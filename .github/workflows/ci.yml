@@ -4,9 +4,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [main, develop]
+    branches: [main, staging]
   push:
-    branches: [main, develop]
+    branches: [main, staging]
 
 jobs:
   verificar:
