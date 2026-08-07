@@ -1,0 +1,13 @@
+{
+  "name": "@oranje/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "DTOs y tipos compartidos api <-> web <-> mobile (§6)",
+  "main": "./src/index.ts",
+  "scripts": {
+    "lint": "echo 'sin código todavía' && exit 0",
+    "typecheck": "echo 'sin código todavía' && exit 0",
+    "test": "echo 'sin código todavía' && exit 0",
+    "build": "echo 'sin código todavía' && exit 0"
+  }
+}

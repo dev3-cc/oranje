@@ -1,0 +1,48 @@
+{
+  "name": "@oranje/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Monolito modular NestJS — los 10 módulos de D-01, un solo desplegable",
+  "scripts": {
+    "dev": "nest start --watch",
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "test:cov": "jest --coverage",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "tsx prisma/seed.ts"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.28",
+    "@nestjs/config": "^4.0.4",
+    "@nestjs/core": "^11.1.28",
+    "@nestjs/platform-express": "^11.1.28",
+    "@prisma/client": "^7.9.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "uuid": "^14.0.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.24",
+    "@nestjs/schematics": "^11.1.0",
+    "@nestjs/testing": "^11.1.28",
+    "@oranje/config": "workspace:*",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^26.1.2",
+    "dotenv": "^17.4.2",
+    "eslint": "^10.8.0",
+    "jest": "^30.4.2",
+    "prisma": "^7.9.1",
+    "ts-jest": "^29.4.12",
+    "tsx": "^4.23.9",
+    "typescript": "^6.0.3"
+  }
+}

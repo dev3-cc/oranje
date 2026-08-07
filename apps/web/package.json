@@ -1,0 +1,12 @@
+{
+  "name": "@oranje/web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pendiente de armar — ver Plan de Implementación",
+  "scripts": {
+    "lint": "echo 'sin código todavía' && exit 0",
+    "typecheck": "echo 'sin código todavía' && exit 0",
+    "test": "echo 'sin código todavía' && exit 0",
+    "build": "echo 'sin código todavía' && exit 0"
+  }
+}

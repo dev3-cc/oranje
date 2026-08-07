@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+coverage/
+.turbo/
+
+# Estándares de Desarrollo §9: .env.example se commitea, el resto no
+.env
+.env.local
+.env.*.local
+
+*.log
+*.tsbuildinfo
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json

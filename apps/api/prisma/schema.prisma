@@ -1,0 +1,24 @@
+// Esquema único del monolito modular — D-01.
+// Un esquema de Postgres por módulo de negocio; los diez van en inglés (D-11).
+// Los modelos llegan en la Fase 2 del Plan de Implementación, en este orden:
+//   catalogs → identity → commercial
+//
+// Prisma 7: la URL de conexión NO vive aquí, vive en prisma.config.ts.
+
+generator client {
+  provider = "prisma-client-js"
+  // multiSchema es GA desde Prisma 6.13.0: ya no lleva previewFeatures.
+}
+
+datasource db {
+  provider = "postgresql"
+  schemas  = ["identity", "commercial", "demand", "coverage", "operations", "settlement", "supervision", "journal", "notifications", "catalogs"]
+}
+
+// Las extensiones que el esquema necesita, en `public`:
+//   postgis     -> hotel.coordinates y la geocerca del ponche (D-08)
+//   pgcrypto    -> cifrado de campo de SSN e ITIN (Estándares de BD §12)
+//   btree_gist  -> la restricción de exclusión de RR-05
+//
+// El `id` NO lo genera Postgres: es uuid v7 desde la aplicación
+// (Estándares de BD §4). No hay DEFAULT en ninguna PK.

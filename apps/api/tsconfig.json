@@ -1,0 +1,4 @@
+{
+  "extends": "../../packages/config/tsconfig/nestjs.json",
+  "include": ["src/**/*.ts", "test/**/*.ts", "prisma/**/*.ts", "prisma.config.ts"]
+}

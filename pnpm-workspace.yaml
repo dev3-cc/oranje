@@ -1,0 +1,19 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# pnpm 11 bloquea los scripts de instalación por defecto. Estos cuatro los necesitan:
+#   prisma / @prisma/engines -> descargan el motor de query
+#   esbuild / unrs-resolver  -> compilan o bajan un binario nativo
+allowBuilds:
+  '@prisma/engines': true
+  prisma: true
+  esbuild: true
+  unrs-resolver: true
+
+# Una sola versión de TypeScript en todo el monorepo.
+# Fijada en 6 a propósito: typescript-eslint todavía no soporta TS 7, y el
+# linter es obligatorio (Estándares de Desarrollo §9). Subir a 7 cuando
+# typescript-eslint lo soporte — ver github.com/typescript-eslint/typescript-eslint/issues/10940
+overrides:
+  typescript: ^6.0.3
