@@ -1,13 +1,17 @@
 // Esquema único del monolito modular — D-01.
-// Un esquema de Postgres por módulo de negocio; los diez van en inglés (D-11).
-// Los modelos llegan en la Fase 2 del Plan de Implementación, en este orden:
-//   catalogs → identity → commercial
+// Un esquema de Postgres por módulo de negocio; los diez en inglés (D-11).
 //
-// Prisma 7: la URL de conexión NO vive aquí, vive en prisma.config.ts.
+// Convenciones que este archivo respeta (Estándares de Base de Datos):
+//   §2  tabla snake_case SINGULAR, calificada por esquema
+//   §3  uuid v7 para el id, text para texto libre, timestamptz para instantes
+//   §4  sin DEFAULT en la PK: el uuid v7 lo genera la aplicación.
+//       updated_at lo mantiene un TRIGGER, no la aplicación -> sin @updatedAt
+//   §5  los semáforos son tablas de catálogo, nunca enums nativos
+//
+// Prisma 7: la url de conexión vive en prisma.config.ts, no aquí.
 
 generator client {
   provider = "prisma-client-js"
-  // multiSchema es GA desde Prisma 6.13.0: ya no lleva previewFeatures.
 }
 
 datasource db {
@@ -15,10 +19,528 @@ datasource db {
   schemas  = ["identity", "commercial", "demand", "coverage", "operations", "settlement", "supervision", "journal", "notifications", "catalogs"]
 }
 
-// Las extensiones que el esquema necesita, en `public`:
-//   postgis     -> hotel.coordinates y la geocerca del ponche (D-08)
-//   pgcrypto    -> cifrado de campo de SSN e ITIN (Estándares de BD §12)
-//   btree_gist  -> la restricción de exclusión de RR-05
+// ============================================================================
+// catalogs — los 7 semáforos como datos, y los catálogos del vault
+// ============================================================================
+
+/// Los 7 semáforos. Uno de ellos es ONBOARDING, el de Ventas.
+model StatusLight {
+  id          String  @db.Uuid
+  code        String  @unique @db.Text
+  name        String  @db.Text
+  description String? @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  states  StatusLightState[]
+  reasons StatusChangeReason[]
+
+  @@id([id])
+  @@map("status_light")
+  @@schema("catalogs")
+}
+
+/// Los estados de cada semáforo. Añadir un estado es un INSERT, no un despliegue.
+/// El `code` va en inglés y el `name` en español (D-11).
+model StatusLightState {
+  id            String  @db.Uuid
+  statusLightId String  @map("status_light_id") @db.Uuid
+  code          String  @db.Text
+  color         String  @db.Text
+  name          String  @db.Text
+  description   String? @db.Text
+  displayOrder  Int     @map("display_order")
+  /// Marca los estados que son rama y no paso del avance normal.
+  /// En Onboarding: RED, BROWN y BLACK.
+  isBranch      Boolean @default(false) @map("is_branch")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  statusLight       StatusLight              @relation(fields: [statusLightId], references: [id], onDelete: Restrict)
+  transitionsFrom   StatusLightTransition[]  @relation("fromState")
+  transitionsTo     StatusLightTransition[]  @relation("toState")
+  prospects         Prospect[]
+  historyFrom       ProspectStateHistory[]   @relation("histFrom")
+  historyTo         ProspectStateHistory[]   @relation("histTo")
+
+  @@id([id])
+  /// Un color significa una cosa POR semáforo: el code es único dentro de su semáforo.
+  @@unique([statusLightId, code], map: "ux_status_light_state_light_code")
+  /// Sostiene la FK compuesta que impide que una entidad tome el estado de otro
+  /// semáforo. Ver restricción 2 del diagrama de Ventas.
+  @@unique([id, statusLightId], map: "ux_status_light_state_id_light")
+  @@index([statusLightId], map: "ix_status_light_state_light")
+  @@map("status_light_state")
+  @@schema("catalogs")
+}
+
+/// Tabla puente N:M auto-referencial CON atributos: qué movimientos son legales,
+/// quién puede hacerlos y qué se le exige. Las 13 RF de Ventas colapsan en un
+/// solo servicio que lee de aquí.
+model StatusLightTransition {
+  id               String  @db.Uuid
+  fromStateId      String  @map("from_state_id") @db.Uuid
+  toStateId        String  @map("to_state_id") @db.Uuid
+  authorizedRoleId String  @map("authorized_role_id") @db.Uuid
+  requiresReason   Boolean @default(false) @map("requires_reason")
+  requiresEvidence Boolean @default(false) @map("requires_evidence")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  fromState      StatusLightState @relation("fromState", fields: [fromStateId], references: [id], onDelete: Restrict)
+  toState        StatusLightState @relation("toState", fields: [toStateId], references: [id], onDelete: Restrict)
+  authorizedRole Role             @relation(fields: [authorizedRoleId], references: [id], onDelete: Restrict)
+
+  /// Si dos roles pueden hacer el mismo paso, son dos filas.
+  @@id([id])
+  @@unique([fromStateId, toStateId, authorizedRoleId], map: "ux_status_light_transition_paso")
+  @@index([fromStateId], map: "ix_status_light_transition_from")
+  @@index([toStateId], map: "ix_status_light_transition_to")
+  @@index([authorizedRoleId], map: "ix_status_light_transition_role")
+  @@map("status_light_transition")
+  @@schema("catalogs")
+}
+
+/// Los motivos catalogados de un cambio de estado. Sin esto, el reporte de
+/// rechazos no se puede agrupar (09 - Dependencias de Ventas).
+model StatusChangeReason {
+  id            String @db.Uuid
+  statusLightId String @map("status_light_id") @db.Uuid
+  code          String @db.Text
+  name          String @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  statusLight     StatusLight            @relation(fields: [statusLightId], references: [id], onDelete: Restrict)
+  prospectCloses  Prospect[]
+  historyEntries  ProspectStateHistory[]
+
+  @@id([id])
+  @@unique([statusLightId, code], map: "ux_status_change_reason_light_code")
+  @@index([statusLightId], map: "ix_status_change_reason_light")
+  @@map("status_change_reason")
+  @@schema("catalogs")
+}
+
+/// Agrupa hoteles para asignar Inspector (RR-13). No es la geocerca.
+model Zone {
+  id   String @db.Uuid
+  code String @unique @db.Text
+  name String @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  hotels    Hotel[]
+  userZones UserZone[]
+
+  @@id([id])
+  @@map("zone")
+  @@schema("catalogs")
+}
+
+/// Los departamentos internos del hotel para los que Oranje recluta.
+/// Housekeeping · Alimentos · Mantenimiento · Front Desk
+model HotelDepartment {
+  id   String @db.Uuid
+  code String @unique @db.Text
+  name String @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  positions Position[]
+  users     User[]
+
+  @@id([id])
+  @@map("hotel_department")
+  @@schema("catalogs")
+}
+
+/// Las posiciones que los hoteles solicitan. El vault las agrupa POR
+/// departamento, y advierte que la lista no es exhaustiva: por eso es tabla
+/// y no un CHECK — el negocio agrega posiciones sin avisar (§5).
+model Position {
+  id                String @db.Uuid
+  hotelDepartmentId String @map("hotel_department_id") @db.Uuid
+  code              String @unique @db.Text
+  name              String @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  hotelDepartment HotelDepartment @relation(fields: [hotelDepartmentId], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@index([hotelDepartmentId], map: "ix_position_hotel_department")
+  @@map("position")
+  @@schema("catalogs")
+}
+
+/// Básico · Intermedio · Avanzado · Conversacional. Ordenados: displayOrder
+/// permite preguntar "nivel mayor o igual a Intermedio".
+model EnglishLevel {
+  id           String @db.Uuid
+  code         String @unique @db.Text
+  name         String @db.Text
+  displayOrder Int    @map("display_order")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  @@id([id])
+  @@map("english_level")
+  @@schema("catalogs")
+}
+
+/// Tiempo completo · Medio tiempo · Temporal · Según solicitud
+model HiringModality {
+  id   String @db.Uuid
+  code String @unique @db.Text
+  name String @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  @@id([id])
+  @@map("hiring_modality")
+  @@schema("catalogs")
+}
+
+// ============================================================================
+// identity — usuarios, roles y permisos (Modelo de Datos §9)
 //
-// El `id` NO lo genera Postgres: es uuid v7 desde la aplicación
-// (Estándares de BD §4). No hay DEFAULT en ninguna PK.
+// Autorizar tiene DOS preguntas y esta sección las separa:
+//   la capacidad -> role_permission (la Matriz de Permisos, pura, por rol)
+//   el alcance   -> user.hotel_id + user.department_id (un hecho de la persona)
+// ============================================================================
+
+/// Los roles del sistema, con el ID del vault: ROL-V-01, ROL-H-02, etc.
+/// NO es el puesto del contacto del hotel.
+model Role {
+  id         String  @db.Uuid
+  code       String  @unique @db.Text
+  name       String  @db.Text
+  department String? @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  users                 User[]
+  permissions           RolePermission[]
+  authorizedTransitions StatusLightTransition[]
+
+  @@id([id])
+  @@map("role")
+  @@schema("identity")
+}
+
+/// La Matriz de Permisos como filas. Agregar un módulo es un INSERT, nunca una
+/// migración de esquema.
+///
+/// Esta tabla NO lleva hotel_id: si lo llevara, la fila diría "el rol Manager de
+/// Área aprueba horas en el Hotel Riu" y habría que insertar una fila por hotel,
+/// por departamento y por acción. El alcance vive en la persona.
+model RolePermission {
+  id     String @db.Uuid
+  roleId String @map("role_id") @db.Uuid
+  module String @db.Text
+  action String @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  role Role @relation(fields: [roleId], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@unique([roleId, module, action], map: "ux_role_permission_rol_modulo_accion")
+  @@index([roleId], map: "ix_role_permission_role")
+  @@map("role_permission")
+  @@schema("identity")
+}
+
+/// El usuario del sistema, y el ALCANCE de su autoridad.
+///
+/// departmentId nulo NO significa "sin alcance": significa TODOS los
+/// departamentos de mi hotel. Es lo que separa al Manager General del Manager de
+/// Área sin una tabla de excepciones.
+///
+/// hotelId nulo es el caso de los roles de territorio — BD, BDC, Inspector —
+/// cuyo alcance son zonas y vive en commercial.user_zone.
+model User {
+  id       String @db.Uuid
+  email    String @unique @db.Text
+  fullName String @map("full_name") @db.Text
+  roleId   String @map("role_id") @db.Uuid
+
+  /// Alcance: el hotel al que pertenece. Nulo en roles de territorio.
+  hotelId      String? @map("hotel_id") @db.Uuid
+  /// Alcance: su departamento dentro del hotel. NULO = todos los del hotel.
+  departmentId String? @map("department_id") @db.Uuid
+
+  /// El BD apunta a su BDC; la Reclutadora a su Líder de Grupo.
+  /// La punta de la jerarquía no le reporta a nadie.
+  reportsToUserId String? @map("reports_to_user_id") @db.Uuid
+
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  role       Role             @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  hotel      Hotel?           @relation("hotelUsers", fields: [hotelId], references: [id], onDelete: Restrict)
+  department HotelDepartment? @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  reportsTo  User?            @relation("jerarquia", fields: [reportsToUserId], references: [id], onDelete: Restrict)
+  reports    User[]           @relation("jerarquia")
+
+  hotelsCreated  Hotel[]                @relation("hotelCreatedBy")
+  hotelsUpdated  Hotel[]                @relation("hotelUpdatedBy")
+  prospectsOwned Prospect[]             @relation("prospectOwner")
+  attempts       ContactAttempt[]
+  stateChanges   ProspectStateHistory[]
+  proposalsSent  Proposal[]
+  zones          UserZone[]
+
+  @@id([id])
+  @@index([roleId], map: "ix_user_role")
+  @@index([hotelId], map: "ix_user_hotel")
+  @@index([reportsToUserId], map: "ix_user_reports_to")
+  @@map("user")
+  @@schema("identity")
+}
+
+// ============================================================================
+// commercial — solo `hotel`, que identity.user necesita por FK.
+// Las otras 6 tablas del diagrama v2 llegan en la siguiente migración.
+// ============================================================================
+
+/// SOLO lo permanente del edificio. Sin estado de semáforo —vive en prospect— y
+/// sin columnas de contacto —viven en hotel_contact (D-13).
+model Hotel {
+  id           String  @db.Uuid
+  name         String  @db.Text
+  generalPhone String? @map("general_phone") @db.Text
+  zoneId       String  @map("zone_id") @db.Uuid
+
+  /// PostGIS. Prisma no tipa geography: las consultas de geocerca van en SQL
+  /// crudo con ST_DWithin, que es donde deben estar (D-08).
+  coordinates      Unsupported("public.geography(Point, 4326)")?
+  geofenceRadiusM  Int?                                  @map("geofence_radius_m")
+
+  /// IANA, no offset numérico: un offset no sabe de horario de verano.
+  /// Sin esto no se puede calcular la jornada ni el corte semanal (§11).
+  timeZone String @map("time_zone") @db.Text
+
+  /// El único hecho de "es cliente" que se queda en el hotel. Con varios ciclos
+  /// comerciales, ninguna otra tabla puede contestar desde cuándo lo es.
+  activatedAt DateTime? @map("activated_at") @db.Timestamptz(6)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+
+  zone      Zone             @relation(fields: [zoneId], references: [id], onDelete: Restrict)
+  users     User[]           @relation("hotelUsers")
+  contacts  HotelContact[]
+  prospects Prospect[]
+  attempts  ContactAttempt[]
+  creator   User?  @relation("hotelCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  updater   User?  @relation("hotelUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@index([zoneId], map: "ix_hotel_zone")
+  @@map("hotel")
+  @@schema("commercial")
+}
+
+// ============================================================================
+// commercial — el pipeline de Ventas. Las 6 tablas restantes del diagrama v2.
+// ============================================================================
+
+/// Los contactos del hotel. Son filas, no columnas de hotel: un hotel tiene al
+/// de Compras y al de Ama de Llaves a la vez.
+model HotelContact {
+  id       String  @db.Uuid
+  hotelId  String  @map("hotel_id") @db.Uuid
+  fullName String  @map("full_name") @db.Text
+  /// El puesto EN EL HOTEL, no un rol del sistema. Texto, no catalogo: nadie
+  /// filtra por el todavia.
+  jobTitle String? @map("job_title") @db.Text
+  phone    String? @db.Text
+  email    String? @db.Text
+  /// Quien es el principal es una decision del BD, no el mas reciente.
+  /// Un solo principal por hotel: UNIQUE parcial en la migracion.
+  isPrimary Boolean @default(false) @map("is_primary")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  hotel    Hotel            @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+  attempts ContactAttempt[]
+
+  @@id([id])
+  /// Sostiene la FK compuesta de contact_attempt (restriccion 6).
+  @@unique([id, hotelId], map: "ux_hotel_contact_id_hotel")
+  @@index([hotelId], map: "ix_hotel_contact_hotel")
+  @@map("hotel_contact")
+  @@schema("commercial")
+}
+
+/// UN CICLO COMERCIAL de un hotel, y donde vive el Semaforo Onboarding (D-13).
+/// Un hotel se prospecta mas de una vez: cada intento es una fila, y solo uno
+/// puede estar abierto a la vez.
+model Prospect {
+  id              String  @db.Uuid
+  hotelId         String  @map("hotel_id") @db.Uuid
+  /// El BD dueno del ciclo, no del edificio: asi la tasa de conversion queda
+  /// limpia cuando un prospecto se reasigna (RF-V-24).
+  ownerUserId     String  @map("owner_user_id") @db.Uuid
+  needDescription String? @map("need_description") @db.Text
+
+  /// El estado del semaforo. La verdad esta en prospect_state_history; esta
+  /// columna es el atajo al estado actual (D-14).
+  onboardingStateId String @map("onboarding_state_id") @db.Uuid
+  /// Redundante a proposito: sostiene la FK compuesta que impide que un
+  /// prospecto tome un estado de OTRO semaforo. Siempre el id de ONBOARDING.
+  statusLightId     String @map("status_light_id") @db.Uuid
+
+  openedAt      DateTime  @default(now()) @map("opened_at") @db.Timestamptz(6)
+  closedAt      DateTime? @map("closed_at") @db.Timestamptz(6)
+  closeReasonId String?   @map("close_reason_id") @db.Uuid
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+
+  hotel           Hotel               @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+  owner           User                @relation("prospectOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+  onboardingState StatusLightState    @relation(fields: [onboardingStateId, statusLightId], references: [id, statusLightId], onDelete: Restrict)
+  closeReason     StatusChangeReason? @relation(fields: [closeReasonId], references: [id], onDelete: Restrict)
+
+  attempts ContactAttempt[]
+  history  ProspectStateHistory[]
+  proposals Proposal[]
+
+  @@id([id])
+  /// Sostiene la FK compuesta de contact_attempt (restriccion 6).
+  @@unique([id, hotelId], map: "ux_prospect_id_hotel")
+  @@index([onboardingStateId], map: "ix_prospect_state")
+  @@index([ownerUserId], map: "ix_prospect_owner")
+  @@index([hotelId], map: "ix_prospect_hotel")
+  @@map("prospect")
+  @@schema("commercial")
+}
+
+/// Una fila por cada cambio de color (D-14). Es la verdad del semaforo: sin
+/// ella no hay tiempo-en-estado ni motivo de transicion fuera del cierre.
+model ProspectStateHistory {
+  id          String  @db.Uuid
+  prospectId  String  @map("prospect_id") @db.Uuid
+  /// Nulo en el primero: el prospecto nace en un estado, no viene de otro.
+  fromStateId String? @map("from_state_id") @db.Uuid
+  toStateId   String  @map("to_state_id") @db.Uuid
+  reasonId    String? @map("reason_id") @db.Uuid
+  userId      String  @map("user_id") @db.Uuid
+  occurredAt  DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  prospect  Prospect            @relation(fields: [prospectId], references: [id], onDelete: Restrict)
+  fromState StatusLightState?   @relation("histFrom", fields: [fromStateId], references: [id], onDelete: Restrict)
+  toState   StatusLightState    @relation("histTo", fields: [toStateId], references: [id], onDelete: Restrict)
+  reason    StatusChangeReason? @relation(fields: [reasonId], references: [id], onDelete: Restrict)
+  user      User                @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@index([prospectId, occurredAt(sort: Desc)], map: "ix_state_history_prospect")
+  @@map("prospect_state_history")
+  @@schema("commercial")
+}
+
+/// Cada intento de contacto. NO es una tabla intermedia: tiene hechos propios
+/// —fecha, resultado, quien lo hizo— y puede haber cinco al mismo contacto.
+model ContactAttempt {
+  id         String  @db.Uuid
+  prospectId String  @map("prospect_id") @db.Uuid
+  /// Redundante: se deduce del prospecto. Existe para que las dos FK compuestas
+  /// impidan citar el contacto de OTRO hotel (restriccion 6).
+  hotelId    String  @map("hotel_id") @db.Uuid
+  /// Opcional: una visita en frio puede no encontrar a nadie.
+  hotelContactId String? @map("hotel_contact_id") @db.Uuid
+
+  /// Listas cerradas con CHECK, no catalogos: no hay pantalla donde el negocio
+  /// agregue un canal ni un resultado (restriccion 9).
+  attemptType String @map("attempt_type") @db.Text
+  outcome     String @db.Text
+
+  userId     String   @map("user_id") @db.Uuid
+  occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  notes      String?  @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  prospect     Prospect      @relation(fields: [prospectId, hotelId], references: [id, hotelId], onDelete: Restrict)
+  hotel        Hotel         @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+  hotelContact HotelContact? @relation(fields: [hotelContactId, hotelId], references: [id, hotelId], onDelete: Restrict)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  /// Sin columna attempt_count en prospect: es COUNT(*).
+  @@id([id])
+  @@index([prospectId, occurredAt(sort: Desc)], map: "ix_contact_attempt_prospect")
+  @@index([hotelId], map: "ix_contact_attempt_hotel")
+  @@map("contact_attempt")
+  @@schema("commercial")
+}
+
+/// La Propuesta Personalizada. Se elabora y envia en GREEN (RR-V-09) y se
+/// ajusta desde BROWN: una fila por version, para no perder lo ofrecido.
+model Proposal {
+  id           String  @db.Uuid
+  prospectId   String  @map("prospect_id") @db.Uuid
+  version      Int
+  servicesNote String? @map("services_note") @db.Text
+
+  /// Tarifas TENTATIVAS y globales. No pagan ni facturan nada: las que cuentan
+  /// son las del Contrato. Cuando el negocio cotice por posicion, se agrega
+  /// proposal_rate sin tocar esta tabla.
+  payRate  Decimal? @map("pay_rate") @db.Decimal(10, 4)
+  billRate Decimal? @map("bill_rate") @db.Decimal(10, 4)
+
+  sentByUserId String?   @map("sent_by_user_id") @db.Uuid
+  /// Nulo = borrador.
+  sentAt       DateTime? @map("sent_at") @db.Timestamptz(6)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  prospect Prospect @relation(fields: [prospectId], references: [id], onDelete: Restrict)
+  sentBy   User?    @relation(fields: [sentByUserId], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@unique([prospectId, version], map: "ux_proposal_prospect_version")
+  @@map("proposal")
+  @@schema("commercial")
+}
+
+/// Tabla puente N:M CON atributo. Es TERRITORIO, no propiedad del prospecto:
+/// esa vive en prospect.owner_user_id. Un BD cubre varias zonas y una zona
+/// puede tener varios BD.
+model UserZone {
+  userId     String   @map("user_id") @db.Uuid
+  zoneId     String   @map("zone_id") @db.Uuid
+  assignedAt DateTime @default(now()) @map("assigned_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  zone Zone @relation(fields: [zoneId], references: [id], onDelete: Restrict)
+
+  @@id([userId, zoneId])
+  @@index([zoneId], map: "ix_user_zone_zone")
+  @@map("user_zone")
+  @@schema("commercial")
+}
