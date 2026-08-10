@@ -114,22 +114,37 @@ El `PrismaModule` es `@Global`, así que no tienes que importarlo en tu módulo.
 
 ## 5. Qué hay en la base hoy
 
-Diecisiete tablas y una vista, en tres esquemas:
+Diecisiete tablas y dos vistas, en tres esquemas, y un módulo de NestJS por
+esquema:
 
-| Esquema      | Qué tiene                                                                                                                                                |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `catalogs`   | Los semáforos como datos: `status_light`, `status_light_state`, `status_light_transition`, `status_change_reason` + `zone` y `hotel_department`          |
-| `identity`   | `role`, `role_permission`, `user`                                                                                                                        |
-| `commercial` | El pipeline de Ventas: `hotel`, `hotel_contact`, `prospect`, `prospect_state_history`, `contact_attempt`, `proposal`, `user_zone` + la vista `vw_client` |
+| Esquema / módulo | Submódulo            | Tablas                                                                                       |
+| ---------------- | -------------------- | -------------------------------------------------------------------------------------------- |
+| `catalogs`       | `status-lights/`     | `status_light` · `status_light_state` · `status_light_transition` · `status_change_reason`   |
+|                  | `zones/`             | `zone`                                                                                       |
+|                  | `hotel-departments/` | `hotel_department`                                                                           |
+| `identity`       | `users/`             | `user`                                                                                       |
+|                  | `roles/`             | `role` · `role_permission`                                                                   |
+| `commercial`     | `hotels/`            | `hotel` · `hotel_contact` · vista `vw_client`                                                |
+|                  | `onboarding/`        | `prospect` · `prospect_state_history` · `contact_attempt` · `proposal` · vista `vw_prospect` |
+|                  | `territories/`       | `user_zone`                                                                                  |
+
+Los tres módulos están registrados en `AppModule` y vacíos: la carpeta de cada
+submódulo espera su `controller`, `service` y `repository`. La anatomía la manda
+`Estructura de Proyecto y Nomenclatura` §3 — el `service` no toca Prisma directo,
+eso es del `repository`.
 
 Los otros siete esquemas —`demand`, `coverage`, `operations`, `settlement`,
 `supervision`, `journal`, `notifications`— **existen y están vacíos** a
-propósito. Sus tablas entran cuando el diagrama de su departamento esté
-aprobado, no antes.
+propósito, y no tienen módulo todavía. Sus tablas entran cuando el diagrama de
+su departamento esté aprobado, no antes.
 
 > **No agregues tablas fuera del diagrama aprobado.** El modelo vigente de
 > `commercial` es `Ventas - Modelo de Datos v2.drawio` en el vault, y el esquema
 > real tiene que poder compararse contra él sin sorpresas.
+
+`vw_client` son los ciclos abiertos en `ORANGE` o `BLACK`; `vw_prospect`, los
+otros siete códigos. _"¿Es cliente?"_ es un join, no una columna: no hay nada que
+se pueda desincronizar.
 
 ### Falta el seed
 

@@ -96,7 +96,7 @@ model StatusLightTransition {
 
   /// Si dos roles pueden hacer el mismo paso, son dos filas.
   @@id([id])
-  @@unique([fromStateId, toStateId, authorizedRoleId], map: "ux_status_light_transition_paso")
+  @@unique([fromStateId, toStateId, authorizedRoleId], map: "ux_status_light_transition_step")
   @@index([fromStateId], map: "ix_status_light_transition_from")
   @@index([toStateId], map: "ix_status_light_transition_to")
   @@index([authorizedRoleId], map: "ix_status_light_transition_role")
@@ -206,7 +206,7 @@ model RolePermission {
   role Role @relation(fields: [roleId], references: [id], onDelete: Restrict)
 
   @@id([id])
-  @@unique([roleId, module, action], map: "ux_role_permission_rol_modulo_accion")
+  @@unique([roleId, module, action], map: "ux_role_permission_role_module_action")
   @@index([roleId], map: "ix_role_permission_role")
   @@map("role_permission")
   @@schema("identity")
@@ -381,7 +381,7 @@ model Prospect {
   /// Sostiene la FK compuesta de contact_attempt (restriccion 6).
   @@unique([id, hotelId], map: "ux_prospect_id_hotel")
   @@index([onboardingStateId], map: "ix_prospect_state")
-  @@index([ownerUserId], map: "ix_prospect_owner")
+  @@index([ownerUserId, onboardingStateId], map: "ix_prospect_owner")
   @@index([hotelId], map: "ix_prospect_hotel")
   @@map("prospect")
   @@schema("commercial")

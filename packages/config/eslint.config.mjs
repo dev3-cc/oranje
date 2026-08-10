@@ -28,19 +28,11 @@ export default tseslint.config(
       /**
        * Una feature se importa solo desde su index.ts (§4).
        *
-       * Antes la regla era `['../*']` — prohibir TODO import que suba de nivel.
-       * Eso no se puede cumplir dentro de una app: un módulo de negocio tiene
-       * que llegar a `infra/prisma` para consultar la base, y `apps/api` no
-       * tiene alias propio (TypeScript 7 eliminó `baseUrl`, y los `paths` de
-       * `tsconfig.base.json` son solo para `@oranje/*`).
-       *
-       * Lo que de verdad importa no es subir de nivel: es **entrar por dentro**
-       * de otra feature. Eso es lo que se bloquea ahora.
-       *
        *   ../../infra/prisma/index.js          sí
-       *   ../../infra/prisma/prisma.service.js NO — sáltate el index y el día
-       *                                        que cambie la estructura interna
-       *                                        rompes a todos los que entraron
+       *   ../../infra/prisma/prisma.service.js no
+       *
+       * Antes la regla era `['../*']`, que prohibía TODO import hacia arriba y
+       * dejaba a un módulo de negocio sin forma de llegar a `infra/prisma`.
        */
       'no-restricted-imports': [
         'error',

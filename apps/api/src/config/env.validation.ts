@@ -9,23 +9,12 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'staging', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
 
-  /**
-   * Apunta al Cloud SQL Auth Proxy en `localhost:5433`, nunca a la IP de la
-   * instancia (Estándares de BD §13). En Cloud Run es el socket unix
-   * `/cloudsql/oranjeapp-gcp:us-central1:oranje`.
-   */
+  // Apunta al Cloud SQL Auth Proxy, nunca a la IP de la instancia (BD §13)
   DATABASE_URL: z.string().url(),
 
-  /**
-   * Conexiones por instancia del API. `max × instancias` no puede pasar del
-   * `max_connections` de Cloud SQL, que en la instancia `oranje` es 100.
-   */
+  // Conexiones por instancia: max × instancias <= max_connections de Cloud SQL
   DATABASE_POOL_MAX: z.coerce.number().int().positive().max(100).default(10),
-
-  /** Cuánto espera por un lugar del pool antes de fallar. */
   DATABASE_CONNECT_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
-
-  /** Techo de una consulta suelta. Ninguna se queda colgada ocupando el pool. */
   DATABASE_STATEMENT_TIMEOUT_MS: z.coerce.number().int().positive().default(15_000),
 
   AUTH_ISSUER_URL: z.string().url(),

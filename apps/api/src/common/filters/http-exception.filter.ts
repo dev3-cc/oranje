@@ -2,16 +2,13 @@ import {
   ArgumentsHost,
   Catch,
   ExceptionFilter,
-  HttpException,
   HttpStatus,
+  HttpException,
   Logger,
 } from '@nestjs/common'
 import { Request, Response } from 'express'
 import { v7 as uuidv7 } from 'uuid'
 
-/**
- * Un error tiene un `field` y opcionalmente el valor que lo provocó.
- */
 interface ErrorDetail {
   field: string
   message?: string
@@ -28,14 +25,8 @@ interface ErrorBody {
 }
 
 /**
- * Toda respuesta de error sale con la MISMA forma — Estándares de Desarrollo §4.
- *
- * El `code` es `UPPER_SNAKE_CASE`, estable y catalogado: el frontend decide qué
- * mostrar a partir de él y **nunca** del `message`, que se puede reescribir sin
- * romper a nadie.
- *
- * Sin este filtro, Nest contesta `{ statusCode, message, error }`, que no es la
- * forma acordada y cambia según quién lanzó la excepción.
+ * Toda respuesta de error sale con la misma forma — Estándares de Desarrollo §4.
+ * El `code` es estable y catalogado: el frontend decide con él, no con el `message`.
  */
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -49,9 +40,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     const { status, body } = this.describe(exception, traceId)
 
+    // El stack queda en el log, nunca en el body
     if (status >= 500) {
-      // El detalle del error queda en el log, no en la respuesta: un stack trace
-      // en el body le dice a un atacante cómo está hecho el sistema
       this.logger.error(
         `${request.method} ${request.url} — ${traceId}`,
         exception instanceof Error ? exception.stack : String(exception),
@@ -66,7 +56,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const status = exception.getStatus()
       const payload = exception.getResponse()
 
-      // Lo que lanzó ZodValidationPipe: ya trae code, message y details
+      // Lo que lanzó ZodValidationPipe ya trae code, message y details
       if (typeof payload === 'object' && payload !== null && 'code' in payload) {
         const { code, message, details } = payload as Partial<ErrorBody['error']>
 
@@ -86,11 +76,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       return {
         status,
         body: {
-          error: {
-            code: this.defaultCode(status),
-            message: exception.message,
-            traceId,
-          },
+          error: { code: this.defaultCode(status), message: exception.message, traceId },
         },
       }
     }
@@ -98,19 +84,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
     return {
       status: HttpStatus.INTERNAL_SERVER_ERROR,
       body: {
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Ocurrió un error inesperado',
-          traceId,
-        },
+        error: { code: 'INTERNAL_ERROR', message: 'Ocurrió un error inesperado', traceId },
       },
     }
   }
 
-  /**
-   * Un `code` genérico por status, para las excepciones de Nest que no traen el
-   * suyo. Cuando un caso importe de verdad, se lanza con su código catalogado.
-   */
+  /** Código genérico para las excepciones de Nest que no traen el suyo. */
   private defaultCode(status: number): string {
     const porStatus: Record<number, string> = {
       [HttpStatus.BAD_REQUEST]: 'BAD_REQUEST',

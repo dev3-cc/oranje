@@ -1,19 +1,11 @@
 {
   "extends": "../../packages/config/tsconfig/nestjs.json",
   "compilerOptions": {
-    /**
-     * Explícito porque hace falta: los globales de Jest (`describe`, `it`,
-     * `expect`) no entraban solos y todo spec fallaba con "Cannot find name
-     * 'it'". `@types/express` no va aquí — ese se importa por su nombre, no
-     * declara globales.
-     */
+    // Explícito porque los globales de Jest no entraban solos.
+    // @types/express no va aquí: se importa por su nombre, no declara globales
     "types": ["node", "jest"],
 
-    /**
-     * Cada archivo se transpila por separado. Es lo que ts-jest exige con
-     * `module: NodeNext` y, de paso, prohíbe lo que un transpilador por archivo
-     * no puede resolver (re-exportar un tipo sin `export type`).
-     */
+    // Lo exige ts-jest con module: NodeNext
     "isolatedModules": true
   },
   "include": ["src/**/*.ts", "test/**/*.ts", "prisma/**/*.ts", "prisma.config.ts"]

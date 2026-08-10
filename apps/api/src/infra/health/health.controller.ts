@@ -2,21 +2,12 @@ import { Controller, Get } from '@nestjs/common'
 
 import { PrismaService } from '../prisma/index.js'
 
-/**
- * `GET /api/v1/health` es la primera prueba de que la conexión funciona, y
- * después el probe de Cloud Run.
- *
- * Dos rutas a propósito:
- *   /health      la app respondió. NO toca la base
- *   /health/db   la base contestó de verdad
- *
- * Si el probe de liveness pegara a la base, una caída de Postgres reiniciaría
- * el API en ciclo sin arreglar nada.
- */
 @Controller('health')
 export class HealthController {
   constructor(private readonly prisma: PrismaService) {}
 
+  // Liveness. No toca la base a propósito: si lo hiciera, una caída de Postgres
+  // reiniciaría el API en ciclo sin arreglar nada
   @Get()
   check(): { status: string } {
     return { status: 'ok' }

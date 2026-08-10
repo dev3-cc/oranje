@@ -4,16 +4,8 @@
     "outDir": "./dist",
     "rootDir": "./src",
 
-    /**
-     * El cache incremental vive DENTRO de dist a propósito.
-     *
-     * `nest-cli.json` tiene `deleteOutDir: true`: borra dist antes de compilar.
-     * Con el cache fuera, TypeScript creía que los archivos sin cambios ya
-     * estaban compilados y no los volvía a emitir — el build salía "Done" con
-     * un dist a medias y `node dist/main.js` moría con MODULE_NOT_FOUND.
-     *
-     * Adentro, borrar dist invalida el cache y los dos quedan siempre de acuerdo.
-     */
+    // Dentro de dist a propósito: con `deleteOutDir: true` y el cache afuera,
+    // tsc creía compilados los archivos sin cambios y el build salía a medias
     "tsBuildInfoFile": "./dist/tsconfig.build.tsbuildinfo"
   },
   "include": ["src/**/*.ts"],
