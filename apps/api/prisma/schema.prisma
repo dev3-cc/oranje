@@ -303,6 +303,7 @@ model Hotel {
 
   @@id([id])
   @@index([zoneId], map: "ix_hotel_zone")
+  @@index([coordinates(ops: raw("gist_geography_ops"))], map: "ix_hotel_coordinates", type: Gist)
   @@map("hotel")
   @@schema("commercial")
 }

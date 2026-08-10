@@ -25,14 +25,38 @@ export default tseslint.config(
       // sin console.log en código que se mergea (§7)
       'no-console': 'error',
 
-      // una feature se importa solo desde su index.ts (§4)
+      /**
+       * Una feature se importa solo desde su index.ts (§4).
+       *
+       * Antes la regla era `['../*']` — prohibir TODO import que suba de nivel.
+       * Eso no se puede cumplir dentro de una app: un módulo de negocio tiene
+       * que llegar a `infra/prisma` para consultar la base, y `apps/api` no
+       * tiene alias propio (TypeScript 7 eliminó `baseUrl`, y los `paths` de
+       * `tsconfig.base.json` son solo para `@oranje/*`).
+       *
+       * Lo que de verdad importa no es subir de nivel: es **entrar por dentro**
+       * de otra feature. Eso es lo que se bloquea ahora.
+       *
+       *   ../../infra/prisma/index.js          sí
+       *   ../../infra/prisma/prisma.service.js NO — sáltate el index y el día
+       *                                        que cambie la estructura interna
+       *                                        rompes a todos los que entraron
+       */
       'no-restricted-imports': [
         'error',
         {
           patterns: [
             {
-              group: ['../*'],
-              message: 'Sin imports relativos que suban de nivel: usa el alias del paquete.',
+              group: ['**/modules/*/*', '!**/modules/*/index.js'],
+              message: 'Una feature de modules/ se importa por su index.ts, no por dentro (§4).',
+            },
+            {
+              group: ['**/infra/*/*', '!**/infra/*/index.js'],
+              message: 'infra/ se importa por su index.ts, no por dentro (§4).',
+            },
+            {
+              group: ['@oranje/*/src/*', '@oranje/*/dist/*'],
+              message: 'Un paquete del workspace se importa por su nombre, no por su ruta interna.',
             },
           ],
         },
