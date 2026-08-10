@@ -146,6 +146,24 @@ su departamento esté aprobado, no antes.
 otros siete códigos. _"¿Es cliente?"_ es un join, no una columna: no hay nada que
 se pueda desincronizar.
 
+### Cinco cosas que están en la base y no en el diagrama
+
+Auditado el 2026-08-10. Ninguna se borró: quitar una columna es destructivo y la
+decisión no es de quien audita.
+
+| Qué                         | De dónde salió                                        | Propuesta                                                                                                                      |
+| --------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `identity.role_permission`  | `Modelo de Datos` §9                                  | Se queda. Ya está justificada                                                                                                  |
+| `catalogs.hotel_department` | `Modelo de Datos` §9 — `user.department_id` le apunta | Se queda. Ya está justificada                                                                                                  |
+| `contact_attempt.notes`     | Se agregó al implementar                              | Se queda: el resultado es una lista cerrada de 4 valores y el detalle del intento no cabe en ninguno                           |
+| `identity.user.is_active`   | Se agregó al implementar                              | Se queda: dar de baja a alguien sin borrar su historia necesita esta columna, y §4 reserva el borrado lógico para otras tablas |
+| `catalogs.zone.code`        | Se agregó al implementar                              | Se queda: los otros cuatro catálogos tienen `code`, y el seed necesita una llave estable que no sea el nombre                  |
+
+**Lo que hay que corregir es el diagrama, no la base.** Las tres columnas se
+agregan a `Ventas - Modelo de Datos v2.drawio`; las dos tablas viven en
+`Modelo de Datos` y solo falta que el diagrama de Ventas las dibuje como _"tabla
+de otro módulo"_, que es lo que su propia leyenda ya contempla.
+
 ### Falta el seed
 
 `prisma/seed.ts` lanza un error a propósito: los catálogos todavía no están
