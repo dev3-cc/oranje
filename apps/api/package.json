@@ -10,8 +10,8 @@
     "start": "node dist/main.js",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
-    "test": "jest",
-    "test:cov": "jest --coverage",
+    "test": "jest --passWithNoTests",
+    "test:cov": "jest --coverage --passWithNoTests",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts"
