@@ -5,27 +5,32 @@
 # un dueño específico en las rutas sensibles, que suma un revisor obligatorio
 # encima del mínimo de 1.
 #
-# PENDIENTE: reemplazar @dev3-cc por los handles reales del equipo
-# (Sebastian, Victor, Hugo) y por los equipos de GitHub cuando existan.
+# Por qué los tres handles aparecen en cada ruta: GitHub excluye siempre al autor
+# del PR de sus propios dueños. Con una sola persona listada, quien toca esa ruta
+# no tiene quién le apruebe y el PR se atora. Con los tres, siempre quedan dos
+# revisores posibles y la segunda mirada existe de verdad.
+#
+# PENDIENTE: migrar a equipos de GitHub cuando el equipo crezca; los handles
+# individuales no escalan.
 
 # Todo, por defecto
-*                                       @dev3-cc
+*                                       @dev3-cc @dev2-cc @Dev4-cc
 
 # --- Rutas que exigen la segunda mirada (§2) ---
 
 # Semáforos: un estado o una transición mal puesta rompe el negocio entero
-/packages/domain/src/statusLights/      @dev3-cc
+/packages/domain/src/statusLights/      @dev3-cc @dev2-cc @Dev4-cc
 
 # Permisos: la Matriz de Permisos es el control de acceso real
-/packages/domain/src/permissions/       @dev3-cc
-/apps/api/src/modules/identity/         @dev3-cc
+/packages/domain/src/permissions/       @dev3-cc @dev2-cc @Dev4-cc
+/apps/api/src/modules/identity/         @dev3-cc @dev2-cc @Dev4-cc
 
 # Migraciones y esquema: no se revierten con un rollback de código
-/apps/api/prisma/                       @dev3-cc
+/apps/api/prisma/                       @dev3-cc @dev2-cc @Dev4-cc
 
 # Dinero: nómina y facturación
-/apps/api/src/modules/settlement/       @dev3-cc
+/apps/api/src/modules/settlement/       @dev3-cc @dev2-cc @Dev4-cc
 
 # La herramienta que hace cumplir todo lo demás
-/.github/                               @dev3-cc
-/packages/config/                       @dev3-cc
+/.github/                               @dev3-cc @dev2-cc @Dev4-cc
+/packages/config/                       @dev3-cc @dev2-cc @Dev4-cc
