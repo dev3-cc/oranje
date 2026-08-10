@@ -153,61 +153,10 @@ model HotelDepartment {
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
 
-  positions Position[]
-  users     User[]
+  users User[]
 
   @@id([id])
   @@map("hotel_department")
-  @@schema("catalogs")
-}
-
-/// Las posiciones que los hoteles solicitan. El vault las agrupa POR
-/// departamento, y advierte que la lista no es exhaustiva: por eso es tabla
-/// y no un CHECK — el negocio agrega posiciones sin avisar (§5).
-model Position {
-  id                String @db.Uuid
-  hotelDepartmentId String @map("hotel_department_id") @db.Uuid
-  code              String @unique @db.Text
-  name              String @db.Text
-
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
-
-  hotelDepartment HotelDepartment @relation(fields: [hotelDepartmentId], references: [id], onDelete: Restrict)
-
-  @@id([id])
-  @@index([hotelDepartmentId], map: "ix_position_hotel_department")
-  @@map("position")
-  @@schema("catalogs")
-}
-
-/// Básico · Intermedio · Avanzado · Conversacional. Ordenados: displayOrder
-/// permite preguntar "nivel mayor o igual a Intermedio".
-model EnglishLevel {
-  id           String @db.Uuid
-  code         String @unique @db.Text
-  name         String @db.Text
-  displayOrder Int    @map("display_order")
-
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
-
-  @@id([id])
-  @@map("english_level")
-  @@schema("catalogs")
-}
-
-/// Tiempo completo · Medio tiempo · Temporal · Según solicitud
-model HiringModality {
-  id   String @db.Uuid
-  code String @unique @db.Text
-  name String @db.Text
-
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
-
-  @@id([id])
-  @@map("hiring_modality")
   @@schema("catalogs")
 }
 
