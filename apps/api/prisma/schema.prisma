@@ -61,9 +61,14 @@ model StatusLightState {
   statusLight       StatusLight              @relation(fields: [statusLightId], references: [id], onDelete: Restrict)
   transitionsFrom   StatusLightTransition[]  @relation("fromState")
   transitionsTo     StatusLightTransition[]  @relation("toState")
-  prospects         Prospect[]
-  historyFrom       ProspectStateHistory[]   @relation("histFrom")
-  historyTo         ProspectStateHistory[]   @relation("histTo")
+  prospects           Prospect[]
+  historyFrom         ProspectStateHistory[]      @relation("histFrom")
+  historyTo           ProspectStateHistory[]      @relation("histTo")
+  requisitions        Requisition[]
+  positionsCoverage   Position[]                  @relation("posCoverage")
+  positionsUrgency    Position[]                  @relation("posUrgency")
+  reqHistoryFrom      RequisitionStateHistory[]   @relation("reqHistFrom")
+  reqHistoryTo        RequisitionStateHistory[]   @relation("reqHistTo")
 
   @@id([id])
   /// Un color significa una cosa POR semáforo: el code es único dentro de su semáforo.
@@ -116,8 +121,9 @@ model StatusChangeReason {
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
 
   statusLight     StatusLight            @relation(fields: [statusLightId], references: [id], onDelete: Restrict)
-  prospectCloses  Prospect[]
-  historyEntries  ProspectStateHistory[]
+  prospectCloses     Prospect[]
+  historyEntries     ProspectStateHistory[]
+  reqHistoryEntries  RequisitionStateHistory[]
 
   @@id([id])
   @@unique([statusLightId, code], map: "ux_status_change_reason_light_code")
@@ -153,7 +159,9 @@ model HotelDepartment {
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
 
-  users User[]
+  users             User[]
+  catalogPositions  CatalogPosition[]
+  requestedPositions Position[]
 
   @@id([id])
   @@map("hotel_department")
@@ -254,6 +262,13 @@ model User {
   proposalsSent  Proposal[]
   zones          UserZone[]
 
+  requisitionsCreated    Requisition[]             @relation("reqCreatedBy")
+  requisitionsUpdated    Requisition[]             @relation("reqUpdatedBy")
+  requisitionsAsManager  Requisition[]             @relation("reqAreaManager")
+  requisitionsAuthorized Requisition[]             @relation("reqAuthorizedBy")
+  requisitionsAsInspector Requisition[]            @relation("reqInspector")
+  requisitionStateChanges RequisitionStateHistory[]
+
   @@id([id])
   @@index([roleId], map: "ix_user_role")
   @@index([hotelId], map: "ix_user_hotel")
@@ -295,9 +310,10 @@ model Hotel {
 
   zone      Zone             @relation(fields: [zoneId], references: [id], onDelete: Restrict)
   users     User[]           @relation("hotelUsers")
-  contacts  HotelContact[]
-  prospects Prospect[]
-  attempts  ContactAttempt[]
+  contacts     HotelContact[]
+  prospects    Prospect[]
+  attempts     ContactAttempt[]
+  requisitions Requisition[]
   creator   User?  @relation("hotelCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
   updater   User?  @relation("hotelUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
 
@@ -493,4 +509,237 @@ model UserZone {
   @@index([zoneId], map: "ix_user_zone_zone")
   @@map("user_zone")
   @@schema("commercial")
+}
+
+// ============================================================================
+// catalogs — los tres que vuelven, ahora que la Posicion solicitada los usa.
+// Se habian quitado en `quita_catalogos_fuera_del_esquema` por no tener
+// consumidor. Fuente: Core/Catalogos/ del vault.
+// ============================================================================
+
+/// Housekeeper, Houseman, Chef… Agrupada por departamento del hotel.
+/// La lista NO es exhaustiva: el negocio agrega posiciones sin avisar, y por eso
+/// es tabla y no un CHECK (Estandares de BD seccion 5).
+///
+/// OJO: no confundir con demand.position. Esta es el CATALOGO de puestos; la
+/// otra es una posicion SOLICITADA en una requisicion.
+model CatalogPosition {
+  id                String @db.Uuid
+  hotelDepartmentId String @map("hotel_department_id") @db.Uuid
+  code              String @unique @db.Text
+  name              String @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  hotelDepartment    HotelDepartment @relation(fields: [hotelDepartmentId], references: [id], onDelete: Restrict)
+  requestedPositions Position[]
+
+  @@id([id])
+  @@index([hotelDepartmentId], map: "ix_position_hotel_department")
+  @@map("position")
+  @@schema("catalogs")
+}
+
+/// Tiempo completo · Medio tiempo · Temporal · Segun solicitud
+model HiringModality {
+  id   String @db.Uuid
+  code String @unique @db.Text
+  name String @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  positions Position[]
+
+  @@id([id])
+  @@map("hiring_modality")
+  @@schema("catalogs")
+}
+
+/// Basico · Intermedio · Avanzado · Conversacional.
+/// displayOrder permite preguntar "nivel mayor o igual a Intermedio".
+model EnglishLevel {
+  id           String @db.Uuid
+  code         String @unique @db.Text
+  name         String @db.Text
+  displayOrder Int    @map("display_order")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  positions Position[]
+
+  @@id([id])
+  @@map("english_level")
+  @@schema("catalogs")
+}
+
+// ============================================================================
+// demand — la Requisicion, sus Posiciones y el Slot.
+// Fuente: Hotel/Demanda - Modelo de Datos.drawio
+// ============================================================================
+
+/// La cabecera de la requisicion. Los reclutadores NO estan aqui: son varios a
+/// la vez y viven en coverage.participation (RR-15).
+model Requisition {
+  id     String @db.Uuid
+  /// AAAAMMDDHHMM + homoclave de 2 caracteres.
+  number String @unique @db.Text
+
+  hotelId String @map("hotel_id") @db.Uuid
+
+  /// Semaforo de Requisicion: Verde manzana · Verde · Amarillo · Azul claro ·
+  /// Rojo · Morado. statusLightId es redundante a proposito: sostiene la FK
+  /// compuesta que impide tomar un estado de otro semaforo.
+  statusLightStateId String @map("status_light_state_id") @db.Uuid
+  statusLightId      String @map("status_light_id") @db.Uuid
+
+  /// El GH responsable del departamento. Puede NO ser quien autoriza: un Manager
+  /// General puede autorizar la requisicion de un departamento cuyo GH es otro.
+  /// Pendiente de confirmar con el negocio.
+  areaManagerUserId String? @map("area_manager_user_id") @db.Uuid
+
+  authorizedBy String?   @map("authorized_by") @db.Uuid
+  authorizedAt DateTime? @map("authorized_at") @db.Timestamptz(6)
+
+  /// El Inspector de la zona del hotel, asignado automaticamente (RR-13).
+  inspectorId String? @map("inspector_id") @db.Uuid
+
+  /// Borrado logico. El estado Morado del semaforo lo exige: una fila borrada
+  /// fisicamente no puede tener un estado.
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+  /// El Supervisor que la creo.
+  createdBy String?   @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+
+  hotel       Hotel            @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+  statusState StatusLightState @relation(fields: [statusLightStateId, statusLightId], references: [id, statusLightId], onDelete: Restrict)
+  areaManager User?            @relation("reqAreaManager", fields: [areaManagerUserId], references: [id], onDelete: Restrict)
+  authorizer  User?            @relation("reqAuthorizedBy", fields: [authorizedBy], references: [id], onDelete: Restrict)
+  inspector   User?            @relation("reqInspector", fields: [inspectorId], references: [id], onDelete: Restrict)
+  creator     User?            @relation("reqCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  updater     User?            @relation("reqUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
+
+  positions Position[]
+  history   RequisitionStateHistory[]
+
+  @@id([id])
+  @@index([hotelId, statusLightStateId], map: "ix_requisition_hotel_state")
+  @@index([inspectorId], map: "ix_requisition_inspector")
+  @@map("requisition")
+  @@schema("demand")
+}
+
+/// Una posicion solicitada dentro de la requisicion. Carga DOS semaforos: el de
+/// Posiciones (cobertura) y el de Urgencia.
+model Position {
+  id            String @db.Uuid
+  requisitionId String @map("requisition_id") @db.Uuid
+  /// El renglon dentro de la requisicion, como una partida de factura.
+  lineNumber    Int    @map("line_number")
+
+  catalogPositionId String  @map("catalog_position_id") @db.Uuid
+  hiringModalityId  String  @map("hiring_modality_id") @db.Uuid
+  /// Es PREFERENCIA del hotel, no requisito: por eso es opcional.
+  englishLevelId    String? @map("english_level_id") @db.Uuid
+  /// El departamento de la posicion SOLICITADA. No se deriva del catalogo: el
+  /// hotel puede pedir un Housekeeper para Alimentos.
+  hotelDepartmentId String  @map("hotel_department_id") @db.Uuid
+
+  quantity Int
+  /// Sin fecha de fin a proposito: la posicion termina cuando el Manager de Area
+  /// manda al colaborador a descansar (Rosa - Stand-by).
+  startDate DateTime @map("start_date") @db.Date
+  /// Solo la hora de entrada. La duracion del turno se decide al disenar
+  /// operations: es el Schedule quien la necesita.
+  startTime DateTime? @map("start_time") @db.Time(0)
+  notes     String?   @db.Text
+
+  /// Semaforo de Posiciones: Dorado · Naranja · Verde · Amarillo · Rojo · Morado.
+  /// Derivado de contar slots ocupados; se guarda porque el tablero lo filtra.
+  coverageStateId String @map("coverage_state_id") @db.Uuid
+  coverageLightId String @map("coverage_light_id") @db.Uuid
+
+  /// Semaforo de Urgencia: Rojo (<72h) · Amarillo (72-120h) · Verde fuerte (>120h).
+  /// Derivado de authorized_at contra start_date (RR-H-05); lo recalcula un job.
+  urgencyStateId String? @map("urgency_state_id") @db.Uuid
+  urgencyLightId String? @map("urgency_light_id") @db.Uuid
+
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  requisition     Requisition       @relation(fields: [requisitionId], references: [id], onDelete: Restrict)
+  catalogPosition CatalogPosition   @relation(fields: [catalogPositionId], references: [id], onDelete: Restrict)
+  hiringModality  HiringModality    @relation(fields: [hiringModalityId], references: [id], onDelete: Restrict)
+  englishLevel    EnglishLevel?     @relation(fields: [englishLevelId], references: [id], onDelete: Restrict)
+  hotelDepartment HotelDepartment   @relation(fields: [hotelDepartmentId], references: [id], onDelete: Restrict)
+  coverageState   StatusLightState  @relation("posCoverage", fields: [coverageStateId, coverageLightId], references: [id, statusLightId], onDelete: Restrict)
+  urgencyState    StatusLightState? @relation("posUrgency", fields: [urgencyStateId, urgencyLightId], references: [id, statusLightId], onDelete: Restrict)
+
+  slots Slot[]
+
+  @@id([id])
+  @@index([requisitionId], map: "ix_position_requisition")
+  @@index([urgencyStateId], map: "ix_position_urgency")
+  @@map("position")
+  @@schema("demand")
+}
+
+/// LA UNIDAD DE BLOQUEO. Una fila por cada persona solicitada: quantity = 3
+/// genera 3 slots. Es lo que permite cumplir RR-15 sin Redis — se bloquea la
+/// fila del slot, no la requisicion (D-02).
+///
+/// Sin deletedAt a proposito: si quantity baja, el slot libre se borra
+/// fisicamente y el ocupado no se puede borrar (FK de coverage.assignment).
+model Slot {
+  id         String @db.Uuid
+  positionId String @map("position_id") @db.Uuid
+  /// El enesimo slot de su posicion. El ORDER BY del Self-Pick lo usa para que
+  /// se ocupen en orden determinista.
+  ordinal    Int
+  /// Lista cerrada y tecnica: el negocio no agrega estados de ocupacion.
+  /// Va como CHECK, no como catalogo (seccion 5).
+  status     String @default("free") @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  position Position @relation(fields: [positionId], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@unique([positionId, ordinal], map: "ux_slot_position_ordinal")
+  @@map("slot")
+  @@schema("demand")
+}
+
+/// El timeline inmutable de la cabecera. La nota de Requisicion pide un
+/// "timeline cronologico inmutable con actor y timestamp". Es D-14 aplicado.
+/// Append-only: sin updated_at ni deleted_at (Estandares de BD seccion 4).
+model RequisitionStateHistory {
+  id            String   @db.Uuid
+  requisitionId String   @map("requisition_id") @db.Uuid
+  /// Nulo en el primero: la requisicion nace en un estado, no viene de otro.
+  fromStateId   String?  @map("from_state_id") @db.Uuid
+  toStateId     String   @map("to_state_id") @db.Uuid
+  reasonId      String?  @map("reason_id") @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  occurredAt    DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  requisition Requisition         @relation(fields: [requisitionId], references: [id], onDelete: Restrict)
+  fromState   StatusLightState?   @relation("reqHistFrom", fields: [fromStateId], references: [id], onDelete: Restrict)
+  toState     StatusLightState    @relation("reqHistTo", fields: [toStateId], references: [id], onDelete: Restrict)
+  reason      StatusChangeReason? @relation(fields: [reasonId], references: [id], onDelete: Restrict)
+  user        User                @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@index([requisitionId, occurredAt(sort: Desc)], map: "ix_requisition_history")
+  @@map("requisition_state_history")
+  @@schema("demand")
 }
