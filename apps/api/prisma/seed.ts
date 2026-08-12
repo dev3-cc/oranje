@@ -257,6 +257,155 @@ const ONBOARDING_TRANSITIONS: Array<{
   { from: 'BLACK', to: 'LIGHT_BLUE', roles: ['ROL-V-02'], reason: true },
 ]
 
+/**
+ * Los 4 estados en los que el colaborador TIENE asignación activa.
+ *
+ * No está enunciado así en el vault, se deriva de la línea 322 de `Reglas de
+ * Negocio`: «Estados que no permiten ponchado: Rosa (Stand-by) y Amarillo
+ * (Disponible voluntario), porque en ninguno de los dos existe asignación
+ * activa». Blanco todavía no está validado, y Morado/Rojo/Gris/Negro ya son
+ * estados de incidencia.
+ *
+ * Importa porque las cuatro transiciones de incidencia SOLO pueden salir de
+ * aquí: no se puede faltar sin Schedule, el hotel no retira de una posición que
+ * no existe, no reporta a quien no trabaja ahí, y el accidente LABORAL ocurre
+ * trabajando.
+ */
+const WORKER_OPERATIONAL = ['APPLE_GREEN', 'LIGHT_BLUE', 'ORANGE', 'BROWN']
+
+const WORKER_TRANSITIONS: Array<{
+  from: string
+  /** `null` = el destino es el estado previo; lo resuelve el servicio leyendo la historia. */
+  to: string | null
+  roles: string[]
+  reason: boolean
+  note?: string
+}> = [
+  // --- entradas y progresión como fijo ---
+  // Blanco NO lleva fila: es el estado inicial con que nace el worker, igual que
+  // GRAY en el Onboarding. Una transición necesita origen.
+  {
+    from: 'WHITE',
+    to: 'STRONG_GREEN',
+    roles: ['ROL-R-01'],
+    reason: false,
+    note: 'valida la Reclutadora (RF-08)',
+  },
+  {
+    from: 'STRONG_GREEN',
+    to: 'APPLE_GREEN',
+    roles: ['ROL-SYS-01'],
+    reason: false,
+    note: 'asignado y asiste el día 1',
+  },
+  {
+    from: 'APPLE_GREEN',
+    to: 'LIGHT_BLUE',
+    roles: ['ROL-SYS-01'],
+    reason: false,
+    note: 'poncha al tercer día',
+  },
+  {
+    from: 'LIGHT_BLUE',
+    to: 'ORANGE',
+    roles: ['ROL-SYS-01'],
+    reason: false,
+    note: 'completa 7 días: fijo',
+  },
+  { from: 'ORANGE', to: 'STRONG_GREEN', roles: ['ROL-SYS-01'], reason: false, note: 'queda libre' },
+
+  // --- disponibilidad voluntaria: 3 orígenes, y los 3 los dispara el colaborador ---
+  { from: 'STRONG_GREEN', to: 'YELLOW', roles: ['ROL-C-01'], reason: false },
+  { from: 'ORANGE', to: 'YELLOW', roles: ['ROL-C-01'], reason: false },
+  { from: 'PINK', to: 'YELLOW', roles: ['ROL-C-01'], reason: false },
+
+  // --- asignación temporal: la Reclutadora o su Líder de Grupo ---
+  { from: 'STRONG_GREEN', to: 'BROWN', roles: ['ROL-R-01', 'ROL-R-02'], reason: false },
+  { from: 'YELLOW', to: 'BROWN', roles: ['ROL-R-01', 'ROL-R-02'], reason: false },
+
+  // --- las 4 de destino variable (returns_to_previous) ---
+  {
+    from: 'BROWN',
+    to: null,
+    roles: ['ROL-SYS-01'],
+    reason: false,
+    note: 'vencen los días asignados',
+  },
+  {
+    from: 'BROWN',
+    to: null,
+    roles: ['ROL-R-01', 'ROL-R-02'],
+    reason: false,
+    note: 'cancelación manual',
+  },
+  { from: 'PURPLE', to: null, roles: ['ROL-SYS-01'], reason: false, note: 'vuelve a ponchar' },
+
+  // --- stand-by: los 3 roles del hotel lo ponen y lo quitan ---
+  { from: 'PINK', to: 'STRONG_GREEN', roles: ['ROL-H-01', 'ROL-H-02', 'ROL-H-03'], reason: false },
+
+  // --- resolución de incidencias ---
+  {
+    from: 'PURPLE',
+    to: 'BLACK',
+    roles: ['ROL-SYS-01'],
+    reason: false,
+    note: '3 inasistencias, automático',
+  },
+  {
+    from: 'RED',
+    to: 'BLACK',
+    roles: ['ROL-I-01'],
+    reason: true,
+    note: 'disputa a favor del hotel',
+  },
+  {
+    from: 'RED',
+    to: 'STRONG_GREEN',
+    roles: ['ROL-I-01'],
+    reason: true,
+    note: 'disputa a favor del colaborador',
+  },
+  // El alta médica NO la cierra el sistema: «requiere alta médica + cierre de
+  // tarjeta de accidente por el Inspector» (Reglas de Negocio, Protección Gris).
+  {
+    from: 'GRAY',
+    to: 'STRONG_GREEN',
+    roles: ['ROL-I-01'],
+    reason: false,
+    note: 'alta médica y cierre de tarjeta',
+  },
+
+  // --- las 4 de incidencia, desde cada estado operativo ---
+  ...WORKER_OPERATIONAL.map((from) => ({
+    from,
+    to: 'PURPLE',
+    roles: ['ROL-SYS-01'],
+    reason: false,
+    note: 'no asiste sin justificación',
+  })),
+  ...WORKER_OPERATIONAL.map((from) => ({
+    from,
+    to: 'PINK',
+    roles: ['ROL-H-01', 'ROL-H-02', 'ROL-H-03'],
+    reason: true,
+    note: 'lo mandan a descansar',
+  })),
+  ...WORKER_OPERATIONAL.map((from) => ({
+    from,
+    to: 'RED',
+    roles: ['ROL-H-01', 'ROL-H-02', 'ROL-H-03'],
+    reason: true,
+    note: 'el hotel lo reporta',
+  })),
+  ...WORKER_OPERATIONAL.map((from) => ({
+    from,
+    to: 'GRAY',
+    roles: ['ROL-SYS-01'],
+    reason: false,
+    note: 'reporte de accidente laboral',
+  })),
+]
+
 async function main(): Promise<void> {
   const log = (s: string): void => {
     process.stdout.write(s + '\n')
@@ -382,12 +531,86 @@ async function main(): Promise<void> {
       transitions++
     }
   }
-  log(`status_light_transition (solo Onboarding): ${transitions}`)
+  log(`status_light_transition (Onboarding): ${transitions}`)
+
+  // --- transiciones del Semáforo del Colaborador ---
+  const worker = await prisma.statusLight.findUniqueOrThrow({ where: { code: 'WORKER' } })
+  const workerStateId = async (code: string): Promise<string> =>
+    (
+      await prisma.statusLightState.findUniqueOrThrow({
+        where: { statusLightId_code: { statusLightId: worker.id, code } },
+      })
+    ).id
+
+  let workerTransitions = 0
+  let returnsToPrevious = 0
+  for (const t of WORKER_TRANSITIONS) {
+    const fromId = await workerStateId(t.from)
+    const toId = t.to === null ? null : await workerStateId(t.to)
+
+    for (const roleCode of t.roles) {
+      const role = await prisma.role.findUniqueOrThrow({ where: { code: roleCode } })
+
+      if (toId === null) {
+        // No se puede usar el upsert por llave compuesta: to_state_id va NULL y
+        // Prisma no acepta null en el where de una unique. El índice de la base
+        // sí lo cubre (NULLS NOT DISTINCT), así que la idempotencia se resuelve
+        // buscando primero.
+        const existing = await prisma.statusLightTransition.findFirst({
+          where: { fromStateId: fromId, toStateId: null, authorizedRoleId: role.id },
+        })
+        if (existing === null) {
+          await prisma.statusLightTransition.create({
+            data: {
+              id: uuidv7(),
+              fromStateId: fromId,
+              toStateId: null,
+              returnsToPrevious: true,
+              authorizedRoleId: role.id,
+              requiresReason: t.reason,
+              requiresEvidence: false,
+            },
+          })
+        }
+        returnsToPrevious++
+      } else {
+        await prisma.statusLightTransition.upsert({
+          where: {
+            fromStateId_toStateId_authorizedRoleId: {
+              fromStateId: fromId,
+              toStateId: toId,
+              authorizedRoleId: role.id,
+            },
+          },
+          update: { requiresReason: t.reason },
+          create: {
+            id: uuidv7(),
+            fromStateId: fromId,
+            toStateId: toId,
+            returnsToPrevious: false,
+            authorizedRoleId: role.id,
+            requiresReason: t.reason,
+            requiresEvidence: false,
+          },
+        })
+      }
+      workerTransitions++
+    }
+  }
+  log(
+    `status_light_transition (Colaborador): ${workerTransitions}` +
+      ` · de ellas ${returnsToPrevious} con destino variable`,
+  )
 
   log('')
-  log('PENDIENTE: las transiciones de los otros 6 semáforos. Sus estados están')
+  log('PENDIENTE 1: las transiciones de los otros 5 semáforos. Sus estados están')
   log('sembrados, pero el vault no documenta qué movimientos son legales ni quién')
   log('los autoriza. Sin esas filas, esos semáforos no caminan.')
+  log('')
+  log('PENDIENTE 2: el Blacklist manual por falta grave. Blacklist.md dice que')
+  log('cualquier rol de Reclutamiento puede vetar con motivo Y evidencia, pero el')
+  log('Semáforo del Colaborador no lista esa transición y no dice desde qué')
+  log('estados sale. Es el tercer camino a Negro y NO está sembrado.')
 }
 
 main()
