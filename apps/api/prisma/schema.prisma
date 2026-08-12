@@ -33,8 +33,9 @@ model StatusLight {
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
 
-  states  StatusLightState[]
-  reasons StatusChangeReason[]
+  states      StatusLightState[]
+  reasons     StatusChangeReason[]
+  transitions StatusLightTransition[]
 
   @@id([id])
   @@map("status_light")
@@ -85,7 +86,16 @@ model StatusLightState {
 /// quién puede hacerlos y qué se le exige. Las 13 RF de Ventas colapsan en un
 /// solo servicio que lee de aquí.
 model StatusLightTransition {
-  id          String  @db.Uuid
+  id String @db.Uuid
+  /// El semaforo al que pertenece el paso. Una sola columna sirve a las DOS
+  /// llaves compuestas, y por eso el origen y el destino no pueden ser de
+  /// semaforos distintos: los dos se comparan contra este mismo valor.
+  ///
+  /// Sin esto las FK eran simples y nada impedia un paso que saliera de un estado
+  /// del Onboarding y llegara a uno del Colaborador. Mismo patron que ya usan
+  /// requisition y position (D-19).
+  statusLightId String @map("status_light_id") @db.Uuid
+
   fromStateId String  @map("from_state_id") @db.Uuid
   /// NULO cuando returns_to_previous es true: el destino no se conoce hasta que
   /// se lee la historia del semaforo. Un CHECK garantiza que exactamente una de
@@ -105,8 +115,13 @@ model StatusLightTransition {
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
 
-  fromState      StatusLightState  @relation("fromState", fields: [fromStateId], references: [id], onDelete: Restrict)
-  toState        StatusLightState? @relation("toState", fields: [toStateId], references: [id], onDelete: Restrict)
+  statusLight StatusLight @relation(fields: [statusLightId], references: [id], onDelete: Restrict)
+  /// Las dos apuntan a (id, status_light_id). La del destino es nulable, y con
+  /// MATCH SIMPLE —el default de Postgres— una llave compuesta con una parte NULL
+  /// no se verifica: justo lo que hace falta cuando returns_to_previous es true y
+  /// no hay destino que validar.
+  fromState      StatusLightState  @relation("fromState", fields: [fromStateId, statusLightId], references: [id, statusLightId], onDelete: Restrict)
+  toState        StatusLightState? @relation("toState", fields: [toStateId, statusLightId], references: [id, statusLightId], onDelete: Restrict)
   authorizedRole Role              @relation(fields: [authorizedRoleId], references: [id], onDelete: Restrict)
 
   /// Si dos roles pueden hacer el mismo paso, son dos filas.
@@ -120,6 +135,7 @@ model StatusLightTransition {
   /// hay que volver a aplicarla a mano.
   @@id([id])
   @@unique([fromStateId, toStateId, authorizedRoleId], map: "ux_status_light_transition_step")
+  @@index([statusLightId], map: "ix_status_light_transition_light")
   @@index([fromStateId], map: "ix_status_light_transition_from")
   @@index([toStateId], map: "ix_status_light_transition_to")
   @@index([authorizedRoleId], map: "ix_status_light_transition_role")

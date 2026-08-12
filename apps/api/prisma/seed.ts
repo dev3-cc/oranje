@@ -521,6 +521,7 @@ async function main(): Promise<void> {
         update: { requiresReason: t.reason },
         create: {
           id: uuidv7(),
+          statusLightId: onboarding.id,
           fromStateId: fromId,
           toStateId: toId,
           authorizedRoleId: role.id,
@@ -563,6 +564,7 @@ async function main(): Promise<void> {
           await prisma.statusLightTransition.create({
             data: {
               id: uuidv7(),
+              statusLightId: worker.id,
               fromStateId: fromId,
               toStateId: null,
               returnsToPrevious: true,
@@ -585,6 +587,7 @@ async function main(): Promise<void> {
           update: { requiresReason: t.reason },
           create: {
             id: uuidv7(),
+            statusLightId: worker.id,
             fromStateId: fromId,
             toStateId: toId,
             returnsToPrevious: false,
