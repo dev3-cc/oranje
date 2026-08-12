@@ -16,7 +16,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  schemas  = ["identity", "commercial", "demand", "coverage", "operations", "settlement", "supervision", "journal", "notifications", "catalogs"]
+  schemas  = ["identity", "personal", "commercial", "demand", "coverage", "operations", "settlement", "supervision", "journal", "notifications", "catalogs"]
 }
 
 // ============================================================================
@@ -70,6 +70,9 @@ model StatusLightState {
   positionsUrgency    Position[]                  @relation("posUrgency")
   reqHistoryFrom      RequisitionStateHistory[]   @relation("reqHistFrom")
   reqHistoryTo        RequisitionStateHistory[]   @relation("reqHistTo")
+  workers            Worker[]             @relation("workerState")
+  workerHistoryFrom  WorkerStateHistory[] @relation("workerHistFrom")
+  workerHistoryTo    WorkerStateHistory[] @relation("workerHistTo")
 
   @@id([id])
   /// Un color significa una cosa POR semáforo: el code es único dentro de su semáforo.
@@ -158,6 +161,7 @@ model StatusChangeReason {
   prospectCloses     Prospect[]
   historyEntries     ProspectStateHistory[]
   reqHistoryEntries  RequisitionStateHistory[]
+  workerStateChanges WorkerStateHistory[]
 
   @@id([id])
   @@unique([statusLightId, code], map: "ux_status_change_reason_light_code")
@@ -177,6 +181,7 @@ model Zone {
 
   hotels    Hotel[]
   userZones UserZone[]
+  workers Worker[]
 
   @@id([id])
   @@map("zone")
@@ -265,6 +270,11 @@ model RolePermission {
 model User {
   id       String @db.Uuid
   email    String @unique @db.Text
+  /// El uid de Firebase Auth, 28 caracteres, NO es un uuid. Es el puente: el token
+  /// trae el uid, se busca aqui, y de ahi en adelante todo usa NUESTRO id.
+  /// Firebase guarda la contrasena; nosotros no guardamos ningun hash.
+  /// Nulable porque el staff sembrado no tiene cuenta de Firebase todavia.
+  firebaseUid String? @unique @map("firebase_uid") @db.Text
   fullName String @map("full_name") @db.Text
   roleId   String @map("role_id") @db.Uuid
 
@@ -303,6 +313,14 @@ model User {
   requisitionsAsInspector Requisition[]            @relation("reqInspector")
   requisitionStateChanges RequisitionStateHistory[]
   journalEntries          JournalEntry[]
+
+  worker              Worker?               @relation("workerAccount")
+  workersCreated      Worker[]              @relation("workerCreatedBy")
+  documentsVerified   WorkerDocument[]
+  workerStateChanges  WorkerStateHistory[]
+  assignmentsMade     Assignment[]
+  participations      Participation[]
+  blacklistEntered    BlacklistEntry[]
 
   @@id([id])
   @@index([roleId], map: "ix_user_role")
@@ -569,6 +587,7 @@ model CatalogPosition {
 
   hotelDepartment    HotelDepartment @relation(fields: [hotelDepartmentId], references: [id], onDelete: Restrict)
   requestedPositions Position[]
+  workers Worker[]
 
   @@id([id])
   @@index([hotelDepartmentId], map: "ix_position_hotel_department")
@@ -586,6 +605,7 @@ model HiringModality {
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
 
   positions Position[]
+  workers Worker[]
 
   @@id([id])
   @@map("hiring_modality")
@@ -604,6 +624,7 @@ model EnglishLevel {
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
 
   positions Position[]
+  workers Worker[]
 
   @@id([id])
   @@map("english_level")
@@ -661,6 +682,7 @@ model Requisition {
 
   positions Position[]
   history   RequisitionStateHistory[]
+  participations Participation[]
 
   @@id([id])
   @@index([hotelId, statusLightStateId], map: "ix_requisition_hotel_state")
@@ -745,6 +767,7 @@ model Slot {
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
 
   position Position @relation(fields: [positionId], references: [id], onDelete: Restrict)
+  assignments Assignment[]
 
   @@id([id])
   @@unique([positionId, ordinal], map: "ux_slot_position_ordinal")
@@ -822,4 +845,261 @@ model JournalEntry {
   @@index([eventType, occurredAt(sort: Desc)], map: "ix_journal_event")
   @@map("journal")
   @@schema("journal")
+}
+
+// ============================================================================
+// personal — quien es la persona
+//
+// Esquema propio y no parte de coverage, por PERMISOS: el expediente lleva SSN e
+// ITIN, que necesitan cifrado de campo con la llave en Secret Manager. Un esquema
+// aparte es un solo GRANT en vez de permisos columna por columna. Y el criterio
+// del corte: la persona sobrevive a todas sus asignaciones.
+// ============================================================================
+
+/// El Colaborador. La entidad central del sistema.
+///
+/// Casi todo es nulable, y no es descuido: los datos llegan en TRES fases. La
+/// Reclutadora captura la Fase 1 en la entrevista, y el propio colaborador llena
+/// las Fases 2 y 3 despues, desde la app. Entre una y otra la fila existe a
+/// medias — y eso ES el estado Blanco. "Obligatorio" en 10 - Validaciones es
+/// regla del FORMULARIO, no de la columna; la del negocio es el guard de la
+/// transicion Blanco -> Verde fuerte, que lee is_profile_complete.
+model Worker {
+  id String @db.Uuid
+  /// La cuenta con la que entra a la app. Nulable porque la Reclutadora puede
+  /// capturar la Fase 1 antes de que exista la cuenta de Firebase.
+  userId String? @unique(map: "ux_worker_user") @map("user_id") @db.Uuid
+
+  // --- Fase 1: la captura la Reclutadora en la entrevista ---
+  fullName String @map("full_name") @db.Text
+  /// NO se guarda la edad, que Colaborador.md pide: un dato que se vuelve falso
+  /// solo. En 12 meses toda la tabla mentiria. La edad se calcula al leer.
+  birthDate DateTime @map("birth_date") @db.Date
+  gender    String   @db.Text
+  phone     String   @db.Text
+  address   String   @db.Text
+  /// La asigna la Reclutadora. Se guarda en vez de derivarla del domicilio
+  /// porque derivarla exige geocodificar, y el Pool filtra por zona siempre.
+  zoneId String @map("zone_id") @db.Uuid
+
+  // --- Fase 2: la llena el propio Colaborador ---
+  /// Cifrados con pgcrypto, llave en Secret Manager. Los dos OPCIONALES: sin
+  /// ninguno se activa la retencion del 16% (ver has_tax_id).
+  ///
+  /// PRECIO DEL CIFRADO: 10 - Validaciones exige formato XXX-XX-XXXX para el SSN
+  /// y 9XX-XX-XXXX para el ITIN, y sobre un bytea cifrado no se puede escribir
+  /// ese CHECK. Esas dos validaciones se quedan en Zod: la unica excepcion
+  /// consciente al principio de "la regla vive en la base".
+  ssnEncrypted  Bytes? @map("ssn_encrypted")
+  itinEncrypted Bytes? @map("itin_encrypted")
+
+  catalogPositionId String? @map("catalog_position_id") @db.Uuid
+  englishLevelId    String? @map("english_level_id") @db.Uuid
+  hiringModalityId  String? @map("hiring_modality_id") @db.Uuid
+  /// Listas CERRADAS de 09 - Campos del Formulario: el negocio no agrega
+  /// opciones de experiencia ni tipos de transporte. Van como text + CHECK, no
+  /// como catalogo (seccion 5).
+  experienceLevel String? @map("experience_level") @db.Text
+  transportType   String? @map("transport_type") @db.Text
+
+  // --- Fase 3: datos de emergencia ---
+  emergencyContactName         String? @map("emergency_contact_name") @db.Text
+  emergencyContactPhone        String? @map("emergency_contact_phone") @db.Text
+  emergencyContactRelationship String? @map("emergency_contact_relationship") @db.Text
+  /// Los 8 grupos mas "No sé". Ojo: "No sé" es un valor legitimo, no un NULL.
+  bloodType    String? @map("blood_type") @db.Text
+  medicalNotes String? @map("medical_notes") @db.Text
+
+  /// Las dos derivadas —has_tax_id y is_profile_complete— NO son columnas de esta
+  /// tabla. Viven en la vista personal.vw_worker, porque Prisma no sabe
+  /// representar columnas GENERATED: declararlas produce un diff que intenta
+  /// SET/DROP DEFAULT sobre una columna generada, y eso Postgres lo rechaza —
+  /// o sea que rompia toda migracion futura. La vista consigue lo mismo (la
+  /// derivacion vive en la base, no puede desincronizarse) sin el drift.
+
+  // --- el semaforo: 12 estados ---
+  statusLightStateId String @map("status_light_state_id") @db.Uuid
+  /// Sostiene la FK compuesta que impide tomar un estado de otro semaforo.
+  /// Sin ella, CAFE del Onboarding seria un estado valido de persona.
+  statusLightId String @map("status_light_id") @db.Uuid
+
+  /// Borrado LOGICO siempre. Blacklist.md es explicito: el colaborador no se
+  /// elimina, no aparece en busquedas activas, y el historial se conserva
+  /// integro. El deleted_at es lo que permite las tres cosas a la vez.
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+  createdBy String    @map("created_by") @db.Uuid
+
+  account         User?            @relation("workerAccount", fields: [userId], references: [id], onDelete: Restrict)
+  createdByUser   User             @relation("workerCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  zone            Zone             @relation(fields: [zoneId], references: [id], onDelete: Restrict)
+  catalogPosition CatalogPosition? @relation(fields: [catalogPositionId], references: [id], onDelete: Restrict)
+  englishLevel    EnglishLevel?    @relation(fields: [englishLevelId], references: [id], onDelete: Restrict)
+  hiringModality  HiringModality?  @relation(fields: [hiringModalityId], references: [id], onDelete: Restrict)
+  statusState     StatusLightState @relation("workerState", fields: [statusLightStateId, statusLightId], references: [id, statusLightId], onDelete: Restrict)
+
+  documents      WorkerDocument[]
+  stateHistory   WorkerStateHistory[]
+  assignments    Assignment[]
+  blacklistEntry BlacklistEntry?
+
+  @@id([id])
+  /// El Pool filtra por estado, y siempre sobre los no borrados.
+  @@index([statusLightStateId], map: "ix_worker_state")
+  @@index([zoneId], map: "ix_worker_zone")
+  @@index([catalogPositionId], map: "ix_worker_position")
+  @@map("worker")
+  @@schema("personal")
+}
+
+/// El expediente. La Reclutadora "valida documentos": aqui queda constancia de
+/// que valido y cuando.
+model WorkerDocument {
+  id           String  @db.Uuid
+  workerId     String  @map("worker_id") @db.Uuid
+  /// Lista tecnica: va como CHECK, no como catalogo. El unico que el formulario
+  /// pide hoy es el documento de SSN/ITIN, opcional y de maximo 10 MB.
+  documentType String  @map("document_type") @db.Text
+  filePath     String  @map("file_path") @db.Text
+  verifiedBy   String? @map("verified_by") @db.Uuid
+  verifiedAt   DateTime? @map("verified_at") @db.Timestamptz(6)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  worker     Worker @relation(fields: [workerId], references: [id], onDelete: Restrict)
+  verifierUser User? @relation(fields: [verifiedBy], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@index([workerId], map: "ix_worker_document_worker")
+  @@map("worker_document")
+  @@schema("personal")
+}
+
+/// El timeline inmutable de los 12 estados. D-14 aplicado.
+///
+/// Es la unica forma de responder "cuantos dias llevaba en Cafe" o "quien lo
+/// mando a Rosa". Y es lo que lee el servicio para resolver las transiciones de
+/// destino variable: Morado -> estado previo y Cafe -> estado previo.
+///
+/// Append-only: sin updated_at y sin deleted_at, a proposito. Una fila con
+/// updated_at significaria que alguien puede cambiar lo que ya ocurrio.
+model WorkerStateHistory {
+  id       String  @db.Uuid
+  workerId String  @map("worker_id") @db.Uuid
+  /// NULO en el primer renglon: el colaborador nace en Blanco, sin origen.
+  fromStateId String? @map("from_state_id") @db.Uuid
+  toStateId   String  @map("to_state_id") @db.Uuid
+  statusLightId String @map("status_light_id") @db.Uuid
+  reasonId    String? @map("reason_id") @db.Uuid
+  /// NULO cuando lo movio el sistema: la progresion por dias y el ponche no
+  /// tienen persona detras.
+  userId     String?  @map("user_id") @db.Uuid
+  occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+
+  worker    Worker              @relation(fields: [workerId], references: [id], onDelete: Restrict)
+  fromState StatusLightState?   @relation("workerHistFrom", fields: [fromStateId, statusLightId], references: [id, statusLightId], onDelete: Restrict)
+  toState   StatusLightState    @relation("workerHistTo", fields: [toStateId, statusLightId], references: [id, statusLightId], onDelete: Restrict)
+  reason    StatusChangeReason? @relation(fields: [reasonId], references: [id], onDelete: Restrict)
+  user      User?               @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@index([workerId, occurredAt(sort: Desc)], map: "ix_worker_state_history_worker")
+  @@map("worker_state_history")
+  @@schema("personal")
+}
+
+// ============================================================================
+// coverage — que esta haciendo
+// ============================================================================
+
+/// El Colaborador ocupando un slot.
+///
+/// RR-05 NO se hace cumplir aqui. Se preciso el 2026-08-12 que el colaborador SI
+/// puede estar en dos hoteles el mismo dia si son horas distintas, y validity es
+/// un daterange: solo ve DIAS. La restriccion de exclusion por HORAS vive en
+/// operations, sobre el turno del dia, con un tstzrange que tiene fecha Y hora
+/// reales — asi sale gratis el turno nocturno, que cruza medianoche.
+///
+/// Lo que la base SI impide hoy es que dos colaboradores tomen el mismo slot.
+model Assignment {
+  id       String @db.Uuid
+  slotId   String @map("slot_id") @db.Uuid
+  workerId String @map("worker_id") @db.Uuid
+  /// Lista cerrada y tecnica: text + CHECK.
+  type String @db.Text
+  /// El rango de dias. El TEMPORAL lleva fin —el vault dice que se define la
+  /// duracion al asignar y que el estado se cierra solo al vencer—; el FIJO no,
+  /// porque termina cuando el hotel manda al colaborador a descansar (Rosa).
+  validity   Unsupported("daterange")
+  status     String  @default("active") @db.Text
+  assignedBy String  @map("assigned_by") @db.Uuid
+  closedReason String? @map("closed_reason") @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  slot           Slot   @relation(fields: [slotId], references: [id], onDelete: Restrict)
+  worker         Worker @relation(fields: [workerId], references: [id], onDelete: Restrict)
+  assignedByUser User   @relation(fields: [assignedBy], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@index([workerId], map: "ix_assignment_worker")
+  @@index([slotId], map: "ix_assignment_slot")
+  @@map("assignment")
+  @@schema("coverage")
+}
+
+/// El Self-Pick — RR-15. Varias reclutadoras sobre la misma requisicion.
+///
+/// Por esto los reclutadores NO estan en la cabecera de la requisicion: son
+/// VARIOS a la vez y no hay dueno unico. Ojo: esta tabla habla de la Reclutadora,
+/// no del Colaborador.
+model Participation {
+  id            String    @db.Uuid
+  requisitionId String    @map("requisition_id") @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  joinedAt      DateTime  @default(now()) @map("joined_at") @db.Timestamptz(6)
+  leftAt        DateTime? @map("left_at") @db.Timestamptz(6)
+
+  requisition Requisition @relation(fields: [requisitionId], references: [id], onDelete: Restrict)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@index([requisitionId], map: "ix_participation_requisition")
+  @@index([userId], map: "ix_participation_user")
+  @@map("participation")
+  @@schema("coverage")
+}
+
+/// El veto, con su evidencia.
+///
+/// Por que no basta el estado Negro del semaforo: Blacklist.md exige MOTIVO Y
+/// EVIDENCIA, y la evidencia es un ARCHIVO que no cabe en un reason_id de
+/// catalogo.
+///
+/// Negro es PERMANENTE — no hay rehabilitacion ni apelacion. Eso no se programa:
+/// simplemente no se siembra ninguna transicion que salga de Negro, y el servicio
+/// devuelve 409 porque la transicion no existe.
+model BlacklistEntry {
+  id       String @db.Uuid
+  /// UNICO: un segundo veto no significaria nada.
+  workerId String @unique(map: "ux_blacklist_worker") @map("worker_id") @db.Uuid
+  /// Los TRES caminos que lista Blacklist.md: manual (falta grave), absences
+  /// (3 inasistencias, automatico) y dispute (el Inspector resolvio a favor del
+  /// hotel). Es lo que decide cuando exigir evidencia.
+  source String @db.Text
+  reason String @db.Text
+  /// Obligatorio solo en el manual: el automatico y el de disputa no traen
+  /// archivo, su respaldo es el historial.
+  evidencePath String? @map("evidence_path") @db.Text
+  enteredBy    String  @map("entered_by") @db.Uuid
+  occurredAt   DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+
+  worker        Worker @relation(fields: [workerId], references: [id], onDelete: Restrict)
+  enteredByUser User   @relation(fields: [enteredBy], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@map("blacklist_entry")
+  @@schema("coverage")
 }

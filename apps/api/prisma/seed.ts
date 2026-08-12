@@ -406,6 +406,37 @@ const WORKER_TRANSITIONS: Array<{
   })),
 ]
 
+// ---------------------------------------------------------------------------
+// Motivos de cambio de estado — catalogs.status_change_reason
+//
+// 33 transiciones exigen motivo (requires_reason), asi que sin estas filas el
+// servicio devuelve 422 y esos pasos no se pueden dar.
+//
+// NINGUNO se invento: todos salen del vault con cita. Los de Ventas venian con un
+// "etc." al final, asi que la lista es abierta — el negocio agrega los que falten
+// desde la aplicacion, que es justo el criterio de la seccion 5 para que esto sea
+// catalogo y no CHECK.
+// ---------------------------------------------------------------------------
+const CHANGE_REASONS: Array<{ light: string; code: string; name: string }> = [
+  // Rosa (Stand-by) — Reglas de Negocio linea 44: "vacaciones, temporada baja"
+  { light: 'WORKER', code: 'VACATION', name: 'Vacaciones' },
+  { light: 'WORKER', code: 'LOW_SEASON', name: 'Temporada baja' },
+
+  // Rojo (Reportado) — Blacklist.md lineas 17-18: las dos causas del reporte
+  { light: 'WORKER', code: 'ABSENCES', name: 'Inasistencias' },
+  { light: 'WORKER', code: 'SERIOUS_MISCONDUCT', name: 'Falta grave en el hotel' },
+
+  // La resolucion del Inspector — Blacklist.md, Proceso de investigacion
+  { light: 'WORKER', code: 'DISPUTE_FOR_HOTEL', name: 'Disputa resuelta a favor del hotel' },
+  { light: 'WORKER', code: 'DISPUTE_FOR_WORKER', name: 'Disputa resuelta a favor del colaborador' },
+
+  // Onboarding — Semaforo Onboarding, "Motivos frecuentes"
+  { light: 'ONBOARDING', code: 'HOTEL_CLOSED', name: 'Cierre del hotel' },
+  { light: 'ONBOARDING', code: 'MANAGEMENT_CHANGE', name: 'Cambio de administración' },
+  { light: 'ONBOARDING', code: 'OPERATION_PAUSED', name: 'Pausa temporal de operación' },
+  { light: 'ONBOARDING', code: 'COMMERCIAL_DISPUTE', name: 'Disputa comercial' },
+]
+
 async function main(): Promise<void> {
   const log = (s: string): void => {
     process.stdout.write(s + '\n')
@@ -494,6 +525,20 @@ async function main(): Promise<void> {
     }
   }
   log(`status_light: ${LIGHTS.length} · status_light_state: ${states}`)
+
+  // --- motivos de cambio de estado ---
+  for (const r of CHANGE_REASONS) {
+    const light = await prisma.statusLight.findUniqueOrThrow({ where: { code: r.light } })
+    const found = await prisma.statusChangeReason.findFirst({
+      where: { statusLightId: light.id, code: r.code },
+    })
+    if (found === null) {
+      await prisma.statusChangeReason.create({
+        data: { id: uuidv7(), statusLightId: light.id, code: r.code, name: r.name },
+      })
+    }
+  }
+  log(`status_change_reason: ${CHANGE_REASONS.length}`)
 
   // --- transiciones del Onboarding ---
   const onboarding = await prisma.statusLight.findUniqueOrThrow({ where: { code: 'ONBOARDING' } })
