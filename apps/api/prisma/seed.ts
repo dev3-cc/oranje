@@ -1,23 +1,401 @@
+import 'dotenv/config'
+
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from '@prisma/client'
+import { v7 as uuidv7 } from 'uuid'
+
 /**
- * Seed del esquema — Fase 3 del Plan de Implementación.
+ * Seed de catálogos — Fase 3 del Plan de Implementación.
  *
- * Las reglas del negocio son FILAS, no código: sin las transiciones sembradas
- * el servicio de transición devuelve 409 a todo y el semáforo no camina.
+ * Las reglas del negocio son FILAS, no código: los semáforos se configuran, no
+ * se programan. Sin esto el esquema existe y el negocio no funciona.
  *
- * Pendiente de sembrar:
- *   1. Los 7 semáforos en catalogs.status_light
- *   2. Los 9 estados y las 12 transiciones del Semáforo Onboarding
- *      (fuente: Ventas/Semáforo Onboarding y Base de Datos.drawio, página 3)
- *   3. catalogs.status_change_reason
- *   4. Catálogos del vault: Posiciones, Zonas, Niveles de Inglés,
- *      Departamentos del Hotel, Modalidades de Contratación
- *   5. La Matriz de Permisos en identity.role_permission
+ * Todo sale del vault. Nada se inventa aquí:
+ *   Core/Catálogos/                    los 5 catálogos
+ *   Core/Módulos/Semáforos/            los 7 semáforos y sus estados
+ *   Arquitecturas/<depto>/01 - Portada.md   los IDs de rol
  *
- * Regla que no se rompe: ningún ambiente que no sea producción lleva PII real
- * (Estándares de Desarrollo §8).
+ * Es IDEMPOTENTE: cada fila se identifica por su `code` y se hace upsert, así
+ * que correrlo dos veces no duplica nada.
+ *
+ * El `id` es uuid v7 generado aquí, no por Postgres: la sección 4 de Estándares
+ * de Base de Datos lo exige y `gen_random_uuid()` devuelve v4.
  */
-function main(): never {
-  throw new Error('Seed pendiente: ver Fase 3 del Plan de Implementación - Base de Datos')
+
+// El seed escribe catálogos, así que corre como el migrador. Cae a DATABASE_URL
+// solo para no romper en ambientes donde no se haya separado el usuario.
+const adapter = new PrismaPg({
+  connectionString: process.env['MIGRATE_DATABASE_URL'] ?? process.env['DATABASE_URL'],
+})
+const prisma = new PrismaClient({ adapter })
+
+// ---------------------------------------------------------------------------
+// Roles — Arquitecturas/<depto>/01 - Portada.md
+//
+// Convención de los IDs, la misma que ya usan Hotel y Ventas: el rol OPERATIVO
+// de base es 01 y de ahí hacia arriba. Reclutamiento usaba ROL-01…ROL-05 sin
+// letra de departamento y se unificó a ROL-R-NN.
+//
+// Sistema y Administrador estaban tres veces, uno por departamento. Son
+// transversales, así que quedan como ROL-SYS-01 y ROL-ADM-01: repetirlos
+// obligaría a triplicar sus permisos en role_permission.
+// ---------------------------------------------------------------------------
+const ROLES: Array<{ code: string; name: string; department: string | null }> = [
+  { code: 'ROL-H-01', name: 'Supervisor', department: 'Hotel' },
+  { code: 'ROL-H-02', name: 'Manager de Área', department: 'Hotel' },
+  { code: 'ROL-H-03', name: 'Manager General', department: 'Hotel' },
+
+  { code: 'ROL-R-01', name: 'Reclutadora', department: 'Reclutamiento' },
+  { code: 'ROL-R-02', name: 'Líder de Grupo de Reclutadoras', department: 'Reclutamiento' },
+  { code: 'ROL-R-03', name: 'Manager de Reclutamiento', department: 'Reclutamiento' },
+
+  { code: 'ROL-V-01', name: 'Business Developer', department: 'Ventas' },
+  { code: 'ROL-V-02', name: 'Business Developer Coordinator', department: 'Ventas' },
+
+  { code: 'ROL-I-01', name: 'Inspector', department: 'Inspección' },
+  { code: 'ROL-I-02', name: 'Coordinador', department: 'Inspección' },
+
+  { code: 'ROL-Q-01', name: 'Operador de QA', department: 'QA' },
+  { code: 'ROL-Q-02', name: 'Manager de QA', department: 'QA' },
+
+  { code: 'ROL-CS-01', name: 'Agente de Customer Service', department: 'Customer Service' },
+  { code: 'ROL-CS-02', name: 'Customer Service Manager', department: 'Customer Service' },
+
+  { code: 'ROL-CO-01', name: 'Contadora', department: 'Contabilidad' },
+  { code: 'ROL-CO-02', name: 'Manager de Contabilidad', department: 'Contabilidad' },
+
+  { code: 'ROL-C-01', name: 'Colaborador', department: null },
+  { code: 'ROL-SYS-01', name: 'Sistema', department: null },
+  { code: 'ROL-ADM-01', name: 'Administrador', department: null },
+]
+
+// ---------------------------------------------------------------------------
+// Catálogos — Core/Catálogos/
+//
+// Dos de ellos advierten "lista no exhaustiva": Posiciones y Zonas. Se siembra
+// SOLO lo documentado; el negocio agrega el resto desde la aplicación.
+// ---------------------------------------------------------------------------
+const HOTEL_DEPARTMENTS = [
+  { code: 'HOUSEKEEPING', name: 'Housekeeping' },
+  { code: 'FOOD', name: 'Alimentos' },
+  { code: 'MAINTENANCE', name: 'Mantenimiento' },
+  { code: 'FRONT_DESK', name: 'Front Desk' },
+]
+
+/// Agrupadas por departamento, como las lista el vault.
+const POSITIONS = [
+  { code: 'HOUSEKEEPER', name: 'Housekeeper', department: 'HOUSEKEEPING' },
+  { code: 'HOUSEMAN', name: 'Houseman', department: 'HOUSEKEEPING' },
+  { code: 'LAUNDRY', name: 'Laundry', department: 'HOUSEKEEPING' },
+  { code: 'CHEF', name: 'Chef', department: 'FOOD' },
+]
+
+const HIRING_MODALITIES = [
+  { code: 'FULL_TIME', name: 'Tiempo completo' },
+  { code: 'PART_TIME', name: 'Medio tiempo' },
+  { code: 'TEMPORARY', name: 'Temporal' },
+  { code: 'ON_REQUEST', name: 'Según solicitud' },
+]
+
+const ENGLISH_LEVELS = [
+  { code: 'BASIC', name: 'Básico', order: 1 },
+  { code: 'INTERMEDIATE', name: 'Intermedio', order: 2 },
+  { code: 'ADVANCED', name: 'Avanzado', order: 3 },
+  { code: 'CONVERSATIONAL', name: 'Conversacional', order: 4 },
+]
+
+const ZONES = [
+  { code: 'CENTRO', name: 'Centro' },
+  { code: 'SUR', name: 'Sur' },
+  { code: 'ESTE', name: 'Este' },
+  { code: 'OESTE', name: 'Oeste' },
+  { code: 'NOROESTE', name: 'Noroeste' },
+  { code: 'SURESTE', name: 'Sureste' },
+]
+
+// ---------------------------------------------------------------------------
+// Los 7 semáforos y sus estados — Core/Módulos/Semáforos/
+//
+// El `code` va en inglés y el `name` en español (D-11). El color es el que el
+// vault documenta; los hex viven en Convenciones de Diseño, no aquí.
+//
+// is_branch marca los estados que son RAMA y no paso del avance normal.
+// ---------------------------------------------------------------------------
+type State = { code: string; color: string; name: string; branch?: boolean }
+type Light = { code: string; name: string; description: string; states: State[] }
+
+const LIGHTS: Light[] = [
+  {
+    code: 'WORKER',
+    name: 'Semáforo del Colaborador',
+    description: 'Situación del colaborador. 12 estados.',
+    states: [
+      { code: 'WHITE', color: 'Blanco', name: 'Pre-asignación' },
+      { code: 'APPLE_GREEN', color: 'Verde manzana', name: 'Día 1-2' },
+      { code: 'LIGHT_BLUE', color: 'Azul claro', name: 'Día 3+' },
+      { code: 'ORANGE', color: 'Naranja', name: 'Fijo' },
+      { code: 'STRONG_GREEN', color: 'Verde fuerte', name: 'Disponible' },
+      { code: 'YELLOW', color: 'Amarillo', name: 'Disponible voluntario' },
+      { code: 'BROWN', color: 'Café', name: 'Asignación temporal' },
+      { code: 'PINK', color: 'Rosa', name: 'Stand-by' },
+      { code: 'PURPLE', color: 'Morado', name: 'No regresó', branch: true },
+      { code: 'RED', color: 'Rojo', name: 'Reportado', branch: true },
+      { code: 'GRAY', color: 'Gris', name: 'Accidentado', branch: true },
+      { code: 'BLACK', color: 'Negro', name: 'Blacklist', branch: true },
+    ],
+  },
+  {
+    code: 'REQUISITION',
+    name: 'Semáforo de Requisición',
+    description: 'Ciclo de vida de una requisición.',
+    states: [
+      { code: 'APPLE_GREEN', color: 'Verde manzana', name: 'En elaboración' },
+      { code: 'GREEN', color: 'Verde', name: 'Autorizada' },
+      { code: 'YELLOW', color: 'Amarillo', name: 'En proceso' },
+      { code: 'LIGHT_BLUE', color: 'Azul claro', name: 'Cubierta totalmente' },
+      { code: 'RED', color: 'Rojo', name: 'Cubierta parcialmente' },
+      { code: 'PURPLE', color: 'Morado', name: 'Eliminada', branch: true },
+    ],
+  },
+  {
+    code: 'POSITION_COVERAGE',
+    name: 'Semáforo de Posiciones de la Requisición',
+    description: 'Porcentaje de cobertura por posición.',
+    states: [
+      { code: 'GOLD', color: 'Dorado', name: 'En preparación' },
+      { code: 'ORANGE', color: 'Naranja', name: 'Autorizada' },
+      { code: 'GREEN', color: 'Verde', name: '100% cubierta' },
+      { code: 'YELLOW', color: 'Amarillo', name: 'Hasta 25% faltante' },
+      { code: 'RED', color: 'Rojo', name: 'Más de 25% faltante' },
+      { code: 'PURPLE', color: 'Morado', name: 'Eliminada', branch: true },
+    ],
+  },
+  {
+    code: 'URGENCY',
+    name: 'Semáforo de Urgencia de Requisición',
+    description: 'Urgencia por tiempo restante. Derivado de authorized_at contra start_date.',
+    states: [
+      { code: 'STRONG_GREEN', color: 'Verde fuerte', name: 'Normal' },
+      { code: 'YELLOW', color: 'Amarillo', name: 'Medio' },
+      { code: 'RED', color: 'Rojo', name: 'Urgente' },
+    ],
+  },
+  {
+    code: 'ONBOARDING',
+    name: 'Semáforo Onboarding',
+    description: 'Ciclo comercial del hotel: prospecto a cliente.',
+    states: [
+      { code: 'GRAY', color: 'Gris', name: 'Hotel identificado' },
+      { code: 'LIGHT_BLUE', color: 'Azul claro', name: 'Contacto y recopilación de datos' },
+      { code: 'GREEN', color: 'Verde', name: 'Propuesta enviada' },
+      { code: 'YELLOW', color: 'Amarillo', name: 'En seguimiento tras propuesta' },
+      { code: 'PINK', color: 'Rosa', name: 'Negociación de términos' },
+      { code: 'ORANGE', color: 'Naranja', name: 'Acuerdo firmado, hotel cliente activo' },
+      { code: 'RED', color: 'Rojo', name: 'Rechazo o no interés', branch: true },
+      { code: 'BROWN', color: 'Café', name: 'Renegociación o desbloqueo', branch: true },
+      { code: 'BLACK', color: 'Negro', name: 'Cliente pausado o inactivo', branch: true },
+    ],
+  },
+  {
+    code: 'QUALITY',
+    name: 'Indicador de Calidad',
+    description: 'Desempeño de un área supervisada por QA.',
+    states: [
+      { code: 'GREEN', color: 'Verde', name: 'Calidad óptima' },
+      { code: 'YELLOW', color: 'Amarillo', name: 'Calidad en riesgo' },
+      { code: 'RED', color: 'Rojo', name: 'Calidad crítica' },
+    ],
+  },
+  {
+    code: 'TIMESHEET_COMPLIANCE',
+    name: 'Indicador de Cumplimiento del Timesheet',
+    description: 'Horas reales contra contractuales.',
+    states: [
+      { code: 'GREEN', color: 'Verde', name: 'Cumplimiento' },
+      { code: 'YELLOW', color: 'Amarillo', name: 'Alerta' },
+      { code: 'RED', color: 'Rojo', name: 'Anomalía' },
+      { code: 'GRAY', color: 'Gris', name: 'Sin datos' },
+    ],
+  },
+]
+
+// ---------------------------------------------------------------------------
+// Transiciones del Semáforo Onboarding — Ventas/Semáforo Onboarding y Base de
+// Datos.drawio, página 3.
+//
+// SOLO el Onboarding. Los otros 6 semáforos tienen sus estados documentados
+// pero no qué movimientos son legales: eso es trabajo de negocio.
+//
+// Del vault: los 12 pares y el rol que autoriza cada uno.
+// PROPUESTA del diagrama, no del vault: la columna `reason`. El vault no dice
+// qué transiciones exigen motivo. El criterio aplicado es que lo exige toda
+// transición que cierra o desbloquea un ciclo.
+//
+// Cualquier par que no esté aquí es un 409, no un estado alcanzable: no existe
+// GREEN -> ORANGE ni BROWN -> GREEN.
+// ---------------------------------------------------------------------------
+const ONBOARDING_TRANSITIONS: Array<{
+  from: string
+  to: string
+  roles: string[]
+  reason: boolean
+}> = [
+  { from: 'GRAY', to: 'LIGHT_BLUE', roles: ['ROL-V-01'], reason: false },
+  { from: 'LIGHT_BLUE', to: 'GREEN', roles: ['ROL-V-01'], reason: false },
+  { from: 'GREEN', to: 'YELLOW', roles: ['ROL-V-01'], reason: false },
+  { from: 'GREEN', to: 'RED', roles: ['ROL-V-01'], reason: true },
+  // BD o BDC: son dos filas, una por rol
+  { from: 'GREEN', to: 'BROWN', roles: ['ROL-V-01', 'ROL-V-02'], reason: true },
+  { from: 'YELLOW', to: 'PINK', roles: ['ROL-V-01'], reason: false },
+  // RR-V-01: la conversión es EXCLUSIVA del BDC
+  { from: 'PINK', to: 'ORANGE', roles: ['ROL-V-02'], reason: false },
+  { from: 'PINK', to: 'BROWN', roles: ['ROL-V-02'], reason: true },
+  { from: 'ORANGE', to: 'BLACK', roles: ['ROL-V-02'], reason: true },
+  // RR-V-07: Azul claro es el ÚNICO punto de reentrada
+  { from: 'RED', to: 'LIGHT_BLUE', roles: ['ROL-V-01'], reason: false },
+  { from: 'BROWN', to: 'LIGHT_BLUE', roles: ['ROL-V-02'], reason: true },
+  { from: 'BLACK', to: 'LIGHT_BLUE', roles: ['ROL-V-02'], reason: true },
+]
+
+async function main(): Promise<void> {
+  const log = (s: string): void => {
+    process.stdout.write(s + '\n')
+  }
+
+  // --- roles ---
+  for (const r of ROLES) {
+    await prisma.role.upsert({
+      where: { code: r.code },
+      update: { name: r.name, department: r.department },
+      create: { id: uuidv7(), code: r.code, name: r.name, department: r.department },
+    })
+  }
+  log(`roles: ${ROLES.length}`)
+
+  // --- catálogos ---
+  for (const d of HOTEL_DEPARTMENTS) {
+    await prisma.hotelDepartment.upsert({
+      where: { code: d.code },
+      update: { name: d.name },
+      create: { id: uuidv7(), code: d.code, name: d.name },
+    })
+  }
+  log(`hotel_department: ${HOTEL_DEPARTMENTS.length}`)
+
+  for (const p of POSITIONS) {
+    const dept = await prisma.hotelDepartment.findUniqueOrThrow({ where: { code: p.department } })
+    await prisma.catalogPosition.upsert({
+      where: { code: p.code },
+      update: { name: p.name, hotelDepartmentId: dept.id },
+      create: { id: uuidv7(), code: p.code, name: p.name, hotelDepartmentId: dept.id },
+    })
+  }
+  log(`catalogs.position: ${POSITIONS.length}`)
+
+  for (const m of HIRING_MODALITIES) {
+    await prisma.hiringModality.upsert({
+      where: { code: m.code },
+      update: { name: m.name },
+      create: { id: uuidv7(), code: m.code, name: m.name },
+    })
+  }
+  log(`hiring_modality: ${HIRING_MODALITIES.length}`)
+
+  for (const e of ENGLISH_LEVELS) {
+    await prisma.englishLevel.upsert({
+      where: { code: e.code },
+      update: { name: e.name, displayOrder: e.order },
+      create: { id: uuidv7(), code: e.code, name: e.name, displayOrder: e.order },
+    })
+  }
+  log(`english_level: ${ENGLISH_LEVELS.length}`)
+
+  for (const z of ZONES) {
+    await prisma.zone.upsert({
+      where: { code: z.code },
+      update: { name: z.name },
+      create: { id: uuidv7(), code: z.code, name: z.name },
+    })
+  }
+  log(`zone: ${ZONES.length}`)
+
+  // --- semáforos y estados ---
+  let states = 0
+  for (const l of LIGHTS) {
+    const light = await prisma.statusLight.upsert({
+      where: { code: l.code },
+      update: { name: l.name, description: l.description },
+      create: { id: uuidv7(), code: l.code, name: l.name, description: l.description },
+    })
+    for (const [i, s] of l.states.entries()) {
+      await prisma.statusLightState.upsert({
+        where: { statusLightId_code: { statusLightId: light.id, code: s.code } },
+        update: { color: s.color, name: s.name, displayOrder: i + 1, isBranch: s.branch ?? false },
+        create: {
+          id: uuidv7(),
+          statusLightId: light.id,
+          code: s.code,
+          color: s.color,
+          name: s.name,
+          displayOrder: i + 1,
+          isBranch: s.branch ?? false,
+        },
+      })
+      states++
+    }
+  }
+  log(`status_light: ${LIGHTS.length} · status_light_state: ${states}`)
+
+  // --- transiciones del Onboarding ---
+  const onboarding = await prisma.statusLight.findUniqueOrThrow({ where: { code: 'ONBOARDING' } })
+  const stateId = async (code: string): Promise<string> =>
+    (
+      await prisma.statusLightState.findUniqueOrThrow({
+        where: { statusLightId_code: { statusLightId: onboarding.id, code } },
+      })
+    ).id
+
+  let transitions = 0
+  for (const t of ONBOARDING_TRANSITIONS) {
+    const fromId = await stateId(t.from)
+    const toId = await stateId(t.to)
+    for (const roleCode of t.roles) {
+      const role = await prisma.role.findUniqueOrThrow({ where: { code: roleCode } })
+      await prisma.statusLightTransition.upsert({
+        where: {
+          fromStateId_toStateId_authorizedRoleId: {
+            fromStateId: fromId,
+            toStateId: toId,
+            authorizedRoleId: role.id,
+          },
+        },
+        update: { requiresReason: t.reason },
+        create: {
+          id: uuidv7(),
+          fromStateId: fromId,
+          toStateId: toId,
+          authorizedRoleId: role.id,
+          requiresReason: t.reason,
+          requiresEvidence: false,
+        },
+      })
+      transitions++
+    }
+  }
+  log(`status_light_transition (solo Onboarding): ${transitions}`)
+
+  log('')
+  log('PENDIENTE: las transiciones de los otros 6 semáforos. Sus estados están')
+  log('sembrados, pero el vault no documenta qué movimientos son legales ni quién')
+  log('los autoriza. Sin esas filas, esos semáforos no caminan.')
 }
 
 main()
+  .then(async () => {
+    await prisma.$disconnect()
+  })
+  .catch(async (e: unknown) => {
+    await prisma.$disconnect()
+    process.stderr.write(String(e) + '\n')
+    process.exit(1)
+  })

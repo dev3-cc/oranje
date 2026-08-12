@@ -268,6 +268,7 @@ model User {
   requisitionsAuthorized Requisition[]             @relation("reqAuthorizedBy")
   requisitionsAsInspector Requisition[]            @relation("reqInspector")
   requisitionStateChanges RequisitionStateHistory[]
+  journalEntries          JournalEntry[]
 
   @@id([id])
   @@index([roleId], map: "ix_user_role")
@@ -742,4 +743,49 @@ model RequisitionStateHistory {
   @@index([requisitionId, occurredAt(sort: Desc)], map: "ix_requisition_history")
   @@map("requisition_state_history")
   @@schema("demand")
+}
+// ============================================================================
+// journal — la bitácora inmutable. RR-16.
+// Fuente: _Globales/Journal - Modelo de Datos.drawio
+//
+// OJO: esta tabla está PARTICIONADA POR MES, y Prisma no expresa particionado.
+// El `PARTITION BY RANGE` y las particiones se crean en SQL a mano dentro de la
+// migración. El modelo existe aquí para que `migrate diff` la vea y no la
+// intente borrar — el particionado le es invisible.
+// ============================================================================
+
+/// Append-only. Sin updated_at, updated_by ni deleted_at: es la excepción de la
+/// sección 4 de Estándares de Base de Datos. occurred_at hace de created_at,
+/// porque en una tabla append-only son el mismo instante.
+model JournalEntry {
+  id String @db.Uuid
+
+  /// Vínculo POLIMÓRFICO, sin FK a propósito: con una columna por tabla serían
+  /// 23 nulables, y con ON DELETE CASCADE borrar una fila borraría su propia
+  /// auditoría. El costo asumido es que nada valida que entity_id exista.
+  entityType String @map("entity_type") @db.Text
+  entityId   String @map("entity_id") @db.Uuid
+
+  /// Lista ABIERTA, va como text: TOOK, JOINED, LEFT, STATUS_CHANGED,
+  /// ASSIGNED_WORKER, REASSIGNED. Un CHECK obligaria a una migracion por evento.
+  eventType String @map("event_type") @db.Text
+
+  /// La unica FK del journal: quien actuo si se valida.
+  actorUserId String? @map("actor_user_id") @db.Uuid
+  actorRole   String? @map("actor_role") @db.Text
+
+  /// Solo para el payload del journal (seccion 3). NO se indexa.
+  payload Json? @db.JsonB
+
+  /// La llave de particion. Postgres exige que este en la PK.
+  occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+
+  actor User? @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@id([id, occurredAt])
+  @@index([entityType, entityId, occurredAt(sort: Desc)], map: "ix_journal_entity")
+  @@index([actorUserId, occurredAt(sort: Desc)], map: "ix_journal_actor")
+  @@index([eventType, occurredAt(sort: Desc)], map: "ix_journal_event")
+  @@map("journal")
+  @@schema("journal")
 }
