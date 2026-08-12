@@ -33,8 +33,9 @@ model StatusLight {
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
 
-  states      StatusLightState[]
-  reasons     StatusChangeReason[]
+  states       StatusLightState[] @relation("lightStates")
+  statesByCode StatusLightState[] @relation("lightStatesByCode")
+  reasons      StatusChangeReason[]
   transitions StatusLightTransition[]
 
   @@id([id])
@@ -47,6 +48,11 @@ model StatusLight {
 model StatusLightState {
   id            String  @db.Uuid
   statusLightId String  @map("status_light_id") @db.Uuid
+  /// El code del semaforo, desnormalizado desde status_light. Es lo que permite
+  /// FIJAR a que semaforo pertenece una fila con un CHECK: contra el uuid no se
+  /// puede, porque el uuid v7 lo genera el seed y cambia en cada ambiente.
+  /// 'WORKER' es 'WORKER' en todas partes. FK con ON UPDATE CASCADE.
+  statusLightCode String @map("status_light_code") @db.Text
   code          String  @db.Text
   color         String  @db.Text
   name          String  @db.Text
@@ -59,7 +65,8 @@ model StatusLightState {
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
 
-  statusLight       StatusLight              @relation(fields: [statusLightId], references: [id], onDelete: Restrict)
+  statusLight       StatusLight              @relation("lightStates", fields: [statusLightId], references: [id], onDelete: Restrict)
+  statusLightByCode StatusLight              @relation("lightStatesByCode", fields: [statusLightCode], references: [code], onDelete: Restrict)
   transitionsFrom   StatusLightTransition[]  @relation("fromState")
   transitionsTo     StatusLightTransition[]  @relation("toState")
   prospects           Prospect[]
@@ -80,6 +87,8 @@ model StatusLightState {
   /// Sostiene la FK compuesta que impide que una entidad tome el estado de otro
   /// semáforo. Ver restricción 2 del diagrama de Ventas.
   @@unique([id, statusLightId], map: "ux_status_light_state_id_light")
+  /// De aqui cuelgan las FK compuestas que SI fijan el semaforo.
+  @@unique([id, statusLightCode], map: "ux_status_light_state_id_code")
   @@index([statusLightId], map: "ix_status_light_state_light")
   @@map("status_light_state")
   @@schema("catalogs")
@@ -425,8 +434,8 @@ model Prospect {
   /// columna es el atajo al estado actual (D-14).
   onboardingStateId String @map("onboarding_state_id") @db.Uuid
   /// Redundante a proposito: sostiene la FK compuesta que impide que un
-  /// prospecto tome un estado de OTRO semaforo. Siempre el id de ONBOARDING.
-  statusLightId     String @map("status_light_id") @db.Uuid
+  /// prospecto tome un estado de OTRO semaforo. Fijado a ONBOARDING por CHECK.
+  statusLightCode   String @map("status_light_code") @db.Text
 
   openedAt      DateTime  @default(now()) @map("opened_at") @db.Timestamptz(6)
   closedAt      DateTime? @map("closed_at") @db.Timestamptz(6)
@@ -439,7 +448,7 @@ model Prospect {
 
   hotel           Hotel               @relation(fields: [hotelId], references: [id], onDelete: Restrict)
   owner           User                @relation("prospectOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
-  onboardingState StatusLightState    @relation(fields: [onboardingStateId, statusLightId], references: [id, statusLightId], onDelete: Restrict)
+  onboardingState StatusLightState    @relation(fields: [onboardingStateId, statusLightCode], references: [id, statusLightCode], onDelete: Restrict)
   closeReason     StatusChangeReason? @relation(fields: [closeReasonId], references: [id], onDelete: Restrict)
 
   attempts ContactAttempt[]
@@ -464,6 +473,10 @@ model ProspectStateHistory {
   /// Nulo en el primero: el prospecto nace en un estado, no viene de otro.
   fromStateId String? @map("from_state_id") @db.Uuid
   toStateId   String  @map("to_state_id") @db.Uuid
+  /// Fijado a ONBOARDING por CHECK. Antes estas dos FK eran SIMPLES, asi que esta
+  /// tabla ni siquiera impedia pares mal formados: podia registrar una
+  /// transicion entre estados de dos semaforos distintos.
+  statusLightCode String @map("status_light_code") @db.Text
   reasonId    String? @map("reason_id") @db.Uuid
   userId      String  @map("user_id") @db.Uuid
   occurredAt  DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
@@ -471,8 +484,8 @@ model ProspectStateHistory {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   prospect  Prospect            @relation(fields: [prospectId], references: [id], onDelete: Restrict)
-  fromState StatusLightState?   @relation("histFrom", fields: [fromStateId], references: [id], onDelete: Restrict)
-  toState   StatusLightState    @relation("histTo", fields: [toStateId], references: [id], onDelete: Restrict)
+  fromState StatusLightState?   @relation("histFrom", fields: [fromStateId, statusLightCode], references: [id, statusLightCode], onDelete: Restrict)
+  toState   StatusLightState    @relation("histTo", fields: [toStateId, statusLightCode], references: [id, statusLightCode], onDelete: Restrict)
   reason    StatusChangeReason? @relation(fields: [reasonId], references: [id], onDelete: Restrict)
   user      User                @relation(fields: [userId], references: [id], onDelete: Restrict)
 
@@ -649,7 +662,7 @@ model Requisition {
   /// Rojo · Morado. statusLightId es redundante a proposito: sostiene la FK
   /// compuesta que impide tomar un estado de otro semaforo.
   statusLightStateId String @map("status_light_state_id") @db.Uuid
-  statusLightId      String @map("status_light_id") @db.Uuid
+  statusLightCode    String @map("status_light_code") @db.Text
 
   /// El GH responsable del departamento. Puede NO ser quien autoriza: un Manager
   /// General puede autorizar la requisicion de un departamento cuyo GH es otro.
@@ -673,7 +686,7 @@ model Requisition {
   updatedBy String?   @map("updated_by") @db.Uuid
 
   hotel       Hotel            @relation(fields: [hotelId], references: [id], onDelete: Restrict)
-  statusState StatusLightState @relation(fields: [statusLightStateId, statusLightId], references: [id, statusLightId], onDelete: Restrict)
+  statusState StatusLightState @relation(fields: [statusLightStateId, statusLightCode], references: [id, statusLightCode], onDelete: Restrict)
   areaManager User?            @relation("reqAreaManager", fields: [areaManagerUserId], references: [id], onDelete: Restrict)
   authorizer  User?            @relation("reqAuthorizedBy", fields: [authorizedBy], references: [id], onDelete: Restrict)
   inspector   User?            @relation("reqInspector", fields: [inspectorId], references: [id], onDelete: Restrict)
@@ -719,12 +732,12 @@ model Position {
   /// Semaforo de Posiciones: Dorado · Naranja · Verde · Amarillo · Rojo · Morado.
   /// Derivado de contar slots ocupados; se guarda porque el tablero lo filtra.
   coverageStateId String @map("coverage_state_id") @db.Uuid
-  coverageLightId String @map("coverage_light_id") @db.Uuid
+  coverageLightCode String @map("coverage_light_code") @db.Text
 
   /// Semaforo de Urgencia: Rojo (<72h) · Amarillo (72-120h) · Verde fuerte (>120h).
   /// Derivado de authorized_at contra start_date (RR-H-05); lo recalcula un job.
   urgencyStateId String? @map("urgency_state_id") @db.Uuid
-  urgencyLightId String? @map("urgency_light_id") @db.Uuid
+  urgencyLightCode String? @map("urgency_light_code") @db.Text
 
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -735,8 +748,8 @@ model Position {
   hiringModality  HiringModality    @relation(fields: [hiringModalityId], references: [id], onDelete: Restrict)
   englishLevel    EnglishLevel?     @relation(fields: [englishLevelId], references: [id], onDelete: Restrict)
   hotelDepartment HotelDepartment   @relation(fields: [hotelDepartmentId], references: [id], onDelete: Restrict)
-  coverageState   StatusLightState  @relation("posCoverage", fields: [coverageStateId, coverageLightId], references: [id, statusLightId], onDelete: Restrict)
-  urgencyState    StatusLightState? @relation("posUrgency", fields: [urgencyStateId, urgencyLightId], references: [id, statusLightId], onDelete: Restrict)
+  coverageState   StatusLightState  @relation("posCoverage", fields: [coverageStateId, coverageLightCode], references: [id, statusLightCode], onDelete: Restrict)
+  urgencyState    StatusLightState? @relation("posUrgency", fields: [urgencyStateId, urgencyLightCode], references: [id, statusLightCode], onDelete: Restrict)
 
   slots Slot[]
 
@@ -784,6 +797,10 @@ model RequisitionStateHistory {
   /// Nulo en el primero: la requisicion nace en un estado, no viene de otro.
   fromStateId   String?  @map("from_state_id") @db.Uuid
   toStateId     String   @map("to_state_id") @db.Uuid
+  /// Fijado a REQUISITION por CHECK. Antes estas dos FK eran SIMPLES, asi que esta
+  /// tabla ni siquiera impedia pares mal formados: podia registrar una
+  /// transicion entre estados de dos semaforos distintos.
+  statusLightCode String @map("status_light_code") @db.Text
   reasonId      String?  @map("reason_id") @db.Uuid
   userId        String   @map("user_id") @db.Uuid
   occurredAt    DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
@@ -791,8 +808,8 @@ model RequisitionStateHistory {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
   requisition Requisition         @relation(fields: [requisitionId], references: [id], onDelete: Restrict)
-  fromState   StatusLightState?   @relation("reqHistFrom", fields: [fromStateId], references: [id], onDelete: Restrict)
-  toState     StatusLightState    @relation("reqHistTo", fields: [toStateId], references: [id], onDelete: Restrict)
+  fromState   StatusLightState?   @relation("reqHistFrom", fields: [fromStateId, statusLightCode], references: [id, statusLightCode], onDelete: Restrict)
+  toState     StatusLightState    @relation("reqHistTo", fields: [toStateId, statusLightCode], references: [id, statusLightCode], onDelete: Restrict)
   reason      StatusChangeReason? @relation(fields: [reasonId], references: [id], onDelete: Restrict)
   user        User                @relation(fields: [userId], references: [id], onDelete: Restrict)
 
@@ -921,7 +938,7 @@ model Worker {
   statusLightStateId String @map("status_light_state_id") @db.Uuid
   /// Sostiene la FK compuesta que impide tomar un estado de otro semaforo.
   /// Sin ella, CAFE del Onboarding seria un estado valido de persona.
-  statusLightId String @map("status_light_id") @db.Uuid
+  statusLightCode String @map("status_light_code") @db.Text
 
   /// Borrado LOGICO siempre. Blacklist.md es explicito: el colaborador no se
   /// elimina, no aparece en busquedas activas, y el historial se conserva
@@ -937,7 +954,7 @@ model Worker {
   catalogPosition CatalogPosition? @relation(fields: [catalogPositionId], references: [id], onDelete: Restrict)
   englishLevel    EnglishLevel?    @relation(fields: [englishLevelId], references: [id], onDelete: Restrict)
   hiringModality  HiringModality?  @relation(fields: [hiringModalityId], references: [id], onDelete: Restrict)
-  statusState     StatusLightState @relation("workerState", fields: [statusLightStateId, statusLightId], references: [id, statusLightId], onDelete: Restrict)
+  statusState     StatusLightState @relation("workerState", fields: [statusLightStateId, statusLightCode], references: [id, statusLightCode], onDelete: Restrict)
 
   documents      WorkerDocument[]
   stateHistory   WorkerStateHistory[]
@@ -990,7 +1007,7 @@ model WorkerStateHistory {
   /// NULO en el primer renglon: el colaborador nace en Blanco, sin origen.
   fromStateId String? @map("from_state_id") @db.Uuid
   toStateId   String  @map("to_state_id") @db.Uuid
-  statusLightId String @map("status_light_id") @db.Uuid
+  statusLightCode String @map("status_light_code") @db.Text
   reasonId    String? @map("reason_id") @db.Uuid
   /// NULO cuando lo movio el sistema: la progresion por dias y el ponche no
   /// tienen persona detras.
@@ -998,8 +1015,8 @@ model WorkerStateHistory {
   occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
 
   worker    Worker              @relation(fields: [workerId], references: [id], onDelete: Restrict)
-  fromState StatusLightState?   @relation("workerHistFrom", fields: [fromStateId, statusLightId], references: [id, statusLightId], onDelete: Restrict)
-  toState   StatusLightState    @relation("workerHistTo", fields: [toStateId, statusLightId], references: [id, statusLightId], onDelete: Restrict)
+  fromState StatusLightState?   @relation("workerHistFrom", fields: [fromStateId, statusLightCode], references: [id, statusLightCode], onDelete: Restrict)
+  toState   StatusLightState    @relation("workerHistTo", fields: [toStateId, statusLightCode], references: [id, statusLightCode], onDelete: Restrict)
   reason    StatusChangeReason? @relation(fields: [reasonId], references: [id], onDelete: Restrict)
   user      User?               @relation(fields: [userId], references: [id], onDelete: Restrict)
 

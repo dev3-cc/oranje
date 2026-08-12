@@ -514,6 +514,10 @@ async function main(): Promise<void> {
         create: {
           id: uuidv7(),
           statusLightId: light.id,
+          // Desnormalizado desde status_light. Es lo que permite FIJAR el semaforo
+          // con un CHECK: contra el uuid no se puede, porque el uuid v7 lo genera
+          // este seed y cambia en cada ambiente.
+          statusLightCode: light.code,
           code: s.code,
           color: s.color,
           name: s.name,
