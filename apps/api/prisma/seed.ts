@@ -437,6 +437,111 @@ const CHANGE_REASONS: Array<{ light: string; code: string; name: string }> = [
   { light: 'ONBOARDING', code: 'COMMERCIAL_DISPUTE', name: 'Disputa comercial' },
 ]
 
+// ---------------------------------------------------------------------------
+// Transiciones de los otros dos semáforos que las tienen documentadas.
+//
+// De los 7 semáforos, solo CUATRO necesitan filas aquí. Los otros tres
+// —Posiciones, Urgencia y Cumplimiento del Timesheet— son DERIVADOS: nadie pide
+// pasar a Rojo, se pasa solo cuando la cobertura, las horas restantes o las horas
+// trabajadas cruzan un umbral. Un job los recalcula. `status_light_transition` es
+// para pasos que una PERSONA pide y el sistema autoriza.
+// ---------------------------------------------------------------------------
+const OTHER_TRANSITIONS: Array<{
+  light: string
+  from: string
+  to: string
+  roles: string[]
+  reason: boolean
+  note?: string
+}> = [
+  // --- Semáforo de Requisición ---
+  // "Solo el GM o GH pueden autorizar; si lo intenta el SUP, el sistema bloquea
+  // la acción." El Supervisor la crea pero NO la autoriza: por eso no está aquí.
+  {
+    light: 'REQUISITION',
+    from: 'APPLE_GREEN',
+    to: 'GREEN',
+    roles: ['ROL-H-02', 'ROL-H-03'],
+    reason: false,
+    note: 'autoriza el GH o el GM',
+  },
+  // La toma de la bandeja compartida — el Self-Pick, RR-15.
+  {
+    light: 'REQUISITION',
+    from: 'GREEN',
+    to: 'YELLOW',
+    roles: ['ROL-R-01', 'ROL-R-02'],
+    reason: false,
+    note: 'la toma de la bandeja',
+  },
+  // Regresa a Autorizada solo cuando SALE EL ULTIMO participante. No lo decide
+  // una persona: lo deduce el sistema contando participation con left_at nulo.
+  {
+    light: 'REQUISITION',
+    from: 'YELLOW',
+    to: 'GREEN',
+    roles: ['ROL-SYS-01'],
+    reason: false,
+    note: 'salio el ultimo reclutador (RR-15)',
+  },
+  {
+    light: 'REQUISITION',
+    from: 'YELLOW',
+    to: 'LIGHT_BLUE',
+    roles: ['ROL-R-01', 'ROL-R-02'],
+    reason: false,
+    note: 'cerro al 100%',
+  },
+  {
+    light: 'REQUISITION',
+    from: 'YELLOW',
+    to: 'RED',
+    roles: ['ROL-R-01', 'ROL-R-02'],
+    reason: true,
+    note: 'cerro con cobertura incompleta',
+  },
+
+  // --- Indicador de Calidad ---
+  // El rol autorizado es el MANAGER de QA, no el Operador: "El Operador de QA
+  // propone el cambio con base en sus mediciones. El Manager de QA valida y
+  // aprueba el cambio." La transicion se efectua al aprobar.
+  //
+  // Verde es el estado INICIAL cuando QA empieza a supervisar, asi que no lleva
+  // fila: una transicion necesita origen.
+  {
+    light: 'QUALITY',
+    from: 'GREEN',
+    to: 'YELLOW',
+    roles: ['ROL-Q-02'],
+    reason: true,
+    note: 'metricas fuera de rango u observaciones sin atender',
+  },
+  {
+    light: 'QUALITY',
+    from: 'YELLOW',
+    to: 'RED',
+    roles: ['ROL-Q-02'],
+    reason: true,
+    note: 'las observaciones persisten',
+  },
+  {
+    light: 'QUALITY',
+    from: 'RED',
+    to: 'YELLOW',
+    roles: ['ROL-Q-02'],
+    reason: false,
+    note: 'el depto empieza a atender',
+  },
+  {
+    light: 'QUALITY',
+    from: 'YELLOW',
+    to: 'GREEN',
+    roles: ['ROL-Q-02'],
+    reason: false,
+    note: 'todo resuelto, metricas en parametros',
+  },
+]
+
 async function main(): Promise<void> {
   const log = (s: string): void => {
     process.stdout.write(s + '\n')
@@ -654,10 +759,53 @@ async function main(): Promise<void> {
       ` · de ellas ${returnsToPrevious} con destino variable`,
   )
 
+  // --- transiciones de Requisición y Calidad ---
+  let otherTransitions = 0
+  for (const t of OTHER_TRANSITIONS) {
+    const light = await prisma.statusLight.findUniqueOrThrow({ where: { code: t.light } })
+    const from = await prisma.statusLightState.findUniqueOrThrow({
+      where: { statusLightId_code: { statusLightId: light.id, code: t.from } },
+    })
+    const to = await prisma.statusLightState.findUniqueOrThrow({
+      where: { statusLightId_code: { statusLightId: light.id, code: t.to } },
+    })
+    for (const roleCode of t.roles) {
+      const role = await prisma.role.findUniqueOrThrow({ where: { code: roleCode } })
+      await prisma.statusLightTransition.upsert({
+        where: {
+          fromStateId_toStateId_authorizedRoleId: {
+            fromStateId: from.id,
+            toStateId: to.id,
+            authorizedRoleId: role.id,
+          },
+        },
+        update: { requiresReason: t.reason },
+        create: {
+          id: uuidv7(),
+          statusLightId: light.id,
+          fromStateId: from.id,
+          toStateId: to.id,
+          returnsToPrevious: false,
+          authorizedRoleId: role.id,
+          requiresReason: t.reason,
+          requiresEvidence: false,
+        },
+      })
+      otherTransitions++
+    }
+  }
+  log(`status_light_transition (Requisición y Calidad): ${otherTransitions}`)
+
   log('')
-  log('PENDIENTE 1: las transiciones de los otros 5 semáforos. Sus estados están')
-  log('sembrados, pero el vault no documenta qué movimientos son legales ni quién')
-  log('los autoriza. Sin esas filas, esos semáforos no caminan.')
+  log('NOTA: 4 de los 7 semáforos tienen transiciones. Los otros tres —Posiciones,')
+  log('Urgencia y Cumplimiento del Timesheet— son DERIVADOS: nadie pide pasar a')
+  log('Rojo, se pasa solo cuando la cobertura, las horas restantes o las horas')
+  log('trabajadas cruzan un umbral. No necesitan filas aquí; los recalcula un job.')
+  log('')
+  log('PENDIENTE 1: el Indicador de Calidad tiene un flujo PROPONER -> APROBAR que')
+  log('este modelo no sabe expresar. El vault dice que el Operador de QA propone y')
+  log('el Manager valida; aquí solo quedó el Manager, porque la transición se')
+  log('efectúa al aprobar. Falta decidir si la propuesta es un estado o una tabla.')
   log('')
   log('PENDIENTE 2: el Blacklist manual por falta grave. Blacklist.md dice que')
   log('cualquier rol de Reclutamiento puede vetar con motivo Y evidencia, pero el')
