@@ -2,7 +2,11 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+
+    // Dentro de dist a propósito: con `deleteOutDir: true` y el cache afuera,
+    // tsc creía compilados los archivos sin cambios y el build salía a medias
+    "tsBuildInfoFile": "./dist/tsconfig.build.tsbuildinfo"
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "test", "prisma"]

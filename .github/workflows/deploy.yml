@@ -1,0 +1,132 @@
+# Despliegue del API. La rama se llama como su ambiente (§1): staging ->
+# oranje-staging, main -> oranje-prod.
+#
+# UN SOLO ARTEFACTO: la imagen se construye una vez en `staging` y producción
+# reutiliza ese digest. Reconstruirla haría que lo probado y lo desplegado
+# fueran dos binarios distintos.
+name: Desplegar
+
+on:
+  push:
+    branches: [staging, main]
+
+# Uno a la vez por ambiente: dos merges seguidos competirían por la misma
+# revisión de Cloud Run
+concurrency:
+  group: desplegar-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  # Workload Identity Federation: GitHub firma un token y GCP lo cambia por
+  # credenciales, así no hay llave de cuenta de servicio guardada como secreto
+  id-token: write
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+
+    # El ambiente de GitHub aporta las variables y permite exigir aprobación
+    # manual antes de producción
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+
+    env:
+      REGION: us-central1
+      SERVICIO: oranje-api
+      REPOSITORIO: oranje
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Autenticar contra GCP
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOY_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Nombre de la imagen
+        id: imagen
+        run: |
+          echo "ruta=$REGION-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/$REPOSITORIO/$SERVICIO" >> "$GITHUB_OUTPUT"
+
+      # --- staging: construye ---
+      - name: Construir y publicar la imagen
+        if: github.ref_name == 'staging'
+        run: |
+          gcloud builds submit \
+            --tag "${{ steps.imagen.outputs.ruta }}:${{ github.sha }}" \
+            --project "${{ vars.GCP_PROJECT_ID }}"
+
+      # --- main: no construye, promueve lo que ya se probó ---
+      # Si el commit no tiene imagen en staging, nunca pasó por ahí y se detiene.
+      - name: Promover la imagen probada en staging
+        if: github.ref_name == 'main'
+        id: promover
+        run: |
+          ORIGEN="${{ vars.STAGING_PROJECT_ID }}"
+          DESTINO="${{ vars.GCP_PROJECT_ID }}"
+          RUTA_ORIGEN="$REGION-docker.pkg.dev/$ORIGEN/$REPOSITORIO/$SERVICIO"
+
+          DIGEST=$(gcloud artifacts docker images describe \
+            "$RUTA_ORIGEN:${{ github.sha }}" \
+            --format='value(image_summary.digest)' \
+            --project "$ORIGEN" 2>/dev/null || true)
+
+          if [ -z "$DIGEST" ]; then
+            echo "::error::El commit ${{ github.sha }} no tiene imagen en staging."
+            echo "::error::Producción solo promueve lo que ya se probó — no reconstruye."
+            exit 1
+          fi
+
+          gcloud container images add-tag \
+            "$RUTA_ORIGEN@$DIGEST" \
+            "$REGION-docker.pkg.dev/$DESTINO/$REPOSITORIO/$SERVICIO:${{ github.sha }}" \
+            --quiet
+
+      # Antes de la revisión nueva y con el usuario dueño del esquema. Expandir y
+      # contraer (BD §8) mantiene vivo al código viejo durante el despliegue
+      - name: Migraciones
+        run: |
+          gcloud run jobs deploy "$SERVICIO-migrate" \
+            --image "$REGION-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/$REPOSITORIO/$SERVICIO:${{ github.sha }}" \
+            --region "$REGION" \
+            --project "${{ vars.GCP_PROJECT_ID }}" \
+            --service-account "${{ vars.RUNTIME_SERVICE_ACCOUNT }}" \
+            --set-cloudsql-instances "${{ vars.CLOUDSQL_INSTANCE }}" \
+            --set-secrets "MIGRATE_DATABASE_URL=oranje-migrate-database-url:latest" \
+            --command node \
+            --args "apps/api/node_modules/prisma/build/index.js,migrate,deploy,--schema,apps/api/prisma/schema.prisma" \
+            --execute-now \
+            --wait
+
+      - name: Desplegar en Cloud Run
+        run: |
+          gcloud run deploy "$SERVICIO" \
+            --image "$REGION-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/$REPOSITORIO/$SERVICIO:${{ github.sha }}" \
+            --region "$REGION" \
+            --project "${{ vars.GCP_PROJECT_ID }}" \
+            --service-account "${{ vars.RUNTIME_SERVICE_ACCOUNT }}" \
+            --set-cloudsql-instances "${{ vars.CLOUDSQL_INSTANCE }}" \
+            --set-env-vars "APP_ENV=${{ vars.APP_ENV }},NODE_ENV=production,AUTH_ISSUER_URL=${{ vars.AUTH_ISSUER_URL }},AUTH_AUDIENCE=${{ vars.AUTH_AUDIENCE }},CORS_ORIGINS=${{ vars.CORS_ORIGINS }},STORAGE_BUCKET=${{ vars.STORAGE_BUCKET }},COOKIE_SECURE=true,LOG_LEVEL=info" \
+            --set-secrets "DATABASE_URL=oranje-database-url:latest,JWT_PRIVATE_KEY=oranje-jwt-private-key:latest,JWT_PUBLIC_KEY=oranje-jwt-public-key:latest" \
+            --min-instances "${{ vars.MIN_INSTANCES }}" \
+            --max-instances "${{ vars.MAX_INSTANCES }}" \
+            --no-allow-unauthenticated
+
+      # Si el contenedor no arranca, la validación de entorno lo tumba y este paso
+      # falla. Cloud Run deja sirviendo la revisión anterior
+      - name: Verificar que la revisión quedó sirviendo
+        run: |
+          gcloud run services describe "$SERVICIO" \
+            --region "$REGION" \
+            --project "${{ vars.GCP_PROJECT_ID }}" \
+            --format='value(status.conditions[0].status)' | grep -q True
+
+      - name: Tag de la versión desplegada a producción
+        if: github.ref_name == 'main'
+        run: |
+          git tag "prod-$(date -u +%Y%m%d-%H%M)-${GITHUB_SHA::7}"
+          git push origin --tags
