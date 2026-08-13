@@ -109,6 +109,24 @@ jobs:
             --execute-now \
             --wait
 
+      # Público en staging, cerrado en producción.
+      #
+      # No es una inconsistencia: el IAM de Cloud Run exige un token de Google en
+      # `Authorization`, que es la MISMA cabecera donde viaja nuestro JWT — y un
+      # navegador o la app móvil no pueden producir un token de Google. O sea que
+      # con IAM el producto no funciona: la puerta es el guard, no el IAM.
+      #
+      # Producción se abre cuando tenga delante el Load Balancer con Cloud Armor
+      # (D-04). Hasta entonces se queda cerrada.
+      - name: Exposición según el ambiente
+        id: acceso
+        run: |
+          if [ "${{ vars.APP_ENV }}" = "production" ]; then
+            echo "flag=--no-allow-unauthenticated" >> "$GITHUB_OUTPUT"
+          else
+            echo "flag=--allow-unauthenticated" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Desplegar en Cloud Run
         run: |
           gcloud run deploy "$SERVICIO" \
@@ -121,7 +139,7 @@ jobs:
             --set-secrets "DATABASE_URL=oranje-database-url:latest,JWT_PRIVATE_KEY=oranje-jwt-private-key:latest,JWT_PUBLIC_KEY=oranje-jwt-public-key:latest" \
             --min-instances "${{ vars.MIN_INSTANCES }}" \
             --max-instances "${{ vars.MAX_INSTANCES }}" \
-            --no-allow-unauthenticated
+            ${{ steps.acceso.outputs.flag }}
 
       # Si el contenedor no arranca, la validación de entorno lo tumba y este paso
       # falla. Cloud Run deja sirviendo la revisión anterior
