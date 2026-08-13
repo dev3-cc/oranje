@@ -32,10 +32,13 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # prisma.config.ts lee MIGRATE_DATABASE_URL, no DATABASE_URL: las
+      # migraciones corren como el dueño de los esquemas, no como la aplicación.
+      # No se conecta a nada — `validate` solo exige que la variable exista
       - name: Esquema de Prisma
         run: pnpm -F @oranje/api exec prisma validate
         env:
-          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          MIGRATE_DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
 
       - name: Tests
         run: pnpm test

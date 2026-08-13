@@ -1,0 +1,23 @@
+# Lo que NO entra a la imagen. Además de peso, esto es seguridad: un .env
+# copiado a la imagen es un secreto que viaja al registro de contenedores.
+.env
+.env.*
+!.env.example
+
+node_modules
+**/node_modules
+**/dist
+**/build
+**/coverage
+**/*.tsbuildinfo
+
+.git
+.github
+.husky
+docs
+infra
+
+**/*.log
+.DS_Store
+.idea
+.vscode
