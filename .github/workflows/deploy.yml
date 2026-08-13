@@ -88,7 +88,12 @@ jobs:
             --quiet
 
       # Antes de la revisión nueva y con el usuario dueño del esquema. Expandir y
-      # contraer (BD §8) mantiene vivo al código viejo durante el despliegue
+      # contraer (BD §8) mantiene vivo al código viejo durante el despliegue.
+      #
+      # Se entra a apps/api porque prisma.config.ts declara sus rutas relativas
+      # a esa carpeta, y desde /app Prisma no encuentra ni la config ni la url.
+      # Sin reintentos: una migración que falla no mejora al repetirla, y cada
+      # intento tarda minutos.
       - name: Migraciones
         run: |
           gcloud run jobs deploy "$SERVICIO-migrate" \
@@ -98,8 +103,9 @@ jobs:
             --service-account "${{ vars.RUNTIME_SERVICE_ACCOUNT }}" \
             --set-cloudsql-instances "${{ vars.CLOUDSQL_INSTANCE }}" \
             --set-secrets "MIGRATE_DATABASE_URL=oranje-migrate-database-url:latest" \
-            --command node \
-            --args "apps/api/node_modules/prisma/build/index.js,migrate,deploy,--schema,apps/api/prisma/schema.prisma" \
+            --command sh \
+            --args "-c,cd apps/api && exec node node_modules/prisma/build/index.js migrate deploy" \
+            --max-retries 0 \
             --execute-now \
             --wait
 
