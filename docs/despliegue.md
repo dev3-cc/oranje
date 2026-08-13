@@ -17,7 +17,31 @@ por eso se queda como staging en vez de crear uno nuevo y migrarlo.
 
 ---
 
-## 1. Qué se crea, una sola vez
+## 1. Qué se creó, el 2026-08-13
+
+> Esto **ya está hecho**. Queda escrito para poder reproducirlo o auditarlo, no
+> para volver a ejecutarlo.
+
+| Recurso               | `oranjeapp-gcp` (staging)               | `oranje-prod`                                                        |
+| --------------------- | --------------------------------------- | -------------------------------------------------------------------- |
+| Proyecto              | Ya existía                              | Creado, org `todoorange.com`                                         |
+| Cloud SQL             | `oranje` · `db-f1-micro`                | `oranje` · `db-g1-small`, PITR, respaldos 14 días, borrado protegido |
+| Usuarios de la base   | `oranje_dev` · `app_user`               | `oranje_dev` · `app_user`                                            |
+| Artifact Registry     | `oranje` (us-central1)                  | `oranje` (us-central1)                                               |
+| Bucket                | `oranje-staging-files`                  | `oranje-prod-files`                                                  |
+| Secretos              | 4                                       | 4                                                                    |
+| Cuenta que despliega  | `deploy-github@…`                       | `deploy-github@…`                                                    |
+| Cuenta que ejecuta    | `oranje-api@…`                          | `oranje-api@…`                                                       |
+| Federación con GitHub | Pool `github`, atada a `dev3-cc/oranje` | Igual                                                                |
+
+**La instancia de producción no es igual a la de staging**: `db-g1-small` en vez
+de `db-f1-micro`, con recuperación punto en el tiempo y protección de borrado.
+PITR va desde el día uno porque activarlo después no recupera lo ya perdido.
+
+**Los pares de llaves son distintos entre ambientes.** Con llave compartida, un
+token de staging valdría en producción.
+
+### Si hubiera que reproducirlo
 
 Requiere `gcloud auth login` con una cuenta que pueda crear proyectos y
 administrar el de destino.
@@ -113,27 +137,38 @@ Producción además necesita leer del registro de staging para promover el diges
 
 ## 2. Variables de GitHub, por ambiente
 
-En **Settings → Environments**, uno llamado `staging` y otro `production`. Son
-variables, no secretos: ninguna es sensible — los secretos de verdad viven en
-Secret Manager y el pipeline solo los nombra.
+Los ambientes `staging` y `production` ya existen en **Settings → Environments**,
+con estas variables cargadas. Son variables, no secretos: ninguna es sensible —
+los secretos de verdad viven en Secret Manager y el pipeline solo los nombra.
 
-| Variable                 | `staging`                                   | `production`                              |
-| ------------------------ | ------------------------------------------- | ----------------------------------------- |
-| `GCP_PROJECT_ID`         | `oranjeapp-gcp`                             | `oranje-prod`                             |
-| `STAGING_PROJECT_ID`     | —                                           | `oranjeapp-gcp`                           |
-| `APP_ENV`                | `staging`                                   | `production`                              |
-| `WIF_PROVIDER`           | el del proyecto                             | el del proyecto                           |
-| `DEPLOY_SERVICE_ACCOUNT` | `deploy-github@…`                           | `deploy-github@…`                         |
-| `CLOUDSQL_INSTANCE`      | `oranjeapp-gcp:us-central1:oranje`          | `oranje-prod:us-central1:oranje`          |
-| `AUTH_ISSUER_URL`        | `https://securetoken.google.com/<firebase>` | idem, con el proyecto de Firebase de prod |
-| `AUTH_AUDIENCE`          | el project-id de Firebase                   | idem                                      |
-| `CORS_ORIGINS`           | el dominio de staging                       | el dominio de producción                  |
-| `STORAGE_BUCKET`         | el bucket de staging                        | el de producción                          |
-| `MIN_INSTANCES`          | `0` — que se apague y no cobre              | `1` — sin arranque en frío                |
-| `MAX_INSTANCES`          | `2`                                         | según carga                               |
+| Variable                  | `staging`                          | `production`                     |
+| ------------------------- | ---------------------------------- | -------------------------------- |
+| `GCP_PROJECT_ID`          | `oranjeapp-gcp`                    | `oranje-prod`                    |
+| `STAGING_PROJECT_ID`      | —                                  | `oranjeapp-gcp`                  |
+| `APP_ENV`                 | `staging`                          | `production`                     |
+| `WIF_PROVIDER`            | pool `github` del proyecto         | pool `github` del proyecto       |
+| `DEPLOY_SERVICE_ACCOUNT`  | `deploy-github@oranjeapp-gcp…`     | `deploy-github@oranje-prod…`     |
+| `RUNTIME_SERVICE_ACCOUNT` | `oranje-api@oranjeapp-gcp…`        | `oranje-api@oranje-prod…`        |
+| `CLOUDSQL_INSTANCE`       | `oranjeapp-gcp:us-central1:oranje` | `oranje-prod:us-central1:oranje` |
+| `STORAGE_BUCKET`          | `oranje-staging-files`             | `oranje-prod-files`              |
+| `MIN_INSTANCES`           | `0` — que se apague y no cobre     | `1` — sin arranque en frío       |
+| `MAX_INSTANCES`           | `2`                                | `4`                              |
 
-> En el ambiente `production` de GitHub, activa **required reviewers**. Es lo
-> que convierte el merge a `main` en una decisión y no en un accidente.
+**Faltan tres, y sin ellas el despliegue falla a propósito:**
+
+| Variable          | Por qué falta                     |
+| ----------------- | --------------------------------- |
+| `AUTH_ISSUER_URL` | No existe el proyecto de Firebase |
+| `AUTH_AUDIENCE`   | Igual                             |
+| `CORS_ORIGINS`    | No hay dominio del front todavía  |
+
+Dos cuentas de servicio por ambiente, a propósito: **`deploy-github` despliega y
+`oranje-api` ejecuta**. La que corre el servicio no puede desplegar, y la que
+despliega no anda leyendo la base en producción.
+
+> **La aprobación manual antes de producción no se pudo activar**: el repositorio
+> es privado y _required reviewers_ exige plan de pago. La puerta real sigue
+> siendo la protección de `main` — PR, una aprobación y CODEOWNERS.
 
 `MAX_INSTANCES × DATABASE_POOL_MAX` no puede pasar del `max_connections` de la
 instancia. Con `DATABASE_POOL_MAX=10` y 100 conexiones, el techo son 10
@@ -168,8 +203,12 @@ gcloud run services update-traffic oranje-api \
 ## 4. Lo que falta
 
 - **El Dockerfile no se ha construido nunca.** No hay Docker en la máquina donde
-  se escribió; el primer `gcloud builds submit` es su primera prueba real.
+  se escribió; el primer `gcloud builds submit` es su primera prueba real. Es lo
+  primero que puede fallar.
 - **No existe el proyecto de Firebase**, así que `AUTH_ISSUER_URL` y
-  `AUTH_AUDIENCE` no tienen valor todavía y el login no funciona en la nube.
-- **`oranje-prod` no está creado.** Todo lo de la sección 1 está pendiente.
-- **Sin dominio ni Load Balancer**: hoy Cloud Run responde en su URL `run.app`.
+  `AUTH_AUDIENCE` no tienen valor. Sin ellas el contenedor no arranca, que es
+  justo lo que se diseñó — pero significa que **hoy no se puede desplegar**.
+- **`CORS_ORIGINS` tampoco**, porque no hay dominio del front.
+- **La base de producción está vacía**: no se han corrido migraciones ni seed.
+- **Sin dominio ni Load Balancer**: Cloud Run responde en su URL `run.app`.
+- **Sin alertas de nómina** — D-07 las pide, y no existen.
