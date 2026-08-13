@@ -1,36 +1,27 @@
 # CODEOWNERS — Estándares de Desarrollo §2
 #
-# GitHub NO permite exigir "2 aprobaciones solo si el PR toca X". El contador de
-# aprobaciones es global por rama. Lo más cercano es esto: forzar la revisión de
-# un dueño específico en las rutas sensibles, que suma un revisor obligatorio
-# encima del mínimo de 1.
+# Los tres handles van en cada ruta porque GitHub excluye al autor de sus propios
+# dueños: con uno solo listado, el PR se queda sin revisor y se atora.
 #
-# Por qué los tres handles aparecen en cada ruta: GitHub excluye siempre al autor
-# del PR de sus propios dueños. Con una sola persona listada, quien toca esa ruta
-# no tiene quién le apruebe y el PR se atora. Con los tres, siempre quedan dos
-# revisores posibles y la segunda mirada existe de verdad.
-#
-# PENDIENTE: migrar a equipos de GitHub cuando el equipo crezca; los handles
-# individuales no escalan.
+# PENDIENTE: migrar a equipos de GitHub.
 
-# Todo, por defecto
 *                                       @dev3-cc @dev2-cc @Dev4-cc
 
 # --- Rutas que exigen la segunda mirada (§2) ---
 
-# Semáforos: un estado o una transición mal puesta rompe el negocio entero
+# Semáforos
 /packages/domain/src/statusLights/      @dev3-cc @dev2-cc @Dev4-cc
 
-# Permisos: la Matriz de Permisos es el control de acceso real
+# Control de acceso
 /packages/domain/src/permissions/       @dev3-cc @dev2-cc @Dev4-cc
 /apps/api/src/modules/identity/         @dev3-cc @dev2-cc @Dev4-cc
 
-# Migraciones y esquema: no se revierten con un rollback de código
+# Esquema: no se revierte con un rollback de código
 /apps/api/prisma/                       @dev3-cc @dev2-cc @Dev4-cc
 
-# Dinero: nómina y facturación
+# Dinero
 /apps/api/src/modules/settlement/       @dev3-cc @dev2-cc @Dev4-cc
 
-# La herramienta que hace cumplir todo lo demás
+# CI y config compartida
 /.github/                               @dev3-cc @dev2-cc @Dev4-cc
 /packages/config/                       @dev3-cc @dev2-cc @Dev4-cc

@@ -6,12 +6,9 @@ import type { CryptoKey, KeyObject } from 'jose'
 import type { Env } from '../../../config/env.validation.js'
 
 /**
- * Lo que viaja dentro de NUESTRO token. Es deliberadamente corto: solo lo que
- * el guard necesita para decidir sin ir a la base en cada request.
- *
- * Los permisos NO van aquí. Viven en `identity.role_permission` y se consultan;
- * si viajaran en el token, revocarle un permiso a alguien tardaría 15 minutos
- * en surtir efecto.
+ * Lo que viaja en nuestro token: solo lo que el guard necesita para decidir sin
+ * ir a la base. Los permisos NO van aquí — se consultan, porque en el token
+ * revocar uno tardaría 15 minutos en surtir efecto.
  */
 export interface AccessTokenPayload {
   /** Nuestro `identity.user.id`, no el uid de Firebase. */
@@ -29,11 +26,9 @@ type Llave = CryptoKey | KeyObject | Uint8Array
 /**
  * Firma y verifica el token que protege los CRUD.
  *
- * **El algoritmo depende del ambiente**, y no por gusto: en local un secreto
- * compartido basta y evita repartir llaves. En staging y producción se firma con
- * RS256, así que la llave privada solo existe donde se emiten tokens y quien
- * verifique necesita únicamente la pública. Con HS256 el que verifica puede
- * firmar, y eso deja de ser aceptable en cuanto hay más de un servicio.
+ * El algoritmo depende del ambiente: en local basta un secreto compartido, pero
+ * con HS256 quien verifica también puede firmar. En los desplegados va RS256,
+ * así que la llave privada solo vive donde se emiten los tokens.
  */
 @Injectable()
 export class AccessTokenService {
@@ -118,9 +113,8 @@ export class AccessTokenService {
 }
 
 /**
- * Secret Manager y los `.env` no conservan los saltos de línea del PEM: los
- * entregan como `\n` literales. Sin esto, la llave no importa y el error que da
- * jose no dice por qué.
+ * Secret Manager y los `.env` entregan los saltos del PEM como `\n` literales.
+ * Sin esto la llave no importa, y el error de jose no dice por qué.
  */
 function normalizarPem(valor: string): string {
   return valor.includes('\\n') ? valor.replace(/\\n/g, '\n') : valor

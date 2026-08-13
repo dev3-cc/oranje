@@ -1,13 +1,11 @@
 import { z } from 'zod'
 
 /**
- * Estándares de Desarrollo §9: toda variable de entorno se declara y valida
- * al arranque. Si falta una, la app NO levanta — falla en el arranque, no a
- * media operación.
+ * Estándares de Desarrollo §9: toda variable se valida al arranque, así que si
+ * falta una la app no levanta.
  *
- * El interruptor de ambiente es APP_ENV, no NODE_ENV: Jest pone NODE_ENV=test
- * por su cuenta, y si de eso dependieran las llaves de firma, correr los tests
- * exigiría material criptográfico. Son dos cosas distintas y aquí van separadas.
+ * El interruptor es APP_ENV y no NODE_ENV porque Jest pone NODE_ENV=test por su
+ * cuenta, y correr los tests no debe exigir material criptográfico.
  */
 
 /** local: tu máquina · staging: oranje-staging · production: oranje-prod (D-06). */
@@ -28,19 +26,16 @@ const baseSchema = z.object({
   DATABASE_STATEMENT_TIMEOUT_MS: z.coerce.number().int().positive().default(15_000),
 
   /**
-   * Firebase: emisor y audiencia del ID token que llega en el login.
-   *
-   * Opcionales mientras no exista el proyecto de Firebase. Sin ellas la API
-   * levanta y los CRUD funcionan; lo único que no funciona es `/auth/session`,
-   * que responde 503. En producción sí son obligatorias.
+   * Firebase: emisor y audiencia del ID token del login. Opcionales mientras no
+   * exista el proyecto — sin ellas solo `/auth/session` responde 503.
+   * Obligatorias en producción.
    */
   AUTH_ISSUER_URL: opcional(z.string().url()),
   AUTH_AUDIENCE: opcional(z.string().min(1)),
 
   /**
-   * Apaga la autenticación y trabaja como el usuario de AUTH_DEV_USER_EMAIL.
-   * Solo se admite en `local` — el refinamiento de abajo tumba el arranque si
-   * aparece en staging o producción.
+   * Apaga la autenticación y trabaja como AUTH_DEV_USER_EMAIL. Solo en `local`:
+   * el refinamiento de abajo tumba el arranque si aparece en un desplegado.
    */
   AUTH_DISABLED: booleanFromEnv(false),
   AUTH_DEV_USER_EMAIL: opcional(z.string().email()),
@@ -80,9 +75,8 @@ const baseSchema = z.object({
 })
 
 /**
- * Una variable declarada y vacía (`FOO=`) es lo mismo que no declararla. Sin
- * esto, dejar el hueco en el `.env` da un error de formato en vez del error
- * de "falta esta variable en este ambiente", que es el útil.
+ * `FOO=` es lo mismo que no declararla. Sin esto, dejar el hueco en el `.env` da
+ * un error de formato en vez del de "falta esta variable", que es el útil.
  */
 function opcional<T extends z.ZodType>(schema: T) {
   return z.preprocess((v) => (v === '' ? undefined : v), schema.optional())
@@ -97,9 +91,8 @@ function booleanFromEnv(porDefecto: boolean) {
 }
 
 /**
- * Lo que cada ambiente exige. Aquí es donde local afloja y los desplegados
- * aprietan — y donde un despliegue mal configurado muere en el arranque en vez
- * de quedar abierto.
+ * Lo que exige cada ambiente: local afloja, los desplegados aprietan. Es donde
+ * un despliegue mal configurado muere al arrancar en vez de quedar abierto.
  */
 const envSchema = baseSchema.superRefine((env, ctx) => {
   const esDesplegado = env.APP_ENV !== 'local'
@@ -110,8 +103,7 @@ const envSchema = baseSchema.superRefine((env, ctx) => {
   }
 
   if (esDesplegado) {
-    // La razón de ser de la firma asimétrica: la llave que firma no sale del
-    // servicio que emite, y quien verifica solo necesita la pública
+    // Firma asimétrica: la llave que firma no sale del servicio que emite
     if (!env.JWT_PRIVATE_KEY) falta('JWT_PRIVATE_KEY', `obligatoria en ${env.APP_ENV} (RS256)`)
     if (!env.JWT_PUBLIC_KEY) falta('JWT_PUBLIC_KEY', `obligatoria en ${env.APP_ENV} (RS256)`)
 
@@ -129,11 +121,8 @@ const envSchema = baseSchema.superRefine((env, ctx) => {
     }
   }
 
-  /**
-   * Staging puede levantar sin Firebase ni dominio: sirve para probar los CRUD
-   * antes de que existan. Producción no — ahí la lista blanca y el proveedor de
-   * identidad son lo que separa "desplegado" de "abierto".
-   */
+  // Staging levanta sin Firebase ni dominio, para probar los CRUD antes de que
+  // existan. Producción no: ahí separan "desplegado" de "abierto".
   if (esProduccion) {
     if (env.CORS_ORIGINS.length === 0) {
       falta('CORS_ORIGINS', 'obligatoria en production: §6 pide lista blanca explícita')

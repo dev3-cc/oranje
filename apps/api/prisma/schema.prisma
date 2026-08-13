@@ -1,14 +1,8 @@
-// Esquema único del monolito modular — D-01.
-// Un esquema de Postgres por módulo de negocio; los diez en inglés (D-11).
+// Esquema único del monolito modular — D-01: un esquema de Postgres por módulo,
+// los diez en inglés (D-11). Convenciones en Estándares de Base de Datos §2-§5.
 //
-// Convenciones que este archivo respeta (Estándares de Base de Datos):
-//   §2  tabla snake_case SINGULAR, calificada por esquema
-//   §3  uuid v7 para el id, text para texto libre, timestamptz para instantes
-//   §4  sin DEFAULT en la PK: el uuid v7 lo genera la aplicación.
-//       updated_at lo mantiene un TRIGGER, no la aplicación -> sin @updatedAt
-//   §5  los semáforos son tablas de catálogo, nunca enums nativos
-//
-// Prisma 7: la url de conexión vive en prisma.config.ts, no aquí.
+// El uuid v7 lo genera la aplicación (sin DEFAULT en la PK) y updated_at lo
+// mantiene un TRIGGER, de ahí que no haya @updatedAt. La url va en prisma.config.ts.
 
 generator client {
   provider = "prisma-client-js"
@@ -48,18 +42,15 @@ model StatusLight {
 model StatusLightState {
   id            String  @db.Uuid
   statusLightId String  @map("status_light_id") @db.Uuid
-  /// El code del semaforo, desnormalizado desde status_light. Es lo que permite
-  /// FIJAR a que semaforo pertenece una fila con un CHECK: contra el uuid no se
-  /// puede, porque el uuid v7 lo genera el seed y cambia en cada ambiente.
-  /// 'WORKER' es 'WORKER' en todas partes. FK con ON UPDATE CASCADE.
+  /// Desnormalizado desde status_light para fijar el semáforo con un CHECK: el
+  /// uuid lo genera el seed y cambia por ambiente, el code no. ON UPDATE CASCADE.
   statusLightCode String @map("status_light_code") @db.Text
   code          String  @db.Text
   color         String  @db.Text
   name          String  @db.Text
   description   String? @db.Text
   displayOrder  Int     @map("display_order")
-  /// Marca los estados que son rama y no paso del avance normal.
-  /// En Onboarding: RED, BROWN y BLACK.
+  /// Rama, no paso del avance normal. En Onboarding: RED, BROWN y BLACK.
   isBranch      Boolean @default(false) @map("is_branch")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -82,42 +73,28 @@ model StatusLightState {
   workerHistoryTo    WorkerStateHistory[] @relation("workerHistTo")
 
   @@id([id])
-  /// Un color significa una cosa POR semáforo: el code es único dentro de su semáforo.
+  /// Un code es único dentro de su semáforo.
   @@unique([statusLightId, code], map: "ux_status_light_state_light_code")
-  /// Sostiene la FK compuesta que impide que una entidad tome el estado de otro
-  /// semáforo. Ver restricción 2 del diagrama de Ventas.
+  /// Las dos sostienen las FK compuestas que fijan el semáforo.
   @@unique([id, statusLightId], map: "ux_status_light_state_id_light")
-  /// De aqui cuelgan las FK compuestas que SI fijan el semaforo.
   @@unique([id, statusLightCode], map: "ux_status_light_state_id_code")
   @@index([statusLightId], map: "ix_status_light_state_light")
   @@map("status_light_state")
   @@schema("catalogs")
 }
 
-/// Tabla puente N:M auto-referencial CON atributos: qué movimientos son legales,
-/// quién puede hacerlos y qué se le exige. Las 13 RF de Ventas colapsan en un
-/// solo servicio que lee de aquí.
+/// Qué movimientos son legales, quién puede hacerlos y qué se le exige.
 model StatusLightTransition {
   id String @db.Uuid
-  /// El semaforo al que pertenece el paso. Una sola columna sirve a las DOS
-  /// llaves compuestas, y por eso el origen y el destino no pueden ser de
-  /// semaforos distintos: los dos se comparan contra este mismo valor.
-  ///
-  /// Sin esto las FK eran simples y nada impedia un paso que saliera de un estado
-  /// del Onboarding y llegara a uno del Colaborador. Mismo patron que ya usan
-  /// requisition y position (D-19).
+  /// Sirve a las DOS llaves compuestas, y por eso origen y destino no pueden ser
+  /// de semáforos distintos: ambos se comparan contra este mismo valor (D-19).
   statusLightId String @map("status_light_id") @db.Uuid
 
   fromStateId String  @map("from_state_id") @db.Uuid
-  /// NULO cuando returns_to_previous es true: el destino no se conoce hasta que
-  /// se lee la historia del semaforo. Un CHECK garantiza que exactamente una de
-  /// las dos formas este presente.
+  /// NULO cuando returns_to_previous es true. Un CHECK exige exactamente una.
   toStateId   String? @map("to_state_id") @db.Uuid
-  /// El destino es "el estado previo", no un estado fijo. El Semaforo del
-  /// Colaborador tiene dos asi: Morado -> estado previo (vuelve a ponchar) y
-  /// Cafe -> estado previo (vence o se cancela la asignacion temporal). Cual sea
-  /// depende de donde venia, asi que el servicio lo saca del ultimo renglon de
-  /// la tabla de historia — que existe justo para esto (D-14).
+  /// El destino es "el estado previo", que el servicio saca de la tabla de
+  /// historia (D-14). En el Colaborador: Morado -> previo y Cafe -> previo.
   returnsToPrevious Boolean @default(false) @map("returns_to_previous")
 
   authorizedRoleId String  @map("authorized_role_id") @db.Uuid
@@ -128,23 +105,17 @@ model StatusLightTransition {
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
 
   statusLight StatusLight @relation(fields: [statusLightId], references: [id], onDelete: Restrict)
-  /// Las dos apuntan a (id, status_light_id). La del destino es nulable, y con
-  /// MATCH SIMPLE —el default de Postgres— una llave compuesta con una parte NULL
-  /// no se verifica: justo lo que hace falta cuando returns_to_previous es true y
-  /// no hay destino que validar.
+  /// La del destino es nulable: con MATCH SIMPLE una llave compuesta con una
+  /// parte NULL no se verifica, que es lo que hace falta si no hay destino.
   fromState      StatusLightState  @relation("fromState", fields: [fromStateId, statusLightId], references: [id, statusLightId], onDelete: Restrict)
   toState        StatusLightState? @relation("toState", fields: [toStateId, statusLightId], references: [id, statusLightId], onDelete: Restrict)
   authorizedRole Role              @relation(fields: [authorizedRoleId], references: [id], onDelete: Restrict)
 
   /// Si dos roles pueden hacer el mismo paso, son dos filas.
   ///
-  /// OJO: en la base este indice lleva NULLS NOT DISTINCT, que Prisma no sabe
-  /// declarar. Sin esa clausula los NULL de to_state_id serian distintos entre
-  /// si y dos filas (from, NULL, role) pasarian las dos. Se declara aqui igual
-  /// —mismo nombre, mismas columnas— para que Prisma lo reconozca como suyo y
-  /// no lo borre en el siguiente diff, que es como se perdio el indice espacial
-  /// de la geocerca el 2026-08-08. Si alguna vez se regenera sin la clausula,
-  /// hay que volver a aplicarla a mano.
+  /// En la base lleva NULLS NOT DISTINCT, que Prisma no sabe declarar; sin esa
+  /// cláusula dos filas (from, NULL, role) pasarían. Se declara aquí con el mismo
+  /// nombre para que Prisma no lo borre en el diff. Si se regenera, reaplicarla.
   @@id([id])
   @@unique([fromStateId, toStateId, authorizedRoleId], map: "ux_status_light_transition_step")
   @@index([statusLightId], map: "ix_status_light_transition_light")
@@ -155,8 +126,8 @@ model StatusLightTransition {
   @@schema("catalogs")
 }
 
-/// Los motivos catalogados de un cambio de estado. Sin esto, el reporte de
-/// rechazos no se puede agrupar (09 - Dependencias de Ventas).
+/// Los motivos catalogados de un cambio de estado. Sin esto el reporte de
+/// rechazos no se puede agrupar.
 model StatusChangeReason {
   id            String @db.Uuid
   statusLightId String @map("status_light_id") @db.Uuid
@@ -197,8 +168,8 @@ model Zone {
   @@schema("catalogs")
 }
 
-/// Los departamentos internos del hotel para los que Oranje recluta.
-/// Housekeeping · Alimentos · Mantenimiento · Front Desk
+/// Los departamentos del hotel para los que Oranje recluta:
+/// Housekeeping · Alimentos · Mantenimiento · Front Desk.
 model HotelDepartment {
   id   String @db.Uuid
   code String @unique @db.Text
@@ -219,13 +190,11 @@ model HotelDepartment {
 // ============================================================================
 // identity — usuarios, roles y permisos (Modelo de Datos §9)
 //
-// Autorizar tiene DOS preguntas y esta sección las separa:
-//   la capacidad -> role_permission (la Matriz de Permisos, pura, por rol)
-//   el alcance   -> user.hotel_id + user.department_id (un hecho de la persona)
+// Autorizar tiene dos preguntas y esta sección las separa: la capacidad va en
+// role_permission y el alcance en user.hotel_id + user.department_id.
 // ============================================================================
 
-/// Los roles del sistema, con el ID del vault: ROL-V-01, ROL-H-02, etc.
-/// NO es el puesto del contacto del hotel.
+/// Los roles del sistema (ROL-V-01, ROL-H-02…). No es el puesto del contacto.
 model Role {
   id         String  @db.Uuid
   code       String  @unique @db.Text
@@ -244,12 +213,9 @@ model Role {
   @@schema("identity")
 }
 
-/// La Matriz de Permisos como filas. Agregar un módulo es un INSERT, nunca una
-/// migración de esquema.
-///
-/// Esta tabla NO lleva hotel_id: si lo llevara, la fila diría "el rol Manager de
-/// Área aprueba horas en el Hotel Riu" y habría que insertar una fila por hotel,
-/// por departamento y por acción. El alcance vive en la persona.
+/// La Matriz de Permisos como filas: agregar un módulo es un INSERT.
+/// Sin hotel_id a propósito — con él habría una fila por hotel, departamento y
+/// acción. El alcance vive en la persona.
 model RolePermission {
   id     String @db.Uuid
   roleId String @map("role_id") @db.Uuid
@@ -268,21 +234,16 @@ model RolePermission {
   @@schema("identity")
 }
 
-/// El usuario del sistema, y el ALCANCE de su autoridad.
+/// El usuario del sistema y el alcance de su autoridad.
 ///
-/// departmentId nulo NO significa "sin alcance": significa TODOS los
-/// departamentos de mi hotel. Es lo que separa al Manager General del Manager de
-/// Área sin una tabla de excepciones.
-///
-/// hotelId nulo es el caso de los roles de territorio — BD, BDC, Inspector —
-/// cuyo alcance son zonas y vive en commercial.user_zone.
+/// departmentId nulo = TODOS los departamentos de mi hotel; es lo que separa al
+/// Manager General del de Área. hotelId nulo son los roles de territorio — BD,
+/// BDC, Inspector — cuyo alcance vive en commercial.user_zone.
 model User {
   id       String @db.Uuid
   email    String @unique @db.Text
-  /// El uid de Firebase Auth, 28 caracteres, NO es un uuid. Es el puente: el token
-  /// trae el uid, se busca aqui, y de ahi en adelante todo usa NUESTRO id.
-  /// Firebase guarda la contrasena; nosotros no guardamos ningun hash.
-  /// Nulable porque el staff sembrado no tiene cuenta de Firebase todavia.
+  /// El uid de Firebase (28 caracteres, no es uuid). Firebase guarda la
+  /// contraseña; aquí no hay hash. Nulable: el staff sembrado aún no tiene cuenta.
   firebaseUid String? @unique @map("firebase_uid") @db.Text
   fullName String @map("full_name") @db.Text
   roleId   String @map("role_id") @db.Uuid
@@ -292,8 +253,7 @@ model User {
   /// Alcance: su departamento dentro del hotel. NULO = todos los del hotel.
   departmentId String? @map("department_id") @db.Uuid
 
-  /// El BD apunta a su BDC; la Reclutadora a su Líder de Grupo.
-  /// La punta de la jerarquía no le reporta a nadie.
+  /// El BD apunta a su BDC; la Reclutadora a su Líder de Grupo. Nulo en la punta.
   reportsToUserId String? @map("reports_to_user_id") @db.Uuid
 
   isActive Boolean @default(true) @map("is_active")
@@ -333,6 +293,11 @@ model User {
   blacklistLifted     BlacklistEntry[]      @relation("blacklistLiftedBy")
   refreshTokens       RefreshToken[]
 
+  schedulesCreated   Schedule[]     @relation("scheduleCreatedBy")
+  timesheetsApproved Timesheet[]    @relation("timesheetApprovedBy")
+  daysReviewed       TimesheetDay[] @relation("timesheetDayReviewedBy")
+  punchesRegistered  PunchMark[]    @relation("punchRegisteredBy")
+
   @@id([id])
   @@index([roleId], map: "ix_user_role")
   @@index([hotelId], map: "ix_user_hotel")
@@ -341,24 +306,21 @@ model User {
   @@schema("identity")
 }
 
-/// Una sesión viva. El access token es de 15 minutos y no se guarda en ningún
-/// lado; esta tabla existe para poder MATAR una sesión antes de que expire su
-/// refresh, que dura 7 días (Estándares de Desarrollo §6).
-///
-/// Firebase autentica; este token es nuestro y es el que protege los CRUD.
+/// Una sesión viva. El access token dura 15 minutos y no se guarda; esta tabla
+/// existe para poder matar una sesión antes de que expire su refresh, que dura
+/// 7 días (Estándares de Desarrollo §6).
 model RefreshToken {
   id     String @db.Uuid
   userId String @map("user_id") @db.Uuid
 
-  /// SHA-256 del token, nunca el token. Si se filtra la tabla, lo que se filtra
-  /// no sirve para entrar.
+  /// SHA-256 del token, nunca el token: filtrar la tabla no da acceso.
   tokenHash String @unique @map("token_hash") @db.Text
 
   expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
   revokedAt DateTime? @map("revoked_at") @db.Timestamptz(6)
 
-  /// Cada refresh emite uno nuevo y apunta al anterior. Si llega un token ya
-  /// reemplazado, es reuso: alguien tiene una copia y se revoca la cadena.
+  /// Cada refresh emite uno nuevo y apunta al anterior. Si llega uno ya
+  /// reemplazado es reuso: alguien tiene copia y se revoca la cadena.
   replacedById String? @unique @map("replaced_by_id") @db.Uuid
 
   /// Para que el usuario reconozca la sesión que va a cerrar.
@@ -379,28 +341,26 @@ model RefreshToken {
 
 // ============================================================================
 // commercial — solo `hotel`, que identity.user necesita por FK.
-// Las otras 6 tablas del diagrama v2 llegan en la siguiente migración.
 // ============================================================================
 
-/// SOLO lo permanente del edificio. Sin estado de semáforo —vive en prospect— y
-/// sin columnas de contacto —viven en hotel_contact (D-13).
+/// Solo lo permanente del edificio. El estado del semáforo vive en prospect y
+/// los contactos en hotel_contact (D-13).
 model Hotel {
   id           String  @db.Uuid
   name         String  @db.Text
   generalPhone String? @map("general_phone") @db.Text
   zoneId       String  @map("zone_id") @db.Uuid
 
-  /// PostGIS. Prisma no tipa geography: las consultas de geocerca van en SQL
-  /// crudo con ST_DWithin, que es donde deben estar (D-08).
+  /// PostGIS. Prisma no tipa geography: la geocerca va en SQL crudo con
+  /// ST_DWithin (D-08).
   coordinates      Unsupported("public.geography(Point, 4326)")?
   geofenceRadiusM  Int?                                  @map("geofence_radius_m")
 
-  /// IANA, no offset numérico: un offset no sabe de horario de verano.
-  /// Sin esto no se puede calcular la jornada ni el corte semanal (§11).
+  /// IANA, no offset numérico: un offset no sabe de horario de verano, y sin eso
+  /// no se calcula la jornada ni el corte semanal (§11).
   timeZone String @map("time_zone") @db.Text
 
-  /// El único hecho de "es cliente" que se queda en el hotel. Con varios ciclos
-  /// comerciales, ninguna otra tabla puede contestar desde cuándo lo es.
+  /// Con varios ciclos comerciales, ninguna otra tabla sabe desde cuándo es cliente.
   activatedAt DateTime? @map("activated_at") @db.Timestamptz(6)
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -417,6 +377,8 @@ model Hotel {
   creator   User?  @relation("hotelCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
   updater   User?  @relation("hotelUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
 
+  schedules Schedule[]
+
   @@id([id])
   @@index([zoneId], map: "ix_hotel_zone")
   @@index([coordinates(ops: raw("gist_geography_ops"))], map: "ix_hotel_coordinates", type: Gist)
@@ -428,19 +390,17 @@ model Hotel {
 // commercial — el pipeline de Ventas. Las 6 tablas restantes del diagrama v2.
 // ============================================================================
 
-/// Los contactos del hotel. Son filas, no columnas de hotel: un hotel tiene al
-/// de Compras y al de Ama de Llaves a la vez.
+/// Filas y no columnas de hotel: un hotel tiene al de Compras y al de Ama de
+/// Llaves a la vez.
 model HotelContact {
   id       String  @db.Uuid
   hotelId  String  @map("hotel_id") @db.Uuid
   fullName String  @map("full_name") @db.Text
-  /// El puesto EN EL HOTEL, no un rol del sistema. Texto, no catalogo: nadie
-  /// filtra por el todavia.
+  /// El puesto en el hotel, no un rol del sistema. Texto: nadie filtra por él.
   jobTitle String? @map("job_title") @db.Text
   phone    String? @db.Text
   email    String? @db.Text
-  /// Quien es el principal es una decision del BD, no el mas reciente.
-  /// Un solo principal por hotel: UNIQUE parcial en la migracion.
+  /// Lo decide el BD, no la fecha. Un solo principal por hotel: UNIQUE parcial.
   isPrimary Boolean @default(false) @map("is_primary")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -457,22 +417,19 @@ model HotelContact {
   @@schema("commercial")
 }
 
-/// UN CICLO COMERCIAL de un hotel, y donde vive el Semaforo Onboarding (D-13).
-/// Un hotel se prospecta mas de una vez: cada intento es una fila, y solo uno
-/// puede estar abierto a la vez.
+/// Un ciclo comercial del hotel, y donde vive el Semáforo Onboarding (D-13).
+/// Un hotel se prospecta más de una vez; solo un ciclo abierto a la vez.
 model Prospect {
   id              String  @db.Uuid
   hotelId         String  @map("hotel_id") @db.Uuid
-  /// El BD dueno del ciclo, no del edificio: asi la tasa de conversion queda
-  /// limpia cuando un prospecto se reasigna (RF-V-24).
+  /// El BD dueño del ciclo, no del edificio: deja limpia la tasa de conversión
+  /// cuando un prospecto se reasigna.
   ownerUserId     String  @map("owner_user_id") @db.Uuid
   needDescription String? @map("need_description") @db.Text
 
-  /// El estado del semaforo. La verdad esta en prospect_state_history; esta
-  /// columna es el atajo al estado actual (D-14).
+  /// Atajo al estado actual; la verdad está en prospect_state_history (D-14).
   onboardingStateId String @map("onboarding_state_id") @db.Uuid
-  /// Redundante a proposito: sostiene la FK compuesta que impide que un
-  /// prospecto tome un estado de OTRO semaforo. Fijado a ONBOARDING por CHECK.
+  /// Sostiene la FK compuesta. Fijado a ONBOARDING por CHECK.
   statusLightCode   String @map("status_light_code") @db.Text
 
   openedAt      DateTime  @default(now()) @map("opened_at") @db.Timestamptz(6)
@@ -503,17 +460,16 @@ model Prospect {
   @@schema("commercial")
 }
 
-/// Una fila por cada cambio de color (D-14). Es la verdad del semaforo: sin
-/// ella no hay tiempo-en-estado ni motivo de transicion fuera del cierre.
+/// Una fila por cambio de color (D-14). Es la verdad del semáforo: sin ella no
+/// hay tiempo-en-estado ni motivo de transición fuera del cierre.
 model ProspectStateHistory {
   id          String  @db.Uuid
   prospectId  String  @map("prospect_id") @db.Uuid
   /// Nulo en el primero: el prospecto nace en un estado, no viene de otro.
   fromStateId String? @map("from_state_id") @db.Uuid
   toStateId   String  @map("to_state_id") @db.Uuid
-  /// Fijado a ONBOARDING por CHECK. Antes estas dos FK eran SIMPLES, asi que esta
-  /// tabla ni siquiera impedia pares mal formados: podia registrar una
-  /// transicion entre estados de dos semaforos distintos.
+  /// Fijado a ONBOARDING por CHECK, para que las dos FK sean compuestas y no
+  /// puedan registrar una transición entre semáforos distintos.
   statusLightCode String @map("status_light_code") @db.Text
   reasonId    String? @map("reason_id") @db.Uuid
   userId      String  @map("user_id") @db.Uuid
@@ -533,19 +489,19 @@ model ProspectStateHistory {
   @@schema("commercial")
 }
 
-/// Cada intento de contacto. NO es una tabla intermedia: tiene hechos propios
-/// —fecha, resultado, quien lo hizo— y puede haber cinco al mismo contacto.
+/// No es tabla intermedia: tiene hechos propios —fecha, resultado, quién— y
+/// puede haber cinco al mismo contacto.
 model ContactAttempt {
   id         String  @db.Uuid
   prospectId String  @map("prospect_id") @db.Uuid
-  /// Redundante: se deduce del prospecto. Existe para que las dos FK compuestas
-  /// impidan citar el contacto de OTRO hotel (restriccion 6).
+  /// Redundante: existe para que las FK compuestas impidan citar el contacto de
+  /// otro hotel.
   hotelId    String  @map("hotel_id") @db.Uuid
-  /// Opcional: una visita en frio puede no encontrar a nadie.
+  /// Opcional: una visita en frío puede no encontrar a nadie.
   hotelContactId String? @map("hotel_contact_id") @db.Uuid
 
-  /// Listas cerradas con CHECK, no catalogos: no hay pantalla donde el negocio
-  /// agregue un canal ni un resultado (restriccion 9).
+  /// Listas cerradas con CHECK: no hay pantalla donde el negocio agregue un
+  /// canal ni un resultado.
   attemptType String @map("attempt_type") @db.Text
   outcome     String @db.Text
 
@@ -568,17 +524,15 @@ model ContactAttempt {
   @@schema("commercial")
 }
 
-/// La Propuesta Personalizada. Se elabora y envia en GREEN (RR-V-09) y se
-/// ajusta desde BROWN: una fila por version, para no perder lo ofrecido.
+/// La Propuesta Personalizada. Se envía en GREEN (RR-V-09) y se ajusta desde
+/// BROWN: una fila por versión, para no perder lo ofrecido.
 model Proposal {
   id           String  @db.Uuid
   prospectId   String  @map("prospect_id") @db.Uuid
   version      Int
   servicesNote String? @map("services_note") @db.Text
 
-  /// Tarifas TENTATIVAS y globales. No pagan ni facturan nada: las que cuentan
-  /// son las del Contrato. Cuando el negocio cotice por posicion, se agrega
-  /// proposal_rate sin tocar esta tabla.
+  /// Tentativas y globales: no pagan ni facturan nada, eso lo hace el Contrato.
   payRate  Decimal? @map("pay_rate") @db.Decimal(10, 4)
   billRate Decimal? @map("bill_rate") @db.Decimal(10, 4)
 
@@ -598,9 +552,8 @@ model Proposal {
   @@schema("commercial")
 }
 
-/// Tabla puente N:M CON atributo. Es TERRITORIO, no propiedad del prospecto:
-/// esa vive en prospect.owner_user_id. Un BD cubre varias zonas y una zona
-/// puede tener varios BD.
+/// Territorio, no propiedad del prospecto —esa vive en prospect.owner_user_id.
+/// Un BD cubre varias zonas y una zona puede tener varios BD.
 model UserZone {
   userId     String   @map("user_id") @db.Uuid
   zoneId     String   @map("zone_id") @db.Uuid
@@ -616,17 +569,14 @@ model UserZone {
 }
 
 // ============================================================================
-// catalogs — los tres que vuelven, ahora que la Posicion solicitada los usa.
-// Se habian quitado en `quita_catalogos_fuera_del_esquema` por no tener
-// consumidor. Fuente: Core/Catalogos/ del vault.
+// catalogs — los tres que usa la Posición solicitada.
 // ============================================================================
 
-/// Housekeeper, Houseman, Chef… Agrupada por departamento del hotel.
-/// La lista NO es exhaustiva: el negocio agrega posiciones sin avisar, y por eso
-/// es tabla y no un CHECK (Estandares de BD seccion 5).
+/// Housekeeper, Houseman, Chef… agrupados por departamento. Es tabla y no CHECK
+/// porque el negocio agrega posiciones sin avisar (Estándares de BD §5).
 ///
-/// OJO: no confundir con demand.position. Esta es el CATALOGO de puestos; la
-/// otra es una posicion SOLICITADA en una requisicion.
+/// No confundir con demand.position: esta es el catálogo de puestos, la otra es
+/// una posición solicitada en una requisición.
 model CatalogPosition {
   id                String @db.Uuid
   hotelDepartmentId String @map("hotel_department_id") @db.Uuid
@@ -663,7 +613,7 @@ model HiringModality {
   @@schema("catalogs")
 }
 
-/// Basico · Intermedio · Avanzado · Conversacional.
+/// Básico · Intermedio · Avanzado · Conversacional.
 /// displayOrder permite preguntar "nivel mayor o igual a Intermedio".
 model EnglishLevel {
   id           String @db.Uuid
@@ -684,11 +634,10 @@ model EnglishLevel {
 
 // ============================================================================
 // demand — la Requisicion, sus Posiciones y el Slot.
-// Fuente: Hotel/Demanda - Modelo de Datos.drawio
 // ============================================================================
 
-/// La cabecera de la requisicion. Los reclutadores NO estan aqui: son varios a
-/// la vez y viven en coverage.participation (RR-15).
+/// La cabecera. Los reclutadores no están aquí: son varios a la vez y viven en
+/// coverage.participation (RR-15).
 model Requisition {
   id     String @db.Uuid
   /// AAAAMMDDHHMM + homoclave de 2 caracteres.
@@ -696,30 +645,28 @@ model Requisition {
 
   hotelId String @map("hotel_id") @db.Uuid
 
-  /// Semaforo de Requisicion: Verde manzana · Verde · Amarillo · Azul claro ·
-  /// Rojo · Morado. statusLightId es redundante a proposito: sostiene la FK
-  /// compuesta que impide tomar un estado de otro semaforo.
+  /// Semáforo de Requisición: Verde manzana · Verde · Amarillo · Azul claro ·
+  /// Rojo · Morado. El code es redundante y sostiene la FK compuesta.
   statusLightStateId String @map("status_light_state_id") @db.Uuid
   statusLightCode    String @map("status_light_code") @db.Text
 
-  /// El GH responsable del departamento. Puede NO ser quien autoriza: un Manager
-  /// General puede autorizar la requisicion de un departamento cuyo GH es otro.
-  /// Pendiente de confirmar con el negocio.
+  /// El GH del departamento, que puede no ser quien autoriza.
+  /// PENDIENTE: confirmar con el negocio.
   areaManagerUserId String? @map("area_manager_user_id") @db.Uuid
 
   authorizedBy String?   @map("authorized_by") @db.Uuid
   authorizedAt DateTime? @map("authorized_at") @db.Timestamptz(6)
 
-  /// El Inspector de la zona del hotel, asignado automaticamente (RR-13).
+  /// El Inspector de la zona del hotel, asignado automáticamente (RR-13).
   inspectorId String? @map("inspector_id") @db.Uuid
 
-  /// Borrado logico. El estado Morado del semaforo lo exige: una fila borrada
-  /// fisicamente no puede tener un estado.
+  /// Borrado lógico: el estado Morado lo exige, una fila borrada de verdad no
+  /// puede tener estado.
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
-  /// El Supervisor que la creo.
+  /// El Supervisor que la creó.
   createdBy String?   @map("created_by") @db.Uuid
   updatedBy String?   @map("updated_by") @db.Uuid
 
@@ -735,6 +682,8 @@ model Requisition {
   history   RequisitionStateHistory[]
   participations Participation[]
 
+  timesheets Timesheet[]
+
   @@id([id])
   @@index([hotelId, statusLightStateId], map: "ix_requisition_hotel_state")
   @@index([inspectorId], map: "ix_requisition_inspector")
@@ -742,37 +691,35 @@ model Requisition {
   @@schema("demand")
 }
 
-/// Una posicion solicitada dentro de la requisicion. Carga DOS semaforos: el de
-/// Posiciones (cobertura) y el de Urgencia.
+/// Una posición solicitada. Carga dos semáforos: Cobertura y Urgencia.
 model Position {
   id            String @db.Uuid
   requisitionId String @map("requisition_id") @db.Uuid
-  /// El renglon dentro de la requisicion, como una partida de factura.
+  /// El renglón dentro de la requisición, como una partida de factura.
   lineNumber    Int    @map("line_number")
 
   catalogPositionId String  @map("catalog_position_id") @db.Uuid
   hiringModalityId  String  @map("hiring_modality_id") @db.Uuid
-  /// Es PREFERENCIA del hotel, no requisito: por eso es opcional.
+  /// Preferencia del hotel, no requisito: por eso es opcional.
   englishLevelId    String? @map("english_level_id") @db.Uuid
-  /// El departamento de la posicion SOLICITADA. No se deriva del catalogo: el
-  /// hotel puede pedir un Housekeeper para Alimentos.
+  /// El departamento de la posición solicitada, no el del catálogo: el hotel
+  /// puede pedir un Housekeeper para Alimentos.
   hotelDepartmentId String  @map("hotel_department_id") @db.Uuid
 
   quantity Int
-  /// Sin fecha de fin a proposito: la posicion termina cuando el Manager de Area
-  /// manda al colaborador a descansar (Rosa - Stand-by).
+  /// Sin fecha de fin: la posición termina cuando el Manager de Área manda al
+  /// colaborador a descansar (Rosa · Stand-by).
   startDate DateTime @map("start_date") @db.Date
-  /// Solo la hora de entrada. La duracion del turno se decide al disenar
-  /// operations: es el Schedule quien la necesita.
+  /// Solo la entrada. La duración del turno la define el Schedule, en operations.
   startTime DateTime? @map("start_time") @db.Time(0)
   notes     String?   @db.Text
 
-  /// Semaforo de Posiciones: Dorado · Naranja · Verde · Amarillo · Rojo · Morado.
+  /// Semáforo de Posiciones: Dorado · Naranja · Verde · Amarillo · Rojo · Morado.
   /// Derivado de contar slots ocupados; se guarda porque el tablero lo filtra.
   coverageStateId String @map("coverage_state_id") @db.Uuid
   coverageLightCode String @map("coverage_light_code") @db.Text
 
-  /// Semaforo de Urgencia: Rojo (<72h) · Amarillo (72-120h) · Verde fuerte (>120h).
+  /// Semáforo de Urgencia: Rojo (<72h) · Amarillo (72-120h) · Verde (>120h).
   /// Derivado de authorized_at contra start_date (RR-H-05); lo recalcula un job.
   urgencyStateId String? @map("urgency_state_id") @db.Uuid
   urgencyLightCode String? @map("urgency_light_code") @db.Text
@@ -798,20 +745,19 @@ model Position {
   @@schema("demand")
 }
 
-/// LA UNIDAD DE BLOQUEO. Una fila por cada persona solicitada: quantity = 3
-/// genera 3 slots. Es lo que permite cumplir RR-15 sin Redis — se bloquea la
-/// fila del slot, no la requisicion (D-02).
+/// La unidad de bloqueo: una fila por persona solicitada, quantity = 3 son 3
+/// slots. Es lo que cumple RR-15 sin Redis — se bloquea el slot, no la
+/// requisición (D-02).
 ///
-/// Sin deletedAt a proposito: si quantity baja, el slot libre se borra
-/// fisicamente y el ocupado no se puede borrar (FK de coverage.assignment).
+/// Sin deletedAt: si quantity baja, el slot libre se borra de verdad, y el
+/// ocupado no se puede borrar (FK de coverage.assignment).
 model Slot {
   id         String @db.Uuid
   positionId String @map("position_id") @db.Uuid
-  /// El enesimo slot de su posicion. El ORDER BY del Self-Pick lo usa para que
-  /// se ocupen en orden determinista.
+  /// El enésimo slot de su posición. El Self-Pick ordena por aquí para ocuparlos
+  /// en orden determinista.
   ordinal    Int
-  /// Lista cerrada y tecnica: el negocio no agrega estados de ocupacion.
-  /// Va como CHECK, no como catalogo (seccion 5).
+  /// Lista cerrada y técnica: va como CHECK, no como catálogo (§5).
   status     String @default("free") @db.Text
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
@@ -826,18 +772,16 @@ model Slot {
   @@schema("demand")
 }
 
-/// El timeline inmutable de la cabecera. La nota de Requisicion pide un
-/// "timeline cronologico inmutable con actor y timestamp". Es D-14 aplicado.
-/// Append-only: sin updated_at ni deleted_at (Estandares de BD seccion 4).
+/// El timeline inmutable de la cabecera (D-14). Append-only: sin updated_at ni
+/// deleted_at (Estándares de BD §4).
 model RequisitionStateHistory {
   id            String   @db.Uuid
   requisitionId String   @map("requisition_id") @db.Uuid
-  /// Nulo en el primero: la requisicion nace en un estado, no viene de otro.
+  /// Nulo en el primero: la requisición nace en un estado, no viene de otro.
   fromStateId   String?  @map("from_state_id") @db.Uuid
   toStateId     String   @map("to_state_id") @db.Uuid
-  /// Fijado a REQUISITION por CHECK. Antes estas dos FK eran SIMPLES, asi que esta
-  /// tabla ni siquiera impedia pares mal formados: podia registrar una
-  /// transicion entre estados de dos semaforos distintos.
+  /// Fijado a REQUISITION por CHECK, para que las dos FK sean compuestas y no
+  /// puedan registrar una transición entre semáforos distintos.
   statusLightCode String @map("status_light_code") @db.Text
   reasonId      String?  @map("reason_id") @db.Uuid
   userId        String   @map("user_id") @db.Uuid
@@ -858,38 +802,35 @@ model RequisitionStateHistory {
 }
 // ============================================================================
 // journal — la bitácora inmutable. RR-16.
-// Fuente: _Globales/Journal - Modelo de Datos.drawio
 //
-// OJO: esta tabla está PARTICIONADA POR MES, y Prisma no expresa particionado.
-// El `PARTITION BY RANGE` y las particiones se crean en SQL a mano dentro de la
-// migración. El modelo existe aquí para que `migrate diff` la vea y no la
-// intente borrar — el particionado le es invisible.
+// Está PARTICIONADA POR MES y Prisma no expresa particionado: el PARTITION BY
+// RANGE se crea en SQL dentro de la migración. El modelo existe aquí solo para
+// que `migrate diff` la vea y no la intente borrar.
 // ============================================================================
 
-/// Append-only. Sin updated_at, updated_by ni deleted_at: es la excepción de la
-/// sección 4 de Estándares de Base de Datos. occurred_at hace de created_at,
-/// porque en una tabla append-only son el mismo instante.
+/// Append-only. Sin updated_at, updated_by ni deleted_at — la excepción de
+/// Estándares de BD §4. occurred_at hace de created_at: son el mismo instante.
 model JournalEntry {
   id String @db.Uuid
 
-  /// Vínculo POLIMÓRFICO, sin FK a propósito: con una columna por tabla serían
-  /// 23 nulables, y con ON DELETE CASCADE borrar una fila borraría su propia
-  /// auditoría. El costo asumido es que nada valida que entity_id exista.
+  /// Vínculo polimórfico, sin FK: con una columna por tabla serían 23 nulables,
+  /// y un ON DELETE CASCADE borraría la propia auditoría. El costo es que nada
+  /// valida que entity_id exista.
   entityType String @map("entity_type") @db.Text
   entityId   String @map("entity_id") @db.Uuid
 
-  /// Lista ABIERTA, va como text: TOOK, JOINED, LEFT, STATUS_CHANGED,
-  /// ASSIGNED_WORKER, REASSIGNED. Un CHECK obligaria a una migracion por evento.
+  /// Lista abierta (TOOK, JOINED, LEFT, STATUS_CHANGED…): un CHECK obligaría a
+  /// una migración por evento.
   eventType String @map("event_type") @db.Text
 
-  /// La unica FK del journal: quien actuo si se valida.
+  /// La única FK del journal.
   actorUserId String? @map("actor_user_id") @db.Uuid
   actorRole   String? @map("actor_role") @db.Text
 
-  /// Solo para el payload del journal (seccion 3). NO se indexa.
+  /// Solo payload (§3). No se indexa.
   payload Json? @db.JsonB
 
-  /// La llave de particion. Postgres exige que este en la PK.
+  /// La llave de partición. Postgres exige que esté en la PK.
   occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
 
   actor User? @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
@@ -905,55 +846,49 @@ model JournalEntry {
 // ============================================================================
 // personal — quien es la persona
 //
-// Esquema propio y no parte de coverage, por PERMISOS: el expediente lleva SSN e
-// ITIN, que necesitan cifrado de campo con la llave en Secret Manager. Un esquema
-// aparte es un solo GRANT en vez de permisos columna por columna. Y el criterio
-// del corte: la persona sobrevive a todas sus asignaciones.
+// Esquema propio y no parte de coverage por PERMISOS: el expediente lleva SSN e
+// ITIN cifrados, y un esquema aparte es un solo GRANT en vez de permisos columna
+// por columna. El criterio del corte: la persona sobrevive a sus asignaciones.
 // ============================================================================
 
 /// El Colaborador. La entidad central del sistema.
 ///
-/// Casi todo es nulable, y no es descuido: los datos llegan en TRES fases. La
-/// Reclutadora captura la Fase 1 en la entrevista, y el propio colaborador llena
-/// las Fases 2 y 3 despues, desde la app. Entre una y otra la fila existe a
-/// medias — y eso ES el estado Blanco. "Obligatorio" en 10 - Validaciones es
-/// regla del FORMULARIO, no de la columna; la del negocio es el guard de la
-/// transicion Blanco -> Verde fuerte, que lee is_profile_complete.
+/// Casi todo es nulable porque los datos llegan en TRES fases: la Reclutadora
+/// captura la Fase 1 en la entrevista y el colaborador llena las otras dos desde
+/// la app. Una fila a medias ES el estado Blanco. Lo "obligatorio" es regla del
+/// formulario; la del negocio es el guard de Blanco -> Verde fuerte.
 model Worker {
   id String @db.Uuid
-  /// La cuenta con la que entra a la app. Nulable porque la Reclutadora puede
-  /// capturar la Fase 1 antes de que exista la cuenta de Firebase.
+  /// La cuenta con la que entra a la app. Nulable: la Fase 1 puede capturarse
+  /// antes de que exista la cuenta de Firebase.
   userId String? @unique(map: "ux_worker_user") @map("user_id") @db.Uuid
 
   // --- Fase 1: la captura la Reclutadora en la entrevista ---
   fullName String @map("full_name") @db.Text
-  /// NO se guarda la edad, que Colaborador.md pide: un dato que se vuelve falso
-  /// solo. En 12 meses toda la tabla mentiria. La edad se calcula al leer.
+  /// La edad no se guarda: se vuelve falsa sola. Se calcula al leer.
   birthDate DateTime @map("birth_date") @db.Date
   gender    String   @db.Text
   phone     String   @db.Text
   address   String   @db.Text
-  /// La asigna la Reclutadora. Se guarda en vez de derivarla del domicilio
-  /// porque derivarla exige geocodificar, y el Pool filtra por zona siempre.
+  /// La asigna la Reclutadora. Guardada y no derivada del domicilio porque
+  /// derivarla exige geocodificar, y el Pool filtra por zona siempre.
   zoneId String @map("zone_id") @db.Uuid
 
   // --- Fase 2: la llena el propio Colaborador ---
-  /// Cifrados con pgcrypto, llave en Secret Manager. Los dos OPCIONALES: sin
-  /// ninguno se activa la retencion del 16% (ver has_tax_id).
+  /// Cifrados con pgcrypto, llave en Secret Manager. Ambos opcionales: sin
+  /// ninguno se activa la retención del 16% (ver has_tax_id).
   ///
-  /// PRECIO DEL CIFRADO: 10 - Validaciones exige formato XXX-XX-XXXX para el SSN
-  /// y 9XX-XX-XXXX para el ITIN, y sobre un bytea cifrado no se puede escribir
-  /// ese CHECK. Esas dos validaciones se quedan en Zod: la unica excepcion
-  /// consciente al principio de "la regla vive en la base".
+  /// Su formato (XXX-XX-XXXX y 9XX-XX-XXXX) se valida en Zod y no con un CHECK:
+  /// sobre un bytea cifrado no se puede. Única excepción consciente a "la regla
+  /// vive en la base".
   ssnEncrypted  Bytes? @map("ssn_encrypted")
   itinEncrypted Bytes? @map("itin_encrypted")
 
   catalogPositionId String? @map("catalog_position_id") @db.Uuid
   englishLevelId    String? @map("english_level_id") @db.Uuid
   hiringModalityId  String? @map("hiring_modality_id") @db.Uuid
-  /// Listas CERRADAS de 09 - Campos del Formulario: el negocio no agrega
-  /// opciones de experiencia ni tipos de transporte. Van como text + CHECK, no
-  /// como catalogo (seccion 5).
+  /// Listas cerradas: el negocio no agrega opciones de experiencia ni tipos de
+  /// transporte. Van como text + CHECK, no como catálogo (§5).
   experienceLevel String? @map("experience_level") @db.Text
   transportType   String? @map("transport_type") @db.Text
 
@@ -961,26 +896,22 @@ model Worker {
   emergencyContactName         String? @map("emergency_contact_name") @db.Text
   emergencyContactPhone        String? @map("emergency_contact_phone") @db.Text
   emergencyContactRelationship String? @map("emergency_contact_relationship") @db.Text
-  /// Los 8 grupos mas "No sé". Ojo: "No sé" es un valor legitimo, no un NULL.
+  /// Los 8 grupos más "No sé", que es un valor legítimo y no un NULL.
   bloodType    String? @map("blood_type") @db.Text
   medicalNotes String? @map("medical_notes") @db.Text
 
-  /// Las dos derivadas —has_tax_id y is_profile_complete— NO son columnas de esta
-  /// tabla. Viven en la vista personal.vw_worker, porque Prisma no sabe
-  /// representar columnas GENERATED: declararlas produce un diff que intenta
-  /// SET/DROP DEFAULT sobre una columna generada, y eso Postgres lo rechaza —
-  /// o sea que rompia toda migracion futura. La vista consigue lo mismo (la
-  /// derivacion vive en la base, no puede desincronizarse) sin el drift.
+  /// has_tax_id e is_profile_complete viven en la vista personal.vw_worker, no
+  /// aquí: Prisma no sabe representar columnas GENERATED y su diff intenta un
+  /// SET/DROP DEFAULT que Postgres rechaza, rompiendo toda migración futura.
 
   // --- el semaforo: 12 estados ---
   statusLightStateId String @map("status_light_state_id") @db.Uuid
-  /// Sostiene la FK compuesta que impide tomar un estado de otro semaforo.
-  /// Sin ella, CAFE del Onboarding seria un estado valido de persona.
+  /// Sostiene la FK compuesta. Sin ella, CAFE del Onboarding sería un estado
+  /// válido de persona.
   statusLightCode String @map("status_light_code") @db.Text
 
-  /// Borrado LOGICO siempre. Blacklist.md es explicito: el colaborador no se
-  /// elimina, no aparece en busquedas activas, y el historial se conserva
-  /// integro. El deleted_at es lo que permite las tres cosas a la vez.
+  /// Borrado lógico siempre: el colaborador no se elimina, no aparece en
+  /// búsquedas activas y su historial se conserva íntegro.
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
@@ -999,6 +930,9 @@ model Worker {
   assignments    Assignment[]
   blacklistEntries BlacklistEntry[]
 
+  scheduleEntries ScheduleEntry[]
+  timesheets      Timesheet[]
+
   @@id([id])
   /// El Pool filtra por estado, y siempre sobre los no borrados.
   @@index([statusLightStateId], map: "ix_worker_state")
@@ -1008,13 +942,11 @@ model Worker {
   @@schema("personal")
 }
 
-/// El expediente. La Reclutadora "valida documentos": aqui queda constancia de
-/// que valido y cuando.
+/// El expediente: aquí queda constancia de qué validó la Reclutadora y cuándo.
 model WorkerDocument {
   id           String  @db.Uuid
   workerId     String  @map("worker_id") @db.Uuid
-  /// Lista tecnica: va como CHECK, no como catalogo. El unico que el formulario
-  /// pide hoy es el documento de SSN/ITIN, opcional y de maximo 10 MB.
+  /// Lista técnica, va como CHECK. Hoy el formulario solo pide el de SSN/ITIN.
   documentType String  @map("document_type") @db.Text
   filePath     String  @map("file_path") @db.Text
   verifiedBy   String? @map("verified_by") @db.Uuid
@@ -1031,24 +963,19 @@ model WorkerDocument {
   @@schema("personal")
 }
 
-/// El timeline inmutable de los 12 estados. D-14 aplicado.
-///
-/// Es la unica forma de responder "cuantos dias llevaba en Cafe" o "quien lo
-/// mando a Rosa". Y es lo que lee el servicio para resolver las transiciones de
-/// destino variable: Morado -> estado previo y Cafe -> estado previo.
-///
-/// Append-only: sin updated_at y sin deleted_at, a proposito. Una fila con
-/// updated_at significaria que alguien puede cambiar lo que ya ocurrio.
+/// El timeline inmutable de los 12 estados (D-14). Contesta "cuántos días
+/// llevaba en Café" y resuelve las transiciones de destino variable, que salen
+/// de aquí. Append-only: sin updated_at ni deleted_at.
 model WorkerStateHistory {
   id       String  @db.Uuid
   workerId String  @map("worker_id") @db.Uuid
-  /// NULO en el primer renglon: el colaborador nace en Blanco, sin origen.
+  /// NULO en el primer renglón: el colaborador nace en Blanco, sin origen.
   fromStateId String? @map("from_state_id") @db.Uuid
   toStateId   String  @map("to_state_id") @db.Uuid
   statusLightCode String @map("status_light_code") @db.Text
   reasonId    String? @map("reason_id") @db.Uuid
-  /// NULO cuando lo movio el sistema: la progresion por dias y el ponche no
-  /// tienen persona detras.
+  /// NULO cuando lo movió el sistema: la progresión por días y el ponche no
+  /// tienen persona detrás.
   userId     String?  @map("user_id") @db.Uuid
   occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
 
@@ -1070,22 +997,20 @@ model WorkerStateHistory {
 
 /// El Colaborador ocupando un slot.
 ///
-/// RR-05 NO se hace cumplir aqui. Se preciso el 2026-08-12 que el colaborador SI
-/// puede estar en dos hoteles el mismo dia si son horas distintas, y validity es
-/// un daterange: solo ve DIAS. La restriccion de exclusion por HORAS vive en
-/// operations, sobre el turno del dia, con un tstzrange que tiene fecha Y hora
-/// reales — asi sale gratis el turno nocturno, que cruza medianoche.
+/// RR-05 NO se hace cumplir aquí: el colaborador sí puede estar en dos hoteles
+/// el mismo día a horas distintas, y validity es un daterange que solo ve días.
+/// La exclusión por HORAS vive en operations, con un tstzrange — así el turno
+/// nocturno que cruza medianoche sale gratis.
 ///
-/// Lo que la base SI impide hoy es que dos colaboradores tomen el mismo slot.
+/// Lo que esta tabla sí impide es que dos colaboradores tomen el mismo slot.
 model Assignment {
   id       String @db.Uuid
   slotId   String @map("slot_id") @db.Uuid
   workerId String @map("worker_id") @db.Uuid
-  /// Lista cerrada y tecnica: text + CHECK.
+  /// Lista cerrada y técnica: text + CHECK.
   type String @db.Text
-  /// El rango de dias. El TEMPORAL lleva fin —el vault dice que se define la
-  /// duracion al asignar y que el estado se cierra solo al vencer—; el FIJO no,
-  /// porque termina cuando el hotel manda al colaborador a descansar (Rosa).
+  /// El rango de días. El TEMPORAL lleva fin y se cierra solo al vencer; el FIJO
+  /// no, porque termina cuando el hotel manda a descansar al colaborador (Rosa).
   validity   Unsupported("daterange")
   status     String  @default("active") @db.Text
   assignedBy String  @map("assigned_by") @db.Uuid
@@ -1098,6 +1023,8 @@ model Assignment {
   worker         Worker @relation(fields: [workerId], references: [id], onDelete: Restrict)
   assignedByUser User   @relation(fields: [assignedBy], references: [id], onDelete: Restrict)
 
+  scheduleEntries ScheduleEntry[]
+
   @@id([id])
   @@index([workerId], map: "ix_assignment_worker")
   @@index([slotId], map: "ix_assignment_slot")
@@ -1105,11 +1032,8 @@ model Assignment {
   @@schema("coverage")
 }
 
-/// El Self-Pick — RR-15. Varias reclutadoras sobre la misma requisicion.
-///
-/// Por esto los reclutadores NO estan en la cabecera de la requisicion: son
-/// VARIOS a la vez y no hay dueno unico. Ojo: esta tabla habla de la Reclutadora,
-/// no del Colaborador.
+/// El Self-Pick (RR-15): varias reclutadoras sobre la misma requisición, que es
+/// por lo que no están en la cabecera. Habla de la Reclutadora, no del Colaborador.
 model Participation {
   id            String    @db.Uuid
   requisitionId String    @map("requisition_id") @db.Uuid
@@ -1127,43 +1051,28 @@ model Participation {
   @@schema("coverage")
 }
 
-/// El veto, con su evidencia.
-///
-/// Por que no basta el estado Negro del semaforo: Blacklist.md exige MOTIVO Y
-/// EVIDENCIA, y la evidencia es un ARCHIVO que no cabe en un reason_id de
-/// catalogo.
-///
-/// Negro es PERMANENTE — no hay rehabilitacion ni apelacion. Eso no se programa:
-/// simplemente no se siembra ninguna transicion que salga de Negro, y el servicio
-/// devuelve 409 porque la transicion no existe.
 /// El veto, con su evidencia — y su historial.
 ///
-/// Por que no basta el estado Negro del semaforo: Blacklist.md exige MOTIVO Y
-/// EVIDENCIA, y la evidencia es un ARCHIVO que no cabe en un reason_id de
-/// catalogo.
+/// No basta el estado Negro del semáforo porque el veto exige motivo Y
+/// evidencia, y la evidencia es un archivo que no cabe en un reason_id.
 ///
-/// Negro DEJO DE SER PERMANENTE el 2026-08-13, por decision del usuario. Antes el
-/// documento decia "no existe proceso de rehabilitacion ni instancia de
-/// apelacion", y sobre eso se habia disenado worker_id como UNIQUE simple. Ahora
-/// los perfiles de administrador pueden levantar el veto y el colaborador regresa
-/// a Blanco, asi que esta tabla es HISTORIAL: la misma persona puede entrar,
-/// salir y volver a entrar.
+/// Negro es REVERSIBLE: un administrador puede levantar el veto y el colaborador
+/// regresa a Blanco. Por eso worker_id no es UNIQUE y esta tabla es historial —
+/// la misma persona puede entrar, salir y volver a entrar.
 model BlacklistEntry {
   id       String @db.Uuid
   workerId String @map("worker_id") @db.Uuid
-  /// Los TRES caminos que lista Blacklist.md: manual (falta grave), absences
-  /// (3 inasistencias, automatico) y dispute (el Inspector resolvio a favor del
-  /// hotel). Es lo que decide cuando exigir evidencia.
+  /// Los tres caminos: manual (falta grave), absences (3 inasistencias) y
+  /// dispute (el Inspector resolvió a favor del hotel). Decide si exigir evidencia.
   source String @db.Text
   reason String @db.Text
-  /// Obligatorio solo en el manual: el automatico y el de disputa no traen
-  /// archivo, su respaldo es el historial.
+  /// Obligatorio solo en el manual: los otros dos se respaldan con el historial.
   evidencePath String? @map("evidence_path") @db.Text
   enteredBy    String  @map("entered_by") @db.Uuid
   occurredAt   DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
 
-  /// El levantamiento. Los tres van juntos o no van: levantar un veto es la
-  /// accion que mas necesita quedar atribuida, asi que un CHECK lo obliga.
+  /// Los tres van juntos o no van, y un CHECK lo obliga: levantar un veto es lo
+  /// que más necesita quedar atribuido.
   liftedAt   DateTime? @map("lifted_at") @db.Timestamptz(6)
   liftedBy   String?   @map("lifted_by") @db.Uuid
   liftReason String?   @map("lift_reason") @db.Text
@@ -1172,11 +1081,229 @@ model BlacklistEntry {
   enteredByUser User   @relation("blacklistEnteredBy", fields: [enteredBy], references: [id], onDelete: Restrict)
   liftedByUser  User?  @relation("blacklistLiftedBy", fields: [liftedBy], references: [id], onDelete: Restrict)
 
-  /// El unico que impide DOS vetos vigentes a la vez es PARCIAL
-  /// (WHERE lifted_at IS NULL) y vive fuera del datamodel: Prisma no sabe
-  /// declarar indices parciales. Se llama ux_blacklist_active.
+  /// El índice que impide dos vetos vigentes a la vez es PARCIAL
+  /// (WHERE lifted_at IS NULL) y vive fuera del datamodel, porque Prisma no sabe
+  /// declararlos. Se llama ux_blacklist_active.
   @@id([id])
   @@index([workerId, occurredAt(sort: Desc)], map: "ix_blacklist_worker")
   @@map("blacklist_entry")
   @@schema("coverage")
+}
+
+// ============================================================================
+// operations — el Schedule, el Timesheet y el ponche
+//
+// Aqui aterrizan las tres reglas que los esquemas anteriores dejaron esperando:
+// RR-05 (el solape de horas), el calculo del overtime, y el contador de
+// inasistencias que dispara el Blacklist automatico.
+// ============================================================================
+
+/// La semana operativa de un hotel.
+///
+/// El inicio y el fin NO son fijos ni calculables: los define el Contrato de cada
+/// hotel, asi que se guardan por semana en vez de derivarse.
+model Schedule {
+  id        String   @db.Uuid
+  hotelId   String   @map("hotel_id") @db.Uuid
+  weekStart DateTime @map("week_start") @db.Date
+  weekEnd   DateTime @map("week_end") @db.Date
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+  createdBy String    @map("created_by") @db.Uuid
+
+  hotel         Hotel @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+  createdByUser User  @relation("scheduleCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+
+  entries    ScheduleEntry[]
+  timesheets Timesheet[]
+
+  @@id([id])
+  @@unique([hotelId, weekStart], map: "ux_schedule_hotel_week")
+  @@map("schedule")
+  @@schema("operations")
+}
+
+/// El turno PLANEADO de un dia.
+///
+/// AQUI VIVE RR-05. La restriccion de exclusion que no cabia en
+/// coverage.assignment vive aqui porque esta es la primera tabla con HORAS: un
+/// daterange solo ve dias, y la regla es que el colaborador SI puede estar en dos
+/// hoteles el mismo dia mientras los turnos no se solapen.
+///
+/// Va sobre lo PLANEADO y no sobre los ponches porque el choque hay que impedirlo
+/// al asignar, no descubrirlo cuando el colaborador ya se presento.
+///
+/// Y sin esta tabla no habria forma de distinguir una FALTA de un DESCANSO: la
+/// semana es 5 de trabajo + 2 de descanso, y el vault no dice cuales 2.
+model ScheduleEntry {
+  id           String @db.Uuid
+  scheduleId   String @map("schedule_id") @db.Uuid
+  assignmentId String @map("assignment_id") @db.Uuid
+  /// Desnormalizado desde assignment. Un EXCLUDE necesita las dos columnas EN LA
+  /// MISMA FILA y no puede hacer JOIN: sin esta columna, RR-05 no se puede escribir.
+  workerId String @map("worker_id") @db.Uuid
+
+  workDate DateTime @map("work_date") @db.Date
+  /// Inicio y fin del turno en un solo campo, con fecha Y hora. Que sea un rango
+  /// —y no dos columnas— es lo que permite que el motor compare filas entre si.
+  /// De paso resuelve el turno nocturno, que cruza medianoche.
+  shiftRange Unsupported("tstzrange") @map("shift_range")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  schedule   Schedule   @relation(fields: [scheduleId], references: [id], onDelete: Restrict)
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
+  worker     Worker     @relation(fields: [workerId], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@index([scheduleId], map: "ix_schedule_entry_schedule")
+  @@index([workerId, workDate], map: "ix_schedule_entry_worker_date")
+  @@map("schedule_entry")
+  @@schema("operations")
+}
+
+/// La semana de UN colaborador en UNA requisicion.
+///
+/// Se rompe por requisicion y no por hotel: D-10 exige que dos requisiciones del
+/// mismo hotel evaluen su umbral de 40h por separado, sin sumar sus horas.
+///
+/// Sin fecha limite de aprobacion a proposito — el plazo NO vence. No hay
+/// aprobacion automatica ni escalamiento: las horas se quedan esperando.
+model Timesheet {
+  id         String @db.Uuid
+  scheduleId String @map("schedule_id") @db.Uuid
+  workerId   String @map("worker_id") @db.Uuid
+  /// Desnormalizado: se llega por assignment -> slot -> position -> requisition.
+  /// Son tres JOIN y el umbral de 40h se consulta en cada ponche.
+  requisitionId String @map("requisition_id") @db.Uuid
+
+  weekStart DateTime @map("week_start") @db.Date
+  weekEnd   DateTime @map("week_end") @db.Date
+  /// OPEN | PENDING_APPROVAL | APPROVED. Lista tecnica: text + CHECK.
+  status String @default("OPEN") @db.Text
+
+  /// El Manager de Area aprueba TODOS los dias, por eso vive aqui y no en el dia.
+  approvedBy String?   @map("approved_by") @db.Uuid
+  approvedAt DateTime? @map("approved_at") @db.Timestamptz(6)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  schedule       Schedule    @relation(fields: [scheduleId], references: [id], onDelete: Restrict)
+  worker         Worker      @relation(fields: [workerId], references: [id], onDelete: Restrict)
+  requisition    Requisition @relation(fields: [requisitionId], references: [id], onDelete: Restrict)
+  approvedByUser User?       @relation("timesheetApprovedBy", fields: [approvedBy], references: [id], onDelete: Restrict)
+
+  days TimesheetDay[]
+
+  @@id([id])
+  /// Lo que hace que el umbral se evalue por requisicion: sin este unico, dos
+  /// filas para la misma semana partirian el acumulado y nadie llegaria a 40h.
+  @@unique([workerId, weekStart, requisitionId], map: "ux_timesheet_worker_week_req")
+  @@index([scheduleId], map: "ix_timesheet_schedule")
+  @@index([requisitionId], map: "ix_timesheet_requisition")
+  @@map("timesheet")
+  @@schema("operations")
+}
+
+/// Una jornada.
+///
+/// gross_minutes se GUARDA aunque se pueda derivar de los ponches: estos se
+/// pueden corregir con un manual, y el bruto tiene que quedar congelado al
+/// aprobar. Si se derivara, aprobar una nomina y recalcularla darian distinto.
+model TimesheetDay {
+  id          String   @db.Uuid
+  timesheetId String   @map("timesheet_id") @db.Uuid
+  workDate    DateTime @map("work_date") @db.Date
+
+  grossMinutes Int @map("gross_minutes")
+  /// 30, SIEMPRE: haya o no marcas de lunch, y sin importar cuanto duro en
+  /// realidad. El par de lunch alimenta el Indicador de Lunch Extendido
+  /// —supervision interna de Oranje— y NO el pago.
+  lunchDeductionMinutes Int @default(30) @map("lunch_deduction_minutes")
+  /// Lo que excede las 40h semanales de ESA requisicion. Lo calcula el servicio,
+  /// no un CHECK: el overtime es un hecho que hay que registrar y pagar, y un
+  /// CHECK solo sabe rechazar.
+  overtimeMinutes Int @default(0) @map("overtime_minutes")
+
+  /// Habia turno planeado y no hubo ponche de Entrada. Es la fuente del contador
+  /// de 3 inasistencias -> Negro, que el diagrama del Colaborador dejo esperando.
+  isAbsence Boolean @default(false) @map("is_absence")
+
+  /// El Supervisor REVISA por jornada —resuelve anomalos y registra manuales—
+  /// pero NO aprueba. La aprobacion vive en el timesheet.
+  hasAnomaly Boolean   @default(false) @map("has_anomaly")
+  reviewNote String?   @map("review_note") @db.Text
+  reviewedBy String?   @map("reviewed_by") @db.Uuid
+  reviewedAt DateTime? @map("reviewed_at") @db.Timestamptz(6)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  timesheet      Timesheet @relation(fields: [timesheetId], references: [id], onDelete: Restrict)
+  reviewedByUser User?     @relation("timesheetDayReviewedBy", fields: [reviewedBy], references: [id], onDelete: Restrict)
+
+  punchMarks PunchMark[]
+
+  @@id([id])
+  @@unique([timesheetId, workDate], map: "ux_timesheet_day")
+  @@index([workDate], map: "ix_timesheet_day_date")
+  @@map("timesheet_day")
+  @@schema("operations")
+}
+
+/// La evidencia de presencia.
+///
+/// CUATRO marcas por jornada, de las cuales solo las dos de los extremos son
+/// obligatorias. El par de lunch es opcional: si no se poncha, se deducen los 30
+/// minutos igual. Existe para MEDIR, no para calcular el pago.
+///
+/// Append-only: sin updated_at, a proposito. Corregir un ponche es registrar uno
+/// manual, no editar el original.
+model PunchMark {
+  id             String @db.Uuid
+  timesheetDayId String @map("timesheet_day_id") @db.Uuid
+  /// CLOCK_IN | LUNCH_OUT | LUNCH_IN | CLOCK_OUT
+  type String @db.Text
+
+  /// La hora del dispositivo. NULABLE mientras el ponche sea web: hoy no aporta
+  /// nada porque no hay modo offline. Cuando exista la app movil empieza a
+  /// llegar, sin migracion.
+  deviceAt DateTime? @map("device_at") @db.Timestamptz(6)
+  /// La hora en que llego al servidor, y la unica de fiar: el reloj del cliente
+  /// se puede cambiar. En movil, ademas, el desfase entre las dos es lo que el
+  /// Supervisor revisa como anomalo.
+  serverAt DateTime @default(now()) @map("server_at") @db.Timestamptz(6)
+
+  /// La ubicacion. El ponche exige GPS dentro del perimetro; fuera, se bloquea.
+  coordinates Unsupported("geography(Point, 4326)")?
+  /// Lo calcula el SERVIDOR, no el cliente (D-08): un dispositivo puede mentir
+  /// sobre su ubicacion. Se GUARDA en vez de calcularse al vuelo porque la
+  /// geocerca del hotel puede cambiar, y el ponche tiene que conservar el
+  /// veredicto que se dio en su momento.
+  insideGeofence Boolean? @map("inside_geofence")
+  /// Solo en Entrada y Salida. Las marcas de lunch no la llevan.
+  photoPath String? @map("photo_path") @db.Text
+
+  /// La valvula de escape: si el GPS falla dentro de la propiedad, el Supervisor
+  /// lo registra y el Manager de Area lo aprueba. Un manual no tiene GPS ni foto
+  /// que lo respalde, solo la palabra del Supervisor — por eso los tres campos
+  /// van juntos o no van.
+  isManual     Boolean @default(false) @map("is_manual")
+  registeredBy String? @map("registered_by") @db.Uuid
+  manualReason String? @map("manual_reason") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  timesheetDay     TimesheetDay @relation(fields: [timesheetDayId], references: [id], onDelete: Restrict)
+  registeredByUser User?        @relation("punchRegisteredBy", fields: [registeredBy], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  /// Una sola marca de cada tipo por jornada: "ponche duplicado en la misma
+  /// jornada, el sistema bloquea". Corregir es registrar un MANUAL, no otra igual.
+  @@unique([timesheetDayId, type], map: "ux_punch_day_type")
+  @@map("punch_mark")
+  @@schema("operations")
 }

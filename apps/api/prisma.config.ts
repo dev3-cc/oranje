@@ -2,23 +2,15 @@ import 'dotenv/config'
 import { defineConfig } from 'prisma/config'
 
 /**
- * Configuración de Prisma 7. La URL de conexión salió del schema y vive aquí.
- *
- * Usa MIGRATE_DATABASE_URL a propósito: las migraciones y el seed corren como
- * `oranje_dev`, que es dueño de los esquemas y las tablas. La aplicación se
- * conecta con `DATABASE_URL` como `app_user`, que solo tiene DML — y ni UPDATE
- * ni DELETE sobre el journal (RR-16).
+ * Configuración de Prisma 7. Usa MIGRATE_DATABASE_URL porque migraciones y seed
+ * corren como dueño de los esquemas; la app se conecta con DATABASE_URL como
+ * `app_user`, que solo tiene DML y ni UPDATE ni DELETE sobre el journal (RR-16).
  */
 
 /**
- * `prisma generate` NO se conecta a nada, pero Prisma evalúa la URL al cargar
- * la configuración. Con el helper `env()` eso hace fallar cualquier
- * `pnpm install` sin `.env` —el CI, el build de la imagen, un clon recién
- * hecho— por una variable que ese comando no iba a usar.
- *
- * El marcador solo sobrevive hasta que algo intente conectarse: `migrate` y
- * `seed` fallan de inmediato contra un host que no existe, y el mensaje dice
- * cuál es la variable que falta.
+ * Marcador para que `prisma generate` no exija la variable: no se conecta a
+ * nada, pero Prisma evalúa la URL al cargar la config, y con `env()` cualquier
+ * `pnpm install` sin `.env` fallaría. Solo sobrevive hasta que algo se conecte.
  */
 const SIN_CONFIGURAR = 'postgresql://falta:MIGRATE_DATABASE_URL@no-configurado:5432/oranje'
 

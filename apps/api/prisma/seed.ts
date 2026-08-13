@@ -5,40 +5,24 @@ import { PrismaClient } from '@prisma/client'
 import { v7 as uuidv7 } from 'uuid'
 
 /**
- * Seed de catálogos — Fase 3 del Plan de Implementación.
+ * Seed de catálogos. Las reglas del negocio son FILAS, no código: sin esto el
+ * esquema existe y el negocio no funciona. Todo sale del vault.
  *
- * Las reglas del negocio son FILAS, no código: los semáforos se configuran, no
- * se programan. Sin esto el esquema existe y el negocio no funciona.
- *
- * Todo sale del vault. Nada se inventa aquí:
- *   Core/Catálogos/                    los 5 catálogos
- *   Core/Módulos/Semáforos/            los 7 semáforos y sus estados
- *   Arquitecturas/<depto>/01 - Portada.md   los IDs de rol
- *
- * Es IDEMPOTENTE: cada fila se identifica por su `code` y se hace upsert, así
- * que correrlo dos veces no duplica nada.
- *
- * El `id` es uuid v7 generado aquí, no por Postgres: la sección 4 de Estándares
- * de Base de Datos lo exige y `gen_random_uuid()` devuelve v4.
+ * Idempotente: cada fila se identifica por su `code` y se hace upsert.
+ * El `id` es uuid v7 generado aquí porque `gen_random_uuid()` devuelve v4.
  */
 
-// El seed escribe catálogos, así que corre como el migrador. Cae a DATABASE_URL
-// solo para no romper en ambientes donde no se haya separado el usuario.
+// Corre como el migrador. Cae a DATABASE_URL solo para no romper donde el
+// usuario no se haya separado.
 const adapter = new PrismaPg({
   connectionString: process.env['MIGRATE_DATABASE_URL'] ?? process.env['DATABASE_URL'],
 })
 const prisma = new PrismaClient({ adapter })
 
 // ---------------------------------------------------------------------------
-// Roles — Arquitecturas/<depto>/01 - Portada.md
-//
-// Convención de los IDs, la misma que ya usan Hotel y Ventas: el rol OPERATIVO
-// de base es 01 y de ahí hacia arriba. Reclutamiento usaba ROL-01…ROL-05 sin
-// letra de departamento y se unificó a ROL-R-NN.
-//
-// Sistema y Administrador estaban tres veces, uno por departamento. Son
-// transversales, así que quedan como ROL-SYS-01 y ROL-ADM-01: repetirlos
-// obligaría a triplicar sus permisos en role_permission.
+// Roles. El rol operativo de base es 01 y de ahí hacia arriba.
+// Sistema y Administrador son transversales (ROL-SYS-01, ROL-ADM-01): uno por
+// departamento triplicaría sus permisos en role_permission.
 // ---------------------------------------------------------------------------
 const ROLES: Array<{ code: string; name: string; department: string | null }> = [
   { code: 'ROL-H-01', name: 'Supervisor', department: 'Hotel' },
@@ -70,10 +54,8 @@ const ROLES: Array<{ code: string; name: string; department: string | null }> = 
 ]
 
 // ---------------------------------------------------------------------------
-// Catálogos — Core/Catálogos/
-//
-// Dos de ellos advierten "lista no exhaustiva": Posiciones y Zonas. Se siembra
-// SOLO lo documentado; el negocio agrega el resto desde la aplicación.
+// Catálogos. Posiciones y Zonas no son exhaustivas: se siembra lo documentado y
+// el negocio agrega el resto desde la aplicación.
 // ---------------------------------------------------------------------------
 const HOTEL_DEPARTMENTS = [
   { code: 'HOUSEKEEPING', name: 'Housekeeping' },
@@ -114,12 +96,9 @@ const ZONES = [
 ]
 
 // ---------------------------------------------------------------------------
-// Los 7 semáforos y sus estados — Core/Módulos/Semáforos/
-//
-// El `code` va en inglés y el `name` en español (D-11). El color es el que el
-// vault documenta; los hex viven en Convenciones de Diseño, no aquí.
-//
-// is_branch marca los estados que son RAMA y no paso del avance normal.
+// Los 7 semáforos y sus estados. El `code` en inglés y el `name` en español
+// (D-11); los hex viven en Convenciones de Diseño, no aquí.
+// `branch` marca los estados que son rama y no paso del avance normal.
 // ---------------------------------------------------------------------------
 type State = { code: string; color: string; name: string; branch?: boolean }
 type Light = { code: string; name: string; description: string; states: State[] }
@@ -220,19 +199,11 @@ const LIGHTS: Light[] = [
 ]
 
 // ---------------------------------------------------------------------------
-// Transiciones del Semáforo Onboarding — Ventas/Semáforo Onboarding y Base de
-// Datos.drawio, página 3.
+// Transiciones del Semáforo Onboarding.
 //
-// SOLO el Onboarding. Los otros 6 semáforos tienen sus estados documentados
-// pero no qué movimientos son legales: eso es trabajo de negocio.
-//
-// Del vault: los 12 pares y el rol que autoriza cada uno.
-// PROPUESTA del diagrama, no del vault: la columna `reason`. El vault no dice
-// qué transiciones exigen motivo. El criterio aplicado es que lo exige toda
-// transición que cierra o desbloquea un ciclo.
-//
-// Cualquier par que no esté aquí es un 409, no un estado alcanzable: no existe
-// GREEN -> ORANGE ni BROWN -> GREEN.
+// Cualquier par que no esté aquí es un 409, no un estado alcanzable.
+// `reason` no viene del vault: el criterio es que lo exige toda transición que
+// cierra o desbloquea un ciclo.
 // ---------------------------------------------------------------------------
 const ONBOARDING_TRANSITIONS: Array<{
   from: string
@@ -258,18 +229,11 @@ const ONBOARDING_TRANSITIONS: Array<{
 ]
 
 /**
- * Los 4 estados en los que el colaborador TIENE asignación activa.
+ * Los 4 estados en los que el colaborador TIENE asignación activa. Derivado de
+ * `Reglas de Negocio`, que excluye Rosa y Amarillo por no tenerla.
  *
- * No está enunciado así en el vault, se deriva de la línea 322 de `Reglas de
- * Negocio`: «Estados que no permiten ponchado: Rosa (Stand-by) y Amarillo
- * (Disponible voluntario), porque en ninguno de los dos existe asignación
- * activa». Blanco todavía no está validado, y Morado/Rojo/Gris/Negro ya son
- * estados de incidencia.
- *
- * Importa porque las cuatro transiciones de incidencia SOLO pueden salir de
- * aquí: no se puede faltar sin Schedule, el hotel no retira de una posición que
- * no existe, no reporta a quien no trabaja ahí, y el accidente LABORAL ocurre
- * trabajando.
+ * Las cuatro transiciones de incidencia solo pueden salir de aquí: no se falta
+ * sin Schedule, y el accidente laboral ocurre trabajando.
  */
 const WORKER_OPERATIONAL = ['APPLE_GREEN', 'LIGHT_BLUE', 'ORANGE', 'BROWN']
 
@@ -407,30 +371,24 @@ const WORKER_TRANSITIONS: Array<{
 ]
 
 // ---------------------------------------------------------------------------
-// Motivos de cambio de estado — catalogs.status_change_reason
-//
-// 33 transiciones exigen motivo (requires_reason), asi que sin estas filas el
-// servicio devuelve 422 y esos pasos no se pueden dar.
-//
-// NINGUNO se invento: todos salen del vault con cita. Los de Ventas venian con un
-// "etc." al final, asi que la lista es abierta — el negocio agrega los que falten
-// desde la aplicacion, que es justo el criterio de la seccion 5 para que esto sea
-// catalogo y no CHECK.
+// Motivos de cambio de estado. 33 transiciones exigen motivo, así que sin estas
+// filas el servicio devuelve 422 y esos pasos no se pueden dar.
+// La lista es abierta: el negocio agrega los que falten desde la aplicación.
 // ---------------------------------------------------------------------------
 const CHANGE_REASONS: Array<{ light: string; code: string; name: string }> = [
-  // Rosa (Stand-by) — Reglas de Negocio linea 44: "vacaciones, temporada baja"
+  // Rosa · Stand-by
   { light: 'WORKER', code: 'VACATION', name: 'Vacaciones' },
   { light: 'WORKER', code: 'LOW_SEASON', name: 'Temporada baja' },
 
-  // Rojo (Reportado) — Blacklist.md lineas 17-18: las dos causas del reporte
+  // Rojo · Reportado — las dos causas del reporte
   { light: 'WORKER', code: 'ABSENCES', name: 'Inasistencias' },
   { light: 'WORKER', code: 'SERIOUS_MISCONDUCT', name: 'Falta grave en el hotel' },
 
-  // La resolucion del Inspector — Blacklist.md, Proceso de investigacion
+  // La resolución del Inspector
   { light: 'WORKER', code: 'DISPUTE_FOR_HOTEL', name: 'Disputa resuelta a favor del hotel' },
   { light: 'WORKER', code: 'DISPUTE_FOR_WORKER', name: 'Disputa resuelta a favor del colaborador' },
 
-  // Onboarding — Semaforo Onboarding, "Motivos frecuentes"
+  // Onboarding
   { light: 'ONBOARDING', code: 'HOTEL_CLOSED', name: 'Cierre del hotel' },
   { light: 'ONBOARDING', code: 'MANAGEMENT_CHANGE', name: 'Cambio de administración' },
   { light: 'ONBOARDING', code: 'OPERATION_PAUSED', name: 'Pausa temporal de operación' },
@@ -438,13 +396,11 @@ const CHANGE_REASONS: Array<{ light: string; code: string; name: string }> = [
 ]
 
 // ---------------------------------------------------------------------------
-// Transiciones de los otros dos semáforos que las tienen documentadas.
+// Transiciones de Requisición y Calidad.
 //
-// De los 7 semáforos, solo CUATRO necesitan filas aquí. Los otros tres
-// —Posiciones, Urgencia y Cumplimiento del Timesheet— son DERIVADOS: nadie pide
-// pasar a Rojo, se pasa solo cuando la cobertura, las horas restantes o las horas
-// trabajadas cruzan un umbral. Un job los recalcula. `status_light_transition` es
-// para pasos que una PERSONA pide y el sistema autoriza.
+// Solo 4 de los 7 semáforos necesitan filas aquí. Posiciones, Urgencia y
+// Cumplimiento del Timesheet son DERIVADOS —los recalcula un job al cruzar un
+// umbral—, y esta tabla es para pasos que una persona pide.
 // ---------------------------------------------------------------------------
 const OTHER_TRANSITIONS: Array<{
   light: string
@@ -455,8 +411,7 @@ const OTHER_TRANSITIONS: Array<{
   note?: string
 }> = [
   // --- Semáforo de Requisición ---
-  // "Solo el GM o GH pueden autorizar; si lo intenta el SUP, el sistema bloquea
-  // la acción." El Supervisor la crea pero NO la autoriza: por eso no está aquí.
+  // El Supervisor la crea pero NO la autoriza: por eso no está aquí.
   {
     light: 'REQUISITION',
     from: 'APPLE_GREEN',
@@ -474,8 +429,8 @@ const OTHER_TRANSITIONS: Array<{
     reason: false,
     note: 'la toma de la bandeja',
   },
-  // Regresa a Autorizada solo cuando SALE EL ULTIMO participante. No lo decide
-  // una persona: lo deduce el sistema contando participation con left_at nulo.
+  // Regresa a Autorizada cuando sale el ÚLTIMO participante. No lo decide una
+  // persona: lo deduce el sistema contando participation con left_at nulo.
   {
     light: 'REQUISITION',
     from: 'YELLOW',
@@ -502,12 +457,8 @@ const OTHER_TRANSITIONS: Array<{
   },
 
   // --- Indicador de Calidad ---
-  // El rol autorizado es el MANAGER de QA, no el Operador: "El Operador de QA
-  // propone el cambio con base en sus mediciones. El Manager de QA valida y
-  // aprueba el cambio." La transicion se efectua al aprobar.
-  //
-  // Verde es el estado INICIAL cuando QA empieza a supervisar, asi que no lleva
-  // fila: una transicion necesita origen.
+  // Autoriza el MANAGER de QA, no el Operador, que solo propone: la transición
+  // se efectúa al aprobar. Verde es el estado inicial y no lleva fila.
   {
     light: 'QUALITY',
     from: 'GREEN',
@@ -543,21 +494,13 @@ const OTHER_TRANSITIONS: Array<{
 ]
 
 // ---------------------------------------------------------------------------
-// Blacklist: la entrada manual abierta, y la salida.
+// Blacklist: la entrada manual y la salida.
 //
-// ENTRADA. Es el tercer camino a Negro que Blacklist.md lista y que el Semaforo
-// del Colaborador no tenia: la falta grave manual, con motivo Y evidencia
-// obligatorios. Sale de CUALQUIER estado, no solo de los operativos — lo
-// justifica el propio documento, que dice que la lista sirve para "evitar volver
-// a reclutar a alguien vetado CUANDO SE POSTULA": o sea que hasta alguien en
-// Blanco, sin validar, puede quedar vetado. Los tres roles de Reclutamiento
-// pueden hacerlo.
+// ENTRADA: falta grave, con motivo Y evidencia. Sale de CUALQUIER estado, no
+// solo de los operativos — hasta alguien en Blanco puede quedar vetado.
 //
-// SALIDA. Negro dejo de ser permanente el 2026-08-13, por decision del usuario.
-// La autoriza el Administrador y regresa a BLANCO, no a Verde fuerte: al volver,
-// la Reclutadora lo revalida antes de que sea asignable. El camino completo de
-// vuelta es Negro -> Blanco -> Verde fuerte, el mismo patron del Onboarding donde
-// todo lo que reingresa entra por un solo punto.
+// SALIDA: la autoriza el Administrador y regresa a BLANCO, no a Verde fuerte,
+// porque la Reclutadora lo revalida antes de que vuelva a ser asignable.
 // ---------------------------------------------------------------------------
 const WORKER_STATES_ALL = [
   'WHITE',
@@ -588,8 +531,7 @@ const BLACKLIST_TRANSITIONS: Array<{
     reason: true,
     evidence: true,
   })),
-  // La salida. Un solo rol, y no es rehabilitacion automatica: es una accion
-  // administrativa deliberada, con motivo obligatorio.
+  // La salida. Un solo rol y motivo obligatorio: no es automática.
   { from: 'BLACK', to: 'WHITE', roles: ['ROL-ADM-01'], reason: true, evidence: false },
 ]
 
@@ -670,9 +612,8 @@ async function main(): Promise<void> {
         create: {
           id: uuidv7(),
           statusLightId: light.id,
-          // Desnormalizado desde status_light. Es lo que permite FIJAR el semaforo
-          // con un CHECK: contra el uuid no se puede, porque el uuid v7 lo genera
-          // este seed y cambia en cada ambiente.
+          // Desnormalizado para fijar el semáforo con un CHECK: el uuid lo genera
+          // este seed y cambia por ambiente, el code no.
           statusLightCode: light.code,
           code: s.code,
           color: s.color,
@@ -758,10 +699,9 @@ async function main(): Promise<void> {
       const role = await prisma.role.findUniqueOrThrow({ where: { code: roleCode } })
 
       if (toId === null) {
-        // No se puede usar el upsert por llave compuesta: to_state_id va NULL y
-        // Prisma no acepta null en el where de una unique. El índice de la base
-        // sí lo cubre (NULLS NOT DISTINCT), así que la idempotencia se resuelve
-        // buscando primero.
+        // Sin upsert por llave compuesta: to_state_id va NULL y Prisma no acepta
+        // null en el where de una unique. La idempotencia se resuelve buscando
+        // primero; el índice de la base sí lo cubre con NULLS NOT DISTINCT.
         const existing = await prisma.statusLightTransition.findFirst({
           where: { fromStateId: fromId, toStateId: null, authorizedRoleId: role.id },
         })

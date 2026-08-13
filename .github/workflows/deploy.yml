@@ -1,28 +1,25 @@
-# Despliegue del API. La rama se llama como el ambiente al que despliega
-# (Estándares de Desarrollo §1), así que no hay traducción de por medio:
+# Despliegue del API. La rama se llama como su ambiente (§1): staging ->
+# oranje-staging, main -> oranje-prod.
 #
-#   staging -> oranje-staging
-#   main    -> oranje-prod
-#
-# UN SOLO ARTEFACTO: la imagen se construye una vez, en `staging`, y producción
-# reutiliza ESE digest. No se reconstruye — si se reconstruyera, lo que se probó
-# en staging y lo que se pone en producción serían dos binarios distintos.
+# UN SOLO ARTEFACTO: la imagen se construye una vez en `staging` y producción
+# reutiliza ese digest. Reconstruirla haría que lo probado y lo desplegado
+# fueran dos binarios distintos.
 name: Desplegar
 
 on:
   push:
     branches: [staging, main]
 
-# Un despliegue a la vez por ambiente. Sin esto, dos merges seguidos compiten
-# por la misma revisión de Cloud Run
+# Uno a la vez por ambiente: dos merges seguidos competirían por la misma
+# revisión de Cloud Run
 concurrency:
   group: desplegar-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
   contents: read
-  # Lo exige Workload Identity Federation: GitHub firma un token y GCP lo cambia
-  # por credenciales. Así no hay llave de cuenta de servicio guardada como secreto
+  # Workload Identity Federation: GitHub firma un token y GCP lo cambia por
+  # credenciales, así no hay llave de cuenta de servicio guardada como secreto
   id-token: write
 
 jobs:
@@ -63,10 +60,8 @@ jobs:
             --tag "${{ steps.imagen.outputs.ruta }}:${{ github.sha }}" \
             --project "${{ vars.GCP_PROJECT_ID }}"
 
-      # --- main: NO construye, promueve lo que ya se probó ---
-      #
-      # Busca el digest de la imagen del commit que se mergeó a main. Si no
-      # existe, es que nunca pasó por staging y el despliegue se detiene.
+      # --- main: no construye, promueve lo que ya se probó ---
+      # Si el commit no tiene imagen en staging, nunca pasó por ahí y se detiene.
       - name: Promover la imagen probada en staging
         if: github.ref_name == 'main'
         id: promover
@@ -91,9 +86,8 @@ jobs:
             "$REGION-docker.pkg.dev/$DESTINO/$REPOSITORIO/$SERVICIO:${{ github.sha }}" \
             --quiet
 
-      # Las migraciones corren ANTES de la revisión nueva y con el usuario dueño
-      # del esquema, no con el de la aplicación. Expandir y contraer (BD §8) es
-      # lo que hace que el código viejo siga funcionando mientras se despliega
+      # Antes de la revisión nueva y con el usuario dueño del esquema. Expandir y
+      # contraer (BD §8) mantiene vivo al código viejo durante el despliegue
       - name: Migraciones
         run: |
           gcloud run jobs deploy "$SERVICIO-migrate" \
@@ -122,9 +116,8 @@ jobs:
             --max-instances "${{ vars.MAX_INSTANCES }}" \
             --no-allow-unauthenticated
 
-      # Si el contenedor no arranca —falta una variable, la llave no importa— la
-      # validación de entorno lo tumba y este paso falla. Cloud Run mantiene la
-      # revisión anterior sirviendo: el despliegue no deja el servicio caído
+      # Si el contenedor no arranca, la validación de entorno lo tumba y este paso
+      # falla. Cloud Run deja sirviendo la revisión anterior
       - name: Verificar que la revisión quedó sirviendo
         run: |
           gcloud run services describe "$SERVICIO" \
