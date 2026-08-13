@@ -16,9 +16,10 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends openssl ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-ENV PNPM_HOME=/pnpm
-ENV PATH=$PNPM_HOME:$PATH
-RUN corepack enable
+# pnpm se instala con npm, no con corepack: Node 25 lo sacó de la imagen oficial.
+# La version va fijada a mano porque `packageManager` del package.json solo lo
+# lee corepack — si esa cambia, esta linea tiene que cambiar con ella
+RUN npm install --global pnpm@11.20.0
 
 WORKDIR /repo
 COPY . .
