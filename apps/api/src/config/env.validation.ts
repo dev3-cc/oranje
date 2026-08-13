@@ -17,8 +17,23 @@ const envSchema = z.object({
   DATABASE_CONNECT_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
   DATABASE_STATEMENT_TIMEOUT_MS: z.coerce.number().int().positive().default(15_000),
 
+  // Firebase: emisor y audiencia del ID token que llega en el login.
+  // En local es el emulador (http://localhost:9099); en la nube,
+  // https://securetoken.google.com/<project-id>
   AUTH_ISSUER_URL: z.string().url(),
   AUTH_AUDIENCE: z.string().min(1),
+
+  // Nuestro token, el que protege los CRUD. Firebase dice quién eres; este dice
+  // qué puedes hacer. En producción sale de Secret Manager (D-07)
+  JWT_SECRET: z.string().min(32, 'mínimo 32 caracteres'),
+  JWT_ACCESS_TTL_S: z.coerce.number().int().positive().default(900),
+  JWT_REFRESH_TTL_S: z.coerce.number().int().positive().default(604_800),
+
+  // La cookie del refresh viaja solo por HTTPS fuera de local
+  COOKIE_SECURE: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((v) => v === 'true'),
 
   STORAGE_BUCKET: z.string().min(1),
 

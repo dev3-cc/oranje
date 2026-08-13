@@ -330,12 +330,49 @@ model User {
   assignmentsMade     Assignment[]
   participations      Participation[]
   blacklistEntered    BlacklistEntry[]
+  refreshTokens       RefreshToken[]
 
   @@id([id])
   @@index([roleId], map: "ix_user_role")
   @@index([hotelId], map: "ix_user_hotel")
   @@index([reportsToUserId], map: "ix_user_reports_to")
   @@map("user")
+  @@schema("identity")
+}
+
+/// Una sesión viva. El access token es de 15 minutos y no se guarda en ningún
+/// lado; esta tabla existe para poder MATAR una sesión antes de que expire su
+/// refresh, que dura 7 días (Estándares de Desarrollo §6).
+///
+/// Firebase autentica; este token es nuestro y es el que protege los CRUD.
+model RefreshToken {
+  id     String @db.Uuid
+  userId String @map("user_id") @db.Uuid
+
+  /// SHA-256 del token, nunca el token. Si se filtra la tabla, lo que se filtra
+  /// no sirve para entrar.
+  tokenHash String @unique @map("token_hash") @db.Text
+
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(6)
+
+  /// Cada refresh emite uno nuevo y apunta al anterior. Si llega un token ya
+  /// reemplazado, es reuso: alguien tiene una copia y se revoca la cadena.
+  replacedById String? @unique @map("replaced_by_id") @db.Uuid
+
+  /// Para que el usuario reconozca la sesión que va a cerrar.
+  userAgent String? @map("user_agent") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user       User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  replacedBy RefreshToken? @relation("rotacion", fields: [replacedById], references: [id], onDelete: Restrict)
+  replaces   RefreshToken? @relation("rotacion")
+
+  @@id([id])
+  @@index([userId], map: "ix_refresh_token_user")
+  @@index([expiresAt], map: "ix_refresh_token_expires")
+  @@map("refresh_token")
   @@schema("identity")
 }
 

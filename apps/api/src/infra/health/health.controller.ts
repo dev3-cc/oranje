@@ -1,7 +1,10 @@
 import { Controller, Get } from '@nestjs/common'
 
+import { Public } from '../../common/decorators/index.js'
 import { PrismaService } from '../prisma/index.js'
 
+// Público: el probe de Cloud Run no trae token
+@Public()
 @Controller('health')
 export class HealthController {
   constructor(private readonly prisma: PrismaService) {}

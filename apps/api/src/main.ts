@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common'
 import { NestFactory } from '@nestjs/core'
+import cookieParser from 'cookie-parser'
 
 import { AppModule } from './app.module.js'
 import { HttpExceptionFilter } from './common/filters/index.js'
@@ -10,6 +11,9 @@ async function bootstrap(): Promise<void> {
 
   // §4: la versión va en la ruta
   app.setGlobalPrefix('api/v1')
+
+  // El refresh token viaja en cookie httpOnly (§6), no en el body
+  app.use(cookieParser())
 
   // §6: ningún body llega a un controller sin validar
   app.useGlobalPipes(new ZodValidationPipe())

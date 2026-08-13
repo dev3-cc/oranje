@@ -57,6 +57,40 @@ nunca importa de otro `apps/*`. Lo que compartan, sube a `packages/`.
 | `pnpm db:studio`   | Prisma Studio                                       |
 | `pnpm db:generate` | Regenera el cliente de Prisma                       |
 
+## Autenticación
+
+**Firebase dice quién eres; nuestro JWT dice qué puedes hacer.** El cliente hace
+login con Firebase, manda ese ID token una sola vez, y a partir de ahí usa el
+token de Oranje en cada request.
+
+| Endpoint                       | Qué hace                                                     |
+| ------------------------------ | ------------------------------------------------------------ |
+| `POST /api/v1/auth/session`    | Crear sesión. Entra el ID token de Firebase, sale el nuestro |
+| `POST /api/v1/auth/refresh`    | Renovar. Rota el refresh: el anterior queda muerto           |
+| `POST /api/v1/auth/logout`     | Matar esta sesión                                            |
+| `POST /api/v1/auth/logout-all` | Matar todas las sesiones del usuario. Exige token            |
+
+El **access token dura 15 minutos** y viaja en `Authorization: Bearer`. El
+**refresh dura 7 días** y viaja en cookie `httpOnly` — nunca en el body, nunca en
+`localStorage`. De él solo guardamos el SHA-256: si se filtra la tabla, lo
+filtrado no sirve para entrar.
+
+**El guard es global**: una ruta nueva nace protegida. Para abrirla, `@Public()`.
+
+```ts
+@Get()
+list(@CurrentUser() user: AuthenticatedUser) {
+  // user.id es NUESTRO id, no el uid de Firebase
+  // user.hotelId + user.departmentId son el alcance
+}
+```
+
+> El guard valida **identidad**, no permisos. La Matriz (`identity.role_permission`)
+> está sembrada en cero, así que el guard de autorización todavía no existe.
+
+En local no hace falta proyecto de Firebase: con `AUTH_ISSUER_URL` apuntando al
+emulador los ID tokens **no se verifican**. Es seguro solo porque es localhost.
+
 ## Cómo se escribe un endpoint
 
 ```ts
