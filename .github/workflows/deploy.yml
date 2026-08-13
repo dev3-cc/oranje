@@ -57,7 +57,8 @@ jobs:
         if: github.ref_name == 'staging'
         run: |
           gcloud builds submit \
-            --tag "${{ steps.imagen.outputs.ruta }}:${{ github.sha }}" \
+            --config cloudbuild.yaml \
+            --substitutions "_IMAGEN=${{ steps.imagen.outputs.ruta }}:${{ github.sha }}" \
             --project "${{ vars.GCP_PROJECT_ID }}"
 
       # --- main: no construye, promueve lo que ya se probó ---
