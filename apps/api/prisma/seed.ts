@@ -542,6 +542,57 @@ const OTHER_TRANSITIONS: Array<{
   },
 ]
 
+// ---------------------------------------------------------------------------
+// Blacklist: la entrada manual abierta, y la salida.
+//
+// ENTRADA. Es el tercer camino a Negro que Blacklist.md lista y que el Semaforo
+// del Colaborador no tenia: la falta grave manual, con motivo Y evidencia
+// obligatorios. Sale de CUALQUIER estado, no solo de los operativos — lo
+// justifica el propio documento, que dice que la lista sirve para "evitar volver
+// a reclutar a alguien vetado CUANDO SE POSTULA": o sea que hasta alguien en
+// Blanco, sin validar, puede quedar vetado. Los tres roles de Reclutamiento
+// pueden hacerlo.
+//
+// SALIDA. Negro dejo de ser permanente el 2026-08-13, por decision del usuario.
+// La autoriza el Administrador y regresa a BLANCO, no a Verde fuerte: al volver,
+// la Reclutadora lo revalida antes de que sea asignable. El camino completo de
+// vuelta es Negro -> Blanco -> Verde fuerte, el mismo patron del Onboarding donde
+// todo lo que reingresa entra por un solo punto.
+// ---------------------------------------------------------------------------
+const WORKER_STATES_ALL = [
+  'WHITE',
+  'APPLE_GREEN',
+  'LIGHT_BLUE',
+  'ORANGE',
+  'STRONG_GREEN',
+  'YELLOW',
+  'BROWN',
+  'PINK',
+  'PURPLE',
+  'RED',
+  'GRAY',
+]
+
+const BLACKLIST_TRANSITIONS: Array<{
+  from: string
+  to: string
+  roles: string[]
+  reason: boolean
+  evidence: boolean
+}> = [
+  // Desde los 11 estados que no son Negro, por los 3 roles de Reclutamiento.
+  ...WORKER_STATES_ALL.map((from) => ({
+    from,
+    to: 'BLACK',
+    roles: ['ROL-R-01', 'ROL-R-02', 'ROL-R-03'],
+    reason: true,
+    evidence: true,
+  })),
+  // La salida. Un solo rol, y no es rehabilitacion automatica: es una accion
+  // administrativa deliberada, con motivo obligatorio.
+  { from: 'BLACK', to: 'WHITE', roles: ['ROL-ADM-01'], reason: true, evidence: false },
+]
+
 async function main(): Promise<void> {
   const log = (s: string): void => {
     process.stdout.write(s + '\n')
@@ -796,6 +847,38 @@ async function main(): Promise<void> {
   }
   log(`status_light_transition (Requisición y Calidad): ${otherTransitions}`)
 
+  // --- Blacklist: entrada abierta y salida ---
+  let blacklistTransitions = 0
+  for (const t of BLACKLIST_TRANSITIONS) {
+    const from = await workerStateId(t.from)
+    const to = await workerStateId(t.to)
+    for (const roleCode of t.roles) {
+      const role = await prisma.role.findUniqueOrThrow({ where: { code: roleCode } })
+      await prisma.statusLightTransition.upsert({
+        where: {
+          fromStateId_toStateId_authorizedRoleId: {
+            fromStateId: from,
+            toStateId: to,
+            authorizedRoleId: role.id,
+          },
+        },
+        update: { requiresReason: t.reason, requiresEvidence: t.evidence },
+        create: {
+          id: uuidv7(),
+          statusLightId: worker.id,
+          fromStateId: from,
+          toStateId: to,
+          returnsToPrevious: false,
+          authorizedRoleId: role.id,
+          requiresReason: t.reason,
+          requiresEvidence: t.evidence,
+        },
+      })
+      blacklistTransitions++
+    }
+  }
+  log(`status_light_transition (Blacklist): ${blacklistTransitions}`)
+
   log('')
   log('NOTA: 4 de los 7 semáforos tienen transiciones. Los otros tres —Posiciones,')
   log('Urgencia y Cumplimiento del Timesheet— son DERIVADOS: nadie pide pasar a')
@@ -806,11 +889,6 @@ async function main(): Promise<void> {
   log('este modelo no sabe expresar. El vault dice que el Operador de QA propone y')
   log('el Manager valida; aquí solo quedó el Manager, porque la transición se')
   log('efectúa al aprobar. Falta decidir si la propuesta es un estado o una tabla.')
-  log('')
-  log('PENDIENTE 2: el Blacklist manual por falta grave. Blacklist.md dice que')
-  log('cualquier rol de Reclutamiento puede vetar con motivo Y evidencia, pero el')
-  log('Semáforo del Colaborador no lista esa transición y no dice desde qué')
-  log('estados sale. Es el tercer camino a Negro y NO está sembrado.')
 }
 
 main()

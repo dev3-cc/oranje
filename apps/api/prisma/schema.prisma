@@ -329,7 +329,8 @@ model User {
   workerStateChanges  WorkerStateHistory[]
   assignmentsMade     Assignment[]
   participations      Participation[]
-  blacklistEntered    BlacklistEntry[]
+  blacklistEntered    BlacklistEntry[]      @relation("blacklistEnteredBy")
+  blacklistLifted     BlacklistEntry[]      @relation("blacklistLiftedBy")
   refreshTokens       RefreshToken[]
 
   @@id([id])
@@ -996,7 +997,7 @@ model Worker {
   documents      WorkerDocument[]
   stateHistory   WorkerStateHistory[]
   assignments    Assignment[]
-  blacklistEntry BlacklistEntry?
+  blacklistEntries BlacklistEntry[]
 
   @@id([id])
   /// El Pool filtra por estado, y siempre sobre los no borrados.
@@ -1135,10 +1136,21 @@ model Participation {
 /// Negro es PERMANENTE — no hay rehabilitacion ni apelacion. Eso no se programa:
 /// simplemente no se siembra ninguna transicion que salga de Negro, y el servicio
 /// devuelve 409 porque la transicion no existe.
+/// El veto, con su evidencia — y su historial.
+///
+/// Por que no basta el estado Negro del semaforo: Blacklist.md exige MOTIVO Y
+/// EVIDENCIA, y la evidencia es un ARCHIVO que no cabe en un reason_id de
+/// catalogo.
+///
+/// Negro DEJO DE SER PERMANENTE el 2026-08-13, por decision del usuario. Antes el
+/// documento decia "no existe proceso de rehabilitacion ni instancia de
+/// apelacion", y sobre eso se habia disenado worker_id como UNIQUE simple. Ahora
+/// los perfiles de administrador pueden levantar el veto y el colaborador regresa
+/// a Blanco, asi que esta tabla es HISTORIAL: la misma persona puede entrar,
+/// salir y volver a entrar.
 model BlacklistEntry {
   id       String @db.Uuid
-  /// UNICO: un segundo veto no significaria nada.
-  workerId String @unique(map: "ux_blacklist_worker") @map("worker_id") @db.Uuid
+  workerId String @map("worker_id") @db.Uuid
   /// Los TRES caminos que lista Blacklist.md: manual (falta grave), absences
   /// (3 inasistencias, automatico) y dispute (el Inspector resolvio a favor del
   /// hotel). Es lo que decide cuando exigir evidencia.
@@ -1150,10 +1162,21 @@ model BlacklistEntry {
   enteredBy    String  @map("entered_by") @db.Uuid
   occurredAt   DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
 
-  worker        Worker @relation(fields: [workerId], references: [id], onDelete: Restrict)
-  enteredByUser User   @relation(fields: [enteredBy], references: [id], onDelete: Restrict)
+  /// El levantamiento. Los tres van juntos o no van: levantar un veto es la
+  /// accion que mas necesita quedar atribuida, asi que un CHECK lo obliga.
+  liftedAt   DateTime? @map("lifted_at") @db.Timestamptz(6)
+  liftedBy   String?   @map("lifted_by") @db.Uuid
+  liftReason String?   @map("lift_reason") @db.Text
 
+  worker        Worker @relation(fields: [workerId], references: [id], onDelete: Restrict)
+  enteredByUser User   @relation("blacklistEnteredBy", fields: [enteredBy], references: [id], onDelete: Restrict)
+  liftedByUser  User?  @relation("blacklistLiftedBy", fields: [liftedBy], references: [id], onDelete: Restrict)
+
+  /// El unico que impide DOS vetos vigentes a la vez es PARCIAL
+  /// (WHERE lifted_at IS NULL) y vive fuera del datamodel: Prisma no sabe
+  /// declarar indices parciales. Se llama ux_blacklist_active.
   @@id([id])
+  @@index([workerId, occurredAt(sort: Desc)], map: "ix_blacklist_worker")
   @@map("blacklist_entry")
   @@schema("coverage")
 }
