@@ -11,6 +11,13 @@ de GCP ni pipeline.
 `oranjeapp-gcp` es el proyecto que ya existe, con la base y el seed cargados —
 por eso se queda como staging en vez de crear uno nuevo y migrarlo.
 
+> **El ID de un proyecto de GCP no se puede cambiar.** Se renombró lo único
+> renombrable, que es el nombre visible (`Oranje Staging`); el ID sigue siendo
+> `oranjeapp-gcp` y así aparece en toda la configuración. Tenerlo como
+> `oranje-staging` exigiría un proyecto nuevo y mover instancia, base, secretos,
+> registro y federación — y la base de staging es la que tiene los datos con los
+> que se está trabajando.
+
 > **Un solo artefacto.** La imagen se construye una vez, en `staging`. Producción
 > **no reconstruye**: promueve el mismo digest que ya se probó. Si el commit no
 > pasó por staging, el despliegue a producción se detiene con error.
@@ -154,21 +161,30 @@ los secretos de verdad viven en Secret Manager y el pipeline solo los nombra.
 | `MIN_INSTANCES`           | `0` — que se apague y no cobre     | `1` — sin arranque en frío       |
 | `MAX_INSTANCES`           | `2`                                | `4`                              |
 
-**Faltan tres, y sin ellas el despliegue falla a propósito:**
+**Faltan tres**, y no bloquean a staging pero sí a producción:
 
-| Variable          | Por qué falta                     |
-| ----------------- | --------------------------------- |
-| `AUTH_ISSUER_URL` | No existe el proyecto de Firebase |
-| `AUTH_AUDIENCE`   | Igual                             |
-| `CORS_ORIGINS`    | No hay dominio del front todavía  |
+| Variable          | Por qué falta                     | `staging`        | `production` |
+| ----------------- | --------------------------------- | ---------------- | ------------ |
+| `AUTH_ISSUER_URL` | No existe el proyecto de Firebase | Levanta sin ella | No arranca   |
+| `AUTH_AUDIENCE`   | Igual                             | Levanta sin ella | No arranca   |
+| `CORS_ORIGINS`    | No hay dominio del front todavía  | Levanta sin ella | No arranca   |
+
+**Staging levanta incompleto a propósito**: sirve para probar los CRUD antes de
+que exista Firebase. Lo único que no funciona es `POST /auth/session`, que
+responde `503 LOGIN_NOT_CONFIGURED`. Un token de Oranje ya emitido se sigue
+verificando, así que el guard y los endpoints se pueden probar hoy.
+
+Producción no afloja: ahí la lista blanca y el proveedor de identidad son lo que
+separa _desplegado_ de _abierto_.
 
 Dos cuentas de servicio por ambiente, a propósito: **`deploy-github` despliega y
 `oranje-api` ejecuta**. La que corre el servicio no puede desplegar, y la que
-despliega no anda leyendo la base en producción.
+despliega no anda leyendo la base en producción. Eso aplica a la **automatización**
+— las personas con `roles/owner` en el proyecto pueden hacer las dos cosas.
 
-> **La aprobación manual antes de producción no se pudo activar**: el repositorio
-> es privado y _required reviewers_ exige plan de pago. La puerta real sigue
-> siendo la protección de `main` — PR, una aprobación y CODEOWNERS.
+> **Aprobación manual activada** en el ambiente `production` de GitHub: un
+> despliegue a producción espera aprobación de `dev3-cc`, y solo desde ramas
+> protegidas.
 
 `MAX_INSTANCES × DATABASE_POOL_MAX` no puede pasar del `max_connections` de la
 instancia. Con `DATABASE_POOL_MAX=10` y 100 conexiones, el techo son 10

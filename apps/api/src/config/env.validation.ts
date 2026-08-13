@@ -27,9 +27,15 @@ const baseSchema = z.object({
   DATABASE_CONNECT_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
   DATABASE_STATEMENT_TIMEOUT_MS: z.coerce.number().int().positive().default(15_000),
 
-  // Firebase: emisor y audiencia del ID token que llega en el login
-  AUTH_ISSUER_URL: z.string().url(),
-  AUTH_AUDIENCE: z.string().min(1),
+  /**
+   * Firebase: emisor y audiencia del ID token que llega en el login.
+   *
+   * Opcionales mientras no exista el proyecto de Firebase. Sin ellas la API
+   * levanta y los CRUD funcionan; lo único que no funciona es `/auth/session`,
+   * que responde 503. En producción sí son obligatorias.
+   */
+  AUTH_ISSUER_URL: opcional(z.string().url()),
+  AUTH_AUDIENCE: opcional(z.string().min(1)),
 
   /**
    * Apaga la autenticación y trabaja como el usuario de AUTH_DEV_USER_EMAIL.
@@ -97,6 +103,7 @@ function booleanFromEnv(porDefecto: boolean) {
  */
 const envSchema = baseSchema.superRefine((env, ctx) => {
   const esDesplegado = env.APP_ENV !== 'local'
+  const esProduccion = env.APP_ENV === 'production'
 
   const falta = (path: string, message: string): void => {
     ctx.addIssue({ code: 'custom', path: [path], message })
@@ -116,14 +123,27 @@ const envSchema = baseSchema.superRefine((env, ctx) => {
       falta('COOKIE_SECURE', `debe ser true en ${env.APP_ENV}: la cookie viaja por HTTPS`)
     }
 
-    if (env.CORS_ORIGINS.length === 0) {
-      falta('CORS_ORIGINS', `obligatoria en ${env.APP_ENV}: §6 pide lista blanca explícita`)
-    }
-
-    if (env.AUTH_ISSUER_URL.includes('localhost')) {
+    // El emulador no verifica firmas: en la nube, cualquiera sería cualquiera
+    if (env.AUTH_ISSUER_URL?.includes('localhost')) {
       falta('AUTH_ISSUER_URL', 'apunta al emulador de Firebase, que no verifica firmas')
     }
-  } else {
+  }
+
+  /**
+   * Staging puede levantar sin Firebase ni dominio: sirve para probar los CRUD
+   * antes de que existan. Producción no — ahí la lista blanca y el proveedor de
+   * identidad son lo que separa "desplegado" de "abierto".
+   */
+  if (esProduccion) {
+    if (env.CORS_ORIGINS.length === 0) {
+      falta('CORS_ORIGINS', 'obligatoria en production: §6 pide lista blanca explícita')
+    }
+
+    if (!env.AUTH_ISSUER_URL) falta('AUTH_ISSUER_URL', 'obligatoria en production')
+    if (!env.AUTH_AUDIENCE) falta('AUTH_AUDIENCE', 'obligatoria en production')
+  }
+
+  if (!esDesplegado) {
     if (!env.JWT_SECRET) falta('JWT_SECRET', 'obligatoria en local (HS256)')
 
     if (env.AUTH_DISABLED && !env.AUTH_DEV_USER_EMAIL) {

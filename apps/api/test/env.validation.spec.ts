@@ -64,9 +64,38 @@ describe('validateEnv', () => {
       ).toThrow(/emulador/)
     })
 
-    it('exige cookie por HTTPS y lista blanca de orígenes', () => {
+    it('exige la cookie por HTTPS', () => {
       expect(() => validateEnv({ ...DESPLEGADO, COOKIE_SECURE: 'false' })).toThrow(/COOKIE_SECURE/)
-      expect(() => validateEnv({ ...DESPLEGADO, CORS_ORIGINS: '' })).toThrow(/CORS_ORIGINS/)
+    })
+  })
+
+  describe('staging puede levantar incompleto, producción no', () => {
+    const SIN_FIREBASE_NI_DOMINIO = {
+      ...DESPLEGADO,
+      AUTH_ISSUER_URL: '',
+      AUTH_AUDIENCE: '',
+      CORS_ORIGINS: '',
+    }
+
+    it('staging arranca sin Firebase ni dominio: sirve para probar los CRUD', () => {
+      const env = validateEnv(SIN_FIREBASE_NI_DOMINIO)
+
+      expect(env.AUTH_ISSUER_URL).toBeUndefined()
+      expect(env.CORS_ORIGINS).toEqual([])
+    })
+
+    it('producción NO arranca sin ellas', () => {
+      expect(() => validateEnv({ ...SIN_FIREBASE_NI_DOMINIO, APP_ENV: 'production' })).toThrow(
+        /CORS_ORIGINS/,
+      )
+
+      expect(() =>
+        validateEnv({
+          ...SIN_FIREBASE_NI_DOMINIO,
+          APP_ENV: 'production',
+          CORS_ORIGINS: 'https://app.oranje.mx',
+        }),
+      ).toThrow(/AUTH_ISSUER_URL/)
     })
   })
 
