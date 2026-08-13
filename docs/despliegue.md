@@ -3,10 +3,18 @@
 Dos ambientes desplegados. `local` es tu máquina y no cuenta: no tiene proyecto
 de GCP ni pipeline.
 
-| `APP_ENV`    | Proyecto de GCP | Rama      | Se despliega |
-| ------------ | --------------- | --------- | ------------ |
-| `staging`    | `oranjeapp-gcp` | `staging` | Al mergear   |
-| `production` | `oranje-prod`   | `main`    | Al mergear   |
+| `APP_ENV`    | Proyecto de GCP | Rama      | Se despliega | Estado                             |
+| ------------ | --------------- | --------- | ------------ | ---------------------------------- |
+| `staging`    | `oranjeapp-gcp` | `staging` | Al mergear   | **Desplegado** desde el 2026-08-13 |
+| `production` | `oranje-prod`   | `main`    | Al mergear   | Sin desplegar todavía              |
+
+Staging responde en `https://oranje-api-endngsd2ra-uc.a.run.app`, **sin acceso
+público**: pide token de Cloud Run. Para probarlo:
+
+```bash
+curl -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+  https://oranje-api-endngsd2ra-uc.a.run.app/api/v1/health/db
+```
 
 `oranjeapp-gcp` es el proyecto que ya existe, con la base y el seed cargados —
 por eso se queda como staging en vez de crear uno nuevo y migrarlo.
@@ -216,15 +224,34 @@ gcloud run services update-traffic oranje-api \
 
 ---
 
-## 4. Lo que falta
+## 4. Lo que costó la primera corrida
 
-- **El Dockerfile no se ha construido nunca.** No hay Docker en la máquina donde
-  se escribió; el primer `gcloud builds submit` es su primera prueba real. Es lo
-  primero que puede fallar.
+El pipeline falló **tres veces** antes de desplegar, y las tres son cosas que no
+se pueden ver sin construir de verdad:
+
+1. **`gcloud builds submit --tag` exige el Dockerfile en la raíz** del contexto,
+   y el nuestro vive en `apps/api`. Pero el contexto tiene que ser la raíz del
+   monorepo, donde están el lockfile y los otros `package.json`. Las dos cosas no
+   se pueden con `--tag`: de ahí el `cloudbuild.yaml`.
+2. **Node 25 sacó `corepack`** de la imagen oficial, y el `.nvmrc` fija 26. El
+   `corepack enable` moría con _command not found_. pnpm se instala con `npm`.
+3. **El job de migraciones corría desde `/app`** y Prisma no encontraba su
+   configuración, que vive en `apps/api` y declara rutas relativas a esa carpeta.
+
+Verificado contra el servicio desplegado: `/health/db` contesta, la base
+responde por el socket unix, `/auth/session` da 503 porque no hay Firebase, y
+toda ruta protegida rechaza sin token.
+
+---
+
+## 5. Lo que falta
+
 - **No existe el proyecto de Firebase**, así que `AUTH_ISSUER_URL` y
-  `AUTH_AUDIENCE` no tienen valor. Sin ellas el contenedor no arranca, que es
-  justo lo que se diseñó — pero significa que **hoy no se puede desplegar**.
-- **`CORS_ORIGINS` tampoco**, porque no hay dominio del front.
-- **La base de producción está vacía**: no se han corrido migraciones ni seed.
+  `AUTH_AUDIENCE` están vacías. Staging levanta igual, pero **el login no
+  funciona**: `/auth/session` responde 503.
+- **`CORS_ORIGINS` tampoco**, porque no hay dominio del front. Producción no
+  arranca sin ella.
+- **Producción nunca se ha desplegado** y su base está vacía: sin migraciones ni
+  seed, a propósito.
 - **Sin dominio ni Load Balancer**: Cloud Run responde en su URL `run.app`.
 - **Sin alertas de nómina** — D-07 las pide, y no existen.
