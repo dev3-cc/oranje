@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { APP_GUARD } from '@nestjs/core'
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler'
+
+import type { Env } from '../../../config/env.validation.js'
 
 import { AccessTokenService } from './access-token.service.js'
 import { AuthController } from './auth.controller.js'
@@ -11,8 +14,14 @@ import { RefreshTokenRepository } from './refresh-token.repository.js'
 
 @Module({
   imports: [
-    // §6: rate limiting global; el login y el refresh lo aprietan con @Throttle
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 120 }]),
+    // §6: rate limiting global. El límite sale del ambiente — en local estorba,
+    // en la nube es la primera defensa. El login lo aprieta con @Throttle
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<Env, true>) => [
+        { ttl: 60_000, limit: config.get('RATE_LIMIT_PER_MINUTE', { infer: true }) },
+      ],
+    }),
   ],
   controllers: [AuthController],
   providers: [

@@ -88,8 +88,69 @@ list(@CurrentUser() user: AuthenticatedUser) {
 > El guard valida **identidad**, no permisos. La Matriz (`identity.role_permission`)
 > está sembrada en cero, así que el guard de autorización todavía no existe.
 
-En local no hace falta proyecto de Firebase: con `AUTH_ISSUER_URL` apuntando al
-emulador los ID tokens **no se verifican**. Es seguro solo porque es localhost.
+## Ambientes
+
+**El interruptor es `APP_ENV`, no `NODE_ENV`.** Jest pone `NODE_ENV=test` por su
+cuenta; si de eso dependieran las llaves de firma, correr los tests exigiría
+material criptográfico. Son dos cosas distintas.
+
+| `APP_ENV`    | Dónde                             | Se arranca con       |
+| ------------ | --------------------------------- | -------------------- |
+| `local`      | Tu máquina                        | `pnpm dev`           |
+| `staging`    | `oranje-staging` (rama `staging`) | `pnpm start:staging` |
+| `production` | `oranje-prod` (rama `main`)       | `pnpm start:prod`    |
+
+Es **un solo artefacto**: el build no cambia entre ambientes, solo las variables.
+
+|                    | `local`                       | `staging` y `production`               |
+| ------------------ | ----------------------------- | -------------------------------------- |
+| Firma del token    | **HS256**, secreto compartido | **RS256**, par de llaves               |
+| Autenticación      | Se puede **apagar**           | Obligatoria — el arranque lo verifica  |
+| Firebase           | Emulador, sin verificar firma | Emisor real; localhost queda prohibido |
+| Cookie del refresh | Puede ir sin HTTPS            | `secure` obligatorio                   |
+| CORS               | Abierto                       | Lista blanca obligatoria               |
+| Rate limit         | Alto, para que no estorbe     | El del ambiente                        |
+
+**Un despliegue mal configurado no arranca.** La validación de entorno tumba el
+proceso con el detalle de qué falta, en vez de dejar la API abierta:
+
+```
+Configuración de entorno inválida:
+  JWT_PRIVATE_KEY: obligatoria en staging (RS256)
+  COOKIE_SECURE: debe ser true en staging: la cookie viaja por HTTPS
+  CORS_ORIGINS: obligatoria en staging: §6 pide lista blanca explícita
+  AUTH_ISSUER_URL: apunta al emulador de Firebase, que no verifica firmas
+```
+
+### Por qué asimétrico fuera de local
+
+Con **HS256 el que verifica puede firmar**: el secreto es el mismo. Mientras solo
+la API emite y valida, da igual. En cuanto la llave tiene que salir del servicio
+—otro consumidor, un job, una revisión— deja de ser aceptable.
+
+Con **RS256 la privada solo existe donde se emiten tokens** y quien verifique
+necesita únicamente la pública. Genera el par con:
+
+```bash
+pnpm -F @oranje/api auth:keys
+```
+
+**Cada ambiente lleva su propio par.** Con llave compartida, un token de staging
+valdría en producción. La privada vive en Secret Manager (D-07), nunca en el repo.
+
+### Trabajar sin Firebase
+
+Mientras no exista el proyecto de Firebase, en local se puede apagar la
+autenticación por completo:
+
+```bash
+AUTH_DISABLED=true
+AUTH_DEV_USER_EMAIL=dev@oranje.local
+```
+
+Todo request entra como ese usuario, **que tiene que existir en `identity.user`**
+— así el rol y el alcance con los que trabajas son los mismos que en la nube, no
+unos inventados. Si `APP_ENV` no es `local`, la app **no arranca** con esto.
 
 ## Cómo se escribe un endpoint
 

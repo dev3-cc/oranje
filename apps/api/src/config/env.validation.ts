@@ -4,8 +4,18 @@ import { z } from 'zod'
  * Estándares de Desarrollo §9: toda variable de entorno se declara y valida
  * al arranque. Si falta una, la app NO levanta — falla en el arranque, no a
  * media operación.
+ *
+ * El interruptor de ambiente es APP_ENV, no NODE_ENV: Jest pone NODE_ENV=test
+ * por su cuenta, y si de eso dependieran las llaves de firma, correr los tests
+ * exigiría material criptográfico. Son dos cosas distintas y aquí van separadas.
  */
-const envSchema = z.object({
+
+/** local: tu máquina · staging: oranje-staging · production: oranje-prod (D-06). */
+export const APP_ENVS = ['local', 'staging', 'production'] as const
+export type AppEnv = (typeof APP_ENVS)[number]
+
+const baseSchema = z.object({
+  APP_ENV: z.enum(APP_ENVS).default('local'),
   NODE_ENV: z.enum(['development', 'test', 'staging', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
 
@@ -17,27 +27,109 @@ const envSchema = z.object({
   DATABASE_CONNECT_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
   DATABASE_STATEMENT_TIMEOUT_MS: z.coerce.number().int().positive().default(15_000),
 
-  // Firebase: emisor y audiencia del ID token que llega en el login.
-  // En local es el emulador (http://localhost:9099); en la nube,
-  // https://securetoken.google.com/<project-id>
+  // Firebase: emisor y audiencia del ID token que llega en el login
   AUTH_ISSUER_URL: z.string().url(),
   AUTH_AUDIENCE: z.string().min(1),
 
-  // Nuestro token, el que protege los CRUD. Firebase dice quién eres; este dice
-  // qué puedes hacer. En producción sale de Secret Manager (D-07)
-  JWT_SECRET: z.string().min(32, 'mínimo 32 caracteres'),
+  /**
+   * Apaga la autenticación y trabaja como el usuario de AUTH_DEV_USER_EMAIL.
+   * Solo se admite en `local` — el refinamiento de abajo tumba el arranque si
+   * aparece en staging o producción.
+   */
+  AUTH_DISABLED: booleanFromEnv(false),
+  AUTH_DEV_USER_EMAIL: opcional(z.string().email()),
+
+  // --- Nuestro JWT ---
+  // local firma con secreto compartido (HS256); staging y producción con par
+  // de llaves (RS256), para que la llave que firma no sea la que verifica
+  JWT_SECRET: opcional(z.string().min(32)),
+  JWT_PRIVATE_KEY: opcional(z.string().min(1)),
+  JWT_PUBLIC_KEY: opcional(z.string().min(1)).refine(
+    (v) => v === undefined || v.includes('PUBLIC KEY'),
+    'no parece un PEM SPKI',
+  ),
+
   JWT_ACCESS_TTL_S: z.coerce.number().int().positive().default(900),
   JWT_REFRESH_TTL_S: z.coerce.number().int().positive().default(604_800),
 
-  // La cookie del refresh viaja solo por HTTPS fuera de local
-  COOKIE_SECURE: z
-    .enum(['true', 'false'])
-    .default('true')
-    .transform((v) => v === 'true'),
+  COOKIE_SECURE: booleanFromEnv(true),
+
+  /** Lista blanca de orígenes, separados por coma. Vacío = ninguno. */
+  CORS_ORIGINS: z
+    .string()
+    .default('')
+    .transform((v) =>
+      v
+        .split(',')
+        .map((o) => o.trim())
+        .filter(Boolean),
+    ),
+
+  /** Peticiones por minuto y por IP. */
+  RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(120),
 
   STORAGE_BUCKET: z.string().min(1),
 
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+})
+
+/**
+ * Una variable declarada y vacía (`FOO=`) es lo mismo que no declararla. Sin
+ * esto, dejar el hueco en el `.env` da un error de formato en vez del error
+ * de "falta esta variable en este ambiente", que es el útil.
+ */
+function opcional<T extends z.ZodType>(schema: T) {
+  return z.preprocess((v) => (v === '' ? undefined : v), schema.optional())
+}
+
+/** Las variables de entorno son strings; "false" es una cadena con valor de verdad. */
+function booleanFromEnv(porDefecto: boolean) {
+  return z
+    .enum(['true', 'false'])
+    .default(porDefecto ? 'true' : 'false')
+    .transform((v) => v === 'true')
+}
+
+/**
+ * Lo que cada ambiente exige. Aquí es donde local afloja y los desplegados
+ * aprietan — y donde un despliegue mal configurado muere en el arranque en vez
+ * de quedar abierto.
+ */
+const envSchema = baseSchema.superRefine((env, ctx) => {
+  const esDesplegado = env.APP_ENV !== 'local'
+
+  const falta = (path: string, message: string): void => {
+    ctx.addIssue({ code: 'custom', path: [path], message })
+  }
+
+  if (esDesplegado) {
+    // La razón de ser de la firma asimétrica: la llave que firma no sale del
+    // servicio que emite, y quien verifica solo necesita la pública
+    if (!env.JWT_PRIVATE_KEY) falta('JWT_PRIVATE_KEY', `obligatoria en ${env.APP_ENV} (RS256)`)
+    if (!env.JWT_PUBLIC_KEY) falta('JWT_PUBLIC_KEY', `obligatoria en ${env.APP_ENV} (RS256)`)
+
+    if (env.AUTH_DISABLED) {
+      falta('AUTH_DISABLED', `no se admite en ${env.APP_ENV}: dejaría la API abierta`)
+    }
+
+    if (!env.COOKIE_SECURE) {
+      falta('COOKIE_SECURE', `debe ser true en ${env.APP_ENV}: la cookie viaja por HTTPS`)
+    }
+
+    if (env.CORS_ORIGINS.length === 0) {
+      falta('CORS_ORIGINS', `obligatoria en ${env.APP_ENV}: §6 pide lista blanca explícita`)
+    }
+
+    if (env.AUTH_ISSUER_URL.includes('localhost')) {
+      falta('AUTH_ISSUER_URL', 'apunta al emulador de Firebase, que no verifica firmas')
+    }
+  } else {
+    if (!env.JWT_SECRET) falta('JWT_SECRET', 'obligatoria en local (HS256)')
+
+    if (env.AUTH_DISABLED && !env.AUTH_DEV_USER_EMAIL) {
+      falta('AUTH_DEV_USER_EMAIL', 'con AUTH_DISABLED hay que decir como quién trabajas')
+    }
+  }
 })
 
 export type Env = z.infer<typeof envSchema>
@@ -49,6 +141,7 @@ export function validateEnv(raw: Record<string, unknown>): Env {
     const detalle = parsed.error.issues
       .map((issue) => `  ${issue.path.join('.')}: ${issue.message}`)
       .join('\n')
+
     throw new Error(`Configuración de entorno inválida:\n${detalle}`)
   }
 

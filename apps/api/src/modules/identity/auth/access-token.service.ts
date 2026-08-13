@@ -1,6 +1,7 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common'
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { jwtVerify, SignJWT } from 'jose'
+import { importPKCS8, importSPKI, jwtVerify, SignJWT } from 'jose'
+import type { CryptoKey, KeyObject } from 'jose'
 
 import type { Env } from '../../../config/env.validation.js'
 
@@ -23,34 +24,58 @@ export interface AccessTokenPayload {
 const ISSUER = 'oranje-api'
 const AUDIENCE = 'oranje'
 
+type Llave = CryptoKey | KeyObject | Uint8Array
+
+/**
+ * Firma y verifica el token que protege los CRUD.
+ *
+ * **El algoritmo depende del ambiente**, y no por gusto: en local un secreto
+ * compartido basta y evita repartir llaves. En staging y producción se firma con
+ * RS256, así que la llave privada solo existe donde se emiten tokens y quien
+ * verifique necesita únicamente la pública. Con HS256 el que verifica puede
+ * firmar, y eso deja de ser aceptable en cuanto hay más de un servicio.
+ */
 @Injectable()
 export class AccessTokenService {
-  private readonly secret: Uint8Array
+  private readonly logger = new Logger(AccessTokenService.name)
+  private readonly alg: 'HS256' | 'RS256'
   private readonly ttlSeconds: number
+  private readonly llaves: Promise<{ firma: Llave; verificacion: Llave }>
 
   constructor(config: ConfigService<Env, true>) {
-    this.secret = new TextEncoder().encode(config.get('JWT_SECRET', { infer: true }))
+    const appEnv = config.get('APP_ENV', { infer: true })
+
+    this.alg = appEnv === 'local' ? 'HS256' : 'RS256'
     this.ttlSeconds = config.get('JWT_ACCESS_TTL_S', { infer: true })
+    this.llaves = this.cargarLlaves(config)
+
+    this.logger.log(`Tokens firmados con ${this.alg} (APP_ENV=${appEnv})`)
   }
 
   async sign(payload: AccessTokenPayload): Promise<{ token: string; expiresIn: number }> {
+    const { firma } = await this.llaves
+
     const token = await new SignJWT({ ...payload })
-      .setProtectedHeader({ alg: 'HS256' })
+      .setProtectedHeader({ alg: this.alg })
       .setSubject(payload.sub)
       .setIssuer(ISSUER)
       .setAudience(AUDIENCE)
       .setIssuedAt()
       .setExpirationTime(`${this.ttlSeconds}s`)
-      .sign(this.secret)
+      .sign(firma)
 
     return { token, expiresIn: this.ttlSeconds }
   }
 
   async verify(token: string): Promise<AccessTokenPayload> {
     try {
-      const { payload } = await jwtVerify(token, this.secret, {
+      const { verificacion } = await this.llaves
+
+      // El algoritmo se fija: sin esto, un token firmado con otro alg pasaría
+      const { payload } = await jwtVerify(token, verificacion, {
         issuer: ISSUER,
         audience: AUDIENCE,
+        algorithms: [this.alg],
       })
 
       return {
@@ -66,4 +91,37 @@ export class AccessTokenService {
       })
     }
   }
+
+  private async cargarLlaves(
+    config: ConfigService<Env, true>,
+  ): Promise<{ firma: Llave; verificacion: Llave }> {
+    if (this.alg === 'HS256') {
+      // La validación de entorno ya garantizó que existe fuera de los desplegados
+      const secreto = new TextEncoder().encode(config.get('JWT_SECRET', { infer: true }))
+
+      return { firma: secreto, verificacion: secreto }
+    }
+
+    const privada = config.get('JWT_PRIVATE_KEY', { infer: true })
+    const publica = config.get('JWT_PUBLIC_KEY', { infer: true })
+
+    // La validación de entorno ya las exigió fuera de local; esto es el cinturón
+    if (!privada || !publica) {
+      throw new Error('RS256 exige JWT_PRIVATE_KEY y JWT_PUBLIC_KEY')
+    }
+
+    return {
+      firma: await importPKCS8(normalizarPem(privada), 'RS256'),
+      verificacion: await importSPKI(normalizarPem(publica), 'RS256'),
+    }
+  }
+}
+
+/**
+ * Secret Manager y los `.env` no conservan los saltos de línea del PEM: los
+ * entregan como `\n` literales. Sin esto, la llave no importa y el error que da
+ * jose no dice por qué.
+ */
+function normalizarPem(valor: string): string {
+  return valor.includes('\\n') ? valor.replace(/\\n/g, '\n') : valor
 }

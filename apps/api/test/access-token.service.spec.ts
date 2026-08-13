@@ -4,14 +4,15 @@ import { ConfigService } from '@nestjs/config'
 import type { Env } from '../src/config/env.validation.js'
 import { AccessTokenService } from '../src/modules/identity/auth/access-token.service.js'
 
-const VALORES: Partial<Env> = {
+const LOCAL: Partial<Env> = {
+  APP_ENV: 'local',
   JWT_SECRET: 'un-secreto-de-mas-de-treinta-y-dos-caracteres',
   JWT_ACCESS_TTL_S: 900,
 }
 
-function servicio(): AccessTokenService {
+function servicio(valores: Partial<Env> = LOCAL): AccessTokenService {
   const config = {
-    get: (clave: keyof Env) => VALORES[clave],
+    get: (clave: keyof Env) => valores[clave],
   } as unknown as ConfigService<Env, true>
 
   return new AccessTokenService(config)
@@ -36,15 +37,18 @@ describe('AccessTokenService', () => {
   it('rechaza un token firmado con otro secreto', async () => {
     const { token } = await servicio().sign(payload)
 
-    const otro = new AccessTokenService({
-      get: (clave: keyof Env) =>
-        clave === 'JWT_SECRET' ? 'otro-secreto-igual-de-largo-para-hs256' : 900,
-    } as unknown as ConfigService<Env, true>)
+    const otro = servicio({ ...LOCAL, JWT_SECRET: 'otro-secreto-igual-de-largo-para-hs256' })
 
     await expect(otro.verify(token)).rejects.toBeInstanceOf(UnauthorizedException)
   })
 
   it('rechaza basura', async () => {
     await expect(servicio().verify('no.es.un.token')).rejects.toBeInstanceOf(UnauthorizedException)
+  })
+
+  it('en un ambiente desplegado exige el par de llaves, no el secreto', async () => {
+    const sinLlaves = servicio({ APP_ENV: 'staging', JWT_ACCESS_TTL_S: 900 })
+
+    await expect(sinLlaves.sign(payload)).rejects.toThrow(/JWT_PRIVATE_KEY/)
   })
 })
