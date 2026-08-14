@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common'
 
-// Submódulos: hotels · onboarding · territories
-@Module({})
+import { HotelsModule } from './hotels/hotels.module.js'
+
+@Module({
+  imports: [HotelsModule],
+})
 export class CommercialModule {}
