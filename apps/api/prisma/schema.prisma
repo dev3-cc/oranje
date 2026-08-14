@@ -298,6 +298,8 @@ model User {
   daysReviewed       TimesheetDay[] @relation("timesheetDayReviewedBy")
   punchesRegistered  PunchMark[]    @relation("punchRegisteredBy")
 
+  contractsSigned Contract[] @relation("contractSignedBy")
+
   @@id([id])
   @@index([roleId], map: "ix_user_role")
   @@index([hotelId], map: "ix_user_hotel")
@@ -379,6 +381,8 @@ model Hotel {
 
   schedules Schedule[]
 
+  contracts Contract[]
+
   @@id([id])
   @@index([zoneId], map: "ix_hotel_zone")
   @@index([coordinates(ops: raw("gist_geography_ops"))], map: "ix_hotel_coordinates", type: Gist)
@@ -449,6 +453,8 @@ model Prospect {
   attempts ContactAttempt[]
   history  ProspectStateHistory[]
   proposals Proposal[]
+
+  contracts Contract[]
 
   @@id([id])
   /// Sostiene la FK compuesta de contact_attempt (restriccion 6).
@@ -589,6 +595,8 @@ model CatalogPosition {
   hotelDepartment    HotelDepartment @relation(fields: [hotelDepartmentId], references: [id], onDelete: Restrict)
   requestedPositions Position[]
   workers Worker[]
+
+  contractRates ContractRate[]
 
   @@id([id])
   @@index([hotelDepartmentId], map: "ix_position_hotel_department")
@@ -1306,4 +1314,129 @@ model PunchMark {
   @@unique([timesheetDayId, type], map: "ux_punch_day_type")
   @@map("punch_mark")
   @@schema("operations")
+}
+
+/// El acuerdo formal entre Oranje y el hotel. Nace del cierre de negociacion en
+/// ROSA del Semaforo Onboarding, y es el PRERREQUISITO de settlement: sin pay rate
+/// ni bill rate no hay nomina ni factura.
+///
+/// Va en commercial y no en settlement porque nace de la negociacion de Ventas, no
+/// del calculo del pago (mapa de modulos, Modelo de Datos seccion 3).
+model Contract {
+  id         String  @db.Uuid
+  hotelId    String  @map("hotel_id") @db.Uuid
+  /// De que ciclo comercial nacio. Nulable: un contrato heredado o migrado puede
+  /// no tener prospecto detras.
+  prospectId String? @map("prospect_id") @db.Uuid
+  number     String  @db.Text
+
+  /// Los CUATRO multiplicadores. Son columnas y no constantes de codigo porque el
+  /// vault los llama "politica pactada" y "recargos acordados": cada hotel negocia
+  /// los suyos, y con la constante en codigo cada negociacion seria un despliegue.
+  ///
+  /// Son cuatro y no dos porque el recargo del hotel y el del colaborador son
+  /// numeros DISTINTOS. El vault solo documenta el lado del hotel —"1.5x bill
+  /// rate", "2x bill rate"— y nunca dice si el colaborador tambien cobra el
+  /// recargo. El lado del colaborador arranca en 1.0, no en 0: cero significaria
+  /// que no cobra nada ese dia; uno, que cobra su hora normal.
+  ///
+  /// Mientras *_pay_* siga en 1.0, Oranje se queda todo el recargo. Cuando el
+  /// negocio decida, es un UPDATE y no una migracion.
+  overtimeBillMultiplier Decimal @default(1.5) @map("overtime_bill_multiplier") @db.Decimal(4, 2)
+  overtimePayMultiplier  Decimal @default(1.0) @map("overtime_pay_multiplier")  @db.Decimal(4, 2)
+  holidayBillMultiplier  Decimal @default(2.0) @map("holiday_bill_multiplier")  @db.Decimal(4, 2)
+  holidayPayMultiplier   Decimal @default(1.0) @map("holiday_pay_multiplier")   @db.Decimal(4, 2)
+
+  /// La semana del hotel, convencion de Postgres: 0 = domingo, 1 = lunes. NO es
+  /// global — operations.schedule la lee de aqui. Un hotel puede correr de lunes a
+  /// domingo y otro de jueves a miercoles, y eso cambia sobre que siete dias se
+  /// evalua el umbral de 40 horas.
+  weekStartDay Int @map("week_start_day")
+  weekEndDay   Int @map("week_end_day")
+
+  validFrom DateTime  @map("valid_from") @db.Date
+  /// NULO = contrato sin fecha de fin, que es lo normal: el vault habla de
+  /// renovacion, no de expiracion automatica.
+  validTo   DateTime? @map("valid_to") @db.Date
+  /// DRAFT | ACTIVE | EXPIRED | CANCELLED
+  status    String    @default("DRAFT") @db.Text
+  renewalNotes String? @map("renewal_notes") @db.Text
+
+  signedBy String?   @map("signed_by") @db.Uuid
+  signedAt DateTime? @map("signed_at") @db.Timestamptz(6)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  hotel        Hotel     @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+  prospect     Prospect? @relation(fields: [prospectId], references: [id], onDelete: Restrict)
+  signedByUser User?     @relation("contractSignedBy", fields: [signedBy], references: [id], onDelete: Restrict)
+
+  rates ContractRate[]
+
+  /// El unico que impide DOS contratos vigentes por hotel es PARCIAL
+  /// (WHERE status = 'ACTIVE') y vive fuera del datamodel: Prisma no sabe declarar
+  /// indices parciales. Se llama ux_contract_active. Un unico simple sobre
+  /// hotel_id impediria la renovacion.
+  @@id([id])
+  @@unique([number], map: "ux_contract_number")
+  @@index([hotelId], map: "ix_contract_hotel")
+  @@map("contract")
+  @@schema("commercial")
+}
+
+/// Un par de tarifas POR POSICION.
+///
+/// Tabla aparte y no columnas del contrato porque los rates no son uno: la
+/// Simulacion de Ventas muestra tres posiciones con seis rates distintos en el
+/// mismo contrato. Con columnas habria que agregar un par cada vez que el catalogo
+/// de posiciones crece, y el vault advierte que esa lista "no es exhaustiva".
+///
+/// El pay rate y el bill rate viven en la MISMA FILA a proposito: se negocian
+/// juntos, y su diferencia es el margen de Oranje. Separarlos esconderia justo el
+/// numero que el negocio necesita ver.
+model ContractRate {
+  id                String  @db.Uuid
+  contractId        String  @map("contract_id") @db.Uuid
+  catalogPositionId String  @map("catalog_position_id") @db.Uuid
+  /// Lo que Oranje le paga al colaborador. Puede quedar sobrescrito por el rate
+  /// interno de la persona, que es un acuerdo aparte y no toca la factura.
+  payRate  Decimal @map("pay_rate")  @db.Decimal(10, 2)
+  /// Lo que el hotel le paga a Oranje. Es SIEMPRE el que va en la factura.
+  billRate Decimal @map("bill_rate") @db.Decimal(10, 2)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  contract        Contract        @relation(fields: [contractId], references: [id], onDelete: Restrict)
+  catalogPosition CatalogPosition @relation(fields: [catalogPositionId], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  /// Dos filas para la misma posicion dejarian la nomina sin saber cual aplicar, y
+  /// el error se descubriria en el pago.
+  @@unique([contractId, catalogPositionId], map: "ux_contract_rate_position")
+  @@map("contract_rate")
+  @@schema("commercial")
+}
+
+/// Los dias con recargo. Sin este catalogo la regla de "2x en festivos" no tiene
+/// contra que comparar una fecha.
+///
+/// Son los federales de Estados Unidos —asi lo dice la Simulacion de Ventas, y
+/// encaja con que el expediente pida SSN e ITIN—. Es catalogo y no CHECK porque el
+/// negocio SI agrega filas sin avisar: cada ano hay que sembrar el siguiente.
+model Holiday {
+  id          String   @db.Uuid
+  holidayDate DateTime @map("holiday_date") @db.Date
+  name        String   @db.Text
+  /// El pais esta en la llave porque el vault habla de festivos FEDERALES. Hoy es
+  /// US, pero dejar la puerta abierta no cuesta nada y cerrarla despues si.
+  country String @default("US") @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@id([id])
+  @@unique([holidayDate, country], map: "ux_holiday_date_country")
+  @@map("holiday")
+  @@schema("catalogs")
 }
