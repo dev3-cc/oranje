@@ -10,6 +10,8 @@ import { AuthController } from './auth.controller.js'
 import { AuthService } from './auth.service.js'
 import { FirebaseTokenService } from './firebase-token.service.js'
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js'
+import { PermissionsGuard } from './guards/permissions.guard.js'
+import { PermissionsService } from './permissions.service.js'
 import { RefreshTokenRepository } from './refresh-token.repository.js'
 
 @Module({
@@ -29,9 +31,13 @@ import { RefreshTokenRepository } from './refresh-token.repository.js'
     AccessTokenService,
     FirebaseTokenService,
     RefreshTokenRepository,
+    PermissionsService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // El orden importa: primero quién eres, después qué puedes. El de permisos
+    // da por hecho que ya hay usuario en el request
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: PermissionsGuard },
   ],
-  exports: [AccessTokenService],
+  exports: [AccessTokenService, PermissionsService],
 })
 export class AuthModule {}

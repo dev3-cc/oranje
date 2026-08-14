@@ -85,8 +85,35 @@ list(@CurrentUser() user: AuthenticatedUser) {
 }
 ```
 
-> El guard valida **identidad**, no permisos. La Matriz (`identity.role_permission`)
-> está sembrada en cero, así que el guard de autorización todavía no existe.
+## Permisos
+
+Autorizar tiene **dos preguntas**, y el sistema las separa:
+
+| Pregunta                           | Dónde vive                             | Quién la resuelve             |
+| ---------------------------------- | -------------------------------------- | ----------------------------- |
+| ¿Este rol puede hacer esta acción? | `identity.role_permission`             | `PermissionsGuard`, global    |
+| ¿Sobre qué filas?                  | `user.hotel_id` + `user.department_id` | Cada servicio, en su consulta |
+
+La Matriz se siembra desde los tres `06 - Matriz de Permisos.md` del vault —
+**297 filas** para 9 roles. Un permiso nuevo es un `INSERT`, nunca un despliegue.
+
+```ts
+@Requires('conversion', 'approve')
+@Post(':id/approve')
+approve(@CurrentUser() user: AuthenticatedUser) { … }
+```
+
+Una ruta **sin** `@Requires` pasa: obligar el decorador en todas forzaría a
+inventar un permiso por endpoint auxiliar. Lo que protege el sistema es que la
+acción que importa sí lo lleve.
+
+> **Los 10 roles sin filas no pueden nada.** Inspección, QA, Customer Service y
+> Contabilidad no tienen matriz todavía, y el Administrador está en pausa en el
+> vault. Quedan negados por omisión, que es la dirección segura del error.
+
+El servicio **cachea por rol durante un minuto** — son datos de catálogo, no de
+request. El costo es que revocar un permiso tarda hasta ese minuto en surtir
+efecto; para lo inmediato está `invalidate()`.
 
 ## Ambientes
 

@@ -367,7 +367,25 @@ const HOTEL: Permission[] = [
     label: 'Ver Timesheet global del hotel',
     roles: [GG, SYS],
   },
-  { module: 'timesheet', action: 'generate_qr', label: 'Generar / Renovar QR', roles: [GA, GG] },
+  {
+    module: 'timesheet',
+    action: 'review_punches',
+    label: 'Revisar ponches y resolver anómalos',
+    roles: [SUP, GA, GG, SYS],
+  },
+  // D-09: el corte entre operación y dinero. El Supervisor revisa, NO aprueba
+  {
+    module: 'timesheet',
+    action: 'approve_hours',
+    label: 'Aprobar horas trabajadas',
+    roles: [GA, GG],
+  },
+  {
+    module: 'timesheet',
+    action: 'create_manual_punch',
+    label: 'Registrar ponche manual',
+    roles: [SUP, GA, GG],
+  },
   { module: 'timesheet', action: 'correct_punch', label: 'Corregir ponche', roles: [GA, GG, SYS] },
   {
     module: 'timesheet',

@@ -556,9 +556,12 @@ async function main(): Promise<void> {
   // Un rol sin filas aquí no puede hacer nada: los cuatro departamentos sin
   // arquitectura quedan negados por omisión, que es la dirección segura.
   const permisos = flattenPermissions()
+  const vigentes = new Set<string>()
 
   for (const p of permisos) {
     const rol = await prisma.role.findUniqueOrThrow({ where: { code: p.roleCode } })
+    vigentes.add(`${rol.id}|${p.module}|${p.action}`)
+
     await prisma.rolePermission.upsert({
       where: {
         roleId_module_action: { roleId: rol.id, module: p.module, action: p.action },
@@ -567,7 +570,21 @@ async function main(): Promise<void> {
       create: { id: uuidv7(), roleId: rol.id, module: p.module, action: p.action },
     })
   }
-  log(`role_permission: ${permisos.length}`)
+
+  // La Matriz es la fuente de verdad, así que también QUITA. Sin esto, un
+  // permiso que el negocio revoca se queda vivo para siempre: solo con upsert,
+  // `generate_qr` sobrevivió a que el ponche dejara de usar QR.
+  const sobrantes = (
+    await prisma.rolePermission.findMany({
+      select: { id: true, roleId: true, module: true, action: true },
+    })
+  ).filter((p) => !vigentes.has(`${p.roleId}|${p.module}|${p.action}`))
+
+  if (sobrantes.length > 0) {
+    await prisma.rolePermission.deleteMany({ where: { id: { in: sobrantes.map((p) => p.id) } } })
+  }
+
+  log(`role_permission: ${permisos.length} vigentes · ${sobrantes.length} revocados`)
 
   // --- catálogos ---
   for (const d of HOTEL_DEPARTMENTS) {
