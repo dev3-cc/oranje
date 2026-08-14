@@ -4,6 +4,8 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client'
 import { v7 as uuidv7 } from 'uuid'
 
+import { flattenPermissions } from './permissions.js'
+
 /**
  * Seed de catálogos. Las reglas del negocio son FILAS, no código: sin esto el
  * esquema existe y el negocio no funciona. Todo sale del vault.
@@ -549,6 +551,23 @@ async function main(): Promise<void> {
     })
   }
   log(`roles: ${ROLES.length}`)
+
+  // --- Matriz de Permisos ---
+  // Un rol sin filas aquí no puede hacer nada: los cuatro departamentos sin
+  // arquitectura quedan negados por omisión, que es la dirección segura.
+  const permisos = flattenPermissions()
+
+  for (const p of permisos) {
+    const rol = await prisma.role.findUniqueOrThrow({ where: { code: p.roleCode } })
+    await prisma.rolePermission.upsert({
+      where: {
+        roleId_module_action: { roleId: rol.id, module: p.module, action: p.action },
+      },
+      update: {},
+      create: { id: uuidv7(), roleId: rol.id, module: p.module, action: p.action },
+    })
+  }
+  log(`role_permission: ${permisos.length}`)
 
   // --- catálogos ---
   for (const d of HOTEL_DEPARTMENTS) {

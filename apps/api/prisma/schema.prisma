@@ -404,8 +404,13 @@ model HotelContact {
   jobTitle String? @map("job_title") @db.Text
   phone    String? @db.Text
   email    String? @db.Text
-  /// Lo decide el BD, no la fecha. Un solo principal por hotel: UNIQUE parcial.
+  /// Lo decide el BD, no la fecha. Un solo principal ACTIVO por hotel.
   isPrimary Boolean @default(false) @map("is_primary")
+
+  /// Ya no trabaja en el hotel. No se borra: `contact_attempt` apunta aquí con
+  /// ON DELETE RESTRICT, así que un contacto con intentos registrados no se
+  /// puede eliminar sin borrar la evidencia de a quién se llamó.
+  isActive Boolean @default(true) @map("is_active")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
