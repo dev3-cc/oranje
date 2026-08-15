@@ -300,6 +300,12 @@ model User {
 
   contractsSigned Contract[] @relation("contractSignedBy")
 
+  workerRatesAuthorized    WorkerRate[]    @relation("workerRateAuthorizedBy")
+  consolidationsValidated  Consolidation[] @relation("consolidationValidatedBy")
+  consolidationsAuthorized Consolidation[] @relation("consolidationAuthorizedBy")
+  deductionsRefunded       Deduction[]     @relation("deductionRefundedBy")
+  invoicesApproved         Invoice[]       @relation("invoiceApprovedBy")
+
   @@id([id])
   @@index([roleId], map: "ix_user_role")
   @@index([hotelId], map: "ix_user_hotel")
@@ -382,6 +388,9 @@ model Hotel {
   schedules Schedule[]
 
   contracts Contract[]
+
+  consolidationDetails ConsolidationDetail[]
+  invoices             Invoice[]
 
   @@id([id])
   @@index([zoneId], map: "ix_hotel_zone")
@@ -603,6 +612,10 @@ model CatalogPosition {
 
   contractRates ContractRate[]
 
+  workerRates          WorkerRate[]
+  consolidationDetails ConsolidationDetail[]
+  invoiceDetails       InvoiceDetail[]
+
   @@id([id])
   @@index([hotelDepartmentId], map: "ix_position_hotel_department")
   @@map("position")
@@ -696,6 +709,9 @@ model Requisition {
   participations Participation[]
 
   timesheets Timesheet[]
+
+  consolidationDetails ConsolidationDetail[]
+  invoiceDetails       InvoiceDetail[]
 
   @@id([id])
   @@index([hotelId, statusLightStateId], map: "ix_requisition_hotel_state")
@@ -945,6 +961,10 @@ model Worker {
 
   scheduleEntries ScheduleEntry[]
   timesheets      Timesheet[]
+
+  rates            WorkerRate[]
+  consolidations   Consolidation[]
+  invoiceDetails   InvoiceDetail[]
 
   @@id([id])
   /// El Pool filtra por estado, y siempre sobre los no borrados.
@@ -1359,6 +1379,17 @@ model Contract {
   weekStartDay Int @map("week_start_day")
   weekEndDay   Int @map("week_end_day")
 
+  /// Configuracion del hotel que la nomina necesita. Las dos las pide el vault:
+  /// Deducciones dice "configuracion del hotel en el Contrato, campo: Deduce
+  /// comida si/no", y Facturacion dice "el Contrato indica si el hotel requiere
+  /// factura partida por mes".
+  ///
+  /// deductsMeals dispara la deduccion de 3 USD por dia laborado — que tiene DOBLE
+  /// efecto: se le descuenta al colaborador Y se le acredita al hotel.
+  deductsMeals Boolean @default(false) @map("deducts_meals")
+  /// Cuando una semana cruza dos meses, se emiten DOS facturas en vez de una.
+  splitsInvoiceByMonth Boolean @default(false) @map("splits_invoice_by_month")
+
   validFrom DateTime  @map("valid_from") @db.Date
   /// NULO = contrato sin fecha de fin, que es lo normal: el vault habla de
   /// renovacion, no de expiracion automatica.
@@ -1444,4 +1475,252 @@ model Holiday {
   @@unique([holidayDate, country], map: "ux_holiday_date_country")
   @@map("holiday")
   @@schema("catalogs")
+}
+
+/// El pay rate personal, acordado entre Oranje y la persona por experiencia o
+/// antiguedad. Puede ser MAYOR al del contrato del hotel, y la diferencia la
+/// absorbe Oranje: la factura al hotel NUNCA lo refleja.
+///
+/// Es TABLA y no columna porque un aumento tiene que dejar rastro. Se evaluo una
+/// columna internal_rate en worker y se descarto: como cada consolidado congela el
+/// rate aplicado, lo que se pago ya queda registrado — pero eso responde "cuanto
+/// cobro", no "quien le autorizo el aumento y desde cuando".
+///
+/// Lleva posicion porque el mismo colaborador puede ganar distinto segun lo que
+/// haga: mas como Chef que como Housekeeper. NULO significa "todas sus posiciones",
+/// asi que la tabla cubre el aumento global y el especifico con la misma forma.
+///
+/// Solo Contabilidad lo ve. Ni el colaborador ni el hotel saben que existe.
+model WorkerRate {
+  id       String @db.Uuid
+  workerId String @map("worker_id") @db.Uuid
+  /// NULO = aplica a todas las posiciones del colaborador.
+  catalogPositionId String? @map("catalog_position_id") @db.Uuid
+  rate Decimal @db.Decimal(10, 2)
+
+  validFrom DateTime  @map("valid_from") @db.Date
+  /// NULO = vigente. Un aumento cierra el anterior y abre uno nuevo.
+  validTo   DateTime? @map("valid_to") @db.Date
+
+  authorizedBy String  @map("authorized_by") @db.Uuid
+  reason       String? @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  worker           Worker           @relation(fields: [workerId], references: [id], onDelete: Restrict)
+  catalogPosition  CatalogPosition? @relation(fields: [catalogPositionId], references: [id], onDelete: Restrict)
+  authorizedByUser User             @relation("workerRateAuthorizedBy", fields: [authorizedBy], references: [id], onDelete: Restrict)
+
+  /// El unico que impide dos rates vigentes a la vez es PARCIAL y ademas lleva
+  /// NULLS NOT DISTINCT — sin esa clausula dos filas globales pasarian las dos,
+  /// porque en Postgres dos NULL son distintos entre si. Vive fuera del datamodel:
+  /// se llama ux_worker_rate_active.
+  @@id([id])
+  @@index([workerId, validFrom(sort: Desc)], map: "ix_worker_rate_worker")
+  @@map("worker_rate")
+  @@schema("personal")
+}
+
+// ============================================================================
+// settlement — donde el trabajo se vuelve dinero
+//
+// Dos flujos en direcciones opuestas: Oranje le paga al Colaborador con el pay
+// rate, y el hotel le paga a Oranje con el bill rate. La diferencia es el margen,
+// y por eso son dos ramas que nunca se mezclan.
+// ============================================================================
+
+/// Lo que Oranje le paga al Colaborador en una semana.
+///
+/// Una fila por persona y semana, sin importar en cuantos hoteles trabajo. El
+/// "Pre-Payroll" del Flujo de Nomina NO es una tabla: es este mismo consolidado en
+/// estado DRAFT.
+model Consolidation {
+  id        String   @db.Uuid
+  workerId  String   @map("worker_id") @db.Uuid
+  weekStart DateTime @map("week_start") @db.Date
+  weekEnd   DateTime @map("week_end") @db.Date
+
+  grossAmount     Decimal @map("gross_amount") @db.Decimal(12, 2)
+  deductionAmount Decimal @default(0) @map("deduction_amount") @db.Decimal(12, 2)
+  netAmount       Decimal @map("net_amount") @db.Decimal(12, 2)
+
+  /// DRAFT | VALIDATED | AUTHORIZED | PAID
+  status String @default("DRAFT") @db.Text
+  /// El Flujo de Nomina tiene DOS firmas: la Contadora valida y el Manager de
+  /// Contabilidad autoriza. Un CHECK impide que algo quede autorizado sin las dos.
+  validatedBy  String?   @map("validated_by") @db.Uuid
+  validatedAt  DateTime? @map("validated_at") @db.Timestamptz(6)
+  authorizedBy String?   @map("authorized_by") @db.Uuid
+  authorizedAt DateTime? @map("authorized_at") @db.Timestamptz(6)
+  paidAt       DateTime? @map("paid_at") @db.Timestamptz(6)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  worker          Worker @relation(fields: [workerId], references: [id], onDelete: Restrict)
+  validatedByUser User?  @relation("consolidationValidatedBy", fields: [validatedBy], references: [id], onDelete: Restrict)
+  authorizedByUser User? @relation("consolidationAuthorizedBy", fields: [authorizedBy], references: [id], onDelete: Restrict)
+
+  details    ConsolidationDetail[]
+  deductions Deduction[]
+
+  @@id([id])
+  @@unique([workerId, weekStart], map: "ux_consolidation_worker_week")
+  @@index([status], map: "ix_consolidation_status")
+  @@map("consolidation")
+  @@schema("settlement")
+}
+
+/// El desglose del consolidado, POR REQUISICION.
+///
+/// Se rompe por requisicion y no por hotel (D-10): dos requisiciones del mismo
+/// hotel evaluan su umbral de 40h por separado y sus horas no se suman.
+///
+/// El rate y el multiplicador se CONGELAN aqui en vez de leerse del contrato. Es
+/// la decision mas importante de este esquema: una nomina pagada no puede cambiar.
+/// Si el rate se leyera, subirlo un martes reescribiria el pasado.
+model ConsolidationDetail {
+  id              String @db.Uuid
+  consolidationId String @map("consolidation_id") @db.Uuid
+  requisitionId   String @map("requisition_id") @db.Uuid
+  hotelId         String @map("hotel_id") @db.Uuid
+  catalogPositionId String @map("catalog_position_id") @db.Uuid
+
+  /// Hasta 40h y lo que paso de 40. Se copian de operations aunque ya esten ahi,
+  /// porque si el Supervisor corrige un ponche viejo la nomina pagada no puede
+  /// cambiar sola.
+  regularMinutes  Int @map("regular_minutes")
+  overtimeMinutes Int @default(0) @map("overtime_minutes")
+
+  payRateApplied            Decimal @map("pay_rate_applied") @db.Decimal(10, 2)
+  overtimeMultiplierApplied Decimal @map("overtime_multiplier_applied") @db.Decimal(4, 2)
+  /// Si se uso el rate personal en vez del contractual. Es lo que le permite a
+  /// Contabilidad entender por que el numero no cuadra con el contrato.
+  isInternalRate Boolean @default(false) @map("is_internal_rate")
+
+  subtotal Decimal @db.Decimal(12, 2)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  consolidation   Consolidation   @relation(fields: [consolidationId], references: [id], onDelete: Restrict)
+  requisition     Requisition     @relation(fields: [requisitionId], references: [id], onDelete: Restrict)
+  hotel           Hotel           @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+  catalogPosition CatalogPosition @relation(fields: [catalogPositionId], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@unique([consolidationId, requisitionId], map: "ux_consolidation_detail_req")
+  @@index([hotelId], map: "ix_consolidation_detail_hotel")
+  @@map("consolidation_detail")
+  @@schema("settlement")
+}
+
+/// Lo que se le descuenta al colaborador antes de liberar el pago.
+///
+/// Los TRES tipos que documenta el vault:
+///   UNIFORM         15 USD, lo dispara el Inspector. Acumulable.
+///   MEALS            3 USD por dia laborado, solo si el contrato lo pide. Tiene
+///                    DOBLE efecto: se descuenta al colaborador Y se acredita al
+///                    hotel en su factura.
+///   TAX_RETENTION   16% del cheque si no tiene SSN ni ITIN. REEMBOLSABLE.
+///
+/// El monto se guarda en la fila y no se lee de una constante: hay que congelarlo,
+/// igual que el rate.
+model Deduction {
+  id              String @db.Uuid
+  consolidationId String @map("consolidation_id") @db.Uuid
+  type            String @db.Text
+  amount          Decimal @db.Decimal(12, 2)
+  sourceNote      String? @map("source_note") @db.Text
+
+  /// Solo la retencion del 16% es reembolsable — un CHECK lo obliga. El saldo
+  /// pendiente es una SUMA, no una tabla: por eso la fila no se borra al devolver.
+  refundedAt DateTime? @map("refunded_at") @db.Timestamptz(6)
+  refundedBy String?   @map("refunded_by") @db.Uuid
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  consolidation  Consolidation @relation(fields: [consolidationId], references: [id], onDelete: Restrict)
+  refundedByUser User?         @relation("deductionRefundedBy", fields: [refundedBy], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@index([consolidationId], map: "ix_deduction_consolidation")
+  @@index([type], map: "ix_deduction_type")
+  @@map("deduction")
+  @@schema("settlement")
+}
+
+/// Lo que el hotel le paga a Oranje.
+///
+/// Una por hotel y por semana — SALVO cuando la semana cruza dos meses y el
+/// contrato pide factura partida: entonces son DOS, una por cada mes. Por eso la
+/// llave lleva el PERIODO y no la semana: con week_start en la llave, la segunda
+/// no cabria.
+model Invoice {
+  id      String @db.Uuid
+  hotelId String @map("hotel_id") @db.Uuid
+  /// Lo genera Oranje. Es independiente de cualquier referencia externa.
+  folio   String @db.Text
+
+  periodStart DateTime @map("period_start") @db.Date
+  periodEnd   DateTime @map("period_end") @db.Date
+
+  totalAmount Decimal @map("total_amount") @db.Decimal(12, 2)
+  /// Las acreditaciones al hotel. Hoy solo la deduccion de comida, que se le
+  /// descuenta al colaborador y se le acredita al hotel.
+  creditAmount Decimal @default(0) @map("credit_amount") @db.Decimal(12, 2)
+
+  /// DRAFT | APPROVED | SENT | PAID
+  status     String    @default("DRAFT") @db.Text
+  approvedBy String?   @map("approved_by") @db.Uuid
+  approvedAt DateTime? @map("approved_at") @db.Timestamptz(6)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  hotel          Hotel @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+  approvedByUser User? @relation("invoiceApprovedBy", fields: [approvedBy], references: [id], onDelete: Restrict)
+
+  details InvoiceDetail[]
+
+  @@id([id])
+  @@unique([folio], map: "ux_invoice_folio")
+  @@unique([hotelId, periodStart, periodEnd], map: "ux_invoice_hotel_period")
+  @@index([status], map: "ix_invoice_status")
+  @@map("invoice")
+  @@schema("settlement")
+}
+
+/// El desglose de la factura.
+///
+/// Usa el BILL RATE y solo el bill rate. El rate personal del colaborador nunca se
+/// refleja aqui: el hotel no debe saber cuanto le paga Oranje a la persona, y eso
+/// es lo que protege el margen como informacion interna.
+model InvoiceDetail {
+  id        String @db.Uuid
+  invoiceId String @map("invoice_id") @db.Uuid
+  requisitionId String @map("requisition_id") @db.Uuid
+  workerId      String @map("worker_id") @db.Uuid
+  catalogPositionId String @map("catalog_position_id") @db.Uuid
+
+  regularMinutes  Int @map("regular_minutes")
+  /// Solo el overtime AUTORIZADO por el hotel. Puede ser menor al que se le pago
+  /// al colaborador — ver el pendiente del overtime en el ADR.
+  overtimeMinutes Int @default(0) @map("overtime_minutes")
+
+  billRateApplied           Decimal @map("bill_rate_applied") @db.Decimal(10, 2)
+  overtimeMultiplierApplied Decimal @map("overtime_multiplier_applied") @db.Decimal(4, 2)
+  subtotal                  Decimal @db.Decimal(12, 2)
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  invoice         Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  requisition     Requisition     @relation(fields: [requisitionId], references: [id], onDelete: Restrict)
+  worker          Worker          @relation(fields: [workerId], references: [id], onDelete: Restrict)
+  catalogPosition CatalogPosition @relation(fields: [catalogPositionId], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@index([invoiceId], map: "ix_invoice_detail_invoice")
+  @@index([workerId], map: "ix_invoice_detail_worker")
+  @@map("invoice_detail")
+  @@schema("settlement")
 }
