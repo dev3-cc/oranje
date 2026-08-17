@@ -4,7 +4,7 @@ import type { ProspectSummary } from '../types/prospect.types'
 
 import { ProspectCard } from './ProspectCard'
 
-import { SemaforoSoftBadge } from '@/shared/components/SemaforoSoftBadge'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   ONBOARDING_STATUS_DESCRIPTION,
   ONBOARDING_STATUS_LABEL,
@@ -29,7 +29,7 @@ export function PipelineColumn({
   return (
     <section className="flex w-80 shrink-0 flex-col gap-3 self-start rounded-lg bg-surface-3/60 p-3">
       <header className="flex items-center justify-between gap-3 px-1 pt-1">
-        <SemaforoSoftBadge
+        <StatusLightSoftBadge
           token={ONBOARDING_STATUS_TOKEN[status]}
           label={ONBOARDING_STATUS_LABEL[status]}
         />

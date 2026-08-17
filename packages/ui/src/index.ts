@@ -6,5 +6,5 @@
  */
 export { cn } from './lib/utils'
 export { KpiCard, type KpiCardProps } from './components/KpiCard'
-export { SemaforoBadge, type SemaforoBadgeProps } from './components/SemaforoBadge'
+export { StatusLightBadge, type StatusLightBadgeProps } from './components/StatusLightBadge'
 export * from '../tokens'

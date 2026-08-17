@@ -6,10 +6,10 @@ const TINT_ALPHA = '26'
 
 /**
  * Variante suave del chip de semáforo: fondo teñido y punto de color, frente al
- * relleno sólido de `SemaforoBadge`. Se usa donde hay varios chips a la vez y
+ * relleno sólido de `StatusLightBadge`. Se usa donde hay varios chips a la vez y
  * el relleno lleno competiría con el contenido.
  *
- * Recibe token y etiqueta —la misma API que `SemaforoBadge`— y no un estado
+ * Recibe token y etiqueta —la misma API que `StatusLightBadge`— y no un estado
  * concreto: sirve a los siete semáforos, y el nombre del estado lo pone quien
  * lo usa, porque un mismo color significa cosas distintas en cada uno.
  *
@@ -18,7 +18,7 @@ const TINT_ALPHA = '26'
  * peor. El color sigue en el punto y el fondo, que es señal redundante y no la
  * única portadora del significado.
  *
- * ⚠ Su sitio natural es `packages/ui`, al lado de `SemaforoBadge`. Está aquí
+ * ⚠ Su sitio natural es `packages/ui`, al lado de `StatusLightBadge`. Está aquí
  * porque ese paquete está fuera del alcance acordado.
  */
 /**
@@ -28,7 +28,7 @@ const TINT_ALPHA = '26'
  */
 const OUTLINED_TOKENS: readonly StatusLightToken[] = ['st-blanco']
 
-export function SemaforoSoftBadge({
+export function StatusLightSoftBadge({
   token,
   label,
 }: {

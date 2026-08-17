@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { NavLink } from 'react-router'
 
 import { useGetSessionQuery } from '@/app/sessionApi'
+import logoOranje from '@/assets/logo/Logo_ORANJE_Orange.png'
 
 /**
  * Sidebar de 248px (`--sb`): logo arriba, módulos del rol en medio y la tarjeta
@@ -56,8 +57,7 @@ export function Sidebar(): ReactNode {
     <aside className="flex w-sb shrink-0 flex-col border-r border-line bg-surface">
       {/* A la altura del header para que el logo y el buscador queden alineados */}
       <div className="flex h-hd shrink-0 items-center gap-3 px-5">
-        <span className="size-8 shrink-0 rounded-lg bg-o-500" aria-hidden />
-        <span className="text-lg font-bold text-ink">Oranje</span>
+        <img src={logoOranje} alt="Oranje" className="h-4 w-auto" />
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 p-3">

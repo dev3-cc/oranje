@@ -7,7 +7,7 @@ import { ProposalVersionHistory } from '../components/ProposalVersionHistory'
 
 import { buttonClass } from '@/shared/components/Button'
 import { SectionCard } from '@/shared/components/SectionCard'
-import { SemaforoSoftBadge } from '@/shared/components/SemaforoSoftBadge'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
@@ -72,7 +72,7 @@ export function ProposalVersionPage(): ReactNode {
             <h1 className="text-3xl font-bold tracking-tight text-ink">
               Propuesta v{selected.version} · {workspace.hotelName}
             </h1>
-            <SemaforoSoftBadge
+            <StatusLightSoftBadge
               token={ONBOARDING_STATUS_TOKEN[workspace.prospectStatus]}
               label={ONBOARDING_STATUS_LABEL[workspace.prospectStatus]}
             />

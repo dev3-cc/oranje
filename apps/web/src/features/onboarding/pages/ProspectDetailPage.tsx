@@ -1,4 +1,4 @@
-import { SemaforoBadge } from '@oranje/ui'
+import { StatusLightBadge } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 
@@ -76,7 +76,10 @@ export function ProspectDetailPage(): ReactNode {
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight text-ink">{prospect.hotelName}</h1>
-            <SemaforoBadge token={ONBOARDING_STATUS_TOKEN[prospect.status]} label={statusLabel} />
+            <StatusLightBadge
+              token={ONBOARDING_STATUS_TOKEN[prospect.status]}
+              label={statusLabel}
+            />
           </div>
           <p className="mt-1.5 text-sm text-ink-3">
             Ciclo abierto desde {formatDate(prospect.cycleStartedAt)} · {prospect.daysInStatus} días

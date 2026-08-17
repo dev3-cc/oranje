@@ -6,7 +6,7 @@ import type { RequisitionRow } from '../types/requisition.types'
 
 import { CoverageBar } from './CoverageBar'
 
-import { SemaforoSoftBadge } from '@/shared/components/SemaforoSoftBadge'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   REQUISITION_STATUS_LABEL,
   REQUISITION_STATUS_TOKEN,
@@ -95,7 +95,7 @@ export function RequisitionTable({ items }: { items: RequisitionRow[] }): ReactN
               </td>
 
               <td className="px-4 py-4">
-                <SemaforoSoftBadge
+                <StatusLightSoftBadge
                   token={REQUISITION_STATUS_TOKEN[item.status]}
                   label={REQUISITION_STATUS_LABEL[item.status]}
                 />

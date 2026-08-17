@@ -1,4 +1,4 @@
-import { cn, SemaforoBadge } from '@oranje/ui'
+import { cn, StatusLightBadge } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
 import {
@@ -149,7 +149,7 @@ export function ChangeStatusDialog({
                 {isSelected && <span className="size-2.5 rounded-full bg-o-500" />}
               </span>
 
-              <SemaforoBadge
+              <StatusLightBadge
                 token={ONBOARDING_STATUS_TOKEN[transition.toStatus]}
                 label={ONBOARDING_STATUS_LABEL[transition.toStatus]}
                 className="shrink-0"

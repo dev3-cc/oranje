@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 import type { ClientCard } from '../types/client.types'
 
-import { SemaforoSoftBadge } from '@/shared/components/SemaforoSoftBadge'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TOKEN } from '@/shared/constants/contractStatus'
 
 /**
@@ -31,7 +31,7 @@ export function ClientMapCard({ client }: { client: ClientCard }): ReactNode {
       <div className="mt-2 flex flex-wrap items-center gap-3">
         {client.contract ? (
           <>
-            <SemaforoSoftBadge
+            <StatusLightSoftBadge
               token={CONTRACT_STATUS_TOKEN[client.contract.status]}
               label={CONTRACT_STATUS_LABEL[client.contract.status]}
             />

@@ -1,8 +1,8 @@
 import { statusLight } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
-import { describeCoverage } from '../lib/coverage'
 import type { RequisitionCoverage } from '../types/requisition.types'
+import { describeCoverage } from '../utils/coverage'
 
 /**
  * Cuántas posiciones están cubiertas, con su barra a escala.

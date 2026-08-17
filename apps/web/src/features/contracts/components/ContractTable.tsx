@@ -5,7 +5,7 @@ import type { ContractRow } from '../types/contract.types'
 
 import { ValidityCell } from './ValidityCell'
 
-import { SemaforoSoftBadge } from '@/shared/components/SemaforoSoftBadge'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TOKEN } from '@/shared/constants/contractStatus'
 
 const HEADERS = ['number', 'hotel', 'estado', 'vigencia', 'posiciones', 'overtime · festivo', '']
@@ -72,7 +72,7 @@ export function ContractTable({
               <td className="px-5 py-5 text-base whitespace-nowrap text-ink-2">{row.hotelName}</td>
 
               <td className="px-5 py-5">
-                <SemaforoSoftBadge
+                <StatusLightSoftBadge
                   token={CONTRACT_STATUS_TOKEN[row.status]}
                   label={CONTRACT_STATUS_LABEL[row.status]}
                 />

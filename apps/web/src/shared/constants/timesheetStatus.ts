@@ -5,7 +5,7 @@ import type { StatusLightToken } from '@oranje/ui'
  *
  * ⚠ DERIVADO DE LA CAPTURA, NO DEL VAULT.
  *
- * §5 declara `packages/domain/src/semaforos/indicadorTimesheet.ts` pero no lo
+ * Estructura de Proyecto §6 declara `packages/domain/src/statusLights/timesheetIndicator.ts` pero no lo
  * transcribe, así que estos tres estados salen de la maqueta del Timesheet.
  * Igual que el de Colaborador: falta validarlo contra la nota y pasar por
  * `semaforo-guardian`. No se declaran transiciones — inventarlas sería peor que

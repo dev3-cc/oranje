@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import type { RequisitionStatusEvent } from '../types/requisition.types'
 
 import { SectionCard } from '@/shared/components/SectionCard'
-import { SemaforoSoftBadge } from '@/shared/components/SemaforoSoftBadge'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   REQUISITION_STATUS_LABEL,
   REQUISITION_STATUS_TOKEN,
@@ -28,7 +28,7 @@ export function StatusHistoryCard({ history }: { history: RequisitionStatusEvent
                 <span className="text-sm text-ink-3">nace en</span>
               ) : (
                 <>
-                  <SemaforoSoftBadge
+                  <StatusLightSoftBadge
                     token={REQUISITION_STATUS_TOKEN[event.fromStatus]}
                     label={REQUISITION_STATUS_LABEL[event.fromStatus]}
                   />
@@ -37,7 +37,7 @@ export function StatusHistoryCard({ history }: { history: RequisitionStatusEvent
                   </span>
                 </>
               )}
-              <SemaforoSoftBadge
+              <StatusLightSoftBadge
                 token={REQUISITION_STATUS_TOKEN[event.toStatus]}
                 label={REQUISITION_STATUS_LABEL[event.toStatus]}
               />

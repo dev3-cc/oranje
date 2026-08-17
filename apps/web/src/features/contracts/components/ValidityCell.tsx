@@ -1,8 +1,8 @@
 import { cn, statusLight } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
-import { describeValidity } from '../lib/validity'
 import type { ContractRow } from '../types/contract.types'
+import { describeValidity } from '../utils/validity'
 
 import { formatDate } from '@/shared/lib/formatters'
 

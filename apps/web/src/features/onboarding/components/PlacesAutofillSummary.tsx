@@ -1,7 +1,7 @@
 import { cn } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
-import { SemaforoSoftBadge } from '@/shared/components/SemaforoSoftBadge'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
@@ -78,7 +78,7 @@ export function PlacesAutofillSummary({
     <div className={cn('p-4', className)}>
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-base font-semibold text-ink">{hotelName || 'Hotel sin nombre'}</h3>
-        <SemaforoSoftBadge
+        <StatusLightSoftBadge
           token={ONBOARDING_STATUS_TOKEN[status]}
           label={ONBOARDING_STATUS_LABEL[status]}
         />

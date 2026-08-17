@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 
 import { useGetConversionQueueQuery } from '../api/conversionApi'
 
-import { SemaforoSoftBadge } from '@/shared/components/SemaforoSoftBadge'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
@@ -64,7 +64,7 @@ export function ConversionQueuePage(): ReactNode {
                       ? 'Listo para aprobar'
                       : `${candidate.pendingRequirements} requisitos pendientes`}
                   </p>
-                  <SemaforoSoftBadge
+                  <StatusLightSoftBadge
                     token={ONBOARDING_STATUS_TOKEN[candidate.status]}
                     label={ONBOARDING_STATUS_LABEL[candidate.status]}
                   />

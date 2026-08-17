@@ -5,7 +5,7 @@ import { Link } from 'react-router'
 import type { ClientCard } from '../types/client.types'
 
 import { Button } from '@/shared/components/Button'
-import { SemaforoSoftBadge } from '@/shared/components/SemaforoSoftBadge'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TOKEN } from '@/shared/constants/contractStatus'
 import { formatDate, formatMoney } from '@/shared/lib/formatters'
 
@@ -82,7 +82,7 @@ export function ClientCardItem({
               </div>
 
               {contract ? (
-                <SemaforoSoftBadge
+                <StatusLightSoftBadge
                   token={CONTRACT_STATUS_TOKEN[contract.status]}
                   label={CONTRACT_STATUS_LABEL[contract.status]}
                 />

@@ -8,7 +8,7 @@ import { SlotList } from '../components/SlotList'
 import { StatusHistoryCard } from '../components/StatusHistoryCard'
 
 import { Button } from '@/shared/components/Button'
-import { SemaforoSoftBadge } from '@/shared/components/SemaforoSoftBadge'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   REQUISITION_STATUS_LABEL,
   REQUISITION_STATUS_TOKEN,
@@ -67,7 +67,7 @@ export function RequisitionDetailPage(): ReactNode {
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight text-ink">{detail.number}</h1>
-            <SemaforoSoftBadge
+            <StatusLightSoftBadge
               token={REQUISITION_STATUS_TOKEN[detail.status]}
               label={REQUISITION_STATUS_LABEL[detail.status]}
             />

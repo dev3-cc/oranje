@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 
 import { useGetProposalCandidatesQuery } from '../api/proposalsApi'
 
-import { SemaforoSoftBadge } from '@/shared/components/SemaforoSoftBadge'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
@@ -75,7 +75,7 @@ export function ProposalListPage(): ReactNode {
                         : 'Borrador sin enviar'}
                     </p>
                   </div>
-                  <SemaforoSoftBadge
+                  <StatusLightSoftBadge
                     token={ONBOARDING_STATUS_TOKEN[candidate.prospectStatus]}
                     label={ONBOARDING_STATUS_LABEL[candidate.prospectStatus]}
                   />

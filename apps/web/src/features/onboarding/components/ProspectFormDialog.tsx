@@ -26,7 +26,7 @@ import { useGetSessionQuery } from '@/app/sessionApi'
 import { Button } from '@/shared/components/Button'
 import { MapsScope } from '@/shared/components/MapsScope'
 import { Modal } from '@/shared/components/Modal'
-import { SemaforoSoftBadge } from '@/shared/components/SemaforoSoftBadge'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   ONBOARDING_STATUS_DESCRIPTION,
   ONBOARDING_STATUS_LABEL,
@@ -582,7 +582,7 @@ export function ProspectFormDialog({
                   column="ck_prospect_light fija el semáforo a ONBOARDING · un solo ciclo abierto por hotel"
                 >
                   <div className="flex items-center gap-3">
-                    <SemaforoSoftBadge
+                    <StatusLightSoftBadge
                       token={ONBOARDING_STATUS_TOKEN[status]}
                       label={ONBOARDING_STATUS_LABEL[status]}
                     />

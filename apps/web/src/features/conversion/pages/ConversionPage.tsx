@@ -11,7 +11,7 @@ import { RequirementRow } from '../components/RequirementRow'
 
 import { Button } from '@/shared/components/Button'
 import { SectionCard } from '@/shared/components/SectionCard'
-import { SemaforoSoftBadge } from '@/shared/components/SemaforoSoftBadge'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
@@ -59,7 +59,7 @@ export function ConversionPage(): ReactNode {
           <h1 className="text-3xl font-bold tracking-tight text-ink">
             Conversión a cliente activo
           </h1>
-          <SemaforoSoftBadge
+          <StatusLightSoftBadge
             token={ONBOARDING_STATUS_TOKEN[readiness.currentStatus]}
             label={ONBOARDING_STATUS_LABEL[readiness.currentStatus]}
           />

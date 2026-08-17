@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { cn, SemaforoBadge } from '@oranje/ui'
+import { cn, StatusLightBadge } from '@oranje/ui'
 import { useEffect, type ComponentProps, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useParams } from 'react-router'
@@ -104,7 +104,7 @@ export function ProposalEditorPage(): ReactNode {
             <h1 className="text-3xl font-bold tracking-tight text-ink">
               Propuesta · {workspace.hotelName}
             </h1>
-            <SemaforoBadge
+            <StatusLightBadge
               token={ONBOARDING_STATUS_TOKEN[workspace.prospectStatus]}
               label={ONBOARDING_STATUS_LABEL[workspace.prospectStatus]}
             />

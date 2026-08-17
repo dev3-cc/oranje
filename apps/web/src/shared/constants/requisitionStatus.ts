@@ -8,7 +8,7 @@ import type { StatusLightToken } from '@oranje/ui'
  * Las transiciones son las de ahí, literales.
  *
  * ⚠ Mismo domicilio provisional que el de Onboarding: su sitio es
- * `packages/domain/src/semaforos/semaforoRequisicion.ts`, hoy fuera del alcance
+ * `packages/domain/src/statusLights/requisitionStatusLight.ts`, hoy fuera del alcance
  * acordado.
  */
 export const REQUISITION_STATUSES = [

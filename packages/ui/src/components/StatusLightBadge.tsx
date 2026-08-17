@@ -11,13 +11,13 @@ import { statusLight, statusLightForeground, type StatusLightToken } from '../..
  * significa en cada uno. Por eso recibe `label`: el nombre del estado lo pone
  * quien lo usa, no este componente.
  */
-export interface SemaforoBadgeProps {
+export interface StatusLightBadgeProps {
   token: StatusLightToken
   label: string
   className?: string
 }
 
-export function SemaforoBadge({ token, label, className }: SemaforoBadgeProps): ReactNode {
+export function StatusLightBadge({ token, label, className }: StatusLightBadgeProps): ReactNode {
   return (
     <span
       className={cn(

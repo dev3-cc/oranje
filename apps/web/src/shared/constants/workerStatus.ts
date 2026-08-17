@@ -5,7 +5,7 @@ import type { StatusLightToken } from '@oranje/ui'
  *
  * ⚠ DERIVADO DE LA CAPTURA, NO DEL VAULT.
  *
- * `NOMENCLATURA.md` §5 declara `packages/domain/src/semaforos/semaforoColaborador.ts`
+ * `NOMENCLATURA.md` Estructura de Proyecto §6 declara `packages/domain/src/statusLights/workerStatusLight.ts`
  * pero solo transcribe el ejemplo del de Requisición, así que estos seis
  * estados y sus etiquetas salen de la maqueta del Pool. Antes de darlos por
  * buenos tienen que validarse contra la nota del semáforo y pasar por

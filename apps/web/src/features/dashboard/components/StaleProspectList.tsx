@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 import type { StaleProspect } from '../types/dashboard.types'
 
 import { SectionCard } from '@/shared/components/SectionCard'
-import { SemaforoSoftBadge } from '@/shared/components/SemaforoSoftBadge'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
@@ -40,7 +40,7 @@ export function StaleProspectList({ prospects }: { prospects: StaleProspect[] })
                 </p>
               </div>
 
-              <SemaforoSoftBadge
+              <StatusLightSoftBadge
                 token={ONBOARDING_STATUS_TOKEN[prospect.status]}
                 label={ONBOARDING_STATUS_LABEL[prospect.status]}
               />

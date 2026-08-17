@@ -1,4 +1,4 @@
-import { SemaforoBadge, statusLight } from '@oranje/ui'
+import { StatusLightBadge, statusLight } from '@oranje/ui'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
@@ -28,7 +28,7 @@ export function HotelMapCard({ hotel }: { hotel: TerritoryHotel }): ReactNode {
     <article className="absolute top-6 left-6 z-10 w-[26rem] max-w-[calc(100%-3rem)] rounded-lg bg-surface p-6 shadow-lg">
       <div className="flex items-start justify-between gap-3">
         <h2 className="text-lg font-semibold text-ink">{hotel.hotelName}</h2>
-        <SemaforoBadge
+        <StatusLightBadge
           token={ONBOARDING_STATUS_TOKEN[hotel.status]}
           label={ONBOARDING_STATUS_LABEL[hotel.status]}
           className="shrink-0"

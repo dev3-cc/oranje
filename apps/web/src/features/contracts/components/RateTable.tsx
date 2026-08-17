@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
-import { marginOf } from '../lib/validity'
 import type { ContractRate } from '../types/contract.types'
+import { marginOf } from '../utils/validity'
 
 import { SectionCard } from '@/shared/components/SectionCard'
 import { formatMoney } from '@/shared/lib/formatters'

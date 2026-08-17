@@ -7,7 +7,7 @@ import { POSITION_MODALITY_LABEL } from '../types/requisition.types'
 import { CoverageBadge } from './CoverageBadge'
 
 import { SectionCard } from '@/shared/components/SectionCard'
-import { SemaforoSoftBadge } from '@/shared/components/SemaforoSoftBadge'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { URGENCY_LABEL, URGENCY_TOKEN } from '@/shared/constants/requisitionStatus'
 import { formatDayMonth } from '@/shared/lib/formatters'
 
@@ -89,7 +89,7 @@ export function PositionsTable({
                   </td>
 
                   <td className="px-3 py-4">
-                    <SemaforoSoftBadge
+                    <StatusLightSoftBadge
                       token={URGENCY_TOKEN[position.urgency]}
                       label={URGENCY_LABEL[position.urgency]}
                     />

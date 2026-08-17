@@ -8,7 +8,7 @@ import { RateTable } from '../components/RateTable'
 
 import { Button } from '@/shared/components/Button'
 import { SectionCard } from '@/shared/components/SectionCard'
-import { SemaforoSoftBadge } from '@/shared/components/SemaforoSoftBadge'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   CONTRACT_STATUS_LABEL,
   CONTRACT_STATUS_TOKEN,
@@ -74,7 +74,7 @@ export function ContractDetailPage(): ReactNode {
             <h1 className="text-3xl font-bold tracking-tight text-ink">
               Contrato {contract.number}
             </h1>
-            <SemaforoSoftBadge
+            <StatusLightSoftBadge
               token={CONTRACT_STATUS_TOKEN[contract.status]}
               label={CONTRACT_STATUS_LABEL[contract.status]}
             />

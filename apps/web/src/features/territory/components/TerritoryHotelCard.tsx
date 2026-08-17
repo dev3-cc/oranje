@@ -1,4 +1,4 @@
-import { cn, SemaforoBadge } from '@oranje/ui'
+import { cn, StatusLightBadge } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
 import type { TerritoryHotel } from '../types/territory.types'
@@ -43,7 +43,7 @@ export function TerritoryHotelCard({
     >
       <div className="flex items-center justify-between gap-3">
         <span className="text-base font-semibold text-ink">{hotel.hotelName}</span>
-        <SemaforoBadge
+        <StatusLightBadge
           token={ONBOARDING_STATUS_TOKEN[hotel.status]}
           label={ONBOARDING_STATUS_LABEL[hotel.status]}
           className="shrink-0"

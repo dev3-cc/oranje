@@ -9,7 +9,7 @@ import { AuthorizationPositionsTable } from '../components/AuthorizationPosition
 import { AuthorizationQueueList } from '../components/AuthorizationQueueList'
 import { AuthorizationResolutionForm } from '../components/AuthorizationResolutionForm'
 
-import { SemaforoSoftBadge } from '@/shared/components/SemaforoSoftBadge'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   AUTHORIZATION_TRANSITION,
   REQUISITION_STATUS_LABEL,
@@ -92,7 +92,7 @@ export function RequisitionAuthorizationPage(): ReactNode {
                     {selected.requestedByName}
                   </p>
                 </div>
-                <SemaforoSoftBadge
+                <StatusLightSoftBadge
                   token={REQUISITION_STATUS_TOKEN[selected.status]}
                   label={REQUISITION_STATUS_LABEL[selected.status]}
                 />

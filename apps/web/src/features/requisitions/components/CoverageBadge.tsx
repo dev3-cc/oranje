@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 
-import { describeCoverage } from '../lib/coverage'
 import type { RequisitionCoverage } from '../types/requisition.types'
+import { describeCoverage } from '../utils/coverage'
 
-import { SemaforoSoftBadge } from '@/shared/components/SemaforoSoftBadge'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 
 /**
  * La cobertura de una posición como chip: «Parcial 3/4».
@@ -17,7 +17,7 @@ export function CoverageBadge({ coverage }: { coverage: RequisitionCoverage }): 
   const capitalized = label.charAt(0).toUpperCase() + label.slice(1)
 
   return (
-    <SemaforoSoftBadge
+    <StatusLightSoftBadge
       token={token}
       label={`${capitalized} ${String(coverage.filled)}/${String(coverage.total)}`}
     />

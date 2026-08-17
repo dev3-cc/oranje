@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 import type { PoolWorker } from '../types/pool.types'
 
-import { SemaforoSoftBadge } from '@/shared/components/SemaforoSoftBadge'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { ENGLISH_LEVEL_LABEL, HIRING_MODALITY_LABEL } from '@/shared/constants/catalogs'
 import { workerStatusChipLabel, WORKER_STATUS_TOKEN } from '@/shared/constants/workerStatus'
 
@@ -69,7 +69,7 @@ export function PoolTable({ items }: { items: PoolWorker[] }): ReactNode {
               </td>
 
               <td className="px-5 py-5">
-                <SemaforoSoftBadge
+                <StatusLightSoftBadge
                   token={WORKER_STATUS_TOKEN[worker.status]}
                   label={workerStatusChipLabel(worker.status)}
                 />

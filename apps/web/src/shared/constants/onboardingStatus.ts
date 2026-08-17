@@ -5,11 +5,11 @@ import type { StatusLightToken } from '@oranje/ui'
  *
  * ⚠ ESTE ARCHIVO ESTÁ EN EL LUGAR EQUIVOCADO A PROPÓSITO.
  *
- * Según §5 los semáforos viven en `packages/domain/src/semaforos/`, que es la
+ * Según Estructura de Proyecto §6 los semáforos viven en `packages/domain/src/statusLights/`, que es la
  * fuente de verdad en código, y `packages/domain` hoy está vacío y fuera del
  * alcance de este trabajo (solo se toca `apps/web`). Queda aquí para no
  * bloquear las pantallas, y debe migrarse tal cual a
- * `packages/domain/src/semaforos/semaforoOnboarding.ts` en cuanto se pueda
+ * `packages/domain/src/statusLights/onboardingStatusLight.ts` en cuanto se pueda
  * tocar ese paquete.
  *
  * Vive en `shared/constants/` y no dentro de una feature porque lo consumen
