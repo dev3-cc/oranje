@@ -1,0 +1,120 @@
+/**
+ * Tokens Oranje como CSS. Espejo de `tokens.ts` — si cambia allá, cambia aquí.
+ *
+ * Dos bloques y la razón de que sean dos:
+ *
+ *   :root       nombres CANÓNICOS del vault (`--o-500`, `--sb`, `--st-*`).
+ *               No se renombran. Son los que documenta Convenciones de Diseño
+ *               y los que usa `oranje-seed.css` durante la migración.
+ *
+ *   @theme      nombres que Tailwind 4 necesita para GENERAR utilidades
+ *               (`--color-o-500` -> `bg-o-500`). Se declaran DERIVADOS con
+ *               `inline`, apuntando a los canónicos. Nunca al revés.
+ */
+
+:root {
+  /* Marca */
+  --o-50: #fff6e8;
+  --o-500: #ff8000;
+  --o-700: #c85f00;
+
+  /* Neutrales */
+  --bg: #f6f4f1;
+  --surface: #ffffff;
+  --surface-2: #fbfaf8;
+  --surface-3: #efebe6;
+  --line: #e3ddd5;
+  --ink: #1a1108;
+  --ink-2: #4a3f35;
+  --ink-3: #7a6d60;
+  --ink-4: #a79a8c; /* 2.7:1 — solo decorativo, nunca texto legible */
+
+  /* Semánticos */
+  --red: #e11919;
+  --yellow: #ffd500;
+  --green: #1fa84a;
+  --blue: #3b7ddd;
+  --purple: #7b2cbf;
+
+  /* Semáforo — 12 estados. No se mapean a shadcn (D-16). */
+  --st-blanco: #ffffff;
+  --st-negro: #1a1108;
+  --st-verde-manzana: #8cc63f;
+  --st-azul-claro: #5bc0eb;
+  --st-naranja: #f2711c; /* NO es --o-500: ΔE 11.0 de separación deliberada */
+  --st-rosa: #ff6fa5;
+  --st-morado: #7b2cbf;
+  --st-rojo: #e11919;
+  --st-amarillo: #ffd500;
+  --st-verde: #1fa84a;
+  --st-cafe: #8b5e34;
+  --st-gris: #9a9a9a;
+
+  /* Layout */
+  --sb: 248px;
+  --hd: 64px;
+
+  /* Radios */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+
+  /* Sombras — tintadas con --ink, no negro puro */
+  --sh-sm: 0 1px 2px rgba(26, 17, 8, 0.06);
+  --sh-md: 0 4px 12px rgba(26, 17, 8, 0.08);
+  --sh-lg: 0 12px 32px rgba(26, 17, 8, 0.12);
+  --sh-orange: 0 6px 20px rgba(255, 128, 0, 0.28);
+
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@theme inline {
+  --font-sans: 'Montserrat Variable', 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+
+  --color-o-50: var(--o-50);
+  --color-o-500: var(--o-500);
+  --color-o-700: var(--o-700);
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+
+  --color-red: var(--red);
+  --color-yellow: var(--yellow);
+  --color-green: var(--green);
+  --color-blue: var(--blue);
+  --color-purple: var(--purple);
+
+  --color-st-blanco: var(--st-blanco);
+  --color-st-negro: var(--st-negro);
+  --color-st-verde-manzana: var(--st-verde-manzana);
+  --color-st-azul-claro: var(--st-azul-claro);
+  --color-st-naranja: var(--st-naranja);
+  --color-st-rosa: var(--st-rosa);
+  --color-st-morado: var(--st-morado);
+  --color-st-rojo: var(--st-rojo);
+  --color-st-amarillo: var(--st-amarillo);
+  --color-st-verde: var(--st-verde);
+  --color-st-cafe: var(--st-cafe);
+  --color-st-gris: var(--st-gris);
+
+  --spacing-sb: var(--sb);
+  --spacing-hd: var(--hd);
+
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+
+  --shadow-sm: var(--sh-sm);
+  --shadow-md: var(--sh-md);
+  --shadow-lg: var(--sh-lg);
+  --shadow-orange: var(--sh-orange);
+
+  --ease-oranje: var(--ease);
+}

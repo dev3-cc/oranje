@@ -1,1 +1,10 @@
-// Pendiente — ver Estructura de Proyecto y Nomenclatura §6
+/**
+ * Única superficie pública de @oranje/ui.
+ *
+ * Los estilos NO se exportan por aquí: se importan por su ruta
+ * (`@oranje/ui/styles/tokens.css`) desde el `globals.css` de cada app.
+ */
+export { cn } from './lib/utils'
+export { KpiCard, type KpiCardProps } from './components/KpiCard'
+export { SemaforoBadge, type SemaforoBadgeProps } from './components/SemaforoBadge'
+export * from '../tokens'

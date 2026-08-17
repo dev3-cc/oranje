@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#ff8000" />
+    <title>Oranje</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!--
+      Destino de impresión. Los documentos imprimibles (hoy la vista previa del
+      contrato) se portalizan aquí, FUERA de #root: dentro del modal quedaban
+      atrapados en un contenedor con overflow y max-height, y al imprimir solo
+      salía el trozo visible en pantalla. Oculto siempre salvo en @media print.
+    -->
+    <div id="print-root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

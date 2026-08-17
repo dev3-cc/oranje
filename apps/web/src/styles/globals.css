@@ -1,0 +1,82 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/* Tokens Oranje primero: shadcn-vars los referencia */
+@import '@oranje/ui/styles/tokens.css';
+@import '@oranje/ui/styles/shadcn-vars.css';
+
+/**
+ * Tailwind 4 escanea el proyecto para saber qué clases generar. `packages/ui`
+ * vive fuera de la raíz de esta app, así que hay que señalarlo a mano — sin
+ * esto, las clases que solo usan los componentes de shadcn no se emiten.
+ */
+@source '../../../../packages/ui/src';
+
+/**
+ * Destino de impresión: existe siempre en el DOM, invisible en pantalla. Los
+ * documentos imprimibles se portalizan aquí desde React.
+ */
+#print-root {
+  display: none;
+}
+
+/**
+ * Impresión: se cambia la app entera por el documento.
+ *
+ * El primer intento ocultaba todo con `visibility` y dejaba el documento donde
+ * estaba, dentro del modal. No funcionó: el panel del modal tiene
+ * `overflow-y: auto` y `max-height`, y un ancestro que recorta sigue
+ * recortando aunque sus hijos sean invisibles — al imprimir salía solo el
+ * trozo que cabía en pantalla. Sacando el documento a `#print-root`, fuera de
+ * `#root`, fluye por el documento y pagina completo.
+ */
+@media print {
+  #root {
+    display: none !important;
+  }
+
+  #print-root {
+    display: block;
+  }
+
+  html,
+  body {
+    background: #fff;
+  }
+
+  /* Sin esto el navegador descarta los fondos y el aviso legal sale en blanco. */
+  #print-root * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Que ningún bloque se parta a la mitad entre dos páginas. */
+  #print-root section,
+  #print-root table,
+  #print-root footer,
+  #print-root header {
+    break-inside: avoid;
+  }
+
+  @page {
+    margin: 16mm;
+  }
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  *,
+  ::before,
+  ::after {
+    border-color: var(--line);
+  }
+}

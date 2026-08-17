@@ -2,12 +2,40 @@
   "name": "@oranje/ui",
   "version": "0.0.0",
   "private": true,
-  "description": "Preset de Tailwind con los tokens Oranje + componentes web (§6)",
+  "type": "module",
+  "description": "Tokens Oranje + componentes web (§6)",
   "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens": "./tokens.ts",
+    "./tailwind-preset": "./tailwind-preset.ts",
+    "./styles/tokens.css": "./src/styles/tokens.css",
+    "./styles/shadcn-vars.css": "./src/styles/shadcn-vars.css"
+  },
   "scripts": {
-    "lint": "echo 'sin código todavía' && exit 0",
-    "typecheck": "echo 'sin código todavía' && exit 0",
-    "test": "echo 'sin código todavía' && exit 0",
-    "build": "echo 'sin código todavía' && exit 0"
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "test": "echo 'sin tests todavía' && exit 0",
+    "build": "echo 'se consume por fuente, no se compila' && exit 0"
+  },
+  "dependencies": {
+    "@tanstack/react-table": "^9.1.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "material-icons": "^1.13.14",
+    "tailwind-merge": "^3.6.0",
+    "tw-animate-css": "^1.4.0"
+  },
+  "devDependencies": {
+    "@oranje/config": "workspace:*",
+    "@types/react": "^19.2.18",
+    "eslint": "^10.8.0",
+    "react": "^19.2.8",
+    "shadcn": "^4.16.2",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^6.0.3"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
   }
 }
