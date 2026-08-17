@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common'
 
 import { IdentityModule } from '../../identity/index.js'
 
+import { ContactAttemptsController } from './contact-attempts.controller.js'
+import { ContactAttemptsRepository } from './contact-attempts.repository.js'
+import { ContactAttemptsService } from './contact-attempts.service.js'
 import { ProspectsController } from './prospects.controller.js'
 import { ProspectsRepository } from './prospects.repository.js'
 import { ProspectsService } from './prospects.service.js'
@@ -11,8 +14,15 @@ import { TransitionsService } from './transitions.service.js'
 
 @Module({
   imports: [IdentityModule],
-  controllers: [ProspectsController, TransitionsController],
-  providers: [ProspectsService, ProspectsRepository, TransitionsService, TransitionsRepository],
-  exports: [ProspectsService, TransitionsService],
+  controllers: [ProspectsController, TransitionsController, ContactAttemptsController],
+  providers: [
+    ProspectsService,
+    ProspectsRepository,
+    TransitionsService,
+    TransitionsRepository,
+    ContactAttemptsService,
+    ContactAttemptsRepository,
+  ],
+  exports: [ProspectsService, TransitionsService, ContactAttemptsService],
 })
 export class OnboardingModule {}
