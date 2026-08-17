@@ -11,15 +11,18 @@ import { PrismaService } from '../../../infra/prisma/index.js'
 
 import type { CreateTransitionDto } from './dto/create-transition.dto.js'
 import type { HistoryEntryEntity, TransitionOptionEntity } from './entities/transition.entity.js'
+import { ProposalsService } from './proposals.service.js'
 import { AllowedTransition, TransitionsRepository } from './transitions.repository.js'
 
 const CLIENT_STATE = 'ORANGE'
+const PROPOSAL_STATE = 'GREEN'
 
 @Injectable()
 export class TransitionsService {
   constructor(
     private readonly repo: TransitionsRepository,
     private readonly prisma: PrismaService,
+    private readonly proposals: ProposalsService,
   ) {}
 
   async available(prospectId: string, user: AuthenticatedUser): Promise<TransitionOptionEntity[]> {
@@ -133,6 +136,10 @@ export class TransitionsService {
       await this.assertHotelUser(prospect.hotelId)
     }
 
+    if (target.code === PROPOSAL_STATE) {
+      await this.assertSentProposal(prospectId)
+    }
+
     await this.repo.applyChange({
       prospectId,
       fromStateId: prospect.onboardingStateId,
@@ -145,6 +152,19 @@ export class TransitionsService {
     })
 
     return { from: prospect.state.code, to: target.code }
+  }
+
+  /**
+   * Verde se llama "Propuesta enviada": se llega ahí al enviarla, no antes.
+   * Ver el Semáforo Onboarding, Azul Claro → Verde.
+   */
+  private async assertSentProposal(prospectId: string): Promise<void> {
+    if (!(await this.proposals.hasSent(prospectId))) {
+      throw new UnprocessableEntityException({
+        code: 'PROPOSAL_REQUIRED',
+        message: 'Verde significa propuesta enviada: envía una antes de mover el semáforo',
+      })
+    }
   }
 
   private async assertHotelUser(hotelId: string): Promise<void> {
