@@ -18,16 +18,16 @@ import { PermissionsService } from '../permissions.service.js'
 export class PermissionsGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    private readonly permisos: PermissionsService,
+    private readonly permissions: PermissionsService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requerido = this.reflector.getAllAndOverride<PermisoRequerido>(REQUIERE_PERMISO, [
+    const required = this.reflector.getAllAndOverride<PermisoRequerido>(REQUIERE_PERMISO, [
       context.getHandler(),
       context.getClass(),
     ])
 
-    if (!requerido) {
+    if (!required) {
       return true
     }
 
@@ -43,12 +43,12 @@ export class PermissionsGuard implements CanActivate {
       })
     }
 
-    const puede = await this.permisos.can(user.roleCode, requerido.module, requerido.action)
+    const puede = await this.permissions.can(user.roleCode, required.module, required.action)
 
     if (!puede) {
       throw new ForbiddenException({
         code: 'FORBIDDEN',
-        message: `Tu rol no puede ${requerido.action} en ${requerido.module}`,
+        message: `Tu rol no puede ${required.action} en ${required.module}`,
       })
     }
 

@@ -10,9 +10,9 @@ const LOCAL: Partial<Env> = {
   JWT_ACCESS_TTL_S: 900,
 }
 
-function servicio(valores: Partial<Env> = LOCAL): AccessTokenService {
+function makeService(values: Partial<Env> = LOCAL): AccessTokenService {
   const config = {
-    get: (clave: keyof Env) => valores[clave],
+    get: (key: keyof Env) => values[key],
   } as unknown as ConfigService<Env, true>
 
   return new AccessTokenService(config)
@@ -27,7 +27,7 @@ describe('AccessTokenService', () => {
   }
 
   it('firma y vuelve a leer el alcance del usuario', async () => {
-    const service = servicio()
+    const service = makeService()
     const { token, expiresIn } = await service.sign(payload)
 
     expect(expiresIn).toBe(900)
@@ -35,20 +35,22 @@ describe('AccessTokenService', () => {
   })
 
   it('rechaza un token firmado con otro secreto', async () => {
-    const { token } = await servicio().sign(payload)
+    const { token } = await makeService().sign(payload)
 
-    const otro = servicio({ ...LOCAL, JWT_SECRET: 'otro-secreto-igual-de-largo-para-hs256' })
+    const other = makeService({ ...LOCAL, JWT_SECRET: 'otro-secreto-igual-de-largo-para-hs256' })
 
-    await expect(otro.verify(token)).rejects.toBeInstanceOf(UnauthorizedException)
+    await expect(other.verify(token)).rejects.toBeInstanceOf(UnauthorizedException)
   })
 
   it('rechaza basura', async () => {
-    await expect(servicio().verify('no.es.un.token')).rejects.toBeInstanceOf(UnauthorizedException)
+    await expect(makeService().verify('no.es.un.token')).rejects.toBeInstanceOf(
+      UnauthorizedException,
+    )
   })
 
   it('en un ambiente desplegado exige el par de llaves, no el secreto', async () => {
-    const sinLlaves = servicio({ APP_ENV: 'staging', JWT_ACCESS_TTL_S: 900 })
+    const withoutKeys = makeService({ APP_ENV: 'staging', JWT_ACCESS_TTL_S: 900 })
 
-    await expect(sinLlaves.sign(payload)).rejects.toThrow(/JWT_PRIVATE_KEY/)
+    await expect(withoutKeys.sign(payload)).rejects.toThrow(/JWT_PRIVATE_KEY/)
   })
 })

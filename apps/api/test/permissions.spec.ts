@@ -7,22 +7,22 @@ import { PermissionsGuard } from '../src/modules/identity/auth/guards/permission
 import { PermissionsService } from '../src/modules/identity/auth/permissions.service.js'
 
 /** Prisma falso que cuenta cuántas veces se le preguntó. */
-function prismaCon(filas: Array<{ module: string; action: string }>) {
-  const llamadas = { n: 0 }
+function prismaWith(rows: Array<{ module: string; action: string }>) {
+  const calls = { n: 0 }
   const prisma = {
     rolePermission: {
       findMany: () => {
-        llamadas.n += 1
+        calls.n += 1
 
-        return Promise.resolve(filas)
+        return Promise.resolve(rows)
       },
     },
   } as unknown as PrismaService
 
-  return { prisma, llamadas }
+  return { prisma, calls }
 }
 
-function contextoCon(user: unknown): ExecutionContext {
+function contextWith(user: unknown): ExecutionContext {
   return {
     getHandler: () => () => undefined,
     getClass: () => class {},
@@ -30,20 +30,20 @@ function contextoCon(user: unknown): ExecutionContext {
   } as unknown as ExecutionContext
 }
 
-function reflectorCon(requerido: unknown): Reflector {
+function reflectorWith(required: unknown): Reflector {
   return {
-    getAllAndOverride: (clave: string) => (clave === REQUIERE_PERMISO ? requerido : undefined),
+    getAllAndOverride: (key: string) => (key === REQUIERE_PERMISO ? required : undefined),
   } as unknown as Reflector
 }
 
 describe('PermissionsService', () => {
-  const MATRIZ = [
+  const MATRIX = [
     { module: 'conversion', action: 'approve' },
     { module: 'pipeline', action: 'read' },
   ]
 
   it('deja pasar lo que la Matriz concede', async () => {
-    const { prisma } = prismaCon(MATRIZ)
+    const { prisma } = prismaWith(MATRIX)
 
     await expect(
       new PermissionsService(prisma).can('ROL-V-02', 'conversion', 'approve'),
@@ -51,7 +51,7 @@ describe('PermissionsService', () => {
   })
 
   it('niega lo que la Matriz no concede — RR-V-01: el BD no aprueba la conversión', async () => {
-    const { prisma } = prismaCon([{ module: 'pipeline', action: 'read' }])
+    const { prisma } = prismaWith([{ module: 'pipeline', action: 'read' }])
 
     await expect(
       new PermissionsService(prisma).can('ROL-V-01', 'conversion', 'approve'),
@@ -59,7 +59,7 @@ describe('PermissionsService', () => {
   })
 
   it('un rol sin permisos no puede nada: los departamentos sin matriz quedan negados', async () => {
-    const { prisma } = prismaCon([])
+    const { prisma } = prismaWith([])
 
     await expect(new PermissionsService(prisma).can('ROL-Q-01', 'pipeline', 'read')).resolves.toBe(
       false,
@@ -67,59 +67,59 @@ describe('PermissionsService', () => {
   })
 
   it('cachea por rol: no pregunta a la base en cada request', async () => {
-    const { prisma, llamadas } = prismaCon(MATRIZ)
+    const { prisma, calls } = prismaWith(MATRIX)
     const service = new PermissionsService(prisma)
 
     await service.can('ROL-V-02', 'pipeline', 'read')
     await service.can('ROL-V-02', 'conversion', 'approve')
 
-    expect(llamadas.n).toBe(1)
+    expect(calls.n).toBe(1)
   })
 
   it('invalidate obliga a releer, para que revocar surta efecto', async () => {
-    const { prisma, llamadas } = prismaCon(MATRIZ)
+    const { prisma, calls } = prismaWith(MATRIX)
     const service = new PermissionsService(prisma)
 
     await service.can('ROL-V-02', 'pipeline', 'read')
     service.invalidate('ROL-V-02')
     await service.can('ROL-V-02', 'pipeline', 'read')
 
-    expect(llamadas.n).toBe(2)
+    expect(calls.n).toBe(2)
   })
 })
 
 describe('PermissionsGuard', () => {
-  const usuario = { id: 'u1', roleCode: 'ROL-V-01', hotelId: null, departmentId: null }
+  const user = { id: 'u1', roleCode: 'ROL-V-01', hotelId: null, departmentId: null }
 
   it('una ruta sin @Requires pasa', async () => {
-    const { prisma } = prismaCon([])
-    const guard = new PermissionsGuard(reflectorCon(undefined), new PermissionsService(prisma))
+    const { prisma } = prismaWith([])
+    const guard = new PermissionsGuard(reflectorWith(undefined), new PermissionsService(prisma))
 
-    await expect(guard.canActivate(contextoCon(usuario))).resolves.toBe(true)
+    await expect(guard.canActivate(contextWith(user))).resolves.toBe(true)
   })
 
   it('deja pasar cuando el rol tiene el permiso', async () => {
-    const { prisma } = prismaCon([{ module: 'pipeline', action: 'create_prospect' }])
-    const requerido = { module: 'pipeline', action: 'create_prospect' }
-    const guard = new PermissionsGuard(reflectorCon(requerido), new PermissionsService(prisma))
+    const { prisma } = prismaWith([{ module: 'pipeline', action: 'create_prospect' }])
+    const required = { module: 'pipeline', action: 'create_prospect' }
+    const guard = new PermissionsGuard(reflectorWith(required), new PermissionsService(prisma))
 
-    await expect(guard.canActivate(contextoCon(usuario))).resolves.toBe(true)
+    await expect(guard.canActivate(contextWith(user))).resolves.toBe(true)
   })
 
   it('responde 403 cuando no lo tiene', async () => {
-    const { prisma } = prismaCon([{ module: 'pipeline', action: 'read' }])
-    const requerido = { module: 'conversion', action: 'approve' }
-    const guard = new PermissionsGuard(reflectorCon(requerido), new PermissionsService(prisma))
+    const { prisma } = prismaWith([{ module: 'pipeline', action: 'read' }])
+    const required = { module: 'conversion', action: 'approve' }
+    const guard = new PermissionsGuard(reflectorWith(required), new PermissionsService(prisma))
 
-    await expect(guard.canActivate(contextoCon(usuario))).rejects.toBeInstanceOf(ForbiddenException)
+    await expect(guard.canActivate(contextWith(user))).rejects.toBeInstanceOf(ForbiddenException)
   })
 
   it('sin usuario también responde 403, no revienta', async () => {
-    const { prisma } = prismaCon([])
-    const requerido = { module: 'pipeline', action: 'read' }
-    const guard = new PermissionsGuard(reflectorCon(requerido), new PermissionsService(prisma))
+    const { prisma } = prismaWith([])
+    const required = { module: 'pipeline', action: 'read' }
+    const guard = new PermissionsGuard(reflectorWith(required), new PermissionsService(prisma))
 
-    await expect(guard.canActivate(contextoCon(undefined))).rejects.toBeInstanceOf(
+    await expect(guard.canActivate(contextWith(undefined))).rejects.toBeInstanceOf(
       ForbiddenException,
     )
   })

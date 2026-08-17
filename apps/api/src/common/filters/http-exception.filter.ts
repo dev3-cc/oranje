@@ -91,7 +91,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
   /** Código genérico para las excepciones de Nest que no traen el suyo. */
   private defaultCode(status: number): string {
-    const porStatus: Record<number, string> = {
+    const byStatus: Record<number, string> = {
       [HttpStatus.BAD_REQUEST]: 'BAD_REQUEST',
       [HttpStatus.UNAUTHORIZED]: 'UNAUTHENTICATED',
       [HttpStatus.FORBIDDEN]: 'FORBIDDEN',
@@ -100,6 +100,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
       [HttpStatus.UNPROCESSABLE_ENTITY]: 'BUSINESS_RULE_VIOLATION',
     }
 
-    return porStatus[status] ?? 'ERROR'
+    return byStatus[status] ?? 'ERROR'
   }
 }

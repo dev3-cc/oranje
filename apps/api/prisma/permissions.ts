@@ -39,20 +39,20 @@ export interface Permission {
 const BD = 'ROL-V-01'
 const BDC = 'ROL-V-02'
 
-const SUP = 'ROL-H-01'
+const SUPERVISOR = 'ROL-H-01'
 const GA = 'ROL-H-02'
 const GG = 'ROL-H-03'
 
-const RECL = 'ROL-R-01'
-const LIDER = 'ROL-R-02'
-const MGR_R = 'ROL-R-03'
+const RECRUITER = 'ROL-R-01'
+const GROUP_LEAD = 'ROL-R-02'
+const RECRUITMENT_MANAGER = 'ROL-R-03'
 
 const SYS = 'ROL-SYS-01'
 
 // ---------------------------------------------------------------------------
 // VENTAS — Business Developer y Business Developer Coordinator
 // ---------------------------------------------------------------------------
-const VENTAS: Permission[] = [
+const SALES: Permission[] = [
   // PIPELINE
   {
     module: 'pipeline',
@@ -260,7 +260,7 @@ const HOTEL: Permission[] = [
     module: 'requisitions',
     action: 'read_own',
     label: 'Ver mis requisiciones',
-    roles: [SUP, GA, GG, SYS],
+    roles: [SUPERVISOR, GA, GG, SYS],
   },
   {
     module: 'requisitions',
@@ -274,18 +274,23 @@ const HOTEL: Permission[] = [
     label: 'Ver vista global del hotel',
     roles: [GG, SYS],
   },
-  { module: 'requisitions', action: 'create', label: 'Crear requisición', roles: [SUP, GA, GG] },
+  {
+    module: 'requisitions',
+    action: 'create',
+    label: 'Crear requisición',
+    roles: [SUPERVISOR, GA, GG],
+  },
   {
     module: 'requisitions',
     action: 'update_draft',
     label: 'Editar borrador',
-    roles: [SUP, GA, GG],
+    roles: [SUPERVISOR, GA, GG],
   },
   {
     module: 'requisitions',
     action: 'submit',
     label: 'Enviar a autorización',
-    roles: [SUP, GA, GG],
+    roles: [SUPERVISOR, GA, GG],
   },
   { module: 'requisitions', action: 'authorize', label: 'Autorizar requisición', roles: [GA, GG] },
   {
@@ -298,7 +303,7 @@ const HOTEL: Permission[] = [
     module: 'requisitions',
     action: 'delete_empty',
     label: 'Eliminar requisición vacía',
-    roles: [SUP, GA, GG, SYS],
+    roles: [SUPERVISOR, GA, GG, SYS],
   },
   {
     module: 'requisitions',
@@ -331,7 +336,7 @@ const HOTEL: Permission[] = [
     module: 'schedule',
     action: 'read_department',
     label: 'Ver Schedule del depto',
-    roles: [SUP, GA, GG, SYS],
+    roles: [SUPERVISOR, GA, GG, SYS],
   },
   {
     module: 'schedule',
@@ -350,16 +355,16 @@ const HOTEL: Permission[] = [
     module: 'schedule',
     action: 'suggest_reinforcement',
     label: 'Sugerir refuerzo de personal',
-    roles: [SUP, GA],
+    roles: [SUPERVISOR, GA],
   },
-  { module: 'schedule', action: 'export', label: 'Exportar Schedule', roles: [SUP, GA, GG] },
+  { module: 'schedule', action: 'export', label: 'Exportar Schedule', roles: [SUPERVISOR, GA, GG] },
 
   // TIMESHEET
   {
     module: 'timesheet',
     action: 'read_department',
     label: 'Ver Timesheet del depto',
-    roles: [SUP, GA, GG, SYS],
+    roles: [SUPERVISOR, GA, GG, SYS],
   },
   {
     module: 'timesheet',
@@ -371,7 +376,7 @@ const HOTEL: Permission[] = [
     module: 'timesheet',
     action: 'review_punches',
     label: 'Revisar ponches y resolver anómalos',
-    roles: [SUP, GA, GG, SYS],
+    roles: [SUPERVISOR, GA, GG, SYS],
   },
   // D-09: el corte entre operación y dinero. El Supervisor revisa, NO aprueba
   {
@@ -384,7 +389,7 @@ const HOTEL: Permission[] = [
     module: 'timesheet',
     action: 'create_manual_punch',
     label: 'Registrar ponche manual',
-    roles: [SUP, GA, GG],
+    roles: [SUPERVISOR, GA, GG],
   },
   { module: 'timesheet', action: 'correct_punch', label: 'Corregir ponche', roles: [GA, GG, SYS] },
   {
@@ -399,27 +404,37 @@ const HOTEL: Permission[] = [
     label: 'Ver Indicador de Lunch Extendido',
     roles: [SYS],
   },
-  { module: 'timesheet', action: 'export', label: 'Exportar Timesheet', roles: [SUP, GA, GG] },
+  {
+    module: 'timesheet',
+    action: 'export',
+    label: 'Exportar Timesheet',
+    roles: [SUPERVISOR, GA, GG],
+  },
 
   // MI PERSONAL
   {
     module: 'staff',
     action: 'read',
     label: 'Ver colaboradores asignados',
-    roles: [SUP, GA, GG, SYS],
+    roles: [SUPERVISOR, GA, GG, SYS],
   },
   {
     module: 'staff',
     action: 'set_standby',
     label: 'Poner en Stand-by (Rosa)',
-    roles: [SUP, GA, GG],
+    roles: [SUPERVISOR, GA, GG],
   },
-  { module: 'staff', action: 'report', label: 'Reportar colaborador (Rojo)', roles: [SUP, GA, GG] },
+  {
+    module: 'staff',
+    action: 'report',
+    label: 'Reportar colaborador (Rojo)',
+    roles: [SUPERVISOR, GA, GG],
+  },
   {
     module: 'staff',
     action: 'read_history',
     label: 'Ver historial del colaborador',
-    roles: [SUP, GA, GG, SYS],
+    roles: [SUPERVISOR, GA, GG, SYS],
   },
 
   // ACCIDENTES
@@ -427,25 +442,25 @@ const HOTEL: Permission[] = [
     module: 'work_accidents',
     action: 'read',
     label: 'Ver accidentes del depto',
-    roles: [SUP, GA, GG, SYS],
+    roles: [SUPERVISOR, GA, GG, SYS],
   },
   {
     module: 'work_accidents',
     action: 'create_scenario_a',
     label: 'Crear tarjeta de accidente — Escenario A',
-    roles: [SUP, GA, GG],
+    roles: [SUPERVISOR, GA, GG],
   },
   {
     module: 'work_accidents',
     action: 'create_scenario_b',
     label: 'Crear tarjeta de accidente — Escenario B',
-    roles: [SUP, GA, GG],
+    roles: [SUPERVISOR, GA, GG],
   },
   {
     module: 'work_accidents',
     action: 'capture_evidence',
     label: 'Capturar evidencia presencial',
-    roles: [SUP, GA, GG],
+    roles: [SUPERVISOR, GA, GG],
   },
   {
     module: 'work_accidents',
@@ -496,7 +511,7 @@ const HOTEL: Permission[] = [
     module: 'dashboard',
     action: 'read_own',
     label: 'Ver KPIs personales',
-    roles: [SUP, GA, GG, SYS],
+    roles: [SUPERVISOR, GA, GG, SYS],
   },
   {
     module: 'dashboard',
@@ -516,7 +531,7 @@ const HOTEL: Permission[] = [
     module: 'system',
     action: 'receive_notification',
     label: 'Recibir notificación',
-    roles: [SUP, GA, GG, SYS],
+    roles: [SUPERVISOR, GA, GG, SYS],
   },
   {
     module: 'system',
@@ -535,73 +550,73 @@ const HOTEL: Permission[] = [
 // ---------------------------------------------------------------------------
 // RECLUTAMIENTO — Reclutadora, Líder de Grupo y Manager
 // ---------------------------------------------------------------------------
-const RECLUTAMIENTO: Permission[] = [
+const RECRUITMENT: Permission[] = [
   // REQUISICIÓN
   {
     module: 'requisitions',
     action: 'read_authorized_queue',
     label: 'Ver cola de Autorizadas',
-    roles: [RECL, LIDER, MGR_R, SYS],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
   {
     module: 'requisitions',
     action: 'take',
     label: 'Tomar requisición (Self-Pick colaborativo)',
-    roles: [RECL, LIDER, MGR_R, SYS],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
   {
     module: 'requisitions',
     action: 'join',
     label: 'Tomar/Unirse a requisición ya tomada',
-    roles: [RECL, LIDER, SYS],
+    roles: [RECRUITER, GROUP_LEAD, SYS],
   },
   {
     module: 'requisitions',
     action: 'leave',
     label: 'Salir de requisición tomada',
-    roles: [RECL, LIDER, MGR_R, SYS],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
   {
     module: 'requisitions',
     action: 'read_active_recruiters',
     label: 'Ver reclutadores activos',
-    roles: [RECL, LIDER, MGR_R, SYS],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
   {
     module: 'requisitions',
     action: 'read_history',
     label: 'Ver Historial de la requisición',
-    roles: [RECL, LIDER, MGR_R, SYS],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
   {
     module: 'requisitions',
     action: 'mark_in_progress',
     label: 'Marcar requisición en proceso',
-    roles: [RECL, LIDER, SYS],
+    roles: [RECRUITER, GROUP_LEAD, SYS],
   },
   {
     module: 'requisitions',
     action: 'request_coverage_close',
     label: 'Marcar requisición como cubierta (solicita)',
-    roles: [RECL],
+    roles: [RECRUITER],
   },
   {
     module: 'requisitions',
     action: 'approve_coverage_close',
     label: 'Marcar requisición como cubierta (cierre)',
-    roles: [LIDER],
+    roles: [GROUP_LEAD],
   },
   {
     module: 'requisitions',
     action: 'read_all',
     label: 'Ver vista global',
-    roles: [LIDER, MGR_R, SYS],
+    roles: [GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
   {
     module: 'requisitions',
     action: 'assign_manually',
     label: 'Asignar manualmente (excepción)',
-    roles: [MGR_R],
+    roles: [RECRUITMENT_MANAGER],
   },
   {
     module: 'requisitions',
@@ -619,7 +634,7 @@ const RECLUTAMIENTO: Permission[] = [
     module: 'requisitions',
     action: 'force_status_change',
     label: 'Forzar cambio de semáforo',
-    roles: [MGR_R, SYS],
+    roles: [RECRUITMENT_MANAGER, SYS],
   },
 
   // RECLUTAMIENTO
@@ -627,73 +642,73 @@ const RECLUTAMIENTO: Permission[] = [
     module: 'recruitment',
     action: 'read_pool',
     label: 'Ver Pool de Colaboradores',
-    roles: [RECL, LIDER, MGR_R, SYS],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
   {
     module: 'recruitment',
     action: 'search_candidates',
     label: 'Buscar / filtrar candidatos',
-    roles: [RECL, LIDER, MGR_R, SYS],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
   {
     module: 'recruitment',
     action: 'create_worker',
     label: 'Crear colaborador (alta Fase 1)',
-    roles: [RECL, LIDER, MGR_R],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER],
   },
   {
     module: 'recruitment',
     action: 'update_worker',
     label: 'Editar colaborador',
-    roles: [RECL, LIDER, MGR_R],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER],
   },
   {
     module: 'recruitment',
     action: 'validate_signup',
     label: 'Validar alta en app (Fase 2)',
-    roles: [RECL, LIDER, SYS],
+    roles: [RECRUITER, GROUP_LEAD, SYS],
   },
   {
     module: 'recruitment',
     action: 'enable_access',
     label: 'Habilitar accesos',
-    roles: [RECL, LIDER, SYS],
+    roles: [RECRUITER, GROUP_LEAD, SYS],
   },
   {
     module: 'recruitment',
     action: 'create_interview',
     label: 'Registrar entrevista',
-    roles: [RECL, LIDER, SYS],
+    roles: [RECRUITER, GROUP_LEAD, SYS],
   },
   {
     module: 'recruitment',
     action: 'read_interviews',
     label: 'Ver historial de entrevistas',
-    roles: [RECL, LIDER, MGR_R, SYS],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
   {
     module: 'recruitment',
     action: 'assign_to_hotel',
     label: 'Asignar colaborador a hotel',
-    roles: [RECL, LIDER, MGR_R, SYS],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
   {
     module: 'recruitment',
     action: 'assign_to_schedule',
     label: 'Asignar al Schedule',
-    roles: [RECL, LIDER, MGR_R, SYS],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
   {
     module: 'recruitment',
     action: 'reassign_worker',
     label: 'Reasignar colaborador',
-    roles: [RECL, LIDER, MGR_R],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER],
   },
   {
     module: 'recruitment',
     action: 'unassign_worker',
     label: 'Desasignar colaborador',
-    roles: [RECL, LIDER, MGR_R],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER],
   },
 
   // BLACKLIST
@@ -701,65 +716,85 @@ const RECLUTAMIENTO: Permission[] = [
     module: 'blacklist',
     action: 'read',
     label: 'Consultar Blacklist',
-    roles: [RECL, LIDER, MGR_R, SYS],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
   {
     module: 'blacklist',
     action: 'create',
     label: 'Agregar a Blacklist',
-    roles: [RECL, LIDER, MGR_R],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER],
   },
 
   // MI GRUPO
-  { module: 'group', action: 'read_members', label: 'Ver Reclutadoras del grupo', roles: [LIDER] },
+  {
+    module: 'group',
+    action: 'read_members',
+    label: 'Ver Reclutadoras del grupo',
+    roles: [GROUP_LEAD],
+  },
   {
     module: 'group',
     action: 'read_member_metrics',
     label: 'Ver métricas individuales',
-    roles: [LIDER, MGR_R, SYS],
+    roles: [GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
   {
     module: 'group',
     action: 'read_member_workload',
     label: 'Ver carga detallada de Reclutadora',
-    roles: [LIDER],
+    roles: [GROUP_LEAD],
   },
   {
     module: 'group',
     action: 'reassign_requisition',
     label: 'Reasignar requisición a Reclutadora',
-    roles: [LIDER],
+    roles: [GROUP_LEAD],
   },
   {
     module: 'group',
     action: 'set_member_availability',
     label: 'Marcar disponibilidad de Reclutadora',
-    roles: [LIDER],
+    roles: [GROUP_LEAD],
   },
 
   // MI EQUIPO
-  { module: 'team', action: 'read_members', label: 'Ver Líderes + Reclutadoras', roles: [MGR_R] },
+  {
+    module: 'team',
+    action: 'read_members',
+    label: 'Ver Líderes + Reclutadoras',
+    roles: [RECRUITMENT_MANAGER],
+  },
   {
     module: 'team',
     action: 'create_member',
     label: 'Dar de alta Líder/Reclutadora',
-    roles: [MGR_R],
+    roles: [RECRUITMENT_MANAGER],
   },
-  { module: 'team', action: 'update_member', label: 'Editar usuario del depto', roles: [MGR_R] },
+  {
+    module: 'team',
+    action: 'update_member',
+    label: 'Editar usuario del depto',
+    roles: [RECRUITMENT_MANAGER],
+  },
   {
     module: 'team',
     action: 'move_member',
     label: 'Mover Reclutadora a otro Líder',
-    roles: [MGR_R],
+    roles: [RECRUITMENT_MANAGER],
   },
 
   // INCIDENCIAS
-  { module: 'incidents', action: 'resolve', label: 'Resolver incidencia', roles: [MGR_R] },
+  {
+    module: 'incidents',
+    action: 'resolve',
+    label: 'Resolver incidencia',
+    roles: [RECRUITMENT_MANAGER],
+  },
   {
     module: 'incidents',
     action: 'escalate_to_commercial',
     label: 'Escalar a comercial',
-    roles: [LIDER, MGR_R],
+    roles: [GROUP_LEAD, RECRUITMENT_MANAGER],
   },
 
   // REPORTES
@@ -767,26 +802,26 @@ const RECLUTAMIENTO: Permission[] = [
     module: 'reports',
     action: 'create',
     label: 'Generar reporte del grupo',
-    roles: [LIDER, MGR_R, SYS],
+    roles: [GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
-  { module: 'reports', action: 'send', label: 'Enviar reporte al Manager', roles: [LIDER] },
+  { module: 'reports', action: 'send', label: 'Enviar reporte al Manager', roles: [GROUP_LEAD] },
   {
     module: 'reports',
     action: 'read_coverage_own',
     label: 'Ver cobertura individual',
-    roles: [RECL, LIDER, MGR_R, SYS],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
   {
     module: 'reports',
     action: 'read_coverage_zone',
     label: 'Ver cobertura por zona',
-    roles: [LIDER, MGR_R, SYS],
+    roles: [GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
   {
     module: 'reports',
     action: 'read_coverage_all',
     label: 'Ver cobertura global',
-    roles: [MGR_R, SYS],
+    roles: [RECRUITMENT_MANAGER, SYS],
   },
 
   // DASHBOARD
@@ -794,22 +829,27 @@ const RECLUTAMIENTO: Permission[] = [
     module: 'dashboard',
     action: 'read_own',
     label: 'Ver KPIs personales',
-    roles: [RECL, LIDER, MGR_R, SYS],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
   {
     module: 'dashboard',
     action: 'read_group',
     label: 'Ver KPIs de grupo',
-    roles: [LIDER, MGR_R, SYS],
+    roles: [GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
-  { module: 'dashboard', action: 'read_all', label: 'Ver KPIs globales', roles: [MGR_R, SYS] },
+  {
+    module: 'dashboard',
+    action: 'read_all',
+    label: 'Ver KPIs globales',
+    roles: [RECRUITMENT_MANAGER, SYS],
+  },
 
   // SISTEMA
   {
     module: 'system',
     action: 'receive_notification',
     label: 'Recibir notificación',
-    roles: [RECL, LIDER, MGR_R, SYS],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
   {
     module: 'system',
@@ -819,7 +859,7 @@ const RECLUTAMIENTO: Permission[] = [
   },
 ]
 
-export const PERMISSIONS: Permission[] = [...VENTAS, ...HOTEL, ...RECLUTAMIENTO]
+export const PERMISSIONS: Permission[] = [...SALES, ...HOTEL, ...RECRUITMENT]
 
 /**
  * Aplana a filas de `identity.role_permission` y quita duplicados.
@@ -830,19 +870,19 @@ export const PERMISSIONS: Permission[] = [...VENTAS, ...HOTEL, ...RECLUTAMIENTO]
  * a media corrida.
  */
 export function flattenPermissions(): Array<{ roleCode: string; module: string; action: string }> {
-  const vistas = new Set<string>()
-  const filas: Array<{ roleCode: string; module: string; action: string }> = []
+  const seen = new Set<string>()
+  const rows: Array<{ roleCode: string; module: string; action: string }> = []
 
   for (const p of PERMISSIONS) {
     for (const roleCode of p.roles) {
-      const clave = `${roleCode}|${p.module}|${p.action}`
+      const key = `${roleCode}|${p.module}|${p.action}`
 
-      if (!vistas.has(clave)) {
-        vistas.add(clave)
-        filas.push({ roleCode, module: p.module, action: p.action })
+      if (!seen.has(key)) {
+        seen.add(key)
+        rows.push({ roleCode, module: p.module, action: p.action })
       }
     }
   }
 
-  return filas
+  return rows
 }

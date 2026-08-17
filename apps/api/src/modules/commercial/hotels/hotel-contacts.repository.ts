@@ -19,7 +19,7 @@ const SELECT = {
 
 export type ContactRow = Prisma.HotelContactGetPayload<{ select: typeof SELECT }>
 
-export interface DatosContacto {
+export interface ContactFields {
   fullName?: string | undefined
   jobTitle?: string | null | undefined
   phone?: string | null | undefined
@@ -27,7 +27,7 @@ export interface DatosContacto {
   isActive?: boolean | undefined
 }
 
-export interface DatosNuevoContacto extends DatosContacto {
+export interface NewContactFields extends ContactFields {
   fullName: string
 }
 
@@ -53,7 +53,7 @@ export class HotelContactsRepository {
     return (await this.prisma.hotel.count({ where: { id: hotelId } })) > 0
   }
 
-  async create(hotelId: string, datos: DatosNuevoContacto, primary: boolean): Promise<ContactRow> {
+  async create(hotelId: string, fields: NewContactFields, primary: boolean): Promise<ContactRow> {
     const id = uuidv7()
 
     await this.prisma.$transaction(async (tx) => {
@@ -68,10 +68,10 @@ export class HotelContactsRepository {
         data: {
           id,
           hotelId,
-          fullName: datos.fullName,
-          jobTitle: datos.jobTitle ?? null,
-          phone: datos.phone ?? null,
-          email: datos.email ?? null,
+          fullName: fields.fullName,
+          jobTitle: fields.jobTitle ?? null,
+          phone: fields.phone ?? null,
+          email: fields.email ?? null,
           isPrimary: primary,
         },
       })
@@ -83,7 +83,7 @@ export class HotelContactsRepository {
   async update(
     hotelId: string,
     id: string,
-    datos: DatosContacto,
+    fields: ContactFields,
     primary: boolean | undefined,
   ): Promise<ContactRow> {
     await this.prisma.$transaction(async (tx) => {
@@ -96,11 +96,11 @@ export class HotelContactsRepository {
 
       const data: Prisma.HotelContactUpdateInput = {}
 
-      if (datos.fullName !== undefined) data.fullName = datos.fullName
-      if (datos.jobTitle !== undefined) data.jobTitle = datos.jobTitle
-      if (datos.phone !== undefined) data.phone = datos.phone
-      if (datos.email !== undefined) data.email = datos.email
-      if (datos.isActive !== undefined) data.isActive = datos.isActive
+      if (fields.fullName !== undefined) data.fullName = fields.fullName
+      if (fields.jobTitle !== undefined) data.jobTitle = fields.jobTitle
+      if (fields.phone !== undefined) data.phone = fields.phone
+      if (fields.email !== undefined) data.email = fields.email
+      if (fields.isActive !== undefined) data.isActive = fields.isActive
       if (primary !== undefined) data.isPrimary = primary
 
       await tx.hotelContact.update({ where: { id }, data })

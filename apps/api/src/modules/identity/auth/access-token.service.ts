@@ -21,7 +21,7 @@ export interface AccessTokenPayload {
 const ISSUER = 'oranje-api'
 const AUDIENCE = 'oranje'
 
-type Llave = CryptoKey | KeyObject | Uint8Array
+type SigningKey = CryptoKey | KeyObject | Uint8Array
 
 /**
  * Firma y verifica el token que protege los CRUD.
@@ -35,20 +35,20 @@ export class AccessTokenService {
   private readonly logger = new Logger(AccessTokenService.name)
   private readonly alg: 'HS256' | 'RS256'
   private readonly ttlSeconds: number
-  private readonly llaves: Promise<{ firma: Llave; verificacion: Llave }>
+  private readonly keys: Promise<{ signing: SigningKey; verification: SigningKey }>
 
   constructor(config: ConfigService<Env, true>) {
     const appEnv = config.get('APP_ENV', { infer: true })
 
     this.alg = appEnv === 'local' ? 'HS256' : 'RS256'
     this.ttlSeconds = config.get('JWT_ACCESS_TTL_S', { infer: true })
-    this.llaves = this.cargarLlaves(config)
+    this.keys = this.loadKeys(config)
 
     this.logger.log(`Tokens firmados con ${this.alg} (APP_ENV=${appEnv})`)
   }
 
   async sign(payload: AccessTokenPayload): Promise<{ token: string; expiresIn: number }> {
-    const { firma } = await this.llaves
+    const { signing } = await this.keys
 
     const token = await new SignJWT({ ...payload })
       .setProtectedHeader({ alg: this.alg })
@@ -57,17 +57,17 @@ export class AccessTokenService {
       .setAudience(AUDIENCE)
       .setIssuedAt()
       .setExpirationTime(`${this.ttlSeconds}s`)
-      .sign(firma)
+      .sign(signing)
 
     return { token, expiresIn: this.ttlSeconds }
   }
 
   async verify(token: string): Promise<AccessTokenPayload> {
     try {
-      const { verificacion } = await this.llaves
+      const { verification } = await this.keys
 
       // El algoritmo se fija: sin esto, un token firmado con otro alg pasaría
-      const { payload } = await jwtVerify(token, verificacion, {
+      const { payload } = await jwtVerify(token, verification, {
         issuer: ISSUER,
         audience: AUDIENCE,
         algorithms: [this.alg],
@@ -87,27 +87,27 @@ export class AccessTokenService {
     }
   }
 
-  private async cargarLlaves(
+  private async loadKeys(
     config: ConfigService<Env, true>,
-  ): Promise<{ firma: Llave; verificacion: Llave }> {
+  ): Promise<{ signing: SigningKey; verification: SigningKey }> {
     if (this.alg === 'HS256') {
       // La validación de entorno ya garantizó que existe fuera de los desplegados
-      const secreto = new TextEncoder().encode(config.get('JWT_SECRET', { infer: true }))
+      const secret = new TextEncoder().encode(config.get('JWT_SECRET', { infer: true }))
 
-      return { firma: secreto, verificacion: secreto }
+      return { signing: secret, verification: secret }
     }
 
-    const privada = config.get('JWT_PRIVATE_KEY', { infer: true })
-    const publica = config.get('JWT_PUBLIC_KEY', { infer: true })
+    const privateKey = config.get('JWT_PRIVATE_KEY', { infer: true })
+    const publicKey = config.get('JWT_PUBLIC_KEY', { infer: true })
 
     // La validación de entorno ya las exigió fuera de local; esto es el cinturón
-    if (!privada || !publica) {
+    if (!privateKey || !publicKey) {
       throw new Error('RS256 exige JWT_PRIVATE_KEY y JWT_PUBLIC_KEY')
     }
 
     return {
-      firma: await importPKCS8(normalizarPem(privada), 'RS256'),
-      verificacion: await importSPKI(normalizarPem(publica), 'RS256'),
+      signing: await importPKCS8(normalizePem(privateKey), 'RS256'),
+      verification: await importSPKI(normalizePem(publicKey), 'RS256'),
     }
   }
 }
@@ -116,6 +116,6 @@ export class AccessTokenService {
  * Secret Manager y los `.env` entregan los saltos del PEM como `\n` literales.
  * Sin esto la llave no importa, y el error de jose no dice por qué.
  */
-function normalizarPem(valor: string): string {
+function normalizePem(valor: string): string {
   return valor.includes('\\n') ? valor.replace(/\\n/g, '\n') : valor
 }

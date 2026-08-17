@@ -56,7 +56,7 @@ export class JwtAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<Request & { user?: AuthenticatedUser }>()
 
     if (this.authDisabled) {
-      request.user = await this.resolverUsuarioDeDesarrollo()
+      request.user = await this.resolveDevUser()
 
       return true
     }
@@ -86,7 +86,7 @@ export class JwtAuthGuard implements CanActivate {
    * El usuario suplantado es uno real de la base, no uno inventado: así el
    * alcance y el rol con los que trabajas en local son los mismos que en la nube.
    */
-  private async resolverUsuarioDeDesarrollo(): Promise<AuthenticatedUser> {
+  private async resolveDevUser(): Promise<AuthenticatedUser> {
     if (this.devUser) {
       return this.devUser
     }

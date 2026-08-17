@@ -29,7 +29,7 @@ export type AttemptRow = {
 export class ContactAttemptsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async prospecto(
+  async prospect(
     id: string,
   ): Promise<{ id: string; hotelId: string; closedAt: Date | null } | null> {
     return this.prisma.prospect.findUnique({
@@ -38,7 +38,7 @@ export class ContactAttemptsRepository {
     })
   }
 
-  async contactoDelHotel(
+  async contactOfHotel(
     contactId: string,
     hotelId: string,
   ): Promise<{ id: string; isActive: boolean } | null> {
@@ -94,7 +94,7 @@ export class ContactAttemptsRepository {
     return this.prisma.contactAttempt.findUniqueOrThrow({ where: { id }, select: SELECT })
   }
 
-  async listar(prospectId: string): Promise<AttemptRow[]> {
+  async listAll(prospectId: string): Promise<AttemptRow[]> {
     return this.prisma.contactAttempt.findMany({
       where: { prospectId },
       orderBy: { occurredAt: 'desc' },
@@ -102,30 +102,30 @@ export class ContactAttemptsRepository {
     })
   }
 
-  async resumen(prospectId: string): Promise<{
+  async summaryOf(prospectId: string): Promise<{
     total: number
     byOutcome: Array<{ outcome: string; total: number }>
     lastAttemptAt: Date | null
   }> {
-    const grupos = await this.prisma.contactAttempt.groupBy({
+    const groups = await this.prisma.contactAttempt.groupBy({
       by: ['outcome'],
       where: { prospectId },
       _count: { _all: true },
     })
 
-    const ultimo = await this.prisma.contactAttempt.findFirst({
+    const last = await this.prisma.contactAttempt.findFirst({
       where: { prospectId },
       orderBy: { occurredAt: 'desc' },
       select: { occurredAt: true },
     })
 
     return {
-      total: grupos.reduce((suma, g) => suma + g._count._all, 0),
+      total: groups.reduce((total, g) => total + g._count._all, 0),
       byOutcome: OUTCOMES.map((outcome) => ({
         outcome,
-        total: grupos.find((g) => g.outcome === outcome)?._count._all ?? 0,
+        total: groups.find((g) => g.outcome === outcome)?._count._all ?? 0,
       })),
-      lastAttemptAt: ultimo?.occurredAt ?? null,
+      lastAttemptAt: last?.occurredAt ?? null,
     }
   }
 }

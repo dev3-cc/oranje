@@ -11,9 +11,9 @@ import { PrismaService } from '../../../infra/prisma/index.js'
 
 import type { CreateTransitionDto } from './dto/create-transition.dto.js'
 import type { HistoryEntryEntity, TransitionOptionEntity } from './entities/transition.entity.js'
-import { TransicionPermitida, TransitionsRepository } from './transitions.repository.js'
+import { AllowedTransition, TransitionsRepository } from './transitions.repository.js'
 
-const ESTADO_CLIENTE = 'ORANGE'
+const CLIENT_STATE = 'ORANGE'
 
 @Injectable()
 export class TransitionsService {
@@ -23,18 +23,18 @@ export class TransitionsService {
   ) {}
 
   async available(prospectId: string, user: AuthenticatedUser): Promise<TransitionOptionEntity[]> {
-    const prospecto = await this.prospecto(prospectId)
-    const pasos = await this.repo.desde(prospecto.onboardingStateId)
+    const prospect = await this.prospect(prospectId)
+    const steps = await this.repo.stepsFrom(prospect.onboardingStateId)
 
-    const mios = pasos.filter((p) => p.roleCode === user.roleCode)
-    const resueltos = await Promise.all(mios.map((p) => this.resolverDestino(prospectId, p)))
+    const mine = steps.filter((p) => p.roleCode === user.roleCode)
+    const resolved = await Promise.all(mine.map((p) => this.resolveTarget(prospectId, p)))
 
-    return resueltos
+    return resolved
       .filter(
         (
           r,
         ): r is {
-          paso: TransicionPermitida
+          step: AllowedTransition
           code: string
           name: string
           color: string
@@ -43,15 +43,15 @@ export class TransitionsService {
       )
       .map((r) => ({
         toState: { code: r.code, color: r.color, name: r.name, isBranch: r.isBranch },
-        requiresReason: r.paso.requiresReason,
-        requiresEvidence: r.paso.requiresEvidence,
+        requiresReason: r.step.requiresReason,
+        requiresEvidence: r.step.requiresEvidence,
       }))
   }
 
   async history(prospectId: string): Promise<HistoryEntryEntity[]> {
-    await this.prospecto(prospectId)
+    await this.prospect(prospectId)
 
-    return (await this.repo.historia(prospectId)).map((h) => ({
+    return (await this.repo.historyOf(prospectId)).map((h) => ({
       id: h.id,
       fromState: h.fromState,
       toState: h.toState,
@@ -66,41 +66,41 @@ export class TransitionsService {
     dto: CreateTransitionDto,
     user: AuthenticatedUser,
   ): Promise<{ from: string; to: string }> {
-    const prospecto = await this.prospecto(prospectId)
+    const prospect = await this.prospect(prospectId)
 
-    if (prospecto.closedAt !== null) {
+    if (prospect.closedAt !== null) {
       throw new ConflictException({
         code: 'PROSPECT_CLOSED',
         message: 'El ciclo comercial está cerrado',
       })
     }
 
-    const pasos = await this.repo.desde(prospecto.onboardingStateId)
-    const candidatos = await this.candidatosHacia(prospectId, pasos, dto.toState)
+    const steps = await this.repo.stepsFrom(prospect.onboardingStateId)
+    const candidates = await this.candidatesTo(prospectId, steps, dto.toState)
 
-    if (candidatos.length === 0) {
-      const posibles = await this.codigosPosibles(prospectId, pasos)
+    if (candidates.length === 0) {
+      const posibles = await this.possibleCodes(prospectId, steps)
 
       throw new ConflictException({
         code: 'TRANSITION_NOT_ALLOWED',
-        message: `No se puede pasar de ${prospecto.state.code} a ${dto.toState}`,
+        message: `No se puede pasar de ${prospect.state.code} a ${dto.toState}`,
         details: posibles.map((code) => ({ field: 'toState', value: code })),
       })
     }
 
-    const paso = candidatos.find((c) => c.roleCode === user.roleCode)
+    const step = candidates.find((c) => c.roleCode === user.roleCode)
 
-    if (!paso) {
+    if (!step) {
       throw new ForbiddenException({
         code: 'TRANSITION_FORBIDDEN',
         message: `Tu rol no puede pasar este prospecto a ${dto.toState}`,
-        details: candidatos.map((c) => ({ field: 'authorizedRole', value: c.roleCode })),
+        details: candidates.map((c) => ({ field: 'authorizedRole', value: c.roleCode })),
       })
     }
 
     let reasonId: string | null = null
 
-    if (paso.requiresReason) {
+    if (step.requiresReason) {
       if (!dto.reasonCode) {
         throw new UnprocessableEntityException({
           code: 'REASON_REQUIRED',
@@ -108,49 +108,49 @@ export class TransitionsService {
         })
       }
 
-      const motivo = await this.repo.motivoPorCode(dto.reasonCode)
+      const reason = await this.repo.reasonByCode(dto.reasonCode)
 
-      if (!motivo) {
+      if (!reason) {
         throw new UnprocessableEntityException({
           code: 'REASON_NOT_FOUND',
           message: `El motivo ${dto.reasonCode} no existe en el Semáforo Onboarding`,
         })
       }
 
-      reasonId = motivo.id
+      reasonId = reason.id
     }
 
-    const destino = await this.resolverDestino(prospectId, paso)
+    const target = await this.resolveTarget(prospectId, step)
 
-    if (!destino) {
+    if (!target) {
       throw new ConflictException({
         code: 'PREVIOUS_STATE_UNKNOWN',
         message: 'No hay un estado previo al que regresar',
       })
     }
 
-    if (destino.code === ESTADO_CLIENTE) {
-      await this.assertUsuarioDelHotel(prospecto.hotelId)
+    if (target.code === CLIENT_STATE) {
+      await this.assertHotelUser(prospect.hotelId)
     }
 
-    await this.repo.aplicar({
+    await this.repo.applyChange({
       prospectId,
-      fromStateId: prospecto.onboardingStateId,
-      toStateId: destino.paso.toStateId ?? (await this.idDe(destino.code)),
-      toStateCode: destino.code,
+      fromStateId: prospect.onboardingStateId,
+      toStateId: target.step.toStateId ?? (await this.idOf(target.code)),
+      toStateCode: target.code,
       reasonId,
       note: dto.note ?? null,
       userId: user.id,
       roleCode: user.roleCode,
     })
 
-    return { from: prospecto.state.code, to: destino.code }
+    return { from: prospect.state.code, to: target.code }
   }
 
-  private async assertUsuarioDelHotel(hotelId: string): Promise<void> {
-    const cuantos = await this.prisma.user.count({ where: { hotelId, isActive: true } })
+  private async assertHotelUser(hotelId: string): Promise<void> {
+    const howMany = await this.prisma.user.count({ where: { hotelId, isActive: true } })
 
-    if (cuantos === 0) {
+    if (howMany === 0) {
       throw new UnprocessableEntityException({
         code: 'HOTEL_USER_REQUIRED',
         message: 'Antes de convertir al hotel en cliente hay que crear su Usuario del Hotel',
@@ -158,7 +158,7 @@ export class TransitionsService {
     }
   }
 
-  private async prospecto(id: string): Promise<{
+  private async prospect(id: string): Promise<{
     id: string
     hotelId: string
     onboardingStateId: string
@@ -183,73 +183,70 @@ export class TransitionsService {
     return { ...row, state: row.onboardingState }
   }
 
-  private async candidatosHacia(
+  private async candidatesTo(
     prospectId: string,
-    pasos: TransicionPermitida[],
+    steps: AllowedTransition[],
     toState: string,
-  ): Promise<TransicionPermitida[]> {
-    const resueltos = await Promise.all(
-      pasos.map(async (p) => ({ paso: p, destino: await this.resolverDestino(prospectId, p) })),
+  ): Promise<AllowedTransition[]> {
+    const resolved = await Promise.all(
+      steps.map(async (p) => ({ step: p, target: await this.resolveTarget(prospectId, p) })),
     )
 
-    return resueltos.filter((r) => r.destino?.code === toState).map((r) => r.paso)
+    return resolved.filter((r) => r.target?.code === toState).map((r) => r.step)
   }
 
-  private async codigosPosibles(
-    prospectId: string,
-    pasos: TransicionPermitida[],
-  ): Promise<string[]> {
-    const resueltos = await Promise.all(pasos.map((p) => this.resolverDestino(prospectId, p)))
+  private async possibleCodes(prospectId: string, steps: AllowedTransition[]): Promise<string[]> {
+    const resolved = await Promise.all(steps.map((p) => this.resolveTarget(prospectId, p)))
 
-    return [...new Set(resueltos.filter((r) => r !== null).map((r) => r.code))]
+    return [...new Set(resolved.filter((r) => r !== null).map((r) => r.code))]
   }
 
-  private async resolverDestino(
+  private async resolveTarget(
     prospectId: string,
-    paso: TransicionPermitida,
+    step: AllowedTransition,
   ): Promise<{
-    paso: TransicionPermitida
+    step: AllowedTransition
     code: string
     name: string
     color: string
     isBranch: boolean
   } | null> {
-    if (!paso.returnsToPrevious) {
-      return paso.toState
+    if (!step.returnsToPrevious) {
+      return step.toState
         ? {
-            paso,
-            code: paso.toState.code,
-            name: paso.toState.name,
-            color: paso.toState.color,
-            isBranch: paso.toState.isBranch,
+            step,
+            code: step.toState.code,
+            name: step.toState.name,
+            color: step.toState.color,
+            isBranch: step.toState.isBranch,
           }
         : null
     }
 
-    const previo = await this.repo.estadoPrevio(prospectId)
+    const previous = await this.repo.previousState(prospectId)
 
-    if (!previo) {
+    if (!previous) {
       return null
     }
 
-    const estado = await this.prisma.statusLightState.findUniqueOrThrow({
-      where: { id: previo.id },
+    const state = await this.prisma.statusLightState.findUniqueOrThrow({
+      where: { id: previous.id },
       select: { code: true, name: true, color: true, isBranch: true },
     })
 
-    return { paso, ...estado }
+    return { step, ...state }
   }
 
-  private async idDe(code: string): Promise<string> {
-    const estado = await this.repo.estadoPorCode(code)
+  private async idOf(code: string): Promise<string> {
+    const state = await this.repo.stateByCode(code)
 
-    if (!estado) {
+    if (!state) {
       throw new ConflictException({
         code: 'STATE_NOT_FOUND',
         message: `El estado ${code} no existe`,
       })
     }
 
-    return estado.id
+    return state.id
   }
 }

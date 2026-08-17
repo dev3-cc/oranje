@@ -8,7 +8,7 @@ import type { QueryProspectsDto } from './dto/query-prospects.dto.js'
 import type { ProspectEntity } from './entities/prospect.entity.js'
 import { ProspectRow, ProspectsRepository } from './prospects.repository.js'
 
-export interface Tablero {
+export interface Board {
   data: ProspectEntity[]
   meta: {
     page: number
@@ -23,7 +23,7 @@ export interface Tablero {
 export class ProspectsService {
   constructor(
     private readonly repo: ProspectsRepository,
-    private readonly permisos: PermissionsService,
+    private readonly permissions: PermissionsService,
   ) {}
 
   async create(dto: CreateProspectDto, user: AuthenticatedUser): Promise<ProspectEntity> {
@@ -31,13 +31,13 @@ export class ProspectsService {
       throw new NotFoundException({ code: 'HOTEL_NOT_FOUND', message: 'El hotel no existe' })
     }
 
-    const abierto = await this.repo.cicloAbiertoDe(dto.hotelId)
+    const openCycle = await this.repo.openCycleOf(dto.hotelId)
 
-    if (abierto) {
+    if (openCycle) {
       throw new ConflictException({
         code: 'PROSPECT_ALREADY_OPEN',
         message: 'Este hotel ya tiene un ciclo comercial abierto',
-        details: [{ field: 'hotelId', value: abierto.id }],
+        details: [{ field: 'hotelId', value: openCycle.id }],
       })
     }
 
@@ -55,8 +55,8 @@ export class ProspectsService {
     )
   }
 
-  async list(query: QueryProspectsDto, user: AuthenticatedUser): Promise<Tablero> {
-    const ownerUserId = await this.alcance(query.ownerUserId, user)
+  async list(query: QueryProspectsDto, user: AuthenticatedUser): Promise<Board> {
+    const ownerUserId = await this.scope(query.ownerUserId, user)
     const filtro = { ...query, ownerUserId }
 
     const [{ rows, total }, byState] = await Promise.all([
@@ -90,14 +90,14 @@ export class ProspectsService {
     return toEntity(row)
   }
 
-  private async alcance(
-    pedido: string | undefined,
+  private async scope(
+    requested: string | undefined,
     user: AuthenticatedUser,
   ): Promise<string | undefined> {
-    const veTodo = await this.permisos.can(user.roleCode, 'pipeline', 'read_all')
+    const seesAll = await this.permissions.can(user.roleCode, 'pipeline', 'read_all')
 
-    if (veTodo) {
-      return pedido
+    if (seesAll) {
+      return requested
     }
 
     return user.id

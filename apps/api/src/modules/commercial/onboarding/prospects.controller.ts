@@ -16,7 +16,7 @@ import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { CreateProspectDto } from './dto/create-prospect.dto.js'
 import { QueryProspectsDto } from './dto/query-prospects.dto.js'
 import type { ProspectEntity } from './entities/prospect.entity.js'
-import { ProspectsService, Tablero } from './prospects.service.js'
+import { ProspectsService, Board } from './prospects.service.js'
 
 @Controller('prospects')
 export class ProspectsController {
@@ -24,10 +24,7 @@ export class ProspectsController {
 
   @Requires('pipeline', 'read')
   @Get()
-  list(
-    @Query() query: QueryProspectsDto,
-    @CurrentUser() user: AuthenticatedUser,
-  ): Promise<Tablero> {
+  list(@Query() query: QueryProspectsDto, @CurrentUser() user: AuthenticatedUser): Promise<Board> {
     return this.prospects.list(query, user)
   }
 

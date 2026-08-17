@@ -30,22 +30,22 @@ const baseSchema = z.object({
    * exista el proyecto — sin ellas solo `/auth/session` responde 503.
    * Obligatorias en producción.
    */
-  AUTH_ISSUER_URL: opcional(z.string().url()),
-  AUTH_AUDIENCE: opcional(z.string().min(1)),
+  AUTH_ISSUER_URL: optionalVar(z.string().url()),
+  AUTH_AUDIENCE: optionalVar(z.string().min(1)),
 
   /**
    * Apaga la autenticación y trabaja como AUTH_DEV_USER_EMAIL. Solo en `local`:
    * el refinamiento de abajo tumba el arranque si aparece en un desplegado.
    */
   AUTH_DISABLED: booleanFromEnv(false),
-  AUTH_DEV_USER_EMAIL: opcional(z.string().email()),
+  AUTH_DEV_USER_EMAIL: optionalVar(z.string().email()),
 
   // --- Nuestro JWT ---
   // local firma con secreto compartido (HS256); staging y producción con par
   // de llaves (RS256), para que la llave que firma no sea la que verifica
-  JWT_SECRET: opcional(z.string().min(32)),
-  JWT_PRIVATE_KEY: opcional(z.string().min(1)),
-  JWT_PUBLIC_KEY: opcional(z.string().min(1)).refine(
+  JWT_SECRET: optionalVar(z.string().min(32)),
+  JWT_PRIVATE_KEY: optionalVar(z.string().min(1)),
+  JWT_PUBLIC_KEY: optionalVar(z.string().min(1)).refine(
     (v) => v === undefined || v.includes('PUBLIC KEY'),
     'no parece un PEM SPKI',
   ),
@@ -78,7 +78,7 @@ const baseSchema = z.object({
  * `FOO=` es lo mismo que no declararla. Sin esto, dejar el hueco en el `.env` da
  * un error de formato en vez del de "falta esta variable", que es el útil.
  */
-function opcional<T extends z.ZodType>(schema: T) {
+function optionalVar<T extends z.ZodType>(schema: T) {
   return z.preprocess((v) => (v === '' ? undefined : v), schema.optional())
 }
 
@@ -95,48 +95,48 @@ function booleanFromEnv(porDefecto: boolean) {
  * un despliegue mal configurado muere al arrancar en vez de quedar abierto.
  */
 const envSchema = baseSchema.superRefine((env, ctx) => {
-  const esDesplegado = env.APP_ENV !== 'local'
-  const esProduccion = env.APP_ENV === 'production'
+  const isDeployed = env.APP_ENV !== 'local'
+  const isProduction = env.APP_ENV === 'production'
 
-  const falta = (path: string, message: string): void => {
+  const missing = (path: string, message: string): void => {
     ctx.addIssue({ code: 'custom', path: [path], message })
   }
 
-  if (esDesplegado) {
+  if (isDeployed) {
     // Firma asimétrica: la llave que firma no sale del servicio que emite
-    if (!env.JWT_PRIVATE_KEY) falta('JWT_PRIVATE_KEY', `obligatoria en ${env.APP_ENV} (RS256)`)
-    if (!env.JWT_PUBLIC_KEY) falta('JWT_PUBLIC_KEY', `obligatoria en ${env.APP_ENV} (RS256)`)
+    if (!env.JWT_PRIVATE_KEY) missing('JWT_PRIVATE_KEY', `obligatoria en ${env.APP_ENV} (RS256)`)
+    if (!env.JWT_PUBLIC_KEY) missing('JWT_PUBLIC_KEY', `obligatoria en ${env.APP_ENV} (RS256)`)
 
     if (env.AUTH_DISABLED) {
-      falta('AUTH_DISABLED', `no se admite en ${env.APP_ENV}: dejaría la API abierta`)
+      missing('AUTH_DISABLED', `no se admite en ${env.APP_ENV}: dejaría la API abierta`)
     }
 
     if (!env.COOKIE_SECURE) {
-      falta('COOKIE_SECURE', `debe ser true en ${env.APP_ENV}: la cookie viaja por HTTPS`)
+      missing('COOKIE_SECURE', `debe ser true en ${env.APP_ENV}: la cookie viaja por HTTPS`)
     }
 
     // El emulador no verifica firmas: en la nube, cualquiera sería cualquiera
     if (env.AUTH_ISSUER_URL?.includes('localhost')) {
-      falta('AUTH_ISSUER_URL', 'apunta al emulador de Firebase, que no verifica firmas')
+      missing('AUTH_ISSUER_URL', 'apunta al emulador de Firebase, que no verifica firmas')
     }
   }
 
   // Staging levanta sin Firebase ni dominio, para probar los CRUD antes de que
   // existan. Producción no: ahí separan "desplegado" de "abierto".
-  if (esProduccion) {
+  if (isProduction) {
     if (env.CORS_ORIGINS.length === 0) {
-      falta('CORS_ORIGINS', 'obligatoria en production: §6 pide lista blanca explícita')
+      missing('CORS_ORIGINS', 'obligatoria en production: §6 pide lista blanca explícita')
     }
 
-    if (!env.AUTH_ISSUER_URL) falta('AUTH_ISSUER_URL', 'obligatoria en production')
-    if (!env.AUTH_AUDIENCE) falta('AUTH_AUDIENCE', 'obligatoria en production')
+    if (!env.AUTH_ISSUER_URL) missing('AUTH_ISSUER_URL', 'obligatoria en production')
+    if (!env.AUTH_AUDIENCE) missing('AUTH_AUDIENCE', 'obligatoria en production')
   }
 
-  if (!esDesplegado) {
-    if (!env.JWT_SECRET) falta('JWT_SECRET', 'obligatoria en local (HS256)')
+  if (!isDeployed) {
+    if (!env.JWT_SECRET) missing('JWT_SECRET', 'obligatoria en local (HS256)')
 
     if (env.AUTH_DISABLED && !env.AUTH_DEV_USER_EMAIL) {
-      falta('AUTH_DEV_USER_EMAIL', 'con AUTH_DISABLED hay que decir como quién trabajas')
+      missing('AUTH_DEV_USER_EMAIL', 'con AUTH_DISABLED hay que decir como quién trabajas')
     }
   }
 })
@@ -147,11 +147,11 @@ export function validateEnv(raw: Record<string, unknown>): Env {
   const parsed = envSchema.safeParse(raw)
 
   if (!parsed.success) {
-    const detalle = parsed.error.issues
+    const detail = parsed.error.issues
       .map((issue) => `  ${issue.path.join('.')}: ${issue.message}`)
       .join('\n')
 
-    throw new Error(`Configuración de entorno inválida:\n${detalle}`)
+    throw new Error(`Configuración de entorno inválida:\n${detail}`)
   }
 
   return parsed.data

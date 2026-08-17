@@ -20,9 +20,9 @@ export class ContactAttemptsService {
     dto: CreateContactAttemptDto,
     user: AuthenticatedUser,
   ): Promise<ContactAttemptEntity> {
-    const prospecto = await this.prospecto(prospectId)
+    const prospect = await this.prospect(prospectId)
 
-    if (prospecto.closedAt !== null) {
+    if (prospect.closedAt !== null) {
       throw new ConflictException({
         code: 'PROSPECT_CLOSED',
         message: 'No se registran intentos en un ciclo comercial cerrado',
@@ -39,22 +39,22 @@ export class ContactAttemptsService {
     let hotelContactId: string | null = null
 
     if (dto.hotelContactId) {
-      const contacto = await this.repo.contactoDelHotel(dto.hotelContactId, prospecto.hotelId)
+      const contact = await this.repo.contactOfHotel(dto.hotelContactId, prospect.hotelId)
 
-      if (!contacto) {
+      if (!contact) {
         throw new UnprocessableEntityException({
           code: 'CONTACT_NOT_IN_HOTEL',
           message: 'Ese contacto no es de este hotel',
         })
       }
 
-      hotelContactId = contacto.id
+      hotelContactId = contact.id
     }
 
     return toEntity(
       await this.repo.create({
         prospectId,
-        hotelId: prospecto.hotelId,
+        hotelId: prospect.hotelId,
         hotelContactId,
         attemptType: dto.attemptType,
         outcome: dto.outcome,
@@ -67,27 +67,27 @@ export class ContactAttemptsService {
   }
 
   async list(prospectId: string): Promise<{ data: ContactAttemptEntity[]; meta: AttemptSummary }> {
-    await this.prospecto(prospectId)
+    await this.prospect(prospectId)
 
-    const [filas, resumen] = await Promise.all([
-      this.repo.listar(prospectId),
-      this.repo.resumen(prospectId),
+    const [rows, summaryOf] = await Promise.all([
+      this.repo.listAll(prospectId),
+      this.repo.summaryOf(prospectId),
     ])
 
     return {
-      data: filas.map(toEntity),
+      data: rows.map(toEntity),
       meta: {
-        total: resumen.total,
-        byOutcome: resumen.byOutcome,
-        lastAttemptAt: resumen.lastAttemptAt?.toISOString() ?? null,
+        total: summaryOf.total,
+        byOutcome: summaryOf.byOutcome,
+        lastAttemptAt: summaryOf.lastAttemptAt?.toISOString() ?? null,
       },
     }
   }
 
-  private async prospecto(
+  private async prospect(
     id: string,
   ): Promise<{ id: string; hotelId: string; closedAt: Date | null }> {
-    const row = await this.repo.prospecto(id)
+    const row = await this.repo.prospect(id)
 
     if (!row) {
       throw new NotFoundException({ code: 'PROSPECT_NOT_FOUND', message: 'El prospecto no existe' })

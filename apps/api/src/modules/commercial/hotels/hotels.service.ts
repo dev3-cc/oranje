@@ -6,7 +6,7 @@ import type { UpdateHotelDto } from './dto/update-hotel.dto.js'
 import type { HotelEntity } from './entities/hotel.entity.js'
 import { HotelRow, HotelsRepository } from './hotels.repository.js'
 
-export interface Paginado<T> {
+export interface Paginated<T> {
   data: T[]
   meta: { page: number; limit: number; total: number; totalPages: number }
 }
@@ -15,7 +15,7 @@ export interface Paginado<T> {
 export class HotelsService {
   constructor(private readonly repo: HotelsRepository) {}
 
-  async list(query: QueryHotelsDto): Promise<Paginado<HotelEntity>> {
+  async list(query: QueryHotelsDto): Promise<Paginated<HotelEntity>> {
     const { rows, total } = await this.repo.findMany(query)
 
     return {
@@ -40,37 +40,37 @@ export class HotelsService {
   }
 
   async create(dto: CreateHotelDto, userId: string): Promise<HotelEntity> {
-    await this.assertZona(dto.zoneId)
-    await this.assertNombreLibre(dto.name)
+    await this.assertZone(dto.zoneId)
+    await this.assertNameAvailable(dto.name)
 
     return toEntity(await this.repo.create(dto, userId))
   }
 
   async update(id: string, dto: UpdateHotelDto, userId: string): Promise<HotelEntity> {
-    const actual = await this.repo.findById(id)
+    const current = await this.repo.findById(id)
 
-    if (!actual) {
+    if (!current) {
       throw new NotFoundException({ code: 'HOTEL_NOT_FOUND', message: 'El hotel no existe' })
     }
 
     if (dto.zoneId !== undefined) {
-      await this.assertZona(dto.zoneId)
+      await this.assertZone(dto.zoneId)
     }
 
-    if (dto.name !== undefined && dto.name.toLowerCase() !== actual.name.toLowerCase()) {
-      await this.assertNombreLibre(dto.name)
+    if (dto.name !== undefined && dto.name.toLowerCase() !== current.name.toLowerCase()) {
+      await this.assertNameAvailable(dto.name)
     }
 
     return toEntity(await this.repo.update(id, dto, userId))
   }
 
-  private async assertZona(zoneId: string): Promise<void> {
+  private async assertZone(zoneId: string): Promise<void> {
     if (!(await this.repo.zoneExists(zoneId))) {
       throw new NotFoundException({ code: 'ZONE_NOT_FOUND', message: 'La zona no existe' })
     }
   }
 
-  private async assertNombreLibre(name: string): Promise<void> {
+  private async assertNameAvailable(name: string): Promise<void> {
     if (await this.repo.findByName(name)) {
       throw new ConflictException({
         code: 'HOTEL_NAME_TAKEN',

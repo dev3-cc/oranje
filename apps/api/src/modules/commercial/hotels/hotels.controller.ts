@@ -18,7 +18,7 @@ import { CreateHotelDto } from './dto/create-hotel.dto.js'
 import { QueryHotelsDto } from './dto/query-hotels.dto.js'
 import { UpdateHotelDto } from './dto/update-hotel.dto.js'
 import type { HotelEntity } from './entities/hotel.entity.js'
-import { HotelsService, Paginado } from './hotels.service.js'
+import { HotelsService, Paginated } from './hotels.service.js'
 
 @Controller('hotels')
 export class HotelsController {
@@ -26,7 +26,7 @@ export class HotelsController {
 
   @Requires('pipeline', 'read')
   @Get()
-  list(@Query() query: QueryHotelsDto): Promise<Paginado<HotelEntity>> {
+  list(@Query() query: QueryHotelsDto): Promise<Paginated<HotelEntity>> {
     return this.hotels.list(query)
   }
 

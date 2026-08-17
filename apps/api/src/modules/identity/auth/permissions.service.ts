@@ -20,14 +20,14 @@ const TTL_MS = 60_000
 @Injectable()
 export class PermissionsService {
   private readonly logger = new Logger(PermissionsService.name)
-  private readonly cache = new Map<string, { permisos: Set<string>; expira: number }>()
+  private readonly cache = new Map<string, { permissions: Set<string>; expiresAt: number }>()
 
   constructor(private readonly prisma: PrismaService) {}
 
   async can(roleCode: string, module: string, action: string): Promise<boolean> {
-    const permisos = await this.permisosDe(roleCode)
+    const permissions = await this.permissionsOf(roleCode)
 
-    return permisos.has(`${module}:${action}`)
+    return permissions.has(`${module}:${action}`)
   }
 
   /** Tras cambiar la Matriz. Sin argumento, tira todo. */
@@ -39,28 +39,28 @@ export class PermissionsService {
     }
   }
 
-  private async permisosDe(roleCode: string): Promise<Set<string>> {
-    const enCache = this.cache.get(roleCode)
+  private async permissionsOf(roleCode: string): Promise<Set<string>> {
+    const cached = this.cache.get(roleCode)
 
-    if (enCache && enCache.expira > Date.now()) {
-      return enCache.permisos
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.permissions
     }
 
-    const filas = await this.prisma.rolePermission.findMany({
+    const rows = await this.prisma.rolePermission.findMany({
       where: { role: { code: roleCode } },
       select: { module: true, action: true },
     })
 
-    const permisos = new Set(filas.map((f) => `${f.module}:${f.action}`))
+    const permissions = new Set(rows.map((f) => `${f.module}:${f.action}`))
 
     // Un rol sin filas no es un error: los departamentos sin matriz quedan
     // negados por omisión. Se avisa una vez por ciclo de caché, no en cada request
-    if (permisos.size === 0) {
+    if (permissions.size === 0) {
       this.logger.warn(`El rol ${roleCode} no tiene permisos: no podrá hacer nada`)
     }
 
-    this.cache.set(roleCode, { permisos, expira: Date.now() + TTL_MS })
+    this.cache.set(roleCode, { permissions, expiresAt: Date.now() + TTL_MS })
 
-    return permisos
+    return permissions
   }
 }

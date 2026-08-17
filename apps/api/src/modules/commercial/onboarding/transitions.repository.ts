@@ -3,10 +3,10 @@ import { v7 as uuidv7 } from 'uuid'
 
 import { PrismaService } from '../../../infra/prisma/index.js'
 
-const SEMAFORO = 'ONBOARDING'
-const ESTADO_CLIENTE = 'ORANGE'
+const STATUS_LIGHT = 'ONBOARDING'
+const CLIENT_STATE = 'ORANGE'
 
-export interface TransicionPermitida {
+export interface AllowedTransition {
   id: string
   toStateId: string | null
   returnsToPrevious: boolean
@@ -20,9 +20,9 @@ export interface TransicionPermitida {
 export class TransitionsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async desde(fromStateId: string): Promise<TransicionPermitida[]> {
-    const filas = await this.prisma.statusLightTransition.findMany({
-      where: { fromStateId, statusLight: { code: SEMAFORO } },
+  async stepsFrom(fromStateId: string): Promise<AllowedTransition[]> {
+    const rows = await this.prisma.statusLightTransition.findMany({
+      where: { fromStateId, statusLight: { code: STATUS_LIGHT } },
       select: {
         id: true,
         toStateId: true,
@@ -34,7 +34,7 @@ export class TransitionsRepository {
       },
     })
 
-    return filas.map((f) => ({
+    return rows.map((f) => ({
       id: f.id,
       toStateId: f.toStateId,
       returnsToPrevious: f.returnsToPrevious,
@@ -45,32 +45,32 @@ export class TransitionsRepository {
     }))
   }
 
-  async estadoPorCode(code: string): Promise<{ id: string; code: string } | null> {
+  async stateByCode(code: string): Promise<{ id: string; code: string } | null> {
     return this.prisma.statusLightState.findFirst({
-      where: { code, statusLightCode: SEMAFORO },
+      where: { code, statusLightCode: STATUS_LIGHT },
       select: { id: true, code: true },
     })
   }
 
-  async motivoPorCode(code: string): Promise<{ id: string } | null> {
+  async reasonByCode(code: string): Promise<{ id: string } | null> {
     return this.prisma.statusChangeReason.findFirst({
-      where: { code, statusLight: { code: SEMAFORO } },
+      where: { code, statusLight: { code: STATUS_LIGHT } },
       select: { id: true },
     })
   }
 
-  async estadoPrevio(prospectId: string): Promise<{ id: string; code: string } | null> {
-    const filas = await this.prisma.prospectStateHistory.findMany({
+  async previousState(prospectId: string): Promise<{ id: string; code: string } | null> {
+    const rows = await this.prisma.prospectStateHistory.findMany({
       where: { prospectId },
       orderBy: { occurredAt: 'desc' },
       take: 2,
       select: { fromState: { select: { id: true, code: true } } },
     })
 
-    return filas[0]?.fromState ?? null
+    return rows[0]?.fromState ?? null
   }
 
-  async aplicar(params: {
+  async applyChange(params: {
     prospectId: string
     fromStateId: string
     toStateId: string
@@ -86,11 +86,11 @@ export class TransitionsRepository {
         data: {
           onboardingStateId: params.toStateId,
           updatedBy: params.userId,
-          ...(params.toStateCode === ESTADO_CLIENTE ? {} : {}),
+          ...(params.toStateCode === CLIENT_STATE ? {} : {}),
         },
       })
 
-      if (params.toStateCode === ESTADO_CLIENTE) {
+      if (params.toStateCode === CLIENT_STATE) {
         const p = await tx.prospect.findUniqueOrThrow({
           where: { id: params.prospectId },
           select: { hotelId: true, hotel: { select: { activatedAt: true } } },
@@ -110,7 +110,7 @@ export class TransitionsRepository {
           prospectId: params.prospectId,
           fromStateId: params.fromStateId,
           toStateId: params.toStateId,
-          statusLightCode: SEMAFORO,
+          statusLightCode: STATUS_LIGHT,
           reasonId: params.reasonId,
           userId: params.userId,
         },
@@ -134,7 +134,7 @@ export class TransitionsRepository {
     })
   }
 
-  async historia(prospectId: string): Promise<
+  async historyOf(prospectId: string): Promise<
     Array<{
       id: string
       occurredAt: Date

@@ -4,8 +4,8 @@ import { v7 as uuidv7 } from 'uuid'
 
 import { PrismaService } from '../../../infra/prisma/index.js'
 
-const ESTADO_INICIAL = 'GRAY'
-const SEMAFORO = 'ONBOARDING'
+const INITIAL_STATE = 'GRAY'
+const STATUS_LIGHT = 'ONBOARDING'
 
 const SELECT = {
   id: true,
@@ -25,7 +25,7 @@ const SELECT = {
 
 export type ProspectRow = Prisma.ProspectGetPayload<{ select: typeof SELECT }>
 
-export interface FiltroProspectos {
+export interface ProspectFilter {
   page: number
   limit: number
   state?: string | undefined
@@ -39,14 +39,14 @@ export interface FiltroProspectos {
 export class ProspectsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async estadoInicial(): Promise<{ id: string }> {
+  async initialState(): Promise<{ id: string }> {
     return this.prisma.statusLightState.findFirstOrThrow({
-      where: { code: ESTADO_INICIAL, statusLightCode: SEMAFORO },
+      where: { code: INITIAL_STATE, statusLightCode: STATUS_LIGHT },
       select: { id: true },
     })
   }
 
-  async cicloAbiertoDe(hotelId: string): Promise<{ id: string } | null> {
+  async openCycleOf(hotelId: string): Promise<{ id: string } | null> {
     return this.prisma.prospect.findFirst({
       where: { hotelId, closedAt: null },
       select: { id: true },
@@ -67,7 +67,7 @@ export class ProspectsRepository {
     needDescription: string | null,
     actorUserId: string,
   ): Promise<ProspectRow> {
-    const estado = await this.estadoInicial()
+    const state = await this.initialState()
     const id = uuidv7()
 
     await this.prisma.$transaction(async (tx) => {
@@ -77,8 +77,8 @@ export class ProspectsRepository {
           hotelId,
           ownerUserId,
           needDescription,
-          onboardingStateId: estado.id,
-          statusLightCode: SEMAFORO,
+          onboardingStateId: state.id,
+          statusLightCode: STATUS_LIGHT,
           createdBy: actorUserId,
           updatedBy: actorUserId,
         },
@@ -89,8 +89,8 @@ export class ProspectsRepository {
           id: uuidv7(),
           prospectId: id,
           fromStateId: null,
-          toStateId: estado.id,
-          statusLightCode: SEMAFORO,
+          toStateId: state.id,
+          statusLightCode: STATUS_LIGHT,
           userId: actorUserId,
         },
       })
@@ -102,7 +102,7 @@ export class ProspectsRepository {
           entityId: id,
           eventType: 'PROSPECT_OPENED',
           actorUserId,
-          payload: { hotelId, ownerUserId, state: ESTADO_INICIAL },
+          payload: { hotelId, ownerUserId, state: INITIAL_STATE },
         },
       })
     })
@@ -110,7 +110,7 @@ export class ProspectsRepository {
     return this.prisma.prospect.findUniqueOrThrow({ where: { id }, select: SELECT })
   }
 
-  async findMany(filtro: FiltroProspectos): Promise<{ rows: ProspectRow[]; total: number }> {
+  async findMany(filtro: ProspectFilter): Promise<{ rows: ProspectRow[]; total: number }> {
     const where: Prisma.ProspectWhereInput = {
       ...(filtro.includeClosed ? {} : { closedAt: null }),
       ...(filtro.state ? { onboardingState: { code: filtro.state } } : {}),
@@ -138,21 +138,21 @@ export class ProspectsRepository {
   async countByState(
     where: Prisma.ProspectWhereInput,
   ): Promise<Array<{ code: string; total: number }>> {
-    const grupos = await this.prisma.prospect.groupBy({
+    const groups = await this.prisma.prospect.groupBy({
       by: ['onboardingStateId'],
       where,
       _count: { _all: true },
     })
 
-    const estados = await this.prisma.statusLightState.findMany({
-      where: { statusLightCode: SEMAFORO },
+    const states = await this.prisma.statusLightState.findMany({
+      where: { statusLightCode: STATUS_LIGHT },
       select: { id: true, code: true, displayOrder: true },
       orderBy: { displayOrder: 'asc' },
     })
 
-    return estados.map((e) => ({
+    return states.map((e) => ({
       code: e.code,
-      total: grupos.find((g) => g.onboardingStateId === e.id)?._count._all ?? 0,
+      total: groups.find((g) => g.onboardingStateId === e.id)?._count._all ?? 0,
     }))
   }
 

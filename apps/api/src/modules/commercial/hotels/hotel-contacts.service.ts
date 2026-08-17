@@ -32,10 +32,10 @@ export class HotelContactsService {
     id: string,
     dto: UpdateHotelContactDto,
   ): Promise<HotelContactEntity> {
-    const actual = await this.assertContacto(hotelId, id)
+    const current = await this.assertContact(hotelId, id)
 
-    const phone = dto.phone === undefined ? actual.phone : dto.phone
-    const email = dto.email === undefined ? actual.email : dto.email
+    const phone = dto.phone === undefined ? current.phone : dto.phone
+    const email = dto.email === undefined ? current.email : dto.email
 
     if (phone === null && email === null) {
       throw new UnprocessableEntityException({
@@ -50,7 +50,7 @@ export class HotelContactsService {
       primary = false
     }
 
-    if (dto.isActive === true && actual.isActive === false && actual.isPrimary) {
+    if (dto.isActive === true && current.isActive === false && current.isPrimary) {
       primary = (await this.repo.hasActivePrimary(hotelId, id)) ? false : true
     }
 
@@ -71,14 +71,14 @@ export class HotelContactsService {
   }
 
   async remove(hotelId: string, id: string): Promise<void> {
-    const actual = await this.assertContacto(hotelId, id)
+    const current = await this.assertContact(hotelId, id)
 
-    const intentos = actual._count.attempts
+    const attemptCount = current._count.attempts
 
-    if (intentos > 0) {
+    if (attemptCount > 0) {
       throw new ConflictException({
         code: 'CONTACT_HAS_ATTEMPTS',
-        message: `Tiene ${intentos} ${intentos === 1 ? 'intento' : 'intentos'} de contacto registrado${intentos === 1 ? '' : 's'}. Desactívalo en vez de borrarlo`,
+        message: `Tiene ${attemptCount} ${attemptCount === 1 ? 'intento' : 'intentos'} de contacto registrado${attemptCount === 1 ? '' : 's'}. Desactívalo en vez de borrarlo`,
       })
     }
 
@@ -102,7 +102,7 @@ export class HotelContactsService {
     }
   }
 
-  private async assertContacto(hotelId: string, id: string): Promise<ContactRow> {
+  private async assertContact(hotelId: string, id: string): Promise<ContactRow> {
     const row = await this.repo.findOne(hotelId, id)
 
     if (!row) {

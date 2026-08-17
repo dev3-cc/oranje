@@ -36,20 +36,20 @@ export class FirebaseTokenService {
   private readonly logger = new Logger(FirebaseTokenService.name)
   private readonly issuer: string | undefined
   private readonly audience: string | undefined
-  private readonly esEmulador: boolean
+  private readonly isEmulator: boolean
   private readonly jwks: ReturnType<typeof createRemoteJWKSet> | null
 
   constructor(config: ConfigService<Env, true>) {
     this.issuer = config.get('AUTH_ISSUER_URL', { infer: true })
     this.audience = config.get('AUTH_AUDIENCE', { infer: true })
-    this.esEmulador =
+    this.isEmulator =
       this.issuer?.includes('localhost') === true || this.issuer?.includes('127.0.0.1') === true
 
-    this.jwks = this.issuer && !this.esEmulador ? createRemoteJWKSet(new URL(JWKS_DE_GOOGLE)) : null
+    this.jwks = this.issuer && !this.isEmulator ? createRemoteJWKSet(new URL(JWKS_DE_GOOGLE)) : null
 
     if (!this.issuer) {
       this.logger.warn('Sin Firebase configurado: POST /auth/session responderá 503')
-    } else if (this.esEmulador) {
+    } else if (this.isEmulator) {
       this.logger.warn('Emulador de Firebase: los ID tokens NO se verifican')
     }
   }
