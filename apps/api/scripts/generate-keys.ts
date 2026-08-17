@@ -19,7 +19,7 @@ const { privateKey, publicKey } = generateKeyPairSync('rsa', {
   publicKeyEncoding: { type: 'spki', format: 'pem' },
 })
 
-const enUnaLinea = (pem: string): string => pem.trim().replace(/\n/g, '\\n')
+const toSingleLine = (pem: string): string => pem.trim().replace(/\n/g, '\\n')
 
-process.stdout.write(`JWT_PRIVATE_KEY="${enUnaLinea(privateKey)}"\n`)
-process.stdout.write(`JWT_PUBLIC_KEY="${enUnaLinea(publicKey)}"\n`)
+process.stdout.write(`JWT_PRIVATE_KEY="${toSingleLine(privateKey)}"\n`)
+process.stdout.write(`JWT_PUBLIC_KEY="${toSingleLine(publicKey)}"\n`)
