@@ -51,6 +51,7 @@ export class ProposalsController {
 
   @Requires('proposals', 'send')
   @Post(':proposalId/send')
+  @HttpCode(HttpStatus.OK)
   async send(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('proposalId', ParseUUIDPipe) proposalId: string,
