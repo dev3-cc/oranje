@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common'
 
 import { AuthModule } from './auth/auth.module.js'
+import { UsersModule } from './users/users.module.js'
 
-// Submódulos: auth · users · roles
 @Module({
-  imports: [AuthModule],
-  exports: [AuthModule],
+  imports: [AuthModule, UsersModule],
+  exports: [AuthModule, UsersModule],
 })
 export class IdentityModule {}
