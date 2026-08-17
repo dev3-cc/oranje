@@ -15,9 +15,9 @@ const NO_HOURS = '—'
 
 /** Cómo se dibuja el punto de checadas según su estado. */
 const PUNCH_CLASS = {
-  COMPLETA: 'border-transparent',
-  INCOMPLETA: 'border-ink-4 bg-transparent',
-  SIN_TURNO: 'border-dashed border-ink-4 bg-transparent',
+  COMPLETE: 'border-transparent',
+  INCOMPLETE: 'border-ink-4 bg-transparent',
+  NO_SHIFT: 'border-dashed border-ink-4 bg-transparent',
 } as const
 
 /**
@@ -51,7 +51,7 @@ export function TimesheetDayCell({
           role="img"
           className={cn('size-3.5 rounded-full border-2', PUNCH_CLASS[entry.punch])}
           style={
-            entry.punch === 'COMPLETA' ? { backgroundColor: statusLight['st-verde'] } : undefined
+            entry.punch === 'COMPLETE' ? { backgroundColor: statusLight['st-verde'] } : undefined
           }
         />
 

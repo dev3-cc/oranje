@@ -47,7 +47,7 @@ describe('RegisterAttemptDialog', () => {
     // Con el tipo pero sin resultado sigue bloqueado.
     expect(submit).toBeDisabled()
 
-    await userEvent.selectOptions(screen.getByLabelText('Resultado'), 'INTERESADO')
+    await userEvent.selectOptions(screen.getByLabelText('Resultado'), 'INTERESTED')
     await waitFor(() => {
       expect(submit).toBeEnabled()
     })
@@ -65,7 +65,7 @@ describe('RegisterAttemptDialog', () => {
     const { onClose } = renderDialog()
 
     await userEvent.click(screen.getByRole('button', { name: 'Visita en frío' }))
-    await userEvent.selectOptions(screen.getByLabelText('Resultado'), 'CITA_AGENDADA')
+    await userEvent.selectOptions(screen.getByLabelText('Resultado'), 'MEETING_SET')
     await userEvent.click(screen.getByRole('button', { name: 'Registrar intento' }))
 
     await waitFor(() => {

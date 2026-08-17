@@ -127,8 +127,8 @@ function readReadiness(prospectId: string): ConversionReadiness {
   return {
     prospectId,
     hotelName: stored.hotelName,
-    currentStatus: stored.isConverted ? 'NARANJA' : 'ROSA',
-    targetStatus: 'NARANJA',
+    currentStatus: stored.isConverted ? 'ORANGE' : 'PINK',
+    targetStatus: 'ORANGE',
     approvalNote: APPROVAL_NOTE,
     requirements,
     effects: EFFECTS,
@@ -171,8 +171,8 @@ function returnToRenegotiation(prospectId: string): ConversionReadiness {
   return {
     prospectId,
     hotelName: stored.hotelName,
-    currentStatus: 'CAFE',
-    targetStatus: 'NARANJA',
+    currentStatus: 'BROWN',
+    targetStatus: 'ORANGE',
     approvalNote: APPROVAL_NOTE,
     requirements: [],
     effects: EFFECTS,
@@ -192,7 +192,7 @@ const routes: readonly MockRoute[] = [
           prospectId,
           hotelName: stored.hotelName,
           zone: stored.zone,
-          status: 'ROSA' as const,
+          status: 'PINK' as const,
           daysInStatus: stored.daysInStatus,
           pendingRequirements: readReadiness(prospectId).requirements.filter(
             (requirement) => !requirement.isMet,

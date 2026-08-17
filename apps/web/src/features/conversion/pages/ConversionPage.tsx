@@ -93,7 +93,7 @@ export function ConversionPage(): ReactNode {
 
           <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
             <Button
-              disabled={isBusy || readiness.currentStatus !== 'ROSA'}
+              disabled={isBusy || readiness.currentStatus !== 'PINK'}
               onClick={() => {
                 void returnToRenegotiation(prospectId)
               }}

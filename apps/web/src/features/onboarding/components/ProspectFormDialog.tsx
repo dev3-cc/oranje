@@ -261,7 +261,7 @@ export function ProspectFormDialog({
     }
   }
 
-  const status: OnboardingStatus = prospect?.status ?? 'GRIS'
+  const status: OnboardingStatus = prospect?.status ?? 'GRAY'
 
   return (
     <Modal

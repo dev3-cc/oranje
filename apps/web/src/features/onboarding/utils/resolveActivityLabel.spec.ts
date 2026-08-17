@@ -8,7 +8,7 @@ const BASE: ProspectSummary = {
   id: 'psp-test',
   hotelName: 'Hotel de prueba',
   zone: 'Zona Centro',
-  status: 'GRIS',
+  status: 'GRAY',
   daysInStatus: 3,
   lastAttempt: null,
   latestProposalVersion: null,
@@ -24,7 +24,7 @@ describe('resolveActivityLabel', () => {
     expect(
       resolveActivityLabel({
         ...BASE,
-        status: 'AMARILLO',
+        status: 'YELLOW',
         lastAttempt: { channel: 'Llamada', outcome: 'Interesado' },
       }),
     ).toBe('Llamada · Interesado')
@@ -34,7 +34,7 @@ describe('resolveActivityLabel', () => {
     expect(
       resolveActivityLabel({
         ...BASE,
-        status: 'VERDE',
+        status: 'GREEN',
         lastAttempt: { channel: 'Correo', outcome: 'Interesado' },
         latestProposalVersion: 2,
       }),
@@ -45,7 +45,7 @@ describe('resolveActivityLabel', () => {
     expect(
       resolveActivityLabel({
         ...BASE,
-        status: 'VERDE',
+        status: 'GREEN',
         lastAttempt: { channel: 'Correo', outcome: 'Interesado' },
       }),
     ).toBe('Correo · Interesado')

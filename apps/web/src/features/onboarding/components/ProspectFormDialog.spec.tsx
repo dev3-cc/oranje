@@ -11,7 +11,7 @@ import { store } from '@/app/store'
 const PROSPECT: ProspectDetail = {
   id: 'psp-0007',
   hotelName: 'Hotel Puerto Real',
-  status: 'ROSA',
+  status: 'PINK',
   cycleStartedAt: '2026-05-12',
   daysInStatus: 7,
   owner: { id: 'usr-ana-ruiz', name: 'Ana Ruiz', shortName: 'A. Ruiz' },

@@ -3,52 +3,51 @@ import type { StatusLightToken } from '@oranje/ui'
 /**
  * Semáforo de Requisición: estados, transiciones válidas y cómo se pintan.
  *
- * A diferencia del de Onboarding, este NO se dedujo de una captura: está
- * transcrito del ejemplo de `NOMENCLATURA.md` §5, que a su vez sale del vault.
- * Las transiciones son las de ahí, literales.
+ * Códigos copiados del seed de la API (`apps/api/prisma/seed.ts`, semáforo
+ * REQUISITION): identificadores en inglés por D-11, etiquetas en español.
  *
  * ⚠ Mismo domicilio provisional que el de Onboarding: su sitio es
  * `packages/domain/src/statusLights/requisitionStatusLight.ts`, hoy fuera del alcance
  * acordado.
  */
 export const REQUISITION_STATUSES = [
-  'VERDE_MANZANA',
-  'VERDE',
-  'AMARILLO',
-  'AZUL_CLARO',
-  'ROJO',
-  'MORADO',
+  'APPLE_GREEN',
+  'GREEN',
+  'YELLOW',
+  'LIGHT_BLUE',
+  'RED',
+  'PURPLE',
 ] as const
 
 export type RequisitionStatus = (typeof REQUISITION_STATUSES)[number]
 
 /** Qué significa cada color EN ESTE semáforo. En otro dice otra cosa. */
 export const REQUISITION_STATUS_LABEL: Record<RequisitionStatus, string> = {
-  VERDE_MANZANA: 'En elaboración',
-  VERDE: 'Autorizada',
-  AMARILLO: 'En proceso',
-  AZUL_CLARO: 'Cubierta totalmente',
-  ROJO: 'Cubierta parcialmente',
-  MORADO: 'Eliminada',
+  APPLE_GREEN: 'En elaboración',
+  GREEN: 'Autorizada',
+  YELLOW: 'En proceso',
+  LIGHT_BLUE: 'Cubierta totalmente',
+  RED: 'Cubierta parcialmente',
+  PURPLE: 'Eliminada',
 }
 
 export const REQUISITION_STATUS_TOKEN: Record<RequisitionStatus, StatusLightToken> = {
-  VERDE_MANZANA: 'st-verde-manzana',
-  VERDE: 'st-verde',
-  AMARILLO: 'st-amarillo',
-  AZUL_CLARO: 'st-azul-claro',
-  ROJO: 'st-rojo',
-  MORADO: 'st-morado',
+  APPLE_GREEN: 'st-verde-manzana',
+  GREEN: 'st-verde',
+  YELLOW: 'st-amarillo',
+  LIGHT_BLUE: 'st-azul-claro',
+  RED: 'st-rojo',
+  PURPLE: 'st-morado',
 }
 
-/** Transcritas de §5. Cambiarlas exige actualizar antes la nota del vault. */
+/** Transcritas del vault. Cambiarlas exige actualizar antes la nota del semáforo. */
 export const REQUISITION_TRANSITIONS: Record<RequisitionStatus, readonly RequisitionStatus[]> = {
-  VERDE_MANZANA: ['VERDE', 'MORADO'],
-  VERDE: ['AMARILLO', 'MORADO'],
-  AMARILLO: ['AZUL_CLARO', 'ROJO'],
-  AZUL_CLARO: [],
-  ROJO: ['AMARILLO'],
-  MORADO: [],
+  APPLE_GREEN: ['GREEN', 'PURPLE'],
+  GREEN: ['YELLOW', 'PURPLE'],
+  YELLOW: ['LIGHT_BLUE', 'RED'],
+  LIGHT_BLUE: [],
+  RED: ['YELLOW'],
+  PURPLE: [],
 }
 
 /**
@@ -57,21 +56,24 @@ export const REQUISITION_TRANSITIONS: Record<RequisitionStatus, readonly Requisi
  * Lo calcula el BACKEND a partir de la fecha de inicio; el front solo lo pinta.
  * Si lo calculara aquí, dos pantallas abiertas a distinta hora mostrarían
  * urgencias distintas para la misma requisición.
+ *
+ * ⚠ El «verde» de ESTE semáforo es `STRONG_GREEN` (Verde fuerte) en el seed,
+ * no `GREEN`: los códigos no se comparten entre semáforos.
  */
-export const URGENCY_LEVELS = ['ROJO', 'AMARILLO', 'VERDE'] as const
+export const URGENCY_LEVELS = ['RED', 'YELLOW', 'STRONG_GREEN'] as const
 
 export type UrgencyLevel = (typeof URGENCY_LEVELS)[number]
 
 export const URGENCY_LABEL: Record<UrgencyLevel, string> = {
-  ROJO: '< 72 h',
-  AMARILLO: '72 – 120 h',
-  VERDE: '> 120 h',
+  RED: '< 72 h',
+  YELLOW: '72 – 120 h',
+  STRONG_GREEN: '> 120 h',
 }
 
 export const URGENCY_TOKEN: Record<UrgencyLevel, StatusLightToken> = {
-  ROJO: 'st-rojo',
-  AMARILLO: 'st-amarillo',
-  VERDE: 'st-verde',
+  RED: 'st-rojo',
+  YELLOW: 'st-amarillo',
+  STRONG_GREEN: 'st-verde',
 }
 
 /**
@@ -79,9 +81,9 @@ export const URGENCY_TOKEN: Record<UrgencyLevel, StatusLightToken> = {
  * posiciones nacen en Rojo». Ahí el chip no sirve porque va dentro del texto.
  */
 export const URGENCY_COLOR_NAME: Record<UrgencyLevel, string> = {
-  ROJO: 'Rojo',
-  AMARILLO: 'Amarillo',
-  VERDE: 'Verde',
+  RED: 'Rojo',
+  YELLOW: 'Amarillo',
+  STRONG_GREEN: 'Verde',
 }
 
 /**
@@ -90,12 +92,12 @@ export const URGENCY_COLOR_NAME: Record<UrgencyLevel, string> = {
  * vault corrige el semáforo, el texto de la pantalla se corrige solo.
  */
 export const AUTHORIZATION_TRANSITION = {
-  from: 'VERDE_MANZANA',
-  to: 'VERDE',
+  from: 'APPLE_GREEN',
+  to: 'GREEN',
 } as const satisfies { from: RequisitionStatus; to: RequisitionStatus }
 
 /**
- * Rechazar solo puede llevar a `MORADO`: es la única salida de
- * `VERDE_MANZANA` que no es autorizar, según las transiciones de §5.
+ * Rechazar solo puede llevar a `PURPLE`: es la única salida de
+ * `APPLE_GREEN` que no es autorizar, según las transiciones del semáforo.
  */
-export const REJECTION_STATUS: RequisitionStatus = 'MORADO'
+export const REJECTION_STATUS: RequisitionStatus = 'PURPLE'

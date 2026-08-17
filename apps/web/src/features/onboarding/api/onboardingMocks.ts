@@ -47,32 +47,33 @@ const OWNER_ANA = { id: 'usr-ana-ruiz', name: 'Ana Ruiz', shortName: 'A. Ruiz' }
 const CURRENT_ROLE: string = 'BD'
 
 /** Transiciones que solo el BDC puede ejecutar (RBAC simulado). */
-const BDC_ONLY_TRANSITIONS: readonly OnboardingStatus[] = ['NARANJA']
+const BDC_ONLY_TRANSITIONS: readonly OnboardingStatus[] = ['ORANGE']
 
 /** Motivo obligatorio: `requires_reason` de `catalogs.status_change_reason`. */
-const TRANSITIONS_REQUIRING_REASON: readonly OnboardingStatus[] = ['ROJO', 'CAFE']
+const TRANSITIONS_REQUIRING_REASON: readonly OnboardingStatus[] = ['RED', 'BROWN']
 
 /** Frase corta que acompaña a cada transición en el modal. */
 const TRANSITION_HINT: Record<OnboardingStatus, string> = {
-  GRIS: 'Alta del hotel en el pipeline',
-  AZUL_CLARO: 'Se inicia el contacto',
-  VERDE: 'Se envía la propuesta',
-  AMARILLO: 'El hotel responde con interés',
-  ROSA: 'Se crea y valida el T&C',
-  CAFE: 'No se cierra el acuerdo',
-  NARANJA: 'Se aprueba la conversión a cliente',
-  ROJO: 'No hay interés',
+  GRAY: 'Alta del hotel en el pipeline',
+  LIGHT_BLUE: 'Se inicia el contacto',
+  GREEN: 'Se envía la propuesta',
+  YELLOW: 'El hotel responde con interés',
+  PINK: 'Se crea y valida el T&C',
+  BROWN: 'No se cierra el acuerdo',
+  ORANGE: 'Se aprueba la conversión a cliente',
+  RED: 'No hay interés',
+  BLACK: 'El cliente se pausa o queda inactivo',
 }
 
 const REASONS_BY_STATUS: Partial<Record<OnboardingStatus, StatusChangeReason[]>> = {
-  ROJO: [
+  RED: [
     { id: 'rsn-precio', label: 'Precio fuera de presupuesto' },
     { id: 'rsn-competencia', label: 'Trabaja con otro proveedor' },
     { id: 'rsn-sin-necesidad', label: 'No tiene necesidad de personal' },
     { id: 'rsn-sin-respuesta', label: 'Dejó de contestar' },
     { id: 'rsn-cierre', label: 'Cierre temporal del hotel' },
   ],
-  CAFE: [
+  BROWN: [
     { id: 'rsn-renegocia-tarifa', label: 'Pide renegociar la tarifa' },
     { id: 'rsn-cambio-contacto', label: 'Cambió el contacto en el hotel' },
     { id: 'rsn-presupuesto', label: 'Presupuesto congelado' },
@@ -108,7 +109,7 @@ let board: ProspectSummary[] = [
     id: 'psp-0001',
     hotelName: 'Hotel Riviera Maya',
     zone: 'Zona Norte',
-    status: 'GRIS',
+    status: 'GRAY',
     daysInStatus: 4,
     lastAttempt: null,
     latestProposalVersion: null,
@@ -118,7 +119,7 @@ let board: ProspectSummary[] = [
     id: 'psp-0002',
     hotelName: 'Casa Tulum Boutique',
     zone: 'Zona Sur',
-    status: 'GRIS',
+    status: 'GRAY',
     daysInStatus: 11,
     lastAttempt: null,
     latestProposalVersion: null,
@@ -128,7 +129,7 @@ let board: ProspectSummary[] = [
     id: 'psp-0003',
     hotelName: 'Hotel Playa Azul',
     zone: 'Zona Centro',
-    status: 'GRIS',
+    status: 'GRAY',
     daysInStatus: 2,
     lastAttempt: null,
     latestProposalVersion: null,
@@ -138,7 +139,7 @@ let board: ProspectSummary[] = [
     id: 'psp-0004',
     hotelName: 'Grand Costa Nube',
     zone: 'Zona Norte',
-    status: 'AZUL_CLARO',
+    status: 'LIGHT_BLUE',
     daysInStatus: 6,
     lastAttempt: { channel: 'Llamada', outcome: 'Interesado' },
     latestProposalVersion: null,
@@ -148,7 +149,7 @@ let board: ProspectSummary[] = [
     id: 'psp-0005',
     hotelName: 'Hotel Bahía Serena',
     zone: 'Zona Poniente',
-    status: 'AZUL_CLARO',
+    status: 'LIGHT_BLUE',
     daysInStatus: 3,
     lastAttempt: { channel: 'Visita', outcome: 'Cita agendada' },
     latestProposalVersion: null,
@@ -158,7 +159,7 @@ let board: ProspectSummary[] = [
     id: 'psp-0006',
     hotelName: 'Suites del Carmen',
     zone: 'Zona Sur',
-    status: 'AZUL_CLARO',
+    status: 'LIGHT_BLUE',
     daysInStatus: 9,
     lastAttempt: { channel: 'Correo', outcome: 'No contestó' },
     latestProposalVersion: null,
@@ -168,7 +169,7 @@ let board: ProspectSummary[] = [
     id: PROSPECT_PUERTO_REAL_ID,
     hotelName: 'Hotel Puerto Real',
     zone: 'Zona Centro',
-    status: 'ROSA',
+    status: 'PINK',
     daysInStatus: 7,
     lastAttempt: { channel: 'Reunión', outcome: 'En revisión' },
     latestProposalVersion: 2,
@@ -178,7 +179,7 @@ let board: ProspectSummary[] = [
     id: 'psp-0008',
     hotelName: 'Hotel Mirador',
     zone: 'Zona Centro',
-    status: 'VERDE',
+    status: 'GREEN',
     daysInStatus: 5,
     lastAttempt: { channel: 'Correo', outcome: 'Interesado' },
     latestProposalVersion: 2,
@@ -188,7 +189,7 @@ let board: ProspectSummary[] = [
     id: 'psp-0009',
     hotelName: 'Resort Isla Blanca',
     zone: 'Zona Norte',
-    status: 'VERDE',
+    status: 'GREEN',
     daysInStatus: 12,
     lastAttempt: { channel: 'Llamada', outcome: 'Interesado' },
     latestProposalVersion: 1,
@@ -198,7 +199,7 @@ let board: ProspectSummary[] = [
     id: 'psp-0010',
     hotelName: 'Hotel Las Palmas',
     zone: 'Zona Sur',
-    status: 'AMARILLO',
+    status: 'YELLOW',
     daysInStatus: 8,
     lastAttempt: { channel: 'Llamada', outcome: 'Interesado' },
     latestProposalVersion: 1,
@@ -208,7 +209,7 @@ let board: ProspectSummary[] = [
     id: 'psp-0011',
     hotelName: 'Villas Coral',
     zone: 'Zona Poniente',
-    status: 'AMARILLO',
+    status: 'YELLOW',
     daysInStatus: 15,
     lastAttempt: { channel: 'Correo', outcome: 'Sin respuesta' },
     latestProposalVersion: 1,
@@ -231,7 +232,7 @@ let board: ProspectSummary[] = [
     id: 'psp-0012',
     hotelName: 'Hotel Puerto Real',
     zone: 'Zona Centro',
-    status: 'NARANJA',
+    status: 'ORANGE',
     daysInStatus: 37,
     lastAttempt: { channel: 'Reunión', outcome: 'Contrato firmado' },
     latestProposalVersion: 2,
@@ -241,7 +242,7 @@ let board: ProspectSummary[] = [
     id: 'psp-0013',
     hotelName: 'Grand Costa Nube',
     zone: 'Zona Norte',
-    status: 'NARANJA',
+    status: 'ORANGE',
     daysInStatus: 85,
     lastAttempt: { channel: 'Reunión', outcome: 'Contrato firmado' },
     latestProposalVersion: 3,
@@ -251,7 +252,7 @@ let board: ProspectSummary[] = [
     id: 'psp-0014',
     hotelName: 'Hotel Mirador',
     zone: 'Zona Centro',
-    status: 'NARANJA',
+    status: 'ORANGE',
     daysInStatus: 164,
     lastAttempt: { channel: 'Llamada', outcome: 'Contrato firmado' },
     latestProposalVersion: 2,
@@ -261,7 +262,7 @@ let board: ProspectSummary[] = [
     id: 'psp-0015',
     hotelName: 'Villas Coral',
     zone: 'Zona Poniente',
-    status: 'NARANJA',
+    status: 'ORANGE',
     daysInStatus: 212,
     lastAttempt: { channel: 'Correo', outcome: 'Contrato firmado' },
     latestProposalVersion: 1,
@@ -271,7 +272,7 @@ let board: ProspectSummary[] = [
     id: 'psp-0016',
     hotelName: 'Hotel Las Palmas',
     zone: 'Zona Norte',
-    status: 'NARANJA',
+    status: 'ORANGE',
     daysInStatus: 285,
     lastAttempt: { channel: 'Visita', outcome: 'Contrato firmado' },
     latestProposalVersion: 1,
@@ -286,7 +287,7 @@ const details = new Map<string, ProspectDetail>([
     {
       id: PROSPECT_PUERTO_REAL_ID,
       hotelName: 'Hotel Puerto Real',
-      status: 'ROSA',
+      status: 'PINK',
       cycleStartedAt: '2026-05-12',
       daysInStatus: 7,
       owner: OWNER_ANA,
@@ -360,8 +361,8 @@ const details = new Map<string, ProspectDetail>([
       history: [
         {
           id: 'hst-5',
-          fromStatus: 'AMARILLO',
-          toStatus: 'ROSA',
+          fromStatus: 'YELLOW',
+          toStatus: 'PINK',
           changedAt: '2026-06-18',
           byName: 'Lucía Márquez',
           byRole: 'BDC',
@@ -369,8 +370,8 @@ const details = new Map<string, ProspectDetail>([
         },
         {
           id: 'hst-4',
-          fromStatus: 'VERDE',
-          toStatus: 'AMARILLO',
+          fromStatus: 'GREEN',
+          toStatus: 'YELLOW',
           changedAt: '2026-06-03',
           byName: 'Ana Ruiz',
           byRole: 'BD',
@@ -378,8 +379,8 @@ const details = new Map<string, ProspectDetail>([
         },
         {
           id: 'hst-3',
-          fromStatus: 'AZUL_CLARO',
-          toStatus: 'VERDE',
+          fromStatus: 'LIGHT_BLUE',
+          toStatus: 'GREEN',
           changedAt: '2026-05-21',
           byName: 'Ana Ruiz',
           byRole: 'BD',
@@ -387,8 +388,8 @@ const details = new Map<string, ProspectDetail>([
         },
         {
           id: 'hst-2',
-          fromStatus: 'GRIS',
-          toStatus: 'AZUL_CLARO',
+          fromStatus: 'GRAY',
+          toStatus: 'LIGHT_BLUE',
           changedAt: '2026-05-14',
           byName: 'Ana Ruiz',
           byRole: 'BD',
@@ -397,7 +398,7 @@ const details = new Map<string, ProspectDetail>([
         {
           id: 'hst-1',
           fromStatus: null,
-          toStatus: 'GRIS',
+          toStatus: 'GRAY',
           changedAt: '2026-05-12',
           byName: 'Ana Ruiz',
           byRole: 'BD',
@@ -437,12 +438,12 @@ function requireParam(params: Readonly<Record<string, string>>, name: string): s
  * backend jamás podría escribirla.
  */
 const CONVERSION_PATH: readonly OnboardingStatus[] = [
-  'GRIS',
-  'AZUL_CLARO',
-  'VERDE',
-  'AMARILLO',
-  'ROSA',
-  'NARANJA',
+  'GRAY',
+  'LIGHT_BLUE',
+  'GREEN',
+  'YELLOW',
+  'PINK',
+  'ORANGE',
 ]
 
 /**
@@ -452,7 +453,7 @@ const CONVERSION_PATH: readonly OnboardingStatus[] = [
  * asiento de alta, que es lo único que se sabe de cierto.
  */
 function buildHistory(summary: ProspectSummary, cycleStartedAt: string): StatusHistoryEntry[] {
-  const path = summary.status === 'NARANJA' ? CONVERSION_PATH : ['GRIS' as OnboardingStatus]
+  const path = summary.status === 'ORANGE' ? CONVERSION_PATH : ['GRAY' as OnboardingStatus]
 
   return path.map((status, index) => ({
     id: `hst-${summary.id}-${String(index + 1)}`,
@@ -486,7 +487,7 @@ function buildDetailFromSummary(summary: ProspectSummary): ProspectDetail {
       geofenceMeters: 150,
       location: ZONE_ANCHOR[zoneIdFromLabel(summary.zone)] ?? ZONE_ANCHOR.centro!,
       // Solo un hotel convertido tiene fecha de alta como cliente.
-      activatedAsClientAt: summary.status === 'NARANJA' ? cycleStartedAt : null,
+      activatedAsClientAt: summary.status === 'ORANGE' ? cycleStartedAt : null,
     },
     contacts: [],
     attempts: [],
@@ -524,7 +525,7 @@ function buildAllowedTransitions(status: OnboardingStatus): AllowedTransitions {
   const visible = all.filter(
     (target) => CURRENT_ROLE === 'BDC' || !BDC_ONLY_TRANSITIONS.includes(target),
   )
-  const isConversionHidden = all.includes('NARANJA') && !visible.includes('NARANJA')
+  const isConversionHidden = all.includes('ORANGE') && !visible.includes('ORANGE')
 
   const transitions: AllowedTransition[] = visible.map((target) => ({
     toStatus: target,
@@ -706,7 +707,7 @@ function createProspect(body: unknown): ProspectDetail {
       id,
       hotelName: payload.hotel.name,
       zone: zone.label,
-      status: 'GRIS',
+      status: 'GRAY',
       daysInStatus: 0,
       lastAttempt: null,
       latestProposalVersion: null,
@@ -718,7 +719,7 @@ function createProspect(body: unknown): ProspectDetail {
   const detail: ProspectDetail = {
     id,
     hotelName: payload.hotel.name,
-    status: 'GRIS',
+    status: 'GRAY',
     cycleStartedAt: openedAt,
     daysInStatus: 0,
     owner: OWNER_ANA,
@@ -730,11 +731,11 @@ function createProspect(body: unknown): ProspectDetail {
       {
         id: `hst-${id}-1`,
         fromStatus: null,
-        toStatus: 'GRIS',
+        toStatus: 'GRAY',
         changedAt: openedAt,
         byName: OWNER_ANA.name,
         byRole: CURRENT_ROLE,
-        note: ONBOARDING_STATUS_DESCRIPTION.GRIS,
+        note: ONBOARDING_STATUS_DESCRIPTION.GRAY,
       },
     ],
   }

@@ -13,11 +13,11 @@ import { ONBOARDING_STATUS_TOKEN, type OnboardingStatus } from '@/shared/constan
  * ocho, es agregar tres filas aquí.
  */
 const LEGEND_ITEMS: { status: OnboardingStatus; label: string }[] = [
-  { status: 'GRIS', label: 'Identificado' },
-  { status: 'AZUL_CLARO', label: 'En contacto' },
-  { status: 'VERDE', label: 'Propuesta' },
-  { status: 'NARANJA', label: 'Cliente' },
-  { status: 'ROJO', label: 'Rechazo' },
+  { status: 'GRAY', label: 'Identificado' },
+  { status: 'LIGHT_BLUE', label: 'En contacto' },
+  { status: 'GREEN', label: 'Propuesta' },
+  { status: 'ORANGE', label: 'Cliente' },
+  { status: 'RED', label: 'Rechazo' },
 ]
 
 export function TerritoryMapLegend(): ReactNode {

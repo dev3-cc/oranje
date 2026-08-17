@@ -32,8 +32,8 @@ const ITEMS: RequisitionRow[] = [
     // la misma requisición del detalle, y las dos pantallas tienen que cuadrar.
     positions: 3,
     coverage: { filled: 4, total: 7 },
-    urgency: 'ROJO',
-    status: 'VERDE',
+    urgency: 'RED',
+    status: 'GREEN',
     authorizedAt: '2026-08-12T09:41:00',
     inspectorName: 'R. Solís',
   },
@@ -44,8 +44,8 @@ const ITEMS: RequisitionRow[] = [
     department: 'Alimentos y Bebidas',
     positions: 1,
     coverage: { filled: 4, total: 4 },
-    urgency: 'VERDE',
-    status: 'AZUL_CLARO',
+    urgency: 'STRONG_GREEN',
+    status: 'LIGHT_BLUE',
     authorizedAt: '2026-08-12T08:52:00',
     inspectorName: 'R. Solís',
   },
@@ -57,8 +57,8 @@ const ITEMS: RequisitionRow[] = [
     // 2 líneas de una persona cada una: las mismas que firma el Manager.
     positions: 2,
     coverage: { filled: 0, total: 2 },
-    urgency: 'ROJO',
-    status: 'VERDE_MANZANA',
+    urgency: 'RED',
+    status: 'APPLE_GREEN',
     authorizedAt: null,
     inspectorName: 'M. Cruz',
   },
@@ -69,8 +69,8 @@ const ITEMS: RequisitionRow[] = [
     department: 'Ama de llaves',
     positions: 1,
     coverage: { filled: 6, total: 8 },
-    urgency: 'AMARILLO',
-    status: 'AMARILLO',
+    urgency: 'YELLOW',
+    status: 'YELLOW',
     authorizedAt: '2026-08-11T17:02:00',
     inspectorName: 'A. Peña',
   },
@@ -81,8 +81,8 @@ const ITEMS: RequisitionRow[] = [
     department: 'Recepción',
     positions: 1,
     coverage: { filled: 1, total: 1 },
-    urgency: 'VERDE',
-    status: 'AZUL_CLARO',
+    urgency: 'STRONG_GREEN',
+    status: 'LIGHT_BLUE',
     authorizedAt: '2026-08-11T12:30:00',
     inspectorName: 'R. Solís',
   },
@@ -93,8 +93,8 @@ const ITEMS: RequisitionRow[] = [
     department: 'Seguridad',
     positions: 1,
     coverage: { filled: 0, total: 3 },
-    urgency: 'AMARILLO',
-    status: 'MORADO',
+    urgency: 'YELLOW',
+    status: 'PURPLE',
     authorizedAt: '2026-08-10T18:10:00',
     inspectorName: 'A. Peña',
   },
@@ -130,7 +130,7 @@ const DETAIL_REQ_0001: RequisitionDetail = {
   number: '202608120930·K7',
   hotelName: 'Hotel Xcaret Arte',
   department: 'Ama de llaves',
-  status: 'VERDE',
+  status: 'GREEN',
   createdByName: 'Laura Méndez',
   createdAt: '2026-08-12T09:30:00',
   authorizedByName: 'Marcela Cruz',
@@ -147,7 +147,7 @@ const DETAIL_REQ_0001: RequisitionDetail = {
       startTime: '07:00',
       english: 'BASICO',
       coverage: { filled: 3, total: 4 },
-      urgency: 'ROJO',
+      urgency: 'RED',
       modality: 'POR_EVENTO',
       slots: [
         {
@@ -193,7 +193,7 @@ const DETAIL_REQ_0001: RequisitionDetail = {
       startTime: '07:00',
       english: 'INTERMEDIO',
       coverage: { filled: 1, total: 1 },
-      urgency: 'ROJO',
+      urgency: 'RED',
       modality: 'NOMINA',
       slots: [
         {
@@ -215,7 +215,7 @@ const DETAIL_REQ_0001: RequisitionDetail = {
       startTime: '08:00',
       english: 'NO_REQUERIDO',
       coverage: { filled: 0, total: 2 },
-      urgency: 'AMARILLO',
+      urgency: 'YELLOW',
       modality: 'POR_EVENTO',
       slots: [
         { ...freeSlot('slot-0006', 1), offerChannel: OFFER_CHANNEL },
@@ -226,8 +226,8 @@ const DETAIL_REQ_0001: RequisitionDetail = {
   history: [
     {
       id: 'evt-0002',
-      fromStatus: 'VERDE_MANZANA',
-      toStatus: 'VERDE',
+      fromStatus: 'APPLE_GREEN',
+      toStatus: 'GREEN',
       action: 'Autorizada',
       byName: 'Marcela Cruz',
       at: '2026-08-12T09:41:00',
@@ -235,7 +235,7 @@ const DETAIL_REQ_0001: RequisitionDetail = {
     {
       id: 'evt-0001',
       fromStatus: null,
-      toStatus: 'VERDE_MANZANA',
+      toStatus: 'APPLE_GREEN',
       action: 'Creada',
       byName: 'Laura Méndez',
       at: '2026-08-12T09:30:00',
@@ -254,7 +254,7 @@ const DETAIL_REQ_0003: RequisitionDetail = {
   number: '202608121115·M9',
   hotelName: 'Hotel Xcaret México',
   department: 'Mantenimiento',
-  status: 'VERDE_MANZANA',
+  status: 'APPLE_GREEN',
   createdByName: 'Laura Méndez',
   createdAt: '2026-08-12T11:15:00',
   authorizedByName: null,
@@ -271,7 +271,7 @@ const DETAIL_REQ_0003: RequisitionDetail = {
       startTime: '06:00',
       english: 'BASICO',
       coverage: { filled: 0, total: 1 },
-      urgency: 'ROJO',
+      urgency: 'RED',
       modality: 'NOMINA',
       // Sin autorizar no hay nada que ofrecer: los slots existen, pero no salen
       // a la Bolsa hasta que alguien firma.
@@ -286,7 +286,7 @@ const DETAIL_REQ_0003: RequisitionDetail = {
       startTime: '06:00',
       english: 'NO_REQUERIDO',
       coverage: { filled: 0, total: 1 },
-      urgency: 'ROJO',
+      urgency: 'RED',
       modality: 'POR_EVENTO',
       slots: [freeSlot('slot-0012', 1)],
     },
@@ -295,7 +295,7 @@ const DETAIL_REQ_0003: RequisitionDetail = {
     {
       id: 'evt-0011',
       fromStatus: null,
-      toStatus: 'VERDE_MANZANA',
+      toStatus: 'APPLE_GREEN',
       action: 'Creada',
       byName: 'Laura Méndez',
       at: '2026-08-12T11:15:00',
@@ -342,12 +342,12 @@ function plusMinutes(iso: string, minutes: number): string {
  * y como título del asiento no agrega nada.
  */
 const ACTION_BY_STATUS: Record<RequisitionStatus, string> = {
-  VERDE_MANZANA: 'Creada',
-  VERDE: 'Autorizada',
-  AMARILLO: 'Puesta en proceso',
-  AZUL_CLARO: 'Cobertura completada',
-  ROJO: 'Cobertura incompleta',
-  MORADO: 'Dada de baja',
+  APPLE_GREEN: 'Creada',
+  GREEN: 'Autorizada',
+  YELLOW: 'Puesta en proceso',
+  LIGHT_BLUE: 'Cobertura completada',
+  RED: 'Cobertura incompleta',
+  PURPLE: 'Dada de baja',
 }
 
 /**
@@ -357,12 +357,12 @@ const ACTION_BY_STATUS: Record<RequisitionStatus, string> = {
  * backend nunca podría escribir.
  */
 const PATH_FROM_VERDE: Record<RequisitionStatus, readonly RequisitionStatus[]> = {
-  VERDE_MANZANA: [],
-  VERDE: [],
-  AMARILLO: ['AMARILLO'],
-  AZUL_CLARO: ['AMARILLO', 'AZUL_CLARO'],
-  ROJO: ['AMARILLO', 'ROJO'],
-  MORADO: ['MORADO'],
+  APPLE_GREEN: [],
+  GREEN: [],
+  YELLOW: ['YELLOW'],
+  LIGHT_BLUE: ['YELLOW', 'LIGHT_BLUE'],
+  RED: ['YELLOW', 'RED'],
+  PURPLE: ['PURPLE'],
 }
 
 function buildDerivedHistory(row: RequisitionRow, createdAt: string): RequisitionStatusEvent[] {
@@ -370,7 +370,7 @@ function buildDerivedHistory(row: RequisitionRow, createdAt: string): Requisitio
     {
       id: `${row.id}-evt-1`,
       fromStatus: null,
-      toStatus: 'VERDE_MANZANA',
+      toStatus: 'APPLE_GREEN',
       action: 'Creada',
       byName: 'Laura Méndez',
       at: createdAt,
@@ -380,14 +380,14 @@ function buildDerivedHistory(row: RequisitionRow, createdAt: string): Requisitio
   if (row.authorizedAt !== null) {
     events.push({
       id: `${row.id}-evt-2`,
-      fromStatus: 'VERDE_MANZANA',
-      toStatus: 'VERDE',
+      fromStatus: 'APPLE_GREEN',
+      toStatus: 'GREEN',
       action: 'Autorizada',
       byName: 'Marcela Cruz',
       at: row.authorizedAt,
     })
 
-    let previous: RequisitionStatus = 'VERDE'
+    let previous: RequisitionStatus = 'GREEN'
     PATH_FROM_VERDE[row.status].forEach((step, index) => {
       events.push({
         id: `${row.id}-evt-${String(index + 3)}`,
@@ -493,22 +493,22 @@ export function applyResolution(requisitionId: string, status: RequisitionStatus
   const row = ITEMS.find((item) => item.id === requisitionId)
   if (row) {
     row.status = status
-    if (status !== 'MORADO') row.authorizedAt = SIMULATED_NOW
+    if (status !== 'PURPLE') row.authorizedAt = SIMULATED_NOW
   }
 
   const detail = DETAILS[requisitionId]
   if (detail) {
     detail.status = status
-    if (status !== 'MORADO') {
+    if (status !== 'PURPLE') {
       detail.authorizedByName = 'Laura Méndez'
       detail.authorizedAt = SIMULATED_NOW
     }
     detail.history = [
       {
         id: `${requisitionId}-evt-firma`,
-        fromStatus: 'VERDE_MANZANA',
+        fromStatus: 'APPLE_GREEN',
         toStatus: status,
-        action: status === 'MORADO' ? 'Rechazada' : 'Autorizada',
+        action: status === 'PURPLE' ? 'Rechazada' : 'Autorizada',
         byName: 'Laura Méndez',
         at: SIMULATED_NOW,
       },
@@ -600,7 +600,7 @@ function createRequisition(body: unknown): RequisitionDetail {
     coverage: { filled: 0, total: position.quantity },
     // La urgencia la calcula el backend contra la fecha de inicio; aquí se
     // deja en el nivel más laxo hasta que alguien autorice y arranque el reloj.
-    urgency: 'VERDE' as const,
+    urgency: 'STRONG_GREEN' as const,
     modality: position.modality,
     slots: Array.from({ length: position.quantity }, (_, slotIndex) =>
       freeSlot(`${id}-slot-${String(index + 1)}-${String(slotIndex + 1)}`, slotIndex + 1),
@@ -612,7 +612,7 @@ function createRequisition(body: unknown): RequisitionDetail {
     number,
     hotelName: hotel.name,
     department: request.department,
-    status: 'VERDE_MANZANA',
+    status: 'APPLE_GREEN',
     createdByName: 'Laura Méndez',
     createdAt: SIMULATED_NOW,
     authorizedByName: null,
@@ -624,7 +624,7 @@ function createRequisition(body: unknown): RequisitionDetail {
       {
         id: `${id}-evt-1`,
         fromStatus: null,
-        toStatus: 'VERDE_MANZANA',
+        toStatus: 'APPLE_GREEN',
         action: 'Creada',
         byName: 'Laura Méndez',
         at: SIMULATED_NOW,
@@ -640,8 +640,8 @@ function createRequisition(body: unknown): RequisitionDetail {
     department: request.department,
     positions: positions.length,
     coverage: { filled: 0, total: slotCount },
-    urgency: 'VERDE',
-    status: 'VERDE_MANZANA',
+    urgency: 'STRONG_GREEN',
+    status: 'APPLE_GREEN',
     authorizedAt: null,
     inspectorName: hotel.inspectorName,
   })

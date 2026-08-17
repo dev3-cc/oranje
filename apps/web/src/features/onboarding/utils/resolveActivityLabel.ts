@@ -9,7 +9,7 @@ import type { ProspectSummary } from '../types/prospect.types'
  * sin actividad es justo la que hay que atender.
  */
 export function resolveActivityLabel(prospect: ProspectSummary): string {
-  if (prospect.status === 'VERDE' && prospect.latestProposalVersion !== null) {
+  if (prospect.status === 'GREEN' && prospect.latestProposalVersion !== null) {
     return `Propuesta v${prospect.latestProposalVersion}`
   }
 

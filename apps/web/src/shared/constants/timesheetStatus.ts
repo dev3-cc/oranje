@@ -11,24 +11,25 @@ import type { StatusLightToken } from '@oranje/ui'
  * `semaforo-guardian`. No se declaran transiciones — inventarlas sería peor que
  * no tenerlas.
  *
- * ⚠ Y aquí los nombres vuelven a estar en español, mientras el de Colaborador
- * llega en inglés. Es el mismo desacuerdo de idioma, ahora en dos semáforos
- * seguidos.
+ * ⚠ Estos estados son POR DÍA y no son los de la base: `operations.timesheet`
+ * lleva un `status` POR SEMANA con `OPEN | PENDING_APPROVAL | APPROVED`
+ * (`ck_timesheet_status`). Cuando exista el endpoint habrá que decidir cómo se
+ * derivan unos de otros; mientras, aquí solo se cumple D-11 (códigos en inglés).
  */
-export const TIMESHEET_STATUSES = ['PENDIENTE', 'OBSERVADO', 'REVISADO'] as const
+export const TIMESHEET_STATUSES = ['PENDING', 'OBSERVED', 'REVIEWED'] as const
 
 export type TimesheetStatus = (typeof TIMESHEET_STATUSES)[number]
 
 export const TIMESHEET_STATUS_LABEL: Record<TimesheetStatus, string> = {
-  PENDIENTE: 'Pendiente',
-  OBSERVADO: 'Observado',
-  REVISADO: 'Revisado',
+  PENDING: 'Pendiente',
+  OBSERVED: 'Observado',
+  REVIEWED: 'Revisado',
 }
 
 export const TIMESHEET_STATUS_TOKEN: Record<TimesheetStatus, StatusLightToken> = {
-  PENDIENTE: 'st-azul-claro',
-  OBSERVADO: 'st-amarillo',
-  REVISADO: 'st-morado',
+  PENDING: 'st-azul-claro',
+  OBSERVED: 'st-amarillo',
+  REVIEWED: 'st-morado',
 }
 
 /**
@@ -36,14 +37,14 @@ export const TIMESHEET_STATUS_TOKEN: Record<TimesheetStatus, StatusLightToken> =
  * dice si la persona marcó entrada y salida; el otro, si alguien ya revisó lo
  * que marcó.
  */
-export const PUNCH_STATES = ['COMPLETA', 'INCOMPLETA', 'SIN_TURNO'] as const
+export const PUNCH_STATES = ['COMPLETE', 'INCOMPLETE', 'NO_SHIFT'] as const
 
 export type PunchState = (typeof PUNCH_STATES)[number]
 
 export const PUNCH_STATE_LABEL: Record<PunchState, string> = {
-  COMPLETA: 'Checadas completas',
-  INCOMPLETA: 'Faltan checadas',
-  SIN_TURNO: 'Sin turno ese día',
+  COMPLETE: 'Checadas completas',
+  INCOMPLETE: 'Faltan checadas',
+  NO_SHIFT: 'Sin turno ese día',
 }
 
 /** Anchos de columna del control de zoom, en píxeles. */

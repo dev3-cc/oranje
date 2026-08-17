@@ -10,35 +10,32 @@
  * ⚠ Mismo domicilio provisional que el semáforo: su lugar es
  * `packages/domain`, que hoy está fuera del alcance acordado.
  *
- * ⚠ Los valores definitivos los fija la migración de `apps/api`. Estos salen de
- * leer el modal, así que hay que cuadrarlos cuando exista el CHECK real.
- *
- * Van en español, como los colores del semáforo: son términos del vault, no
- * identificadores traducibles.
+ * Los valores son los del CHECK real (`CreateContactAttemptDto` de `apps/api`):
+ * identificadores en inglés por D-11, etiquetas en español para la UI.
  */
 
-export const CONTACT_ATTEMPT_TYPES = ['VISITA_EN_FRIO', 'LLAMADA', 'CORREO'] as const
+export const CONTACT_ATTEMPT_TYPES = ['COLD_VISIT', 'CALL', 'EMAIL'] as const
 
 export type ContactAttemptType = (typeof CONTACT_ATTEMPT_TYPES)[number]
 
 export const CONTACT_ATTEMPT_TYPE_LABEL: Record<ContactAttemptType, string> = {
-  VISITA_EN_FRIO: 'Visita en frío',
-  LLAMADA: 'Llamada',
-  CORREO: 'Correo',
+  COLD_VISIT: 'Visita en frío',
+  CALL: 'Llamada',
+  EMAIL: 'Correo',
 }
 
 export const CONTACT_ATTEMPT_OUTCOMES = [
-  'NO_CONTESTO',
-  'INTERESADO',
-  'NO_INTERESADO',
-  'CITA_AGENDADA',
+  'NO_ANSWER',
+  'INTERESTED',
+  'NOT_INTERESTED',
+  'MEETING_SET',
 ] as const
 
 export type ContactAttemptOutcome = (typeof CONTACT_ATTEMPT_OUTCOMES)[number]
 
 export const CONTACT_ATTEMPT_OUTCOME_LABEL: Record<ContactAttemptOutcome, string> = {
-  NO_CONTESTO: 'No contestó',
-  INTERESADO: 'Interesado',
-  NO_INTERESADO: 'No interesado',
-  CITA_AGENDADA: 'Cita agendada',
+  NO_ANSWER: 'No contestó',
+  INTERESTED: 'Interesado',
+  NOT_INTERESTED: 'No interesado',
+  MEETING_SET: 'Cita agendada',
 }
