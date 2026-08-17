@@ -23,6 +23,7 @@ import {
 const DRAFT = 'APPLE_GREEN'
 const AUTHORIZED = 'GREEN'
 const EMPTY_COVERAGE = 'GOLD'
+const AUTHORIZED_COVERAGE = 'ORANGE'
 
 const URGENT_HOURS = 72
 const MEDIUM_HOURS = 120
@@ -137,6 +138,7 @@ export class RequisitionsService {
     }
 
     const authorized = await this.stateOf(REQUISITION_LIGHT, AUTHORIZED)
+    const coverage = await this.stateOf(COVERAGE_LIGHT, AUTHORIZED_COVERAGE)
     const now = new Date()
 
     const urgencyByPosition = await Promise.all(
@@ -151,6 +153,7 @@ export class RequisitionsService {
         id,
         fromStateId: (await this.stateOf(REQUISITION_LIGHT, DRAFT)).id,
         toStateId: authorized.id,
+        coverageStateId: coverage.id,
         urgencyByPosition,
         userId: user.id,
         roleCode: user.roleCode,

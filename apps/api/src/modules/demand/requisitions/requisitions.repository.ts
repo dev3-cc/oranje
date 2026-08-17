@@ -239,6 +239,7 @@ export class RequisitionsRepository {
     id: string
     fromStateId: string
     toStateId: string
+    coverageStateId: string
     urgencyByPosition: Array<{ positionId: string; urgencyStateId: string }>
     userId: string
     roleCode: string
@@ -263,6 +264,8 @@ export class RequisitionsRepository {
           data: {
             urgencyStateId: u.urgencyStateId,
             urgencyLightCode: URGENCY_LIGHT,
+            coverageStateId: params.coverageStateId,
+            coverageLightCode: COVERAGE_LIGHT,
             updatedAt: now,
           },
         })
