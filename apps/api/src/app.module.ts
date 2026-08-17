@@ -5,6 +5,7 @@ import { HealthModule } from './infra/health/index.js'
 import { PrismaModule } from './infra/prisma/index.js'
 import { CatalogsModule } from './modules/catalogs/index.js'
 import { CommercialModule } from './modules/commercial/index.js'
+import { CoverageModule } from './modules/coverage/index.js'
 import { DemandModule } from './modules/demand/index.js'
 import { IdentityModule } from './modules/identity/index.js'
 
@@ -25,6 +26,7 @@ import { IdentityModule } from './modules/identity/index.js'
     IdentityModule,
     CommercialModule,
     DemandModule,
+    CoverageModule,
   ],
 })
 export class AppModule {}
