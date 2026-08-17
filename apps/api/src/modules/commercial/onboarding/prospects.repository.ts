@@ -159,4 +159,46 @@ export class ProspectsRepository {
   async findById(id: string): Promise<ProspectRow | null> {
     return this.prisma.prospect.findUnique({ where: { id }, select: SELECT })
   }
+
+  async reasonByCode(code: string): Promise<{ id: string } | null> {
+    return this.prisma.statusChangeReason.findFirst({
+      where: { code, statusLight: { code: STATUS_LIGHT } },
+      select: { id: true },
+    })
+  }
+
+  async close(params: {
+    id: string
+    reasonId: string
+    note: string | null
+    userId: string
+    roleCode: string
+    stateCode: string
+  }): Promise<ProspectRow> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.prospect.update({
+        where: { id: params.id },
+        data: {
+          closedAt: new Date(),
+          closeReasonId: params.reasonId,
+          updatedAt: new Date(),
+          updatedBy: params.userId,
+        },
+      })
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'commercial.prospect',
+          entityId: params.id,
+          eventType: 'PROSPECT_CLOSED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: { state: params.stateCode, note: params.note },
+        },
+      })
+    })
+
+    return this.prisma.prospect.findUniqueOrThrow({ where: { id: params.id }, select: SELECT })
+  }
 }

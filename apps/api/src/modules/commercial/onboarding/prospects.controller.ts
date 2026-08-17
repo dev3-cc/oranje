@@ -13,6 +13,7 @@ import {
 import { CurrentUser, Requires } from '../../../common/decorators/index.js'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 
+import { CloseProspectDto } from './dto/close-prospect.dto.js'
 import { CreateProspectDto } from './dto/create-prospect.dto.js'
 import { QueryProspectsDto } from './dto/query-prospects.dto.js'
 import type { ProspectEntity } from './entities/prospect.entity.js'
@@ -42,5 +43,15 @@ export class ProspectsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: ProspectEntity }> {
     return { data: await this.prospects.create(dto, user) }
+  }
+
+  @Requires('pipeline', 'close_cycle')
+  @Post(':id/close')
+  async close(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CloseProspectDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: ProspectEntity }> {
+    return { data: await this.prospects.close(id, dto, user) }
   }
 }

@@ -3,10 +3,13 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { PermissionsService } from '../../identity/index.js'
 
+import type { CloseProspectDto } from './dto/close-prospect.dto.js'
 import type { CreateProspectDto } from './dto/create-prospect.dto.js'
 import type { QueryProspectsDto } from './dto/query-prospects.dto.js'
 import type { ProspectEntity } from './entities/prospect.entity.js'
 import { ProspectRow, ProspectsRepository } from './prospects.repository.js'
+
+const CLIENT_STATE = 'ORANGE'
 
 export interface Board {
   data: ProspectEntity[]
@@ -88,6 +91,48 @@ export class ProspectsService {
     }
 
     return toEntity(row)
+  }
+
+  async close(id: string, dto: CloseProspectDto, user: AuthenticatedUser): Promise<ProspectEntity> {
+    const row = await this.repo.findById(id)
+
+    if (!row) {
+      throw new NotFoundException({ code: 'PROSPECT_NOT_FOUND', message: 'El prospecto no existe' })
+    }
+
+    if (row.closedAt !== null) {
+      throw new ConflictException({
+        code: 'PROSPECT_CLOSED',
+        message: 'Este ciclo comercial ya estaba cerrado',
+      })
+    }
+
+    if (row.onboardingState.code === CLIENT_STATE) {
+      throw new ConflictException({
+        code: 'PROSPECT_IS_CLIENT',
+        message: 'Un hotel en Naranja es cliente activo: pásalo a Negro antes de cerrar el ciclo',
+      })
+    }
+
+    const reason = await this.repo.reasonByCode(dto.reasonCode)
+
+    if (!reason) {
+      throw new NotFoundException({
+        code: 'REASON_NOT_FOUND',
+        message: `El motivo ${dto.reasonCode} no existe en el Semáforo Onboarding`,
+      })
+    }
+
+    return toEntity(
+      await this.repo.close({
+        id,
+        reasonId: reason.id,
+        note: dto.note ?? null,
+        userId: user.id,
+        roleCode: user.roleCode,
+        stateCode: row.onboardingState.code,
+      }),
+    )
   }
 
   private async scope(

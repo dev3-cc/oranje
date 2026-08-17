@@ -136,7 +136,7 @@ export class TransitionsService {
       await this.assertHotelUser(prospect.hotelId)
     }
 
-    if (target.code === PROPOSAL_STATE) {
+    if (prospect.state.code === PROPOSAL_STATE) {
       await this.assertSentProposal(prospectId)
     }
 
@@ -154,15 +154,11 @@ export class TransitionsService {
     return { from: prospect.state.code, to: target.code }
   }
 
-  /**
-   * Verde se llama "Propuesta enviada": se llega ahí al enviarla, no antes.
-   * Ver el Semáforo Onboarding, Azul Claro → Verde.
-   */
   private async assertSentProposal(prospectId: string): Promise<void> {
     if (!(await this.proposals.hasSent(prospectId))) {
       throw new UnprocessableEntityException({
         code: 'PROPOSAL_REQUIRED',
-        message: 'Verde significa propuesta enviada: envía una antes de mover el semáforo',
+        message: 'Verde no se abandona sin enviar la Propuesta Personalizada',
       })
     }
   }

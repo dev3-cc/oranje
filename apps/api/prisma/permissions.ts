@@ -124,6 +124,12 @@ const SALES: Permission[] = [
     label: 'Reactivar desde Negro',
     roles: [BDC],
   },
+  {
+    module: 'pipeline',
+    action: 'close_cycle',
+    label: 'Archivar ciclo comercial',
+    roles: [BD, BDC],
+  },
 
   // PROPUESTAS
   { module: 'proposals', action: 'read', label: 'Ver propuestas', roles: [BD, BDC, SYS] },

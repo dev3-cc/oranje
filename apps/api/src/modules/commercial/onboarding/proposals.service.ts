@@ -1,10 +1,17 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 
 import type { CreateProposalDto } from './dto/create-proposal.dto.js'
 import type { ProposalEntity } from './entities/proposal.entity.js'
 import { ProposalRow, ProposalsRepository } from './proposals.repository.js'
+
+const WORKING_STATES = ['GREEN', 'BROWN']
 
 @Injectable()
 export class ProposalsService {
@@ -109,11 +116,18 @@ export class ProposalsService {
         message: 'El ciclo comercial está cerrado',
       })
     }
+
+    if (!WORKING_STATES.includes(prospect.stateCode)) {
+      throw new UnprocessableEntityException({
+        code: 'PROPOSAL_STATE_INVALID',
+        message: `La propuesta se trabaja en Verde o Café, no en ${prospect.stateCode}`,
+      })
+    }
   }
 
   private async prospect(
     id: string,
-  ): Promise<{ id: string; hotelId: string; closedAt: Date | null }> {
+  ): Promise<{ id: string; hotelId: string; closedAt: Date | null; stateCode: string }> {
     const row = await this.repo.prospect(id)
 
     if (!row) {

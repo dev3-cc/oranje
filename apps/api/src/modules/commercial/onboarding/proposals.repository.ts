@@ -32,13 +32,23 @@ export type ProposalRow = {
 export class ProposalsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async prospect(
-    id: string,
-  ): Promise<{ id: string; hotelId: string; closedAt: Date | null } | null> {
-    return this.prisma.prospect.findUnique({
+  async prospect(id: string): Promise<{
+    id: string
+    hotelId: string
+    closedAt: Date | null
+    stateCode: string
+  } | null> {
+    const row = await this.prisma.prospect.findUnique({
       where: { id },
-      select: { id: true, hotelId: true, closedAt: true },
+      select: {
+        id: true,
+        hotelId: true,
+        closedAt: true,
+        onboardingState: { select: { code: true } },
+      },
     })
+
+    return row ? { ...row, stateCode: row.onboardingState.code } : null
   }
 
   async findById(prospectId: string, id: string): Promise<ProposalRow | null> {
@@ -69,11 +79,6 @@ export class ProposalsRepository {
     })
   }
 
-  /**
-   * La versión se calcula dentro de la transacción y el índice único
-   * `ux_proposal_prospect_version` es lo que de verdad impide el empate:
-   * dos BD guardando a la vez leerían el mismo máximo.
-   */
   async create(params: {
     prospectId: string
     servicesNote: string | null
