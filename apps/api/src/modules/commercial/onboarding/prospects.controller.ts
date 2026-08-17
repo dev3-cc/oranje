@@ -47,6 +47,7 @@ export class ProspectsController {
 
   @Requires('pipeline', 'close_cycle')
   @Post(':id/close')
+  @HttpCode(HttpStatus.OK)
   async close(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CloseProspectDto,
