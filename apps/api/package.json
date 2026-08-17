@@ -18,7 +18,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
-    "auth:keys": "tsx scripts/generar-llaves.ts"
+    "auth:keys": "tsx scripts/generar-llaves.ts",
+    "token:local": "tsx scripts/token-local.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

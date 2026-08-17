@@ -9,4 +9,8 @@ export default [
     files: ['test/**/*.ts'],
     rules: { 'no-restricted-imports': 'off' },
   },
+  {
+    files: ['scripts/**/*.ts', 'prisma/**/*.ts'],
+    rules: { 'no-console': 'off' },
+  },
 ]
