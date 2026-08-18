@@ -9,6 +9,7 @@ import { CoverageModule } from './modules/coverage/index.js'
 import { DemandModule } from './modules/demand/index.js'
 import { IdentityModule } from './modules/identity/index.js'
 import { OperationsModule } from './modules/operations/index.js'
+import { SettlementModule } from './modules/settlement/index.js'
 
 /**
  * Monolito modular — D-01. Los 10 módulos de negocio son carpetas de
@@ -29,6 +30,7 @@ import { OperationsModule } from './modules/operations/index.js'
     DemandModule,
     CoverageModule,
     OperationsModule,
+    SettlementModule,
   ],
 })
 export class AppModule {}
