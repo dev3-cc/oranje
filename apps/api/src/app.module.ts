@@ -9,6 +9,7 @@ import { CoverageModule } from './modules/coverage/index.js'
 import { DemandModule } from './modules/demand/index.js'
 import { IdentityModule } from './modules/identity/index.js'
 import { OperationsModule } from './modules/operations/index.js'
+import { PersonalModule } from './modules/personal/index.js'
 import { SettlementModule } from './modules/settlement/index.js'
 
 /**
@@ -30,6 +31,7 @@ import { SettlementModule } from './modules/settlement/index.js'
     DemandModule,
     CoverageModule,
     OperationsModule,
+    PersonalModule,
     SettlementModule,
   ],
 })
