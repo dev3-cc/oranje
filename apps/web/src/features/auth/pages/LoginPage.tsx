@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { Navigate, useLocation, useNavigate } from 'react-router'
@@ -11,17 +11,65 @@ import { useAppSelector } from '@/app/hooks'
 import { useCreateSessionMutation } from '@/app/sessionApi'
 import { selectSessionStatus } from '@/app/sessionSlice'
 import logoOranje from '@/assets/logo/Logo_ORANJE_Orange.png'
-import { signInWithEmail } from '@/shared/lib/firebase'
+import { requestPasswordReset, signInWithEmail } from '@/shared/lib/firebase'
 
 /**
  * Login — la única pantalla pública. Layout partido como la referencia de
  * diseño: formulario a la izquierda (340–400px) y panel visual a la derecha,
- * que en móvil desaparece para dejar solo la tarjeta del formulario.
+ * que en móvil desaparece para dejar solo la tarjeta del formulario. Detrás,
+ * un collage de hoteles con velo cálido.
  *
  * El botón primario va con texto `--ink` sobre naranja: blanco da 2.5:1 y la
  * regla de contraste de `tokens.ts` lo prohíbe (la excepción documentada en
  * `Button.tsx` es deuda de la maqueta, no un precedente).
  */
+
+/**
+ * Hoteles de Estados Unidos para el fondo. Fotos de Unsplash serviéndose de su
+ * CDN (hotlink permitido por su licencia). Son decorativas: si alguna cae, el
+ * velo y el color de fondo cubren el hueco sin romper nada.
+ *
+ * ⚠ Si algún día el web sirve con CSP, `images.unsplash.com` necesita entrar
+ * a `img-src` (la CSP de D-17 solo abre `maps.googleapis.com`).
+ */
+const HOTEL_PHOTOS: readonly string[] = [
+  'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=640&q=55',
+  'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=640&q=55',
+  'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=640&q=55',
+  'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=640&q=55',
+  'https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=640&q=55',
+  'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=640&q=55',
+  'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=640&q=55',
+  'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=640&q=55',
+]
+
+/** Collage de fondo con paneo lento. Decorativo: `aria-hidden`, sin foco. */
+function HotelBackdrop(): ReactNode {
+  /** Dos copias apiladas para que el paneo vertical no deje hueco. */
+  const rows = [...HOTEL_PHOTOS, ...HOTEL_PHOTOS]
+
+  return (
+    <div aria-hidden className="absolute inset-0 overflow-hidden">
+      <motion.div
+        animate={{ y: ['0%', '-50%'] }}
+        transition={{ duration: 90, repeat: Infinity, ease: 'linear' }}
+        className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 lg:grid-cols-4"
+      >
+        {rows.map((src, index) => (
+          <img
+            key={`${src}-${String(index)}`}
+            src={src}
+            alt=""
+            loading="lazy"
+            className="h-44 w-full rounded-lg object-cover sm:h-52"
+          />
+        ))}
+      </motion.div>
+      {/* Velo cálido: el fondo acompaña, la tarjeta manda. */}
+      <div className="absolute inset-0 bg-gradient-to-b from-surface-2/85 via-surface-2/70 to-surface-2/90 backdrop-blur-[2px]" />
+    </div>
+  )
+}
 
 /** Un solo mensaje para credenciales malas: no se revela cuál mitad falló. */
 function loginErrorMessage(error: unknown): string {
@@ -41,17 +89,22 @@ function loginErrorMessage(error: unknown): string {
 const INPUT_CLASS =
   'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none'
 
+type AuthMode = 'login' | 'reset'
+
 export function LoginPage(): ReactNode {
   const status = useAppSelector(selectSessionStatus)
   const navigate = useNavigate()
   const location = useLocation()
   const [createSession] = useCreateSessionMutation()
+  const [mode, setMode] = useState<AuthMode>('login')
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [resetSentTo, setResetSentTo] = useState<string | null>(null)
 
   const {
     register,
     handleSubmit,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormValues>({ resolver: zodResolver(loginSchema) })
 
@@ -74,13 +127,34 @@ export function LoginPage(): ReactNode {
     }
   }
 
+  /**
+   * Recuperación: Firebase manda el correo con el enlace, sin tocar la API
+   * (la contraseña vive en Firebase, D-05). La respuesta es la MISMA exista o
+   * no la cuenta: no se confirma qué correos están registrados.
+   */
+  async function onRequestReset(): Promise<void> {
+    const email = getValues('email').trim()
+    if (!email) {
+      setSubmitError('Escribe tu correo para mandarte el enlace.')
+      return
+    }
+    setSubmitError(null)
+    try {
+      await requestPasswordReset(email)
+    } finally {
+      setResetSentTo(email)
+    }
+  }
+
   return (
-    <main className="flex min-h-screen items-center justify-center bg-surface-2 p-4 sm:p-6">
+    <main className="relative flex min-h-screen items-center justify-center bg-surface-2 p-4 sm:p-6">
+      <HotelBackdrop />
+
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="flex w-full max-w-4xl overflow-hidden rounded-2xl border border-line bg-surface shadow-xl"
+        className="relative z-10 flex w-full max-w-4xl overflow-hidden rounded-2xl border border-line bg-surface shadow-xl"
       >
         {/* Columna del formulario: 340–400px, como la referencia. */}
         <section className="flex w-full flex-col justify-center gap-8 p-8 sm:p-10 md:max-w-100">
@@ -93,103 +167,186 @@ export function LoginPage(): ReactNode {
             transition={{ delay: 0.15, duration: 0.4 }}
           />
 
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25, duration: 0.4 }}
-            className="flex flex-col gap-2"
-          >
-            <h1 className="text-2xl font-bold text-ink">Inicia sesión</h1>
-            <p className="text-sm text-ink-3">La operación de tu hotel, en un solo lugar.</p>
-          </motion.div>
+          <AnimatePresence mode="wait" initial={false}>
+            {mode === 'login' ? (
+              <motion.div
+                key="login"
+                initial={{ opacity: 0, x: -16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 16 }}
+                transition={{ duration: 0.25 }}
+                className="flex flex-col gap-8"
+              >
+                <div className="flex flex-col gap-2">
+                  <h1 className="text-2xl font-bold text-ink">Inicia sesión</h1>
+                  <p className="text-sm text-ink-3">La operación de tu hotel, en un solo lugar.</p>
+                </div>
 
-          <motion.form
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35, duration: 0.4 }}
-            className="flex flex-col gap-5"
-            onSubmit={(event) => {
-              void handleSubmit(onSubmit)(event)
-            }}
-            noValidate
-          >
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="email" className="text-sm font-medium text-ink-2">
-                Correo
-              </label>
-              <input
-                id="email"
-                type="email"
-                autoComplete="email"
-                placeholder="tu@oranje.mx"
-                className={INPUT_CLASS}
-                {...register('email')}
-              />
-              {errors.email && <p className="text-sm text-red">{errors.email.message}</p>}
-            </div>
+                <form
+                  className="flex flex-col gap-5"
+                  onSubmit={(event) => {
+                    void handleSubmit(onSubmit)(event)
+                  }}
+                  noValidate
+                >
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="email" className="text-sm font-medium text-ink-2">
+                      Correo
+                    </label>
+                    <input
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      placeholder="tu@oranje.mx"
+                      className={INPUT_CLASS}
+                      {...register('email')}
+                    />
+                    {errors.email && <p className="text-sm text-red">{errors.email.message}</p>}
+                  </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="password" className="text-sm font-medium text-ink-2">
-                Contraseña
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={isPasswordVisible ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  placeholder="••••••••"
-                  className={`${INPUT_CLASS} pr-12`}
-                  {...register('password')}
-                />
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="password" className="text-sm font-medium text-ink-2">
+                        Contraseña
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSubmitError(null)
+                          setResetSentTo(null)
+                          setMode('reset')
+                        }}
+                        className="text-xs font-semibold text-o-700 hover:underline"
+                      >
+                        ¿La olvidaste?
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <input
+                        id="password"
+                        type={isPasswordVisible ? 'text' : 'password'}
+                        autoComplete="current-password"
+                        placeholder="••••••••"
+                        className={`${INPUT_CLASS} pr-12`}
+                        {...register('password')}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsPasswordVisible((visible) => !visible)
+                        }}
+                        className="absolute inset-y-0 right-0 flex items-center px-3 text-ink-3 hover:text-ink"
+                        aria-label={isPasswordVisible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                      >
+                        <span className="material-icons-outlined text-xl leading-none" aria-hidden>
+                          {isPasswordVisible ? 'visibility_off' : 'visibility'}
+                        </span>
+                      </button>
+                    </div>
+                    {errors.password && (
+                      <p className="text-sm text-red">{errors.password.message}</p>
+                    )}
+                  </div>
+
+                  {submitError && (
+                    <motion.p
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      role="alert"
+                      className="rounded-md bg-surface-2 p-3 text-sm text-red"
+                    >
+                      {submitError}
+                    </motion.p>
+                  )}
+
+                  <motion.button
+                    type="submit"
+                    disabled={isSubmitting}
+                    whileHover={{ scale: isSubmitting ? 1 : 1.015 }}
+                    whileTap={{ scale: isSubmitting ? 1 : 0.985 }}
+                    className="rounded-md bg-o-500 px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-o-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isSubmitting ? 'Entrando…' : 'Entrar'}
+                  </motion.button>
+                </form>
+
+                <p className="text-xs text-ink-4">
+                  ¿Sin acceso? El alta de usuarios la hace el administrador de tu departamento.
+                </p>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="reset"
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ duration: 0.25 }}
+                className="flex flex-col gap-8"
+              >
+                <div className="flex flex-col gap-2">
+                  <h1 className="text-2xl font-bold text-ink">Recupera tu contraseña</h1>
+                  <p className="text-sm text-ink-3">
+                    Te mandamos un enlace al correo para crear una nueva.
+                  </p>
+                </div>
+
+                {resetSentTo ? (
+                  <p className="rounded-md bg-surface-2 p-4 text-sm text-ink-2">
+                    Si <span className="font-semibold">{resetSentTo}</span> está registrado en
+                    Oranje, el enlace ya va en camino. Revisa también el spam.
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-5">
+                    <div className="flex flex-col gap-1.5">
+                      <label htmlFor="email" className="text-sm font-medium text-ink-2">
+                        Correo
+                      </label>
+                      <input
+                        id="email"
+                        type="email"
+                        autoComplete="email"
+                        placeholder="tu@oranje.mx"
+                        className={INPUT_CLASS}
+                        {...register('email')}
+                      />
+                    </div>
+
+                    {submitError && (
+                      <p role="alert" className="rounded-md bg-surface-2 p-3 text-sm text-red">
+                        {submitError}
+                      </p>
+                    )}
+
+                    <motion.button
+                      type="button"
+                      whileHover={{ scale: 1.015 }}
+                      whileTap={{ scale: 0.985 }}
+                      onClick={() => {
+                        void onRequestReset()
+                      }}
+                      className="rounded-md bg-o-500 px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-o-700"
+                    >
+                      Mandar enlace
+                    </motion.button>
+                  </div>
+                )}
+
                 <button
                   type="button"
                   onClick={() => {
-                    setIsPasswordVisible((visible) => !visible)
+                    setSubmitError(null)
+                    setMode('login')
                   }}
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-ink-3 hover:text-ink"
-                  aria-label={isPasswordVisible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  className="self-start text-sm font-semibold text-o-700 hover:underline"
                 >
-                  <span className="material-icons-outlined text-xl leading-none" aria-hidden>
-                    {isPasswordVisible ? 'visibility_off' : 'visibility'}
-                  </span>
+                  ← Volver a iniciar sesión
                 </button>
-              </div>
-              {errors.password && <p className="text-sm text-red">{errors.password.message}</p>}
-            </div>
-
-            {submitError && (
-              <motion.p
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                role="alert"
-                className="rounded-md bg-surface-2 p-3 text-sm text-red"
-              >
-                {submitError}
-              </motion.p>
+              </motion.div>
             )}
-
-            <motion.button
-              type="submit"
-              disabled={isSubmitting}
-              whileHover={{ scale: isSubmitting ? 1 : 1.015 }}
-              whileTap={{ scale: isSubmitting ? 1 : 0.985 }}
-              className="rounded-md bg-o-500 px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-o-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSubmitting ? 'Entrando…' : 'Entrar'}
-            </motion.button>
-          </motion.form>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.4 }}
-            className="text-xs text-ink-4"
-          >
-            ¿Sin acceso? El alta de usuarios la hace el administrador de tu departamento.
-          </motion.p>
+          </AnimatePresence>
         </section>
 
-        {/* Panel visual: la fotografía de la referencia, aquí en 3D de marca. */}
+        {/* Panel visual: las naranjas de la marca, en 3D. */}
         <motion.aside
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -198,7 +355,10 @@ export function LoginPage(): ReactNode {
         >
           <LoginScene />
           <div className="absolute inset-x-4 bottom-4 rounded-lg bg-surface/90 p-4 backdrop-blur">
-            <p className="text-sm font-semibold text-ink">Oranje Matrix System</p>
+            <p className="text-sm font-semibold text-ink">
+              Oranje Matrix System{' '}
+              <span className="font-normal text-ink-3">· v{__APP_VERSION__}</span>
+            </p>
             <p className="text-xs text-ink-3">
               Staffing de hoteles: del reclutamiento al pago, con un semáforo en cada paso.
             </p>

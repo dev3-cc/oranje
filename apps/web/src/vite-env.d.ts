@@ -23,3 +23,6 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+/** Versión del sistema, inyectada desde `package.json` por `vite.config.ts`. */
+declare const __APP_VERSION__: string

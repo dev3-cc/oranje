@@ -1,5 +1,10 @@
 import { initializeApp, type FirebaseApp, type FirebaseOptions } from 'firebase/app'
-import { getAuth, signInWithEmailAndPassword, type Auth } from 'firebase/auth'
+import {
+  getAuth,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  type Auth,
+} from 'firebase/auth'
 
 /**
  * Firebase Auth es la autoridad de identidad (D-05).
@@ -50,4 +55,15 @@ export async function signInWithEmail(email: string, password: string): Promise<
 
   const credentials = await signInWithEmailAndPassword(auth, email, password)
   return credentials.user.getIdToken()
+}
+
+/**
+ * Recuperación de contraseña: Firebase manda el correo con el enlace, la API
+ * ni se entera (la contraseña vive en Firebase, D-05). Sin proyecto
+ * configurado no hace nada: el mock no tiene a dónde escribir.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  const auth = getFirebaseAuth()
+  if (!auth) return
+  await sendPasswordResetEmail(auth, email)
 }
