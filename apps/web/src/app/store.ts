@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit'
 
 import { baseApi } from './baseApi'
+import { sessionReducer } from './sessionSlice'
 
 /**
  * Un solo store con dos inquilinos que no se mezclan (D-12):
@@ -13,7 +14,8 @@ import { baseApi } from './baseApi'
 export const store = configureStore({
   reducer: {
     [baseApi.reducerPath]: baseApi.reducer,
-    // Los slices de UI se registran aquí conforme aparezcan
+    /** Sesión: usuario, rol y accessToken en memoria. El primer slice de UI. */
+    session: sessionReducer,
   },
   middleware: (getDefault) => getDefault().concat(baseApi.middleware),
 })

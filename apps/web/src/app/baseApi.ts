@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
-import { getIdToken } from '@/shared/lib/firebase'
+import { selectAccessToken } from './sessionSlice'
+
 import { withMocks } from '@/shared/lib/mockBaseQuery'
 
 /**
@@ -24,8 +25,13 @@ export const baseApi = createApi({
   baseQuery: withMocks(
     fetchBaseQuery({
       baseUrl: import.meta.env.VITE_API_URL ?? '/api/v1',
-      prepareHeaders: async (headers) => {
-        const token = await getIdToken()
+      /**
+       * El Bearer es el ACCESS TOKEN de la API (`POST /auth/session`), no el
+       * idToken de Firebase: el guard global de `apps/api` solo valida el
+       * suyo. El idToken se usa una vez, al canjear la sesión en el login.
+       */
+      prepareHeaders: (headers, { getState }) => {
+        const token = selectAccessToken(getState() as Parameters<typeof selectAccessToken>[0])
         if (token) headers.set('authorization', `Bearer ${token}`)
         return headers
       },

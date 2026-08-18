@@ -35,6 +35,25 @@ export interface ApiError {
   }
 }
 
+// --- identity/auth ---------------------------------------------------------
+
+/**
+ * `POST /auth/session` y `POST /auth/refresh`. El refresh token NUNCA viaja en
+ * el body: va en la cookie `oranje_refresh` (`httpOnly`, `path=/api/v1/auth`),
+ * así que ambas llamadas exigen `credentials: 'include'`.
+ */
+export interface SessionApi {
+  accessToken: string
+  /** Segundos de vida del access token (default 900). */
+  expiresIn: number
+  user: {
+    id: string
+    email: string
+    fullName: string
+    roleCode: string
+  }
+}
+
 // --- commercial/hotels -----------------------------------------------------
 
 export interface ZoneRefApi {

@@ -1,5 +1,5 @@
 import { initializeApp, type FirebaseApp, type FirebaseOptions } from 'firebase/app'
-import { getAuth, type Auth } from 'firebase/auth'
+import { getAuth, signInWithEmailAndPassword, type Auth } from 'firebase/auth'
 
 /**
  * Firebase Auth es la autoridad de identidad (D-05).
@@ -37,4 +37,17 @@ export function getFirebaseAuth(): Auth | undefined {
 
 export async function getIdToken(): Promise<string | undefined> {
   return getFirebaseAuth()?.currentUser?.getIdToken()
+}
+
+/**
+ * Login con correo y contraseña → idToken listo para canjear en
+ * `POST /auth/session`. Sin proyecto configurado (dev con mocks) devuelve un
+ * token ficticio: la capa de mocks acepta cualquiera.
+ */
+export async function signInWithEmail(email: string, password: string): Promise<string> {
+  const auth = getFirebaseAuth()
+  if (!auth) return 'mock-id-token'
+
+  const credentials = await signInWithEmailAndPassword(auth, email, password)
+  return credentials.user.getIdToken()
 }
