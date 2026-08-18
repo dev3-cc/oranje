@@ -371,8 +371,7 @@ export function LoginPage(): ReactNode {
           <LoginScene />
           <div className="absolute inset-x-4 bottom-4 rounded-lg bg-surface/90 p-4 backdrop-blur">
             <p className="text-sm font-semibold text-ink">
-              Oranje Matrix System{' '}
-              <span className="font-normal text-ink-3">· v{__APP_VERSION__}</span>
+              Nuevo Oranje <span className="font-normal text-ink-3">· v{__APP_VERSION__}</span>
             </p>
             <p className="text-xs text-ink-3">
               Staffing de hoteles: del reclutamiento al pago, con un semáforo en cada paso.
