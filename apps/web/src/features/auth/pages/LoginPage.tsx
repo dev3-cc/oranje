@@ -43,26 +43,41 @@ const HOTEL_PHOTOS: readonly string[] = [
   'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=640&q=55',
 ]
 
-/** Collage de fondo con paneo lento. Decorativo: `aria-hidden`, sin foco. */
+/**
+ * Collage de fondo con paneo lento. Decorativo: `aria-hidden`, sin foco.
+ *
+ * El bucle solo es continuo si el `-50%` del paneo cae EXACTO donde empieza
+ * una copia idéntica: por eso son DOS bloques iguales apilados, y cada bloque
+ * repite las fotos hasta medir más que cualquier pantalla — sin eso, en
+ * monitores altos el collage se acababa y subía un hueco vacío.
+ */
+const BACKDROP_REPEATS = 6
+
 function HotelBackdrop(): ReactNode {
-  /** Dos copias apiladas para que el paneo vertical no deje hueco. */
-  const rows = [...HOTEL_PHOTOS, ...HOTEL_PHOTOS]
+  const block = Array.from({ length: BACKDROP_REPEATS }, () => HOTEL_PHOTOS).flat()
 
   return (
     <div aria-hidden className="absolute inset-0 overflow-hidden">
       <motion.div
         animate={{ y: ['0%', '-50%'] }}
-        transition={{ duration: 90, repeat: Infinity, ease: 'linear' }}
-        className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 lg:grid-cols-4"
+        transition={{ duration: 240, repeat: Infinity, ease: 'linear' }}
+        className="flex flex-col"
       >
-        {rows.map((src, index) => (
-          <img
-            key={`${src}-${String(index)}`}
-            src={src}
-            alt=""
-            loading="lazy"
-            className="h-44 w-full rounded-lg object-cover sm:h-52"
-          />
+        {[0, 1].map((copy) => (
+          <div
+            key={copy}
+            className="grid grid-cols-2 gap-3 px-3 py-1.5 sm:grid-cols-3 lg:grid-cols-4"
+          >
+            {block.map((src, index) => (
+              <img
+                key={`${String(copy)}-${src}-${String(index)}`}
+                src={src}
+                alt=""
+                loading="lazy"
+                className="h-44 w-full rounded-lg object-cover sm:h-52"
+              />
+            ))}
+          </div>
         ))}
       </motion.div>
       {/* Velo cálido: el fondo acompaña, la tarjeta manda. */}
