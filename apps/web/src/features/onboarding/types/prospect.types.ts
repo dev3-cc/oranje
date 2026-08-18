@@ -81,8 +81,12 @@ export interface HotelData {
   /** IANA, p. ej. `America/Cancun`. */
   timeZone: string
   geofenceMeters: number
-  /** Dónde está el hotel. La usa el mapa de Mi Territorio y la geocerca. */
-  location: GeoPoint
+  /**
+   * Dónde está el hotel. La usa el mapa de Mi Territorio y la geocerca.
+   * ⚠ `null` mientras `commercial.hotel` no exponga dirección ni pin: el
+   * contrato real de `GET /hotels/:id` no trae estos campos todavía.
+   */
+  location: GeoPoint | null
   /** `null` mientras el prospecto no se convierte en cliente activo. */
   activatedAsClientAt: string | null
 }
@@ -138,10 +142,12 @@ export interface UpdateProspectRequest {
 }
 
 /** Hotel ya dado de alta, para el modo «Hotel ya registrado». */
-export interface RegisteredHotel extends HotelPayload {
+export interface RegisteredHotel extends Omit<HotelPayload, 'location'> {
   id: string
   /** Etiqueta de la zona, ya resuelta. */
   zone: string
+  /** Mismo hueco que `HotelData`: la API aún no expone el pin. */
+  location: GeoPoint | null
 }
 
 export interface HotelContact {

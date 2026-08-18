@@ -30,7 +30,9 @@ export function HotelDataCard({
     { label: 'Geocerca', value: `${hotel.geofenceMeters} m` },
     {
       label: 'Ubicación',
-      value: `${hotel.location.lat.toFixed(5)}, ${hotel.location.lng.toFixed(5)}`,
+      value: hotel.location
+        ? `${hotel.location.lat.toFixed(5)}, ${hotel.location.lng.toFixed(5)}`
+        : EMPTY_VALUE,
     },
     { label: 'Qué necesita', value: needDescription || EMPTY_VALUE },
     {

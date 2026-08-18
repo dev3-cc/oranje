@@ -30,7 +30,11 @@ describe('PipelinePage', () => {
     renderPipeline()
 
     // El total sale de `openCount`, no de contar las tarjetas visibles.
-    expect(await screen.findByText('38 prospectos abiertos · 5 zonas')).toBeInTheDocument()
+    /**
+     * El contrato real no trae `zoneCount`: se deriva de las tarjetas de la
+     * página (4 zonas en los fixtures). El 38 sí viaja: es `meta.total`.
+     */
+    expect(await screen.findByText('38 prospectos abiertos · 4 zonas')).toBeInTheDocument()
 
     expect(await screen.findByText('Hotel Riviera Maya')).toBeInTheDocument()
     expect(screen.getByText('Grand Costa Nube')).toBeInTheDocument()

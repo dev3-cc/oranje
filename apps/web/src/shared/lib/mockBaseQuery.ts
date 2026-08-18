@@ -16,8 +16,13 @@ import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolk
 /** Origen ficticio: `new URL` necesita uno para parsear rutas relativas. */
 const MOCK_ORIGIN = 'http://mock.oranje.local'
 
-/** Latencia artificial. Sin ella los estados de carga nunca se ven y se cuelan bugs de skeleton. */
-const MOCK_LATENCY_MS = 420
+/**
+ * Latencia artificial. Sin ella los estados de carga nunca se ven y se cuelan
+ * bugs de skeleton. En tests va en cero: los flujos compuestos (alta = hotel +
+ * contacto + prospecto + refetch) encadenan varias llamadas y con 420ms cada
+ * una el `findBy*` de Testing Library se agota antes de que pinte.
+ */
+const MOCK_LATENCY_MS = import.meta.env.MODE === 'test' ? 0 : 420
 
 export type MockMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 

@@ -14,22 +14,77 @@ import type {
   Zone,
 } from '../types/prospect.types'
 
+import {
+  adaptAttempt,
+  adaptProspectDetail,
+  adaptProspectSummary,
+  adaptRegisteredHotel,
+  adaptTransitions,
+} from './adapters'
 import { registerOnboardingMocks } from './onboardingMocks'
 
 import { baseApi } from '@/app/baseApi'
 import type { OnboardingStatus } from '@/shared/constants/onboardingStatus'
+import type {
+  ApiEnvelope,
+  ContactAttemptApi,
+  HistoryEntryApi,
+  HotelApi,
+  HotelContactApi,
+  PaginatedEnvelope,
+  ProspectApi,
+  ProspectBoardMeta,
+  TransitionOptionApi,
+  TransitionResultApi,
+} from '@/shared/types/apiContract.types'
 
 /**
- * Endpoints de Onboarding sobre el `createApi` único (D-12).
- *
- * Las URLs y los métodos son los DEFINITIVOS: hoy los atiende la capa de
- * fixtures porque `apps/api` todavía no los expone, pero ni este archivo ni
- * ningún componente saben de eso. Apagar `VITE_USE_MOCKS` es todo lo que hay
- * que hacer el día que el backend exista.
+ * Endpoints de Onboarding sobre el `createApi` único (D-12), alineados al
+ * contrato REAL de `apps/api`. Las formas crudas viven en
+ * `apiContract.types.ts` y aquí se adaptan a los tipos de vista (`adapters.ts`)
+ * para que los componentes no carguen con la envoltura `{data, meta}` ni con
+ * los huecos del contrato.
  *
  * Los hooks se GENERAN — no se escriben a mano ni se envuelven sin necesidad.
  */
 registerOnboardingMocks()
+
+/** `fetchWithBQ` de un `queryFn`: el tipo exacto no está exportado por RTK. */
+type FetchWithBQ = (
+  args: string | { url: string; method?: string; body?: unknown; params?: Record<string, unknown> },
+) => Promise<{ data?: unknown; error?: unknown }>
+
+/**
+ * La ficha del prospecto se arma con CINCO recursos: el contrato real no tiene
+ * un endpoint compuesto. Se piden en paralelo lo que no depende entre sí.
+ */
+async function fetchProspectDetail(
+  fetchWithBQ: FetchWithBQ,
+  prospectId: string,
+): Promise<{ data: ProspectDetail } | { error: unknown }> {
+  const prospectRes = await fetchWithBQ(`/prospects/${prospectId}`)
+  if (prospectRes.error) return { error: prospectRes.error }
+  const prospect = (prospectRes.data as ApiEnvelope<ProspectApi>).data
+
+  const [hotelRes, contactsRes, attemptsRes, historyRes] = await Promise.all([
+    fetchWithBQ(`/hotels/${prospect.hotel.id}`),
+    fetchWithBQ(`/hotels/${prospect.hotel.id}/contacts`),
+    fetchWithBQ(`/prospects/${prospectId}/contact-attempts`),
+    fetchWithBQ(`/prospects/${prospectId}/history`),
+  ])
+  const failed = [hotelRes, contactsRes, attemptsRes, historyRes].find((res) => res.error)
+  if (failed) return { error: failed.error }
+
+  return {
+    data: adaptProspectDetail(
+      prospect,
+      (hotelRes.data as ApiEnvelope<HotelApi>).data,
+      (contactsRes.data as ApiEnvelope<HotelContactApi[]>).data,
+      (attemptsRes.data as ApiEnvelope<ContactAttemptApi[]>).data,
+      (historyRes.data as ApiEnvelope<HistoryEntryApi[]>).data,
+    ),
+  }
+}
 
 export const onboardingApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
@@ -37,11 +92,27 @@ export const onboardingApi = baseApi.injectEndpoints({
       query: (filters) => ({
         url: '/prospects',
         params: {
-          ...(filters.zone ? { zone: filters.zone } : {}),
-          ...(filters.ownerId ? { ownerId: filters.ownerId } : {}),
-          ...(filters.staleDays ? { staleDays: filters.staleDays } : {}),
+          /** El tablero pinta columnas completas: se pide la página más grande. */
+          limit: 100,
+          ...(filters.zone ? { zoneId: filters.zone } : {}),
+          ...(filters.ownerId ? { ownerUserId: filters.ownerId } : {}),
         },
       }),
+      /** `staleDays` se filtra aquí: el contrato real no tiene ese parámetro. */
+      transformResponse: (
+        raw: PaginatedEnvelope<ProspectApi, ProspectBoardMeta>,
+        _meta,
+        filters: PipelineFilters,
+      ): PipelineBoard => {
+        const items = raw.data
+          .map(adaptProspectSummary)
+          .filter((item) => !filters.staleDays || item.daysInStatus >= filters.staleDays)
+        return {
+          openCount: raw.meta.total,
+          zoneCount: new Set(items.map((item) => item.zone)).size,
+          items,
+        }
+      },
       providesTags: (board) => [
         { type: 'Prospect' as const, id: 'LIST' },
         ...(board?.items ?? []).map((item) => ({ type: 'Prospect' as const, id: item.id })),
@@ -49,24 +120,90 @@ export const onboardingApi = baseApi.injectEndpoints({
     }),
 
     getProspect: build.query<ProspectDetail, string>({
-      query: (prospectId) => `/prospects/${prospectId}`,
+      queryFn: async (prospectId, _api, _extra, fetchWithBQ) => {
+        const result = await fetchProspectDetail(fetchWithBQ as FetchWithBQ, prospectId)
+        return 'error' in result ? { error: result.error as never } : { data: result.data }
+      },
       providesTags: (_result, _error, prospectId) => [{ type: 'Prospect', id: prospectId }],
     }),
 
     /** Filtradas por el rol de quien pregunta: el front nunca decide permisos. */
     getAllowedTransitions: build.query<AllowedTransitions, string>({
-      query: (prospectId) => `/prospects/${prospectId}/allowed-transitions`,
+      query: (prospectId) => `/prospects/${prospectId}/transitions`,
+      transformResponse: (raw: ApiEnvelope<TransitionOptionApi[]>) => adaptTransitions(raw.data),
       providesTags: (_result, _error, prospectId) => [{ type: 'Prospect', id: prospectId }],
     }),
 
+    /** ⚠ Hueco del contrato: `/catalogs/zones` no existe en `apps/api` todavía. */
     getZones: build.query<Zone[], void>({
       query: () => '/catalogs/zones',
       providesTags: [{ type: 'Catalog', id: 'ZONE' }],
     }),
 
-    /** Alta del hotel en el pipeline. Nace en GRIS: el semáforo lo fija el backend. */
+    /**
+     * Alta del prospecto contra el contrato real: TRES recursos en secuencia
+     * — `POST /hotels` (si el hotel es nuevo), `POST /hotels/:id/contacts` y
+     * `POST /prospects`. El semáforo nace en GRAY y lo fija el backend.
+     *
+     * ⚠ `address` y `location` del formulario NO viajan: `commercial.hotel`
+     * no los expone. Se pierden hasta que la API los agregue.
+     */
     createProspect: build.mutation<ProspectDetail, CreateProspectRequest>({
-      query: (body) => ({ url: '/prospects', method: 'POST', body }),
+      queryFn: async (request, _api, _extra, fetchWithBQ) => {
+        const bq = fetchWithBQ as FetchWithBQ
+
+        let hotelId = request.existingHotelId ?? null
+        if (request.hotelSource === 'NEW') {
+          const hotelRes = await bq({
+            url: '/hotels',
+            method: 'POST',
+            body: {
+              name: request.hotel.name,
+              zoneId: request.hotel.zoneId,
+              timeZone: request.hotel.timeZone,
+              ...(request.hotel.generalPhone ? { generalPhone: request.hotel.generalPhone } : {}),
+              ...(request.hotel.geofenceMeters
+                ? { geofenceRadiusM: request.hotel.geofenceMeters }
+                : {}),
+            },
+          })
+          if (hotelRes.error) return { error: hotelRes.error as never }
+          hotelId = (hotelRes.data as ApiEnvelope<HotelApi>).data.id
+        }
+        if (!hotelId) {
+          return { error: { status: 400, data: { message: 'Falta el hotel' } } as never }
+        }
+
+        if (request.contact.fullName) {
+          const contactRes = await bq({
+            url: `/hotels/${hotelId}/contacts`,
+            method: 'POST',
+            body: {
+              fullName: request.contact.fullName,
+              ...(request.contact.jobTitle ? { jobTitle: request.contact.jobTitle } : {}),
+              ...(request.contact.phone ? { phone: request.contact.phone } : {}),
+              ...(request.contact.email ? { email: request.contact.email } : {}),
+              isPrimary: request.contact.isPrimary,
+            },
+          })
+          if (contactRes.error) return { error: contactRes.error as never }
+        }
+
+        const prospectRes = await bq({
+          url: '/prospects',
+          method: 'POST',
+          body: {
+            hotelId,
+            ownerUserId: request.ownerUserId,
+            ...(request.needDescription ? { needDescription: request.needDescription } : {}),
+          },
+        })
+        if (prospectRes.error) return { error: prospectRes.error as never }
+        const prospectId = (prospectRes.data as ApiEnvelope<ProspectApi>).data.id
+
+        const detail = await fetchProspectDetail(bq, prospectId)
+        return 'error' in detail ? { error: detail.error as never } : { data: detail.data }
+      },
       invalidatesTags: [
         { type: 'Prospect', id: 'LIST' },
         { type: 'Hotel', id: 'LIST' },
@@ -74,36 +211,81 @@ export const onboardingApi = baseApi.injectEndpoints({
     }),
 
     /**
-     * Alta de contactos en LOTE.
-     *
-     * Un solo `POST` con todos porque `ux_hotel_contact_primary` obliga a que
-     * quitarle el principal al anterior y dárselo al nuevo pase en la misma
-     * transacción; en dos llamadas, el motor rechaza la segunda.
+     * Alta de contactos contra el sub-recurso real (`/hotels/:id/contacts`).
+     * Va en secuencia: el backend resuelve el cambio de principal por llamada
+     * (marcar uno nuevo desmarca al anterior en su transacción).
      */
     addHotelContacts: build.mutation<
       ProspectDetail,
       { prospectId: string; contacts: HotelContactPayload[] }
     >({
-      query: ({ prospectId, contacts }) => ({
-        url: `/prospects/${prospectId}/contacts`,
-        method: 'POST',
-        body: { contacts },
-      }),
+      queryFn: async ({ prospectId, contacts }, _api, _extra, fetchWithBQ) => {
+        const bq = fetchWithBQ as FetchWithBQ
+
+        const prospectRes = await bq(`/prospects/${prospectId}`)
+        if (prospectRes.error) return { error: prospectRes.error as never }
+        const hotelId = (prospectRes.data as ApiEnvelope<ProspectApi>).data.hotel.id
+
+        for (const contact of contacts) {
+          const res = await bq({
+            url: `/hotels/${hotelId}/contacts`,
+            method: 'POST',
+            body: {
+              fullName: contact.fullName,
+              ...(contact.jobTitle ? { jobTitle: contact.jobTitle } : {}),
+              ...(contact.phone ? { phone: contact.phone } : {}),
+              ...(contact.email ? { email: contact.email } : {}),
+              isPrimary: contact.isPrimary,
+            },
+          })
+          if (res.error) return { error: res.error as never }
+        }
+
+        const detail = await fetchProspectDetail(bq, prospectId)
+        return 'error' in detail ? { error: detail.error as never } : { data: detail.data }
+      },
       invalidatesTags: (_result, _error, { prospectId }) => [{ type: 'Prospect', id: prospectId }],
     }),
 
-    /** Hoteles ya registrados sin ciclo abierto: un hotel no tiene dos a la vez. */
+    /** Hoteles ya registrados, para el modo «Hotel ya registrado» del alta. */
     getRegisteredHotels: build.query<RegisteredHotel[], void>({
-      query: () => ({ url: '/hotels', params: { withoutOpenCycle: true } }),
+      query: () => ({ url: '/hotels', params: { limit: 100 } }),
+      transformResponse: (raw: PaginatedEnvelope<HotelApi>) => raw.data.map(adaptRegisteredHotel),
       providesTags: [{ type: 'Hotel', id: 'LIST' }],
     }),
 
+    /**
+     * Edición contra el contrato real: solo el HOTEL es editable
+     * (`PATCH /hotels/:id`). No existe `PATCH /prospects`, así que
+     * `ownerUserId` y `needDescription` no se pueden cambiar — hueco del
+     * contrato. El contacto se edita en su propio diálogo, no aquí.
+     */
     updateProspect: build.mutation<ProspectDetail, UpdateProspectRequest>({
-      query: ({ prospectId, ...body }) => ({
-        url: `/prospects/${prospectId}`,
-        method: 'PATCH',
-        body,
-      }),
+      queryFn: async (request, _api, _extra, fetchWithBQ) => {
+        const bq = fetchWithBQ as FetchWithBQ
+
+        const prospectRes = await bq(`/prospects/${request.prospectId}`)
+        if (prospectRes.error) return { error: prospectRes.error as never }
+        const hotelId = (prospectRes.data as ApiEnvelope<ProspectApi>).data.hotel.id
+
+        const patchRes = await bq({
+          url: `/hotels/${hotelId}`,
+          method: 'PATCH',
+          body: {
+            name: request.hotel.name,
+            zoneId: request.hotel.zoneId,
+            timeZone: request.hotel.timeZone,
+            ...(request.hotel.generalPhone ? { generalPhone: request.hotel.generalPhone } : {}),
+            ...(request.hotel.geofenceMeters
+              ? { geofenceRadiusM: request.hotel.geofenceMeters }
+              : {}),
+          },
+        })
+        if (patchRes.error) return { error: patchRes.error as never }
+
+        const detail = await fetchProspectDetail(bq, request.prospectId)
+        return 'error' in detail ? { error: detail.error as never } : { data: detail.data }
+      },
       /** También la lista: cambiar zona o nombre altera la tarjeta del tablero. */
       invalidatesTags: (_result, _error, { prospectId }) => [
         { type: 'Prospect', id: prospectId },
@@ -111,22 +293,19 @@ export const onboardingApi = baseApi.injectEndpoints({
       ],
     }),
 
+    /** ⚠ Hueco del contrato: no hay endpoint que liste los motivos del catálogo. */
     getStatusChangeReasons: build.query<StatusChangeReason[], OnboardingStatus>({
       query: (toStatus) => ({ url: '/catalogs/status-change-reasons', params: { toStatus } }),
       providesTags: [{ type: 'Catalog', id: 'STATUS_CHANGE_REASON' }],
     }),
 
-    /**
-     * Devuelve el intento creado (201 Created), no el prospecto completo: es lo
-     * convencional para un POST de recurso y es lo que va a implementar
-     * `apps/api`. La bitácora se refresca por la invalidación del tag.
-     */
     registerContactAttempt: build.mutation<ContactAttempt, RegisterContactAttemptRequest>({
       query: ({ prospectId, ...body }) => ({
         url: `/prospects/${prospectId}/contact-attempts`,
         method: 'POST',
         body,
       }),
+      transformResponse: (raw: ApiEnvelope<ContactAttemptApi>) => adaptAttempt(raw.data),
       /** También la lista: el tablero muestra el último intento en la tarjeta. */
       invalidatesTags: (_result, _error, { prospectId }) => [
         { type: 'Prospect', id: prospectId },
@@ -134,16 +313,26 @@ export const onboardingApi = baseApi.injectEndpoints({
       ],
     }),
 
-    changeProspectStatus: build.mutation<ProspectDetail, ChangeStatusRequest>({
-      query: ({ prospectId, ...body }) => ({
-        url: `/prospects/${prospectId}/status-changes`,
+    /**
+     * `POST /prospects/:id/transitions` responde solo `{from, to}` (200): el
+     * prospecto se refresca por la invalidación del tag, no por la respuesta.
+     */
+    changeProspectStatus: build.mutation<
+      { from: OnboardingStatus; to: OnboardingStatus },
+      ChangeStatusRequest
+    >({
+      query: ({ prospectId, toStatus, reasonId }) => ({
+        url: `/prospects/${prospectId}/transitions`,
         method: 'POST',
-        body,
+        body: {
+          toState: toStatus,
+          ...(reasonId ? { reasonCode: reasonId } : {}),
+        },
       }),
-      /**
-       * Invalida el prospecto Y la lista: cambiar de estado lo mueve de columna
-       * en el tablero, así que la vista anterior queda mintiendo.
-       */
+      transformResponse: (raw: ApiEnvelope<TransitionResultApi>) => ({
+        from: raw.data.from as OnboardingStatus,
+        to: raw.data.to as OnboardingStatus,
+      }),
       invalidatesTags: (_result, _error, { prospectId }) => [
         { type: 'Prospect', id: prospectId },
         { type: 'Prospect', id: 'LIST' },

@@ -1,16 +1,18 @@
-import type {
-  ProposalCandidate,
-  ProposalVersionSummary,
-  ProposalWorkspace,
-} from '../types/proposal.types'
+import type { ProposalCandidate, ProposalVersionSummary } from '../types/proposal.types'
 
-import { getProspectIdentity } from './onboardingMocks'
+import { getProspectIdentity, registerOnboardingMocks } from './onboardingMocks'
 
 import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
+import type { ApiEnvelope, ProposalApi } from '@/shared/types/apiContract.types'
 
 /**
- * Fixtures de las propuestas. ANDAMIO TEMPORAL — se borra cuando `apps/api`
- * exponga los endpoints.
+ * Fixtures de las propuestas. ANDAMIO TEMPORAL — se borra cuando
+ * `VITE_USE_MOCKS` deje de usarse.
+ *
+ * El estado interno sigue en el tipo de vista (`ProposalVersionSummary`), pero
+ * las rutas responden `ProposalApi` con su envoltura, como el contrato real:
+ * tarifas como STRING (`"185.0000"`), `isDraft` derivado de `sentAt`, y todo
+ * bajo `/prospects/:id/proposals`.
  *
  * El nombre del hotel y su semáforo NO se repiten aquí: salen de
  * `getProspectIdentity`, que lee los mismos fixtures que la ficha del
@@ -144,55 +146,35 @@ function todayIso(): string {
   return `${now.getFullYear()}-${month}-${day}`
 }
 
-/** Hoy el resumen y lo almacenado coinciden; la función marca dónde separarlos. */
-function toSummary(version: StoredVersion): ProposalVersionSummary {
+/** Vista → contrato crudo: la inversa de los adaptadores de `proposalsApi`. */
+function toProposalApi(version: StoredVersion): ProposalApi {
   return {
     id: version.id,
     version: version.version,
-    status: version.status,
+    servicesNote: version.servicesNote || null,
+    payRate: version.payRate.toFixed(4),
+    billRate: version.billRate.toFixed(4),
+    isDraft: version.status === 'DRAFT',
+    sentBy: version.sentAt ? { id: 'usr-ana-ruiz', fullName: version.byName } : null,
     sentAt: version.sentAt,
-    byName: version.byName,
-    servicesNote: version.servicesNote,
-    payRate: version.payRate,
-    billRate: version.billRate,
+    createdAt: version.sentAt ?? todayIso(),
+    updatedAt: null,
   }
 }
 
-function readWorkspace(prospectId: string): ProposalWorkspace {
-  const identity = getProspectIdentity(prospectId)
-  if (!identity) throw new Error(`No existe el prospecto ${prospectId}`)
-
-  const versions = versionsByProspect.get(prospectId) ?? []
-  const draft = versions.find((version) => version.status === 'DRAFT')
-
-  return {
-    prospectId,
-    hotelName: identity.hotelName,
-    prospectStatus: identity.status,
-    draft: draft
-      ? {
-          id: draft.id,
-          version: draft.version,
-          servicesNote: draft.servicesNote,
-          payRate: draft.payRate,
-          billRate: draft.billRate,
-        }
-      : null,
-    versions: versions.map(toSummary),
-  }
-}
-
-function findProspectByProposalId(proposalId: string): string {
-  for (const [prospectId, versions] of versionsByProspect) {
-    if (versions.some((version) => version.id === proposalId)) return prospectId
-  }
-  throw new Error(`No existe la propuesta ${proposalId}`)
-}
-
-function createDraft(prospectId: string): ProposalWorkspace {
+function readVersions(prospectId: string): StoredVersion[] {
   if (!getProspectIdentity(prospectId)) throw new Error(`No existe el prospecto ${prospectId}`)
+  return versionsByProspect.get(prospectId) ?? []
+}
 
-  const versions = versionsByProspect.get(prospectId) ?? []
+function findVersion(prospectId: string, proposalId: string): StoredVersion {
+  const version = readVersions(prospectId).find((item) => item.id === proposalId)
+  if (!version) throw new Error(`No existe la propuesta ${proposalId}`)
+  return version
+}
+
+function createDraft(prospectId: string): ProposalApi {
+  const versions = readVersions(prospectId)
   if (versions.some((version) => version.status === 'DRAFT')) {
     throw new Error('Ya hay una versión en borrador')
   }
@@ -201,55 +183,56 @@ function createDraft(prospectId: string): ProposalWorkspace {
   const [latest] = versions
   const nextVersion = (latest?.version ?? 0) + 1
 
-  versionsByProspect.set(prospectId, [
-    {
-      id: `prp-${prospectId}-${nextVersion}`,
-      version: nextVersion,
-      status: 'DRAFT',
-      sentAt: null,
-      byName: 'Ana Ruiz',
-      payRate: latest?.payRate ?? 0,
-      billRate: latest?.billRate ?? 0,
-      servicesNote: latest?.servicesNote ?? '',
-    },
-    ...versions,
-  ])
-
-  return readWorkspace(prospectId)
+  const draft: StoredVersion = {
+    id: `prp-${prospectId}-${nextVersion}`,
+    version: nextVersion,
+    status: 'DRAFT',
+    sentAt: null,
+    byName: 'Ana Ruiz',
+    payRate: latest?.payRate ?? 0,
+    billRate: latest?.billRate ?? 0,
+    servicesNote: latest?.servicesNote ?? '',
+  }
+  versionsByProspect.set(prospectId, [draft, ...versions])
+  return toProposalApi(draft)
 }
 
-function saveDraft(proposalId: string, body: unknown): ProposalWorkspace {
-  const payload = body as { servicesNote?: string; payRate?: number; billRate?: number } | undefined
-  const prospectId = findProspectByProposalId(proposalId)
-  const version = versionsByProspect.get(prospectId)?.find((item) => item.id === proposalId)
+interface SaveDraftBody {
+  servicesNote?: string
+  payRate?: string
+  billRate?: string
+}
 
-  if (!version) throw new Error(`No existe la propuesta ${proposalId}`)
+/** Como el contrato real: REEMPLAZO, no parche — campo omitido queda vacío. */
+function saveDraft(prospectId: string, proposalId: string, body: unknown): ProposalApi {
+  const payload = (body ?? {}) as SaveDraftBody
+  const version = findVersion(prospectId, proposalId)
   if (version.status === 'SENT') throw new Error('Una propuesta enviada ya no se edita')
 
-  version.servicesNote = payload?.servicesNote ?? version.servicesNote
-  version.payRate = payload?.payRate ?? version.payRate
-  version.billRate = payload?.billRate ?? version.billRate
+  version.servicesNote = payload.servicesNote ?? ''
+  version.payRate = payload.payRate ? Number(payload.payRate) : 0
+  version.billRate = payload.billRate ? Number(payload.billRate) : 0
 
-  return readWorkspace(prospectId)
+  return toProposalApi(version)
 }
 
-function sendProposal(proposalId: string): ProposalWorkspace {
-  const prospectId = findProspectByProposalId(proposalId)
-  const version = versionsByProspect.get(prospectId)?.find((item) => item.id === proposalId)
-
-  if (!version) throw new Error(`No existe la propuesta ${proposalId}`)
+function sendProposal(prospectId: string, proposalId: string): ProposalApi {
+  const version = findVersion(prospectId, proposalId)
   if (version.status === 'SENT') throw new Error('Esta propuesta ya se envió')
   if (!version.servicesNote.trim()) throw new Error('La propuesta necesita una descripción')
 
   version.status = 'SENT'
   version.sentAt = todayIso()
 
-  return readWorkspace(prospectId)
+  return toProposalApi(version)
 }
 
 /**
  * Todos los hoteles que tienen al menos una versión. Los que nunca se
  * cotizaron no salen: el módulo lista propuestas, no prospectos.
+ *
+ * ⚠ Hueco del contrato: esta vista transversal no tiene endpoint real, así que
+ * sigue respondiendo el tipo de vista sin envoltura.
  */
 function listCandidates(): ProposalCandidate[] {
   const candidates: ProposalCandidate[] = []
@@ -282,22 +265,30 @@ const routes: readonly MockRoute[] = [
   {
     method: 'GET',
     path: '/prospects/:prospectId/proposals',
-    resolve: ({ params }): ProposalWorkspace => readWorkspace(params.prospectId ?? ''),
+    resolve: ({ params }): ApiEnvelope<ProposalApi[]> => ({
+      data: readVersions(params.prospectId ?? '').map(toProposalApi),
+    }),
   },
   {
     method: 'POST',
     path: '/prospects/:prospectId/proposals',
-    resolve: ({ params }): ProposalWorkspace => createDraft(params.prospectId ?? ''),
+    resolve: ({ params }): ApiEnvelope<ProposalApi> => ({
+      data: createDraft(params.prospectId ?? ''),
+    }),
   },
   {
     method: 'PATCH',
-    path: '/proposals/:proposalId',
-    resolve: ({ params, body }): ProposalWorkspace => saveDraft(params.proposalId ?? '', body),
+    path: '/prospects/:prospectId/proposals/:proposalId',
+    resolve: ({ params, body }): ApiEnvelope<ProposalApi> => ({
+      data: saveDraft(params.prospectId ?? '', params.proposalId ?? '', body),
+    }),
   },
   {
     method: 'POST',
-    path: '/proposals/:proposalId/send',
-    resolve: ({ params }): ProposalWorkspace => sendProposal(params.proposalId ?? ''),
+    path: '/prospects/:prospectId/proposals/:proposalId/send',
+    resolve: ({ params }): ApiEnvelope<ProposalApi> => ({
+      data: sendProposal(params.prospectId ?? '', params.proposalId ?? ''),
+    }),
   },
 ]
 
@@ -306,5 +297,11 @@ let areRoutesRegistered = false
 export function registerProposalsMocks(): void {
   if (areRoutesRegistered) return
   areRoutesRegistered = true
+  /**
+   * El workspace también pide `GET /prospects/:id` (nombre del hotel y
+   * semáforo), que vive en los mocks de onboarding: se registran juntos para
+   * que un spec que solo monta el editor no reciba un 501.
+   */
+  registerOnboardingMocks()
   registerMockRoutes(routes)
 }
