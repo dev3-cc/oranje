@@ -101,6 +101,8 @@ function toEntity(row: HotelRow): HotelEntity {
     generalPhone: row.generalPhone,
     timeZone: row.timeZone,
     geofenceRadiusM: row.geofenceRadiusM,
+    address: row.address,
+    placeId: row.placeId,
     latitude: row.latitude ?? null,
     longitude: row.longitude ?? null,
     zone: row.zone,
