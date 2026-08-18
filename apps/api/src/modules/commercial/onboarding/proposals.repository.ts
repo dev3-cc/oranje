@@ -55,6 +55,30 @@ export class ProposalsRepository {
     return this.prisma.proposal.findFirst({ where: { id, prospectId }, select: SELECT })
   }
 
+  async listAcrossProspects(params: {
+    ownerUserId: string | null
+    onlyDrafts: boolean
+  }): Promise<Array<ProposalRow & { prospectId: string; hotelName: string }>> {
+    const rows = await this.prisma.proposal.findMany({
+      where: {
+        ...(params.onlyDrafts ? { sentAt: null } : {}),
+        prospect: {
+          closedAt: null,
+          ...(params.ownerUserId ? { ownerUserId: params.ownerUserId } : {}),
+        },
+      },
+      orderBy: [{ createdAt: 'desc' }],
+      take: 200,
+      select: {
+        ...SELECT,
+        prospectId: true,
+        prospect: { select: { hotel: { select: { name: true } } } },
+      },
+    })
+
+    return rows.map((r) => ({ ...r, hotelName: r.prospect.hotel.name }))
+  }
+
   async listAll(prospectId: string): Promise<ProposalRow[]> {
     return this.prisma.proposal.findMany({
       where: { prospectId },

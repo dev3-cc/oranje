@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common'
 
 import { CurrentUser, Requires } from '../../../common/decorators/index.js'
@@ -17,18 +18,33 @@ import { CreateProposalDto } from './dto/create-proposal.dto.js'
 import type { ProposalEntity } from './entities/proposal.entity.js'
 import { ProposalsService } from './proposals.service.js'
 
-@Controller('prospects/:id/proposals')
+@Controller()
 export class ProposalsController {
   constructor(private readonly proposals: ProposalsService) {}
 
   @Requires('proposals', 'read')
-  @Get()
+  @Get('proposals')
+  async listAcross(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('mine') mine?: string,
+    @Query('onlyDrafts') onlyDrafts?: string,
+  ): Promise<{ data: Array<ProposalEntity & { prospectId: string; hotelName: string }> }> {
+    return {
+      data: await this.proposals.listAcross(
+        mine === 'true' ? user.id : null,
+        onlyDrafts === 'true',
+      ),
+    }
+  }
+
+  @Requires('proposals', 'read')
+  @Get('prospects/:id/proposals')
   async list(@Param('id', ParseUUIDPipe) id: string): Promise<{ data: ProposalEntity[] }> {
     return { data: await this.proposals.list(id) }
   }
 
   @Requires('proposals', 'create')
-  @Post()
+  @Post('prospects/:id/proposals')
   @HttpCode(HttpStatus.CREATED)
   async create(
     @Param('id', ParseUUIDPipe) id: string,
@@ -39,7 +55,7 @@ export class ProposalsController {
   }
 
   @Requires('proposals', 'create')
-  @Patch(':proposalId')
+  @Patch('prospects/:id/proposals/:proposalId')
   async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('proposalId', ParseUUIDPipe) proposalId: string,
@@ -50,7 +66,7 @@ export class ProposalsController {
   }
 
   @Requires('proposals', 'send')
-  @Post(':proposalId/send')
+  @Post('prospects/:id/proposals/:proposalId/send')
   @HttpCode(HttpStatus.OK)
   async send(
     @Param('id', ParseUUIDPipe) id: string,

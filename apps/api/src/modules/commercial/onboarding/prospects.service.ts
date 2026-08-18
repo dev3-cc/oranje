@@ -6,6 +6,7 @@ import { PermissionsService } from '../../identity/index.js'
 import type { CloseProspectDto } from './dto/close-prospect.dto.js'
 import type { CreateProspectDto } from './dto/create-prospect.dto.js'
 import type { QueryProspectsDto } from './dto/query-prospects.dto.js'
+import type { UpdateProspectDto } from './dto/update-prospect.dto.js'
 import type { ProspectEntity } from './entities/prospect.entity.js'
 import { ProspectRow, ProspectsRepository } from './prospects.repository.js'
 
@@ -93,6 +94,42 @@ export class ProspectsService {
     return toEntity(row)
   }
 
+  async update(
+    id: string,
+    dto: UpdateProspectDto,
+    user: AuthenticatedUser,
+  ): Promise<ProspectEntity> {
+    const row = await this.repo.findById(id)
+
+    if (!row) {
+      throw new NotFoundException({ code: 'PROSPECT_NOT_FOUND', message: 'El prospecto no existe' })
+    }
+
+    if (row.closedAt !== null) {
+      throw new ConflictException({
+        code: 'PROSPECT_CLOSED',
+        message: 'Un ciclo cerrado ya no se edita',
+      })
+    }
+
+    if (dto.ownerUserId !== undefined && !(await this.repo.userExists(dto.ownerUserId))) {
+      throw new NotFoundException({
+        code: 'OWNER_NOT_FOUND',
+        message: 'El usuario dueño del ciclo no existe o está desactivado',
+      })
+    }
+
+    return toEntity(
+      await this.repo.update({
+        id,
+        ownerUserId: dto.ownerUserId,
+        needDescription: dto.needDescription,
+        userId: user.id,
+        roleCode: user.roleCode,
+      }),
+    )
+  }
+
   async close(id: string, dto: CloseProspectDto, user: AuthenticatedUser): Promise<ProspectEntity> {
     const row = await this.repo.findById(id)
 
@@ -166,6 +203,20 @@ function toEntity(row: ProspectRow): ProspectEntity {
     openedAt: row.openedAt.toISOString(),
     closedAt: row.closedAt?.toISOString() ?? null,
     attemptCount: row._count.attempts,
+    lastAttempt: row.attempts[0]
+      ? {
+          occurredAt: row.attempts[0].occurredAt.toISOString(),
+          attemptType: row.attempts[0].attemptType,
+          outcome: row.attempts[0].outcome,
+        }
+      : null,
+    lastProposal: row.proposals[0]
+      ? {
+          version: row.proposals[0].version,
+          isDraft: row.proposals[0].sentAt === null,
+          sentAt: row.proposals[0].sentAt?.toISOString() ?? null,
+        }
+      : null,
     isOpen: row.closedAt === null,
   }
 }

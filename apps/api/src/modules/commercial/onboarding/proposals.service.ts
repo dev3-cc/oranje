@@ -17,6 +17,15 @@ const WORKING_STATES = ['GREEN', 'BROWN']
 export class ProposalsService {
   constructor(private readonly repo: ProposalsRepository) {}
 
+  async listAcross(
+    ownerUserId: string | null,
+    onlyDrafts: boolean,
+  ): Promise<Array<ProposalEntity & { prospectId: string; hotelName: string }>> {
+    const rows = await this.repo.listAcrossProspects({ ownerUserId, onlyDrafts })
+
+    return rows.map((r) => ({ ...toEntity(r), prospectId: r.prospectId, hotelName: r.hotelName }))
+  }
+
   async list(prospectId: string): Promise<ProposalEntity[]> {
     await this.prospect(prospectId)
 
