@@ -6,6 +6,7 @@ export interface HotelEntity {
   geofenceRadiusM: number | null
   address: string | null
   placeId: string | null
+  photoUrl: string | null
   latitude: number | null
   longitude: number | null
   zone: { id: string; code: string; name: string }

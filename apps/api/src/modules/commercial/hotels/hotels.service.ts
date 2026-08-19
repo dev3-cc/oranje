@@ -103,6 +103,7 @@ function toEntity(row: HotelRow): HotelEntity {
     geofenceRadiusM: row.geofenceRadiusM,
     address: row.address,
     placeId: row.placeId,
+    photoUrl: row.photoUrl,
     latitude: row.latitude ?? null,
     longitude: row.longitude ?? null,
     zone: row.zone,

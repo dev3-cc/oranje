@@ -366,6 +366,8 @@ model Hotel {
   /// El identificador estable de Google Places. Sobrevive a que alguien
   /// reescriba la calle a mano.
   placeId String? @map("place_id") @db.Text
+  /// Foto del lugar según Places. Solo URL: el binario es de Google.
+  photoUrl String? @map("photo_url") @db.Text
 
   coordinates      Unsupported("public.geography(Point, 4326)")?
   geofenceRadiusM  Int?                                  @map("geofence_radius_m")
