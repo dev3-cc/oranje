@@ -69,6 +69,11 @@ jobs:
       - name: Migraciones
         run: pnpm -F @oranje/api exec prisma migrate deploy
 
+      # Los permisos van DESPUES: no se otorga sobre esquemas que las
+      # migraciones acaban de crear.
+      - name: Permisos de la aplicación
+        run: pnpm -F @oranje/api db:grants
+
       - name: Semilla
         run: pnpm -F @oranje/api prisma:seed
 

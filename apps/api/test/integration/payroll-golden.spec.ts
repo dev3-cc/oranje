@@ -1,6 +1,7 @@
 import { v7 as uuidv7 } from 'uuid'
 
 import { close, db } from './db.js'
+import { actor } from './fixture.js'
 
 /**
  * El golden test que piden los Estándares §8.
@@ -46,7 +47,7 @@ async function seed(): Promise<void> {
   const position = await db.catalogPosition.findFirstOrThrow({ select: { id: true } })
   const modality = await db.hiringModality.findFirstOrThrow({ select: { id: true } })
   const department = await db.hotelDepartment.findFirstOrThrow({ select: { id: true } })
-  const actor = await db.user.findFirstOrThrow({ select: { id: true } })
+  const who = await actor()
   const workerState = await db.statusLightState.findFirstOrThrow({
     where: { code: 'STRONG_GREEN', statusLightCode: 'WORKER' },
     select: { id: true },
@@ -102,7 +103,7 @@ async function seed(): Promise<void> {
       zoneId: zone.id,
       statusLightStateId: workerState.id,
       statusLightCode: 'WORKER',
-      createdBy: actor.id,
+      createdBy: who.id,
     },
   })
   created.push({ table: 'personal.worker', id: workerId })
@@ -143,7 +144,7 @@ async function seed(): Promise<void> {
       hotelId,
       weekStart: new Date(WEEK_START),
       weekEnd: new Date(WEEK_END),
-      createdBy: actor.id,
+      createdBy: who.id,
     },
   })
   created.push({ table: 'operations.schedule', id: scheduleId })
@@ -158,7 +159,7 @@ async function seed(): Promise<void> {
       weekStart: new Date(WEEK_START),
       weekEnd: new Date(WEEK_END),
       status: 'APPROVED',
-      approvedBy: actor.id,
+      approvedBy: who.id,
       approvedAt: new Date(),
     },
   })
