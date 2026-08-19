@@ -24,6 +24,8 @@ import {
 import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
 import type {
   ApiEnvelope,
+  CatalogItemApi,
+  ReasonItemApi,
   AttemptSummaryApi,
   ContactAttemptApi,
   HistoryEntryApi,
@@ -593,6 +595,20 @@ function toProspectApi(summary: ProspectSummary): ProspectApi {
     closedAt: null,
     attemptCount: detail.attempts.length,
     isOpen: true,
+    lastAttempt: summary.lastAttempt
+      ? {
+          occurredAt: detail.attempts[0]?.occurredAt ?? isoDaysAgo(summary.daysInStatus),
+          attemptType: codeForLabel(summary.lastAttempt.channel, CONTACT_ATTEMPT_TYPE_LABEL),
+          outcome: codeForLabel(summary.lastAttempt.outcome, CONTACT_ATTEMPT_OUTCOME_LABEL),
+        }
+      : null,
+    lastProposal: summary.latestProposalVersion
+      ? {
+          version: summary.latestProposalVersion,
+          isDraft: false,
+          sentAt: isoDaysAgo(summary.daysInStatus),
+        }
+      : null,
   }
 }
 
@@ -603,6 +619,10 @@ function toHotelApi(detail: ProspectDetail): HotelApi {
     generalPhone: detail.hotel.generalPhone || null,
     timeZone: detail.hotel.timeZone,
     geofenceRadiusM: detail.hotel.geofenceMeters || null,
+    address: detail.hotel.address || null,
+    placeId: null,
+    latitude: detail.hotel.location?.lat ?? null,
+    longitude: detail.hotel.location?.lng ?? null,
     zone: zoneRef(detail.hotel.zoneId),
     isClient: detail.hotel.activatedAsClientAt !== null,
     activatedAt: detail.hotel.activatedAsClientAt,
@@ -619,6 +639,10 @@ function registeredToHotelApi(hotel: RegisteredHotel): HotelApi {
     generalPhone: hotel.generalPhone || null,
     timeZone: hotel.timeZone,
     geofenceRadiusM: hotel.geofenceMeters || null,
+    address: hotel.address || null,
+    placeId: null,
+    latitude: hotel.location?.lat ?? null,
+    longitude: hotel.location?.lng ?? null,
     zone: zoneRef(hotel.zoneId),
     isClient: false,
     activatedAt: null,
@@ -797,9 +821,12 @@ interface CreateHotelBody {
   timeZone?: string
   generalPhone?: string
   geofenceRadiusM?: number
+  address?: string
+  latitude?: number
+  longitude?: number
 }
 
-/** `POST /hotels`: alta del edificio, como en el contrato real (sin pin ni dirección). */
+/** `POST /hotels`: alta del edificio, con dirección y pin como el contrato real. */
 function createHotel(body: unknown): HotelApi {
   const payload = (body ?? {}) as CreateHotelBody
   const zone = ZONES.find((item) => item.id === payload.zoneId)
@@ -814,9 +841,12 @@ function createHotel(body: unknown): HotelApi {
     zoneId: zone.id,
     zone: zone.label,
     timeZone: payload.timeZone,
-    address: '',
+    address: payload.address ?? '',
     generalPhone: payload.generalPhone ?? '',
-    location: null,
+    location:
+      payload.latitude !== undefined && payload.longitude !== undefined
+        ? { lat: payload.latitude, lng: payload.longitude }
+        : null,
     geofenceMeters: payload.geofenceRadiusM ?? 0,
   }
   hotelsWithoutCycle.push(hotel)
@@ -842,6 +872,11 @@ function patchHotel(hotelId: string, body: unknown): HotelApi {
         timeZone: payload.timeZone ?? detail.hotel.timeZone,
         generalPhone: payload.generalPhone ?? detail.hotel.generalPhone,
         geofenceMeters: payload.geofenceRadiusM ?? detail.hotel.geofenceMeters,
+        address: payload.address ?? detail.hotel.address,
+        location:
+          payload.latitude !== undefined && payload.longitude !== undefined
+            ? { lat: payload.latitude, lng: payload.longitude }
+            : detail.hotel.location,
       },
     }
     details.set(prospectId, updated)
@@ -1078,6 +1113,25 @@ const routes: readonly MockRoute[] = [
     },
   },
   {
+    method: 'PATCH',
+    path: '/prospects/:prospectId',
+    resolve: ({ params, body }): ApiEnvelope<ProspectApi> => {
+      const prospectId = requireParam(params, 'prospectId')
+      const payload = (body ?? {}) as { ownerUserId?: string; needDescription?: string | null }
+      const detail = readDetail(prospectId)
+      details.set(prospectId, {
+        ...detail,
+        needDescription:
+          payload.needDescription !== undefined
+            ? (payload.needDescription ?? '')
+            : detail.needDescription,
+      })
+      const summary = board.find((item) => item.id === prospectId)
+      if (!summary) throw new Error(`No existe el prospecto ${prospectId}`)
+      return { data: toProspectApi(summary) }
+    },
+  },
+  {
     method: 'GET',
     path: '/prospects/:prospectId/transitions',
     resolve: ({ params }): ApiEnvelope<TransitionOptionApi[]> => ({
@@ -1170,15 +1224,24 @@ const routes: readonly MockRoute[] = [
   {
     method: 'GET',
     path: '/catalogs/zones',
-    resolve: (): Zone[] => ZONES,
+    resolve: (): ApiEnvelope<CatalogItemApi[]> => ({
+      data: ZONES.map((zone) => ({ id: zone.id, code: zone.id.toUpperCase(), name: zone.label })),
+    }),
   },
+  /** El catálogo real filtra por semáforo y devuelve TODOS sus motivos. */
   {
     method: 'GET',
-    path: '/catalogs/status-change-reasons',
-    resolve: ({ search }): StatusChangeReason[] => {
-      const toStatus = search.get('toStatus') as OnboardingStatus | null
-      return toStatus ? (REASONS_BY_STATUS[toStatus] ?? []) : []
-    },
+    path: '/catalogs/reasons',
+    resolve: (): ApiEnvelope<ReasonItemApi[]> => ({
+      data: Object.values(REASONS_BY_STATUS)
+        .flat()
+        .map((reason) => ({
+          id: reason.id,
+          code: reason.id,
+          name: reason.label,
+          statusLight: 'ONBOARDING',
+        })),
+    }),
   },
 ]
 

@@ -27,6 +27,7 @@ import { baseApi } from '@/app/baseApi'
 import type { OnboardingStatus } from '@/shared/constants/onboardingStatus'
 import type {
   ApiEnvelope,
+  CatalogItemApi,
   ContactAttemptApi,
   HistoryEntryApi,
   HotelApi,
@@ -34,6 +35,7 @@ import type {
   PaginatedEnvelope,
   ProspectApi,
   ProspectBoardMeta,
+  ReasonItemApi,
   TransitionOptionApi,
   TransitionResultApi,
 } from '@/shared/types/apiContract.types'
@@ -134,9 +136,10 @@ export const onboardingApi = baseApi.injectEndpoints({
       providesTags: (_result, _error, prospectId) => [{ type: 'Prospect', id: prospectId }],
     }),
 
-    /** ⚠ Hueco del contrato: `/catalogs/zones` no existe en `apps/api` todavía. */
     getZones: build.query<Zone[], void>({
       query: () => '/catalogs/zones',
+      transformResponse: (raw: ApiEnvelope<CatalogItemApi[]>) =>
+        raw.data.map((zone) => ({ id: zone.id, label: zone.name })),
       providesTags: [{ type: 'Catalog', id: 'ZONE' }],
     }),
 
@@ -144,9 +147,6 @@ export const onboardingApi = baseApi.injectEndpoints({
      * Alta del prospecto contra el contrato real: TRES recursos en secuencia
      * — `POST /hotels` (si el hotel es nuevo), `POST /hotels/:id/contacts` y
      * `POST /prospects`. El semáforo nace en GRAY y lo fija el backend.
-     *
-     * ⚠ `address` y `location` del formulario NO viajan: `commercial.hotel`
-     * no los expone. Se pierden hasta que la API los agregue.
      */
     createProspect: build.mutation<ProspectDetail, CreateProspectRequest>({
       queryFn: async (request, _api, _extra, fetchWithBQ) => {
@@ -164,6 +164,13 @@ export const onboardingApi = baseApi.injectEndpoints({
               ...(request.hotel.generalPhone ? { generalPhone: request.hotel.generalPhone } : {}),
               ...(request.hotel.geofenceMeters
                 ? { geofenceRadiusM: request.hotel.geofenceMeters }
+                : {}),
+              ...(request.hotel.address ? { address: request.hotel.address } : {}),
+              ...(request.hotel.location
+                ? {
+                    latitude: request.hotel.location.lat,
+                    longitude: request.hotel.location.lng,
+                  }
                 : {}),
             },
           })
@@ -255,10 +262,9 @@ export const onboardingApi = baseApi.injectEndpoints({
     }),
 
     /**
-     * Edición contra el contrato real: solo el HOTEL es editable
-     * (`PATCH /hotels/:id`). No existe `PATCH /prospects`, así que
-     * `ownerUserId` y `needDescription` no se pueden cambiar — hueco del
-     * contrato. El contacto se edita en su propio diálogo, no aquí.
+     * Edición contra el contrato real: el hotel por `PATCH /hotels/:id` y el
+     * dueño + la necesidad por `PATCH /prospects/:id`. El contacto se edita en
+     * su propio diálogo, no aquí.
      */
     updateProspect: build.mutation<ProspectDetail, UpdateProspectRequest>({
       queryFn: async (request, _api, _extra, fetchWithBQ) => {
@@ -279,9 +285,26 @@ export const onboardingApi = baseApi.injectEndpoints({
             ...(request.hotel.geofenceMeters
               ? { geofenceRadiusM: request.hotel.geofenceMeters }
               : {}),
+            ...(request.hotel.address ? { address: request.hotel.address } : {}),
+            ...(request.hotel.location
+              ? {
+                  latitude: request.hotel.location.lat,
+                  longitude: request.hotel.location.lng,
+                }
+              : {}),
           },
         })
         if (patchRes.error) return { error: patchRes.error as never }
+
+        const prospectPatch = await bq({
+          url: `/prospects/${request.prospectId}`,
+          method: 'PATCH',
+          body: {
+            ownerUserId: request.ownerUserId,
+            ...(request.needDescription ? { needDescription: request.needDescription } : {}),
+          },
+        })
+        if (prospectPatch.error) return { error: prospectPatch.error as never }
 
         const detail = await fetchProspectDetail(bq, request.prospectId)
         return 'error' in detail ? { error: detail.error as never } : { data: detail.data }
@@ -293,9 +316,15 @@ export const onboardingApi = baseApi.injectEndpoints({
       ],
     }),
 
-    /** ⚠ Hueco del contrato: no hay endpoint que liste los motivos del catálogo. */
+    /**
+     * El catálogo real filtra por SEMÁFORO, no por estado destino: llegan
+     * todos los motivos del Onboarding y el `id` de la vista es el CODE, que
+     * es lo que `POST .../transitions` espera como `reasonCode`.
+     */
     getStatusChangeReasons: build.query<StatusChangeReason[], OnboardingStatus>({
-      query: (toStatus) => ({ url: '/catalogs/status-change-reasons', params: { toStatus } }),
+      query: () => ({ url: '/catalogs/reasons', params: { statusLight: 'ONBOARDING' } }),
+      transformResponse: (raw: ApiEnvelope<ReasonItemApi[]>) =>
+        raw.data.map((reason) => ({ id: reason.code, label: reason.name })),
       providesTags: [{ type: 'Catalog', id: 'STATUS_CHANGE_REASON' }],
     }),
 

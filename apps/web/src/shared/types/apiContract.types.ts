@@ -68,6 +68,10 @@ export interface HotelApi {
   generalPhone: string | null
   timeZone: string
   geofenceRadiusM: number | null
+  address: string | null
+  placeId: string | null
+  latitude: number | null
+  longitude: number | null
   zone: ZoneRefApi
   isClient: boolean
   activatedAt: string | null
@@ -88,6 +92,35 @@ export interface HotelContactApi {
   attemptCount: number
   canDelete: boolean
   createdAt: string
+}
+
+// --- catalogs --------------------------------------------------------------
+
+export interface CatalogItemApi {
+  id: string
+  code: string
+  name: string
+}
+
+export interface ReasonItemApi {
+  id: string
+  code: string
+  name: string
+  statusLight: string
+}
+
+// --- identity/users (GET /me) ----------------------------------------------
+
+export interface MeApi {
+  id: string
+  email: string
+  fullName: string
+  role: { code: string; name: string; department: string | null }
+  hotel: { id: string; name: string } | null
+  department: { id: string; code: string; name: string } | null
+  zones: ZoneRefApi[]
+  /** Permisos aplanados `modulo.accion`: el sidebar decide qué pinta sin adivinar. */
+  permissions: string[]
 }
 
 // --- commercial/onboarding -------------------------------------------------
@@ -111,6 +144,9 @@ export interface ProspectApi {
   closedAt: string | null
   attemptCount: number
   isOpen: boolean
+  /** Lo que la tarjeta del tablero muestra sin N+1 llamadas. */
+  lastAttempt: { occurredAt: string; attemptType: string; outcome: string } | null
+  lastProposal: { version: number; isDraft: boolean; sentAt: string | null } | null
 }
 
 /** `meta` extra del tablero: total por estado, con 0 cuando no hay. */

@@ -53,13 +53,17 @@ export function adaptProspectSummary(prospect: ProspectApi): ProspectSummary {
     zone: prospect.hotel.zone.name,
     status: prospect.state.code as OnboardingStatus,
     daysInStatus: daysSince(prospect.stateSince),
-    /**
-     * ⚠ Hueco del contrato: `GET /prospects` no trae el último intento ni la
-     * versión de propuesta que la tarjeta del diseño muestra. La tarjeta los
-     * pinta vacíos hasta que la API los agregue.
-     */
-    lastAttempt: null,
-    latestProposalVersion: null,
+    lastAttempt: prospect.lastAttempt
+      ? {
+          channel:
+            CONTACT_ATTEMPT_TYPE_LABEL[prospect.lastAttempt.attemptType as ContactAttemptType] ??
+            prospect.lastAttempt.attemptType,
+          outcome:
+            CONTACT_ATTEMPT_OUTCOME_LABEL[prospect.lastAttempt.outcome as ContactAttemptOutcome] ??
+            prospect.lastAttempt.outcome,
+        }
+      : null,
+    latestProposalVersion: prospect.lastProposal?.version ?? null,
     owner: {
       id: prospect.owner.id,
       name: prospect.owner.fullName,
@@ -117,6 +121,12 @@ export function adaptTransitions(options: TransitionOptionApi[]): AllowedTransit
   }
 }
 
+function locationOf(hotel: HotelApi): { lat: number; lng: number } | null {
+  return hotel.latitude !== null && hotel.longitude !== null
+    ? { lat: hotel.latitude, lng: hotel.longitude }
+    : null
+}
+
 export function adaptRegisteredHotel(hotel: HotelApi): RegisteredHotel {
   return {
     id: hotel.id,
@@ -126,9 +136,8 @@ export function adaptRegisteredHotel(hotel: HotelApi): RegisteredHotel {
     timeZone: hotel.timeZone,
     generalPhone: hotel.generalPhone ?? '',
     geofenceMeters: hotel.geofenceRadiusM ?? 0,
-    /** ⚠ Hueco del contrato: `commercial.hotel` no expone dirección ni pin. */
-    address: '',
-    location: null,
+    address: hotel.address ?? '',
+    location: locationOf(hotel),
   }
 }
 
@@ -151,13 +160,13 @@ export function adaptProspectDetail(
       shortName: toShortName(prospect.owner.fullName),
     },
     hotel: {
-      address: '',
+      address: hotel.address ?? '',
       generalPhone: hotel.generalPhone ?? '',
       zoneId: hotel.zone.id,
       zone: hotel.zone.name,
       timeZone: hotel.timeZone,
       geofenceMeters: hotel.geofenceRadiusM ?? 0,
-      location: null,
+      location: locationOf(hotel),
       activatedAsClientAt: hotel.activatedAt,
     },
     needDescription: prospect.needDescription ?? '',

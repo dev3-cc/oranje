@@ -3,7 +3,7 @@ import { sessionCleared, sessionEstablished } from './sessionSlice'
 
 import { roleLabelOf } from '@/shared/constants/roles'
 import { registerMockRoutes } from '@/shared/lib/mockBaseQuery'
-import type { ApiEnvelope, SessionApi } from '@/shared/types/apiContract.types'
+import type { ApiEnvelope, MeApi, SessionApi } from '@/shared/types/apiContract.types'
 import type { SessionUser } from '@/shared/types/session.types'
 
 /**
@@ -79,16 +79,25 @@ registerMockRoutes([
       return null
     },
   },
-  /**
-   * ⚠ Hueco del contrato: `GET /me` no existe en la API — el usuario de la
-   * sesión sale de `POST /auth/session`. Se conserva mientras el shell siga
-   * leyendo `useGetSessionQuery`; al conectar la API real, el shell pasa a
-   * leer `selectSessionUser` y este endpoint se borra.
-   */
   {
     method: 'GET',
     path: '/me',
-    resolve: (): SessionUser => adaptSessionUser(MOCK_SESSION),
+    resolve: (): ApiEnvelope<MeApi> => ({
+      data: {
+        id: MOCK_SESSION.user.id,
+        email: MOCK_SESSION.user.email,
+        fullName: MOCK_SESSION.user.fullName,
+        role: {
+          code: MOCK_SESSION.user.roleCode,
+          name: 'Business Developer',
+          department: 'Ventas',
+        },
+        hotel: null,
+        department: null,
+        zones: [],
+        permissions: ['pipeline.read', 'pipeline.create_prospect', 'proposals.read'],
+      },
+    }),
   },
 ])
 
@@ -107,8 +116,16 @@ function captureToken(raw: ApiEnvelope<SessionApi>): SessionUser {
 
 export const sessionApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
+    /** El `/me` real: rol con su nombre del catálogo, no del mapa de etiquetas. */
     getSession: build.query<SessionUser, void>({
       query: () => '/me',
+      transformResponse: (raw: ApiEnvelope<MeApi>): SessionUser => ({
+        id: raw.data.id,
+        name: raw.data.fullName,
+        shortName: toShortName(raw.data.fullName),
+        roleCode: roleLabelOf(raw.data.role.code).short,
+        roleTitle: raw.data.role.name,
+      }),
     }),
 
     /**
