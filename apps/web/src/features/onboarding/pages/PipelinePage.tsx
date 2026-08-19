@@ -7,6 +7,7 @@ import { PipelineColumn } from '../components/PipelineColumn'
 import { ProspectFormDialog } from '../components/ProspectFormDialog'
 import { usePipelineFilters } from '../hooks/usePipelineFilters'
 
+import { useGetSessionQuery } from '@/app/sessionApi'
 import { Button } from '@/shared/components/Button'
 import { PIPELINE_COLUMNS } from '@/shared/constants/onboardingStatus'
 
@@ -18,6 +19,7 @@ export function PipelinePage(): ReactNode {
   const navigate = useNavigate()
   const [isFormOpen, setIsFormOpen] = useState(false)
   const { filters, isStaleOnly, toggleStaleOnly } = usePipelineFilters()
+  const { data: session } = useGetSessionQuery()
   const { data: board, isLoading, isError } = useGetPipelineBoardQuery(filters)
 
   return (
@@ -55,7 +57,7 @@ export function PipelinePage(): ReactNode {
           así que conectarlos es solo ponerles el picker encima.
         */}
         <span className={FILTER_CHIP_CLASS}>Zona: {filters.zone ?? 'todas'}</span>
-        <span className={FILTER_CHIP_CLASS}>Dueño: Ana Ruiz</span>
+        <span className={FILTER_CHIP_CLASS}>Dueño: {session?.name ?? 'yo'}</span>
         <button
           type="button"
           onClick={toggleStaleOnly}

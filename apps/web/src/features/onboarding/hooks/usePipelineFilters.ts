@@ -8,15 +8,14 @@ const STALE_THRESHOLD_DAYS = 7
 /**
  * Estado de los filtros del tablero.
  *
- * Por defecto: todas las zonas, los prospectos del usuario en sesión y sin
- * filtro de antigüedad — que es exactamente lo que muestra el diseño.
- *
- * ⚠ El dueño se fija a un id de prueba. Sale de la sesión en cuanto exista el
- * endpoint de identidad; hoy Firebase Auth solo da el token.
+ * Por defecto: todas las zonas, sin dueño y sin filtro de antigüedad. El
+ * dueño NO viaja a propósito: la API ya acota por permiso — un BD sin
+ * `pipeline:read_all` solo ve lo suyo, y mandar `ownerUserId` es redundante
+ * (y con el id de fixture de antes, un 400 directo: no era UUID).
  */
 const DEFAULT_FILTERS: PipelineFilters = {
   zone: null,
-  ownerId: 'usr-ana-ruiz',
+  ownerId: null,
   staleDays: null,
 }
 
