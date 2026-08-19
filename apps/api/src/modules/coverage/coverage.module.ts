@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common'
 
+import { BlacklistController } from './blacklist/blacklist.controller.js'
+import { BlacklistRepository } from './blacklist/blacklist.repository.js'
+import { BlacklistService } from './blacklist/blacklist.service.js'
 import { AssignmentsController } from './assignments/assignments.controller.js'
 import { AssignmentsRepository } from './assignments/assignments.repository.js'
 import { AssignmentsService } from './assignments/assignments.service.js'
@@ -8,13 +11,15 @@ import { ParticipationRepository } from './participation/participation.repositor
 import { ParticipationService } from './participation/participation.service.js'
 
 @Module({
-  controllers: [ParticipationController, AssignmentsController],
+  controllers: [ParticipationController, AssignmentsController, BlacklistController],
   providers: [
     ParticipationService,
     ParticipationRepository,
     AssignmentsService,
     AssignmentsRepository,
+    BlacklistService,
+    BlacklistRepository,
   ],
-  exports: [ParticipationService, AssignmentsService],
+  exports: [ParticipationService, AssignmentsService, BlacklistService],
 })
 export class CoverageModule {}
