@@ -51,6 +51,7 @@ const GG = 'ROL-H-03'
 const RECRUITER = 'ROL-R-01'
 const GROUP_LEAD = 'ROL-R-02'
 const RECRUITMENT_MANAGER = 'ROL-R-03'
+const ADMIN = 'ROL-ADM-01'
 const ACCOUNTANT = 'ROL-CO-01'
 const ACCOUNTING_MANAGER = 'ROL-CO-02'
 
@@ -880,6 +881,20 @@ const RECRUITMENT: Permission[] = [
 // Contadora valida, el Manager de Contabilidad autoriza —, y coinciden con las
 // dos firmas que ck_consolidation_signatures ya exige en la base.
 // ---------------------------------------------------------------------------
+// El levantamiento del veto no esta en la matriz de Reclutamiento: el propio
+// encabezado explica que «Remover de Blacklist» quedo fuera por ser del
+// Administrador, que no es rol de ese departamento. La fila se deriva de
+// `Core/Modulos/Blacklist` —«solo por un perfil de Administrador», 2026-08-13— y
+// coincide con la unica transicion BLACK -> WHITE sembrada, autorizada a ROL-ADM-01.
+const ADMINISTRATION: Permission[] = [
+  {
+    module: 'blacklist',
+    action: 'lift',
+    label: 'Remover de Blacklist',
+    roles: [ADMIN],
+  },
+]
+
 const ACCOUNTING: Permission[] = [
   {
     module: 'payroll',
@@ -919,7 +934,13 @@ const ACCOUNTING: Permission[] = [
   },
 ]
 
-export const PERMISSIONS: Permission[] = [...SALES, ...HOTEL, ...RECRUITMENT, ...ACCOUNTING]
+export const PERMISSIONS: Permission[] = [
+  ...SALES,
+  ...HOTEL,
+  ...RECRUITMENT,
+  ...ACCOUNTING,
+  ...ADMINISTRATION,
+]
 
 /**
  * Aplana a filas de `identity.role_permission` y quita duplicados.
