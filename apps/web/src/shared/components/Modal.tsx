@@ -1,13 +1,20 @@
-import { cn } from '@oranje/ui'
-import { useEffect, useRef, type ReactNode } from 'react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  cn,
+} from '@oranje/ui'
+import type { ReactNode } from 'react'
 
 /**
- * Modal centrado con backdrop. No usa `<dialog>` nativo: su `::backdrop` no
- * acepta los tokens y el comportamiento de cierre varía entre navegadores.
- *
- * Se encarga de lo que un modal tiene que hacer para no ser una trampa:
- * cerrar con Escape, cerrar al hacer clic fuera, bloquear el scroll del fondo
- * y llevarse el foco al abrir.
+ * Modal de la app, implementado SOBRE el `Dialog` de shadcn/Radix (D-16). La
+ * API (`isOpen`/`onClose`/`title`/`footer`) no cambia: ningún consumidor se
+ * entera. Radix se encarga de lo que el modal hecho a mano resolvía por su
+ * cuenta —Escape, clic fuera, bloqueo de scroll, foco atrapado— y de lo que
+ * no: devolver el foco al cerrar.
  */
 export interface ModalProps {
   isOpen: boolean
@@ -28,61 +35,31 @@ export function Modal({
   footer,
   className,
 }: ModalProps): ReactNode {
-  const panelRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!isOpen) return undefined
-
-    function handleKeyDown(event: KeyboardEvent): void {
-      if (event.key === 'Escape') onClose()
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    panelRef.current?.focus()
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      document.body.style.overflow = previousOverflow
-    }
-  }, [isOpen, onClose])
-
-  if (!isOpen) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-      {/* Backdrop tintado con --ink, no negro puro: coherente con las sombras */}
-      <button
-        type="button"
-        aria-label="Cerrar"
-        onClick={onClose}
-        className="absolute inset-0 cursor-default bg-ink/45"
-      />
-
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-title"
-        tabIndex={-1}
-        className={cn(
-          'relative z-10 flex max-h-full w-full max-w-2xl flex-col gap-5 overflow-y-auto',
-          'rounded-lg bg-surface p-7 shadow-lg outline-none',
-          className,
-        )}
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+    >
+      <DialogContent
+        className={cn('max-h-[calc(100vh-3rem)] gap-5 overflow-y-auto', className)}
+        /* Sin descripción, Radix avisa en consola; se apaga el aria explícitamente. */
+        {...(description === undefined ? { 'aria-describedby': undefined } : {})}
       >
-        <header className="flex flex-col gap-2">
-          <h2 id="modal-title" className="text-xl font-bold text-ink">
-            {title}
-          </h2>
-          {description && <p className="text-sm leading-relaxed text-ink-3">{description}</p>}
-        </header>
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold text-ink">{title}</DialogTitle>
+          {description && (
+            <DialogDescription className="text-sm leading-relaxed text-ink-3">
+              {description}
+            </DialogDescription>
+          )}
+        </DialogHeader>
 
         {children}
 
-        {footer && <footer className="flex items-center justify-end gap-3">{footer}</footer>}
-      </div>
-    </div>
+        {footer && <DialogFooter className="items-center gap-3">{footer}</DialogFooter>}
+      </DialogContent>
+    </Dialog>
   )
 }

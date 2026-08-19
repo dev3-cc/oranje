@@ -1,19 +1,15 @@
-import { cn } from '@oranje/ui'
+import { buttonVariants, cn } from '@oranje/ui'
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 
 /**
- * Botón base. Sube a `shared/` porque lo usan Pipeline, el detalle y el modal
- * (§4: lo que necesitan dos features no vive en una de ellas).
+ * Botón de la app, implementado SOBRE el `button` de shadcn (D-16): las
+ * variantes Oranje se mapean a las suyas y las clases viven en la primitiva,
+ * no aquí. La API (`variant` primary/secondary/yellow) no cambia: ningún
+ * consumidor se entera.
  *
- * ⚠ CONFLICTO PENDIENTE DE RESOLVER — texto blanco sobre naranja.
- *
- * `variant="primary"` usa blanco sobre `--o-500` porque así está en el diseño.
- * Pero `packages/ui/tokens.ts` mide ese par en 2.5:1 y deja escrita la regla de
- * NUNCA usar blanco sobre naranja: reprueba WCAG AA, que pide 4.5:1. Con
- * `--ink` daría 7.4:1.
- *
- * Se implementó como está en la captura para no alterar el diseño por cuenta
- * propia. Cambiar `text-white` por `text-ink` aquí lo corrige en toda la app.
+ * Al pasar a shadcn se SALDA el conflicto que este archivo documentaba: el
+ * primario ahora escribe con `--ink` sobre naranja (7.4:1), como manda la
+ * regla 1 de contraste — el blanco de la maqueta daba 2.5:1 y reprobaba AA.
  */
 export type ButtonVariant = 'primary' | 'secondary' | 'yellow'
 
@@ -23,15 +19,14 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
-  primary: 'bg-o-500 text-white hover:bg-o-700 focus-visible:outline-o-700',
-  secondary:
-    'border border-line bg-surface text-ink hover:bg-surface-2 focus-visible:outline-o-500',
-  /**
-   * Texto en `--ink`, NUNCA blanco: `tokens.ts` mide amarillo con blanco en
-   * 1.4:1, que es ilegible. Con `--ink` sube a 13:1. Es la misma regla que ya
-   * aplica `statusLightForeground` al chip amarillo del semáforo.
-   */
-  yellow: 'bg-yellow text-ink hover:brightness-95 focus-visible:outline-ink-3',
+  /** `default` de shadcn = bg-primary + text-primary-foreground (naranja + ink). */
+  primary: buttonVariants({ variant: 'default' }),
+  secondary: buttonVariants({ variant: 'outline' }),
+  /** Amarillo con `--ink`: con blanco da 1.4:1, ilegible (regla del chip amarillo). */
+  yellow: cn(
+    buttonVariants({ variant: 'default' }),
+    'bg-yellow text-ink hover:bg-yellow hover:brightness-95',
+  ),
 }
 
 /**
@@ -39,13 +34,7 @@ const VARIANT_CLASS: Record<ButtonVariant, string> = {
  * es un enlace, y como enlace conserva abrir en pestaña nueva y clic central.
  */
 export function buttonClass(variant: ButtonVariant = 'secondary', className?: string): string {
-  return cn(
-    'inline-flex items-center justify-center gap-2 rounded-md px-5 py-2.5 text-sm font-semibold',
-    'transition-colors focus-visible:outline-2 focus-visible:outline-offset-2',
-    'disabled:cursor-not-allowed disabled:opacity-50',
-    VARIANT_CLASS[variant],
-    className,
-  )
+  return cn(VARIANT_CLASS[variant], 'font-semibold', className)
 }
 
 export function Button({

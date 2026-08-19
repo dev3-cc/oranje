@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { cn } from '@oranje/ui'
+import { Input, cn } from '@oranje/ui'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
@@ -532,13 +532,12 @@ export function ProspectFormDialog({
                         column="name"
                         error={formState.errors.hotelName?.message}
                       >
-                        <input
+                        <Input
                           id="hotelName"
                           type="text"
                           placeholder="Hotel Puerto Real"
                           disabled={isExistingHotel}
                           {...register('hotelName')}
-                          className={CONTROL_CLASS}
                         />
                       </Field>
 
@@ -647,32 +646,29 @@ export function ProspectFormDialog({
                           column="full_name"
                           error={formState.errors.contactFullName?.message}
                         >
-                          <input
+                          <Input
                             id="contactFullName"
                             type="text"
                             placeholder="Marta Solís"
                             {...register('contactFullName')}
-                            className={CONTROL_CLASS}
                           />
                         </Field>
 
                         <Field label="Puesto" htmlFor="contactJobTitle" column="job_title">
-                          <input
+                          <Input
                             id="contactJobTitle"
                             type="text"
                             placeholder="Gerente de Compras"
                             {...register('contactJobTitle')}
-                            className={CONTROL_CLASS}
                           />
                         </Field>
 
                         <Field label="Teléfono" htmlFor="contactPhone" column="phone">
-                          <input
+                          <Input
                             id="contactPhone"
                             type="tel"
                             placeholder="+52 998 111 2233"
                             {...register('contactPhone')}
-                            className={CONTROL_CLASS}
                           />
                         </Field>
 
@@ -682,12 +678,11 @@ export function ProspectFormDialog({
                           column="email"
                           error={formState.errors.contactEmail?.message}
                         >
-                          <input
+                          <Input
                             id="contactEmail"
                             type="email"
                             placeholder="marta.solis@puertoreal.mx"
                             {...register('contactEmail')}
-                            className={CONTROL_CLASS}
                           />
                         </Field>
                       </div>
@@ -741,12 +736,11 @@ export function ProspectFormDialog({
                             htmlFor="needDescription"
                             column="need_description"
                           >
-                            <input
+                            <Input
                               id="needDescription"
                               type="text"
                               placeholder="2 camaristas y 1 houseman"
                               {...register('needDescription')}
-                              className={CONTROL_CLASS}
                             />
                           </Field>
                         </div>

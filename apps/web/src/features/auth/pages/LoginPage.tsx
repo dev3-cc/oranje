@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Input } from '@oranje/ui'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
@@ -100,9 +101,6 @@ function loginErrorMessage(error: unknown): string {
   }
   return 'No se pudo iniciar sesión. Revisa tu correo y contraseña.'
 }
-
-const INPUT_CLASS =
-  'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none'
 
 type AuthMode = 'login' | 'reset'
 
@@ -208,12 +206,12 @@ export function LoginPage(): ReactNode {
                     <label htmlFor="email" className="text-sm font-medium text-ink-2">
                       Correo
                     </label>
-                    <input
+                    <Input
                       id="email"
                       type="email"
                       autoComplete="email"
                       placeholder="tu@oranje.mx"
-                      className={INPUT_CLASS}
+                      className="h-auto px-4 py-3"
                       {...register('email')}
                     />
                     {errors.email && <p className="text-sm text-red">{errors.email.message}</p>}
@@ -237,12 +235,12 @@ export function LoginPage(): ReactNode {
                       </button>
                     </div>
                     <div className="relative">
-                      <input
+                      <Input
                         id="password"
                         type={isPasswordVisible ? 'text' : 'password'}
                         autoComplete="current-password"
                         placeholder="••••••••"
-                        className={`${INPUT_CLASS} pr-12`}
+                        className="h-auto px-4 py-3 pr-12"
                         {...register('password')}
                       />
                       <button
@@ -316,12 +314,12 @@ export function LoginPage(): ReactNode {
                       <label htmlFor="email" className="text-sm font-medium text-ink-2">
                         Correo
                       </label>
-                      <input
+                      <Input
                         id="email"
                         type="email"
                         autoComplete="email"
                         placeholder="tu@oranje.mx"
-                        className={INPUT_CLASS}
+                        className="h-auto px-4 py-3"
                         {...register('email')}
                       />
                     </div>
