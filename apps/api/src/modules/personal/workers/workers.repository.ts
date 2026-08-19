@@ -97,9 +97,7 @@ export class WorkersRepository {
     })
   }
 
-  async allowedFrom(
-    stateId: string,
-  ): Promise<
+  async allowedFrom(stateId: string): Promise<
     Array<{
       toStateId: string | null
       code: string | null
