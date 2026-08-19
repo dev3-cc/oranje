@@ -8,6 +8,8 @@ export { cn } from './lib/utils'
 export { KpiCard, type KpiCardProps } from './components/KpiCard'
 export { StatusLightBadge, type StatusLightBadgeProps } from './components/StatusLightBadge'
 export { MaterialIcon } from './components/material-icon'
+export { DataTable } from './components/DataTable'
+export type { ColumnDef } from '@tanstack/react-table'
 
 /**
  * Primitivas copiadas de shadcn/ui (D-16): tematizadas vía `shadcn-vars.css`
@@ -15,6 +17,16 @@ export { MaterialIcon } from './components/material-icon'
  * porque la superficie pública del paquete es una sola (§6).
  */
 export { Skeleton } from './components/ui/skeleton'
+export {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from './components/ui/table'
 export { Button as UiButton, buttonVariants } from './components/ui/button'
 export { Badge, badgeVariants } from './components/ui/badge'
 export { Input } from './components/ui/input'

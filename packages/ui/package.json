@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.0",
-    "@tanstack/react-table": "^9.1.2",
+    "@tanstack/react-table": "^8.21.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "material-icons": "^1.13.14",

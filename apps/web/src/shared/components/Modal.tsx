@@ -35,6 +35,18 @@ export function Modal({
   footer,
   className,
 }: ModalProps): ReactNode {
+  /**
+   * El DialogContent de shadcn se auto-limita a `sm:max-w-lg` (512px). Los
+   * modales de la app declaran su ancho con `max-w-*` SIN breakpoint, que en
+   * ≥sm perdería contra ese tope: aquí se espeja cada `max-w-*` del caller a
+   * su variante `sm:` para que el ancho pedido gane en todos los tamaños.
+   */
+  const widthOverrides = (className ?? '')
+    .split(/\s+/)
+    .filter((item) => item.startsWith('max-w-'))
+    .map((item) => `sm:${item}`)
+    .join(' ')
+
   return (
     <Dialog
       open={isOpen}
@@ -43,7 +55,12 @@ export function Modal({
       }}
     >
       <DialogContent
-        className={cn('max-h-[calc(100vh-3rem)] gap-5 overflow-y-auto', className)}
+        className={cn(
+          'max-h-[calc(100vh-3rem)] gap-5 overflow-y-auto',
+          'sm:max-w-2xl',
+          className,
+          widthOverrides,
+        )}
         /* Sin descripción, Radix avisa en consola; se apaga el aria explícitamente. */
         {...(description === undefined ? { 'aria-describedby': undefined } : {})}
       >

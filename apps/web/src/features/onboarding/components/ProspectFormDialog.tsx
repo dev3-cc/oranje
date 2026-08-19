@@ -1,8 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Input, cn } from '@oranje/ui'
+import {
+  Checkbox,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Slider,
+  cn,
+} from '@oranje/ui'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState, type ReactNode } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 
 import {
   useCreateProspectMutation,
@@ -37,9 +47,6 @@ import {
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'prospect-form'
-
-const CONTROL_CLASS =
-  'w-full rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-surface-2'
 
 /** Zonas horarias de operación. Identificadores IANA, no catálogo de negocio. */
 const TIME_ZONES = [
@@ -266,7 +273,7 @@ export function ProspectFormDialog({
     needDescription: prospect?.needDescription ?? '',
   }
 
-  const { register, handleSubmit, reset, setValue, watch, trigger, formState } =
+  const { register, handleSubmit, reset, setValue, watch, trigger, control, formState } =
     useForm<ProspectFormValues>({
       resolver: zodResolver(prospectFormSchema),
       mode: 'onChange',
@@ -502,26 +509,36 @@ export function ProspectFormDialog({
                           column="hotel_id · solo hoteles sin ciclo abierto"
                           error={formState.errors.existingHotelId?.message}
                         >
-                          <select
-                            id="existingHotelId"
-                            {...register('existingHotelId', {
-                              onChange: (event: { target: { value: string } }) => {
-                                applyRegisteredHotel(event.target.value)
-                              },
-                            })}
-                            className={CONTROL_CLASS}
-                          >
-                            <option value="">
-                              {registeredHotels.length === 0
-                                ? 'No hay hoteles libres: todos tienen ciclo abierto'
-                                : 'Elige un hotel…'}
-                            </option>
-                            {registeredHotels.map((hotel) => (
-                              <option key={hotel.id} value={hotel.id}>
-                                {hotel.name} · {hotel.zone}
-                              </option>
-                            ))}
-                          </select>
+                          <Controller
+                            control={control}
+                            name="existingHotelId"
+                            render={({ field }) => (
+                              <Select
+                                {...(field.value ? { value: field.value } : {})}
+                                onValueChange={(value) => {
+                                  field.onChange(value)
+                                  applyRegisteredHotel(value)
+                                }}
+                              >
+                                <SelectTrigger id="existingHotelId" className="w-full">
+                                  <SelectValue
+                                    placeholder={
+                                      registeredHotels.length === 0
+                                        ? 'No hay hoteles libres: todos tienen ciclo abierto'
+                                        : 'Elige un hotel…'
+                                    }
+                                  />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {registeredHotels.map((hotel) => (
+                                    <SelectItem key={hotel.id} value={hotel.id}>
+                                      {hotel.name} · {hotel.zone}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
                         </Field>
                       )}
 
@@ -549,14 +566,27 @@ export function ProspectFormDialog({
                           column="zone_id + catalogs.zone"
                           error={formState.errors.zoneId?.message}
                         >
-                          <select id="zoneId" {...register('zoneId')} className={CONTROL_CLASS}>
-                            <option value="">Selecciona una zona</option>
-                            {zones.map((zone) => (
-                              <option key={zone.id} value={zone.id}>
-                                {zone.label}
-                              </option>
-                            ))}
-                          </select>
+                          <Controller
+                            control={control}
+                            name="zoneId"
+                            render={({ field }) => (
+                              <Select
+                                {...(field.value ? { value: field.value } : {})}
+                                onValueChange={field.onChange}
+                              >
+                                <SelectTrigger id="zoneId" className="w-full">
+                                  <SelectValue placeholder="Selecciona una zona" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {zones.map((zone) => (
+                                    <SelectItem key={zone.id} value={zone.id}>
+                                      {zone.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
                         </Field>
 
                         <Field
@@ -566,13 +596,24 @@ export function ProspectFormDialog({
                           column="time_zone"
                           error={formState.errors.timeZone?.message}
                         >
-                          <select id="timeZone" {...register('timeZone')} className={CONTROL_CLASS}>
-                            {TIME_ZONES.map((zone) => (
-                              <option key={zone} value={zone}>
-                                {zone}
-                              </option>
-                            ))}
-                          </select>
+                          <Controller
+                            control={control}
+                            name="timeZone"
+                            render={({ field }) => (
+                              <Select value={field.value} onValueChange={field.onChange}>
+                                <SelectTrigger id="timeZone" className="w-full">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {TIME_ZONES.map((zone) => (
+                                    <SelectItem key={zone} value={zone}>
+                                      {zone}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
                         </Field>
                       </div>
                     </>
@@ -599,14 +640,22 @@ export function ProspectFormDialog({
                         error={formState.errors.geofenceMeters?.message}
                       >
                         <div className="flex items-center gap-4">
-                          <input
-                            id="geofenceMeters"
-                            type="range"
-                            min={GEOFENCE_MIN_M}
-                            max={GEOFENCE_MAX_M}
-                            step={GEOFENCE_STEP_M}
-                            {...register('geofenceMeters', { valueAsNumber: true })}
-                            className="h-1.5 min-w-0 flex-1 accent-o-500"
+                          <Controller
+                            control={control}
+                            name="geofenceMeters"
+                            render={({ field }) => (
+                              <Slider
+                                min={GEOFENCE_MIN_M}
+                                max={GEOFENCE_MAX_M}
+                                step={GEOFENCE_STEP_M}
+                                value={[field.value]}
+                                onValueChange={([meters]) => {
+                                  field.onChange(meters)
+                                }}
+                                aria-label="Radio de geocerca"
+                                className="min-w-0 flex-1"
+                              />
+                            )}
                           />
                           <span className="w-14 shrink-0 text-right text-sm font-semibold text-ink">
                             {values.geofenceMeters} m
@@ -688,10 +737,12 @@ export function ProspectFormDialog({
                       </div>
 
                       <label className="flex cursor-pointer items-center gap-3 rounded-md bg-o-50 px-3 py-2.5">
-                        <input
-                          type="checkbox"
-                          {...register('isPrimaryContact')}
-                          className="size-4 accent-o-500"
+                        <Controller
+                          control={control}
+                          name="isPrimaryContact"
+                          render={({ field }) => (
+                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                          )}
                         />
                         <span className="text-sm font-semibold text-ink">
                           Es el contacto principal
@@ -718,17 +769,27 @@ export function ProspectFormDialog({
                       ⚠ Un solo dueño posible: no existe endpoint de equipo
                       todavía, así que solo se ofrece quien tiene la sesión.
                     */}
-                            <select
-                              id="ownerUserId"
-                              {...register('ownerUserId')}
-                              className={CONTROL_CLASS}
-                            >
-                              {session && (
-                                <option value={session.id}>
-                                  {session.name} · {session.roleCode}
-                                </option>
+                            <Controller
+                              control={control}
+                              name="ownerUserId"
+                              render={({ field }) => (
+                                <Select
+                                  {...(field.value ? { value: field.value } : {})}
+                                  onValueChange={field.onChange}
+                                >
+                                  <SelectTrigger id="ownerUserId" className="w-full">
+                                    <SelectValue placeholder="Elige al dueño" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {session && (
+                                      <SelectItem value={session.id}>
+                                        {session.name} · {session.roleCode}
+                                      </SelectItem>
+                                    )}
+                                  </SelectContent>
+                                </Select>
                               )}
-                            </select>
+                            />
                           </Field>
 
                           <Field

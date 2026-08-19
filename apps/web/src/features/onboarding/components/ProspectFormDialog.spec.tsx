@@ -88,11 +88,12 @@ describe('ProspectFormDialog', () => {
 
     // Paso 1: el edificio, prellenado.
     expect(screen.getByLabelText('Nombre del hotel')).toHaveValue('Hotel Puerto Real')
-    expect(screen.getByLabelText('Zona horaria')).toHaveValue('America/Cancun')
+    // Radix Select no es un <select>: el valor se lee del trigger.
+    expect(screen.getByLabelText('Zona horaria')).toHaveTextContent('America/Cancun')
 
     // Paso 2: la ubicación, con el buscador y la geocerca.
     await user.click(screen.getByRole('button', { name: 'Continuar' }))
-    expect(await screen.findByLabelText('Radio de geocerca')).toHaveValue('150')
+    expect(await screen.findByRole('slider')).toHaveAttribute('aria-valuenow', '150')
 
     // Paso 3: el contacto principal, prellenado.
     await user.click(screen.getByRole('button', { name: 'Continuar' }))
@@ -115,6 +116,7 @@ describe('ProspectFormDialog', () => {
 
     // El deslizador vive en el paso 2 (Ubicación); la ficha, en los demás pasos.
     await user.click(screen.getByRole('button', { name: 'Continuar' }))
-    expect(await screen.findByLabelText('Radio de geocerca')).toHaveValue('150')
+    // Radix Slider expone el valor por aria, no por value.
+    expect(await screen.findByRole('slider')).toHaveAttribute('aria-valuenow', '150')
   })
 })
