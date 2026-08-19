@@ -87,6 +87,8 @@ export interface HotelData {
    * contrato real de `GET /hotels/:id` no trae estos campos todavía.
    */
   location: GeoPoint | null
+  /** Foto del hotel según Places; `null` en hoteles capturados sin ella. */
+  photoUrl: string | null
   /** `null` mientras el prospecto no se convierte en cliente activo. */
   activatedAsClientAt: string | null
 }
@@ -100,6 +102,8 @@ export interface Zone {
 /** El edificio, `commercial.hotel`. Un hotel puede tener varios ciclos (D-13). */
 export interface HotelPayload {
   name: string
+  /** URL de la foto según Places. Opcional: hoteles sin foto siguen valiendo. */
+  photoUrl?: string | null
   zoneId: string
   timeZone: string
   address: string

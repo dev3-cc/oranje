@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -23,6 +24,7 @@ const PROSPECT: ProspectDetail = {
     timeZone: 'America/Cancun',
     geofenceMeters: 150,
     location: { lat: 21.1619, lng: -86.8515 },
+    photoUrl: null,
     activatedAsClientAt: null,
   },
   needDescription: '2 camaristas y 1 houseman',
@@ -57,10 +59,19 @@ describe('ProspectFormDialog', () => {
     expect(screen.getByRole('button', { name: 'Hotel ya registrado' })).toBeInTheDocument()
   })
 
-  it('en alta no deja crear sin los datos obligatorios', () => {
+  /** El wizard no avanza del paso 1 con los obligatorios vacíos. */
+  it('en alta no deja avanzar sin los datos obligatorios', async () => {
+    const user = userEvent.setup()
     renderDialog()
 
-    expect(screen.getByRole('button', { name: 'Crear prospecto' })).toBeDisabled()
+    // Crear vive en el paso 3; en el 1 solo existe Continuar.
+    expect(screen.queryByRole('button', { name: 'Crear prospecto' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+
+    // Sigue en el paso 1: el campo del edificio sigue visible.
+    expect(screen.getByLabelText('Nombre del hotel')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Crear prospecto' })).not.toBeInTheDocument()
   })
 
   /** Un ciclo abierto no cambia de edificio: elegir origen no aplica al editar. */
@@ -71,21 +82,39 @@ describe('ProspectFormDialog', () => {
     expect(screen.queryByRole('button', { name: 'Hotel ya registrado' })).not.toBeInTheDocument()
   })
 
-  it('en edición llega con los datos del prospecto, incluido el contacto principal', () => {
+  it('en edición llega con los datos y el wizard recorre hasta el ciclo', async () => {
+    const user = userEvent.setup()
     renderDialog(PROSPECT)
 
+    // Paso 1: el edificio, prellenado.
     expect(screen.getByLabelText('Nombre del hotel')).toHaveValue('Hotel Puerto Real')
     expect(screen.getByLabelText('Zona horaria')).toHaveValue('America/Cancun')
-    expect(screen.getByLabelText('Nombre')).toHaveValue('Marta Solís')
+
+    // Paso 2: la ubicación, con el buscador y la geocerca.
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+    expect(await screen.findByLabelText('Radio de geocerca')).toHaveValue('150')
+
+    // Paso 3: el contacto principal, prellenado.
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+    expect(await screen.findByLabelText('Nombre')).toHaveValue('Marta Solís')
     expect(screen.getByLabelText('Puesto')).toHaveValue('Gerente de Compras')
-    expect(screen.getByLabelText('Qué necesita')).toHaveValue('2 camaristas y 1 houseman')
+
+    // Paso 4: el ciclo, con el botón de guardar al final.
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+    expect(await screen.findByLabelText('Qué necesita')).toHaveValue('2 camaristas y 1 houseman')
+    expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeInTheDocument()
+
+    // Atrás regresa sin perder lo escrito.
+    await user.click(screen.getByRole('button', { name: 'Atrás' }))
+    expect(await screen.findByLabelText('Nombre')).toHaveValue('Marta Solís')
   })
 
-  it('el radio de geocerca llega del prospecto y se lee en los dos sitios', () => {
+  it('el radio de geocerca llega del prospecto y se lee en los dos sitios', async () => {
+    const user = userEvent.setup()
     renderDialog(PROSPECT)
 
-    expect(screen.getByLabelText('Radio de geocerca')).toHaveValue('150')
-    // Junto al deslizador y en el resumen de la derecha: tienen que coincidir.
-    expect(screen.getAllByText('150 m')).toHaveLength(2)
+    // El deslizador vive en el paso 2 (Ubicación); la ficha, en los demás pasos.
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+    expect(await screen.findByLabelText('Radio de geocerca')).toHaveValue('150')
   })
 })

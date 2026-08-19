@@ -138,6 +138,7 @@ export function adaptRegisteredHotel(hotel: HotelApi): RegisteredHotel {
     geofenceMeters: hotel.geofenceRadiusM ?? 0,
     address: hotel.address ?? '',
     location: locationOf(hotel),
+    photoUrl: hotel.photoUrl,
   }
 }
 
@@ -167,6 +168,7 @@ export function adaptProspectDetail(
       timeZone: hotel.timeZone,
       geofenceMeters: hotel.geofenceRadiusM ?? 0,
       location: locationOf(hotel),
+      photoUrl: hotel.photoUrl,
       activatedAsClientAt: hotel.activatedAt,
     },
     needDescription: prospect.needDescription ?? '',

@@ -318,6 +318,7 @@ const details = new Map<string, ProspectDetail>([
         timeZone: 'America/Cancun',
         geofenceMeters: 150,
         location: { lat: 21.1619, lng: -86.8515 },
+        photoUrl: null,
         activatedAsClientAt: null,
       },
       contacts: [
@@ -504,6 +505,7 @@ function buildDetailFromSummary(summary: ProspectSummary): ProspectDetail {
       timeZone: 'America/Cancun',
       geofenceMeters: 150,
       location: ZONE_ANCHOR[zoneIdFromLabel(summary.zone)] ?? ZONE_ANCHOR.centro!,
+      photoUrl: null,
       // Solo un hotel convertido tiene fecha de alta como cliente.
       activatedAsClientAt: summary.status === 'ORANGE' ? cycleStartedAt : null,
     },
@@ -621,6 +623,7 @@ function toHotelApi(detail: ProspectDetail): HotelApi {
     geofenceRadiusM: detail.hotel.geofenceMeters || null,
     address: detail.hotel.address || null,
     placeId: null,
+    photoUrl: detail.hotel.photoUrl ?? null,
     latitude: detail.hotel.location?.lat ?? null,
     longitude: detail.hotel.location?.lng ?? null,
     zone: zoneRef(detail.hotel.zoneId),
@@ -641,6 +644,7 @@ function registeredToHotelApi(hotel: RegisteredHotel): HotelApi {
     geofenceRadiusM: hotel.geofenceMeters || null,
     address: hotel.address || null,
     placeId: null,
+    photoUrl: hotel.photoUrl ?? null,
     latitude: hotel.location?.lat ?? null,
     longitude: hotel.location?.lng ?? null,
     zone: zoneRef(hotel.zoneId),
@@ -800,6 +804,7 @@ const hotelsWithoutCycle: RegisteredHotel[] = [
     address: 'Blvd. Kukulcán km 14, Zona Hotelera, Cancún',
     generalPhone: '+52 998 222 3344',
     location: { lat: 21.0925, lng: -86.7712 },
+    photoUrl: null,
     geofenceMeters: 180,
   },
   {
@@ -811,6 +816,7 @@ const hotelsWithoutCycle: RegisteredHotel[] = [
     address: 'Av. Tulum 320, Cancún',
     generalPhone: '+52 998 555 8899',
     location: { lat: 21.1372, lng: -86.8271 },
+    photoUrl: null,
     geofenceMeters: 120,
   },
 ]
@@ -822,6 +828,7 @@ interface CreateHotelBody {
   generalPhone?: string
   geofenceRadiusM?: number
   address?: string
+  photoUrl?: string
   latitude?: number
   longitude?: number
 }
@@ -842,6 +849,7 @@ function createHotel(body: unknown): HotelApi {
     zone: zone.label,
     timeZone: payload.timeZone,
     address: payload.address ?? '',
+    photoUrl: payload.photoUrl ?? null,
     generalPhone: payload.generalPhone ?? '',
     location:
       payload.latitude !== undefined && payload.longitude !== undefined
@@ -873,6 +881,7 @@ function patchHotel(hotelId: string, body: unknown): HotelApi {
         generalPhone: payload.generalPhone ?? detail.hotel.generalPhone,
         geofenceMeters: payload.geofenceRadiusM ?? detail.hotel.geofenceMeters,
         address: payload.address ?? detail.hotel.address,
+        photoUrl: payload.photoUrl ?? detail.hotel.photoUrl,
         location:
           payload.latitude !== undefined && payload.longitude !== undefined
             ? { lat: payload.latitude, lng: payload.longitude }
@@ -990,6 +999,7 @@ function createProspect(body: unknown): ProspectApi {
       timeZone: registered.timeZone,
       geofenceMeters: registered.geofenceMeters,
       location: registered.location,
+      photoUrl: registered.photoUrl ?? null,
       activatedAsClientAt: null,
     },
     needDescription: payload.needDescription ?? '',

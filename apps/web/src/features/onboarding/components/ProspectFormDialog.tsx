@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { cn } from '@oranje/ui'
-import { useEffect, type ReactNode } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 
 import {
@@ -33,6 +34,7 @@ import {
   ONBOARDING_STATUS_TOKEN,
   type OnboardingStatus,
 } from '@/shared/constants/onboardingStatus'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'prospect-form'
 
@@ -51,8 +53,9 @@ const TIME_ZONES = [
 
 /**
  * Campo del modal: etiqueta, marca de obligatorio, control y —debajo— el nombre
- * de la columna. Ese pie no es decorativo: al capturar, dice exactamente qué se
- * está llenando de la base, que es lo que pide la maqueta.
+ * de la columna. Las anotaciones de esquema (NOT NULL, columna) solo se pintan
+ * en dev local (IS_DEV_UI): son documentación para construir contra la base,
+ * no producto.
  */
 function Field({
   label,
@@ -83,7 +86,9 @@ function Field({
             {label}
           </label>
         )}
-        {isRequired && <span className="text-xs font-semibold text-red">NOT NULL</span>}
+        {IS_DEV_UI && isRequired && (
+          <span className="text-xs font-semibold text-red">NOT NULL</span>
+        )}
         {note && <span className="text-xs text-ink-3">{note}</span>}
       </div>
 
@@ -92,14 +97,113 @@ function Field({
       {error !== undefined ? (
         <p className="text-xs text-red">{error}</p>
       ) : (
-        column && <p className="text-xs text-ink-4">{column}</p>
+        IS_DEV_UI && column && <p className="text-xs text-ink-4">{column}</p>
       )}
     </div>
   )
 }
 
-function SectionTitle({ children }: { children: ReactNode }): ReactNode {
-  return <h3 className="text-sm font-semibold text-ink">{children}</h3>
+/**
+ * Del error de la API a una frase que diga QUÉ corregir. El fallback genérico
+ * queda solo para lo que de verdad no se sabe: un «revisa los datos» ante un
+ * 409 de ciclo abierto mandaba a revisar campos que estaban bien.
+ */
+function saveErrorMessage(error: unknown): string {
+  const data = (
+    error as
+      { data?: { error?: { code?: string; message?: string }; message?: string } } | undefined
+  )?.data
+  const code = data?.error?.code
+
+  if (code === 'PROSPECT_ALREADY_OPEN') {
+    return 'Este hotel ya tiene un ciclo comercial abierto: ciérralo o elige otro hotel.'
+  }
+  if (code === 'HOTEL_NAME_TAKEN') return 'Ya existe un hotel con ese nombre.'
+  if (data?.error?.message) return data.error.message
+  if (typeof data?.message === 'string') return data.message
+  return 'No se pudo guardar. Revisa los datos e inténtalo de nuevo.'
+}
+
+/** El sufijo de esquema (`· commercial.hotel`) solo se pinta en dev local. */
+function SectionTitle({ children, schema }: { children: ReactNode; schema?: string }): ReactNode {
+  return (
+    <h3 className="text-sm font-semibold text-ink">
+      {children}
+      {IS_DEV_UI && schema && <span className="font-normal text-ink-4"> · {schema}</span>}
+    </h3>
+  )
+}
+
+type WizardStep = 1 | 2 | 3 | 4
+
+const WIZARD_STEPS: Array<{ step: WizardStep; label: string }> = [
+  { step: 1, label: 'El edificio' },
+  { step: 2, label: 'Ubicación' },
+  { step: 3, label: 'Primer contacto' },
+  { step: 4, label: 'El ciclo' },
+]
+
+/** Qué campos valida «Continuar» en cada paso. */
+const STEP_FIELDS: Record<WizardStep, Array<keyof ProspectFormValues>> = {
+  1: ['hotelSource', 'existingHotelId', 'hotelName', 'zoneId', 'timeZone'],
+  2: ['location', 'geofenceMeters'],
+  3: ['contactFullName', 'contactEmail'],
+  4: ['ownerUserId'],
+}
+
+/** Indicador del wizard. Los pasos ya recorridos son clicables para volver. */
+function StepIndicator({
+  current,
+  onStepClick,
+}: {
+  current: WizardStep
+  onStepClick: (step: WizardStep) => void
+}): ReactNode {
+  return (
+    <ol className="flex items-center gap-2">
+      {WIZARD_STEPS.map(({ step, label }, index) => {
+        const isDone = step < current
+        const isActive = step === current
+        return (
+          <li key={step} className="flex items-center gap-2">
+            {index > 0 && <span className="h-px w-6 bg-line sm:w-10" aria-hidden />}
+            <button
+              type="button"
+              disabled={!isDone}
+              onClick={() => {
+                onStepClick(step)
+              }}
+              aria-current={isActive ? 'step' : undefined}
+              className={cn(
+                'flex items-center gap-2 rounded-full py-1 pr-3 pl-1 text-sm transition-colors',
+                isDone && 'cursor-pointer hover:bg-surface-2',
+              )}
+            >
+              <span
+                className={cn(
+                  'flex size-6 items-center justify-center rounded-full text-xs font-semibold',
+                  isActive && 'bg-o-500 text-ink',
+                  isDone && 'bg-green text-white',
+                  !isActive && !isDone && 'border border-line text-ink-3',
+                )}
+              >
+                {isDone ? (
+                  <span className="material-icons-outlined text-sm leading-none" aria-hidden>
+                    check
+                  </span>
+                ) : (
+                  step
+                )}
+              </span>
+              <span className={cn(isActive ? 'font-semibold text-ink' : 'text-ink-3')}>
+                {label}
+              </span>
+            </button>
+          </li>
+        )
+      })}
+    </ol>
+  )
 }
 
 export interface ProspectFormDialogProps {
@@ -134,9 +238,9 @@ export function ProspectFormDialog({
     skip: isEditing,
   })
 
-  const [createProspect, { isLoading: isCreating, isError: hasCreateFailed }] =
+  const [createProspect, { isLoading: isCreating, isError: hasCreateFailed, error: createError }] =
     useCreateProspectMutation()
-  const [updateProspect, { isLoading: isUpdating, isError: hasUpdateFailed }] =
+  const [updateProspect, { isLoading: isUpdating, isError: hasUpdateFailed, error: updateError }] =
     useUpdateProspectMutation()
 
   const primaryContact = prospect?.contacts.find((contact) => contact.isPrimary)
@@ -162,13 +266,12 @@ export function ProspectFormDialog({
     needDescription: prospect?.needDescription ?? '',
   }
 
-  const { register, handleSubmit, reset, setValue, watch, formState } = useForm<ProspectFormValues>(
-    {
+  const { register, handleSubmit, reset, setValue, watch, trigger, formState } =
+    useForm<ProspectFormValues>({
       resolver: zodResolver(prospectFormSchema),
       mode: 'onChange',
       defaultValues: defaults,
-    },
-  )
+    })
 
   /**
    * Al abrir se parte de los valores del prospecto, o de cero si es un alta.
@@ -177,11 +280,28 @@ export function ProspectFormDialog({
    * editando y cuándo se abre.
    */
   useEffect(() => {
-    if (isOpen) reset(defaults)
+    if (isOpen) {
+      reset(defaults)
+      setPlacePhotoUrl(prospect?.hotel.photoUrl ?? null)
+      setStep(1)
+    }
   }, [isOpen, prospect, session?.id, reset])
 
   const values = watch()
   const isBusy = isCreating || isUpdating
+  /** Foto del lugar según Google, y también la ya persistida al editar. */
+  const [placePhotoUrl, setPlacePhotoUrl] = useState<string | null>(null)
+
+  /**
+   * Wizard de 3 pasos. «Continuar» valida SOLO los campos del paso en turno:
+   * así el error aparece junto a lo que se está llenando, no al final.
+   */
+  const [step, setStep] = useState<WizardStep>(1)
+
+  async function goNext(): Promise<void> {
+    const isStepValid = await trigger(STEP_FIELDS[step])
+    if (isStepValid && step < 4) setStep((step + 1) as WizardStep)
+  }
   const isExistingHotel = values.hotelSource === 'EXISTING'
 
   /**
@@ -194,6 +314,7 @@ export function ProspectFormDialog({
     if (place.phone) setValue('generalPhone', place.phone)
     setValue('location', place.location, { shouldValidate: true })
     setValue('placeLocation', place.location)
+    setPlacePhotoUrl(place.photoUrl)
   }
 
   /** Arrastrar o clicar mueve la coordenada a mano: ya no es la de Google. */
@@ -226,6 +347,7 @@ export function ProspectFormDialog({
       generalPhone: form.generalPhone,
       location: form.location,
       geofenceMeters: form.geofenceMeters,
+      photoUrl: placePhotoUrl,
     }
     const contact = {
       fullName: form.contactFullName,
@@ -279,14 +401,36 @@ export function ProspectFormDialog({
           <Button onClick={onClose} disabled={isBusy}>
             Cancelar
           </Button>
-          <Button
-            variant="primary"
-            type="submit"
-            form={FORM_ID}
-            disabled={!formState.isValid || isBusy}
-          >
-            {isBusy ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear prospecto'}
-          </Button>
+          {step > 1 && (
+            <Button
+              onClick={() => {
+                setStep((step - 1) as WizardStep)
+              }}
+              disabled={isBusy}
+            >
+              Atrás
+            </Button>
+          )}
+          {step < 4 ? (
+            <Button
+              variant="primary"
+              type="button"
+              onClick={() => {
+                void goNext()
+              }}
+            >
+              Continuar
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              type="submit"
+              form={FORM_ID}
+              disabled={!formState.isValid || isBusy}
+            >
+              {isBusy ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear prospecto'}
+            </Button>
+          )}
         </>
       }
     >
@@ -298,7 +442,14 @@ export function ProspectFormDialog({
         }}
         className="flex flex-col gap-4"
       >
-        {!isEditing && (
+        <StepIndicator
+          current={step}
+          onStepClick={(target) => {
+            setStep(target)
+          }}
+        />
+
+        {!isEditing && step === 1 && (
           <div className="flex w-fit gap-1 rounded-lg bg-surface-3/60 p-1">
             {(
               [
@@ -328,287 +479,356 @@ export function ProspectFormDialog({
 
         <MapsScope>
           <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
-            {/* Izquierda: el edificio, su geocerca y el contacto con el que abre */}
-            <div className="flex flex-col gap-4">
-              <SectionTitle>El edificio · commercial.hotel</SectionTitle>
-
-              {isExistingHotel && (
-                <Field
-                  label="Hotel registrado"
-                  htmlFor="existingHotelId"
-                  isRequired
-                  column="hotel_id · solo hoteles sin ciclo abierto"
-                  error={formState.errors.existingHotelId?.message}
+            {/* Izquierda: el paso en turno; la derecha acompaña siempre con el mapa */}
+            <div className="flex min-h-105 flex-col gap-4">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={step}
+                  initial={{ opacity: 0, x: 24 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -24 }}
+                  transition={{ duration: 0.22, ease: 'easeOut' }}
+                  className="flex flex-col gap-4"
                 >
-                  <select
-                    id="existingHotelId"
-                    {...register('existingHotelId', {
-                      onChange: (event: { target: { value: string } }) => {
-                        applyRegisteredHotel(event.target.value)
-                      },
-                    })}
-                    className={CONTROL_CLASS}
-                  >
-                    <option value="">
-                      {registeredHotels.length === 0
-                        ? 'No hay hoteles libres: todos tienen ciclo abierto'
-                        : 'Elige un hotel…'}
-                    </option>
-                    {registeredHotels.map((hotel) => (
-                      <option key={hotel.id} value={hotel.id}>
-                        {hotel.name} · {hotel.zone}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-              )}
+                  {step === 1 && (
+                    <>
+                      <SectionTitle schema="commercial.hotel">El edificio</SectionTitle>
 
-              <Field
-                label="Nombre del hotel"
-                htmlFor="hotelName"
-                isRequired
-                column="name"
-                error={formState.errors.hotelName?.message}
-              >
-                <input
-                  id="hotelName"
-                  type="text"
-                  placeholder="Hotel Puerto Real"
-                  disabled={isExistingHotel}
-                  {...register('hotelName')}
-                  className={CONTROL_CLASS}
-                />
-              </Field>
+                      {isExistingHotel && (
+                        <Field
+                          label="Hotel registrado"
+                          htmlFor="existingHotelId"
+                          isRequired
+                          column="hotel_id · solo hoteles sin ciclo abierto"
+                          error={formState.errors.existingHotelId?.message}
+                        >
+                          <select
+                            id="existingHotelId"
+                            {...register('existingHotelId', {
+                              onChange: (event: { target: { value: string } }) => {
+                                applyRegisteredHotel(event.target.value)
+                              },
+                            })}
+                            className={CONTROL_CLASS}
+                          >
+                            <option value="">
+                              {registeredHotels.length === 0
+                                ? 'No hay hoteles libres: todos tienen ciclo abierto'
+                                : 'Elige un hotel…'}
+                            </option>
+                            {registeredHotels.map((hotel) => (
+                              <option key={hotel.id} value={hotel.id}>
+                                {hotel.name} · {hotel.zone}
+                              </option>
+                            ))}
+                          </select>
+                        </Field>
+                      )}
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Field
-                  label="Zona"
-                  htmlFor="zoneId"
-                  isRequired
-                  column="zone_id + catalogs.zone"
-                  error={formState.errors.zoneId?.message}
-                >
-                  <select id="zoneId" {...register('zoneId')} className={CONTROL_CLASS}>
-                    <option value="">Selecciona una zona</option>
-                    {zones.map((zone) => (
-                      <option key={zone.id} value={zone.id}>
-                        {zone.label}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
+                      <Field
+                        label="Nombre del hotel"
+                        htmlFor="hotelName"
+                        isRequired
+                        column="name"
+                        error={formState.errors.hotelName?.message}
+                      >
+                        <input
+                          id="hotelName"
+                          type="text"
+                          placeholder="Hotel Puerto Real"
+                          disabled={isExistingHotel}
+                          {...register('hotelName')}
+                          className={CONTROL_CLASS}
+                        />
+                      </Field>
 
-                <Field
-                  label="Zona horaria"
-                  htmlFor="timeZone"
-                  isRequired
-                  column="time_zone"
-                  error={formState.errors.timeZone?.message}
-                >
-                  <select id="timeZone" {...register('timeZone')} className={CONTROL_CLASS}>
-                    {TIME_ZONES.map((zone) => (
-                      <option key={zone} value={zone}>
-                        {zone}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-              </div>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <Field
+                          label="Zona"
+                          htmlFor="zoneId"
+                          isRequired
+                          column="zone_id + catalogs.zone"
+                          error={formState.errors.zoneId?.message}
+                        >
+                          <select id="zoneId" {...register('zoneId')} className={CONTROL_CLASS}>
+                            <option value="">Selecciona una zona</option>
+                            {zones.map((zone) => (
+                              <option key={zone.id} value={zone.id}>
+                                {zone.label}
+                              </option>
+                            ))}
+                          </select>
+                        </Field>
 
-              <Field
-                label="Ubicación"
-                isRequired
-                note="Places Autocomplete"
-                column="latitude + longitude"
-                error={formState.errors.location?.message}
-              >
-                <PlacesSearchField defaultValue={values.address} onPick={applyPlace} />
-              </Field>
+                        <Field
+                          label="Zona horaria"
+                          htmlFor="timeZone"
+                          isRequired
+                          column="time_zone"
+                          error={formState.errors.timeZone?.message}
+                        >
+                          <select id="timeZone" {...register('timeZone')} className={CONTROL_CLASS}>
+                            {TIME_ZONES.map((zone) => (
+                              <option key={zone} value={zone}>
+                                {zone}
+                              </option>
+                            ))}
+                          </select>
+                        </Field>
+                      </div>
+                    </>
+                  )}
 
-              <Field
-                label="Radio de geocerca"
-                htmlFor="geofenceMeters"
-                column="geofence_radius_m · lo evalúa ST_DWithin en el servidor (D-08)"
-                error={formState.errors.geofenceMeters?.message}
-              >
-                <div className="flex items-center gap-4">
-                  <input
-                    id="geofenceMeters"
-                    type="range"
-                    min={GEOFENCE_MIN_M}
-                    max={GEOFENCE_MAX_M}
-                    step={GEOFENCE_STEP_M}
-                    {...register('geofenceMeters', { valueAsNumber: true })}
-                    className="h-1.5 min-w-0 flex-1 accent-o-500"
-                  />
-                  <span className="w-14 shrink-0 text-right text-sm font-semibold text-ink">
-                    {values.geofenceMeters} m
-                  </span>
-                </div>
-              </Field>
+                  {step === 2 && (
+                    <>
+                      <SectionTitle>Ubicación</SectionTitle>
 
-              <section className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4">
-                <SectionTitle>Primer contacto · commercial.hotel_contact</SectionTitle>
+                      <Field
+                        label="Buscar en Google"
+                        isRequired
+                        note="elige el hotel: pin, dirección y foto llegan solos"
+                        column="latitude + longitude"
+                        error={formState.errors.location?.message}
+                      >
+                        <PlacesSearchField defaultValue={values.address} onPick={applyPlace} />
+                      </Field>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <Field
-                    label="Nombre"
-                    htmlFor="contactFullName"
-                    isRequired={!isEditing}
-                    column="full_name"
-                    error={formState.errors.contactFullName?.message}
-                  >
-                    <input
-                      id="contactFullName"
-                      type="text"
-                      placeholder="Marta Solís"
-                      {...register('contactFullName')}
-                      className={CONTROL_CLASS}
-                    />
-                  </Field>
+                      <Field
+                        label="Radio de geocerca"
+                        htmlFor="geofenceMeters"
+                        column="geofence_radius_m · lo evalúa ST_DWithin en el servidor (D-08)"
+                        error={formState.errors.geofenceMeters?.message}
+                      >
+                        <div className="flex items-center gap-4">
+                          <input
+                            id="geofenceMeters"
+                            type="range"
+                            min={GEOFENCE_MIN_M}
+                            max={GEOFENCE_MAX_M}
+                            step={GEOFENCE_STEP_M}
+                            {...register('geofenceMeters', { valueAsNumber: true })}
+                            className="h-1.5 min-w-0 flex-1 accent-o-500"
+                          />
+                          <span className="w-14 shrink-0 text-right text-sm font-semibold text-ink">
+                            {values.geofenceMeters} m
+                          </span>
+                        </div>
+                      </Field>
 
-                  <Field label="Puesto" htmlFor="contactJobTitle" column="job_title">
-                    <input
-                      id="contactJobTitle"
-                      type="text"
-                      placeholder="Gerente de Compras"
-                      {...register('contactJobTitle')}
-                      className={CONTROL_CLASS}
-                    />
-                  </Field>
+                      {!placePhotoUrl && (
+                        <p className="rounded-lg border border-line bg-surface p-4 text-sm text-ink-3">
+                          Sin foto todavía: al elegir el hotel en el buscador, Google la trae y se
+                          guarda con el hotel.
+                        </p>
+                      )}
 
-                  <Field label="Teléfono" htmlFor="contactPhone" column="phone">
-                    <input
-                      id="contactPhone"
-                      type="tel"
-                      placeholder="+52 998 111 2233"
-                      {...register('contactPhone')}
-                      className={CONTROL_CLASS}
-                    />
-                  </Field>
+                      <div className="rounded-md bg-o-50 p-4">
+                        <p className="text-sm font-semibold text-o-700">
+                          El pin se arrastra a propósito.
+                        </p>
+                        <p className="mt-1 text-sm leading-relaxed text-ink-2">
+                          Google devuelve el centro del lugar, que casi nunca es por donde entra el
+                          colaborador. Arrástralo en el mapa a la entrada real: unos metros de más
+                          rechazan ponches legítimos.
+                        </p>
+                      </div>
+                    </>
+                  )}
 
-                  <Field
-                    label="Correo"
-                    htmlFor="contactEmail"
-                    column="email"
-                    error={formState.errors.contactEmail?.message}
-                  >
-                    <input
-                      id="contactEmail"
-                      type="email"
-                      placeholder="marta.solis@puertoreal.mx"
-                      {...register('contactEmail')}
-                      className={CONTROL_CLASS}
-                    />
-                  </Field>
-                </div>
+                  {step === 3 && (
+                    <section className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4">
+                      <SectionTitle schema="commercial.hotel_contact">Primer contacto</SectionTitle>
 
-                <label className="flex cursor-pointer items-center gap-3 rounded-md bg-o-50 px-3 py-2.5">
-                  <input
-                    type="checkbox"
-                    {...register('isPrimaryContact')}
-                    className="size-4 accent-o-500"
-                  />
-                  <span className="text-sm font-semibold text-ink">Es el contacto principal</span>
-                  <span className="text-xs text-ink-3">is_primary</span>
-                </label>
-              </section>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <Field
+                          label="Nombre"
+                          htmlFor="contactFullName"
+                          isRequired={!isEditing}
+                          column="full_name"
+                          error={formState.errors.contactFullName?.message}
+                        >
+                          <input
+                            id="contactFullName"
+                            type="text"
+                            placeholder="Marta Solís"
+                            {...register('contactFullName')}
+                            className={CONTROL_CLASS}
+                          />
+                        </Field>
+
+                        <Field label="Puesto" htmlFor="contactJobTitle" column="job_title">
+                          <input
+                            id="contactJobTitle"
+                            type="text"
+                            placeholder="Gerente de Compras"
+                            {...register('contactJobTitle')}
+                            className={CONTROL_CLASS}
+                          />
+                        </Field>
+
+                        <Field label="Teléfono" htmlFor="contactPhone" column="phone">
+                          <input
+                            id="contactPhone"
+                            type="tel"
+                            placeholder="+52 998 111 2233"
+                            {...register('contactPhone')}
+                            className={CONTROL_CLASS}
+                          />
+                        </Field>
+
+                        <Field
+                          label="Correo"
+                          htmlFor="contactEmail"
+                          column="email"
+                          error={formState.errors.contactEmail?.message}
+                        >
+                          <input
+                            id="contactEmail"
+                            type="email"
+                            placeholder="marta.solis@puertoreal.mx"
+                            {...register('contactEmail')}
+                            className={CONTROL_CLASS}
+                          />
+                        </Field>
+                      </div>
+
+                      <label className="flex cursor-pointer items-center gap-3 rounded-md bg-o-50 px-3 py-2.5">
+                        <input
+                          type="checkbox"
+                          {...register('isPrimaryContact')}
+                          className="size-4 accent-o-500"
+                        />
+                        <span className="text-sm font-semibold text-ink">
+                          Es el contacto principal
+                        </span>
+                        {IS_DEV_UI && <span className="text-xs text-ink-3">is_primary</span>}
+                      </label>
+                    </section>
+                  )}
+
+                  {step === 4 && (
+                    <>
+                      <section className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4">
+                        <SectionTitle schema="commercial.prospect">El ciclo comercial</SectionTitle>
+
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <Field
+                            label="Dueño del prospecto"
+                            htmlFor="ownerUserId"
+                            isRequired
+                            column="owner_user_id"
+                            error={formState.errors.ownerUserId?.message}
+                          >
+                            {/*
+                      ⚠ Un solo dueño posible: no existe endpoint de equipo
+                      todavía, así que solo se ofrece quien tiene la sesión.
+                    */}
+                            <select
+                              id="ownerUserId"
+                              {...register('ownerUserId')}
+                              className={CONTROL_CLASS}
+                            >
+                              {session && (
+                                <option value={session.id}>
+                                  {session.name} · {session.roleCode}
+                                </option>
+                              )}
+                            </select>
+                          </Field>
+
+                          <Field
+                            label="Qué necesita"
+                            htmlFor="needDescription"
+                            column="need_description"
+                          >
+                            <input
+                              id="needDescription"
+                              type="text"
+                              placeholder="2 camaristas y 1 houseman"
+                              {...register('needDescription')}
+                              className={CONTROL_CLASS}
+                            />
+                          </Field>
+                        </div>
+
+                        <Field
+                          label={isEditing ? 'Estado actual' : 'Estado inicial'}
+                          column="ck_prospect_light fija el semáforo a ONBOARDING · un solo ciclo abierto por hotel"
+                        >
+                          <div className="flex items-center gap-3">
+                            <StatusLightSoftBadge
+                              token={ONBOARDING_STATUS_TOKEN[status]}
+                              label={ONBOARDING_STATUS_LABEL[status]}
+                            />
+                            <span className="text-sm text-ink-3">
+                              {ONBOARDING_STATUS_DESCRIPTION[status]}
+                            </span>
+                          </div>
+                        </Field>
+                      </section>
+                    </>
+                  )}
+                </motion.div>
+              </AnimatePresence>
             </div>
 
-            {/* Derecha: mapa y ficha en UNA tarjeta, y debajo el ciclo comercial */}
+            {/* Derecha: mapa y ficha SIEMPRE a la vista — es la vista previa del alta */}
             <div className="flex flex-col gap-4">
               <div className="overflow-hidden rounded-lg border border-line bg-surface">
+                {step === 2 && placePhotoUrl && (
+                  /* Hero de Ubicación: la foto de Places se disuelve hacia el mapa. */
+                  <div className="relative">
+                    <img
+                      src={placePhotoUrl}
+                      alt={`Foto de ${values.hotelName || 'el hotel'} según Google`}
+                      className="h-40 w-full object-cover"
+                    />
+                    <div
+                      aria-hidden
+                      className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-surface"
+                    />
+                    <p className="absolute bottom-2 left-4 text-base font-semibold text-ink">
+                      {values.hotelName}
+                    </p>
+                  </div>
+                )}
                 <HotelLocationMap
                   value={values.location}
                   geofenceMeters={values.geofenceMeters}
                   onMovePin={movePin}
-                  className="h-40 rounded-none border-0 border-b border-line"
+                  className={cn(
+                    'rounded-none border-0',
+                    // En el paso de Ubicación el mapa manda: grande y arrastrable.
+                    step === 2 ? 'h-105' : 'h-40 border-b border-line',
+                  )}
                 />
 
-                <PlacesAutofillSummary
-                  hotelName={values.hotelName}
-                  address={values.address}
-                  generalPhone={values.generalPhone}
-                  timeZone={values.timeZone}
-                  location={values.location}
-                  geofenceMeters={values.geofenceMeters}
-                  status={status}
-                  isPinMoved={
-                    values.location !== null &&
-                    (values.placeLocation === null ||
-                      values.placeLocation.lat !== values.location.lat ||
-                      values.placeLocation.lng !== values.location.lng)
-                  }
-                />
+                {step !== 2 && (
+                  <PlacesAutofillSummary
+                    photoUrl={placePhotoUrl}
+                    hotelName={values.hotelName}
+                    address={values.address}
+                    generalPhone={values.generalPhone}
+                    timeZone={values.timeZone}
+                    location={values.location}
+                    geofenceMeters={values.geofenceMeters}
+                    status={status}
+                    isPinMoved={
+                      values.location !== null &&
+                      (values.placeLocation === null ||
+                        values.placeLocation.lat !== values.location.lat ||
+                        values.placeLocation.lng !== values.location.lng)
+                    }
+                  />
+                )}
               </div>
-
-              <section className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4">
-                <SectionTitle>El ciclo comercial · commercial.prospect</SectionTitle>
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <Field
-                    label="Dueño del prospecto"
-                    htmlFor="ownerUserId"
-                    isRequired
-                    column="owner_user_id"
-                    error={formState.errors.ownerUserId?.message}
-                  >
-                    {/*
-                      ⚠ Un solo dueño posible: no existe endpoint de equipo
-                      todavía, así que solo se ofrece quien tiene la sesión.
-                    */}
-                    <select id="ownerUserId" {...register('ownerUserId')} className={CONTROL_CLASS}>
-                      {session && (
-                        <option value={session.id}>
-                          {session.name} · {session.roleCode}
-                        </option>
-                      )}
-                    </select>
-                  </Field>
-
-                  <Field label="Qué necesita" htmlFor="needDescription" column="need_description">
-                    <input
-                      id="needDescription"
-                      type="text"
-                      placeholder="2 camaristas y 1 houseman"
-                      {...register('needDescription')}
-                      className={CONTROL_CLASS}
-                    />
-                  </Field>
-                </div>
-
-                <Field
-                  label={isEditing ? 'Estado actual' : 'Estado inicial'}
-                  column="ck_prospect_light fija el semáforo a ONBOARDING · un solo ciclo abierto por hotel"
-                >
-                  <div className="flex items-center gap-3">
-                    <StatusLightSoftBadge
-                      token={ONBOARDING_STATUS_TOKEN[status]}
-                      label={ONBOARDING_STATUS_LABEL[status]}
-                    />
-                    <span className="text-sm text-ink-3">
-                      {ONBOARDING_STATUS_DESCRIPTION[status]}
-                    </span>
-                  </div>
-                </Field>
-              </section>
             </div>
-
-            {/* Cruza las dos columnas: explica el mapa y el radio a la vez */}
-            <aside className="rounded-md bg-o-50 p-4 xl:col-span-2">
-              <p className="text-sm font-semibold text-o-700">El pin se arrastra a propósito.</p>
-              <p className="mt-1 text-sm leading-relaxed text-ink-2">
-                Google devuelve el centroide del lugar, que casi nunca es por donde entra el
-                colaborador. Como la geocerca se evalúa con ST_DWithin, unos metros de más rechazan
-                ponches legítimos.
-              </p>
-            </aside>
           </div>
         </MapsScope>
 
         {(hasCreateFailed || hasUpdateFailed) && (
-          <p className="rounded-md bg-red/10 p-4 text-sm text-red">
-            No se pudo guardar. Revisa los datos e inténtalo de nuevo.
+          <p role="alert" className="rounded-md bg-red/10 p-4 text-sm text-red">
+            {saveErrorMessage(hasCreateFailed ? createError : updateError)}
           </p>
         )}
       </form>

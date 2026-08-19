@@ -70,6 +70,7 @@ export interface HotelApi {
   geofenceRadiusM: number | null
   address: string | null
   placeId: string | null
+  photoUrl: string | null
   latitude: number | null
   longitude: number | null
   zone: ZoneRefApi

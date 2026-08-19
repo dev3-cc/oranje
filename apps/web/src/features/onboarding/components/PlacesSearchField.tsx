@@ -10,6 +10,12 @@ export interface PlaceAutofill {
   address: string
   phone: string
   location: GeoPoint
+  /**
+   * Foto del lugar servida por Google. SOLO se muestra al capturar: no se
+   * persiste — `commercial.hotel` no tiene columna de foto (pendiente de
+   * decidir si se quiere guardar).
+   */
+  photoUrl: string | null
 }
 
 const CONTROL_CLASS =
@@ -37,6 +43,7 @@ interface PlacesLibrary {
       formatted_address?: string
       formatted_phone_number?: string
       geometry?: { location?: { lat: () => number; lng: () => number } }
+      photos?: Array<{ getUrl: (opts?: { maxWidth?: number; maxHeight?: number }) => string }>
     }
   }
 }
@@ -67,7 +74,7 @@ function PlacesAutocompleteInput({
 
     const autocomplete = new places.Autocomplete(input, {
       /** `geometry` a secas: `geometry.location` no es un campo válido aquí. */
-      fields: ['name', 'formatted_address', 'formatted_phone_number', 'geometry'],
+      fields: ['name', 'formatted_address', 'formatted_phone_number', 'geometry', 'photos'],
       /** El territorio es México; sin esto sugiere direcciones de todo el mundo. */
       componentRestrictions: { country: 'mx' },
     })
@@ -82,6 +89,7 @@ function PlacesAutocompleteInput({
         address: place.formatted_address ?? '',
         phone: place.formatted_phone_number ?? '',
         location: { lat: location.lat(), lng: location.lng() },
+        photoUrl: place.photos?.[0]?.getUrl({ maxWidth: 640 }) ?? null,
       })
     })
 

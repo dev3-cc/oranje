@@ -166,6 +166,7 @@ export const onboardingApi = baseApi.injectEndpoints({
                 ? { geofenceRadiusM: request.hotel.geofenceMeters }
                 : {}),
               ...(request.hotel.address ? { address: request.hotel.address } : {}),
+              ...(request.hotel.photoUrl ? { photoUrl: request.hotel.photoUrl } : {}),
               ...(request.hotel.location
                 ? {
                     latitude: request.hotel.location.lat,
@@ -193,6 +194,7 @@ export const onboardingApi = baseApi.injectEndpoints({
               ? { geofenceRadiusM: request.hotel.geofenceMeters }
               : {}),
             ...(request.hotel.address ? { address: request.hotel.address } : {}),
+            ...(request.hotel.photoUrl ? { photoUrl: request.hotel.photoUrl } : {}),
             ...(request.hotel.location
               ? {
                   latitude: request.hotel.location.lat,
@@ -311,6 +313,7 @@ export const onboardingApi = baseApi.injectEndpoints({
               ? { geofenceRadiusM: request.hotel.geofenceMeters }
               : {}),
             ...(request.hotel.address ? { address: request.hotel.address } : {}),
+            ...(request.hotel.photoUrl ? { photoUrl: request.hotel.photoUrl } : {}),
             ...(request.hotel.location
               ? {
                   latitude: request.hotel.location.lat,
