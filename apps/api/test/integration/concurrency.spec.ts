@@ -1,6 +1,7 @@
 import { v7 as uuidv7 } from 'uuid'
 
 import { close, db } from './db.js'
+import { actor } from './fixture.js'
 
 /**
  * Las tres carreras que la base tiene que perder sola, sin ayuda de la
@@ -25,7 +26,7 @@ async function seedFixture(): Promise<void> {
   const position = await db.catalogPosition.findFirstOrThrow({ select: { id: true } })
   const modality = await db.hiringModality.findFirstOrThrow({ select: { id: true } })
   const department = await db.hotelDepartment.findFirstOrThrow({ select: { id: true } })
-  const actor = await db.user.findFirstOrThrow({ select: { id: true } })
+  const who = await actor()
   const workerState = await db.statusLightState.findFirstOrThrow({
     where: { code: 'STRONG_GREEN', statusLightCode: 'WORKER' },
     select: { id: true },
@@ -65,7 +66,7 @@ async function seedFixture(): Promise<void> {
         zoneId: zone.id,
         statusLightStateId: workerState.id,
         statusLightCode: 'WORKER',
-        createdBy: actor.id,
+        createdBy: who.id,
       },
     })
     created.push({ table: 'personal.worker', id })
@@ -112,12 +113,12 @@ async function seedFixture(): Promise<void> {
 
 async function assign(worker: string): Promise<string> {
   const id = uuidv7()
-  const actor = await db.user.findFirstOrThrow({ select: { id: true } })
+  const who = await actor()
 
   await db.$executeRaw`
     INSERT INTO coverage.assignment (id, slot_id, worker_id, type, validity, status, assigned_by)
     VALUES (${id}::uuid, ${slotId}::uuid, ${worker}::uuid, 'FIXED',
-            daterange(current_date, null), 'ACTIVE', ${actor.id}::uuid)`
+            daterange(current_date, null), 'ACTIVE', ${who.id}::uuid)`
 
   created.push({ table: 'coverage.assignment', id })
 
@@ -160,7 +161,7 @@ describe('RR-05 · el mismo colaborador no puede tener turnos encimados', () => 
   let assignment: string
 
   beforeAll(async () => {
-    const actor = await db.user.findFirstOrThrow({ select: { id: true } })
+    const who = await actor()
     const monday = new Date('2027-03-01')
 
     scheduleId = uuidv7()
@@ -170,7 +171,7 @@ describe('RR-05 · el mismo colaborador no puede tener turnos encimados', () => 
         hotelId,
         weekStart: monday,
         weekEnd: new Date('2027-03-07'),
-        createdBy: actor.id,
+        createdBy: who.id,
       },
     })
     created.push({ table: 'operations.schedule', id: scheduleId })
