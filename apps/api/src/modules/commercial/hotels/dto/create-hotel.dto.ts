@@ -10,6 +10,8 @@ export const createHotelSchema = z.object({
   geofenceRadiusM: z.number().int().min(20).max(2000).optional(),
   address: z.string().trim().min(1).max(300).optional(),
   placeId: z.string().trim().min(1).max(120).optional(),
+  /** URL de la foto según Places. Solo la referencia: el binario es de Google. */
+  photoUrl: z.url().trim().max(1024).optional(),
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
 })
