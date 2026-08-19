@@ -5,7 +5,7 @@ import { useAppSelector } from './hooks'
 import { useRefreshSessionMutation } from './sessionApi'
 import { selectSessionStatus } from './sessionSlice'
 
-import logoOranje from '@/assets/logo/Logo_ORANJE_Orange.png'
+import { LoadingOranje } from '@/shared/components/LoadingOranje'
 
 /**
  * Puerta de las rutas privadas. Vive en `app/` como el router: es cableado
@@ -34,10 +34,6 @@ export function RequireSession(): ReactNode {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
 
-  /** `unknown` o `authenticating`: splash mínimo mientras el refresh decide. */
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-surface-2">
-      <img src={logoOranje} alt="Oranje" className="h-6 w-auto animate-pulse" />
-    </div>
-  )
+  /** `unknown` o `authenticating`: la naranja girando mientras el refresh decide. */
+  return <LoadingOranje label="Abriendo tu sesión…" />
 }

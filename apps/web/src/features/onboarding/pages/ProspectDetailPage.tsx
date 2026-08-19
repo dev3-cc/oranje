@@ -15,6 +15,7 @@ import { RegisterAttemptDialog } from '../components/RegisterAttemptDialog'
 import { StatusTimeline } from '../components/StatusTimeline'
 
 import { Button } from '@/shared/components/Button'
+import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import {
   isTerminalStatus,
   ONBOARDING_STATUS_LABEL,
@@ -46,7 +47,7 @@ export function ProspectDetailPage(): ReactNode {
   )
 
   if (isLoading) {
-    return <p className="text-sm text-ink-3">Cargando prospecto…</p>
+    return <DetailSkeleton />
   }
 
   if (isError || !prospect) {

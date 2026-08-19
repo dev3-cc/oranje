@@ -1,7 +1,9 @@
-import { Float, MeshDistortMaterial, Sparkles, useCursor } from '@react-three/drei'
+import { Float, Sparkles, useCursor } from '@react-three/drei'
 import { Canvas, useFrame, type ThreeEvent } from '@react-three/fiber'
 import { useRef, useState, type ReactNode } from 'react'
 import { Group, Vector3 } from 'three'
+
+import { OrangeModel } from '@/shared/components/three/OrangeModel'
 
 /**
  * Panel visual del login: NARANJAS 🍊 flotando sobre el degradado de marca —
@@ -92,20 +94,7 @@ function Orange({ position, scale, floatSpeed }: OrangeProps): ReactNode {
           setIsHovered(false)
         }}
       >
-        <mesh>
-          <sphereGeometry args={[1, 64, 64]} />
-          <MeshDistortMaterial color="#FF8000" distort={0.08} speed={1.4} roughness={0.55} />
-        </mesh>
-        {/* Tallo */}
-        <mesh position={[0, 1.02, 0]}>
-          <cylinderGeometry args={[0.05, 0.07, 0.18, 8]} />
-          <meshStandardMaterial color="#6B4A2B" roughness={0.9} />
-        </mesh>
-        {/* Hoja: esfera aplastada e inclinada */}
-        <mesh position={[0.22, 1.08, 0]} rotation={[0.4, 0.2, -0.9]} scale={[0.34, 0.1, 0.16]}>
-          <sphereGeometry args={[1, 24, 24]} />
-          <meshStandardMaterial color="#4C8A3F" roughness={0.6} />
-        </mesh>
+        <OrangeModel />
       </group>
     </Float>
   )

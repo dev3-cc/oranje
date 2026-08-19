@@ -6,6 +6,7 @@ import { PoolTable } from '../components/PoolTable'
 import { EMPTY_POOL_FILTERS, type PoolFilters as Filters } from '../types/pool.types'
 
 import { Button } from '@/shared/components/Button'
+import { TableSkeleton } from '@/shared/components/TableSkeleton'
 
 /**
  * Pool de Colaboradores: quién hay disponible y en qué situación está.
@@ -52,7 +53,7 @@ export function PoolPage(): ReactNode {
       )}
 
       {isLoading && !pool ? (
-        <p className="text-sm text-ink-3">Cargando colaboradores…</p>
+        <TableSkeleton rows={6} columns={6} />
       ) : (
         pool && <PoolTable items={pool.items} />
       )}

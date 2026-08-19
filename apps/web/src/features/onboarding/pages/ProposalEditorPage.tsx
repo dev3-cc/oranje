@@ -14,6 +14,7 @@ import { ProposalVersionHistory } from '../components/ProposalVersionHistory'
 import { proposalDraftSchema, type ProposalDraftForm } from '../types/proposalDraft.schema'
 
 import { Button } from '@/shared/components/Button'
+import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { FormField } from '@/shared/components/FormField'
 import { SectionCard } from '@/shared/components/SectionCard'
 import {
@@ -57,7 +58,7 @@ export function ProposalEditorPage(): ReactNode {
     })
   }, [draft, reset])
 
-  if (isLoading) return <p className="text-sm text-ink-3">Cargando propuesta…</p>
+  if (isLoading) return <DetailSkeleton />
 
   if (isError || !workspace) {
     return (

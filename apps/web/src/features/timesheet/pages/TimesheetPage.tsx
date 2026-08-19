@@ -6,6 +6,7 @@ import { TimesheetToolbar } from '../components/TimesheetToolbar'
 import { EMPTY_TIMESHEET_FILTERS, type TimesheetFilters } from '../types/timesheet.types'
 
 import { Button } from '@/shared/components/Button'
+import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { DEFAULT_COLUMN_WIDTH } from '@/shared/constants/timesheetStatus'
 import { formatWeekRange } from '@/shared/lib/formatters'
 
@@ -106,7 +107,7 @@ export function TimesheetPage(): ReactNode {
       )}
 
       {isLoading && !week ? (
-        <p className="text-sm text-ink-3">Cargando semana…</p>
+        <TableSkeleton rows={7} columns={8} />
       ) : (
         week && (
           <TimesheetGrid

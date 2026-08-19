@@ -1,4 +1,4 @@
-import { cn } from '@oranje/ui'
+import { Skeleton, cn } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 
@@ -77,12 +77,30 @@ export function PipelinePage(): ReactNode {
       )}
 
       {isLoading && (
-        <div className="flex gap-4">
+        <div className="flex gap-4 overflow-hidden" aria-hidden>
           {PIPELINE_COLUMNS.slice(0, 4).map((status) => (
             <div
               key={status}
-              className="h-64 w-80 shrink-0 animate-pulse rounded-lg bg-surface-3/60"
-            />
+              className="flex w-80 shrink-0 flex-col gap-3 rounded-lg bg-surface-2 p-3"
+            >
+              <div className="flex items-center justify-between px-1">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-5 w-8 rounded-full" />
+              </div>
+              {[0, 1, 2].map((card) => (
+                <div
+                  key={card}
+                  className="flex flex-col gap-2 rounded-lg border border-line bg-surface p-4"
+                >
+                  <Skeleton className="h-5 w-40" />
+                  <Skeleton className="h-4 w-24" />
+                  <div className="flex items-center justify-between">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-6 w-6 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ))}
         </div>
       )}

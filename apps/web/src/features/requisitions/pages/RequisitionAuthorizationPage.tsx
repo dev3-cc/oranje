@@ -10,6 +10,7 @@ import { AuthorizationQueueList } from '../components/AuthorizationQueueList'
 import { AuthorizationResolutionForm } from '../components/AuthorizationResolutionForm'
 
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
+import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import {
   AUTHORIZATION_TRANSITION,
   REQUISITION_STATUS_LABEL,
@@ -31,7 +32,7 @@ export function RequisitionAuthorizationPage(): ReactNode {
   const { data: reasons } = useGetStatusChangeReasonsQuery()
 
   if (isLoading) {
-    return <p className="text-sm text-ink-3">Cargando pendientes…</p>
+    return <TableSkeleton rows={4} columns={4} />
   }
 
   if (isError || !queue) {

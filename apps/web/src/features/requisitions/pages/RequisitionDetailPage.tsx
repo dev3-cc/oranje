@@ -8,6 +8,7 @@ import { SlotList } from '../components/SlotList'
 import { StatusHistoryCard } from '../components/StatusHistoryCard'
 
 import { Button } from '@/shared/components/Button'
+import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   REQUISITION_STATUS_LABEL,
@@ -34,7 +35,7 @@ export function RequisitionDetailPage(): ReactNode {
   } = useGetRequisitionQuery(requisitionId, { skip: requisitionId === '' })
 
   if (isLoading) {
-    return <p className="text-sm text-ink-3">Cargando requisición…</p>
+    return <DetailSkeleton />
   }
 
   if (isError || !detail) {

@@ -10,6 +10,7 @@ import {
 import { RequirementRow } from '../components/RequirementRow'
 
 import { Button } from '@/shared/components/Button'
+import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
@@ -37,7 +38,7 @@ export function ConversionPage(): ReactNode {
   const [approveConversion, { isLoading: isApproving }] = useApproveConversionMutation()
   const [returnToRenegotiation, { isLoading: isReturning }] = useReturnToRenegotiationMutation()
 
-  if (isLoading) return <p className="text-sm text-ink-3">Cargando la conversión…</p>
+  if (isLoading) return <DetailSkeleton />
 
   if (isError || !readiness) {
     return (

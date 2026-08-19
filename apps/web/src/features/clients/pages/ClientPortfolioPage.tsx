@@ -7,6 +7,7 @@ import { ClientFilters } from '../components/ClientFilters'
 import { ClientMapCard } from '../components/ClientMapCard'
 import type { ClientFilters as Filters } from '../types/client.types'
 
+import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { HotelPointsMap, type HotelMapPoint } from '@/shared/components/HotelPointsMap'
 import { CONTRACT_STATUS_TOKEN } from '@/shared/constants/contractStatus'
 
@@ -92,7 +93,7 @@ export function ClientPortfolioPage(): ReactNode {
       )}
 
       {isLoading && !portfolio ? (
-        <p className="text-sm text-ink-3">Cargando cartera…</p>
+        <CardGridSkeleton cards={4} />
       ) : (
         <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
           {items.length === 0 ? (

@@ -6,6 +6,7 @@ import { ContractPreviewButton } from '../components/ContractPreviewButton'
 import { ProposalVersionHistory } from '../components/ProposalVersionHistory'
 
 import { buttonClass } from '@/shared/components/Button'
+import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
@@ -34,7 +35,7 @@ export function ProposalVersionPage(): ReactNode {
     isError,
   } = useGetProposalWorkspaceQuery(prospectId, { skip: prospectId === '' })
 
-  if (isLoading) return <p className="text-sm text-ink-3">Cargando la propuesta…</p>
+  if (isLoading) return <DetailSkeleton />
 
   const selected = workspace?.versions.find((item) => item.version === versionNumber)
 

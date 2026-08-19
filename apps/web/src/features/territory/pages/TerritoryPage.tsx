@@ -5,6 +5,7 @@ import { TerritoryHotelCard } from '../components/TerritoryHotelCard'
 import { TerritoryMap } from '../components/TerritoryMap'
 import { TerritoryZoneChips } from '../components/TerritoryZoneChips'
 
+import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { useDebounce } from '@/shared/hooks/useDebounce'
 
 export function TerritoryPage(): ReactNode {
@@ -50,7 +51,7 @@ export function TerritoryPage(): ReactNode {
         </div>
 
         <div className="mt-4 flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto">
-          {isLoading && <p className="text-sm text-ink-3">Cargando territorio…</p>}
+          {isLoading && <CardGridSkeleton cards={3} className="grid-cols-1" />}
 
           {isError && (
             <p className="text-sm text-red">No se pudo cargar tu territorio. Reintenta.</p>

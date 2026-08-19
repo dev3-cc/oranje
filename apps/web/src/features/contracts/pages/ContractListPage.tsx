@@ -6,6 +6,7 @@ import { ContractTable } from '../components/ContractTable'
 import type { ContractListFilters } from '../types/contract.types'
 
 import { Button } from '@/shared/components/Button'
+import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { EXPIRY_WARNING_DAYS } from '@/shared/constants/contractStatus'
 
 /** Cuánto se espera a que alguien deje de teclear antes de preguntar al servidor. */
@@ -68,7 +69,7 @@ export function ContractListPage(): ReactNode {
       )}
 
       {isLoading && !list ? (
-        <p className="text-sm text-ink-3">Cargando contratos…</p>
+        <TableSkeleton rows={6} columns={6} />
       ) : (
         list && <ContractTable items={list.items} warningDays={warningDays} />
       )}

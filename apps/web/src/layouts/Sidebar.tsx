@@ -2,7 +2,7 @@ import { cn } from '@oranje/ui'
 import type { ReactNode } from 'react'
 import { NavLink } from 'react-router'
 
-import { useGetSessionQuery } from '@/app/sessionApi'
+import { useGetSessionQuery, useLogoutMutation } from '@/app/sessionApi'
 import logoOranje from '@/assets/logo/Logo_ORANJE_Orange.png'
 
 /**
@@ -52,6 +52,11 @@ const MODULES: NavModule[] = [
 
 export function Sidebar(): ReactNode {
   const { data: session } = useGetSessionQuery()
+  /**
+   * Cerrar sesión no navega a mano: `logout` limpia el slice, el guard ve
+   * `anonymous` y él solo redirige a /login. Una sola puerta de salida.
+   */
+  const [logout, { isLoading: isLoggingOut }] = useLogoutMutation()
 
   return (
     <aside className="flex w-sb shrink-0 flex-col border-r border-line bg-surface">
@@ -86,10 +91,24 @@ export function Sidebar(): ReactNode {
         <div className="p-3">
           <div className="flex items-center gap-3 rounded-md bg-surface-2 p-3">
             <span className="size-9 shrink-0 rounded-full bg-o-500" aria-hidden />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-ink">{session.shortName}</p>
               <p className="truncate text-xs text-ink-3">{session.roleTitle}</p>
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                void logout()
+              }}
+              disabled={isLoggingOut}
+              title="Cerrar sesión"
+              aria-label="Cerrar sesión"
+              className="shrink-0 rounded-md p-2 text-ink-3 transition-colors hover:bg-surface hover:text-red disabled:opacity-50"
+            >
+              <span className="material-icons-outlined text-xl leading-none" aria-hidden>
+                logout
+              </span>
+            </button>
           </div>
         </div>
       )}

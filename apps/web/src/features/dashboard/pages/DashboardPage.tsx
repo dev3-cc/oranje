@@ -4,6 +4,7 @@ import { useGetDashboardOverviewQuery } from '../api/dashboardApi'
 import { StaleProspectList } from '../components/StaleProspectList'
 import { StatusFunnel } from '../components/StatusFunnel'
 
+import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { MetricCard } from '@/shared/components/MetricCard'
 import { formatList, formatPercent } from '@/shared/lib/formatters'
 
@@ -11,7 +12,7 @@ export function DashboardPage(): ReactNode {
   const { data: overview, isLoading, isError } = useGetDashboardOverviewQuery()
 
   if (isLoading) {
-    return <p className="text-sm text-ink-3">Cargando el dashboard…</p>
+    return <CardGridSkeleton cards={6} className="grid-cols-1 md:grid-cols-2 xl:grid-cols-3" />
   }
 
   if (isError || !overview) {

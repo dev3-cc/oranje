@@ -7,4 +7,5 @@
 export { cn } from './lib/utils'
 export { KpiCard, type KpiCardProps } from './components/KpiCard'
 export { StatusLightBadge, type StatusLightBadgeProps } from './components/StatusLightBadge'
+export { Skeleton } from './components/ui/skeleton'
 export * from '../tokens'

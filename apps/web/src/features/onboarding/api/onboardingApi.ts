@@ -181,6 +181,31 @@ export const onboardingApi = baseApi.injectEndpoints({
           return { error: { status: 400, data: { message: 'Falta el hotel' } } as never }
         }
 
+        /**
+         * Hotel YA registrado: lo que el formulario complete (dirección, pin,
+         * teléfono, geocerca) SE GUARDA — los hoteles viejos nacieron sin esos
+         * campos y este es el lugar natural para completarlos.
+         */
+        if (request.hotelSource === 'EXISTING') {
+          const patch = {
+            ...(request.hotel.generalPhone ? { generalPhone: request.hotel.generalPhone } : {}),
+            ...(request.hotel.geofenceMeters
+              ? { geofenceRadiusM: request.hotel.geofenceMeters }
+              : {}),
+            ...(request.hotel.address ? { address: request.hotel.address } : {}),
+            ...(request.hotel.location
+              ? {
+                  latitude: request.hotel.location.lat,
+                  longitude: request.hotel.location.lng,
+                }
+              : {}),
+          }
+          if (Object.keys(patch).length > 0) {
+            const patchRes = await bq({ url: `/hotels/${hotelId}`, method: 'PATCH', body: patch })
+            if (patchRes.error) return { error: patchRes.error as never }
+          }
+        }
+
         if (request.contact.fullName) {
           const contactRes = await bq({
             url: `/hotels/${hotelId}/contacts`,
