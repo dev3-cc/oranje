@@ -31,6 +31,14 @@ interface CoreLibrary {
   Size: new (width: number, height: number) => object
 }
 
+/** El centro del mapa cuando la vista se asienta (evento `idle`). */
+function readIdleCenter(event: unknown): GeoPoint | null {
+  const center = (
+    event as { map?: { getCenter?: () => { lat: () => number; lng: () => number } | undefined } }
+  ).map?.getCenter?.()
+  return center ? { lat: center.lat(), lng: center.lng() } : null
+}
+
 /** El clic en el mapa trae la coordenada como objeto plano. */
 function readClickPoint(event: unknown): GeoPoint | null {
   const detail = (event as { detail?: { latLng?: GeoPoint | null } }).detail
@@ -81,12 +89,12 @@ function MapControls({ point }: { point: GeoPoint | null }): ReactNode {
         onClick={() => {
           if (point) map?.setCenter(point)
         }}
-        className="absolute top-3 left-3 z-10 rounded-md bg-surface px-3 py-1.5 text-xs font-semibold text-ink-2 shadow-md transition-colors hover:bg-surface-2 disabled:opacity-50"
+        className="absolute bottom-24 left-3 z-10 rounded-md bg-surface px-3 py-1.5 text-xs font-semibold text-ink-2 shadow-md transition-colors hover:bg-surface-2 disabled:opacity-50"
       >
         Recentrar
       </button>
 
-      <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5">
+      <div className="absolute bottom-3 left-3 z-10 flex flex-col gap-1.5">
         <button
           type="button"
           aria-label="Acercar"
@@ -147,6 +155,14 @@ export interface HotelLocationMapProps {
   geofenceMeters: number
   onMovePin: (point: GeoPoint) => void
   className?: string
+  /**
+   * Modo Uber: el pin queda FIJO al centro y se arrastra el MAPA; al
+   * asentarse la vista, el centro es la ubicación. Para el paso de Ubicación.
+   */
+  centerPin?: boolean
+  /** A dónde volar la vista (la elección de Places). En modo centerPin el
+   * mapa NO persigue `value` — el valor ES el centro, perseguirlo ciclaría. */
+  followPoint?: GeoPoint | null
 }
 
 /**
@@ -165,6 +181,8 @@ export function HotelLocationMap({
   geofenceMeters,
   onMovePin,
   className,
+  centerPin = false,
+  followPoint = null,
 }: HotelLocationMapProps): ReactNode {
   if (!isMapsEnabled) {
     return (
@@ -179,17 +197,33 @@ export function HotelLocationMap({
       <Map
         defaultCenter={value ?? DEFAULT_MAP_CENTER}
         defaultZoom={value ? PICKED_ZOOM : DEFAULT_MAP_ZOOM}
-        gestureHandling="cooperative"
+        gestureHandling={centerPin ? 'greedy' : 'cooperative'}
         disableDefaultUI
         clickableIcons={false}
         styles={HIDE_POI_MAP_STYLES}
         className="size-full"
         onClick={(event) => {
+          if (centerPin) return
           const clicked = readClickPoint(event)
           if (clicked) onMovePin(clicked)
         }}
+        onIdle={(event) => {
+          if (!centerPin) return
+          const center = readIdleCenter(event)
+          if (!center) return
+          /* El idle también dispara tras un vuelo programado (Places): si el
+             centro ya ES el valor, no hay arrastre que reportar. */
+          if (
+            value &&
+            Math.abs(center.lat - value.lat) < 1e-7 &&
+            Math.abs(center.lng - value.lng) < 1e-7
+          ) {
+            return
+          }
+          onMovePin(center)
+        }}
       >
-        <MapFollower point={value} />
+        <MapFollower point={centerPin ? followPoint : value} />
         {value && (
           <>
             {/* La geocerca a escala: 150 m se ven distintos según el zoom */}
@@ -203,10 +237,26 @@ export function HotelLocationMap({
               fillOpacity={0.15}
               clickable={false}
             />
-            <HotelMarker point={value} onMovePin={onMovePin} />
+            {!centerPin && <HotelMarker point={value} onMovePin={onMovePin} />}
           </>
         )}
       </Map>
+
+      {centerPin && (
+        /* Pin estilo Uber: fijo al centro, la punta marca la coordenada. */
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-1/2 left-1/2 z-10 -translate-x-1/2 -translate-y-full"
+        >
+          <div className="flex flex-col items-center">
+            <div className="flex size-8 items-center justify-center rounded-full bg-o-500 shadow-lg ring-2 ring-surface">
+              <div className="size-2.5 rounded-full bg-surface" />
+            </div>
+            <div className="h-3 w-0.5 bg-o-500" />
+            <div className="-mt-0.5 size-1.5 rounded-full bg-ink/30 blur-[1px]" />
+          </div>
+        </div>
+      )}
 
       <MapControls point={value} />
     </div>

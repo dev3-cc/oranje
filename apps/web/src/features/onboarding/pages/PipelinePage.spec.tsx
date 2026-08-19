@@ -57,11 +57,8 @@ describe('PipelinePage', () => {
 
     const dialog = await screen.findByRole('dialog')
     expect(within(dialog).getByRole('heading', { name: 'Nuevo prospecto' })).toBeInTheDocument()
-    expect(
-      within(dialog).getByText(
-        'Abre un ciclo comercial. El hotel es el edificio; el prospecto es el ciclo (D-13).',
-      ),
-    ).toBeInTheDocument()
+    // El modal estilo Estates no pinta descripción: sus chips de origen bastan.
+    expect(within(dialog).getByRole('button', { name: 'Hotel ya registrado' })).toBeInTheDocument()
   })
 
   it('la tarjeta lleva al detalle del prospecto', async () => {

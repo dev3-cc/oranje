@@ -30,7 +30,6 @@ import {
 } from '../types/prospectForm.schema'
 
 import { HotelLocationMap } from './HotelLocationMap'
-import { PlacesAutofillSummary } from './PlacesAutofillSummary'
 import { PlacesSearchField, type PlaceAutofill } from './PlacesSearchField'
 
 import { useGetSessionQuery } from '@/app/sessionApi'
@@ -173,7 +172,7 @@ function StepIndicator({
         const isActive = step === current
         return (
           <li key={step} className="flex items-center gap-2">
-            {index > 0 && <span className="h-px w-6 bg-line sm:w-10" aria-hidden />}
+            {index > 0 && <span className="h-px w-4 bg-line" aria-hidden />}
             <button
               type="button"
               disabled={!isDone}
@@ -202,7 +201,10 @@ function StepIndicator({
                   step
                 )}
               </span>
-              <span className={cn(isActive ? 'font-semibold text-ink' : 'text-ink-3')}>
+              {/* Compacto: solo el paso activo dice su nombre; el resto, su número. */}
+              <span
+                className={cn('whitespace-nowrap', isActive ? 'font-semibold text-ink' : 'hidden')}
+              >
                 {label}
               </span>
             </button>
@@ -394,100 +396,97 @@ export function ProspectFormDialog({
 
   return (
     <Modal
+      chromeless
       isOpen={isOpen}
       onClose={onClose}
       title={isEditing ? 'Editar prospecto' : 'Nuevo prospecto'}
-      description={
-        isEditing
-          ? 'Corrige el edificio, su contacto principal y el ciclo. El semáforo no se toca aquí.'
-          : 'Abre un ciclo comercial. El hotel es el edificio; el prospecto es el ciclo (D-13).'
-      }
-      className="max-w-[95rem] gap-4 p-6"
-      footer={
-        <>
-          <Button onClick={onClose} disabled={isBusy}>
-            Cancelar
-          </Button>
-          {step > 1 && (
-            <Button
-              onClick={() => {
-                setStep((step - 1) as WizardStep)
-              }}
-              disabled={isBusy}
-            >
-              Atrás
-            </Button>
-          )}
-          {step < 4 ? (
-            <Button
-              variant="primary"
-              type="button"
-              onClick={() => {
-                void goNext()
-              }}
-            >
-              Continuar
-            </Button>
-          ) : (
-            <Button
-              variant="primary"
-              type="submit"
-              form={FORM_ID}
-              disabled={!formState.isValid || isBusy}
-            >
-              {isBusy ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear prospecto'}
-            </Button>
-          )}
-        </>
-      }
+      className="h-[88vh] max-w-[95rem]"
     >
+      {/* Lienzo estilo Estates: el mapa ES el modal; todo lo demás flota. */}
       <form
         id={FORM_ID}
         noValidate
         onSubmit={(event) => {
           void handleSubmit(onSubmit)(event)
         }}
-        className="flex flex-col gap-4"
+        className="relative h-full"
       >
-        <StepIndicator
-          current={step}
-          onStepClick={(target) => {
-            setStep(target)
-          }}
-        />
-
-        {!isEditing && step === 1 && (
-          <div className="flex w-fit gap-1 rounded-lg bg-surface-3/60 p-1">
-            {(
-              [
-                ['NEW', 'Hotel nuevo'],
-                ['EXISTING', 'Hotel ya registrado'],
-              ] as const
-            ).map(([source, label]) => (
-              <button
-                key={source}
-                type="button"
-                aria-pressed={values.hotelSource === source}
-                onClick={() => {
-                  setValue('hotelSource', source, { shouldValidate: true })
-                }}
-                className={cn(
-                  'rounded-md px-3 py-1.5 text-sm transition-colors',
-                  values.hotelSource === source
-                    ? 'bg-surface font-semibold text-ink shadow-sm'
-                    : 'text-ink-3 hover:text-ink-2',
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
-
         <MapsScope>
-          <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
-            {/* Izquierda: el paso en turno; la derecha acompaña siempre con el mapa */}
-            <div className="flex min-h-105 flex-col gap-4">
+          <HotelLocationMap
+            value={values.location}
+            geofenceMeters={values.geofenceMeters}
+            onMovePin={movePin}
+            /* Paso de Ubicación en modo Uber: el pin fijo, el mapa se arrastra. */
+            centerPin={step === 2}
+            followPoint={values.placeLocation}
+            className="absolute inset-0 h-full rounded-none border-0"
+          />
+
+          {/* Flotantes superiores izquierdos: título y origen del hotel */}
+          <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-3">
+            {/* Chip, no heading: el título accesible ya lo pone el Dialog (sr-only). */}
+            <p className="rounded-full bg-surface/95 px-4 py-2 text-sm font-bold text-ink shadow-md backdrop-blur">
+              {isEditing ? 'Editar prospecto' : 'Nuevo prospecto'}
+            </p>
+            {!isEditing && step === 1 && (
+              <div className="flex gap-1 rounded-full bg-surface/95 p-1 shadow-md backdrop-blur">
+                {(
+                  [
+                    ['NEW', 'Hotel nuevo'],
+                    ['EXISTING', 'Hotel ya registrado'],
+                  ] as const
+                ).map(([source, label]) => (
+                  <button
+                    key={source}
+                    type="button"
+                    aria-pressed={values.hotelSource === source}
+                    onClick={() => {
+                      setValue('hotelSource', source, { shouldValidate: true })
+                    }}
+                    className={cn(
+                      'rounded-full px-3 py-1.5 text-sm transition-colors',
+                      values.hotelSource === source
+                        ? 'bg-o-500 font-semibold text-ink'
+                        : 'text-ink-3 hover:text-ink-2',
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Panel flotante derecho: la ficha que guía los pasos */}
+          <section className="absolute top-14 right-4 bottom-4 z-10 flex w-md flex-col overflow-hidden rounded-xl bg-surface/95 shadow-lg backdrop-blur">
+            {placePhotoUrl && (
+              /* Hero: la foto de Places se disuelve hacia el panel. */
+              <div className="relative shrink-0">
+                <img
+                  src={placePhotoUrl}
+                  alt={`Foto de ${values.hotelName || 'el hotel'} según Google`}
+                  className="h-32 w-full object-cover"
+                />
+                <div
+                  aria-hidden
+                  className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-surface"
+                />
+                <p className="absolute bottom-1.5 left-4 text-base font-semibold text-ink">
+                  {values.hotelName}
+                </p>
+              </div>
+            )}
+
+            <div className="shrink-0 px-4 pt-3">
+              <StepIndicator
+                current={step}
+                onStepClick={(target) => {
+                  setStep(target)
+                }}
+              />
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
                   key={step}
@@ -827,65 +826,52 @@ export function ProspectFormDialog({
               </AnimatePresence>
             </div>
 
-            {/* Derecha: mapa y ficha SIEMPRE a la vista — es la vista previa del alta */}
-            <div className="flex flex-col gap-4">
-              <div className="overflow-hidden rounded-lg border border-line bg-surface">
-                {step === 2 && placePhotoUrl && (
-                  /* Hero de Ubicación: la foto de Places se disuelve hacia el mapa. */
-                  <div className="relative">
-                    <img
-                      src={placePhotoUrl}
-                      alt={`Foto de ${values.hotelName || 'el hotel'} según Google`}
-                      className="h-40 w-full object-cover"
-                    />
-                    <div
-                      aria-hidden
-                      className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent to-surface"
-                    />
-                    <p className="absolute bottom-2 left-4 text-base font-semibold text-ink">
-                      {values.hotelName}
-                    </p>
-                  </div>
-                )}
-                <HotelLocationMap
-                  value={values.location}
-                  geofenceMeters={values.geofenceMeters}
-                  onMovePin={movePin}
-                  className={cn(
-                    'rounded-none border-0',
-                    // En el paso de Ubicación el mapa manda: grande y arrastrable.
-                    step === 2 ? 'h-105' : 'h-40 border-b border-line',
-                  )}
-                />
+            {(hasCreateFailed || hasUpdateFailed) && (
+              <p
+                role="alert"
+                className="mx-4 mb-3 shrink-0 rounded-md bg-red/10 p-3 text-sm text-red"
+              >
+                {saveErrorMessage(hasCreateFailed ? createError : updateError)}
+              </p>
+            )}
 
-                {step !== 2 && (
-                  <PlacesAutofillSummary
-                    photoUrl={placePhotoUrl}
-                    hotelName={values.hotelName}
-                    address={values.address}
-                    generalPhone={values.generalPhone}
-                    timeZone={values.timeZone}
-                    location={values.location}
-                    geofenceMeters={values.geofenceMeters}
-                    status={status}
-                    isPinMoved={
-                      values.location !== null &&
-                      (values.placeLocation === null ||
-                        values.placeLocation.lat !== values.location.lat ||
-                        values.placeLocation.lng !== values.location.lng)
-                    }
-                  />
-                )}
-              </div>
-            </div>
-          </div>
+            <footer className="flex shrink-0 items-center justify-end gap-3 border-t border-line px-4 py-3">
+              <Button onClick={onClose} disabled={isBusy}>
+                Cancelar
+              </Button>
+              {step > 1 && (
+                <Button
+                  onClick={() => {
+                    setStep((step - 1) as WizardStep)
+                  }}
+                  disabled={isBusy}
+                >
+                  Atrás
+                </Button>
+              )}
+              {step < 4 ? (
+                <Button
+                  variant="primary"
+                  type="button"
+                  onClick={() => {
+                    void goNext()
+                  }}
+                >
+                  Continuar
+                </Button>
+              ) : (
+                <Button
+                  variant="primary"
+                  type="submit"
+                  form={FORM_ID}
+                  disabled={!formState.isValid || isBusy}
+                >
+                  {isBusy ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear prospecto'}
+                </Button>
+              )}
+            </footer>
+          </section>
         </MapsScope>
-
-        {(hasCreateFailed || hasUpdateFailed) && (
-          <p role="alert" className="rounded-md bg-red/10 p-4 text-sm text-red">
-            {saveErrorMessage(hasCreateFailed ? createError : updateError)}
-          </p>
-        )}
       </form>
     </Modal>
   )

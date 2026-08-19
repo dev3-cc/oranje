@@ -80,3 +80,13 @@
     border-color: var(--line);
   }
 }
+
+/*
+ * El desplegable de Google Places se monta en <body>, fuera del Dialog de
+ * Radix, que en modo modal apaga pointer-events del resto de la página: sin
+ * esto, las sugerencias se ven pero no se pueden clicar.
+ */
+.pac-container {
+  z-index: 60;
+  pointer-events: auto;
+}

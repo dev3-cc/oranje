@@ -24,6 +24,24 @@ export interface ModalProps {
   children: ReactNode
   footer?: ReactNode
   className?: string
+  /**
+   * Sin marco: ni encabezado ni padding — los hijos son dueños de todo el
+   * lienzo (mapas, heros). El título queda solo para lectores de pantalla,
+   * que Radix lo exige y con razón.
+   */
+  chromeless?: boolean
+}
+
+/**
+ * Elegir una sugerencia de Google Places no debe cerrar el diálogo: el
+ * desplegable vive fuera del contenido y Radix lo trata como «clic afuera».
+ */
+function keepPlacesInteraction(event: {
+  target: EventTarget | null
+  preventDefault: () => void
+}): void {
+  const target = event.target as Element | null
+  if (target?.closest('.pac-container')) event.preventDefault()
 }
 
 export function Modal({
@@ -34,6 +52,7 @@ export function Modal({
   children,
   footer,
   className,
+  chromeless = false,
 }: ModalProps): ReactNode {
   /**
    * El DialogContent de shadcn se auto-limita a `sm:max-w-lg` (512px). Los
@@ -46,6 +65,27 @@ export function Modal({
     .filter((item) => item.startsWith('max-w-'))
     .map((item) => `sm:${item}`)
     .join(' ')
+
+  if (chromeless) {
+    return (
+      <Dialog
+        open={isOpen}
+        onOpenChange={(open) => {
+          if (!open) onClose()
+        }}
+      >
+        <DialogContent
+          className={cn('overflow-hidden p-0', 'sm:max-w-2xl', className, widthOverrides)}
+          aria-describedby={undefined}
+          onInteractOutside={keepPlacesInteraction}
+          onPointerDownOutside={keepPlacesInteraction}
+        >
+          <DialogTitle className="sr-only">{title}</DialogTitle>
+          {children}
+        </DialogContent>
+      </Dialog>
+    )
+  }
 
   return (
     <Dialog
@@ -61,6 +101,8 @@ export function Modal({
           className,
           widthOverrides,
         )}
+        onInteractOutside={keepPlacesInteraction}
+        onPointerDownOutside={keepPlacesInteraction}
         /* Sin descripción, Radix avisa en consola; se apaga el aria explícitamente. */
         {...(description === undefined ? { 'aria-describedby': undefined } : {})}
       >
