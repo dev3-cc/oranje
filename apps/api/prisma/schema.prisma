@@ -361,6 +361,12 @@ model Hotel {
 
   /// PostGIS. Prisma no tipa geography: la geocerca va en SQL crudo con
   /// ST_DWithin (D-08).
+  /// Como se llega. Las coordenadas dicen donde esta; esto, como se lee.
+  address String? @db.Text
+  /// El identificador estable de Google Places. Sobrevive a que alguien
+  /// reescriba la calle a mano.
+  placeId String? @map("place_id") @db.Text
+
   coordinates      Unsupported("public.geography(Point, 4326)")?
   geofenceRadiusM  Int?                                  @map("geofence_radius_m")
 
@@ -1045,7 +1051,7 @@ model Assignment {
   /// El rango de días. El TEMPORAL lleva fin y se cierra solo al vencer; el FIJO
   /// no, porque termina cuando el hotel manda a descansar al colaborador (Rosa).
   validity   Unsupported("daterange")
-  status     String  @default("active") @db.Text
+  status     String  @default("ACTIVE") @db.Text
   assignedBy String  @map("assigned_by") @db.Uuid
   closedReason String? @map("closed_reason") @db.Text
 

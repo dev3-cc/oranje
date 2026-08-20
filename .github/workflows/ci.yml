@@ -11,6 +11,27 @@ on:
 jobs:
   verificar:
     runs-on: ubuntu-latest
+
+    # Postgres con PostGIS, no el oficial: el esquema usa geography para la
+    # geocerca y btree_gist para la restriccion de exclusion de los turnos.
+    services:
+      postgres:
+        image: postgis/postgis:15-3.4
+        env:
+          POSTGRES_USER: oranje_dev
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: oranje
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      MIGRATE_DATABASE_URL: postgresql://oranje_dev:ci@localhost:5432/oranje
+      DATABASE_URL: postgresql://oranje_dev:ci@localhost:5432/oranje
+
     steps:
       - uses: actions/checkout@v4
 
@@ -34,14 +55,34 @@ jobs:
 
       # prisma.config.ts lee MIGRATE_DATABASE_URL, no DATABASE_URL: las
       # migraciones corren como el dueño de los esquemas, no como la aplicación.
-      # No se conecta a nada — `validate` solo exige que la variable exista
       - name: Esquema de Prisma
         run: pnpm -F @oranje/api exec prisma validate
-        env:
-          MIGRATE_DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+
+      # Lo que tiene que existir antes de la primera migración: el rol app_user,
+      # al que varias hacen GRANT sin crearlo nunca, y las tres extensiones.
+      - name: Preparar la base
+        run: pnpm -F @oranje/api db:bootstrap
+
+      # El replay completo desde cero. Es la única forma de saber que el
+      # historial sigue siendo reproducible: en la instancia de desarrollo las
+      # migraciones ya están aplicadas y un error de orden no se nota.
+      - name: Migraciones
+        run: pnpm -F @oranje/api exec prisma migrate deploy
+
+      # Los permisos van DESPUES: no se otorga sobre esquemas que las
+      # migraciones acaban de crear.
+      - name: Permisos de la aplicación
+        run: pnpm -F @oranje/api db:grants
+
+      - name: Semilla
+        run: pnpm -F @oranje/api prisma:seed
 
       - name: Tests
         run: pnpm test
+
+      # Las 34 que necesitan base. Hasta hoy solo corrían a mano.
+      - name: Tests de integración
+        run: pnpm -F @oranje/api test:db
 
       - name: Build
         run: pnpm build

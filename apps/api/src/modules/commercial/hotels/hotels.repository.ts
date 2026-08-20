@@ -12,6 +12,8 @@ const SELECT = {
   id: true,
   name: true,
   generalPhone: true,
+  address: true,
+  placeId: true,
   timeZone: true,
   geofenceRadiusM: true,
   activatedAt: true,
@@ -21,7 +23,10 @@ const SELECT = {
   _count: { select: { contacts: true } },
 } as const
 
-export type HotelRow = Prisma.HotelGetPayload<{ select: typeof SELECT }>
+export type HotelRow = Prisma.HotelGetPayload<{ select: typeof SELECT }> & {
+  latitude?: number | null
+  longitude?: number | null
+}
 
 @Injectable()
 export class HotelsRepository {
@@ -34,7 +39,7 @@ export class HotelsRepository {
       ...(query.search ? { name: { contains: query.search, mode: 'insensitive' } } : {}),
     }
 
-    const [rows, total] = await Promise.all([
+    const [plain, total] = await Promise.all([
       this.prisma.hotel.findMany({
         where,
         select: SELECT,
@@ -45,11 +50,44 @@ export class HotelsRepository {
       this.prisma.hotel.count({ where }),
     ])
 
+    const coords = await this.coordinatesOf(plain.map((r) => r.id))
+    const rows = plain.map((r) => ({ ...r, ...coords[r.id] }))
+
     return { rows, total }
   }
 
   async findById(id: string): Promise<HotelRow | null> {
-    return this.prisma.hotel.findUnique({ where: { id }, select: SELECT })
+    const row = await this.prisma.hotel.findUnique({ where: { id }, select: SELECT })
+
+    return row ? { ...row, ...(await this.coordinatesOf([row.id]))[row.id] } : null
+  }
+
+  async coordinatesOf(
+    ids: string[],
+  ): Promise<Record<string, { latitude: number | null; longitude: number | null }>> {
+    if (ids.length === 0) {
+      return {}
+    }
+
+    const rows = await this.prisma.$queryRaw<
+      Array<{ id: string; latitude: number | null; longitude: number | null }>
+    >`
+      SELECT id,
+             ST_Y(coordinates::geometry) AS latitude,
+             ST_X(coordinates::geometry) AS longitude
+        FROM commercial.hotel
+       WHERE id = ANY(${Prisma.sql`ARRAY[${Prisma.join(ids.map((i) => Prisma.sql`${i}::uuid`))}]`})`
+
+    return Object.fromEntries(
+      rows.map((r) => [r.id, { latitude: r.latitude, longitude: r.longitude }]),
+    )
+  }
+
+  async setCoordinates(id: string, latitude: number, longitude: number): Promise<void> {
+    await this.prisma.$executeRaw`
+      UPDATE commercial.hotel
+         SET coordinates = ST_SetSRID(ST_MakePoint(${longitude}::float8, ${latitude}::float8), 4326)::geography
+       WHERE id = ${id}::uuid`
   }
 
   async findByName(name: string): Promise<{ id: string } | null> {
@@ -71,6 +109,8 @@ export class HotelsRepository {
         zoneId: data.zoneId,
         timeZone: data.timeZone,
         generalPhone: data.generalPhone ?? null,
+        address: data.address ?? null,
+        placeId: data.placeId ?? null,
         geofenceRadiusM: data.geofenceRadiusM ?? null,
         createdBy: userId,
         updatedBy: userId,
@@ -87,6 +127,8 @@ export class HotelsRepository {
         ...(data.zoneId !== undefined ? { zoneId: data.zoneId } : {}),
         ...(data.timeZone !== undefined ? { timeZone: data.timeZone } : {}),
         ...(data.generalPhone !== undefined ? { generalPhone: data.generalPhone } : {}),
+        ...(data.address !== undefined ? { address: data.address } : {}),
+        ...(data.placeId !== undefined ? { placeId: data.placeId } : {}),
         ...(data.geofenceRadiusM !== undefined ? { geofenceRadiusM: data.geofenceRadiusM } : {}),
         updatedBy: userId,
       },

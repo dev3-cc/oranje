@@ -4,7 +4,7 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   rootDir: '.',
-  testRegex: 'test/.*\\.spec\\.ts$',
+  testRegex: 'test/(?!integration/).*\\.spec\\.ts$',
 
   // Los imports llevan sufijo .js por NodeNext; Jest resuelve sobre los .ts
   moduleNameMapper: {

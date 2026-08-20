@@ -19,7 +19,10 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
     "auth:keys": "tsx scripts/generate-keys.ts",
-    "token:local": "tsx scripts/token-local.ts"
+    "token:local": "tsx scripts/token-local.ts",
+    "test:db": "jest --config jest.integration.config.cjs",
+    "db:bootstrap": "psql \"$MIGRATE_DATABASE_URL\" -v ON_ERROR_STOP=1 -f prisma/bootstrap.sql",
+    "db:grants": "psql \"$MIGRATE_DATABASE_URL\" -v ON_ERROR_STOP=1 -f prisma/grants.sql"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

@@ -43,7 +43,15 @@ export class HotelsService {
     await this.assertZone(dto.zoneId)
     await this.assertNameAvailable(dto.name)
 
-    return toEntity(await this.repo.create(dto, userId))
+    const row = await this.repo.create(dto, userId)
+
+    if (dto.latitude !== undefined && dto.longitude !== undefined) {
+      await this.repo.setCoordinates(row.id, dto.latitude, dto.longitude)
+
+      return this.get(row.id)
+    }
+
+    return toEntity(row)
   }
 
   async update(id: string, dto: UpdateHotelDto, userId: string): Promise<HotelEntity> {
@@ -61,7 +69,13 @@ export class HotelsService {
       await this.assertNameAvailable(dto.name)
     }
 
-    return toEntity(await this.repo.update(id, dto, userId))
+    if (dto.latitude !== undefined && dto.longitude !== undefined) {
+      await this.repo.setCoordinates(id, dto.latitude, dto.longitude)
+    }
+
+    await this.repo.update(id, dto, userId)
+
+    return this.get(id)
   }
 
   private async assertZone(zoneId: string): Promise<void> {
@@ -87,6 +101,10 @@ function toEntity(row: HotelRow): HotelEntity {
     generalPhone: row.generalPhone,
     timeZone: row.timeZone,
     geofenceRadiusM: row.geofenceRadiusM,
+    address: row.address,
+    placeId: row.placeId,
+    latitude: row.latitude ?? null,
+    longitude: row.longitude ?? null,
     zone: row.zone,
     isClient: row.activatedAt !== null,
     activatedAt: row.activatedAt?.toISOString() ?? null,

@@ -8,5 +8,7 @@ export interface ProspectEntity {
   openedAt: string
   closedAt: string | null
   attemptCount: number
+  lastAttempt: { occurredAt: string; attemptType: string; outcome: string } | null
+  lastProposal: { version: number; isDraft: boolean; sentAt: string | null } | null
   isOpen: boolean
 }

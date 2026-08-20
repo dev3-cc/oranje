@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common'
@@ -16,6 +17,7 @@ import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { CloseProspectDto } from './dto/close-prospect.dto.js'
 import { CreateProspectDto } from './dto/create-prospect.dto.js'
 import { QueryProspectsDto } from './dto/query-prospects.dto.js'
+import { UpdateProspectDto } from './dto/update-prospect.dto.js'
 import type { ProspectEntity } from './entities/prospect.entity.js'
 import { ProspectsService, Board } from './prospects.service.js'
 
@@ -45,8 +47,19 @@ export class ProspectsController {
     return { data: await this.prospects.create(dto, user) }
   }
 
+  @Requires('pipeline', 'create_prospect')
+  @Patch(':id')
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateProspectDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: ProspectEntity }> {
+    return { data: await this.prospects.update(id, dto, user) }
+  }
+
   @Requires('pipeline', 'close_cycle')
   @Post(':id/close')
+  @HttpCode(HttpStatus.OK)
   async close(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: CloseProspectDto,
