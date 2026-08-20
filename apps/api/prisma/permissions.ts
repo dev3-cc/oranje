@@ -199,10 +199,6 @@ const SALES: Permission[] = [
     label: 'Ver prospectos por ruta',
     roles: [BD, BDC, SYS],
   },
-  // El vault dice que el BD tiene «su territorio asignado» y que el BDC
-  // «supervisa a los BD en su territorio y rutas asignadas», pero ninguno de los
-  // dos documentos dice QUIEN lo asigna. Se deriva del BDC por ser su manager:
-  // es el mismo rol que ya tiene MI EQUIPO. Cuarta fila sembrada sin matriz.
   {
     module: 'territory',
     action: 'assign',
