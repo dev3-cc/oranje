@@ -15,12 +15,7 @@ import type { Env } from '../../../../config/env.validation.js'
 import { PrismaService } from '../../../../infra/prisma/index.js'
 import { AccessTokenService } from '../access-token.service.js'
 
-/**
- * Guard global: ninguna ruta responde sin token salvo que lleve `@Public()`.
- *
- * Solo verifica la firma y cuelga el usuario del request. **No decide permisos**
- * — eso es de la Matriz (`identity.role_permission`) y va en un guard aparte.
- */
+// Verifica la firma y cuelga el usuario del request. No decide permisos.
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   private readonly logger = new Logger(JwtAuthGuard.name)
@@ -34,7 +29,6 @@ export class JwtAuthGuard implements CanActivate {
     private readonly prisma: PrismaService,
     config: ConfigService<Env, true>,
   ) {
-    // La validación de entorno ya impidió que esto sea true fuera de local
     this.authDisabled = config.get('AUTH_DISABLED', { infer: true })
     this.devUserEmail = config.get('AUTH_DEV_USER_EMAIL', { infer: true })
 
@@ -82,16 +76,12 @@ export class JwtAuthGuard implements CanActivate {
     return true
   }
 
-  /**
-   * El usuario suplantado es uno real de la base, no uno inventado: así el
-   * alcance y el rol con los que trabajas en local son los mismos que en la nube.
-   */
+  // Un usuario real de la base: el alcance y el rol en local son los de la nube.
   private async resolveDevUser(): Promise<AuthenticatedUser> {
     if (this.devUser) {
       return this.devUser
     }
 
-    // La validación de entorno ya lo exigió junto con AUTH_DISABLED
     const email = this.devUserEmail ?? ''
 
     const user = await this.prisma.user.findUnique({

@@ -1,14 +1,8 @@
 import { z } from 'zod'
 
-/**
- * Estándares de Desarrollo §9: toda variable se valida al arranque, así que si
- * falta una la app no levanta.
- *
- * El interruptor es APP_ENV y no NODE_ENV porque Jest pone NODE_ENV=test por su
- * cuenta, y correr los tests no debe exigir material criptográfico.
- */
+// El interruptor es APP_ENV y no NODE_ENV: Jest pone NODE_ENV=test por su
+// cuenta, y correr los tests no debe exigir material criptográfico.
 
-/** local: tu máquina · staging: oranje-staging · production: oranje-prod (D-06). */
 export const APP_ENVS = ['local', 'staging', 'production'] as const
 export type AppEnv = (typeof APP_ENVS)[number]
 
@@ -17,32 +11,24 @@ const baseSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'staging', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
 
-  // Apunta al Cloud SQL Auth Proxy, nunca a la IP de la instancia (BD §13)
+  // El proxy, nunca la IP de la instancia.
   DATABASE_URL: z.string().url(),
 
-  // Conexiones por instancia: max × instancias <= max_connections de Cloud SQL
+  // max × instancias <= max_connections de Cloud SQL.
   DATABASE_POOL_MAX: z.coerce.number().int().positive().max(100).default(10),
   DATABASE_CONNECT_TIMEOUT_MS: z.coerce.number().int().positive().default(10_000),
   DATABASE_STATEMENT_TIMEOUT_MS: z.coerce.number().int().positive().default(15_000),
 
-  /**
-   * Firebase: emisor y audiencia del ID token del login. Opcionales mientras no
-   * exista el proyecto — sin ellas solo `/auth/session` responde 503.
-   * Obligatorias en producción.
-   */
+  // Sin estas, solo /auth/session responde 503. Obligatorias en producción.
   AUTH_ISSUER_URL: optionalVar(z.string().url()),
   AUTH_AUDIENCE: optionalVar(z.string().min(1)),
 
-  /**
-   * Apaga la autenticación y trabaja como AUTH_DEV_USER_EMAIL. Solo en `local`:
-   * el refinamiento de abajo tumba el arranque si aparece en un desplegado.
-   */
+  // Solo en local: el refinamiento de abajo tumba el arranque si aparece
+  // en un desplegado.
   AUTH_DISABLED: booleanFromEnv(false),
   AUTH_DEV_USER_EMAIL: optionalVar(z.string().email()),
 
-  // --- Nuestro JWT ---
-  // local firma con secreto compartido (HS256); staging y producción con par
-  // de llaves (RS256), para que la llave que firma no sea la que verifica
+  // HS256 en local, RS256 en los desplegados.
   JWT_SECRET: optionalVar(z.string().min(32)),
   JWT_PRIVATE_KEY: optionalVar(z.string().min(1)),
   JWT_PUBLIC_KEY: optionalVar(z.string().min(1)).refine(
@@ -55,7 +41,6 @@ const baseSchema = z.object({
 
   COOKIE_SECURE: booleanFromEnv(true),
 
-  /** Lista blanca de orígenes, separados por coma. Vacío = ninguno. */
   CORS_ORIGINS: z
     .string()
     .default('')
@@ -66,7 +51,6 @@ const baseSchema = z.object({
         .filter(Boolean),
     ),
 
-  /** Peticiones por minuto y por IP. */
   RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(120),
 
   STORAGE_BUCKET: z.string().min(1),
@@ -74,15 +58,13 @@ const baseSchema = z.object({
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 })
 
-/**
- * `FOO=` es lo mismo que no declararla. Sin esto, dejar el hueco en el `.env` da
- * un error de formato en vez del de "falta esta variable", que es el útil.
- */
+// `FOO=` es lo mismo que no declararla: si no, el error dice "formato" en vez
+// de "falta esta variable".
 function optionalVar<T extends z.ZodType>(schema: T) {
   return z.preprocess((v) => (v === '' ? undefined : v), schema.optional())
 }
 
-/** Las variables de entorno son strings; "false" es una cadena con valor de verdad. */
+// "false" es una cadena con valor de verdad.
 function booleanFromEnv(porDefecto: boolean) {
   return z
     .enum(['true', 'false'])
@@ -90,10 +72,7 @@ function booleanFromEnv(porDefecto: boolean) {
     .transform((v) => v === 'true')
 }
 
-/**
- * Lo que exige cada ambiente: local afloja, los desplegados aprietan. Es donde
- * un despliegue mal configurado muere al arrancar en vez de quedar abierto.
- */
+// Donde un despliegue mal configurado muere al arrancar en vez de quedar abierto.
 const envSchema = baseSchema.superRefine((env, ctx) => {
   const isDeployed = env.APP_ENV !== 'local'
   const isProduction = env.APP_ENV === 'production'
@@ -103,7 +82,6 @@ const envSchema = baseSchema.superRefine((env, ctx) => {
   }
 
   if (isDeployed) {
-    // Firma asimétrica: la llave que firma no sale del servicio que emite
     if (!env.JWT_PRIVATE_KEY) missing('JWT_PRIVATE_KEY', `obligatoria en ${env.APP_ENV} (RS256)`)
     if (!env.JWT_PUBLIC_KEY) missing('JWT_PUBLIC_KEY', `obligatoria en ${env.APP_ENV} (RS256)`)
 
@@ -115,14 +93,13 @@ const envSchema = baseSchema.superRefine((env, ctx) => {
       missing('COOKIE_SECURE', `debe ser true en ${env.APP_ENV}: la cookie viaja por HTTPS`)
     }
 
-    // El emulador no verifica firmas: en la nube, cualquiera sería cualquiera
+    // El emulador no verifica firmas: en la nube, cualquiera sería cualquiera.
     if (env.AUTH_ISSUER_URL?.includes('localhost')) {
       missing('AUTH_ISSUER_URL', 'apunta al emulador de Firebase, que no verifica firmas')
     }
   }
 
-  // Staging levanta sin Firebase ni dominio, para probar los CRUD antes de que
-  // existan. Producción no: ahí separan "desplegado" de "abierto".
+  // Staging levanta sin Firebase ni dominio; producción no.
   if (isProduction) {
     if (env.CORS_ORIGINS.length === 0) {
       missing('CORS_ORIGINS', 'obligatoria en production: §6 pide lista blanca explícita')

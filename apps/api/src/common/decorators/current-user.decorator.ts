@@ -1,7 +1,6 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common'
 import { Request } from 'express'
 
-/** Lo que el guard cuelga del request tras validar el token. */
 export interface AuthenticatedUser {
   id: string
   roleCode: string

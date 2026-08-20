@@ -5,14 +5,12 @@ import { PrismaClient } from '@prisma/client'
 
 import type { Env } from '../../config/env.validation.js'
 
-/** El único punto de conexión a Postgres. Ningún módulo instancia su propio cliente. */
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name)
 
   constructor(config: ConfigService<Env, true>) {
-    // Prisma 7 exige un driver adapter, y por eso el pool se configura aquí y
-    // no como parámetros del DATABASE_URL
+    // Prisma 7 exige driver adapter: el pool se configura aquí, no en la URL.
     const adapter = new PrismaPg({
       connectionString: config.get('DATABASE_URL', { infer: true }),
       max: config.get('DATABASE_POOL_MAX', { infer: true }),
@@ -39,7 +37,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     await this.$disconnect()
   }
 
-  /** Ida y vuelta real a la base: que el pool exista no prueba que Postgres conteste. */
   async ping(): Promise<boolean> {
     await this.$queryRaw`SELECT 1`
     return true

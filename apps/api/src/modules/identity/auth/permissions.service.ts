@@ -2,19 +2,10 @@ import { Injectable, Logger } from '@nestjs/common'
 
 import { PrismaService } from '../../../infra/prisma/index.js'
 
-/**
- * Responde la primera de las dos preguntas de la autorización: **¿este rol puede
- * hacer esta acción, en principio?**
- *
- * La segunda —¿sobre qué filas?— es el alcance, vive en `identity.user`
- * (`hotel_id` + `department_id`) y la resuelve cada servicio con su consulta.
- * Este servicio no la toca: mezclarlas obligaría a una fila por hotel.
- *
- * Los permisos se cachean por rol. Son datos de catálogo que cambian con un
- * `INSERT` deliberado, no en cada request, y sin caché cada llamada pegaría a la
- * base solo para preguntar lo mismo. El costo es que revocar un permiso tarda
- * hasta `TTL_MS` en surtir efecto — por eso el TTL es corto y hay `invalidate()`.
- */
+// La capacidad, no el alcance: sobre qué filas vive en identity.user y lo
+// resuelve cada servicio. Mezclarlas obligaría a una fila por hotel.
+//
+// Se cachea por rol, así que revocar tarda hasta TTL_MS en surtir efecto.
 const TTL_MS = 60_000
 
 @Injectable()
@@ -30,7 +21,6 @@ export class PermissionsService {
     return permissions.has(`${module}:${action}`)
   }
 
-  /** Tras cambiar la Matriz. Sin argumento, tira todo. */
   invalidate(roleCode?: string): void {
     if (roleCode) {
       this.cache.delete(roleCode)
@@ -53,8 +43,7 @@ export class PermissionsService {
 
     const permissions = new Set(rows.map((f) => `${f.module}:${f.action}`))
 
-    // Un rol sin filas no es un error: los departamentos sin matriz quedan
-    // negados por omisión. Se avisa una vez por ciclo de caché, no en cada request
+    // Un rol sin filas no es error: los departamentos sin matriz quedan negados.
     if (permissions.size === 0) {
       this.logger.warn(`El rol ${roleCode} no tiene permisos: no podrá hacer nada`)
     }

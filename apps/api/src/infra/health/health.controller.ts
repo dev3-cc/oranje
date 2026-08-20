@@ -3,14 +3,12 @@ import { Controller, Get } from '@nestjs/common'
 import { Public } from '../../common/decorators/index.js'
 import { PrismaService } from '../prisma/index.js'
 
-// Público: el probe de Cloud Run no trae token
 @Public()
 @Controller('health')
 export class HealthController {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Liveness. No toca la base a propósito: si lo hiciera, una caída de Postgres
-  // reiniciaría el API en ciclo sin arreglar nada
+  // No toca la base: si lo hiciera, una caída de Postgres reiniciaría el API en ciclo.
   @Get()
   check(): { status: string } {
     return { status: 'ok' }

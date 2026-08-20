@@ -21,7 +21,7 @@ import { CreateSessionDto } from './dto/create-session.dto.js'
 
 const REFRESH_COOKIE = 'oranje_refresh'
 
-/** Lo que sale al cliente. El refresh NO va en el body: va en la cookie. */
+// El refresh NO va en el body: va en la cookie.
 interface SessionResponse {
   data: Omit<Session, 'refreshToken'>
 }
@@ -43,12 +43,7 @@ export class AuthController {
     }
   }
 
-  /**
-   * Crear sesión. Entra el ID token de Firebase, sale el nuestro.
-   *
-   * Público porque es la puerta: el usuario todavía no tiene token de Oranje.
-   * Limitado a 5 intentos por minuto (Estándares §6: rate limiting estricto en login).
-   */
+  // Público porque es la puerta: el usuario todavía no tiene token de Oranje.
   @Public()
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @Post('session')
@@ -63,10 +58,8 @@ export class AuthController {
     return this.respond(session, response)
   }
 
-  /**
-   * Renovar. Cada llamada quema el refresh anterior y emite uno nuevo, así que
-   * un token robado deja de servir en cuanto el dueño renueva.
-   */
+  // Cada llamada quema el refresh anterior: un token robado deja de servir en
+  // cuanto el dueño renueva.
   @Public()
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
   @Post('refresh')
@@ -80,7 +73,6 @@ export class AuthController {
     return this.respond(session, response)
   }
 
-  /** Cerrar esta sesión. */
   @Public()
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -97,10 +89,7 @@ export class AuthController {
     response.clearCookie(REFRESH_COOKIE, this.cookieOptions)
   }
 
-  /**
-   * Cerrar TODAS las sesiones del usuario. Esta sí exige token: es una acción
-   * sobre la cuenta, no sobre la sesión que traes.
-   */
+  // Exige token: es una acción sobre la cuenta, no sobre la sesión que traes.
   @Post('logout-all')
   @HttpCode(HttpStatus.OK)
   async logoutAll(
