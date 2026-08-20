@@ -203,7 +203,7 @@ const SALES: Permission[] = [
     module: 'territory',
     action: 'assign',
     label: 'Asignar territorio a un BD',
-    roles: [BDC],
+    roles: [BDC, ADMIN],
   },
   {
     module: 'territory',
