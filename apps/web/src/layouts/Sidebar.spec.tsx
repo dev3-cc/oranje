@@ -25,6 +25,8 @@ const EXPECTED_LINKS: [string, string][] = [
   ['Pool de Colaboradores', '/pool-colaboradores'],
   ['Schedule', '/schedule'],
   ['Timesheet', '/timesheet'],
+  ['Timesheet Global', '/timesheet-global'],
+  ['Blacklist', '/blacklist'],
   ['Mi Personal', '/mi-personal'],
   ['Accidentes', '/accidentes'],
 ]
@@ -46,7 +48,8 @@ describe('Sidebar', () => {
     renderSidebar()
 
     for (const [label, href] of EXPECTED_LINKS) {
-      expect(screen.getByRole('link', { name: new RegExp(label) })).toHaveAttribute('href', href)
+      // Ancla exacta: «Timesheet» no debe casar también con «Timesheet Global».
+      expect(screen.getByRole('link', { name: label })).toHaveAttribute('href', href)
     }
   })
 

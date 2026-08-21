@@ -44,8 +44,10 @@ const MODULES: NavModule[] = [
   { label: 'Reportes', to: '/reportes', icon: 'bar_chart' },
   { label: 'Requisiciones', to: '/requisiciones', icon: 'assignment' },
   { label: 'Pool de Colaboradores', to: '/pool-colaboradores', icon: 'badge' },
+  { label: 'Blacklist', to: '/blacklist', icon: 'block' },
   { label: 'Schedule', to: '/schedule', icon: 'calendar_month' },
   { label: 'Timesheet', to: '/timesheet', icon: 'schedule' },
+  { label: 'Timesheet Global', to: '/timesheet-global', icon: 'fact_check' },
   { label: 'Mi Personal', to: '/mi-personal', icon: 'badge' },
   { label: 'Accidentes', to: '/accidentes', icon: 'report' },
 ]

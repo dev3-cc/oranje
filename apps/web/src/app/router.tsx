@@ -10,9 +10,6 @@ import { ModulePlaceholder } from '@/shared/components/ModulePlaceholder'
  * sale de aquí y pasa a ser una feature propia cuando llegue su maqueta.
  */
 const PENDING_MODULES = [
-  { path: 'mi-equipo', title: 'Mi Equipo' },
-  { path: 'reportes', title: 'Reportes' },
-  { path: 'schedule', title: 'Schedule' },
   { path: 'mi-personal', title: 'Mi Personal' },
   { path: 'accidentes', title: 'Accidentes' },
 ]
@@ -138,6 +135,13 @@ export const router = createBrowserRouter([
             },
           },
           {
+            path: 'schedule',
+            lazy: async () => {
+              const m = await import('@/features/schedule')
+              return { Component: m.SchedulePage }
+            },
+          },
+          {
             path: 'timesheet',
             lazy: async () => {
               const m = await import('@/features/timesheet')
@@ -145,10 +149,38 @@ export const router = createBrowserRouter([
             },
           },
           {
+            path: 'timesheet-global',
+            lazy: async () => {
+              const m = await import('@/features/timesheet')
+              return { Component: m.TimesheetGlobalPage }
+            },
+          },
+          {
             path: 'pool-colaboradores',
             lazy: async () => {
               const m = await import('@/features/recruitment')
               return { Component: m.PoolPage }
+            },
+          },
+          {
+            path: 'reportes',
+            lazy: async () => {
+              const m = await import('@/features/reports')
+              return { Component: m.ReportsPage }
+            },
+          },
+          {
+            path: 'mi-equipo',
+            lazy: async () => {
+              const m = await import('@/features/team')
+              return { Component: m.TeamPage }
+            },
+          },
+          {
+            path: 'blacklist',
+            lazy: async () => {
+              const m = await import('@/features/recruitment')
+              return { Component: m.BlacklistPage }
             },
           },
           {
