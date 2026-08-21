@@ -13,7 +13,12 @@ const SELECT = {
   openedAt: true,
   closedAt: true,
   hotel: {
-    select: { id: true, name: true, zone: { select: { id: true, code: true, name: true } } },
+    select: {
+      id: true,
+      name: true,
+      photoUrl: true,
+      zone: { select: { id: true, code: true, name: true } },
+    },
   },
   owner: { select: { id: true, fullName: true } },
   onboardingState: {
