@@ -2,7 +2,6 @@ import { cn } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
 import type { RequisitionPosition } from '../types/requisition.types'
-import { POSITION_MODALITY_LABEL } from '../types/requisition.types'
 
 import { CoverageBadge } from './CoverageBadge'
 
@@ -96,7 +95,7 @@ export function PositionsTable({
                   </td>
 
                   <td className="px-3 py-4 text-sm whitespace-nowrap text-ink-2">
-                    {POSITION_MODALITY_LABEL[position.modality]}
+                    {position.modality}
                   </td>
                 </tr>
               )

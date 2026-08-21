@@ -8,7 +8,13 @@ import { RequisitionDetailPage } from './RequisitionDetailPage'
 
 import { store } from '@/app/store'
 
-function renderDetail(requisitionId = 'req-0001'): void {
+/**
+ * La ficha COMPONE el contrato real: `GET /requisitions/:id` + las
+ * asignaciones de `coverage`. Los nombres de quién creó, autorizó o inspecciona
+ * salen como `—`: el contrato solo da ids y su endpoint de nombres no existe
+ * aún. `req-0005` (Villas Coral) es la autorizada con dos posiciones.
+ */
+function renderDetail(requisitionId = 'req-0005'): void {
   const router = createMemoryRouter(
     [{ path: '/requisiciones/:requisitionId', element: <RequisitionDetailPage /> }],
     { initialEntries: [`/requisiciones/${requisitionId}`] },
@@ -22,58 +28,49 @@ function renderDetail(requisitionId = 'req-0001'): void {
 }
 
 describe('RequisitionDetailPage', () => {
-  it('encabeza con el folio, su estado y quién la creó', async () => {
+  it('encabeza con el folio y no inventa quién la creó', async () => {
     renderDetail()
 
-    expect(await screen.findByRole('heading', { name: '202608120930·K7' })).toBeInTheDocument()
-    expect(
-      screen.getByText(
-        'Hotel Xcaret Arte · Ama de llaves · creada por Laura Méndez el 12 ago 2026 09:30',
-      ),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '202608130800·D4' })).toBeInTheDocument()
+    // El contrato no expone al creador: raya, no un nombre fingido.
+    expect(screen.getByText(/Villas Coral · Housekeeping · creada por —/)).toBeInTheDocument()
   })
 
-  it('los totales vienen del backend aunque los slots estén en la respuesta', async () => {
+  it('los totales salen de la entidad, no de contar chips', async () => {
     renderDetail()
 
-    // 4 de 7 son 57.14 %: se muestra el número de la API, redondeado al pintar.
-    expect(await screen.findByText('7 · 4 ocupados')).toBeInTheDocument()
-    expect(screen.getByText('57%')).toBeInTheDocument()
-    expect(screen.getByText('Marcela Cruz')).toBeInTheDocument()
-    expect(screen.getByText('Ricardo Solís')).toBeInTheDocument()
+    expect(await screen.findByText('6 · 3 ocupados')).toBeInTheDocument()
+    expect(screen.getByText('50%')).toBeInTheDocument()
   })
 
   it('cada posición lleva su cobertura y su urgencia, que no son la misma cosa', async () => {
     renderDetail()
 
-    expect(await screen.findByText('Parcial 3/4')).toBeInTheDocument()
-    expect(screen.getByText('Cubierta 1/1')).toBeInTheDocument()
-    expect(screen.getByText('Sin cubrir 0/2')).toBeInTheDocument()
+    expect(await screen.findByText('Parcial 1/4')).toBeInTheDocument()
+    expect(screen.getByText('Cubierta 2/2')).toBeInTheDocument()
 
-    // Dos posiciones arrancan el 18 y una el 20: por eso hay dos urgencias.
-    expect(screen.getAllByText('< 72 h')).toHaveLength(2)
+    expect(screen.getByText('< 72 h')).toBeInTheDocument()
     expect(screen.getByText('72 – 120 h')).toBeInTheDocument()
-    expect(screen.getByText('Nómina')).toBeInTheDocument()
+    expect(screen.getAllByText('Tiempo completo').length).toBeGreaterThan(0)
   })
 
   it('abre con los slots de la primera posición y cambia al elegir otra', async () => {
     const user = userEvent.setup()
     renderDetail()
 
-    expect(await screen.findByText('Slots de la posición 1 · Camarista')).toBeInTheDocument()
-    expect(screen.getByText('Ana Rivera Gómez')).toBeInTheDocument()
-    expect(screen.getByText('Asignado 12 ago 10:02')).toBeInTheDocument()
-    expect(screen.getAllByText('occupied')).toHaveLength(3)
-    expect(screen.getByText('Visible en la Bolsa · Self-Pick')).toBeInTheDocument()
+    expect(await screen.findByText('Slots de la posición 1 · Houseman')).toBeInTheDocument()
+    // Ocupado/libre viene del conteo; el nombre de quién ocupa aún no tiene
+    // contrato (las asignaciones no exponen la posición del slot).
+    expect(screen.getAllByText('occupied')).toHaveLength(1)
+    expect(screen.getAllByText('Visible en la Bolsa · Self-Pick')).toHaveLength(3)
 
     await user.click(screen.getByRole('button', { name: 'Housekeeper' }))
 
-    expect(screen.getByText('Slots de la posición 3 · Housekeeper')).toBeInTheDocument()
-    expect(screen.getAllByText('Sin asignar')).toHaveLength(2)
-    expect(screen.queryByText('Ana Rivera Gómez')).not.toBeInTheDocument()
+    expect(screen.getByText('Slots de la posición 2 · Housekeeper')).toBeInTheDocument()
+    expect(screen.getAllByText('occupied')).toHaveLength(2)
   })
 
-  it('la historia va de lo más nuevo a lo más viejo y marca dónde nace', async () => {
+  it('la historia mínima marca dónde nace y cuándo se autorizó', async () => {
     renderDetail()
 
     const history = (await screen.findByText('Historia de estado')).closest('section')
@@ -92,15 +89,13 @@ describe('RequisitionDetailPage', () => {
     expect(within(entries[1] as HTMLElement).getAllByText('En elaboración')).toHaveLength(1)
   })
 
-  it('no salta pasos del semáforo: a cubierta totalmente se llega por en proceso', async () => {
-    renderDetail('req-0002')
+  it('una requisición sin autorizar solo tiene el asiento del alta', async () => {
+    renderDetail('req-0001')
 
     const history = (await screen.findByText('Historia de estado')).closest('section')
     const entries = within(history as HTMLElement).getAllByRole('listitem')
 
-    // §5 no permite VERDE -> AZUL_CLARO directo; la historia pasa por AMARILLO.
-    expect(entries).toHaveLength(4)
-    expect(within(entries[0] as HTMLElement).getByText('Cobertura completada')).toBeInTheDocument()
-    expect(within(entries[1] as HTMLElement).getByText('Puesta en proceso')).toBeInTheDocument()
+    expect(entries).toHaveLength(1)
+    expect(within(entries[0] as HTMLElement).getByText('Creada')).toBeInTheDocument()
   })
 })

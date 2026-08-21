@@ -1,12 +1,11 @@
 import { z } from 'zod'
 
-import { ENGLISH_LEVELS } from '@/shared/constants/catalogs'
-
 /** Al menos una persona por posición: una fila de cantidad cero no pide nada. */
 const QUANTITY_PATTERN = /^\d+$/
 
 /**
- * Alta de una requisición.
+ * Alta de una requisición contra el contrato REAL: posición, modalidad,
+ * departamento e inglés se eligen de los catálogos del backend y viajan por id.
  *
  * La cantidad se valida como TEXTO y se convierte al enviar. Con
  * `z.coerce.number()` el tipo de entrada del esquema sería `unknown` y el de
@@ -18,10 +17,11 @@ const QUANTITY_PATTERN = /^\d+$/
  * por el navegador chocaría con el de otra alta simultánea.
  */
 export const requisitionPositionDraftSchema = z.object({
-  positionName: z.string().trim().min(1, 'Escribe la posición'),
-  modality: z.enum(['POR_EVENTO', 'NOMINA']),
-  english: z.enum(ENGLISH_LEVELS),
-  department: z.string().trim().min(1, 'Falta el departamento'),
+  catalogPositionId: z.string().min(1, 'Falta la posición'),
+  hiringModalityId: z.string().min(1, 'Falta la modalidad'),
+  /** Vacío = la posición no exige inglés (la columna es nulable). */
+  englishLevelId: z.string(),
+  hotelDepartmentId: z.string().min(1, 'Falta el departamento'),
   quantity: z
     .string()
     .refine((value) => QUANTITY_PATTERN.test(value) && Number(value) >= 1, 'Mínimo 1'),
@@ -36,8 +36,8 @@ export const requisitionPositionDraftSchema = z.object({
  */
 export const requisitionFormSchema = z.object({
   hotelId: z.string().min(1, 'Falta el hotel'),
-  department: z.string().min(1, 'Falta el departamento'),
-  areaManagerId: z.string().min(1, 'Falta el GH responsable'),
+  /** Propuesta para las filas nuevas; cada posición lleva EL SUYO. */
+  department: z.string(),
   positions: z.array(requisitionPositionDraftSchema).min(1, 'Agrega al menos una posición'),
 })
 
@@ -45,12 +45,12 @@ export type RequisitionPositionDraft = z.infer<typeof requisitionPositionDraftSc
 export type RequisitionForm = z.infer<typeof requisitionFormSchema>
 
 /** Fila nueva: hereda el departamento de la cabecera, que es lo más común. */
-export function emptyPositionDraft(department: string): RequisitionPositionDraft {
+export function emptyPositionDraft(hotelDepartmentId: string): RequisitionPositionDraft {
   return {
-    positionName: '',
-    modality: 'POR_EVENTO',
-    english: 'NO_REQUERIDO',
-    department,
+    catalogPositionId: '',
+    hiringModalityId: '',
+    englishLevelId: '',
+    hotelDepartmentId,
     quantity: '1',
     startDate: '',
     startTime: '07:00',

@@ -1,31 +1,12 @@
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, type ReactNode } from 'react'
-import { useForm } from 'react-hook-form'
+import { useState, type ReactNode } from 'react'
 
-import {
-  useAuthorizeRequisitionMutation,
-  useRejectRequisitionMutation,
-} from '../api/authorizationsApi'
-import type {
-  AuthorizationRequest,
-  AuthorizationUrgencyPreview,
-  StatusChangeReason,
-} from '../types/requisition.types'
-import {
-  resolveAuthorizationSchema,
-  type ResolveAuthorizationForm,
-} from '../types/resolveAuthorization.schema'
+import { useAuthorizeRequisitionMutation } from '../api/authorizationsApi'
+import type { AuthorizationRequest, AuthorizationUrgencyPreview } from '../types/requisition.types'
 
 import { Button } from '@/shared/components/Button'
-import { FormField } from '@/shared/components/FormField'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { URGENCY_COLOR_NAME, URGENCY_LABEL } from '@/shared/constants/requisitionStatus'
 import { formatDayMonth } from '@/shared/lib/formatters'
-
-const CONTROL_CLASS =
-  'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm focus:border-o-500 focus:outline-none'
-
-const REASON_FIELD_ID = 'resolution-reason'
 
 /**
  * La advertencia de qué pasará al firmar, en palabras.
@@ -48,74 +29,40 @@ function describeUrgencyPreview(preview: AuthorizationUrgencyPreview): string {
 }
 
 /**
- * Autorizar o rechazar. Las dos acciones comparten el mismo motivo, y por eso
- * comparten formulario en vez de ser dos diálogos.
+ * Autorizar. La firma real no lleva motivo ni cuerpo: es el token de quien
+ * firma, y el backend congela la urgencia y valida el alcance (D-09).
  */
 export function AuthorizationResolutionForm({
   request,
-  reasons,
   authorizerRole,
   authorizerScope,
 }: {
   request: AuthorizationRequest
-  reasons: StatusChangeReason[]
   authorizerRole: string
   authorizerScope: string
 }): ReactNode {
-  const [authorize] = useAuthorizeRequisitionMutation()
-  const [reject] = useRejectRequisitionMutation()
+  const [authorize, { isLoading: isSubmitting }] = useAuthorizeRequisitionMutation()
+  const [rootError, setRootError] = useState<string | null>(null)
 
-  const {
-    register,
-    handleSubmit,
-    setError,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<ResolveAuthorizationForm>({
-    resolver: zodResolver(resolveAuthorizationSchema),
-    defaultValues: { reasonId: '' },
-  })
-
-  // Al cambiar de requisición se limpia: un motivo escrito para una no vale
-  // para la siguiente, y arrastrarlo es la manera de firmar algo con la razón
-  // equivocada.
-  useEffect(() => {
-    reset({ reasonId: '' })
-  }, [request.id, reset])
-
-  const submitAuthorize = handleSubmit(async (values) => {
+  async function submitAuthorize(): Promise<void> {
+    setRootError(null)
     try {
-      await authorize({
-        requisitionId: request.id,
-        reasonId: values.reasonId === '' ? null : values.reasonId,
-      }).unwrap()
+      await authorize({ requisitionId: request.id }).unwrap()
     } catch {
-      setError('root', { message: 'No se pudo autorizar. Reintenta en unos segundos.' })
+      setRootError('No se pudo autorizar. Reintenta en unos segundos.')
     }
-  })
-
-  const submitReject = handleSubmit(async (values) => {
-    if (values.reasonId === '') {
-      setError('reasonId', { message: 'El motivo es obligatorio al rechazar' })
-      return
-    }
-
-    try {
-      await reject({ requisitionId: request.id, reasonId: values.reasonId }).unwrap()
-    } catch {
-      setError('root', { message: 'No se pudo rechazar. Reintenta en unos segundos.' })
-    }
-  })
+  }
 
   return (
     <SectionCard
       title="Resolución"
-      subtitle="El motivo es obligatorio al rechazar; opcional al autorizar. Queda en requisition_state_history"
+      subtitle="Autorizar congela la urgencia contra la fecha de inicio (RR-H-05)"
     >
       {/* Enter dispara autorizar, que es la acción esperada; rechazar exige el clic. */}
       <form
         onSubmit={(event) => {
-          void submitAuthorize(event)
+          event.preventDefault()
+          void submitAuthorize()
         }}
         className="flex flex-col gap-5"
       >
@@ -126,24 +73,7 @@ export function AuthorizationResolutionForm({
           {describeUrgencyPreview(request.urgencyPreview)}
         </p>
 
-        <FormField
-          label="Motivo (catalogs.status_change_reason)"
-          htmlFor={REASON_FIELD_ID}
-          error={errors.reasonId?.message}
-        >
-          <select id={REASON_FIELD_ID} className={CONTROL_CLASS} {...register('reasonId')}>
-            <option value="">Selecciona un motivo</option>
-            {reasons.map((reason) => (
-              <option key={reason.id} value={reason.id}>
-                {reason.label}
-              </option>
-            ))}
-          </select>
-        </FormField>
-
-        {errors.root?.message !== undefined && (
-          <p className="text-sm text-red">{errors.root.message}</p>
-        )}
+        {rootError !== null && <p className="text-sm text-red">{rootError}</p>}
 
         <div className="flex flex-wrap items-center justify-between gap-4">
           <p className="text-sm text-ink-3">
@@ -151,12 +81,12 @@ export function AuthorizationResolutionForm({
           </p>
 
           <div className="flex gap-3">
+            {/* El contrato aún no expone el rechazo (pendiente 21 del ADR):
+                el botón lo dice en vez de fingir que firma. */}
             <Button
               variant="secondary"
-              onClick={() => {
-                void submitReject()
-              }}
-              disabled={isSubmitting}
+              disabled
+              title="El rechazo aún no existe en el backend (pendiente 21 del ADR)"
             >
               Rechazar
             </Button>

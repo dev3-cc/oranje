@@ -7,7 +7,6 @@ import {
   useCreateRequisitionMutation,
   useGetRequisitionFormOptionsQuery,
 } from '../api/requisitionsApi'
-import { POSITION_MODALITIES, POSITION_MODALITY_LABEL } from '../types/requisition.types'
 import {
   emptyPositionDraft,
   requisitionFormSchema,
@@ -17,7 +16,6 @@ import {
 
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
-import { ENGLISH_LEVEL_LABEL, ENGLISH_LEVELS } from '@/shared/constants/catalogs'
 import {
   AUTHORIZATION_TRANSITION,
   REQUISITION_STATUS_LABEL,
@@ -58,9 +56,10 @@ function positionPath<K extends keyof RequisitionPositionDraft>(
 
 /** Los campos de una fila, para buscar su primer error sin recorrer `unknown`. */
 const POSITION_FIELDS = [
-  'positionName',
+  'catalogPositionId',
+  'hiringModalityId',
   'quantity',
-  'department',
+  'hotelDepartmentId',
   'startDate',
   'startTime',
 ] as const
@@ -109,7 +108,6 @@ export function NewRequisitionDialog({
     defaultValues: {
       hotelId: '',
       department: '',
-      areaManagerId: '',
       positions: [emptyPositionDraft('')],
     },
   })
@@ -118,7 +116,7 @@ export function NewRequisitionDialog({
 
   useEffect(() => {
     if (!isOpen) return
-    reset({ hotelId: '', department: '', areaManagerId: '', positions: [emptyPositionDraft('')] })
+    reset({ hotelId: '', department: '', positions: [emptyPositionDraft('')] })
   }, [isOpen, reset])
 
   const hotelId = watch('hotelId')
@@ -136,15 +134,14 @@ export function NewRequisitionDialog({
 
   const onSubmit = handleSubmit(async (values) => {
     try {
+      /** El cuerpo REAL de `POST /requisitions`: los catálogos van por id. */
       await createRequisition({
         hotelId: values.hotelId,
-        department: values.department,
-        areaManagerId: values.areaManagerId,
         positions: values.positions.map((position) => ({
-          positionName: position.positionName,
-          modality: position.modality,
-          english: position.english,
-          department: position.department,
+          catalogPositionId: position.catalogPositionId,
+          hiringModalityId: position.hiringModalityId,
+          hotelDepartmentId: position.hotelDepartmentId,
+          ...(position.englishLevelId ? { englishLevelId: position.englishLevelId } : {}),
           quantity: Number(position.quantity),
           startDate: position.startDate,
           startTime: position.startTime,
@@ -211,29 +208,11 @@ export function NewRequisitionDialog({
               <select {...register('department')} className={HEADER_CONTROL}>
                 <option value="">Elige el departamento</option>
                 {(options?.departments ?? []).map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-              {errors.department && (
-                <span className="text-xs text-red">{errors.department.message}</span>
-              )}
-            </label>
-
-            <label className="flex flex-col gap-2">
-              <span className="text-sm text-ink-3">GH responsable del área</span>
-              <select {...register('areaManagerId')} className={HEADER_CONTROL}>
-                <option value="">Elige al responsable</option>
-                {(options?.areaManagers ?? []).map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.name}
                   </option>
                 ))}
               </select>
-              {errors.areaManagerId && (
-                <span className="text-xs text-red">{errors.areaManagerId.message}</span>
-              )}
             </label>
 
             <label className="flex flex-col gap-2">
@@ -241,7 +220,7 @@ export function NewRequisitionDialog({
               <input
                 readOnly
                 disabled
-                value={hotel ? `${hotel.inspectorName} — zona ${hotel.zoneName}` : ''}
+                value={hotel ? `Se congela al guardar — zona ${hotel.zoneName} (RR-13)` : ''}
                 placeholder="Se asigna al elegir el hotel"
                 className={HEADER_CONTROL}
               />
@@ -283,35 +262,43 @@ export function NewRequisitionDialog({
                     <tr key={field.id} className="border-b border-line last:border-b-0">
                       <td className="px-2 py-3 text-sm text-ink-3">{index + 1}</td>
                       <td className="px-2 py-3">
-                        <input
-                          {...register(positionPath(index, 'positionName'))}
-                          placeholder="Camarista"
+                        <select
+                          {...register(positionPath(index, 'catalogPositionId'))}
                           aria-label={`Posición ${String(index + 1)}`}
                           className={cn(CELL_CONTROL, 'font-semibold', rowError && 'border-red')}
-                        />
-                      </td>
-                      <td className="px-2 py-3">
-                        <select
-                          {...register(positionPath(index, 'modality'))}
-                          aria-label={`Modalidad ${String(index + 1)}`}
-                          className={CELL_CONTROL}
                         >
-                          {POSITION_MODALITIES.map((modality) => (
-                            <option key={modality} value={modality}>
-                              {POSITION_MODALITY_LABEL[modality]}
+                          <option value="">—</option>
+                          {(options?.positions ?? []).map((item) => (
+                            <option key={item.id} value={item.id}>
+                              {item.name}
                             </option>
                           ))}
                         </select>
                       </td>
                       <td className="px-2 py-3">
                         <select
-                          {...register(positionPath(index, 'english'))}
+                          {...register(positionPath(index, 'hiringModalityId'))}
+                          aria-label={`Modalidad ${String(index + 1)}`}
+                          className={CELL_CONTROL}
+                        >
+                          <option value="">—</option>
+                          {(options?.modalities ?? []).map((item) => (
+                            <option key={item.id} value={item.id}>
+                              {item.name}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-2 py-3">
+                        <select
+                          {...register(positionPath(index, 'englishLevelId'))}
                           aria-label={`Inglés ${String(index + 1)}`}
                           className={CELL_CONTROL}
                         >
-                          {ENGLISH_LEVELS.map((level) => (
-                            <option key={level} value={level}>
-                              {ENGLISH_LEVEL_LABEL[level]}
+                          <option value="">No requerido</option>
+                          {(options?.englishLevels ?? []).map((item) => (
+                            <option key={item.id} value={item.id}>
+                              {item.name}
                             </option>
                           ))}
                         </select>
@@ -321,14 +308,14 @@ export function NewRequisitionDialog({
                             propone el más común, y una requisición puede pedir
                             gente para dos áreas del mismo hotel. */}
                         <select
-                          {...register(positionPath(index, 'department'))}
+                          {...register(positionPath(index, 'hotelDepartmentId'))}
                           aria-label={`Departamento ${String(index + 1)}`}
                           className={CELL_CONTROL}
                         >
                           <option value="">—</option>
                           {(options?.departments ?? []).map((item) => (
-                            <option key={item} value={item}>
-                              {item}
+                            <option key={item.id} value={item.id}>
+                              {item.name}
                             </option>
                           ))}
                         </select>

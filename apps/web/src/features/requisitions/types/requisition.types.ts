@@ -1,4 +1,3 @@
-import type { EnglishLevel } from '@/shared/constants/catalogs'
 import type { RequisitionStatus, UrgencyLevel } from '@/shared/constants/requisitionStatus'
 
 /**
@@ -52,22 +51,11 @@ export interface RequisitionBoard {
   items: RequisitionRow[]
 }
 
-/** Cómo se contrata la posición. */
-export const POSITION_MODALITIES = ['POR_EVENTO', 'NOMINA'] as const
-
-export type PositionModality = (typeof POSITION_MODALITIES)[number]
-
-export const POSITION_MODALITY_LABEL: Record<PositionModality, string> = {
-  POR_EVENTO: 'Por evento',
-  NOMINA: 'Nómina',
-}
-
 /**
- * El nivel de inglés sale del catálogo compartido y no de aquí: es la misma
- * lista que tiene un colaborador en el Pool, y con dos copias un día una
- * tendría «Conversacional» y la otra no.
+ * Modalidad e inglés ya NO son listas cerradas en código: son CATÁLOGOS del
+ * backend (`catalogs.hiring_modality`, `catalogs.english_level`) y viajan como
+ * su NOMBRE ya resuelto. El alta los elige por id desde `RequisitionFormOptions`.
  */
-export type EnglishRequirement = EnglishLevel
 
 /**
  * Estado del slot. Se guardan los valores del enum de base tal cual —en inglés,
@@ -108,15 +96,16 @@ export interface RequisitionPosition {
   startDate: string
   /** `HH:mm` en hora del hotel: a qué hora entra ese día. */
   startTime: string
-  /** Nivel de inglés que exige el puesto. Se pide en el alta y se firma al autorizar. */
-  english: EnglishRequirement
+  /** Nombre del nivel de inglés del catálogo; `—` cuando la posición no lo exige. */
+  english: string
   coverage: RequisitionCoverage
   /**
    * Se deriva de `startDate`, y la calcula el BACKEND por lo mismo que la del
    * tablero. La urgencia que se ve en el tablero es la más apremiante de estas.
    */
   urgency: UrgencyLevel
-  modality: PositionModality
+  /** Nombre de la modalidad del catálogo: `Tiempo completo`, `Temporal`… */
+  modality: string
   slots: RequisitionSlot[]
 }
 
@@ -217,38 +206,43 @@ export interface StatusChangeReason {
 
 export interface ResolveAuthorizationPayload {
   requisitionId: string
-  /** `null` solo es válido al autorizar; al rechazar el motivo es obligatorio. */
-  reasonId: string | null
 }
 
-/** Un hotel elegible al crear una requisición, con lo que se deriva de él. */
+/** Una fila de catálogo del backend, tal cual (`/catalogs/*`). */
+export interface CatalogOption {
+  id: string
+  code: string
+  name: string
+}
+
+/** Un hotel elegible al crear una requisición. Solo clientes activos piden gente. */
 export interface RequisitionHotelOption {
   id: string
   name: string
   zoneName: string
-  /** Se asigna SOLO por la zona del hotel (RR-13): el formulario no lo elige. */
-  inspectorName: string
 }
 
+/** Los catálogos del alta, compuestos de `/catalogs/*` y `/hotels`. */
 export interface RequisitionFormOptions {
   hotels: RequisitionHotelOption[]
-  departments: string[]
-  areaManagers: { id: string; name: string }[]
+  departments: CatalogOption[]
+  positions: CatalogOption[]
+  modalities: CatalogOption[]
+  englishLevels: CatalogOption[]
 }
 
+/** El cuerpo REAL de `POST /requisitions`: los catálogos van por id. */
 export interface CreateRequisitionPosition {
-  positionName: string
-  modality: PositionModality
-  english: EnglishLevel
-  department: string
+  catalogPositionId: string
+  hiringModalityId: string
+  hotelDepartmentId: string
+  englishLevelId?: string
   quantity: number
   startDate: string
-  startTime: string
+  startTime?: string
 }
 
 export interface CreateRequisitionRequest {
   hotelId: string
-  department: string
-  areaManagerId: string
   positions: CreateRequisitionPosition[]
 }

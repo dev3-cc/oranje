@@ -42,11 +42,11 @@ describe('NewRequisitionDialog', () => {
     expect(inspector).toHaveValue('')
 
     await waitFor(() => {
-      expect(screen.getByRole('option', { name: 'Hotel Xcaret Arte' })).toBeInTheDocument()
+      expect(screen.getByRole('option', { name: 'Hotel Puerto Real' })).toBeInTheDocument()
     })
-    await user.selectOptions(screen.getByLabelText('Hotel'), 'htl-arte')
+    await user.selectOptions(screen.getByLabelText('Hotel'), 'htl-psp-0012')
 
-    expect(inspector).toHaveValue('R. Solís — zona Centro')
+    expect(inspector).toHaveValue('Se congela al guardar — zona Centro (RR-13)')
   })
 
   it('cada unidad de cantidad es un slot, y el total los suma', async () => {
@@ -75,15 +75,14 @@ describe('NewRequisitionDialog', () => {
     expect(screen.getByRole('button', { name: 'Quitar posición 1' })).toBeEnabled()
   })
 
-  it('exige hotel, departamento, responsable y el nombre de la posición', async () => {
+  it('exige hotel y los catálogos de la posición', async () => {
     const user = userEvent.setup()
     renderDialog()
 
     await user.click(screen.getByRole('button', { name: 'Guardar requisición' }))
 
     expect(await screen.findByText('Falta el hotel')).toBeInTheDocument()
-    expect(screen.getByText('Falta el GH responsable')).toBeInTheDocument()
-    expect(screen.getByText('Posición 1: Escribe la posición')).toBeInTheDocument()
+    expect(screen.getByText('Posición 1: Falta la posición')).toBeInTheDocument()
   })
 
   it('guarda y cierra cuando el alta está completa', async () => {
@@ -96,19 +95,19 @@ describe('NewRequisitionDialog', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByRole('option', { name: 'Hotel Xcaret Arte' })).toBeInTheDocument()
+      expect(screen.getByRole('option', { name: 'Hotel Puerto Real' })).toBeInTheDocument()
     })
 
-    await user.selectOptions(screen.getByLabelText('Hotel'), 'htl-arte')
-    await user.selectOptions(screen.getByLabelText('Departamento del hotel'), 'Ama de llaves')
-    await user.selectOptions(screen.getByLabelText('GH responsable del área'), 'gh-marcela')
+    await user.selectOptions(screen.getByLabelText('Hotel'), 'htl-psp-0012')
 
-    await user.type(screen.getByLabelText('Posición 1'), 'Camarista')
-    await user.selectOptions(screen.getByLabelText('Departamento 1'), 'Ama de llaves')
+    // Todo por id de catálogo: así viaja el cuerpo real de POST /requisitions.
+    await user.selectOptions(screen.getByLabelText('Posición 1'), 'pos-hk')
+    await user.selectOptions(screen.getByLabelText('Modalidad 1'), 'mod-ft')
+    await user.selectOptions(screen.getByLabelText('Departamento 1'), 'dep-hk')
 
     const row = screen.getByLabelText('Posición 1').closest('tr')
     const date = within(row as HTMLElement).getByLabelText('Inicio 1')
-    await user.type(date, '2026-08-18')
+    await user.type(date, '2026-09-18')
 
     await user.click(screen.getByRole('button', { name: 'Guardar requisición' }))
 

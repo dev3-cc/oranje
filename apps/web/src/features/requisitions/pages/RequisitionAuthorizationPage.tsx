@@ -1,10 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
-import {
-  useGetAuthorizationQueueQuery,
-  useGetStatusChangeReasonsQuery,
-} from '../api/authorizationsApi'
+import { useGetAuthorizationQueueQuery } from '../api/authorizationsApi'
 import { AuthorizationPositionsTable } from '../components/AuthorizationPositionsTable'
 import { AuthorizationQueueList } from '../components/AuthorizationQueueList'
 import { AuthorizationResolutionForm } from '../components/AuthorizationResolutionForm'
@@ -29,7 +26,6 @@ export function RequisitionAuthorizationPage(): ReactNode {
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const { data: queue, isLoading, isError } = useGetAuthorizationQueueQuery()
-  const { data: reasons } = useGetStatusChangeReasonsQuery()
 
   if (isLoading) {
     return <TableSkeleton rows={4} columns={4} />
@@ -106,7 +102,6 @@ export function RequisitionAuthorizationPage(): ReactNode {
 
             <AuthorizationResolutionForm
               request={selected}
-              reasons={reasons?.items ?? []}
               authorizerRole={queue.authorizerRole}
               authorizerScope={queue.authorizerScope}
             />

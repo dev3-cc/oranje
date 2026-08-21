@@ -1,9 +1,7 @@
 import type { ReactNode } from 'react'
 
 import type { RequisitionPosition } from '../types/requisition.types'
-import { POSITION_MODALITY_LABEL } from '../types/requisition.types'
 
-import { ENGLISH_LEVEL_LABEL } from '@/shared/constants/catalogs'
 import { formatDate } from '@/shared/lib/formatters'
 
 const HEADERS = ['#', 'Posición', 'Modalidad', 'Cant.', 'Inicio', 'Hora', 'Inglés']
@@ -46,7 +44,7 @@ export function AuthorizationPositionsTable({
                 {position.name}
               </td>
               <td className="px-4 py-4 text-sm whitespace-nowrap text-ink-2">
-                {POSITION_MODALITY_LABEL[position.modality]}
+                {position.modality}
               </td>
               <td className="px-4 py-4 text-sm text-ink-2">{position.quantity}</td>
               <td className="px-4 py-4 text-sm whitespace-nowrap text-ink-2">
@@ -55,9 +53,7 @@ export function AuthorizationPositionsTable({
               <td className="px-4 py-4 text-sm whitespace-nowrap text-ink-2">
                 {position.startTime}
               </td>
-              <td className="px-4 py-4 text-sm whitespace-nowrap text-ink-2">
-                {ENGLISH_LEVEL_LABEL[position.english]}
-              </td>
+              <td className="px-4 py-4 text-sm whitespace-nowrap text-ink-2">{position.english}</td>
             </tr>
           ))}
         </tbody>

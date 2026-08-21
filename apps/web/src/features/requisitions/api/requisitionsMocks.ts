@@ -1,684 +1,423 @@
-import type {
-  CreateRequisitionPosition,
-  CreateRequisitionRequest,
-  RequisitionBoard,
-  RequisitionDetail,
-  RequisitionFormOptions,
-  RequisitionRow,
-  RequisitionSlot,
-  RequisitionStatusEvent,
-} from '../types/requisition.types'
-
-import type { RequisitionStatus } from '@/shared/constants/requisitionStatus'
+/*
+ * ⚠ Import entre features, permitido SOLO aquí: la composición usa `/hotels`
+ * (Onboarding) y `/me` (sesión). Con mocks apagados esto es un no-op.
+ */
+// eslint-disable-next-line no-restricted-imports
+import { registerOnboardingMocks } from '@/features/onboarding/api/onboardingMocks'
+import '@/app/sessionApi'
 import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
+import type {
+  ApiEnvelope,
+  CatalogItemApi,
+  PaginatedEnvelope,
+  RequisitionApi,
+  RequisitionPositionApi,
+  StatusRefApi,
+} from '@/shared/types/apiContract.types'
 
 /**
- * Fixtures de Requisiciones. ANDAMIO TEMPORAL — se borra cuando `apps/api`
- * exponga `GET /requisitions` y `GET /requisitions/:id`.
- *
- * Las filas y las cifras son las de las capturas, para poder comparar pantalla
- * contra maqueta. Los totales del encabezado del tablero NO se derivan de
- * `items`: son agregados de todo el territorio del supervisor, mientras que
- * `items` es la página que se pinta. Por eso el encabezado dice 8 abiertas y se
- * ven 6 filas.
+ * Fixtures de `demand` en la forma CRUDA del contrato real: requisiciones con
+ * sus posiciones, los catálogos del alta y la firma. Los hoteles son los
+ * clientes de Onboarding (`htl-psp-0012` …).
  */
-const ITEMS: RequisitionRow[] = [
-  {
-    id: 'req-0001',
-    number: '202608120930·K7',
-    hotelName: 'Hotel Xcaret Arte',
-    department: 'Ama de llaves',
-    // 3 líneas de posición que suman 7 slots, de los que 4 están ocupados: es
-    // la misma requisición del detalle, y las dos pantallas tienen que cuadrar.
-    positions: 3,
-    coverage: { filled: 4, total: 7 },
-    urgency: 'RED',
-    status: 'GREEN',
-    authorizedAt: '2026-08-12T09:41:00',
-    inspectorName: 'R. Solís',
-  },
-  {
-    id: 'req-0002',
-    number: '202608120845·B2',
-    hotelName: 'Grand Velas Riviera',
-    department: 'Alimentos y Bebidas',
-    positions: 1,
-    coverage: { filled: 4, total: 4 },
-    urgency: 'STRONG_GREEN',
-    status: 'LIGHT_BLUE',
-    authorizedAt: '2026-08-12T08:52:00',
-    inspectorName: 'R. Solís',
-  },
-  {
-    id: 'req-0003',
-    number: '202608121115·M9',
-    hotelName: 'Hotel Xcaret México',
-    department: 'Mantenimiento',
-    // 2 líneas de una persona cada una: las mismas que firma el Manager.
-    positions: 2,
-    coverage: { filled: 0, total: 2 },
-    urgency: 'RED',
-    status: 'APPLE_GREEN',
-    authorizedAt: null,
-    inspectorName: 'M. Cruz',
-  },
-  {
-    id: 'req-0004',
-    number: '202608111640·T4',
-    hotelName: 'Iberostar Cancún',
-    department: 'Ama de llaves',
-    positions: 1,
-    coverage: { filled: 6, total: 8 },
-    urgency: 'YELLOW',
-    status: 'YELLOW',
-    authorizedAt: '2026-08-11T17:02:00',
-    inspectorName: 'A. Peña',
-  },
-  {
-    id: 'req-0005',
-    number: '202608111210·L1',
-    hotelName: 'Hotel Xcaret Arte',
-    department: 'Recepción',
-    positions: 1,
-    coverage: { filled: 1, total: 1 },
-    urgency: 'STRONG_GREEN',
-    status: 'LIGHT_BLUE',
-    authorizedAt: '2026-08-11T12:30:00',
-    inspectorName: 'R. Solís',
-  },
-  {
-    id: 'req-0006',
-    number: '202608101755·Q8',
-    hotelName: 'Grand Velas Riviera',
-    department: 'Seguridad',
-    positions: 1,
-    coverage: { filled: 0, total: 3 },
-    urgency: 'YELLOW',
-    status: 'PURPLE',
-    authorizedAt: '2026-08-10T18:10:00',
-    inspectorName: 'A. Peña',
-  },
+
+// ── Catálogos, con los códigos del seed real ─────────────────────────────────
+const DEPARTMENTS: CatalogItemApi[] = [
+  { id: 'dep-hk', code: 'HOUSEKEEPING', name: 'Housekeeping' },
+  { id: 'dep-fb', code: 'FOOD_BEVERAGE', name: 'Alimentos' },
+  { id: 'dep-fd', code: 'FRONT_DESK', name: 'Front Desk' },
 ]
 
-const BOARD: RequisitionBoard = {
-  metrics: {
-    openCount: 8,
-    openHotels: 4,
-    awaitingAuthorization: 3,
-    awaitingOver48h: 1,
-    partialCoverage: 5,
-    freeSlots: 12,
-    urgentCount: 2,
-    urgentRuleId: 'RR-H-05',
-  },
-  items: ITEMS,
-}
-
-/** Cómo se ofrece un slot que todavía no tiene a nadie. */
-const OFFER_CHANNEL = 'Visible en la Bolsa · Self-Pick'
-
-function freeSlot(id: string, index: number): RequisitionSlot {
-  return { id, index, status: 'free', assigneeName: null, assignedAt: null, offerChannel: null }
-}
-
-/**
- * El detalle de la maqueta, escrito a mano. Los demás se derivan de su fila del
- * tablero para que ninguna sea un callejón sin salida al hacer clic.
- */
-const DETAIL_REQ_0001: RequisitionDetail = {
-  id: 'req-0001',
-  number: '202608120930·K7',
-  hotelName: 'Hotel Xcaret Arte',
-  department: 'Ama de llaves',
-  status: 'GREEN',
-  createdByName: 'Laura Méndez',
-  createdAt: '2026-08-12T09:30:00',
-  authorizedByName: 'Marcela Cruz',
-  authorizedAt: '2026-08-12T09:41:00',
-  inspectorName: 'Ricardo Solís',
-  totals: { positionCount: 3, slotCount: 7, occupiedCount: 4, coverage: 4 / 7 },
-  positions: [
-    {
-      id: 'pos-0001',
-      index: 1,
-      name: 'Camarista',
-      quantity: 4,
-      startDate: '2026-08-18',
-      startTime: '07:00',
-      english: 'BASICO',
-      coverage: { filled: 3, total: 4 },
-      urgency: 'RED',
-      modality: 'POR_EVENTO',
-      slots: [
-        {
-          id: 'slot-0001',
-          index: 1,
-          status: 'occupied',
-          assigneeName: 'Ana Rivera Gómez',
-          assignedAt: '2026-08-12T10:02:00',
-          offerChannel: null,
-        },
-        {
-          id: 'slot-0002',
-          index: 2,
-          status: 'occupied',
-          assigneeName: 'Beatriz Luna Ortiz',
-          assignedAt: '2026-08-12T10:15:00',
-          offerChannel: null,
-        },
-        {
-          id: 'slot-0003',
-          index: 3,
-          status: 'occupied',
-          assigneeName: 'Carmen Díaz Peña',
-          assignedAt: '2026-08-12T11:40:00',
-          offerChannel: null,
-        },
-        {
-          id: 'slot-0004',
-          index: 4,
-          status: 'free',
-          assigneeName: null,
-          assignedAt: null,
-          offerChannel: OFFER_CHANNEL,
-        },
-      ],
-    },
-    {
-      id: 'pos-0002',
-      index: 2,
-      name: 'Supervisora de piso',
-      quantity: 1,
-      startDate: '2026-08-18',
-      startTime: '07:00',
-      english: 'INTERMEDIO',
-      coverage: { filled: 1, total: 1 },
-      urgency: 'RED',
-      modality: 'NOMINA',
-      slots: [
-        {
-          id: 'slot-0005',
-          index: 1,
-          status: 'occupied',
-          assigneeName: 'Diana Ortega Ruiz',
-          assignedAt: '2026-08-12T10:30:00',
-          offerChannel: null,
-        },
-      ],
-    },
-    {
-      id: 'pos-0003',
-      index: 3,
-      name: 'Housekeeper',
-      quantity: 2,
-      startDate: '2026-08-20',
-      startTime: '08:00',
-      english: 'NO_REQUERIDO',
-      coverage: { filled: 0, total: 2 },
-      urgency: 'YELLOW',
-      modality: 'POR_EVENTO',
-      slots: [
-        { ...freeSlot('slot-0006', 1), offerChannel: OFFER_CHANNEL },
-        { ...freeSlot('slot-0007', 2), offerChannel: OFFER_CHANNEL },
-      ],
-    },
-  ],
-  history: [
-    {
-      id: 'evt-0002',
-      fromStatus: 'APPLE_GREEN',
-      toStatus: 'GREEN',
-      action: 'Autorizada',
-      byName: 'Marcela Cruz',
-      at: '2026-08-12T09:41:00',
-    },
-    {
-      id: 'evt-0001',
-      fromStatus: null,
-      toStatus: 'APPLE_GREEN',
-      action: 'Creada',
-      byName: 'Laura Méndez',
-      at: '2026-08-12T09:30:00',
-    },
-  ],
-}
-
-/**
- * La misma requisición que encabeza la cola de autorización. Se escribe a mano
- * para que las dos pantallas hablen de las mismas dos posiciones: derivarla
- * daría una sola línea llamada «Mantenimiento», y al firmar en una pantalla la
- * otra mostraría algo distinto.
- */
-const DETAIL_REQ_0003: RequisitionDetail = {
-  id: 'req-0003',
-  number: '202608121115·M9',
-  hotelName: 'Hotel Xcaret México',
-  department: 'Mantenimiento',
-  status: 'APPLE_GREEN',
-  createdByName: 'Laura Méndez',
-  createdAt: '2026-08-12T11:15:00',
-  authorizedByName: null,
-  authorizedAt: null,
-  inspectorName: 'M. Cruz',
-  totals: { positionCount: 2, slotCount: 2, occupiedCount: 0, coverage: 0 },
-  positions: [
-    {
-      id: 'pos-0011',
-      index: 1,
-      name: 'Técnico de mantenimiento',
-      quantity: 1,
-      startDate: '2026-08-14',
-      startTime: '06:00',
-      english: 'BASICO',
-      coverage: { filled: 0, total: 1 },
-      urgency: 'RED',
-      modality: 'NOMINA',
-      // Sin autorizar no hay nada que ofrecer: los slots existen, pero no salen
-      // a la Bolsa hasta que alguien firma.
-      slots: [freeSlot('slot-0011', 1)],
-    },
-    {
-      id: 'pos-0012',
-      index: 2,
-      name: 'Auxiliar de albañilería',
-      quantity: 1,
-      startDate: '2026-08-14',
-      startTime: '06:00',
-      english: 'NO_REQUERIDO',
-      coverage: { filled: 0, total: 1 },
-      urgency: 'RED',
-      modality: 'POR_EVENTO',
-      slots: [freeSlot('slot-0012', 1)],
-    },
-  ],
-  history: [
-    {
-      id: 'evt-0011',
-      fromStatus: null,
-      toStatus: 'APPLE_GREEN',
-      action: 'Creada',
-      byName: 'Laura Méndez',
-      at: '2026-08-12T11:15:00',
-    },
-  ],
-}
-
-/** Nombres de relleno para los slots ocupados de los detalles derivados. */
-const FILLER_NAMES = [
-  'Ana Rivera Gómez',
-  'Beatriz Luna Ortiz',
-  'Carmen Díaz Peña',
-  'Diana Ortega Ruiz',
-  'Elena Vargas Sosa',
-  'Fabiola Mena Ríos',
-  'Gabriela Nieto Paz',
-  'Hilda Robles Cano',
+const POSITIONS: CatalogItemApi[] = [
+  { id: 'pos-hk', code: 'HOUSEKEEPER', name: 'Housekeeper' },
+  { id: 'pos-hm', code: 'HOUSEMAN', name: 'Houseman' },
+  { id: 'pos-ln', code: 'LAUNDRY', name: 'Laundry' },
+  { id: 'pos-ck', code: 'COOK', name: 'Cocinero' },
 ]
 
-/** Inicio de los detalles derivados: fijo, para que las pruebas no dependan de hoy. */
-const DERIVED_START_DATE = '2026-08-20'
-const DERIVED_START_TIME = '07:00'
+const MODALITIES: CatalogItemApi[] = [
+  { id: 'mod-ft', code: 'FULL_TIME', name: 'Tiempo completo' },
+  { id: 'mod-pt', code: 'PART_TIME', name: 'Medio tiempo' },
+  { id: 'mod-tp', code: 'TEMPORARY', name: 'Temporal' },
+  { id: 'mod-or', code: 'ON_REQUEST', name: 'Según solicitud' },
+]
 
-/**
- * Corre el reloj de un ISO sin construir un `Date`: solo toca `HH:MM`. Sirve
- * para separar en el tiempo los pasos intermedios de una historia derivada.
- * Si se pasara de medianoche devuelve el original, que en estos fixtures no ocurre.
- */
-function plusMinutes(iso: string, minutes: number): string {
-  const match = /T(\d{2}):(\d{2})/.exec(iso)
-  if (!match) return iso
+const ENGLISH: CatalogItemApi[] = [
+  { id: 'eng-ba', code: 'BASIC', name: 'Básico' },
+  { id: 'eng-in', code: 'INTERMEDIATE', name: 'Intermedio' },
+  { id: 'eng-ad', code: 'ADVANCED', name: 'Avanzado' },
+  { id: 'eng-co', code: 'CONVERSATIONAL', name: 'Conversacional' },
+]
 
-  const total = Number(match[1]) * 60 + Number(match[2]) + minutes
-  if (total >= 24 * 60) return iso
-
-  const hh = String(Math.floor(total / 60)).padStart(2, '0')
-  const mm = String(total % 60).padStart(2, '0')
-  return iso.replace(/T\d{2}:\d{2}/, `T${hh}:${mm}`)
+// ── Estados de los dos semáforos, como los sirve la API ──────────────────────
+const REQ_STATE: Record<string, StatusRefApi> = {
+  APPLE_GREEN: { code: 'APPLE_GREEN', color: 'Verde manzana', name: 'En elaboración' },
+  GREEN: { code: 'GREEN', color: 'Verde', name: 'Autorizada' },
+  YELLOW: { code: 'YELLOW', color: 'Amarillo', name: 'En proceso' },
+  LIGHT_BLUE: { code: 'LIGHT_BLUE', color: 'Azul claro', name: 'Cubierta totalmente' },
 }
 
-/**
- * Qué se hizo para llegar a cada estado. Donde existe una forma verbal distinta
- * se usa esa y no el nombre del estado: repetir «Cubierta totalmente» como chip
- * y como título del asiento no agrega nada.
- */
-const ACTION_BY_STATUS: Record<RequisitionStatus, string> = {
-  APPLE_GREEN: 'Creada',
-  GREEN: 'Autorizada',
-  YELLOW: 'Puesta en proceso',
-  LIGHT_BLUE: 'Cobertura completada',
-  RED: 'Cobertura incompleta',
-  PURPLE: 'Dada de baja',
+const URGENCY: Record<string, StatusRefApi> = {
+  RED: { code: 'RED', color: 'Rojo', name: '< 72 h' },
+  YELLOW: { code: 'YELLOW', color: 'Amarillo', name: '72–120 h' },
+  STRONG_GREEN: { code: 'STRONG_GREEN', color: 'Verde fuerte', name: '> 120 h' },
 }
 
-/**
- * El camino desde `VERDE` hasta el estado actual, respetando
- * `REQUISITION_TRANSITIONS`: a `AZUL_CLARO` y a `ROJO` solo se llega pasando
- * por `AMARILLO`. Inventar un salto directo produciría una historia que el
- * backend nunca podría escribir.
- */
-const PATH_FROM_VERDE: Record<RequisitionStatus, readonly RequisitionStatus[]> = {
-  APPLE_GREEN: [],
-  GREEN: [],
-  YELLOW: ['YELLOW'],
-  LIGHT_BLUE: ['YELLOW', 'LIGHT_BLUE'],
-  RED: ['YELLOW', 'RED'],
-  PURPLE: ['PURPLE'],
+const COVERAGE_REF: StatusRefApi = { code: 'RED', color: 'Rojo', name: '0–50%' }
+
+function isoInDays(days: number): string {
+  return new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10)
 }
 
-function buildDerivedHistory(row: RequisitionRow, createdAt: string): RequisitionStatusEvent[] {
-  const events: RequisitionStatusEvent[] = [
-    {
-      id: `${row.id}-evt-1`,
-      fromStatus: null,
-      toStatus: 'APPLE_GREEN',
-      action: 'Creada',
-      byName: 'Laura Méndez',
-      at: createdAt,
-    },
-  ]
-
-  if (row.authorizedAt !== null) {
-    events.push({
-      id: `${row.id}-evt-2`,
-      fromStatus: 'APPLE_GREEN',
-      toStatus: 'GREEN',
-      action: 'Autorizada',
-      byName: 'Marcela Cruz',
-      at: row.authorizedAt,
-    })
-
-    let previous: RequisitionStatus = 'GREEN'
-    PATH_FROM_VERDE[row.status].forEach((step, index) => {
-      events.push({
-        id: `${row.id}-evt-${String(index + 3)}`,
-        fromStatus: previous,
-        toStatus: step,
-        action: ACTION_BY_STATUS[step],
-        byName: row.inspectorName,
-        at: plusMinutes(row.authorizedAt ?? createdAt, (index + 1) * 45),
-      })
-      previous = step
-    })
-  }
-
-  return events.reverse()
+function isoHoursAgo(hours: number): string {
+  return new Date(Date.now() - hours * 3_600_000).toISOString()
 }
 
-/** Un detalle verosímil para las filas que no tienen maqueta propia. */
-function deriveDetail(row: RequisitionRow): RequisitionDetail {
-  const createdAt = row.authorizedAt ? plusMinutes(row.authorizedAt, -11) : '2026-08-12T11:15:00'
+let positionSequence = 0
 
-  const slots: RequisitionSlot[] = Array.from({ length: row.coverage.total }, (_, index) => {
-    if (index >= row.coverage.filled) {
-      return {
-        ...freeSlot(`${row.id}-slot-${String(index + 1)}`, index + 1),
-        offerChannel: OFFER_CHANNEL,
-      }
-    }
-
-    return {
-      id: `${row.id}-slot-${String(index + 1)}`,
-      index: index + 1,
-      status: 'occupied',
-      assigneeName: FILLER_NAMES[index % FILLER_NAMES.length] ?? 'Sin nombre',
-      assignedAt: plusMinutes(row.authorizedAt ?? createdAt, (index + 1) * 18),
-      offerChannel: null,
-    }
-  })
-
+function buildPosition(input: {
+  positionId: string
+  departmentId: string
+  quantity: number
+  filled: number
+  startInDays: number
+  urgency: string | null
+  englishId?: string
+  lineNumber: number
+}): RequisitionPositionApi {
+  positionSequence += 1
   return {
-    id: row.id,
-    number: row.number,
-    hotelName: row.hotelName,
-    department: row.department,
-    status: row.status,
-    createdByName: 'Laura Méndez',
-    createdAt,
-    authorizedByName: row.authorizedAt ? 'Marcela Cruz' : null,
-    authorizedAt: row.authorizedAt,
-    inspectorName: row.inspectorName,
-    totals: {
-      positionCount: row.positions,
-      slotCount: row.coverage.total,
-      occupiedCount: row.coverage.filled,
-      coverage: row.coverage.total > 0 ? row.coverage.filled / row.coverage.total : 0,
-    },
+    id: `dpos-${String(positionSequence).padStart(3, '0')}`,
+    lineNumber: input.lineNumber,
+    position:
+      POSITIONS.find((item) => item.id === input.positionId) ?? (POSITIONS[0] as CatalogItemApi),
+    hiringModality: MODALITIES[0] as CatalogItemApi,
+    englishLevel: input.englishId
+      ? (ENGLISH.find((item) => item.id === input.englishId) ?? null)
+      : null,
+    department:
+      DEPARTMENTS.find((item) => item.id === input.departmentId) ??
+      (DEPARTMENTS[0] as CatalogItemApi),
+    quantity: input.quantity,
+    startDate: isoInDays(input.startInDays),
+    startTime: '07:00',
+    notes: null,
+    coverage: COVERAGE_REF,
+    urgency: input.urgency ? (URGENCY[input.urgency] ?? null) : null,
+    filled: input.filled,
+  }
+}
+
+function buildRequisition(input: {
+  id: string
+  number: string
+  hotelId: string
+  hotelName: string
+  state: string
+  createdHoursAgo: number
+  authorizedHoursAgo?: number
+  positions: RequisitionPositionApi[]
+}): RequisitionApi {
+  return {
+    id: input.id,
+    number: input.number,
+    hotel: { id: input.hotelId, name: input.hotelName },
+    state: REQ_STATE[input.state] ?? (REQ_STATE.APPLE_GREEN as StatusRefApi),
+    areaManagerUserId: null,
+    authorizedBy: input.authorizedHoursAgo === undefined ? null : 'usr-gm',
+    authorizedAt:
+      input.authorizedHoursAgo === undefined ? null : isoHoursAgo(input.authorizedHoursAgo),
+    inspectorId: null,
+    positions: input.positions,
+    totalSlots: input.positions.reduce((total, position) => total + position.quantity, 0),
+    filledSlots: input.positions.reduce((total, position) => total + position.filled, 0),
+    createdAt: isoHoursAgo(input.createdHoursAgo),
+    updatedAt: null,
+  }
+}
+
+const requisitions: RequisitionApi[] = [
+  // Esperan autorización (APPLE_GREEN): 3, una con más de 48 h.
+  buildRequisition({
+    id: 'req-0001',
+    number: '202608190930·K7',
+    hotelId: 'htl-psp-0012',
+    hotelName: 'Hotel Puerto Real',
+    state: 'APPLE_GREEN',
+    createdHoursAgo: 60,
     positions: [
-      {
-        id: `${row.id}-pos-1`,
-        index: 1,
-        name: row.department,
-        quantity: row.coverage.total,
-        startDate: DERIVED_START_DATE,
-        startTime: DERIVED_START_TIME,
-        english: 'NO_REQUERIDO',
-        coverage: row.coverage,
-        urgency: row.urgency,
-        modality: 'POR_EVENTO',
-        slots,
-      },
+      buildPosition({
+        positionId: 'pos-hk',
+        departmentId: 'dep-hk',
+        quantity: 6,
+        filled: 0,
+        startInDays: 2,
+        urgency: null,
+        lineNumber: 1,
+      }),
     ],
-    history: buildDerivedHistory(row, createdAt),
-  }
-}
-
-const DETAILS: Record<string, RequisitionDetail> = {
-  [DETAIL_REQ_0001.id]: DETAIL_REQ_0001,
-  [DETAIL_REQ_0003.id]: DETAIL_REQ_0003,
-}
-
-function findDetail(requisitionId: string): RequisitionDetail {
-  const authored = DETAILS[requisitionId]
-  if (authored) return authored
-
-  const row = ITEMS.find((item) => item.id === requisitionId)
-  if (!row) throw new Error(`No existe la requisición ${requisitionId}`)
-
-  return deriveDetail(row)
-}
-
-/**
- * Reloj simulado. Los fixtures viven en agosto de 2026, así que una firma
- * sellada con la hora real de la máquina saldría descolgada del resto — y
- * además haría que las pruebas dependieran del día en que corren.
- */
-export const SIMULATED_NOW = '2026-08-12T12:00:00'
-
-/**
- * Aplica en el tablero y en el detalle lo que se resolvió en la pantalla de
- * autorización. Vive aquí porque es este archivo el que guarda el estado del
- * tablero: si la cola lo mutara por su cuenta, habría dos verdades.
- */
-export function applyResolution(requisitionId: string, status: RequisitionStatus): void {
-  const row = ITEMS.find((item) => item.id === requisitionId)
-  if (row) {
-    row.status = status
-    if (status !== 'PURPLE') row.authorizedAt = SIMULATED_NOW
-  }
-
-  const detail = DETAILS[requisitionId]
-  if (detail) {
-    detail.status = status
-    if (status !== 'PURPLE') {
-      detail.authorizedByName = 'Laura Méndez'
-      detail.authorizedAt = SIMULATED_NOW
-    }
-    detail.history = [
-      {
-        id: `${requisitionId}-evt-firma`,
-        fromStatus: 'APPLE_GREEN',
-        toStatus: status,
-        action: status === 'PURPLE' ? 'Rechazada' : 'Autorizada',
-        byName: 'Laura Méndez',
-        at: SIMULATED_NOW,
-      },
-      ...detail.history,
-    ]
-  }
-
-  // La métrica del tablero es un agregado del territorio: baja una porque esta
-  // requisición ya dejó de esperar firma, gane o pierda.
-  BOARD.metrics.awaitingAuthorization = Math.max(0, BOARD.metrics.awaitingAuthorization - 1)
-}
-
-/** Las posiciones que ya están escritas para una requisición, si las hay. */
-export function findAuthoredPositions(
-  requisitionId: string,
-): RequisitionDetail['positions'] | null {
-  return DETAILS[requisitionId]?.positions ?? null
-}
-
-/** Hoteles elegibles, con el inspector que les toca por zona (RR-13). */
-const HOTEL_OPTIONS: RequisitionFormOptions['hotels'] = [
-  { id: 'htl-arte', name: 'Hotel Xcaret Arte', zoneName: 'Centro', inspectorName: 'R. Solís' },
-  { id: 'htl-mexico', name: 'Hotel Xcaret México', zoneName: 'Centro', inspectorName: 'M. Cruz' },
-  { id: 'htl-velas', name: 'Grand Velas Riviera', zoneName: 'Norte', inspectorName: 'A. Peña' },
-  { id: 'htl-iberostar', name: 'Iberostar Cancún', zoneName: 'Norte', inspectorName: 'A. Peña' },
-]
-
-const DEPARTMENTS = [
-  'Ama de llaves',
-  'Alimentos y Bebidas',
-  'Mantenimiento',
-  'Recepción',
-  'Seguridad',
-]
-
-const AREA_MANAGERS = [
-  { id: 'gh-marcela', name: 'Marcela Cruz' },
-  { id: 'gh-laura', name: 'Laura Méndez' },
-  { id: 'gh-ricardo', name: 'Ricardo Solís' },
-]
-
-/**
- * Homoclave de dos caracteres. En el backend evita que dos altas del mismo
- * minuto choquen; aquí basta con que sea distinta cada vez y estable entre
- * corridas, así que va por secuencia y no al azar.
- */
-const HOMOCLAVE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-let requisitionSequence = 0
-
-function nextNumber(): string {
-  requisitionSequence += 1
-  const stamp = SIMULATED_NOW.replace(/[-:T]/g, '').slice(0, 12)
-  const first = HOMOCLAVE_ALPHABET[requisitionSequence % HOMOCLAVE_ALPHABET.length] ?? 'A'
-  const second = HOMOCLAVE_ALPHABET[(requisitionSequence * 7) % HOMOCLAVE_ALPHABET.length] ?? 'B'
-
-  return `${stamp}\u00b7${first}${second}`
-}
-
-function readCreateRequest(body: unknown): CreateRequisitionRequest {
-  if (typeof body !== 'object' || body === null) throw new Error('Falta el cuerpo de la petición')
-  return body as CreateRequisitionRequest
-}
-
-/**
- * Alta de una requisición.
- *
- * Nace en el estado del que sale la autorización y sin nadie que la haya
- * firmado: `authorizedAt` en nulo. Sus slots existen desde el primer momento
- * —uno por unidad de cantidad (D-02, RR-15)— pero todos libres.
- */
-function createRequisition(body: unknown): RequisitionDetail {
-  const request = readCreateRequest(body)
-  const hotel = HOTEL_OPTIONS.find((item) => item.id === request.hotelId)
-  if (!hotel) throw new Error('El hotel no existe en el catálogo')
-  if (request.positions.length === 0) throw new Error('Una requisición pide al menos una posición')
-
-  const id = `req-${String(1000 + requisitionSequence)}`
-  const number = nextNumber()
-  const slotCount = request.positions.reduce((total, position) => total + position.quantity, 0)
-
-  const positions = request.positions.map((position: CreateRequisitionPosition, index) => ({
-    id: `${id}-pos-${String(index + 1)}`,
-    index: index + 1,
-    name: position.positionName,
-    quantity: position.quantity,
-    startDate: position.startDate,
-    startTime: position.startTime,
-    english: position.english,
-    coverage: { filled: 0, total: position.quantity },
-    // La urgencia la calcula el backend contra la fecha de inicio; aquí se
-    // deja en el nivel más laxo hasta que alguien autorice y arranque el reloj.
-    urgency: 'STRONG_GREEN' as const,
-    modality: position.modality,
-    slots: Array.from({ length: position.quantity }, (_, slotIndex) =>
-      freeSlot(`${id}-slot-${String(index + 1)}-${String(slotIndex + 1)}`, slotIndex + 1),
-    ),
-  }))
-
-  const detail: RequisitionDetail = {
-    id,
-    number,
-    hotelName: hotel.name,
-    department: request.department,
-    status: 'APPLE_GREEN',
-    createdByName: 'Laura Méndez',
-    createdAt: SIMULATED_NOW,
-    authorizedByName: null,
-    authorizedAt: null,
-    inspectorName: hotel.inspectorName,
-    totals: { positionCount: positions.length, slotCount, occupiedCount: 0, coverage: 0 },
-    positions,
-    history: [
-      {
-        id: `${id}-evt-1`,
-        fromStatus: null,
-        toStatus: 'APPLE_GREEN',
-        action: 'Creada',
-        byName: 'Laura Méndez',
-        at: SIMULATED_NOW,
-      },
+  }),
+  buildRequisition({
+    id: 'req-0002',
+    number: '202608200815·B2',
+    hotelId: 'htl-psp-0013',
+    hotelName: 'Grand Costa Nube',
+    state: 'APPLE_GREEN',
+    createdHoursAgo: 20,
+    positions: [
+      buildPosition({
+        positionId: 'pos-ck',
+        departmentId: 'dep-fb',
+        quantity: 2,
+        filled: 0,
+        startInDays: 6,
+        urgency: null,
+        englishId: 'eng-ba',
+        lineNumber: 1,
+      }),
+      buildPosition({
+        positionId: 'pos-hm',
+        departmentId: 'dep-hk',
+        quantity: 3,
+        filled: 0,
+        startInDays: 6,
+        urgency: null,
+        lineNumber: 2,
+      }),
     ],
-  }
+  }),
+  buildRequisition({
+    id: 'req-0003',
+    number: '202608201110·C9',
+    hotelId: 'htl-psp-0014',
+    hotelName: 'Hotel Mirador',
+    state: 'APPLE_GREEN',
+    createdHoursAgo: 4,
+    positions: [
+      buildPosition({
+        positionId: 'pos-ln',
+        departmentId: 'dep-hk',
+        quantity: 2,
+        filled: 0,
+        startInDays: 9,
+        urgency: null,
+        lineNumber: 1,
+      }),
+    ],
+  }),
+  // Autorizadas trabajando: cobertura parcial y urgencias vivas.
+  buildRequisition({
+    id: 'req-0004',
+    number: '202608120930·K7',
+    hotelId: 'htl-psp-0012',
+    hotelName: 'Hotel Puerto Real',
+    state: 'YELLOW',
+    createdHoursAgo: 200,
+    authorizedHoursAgo: 190,
+    positions: [
+      buildPosition({
+        positionId: 'pos-hk',
+        departmentId: 'dep-hk',
+        quantity: 6,
+        filled: 4,
+        startInDays: 1,
+        urgency: 'RED',
+        lineNumber: 1,
+      }),
+    ],
+  }),
+  buildRequisition({
+    id: 'req-0005',
+    number: '202608130800·D4',
+    hotelId: 'htl-psp-0015',
+    hotelName: 'Villas Coral',
+    state: 'YELLOW',
+    createdHoursAgo: 180,
+    authorizedHoursAgo: 170,
+    positions: [
+      buildPosition({
+        positionId: 'pos-hm',
+        departmentId: 'dep-hk',
+        quantity: 4,
+        filled: 1,
+        startInDays: 2,
+        urgency: 'RED',
+        lineNumber: 1,
+      }),
+      buildPosition({
+        positionId: 'pos-hk',
+        departmentId: 'dep-hk',
+        quantity: 2,
+        filled: 2,
+        startInDays: 4,
+        urgency: 'YELLOW',
+        lineNumber: 2,
+      }),
+    ],
+  }),
+  buildRequisition({
+    id: 'req-0006',
+    number: '202608140700·E1',
+    hotelId: 'htl-psp-0016',
+    hotelName: 'Hotel Las Palmas',
+    state: 'GREEN',
+    createdHoursAgo: 150,
+    authorizedHoursAgo: 140,
+    positions: [
+      buildPosition({
+        positionId: 'pos-ck',
+        departmentId: 'dep-fb',
+        quantity: 3,
+        filled: 0,
+        startInDays: 7,
+        urgency: 'STRONG_GREEN',
+        englishId: 'eng-co',
+        lineNumber: 1,
+      }),
+    ],
+  }),
+  buildRequisition({
+    id: 'req-0007',
+    number: '202608150600·F8',
+    hotelId: 'htl-psp-0013',
+    hotelName: 'Grand Costa Nube',
+    state: 'GREEN',
+    createdHoursAgo: 120,
+    authorizedHoursAgo: 100,
+    positions: [
+      buildPosition({
+        positionId: 'pos-hk',
+        departmentId: 'dep-hk',
+        quantity: 5,
+        filled: 2,
+        startInDays: 8,
+        urgency: 'STRONG_GREEN',
+        lineNumber: 1,
+      }),
+    ],
+  }),
+  buildRequisition({
+    id: 'req-0008',
+    number: '202608160500·G3',
+    hotelId: 'htl-psp-0014',
+    hotelName: 'Hotel Mirador',
+    state: 'YELLOW',
+    createdHoursAgo: 100,
+    authorizedHoursAgo: 90,
+    positions: [
+      buildPosition({
+        positionId: 'pos-ln',
+        departmentId: 'dep-hk',
+        quantity: 3,
+        filled: 1,
+        startInDays: 5,
+        urgency: 'YELLOW',
+        lineNumber: 1,
+      }),
+    ],
+  }),
+]
 
-  DETAILS[id] = detail
-  ITEMS.unshift({
-    id,
-    number,
-    hotelName: hotel.name,
-    department: request.department,
-    positions: positions.length,
-    coverage: { filled: 0, total: slotCount },
-    urgency: 'STRONG_GREEN',
-    status: 'APPLE_GREEN',
-    authorizedAt: null,
-    inspectorName: hotel.inspectorName,
-  })
+let requisitionSequence = 8
 
-  // Sube el agregado del tablero. La cola de autorización vive en el fixture de
-  // al lado y no se toca desde aquí: son dos archivos y una sola verdad la
-  // tendrá el backend.
-  BOARD.metrics.awaitingAuthorization += 1
-  BOARD.metrics.openCount += 1
-
-  return detail
+interface CreateBody {
+  hotelId?: string
+  positions?: Array<{
+    catalogPositionId?: string
+    hiringModalityId?: string
+    hotelDepartmentId?: string
+    englishLevelId?: string
+    quantity?: number
+    startDate?: string
+    startTime?: string
+  }>
 }
+
+const catalogRoute = (path: string, items: CatalogItemApi[]): MockRoute => ({
+  method: 'GET',
+  path,
+  resolve: (): ApiEnvelope<CatalogItemApi[]> => ({ data: items }),
+})
 
 const routes: readonly MockRoute[] = [
+  catalogRoute('/catalogs/hotel-departments', DEPARTMENTS),
+  catalogRoute('/catalogs/positions', POSITIONS),
+  catalogRoute('/catalogs/hiring-modalities', MODALITIES),
+  catalogRoute('/catalogs/english-levels', ENGLISH),
   {
     method: 'GET',
     path: '/requisitions',
-    resolve: (): RequisitionBoard => BOARD,
-  },
-  {
-    method: 'GET',
-    path: '/requisitions/form-options',
-    resolve: (): RequisitionFormOptions => ({
-      hotels: HOTEL_OPTIONS,
-      departments: DEPARTMENTS,
-      areaManagers: AREA_MANAGERS,
-    }),
-  },
-  {
-    method: 'POST',
-    path: '/requisitions',
-    resolve: ({ body }): RequisitionDetail => createRequisition(body),
+    resolve: ({ search }): PaginatedEnvelope<RequisitionApi> => {
+      const state = search.get('state')
+      const items = requisitions.filter((item) => !state || item.state.code === state)
+      return { data: items, meta: { page: 1, limit: 100, total: items.length, totalPages: 1 } }
+    },
   },
   {
     method: 'GET',
     path: '/requisitions/:requisitionId',
-    resolve: ({ params }): RequisitionDetail => findDetail(params['requisitionId'] ?? ''),
+    resolve: ({ params }): ApiEnvelope<RequisitionApi> => {
+      const found = requisitions.find((item) => item.id === params.requisitionId)
+      if (!found) throw new Error('REQUISITION_NOT_FOUND')
+      return { data: found }
+    },
+  },
+  {
+    method: 'GET',
+    path: '/requisitions/:requisitionId/assignments',
+    /** `coverage` responde plano; los fixtures arrancan sin asignaciones vivas. */
+    resolve: (): ApiEnvelope<never[]> => ({ data: [] }),
+  },
+  {
+    method: 'POST',
+    path: '/requisitions',
+    resolve: ({ body }): ApiEnvelope<RequisitionApi> => {
+      const payload = (body ?? {}) as CreateBody
+      if (!payload.hotelId || !payload.positions?.length) throw new Error('Faltan datos')
+      requisitionSequence += 1
+      positionSequence += 100
+      const created = buildRequisition({
+        id: `req-${String(requisitionSequence).padStart(4, '0')}`,
+        number: `20260821${String(requisitionSequence).padStart(4, '0')}·N${String(requisitionSequence % 10)}`,
+        hotelId: payload.hotelId,
+        hotelName: 'Hotel nuevo',
+        state: 'APPLE_GREEN',
+        createdHoursAgo: 0,
+        positions: payload.positions.map((position, index) =>
+          buildPosition({
+            positionId: position.catalogPositionId ?? 'pos-hk',
+            departmentId: position.hotelDepartmentId ?? 'dep-hk',
+            quantity: position.quantity ?? 1,
+            filled: 0,
+            startInDays: 7,
+            urgency: null,
+            ...(position.englishLevelId ? { englishId: position.englishLevelId } : {}),
+            lineNumber: index + 1,
+          }),
+        ),
+      })
+      requisitions.unshift(created)
+      return { data: created }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/requisitions/:requisitionId/authorize',
+    resolve: ({ params }): ApiEnvelope<RequisitionApi> => {
+      const found = requisitions.find((item) => item.id === params.requisitionId)
+      if (!found) throw new Error('REQUISITION_NOT_FOUND')
+      found.state = REQ_STATE.GREEN as StatusRefApi
+      found.authorizedAt = new Date().toISOString()
+      found.authorizedBy = 'usr-gm'
+      /** RR-H-05: la urgencia nace al autorizar, contra la fecha de inicio. */
+      for (const position of found.positions) {
+        const hours = (new Date(position.startDate).getTime() - Date.now()) / 3_600_000
+        position.urgency = (
+          hours < 72 ? URGENCY.RED : hours <= 120 ? URGENCY.YELLOW : URGENCY.STRONG_GREEN
+        ) as StatusRefApi
+      }
+      return { data: found }
+    },
   },
 ]
 
@@ -688,4 +427,6 @@ export function registerRequisitionsMocks(): void {
   if (areRoutesRegistered) return
   areRoutesRegistered = true
   registerMockRoutes(routes)
+  // `/hotels` y `/me`, que la composición consume, viven en otras features.
+  registerOnboardingMocks()
 }
