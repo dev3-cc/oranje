@@ -1,14 +1,7 @@
 import type { ChangeEvent, ReactNode } from 'react'
 
-import type { PoolFilters as Filters } from '../types/pool.types'
+import type { PoolFilters as Filters, PoolOptions } from '../types/pool.types'
 
-import {
-  CATALOG_POSITIONS,
-  ENGLISH_LEVEL_LABEL,
-  HIRING_MODALITIES,
-  HIRING_MODALITY_LABEL,
-  WORKER_ENGLISH_LEVELS,
-} from '@/shared/constants/catalogs'
 import { WORKER_STATUSES } from '@/shared/constants/workerStatus'
 
 const CONTROL_CLASS =
@@ -53,11 +46,12 @@ function FilterSelect({
  */
 export function PoolFilters({
   filters,
-  zoneNames,
+  options,
   onChange,
 }: {
   filters: Filters
-  zoneNames: string[]
+  /** Catálogos del backend; mientras cargan, los selects solo dicen «todas». */
+  options: PoolOptions | undefined
   onChange: (filters: Filters) => void
 }): ReactNode {
   const update =
@@ -71,39 +65,39 @@ export function PoolFilters({
       <FilterSelect
         label="Posición"
         anyLabel="todas"
-        value={filters.catalogPosition}
-        onChange={update('catalogPosition')}
-        options={CATALOG_POSITIONS.map((position) => ({ value: position, label: position }))}
+        value={filters.catalogPositionId}
+        onChange={update('catalogPositionId')}
+        options={(options?.positions ?? []).map((item) => ({ value: item.id, label: item.name }))}
       />
 
       <FilterSelect
         label="Zona"
         anyLabel="todas"
-        value={filters.zoneName}
-        onChange={update('zoneName')}
-        options={zoneNames.map((zone) => ({ value: zone, label: zone }))}
+        value={filters.zoneId}
+        onChange={update('zoneId')}
+        options={(options?.zones ?? []).map((item) => ({
+          value: item.id,
+          label: item.name.replace(/^Zona\s+/i, ''),
+        }))}
       />
 
       <FilterSelect
         label="Inglés"
         anyLabel="cualquiera"
-        value={filters.englishLevel}
-        onChange={update('englishLevel')}
-        options={WORKER_ENGLISH_LEVELS.map((level) => ({
-          value: level,
-          label: ENGLISH_LEVEL_LABEL[level],
+        value={filters.englishLevelId}
+        onChange={update('englishLevelId')}
+        options={(options?.englishLevels ?? []).map((item) => ({
+          value: item.id,
+          label: item.name,
         }))}
       />
 
       <FilterSelect
         label="Modalidad"
         anyLabel="todas"
-        value={filters.hiringModality}
-        onChange={update('hiringModality')}
-        options={HIRING_MODALITIES.map((modality) => ({
-          value: modality,
-          label: HIRING_MODALITY_LABEL[modality],
-        }))}
+        value={filters.hiringModalityId}
+        onChange={update('hiringModalityId')}
+        options={(options?.modalities ?? []).map((item) => ({ value: item.id, label: item.name }))}
       />
 
       {/* El estado va con su código, que es el valor que viaja en la API. */}

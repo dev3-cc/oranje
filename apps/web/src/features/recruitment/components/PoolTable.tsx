@@ -4,7 +4,6 @@ import type { ReactNode } from 'react'
 import type { PoolWorker } from '../types/pool.types'
 
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
-import { ENGLISH_LEVEL_LABEL, HIRING_MODALITY_LABEL } from '@/shared/constants/catalogs'
 import { workerStatusChipLabel, WORKER_STATUS_TOKEN } from '@/shared/constants/workerStatus'
 
 /**
@@ -39,18 +38,12 @@ const COLUMNS: ColumnDef<PoolWorker, unknown>[] = [
   {
     accessorKey: 'englishLevel',
     header: 'english_level',
-    cell: ({ row }) => (
-      <span className="whitespace-nowrap">{ENGLISH_LEVEL_LABEL[row.original.englishLevel]}</span>
-    ),
+    cell: ({ row }) => <span className="whitespace-nowrap">{row.original.englishLevel}</span>,
   },
   {
     accessorKey: 'hiringModality',
     header: 'hiring_modality',
-    cell: ({ row }) => (
-      <span className="whitespace-nowrap">
-        {HIRING_MODALITY_LABEL[row.original.hiringModality]}
-      </span>
-    ),
+    cell: ({ row }) => <span className="whitespace-nowrap">{row.original.hiringModality}</span>,
   },
   {
     accessorKey: 'status',

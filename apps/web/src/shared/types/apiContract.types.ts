@@ -248,6 +248,105 @@ export interface AssignmentApi {
   createdAt: string
 }
 
+/** `personal.worker` + `vw_worker` como lo sirve la API (`GET /workers[/:id]`). */
+export interface WorkerApi {
+  id: string
+  fullName: string
+  birthDate: string
+  age: number
+  gender: string
+  phone: string
+  address: string
+  zone: CatalogItemApi
+  position: CatalogItemApi | null
+  englishLevel: CatalogItemApi | null
+  hiringModality: CatalogItemApi | null
+  experienceLevel: string | null
+  transportType: string | null
+  emergencyContact: { name: string; phone: string; relationship: string } | null
+  bloodType: string | null
+  state: StatusRefApi
+  isProfileComplete: boolean
+  hasTaxId: boolean
+  hasAccount: boolean
+  isBlacklisted: boolean
+  createdAt: string
+}
+
+/** Una marca del ponche (`operations.punch_mark`), como la sirve la API. */
+export interface TimesheetPunchApi {
+  id: string
+  type: string
+  serverAt: string
+  deviceAt: string | null
+  insideGeofence: boolean | null
+  isManual: boolean
+  manualReason: string | null
+}
+
+export interface TimesheetDayApi {
+  id: string
+  workDate: string
+  grossMinutes: number
+  netMinutes: number
+  lunchDeductionMinutes: number
+  actualLunchMinutes: number | null
+  overtimeMinutes: number
+  isAbsence: boolean
+  hasAnomaly: boolean
+  reviewNote: string | null
+  punches: TimesheetPunchApi[]
+}
+
+/** `operations.timesheet` (semana × persona × requisición), `GET /timesheets[/:id]`. */
+export interface TimesheetApi {
+  id: string
+  worker: { id: string; fullName: string }
+  requisitionId: string
+  weekStart: string
+  weekEnd: string
+  status: string
+  approvedAt: string | null
+  days?: TimesheetDayApi[]
+  totals?: { grossMinutes: number; netMinutes: number; overtimeMinutes: number }
+}
+
+/** `coverage.blacklist_entry` como lo sirve la API (`GET /blacklist`). */
+export interface BlacklistEntryApi {
+  id: string
+  worker: { id: string; fullName: string }
+  source: string
+  reason: string
+  evidencePath: string | null
+  occurredAt: string
+  isActive: boolean
+  enteredBy: { id: string; fullName: string }
+  liftedAt: string | null
+  liftedBy: { id: string; fullName: string } | null
+  liftReason: string | null
+}
+
+/** `operations.schedule` (semana × hotel), `GET /schedules`. */
+export interface ScheduleApi {
+  id: string
+  hotel: { id: string; name: string; timeZone: string }
+  weekStart: string
+  weekEnd: string
+  entryCount: number
+  createdAt: string
+}
+
+/** `operations.schedule_entry`, `GET /schedules/:id/entries`. */
+export interface ScheduleEntryApi {
+  id: string
+  workDate: string
+  startsAt: string
+  endsAt: string
+  minutes: number
+  worker: { id: string; fullName: string }
+  assignmentId: string
+}
+
 /** `meta` extra del tablero: total por estado, con 0 cuando no hay. */
 export interface ProspectBoardMeta extends PaginationMeta {
   byState: Array<{ code: string; total: number }>

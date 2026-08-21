@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 
-import { useGetWorkerPoolQuery } from '../api/poolApi'
+import { useGetPoolOptionsQuery, useGetWorkerPoolQuery } from '../api/poolApi'
+import { CreateWorkerDialog } from '../components/CreateWorkerDialog'
 import { PoolFilters } from '../components/PoolFilters'
 import { PoolTable } from '../components/PoolTable'
 import { EMPTY_POOL_FILTERS, type PoolFilters as Filters } from '../types/pool.types'
@@ -10,16 +11,14 @@ import { TableSkeleton } from '@/shared/components/TableSkeleton'
 
 /**
  * Pool de Colaboradores: quién hay disponible y en qué situación está.
- *
- * ⚠ La vista que alimenta esta pantalla NO existe todavía en la instancia.
- * `coverage.vw_pool` está en el diagrama, pero la base solo tiene `vw_worker`,
- * `vw_client` y `vw_prospect`, y `app_user` no tiene GRANT sobre el esquema
- * `personal`. Hasta entonces vive de fixtures, igual que el resto.
+ * Contra `GET /workers` (el contrato real), con los filtros por id de catálogo.
  */
 export function PoolPage(): ReactNode {
   const [filters, setFilters] = useState<Filters>(EMPTY_POOL_FILTERS)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
 
   const { data: pool, isLoading, isError } = useGetWorkerPoolQuery(filters)
+  const { data: options } = useGetPoolOptionsQuery()
 
   return (
     <div className="flex flex-col gap-6">
@@ -33,18 +32,22 @@ export function PoolPage(): ReactNode {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-ink">Pool de Colaboradores</h1>
           <p className="mt-1.5 text-sm text-ink-3">
-            coverage.vw_pool · vista sobre personal.worker filtrada por estado
+            personal.worker · vw_worker deriva edad y perfil completo
             {pool && ` · ${String(pool.total)} en el pool`}
           </p>
         </div>
 
-        {/* Pendiente: falta el diseño del alta de colaborador */}
-        <Button variant="primary" disabled title="Pendiente: falta el diseño del alta">
+        <Button
+          variant="primary"
+          onClick={() => {
+            setIsCreateOpen(true)
+          }}
+        >
           + Nuevo colaborador
         </Button>
       </header>
 
-      <PoolFilters filters={filters} zoneNames={pool?.zoneNames ?? []} onChange={setFilters} />
+      <PoolFilters filters={filters} options={options} onChange={setFilters} />
 
       {isError && (
         <p className="rounded-lg border border-line bg-surface p-6 text-sm text-red">
@@ -57,6 +60,13 @@ export function PoolPage(): ReactNode {
       ) : (
         pool && <PoolTable items={pool.items} />
       )}
+
+      <CreateWorkerDialog
+        isOpen={isCreateOpen}
+        onClose={() => {
+          setIsCreateOpen(false)
+        }}
+      />
     </div>
   )
 }

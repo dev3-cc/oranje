@@ -10,6 +10,10 @@ import { store } from '@/app/store'
 /** Latencia del mock: el margen por omisión se queda corto al filtrar. */
 const SLOW = { timeout: 4000 }
 
+/**
+ * El Pool va contra `GET /workers` crudo: siete personas de fixture con los
+ * catálogos por id (los mismos de Requisiciones) y los estados del seed.
+ */
 function renderPool(): void {
   render(
     <Provider store={store}>
@@ -22,10 +26,9 @@ describe('PoolPage', () => {
   it('el encabezado habla del pool completo, no de la página', async () => {
     renderPool()
 
-    // Se pintan 6 filas y el subtítulo dice 148: la tabla es una página.
     expect(
       await screen.findByText(
-        'coverage.vw_pool · vista sobre personal.worker filtrada por estado · 148 en el pool',
+        'personal.worker · vw_worker deriva edad y perfil completo · 7 en el pool',
       ),
     ).toBeInTheDocument()
   })
@@ -33,50 +36,82 @@ describe('PoolPage', () => {
   it('el chip del semáforo enseña el código y lo que significa', async () => {
     renderPool()
 
-    expect(await screen.findByText('STRONG_GREEN · Disponible')).toBeInTheDocument()
+    expect((await screen.findAllByText('STRONG_GREEN · Disponible')).length).toBe(2)
     expect(screen.getByText('ORANGE · Fijo')).toBeInTheDocument()
-    expect(screen.getByText('YELLOW · Disp. voluntario')).toBeInTheDocument()
     expect(screen.getByText('WHITE · Pre-asignación')).toBeInTheDocument()
-    expect(screen.getByText('PINK · Stand-by')).toBeInTheDocument()
     expect(screen.getByText('BROWN · Asig. temporal')).toBeInTheDocument()
+    // Las ramas también existen: el accidentado y el vetado se ven, no se esconden.
+    expect(screen.getByText('GRAY · Accidentado')).toBeInTheDocument()
+    expect(screen.getByText('BLACK · Blacklist')).toBeInTheDocument()
   })
 
   it('perfil e ITIN se leen en palabras', async () => {
     renderPool()
 
-    const row = (await screen.findByText('Luis Ferrer')).closest('tr')
+    const row = (await screen.findByText('Pedro Alcántara')).closest('tr')
     const scoped = within(row as HTMLElement)
 
+    // Nace en Blanco con el perfil a medias: los datos llegan en tres fases.
     expect(scoped.getByText('incompleto')).toBeInTheDocument()
+    // D-27: sin el cifrado conectado, `has_tax_id` es siempre `no`.
     expect(scoped.getByText('no')).toBeInTheDocument()
-    // La edad llega calculada de la vista, no de una fecha de nacimiento.
-    expect(scoped.getByText('25')).toBeInTheDocument()
+    expect(scoped.getByText('31')).toBeInTheDocument()
   })
 
-  it('los filtros arrancan abiertos y filtran en el servidor', async () => {
+  it('los filtros van por id de catálogo y filtran en el servidor', async () => {
     const user = userEvent.setup()
     renderPool()
 
-    // Todos a la vista al abrir: la maqueta pone valores de ejemplo en los
-    // controles, pero debajo enseña filas que esos valores excluirían.
-    expect(await screen.findByText('María Sandoval')).toBeInTheDocument()
-    expect(screen.getByText('Luis Ferrer')).toBeInTheDocument()
+    expect(await screen.findByText('Ana Rivera Gómez')).toBeInTheDocument()
+    expect(screen.getByText('Julia Mendoza')).toBeInTheDocument()
 
-    await user.selectOptions(screen.getByLabelText('Posición'), 'Housekeeper')
+    // El value del option es el ID (`pos-hk`): así viaja a `GET /workers`.
+    await user.selectOptions(await screen.findByLabelText('Posición'), 'pos-hk')
 
     await waitFor(() => {
-      expect(screen.queryByText('Luis Ferrer')).not.toBeInTheDocument()
+      expect(screen.queryByText('Julia Mendoza')).not.toBeInTheDocument()
     }, SLOW)
-    expect(screen.getByText('María Sandoval')).toBeInTheDocument()
-    expect(screen.getByText('Rosa Navarro')).toBeInTheDocument()
+    expect(screen.getByText('Ana Rivera Gómez')).toBeInTheDocument()
+    expect(screen.getByText('Rogelio Santos')).toBeInTheDocument()
   })
 
-  it('el nivel de inglés sale del catálogo compartido', async () => {
+  it('el alta de Fase 1 crea a la persona y nace en Blanco', async () => {
+    const user = userEvent.setup()
     renderPool()
 
-    // «Conversacional» solo existe describiendo a una persona; una requisición
-    // pide del mismo catálogo, por eso vive en `shared`.
-    expect(await screen.findByText('Conversacional')).toBeInTheDocument()
-    expect(screen.getAllByText('Básico')).toHaveLength(3)
+    await screen.findByText('Ana Rivera Gómez')
+    await user.click(screen.getByRole('button', { name: '+ Nuevo colaborador' }))
+
+    const dialog = await screen.findByRole('dialog')
+    const scoped = within(dialog)
+    const submit = scoped.getByRole('button', { name: 'Crear colaborador' })
+    expect(submit).toBeDisabled()
+
+    // La maqueta lo dice: nace en BLANCO y el perfil se completa por la app.
+    expect(scoped.getByText(/Nace en BLANCO/)).toBeInTheDocument()
+
+    await user.type(scoped.getByPlaceholderText('María Sandoval Ruiz'), 'Braulio Vega')
+    await user.type(scoped.getByLabelText('Fecha de nacimiento'), '1994-05-10')
+    await user.type(scoped.getByPlaceholderText('+1 404 790 2517'), '+1 404 555 0199')
+    await user.type(scoped.getByPlaceholderText(/Peachtree/), '88 Auburn Ave, Atlanta')
+    await user.selectOptions(await scoped.findByLabelText('Zona'), 'centro')
+    expect(submit).toBeEnabled()
+
+    await user.click(submit)
+
+    // Aparece en el pool, en Blanco y con el perfil a medias.
+    const row = (await screen.findByText('Braulio Vega', undefined, SLOW)).closest('tr')
+    const rowScoped = within(row as HTMLElement)
+    expect(rowScoped.getByText('WHITE · Pre-asignación')).toBeInTheDocument()
+    expect(rowScoped.getByText('incompleto')).toBeInTheDocument()
+  })
+
+  it('posición e inglés llegan como nombre del catálogo, o raya si faltan', async () => {
+    renderPool()
+
+    expect((await screen.findAllByText('Conversacional')).length).toBeGreaterThan(0)
+    // Pedro (Blanco, fase 1) aún no tiene posición ni modalidad: rayas.
+    const row = screen.getByText('Pedro Alcántara').closest('tr')
+    expect(within(row as HTMLElement).getAllByText('—').length).toBeGreaterThan(1)
   })
 })

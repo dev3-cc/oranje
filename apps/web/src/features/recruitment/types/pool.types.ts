@@ -1,64 +1,78 @@
-import type { CatalogPosition, EnglishLevel, HiringModality } from '@/shared/constants/catalogs'
 import type { WorkerStatus } from '@/shared/constants/workerStatus'
 
 /**
- * Formas de respuesta del Pool de Colaboradores (`coverage.vw_pool`).
- *
- * ⚠ ESTA VISTA TODAVÍA NO EXISTE EN LA INSTANCIA.
- *
- * `coverage.vw_pool` está en el diagrama, pero la base solo tiene `vw_worker`,
- * `vw_client` y `vw_prospect`, y `app_user` no tiene GRANT sobre el esquema
- * `personal`. Mientras tanto la pantalla vive de fixtures; el día que la vista
- * exista, se apaga la bandera de mocks y nada más.
+ * Formas de la vista del Pool, adaptadas de `GET /workers` (el contrato real:
+ * `personal.worker` + `vw_worker`). Posición, inglés y modalidad llegan como
+ * su NOMBRE ya resuelto del catálogo; los filtros viajan por id.
  *
  * ⚠ Igual que las demás, su lugar es `packages/contracts` (§5).
  */
 export interface PoolWorker {
   id: string
   fullName: string
-  /**
-   * Derivada de la VISTA, no de la tabla: `personal.worker` guarda la fecha de
-   * nacimiento. Prisma no soporta columnas GENERATED (D-19), así que el cálculo
-   * vive en la vista y el front solo la pinta — que además es lo correcto,
-   * porque una edad calculada en el navegador cambia de valor a medianoche.
-   */
+  /** Derivada de la vista (`vw_worker`): una edad calculada en el navegador cambia a medianoche. */
   age: number
   zoneName: string
-  catalogPosition: CatalogPosition
-  englishLevel: EnglishLevel
-  hiringModality: HiringModality
+  /** `—` mientras el expediente no la registra (fase 2 del alta). */
+  catalogPosition: string
+  englishLevel: string
+  hiringModality: string
   status: WorkerStatus
-  /** `is_profile_complete`: también derivada de la vista. */
+  /** `is_profile_complete`: los nueve campos que la vista declara obligatorios. */
   isProfileComplete: boolean
-  /** `has_tax_id`: si tiene ITIN registrado. Derivada de la vista. */
+  /** `has_tax_id`: mientras el cifrado no se conecte, siempre es `false` (D-27). */
   hasTaxId: boolean
+  /** Un vetado se pinta distinto aunque su estado lo diga: es la regla, no un adorno. */
+  isBlacklisted: boolean
 }
 
 export interface WorkerPool {
   items: PoolWorker[]
-  /**
-   * Cuántos hay en el pool completo, no cuántos se están pintando. Agregado del
-   * backend: la tabla es una página.
-   */
+  /** Cuántos hay en el pool completo (meta.total), no cuántos se pintan. */
   total: number
-  zoneNames: string[]
+}
+
+/** Una fila de catálogo para armar los filtros. */
+export interface PoolOption {
+  id: string
+  name: string
+}
+
+export interface PoolOptions {
+  positions: PoolOption[]
+  zones: PoolOption[]
+  englishLevels: PoolOption[]
+  modalities: PoolOption[]
 }
 
 /** Ningún filtro puesto en esa columna. */
 export const ANY_VALUE = 'ALL'
 
+/** Los filtros viajan por ID de catálogo, que es lo que `GET /workers` acepta. */
 export interface PoolFilters {
-  catalogPosition: string
-  zoneName: string
-  englishLevel: string
-  hiringModality: string
+  catalogPositionId: string
+  zoneId: string
+  englishLevelId: string
+  /** El único que la API aún no filtra: se aplica al adaptar. */
+  hiringModalityId: string
   status: string
 }
 
 export const EMPTY_POOL_FILTERS: PoolFilters = {
-  catalogPosition: ANY_VALUE,
-  zoneName: ANY_VALUE,
-  englishLevel: ANY_VALUE,
-  hiringModality: ANY_VALUE,
+  catalogPositionId: ANY_VALUE,
+  zoneId: ANY_VALUE,
+  englishLevelId: ANY_VALUE,
+  hiringModalityId: ANY_VALUE,
   status: ANY_VALUE,
+}
+
+/** El cuerpo REAL de `POST /workers` (Fase 1 · Entrevista). */
+export interface CreateWorkerRequest {
+  fullName: string
+  birthDate: string
+  /** El CHECK real admite también OTHER, aunque la maqueta enseñe dos. */
+  gender: 'MALE' | 'FEMALE' | 'OTHER'
+  phone: string
+  address: string
+  zoneId: string
 }
