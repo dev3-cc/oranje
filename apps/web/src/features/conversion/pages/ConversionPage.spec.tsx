@@ -8,6 +8,14 @@ import { ConversionPage } from './ConversionPage'
 
 import { store } from '@/app/store'
 
+/**
+ * La pantalla COMPONE el contrato real (prospecto + propuestas + contactos +
+ * usuario del hotel): estas pruebas cubren la cadena completa sobre los
+ * fixtures de Onboarding. `psp-0007` (Hotel Puerto Real) es el único PINK.
+ * El estado del usuario del hotel persiste entre pruebas a propósito: crear
+ * el usuario en una prueba desbloquea la aprobación en la siguiente, igual
+ * que en la operación real.
+ */
 function renderConversion(prospectId: string): void {
   const router = createMemoryRouter(
     [{ path: '/conversion/:prospectId', element: <ConversionPage /> }],
@@ -27,21 +35,24 @@ describe('ConversionPage', () => {
   it('lista los requisitos con su evidencia y lo que pasa al aprobar', async () => {
     renderConversion('psp-0007')
 
-    expect(await screen.findByText('Propuesta enviada y aceptada')).toBeInTheDocument()
-    expect(screen.getByText('Propuesta v2 · 03 jun 2026')).toBeInTheDocument()
+    expect(await screen.findByText('Propuesta enviada')).toBeInTheDocument()
+    expect(screen.getByText('Propuesta v2 · 03 jun')).toBeInTheDocument()
     expect(screen.getByText('Contacto principal registrado')).toBeInTheDocument()
+    expect(screen.getByText('Marta Solís · Gerente de Compras')).toBeInTheDocument()
 
-    expect(screen.getByText('prospect.onboarding_state_id pasa a ORANGE')).toBeInTheDocument()
-    expect(screen.getByText('hotel.activated_at toma la fecha de hoy')).toBeInTheDocument()
+    expect(screen.getByText(/El semáforo pasa a Naranja/)).toBeInTheDocument()
+    expect(screen.getByText(/El hotel queda activado como cliente/)).toBeInTheDocument()
   })
 
-  /** El permiso lo decide el backend; el front no cuenta palomitas. */
-  it('un requisito pendiente bloquea la aprobación y dice por qué', async () => {
+  /** El permiso lo valida el backend; el front solo explica el bloqueo. */
+  it('sin usuario del hotel la aprobación queda bloqueada y dice por qué', async () => {
     renderConversion('psp-0007')
 
-    expect(await screen.findByText('No existe todavía — bloquea la conversión')).toBeInTheDocument()
+    expect(
+      await screen.findByText('No existe todavía — bloquea la conversión (RR-V-02)'),
+    ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Aprobar conversión' })).toBeDisabled()
-    expect(screen.getByText('Faltan 1 requisitos por cumplir.')).toBeInTheDocument()
+    expect(screen.getByText(/HOTEL_USER_REQUIRED/)).toBeInTheDocument()
   })
 
   it('crear el usuario del hotel desbloquea la aprobación sin salir de la pantalla', async () => {
@@ -52,15 +63,26 @@ describe('ConversionPage', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Aprobar conversión' })).toBeEnabled()
     })
-    expect(screen.getByText('Creado desde el contacto principal')).toBeInTheDocument()
+    // El usuario nace del contacto principal, como Manager General.
+    expect(screen.getByText('Marta Solís · Manager General')).toBeInTheDocument()
   })
 
-  it('con todo cumplido se puede aprobar de entrada', async () => {
-    renderConversion('psp-0012')
+  it('devolver a Café exige elegir motivo antes de confirmar', async () => {
+    renderConversion('psp-0007')
 
-    expect(await screen.findByText('Conversión a cliente activo')).toBeInTheDocument()
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Aprobar conversión' })).toBeEnabled()
-    })
+    await userEvent.click(await screen.findByRole('button', { name: 'Devolver a Café' }))
+
+    const confirm = await screen.findByRole('button', { name: 'Confirmar regreso' })
+    expect(confirm).toBeDisabled()
+    expect(screen.getByLabelText(/Motivo del regreso/)).toBeInTheDocument()
+  })
+
+  it('un prospecto fuera de Rosa no está esperando conversión', async () => {
+    // psp-0004 está en Azul claro: la conversión sale de Rosa.
+    renderConversion('psp-0004')
+
+    expect(
+      await screen.findByText('Este prospecto no está esperando conversión.'),
+    ).toBeInTheDocument()
   })
 })

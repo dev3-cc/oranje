@@ -1,223 +1,54 @@
-import type {
-  ConversionCandidate,
-  ConversionReadiness,
-  ConversionRequirement,
-} from '../types/conversion.types'
-
+/*
+ * ⚠ Imports entre features, permitidos SOLO aquí: la composición de Conversión
+ * consume `/prospects` y `/prospects/:id/proposals`, cuyos mocks viven en
+ * Onboarding. Es cableado de fixtures — con mocks apagados esto es un no-op.
+ */
+// eslint-disable-next-line no-restricted-imports
+import { registerOnboardingMocks } from '@/features/onboarding/api/onboardingMocks'
+// eslint-disable-next-line no-restricted-imports
+import { registerProposalsMocks } from '@/features/onboarding/api/proposalsMocks'
 import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
 
 /**
- * Fixtures de la conversión. ANDAMIO TEMPORAL — se borra cuando `apps/api`
- * exponga los endpoints.
- *
- * ⚠ Estado propio, separado del de Onboarding. §4 impide que una feature
- * importe de otra, así que aquí se repiten los hoteles. Consecuencia en modo
- * mock: aprobar una conversión NO mueve la tarjeta del tablero, porque son dos
- * almacenes en memoria distintos. Contra la API real es una sola transacción y
- * la invalidación del tag `Prospect` basta.
+ * La conversión ya NO tiene endpoints propios (ver `conversionApi.ts`). El
+ * único mock de esta feature es el del Usuario del Hotel, que ninguna otra
+ * registra. Estado en memoria: los hoteles arrancan SIN usuario — que es
+ * justo lo que bloquea la conversión en la maqueta.
  */
 
-/** Lo que ocurre al aprobar. Lo describe el backend porque es lo que él hace. */
-const EFFECTS = [
-  'prospect.onboarding_state_id pasa a ORANGE',
-  'Se escribe una fila en prospect_state_history',
-  'hotel.activated_at toma la fecha de hoy',
-  'El hotel entra en vw_client y puede generar requisiciones',
-  'Reclutamiento e Inspección toman la operación',
-]
-
-const APPROVAL_NOTE = 'solo el BDC aprueba esta transición (RR-V-01, RR-V-02)'
-
-interface StoredConversion {
-  hotelName: string
-  zone: string
-  daysInStatus: number
-  hasHotelUser: boolean
-  requirements: Omit<ConversionRequirement, 'action'>[]
-  /** Al aprobar deja de ser candidato: ya es cliente activo. */
-  isConverted: boolean
+interface StoredHotelUser {
+  id: string
+  email: string
+  fullName: string
+  role: { code: string; name: string }
 }
 
-const conversions = new Map<string, StoredConversion>([
-  [
-    'psp-0007',
-    {
-      hotelName: 'Hotel Puerto Real',
-      zone: 'Zona Centro',
-      daysInStatus: 7,
-      hasHotelUser: false,
-      isConverted: false,
-      requirements: [
-        {
-          id: 'req-proposal',
-          label: 'Propuesta enviada y aceptada',
-          detail: 'Propuesta v2 · 03 jun 2026',
-          isMet: true,
-        },
-        {
-          id: 'req-terms',
-          label: 'Documento de T&C validado',
-          detail: 'Negociado en Rosa desde el 18 jun',
-          isMet: true,
-        },
-        {
-          id: 'req-contact',
-          label: 'Contacto principal registrado',
-          detail: 'Marta Solís · Gerente de Compras',
-          isMet: true,
-        },
-      ],
-    },
-  ],
-  [
-    'psp-0012',
-    {
-      hotelName: 'Hotel Vista Laguna',
-      zone: 'Zona Norte',
-      daysInStatus: 12,
-      hasHotelUser: true,
-      isConverted: false,
-      requirements: [
-        {
-          id: 'req-proposal',
-          label: 'Propuesta enviada y aceptada',
-          detail: 'Propuesta v2 · 24 jun 2026',
-          isMet: true,
-        },
-        {
-          id: 'req-terms',
-          label: 'Documento de T&C validado',
-          detail: 'Negociado en Rosa desde el 02 jul',
-          isMet: true,
-        },
-        {
-          id: 'req-contact',
-          label: 'Contacto principal registrado',
-          detail: 'Jorge Peña · Ama de Llaves',
-          isMet: true,
-        },
-      ],
-    },
-  ],
-])
-
-/** El usuario del hotel es un requisito más, pero con acción para resolverlo. */
-function hotelUserRequirement(stored: StoredConversion): ConversionRequirement {
-  return {
-    id: 'req-hotel-user',
-    label: 'Usuario del Hotel creado',
-    detail: stored.hasHotelUser
-      ? 'Creado desde el contacto principal'
-      : 'No existe todavía — bloquea la conversión',
-    isMet: stored.hasHotelUser,
-    action: stored.hasHotelUser ? null : { kind: 'CREATE_HOTEL_USER', label: 'Crear usuario' },
-  }
-}
-
-function readReadiness(prospectId: string): ConversionReadiness {
-  const stored = conversions.get(prospectId)
-  if (!stored) throw new Error(`El prospecto ${prospectId} no está en conversión`)
-
-  const requirements: ConversionRequirement[] = [
-    ...stored.requirements.map((requirement) => ({ ...requirement, action: null })),
-    hotelUserRequirement(stored),
-  ]
-  const pending = requirements.filter((requirement) => !requirement.isMet)
-
-  return {
-    prospectId,
-    hotelName: stored.hotelName,
-    currentStatus: stored.isConverted ? 'ORANGE' : 'PINK',
-    targetStatus: 'ORANGE',
-    approvalNote: APPROVAL_NOTE,
-    requirements,
-    effects: EFFECTS,
-    canApprove: pending.length === 0 && !stored.isConverted,
-    blockedReason: stored.isConverted
-      ? 'Este hotel ya es cliente activo.'
-      : pending.length > 0
-        ? `Faltan ${String(pending.length)} requisitos por cumplir.`
-        : null,
-  }
-}
-
-function createHotelUser(prospectId: string): ConversionReadiness {
-  const stored = conversions.get(prospectId)
-  if (!stored) throw new Error(`El prospecto ${prospectId} no está en conversión`)
-  if (stored.hasHotelUser) throw new Error('El usuario del hotel ya existe')
-
-  stored.hasHotelUser = true
-  return readReadiness(prospectId)
-}
-
-function approve(prospectId: string): ConversionReadiness {
-  const readiness = readReadiness(prospectId)
-  if (!readiness.canApprove) throw new Error(readiness.blockedReason ?? 'No se puede aprobar')
-
-  const stored = conversions.get(prospectId)
-  if (stored) stored.isConverted = true
-
-  return readReadiness(prospectId)
-}
-
-function returnToRenegotiation(prospectId: string): ConversionReadiness {
-  const stored = conversions.get(prospectId)
-  if (!stored) throw new Error(`El prospecto ${prospectId} no está en conversión`)
-  if (stored.isConverted) throw new Error('Un cliente activo ya no vuelve a Café')
-
-  // Sale de la cola: deja de estar en Rosa esperando aprobación.
-  conversions.delete(prospectId)
-
-  return {
-    prospectId,
-    hotelName: stored.hotelName,
-    currentStatus: 'BROWN',
-    targetStatus: 'ORANGE',
-    approvalNote: APPROVAL_NOTE,
-    requirements: [],
-    effects: EFFECTS,
-    canApprove: false,
-    blockedReason: 'El ciclo volvió a Café: hay que renegociar antes de convertir.',
-  }
-}
+const usersByHotel = new Map<string, StoredHotelUser[]>()
+let userSequence = 0
 
 const routes: readonly MockRoute[] = [
   {
     method: 'GET',
-    path: '/conversion',
-    resolve: (): ConversionCandidate[] =>
-      [...conversions.entries()]
-        .filter(([, stored]) => !stored.isConverted)
-        .map(([prospectId, stored]) => ({
-          prospectId,
-          hotelName: stored.hotelName,
-          zone: stored.zone,
-          status: 'PINK' as const,
-          daysInStatus: stored.daysInStatus,
-          pendingRequirements: readReadiness(prospectId).requirements.filter(
-            (requirement) => !requirement.isMet,
-          ).length,
-        })),
-  },
-  {
-    method: 'GET',
-    path: '/prospects/:prospectId/conversion',
-    resolve: ({ params }): ConversionReadiness => readReadiness(params.prospectId ?? ''),
+    path: '/hotels/:hotelId/users',
+    resolve: ({ params }) => ({ data: usersByHotel.get(params.hotelId ?? '') ?? [] }),
   },
   {
     method: 'POST',
-    path: '/prospects/:prospectId/hotel-user',
-    resolve: ({ params }): ConversionReadiness => createHotelUser(params.prospectId ?? ''),
-  },
-  {
-    method: 'POST',
-    path: '/prospects/:prospectId/conversion/approvals',
-    resolve: ({ params }): ConversionReadiness => approve(params.prospectId ?? ''),
-  },
-  {
-    method: 'POST',
-    path: '/prospects/:prospectId/conversion/returns',
-    resolve: ({ params }): ConversionReadiness => returnToRenegotiation(params.prospectId ?? ''),
+    path: '/hotels/:hotelId/users',
+    resolve: ({ params, body }) => {
+      const payload = (body ?? {}) as { email?: string; fullName?: string; roleCode?: string }
+      if (!payload.email || !payload.fullName) throw new Error('Faltan datos del usuario')
+      userSequence += 1
+      const user: StoredHotelUser = {
+        id: `husr-${String(userSequence).padStart(3, '0')}`,
+        email: payload.email,
+        fullName: payload.fullName,
+        role: { code: payload.roleCode ?? 'ROL-H-03', name: 'Manager General' },
+      }
+      const hotelId = params.hotelId ?? ''
+      usersByHotel.set(hotelId, [...(usersByHotel.get(hotelId) ?? []), user])
+      return { data: user }
+    },
   },
 ]
 
@@ -227,4 +58,7 @@ export function registerConversionMocks(): void {
   if (areRoutesRegistered) return
   areRoutesRegistered = true
   registerMockRoutes(routes)
+  // Las rutas que la composición consume y no son de esta feature.
+  registerOnboardingMocks()
+  registerProposalsMocks()
 }

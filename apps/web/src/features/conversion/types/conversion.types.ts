@@ -25,6 +25,8 @@ export interface ConversionRequirement {
 
 export interface ConversionReadiness {
   prospectId: string
+  /** Para las acciones que pegan al hotel (crear su usuario). */
+  hotelId: string
   hotelName: string
   currentStatus: OnboardingStatus
   targetStatus: OnboardingStatus
@@ -41,6 +43,8 @@ export interface ConversionReadiness {
   canApprove: boolean
   /** Motivo por el que no se puede aprobar; `null` cuando sí se puede. */
   blockedReason: string | null
+  /** Datos del contacto principal para crear el Usuario del Hotel; `null` sin correo. */
+  hotelUserDraft: { email: string; fullName: string } | null
 }
 
 /** Fila de la cola: prospectos esperando conversión. */

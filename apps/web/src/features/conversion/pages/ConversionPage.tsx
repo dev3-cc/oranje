@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 
 import {
@@ -9,6 +9,7 @@ import {
 } from '../api/conversionApi'
 import { RequirementRow } from '../components/RequirementRow'
 
+import { useGetStatusChangeReasonsQuery } from '@/features/onboarding'
 import { Button } from '@/shared/components/Button'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { SectionCard } from '@/shared/components/SectionCard'
@@ -37,6 +38,13 @@ export function ConversionPage(): ReactNode {
   const [createHotelUser, { isLoading: isCreatingUser }] = useCreateHotelUserMutation()
   const [approveConversion, { isLoading: isApproving }] = useApproveConversionMutation()
   const [returnToRenegotiation, { isLoading: isReturning }] = useReturnToRenegotiationMutation()
+
+  /** Rosa → Café exige motivo: el botón abre la elección en vez de ejecutar. */
+  const [isReturnOpen, setIsReturnOpen] = useState(false)
+  const [returnReason, setReturnReason] = useState('')
+  const { data: returnReasons = [] } = useGetStatusChangeReasonsQuery('BROWN', {
+    skip: !isReturnOpen,
+  })
 
   if (isLoading) return <DetailSkeleton />
 
@@ -85,7 +93,13 @@ export function ConversionPage(): ReactNode {
                   requirement={requirement}
                   isActing={isCreatingUser}
                   onAct={() => {
-                    void createHotelUser(prospectId)
+                    if (!readiness.hotelUserDraft) return
+                    void createHotelUser({
+                      prospectId,
+                      hotelId: readiness.hotelId,
+                      email: readiness.hotelUserDraft.email,
+                      fullName: readiness.hotelUserDraft.fullName,
+                    })
                   }}
                 />
               ))}
@@ -94,12 +108,12 @@ export function ConversionPage(): ReactNode {
 
           <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
             <Button
-              disabled={isBusy || readiness.currentStatus !== 'PINK'}
+              disabled={isBusy}
               onClick={() => {
-                void returnToRenegotiation(prospectId)
+                setIsReturnOpen((open) => !open)
               }}
             >
-              {isReturning ? 'Devolviendo…' : 'Devolver a Café'}
+              Devolver a Café
             </Button>
 
             <Button
@@ -113,6 +127,37 @@ export function ConversionPage(): ReactNode {
               {isApproving ? 'Aprobando…' : 'Aprobar conversión'}
             </Button>
           </div>
+
+          {isReturnOpen && (
+            <div className="mt-4 flex flex-wrap items-center justify-end gap-3 rounded-md bg-surface-2 p-3">
+              <label htmlFor="returnReason" className="text-sm text-ink-2">
+                Motivo del regreso (obligatorio):
+              </label>
+              <select
+                id="returnReason"
+                value={returnReason}
+                onChange={(event) => {
+                  setReturnReason(event.target.value)
+                }}
+                className="rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink"
+              >
+                <option value="">Elige un motivo…</option>
+                {returnReasons.map((reason) => (
+                  <option key={reason.id} value={reason.id}>
+                    {reason.label}
+                  </option>
+                ))}
+              </select>
+              <Button
+                disabled={returnReason === '' || isBusy}
+                onClick={() => {
+                  void returnToRenegotiation({ prospectId, reasonCode: returnReason })
+                }}
+              >
+                {isReturning ? 'Devolviendo…' : 'Confirmar regreso'}
+              </Button>
+            </div>
+          )}
 
           {readiness.blockedReason !== null && (
             <p className="mt-3 text-right text-sm text-ink-3">{readiness.blockedReason}</p>

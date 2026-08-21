@@ -10,3 +10,6 @@ export { ProspectDetailPage } from './pages/ProspectDetailPage'
 export { ProposalEditorPage } from './pages/ProposalEditorPage'
 export { ProposalListPage } from './pages/ProposalListPage'
 export { ProposalVersionPage } from './pages/ProposalVersionPage'
+
+/** La conversión reusa el catálogo de motivos del semáforo. */
+export { useGetStatusChangeReasonsQuery } from './api/onboardingApi'
