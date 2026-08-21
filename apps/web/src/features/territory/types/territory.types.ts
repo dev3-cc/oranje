@@ -55,4 +55,14 @@ export interface TerritoryFilters {
   /** `null` = todas las zonas. */
   zoneId: string | null
   search: string
+  /** `null` = el mío. El BDC pone aquí el id del BD que está mirando. */
+  userId?: string | null
+}
+
+/** Una persona del selector de «territorio de quién». */
+export interface TerritoryOwner {
+  id: string
+  fullName: string
+  zoneCount: number
+  openProspects: number
 }

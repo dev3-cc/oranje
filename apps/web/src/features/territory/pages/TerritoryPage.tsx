@@ -1,20 +1,34 @@
 import { useState, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router'
 
-import { useGetTerritoryQuery } from '../api/territoryApi'
+import { useGetTerritoryOwnersQuery, useGetTerritoryQuery } from '../api/territoryApi'
 import { TerritoryHotelCard } from '../components/TerritoryHotelCard'
 import { TerritoryMap } from '../components/TerritoryMap'
+import { TerritoryOwnerPicker } from '../components/TerritoryOwnerPicker'
 import { TerritoryZoneChips } from '../components/TerritoryZoneChips'
 
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { useDebounce } from '@/shared/hooks/useDebounce'
 
 export function TerritoryPage(): ReactNode {
+  /** `?q=`: el globo del pipeline manda aquí con el hotel ya buscado. */
+  const [searchParams] = useSearchParams()
   const [zoneId, setZoneId] = useState<string | null>(null)
-  const [searchInput, setSearchInput] = useState('')
+  const [searchInput, setSearchInput] = useState(searchParams.get('q') ?? '')
   const [pickedHotelId, setPickedHotelId] = useState<string | null>(null)
+  /** `null` = el mío. El BDC lo cambia con el selector. */
+  const [ownerId, setOwnerId] = useState<string | null>(null)
 
   const search = useDebounce(searchInput)
-  const { data: territory, isLoading, isError } = useGetTerritoryQuery({ zoneId, search })
+  /** Sin equipo la consulta falla con 403 y la lista queda vacía: el BD no ve selector. */
+  const { data: owners = [] } = useGetTerritoryOwnersQuery()
+  const {
+    data: territory,
+    isLoading,
+    isError,
+  } = useGetTerritoryQuery({ zoneId, search, userId: ownerId })
+
+  const ownerName = owners.find((owner) => owner.id === ownerId)?.fullName ?? null
 
   const hotels = territory?.hotels ?? []
 
@@ -28,7 +42,19 @@ export function TerritoryPage(): ReactNode {
   return (
     <div className="grid h-full min-h-0 grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
       <section className="flex min-h-0 flex-col rounded-lg border border-line bg-surface p-6">
-        <h1 className="text-2xl font-bold tracking-tight text-ink">Mi Territorio</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-ink">
+          {ownerName ? `Territorio de ${ownerName}` : 'Mi Territorio'}
+        </h1>
+
+        <TerritoryOwnerPicker
+          owners={owners}
+          selectedId={ownerId}
+          onSelect={(id) => {
+            setOwnerId(id)
+            /** El hotel elegido es de otro territorio: la ficha caería vacía. */
+            setPickedHotelId(null)
+          }}
+        />
 
         <input
           type="search"

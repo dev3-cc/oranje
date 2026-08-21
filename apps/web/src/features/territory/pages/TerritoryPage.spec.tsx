@@ -8,6 +8,13 @@ import { TerritoryPage } from './TerritoryPage'
 
 import { store } from '@/app/store'
 
+/**
+ * La pantalla ya no tiene endpoint propio: COMPONE `/me` + `/users/:id/zones` +
+ * `/hotels` + `/prospects`, así que estas pruebas cubren la cadena completa
+ * sobre los fixtures de Onboarding. Algunos nombres aparecen DOS veces a
+ * propósito: los fixtures repiten cinco hoteles como prospecto abierto y como
+ * cliente convertido (ver el aviso en `onboardingMocks.ts`).
+ */
 function renderTerritory(): void {
   const router = createMemoryRouter([{ path: '/mi-territorio', element: <TerritoryPage /> }], {
     initialEntries: ['/mi-territorio'],
@@ -24,27 +31,27 @@ describe('TerritoryPage', () => {
   it('lista los hoteles del territorio con su zona', async () => {
     renderTerritory()
 
-    expect(await screen.findByText('Hotel Puerto Real')).toBeInTheDocument()
-    expect(screen.getByText('Grand Costa Nube')).toBeInTheDocument()
-    expect(screen.getByText('Hostal Del Sol')).toBeInTheDocument()
+    expect((await screen.findAllByText('Hotel Puerto Real')).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Grand Costa Nube').length).toBeGreaterThan(0)
+    expect(screen.getByText('Hotel Riviera Maya')).toBeInTheDocument()
   })
 
   it('un cliente activo muestra desde cuándo lo es, no días en estado', async () => {
     renderTerritory()
 
-    // Hotel Vista Laguna está en NARANJA.
-    expect(await screen.findByText('Cliente desde 08 jul')).toBeInTheDocument()
+    // Los convertidos (NARANJA) traen fecha de alta, no días en estado.
+    expect((await screen.findAllByText(/Cliente desde/)).length).toBeGreaterThan(0)
   })
 
   it('filtrar por zona deja solo los hoteles de esa zona', async () => {
     renderTerritory()
-    await screen.findByText('Hotel Puerto Real')
+    await screen.findAllByText('Hotel Puerto Real')
 
-    await userEvent.click(screen.getByRole('button', { name: /^Sur\s*13$/ }))
+    await userEvent.click(screen.getByRole('button', { name: /^Sur\s*\d+$/ }))
 
-    expect(await screen.findByText('Suites del Carmen')).toBeInTheDocument()
+    expect((await screen.findAllByText('Suites del Carmen')).length).toBeGreaterThan(0)
     await waitFor(() => {
-      expect(screen.queryByText('Hotel Puerto Real')).not.toBeInTheDocument()
+      expect(screen.queryAllByText('Hotel Puerto Real')).toHaveLength(0)
     })
   })
 

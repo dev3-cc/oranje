@@ -1,171 +1,34 @@
-import type { Territory, TerritoryHotel, TerritoryZone } from '../types/territory.types'
-
+/*
+ * ⚠ Import entre features, permitido SOLO aquí: la composición de Mi
+ * Territorio consume `/hotels` y `/prospects`, cuyos mocks viven en
+ * Onboarding. Es cableado de fixtures — el código de producción no lo usa:
+ * con mocks apagados este módulo entero es un no-op.
+ */
+// eslint-disable-next-line no-restricted-imports
+import { registerOnboardingMocks } from '@/features/onboarding/api/onboardingMocks'
 import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
 
 /**
- * Fixtures de Mi Territorio. ANDAMIO TEMPORAL — se borra cuando `apps/api`
- * exponga `GET /territory`.
- *
- * ⚠ Las coordenadas son de CANCÚN, no de las de la captura.
- *
- * El mapa del diseño muestra Birmingham, Alabama: es la ubicación por defecto
- * de la herramienta con la que se maquetó, no un dato del negocio. Todo lo
- * demás de la pantalla apunta a Quintana Roo (`America/Cancun`, teléfonos +52
- * 998), así que los puntos se sembraron ahí. La ubicación es dato, no diseño.
- *
- * Los cinco primeros hoteles son, en orden, los de la captura. Los dos de Zona
- * Sur se agregaron para que el chip «Sur» no devuelva una lista vacía al
- * filtrar.
+ * Mi Territorio ya NO tiene endpoint propio: la pantalla compone `/me`,
+ * `/users/:id/zones`, `/hotels` y `/prospects` (ver `territoryApi.ts`). El
+ * único mock que queda aquí es el de las zonas asignadas.
  */
 
-const ZONES: TerritoryZone[] = [
-  { id: 'norte', label: 'Norte', count: 14 },
-  { id: 'centro', label: 'Centro', count: 11 },
-  { id: 'sur', label: 'Sur', count: 13 },
-]
-
-const HOTELS: TerritoryHotel[] = [
-  {
-    id: 'psp-0007',
-    hotelName: 'Hotel Puerto Real',
-    zoneId: 'centro',
-    zone: 'Zona Centro',
-    status: 'PINK',
-    daysInStatus: 7,
-    clientSince: null,
-    location: { lat: 21.1619, lng: -86.8515 },
-    geofenceMeters: 150,
-    timeZone: 'America/Cancun',
-    recentHistory: [
-      { id: 'thl-0007-3', status: 'PINK', changedAt: '2026-06-18' },
-      { id: 'thl-0007-2', status: 'YELLOW', changedAt: '2026-06-03' },
-      { id: 'thl-0007-1', status: 'GREEN', changedAt: '2026-05-21' },
-    ],
-  },
-  {
-    id: 'psp-0004',
-    hotelName: 'Grand Costa Nube',
-    zoneId: 'norte',
-    zone: 'Zona Norte',
-    status: 'LIGHT_BLUE',
-    daysInStatus: 6,
-    clientSince: null,
-    location: { lat: 21.1743, lng: -86.8466 },
-    geofenceMeters: 120,
-    timeZone: 'America/Cancun',
-    recentHistory: [
-      { id: 'thl-0004-2', status: 'LIGHT_BLUE', changedAt: '2026-08-04' },
-      { id: 'thl-0004-1', status: 'GRAY', changedAt: '2026-07-28' },
-    ],
-  },
-  {
-    id: 'psp-0012',
-    hotelName: 'Hotel Vista Laguna',
-    zoneId: 'norte',
-    zone: 'Zona Norte',
-    status: 'ORANGE',
-    daysInStatus: 33,
-    clientSince: '2026-07-08',
-    location: { lat: 21.1801, lng: -86.8395 },
-    geofenceMeters: 200,
-    timeZone: 'America/Cancun',
-    recentHistory: [
-      { id: 'thl-0012-3', status: 'ORANGE', changedAt: '2026-07-08' },
-      { id: 'thl-0012-2', status: 'PINK', changedAt: '2026-06-24' },
-      { id: 'thl-0012-1', status: 'YELLOW', changedAt: '2026-06-11' },
-    ],
-  },
-  {
-    id: 'psp-0008',
-    hotelName: 'Hotel Mirador',
-    zoneId: 'centro',
-    zone: 'Zona Centro',
-    status: 'GREEN',
-    daysInStatus: 5,
-    clientSince: null,
-    location: { lat: 21.1585, lng: -86.8462 },
-    geofenceMeters: 150,
-    timeZone: 'America/Cancun',
-    recentHistory: [
-      { id: 'thl-0008-2', status: 'GREEN', changedAt: '2026-08-05' },
-      { id: 'thl-0008-1', status: 'LIGHT_BLUE', changedAt: '2026-07-22' },
-    ],
-  },
-  {
-    id: 'psp-0013',
-    hotelName: 'Hostal Del Sol',
-    zoneId: 'centro',
-    zone: 'Zona Centro',
-    status: 'RED',
-    daysInStatus: 20,
-    clientSince: null,
-    location: { lat: 21.1522, lng: -86.8551 },
-    geofenceMeters: 100,
-    timeZone: 'America/Cancun',
-    recentHistory: [
-      { id: 'thl-0013-2', status: 'RED', changedAt: '2026-07-21' },
-      { id: 'thl-0013-1', status: 'LIGHT_BLUE', changedAt: '2026-07-02' },
-    ],
-  },
-  {
-    id: 'psp-0006',
-    hotelName: 'Suites del Carmen',
-    zoneId: 'sur',
-    zone: 'Zona Sur',
-    status: 'LIGHT_BLUE',
-    daysInStatus: 9,
-    clientSince: null,
-    location: { lat: 21.118, lng: -86.848 },
-    geofenceMeters: 120,
-    timeZone: 'America/Cancun',
-    recentHistory: [
-      { id: 'thl-0006-2', status: 'LIGHT_BLUE', changedAt: '2026-08-01' },
-      { id: 'thl-0006-1', status: 'GRAY', changedAt: '2026-07-19' },
-    ],
-  },
-  {
-    id: 'psp-0010',
-    hotelName: 'Hotel Las Palmas',
-    zoneId: 'sur',
-    zone: 'Zona Sur',
-    status: 'YELLOW',
-    daysInStatus: 8,
-    clientSince: null,
-    location: { lat: 21.124, lng: -86.861 },
-    geofenceMeters: 150,
-    timeZone: 'America/Cancun',
-    recentHistory: [
-      { id: 'thl-0010-2', status: 'YELLOW', changedAt: '2026-08-02' },
-      { id: 'thl-0010-1', status: 'GREEN', changedAt: '2026-07-14' },
-    ],
-  },
-]
-
-/** Minúsculas y sin acentos, para que «bahia» encuentre «Bahía». */
-function normalize(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-}
-
 const routes: readonly MockRoute[] = [
+  /**
+   * Zonas asignadas (el módulo de territorio del back). Vacías a propósito:
+   * sin asignación, la pantalla compone el territorio con TODOS los hoteles
+   * de los mocks de onboarding — igual que la API real con `user_zone` vacío.
+   */
   {
     method: 'GET',
-    path: '/territory',
-    resolve: ({ search }): Territory => {
-      const zoneId = search.get('zoneId')
-      const query = search.get('q')
-
-      const hotels = HOTELS.filter((hotel) => {
-        if (zoneId && hotel.zoneId !== zoneId) return false
-        // Sin acentos a los dos lados: «bahia» tiene que encontrar «Bahía».
-        if (query && !normalize(hotel.hotelName).includes(normalize(query))) return false
-        return true
-      })
-
-      return { total: 38, zones: ZONES, hotels }
-    },
+    path: '/users/:id/zones',
+    resolve: () => ({
+      data: {
+        user: { id: 'usr-hugo', fullName: 'Hugo', roleCode: 'ROL-V-01' },
+        zones: [],
+      },
+    }),
   },
 ]
 
@@ -175,4 +38,6 @@ export function registerTerritoryMocks(): void {
   if (areRoutesRegistered) return
   areRoutesRegistered = true
   registerMockRoutes(routes)
+  // Las rutas que la composición consume y no son de esta feature.
+  registerOnboardingMocks()
 }
