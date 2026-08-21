@@ -6,6 +6,7 @@ export interface WorkerEntity {
   gender: string
   phone: string
   address: string
+  photoUrl: string | null
   zone: { id: string; code: string; name: string }
   position: { id: string; code: string; name: string } | null
   englishLevel: { id: string; code: string; name: string } | null

@@ -907,6 +907,9 @@ model Worker {
   gender    String   @db.Text
   phone     String   @db.Text
   address   String   @db.Text
+  /// Para la tarjeta del Pool. Solo la URL; no es un documento del expediente
+  /// ni una foto de ponche.
+  photoUrl  String?  @map("photo_url") @db.Text
   /// La asigna la Reclutadora. Guardada y no derivada del domicilio porque
   /// derivarla exige geocodificar, y el Pool filtra por zona siempre.
   zoneId String @map("zone_id") @db.Uuid

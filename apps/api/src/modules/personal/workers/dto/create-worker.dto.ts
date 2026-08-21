@@ -33,6 +33,7 @@ export const createWorkerSchema = z.object({
   phone: z.string().trim().min(7).max(32),
   address: z.string().trim().min(1).max(300),
   zoneId: z.uuid(),
+  photoUrl: z.url().max(500).optional(),
 })
 
 export class CreateWorkerDto extends createZodDto(createWorkerSchema) {}
@@ -43,6 +44,7 @@ export const updateWorkerSchema = z
     phone: z.string().trim().min(7).max(32).optional(),
     address: z.string().trim().min(1).max(300).optional(),
     zoneId: z.uuid().optional(),
+    photoUrl: z.url().max(500).nullish(),
     catalogPositionId: z.uuid().nullish(),
     englishLevelId: z.uuid().nullish(),
     hiringModalityId: z.uuid().nullish(),

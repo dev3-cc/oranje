@@ -13,6 +13,7 @@ export interface WorkerRow {
   gender: string
   phone: string
   address: string
+  photoUrl: string | null
   experienceLevel: string | null
   transportType: string | null
   emergencyContactName: string | null
@@ -50,6 +51,7 @@ const BASE = `
          w.gender,
          w.phone,
          w.address,
+         w.photo_url AS "photoUrl",
          w.experience_level AS "experienceLevel",
          w.transport_type   AS "transportType",
          w.emergency_contact_name         AS "emergencyContactName",
@@ -176,6 +178,7 @@ export class WorkersRepository {
     gender: string
     phone: string
     address: string
+    photoUrl: string | null
     zoneId: string
     stateId: string
     userId: string
@@ -192,6 +195,7 @@ export class WorkersRepository {
           gender: params.gender,
           phone: params.phone,
           address: params.address,
+          photoUrl: params.photoUrl,
           zoneId: params.zoneId,
           statusLightStateId: params.stateId,
           statusLightCode: WORKER_LIGHT,
