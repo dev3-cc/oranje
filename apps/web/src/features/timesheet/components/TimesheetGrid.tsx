@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import type { TimesheetWeek } from '../types/timesheet.types'
+import type { TimesheetEntry, TimesheetWeek } from '../types/timesheet.types'
 
 import { TimesheetDayCell } from './TimesheetDayCell'
 import { WorkerWeekSummary } from './WorkerWeekSummary'
@@ -25,11 +25,13 @@ export function TimesheetGrid({
   columnWidth,
   selectedIds,
   onToggle,
+  onReview,
 }: {
   week: TimesheetWeek
   columnWidth: number
   selectedIds: Set<string>
   onToggle: (entryId: string) => void
+  onReview: (entry: TimesheetEntry, workerName: string) => void
 }): ReactNode {
   const template = `${String(WORKER_COLUMN_PX)}px repeat(${String(week.days.length)}, ${String(columnWidth)}px)`
 
@@ -84,6 +86,9 @@ export function TimesheetGrid({
                         entry={entry}
                         isSelected={selectedIds.has(entry.id)}
                         onToggle={onToggle}
+                        onReview={(item) => {
+                          onReview(item, row.workerName)
+                        }}
                       />
                     )}
                   </div>

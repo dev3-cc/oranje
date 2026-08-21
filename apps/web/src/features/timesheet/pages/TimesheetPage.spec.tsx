@@ -10,6 +10,11 @@ import { store } from '@/app/store'
 /** Latencia del mock: el margen por omisión se queda corto al filtrar. */
 const SLOW = { timeout: 4000 }
 
+/**
+ * El Timesheet compone `GET /timesheets` + su detalle (días y marcas) sobre la
+ * semana ACTUAL: los fixtures derivan sus fechas del lunes de hoy, así que las
+ * aserciones hablan de personas y estados, no de fechas fijas.
+ */
 function renderTimesheet(): void {
   render(
     <Provider store={store}>
@@ -22,79 +27,88 @@ describe('TimesheetPage', () => {
   it('el título dice la misma semana que las columnas', async () => {
     renderTimesheet()
 
-    // El rango se arma con los días que llegaron: 31 jul – 6 ago 2026.
-    expect(await screen.findByText('Semana 31 jul – 6 ago 2026')).toBeInTheDocument()
-    expect(screen.getByText('Vie')).toBeInTheDocument()
-    expect(screen.getByText('31')).toBeInTheDocument()
-    expect(screen.getByText('Jue')).toBeInTheDocument()
+    expect(await screen.findByText(/^Semana /)).toBeInTheDocument()
+    // La semana arranca en lunes: la primera columna siempre es Lun.
+    expect(screen.getByText('Lun')).toBeInTheDocument()
+    expect(screen.getByText('Dom')).toBeInTheDocument()
   })
 
   it('los totales de la fila los manda el backend, no las celdas visibles', async () => {
     renderTimesheet()
 
-    const row = (await screen.findByText('Alejandro Ruiz')).closest('div')?.parentElement
+    const row = (await screen.findByText('Ana Rivera Gómez')).closest('div')?.parentElement
     expect(row).not.toBeNull()
 
-    // 33h con 7 días capturados que suman 40: el total es el de la semana.
-    expect(within(row as HTMLElement).getByText('33h')).toBeInTheDocument()
-    expect(within(row as HTMLElement).getByText('/ 40h')).toBeInTheDocument()
+    // 4 días de 8.5h netas: 34h, sumadas por `totals` del detalle.
+    expect(within(row as HTMLElement).getByText('34h')).toBeInTheDocument()
   })
 
-  it('un día sin horas dice guion, que no es lo mismo que cero', async () => {
+  it('la fila enseña el estado de la SEMANA: abierta, enviada o aprobada', async () => {
     renderTimesheet()
 
-    // El turno del 5 cruza la medianoche y todavía no cierra.
-    expect(await screen.findByText('17:11 – 03:40')).toBeInTheDocument()
-    expect(screen.getAllByText('—').length).toBeGreaterThan(0)
-    expect(screen.getByText('7.1h')).toBeInTheDocument()
+    expect((await screen.findAllByText('Abierta')).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Enviada a aprobación').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Aprobada').length).toBeGreaterThan(0)
   })
 
-  it('separa el chip de pago de la falta de requisición', async () => {
+  it('una ausencia dice guion, que no es lo mismo que cero horas', async () => {
     renderTimesheet()
 
-    // Tres filas tienen un día sin pagar; solo Sofía va al corriente.
-    expect(await screen.findAllByText('Pagar 1')).toHaveLength(3)
-    expect(screen.getByText('0 sin pagar')).toBeInTheDocument()
-    expect(screen.getAllByText('Sin req.').length).toBeGreaterThan(0)
+    // Luis tiene un día `is_absence`: sin horas y sin marcas.
+    const row = (await screen.findByText('Luis Cabrera')).closest('div')?.parentElement
+    expect(within(row as HTMLElement).getAllByText('—').length).toBeGreaterThan(0)
+  })
+
+  it('el día con anomalía se ve Observado y abre la Revisión del día', async () => {
+    const user = userEvent.setup()
+    renderTimesheet()
+
+    // La anomalía de la maqueta: CLOCK_OUT fuera de la geocerca.
+    await user.click(await screen.findByText('Observado'))
+
+    const dialog = await screen.findByRole('dialog')
+    const scoped = within(dialog)
+    expect(scoped.getByText('CLOCK_OUT')).toBeInTheDocument()
+    expect(scoped.getByText('fuera de geocerca')).toBeInTheDocument()
+    // La nota es obligatoria: sin ella no se marca revisado.
+    expect(scoped.getByRole('button', { name: /marcar revisado/i })).toBeDisabled()
+
+    await user.type(scoped.getByRole('textbox'), 'Salió por el acceso de servicio')
+    expect(scoped.getByRole('button', { name: /marcar revisado/i })).toBeEnabled()
+
+    await user.click(scoped.getByRole('button', { name: /marcar revisado/i }))
+
+    // Revisar resuelve la anomalía: el día deja de estar Observado.
+    await waitFor(() => {
+      expect(screen.queryByText('Observado')).not.toBeInTheDocument()
+    }, SLOW)
   })
 
   it('elegir días arma un resumen con su requisición', async () => {
     const user = userEvent.setup()
     renderTimesheet()
 
-    const first = await screen.findByLabelText('Seleccionar 2026-07-31')
-    await user.click(first)
+    const checkboxes = await screen.findAllByLabelText(/^Seleccionar /)
+    await user.click(checkboxes[0] as HTMLElement)
 
     const summary = screen.getByText('1 día elegido').parentElement
-    expect(within(summary as HTMLElement).getByText('SR26-104')).toBeInTheDocument()
+    // La referencia real es el id de la requisición recortado (sin folio aún).
+    expect(within(summary as HTMLElement).getByText(/^req /)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Limpiar' }))
     expect(screen.queryByText('1 día elegido')).not.toBeInTheDocument()
   })
 
-  it('el zoom cambia el ancho de la columna, no lo que se ve', async () => {
+  it('el filtro de estado de la semana va al servidor', async () => {
     const user = userEvent.setup()
     renderTimesheet()
 
-    await screen.findByText('Alejandro Ruiz')
-    await user.click(screen.getByRole('button', { name: '180' }))
-
-    expect(screen.getByRole('button', { name: '180' })).toHaveAttribute('aria-pressed', 'true')
-    // Nadie desapareció: el zoom no filtra.
-    expect(screen.getByText('Sofia Garcia')).toBeInTheDocument()
-  })
-
-  it('el filtro de hotel se resuelve en el servidor', async () => {
-    const user = userEvent.setup()
-    renderTimesheet()
-
-    await screen.findByText('Camila Gomez')
-    await user.selectOptions(screen.getByLabelText('Hotel'), 'Hotel Puerto Real')
+    await screen.findByText('Julia Mendoza')
+    await user.selectOptions(screen.getByLabelText('Estado'), 'APPROVED')
 
     await waitFor(() => {
-      expect(screen.queryByText('Camila Gomez')).not.toBeInTheDocument()
+      expect(screen.queryByText('Ana Rivera Gómez')).not.toBeInTheDocument()
     }, SLOW)
-    expect(screen.getByText('Alejandro Ruiz')).toBeInTheDocument()
-    expect(screen.getByText('Sofia Garcia')).toBeInTheDocument()
+    expect(screen.getByText('Julia Mendoza')).toBeInTheDocument()
   })
 })

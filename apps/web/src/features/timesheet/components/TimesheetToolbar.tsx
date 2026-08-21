@@ -5,8 +5,8 @@ import type { TimesheetFilters as Filters } from '../types/timesheet.types'
 
 import {
   COLUMN_WIDTHS,
-  TIMESHEET_STATUS_LABEL,
-  TIMESHEET_STATUSES,
+  TIMESHEET_WEEK_STATUS_LABEL,
+  TIMESHEET_WEEK_STATUSES,
 } from '@/shared/constants/timesheetStatus'
 
 const CONTROL_CLASS =
@@ -75,9 +75,9 @@ export function TimesheetToolbar({
         <LabeledControl label="Estado">
           <select value={filters.status} onChange={update('status')} className={CONTROL_CLASS}>
             <option value="ALL">Todos los estados</option>
-            {TIMESHEET_STATUSES.map((status) => (
+            {TIMESHEET_WEEK_STATUSES.map((status) => (
               <option key={status} value={status}>
-                {TIMESHEET_STATUS_LABEL[status]}
+                {TIMESHEET_WEEK_STATUS_LABEL[status]}
               </option>
             ))}
           </select>

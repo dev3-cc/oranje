@@ -35,10 +35,13 @@ export function TimesheetDayCell({
   entry,
   isSelected,
   onToggle,
+  onReview,
 }: {
   entry: TimesheetEntry
   isSelected: boolean
   onToggle: (entryId: string) => void
+  /** Abre la Revisión del día (maqueta del Supervisor). */
+  onReview: (entry: TimesheetEntry) => void
 }): ReactNode {
   const color = statusLight[TIMESHEET_STATUS_TOKEN[entry.status]]
 
@@ -66,8 +69,16 @@ export function TimesheetDayCell({
         />
       </div>
 
-      <div
-        className={cn('rounded-lg p-3', isSelected && 'ring-2 ring-purple')}
+      <button
+        type="button"
+        onClick={() => {
+          onReview(entry)
+        }}
+        title="Revisar el día"
+        className={cn(
+          'w-full cursor-pointer rounded-lg p-3 text-left transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500',
+          isSelected && 'ring-2 ring-purple',
+        )}
         style={{ backgroundColor: `${color}26` }}
       >
         <p className="flex items-center justify-between gap-2">
@@ -92,7 +103,7 @@ export function TimesheetDayCell({
         <p className="mt-0.5 truncate text-xs font-medium text-ink-3">
           {entry.requisitionNumber ?? 'Sin req.'}
         </p>
-      </div>
+      </button>
     </div>
   )
 }

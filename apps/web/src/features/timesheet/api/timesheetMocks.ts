@@ -1,221 +1,199 @@
-import type { TimesheetEntry, TimesheetRow, TimesheetWeek } from '../types/timesheet.types'
-
+/* Solo `/me` es ajeno: lo registra la sesión. Con mocks apagados, no-op. */
+import '@/app/sessionApi'
 import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
+import type {
+  ApiEnvelope,
+  TimesheetApi,
+  TimesheetDayApi,
+  TimesheetPunchApi,
+} from '@/shared/types/apiContract.types'
 
 /**
- * Fixtures del Timesheet semanal. ANDAMIO TEMPORAL.
- *
- * La semana es la de la captura: viernes 31 de julio a jueves 6 de agosto de
- * 2026. El encabezado de la pantalla se arma con estas fechas y no con un texto
- * aparte, así que columnas y título no pueden discrepar.
+ * Fixtures de `operations.timesheet` en la forma CRUDA del contrato real. La
+ * semana es la ACTUAL (lunes derivado de hoy): el grid siempre enseña fechas
+ * vivas, como contra la API.
  */
-const DAYS = [
-  '2026-07-31',
-  '2026-08-01',
-  '2026-08-02',
-  '2026-08-03',
-  '2026-08-04',
-  '2026-08-05',
-  '2026-08-06',
-]
 
-const REQ = 'SR26-104'
+const MS_PER_DAY = 86_400_000
 
-function entry(partial: Omit<TimesheetEntry, 'id'>): TimesheetEntry {
-  return { id: `tse-${partial.date}-${String(partial.hours ?? 'x')}`, ...partial }
+/** El lunes de esta semana, en ISO sin hora. */
+function mondayOfThisWeek(): string {
+  const now = new Date()
+  const weekday = (now.getUTCDay() + 6) % 7
+  return new Date(now.getTime() - weekday * MS_PER_DAY).toISOString().slice(0, 10)
 }
 
-const ALEJANDRO: TimesheetEntry[] = [
-  entry({
-    date: '2026-07-31',
-    status: 'REVIEWED',
-    hours: 8,
-    startTime: '08:00',
-    endTime: '16:00',
-    requisitionNumber: REQ,
-    punch: 'COMPLETE',
-    isPaid: true,
-  }),
-  entry({
-    date: '2026-08-01',
-    status: 'OBSERVED',
-    hours: 1,
-    startTime: '08:00',
-    endTime: '09:00',
-    requisitionNumber: REQ,
-    punch: 'COMPLETE',
-    isPaid: true,
-  }),
-  entry({
-    date: '2026-08-02',
-    status: 'OBSERVED',
-    hours: 8,
-    startTime: '08:00',
-    endTime: '16:00',
-    requisitionNumber: REQ,
-    punch: 'COMPLETE',
-    isPaid: true,
-  }),
-  entry({
-    date: '2026-08-03',
-    status: 'OBSERVED',
-    hours: 8,
-    startTime: '08:00',
-    endTime: '16:00',
-    requisitionNumber: REQ,
-    punch: 'COMPLETE',
-    isPaid: true,
-  }),
-  entry({
-    date: '2026-08-04',
-    status: 'OBSERVED',
-    hours: 8,
-    startTime: '08:00',
-    endTime: '16:00',
-    requisitionNumber: REQ,
-    punch: 'COMPLETE',
-    isPaid: true,
-  }),
-  entry({
-    // Turno que cruza la medianoche: entra el 5 y sale el 6. Las horas todavía
-    // no se calculan porque el día no ha cerrado.
-    date: '2026-08-05',
-    status: 'PENDING',
-    hours: null,
-    startTime: '17:11',
-    endTime: '03:40',
-    requisitionNumber: REQ,
-    punch: 'COMPLETE',
-    isPaid: false,
-  }),
-  entry({
-    date: '2026-08-06',
-    status: 'PENDING',
-    hours: 7.1,
-    startTime: '01:58',
-    endTime: '09:03',
-    requisitionNumber: null,
-    punch: 'COMPLETE',
-    isPaid: false,
-  }),
-]
+const WEEK_START = mondayOfThisWeek()
 
-const ROWS: TimesheetRow[] = [
-  {
-    workerId: 'wrk-alejandro',
-    workerName: 'Alejandro Ruiz',
-    jobTitle: 'Test Cargo',
-    hotelName: 'Hotel Puerto Real',
-    totalHours: 33,
-    targetHours: 40,
-    unpaidCount: 1,
-    withoutRequisitionCount: 1,
-    entries: ALEJANDRO,
-  },
-  {
-    workerId: 'wrk-camila',
-    workerName: 'Camila Gomez',
-    jobTitle: 'Test Cargo',
-    hotelName: 'Grand Costa Nube',
-    totalHours: 0,
-    targetHours: 40,
-    unpaidCount: 1,
-    withoutRequisitionCount: 1,
-    entries: [
-      entry({
-        date: '2026-08-01',
-        status: 'PENDING',
-        hours: null,
-        startTime: null,
-        endTime: null,
-        requisitionNumber: null,
-        punch: 'NO_SHIFT',
-        isPaid: false,
-      }),
-    ],
-  },
-  {
-    workerId: 'wrk-mateo',
-    workerName: 'Mateo Hernandez',
-    jobTitle: 'Test Cargo',
-    hotelName: 'Hotel Mirador',
-    totalHours: 8,
-    targetHours: 40,
-    unpaidCount: 1,
-    withoutRequisitionCount: 1,
-    entries: [
-      entry({
-        date: '2026-08-01',
-        status: 'OBSERVED',
-        hours: 8,
-        startTime: '08:00',
-        endTime: '16:00',
-        requisitionNumber: null,
-        punch: 'INCOMPLETE',
-        isPaid: false,
-      }),
-    ],
-  },
-  {
-    workerId: 'wrk-sofia',
-    workerName: 'Sofia Garcia',
-    jobTitle: 'Test Cargo',
-    hotelName: 'Hotel Puerto Real',
-    totalHours: 0,
-    targetHours: 40,
-    unpaidCount: 0,
-    withoutRequisitionCount: 1,
-    entries: [
-      entry({
-        date: '2026-08-01',
-        status: 'PENDING',
-        hours: null,
-        startTime: null,
-        endTime: null,
-        requisitionNumber: null,
-        punch: 'NO_SHIFT',
-        isPaid: false,
-      }),
-    ],
-  },
-]
-
-const REQUISITION_NUMBERS = [REQ, 'SR26-098', 'SR26-112']
-const HOTEL_NAMES = ['Hotel Puerto Real', 'Grand Costa Nube', 'Hotel Mirador']
-
-function matches(row: TimesheetRow, params: URLSearchParams): boolean {
-  const search = params.get('search') ?? ''
-  const requisition = params.get('requisition') ?? 'ALL'
-  const status = params.get('status') ?? 'ALL'
-  const hotel = params.get('hotel') ?? 'ALL'
-
-  if (hotel !== 'ALL' && row.hotelName !== hotel) return false
-  if (search !== '' && !row.workerName.toLocaleLowerCase().includes(search.toLocaleLowerCase())) {
-    return false
-  }
-
-  // Por requisición y por estado se filtra la FILA: si a alguien no le queda
-  // ningún día que cumpla, no tiene por qué ocupar un renglón vacío.
-  if (requisition !== 'ALL') {
-    if (!row.entries.some((item) => item.requisitionNumber === requisition)) return false
-  }
-  if (status !== 'ALL') {
-    if (!row.entries.some((item) => item.status === status)) return false
-  }
-
-  return true
+function dayIso(offset: number): string {
+  return new Date(new Date(WEEK_START).getTime() + offset * MS_PER_DAY).toISOString().slice(0, 10)
 }
+
+let punchSequence = 0
+
+function punch(input: {
+  type: string
+  time: string
+  date: string
+  inside?: boolean | null
+  manual?: boolean
+  reason?: string
+}): TimesheetPunchApi {
+  punchSequence += 1
+  return {
+    id: `pm-${String(punchSequence).padStart(4, '0')}`,
+    type: input.type,
+    serverAt: `${input.date}T${input.time}:00.000Z`,
+    deviceAt: input.manual ? null : `${input.date}T${input.time}:00.000Z`,
+    insideGeofence: input.manual ? null : (input.inside ?? true),
+    isManual: input.manual ?? false,
+    manualReason: input.reason ?? null,
+  }
+}
+
+let daySequence = 0
+
+function fullDay(input: {
+  offset: number
+  hasAnomaly?: boolean
+  reviewNote?: string | null
+  outOfFence?: boolean
+}): TimesheetDayApi {
+  daySequence += 1
+  const date = dayIso(input.offset)
+  return {
+    id: `tsd-${String(daySequence).padStart(4, '0')}`,
+    workDate: date,
+    grossMinutes: 540,
+    netMinutes: 510,
+    lunchDeductionMinutes: 30,
+    actualLunchMinutes: 30,
+    overtimeMinutes: 0,
+    isAbsence: false,
+    hasAnomaly: input.hasAnomaly ?? false,
+    reviewNote: input.reviewNote ?? null,
+    punches: [
+      punch({ type: 'CLOCK_IN', time: '07:00', date }),
+      punch({ type: 'LUNCH_OUT', time: '12:30', date }),
+      punch({ type: 'LUNCH_IN', time: '13:00', date }),
+      punch({ type: 'CLOCK_OUT', time: '16:00', date, inside: !input.outOfFence }),
+    ],
+  }
+}
+
+function absenceDay(offset: number): TimesheetDayApi {
+  daySequence += 1
+  return {
+    id: `tsd-${String(daySequence).padStart(4, '0')}`,
+    workDate: dayIso(offset),
+    grossMinutes: 0,
+    netMinutes: 0,
+    lunchDeductionMinutes: 0,
+    actualLunchMinutes: null,
+    overtimeMinutes: 0,
+    isAbsence: true,
+    hasAnomaly: false,
+    reviewNote: null,
+    punches: [],
+  }
+}
+
+interface StoredTimesheet extends TimesheetApi {
+  days: TimesheetDayApi[]
+}
+
+function totalsOf(days: TimesheetDayApi[]): {
+  grossMinutes: number
+  netMinutes: number
+  overtimeMinutes: number
+} {
+  return {
+    grossMinutes: days.reduce((total, day) => total + day.grossMinutes, 0),
+    netMinutes: days.reduce((total, day) => total + day.netMinutes, 0),
+    overtimeMinutes: days.reduce((total, day) => total + day.overtimeMinutes, 0),
+  }
+}
+
+const timesheets: StoredTimesheet[] = [
+  {
+    id: 'ts-0001',
+    worker: { id: 'wrk-0001', fullName: 'Ana Rivera Gómez' },
+    requisitionId: 'a1b2c3d4-0000-7000-8000-000000000001',
+    weekStart: WEEK_START,
+    weekEnd: dayIso(6),
+    status: 'OPEN',
+    approvedAt: null,
+    days: [
+      fullDay({ offset: 0, reviewNote: 'Jornada normal' }),
+      fullDay({ offset: 1, reviewNote: 'Jornada normal' }),
+      /** La anomalía de la maqueta: salió fuera de la geocerca. */
+      fullDay({ offset: 2, hasAnomaly: true, outOfFence: true }),
+      fullDay({ offset: 3 }),
+    ],
+  },
+  {
+    id: 'ts-0002',
+    worker: { id: 'wrk-0002', fullName: 'Luis Cabrera' },
+    requisitionId: 'a1b2c3d4-0000-7000-8000-000000000002',
+    weekStart: WEEK_START,
+    weekEnd: dayIso(6),
+    status: 'PENDING_APPROVAL',
+    approvedAt: null,
+    days: [
+      fullDay({ offset: 0, reviewNote: 'ok' }),
+      fullDay({ offset: 1, reviewNote: 'ok' }),
+      fullDay({ offset: 2, reviewNote: 'ok' }),
+      absenceDay(3),
+    ],
+  },
+  {
+    id: 'ts-0003',
+    worker: { id: 'wrk-0005', fullName: 'Julia Mendoza' },
+    requisitionId: 'a1b2c3d4-0000-7000-8000-000000000001',
+    weekStart: WEEK_START,
+    weekEnd: dayIso(6),
+    status: 'APPROVED',
+    approvedAt: `${dayIso(4)}T18:00:00.000Z`,
+    days: [fullDay({ offset: 0, reviewNote: 'ok' }), fullDay({ offset: 1, reviewNote: 'ok' })],
+  },
+]
 
 const routes: readonly MockRoute[] = [
   {
     method: 'GET',
-    path: '/timesheets/week',
-    resolve: ({ search }): TimesheetWeek => ({
-      days: DAYS,
-      rows: ROWS.filter((row) => matches(row, search)),
-      requisitionNumbers: REQUISITION_NUMBERS,
-      hotelNames: HOTEL_NAMES,
-    }),
+    path: '/timesheets',
+    resolve: ({ search }): ApiEnvelope<TimesheetApi[]> => {
+      const status = search.get('status')
+      const items = timesheets.filter((sheet) => !status || sheet.status === status)
+      // La lista viaja SIN días, como el backend: el detalle los trae.
+      return { data: items.map(({ days: _days, ...sheet }) => sheet) }
+    },
+  },
+  {
+    method: 'GET',
+    path: '/timesheets/:timesheetId',
+    resolve: ({ params }): ApiEnvelope<TimesheetApi> => {
+      const found = timesheets.find((sheet) => sheet.id === params.timesheetId)
+      if (!found) throw new Error('TIMESHEET_NOT_FOUND')
+      return { data: { ...found, totals: totalsOf(found.days) } }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/timesheet-days/:dayId/review',
+    resolve: ({ params, body }): ApiEnvelope<TimesheetDayApi> => {
+      const note = ((body ?? {}) as { note?: string }).note
+      if (!note) throw new Error('La nota de revisión es obligatoria')
+      for (const sheet of timesheets) {
+        const day = sheet.days.find((item) => item.id === params.dayId)
+        if (day) {
+          day.reviewNote = note
+          day.hasAnomaly = false
+          return { data: day }
+        }
+      }
+      throw new Error('DAY_NOT_FOUND')
+    },
   },
 ]
 

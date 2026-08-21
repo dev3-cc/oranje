@@ -1,9 +1,14 @@
 import { useMemo, useState, type ReactNode } from 'react'
 
 import { useGetTimesheetWeekQuery } from '../api/timesheetApi'
+import { ReviewDayDialog } from '../components/ReviewDayDialog'
 import { TimesheetGrid } from '../components/TimesheetGrid'
 import { TimesheetToolbar } from '../components/TimesheetToolbar'
-import { EMPTY_TIMESHEET_FILTERS, type TimesheetFilters } from '../types/timesheet.types'
+import {
+  EMPTY_TIMESHEET_FILTERS,
+  type TimesheetEntry,
+  type TimesheetFilters,
+} from '../types/timesheet.types'
 
 import { Button } from '@/shared/components/Button'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
@@ -21,6 +26,8 @@ export function TimesheetPage(): ReactNode {
   const [filters, setFilters] = useState<TimesheetFilters>(EMPTY_TIMESHEET_FILTERS)
   const [columnWidth, setColumnWidth] = useState<number>(DEFAULT_COLUMN_WIDTH)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  /** El día abierto en Revisión (maqueta del Supervisor); `null` = cerrado. */
+  const [review, setReview] = useState<{ entry: TimesheetEntry; workerName: string } | null>(null)
 
   const { data: week, isLoading, isError } = useGetTimesheetWeekQuery(filters)
 
@@ -115,9 +122,20 @@ export function TimesheetPage(): ReactNode {
             columnWidth={columnWidth}
             selectedIds={selectedIds}
             onToggle={toggle}
+            onReview={(entry, workerName) => {
+              setReview({ entry, workerName })
+            }}
           />
         )
       )}
+
+      <ReviewDayDialog
+        entry={review?.entry ?? null}
+        workerName={review?.workerName ?? ''}
+        onClose={() => {
+          setReview(null)
+        }}
+      />
     </div>
   )
 }
