@@ -1,74 +1,19 @@
-import type { DashboardOverview } from '../types/dashboard.types'
+/*
+ * ⚠ Import entre features, permitido SOLO aquí: la composición del Dashboard
+ * consume `/prospects` y `/hotels`, cuyos mocks viven en Onboarding. Es
+ * cableado de fixtures — con mocks apagados este módulo entero es un no-op.
+ */
+// eslint-disable-next-line no-restricted-imports
+import { registerOnboardingMocks } from '@/features/onboarding/api/onboardingMocks'
 
-import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
+/** Efecto secundario: registra el mock de `/me`, que la composición consume. */
+import '@/app/sessionApi'
 
 /**
- * Fixture del dashboard. ANDAMIO TEMPORAL — se borra cuando `apps/api` exponga
- * `GET /dashboard`.
- *
- * Las cifras son las de la captura, para poder comparar pantalla contra
- * maqueta. Contra la API real se calcularán en el backend: son agregados sobre
- * todo el territorio, no algo que el front pueda derivar de la página que tiene
- * cargada.
+ * El Dashboard ya NO tiene endpoint propio: compone `/me` + `/prospects` +
+ * `/hotels` (ver `dashboardApi.ts`). Aquí solo se registran las rutas ajenas
+ * que esa composición necesita en modo mock.
  */
-const OVERVIEW: DashboardOverview = {
-  owner: { name: 'Ana Ruiz', roleLabel: 'BD' },
-  scope: { zones: ['Norte', 'Centro', 'Sur'], periodLabel: 'trimestre en curso' },
-  metrics: {
-    openProspects: 38,
-    staleProspects: 6,
-    conversionRate: 0.21,
-    averageConversionDays: 47,
-    activeClients: 12,
-  },
-  funnel: [
-    { status: 'GRAY', count: 12 },
-    { status: 'LIGHT_BLUE', count: 8 },
-    { status: 'GREEN', count: 6 },
-    { status: 'YELLOW', count: 5 },
-    { status: 'PINK', count: 3 },
-    { status: 'ORANGE', count: 2 },
-  ],
-  staleProspects: [
-    {
-      prospectId: 'psp-0011',
-      hotelName: 'Villas Coral',
-      daysWithoutAttempt: 15,
-      status: 'YELLOW',
-    },
-    {
-      prospectId: 'psp-0006',
-      hotelName: 'Suites del Carmen',
-      daysWithoutAttempt: 9,
-      status: 'LIGHT_BLUE',
-    },
-    {
-      prospectId: 'psp-0002',
-      hotelName: 'Casa Tulum Boutique',
-      daysWithoutAttempt: 11,
-      status: 'GRAY',
-    },
-    {
-      prospectId: 'psp-0009',
-      hotelName: 'Resort Isla Blanca',
-      daysWithoutAttempt: 12,
-      status: 'GREEN',
-    },
-  ],
-}
-
-const routes: readonly MockRoute[] = [
-  {
-    method: 'GET',
-    path: '/dashboard',
-    resolve: (): DashboardOverview => OVERVIEW,
-  },
-]
-
-let areRoutesRegistered = false
-
 export function registerDashboardMocks(): void {
-  if (areRoutesRegistered) return
-  areRoutesRegistered = true
-  registerMockRoutes(routes)
+  registerOnboardingMocks()
 }

@@ -23,30 +23,33 @@ describe('DashboardPage', () => {
   it('arma el subtítulo con el dueño, sus zonas y el periodo', async () => {
     renderDashboard()
 
+    // Compuesto de /me: nombre, rol, zonas (sin asignar = todas) y periodo.
     expect(
-      await screen.findByText('Ana Ruiz · BD · zonas Norte, Centro y Sur · trimestre en curso'),
+      await screen.findByText(/Business Developer · zonas todas · histórico/),
     ).toBeInTheDocument()
   })
 
   it('da formato a las métricas: la API manda números crudos', async () => {
     renderDashboard()
 
-    // conversionRate llega como 0.21 y averageConversionDays como 47.
-    expect(await screen.findByText('21%')).toBeInTheDocument()
-    expect(screen.getByText('47 d')).toBeInTheDocument()
-    expect(screen.getByText('38')).toBeInTheDocument()
-    expect(screen.getByText('6 sin actividad 7+ días')).toBeInTheDocument()
+    /*
+     * Con los fixtures compuestos: 5 convertidos y 0 cerrados sin convertir
+     * dan 100%; los 16 ciclos del tablero están abiertos.
+     */
+    expect(await screen.findByText('100%')).toBeInTheDocument()
+    expect(screen.getByText('16')).toBeInTheDocument()
+    expect(screen.getByText(/sin actividad 7\+ días/)).toBeInTheDocument()
   })
 
   it('el embudo escala cada barra contra el peldaño más alto', async () => {
     renderDashboard()
 
-    // Gris es el máximo (12): llena la pista. Verde (6) va a la mitad.
-    const gris = await screen.findByRole('img', { name: 'Gris: 12 prospectos' })
-    const verde = screen.getByRole('img', { name: 'Verde: 6 prospectos' })
+    // Naranja es el máximo (5): llena la pista. Gris (3) queda al 60%.
+    const naranja = await screen.findByRole('img', { name: 'Naranja: 5 prospectos' })
+    const gris = screen.getByRole('img', { name: 'Gris: 3 prospectos' })
 
-    expect(gris.firstElementChild).toHaveStyle({ width: '100.0%' })
-    expect(verde.firstElementChild).toHaveStyle({ width: '50.0%' })
+    expect(naranja.firstElementChild).toHaveStyle({ width: '100.0%' })
+    expect(gris.firstElementChild).toHaveStyle({ width: '60.0%' })
   })
 
   it('cada prospecto inactivo enlaza a su ficha', async () => {
@@ -55,7 +58,11 @@ describe('DashboardPage', () => {
     const card = (await screen.findByText('Sin actividad reciente')).closest('section')
     expect(card).not.toBeNull()
 
-    const link = within(card as HTMLElement).getByRole('link', { name: 'Villas Coral' })
-    expect(link).toHaveAttribute('href', '/pipeline/psp-0011')
+    /*
+     * Puerto Real: sus intentos de fixture son de junio — el más inactivo.
+     * Aparece dos veces porque los fixtures duplican los convertidos.
+     */
+    const links = within(card as HTMLElement).getAllByRole('link', { name: 'Hotel Puerto Real' })
+    expect(links.map((link) => link.getAttribute('href'))).toContain('/pipeline/psp-0007')
   })
 })
