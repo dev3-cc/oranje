@@ -1,194 +1,172 @@
-import type { ContractDetail, ContractList, ContractRow } from '../types/contract.types'
-
+/*
+ * ⚠ Import entre features, permitido SOLO aquí: la lista resuelve la zona con
+ * `/hotels`, cuyo mock vive en Onboarding. Con mocks apagados esto es no-op.
+ */
+// eslint-disable-next-line no-restricted-imports
+import { registerOnboardingMocks } from '@/features/onboarding/api/onboardingMocks'
 import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
+import type { ApiEnvelope, ContractApi, ContractRateApi } from '@/shared/types/apiContract.types'
 
 /**
- * Fixtures de Documentos T&C. ANDAMIO TEMPORAL — se borra cuando `apps/api`
- * exponga `GET /contracts` y `GET /contracts/:id`.
- *
- * `elapsed` y `daysRemaining` están escritos a mano y son coherentes entre sí,
- * como los mandaría el backend: la barra y el pie tienen que contar lo mismo.
+ * Fixtures de `commercial.contract` en la forma CRUDA del contrato real
+ * (`ContractEntity` del backend): la lista sin tarifas, el detalle con ellas.
+ * Los hoteles son los cinco clientes convertidos de los fixtures de
+ * Onboarding (`htl-psp-0012` … `htl-psp-0016`).
  */
-const ITEMS: ContractRow[] = [
-  {
-    id: 'ct-0184',
-    number: 'CT-2026-0184',
-    hotelName: 'Hotel Puerto Real',
-    zoneName: 'Norte',
-    status: 'ACTIVE',
-    validFrom: '2026-07-01',
-    validTo: '2027-06-30',
-    elapsed: 0.16,
-    daysRemaining: 305,
-    positionCount: 4,
-    overtimeBillMultiplier: 2,
-    holidayBillMultiplier: 2.5,
-  },
-  {
-    id: 'ct-0151',
-    number: 'CT-2026-0151',
-    hotelName: 'Grand Costa Nube',
-    zoneName: 'Centro',
-    status: 'ACTIVE',
-    validFrom: '2026-05-15',
-    validTo: '2026-11-14',
-    elapsed: 0.49,
-    daysRemaining: 94,
-    positionCount: 3,
-    overtimeBillMultiplier: 1.75,
-    holidayBillMultiplier: 2.25,
-  },
-  {
-    id: 'ct-0098',
-    number: 'CT-2026-0098',
-    hotelName: 'Hotel Mirador',
-    zoneName: 'Norte',
-    status: 'ACTIVE',
-    validFrom: '2026-03-01',
-    validTo: '2026-09-30',
-    elapsed: 0.79,
-    daysRemaining: 45,
-    positionCount: 2,
-    overtimeBillMultiplier: 2,
-    holidayBillMultiplier: 2,
-  },
-  {
-    id: 'ct-0042',
-    number: 'CT-2026-0042',
-    hotelName: 'Villas Coral',
-    zoneName: 'Sur',
-    status: 'EXPIRED',
-    validFrom: '2026-01-14',
-    validTo: '2026-07-13',
-    elapsed: 1,
-    daysRemaining: -30,
-    positionCount: 3,
-    overtimeBillMultiplier: 1.5,
-    holidayBillMultiplier: 2,
-  },
-  {
-    id: 'ct-0203',
-    number: 'CT-2026-0203',
-    hotelName: 'Hotel Las Palmas',
-    zoneName: 'Centro',
-    status: 'DRAFT',
-    validFrom: null,
-    validTo: null,
-    elapsed: null,
-    daysRemaining: null,
-    positionCount: 0,
-    overtimeBillMultiplier: null,
-    holidayBillMultiplier: null,
-  },
-]
 
-/** Las zonas se mandan aparte: si salieran de las filas, un filtro activo las escondería. */
-const ZONE_NAMES = ['Norte', 'Centro', 'Sur']
-
-const DETAIL_CT_0184: ContractDetail = {
-  id: 'ct-0184',
-  number: 'CT-2026-0184',
-  hotelName: 'Hotel Puerto Real',
-  status: 'ACTIVE',
-  signedByName: 'Lucía Márquez',
-  signedAt: '2026-06-20',
-  validFrom: '2026-07-01',
-  validTo: '2027-06-30',
-  // Lunes a domingo. Domingo es 0, así que la semana termina en un número
-  // menor que el que la empieza; no es un error de captura.
-  weekStartDay: 1,
-  weekEndDay: 0,
-  multipliers: {
-    overtime: { pay: 1.5, bill: 2 },
-    holiday: { pay: 2, bill: 2.5 },
-  },
-  rates: [
-    { id: 'rate-0184-1', positionName: 'Housekeeper', payRate: 170, billRate: 250 },
-    { id: 'rate-0184-2', positionName: 'Houseman', payRate: 165, billRate: 240 },
-    { id: 'rate-0184-3', positionName: 'Laundry', payRate: 160, billRate: 230 },
-    { id: 'rate-0184-4', positionName: 'Chef', payRate: 260, billRate: 380 },
-  ],
+/** Fechas relativas a hoy: los «vence en N días» del spec no caducan. */
+function isoInDays(days: number): string {
+  const date = new Date(Date.now() + days * 86_400_000)
+  return date.toISOString().slice(0, 10)
 }
 
-/** Catálogo de posiciones del que se sirven los contratos derivados. */
-const CATALOG = [
-  { positionName: 'Housekeeper', payRate: 170, billRate: 250 },
-  { positionName: 'Houseman', payRate: 165, billRate: 240 },
-  { positionName: 'Laundry', payRate: 160, billRate: 230 },
-  { positionName: 'Chef', payRate: 260, billRate: 380 },
+const CATALOG: Array<Omit<ContractRateApi, 'id'>> = [
+  {
+    payRate: '170.00',
+    billRate: '250.00',
+    position: { id: 'pos-hk', code: 'HK', name: 'Housekeeper' },
+  },
+  {
+    payRate: '165.00',
+    billRate: '240.00',
+    position: { id: 'pos-hm', code: 'HM', name: 'Houseman' },
+  },
+  {
+    payRate: '160.00',
+    billRate: '230.00',
+    position: { id: 'pos-ln', code: 'LN', name: 'Laundry' },
+  },
+  { payRate: '260.00', billRate: '380.00', position: { id: 'pos-ch', code: 'CH', name: 'Chef' } },
 ]
 
-/** Un detalle verosímil para los contratos que no tienen maqueta propia. */
-function deriveDetail(row: ContractRow): ContractDetail {
+function rates(contractId: string, count: number): ContractRateApi[] {
+  return CATALOG.slice(0, count).map((entry, index) => ({
+    ...entry,
+    id: `rate-${contractId}-${String(index + 1)}`,
+  }))
+}
+
+interface StoredContract extends ContractApi {
+  rates: ContractRateApi[]
+}
+
+function buildContract(input: {
+  id: string
+  number: string
+  hotelId: string
+  hotelName: string
+  status: string
+  validFrom: string
+  validTo: string | null
+  signedAt: string | null
+  positionCount: number
+  overtimeBill?: string
+  holidayBill?: string
+}): StoredContract {
   return {
-    id: row.id,
-    number: row.number,
-    hotelName: row.hotelName,
-    status: row.status,
-    signedByName: 'Lucía Márquez',
-    signedAt: row.validFrom ?? '2026-08-01',
-    validFrom: row.validFrom ?? '2026-08-01',
-    validTo: row.validTo,
-    weekStartDay: 1,
-    weekEndDay: 0,
+    id: input.id,
+    number: input.number,
+    hotel: { id: input.hotelId, name: input.hotelName },
+    status: input.status,
+    validFrom: input.validFrom,
+    validTo: input.validTo,
+    week: { startDay: 1, endDay: 0 },
     multipliers: {
-      // Un borrador sin multiplicadores todavía se guarda en el mínimo legal,
-      // que es 1.00: la columna es NOT NULL y no admite bajar de ahí.
-      overtime: { pay: 1.5, bill: row.overtimeBillMultiplier ?? 1.5 },
-      holiday: { pay: 2, bill: row.holidayBillMultiplier ?? 2 },
+      overtimeBill: input.overtimeBill ?? '2.00',
+      overtimePay: '1.50',
+      holidayBill: input.holidayBill ?? '2.50',
+      holidayPay: '2.00',
     },
-    rates: CATALOG.slice(0, row.positionCount).map((entry, index) => ({
-      id: `${row.id}-rate-${String(index + 1)}`,
-      ...entry,
-    })),
+    deductsMeals: false,
+    splitsInvoiceByMonth: false,
+    signedAt: input.signedAt,
+    createdAt: input.validFrom,
+    rates: rates(input.id, input.positionCount),
   }
 }
 
-const DETAILS: Record<string, ContractDetail> = { [DETAIL_CT_0184.id]: DETAIL_CT_0184 }
-
-function findDetail(contractId: string): ContractDetail {
-  const authored = DETAILS[contractId]
-  if (authored) return authored
-
-  const row = ITEMS.find((item) => item.id === contractId)
-  if (!row) throw new Error(`No existe el contrato ${contractId}`)
-
-  return deriveDetail(row)
-}
-
-function matches(row: ContractRow, search: string, status: string, zone: string): boolean {
-  if (status !== 'ALL' && row.status !== status) return false
-  if (zone !== 'ALL' && row.zoneName !== zone) return false
-
-  if (search === '') return true
-
-  const needle = search.toLocaleLowerCase()
-  return (
-    row.hotelName.toLocaleLowerCase().includes(needle) ||
-    row.number.toLocaleLowerCase().includes(needle)
-  )
-}
+const CONTRACTS: StoredContract[] = [
+  buildContract({
+    id: 'ct-0184',
+    number: 'CT-2026-0184',
+    hotelId: 'htl-psp-0012',
+    hotelName: 'Hotel Puerto Real',
+    status: 'ACTIVE',
+    validFrom: isoInDays(-55),
+    validTo: isoInDays(310),
+    signedAt: '2026-06-20',
+    positionCount: 4,
+  }),
+  buildContract({
+    id: 'ct-0151',
+    number: 'CT-2026-0151',
+    hotelId: 'htl-psp-0013',
+    hotelName: 'Grand Costa Nube',
+    status: 'ACTIVE',
+    validFrom: isoInDays(-100),
+    validTo: isoInDays(94),
+    signedAt: '2026-05-10',
+    positionCount: 3,
+  }),
+  buildContract({
+    id: 'ct-0098',
+    number: 'CT-2026-0098',
+    hotelId: 'htl-psp-0014',
+    hotelName: 'Hotel Mirador',
+    status: 'ACTIVE',
+    validFrom: isoInDays(-170),
+    validTo: isoInDays(45),
+    signedAt: '2026-02-25',
+    positionCount: 2,
+  }),
+  buildContract({
+    id: 'ct-0042',
+    number: 'CT-2026-0042',
+    hotelId: 'htl-psp-0015',
+    hotelName: 'Villas Coral',
+    status: 'EXPIRED',
+    validFrom: isoInDays(-220),
+    validTo: isoInDays(-38),
+    signedAt: '2026-01-10',
+    positionCount: 3,
+  }),
+  buildContract({
+    id: 'ct-0203',
+    number: 'CT-2026-0203',
+    hotelId: 'htl-psp-0016',
+    hotelName: 'Hotel Las Palmas',
+    status: 'DRAFT',
+    validFrom: isoInDays(11),
+    validTo: null,
+    signedAt: null,
+    positionCount: 0,
+  }),
+]
 
 const routes: readonly MockRoute[] = [
   {
     method: 'GET',
     path: '/contracts',
-    resolve: ({ search }): ContractList => ({
-      items: ITEMS.filter((row) =>
-        matches(
-          row,
-          search.get('search') ?? '',
-          search.get('status') ?? 'ALL',
-          search.get('zone') ?? 'ALL',
-        ),
-      ),
-      zoneNames: ZONE_NAMES,
-    }),
+    resolve: ({ search }): ApiEnvelope<ContractApi[]> => {
+      const hotelId = search.get('hotelId')
+      const status = search.get('status')
+      const items = CONTRACTS.filter((contract) => {
+        if (hotelId && contract.hotel.id !== hotelId) return false
+        if (status && contract.status !== status) return false
+        return true
+      })
+      // La lista NO trae tarifas, como el backend.
+      return { data: items.map(({ rates: _rates, ...contract }) => contract) }
+    },
   },
   {
     method: 'GET',
     path: '/contracts/:contractId',
-    resolve: ({ params }): ContractDetail => findDetail(params['contractId'] ?? ''),
+    resolve: ({ params }): ApiEnvelope<ContractApi> => {
+      const contract = CONTRACTS.find((item) => item.id === params.contractId)
+      if (!contract) throw new Error('CONTRACT_NOT_FOUND')
+      return { data: contract }
+    },
   },
 ]
 
@@ -198,4 +176,6 @@ export function registerContractsMocks(): void {
   if (areRoutesRegistered) return
   areRoutesRegistered = true
   registerMockRoutes(routes)
+  // La zona de cada fila sale de `/hotels`, que registra Onboarding.
+  registerOnboardingMocks()
 }

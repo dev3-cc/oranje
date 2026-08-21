@@ -28,9 +28,7 @@ describe('ContractDetailPage', () => {
       await screen.findByRole('heading', { name: 'Contrato CT-2026-0184' }),
     ).toBeInTheDocument()
     expect(
-      screen.getByText(
-        'commercial.contract · Hotel Puerto Real · firmado por Lucía Márquez el 20 jun 2026',
-      ),
+      screen.getByText('commercial.contract · Hotel Puerto Real · firmado el 20 jun 2026'),
     ).toBeInTheDocument()
   })
 

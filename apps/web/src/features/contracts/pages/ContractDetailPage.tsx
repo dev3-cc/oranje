@@ -80,7 +80,10 @@ export function ContractDetailPage(): ReactNode {
             />
           </div>
           <p className="mt-1.5 text-sm text-ink-3">
-            commercial.contract · {contract.hotelName} · firmado por {contract.signedByName} el{' '}
+            commercial.contract · {contract.hotelName} ·{' '}
+            {contract.signedByName === '—'
+              ? 'firmado el'
+              : `firmado por ${contract.signedByName} el`}{' '}
             {formatDate(contract.signedAt)}
           </p>
         </div>

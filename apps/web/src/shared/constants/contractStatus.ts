@@ -7,7 +7,7 @@ import type { StatusLightToken } from '@oranje/ui'
  * eso se muestran tal cual —`ACTIVE`, `EXPIRED`, `DRAFT`— como en el diseño.
  * Cuando se decida enseñarlos en español, es esta constante y nada más.
  */
-export const CONTRACT_STATUSES = ['DRAFT', 'ACTIVE', 'EXPIRED'] as const
+export const CONTRACT_STATUSES = ['DRAFT', 'ACTIVE', 'EXPIRED', 'CANCELLED'] as const
 
 export type ContractStatus = (typeof CONTRACT_STATUSES)[number]
 
@@ -15,12 +15,14 @@ export const CONTRACT_STATUS_LABEL: Record<ContractStatus, string> = {
   DRAFT: 'DRAFT',
   ACTIVE: 'ACTIVE',
   EXPIRED: 'EXPIRED',
+  CANCELLED: 'CANCELLED',
 }
 
 export const CONTRACT_STATUS_TOKEN: Record<ContractStatus, StatusLightToken> = {
   DRAFT: 'st-gris',
   ACTIVE: 'st-verde',
   EXPIRED: 'st-amarillo',
+  CANCELLED: 'st-rojo',
 }
 
 /**

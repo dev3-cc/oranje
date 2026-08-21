@@ -160,6 +160,94 @@ export interface ProspectApi {
   lastProposal: { version: number; isDraft: boolean; sentAt: string | null } | null
 }
 
+export interface ContractRateApi {
+  id: string
+  /** Decimal serializado (`"170.00"`), como toda tarifa del contrato. */
+  payRate: string
+  billRate: string
+  position: { id: string; code: string; name: string }
+}
+
+/** `commercial.contract` como lo sirve la API (`GET /contracts[/:id]`). */
+export interface ContractApi {
+  id: string
+  number: string
+  hotel: { id: string; name: string }
+  status: string
+  validFrom: string
+  validTo: string | null
+  week: { startDay: number; endDay: number }
+  multipliers: {
+    overtimeBill: string
+    overtimePay: string
+    holidayBill: string
+    holidayPay: string
+  }
+  deductsMeals: boolean
+  splitsInvoiceByMonth: boolean
+  signedAt: string | null
+  createdAt: string
+  /** Solo el detalle (`GET /contracts/:id`) trae las tarifas. */
+  rates?: ContractRateApi[]
+}
+
+/** Fila cruda de un catálogo (`/catalogs/*`). */
+export interface CatalogItemApi {
+  id: string
+  code: string
+  name: string
+}
+
+export interface StatusRefApi {
+  code: string
+  color: string
+  name: string
+}
+
+/** `demand.position` como la sirve la API, dentro de su requisición. */
+export interface RequisitionPositionApi {
+  id: string
+  lineNumber: number
+  position: CatalogItemApi
+  hiringModality: CatalogItemApi
+  englishLevel: CatalogItemApi | null
+  department: CatalogItemApi
+  quantity: number
+  startDate: string
+  startTime: string | null
+  notes: string | null
+  coverage: StatusRefApi
+  urgency: StatusRefApi | null
+  filled: number
+}
+
+/** `demand.requisition` como la sirve la API (`GET /requisitions[/:id]`). */
+export interface RequisitionApi {
+  id: string
+  number: string
+  hotel: { id: string; name: string }
+  state: StatusRefApi
+  areaManagerUserId: string | null
+  authorizedBy: string | null
+  authorizedAt: string | null
+  inspectorId: string | null
+  positions: RequisitionPositionApi[]
+  totalSlots: number
+  filledSlots: number
+  createdAt: string
+  updatedAt: string | null
+}
+
+/** `coverage.assignment` plana (`GET /requisitions/:id/assignments`). */
+export interface AssignmentApi {
+  id: string
+  type: string
+  status: string
+  worker: { id: string; fullName: string }
+  slot: { id: string; ordinal: number }
+  createdAt: string
+}
+
 /** `meta` extra del tablero: total por estado, con 0 cuando no hay. */
 export interface ProspectBoardMeta extends PaginationMeta {
   byState: Array<{ code: string; total: number }>

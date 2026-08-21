@@ -672,7 +672,14 @@ function toHotelApi(detail: ProspectDetail): HotelApi {
   }
 }
 
+/**
+ * Cliente activado SIN contrato: el caso que Clientes Activos debe pintar sin
+ * fingir folio. Se activó por fuera del pipeline de los fixtures.
+ */
+const CLIENT_WITHOUT_CONTRACT_ID = 'htl-0002'
+
 function registeredToHotelApi(hotel: RegisteredHotel): HotelApi {
+  const isClient = hotel.id === CLIENT_WITHOUT_CONTRACT_ID
   return {
     id: hotel.id,
     name: hotel.name,
@@ -685,8 +692,8 @@ function registeredToHotelApi(hotel: RegisteredHotel): HotelApi {
     latitude: hotel.location?.lat ?? null,
     longitude: hotel.location?.lng ?? null,
     zone: zoneRef(hotel.zoneId),
-    isClient: false,
-    activatedAt: null,
+    isClient,
+    activatedAt: isClient ? isoDaysAgo(21) : null,
     contactCount: 0,
     createdAt: isoDaysAgo(30),
     updatedAt: null,
@@ -1124,9 +1131,12 @@ const routes: readonly MockRoute[] = [
       const zoneId = search.get('zoneId')
       const ownerUserId = search.get('ownerUserId')
 
+      const state = search.get('state')
+
       const items = board.filter((item) => {
         if (zoneId && zoneIdFromLabel(item.zone) !== zoneId) return false
         if (ownerUserId && item.owner.id !== ownerUserId) return false
+        if (state && item.status !== state) return false
         return true
       })
 
