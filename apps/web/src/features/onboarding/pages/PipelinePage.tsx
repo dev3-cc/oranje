@@ -1,15 +1,22 @@
 import { Skeleton, cn } from '@oranje/ui'
-import { useState, type ReactNode } from 'react'
+import { lazy, Suspense, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 
 import { useGetPipelineBoardQuery } from '../api/onboardingApi'
 import { PipelineColumn } from '../components/PipelineColumn'
+import { PipelineFlowCard } from '../components/PipelineFlowCard'
 import { ProspectFormDialog } from '../components/ProspectFormDialog'
+import { SemaforoHelpButton } from '../components/SemaforoHelpDialog'
 import { usePipelineFilters } from '../hooks/usePipelineFilters'
 
 import { useGetSessionQuery } from '@/app/sessionApi'
 import { Button } from '@/shared/components/Button'
 import { PIPELINE_COLUMNS } from '@/shared/constants/onboardingStatus'
+
+/** El globo carga aparte: three-globe + continentes no pesan en el chunk base. */
+const HotelGlobeCard = lazy(() =>
+  import('../components/HotelGlobeCard').then((module) => ({ default: module.HotelGlobeCard })),
+)
 
 /** Estilo común de los chips de filtro, para que el que es botón no se distinga. */
 const FILTER_CHIP_CLASS =
@@ -26,7 +33,10 @@ export function PipelinePage(): ReactNode {
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-ink">Pipeline</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold tracking-tight text-ink">Pipeline</h1>
+            <SemaforoHelpButton />
+          </div>
           <p className="mt-1 text-sm text-ink-3">
             {isLoading
               ? 'Cargando prospectos…'
@@ -116,6 +126,15 @@ export function PipelinePage(): ReactNode {
               prospects={board.items.filter((item) => item.status === status)}
             />
           ))}
+        </div>
+      )}
+
+      {board && (
+        <div className="grid grid-cols-1 items-stretch gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+          <PipelineFlowCard countByStatus={board.countByStatus} />
+          <Suspense fallback={null}>
+            <HotelGlobeCard />
+          </Suspense>
         </div>
       )}
 
