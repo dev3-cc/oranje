@@ -94,6 +94,79 @@ export class ContactAttemptsRepository {
     return this.prisma.contactAttempt.findUniqueOrThrow({ where: { id }, select: SELECT })
   }
 
+  async find(attemptId: string, prospectId: string): Promise<AttemptRow | null> {
+    const row = await this.prisma.contactAttempt.findUnique({
+      where: { id: attemptId },
+      select: { ...SELECT, prospectId: true },
+    })
+
+    return row && row.prospectId === prospectId ? row : null
+  }
+
+  async update(
+    attemptId: string,
+    data: {
+      attemptType?: string
+      outcome?: string
+      hotelContactId?: string | null
+      occurredAt?: Date
+      notes?: string | null
+    },
+    actor: { userId: string; roleCode: string },
+  ): Promise<AttemptRow> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.contactAttempt.update({
+        where: { id: attemptId },
+        data: {
+          ...(data.attemptType !== undefined ? { attemptType: data.attemptType } : {}),
+          ...(data.outcome !== undefined ? { outcome: data.outcome } : {}),
+          ...(data.hotelContactId !== undefined ? { hotelContactId: data.hotelContactId } : {}),
+          ...(data.occurredAt !== undefined ? { occurredAt: data.occurredAt } : {}),
+          ...(data.notes !== undefined ? { notes: data.notes } : {}),
+        },
+      })
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'commercial.contact_attempt',
+          entityId: attemptId,
+          eventType: 'CONTACT_ATTEMPT_CORRECTED',
+          actorUserId: actor.userId,
+          actorRole: actor.roleCode,
+          payload: JSON.parse(JSON.stringify(data)) as object,
+        },
+      })
+    })
+
+    return this.prisma.contactAttempt.findUniqueOrThrow({
+      where: { id: attemptId },
+      select: SELECT,
+    })
+  }
+
+  async remove(
+    attemptId: string,
+    actor: { userId: string; roleCode: string },
+    payload: { attemptType: string; outcome: string },
+  ): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.contactAttempt.delete({ where: { id: attemptId } })
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'commercial.contact_attempt',
+          entityId: attemptId,
+          eventType: 'CONTACT_ATTEMPT_DELETED',
+          actorUserId: actor.userId,
+          actorRole: actor.roleCode,
+          payload,
+        },
+      })
+    })
+  }
+
   async listAll(prospectId: string): Promise<AttemptRow[]> {
     return this.prisma.contactAttempt.findMany({
       where: { prospectId },
