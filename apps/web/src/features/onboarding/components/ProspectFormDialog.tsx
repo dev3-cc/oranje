@@ -47,14 +47,17 @@ import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'prospect-form'
 
-/** Zonas horarias de operación. Identificadores IANA, no catálogo de negocio. */
+/**
+ * Zonas horarias de operación: solo EE. UU., que es donde están los hoteles
+ * cliente. Identificadores IANA, no catálogo de negocio — si la operación
+ * vuelve a México, aquí se agregan sus zonas.
+ */
 const TIME_ZONES = [
-  'America/Cancun',
-  'America/Merida',
-  'America/Mexico_City',
-  'America/Monterrey',
-  'America/Mazatlan',
-  'America/Tijuana',
+  { value: 'America/New_York', label: 'Este — Atlanta, Miami, Nueva York' },
+  { value: 'America/Chicago', label: 'Central — Chicago, Houston, Dallas' },
+  { value: 'America/Denver', label: 'Montaña — Denver, Salt Lake City' },
+  { value: 'America/Phoenix', label: 'Arizona — Phoenix (sin horario de verano)' },
+  { value: 'America/Los_Angeles', label: 'Pacífico — Los Ángeles, Las Vegas' },
 ] as const
 
 /**
@@ -260,7 +263,7 @@ export function ProspectFormDialog({
     existingHotelId: '',
     hotelName: prospect?.hotelName ?? '',
     zoneId: prospect?.hotel.zoneId ?? '',
-    timeZone: prospect?.hotel.timeZone ?? 'America/Cancun',
+    timeZone: prospect?.hotel.timeZone ?? 'America/New_York',
     address: prospect?.hotel.address ?? '',
     generalPhone: prospect?.hotel.generalPhone ?? '',
     location: prospect?.hotel.location ?? null,
@@ -469,9 +472,10 @@ export function ProspectFormDialog({
                 />
                 <div
                   aria-hidden
-                  className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-surface"
+                  className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent via-surface/85 to-surface"
                 />
-                <p className="absolute bottom-1.5 left-4 text-base font-semibold text-ink">
+                {/* El nombre pisa la franja ya sólida del fundido: siempre legible. */}
+                <p className="absolute bottom-0.5 left-4 text-base font-semibold text-ink">
                   {values.hotelName}
                 </p>
               </div>
@@ -605,10 +609,15 @@ export function ProspectFormDialog({
                                 </SelectTrigger>
                                 <SelectContent>
                                   {TIME_ZONES.map((zone) => (
-                                    <SelectItem key={zone} value={zone}>
-                                      {zone}
+                                    <SelectItem key={zone.value} value={zone.value}>
+                                      {zone.label}
                                     </SelectItem>
                                   ))}
+                                  {/* Zona heredada (p. ej. México, de antes de acotar a
+                                      EE. UU.): se conserva visible al editar, cruda. */}
+                                  {!TIME_ZONES.some((zone) => zone.value === field.value) && (
+                                    <SelectItem value={field.value}>{field.value}</SelectItem>
+                                  )}
                                 </SelectContent>
                               </Select>
                             )}
@@ -622,10 +631,14 @@ export function ProspectFormDialog({
                     <>
                       <SectionTitle>Ubicación</SectionTitle>
 
+                      {/*
+                        El buscador es un ATAJO, no el requisito: si el hotel no
+                        está en Google, se arrastra el mapa y ya. Lo obligatorio
+                        es la coordenada, y por eso el error se pinta aquí.
+                      */}
                       <Field
-                        label="Buscar en Google"
-                        isRequired
-                        note="elige el hotel: pin, dirección y foto llegan solos"
+                        label="Buscar en Google (opcional)"
+                        note="si el hotel aparece, pin, dirección y foto llegan solos; si no existe en Google, arrastra el mapa hasta la entrada"
                         column="latitude + longitude"
                         error={formState.errors.location?.message}
                       >
@@ -664,8 +677,8 @@ export function ProspectFormDialog({
 
                       {!placePhotoUrl && (
                         <p className="rounded-lg border border-line bg-surface p-4 text-sm text-ink-3">
-                          Sin foto todavía: al elegir el hotel en el buscador, Google la trae y se
-                          guarda con el hotel.
+                          Sin foto todavía: al elegir el hotel en el buscador, Oranje la trae y se
+                          guardará automáticamente
                         </p>
                       )}
 
@@ -685,6 +698,11 @@ export function ProspectFormDialog({
                   {step === 3 && (
                     <section className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4">
                       <SectionTitle schema="commercial.hotel_contact">Primer contacto</SectionTitle>
+                      {/* UX writing: sin esto se llenaba con los datos de quien captura. */}
+                      <p className="-mt-2 text-sm leading-relaxed text-ink-3">
+                        La persona DEL HOTEL con quien hablas: la gerente, el de compras, quien te
+                        atendió. No son tus datos — a esta persona le llegará la propuesta.
+                      </p>
 
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <Field
@@ -715,7 +733,7 @@ export function ProspectFormDialog({
                           <Input
                             id="contactPhone"
                             type="tel"
-                            placeholder="+52 998 111 2233"
+                            placeholder="+1 404 555 0134"
                             {...register('contactPhone')}
                           />
                         </Field>

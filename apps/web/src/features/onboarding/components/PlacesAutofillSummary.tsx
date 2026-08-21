@@ -100,7 +100,7 @@ export function PlacesAutofillSummary({
           />
           <div
             aria-hidden
-            className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent to-surface"
+            className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent via-surface/85 to-surface"
           />
         </div>
       )}

@@ -124,6 +124,16 @@ export interface MeApi {
   permissions: string[]
 }
 
+/** `GET /team`: los BDs a cargo del BDC. Vacío si nadie le reporta. */
+export interface TeamMemberApi {
+  id: string
+  fullName: string
+  email: string
+  role: { code: string; name: string }
+  zones: ZoneRefApi[]
+  openProspects: number
+}
+
 // --- commercial/onboarding -------------------------------------------------
 
 export interface ProspectStateApi {
@@ -136,7 +146,7 @@ export interface ProspectStateApi {
 
 export interface ProspectApi {
   id: string
-  hotel: { id: string; name: string; zone: ZoneRefApi }
+  hotel: { id: string; name: string; photoUrl: string | null; zone: ZoneRefApi }
   owner: { id: string; fullName: string }
   state: ProspectStateApi
   stateSince: string

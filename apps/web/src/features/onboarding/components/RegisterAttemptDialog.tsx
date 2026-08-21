@@ -3,8 +3,11 @@ import { cn } from '@oranje/ui'
 import { useEffect, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 
-import { useRegisterContactAttemptMutation } from '../api/onboardingApi'
-import type { HotelContact } from '../types/prospect.types'
+import {
+  useRegisterContactAttemptMutation,
+  useUpdateContactAttemptMutation,
+} from '../api/onboardingApi'
+import type { ContactAttempt, HotelContact } from '../types/prospect.types'
 import {
   registerContactAttemptSchema,
   type RegisterContactAttemptForm,
@@ -30,11 +33,14 @@ const CONTROL_CLASS =
  * `datetime-local` espera `YYYY-MM-DDTHH:mm` en hora LOCAL. `toISOString()` da
  * UTC y en México adelantaría el valor cinco o seis horas.
  */
-function nowForDateTimeInput(): string {
-  const now = new Date()
+function toDateTimeInput(date: Date): string {
   const pad = (value: number): string => String(value).padStart(2, '0')
 
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+function nowForDateTimeInput(): string {
+  return toDateTimeInput(new Date())
 }
 
 export interface RegisterAttemptDialogProps {
@@ -43,6 +49,8 @@ export interface RegisterAttemptDialogProps {
   prospectId: string
   hotelName: string
   contacts: HotelContact[]
+  /** Con intento, el diálogo corrige en vez de registrar (solo su autor llega aquí). */
+  attempt?: ContactAttempt
 }
 
 /**
@@ -61,8 +69,15 @@ export function RegisterAttemptDialog({
   prospectId,
   hotelName,
   contacts,
+  attempt,
 }: RegisterAttemptDialogProps): ReactNode {
-  const [registerAttempt, { isLoading, error: saveError }] = useRegisterContactAttemptMutation()
+  const isEditing = attempt !== undefined
+  const [registerAttempt, { isLoading: isCreating, error: createError }] =
+    useRegisterContactAttemptMutation()
+  const [updateAttempt, { isLoading: isUpdating, error: updateError }] =
+    useUpdateContactAttemptMutation()
+  const isLoading = isCreating || isUpdating
+  const saveError = isEditing ? updateError : createError
 
   const { register, handleSubmit, setValue, watch, reset, formState } =
     useForm<RegisterContactAttemptForm>({
@@ -72,25 +87,47 @@ export function RegisterAttemptDialog({
       defaultValues: { hotelContactId: '', notes: '', occurredAt: nowForDateTimeInput() },
     })
 
-  // Al abrir se parte de cero, con la hora del momento: se registra lo recién hecho.
+  // Al abrir: de cero para registrar, o con los datos del intento al corregir.
   useEffect(() => {
     if (!isOpen) return
-    reset({ hotelContactId: '', notes: '', occurredAt: nowForDateTimeInput() })
-  }, [isOpen, reset])
+    if (attempt) {
+      reset({
+        attemptType: attempt.typeCode as RegisterContactAttemptForm['attemptType'],
+        outcome: attempt.outcomeCode as RegisterContactAttemptForm['outcome'],
+        hotelContactId: attempt.contactId ?? '',
+        notes: attempt.notes,
+        occurredAt: toDateTimeInput(new Date(attempt.occurredAt)),
+      })
+    } else {
+      reset({ hotelContactId: '', notes: '', occurredAt: nowForDateTimeInput() })
+    }
+  }, [isOpen, attempt, reset])
 
   const attemptType = watch('attemptType')
   const outcome = watch('outcome')
 
   async function onSubmit(values: RegisterContactAttemptForm): Promise<void> {
     try {
-      await registerAttempt({
-        prospectId,
-        attemptType: values.attemptType,
-        outcome: values.outcome,
-        occurredAt: values.occurredAt,
-        ...(values.hotelContactId ? { hotelContactId: values.hotelContactId } : {}),
-        ...(values.notes ? { notes: values.notes } : {}),
-      }).unwrap()
+      if (attempt) {
+        await updateAttempt({
+          prospectId,
+          attemptId: attempt.id,
+          attemptType: values.attemptType,
+          outcome: values.outcome,
+          occurredAt: values.occurredAt,
+          hotelContactId: values.hotelContactId || null,
+          notes: values.notes || null,
+        }).unwrap()
+      } else {
+        await registerAttempt({
+          prospectId,
+          attemptType: values.attemptType,
+          outcome: values.outcome,
+          occurredAt: values.occurredAt,
+          ...(values.hotelContactId ? { hotelContactId: values.hotelContactId } : {}),
+          ...(values.notes ? { notes: values.notes } : {}),
+        }).unwrap()
+      }
       onClose()
     } catch {
       // El error queda en `saveError` y se pinta abajo; el modal no se cierra.
@@ -101,7 +138,7 @@ export function RegisterAttemptDialog({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Registrar intento de contacto"
+      title={isEditing ? 'Corregir intento de contacto' : 'Registrar intento de contacto'}
       description={`${hotelName} · commercial.contact_attempt`}
       footer={
         <>
@@ -114,7 +151,7 @@ export function RegisterAttemptDialog({
             form={FORM_ID}
             disabled={!formState.isValid || isLoading}
           >
-            {isLoading ? 'Registrando…' : 'Registrar intento'}
+            {isLoading ? 'Guardando…' : isEditing ? 'Guardar corrección' : 'Registrar intento'}
           </Button>
         </>
       }
@@ -218,7 +255,9 @@ export function RegisterAttemptDialog({
 
         {saveError !== undefined && (
           <p className="rounded-md bg-red/10 p-4 text-sm text-red">
-            No se pudo registrar el intento. Revisa los datos e inténtalo de nuevo.
+            {isEditing
+              ? 'No se pudo corregir el intento. Solo su autor puede hacerlo.'
+              : 'No se pudo registrar el intento. Revisa los datos e inténtalo de nuevo.'}
           </p>
         )}
       </form>

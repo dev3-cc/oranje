@@ -1,6 +1,7 @@
 import type {
   AllowedTransitions,
   ChangeStatusRequest,
+  UpdateContactAttemptRequest,
   ContactAttempt,
   CreateProspectRequest,
   HotelContactPayload,
@@ -9,6 +10,7 @@ import type {
   ProspectDetail,
   RegisterContactAttemptRequest,
   StatusChangeReason,
+  HotelMapPoint,
   RegisteredHotel,
   UpdateProspectRequest,
   Zone,
@@ -112,6 +114,9 @@ export const onboardingApi = baseApi.injectEndpoints({
         return {
           openCount: raw.meta.total,
           zoneCount: new Set(items.map((item) => item.zone)).size,
+          countByStatus: Object.fromEntries(
+            raw.meta.byState.map((entry) => [entry.code, entry.total]),
+          ),
           items,
         }
       },
@@ -289,6 +294,46 @@ export const onboardingApi = baseApi.injectEndpoints({
     }),
 
     /**
+     * Puntos del globo 3D: solo los hoteles con coordenada. El estado del
+     * semáforo no viene en `/hotels`: se compone con los prospectos abiertos.
+     */
+    getHotelMapPoints: build.query<HotelMapPoint[], void>({
+      queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
+        const [hotelsRes, prospectsRes] = await Promise.all([
+          fetchWithBQ({ url: '/hotels', params: { limit: 100 } }),
+          fetchWithBQ({ url: '/prospects', params: { limit: 100 } }),
+        ])
+        if (hotelsRes.error) return { error: hotelsRes.error }
+        if (prospectsRes.error) return { error: prospectsRes.error }
+
+        const statusByHotel = new Map(
+          (prospectsRes.data as PaginatedEnvelope<ProspectApi>).data.map((prospect) => [
+            prospect.hotel.id,
+            prospect.state.code as OnboardingStatus,
+          ]),
+        )
+
+        return {
+          data: (hotelsRes.data as PaginatedEnvelope<HotelApi>).data
+            .filter((hotel) => hotel.latitude !== null && hotel.longitude !== null)
+            .map((hotel) => ({
+              id: hotel.id,
+              name: hotel.name,
+              lat: hotel.latitude as number,
+              lng: hotel.longitude as number,
+              isClient: hotel.isClient,
+              photoUrl: hotel.photoUrl,
+              status: statusByHotel.get(hotel.id) ?? null,
+            })),
+        }
+      },
+      providesTags: [
+        { type: 'Hotel', id: 'LIST' },
+        { type: 'Prospect', id: 'LIST' },
+      ],
+    }),
+
+    /**
      * Edición contra el contrato real: el hotel por `PATCH /hotels/:id` y el
      * dueño + la necesidad por `PATCH /prospects/:id`. El contacto se edita en
      * su propio diálogo, no aquí.
@@ -356,6 +401,32 @@ export const onboardingApi = baseApi.injectEndpoints({
       providesTags: [{ type: 'Catalog', id: 'STATUS_CHANGE_REASON' }],
     }),
 
+    /** Corrección de un intento: SOLO su autor (lo verifica la API). */
+    updateContactAttempt: build.mutation<ContactAttempt, UpdateContactAttemptRequest>({
+      query: ({ prospectId, attemptId, ...body }) => ({
+        url: `/prospects/${prospectId}/contact-attempts/${attemptId}`,
+        method: 'PATCH',
+        body,
+      }),
+      transformResponse: (raw: ApiEnvelope<ContactAttemptApi>) => adaptAttempt(raw.data),
+      invalidatesTags: (_result, _error, { prospectId }) => [
+        { type: 'Prospect', id: prospectId },
+        { type: 'Prospect', id: 'LIST' },
+      ],
+    }),
+
+    /** Borrado de un intento: SOLO su autor — el de prueba o el capturado doble. */
+    deleteContactAttempt: build.mutation<void, { prospectId: string; attemptId: string }>({
+      query: ({ prospectId, attemptId }) => ({
+        url: `/prospects/${prospectId}/contact-attempts/${attemptId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (_result, _error, { prospectId }) => [
+        { type: 'Prospect', id: prospectId },
+        { type: 'Prospect', id: 'LIST' },
+      ],
+    }),
+
     registerContactAttempt: build.mutation<ContactAttempt, RegisterContactAttemptRequest>({
       query: ({ prospectId, ...body }) => ({
         url: `/prospects/${prospectId}/contact-attempts`,
@@ -406,8 +477,11 @@ export const {
   useCreateProspectMutation,
   useAddHotelContactsMutation,
   useGetRegisteredHotelsQuery,
+  useGetHotelMapPointsQuery,
   useUpdateProspectMutation,
   useGetStatusChangeReasonsQuery,
   useRegisterContactAttemptMutation,
+  useUpdateContactAttemptMutation,
+  useDeleteContactAttemptMutation,
   useChangeProspectStatusMutation,
 } = onboardingApi

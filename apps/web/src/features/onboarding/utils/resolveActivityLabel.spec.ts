@@ -7,6 +7,7 @@ import { resolveActivityLabel } from './resolveActivityLabel'
 const BASE: ProspectSummary = {
   id: 'psp-test',
   hotelName: 'Hotel de prueba',
+  photoUrl: null,
   zone: 'Zona Centro',
   status: 'GRAY',
   daysInStatus: 3,

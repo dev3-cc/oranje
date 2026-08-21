@@ -126,6 +126,7 @@ let board: ProspectSummary[] = [
   {
     id: 'psp-0001',
     hotelName: 'Hotel Riviera Maya',
+    photoUrl: null,
     zone: 'Zona Norte',
     status: 'GRAY',
     daysInStatus: 4,
@@ -136,6 +137,7 @@ let board: ProspectSummary[] = [
   {
     id: 'psp-0002',
     hotelName: 'Casa Tulum Boutique',
+    photoUrl: null,
     zone: 'Zona Sur',
     status: 'GRAY',
     daysInStatus: 11,
@@ -146,6 +148,7 @@ let board: ProspectSummary[] = [
   {
     id: 'psp-0003',
     hotelName: 'Hotel Playa Azul',
+    photoUrl: null,
     zone: 'Zona Centro',
     status: 'GRAY',
     daysInStatus: 2,
@@ -156,6 +159,7 @@ let board: ProspectSummary[] = [
   {
     id: 'psp-0004',
     hotelName: 'Grand Costa Nube',
+    photoUrl: null,
     zone: 'Zona Norte',
     status: 'LIGHT_BLUE',
     daysInStatus: 6,
@@ -166,6 +170,7 @@ let board: ProspectSummary[] = [
   {
     id: 'psp-0005',
     hotelName: 'Hotel Bahía Serena',
+    photoUrl: null,
     zone: 'Zona Poniente',
     status: 'LIGHT_BLUE',
     daysInStatus: 3,
@@ -176,6 +181,7 @@ let board: ProspectSummary[] = [
   {
     id: 'psp-0006',
     hotelName: 'Suites del Carmen',
+    photoUrl: null,
     zone: 'Zona Sur',
     status: 'LIGHT_BLUE',
     daysInStatus: 9,
@@ -186,6 +192,7 @@ let board: ProspectSummary[] = [
   {
     id: PROSPECT_PUERTO_REAL_ID,
     hotelName: 'Hotel Puerto Real',
+    photoUrl: null,
     zone: 'Zona Centro',
     status: 'PINK',
     daysInStatus: 7,
@@ -196,6 +203,7 @@ let board: ProspectSummary[] = [
   {
     id: 'psp-0008',
     hotelName: 'Hotel Mirador',
+    photoUrl: null,
     zone: 'Zona Centro',
     status: 'GREEN',
     daysInStatus: 5,
@@ -206,6 +214,7 @@ let board: ProspectSummary[] = [
   {
     id: 'psp-0009',
     hotelName: 'Resort Isla Blanca',
+    photoUrl: null,
     zone: 'Zona Norte',
     status: 'GREEN',
     daysInStatus: 12,
@@ -216,6 +225,7 @@ let board: ProspectSummary[] = [
   {
     id: 'psp-0010',
     hotelName: 'Hotel Las Palmas',
+    photoUrl: null,
     zone: 'Zona Sur',
     status: 'YELLOW',
     daysInStatus: 8,
@@ -226,6 +236,7 @@ let board: ProspectSummary[] = [
   {
     id: 'psp-0011',
     hotelName: 'Villas Coral',
+    photoUrl: null,
     zone: 'Zona Poniente',
     status: 'YELLOW',
     daysInStatus: 15,
@@ -249,6 +260,7 @@ let board: ProspectSummary[] = [
   {
     id: 'psp-0012',
     hotelName: 'Hotel Puerto Real',
+    photoUrl: null,
     zone: 'Zona Centro',
     status: 'ORANGE',
     daysInStatus: 37,
@@ -259,6 +271,7 @@ let board: ProspectSummary[] = [
   {
     id: 'psp-0013',
     hotelName: 'Grand Costa Nube',
+    photoUrl: null,
     zone: 'Zona Norte',
     status: 'ORANGE',
     daysInStatus: 85,
@@ -269,6 +282,7 @@ let board: ProspectSummary[] = [
   {
     id: 'psp-0014',
     hotelName: 'Hotel Mirador',
+    photoUrl: null,
     zone: 'Zona Centro',
     status: 'ORANGE',
     daysInStatus: 164,
@@ -279,6 +293,7 @@ let board: ProspectSummary[] = [
   {
     id: 'psp-0015',
     hotelName: 'Villas Coral',
+    photoUrl: null,
     zone: 'Zona Poniente',
     status: 'ORANGE',
     daysInStatus: 212,
@@ -289,6 +304,7 @@ let board: ProspectSummary[] = [
   {
     id: 'psp-0016',
     hotelName: 'Hotel Las Palmas',
+    photoUrl: null,
     zone: 'Zona Norte',
     status: 'ORANGE',
     daysInStatus: 285,
@@ -354,6 +370,11 @@ const details = new Map<string, ProspectDetail>([
           channel: 'Reunión',
           outcome: 'En revisión',
           byName: 'Lucía Márquez',
+          userId: 'usr-lucia',
+          typeCode: 'Reunión',
+          outcomeCode: 'En revisión',
+          notes: '',
+          contactId: null,
         },
         {
           id: 'att-3',
@@ -361,6 +382,11 @@ const details = new Map<string, ProspectDetail>([
           channel: 'Llamada',
           outcome: 'Interesado',
           byName: 'Ana Ruiz',
+          userId: 'usr-ana-ruiz',
+          typeCode: 'CALL',
+          outcomeCode: 'INTERESTED',
+          notes: '',
+          contactId: null,
         },
         {
           id: 'att-2',
@@ -368,6 +394,11 @@ const details = new Map<string, ProspectDetail>([
           channel: 'Correo',
           outcome: 'Interesado',
           byName: 'Ana Ruiz',
+          userId: 'usr-ana-ruiz',
+          typeCode: 'EMAIL',
+          outcomeCode: 'INTERESTED',
+          notes: '',
+          contactId: null,
         },
         {
           id: 'att-1',
@@ -375,6 +406,11 @@ const details = new Map<string, ProspectDetail>([
           channel: 'Visita en frío',
           outcome: 'Cita agendada',
           byName: 'Ana Ruiz',
+          userId: 'usr-ana-ruiz',
+          typeCode: 'COLD_VISIT',
+          outcomeCode: 'MEETING_SET',
+          notes: '',
+          contactId: null,
         },
       ],
       history: [
@@ -587,6 +623,7 @@ function toProspectApi(summary: ProspectSummary): ProspectApi {
     hotel: {
       id: hotelIdOf(summary.id),
       name: summary.hotelName,
+      photoUrl: detail.hotel.photoUrl,
       zone: zoneRef(zoneIdFromLabel(summary.zone)),
     },
     owner: { id: summary.owner.id, fullName: summary.owner.name },
@@ -685,12 +722,12 @@ function codeForLabel(label: string, catalog: Record<string, string>): string {
 function toAttemptApi(attempt: ContactAttempt): ContactAttemptApi {
   return {
     id: attempt.id,
-    attemptType: codeForLabel(attempt.channel, CONTACT_ATTEMPT_TYPE_LABEL),
-    outcome: codeForLabel(attempt.outcome, CONTACT_ATTEMPT_OUTCOME_LABEL),
+    attemptType: attempt.typeCode || codeForLabel(attempt.channel, CONTACT_ATTEMPT_TYPE_LABEL),
+    outcome: attempt.outcomeCode || codeForLabel(attempt.outcome, CONTACT_ATTEMPT_OUTCOME_LABEL),
     contact: null,
-    user: { id: OWNER_ANA.id, fullName: attempt.byName },
+    user: { id: attempt.userId, fullName: attempt.byName },
     occurredAt: attempt.occurredAt,
-    notes: null,
+    notes: attempt.notes || null,
   }
 }
 
@@ -975,6 +1012,7 @@ function createProspect(body: unknown): ProspectApi {
   const summary: ProspectSummary = {
     id,
     hotelName: registered.name,
+    photoUrl: null,
     zone: registered.zone,
     status: 'GRAY',
     daysInStatus: 0,
@@ -1054,6 +1092,11 @@ function addContactAttempt(prospectId: string, body: unknown): ContactAttemptApi
     channel: CONTACT_ATTEMPT_TYPE_LABEL[payload.attemptType],
     outcome: CONTACT_ATTEMPT_OUTCOME_LABEL[payload.outcome],
     byName: OWNER_ANA.name,
+    userId: OWNER_ANA.id,
+    typeCode: payload.attemptType,
+    outcomeCode: payload.outcome,
+    notes: payload.notes ?? '',
+    contactId: payload.hotelContactId ?? null,
   }
 
   details.set(prospectId, {
@@ -1171,6 +1214,60 @@ const routes: readonly MockRoute[] = [
     },
   },
   {
+    method: 'PATCH',
+    path: '/prospects/:prospectId/contact-attempts/:attemptId',
+    resolve: ({ params, body }): ApiEnvelope<ContactAttemptApi> => {
+      const prospectId = requireParam(params, 'prospectId')
+      const attemptId = requireParam(params, 'attemptId')
+      const payload = (body ?? {}) as Partial<CreateAttemptBody> & { notes?: string | null }
+      const detail = readDetail(prospectId)
+      const attempt = detail.attempts.find((item) => item.id === attemptId)
+      if (!attempt) throw new Error('El intento no existe')
+
+      const updated: ContactAttempt = {
+        ...attempt,
+        ...(payload.attemptType
+          ? {
+              typeCode: payload.attemptType,
+              channel: CONTACT_ATTEMPT_TYPE_LABEL[payload.attemptType],
+            }
+          : {}),
+        ...(payload.outcome
+          ? {
+              outcomeCode: payload.outcome,
+              outcome: CONTACT_ATTEMPT_OUTCOME_LABEL[payload.outcome],
+            }
+          : {}),
+        ...(payload.occurredAt ? { occurredAt: payload.occurredAt } : {}),
+        ...(payload.notes !== undefined ? { notes: payload.notes ?? '' } : {}),
+        ...(payload.hotelContactId !== undefined
+          ? { contactId: payload.hotelContactId ?? null }
+          : {}),
+      }
+      details.set(prospectId, {
+        ...detail,
+        attempts: detail.attempts
+          .map((item) => (item.id === attemptId ? updated : item))
+          .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt)),
+      })
+      return { data: toAttemptApi(updated) }
+    },
+  },
+  {
+    method: 'DELETE',
+    path: '/prospects/:prospectId/contact-attempts/:attemptId',
+    resolve: ({ params }): null => {
+      const prospectId = requireParam(params, 'prospectId')
+      const attemptId = requireParam(params, 'attemptId')
+      const detail = readDetail(prospectId)
+      details.set(prospectId, {
+        ...detail,
+        attempts: detail.attempts.filter((item) => item.id !== attemptId),
+      })
+      return null
+    },
+  },
+  {
     method: 'POST',
     path: '/prospects/:prospectId/contact-attempts',
     resolve: ({ params, body }): ApiEnvelope<ContactAttemptApi> => ({
@@ -1180,10 +1277,18 @@ const routes: readonly MockRoute[] = [
   {
     method: 'GET',
     path: '/hotels',
-    resolve: (): PaginatedEnvelope<HotelApi> => ({
-      data: hotelsWithoutCycle.map(registeredToHotelApi),
-      meta: { page: 1, limit: 100, total: hotelsWithoutCycle.length, totalPages: 1 },
-    }),
+    /**
+     * Como la API real: TODOS los hoteles, con o sin ciclo. Los del tablero
+     * salen de su detalle (coordenada y foto incluidas); los registrados sin
+     * ciclo, de su fixture. Mi Territorio compone sobre esta lista.
+     */
+    resolve: (): PaginatedEnvelope<HotelApi> => {
+      const data = [
+        ...board.map((summary) => toHotelApi(readDetail(summary.id))),
+        ...hotelsWithoutCycle.map(registeredToHotelApi),
+      ]
+      return { data, meta: { page: 1, limit: 100, total: data.length, totalPages: 1 } }
+    },
   },
   {
     method: 'POST',

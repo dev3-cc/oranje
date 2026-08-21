@@ -50,6 +50,7 @@ export function adaptProspectSummary(prospect: ProspectApi): ProspectSummary {
   return {
     id: prospect.id,
     hotelName: prospect.hotel.name,
+    photoUrl: prospect.hotel.photoUrl,
     zone: prospect.hotel.zone.name,
     status: prospect.state.code as OnboardingStatus,
     daysInStatus: daysSince(prospect.stateSince),
@@ -92,6 +93,11 @@ export function adaptAttempt(attempt: ContactAttemptApi): ContactAttempt {
     outcome:
       CONTACT_ATTEMPT_OUTCOME_LABEL[attempt.outcome as ContactAttemptOutcome] ?? attempt.outcome,
     byName: attempt.user.fullName,
+    userId: attempt.user.id,
+    typeCode: attempt.attemptType,
+    outcomeCode: attempt.outcome,
+    notes: attempt.notes ?? '',
+    contactId: attempt.contact?.id ?? null,
   }
 }
 

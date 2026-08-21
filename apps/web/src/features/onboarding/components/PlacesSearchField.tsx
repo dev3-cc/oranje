@@ -1,5 +1,6 @@
+import { MaterialIcon } from '@oranje/ui'
 import { useMapsLibrary } from '@vis.gl/react-google-maps'
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { isMapsEnabled } from '@/shared/constants/googleMaps'
 import type { GeoPoint } from '@/shared/types/geo.types'
@@ -75,8 +76,8 @@ function PlacesAutocompleteInput({
     const autocomplete = new places.Autocomplete(input, {
       /** `geometry` a secas: `geometry.location` no es un campo válido aquí. */
       fields: ['name', 'formatted_address', 'formatted_phone_number', 'geometry', 'photos'],
-      /** El territorio es México; sin esto sugiere direcciones de todo el mundo. */
-      componentRestrictions: { country: 'mx' },
+      /** Los hoteles cliente operan en EE. UU. y el arranque fue en México. */
+      componentRestrictions: { country: ['us', 'mx'] },
     })
 
     const listener = autocomplete.addListener('place_changed', () => {
@@ -100,22 +101,45 @@ function PlacesAutocompleteInput({
     }
   }, [places])
 
+  const [hasText, setHasText] = useState(defaultValue !== '')
+
   return (
-    <input
-      ref={inputRef}
-      type="text"
-      defaultValue={defaultValue}
-      disabled={!places?.Autocomplete}
-      /** El autocompletado del navegador tapa el de Google. */
-      autoComplete="off"
-      onKeyDown={(event) => {
-        /** Enter elige la sugerencia; si no, enviaría el formulario a medias. */
-        if (event.key === 'Enter') event.preventDefault()
-      }}
-      placeholder={places ? 'Busca el hotel o su dirección…' : 'Buscador no disponible'}
-      aria-label="Buscar la ubicación del hotel"
-      className={`${CONTROL_CLASS} border-o-500`}
-    />
+    <div className="relative">
+      <input
+        ref={inputRef}
+        type="text"
+        defaultValue={defaultValue}
+        disabled={!places?.Autocomplete}
+        /** El autocompletado del navegador tapa el de Google. */
+        autoComplete="off"
+        onKeyDown={(event) => {
+          /** Enter elige la sugerencia; si no, enviaría el formulario a medias. */
+          if (event.key === 'Enter') event.preventDefault()
+        }}
+        onInput={(event) => {
+          setHasText(event.currentTarget.value !== '')
+        }}
+        placeholder={places ? 'Busca el hotel o su dirección…' : 'Buscador no disponible'}
+        aria-label="Buscar la ubicación del hotel"
+        className={`${CONTROL_CLASS} border-o-500 pr-11`}
+      />
+      {hasText && (
+        <button
+          type="button"
+          aria-label="Borrar la búsqueda"
+          onClick={() => {
+            const input = inputRef.current
+            if (!input) return
+            input.value = ''
+            setHasText(false)
+            input.focus()
+          }}
+          className="absolute inset-y-0 right-0 flex items-center px-3 text-ink-3 transition-colors hover:text-ink"
+        >
+          <MaterialIcon name="close" className="text-lg" />
+        </button>
+      )}
+    </div>
   )
 }
 

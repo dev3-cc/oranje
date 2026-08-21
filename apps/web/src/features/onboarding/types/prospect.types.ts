@@ -39,12 +39,21 @@ export interface ContactAttempt {
   channel: string
   outcome: string
   byName: string
+  /** Autor del intento: solo él puede corregirlo o eliminarlo. */
+  userId: string
+  /** Códigos crudos, para prellenar el formulario de corrección. */
+  typeCode: string
+  outcomeCode: string
+  notes: string
+  contactId: string | null
 }
 
 /** Tarjeta del tablero. Deliberadamente más chica que `ProspectDetail`. */
 export interface ProspectSummary {
   id: string
   hotelName: string
+  /** Foto de Places del hotel: la portada de la tarjeta del tablero. */
+  photoUrl: string | null
   /** Nombre de la zona del catálogo, ya resuelto por el backend. */
   zone: string
   status: OnboardingStatus
@@ -52,6 +61,19 @@ export interface ProspectSummary {
   lastAttempt: Pick<ContactAttempt, 'channel' | 'outcome'> | null
   latestProposalVersion: number | null
   owner: ProspectOwner
+}
+
+/** Un hotel en el globo 3D: coordenada y si ya es cliente. */
+export interface HotelMapPoint {
+  id: string
+  name: string
+  lat: number
+  lng: number
+  isClient: boolean
+  /** La foto de Places: la tarjeta anotada del globo la usa de portada. */
+  photoUrl: string | null
+  /** Estado del ciclo abierto, si lo hay. Un cliente activo ya no tiene ciclo. */
+  status: OnboardingStatus | null
 }
 
 /** Filtros del tablero. Viajan como query string al endpoint. */
@@ -67,6 +89,8 @@ export interface PipelineBoard {
   /** Total de prospectos abiertos, no los que caben en la página. */
   openCount: number
   zoneCount: number
+  /** Total por estado (`meta.byState`), con 0 cuando no hay: alimenta el flujo. */
+  countByStatus: Partial<Record<OnboardingStatus, number>>
   items: ProspectSummary[]
 }
 
@@ -237,6 +261,17 @@ export interface RegisterContactAttemptRequest {
   /** Se omite cuando no se encontró a nadie. */
   hotelContactId?: string
   notes?: string
+}
+
+/** Corrección de un intento: solo campos presentes viajan; `null` limpia. */
+export interface UpdateContactAttemptRequest {
+  prospectId: string
+  attemptId: string
+  attemptType?: ContactAttemptType
+  outcome?: ContactAttemptOutcome
+  occurredAt?: string
+  hotelContactId?: string | null
+  notes?: string | null
 }
 
 export interface ChangeStatusRequest {

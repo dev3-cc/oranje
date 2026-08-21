@@ -7,6 +7,8 @@ import {
   useGetStatusChangeReasonsQuery,
 } from '../api/onboardingApi'
 
+import { SemaforoHelpButton } from './SemaforoHelpDialog'
+
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
 import {
@@ -33,6 +35,61 @@ export interface ChangeStatusDialogProps {
  * El motivo se exige cuando la transición trae `requiresReason`, que es el
  * `requires_reason` del catálogo. El botón queda bloqueado hasta que hay uno.
  */
+/** Siglas visibles de los roles autorizados, para citar QUIÉN puede dar el paso. */
+const ROLE_SHORT: Record<string, string> = {
+  'ROL-V-01': 'el BD',
+  'ROL-V-02': 'el BDC',
+  'ROL-SYS-01': 'el Sistema',
+  'ROL-ADM-01': 'el Administrador',
+}
+
+/**
+ * La causa real del rechazo Y el camino para resolverla — no un «revisa el
+ * motivo» a ciegas: un 422 de PROPOSAL_REQUIRED (D-22) no se arregla
+ * eligiendo otro motivo, y un 403 se resuelve pidiéndoselo al rol correcto.
+ */
+function transitionErrorMessage(error: unknown): string {
+  const data = (
+    error as
+      | {
+          data?: {
+            error?: {
+              code?: string
+              message?: string
+              details?: Array<{ field?: string; value?: unknown }>
+            }
+          }
+        }
+      | undefined
+  )?.data
+  const code = data?.error?.code
+  const details = data?.error?.details ?? []
+
+  if (code === 'PROPOSAL_REQUIRED') {
+    return 'Verde no se abandona sin enviar la Propuesta Personalizada: abre la propuesta, envíala y vuelve a intentar.'
+  }
+  if (code === 'HOTEL_USER_REQUIRED') {
+    return 'Para convertir a Naranja primero debe existir el Usuario del Hotel: créalo desde Conversión.'
+  }
+  if (code === 'TRANSITION_FORBIDDEN') {
+    const roles = details
+      .map((item) => ROLE_SHORT[String(item.value)] ?? String(item.value))
+      .join(' o ')
+    return `Ese paso existe, pero lo ejecuta ${roles || 'otro rol'}: pídeselo — tu rol no lo tiene asignado.`
+  }
+  if (code === 'TRANSITION_NOT_ALLOWED') {
+    const targets = details
+      .map((item) => ONBOARDING_STATUS_LABEL[item.value as OnboardingStatus] ?? String(item.value))
+      .join(', ')
+    return targets
+      ? `Desde aquí el semáforo solo permite ir a: ${targets}.`
+      : 'El semáforo no tiene ese paso configurado.'
+  }
+  if (code === 'REASON_REQUIRED') return 'Esta transición exige un motivo: elígelo de la lista.'
+  if (data?.error?.message) return data.error.message
+  return 'No se pudo cambiar el estado. Revisa el motivo e inténtalo de nuevo.'
+}
+
 export function ChangeStatusDialog({
   isOpen,
   onClose,
@@ -213,10 +270,24 @@ export function ChangeStatusDialog({
       )}
 
       {saveError !== undefined && (
-        <p className="rounded-md bg-red/10 p-4 text-sm text-red">
-          No se pudo cambiar el estado. Revisa el motivo e inténtalo de nuevo.
+        <p role="alert" className="rounded-md bg-red/10 p-4 text-sm text-red">
+          {transitionErrorMessage(saveError)}
         </p>
       )}
+
+      {/*
+        El semáforo no retrocede (RR-V-07): quien busque «bajar» un estado
+        necesita saber el camino real sin ir a leer el vault.
+      */}
+      <div className="flex items-start gap-2 rounded-md bg-surface-2 p-3">
+        <p className="text-xs leading-relaxed text-ink-3">
+          ¿Necesitas regresarlo? El semáforo no retrocede: se sale por una rama y se reactiva hacia
+          Azul claro. Desde <span className="font-semibold">Rojo</span> reactiva el BD; desde{' '}
+          <span className="font-semibold">Café</span> y <span className="font-semibold">Negro</span>
+          , solo el BDC.
+        </p>
+        <SemaforoHelpButton className="shrink-0" />
+      </div>
     </Modal>
   )
 }
