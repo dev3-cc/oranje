@@ -1,6 +1,12 @@
-import { Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common'
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { PermissionsService } from '../../identity/index.js'
 
 import type { SetZonesDto } from './dto/territory.dto.js'
 import { TerritoriesRepository, ZoneRow } from './territories.repository.js'
@@ -22,9 +28,33 @@ export interface TerritoryEntity {
 
 @Injectable()
 export class TerritoriesService {
-  constructor(private readonly repo: TerritoriesRepository) {}
+  constructor(
+    private readonly repo: TerritoriesRepository,
+    private readonly permissions: PermissionsService,
+  ) {}
 
-  async get(userId: string): Promise<TerritoryEntity> {
+  async get(userId: string, actor: AuthenticatedUser): Promise<TerritoryEntity> {
+    const isSelf = actor.id === userId
+    // Quien asigna tambien lee: el Administrador no administra un equipo, pero
+    // no puede repartir territorio a ciegas.
+    const allowed = isSelf
+      ? await this.permissions.can(actor.roleCode, 'territory', 'read')
+      : (await this.permissions.can(actor.roleCode, 'team', 'read_members')) ||
+        (await this.permissions.can(actor.roleCode, 'territory', 'assign'))
+
+    if (!allowed) {
+      throw new ForbiddenException({
+        code: 'FORBIDDEN',
+        message: isSelf
+          ? 'Tu rol no tiene territorio propio'
+          : 'Ver el territorio de otra persona requiere administrar el equipo',
+      })
+    }
+
+    return this.read(userId)
+  }
+
+  private async read(userId: string): Promise<TerritoryEntity> {
     const user = await this.user(userId)
 
     return { user, zones: (await this.repo.of(userId)).map(toEntity) }
@@ -67,7 +97,9 @@ export class TerritoriesService {
       roleCode: actor.roleCode,
     })
 
-    return this.get(userId)
+    // Quien acaba de asignar puede ver lo que asignó: volver por get() lo
+    // obligaría además a `team:read_members`, que el Administrador no tiene.
+    return this.read(userId)
   }
 
   async holders(zoneId: string): Promise<Array<{ id: string; fullName: string }>> {

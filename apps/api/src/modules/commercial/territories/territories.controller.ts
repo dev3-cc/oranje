@@ -19,10 +19,18 @@ import { TerritoriesService, TerritoryEntity } from './territories.service.js'
 export class TerritoriesController {
   constructor(private readonly territories: TerritoriesService) {}
 
-  @Requires('team', 'read_members')
+  /**
+   * Sin `@Requires`: el permiso depende de QUIÉN pregunta. El propio territorio
+   * se lee con `territory:read` (el BD lo tiene); el de otro exige
+   * `team:read_members` (el BDC). Un solo par en el decorador dejaba al BD
+   * fuera de su pantalla de Mi Territorio.
+   */
   @Get('users/:id/zones')
-  async get(@Param('id', ParseUUIDPipe) id: string): Promise<{ data: TerritoryEntity }> {
-    return { data: await this.territories.get(id) }
+  async get(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: TerritoryEntity }> {
+    return { data: await this.territories.get(id, user) }
   }
 
   @Requires('territory', 'assign')
