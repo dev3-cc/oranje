@@ -39,6 +39,42 @@ export const router = createBrowserRouter([
     Component: RequireSession,
     children: [
       {
+        /**
+         * El apartado del Colaborador (ROL-C-01): web responsive que imita la
+         * app móvil de la maqueta. Vive FUERA del AppShell — el Colaborador no
+         * usa el sidebar del staff.
+         */
+        path: 'colaborador',
+        lazy: async () => {
+          const m = await import('@/features/worker')
+          return { Component: m.MobileShell }
+        },
+        children: [
+          { index: true, element: <Navigate to="/colaborador/alta-2" replace /> },
+          {
+            path: 'alta-2',
+            lazy: async () => {
+              const m = await import('@/features/worker')
+              return { Component: m.Phase2Page }
+            },
+          },
+          {
+            path: 'alta-3',
+            lazy: async () => {
+              const m = await import('@/features/worker')
+              return { Component: m.Phase3Page }
+            },
+          },
+          {
+            path: 'avisos',
+            lazy: async () => {
+              const m = await import('@/features/worker')
+              return { Component: m.NotificationsPage }
+            },
+          },
+        ],
+      },
+      {
         Component: AppShell,
         children: [
           { index: true, element: <Navigate to="/dashboard" replace /> },
