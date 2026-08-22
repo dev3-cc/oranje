@@ -1,49 +1,43 @@
+import type { WorkerApi } from '@/shared/types/apiContract.types'
+
 /**
- * Formas del apartado del Colaborador (web responsive de las pantallas
- * móviles). El contrato propio-de-la-persona (`/workers/me`, `/notifications`)
- * lo está construyendo la sesión de backend; estas formas SON ese contrato.
+ * Formas del apartado del Colaborador, transcritas del contrato REAL
+ * (`me.controller.ts` y `tax-deadline.service.ts` del back).
  *
  * ⚠ Igual que las demás, su lugar es `packages/contracts` (§5).
  */
 
-/** Mi expediente, como me lo devuelve `GET /workers/me`. */
-export interface MyProfile {
-  id: string
-  fullName: string
-  photoUrl: string | null
-  statusCode: string
-  statusLabel: string
-  isProfileComplete: boolean
-  /** Fase 2 · perfil laboral (ids de catálogo; null = sin capturar). */
-  catalogPositionId: string | null
-  englishLevelId: string | null
-  hiringModalityId: string | null
-  experienceLevel: string | null
-  transportType: string | null
-  /** Fase 3 · emergencia y salud. */
-  emergencyContactName: string | null
-  emergencyContactPhone: string | null
-  emergencyContactRelationship: string | null
-  bloodType: string | null
-  medicalNotes: string | null
+/**
+ * El plazo de SSN/ITIN (Reglas del Colaborador): 3 días desde el alta.
+ * Día 4 = NOTICE (aviso interceptor) · día 5 = SUSPENDED (acceso suspendido).
+ * Lo que corre el plazo hoy es SUBIR el documento; la retención del 16% es
+ * independiente y aplica mientras `has_tax_id` sea false (D-27).
+ */
+export interface TaxDeadlineApi {
+  status: 'OK' | 'NOTICE' | 'SUSPENDED'
+  /** Días desde el alta; el día 1 es el del alta. */
+  day: number
+  dueAt: string
+  hasDocument: boolean
+  isDocumentVerified: boolean
+  taxRetentionApplies: boolean
 }
 
-/** Lo que la Fase 2 envía (`PATCH /workers/me`), con los nombres del DTO real. */
-export interface UpdatePhase2Request {
-  catalogPositionId: string
-  englishLevelId: string
-  hiringModalityId: string
-  experienceLevel: string
-  transportType: string
-  photoPath?: string
-}
+/** `GET /workers/me`: mi expediente completo (misma entidad que /workers/:id) + el plazo. */
+export type MyProfile = WorkerApi & { taxDeadline: TaxDeadlineApi }
 
-export interface UpdatePhase3Request {
-  emergencyContactName: string
-  emergencyContactPhone: string
-  emergencyContactRelationship: string
-  bloodType: string
-  medicalNotes?: string | null
+/**
+ * `PATCH /workers/me/signup` — Fases 2 y 3 (cambio del 2026-08-22): de la
+ * Fase 2 solo queda el transporte; posición, modalidad, inglés y experiencia
+ * las decide Oranje en la entrevista. Todos opcionales, al menos uno.
+ */
+export interface CompleteSignupRequest {
+  transportType?: string
+  emergencyContactName?: string
+  emergencyContactPhone?: string
+  emergencyContactRelationship?: string
+  bloodType?: string
+  medicalNotes?: string
 }
 
 /**
@@ -85,61 +79,14 @@ export interface MyNotificationList {
   unread: number
 }
 
-// ── Los enum del CHECK real (create-worker.dto.ts del backend) ──
-
-export const EXPERIENCE_LEVELS = ['NONE', 'ONE_TO_TWO', 'THREE_TO_FIVE', 'MORE_THAN_FIVE'] as const
-export const EXPERIENCE_LABEL: Record<string, string> = {
-  NONE: 'Sin experiencia',
-  ONE_TO_TWO: '1–2 años',
-  THREE_TO_FIVE: '3–5 años',
-  MORE_THAN_FIVE: 'Más de 5 años',
-}
-
-export const TRANSPORT_TYPES = ['OWN', 'PUBLIC', 'OTHER'] as const
-export const TRANSPORT_LABEL: Record<string, string> = {
-  OWN: 'Propio',
-  PUBLIC: 'Público',
-  OTHER: 'Otro',
-}
-
-export const RELATIONSHIPS = [
-  'MOTHER',
-  'FATHER',
-  'SPOUSE',
-  'SIBLING',
-  'CHILD',
-  'FRIEND',
-  'OTHER',
-] as const
-export const RELATIONSHIP_LABEL: Record<string, string> = {
-  MOTHER: 'Madre',
-  FATHER: 'Padre',
-  SPOUSE: 'Cónyuge',
-  SIBLING: 'Hermano/a',
-  CHILD: 'Hijo/a',
-  FRIEND: 'Amistad',
-  OTHER: 'Otro',
-}
-
-export const BLOOD_TYPES = [
-  'A_POS',
-  'A_NEG',
-  'B_POS',
-  'B_NEG',
-  'AB_POS',
-  'AB_NEG',
-  'O_POS',
-  'O_NEG',
-  'UNKNOWN',
-] as const
-export const BLOOD_LABEL: Record<string, string> = {
-  A_POS: 'A+',
-  A_NEG: 'A−',
-  B_POS: 'B+',
-  B_NEG: 'B−',
-  AB_POS: 'AB+',
-  AB_NEG: 'AB−',
-  O_POS: 'O+',
-  O_NEG: 'O−',
-  UNKNOWN: 'No sé',
-}
+// ── Los enum del CHECK real viven en shared: también los usa el Expediente ──
+export {
+  BLOOD_LABEL,
+  BLOOD_TYPES,
+  EXPERIENCE_LABEL,
+  EXPERIENCE_LEVELS,
+  RELATIONSHIP_LABEL,
+  RELATIONSHIPS,
+  TRANSPORT_LABEL,
+  TRANSPORT_TYPES,
+} from '@/shared/constants/workerEnums'

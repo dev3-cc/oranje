@@ -1,37 +1,60 @@
-import type { MyProfile, NotificationApi, NotificationBoardApi } from '../types/worker.types'
+import type {
+  CompleteSignupRequest,
+  MyProfile,
+  NotificationApi,
+  NotificationBoardApi,
+} from '../types/worker.types'
 
-/*
- * ⚠ Import entre features, permitido SOLO aquí: los catálogos de posición,
- * inglés y modalidad que la Fase 2 elige los registra Requisiciones.
- */
-// eslint-disable-next-line no-restricted-imports
-import { registerRequisitionsMocks } from '@/features/requisitions/api/requisitionsMocks'
 import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
 import type { ApiEnvelope } from '@/shared/types/apiContract.types'
 
 /**
- * Fixtures del apartado del Colaborador, con la forma del contrato que la
- * sesión de backend está construyendo. «Rosa N.» de la maqueta: en Blanco,
- * con la Fase 1 hecha y las fases 2-3 pendientes.
+ * Fixtures del apartado del Colaborador con las formas del contrato real.
+ * «Rosa Navarro»: en BLANCO, con la Fase 1 completa (identidad + las 4
+ * decisiones de Oranje, cambio del 2026-08-22) y las fases 2-3 pendientes.
  */
 
 const profile: MyProfile = {
   id: 'wrk-yo',
   fullName: 'Rosa Navarro',
   photoUrl: null,
-  statusCode: 'WHITE',
-  statusLabel: 'Pre-asignación',
-  isProfileComplete: false,
-  catalogPositionId: null,
-  englishLevelId: null,
-  hiringModalityId: null,
-  experienceLevel: null,
+  birthDate: '1998-04-12',
+  age: 28,
+  gender: 'FEMALE',
+  phone: '+1 404 555 0188',
+  address: '1280 Peachtree St NE, Atlanta',
+  zone: { id: 'centro', code: 'CENTRO', name: 'Zona Centro' },
+  /** Los 4 de Oranje ya vienen de la entrevista: no los captura la persona. */
+  position: { id: 'pos-hk', code: 'HOUSEKEEPER', name: 'Housekeeper' },
+  englishLevel: { id: 'eng-ba', code: 'BASIC', name: 'Básico' },
+  hiringModality: { id: 'mod-ft', code: 'FULL_TIME', name: 'Tiempo completo' },
+  experienceLevel: 'ONE_TO_TWO',
   transportType: null,
-  emergencyContactName: null,
-  emergencyContactPhone: null,
-  emergencyContactRelationship: null,
+  emergencyContact: null,
   bloodType: null,
-  medicalNotes: null,
+  state: { code: 'WHITE', color: 'Blanco', name: 'Pre-asignación' },
+  isProfileComplete: false,
+  hasTaxId: false,
+  hasAccount: true,
+  isBlacklisted: false,
+  createdAt: isoDaysAgo(1),
+  taxDeadline: {
+    status: 'OK',
+    day: 2,
+    dueAt: isoDaysFromNow(2),
+    hasDocument: false,
+    isDocumentVerified: false,
+    /** D-27: sin cifrado conectado, la retención aplica a todos. */
+    taxRetentionApplies: true,
+  },
+}
+
+function isoDaysAgo(days: number): string {
+  return new Date(Date.now() - days * 86_400_000).toISOString()
+}
+
+function isoDaysFromNow(days: number): string {
+  return new Date(Date.now() + days * 86_400_000).toISOString()
 }
 
 function isoHoursAgo(hours: number): string {
@@ -44,7 +67,7 @@ const notifications: NotificationApi[] = [
     id: 'ntf-0001',
     type: { code: 'PROFILE_PHASE_PENDING', name: 'Alta pendiente', module: 'worker' },
     title: 'Completa tu alta',
-    body: 'Te falta la Fase 2 (perfil laboral) y la Fase 3 (emergencia y salud) para que la Reclutadora pueda validarte.',
+    body: 'Te falta la Fase 2 (transporte y SSN/ITIN) y la Fase 3 (emergencia y salud) para que la Reclutadora pueda validarte.',
     entity: { type: 'worker', id: 'wrk-yo' },
     createdAt: isoHoursAgo(4),
     readAt: null,
@@ -74,49 +97,39 @@ const routes: readonly MockRoute[] = [
     method: 'GET',
     path: '/workers/me',
     /** Copia, no referencia: RTK Query congela lo que recibe y el PATCH muta. */
-    resolve: (): ApiEnvelope<MyProfile> => ({ data: { ...profile } }),
+    resolve: (): ApiEnvelope<MyProfile> => ({
+      data: { ...profile, taxDeadline: { ...profile.taxDeadline } },
+    }),
   },
   {
     method: 'PATCH',
-    path: '/workers/me',
+    path: '/workers/me/signup',
     resolve: ({ body }): ApiEnvelope<MyProfile> => {
-      const payload = (body ?? {}) as Partial<MyProfile> & { photoPath?: string }
-      Object.assign(profile, {
-        ...(payload.catalogPositionId !== undefined
-          ? { catalogPositionId: payload.catalogPositionId }
-          : {}),
-        ...(payload.englishLevelId !== undefined ? { englishLevelId: payload.englishLevelId } : {}),
-        ...(payload.hiringModalityId !== undefined
-          ? { hiringModalityId: payload.hiringModalityId }
-          : {}),
-        ...(payload.experienceLevel !== undefined
-          ? { experienceLevel: payload.experienceLevel }
-          : {}),
-        ...(payload.transportType !== undefined ? { transportType: payload.transportType } : {}),
-        ...(payload.emergencyContactName !== undefined
-          ? { emergencyContactName: payload.emergencyContactName }
-          : {}),
-        ...(payload.emergencyContactPhone !== undefined
-          ? { emergencyContactPhone: payload.emergencyContactPhone }
-          : {}),
-        ...(payload.emergencyContactRelationship !== undefined
-          ? { emergencyContactRelationship: payload.emergencyContactRelationship }
-          : {}),
-        ...(payload.bloodType !== undefined ? { bloodType: payload.bloodType } : {}),
-        ...(payload.medicalNotes !== undefined ? { medicalNotes: payload.medicalNotes } : {}),
-      })
-      /** Los 9 de `vw_worker`: con fase 2 y 3 completas, el perfil cierra. */
+      const payload = (body ?? {}) as CompleteSignupRequest
+      if (payload.transportType !== undefined) profile.transportType = payload.transportType
+      if (payload.bloodType !== undefined) profile.bloodType = payload.bloodType
+      if (
+        payload.emergencyContactName !== undefined ||
+        payload.emergencyContactPhone !== undefined ||
+        payload.emergencyContactRelationship !== undefined
+      ) {
+        profile.emergencyContact = {
+          name: payload.emergencyContactName ?? profile.emergencyContact?.name ?? '',
+          phone: payload.emergencyContactPhone ?? profile.emergencyContact?.phone ?? '',
+          relationship:
+            payload.emergencyContactRelationship ?? profile.emergencyContact?.relationship ?? '',
+        }
+      }
+      /** Los 9 de `vw_worker`: con Fase 1 hecha, faltan transporte + emergencia + sangre. */
       profile.isProfileComplete =
-        profile.catalogPositionId !== null &&
-        profile.englishLevelId !== null &&
-        profile.hiringModalityId !== null &&
+        profile.position !== null &&
+        profile.englishLevel !== null &&
+        profile.hiringModality !== null &&
         profile.experienceLevel !== null &&
         profile.transportType !== null &&
-        profile.emergencyContactName !== null &&
-        profile.emergencyContactPhone !== null &&
-        profile.emergencyContactRelationship !== null &&
+        profile.emergencyContact !== null &&
         profile.bloodType !== null
-      return { data: { ...profile } }
+      return { data: { ...profile, taxDeadline: { ...profile.taxDeadline } } }
     },
   },
   {
@@ -155,6 +168,5 @@ let areRoutesRegistered = false
 export function registerWorkerMocks(): void {
   if (areRoutesRegistered) return
   areRoutesRegistered = true
-  registerRequisitionsMocks()
   registerMockRoutes(routes)
 }

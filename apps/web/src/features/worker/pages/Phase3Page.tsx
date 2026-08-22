@@ -1,9 +1,14 @@
 import { useEffect, useState, type ReactNode } from 'react'
 
-import { useGetMyProfileQuery, useUpdatePhase3Mutation } from '../api/workerApi'
-import { BLOOD_LABEL, BLOOD_TYPES, RELATIONSHIP_LABEL, RELATIONSHIPS } from '../types/worker.types'
+import { useCompleteSignupMutation, useGetMyProfileQuery } from '../api/workerApi'
 
 import { Button } from '@/shared/components/Button'
+import {
+  BLOOD_LABEL,
+  BLOOD_TYPES,
+  RELATIONSHIP_LABEL,
+  RELATIONSHIPS,
+} from '@/shared/constants/workerEnums'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const CONTROL_CLASS =
@@ -35,7 +40,7 @@ function Field({
  */
 export function Phase3Page(): ReactNode {
   const { data: profile } = useGetMyProfileQuery()
-  const [save, { isLoading, isError, isSuccess }] = useUpdatePhase3Mutation()
+  const [save, { isLoading, isError, isSuccess }] = useCompleteSignupMutation()
 
   const [draft, setDraft] = useState({
     emergencyContactName: '',
@@ -47,13 +52,13 @@ export function Phase3Page(): ReactNode {
 
   useEffect(() => {
     if (!profile) return
-    setDraft({
-      emergencyContactName: profile.emergencyContactName ?? '',
-      emergencyContactPhone: profile.emergencyContactPhone ?? '',
-      emergencyContactRelationship: profile.emergencyContactRelationship ?? '',
+    setDraft((previous) => ({
+      ...previous,
+      emergencyContactName: profile.emergencyContact?.name ?? '',
+      emergencyContactPhone: profile.emergencyContact?.phone ?? '',
+      emergencyContactRelationship: profile.emergencyContact?.relationship ?? '',
       bloodType: profile.bloodType ?? '',
-      medicalNotes: profile.medicalNotes ?? '',
-    })
+    }))
   }, [profile])
 
   const update =
@@ -77,7 +82,8 @@ export function Phase3Page(): ReactNode {
         emergencyContactPhone: draft.emergencyContactPhone.trim(),
         emergencyContactRelationship: draft.emergencyContactRelationship,
         bloodType: draft.bloodType,
-        medicalNotes: draft.medicalNotes.trim() === '' ? null : draft.medicalNotes.trim(),
+        /** El DTO no acepta null: vacío se omite, no se manda. */
+        ...(draft.medicalNotes.trim() !== '' ? { medicalNotes: draft.medicalNotes.trim() } : {}),
       }).unwrap()
     } catch {
       /* el error queda en `isError` */

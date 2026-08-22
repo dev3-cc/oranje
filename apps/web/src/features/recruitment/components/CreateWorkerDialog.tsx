@@ -5,6 +5,7 @@ import { useCreateWorkerMutation, useGetPoolOptionsQuery } from '../api/poolApi'
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
 import { PhotoUpload } from '@/shared/components/PhotoUpload'
+import { EXPERIENCE_LABEL, EXPERIENCE_LEVELS } from '@/shared/constants/workerEnums'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const CONTROL_CLASS =
@@ -19,7 +20,7 @@ const GENDERS = [
 /** Qué pasa después del alta: las cinco verdades de la maqueta, tal cual. */
 const AFTERMATH = [
   'Nace en BLANCO: la fila existe a medias, eso ES el estado (D-26).',
-  'El colaborador completa Fase 2 (perfil laboral y SSN/ITIN opcional) y Fase 3 (emergencia y salud) en la app.',
+  'El colaborador completa Fase 2 (transporte y SSN/ITIN, con 3 días de plazo) y Fase 3 (emergencia y salud) en la app.',
   'is_profile_complete vive en vw_worker: los campos obligatorios los declara la vista, sin NOT NULL.',
   'La Reclutadora valida el alta (RF-08) → pasa a VERDE FUERTE y entra al Pool.',
   'Sin SSN/ITIN, la retención del 16% aplica automática (D-27).',
@@ -34,6 +35,11 @@ interface Draft {
   phone: string
   address: string
   zoneId: string
+  /** Decisiones de Oranje (2026-08-22): las captura la Reclutadora, no el candidato. */
+  catalogPositionId: string
+  hiringModalityId: string
+  englishLevelId: string
+  experienceLevel: string
 }
 
 const EMPTY_DRAFT: Draft = {
@@ -44,13 +50,18 @@ const EMPTY_DRAFT: Draft = {
   phone: '',
   address: '',
   zoneId: '',
+  catalogPositionId: '',
+  hiringModalityId: '',
+  englishLevelId: '',
+  experienceLevel: '',
 }
 
 /**
- * Crear colaborador — Fase 1 · Entrevista (maqueta de la Reclutadora): solo la
- * identidad. El resto del expediente llega en fases por la app del colaborador,
- * y por eso la persona nace en BLANCO con el perfil incompleto — es el diseño,
- * no un hueco (`POST /workers`, D-26).
+ * Crear colaborador — Fase 1 · Entrevista (maqueta de la Reclutadora): la
+ * identidad MÁS las decisiones de Oranje sobre el perfil laboral — posición,
+ * modalidad, inglés y experiencia dejaron de ser datos que el colaborador
+ * declara (Colaborador.md, 2026-08-22). Van opcionales: la fila nace a medias
+ * a propósito, eso ES el estado Blanco (`POST /workers`, D-26).
  */
 export function CreateWorkerDialog({
   isOpen,
@@ -92,6 +103,10 @@ export function CreateWorkerDialog({
         address: draft.address.trim(),
         zoneId: draft.zoneId,
         ...(draft.photoPath !== '' ? { photoPath: draft.photoPath } : {}),
+        ...(draft.catalogPositionId !== '' ? { catalogPositionId: draft.catalogPositionId } : {}),
+        ...(draft.hiringModalityId !== '' ? { hiringModalityId: draft.hiringModalityId } : {}),
+        ...(draft.englishLevelId !== '' ? { englishLevelId: draft.englishLevelId } : {}),
+        ...(draft.experienceLevel !== '' ? { experienceLevel: draft.experienceLevel } : {}),
       }).unwrap()
       onClose()
     } catch {
@@ -246,6 +261,105 @@ export function CreateWorkerDialog({
               update('photoPath')(path)
             }}
           />
+
+          <legend className="mt-2 text-sm font-semibold text-ink">
+            Decisiones de Oranje sobre su perfil
+          </legend>
+          <p className="-mt-2 text-xs text-ink-4">
+            Las define la Reclutadora en la entrevista; el candidato ya no las declara
+          </p>
+
+          <div className="grid grid-cols-2 gap-4">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-sm text-ink-3">
+                Posición
+                {IS_DEV_UI && <code className="text-xs text-ink-4"> · catalog_position_id</code>}
+              </span>
+              <select
+                value={draft.catalogPositionId}
+                onChange={(event) => {
+                  update('catalogPositionId')(event.target.value)
+                }}
+                aria-label="Posición"
+                className={CONTROL_CLASS}
+              >
+                <option value="">Sin definir aún…</option>
+                {(options?.positions ?? []).map((position) => (
+                  <option key={position.id} value={position.id}>
+                    {position.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <span className="text-sm text-ink-3">
+                Modalidad
+                {IS_DEV_UI && <code className="text-xs text-ink-4"> · hiring_modality_id</code>}
+              </span>
+              <select
+                value={draft.hiringModalityId}
+                onChange={(event) => {
+                  update('hiringModalityId')(event.target.value)
+                }}
+                aria-label="Modalidad"
+                className={CONTROL_CLASS}
+              >
+                <option value="">Sin definir aún…</option>
+                {(options?.modalities ?? []).map((modality) => (
+                  <option key={modality.id} value={modality.id}>
+                    {modality.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <label className="flex flex-col gap-1.5">
+              <span className="text-sm text-ink-3">
+                Nivel de inglés
+                {IS_DEV_UI && <code className="text-xs text-ink-4"> · english_level_id</code>}
+              </span>
+              <select
+                value={draft.englishLevelId}
+                onChange={(event) => {
+                  update('englishLevelId')(event.target.value)
+                }}
+                aria-label="Nivel de inglés"
+                className={CONTROL_CLASS}
+              >
+                <option value="">Sin definir aún…</option>
+                {(options?.englishLevels ?? []).map((level) => (
+                  <option key={level.id} value={level.id}>
+                    {level.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1.5">
+              <span className="text-sm text-ink-3">
+                Experiencia
+                {IS_DEV_UI && <code className="text-xs text-ink-4"> · experience_level</code>}
+              </span>
+              <select
+                value={draft.experienceLevel}
+                onChange={(event) => {
+                  update('experienceLevel')(event.target.value)
+                }}
+                aria-label="Experiencia"
+                className={CONTROL_CLASS}
+              >
+                <option value="">Sin definir aún…</option>
+                {EXPERIENCE_LEVELS.map((level) => (
+                  <option key={level} value={level}>
+                    {EXPERIENCE_LABEL[level]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         </fieldset>
 
         <aside className="rounded-lg bg-surface-2 p-4">

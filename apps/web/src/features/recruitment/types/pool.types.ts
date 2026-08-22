@@ -79,4 +79,12 @@ export interface CreateWorkerRequest {
   phone: string
   address: string
   zoneId: string
+  /**
+   * Decisiones de Oranje (2026-08-22): las captura la Reclutadora en la
+   * entrevista. Opcionales: la fila nace a medias a propósito (Blanco).
+   */
+  catalogPositionId?: string
+  hiringModalityId?: string
+  englishLevelId?: string
+  experienceLevel?: string
 }

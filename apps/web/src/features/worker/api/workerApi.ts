@@ -1,57 +1,22 @@
 import type {
+  CompleteSignupRequest,
   MyNotificationList,
   MyProfile,
   NotificationApi,
   NotificationBoardApi,
-  UpdatePhase2Request,
-  UpdatePhase3Request,
 } from '../types/worker.types'
 
 import { registerWorkerMocks } from './workerMocks'
 
 import { baseApi } from '@/app/baseApi'
-import type { ApiEnvelope, CatalogItemApi } from '@/shared/types/apiContract.types'
+import type { ApiEnvelope } from '@/shared/types/apiContract.types'
 
 /**
- * El contrato PROPIO del Colaborador: `GET/PATCH /workers/me` (mi expediente,
- * solo mi fila) y `GET /notifications` + marcar leída (solo las mías, por el
- * modelo de Notificaciones). La sesión de backend lo está construyendo con
- * estos nombres; mientras, los mocks responden esta misma forma.
+ * El contrato PROPIO del Colaborador (todo `_own`, el alcance sale del token):
+ * `GET /workers/me` (mi expediente + el plazo de SSN/ITIN), `PATCH
+ * /workers/me/signup` (fases 2 y 3) y mis notificaciones.
  */
 registerWorkerMocks()
-
-/** `fetchWithBQ` de un `queryFn`: el tipo exacto no está exportado por RTK. */
-type FetchWithBQ = (args: string) => Promise<{ data?: unknown; error?: unknown }>
-
-export interface WorkerCatalogs {
-  positions: CatalogItemApi[]
-  englishLevels: CatalogItemApi[]
-  modalities: CatalogItemApi[]
-}
-
-/** Los 3 catálogos que la Fase 2 elige, compuestos en el front (D-28). */
-async function fetchCatalogs(
-  fetchWithBQ: FetchWithBQ,
-): Promise<{ data: WorkerCatalogs } | { error: unknown }> {
-  const [positionsRes, englishRes, modalitiesRes] = await Promise.all([
-    fetchWithBQ('/catalogs/positions'),
-    fetchWithBQ('/catalogs/english-levels'),
-    fetchWithBQ('/catalogs/hiring-modalities'),
-  ])
-  for (const res of [positionsRes, englishRes, modalitiesRes]) {
-    if (res.error) return { error: res.error }
-  }
-  const items = (res: { data?: unknown }): CatalogItemApi[] =>
-    (res.data as ApiEnvelope<CatalogItemApi[]>).data
-
-  return {
-    data: {
-      positions: items(positionsRes),
-      englishLevels: items(englishRes),
-      modalities: items(modalitiesRes),
-    },
-  }
-}
 
 function toMyNotification(raw: NotificationApi): MyNotificationList['items'][number] {
   return {
@@ -74,15 +39,9 @@ export const workerApi = baseApi.injectEndpoints({
       providesTags: [{ type: 'Worker' as const, id: 'ME' }],
     }),
 
-    /** Fase 2 · perfil laboral (RF-C-01). Sigo en BLANCO hasta que validen. */
-    updatePhase2: build.mutation<unknown, UpdatePhase2Request>({
-      query: (body) => ({ url: '/workers/me', method: 'PATCH', body }),
-      invalidatesTags: [{ type: 'Worker' as const, id: 'ME' }],
-    }),
-
-    /** Fase 3 · emergencia y salud (RF-C-02). */
-    updatePhase3: build.mutation<unknown, UpdatePhase3Request>({
-      query: (body) => ({ url: '/workers/me', method: 'PATCH', body }),
+    /** Fases 2 y 3 (RF-C-01/02): campos opcionales, al menos uno por envío. */
+    completeSignup: build.mutation<unknown, CompleteSignupRequest>({
+      query: (body) => ({ url: '/workers/me/signup', method: 'PATCH', body }),
       invalidatesTags: [{ type: 'Worker' as const, id: 'ME' }],
     }),
 
@@ -107,21 +66,12 @@ export const workerApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [{ type: 'Worker' as const, id: 'NOTIFICATIONS' }],
     }),
-
-    getWorkerCatalogs: build.query<WorkerCatalogs, void>({
-      queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
-        const result = await fetchCatalogs(fetchWithBQ as FetchWithBQ)
-        return 'error' in result ? { error: result.error as never } : { data: result.data }
-      },
-    }),
   }),
 })
 
 export const {
   useGetMyProfileQuery,
-  useUpdatePhase2Mutation,
-  useUpdatePhase3Mutation,
+  useCompleteSignupMutation,
   useGetMyNotificationsQuery,
   useMarkNotificationReadMutation,
-  useGetWorkerCatalogsQuery,
 } = workerApi

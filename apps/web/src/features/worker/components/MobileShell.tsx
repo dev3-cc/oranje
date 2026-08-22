@@ -4,14 +4,19 @@ import { NavLink, Outlet } from 'react-router'
 
 import { useGetMyNotificationsQuery, useGetMyProfileQuery } from '../api/workerApi'
 
+import { SuspendedScreen } from './TaxDeadlineBanner'
+
 /**
  * El shell del apartado del Colaborador: web responsive que imita la app
  * móvil de la maqueta (columna de 390px, encabezado ORANJE + nombre corto).
  * No lleva el sidebar del staff — el Colaborador no opera ese sistema.
+ * Día 5 sin SSN/ITIN: el acceso se suspende y el shell bloquea todo.
  */
 export function MobileShell(): ReactNode {
   const { data: profile } = useGetMyProfileQuery()
   const { data: board } = useGetMyNotificationsQuery()
+
+  const isSuspended = profile?.taxDeadline.status === 'SUSPENDED'
 
   /** El contador viene del `meta.unread` del board, no de contar la página. */
   const unread = board?.unread ?? 0
@@ -59,9 +64,7 @@ export function MobileShell(): ReactNode {
           </NavLink>
         </nav>
 
-        <main className="flex-1 px-5 py-5">
-          <Outlet />
-        </main>
+        <main className="flex-1 px-5 py-5">{isSuspended ? <SuspendedScreen /> : <Outlet />}</main>
       </div>
     </div>
   )
