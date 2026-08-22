@@ -1,6 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
+import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
 import { PoolPage } from './PoolPage'
@@ -13,11 +14,15 @@ const SLOW = { timeout: 4000 }
 /**
  * El Pool va contra `GET /workers` crudo: siete personas de fixture con los
  * catálogos por id (los mismos de Requisiciones) y los estados del seed.
+ * Con router: el nombre de cada fila es un Link al Expediente.
  */
 function renderPool(): void {
+  const router = createMemoryRouter([{ path: '/pool-colaboradores', element: <PoolPage /> }], {
+    initialEntries: ['/pool-colaboradores'],
+  })
   render(
     <Provider store={store}>
-      <PoolPage />
+      <RouterProvider router={router} />
     </Provider>,
   )
 }

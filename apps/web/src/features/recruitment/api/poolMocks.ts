@@ -12,6 +12,10 @@ import type {
   PaginatedEnvelope,
   StatusRefApi,
   WorkerApi,
+  WorkerDocumentApi,
+  WorkerDocumentListApi,
+  WorkerHistoryEntryApi,
+  WorkerTransitionApi,
 } from '@/shared/types/apiContract.types'
 
 /**
@@ -157,6 +161,11 @@ const workers: WorkerApi[] = [
   }),
 ]
 
+/** Ana llegó a la Fase 3: su expediente sí tiene contacto de emergencia. */
+Object.assign(workers[0] as WorkerApi, {
+  emergencyContact: { name: 'Rubén Sandoval', phone: '+1 404 512 8890', relationship: 'SIBLING' },
+})
+
 const routes: readonly MockRoute[] = [
   {
     method: 'GET',
@@ -178,7 +187,11 @@ const routes: readonly MockRoute[] = [
         if (englishId && worker.englishLevel?.id !== englishId) return false
         return true
       })
-      return { data: items, meta: { page: 1, limit: 100, total: items.length, totalPages: 1 } }
+      /** Copias, no referencias: RTK congela lo servido y las transiciones mutan. */
+      return {
+        data: items.map((worker) => ({ ...worker })),
+        meta: { page: 1, limit: 100, total: items.length, totalPages: 1 },
+      }
     },
   },
   {
@@ -193,6 +206,10 @@ const routes: readonly MockRoute[] = [
         address?: string
         zoneId?: string
         photoPath?: string
+        catalogPositionId?: string
+        hiringModalityId?: string
+        englishLevelId?: string
+        experienceLevel?: string
       }
       if (!payload.fullName || !payload.birthDate || !payload.zoneId) {
         throw new Error('Faltan datos del alta')
@@ -204,6 +221,9 @@ const routes: readonly MockRoute[] = [
           Math.floor((Date.now() - new Date(payload.birthDate).getTime()) / 31_557_600_000),
         ),
         zoneId: payload.zoneId,
+        ...(payload.catalogPositionId ? { positionId: payload.catalogPositionId } : {}),
+        ...(payload.hiringModalityId ? { modalityId: payload.hiringModalityId } : {}),
+        ...(payload.englishLevelId ? { englishId: payload.englishLevelId } : {}),
         state: 'WHITE',
         isProfileComplete: false,
       })
@@ -217,10 +237,167 @@ const routes: readonly MockRoute[] = [
     resolve: ({ params }): ApiEnvelope<WorkerApi> => {
       const found = workers.find((worker) => worker.id === params.workerId)
       if (!found) throw new Error('WORKER_NOT_FOUND')
-      return { data: found }
+      return { data: { ...found } }
     },
   },
+  {
+    method: 'GET',
+    path: '/workers/:workerId/history',
+    resolve: ({ params }): ApiEnvelope<WorkerHistoryEntryApi[]> => ({
+      data: historyOf(params.workerId ?? '').map((entry) => ({ ...entry })),
+    }),
+  },
+  {
+    method: 'GET',
+    path: '/workers/:workerId/transitions',
+    resolve: ({ params }): ApiEnvelope<WorkerTransitionApi[]> => {
+      const found = workers.find((worker) => worker.id === params.workerId)
+      if (!found) throw new Error('WORKER_NOT_FOUND')
+      return { data: transitionsFor(found.state.code) }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/workers/:workerId/transitions',
+    resolve: ({ params, body }): ApiEnvelope<WorkerApi> => {
+      const found = workers.find((worker) => worker.id === params.workerId)
+      if (!found) throw new Error('WORKER_NOT_FOUND')
+      const payload = (body ?? {}) as { toState?: string; note?: string }
+      const allowed = transitionsFor(found.state.code)
+      const option = allowed.find((transition) => transition.toState === payload.toState)
+      if (!option || !payload.toState) throw new Error('TRANSITION_NOT_ALLOWED')
+      const target = STATE[payload.toState]
+      if (!target) throw new Error('TRANSITION_NOT_ALLOWED')
+      historyOf(found.id).unshift({
+        id: `wsh-${String(Date.now())}`,
+        fromState: found.state.code,
+        toState: payload.toState,
+        reason: payload.note ?? null,
+        occurredAt: new Date().toISOString(),
+        userName: 'Diana Roldán',
+      })
+      found.state = target
+      return { data: { ...found } }
+    },
+  },
+  {
+    method: 'GET',
+    path: '/workers/:workerId/documents',
+    resolve: ({ params }): WorkerDocumentListApi => ({
+      data: (DOCUMENTS[params.workerId ?? ''] ?? []).map((doc) => ({ ...doc })),
+      /** D-27: el cifrado no está conectado — la retención del 16% aplica a todos. */
+      meta: { hasTaxId: false, taxRetentionApplies: true },
+    }),
+  },
 ]
+
+/**
+ * Lo que la RECLUTADORA (ROL-R-01) puede disparar, copiado del seed real:
+ * valida el alta (WHITE→STRONG_GREEN, RF-08) y asigna temporal (→BROWN, con
+ * cancelación manual que devuelve al previo). Lo demás es del sistema, del
+ * hotel o del Inspector, así que aquí la lista sale vacía.
+ */
+function transitionsFor(stateCode: string): WorkerTransitionApi[] {
+  switch (stateCode) {
+    case 'WHITE':
+      return [{ toState: 'STRONG_GREEN', requiresReason: false }]
+    case 'STRONG_GREEN':
+    case 'YELLOW':
+      return [{ toState: 'BROWN', requiresReason: false }]
+    case 'BROWN':
+      return [{ toState: 'STRONG_GREEN', requiresReason: false }]
+    default:
+      return []
+  }
+}
+
+const HISTORY: Record<string, WorkerHistoryEntryApi[]> = {
+  /** Ana: el recorrido real del seed — alta, validación y una temporal cerrada. */
+  'wrk-0001': [
+    {
+      id: 'wsh-0004',
+      fromState: 'BROWN',
+      toState: 'STRONG_GREEN',
+      reason: 'Vencen los días asignados',
+      occurredAt: '2026-08-10T15:00:00.000Z',
+      userName: 'Sistema',
+    },
+    {
+      id: 'wsh-0003',
+      fromState: 'STRONG_GREEN',
+      toState: 'BROWN',
+      reason: null,
+      occurredAt: '2026-08-06T15:00:00.000Z',
+      userName: 'Diana Roldán',
+    },
+    {
+      id: 'wsh-0002',
+      fromState: 'WHITE',
+      toState: 'STRONG_GREEN',
+      reason: 'Alta completada (RF-08)',
+      occurredAt: '2026-08-03T15:00:00.000Z',
+      userName: 'Diana Roldán',
+    },
+    {
+      id: 'wsh-0001',
+      fromState: null,
+      toState: 'WHITE',
+      reason: 'Fase 1 · entrevista',
+      occurredAt: '2026-08-01T15:00:00.000Z',
+      userName: 'Diana Roldán',
+    },
+  ],
+}
+
+/** Todo worker tiene al menos su nacimiento en BLANCO (Fase 1). */
+function historyOf(workerId: string): WorkerHistoryEntryApi[] {
+  HISTORY[workerId] ??= [
+    {
+      id: `wsh-${workerId}`,
+      fromState: null,
+      toState: 'WHITE',
+      reason: 'Fase 1 · entrevista',
+      occurredAt: '2026-08-01T15:00:00.000Z',
+      userName: 'Diana Roldán',
+    },
+  ]
+  return HISTORY[workerId]
+}
+
+const DOCUMENTS: Record<string, WorkerDocumentApi[]> = {
+  'wrk-0001': [
+    {
+      id: 'doc-0001',
+      documentType: 'ID',
+      filePath: 'workers/document/ine-frente.pdf',
+      url: null,
+      isVerified: true,
+      verifiedBy: { id: 'usr-recl', fullName: 'Diana Roldán' },
+      verifiedAt: '2026-08-03T15:00:00.000Z',
+      createdAt: '2026-08-01T15:00:00.000Z',
+    },
+    {
+      id: 'doc-0002',
+      documentType: 'PROOF_OF_ADDRESS',
+      filePath: 'workers/document/cfe-julio.pdf',
+      url: null,
+      isVerified: true,
+      verifiedBy: { id: 'usr-recl', fullName: 'Diana Roldán' },
+      verifiedAt: '2026-08-03T15:00:00.000Z',
+      createdAt: '2026-08-01T15:00:00.000Z',
+    },
+    {
+      id: 'doc-0003',
+      documentType: 'SSN_ITIN',
+      filePath: 'workers/document/itin.pdf',
+      url: null,
+      isVerified: false,
+      verifiedBy: null,
+      verifiedAt: null,
+      createdAt: '2026-08-02T15:00:00.000Z',
+    },
+  ],
+}
 
 /** Para los mocks hermanos de la feature (Blacklist) que solo tienen el id. */
 export function mockWorkerName(workerId: string): string {

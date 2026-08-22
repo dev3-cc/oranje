@@ -199,6 +199,14 @@ export const router = createBrowserRouter([
             },
           },
           {
+            /* El Expediente cuelga del Pool: se llega desde el nombre de la fila. */
+            path: 'pool-colaboradores/:workerId',
+            lazy: async () => {
+              const m = await import('@/features/recruitment')
+              return { Component: m.WorkerDetailPage }
+            },
+          },
+          {
             path: 'reportes',
             lazy: async () => {
               const m = await import('@/features/reports')

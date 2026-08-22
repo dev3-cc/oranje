@@ -275,6 +275,42 @@ export interface WorkerApi {
   createdAt: string
 }
 
+/** Una fila de `GET /workers/:id/history` — `personal.worker_state_history`. */
+export interface WorkerHistoryEntryApi {
+  id: string
+  /** `null` en la primera: nacer en BLANCO no es una transición. */
+  fromState: string | null
+  toState: string
+  reason: string | null
+  occurredAt: string
+  userName: string
+}
+
+/** Una opción de `GET /workers/:id/transitions`, ya filtrada por MI rol. */
+export interface WorkerTransitionApi {
+  toState: string
+  requiresReason: boolean
+}
+
+/** Una fila de `GET /workers/:id/documents` — `personal.worker_document`. */
+export interface WorkerDocumentApi {
+  id: string
+  documentType: string
+  filePath: string
+  /** URL firmada para abrirlo; caduca en una hora y es null si no se pudo firmar. */
+  url: string | null
+  isVerified: boolean
+  verifiedBy: { id: string; fullName: string } | null
+  verifiedAt: string | null
+  createdAt: string
+}
+
+export interface WorkerDocumentListApi {
+  data: WorkerDocumentApi[]
+  /** D-27: sin el cifrado conectado, `hasTaxId` es false y la retención aplica. */
+  meta: { hasTaxId: boolean; taxRetentionApplies: boolean }
+}
+
 /** Una marca del ponche (`operations.punch_mark`), como la sirve la API. */
 export interface TimesheetPunchApi {
   id: string

@@ -1,5 +1,6 @@
 import { DataTable, type ColumnDef } from '@oranje/ui'
 import type { ReactNode } from 'react'
+import { Link } from 'react-router'
 
 import type { PoolWorker } from '../types/pool.types'
 
@@ -45,9 +46,13 @@ const COLUMNS: ColumnDef<PoolWorker, unknown>[] = [
             {initialsOf(row.original.fullName)}
           </span>
         )}
-        <span className="text-base font-bold whitespace-nowrap text-ink">
+        {/* El nombre abre el Expediente: el detalle cuelga de la lista. */}
+        <Link
+          to={`/pool-colaboradores/${row.original.id}`}
+          className="text-base font-bold whitespace-nowrap text-ink hover:text-o-700 hover:underline"
+        >
           {row.original.fullName}
-        </span>
+        </Link>
       </span>
     ),
   },
