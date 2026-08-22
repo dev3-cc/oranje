@@ -252,6 +252,8 @@ export interface AssignmentApi {
 export interface WorkerApi {
   id: string
   fullName: string
+  /** La foto se captura en la app móvil (Fase 2); no integra el perfil completo. */
+  photoUrl: string | null
   birthDate: string
   age: number
   gender: string

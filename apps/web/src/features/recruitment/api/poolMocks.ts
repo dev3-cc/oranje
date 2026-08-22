@@ -56,6 +56,7 @@ let workerSequence = 0
 
 function buildWorker(input: {
   fullName: string
+  photoUrl?: string
   age: number
   zoneId: string
   positionId?: string
@@ -69,6 +70,8 @@ function buildWorker(input: {
   return {
     id: `wrk-${String(workerSequence).padStart(4, '0')}`,
     fullName: input.fullName,
+    /** La foto llega por URL (Fase 1 web) o por la app móvil (Fase 2). */
+    photoUrl: input.photoUrl ?? null,
     birthDate: '1995-01-01',
     age: input.age,
     gender: 'FEMALE',
@@ -189,6 +192,7 @@ const routes: readonly MockRoute[] = [
         phone?: string
         address?: string
         zoneId?: string
+        photoPath?: string
       }
       if (!payload.fullName || !payload.birthDate || !payload.zoneId) {
         throw new Error('Faltan datos del alta')

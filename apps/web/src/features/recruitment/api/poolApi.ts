@@ -35,6 +35,7 @@ function toPoolWorker(worker: WorkerApi): PoolWorker {
   return {
     id: worker.id,
     fullName: worker.fullName,
+    photoUrl: worker.photoUrl,
     age: worker.age,
     zoneName: worker.zone.name.replace(/^Zona\s+/i, ''),
     catalogPosition: worker.position?.name ?? '—',

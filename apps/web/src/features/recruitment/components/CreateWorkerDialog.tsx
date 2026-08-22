@@ -4,6 +4,7 @@ import { useCreateWorkerMutation, useGetPoolOptionsQuery } from '../api/poolApi'
 
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
+import { PhotoUpload } from '@/shared/components/PhotoUpload'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const CONTROL_CLASS =
@@ -27,6 +28,8 @@ const AFTERMATH = [
 interface Draft {
   fullName: string
   birthDate: string
+  /** Ruta del bucket que devolvió POST /files; vacío = sin foto. */
+  photoPath: string
   gender: 'MALE' | 'FEMALE' | 'OTHER'
   phone: string
   address: string
@@ -36,6 +39,7 @@ interface Draft {
 const EMPTY_DRAFT: Draft = {
   fullName: '',
   birthDate: '',
+  photoPath: '',
   gender: 'FEMALE',
   phone: '',
   address: '',
@@ -87,6 +91,7 @@ export function CreateWorkerDialog({
         phone: draft.phone.trim(),
         address: draft.address.trim(),
         zoneId: draft.zoneId,
+        ...(draft.photoPath !== '' ? { photoPath: draft.photoPath } : {}),
       }).unwrap()
       onClose()
     } catch {
@@ -228,6 +233,19 @@ export function CreateWorkerDialog({
               className={CONTROL_CLASS}
             />
           </label>
+
+          <PhotoUpload
+            initials={draft.fullName
+              .trim()
+              .split(/\s+/)
+              .slice(0, 2)
+              .map((word) => word.charAt(0))
+              .join('')
+              .toUpperCase()}
+            onUploaded={(path) => {
+              update('photoPath')(path)
+            }}
+          />
         </fieldset>
 
         <aside className="rounded-lg bg-surface-2 p-4">

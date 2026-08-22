@@ -14,13 +14,40 @@ import { workerStatusChipLabel, WORKER_STATUS_TOKEN } from '@/shared/constants/w
  * diseño: quien usa esta pantalla está armando coberturas contra `vw_pool` y
  * necesita saber por cuál campo está mirando.
  */
+/** Iniciales para el avatar sin foto, como el «MS» del Expediente. */
+function initialsOf(fullName: string): string {
+  return fullName
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => word.charAt(0))
+    .join('')
+    .toUpperCase()
+}
+
 const COLUMNS: ColumnDef<PoolWorker, unknown>[] = [
   {
     accessorKey: 'fullName',
     header: 'full_name',
     cell: ({ row }) => (
-      <span className="text-base font-bold whitespace-nowrap text-ink">
-        {row.original.fullName}
+      <span className="flex items-center gap-3">
+        {/* La foto se captura en la app móvil (Fase 2): mientras no exista, iniciales. */}
+        {row.original.photoUrl ? (
+          <img
+            src={row.original.photoUrl}
+            alt=""
+            className="size-9 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <span
+            aria-hidden
+            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-o-50 text-xs font-bold text-o-700"
+          >
+            {initialsOf(row.original.fullName)}
+          </span>
+        )}
+        <span className="text-base font-bold whitespace-nowrap text-ink">
+          {row.original.fullName}
+        </span>
       </span>
     ),
   },

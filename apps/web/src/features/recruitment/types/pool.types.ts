@@ -10,6 +10,8 @@ import type { WorkerStatus } from '@/shared/constants/workerStatus'
 export interface PoolWorker {
   id: string
   fullName: string
+  /** Avatar del Expediente: foto si existe, iniciales si no. */
+  photoUrl: string | null
   /** Derivada de la vista (`vw_worker`): una edad calculada en el navegador cambia a medianoche. */
   age: number
   zoneName: string
@@ -70,6 +72,8 @@ export const EMPTY_POOL_FILTERS: PoolFilters = {
 export interface CreateWorkerRequest {
   fullName: string
   birthDate: string
+  /** Ruta devuelta por `POST /files` (WORKER_PHOTO). No integra el perfil. */
+  photoPath?: string
   /** El CHECK real admite también OTHER, aunque la maqueta enseñe dos. */
   gender: 'MALE' | 'FEMALE' | 'OTHER'
   phone: string
