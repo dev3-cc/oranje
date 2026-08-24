@@ -201,20 +201,26 @@ async function fetchFormOptions(
     fetchWithBQ('/catalogs/hiring-modalities'),
     fetchWithBQ('/catalogs/english-levels'),
   ])
-  for (const res of [hotelsRes, departmentsRes, positionsRes, modalitiesRes, englishRes]) {
+  /**
+   * `/hotels` es de Ventas y a los roles del hotel les responde 403: NO tumba
+   * los catálogos — su modal fija el hotel de la sesión y no necesita lista.
+   */
+  for (const res of [departmentsRes, positionsRes, modalitiesRes, englishRes]) {
     if (res.error) return { error: res.error }
   }
 
   return {
     data: {
       /** Solo los clientes activos generan requisiciones (entran a `vw_client`). */
-      hotels: (hotelsRes.data as PaginatedEnvelope<HotelApi>).data
-        .filter((hotel) => hotel.isClient)
-        .map((hotel) => ({
-          id: hotel.id,
-          name: hotel.name,
-          zoneName: hotel.zone.name.replace(/^Zona\s+/i, ''),
-        })),
+      hotels: hotelsRes.error
+        ? []
+        : (hotelsRes.data as PaginatedEnvelope<HotelApi>).data
+            .filter((hotel) => hotel.isClient)
+            .map((hotel) => ({
+              id: hotel.id,
+              name: hotel.name,
+              zoneName: hotel.zone.name.replace(/^Zona\s+/i, ''),
+            })),
       departments: (departmentsRes.data as ApiEnvelope<CatalogItemApi[]>).data,
       positions: (positionsRes.data as ApiEnvelope<CatalogItemApi[]>).data,
       modalities: (modalitiesRes.data as ApiEnvelope<CatalogItemApi[]>).data,

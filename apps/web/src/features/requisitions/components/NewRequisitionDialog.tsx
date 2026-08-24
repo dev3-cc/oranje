@@ -14,6 +14,7 @@ import {
   type RequisitionPositionDraft,
 } from '../types/requisitionForm.schema'
 
+import { useGetSessionQuery } from '@/app/sessionApi'
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
 import {
@@ -114,10 +115,22 @@ export function NewRequisitionDialog({
 
   const { fields, append, remove } = useFieldArray({ control, name: 'positions' })
 
+  /**
+   * El alcance manda: el back rechaza con HOTEL_OUT_OF_SCOPE toda requisición
+   * de un hotel ajeno, así que si la sesión TIENE hotel, el campo se fija —
+   * ofrecer el catálogo entero era invitar al 403.
+   */
+  const { data: session } = useGetSessionQuery()
+  const sessionHotel = session?.hotel ?? null
+
   useEffect(() => {
     if (!isOpen) return
-    reset({ hotelId: '', department: '', positions: [emptyPositionDraft('')] })
-  }, [isOpen, reset])
+    reset({
+      hotelId: sessionHotel?.id ?? '',
+      department: '',
+      positions: [emptyPositionDraft('')],
+    })
+  }, [isOpen, reset, sessionHotel])
 
   const hotelId = watch('hotelId')
   const department = watch('department')
@@ -148,8 +161,15 @@ export function NewRequisitionDialog({
         })),
       }).unwrap()
       onClose()
-    } catch {
-      setError('root', { message: 'No se pudo guardar la requisición. Reintenta.' })
+    } catch (error) {
+      /** El 403 no es transitorio: decir «Reintenta» ahí es mentirle al usuario. */
+      const status = (error as { status?: number }).status
+      setError('root', {
+        message:
+          status === 403
+            ? 'Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área o el Manager General del hotel.'
+            : 'No se pudo guardar la requisición. Reintenta.',
+      })
     }
   })
 
@@ -192,14 +212,25 @@ export function NewRequisitionDialog({
           <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <label className="flex flex-col gap-2">
               <span className="text-sm text-ink-3">Hotel</span>
-              <select {...register('hotelId')} className={HEADER_CONTROL}>
-                <option value="">Elige el hotel</option>
-                {(options?.hotels ?? []).map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
+              {sessionHotel ? (
+                /* El hotel es el de MI sesión: fijo, como lo exige el alcance. */
+                <input
+                  value={sessionHotel.name}
+                  readOnly
+                  aria-label="Hotel"
+                  title="Solo puedes crear requisiciones de tu hotel"
+                  className={cn(HEADER_CONTROL, 'cursor-not-allowed bg-surface-2')}
+                />
+              ) : (
+                <select {...register('hotelId')} className={HEADER_CONTROL}>
+                  <option value="">Elige el hotel</option>
+                  {(options?.hotels ?? []).map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              )}
               {errors.hotelId && <span className="text-xs text-red">{errors.hotelId.message}</span>}
             </label>
 

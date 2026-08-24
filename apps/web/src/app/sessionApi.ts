@@ -29,8 +29,11 @@ function adaptSessionUser(session: SessionApi): SessionUser {
     id: session.user.id,
     name: session.user.fullName,
     shortName: toShortName(session.user.fullName),
+    roleId: session.user.roleCode,
     roleCode: role.short,
     roleTitle: role.title,
+    /** El login no trae el hotel; lo completa el `GET /me` que sigue. */
+    hotel: null,
   }
 }
 
@@ -123,8 +126,11 @@ export const sessionApi = baseApi.injectEndpoints({
         id: raw.data.id,
         name: raw.data.fullName,
         shortName: toShortName(raw.data.fullName),
+        roleId: raw.data.role.code,
         roleCode: roleLabelOf(raw.data.role.code).short,
         roleTitle: raw.data.role.name,
+        /** El alcance: el Supervisor crea requisiciones SOLO de este hotel. */
+        hotel: raw.data.hotel,
       }),
     }),
 
