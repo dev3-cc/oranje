@@ -1,15 +1,39 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { MaterialIcon } from '@oranje/ui'
+import { useEffect, useRef, useState, type ReactNode, type SelectHTMLAttributes } from 'react'
 
 import { useCreateWorkerMutation, useGetPoolOptionsQuery } from '../api/poolApi'
 
+import { useUploadFileMutation } from '@/app/filesApi'
+import personajeContratacion from '@/assets/ilustrations/personaje-contratacion.svg'
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
-import { PhotoUpload } from '@/shared/components/PhotoUpload'
 import { EXPERIENCE_LABEL, EXPERIENCE_LEVELS } from '@/shared/constants/workerEnums'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const CONTROL_CLASS =
-  'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none'
+  'w-full rounded-md border border-line bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none'
+
+/**
+ * Select con chevron propio: el nativo pinta su flecha con el cromo del
+ * sistema y desentona con los inputs — `appearance-none` + Material Icon.
+ */
+function Select({
+  children,
+  ...props
+}: SelectHTMLAttributes<HTMLSelectElement> & { children: ReactNode }): ReactNode {
+  return (
+    <span className="relative w-full">
+      <select {...props} className={`${CONTROL_CLASS} cursor-pointer appearance-none pr-10`}>
+        {children}
+      </select>
+      <MaterialIcon
+        name="expand_more"
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-lg text-ink-3"
+      />
+    </span>
+  )
+}
 
 const GENDERS = [
   { value: 'FEMALE', label: 'Femenino' },
@@ -56,12 +80,62 @@ const EMPTY_DRAFT: Draft = {
   experienceLevel: '',
 }
 
+/** Una fila del formulario: etiqueta a la izquierda, control a la derecha. */
+function FormRow({
+  label,
+  column,
+  children,
+}: {
+  label: string
+  column?: string
+  children: ReactNode
+}): ReactNode {
+  return (
+    <div className="grid grid-cols-1 gap-2 border-t border-line px-6 py-4 sm:grid-cols-[190px_1fr] sm:gap-6">
+      <span className="pt-2.5 text-sm font-medium text-ink-2">
+        {label}
+        {IS_DEV_UI && column && <code className="block text-[11px] text-ink-4">{column}</code>}
+      </span>
+      <div className="flex gap-3">{children}</div>
+    </div>
+  )
+}
+
 /**
- * Crear colaborador — Fase 1 · Entrevista (maqueta de la Reclutadora): la
- * identidad MÁS las decisiones de Oranje sobre el perfil laboral — posición,
- * modalidad, inglés y experiencia dejaron de ser datos que el colaborador
- * declara (Colaborador.md, 2026-08-22). Van opcionales: la fila nace a medias
- * a propósito, eso ES el estado Blanco (`POST /workers`, D-26).
+ * Del error de la API a una frase que diga QUÉ corregir: el back ya distingue
+ * el HEIC del iPhone (UNSUPPORTED_FILE_TYPE) del archivo gigante (413) — el
+ * genérico «inténtalo de nuevo» escondía justo eso.
+ */
+function uploadErrorMessage(error: unknown): string {
+  const raw = error as
+    { status?: number | string; data?: { error?: { code?: string; message?: string } } } | undefined
+  if (raw?.data?.error?.code === 'UNSUPPORTED_FILE_TYPE') {
+    return 'Ese formato no se puede procesar (los HEIC del iPhone no entran): usa JPG, PNG o WebP.'
+  }
+  if (raw?.status === 413) {
+    return 'La imagen pasa de 15 MB: toma la foto con menos resolución o comprímela.'
+  }
+  if (raw?.data?.error?.message) return raw.data.error.message
+  return 'No se pudo subir la foto. Revisa tu conexión e inténtalo de nuevo.'
+}
+
+function initialsOf(fullName: string): string {
+  return fullName
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => word.charAt(0))
+    .join('')
+    .toUpperCase()
+}
+
+/**
+ * Crear colaborador — Fase 1 · Entrevista, en el patrón de ficha de usuario:
+ * banda con la escena 3D de la naranja, avatar encimado y filas de etiqueta a
+ * la izquierda. La identidad MÁS las decisiones de Oranje sobre el perfil —
+ * posición, modalidad, inglés y experiencia dejaron de ser datos que el
+ * colaborador declara (Colaborador.md, 2026-08-22). Van opcionales: la fila
+ * nace a medias a propósito, eso ES el estado Blanco (`POST /workers`, D-26).
  */
 export function CreateWorkerDialog({
   isOpen,
@@ -74,9 +148,27 @@ export function CreateWorkerDialog({
   const { data: options } = useGetPoolOptionsQuery(undefined, { skip: !isOpen })
   const [createWorker, { isLoading, isError }] = useCreateWorkerMutation()
 
+  /** La foto se pica en el avatar de la banda: sube a POST /files y previsualiza local. */
+  const photoInputRef = useRef<HTMLInputElement>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [uploadPhoto, { isLoading: isUploading, isError: isUploadError, error: uploadError }] =
+    useUploadFileMutation()
+
   useEffect(() => {
-    if (isOpen) setDraft(EMPTY_DRAFT)
+    if (!isOpen) return
+    setDraft(EMPTY_DRAFT)
+    setPhotoPreview(null)
   }, [isOpen])
+
+  async function handlePhoto(file: File): Promise<void> {
+    setPhotoPreview(URL.createObjectURL(file))
+    try {
+      const stored = await uploadPhoto({ file, purpose: 'WORKER_PHOTO' }).unwrap()
+      update('photoPath')(stored.path)
+    } catch {
+      /* el error queda en `isUploadError` y se pinta bajo el header */
+    }
+  }
 
   const update =
     <K extends keyof Draft>(key: K) =>
@@ -114,19 +206,266 @@ export function CreateWorkerDialog({
     }
   }
 
+  const initials = initialsOf(draft.fullName)
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title="Crear colaborador — Fase 1 · Entrevista"
-      description={
-        IS_DEV_UI
-          ? 'personal.worker · nace en BLANCO'
-          : 'Solo la identidad: el resto llega por la app'
-      }
-      className="max-w-3xl"
-      footer={
-        <>
+      chromeless
+      className="max-w-2xl"
+    >
+      <div className="flex max-h-[calc(100vh-3rem)] flex-col overflow-y-auto">
+        {/* La banda: gradiente cálido + la naranja 3D flotando (si hay WebGL). */}
+        <div className="relative h-36 shrink-0 bg-gradient-to-r from-o-50 via-o-50/70 to-surface-2">
+          {/* El personaje de Contratación del sistema de marca, completo
+              dentro de la banda: más alto que ella y el modal le corta la
+              cabeza. Sin animación: quieto se ve mejor. */}
+          <img
+            src={personajeContratacion}
+            alt=""
+            aria-hidden
+            className="absolute right-10 bottom-2 h-32 w-auto"
+          />
+          {/* El avatar ES el control de la foto: picar carga o reemplaza.
+              Sobresale de la banda a propósito — nada lo recorta. */}
+          <button
+            type="button"
+            aria-label={photoPreview ? 'Reemplazar foto' : 'Subir foto'}
+            title={photoPreview ? 'Reemplazar foto' : 'Subir foto'}
+            disabled={isUploading}
+            onClick={() => {
+              photoInputRef.current?.click()
+            }}
+            className="group absolute -bottom-12 left-8 z-10 size-24 cursor-pointer rounded-full border-4 border-surface bg-o-50 shadow-md transition-shadow hover:shadow-lg focus:outline-2 focus:outline-offset-2 focus:outline-o-500 disabled:cursor-wait"
+          >
+            <span className="block size-full overflow-hidden rounded-full">
+              {photoPreview ? (
+                <img src={photoPreview} alt="" className="size-full object-cover" />
+              ) : initials !== '' ? (
+                <span
+                  aria-hidden
+                  className="flex size-full items-center justify-center text-2xl font-bold text-o-700"
+                >
+                  {initials}
+                </span>
+              ) : (
+                <span aria-hidden className="flex size-full items-center justify-center">
+                  <MaterialIcon name="photo_camera" className="text-3xl text-o-700" />
+                </span>
+              )}
+              <span
+                aria-hidden
+                className="absolute inset-x-1 bottom-1 rounded-full bg-ink/60 py-0.5 text-center text-[10px] font-semibold text-surface opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                {isUploading ? 'Subiendo…' : photoPreview ? 'Cambiar' : 'Subir foto'}
+              </span>
+            </span>
+            {/* El sello de cámara dice sin hover que esto se pica. */}
+            <span
+              aria-hidden
+              className="absolute -right-0.5 -bottom-0.5 flex size-8 items-center justify-center rounded-full border-2 border-surface bg-o-500 text-ink shadow-sm"
+            >
+              <MaterialIcon name="photo_camera" className="text-base" />
+            </span>
+          </button>
+          <input
+            ref={photoInputRef}
+            type="file"
+            /* Sin `image/*`: el back no abre HEIC, y al excluirlo iOS convierte
+               la foto a JPEG solo. */
+            accept="image/jpeg,image/png,image/webp"
+            capture="user"
+            className="hidden"
+            aria-label="Foto del colaborador"
+            onChange={(event) => {
+              const file = event.target.files?.[0]
+              if (file) void handlePhoto(file)
+            }}
+          />
+        </div>
+
+        <header className="px-8 pt-16 pb-5">
+          <h2 className="text-xl font-bold text-ink">
+            {draft.fullName.trim() === '' ? 'Nuevo colaborador' : draft.fullName}
+          </h2>
+          <p className="mt-0.5 text-xs text-ink-3">
+            Fase 1 · Entrevista{IS_DEV_UI && ' — personal.worker · nace en BLANCO'}
+            {IS_DEV_UI && <code className="text-[11px] text-ink-4"> · photo_path</code>}
+          </p>
+          {isUploadError && (
+            <p role="alert" className="mt-1 text-xs text-red">
+              {uploadErrorMessage(uploadError)}
+            </p>
+          )}
+        </header>
+
+        <FormRow label="Nombre completo" column="full_name">
+          <input
+            value={draft.fullName}
+            onChange={(event) => {
+              update('fullName')(event.target.value)
+            }}
+            aria-label="Nombre completo"
+            placeholder="María Sandoval Ruiz"
+            className={CONTROL_CLASS}
+          />
+        </FormRow>
+
+        <FormRow label="Nacimiento y género" column="birth_date · gender">
+          <input
+            type="date"
+            value={draft.birthDate}
+            onChange={(event) => {
+              update('birthDate')(event.target.value)
+            }}
+            aria-label="Fecha de nacimiento"
+            className={CONTROL_CLASS}
+          />
+          <Select
+            value={draft.gender}
+            onChange={(event) => {
+              update('gender')(event.target.value as Draft['gender'])
+            }}
+            aria-label="Género"
+          >
+            {GENDERS.map((gender) => (
+              <option key={gender.value} value={gender.value}>
+                {gender.label}
+              </option>
+            ))}
+          </Select>
+        </FormRow>
+
+        <FormRow label="Teléfono y zona" column="phone · zone_id">
+          <input
+            value={draft.phone}
+            onChange={(event) => {
+              update('phone')(event.target.value)
+            }}
+            aria-label="Teléfono"
+            placeholder="+1 404 790 2517"
+            className={CONTROL_CLASS}
+          />
+          <Select
+            value={draft.zoneId}
+            onChange={(event) => {
+              update('zoneId')(event.target.value)
+            }}
+            aria-label="Zona"
+          >
+            <option value="">Elige la zona…</option>
+            {(options?.zones ?? []).map((zone) => (
+              <option key={zone.id} value={zone.id}>
+                {zone.name}
+              </option>
+            ))}
+          </Select>
+        </FormRow>
+
+        <FormRow label="Domicilio" column="address">
+          <input
+            value={draft.address}
+            onChange={(event) => {
+              update('address')(event.target.value)
+            }}
+            aria-label="Domicilio"
+            placeholder="1280 Peachtree St NE, Atlanta"
+            className={CONTROL_CLASS}
+          />
+        </FormRow>
+
+        <div className="border-t border-line bg-surface-2/60 px-6 py-3">
+          <h3 className="text-sm font-semibold text-ink">Decisiones de Oranje sobre su perfil</h3>
+          <p className="text-xs text-ink-4">
+            Las define la Reclutadora en la entrevista; el candidato ya no las declara
+          </p>
+        </div>
+
+        <FormRow label="Posición y modalidad" column="catalog_position_id · hiring_modality_id">
+          <Select
+            value={draft.catalogPositionId}
+            onChange={(event) => {
+              update('catalogPositionId')(event.target.value)
+            }}
+            aria-label="Posición"
+          >
+            <option value="">Sin definir aún…</option>
+            {(options?.positions ?? []).map((position) => (
+              <option key={position.id} value={position.id}>
+                {position.name}
+              </option>
+            ))}
+          </Select>
+          <Select
+            value={draft.hiringModalityId}
+            onChange={(event) => {
+              update('hiringModalityId')(event.target.value)
+            }}
+            aria-label="Modalidad"
+          >
+            <option value="">Sin definir aún…</option>
+            {(options?.modalities ?? []).map((modality) => (
+              <option key={modality.id} value={modality.id}>
+                {modality.name}
+              </option>
+            ))}
+          </Select>
+        </FormRow>
+
+        <FormRow label="Inglés y experiencia" column="english_level_id · experience_level">
+          <Select
+            value={draft.englishLevelId}
+            onChange={(event) => {
+              update('englishLevelId')(event.target.value)
+            }}
+            aria-label="Nivel de inglés"
+          >
+            <option value="">Sin definir aún…</option>
+            {(options?.englishLevels ?? []).map((level) => (
+              <option key={level.id} value={level.id}>
+                {level.name}
+              </option>
+            ))}
+          </Select>
+          <Select
+            value={draft.experienceLevel}
+            onChange={(event) => {
+              update('experienceLevel')(event.target.value)
+            }}
+            aria-label="Experiencia"
+          >
+            <option value="">Sin definir aún…</option>
+            {EXPERIENCE_LEVELS.map((level) => (
+              <option key={level} value={level}>
+                {EXPERIENCE_LABEL[level]}
+              </option>
+            ))}
+          </Select>
+        </FormRow>
+
+        <details className="border-t border-line px-6 py-3">
+          <summary className="cursor-pointer text-xs font-semibold text-ink-3 select-none">
+            Qué pasa después del alta
+          </summary>
+          <ul className="mt-2.5 flex flex-col gap-2">
+            {AFTERMATH.map((line) => (
+              <li key={line} className="flex gap-2.5 text-xs leading-relaxed text-ink-2">
+                <span className="mt-1 size-1.5 shrink-0 rounded-full bg-o-500" aria-hidden />
+                {line}
+              </li>
+            ))}
+          </ul>
+        </details>
+
+        {isError && (
+          <p role="alert" className="px-6 pb-2 text-sm text-red">
+            No se pudo crear el colaborador. Revisa los datos e inténtalo de nuevo.
+          </p>
+        )}
+
+        <div className="flex items-center justify-end gap-3 border-t border-line px-6 py-4">
           <Button onClick={onClose} disabled={isLoading}>
             Cancelar
           </Button>
@@ -139,247 +478,8 @@ export function CreateWorkerDialog({
           >
             {isLoading ? 'Creando…' : 'Crear colaborador'}
           </Button>
-        </>
-      }
-    >
-      <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-[3fr_2fr]">
-        <fieldset className="flex flex-col gap-4">
-          <legend className="text-sm font-semibold text-ink">Identidad</legend>
-
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm text-ink-3">
-              Nombre completo{IS_DEV_UI && <code className="text-xs text-ink-4"> · full_name</code>}
-            </span>
-            <input
-              value={draft.fullName}
-              onChange={(event) => {
-                update('fullName')(event.target.value)
-              }}
-              placeholder="María Sandoval Ruiz"
-              className={CONTROL_CLASS}
-            />
-          </label>
-
-          <div className="grid grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm text-ink-3">
-                Fecha de nacimiento
-                {IS_DEV_UI && <code className="text-xs text-ink-4"> · birth_date</code>}
-              </span>
-              <input
-                type="date"
-                value={draft.birthDate}
-                onChange={(event) => {
-                  update('birthDate')(event.target.value)
-                }}
-                aria-label="Fecha de nacimiento"
-                className={CONTROL_CLASS}
-              />
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm text-ink-3">
-                Género{IS_DEV_UI && <code className="text-xs text-ink-4"> · gender</code>}
-              </span>
-              <select
-                value={draft.gender}
-                onChange={(event) => {
-                  update('gender')(event.target.value as Draft['gender'])
-                }}
-                aria-label="Género"
-                className={CONTROL_CLASS}
-              >
-                {GENDERS.map((gender) => (
-                  <option key={gender.value} value={gender.value}>
-                    {gender.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm text-ink-3">
-                Teléfono{IS_DEV_UI && <code className="text-xs text-ink-4"> · phone</code>}
-              </span>
-              <input
-                value={draft.phone}
-                onChange={(event) => {
-                  update('phone')(event.target.value)
-                }}
-                placeholder="+1 404 790 2517"
-                className={CONTROL_CLASS}
-              />
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm text-ink-3">
-                Zona{IS_DEV_UI && <code className="text-xs text-ink-4"> · zone_id</code>}
-              </span>
-              <select
-                value={draft.zoneId}
-                onChange={(event) => {
-                  update('zoneId')(event.target.value)
-                }}
-                aria-label="Zona"
-                className={CONTROL_CLASS}
-              >
-                <option value="">Elige la zona…</option>
-                {(options?.zones ?? []).map((zone) => (
-                  <option key={zone.id} value={zone.id}>
-                    {zone.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <label className="flex flex-col gap-1.5">
-            <span className="text-sm text-ink-3">
-              Domicilio{IS_DEV_UI && <code className="text-xs text-ink-4"> · address</code>}
-            </span>
-            <input
-              value={draft.address}
-              onChange={(event) => {
-                update('address')(event.target.value)
-              }}
-              placeholder="1280 Peachtree St NE, Atlanta"
-              className={CONTROL_CLASS}
-            />
-          </label>
-
-          <PhotoUpload
-            initials={draft.fullName
-              .trim()
-              .split(/\s+/)
-              .slice(0, 2)
-              .map((word) => word.charAt(0))
-              .join('')
-              .toUpperCase()}
-            onUploaded={(path) => {
-              update('photoPath')(path)
-            }}
-          />
-
-          <legend className="mt-2 text-sm font-semibold text-ink">
-            Decisiones de Oranje sobre su perfil
-          </legend>
-          <p className="-mt-2 text-xs text-ink-4">
-            Las define la Reclutadora en la entrevista; el candidato ya no las declara
-          </p>
-
-          <div className="grid grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm text-ink-3">
-                Posición
-                {IS_DEV_UI && <code className="text-xs text-ink-4"> · catalog_position_id</code>}
-              </span>
-              <select
-                value={draft.catalogPositionId}
-                onChange={(event) => {
-                  update('catalogPositionId')(event.target.value)
-                }}
-                aria-label="Posición"
-                className={CONTROL_CLASS}
-              >
-                <option value="">Sin definir aún…</option>
-                {(options?.positions ?? []).map((position) => (
-                  <option key={position.id} value={position.id}>
-                    {position.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm text-ink-3">
-                Modalidad
-                {IS_DEV_UI && <code className="text-xs text-ink-4"> · hiring_modality_id</code>}
-              </span>
-              <select
-                value={draft.hiringModalityId}
-                onChange={(event) => {
-                  update('hiringModalityId')(event.target.value)
-                }}
-                aria-label="Modalidad"
-                className={CONTROL_CLASS}
-              >
-                <option value="">Sin definir aún…</option>
-                {(options?.modalities ?? []).map((modality) => (
-                  <option key={modality.id} value={modality.id}>
-                    {modality.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm text-ink-3">
-                Nivel de inglés
-                {IS_DEV_UI && <code className="text-xs text-ink-4"> · english_level_id</code>}
-              </span>
-              <select
-                value={draft.englishLevelId}
-                onChange={(event) => {
-                  update('englishLevelId')(event.target.value)
-                }}
-                aria-label="Nivel de inglés"
-                className={CONTROL_CLASS}
-              >
-                <option value="">Sin definir aún…</option>
-                {(options?.englishLevels ?? []).map((level) => (
-                  <option key={level.id} value={level.id}>
-                    {level.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <span className="text-sm text-ink-3">
-                Experiencia
-                {IS_DEV_UI && <code className="text-xs text-ink-4"> · experience_level</code>}
-              </span>
-              <select
-                value={draft.experienceLevel}
-                onChange={(event) => {
-                  update('experienceLevel')(event.target.value)
-                }}
-                aria-label="Experiencia"
-                className={CONTROL_CLASS}
-              >
-                <option value="">Sin definir aún…</option>
-                {EXPERIENCE_LEVELS.map((level) => (
-                  <option key={level} value={level}>
-                    {EXPERIENCE_LABEL[level]}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        </fieldset>
-
-        <aside className="rounded-lg bg-surface-2 p-4">
-          <h3 className="text-sm font-semibold text-ink">Qué pasa después</h3>
-          <ul className="mt-2.5 flex flex-col gap-2.5">
-            {AFTERMATH.map((line) => (
-              <li key={line} className="flex gap-2.5 text-xs leading-relaxed text-ink-2">
-                <span className="mt-1 size-1.5 shrink-0 rounded-full bg-o-500" aria-hidden />
-                {line}
-              </li>
-            ))}
-          </ul>
-        </aside>
+        </div>
       </div>
-
-      {isError && (
-        <p role="alert" className="text-sm text-red">
-          No se pudo crear el colaborador. Revisa los datos e inténtalo de nuevo.
-        </p>
-      )}
     </Modal>
   )
 }
