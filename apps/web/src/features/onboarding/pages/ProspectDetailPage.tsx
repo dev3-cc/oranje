@@ -34,6 +34,8 @@ export function ProspectDetailPage(): ReactNode {
   const [isAttemptDialogOpen, setIsAttemptDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [areContactsOpen, setAreContactsOpen] = useState(false)
+  /** La URL guardada de Places pudo caducar (getUrl es efímera): hero sin foto. */
+  const [isPhotoDead, setPhotoDead] = useState(false)
 
   const {
     data: prospect,
@@ -79,12 +81,15 @@ export function ProspectDetailPage(): ReactNode {
       </nav>
 
       {/* Con foto (Places, persistida): hero con fundido al fondo de la página. */}
-      {prospect.hotel.photoUrl ? (
+      {prospect.hotel.photoUrl && !isPhotoDead ? (
         <header className="relative overflow-hidden rounded-xl">
           <img
             src={prospect.hotel.photoUrl}
             alt={`Foto de ${prospect.hotelName} según Google`}
             className="h-72 w-full object-cover"
+            onError={() => {
+              setPhotoDead(true)
+            }}
           />
           <div
             aria-hidden

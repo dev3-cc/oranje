@@ -30,7 +30,7 @@ const COUNTRIES = (
 ).features
 
 /** La vista inicial apunta al territorio: Quintana Roo. */
-const HOME = { lat: 21, lng: -87, altitude: 1.9 }
+const HOME = { lat: 21, lng: -87, altitude: 2.1 }
 
 function buildGlobe(): ThreeGlobe {
   const globe = new ThreeGlobe()
@@ -97,9 +97,10 @@ function GlobeObject({ globe, spots }: { globe: ThreeGlobe; spots: GlobeSpot[] }
       .pointLat((point) => (point as GlobeSpot).lat)
       .pointLng((point) => (point as GlobeSpot).lng)
       // Uniformes y de marca: el detalle por hotel lo cuenta la tarjeta.
+      // Bajos y finos: a planeta completo, un cilindro alto se ve como tornillo.
       .pointColor(() => brand['o-500'])
-      .pointAltitude(0.05)
-      .pointRadius(0.9)
+      .pointAltitude(0.015)
+      .pointRadius(0.55)
       // El anillo que pulsa hace encontrable un punto sobre un globo quieto.
       .ringsData(spots)
       .ringLat((ring) => (ring as GlobeSpot).lat)
@@ -122,10 +123,10 @@ const MAX_ROWS = 3
  * varios puntos vecinos no encimen sus tarjetas ni crucen sus líneas.
  */
 const CALLOUT_OFFSETS: ReadonlyArray<{ dx: number; dy: number }> = [
-  { dx: 96, dy: -104 },
-  { dx: -96, dy: -64 },
-  { dx: 108, dy: 48 },
-  { dx: -108, dy: 88 },
+  { dx: 118, dy: -100 },
+  { dx: -118, dy: -70 },
+  { dx: 130, dy: 56 },
+  { dx: -130, dy: 90 },
 ]
 
 /**
@@ -217,7 +218,7 @@ function SpotCallout({
           onClick={() => {
             onOpen(spot)
           }}
-          className="absolute w-48 cursor-pointer overflow-hidden rounded-md border border-line bg-surface/95 text-left shadow-md backdrop-blur-sm transition-shadow hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
+          className="absolute w-48 cursor-pointer overflow-hidden rounded-xl bg-surface/95 text-left shadow-md backdrop-blur-sm transition-shadow hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
           style={{
             left: dx,
             top: dy,
@@ -225,8 +226,17 @@ function SpotCallout({
           }}
         >
           {spot.photoUrl && (
-            <span className="relative block h-16">
-              <img src={spot.photoUrl} alt="" loading="lazy" className="size-full object-cover" />
+            <span className="relative block h-16 bg-surface-2">
+              <img
+                src={spot.photoUrl}
+                alt=""
+                loading="lazy"
+                className="size-full object-cover"
+                onError={(event) => {
+                  /** Las URLs guardadas de getUrl() caducan: fuera la rota. */
+                  event.currentTarget.style.display = 'none'
+                }}
+              />
               <span
                 aria-hidden
                 className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-b from-transparent via-surface/70 to-surface"
@@ -297,14 +307,17 @@ function GlobeCanvas({
 
   /**
    * La cámara arranca SOBRE los hoteles, no sobre un punto fijo: centroide de
-   * los puntos y más cerca. Sin datos, cae al HOME del territorio.
+   * los puntos. Sin datos, cae al HOME del territorio.
+   *
+   * Altitud 2.1 a propósito: con fov 45, más cerca la esfera no cabe en el
+   * encuadre y se ve un pedazo de planeta recortado en vez de un planeta.
    */
   const camera = useMemo(() => {
     const target = spots.length
       ? {
           lat: spots.reduce((sum, spot) => sum + spot.lat, 0) / spots.length,
           lng: spots.reduce((sum, spot) => sum + spot.lng, 0) / spots.length,
-          altitude: 1.15,
+          altitude: 2.1,
         }
       : HOME
     const radius = 100 * (1 + target.altitude)
@@ -365,14 +378,15 @@ export function HotelGlobeCard(): ReactNode {
   }
 
   return (
-    <section className="flex flex-col rounded-lg border border-line bg-surface p-5">
+    /* La caja sigue el estilo del tablero: radio grande y sombra tintada, sin borde. */
+    <section className="flex flex-col rounded-2xl bg-surface p-5 shadow-md">
       <h2 className="text-base font-semibold text-ink">El territorio</h2>
       <p className="mt-0.5 text-sm text-ink-3">
         Arrástralo. El clic en una tarjeta abre Mi Territorio con ese hotel.
         {hotels && ` ${hotels.length} hoteles con coordenada.`}
       </p>
 
-      <div className="mt-3 min-h-80 flex-1">
+      <div className="mx-auto mt-2 h-96 w-full max-w-3xl">
         {isError ? (
           <p className="pt-8 text-center text-sm text-ink-3">
             No se pudieron cargar los hoteles del globo.

@@ -295,14 +295,17 @@ export function ProspectFormDialog({
     if (isOpen) {
       reset(defaults)
       setPlacePhotoUrl(prospect?.hotel.photoUrl ?? null)
+      setPlaceId(null)
       setStep(1)
     }
   }, [isOpen, prospect, session?.id, reset])
 
   const values = watch()
   const isBusy = isCreating || isUpdating
-  /** Foto del lugar según Google, y también la ya persistida al editar. */
+  /** Foto del lugar según Google: SOLO preview de la sesión (la URL es efímera). */
   const [placePhotoUrl, setPlacePhotoUrl] = useState<string | null>(null)
+  /** Lo que sí se persiste: el back resuelve la foto estable con el place_id. */
+  const [placeId, setPlaceId] = useState<string | null>(null)
 
   /**
    * Wizard de 3 pasos. «Continuar» valida SOLO los campos del paso en turno:
@@ -327,6 +330,7 @@ export function ProspectFormDialog({
     setValue('location', place.location, { shouldValidate: true })
     setValue('placeLocation', place.location)
     setPlacePhotoUrl(place.photoUrl)
+    setPlaceId(place.placeId)
   }
 
   /** Arrastrar o clicar mueve la coordenada a mano: ya no es la de Google. */
@@ -359,7 +363,7 @@ export function ProspectFormDialog({
       generalPhone: form.generalPhone,
       location: form.location,
       geofenceMeters: form.geofenceMeters,
-      photoUrl: placePhotoUrl,
+      placeId,
     }
     const contact = {
       fullName: form.contactFullName,
@@ -469,6 +473,10 @@ export function ProspectFormDialog({
                   src={placePhotoUrl}
                   alt={`Foto de ${values.hotelName || 'el hotel'} según Google`}
                   className="h-32 w-full object-cover"
+                  onError={() => {
+                    /** Al editar llega la URL guardada, que pudo caducar. */
+                    setPlacePhotoUrl(null)
+                  }}
                 />
                 <div
                   aria-hidden

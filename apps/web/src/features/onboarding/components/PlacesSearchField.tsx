@@ -12,11 +12,14 @@ export interface PlaceAutofill {
   phone: string
   location: GeoPoint
   /**
-   * Foto del lugar servida por Google. SOLO se muestra al capturar: no se
-   * persiste — `commercial.hotel` no tiene columna de foto (pendiente de
-   * decidir si se quiere guardar).
+   * Foto del lugar servida por Google. SOLO sirve de preview en la sesión:
+   * `getUrl()` devuelve una URL con token efímero que muere en horas — se
+   * guardó una vez y el Pipeline quedó lleno de 403. Lo que se persiste es
+   * el `placeId`, y el back resuelve la foto estable con él.
    */
   photoUrl: string | null
+  /** Estable: con él el back resuelve la foto y lo que Places sepa del sitio. */
+  placeId: string | null
 }
 
 const CONTROL_CLASS =
@@ -43,6 +46,7 @@ interface PlacesLibrary {
       name?: string
       formatted_address?: string
       formatted_phone_number?: string
+      place_id?: string
       geometry?: { location?: { lat: () => number; lng: () => number } }
       photos?: Array<{ getUrl: (opts?: { maxWidth?: number; maxHeight?: number }) => string }>
     }
@@ -75,7 +79,14 @@ function PlacesAutocompleteInput({
 
     const autocomplete = new places.Autocomplete(input, {
       /** `geometry` a secas: `geometry.location` no es un campo válido aquí. */
-      fields: ['name', 'formatted_address', 'formatted_phone_number', 'geometry', 'photos'],
+      fields: [
+        'name',
+        'formatted_address',
+        'formatted_phone_number',
+        'place_id',
+        'geometry',
+        'photos',
+      ],
       /** Los hoteles cliente operan en EE. UU. y el arranque fue en México. */
       componentRestrictions: { country: ['us', 'mx'] },
     })
@@ -91,6 +102,7 @@ function PlacesAutocompleteInput({
         phone: place.formatted_phone_number ?? '',
         location: { lat: location.lat(), lng: location.lng() },
         photoUrl: place.photos?.[0]?.getUrl({ maxWidth: 640 }) ?? null,
+        placeId: place.place_id ?? null,
       })
     })
 

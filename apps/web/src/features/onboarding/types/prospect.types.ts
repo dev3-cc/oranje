@@ -60,6 +60,8 @@ export interface ProspectSummary {
   daysInStatus: number
   lastAttempt: Pick<ContactAttempt, 'channel' | 'outcome'> | null
   latestProposalVersion: number | null
+  /** Si la última versión sigue en borrador (`lastProposal.isDraft` del API). */
+  latestProposalIsDraft?: boolean
   owner: ProspectOwner
 }
 
@@ -126,8 +128,12 @@ export interface Zone {
 /** El edificio, `commercial.hotel`. Un hotel puede tener varios ciclos (D-13). */
 export interface HotelPayload {
   name: string
-  /** URL de la foto según Places. Opcional: hoteles sin foto siguen valiendo. */
-  photoUrl?: string | null
+  /**
+   * `place_id` de Google Places. Es lo que SE PERSISTE de la foto: la URL de
+   * `getUrl()` lleva token efímero y muere en horas (el Pipeline quedó en
+   * 403). El back resuelve la foto estable con este id.
+   */
+  placeId?: string | null
   zoneId: string
   timeZone: string
   address: string
@@ -176,6 +182,8 @@ export interface RegisteredHotel extends Omit<HotelPayload, 'location'> {
   zone: string
   /** Mismo hueco que `HotelData`: la API aún no expone el pin. */
   location: GeoPoint | null
+  /** La foto que la API SIRVE (será estable cuando el back resuelva por place_id). */
+  photoUrl: string | null
 }
 
 export interface HotelContact {

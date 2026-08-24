@@ -19,15 +19,24 @@ export function ProspectCard({ prospect }: { prospect: ProspectSummary }): React
   return (
     <Link
       to={`/pipeline/${prospect.id}`}
-      className="block overflow-hidden rounded-md border border-line bg-surface transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
+      className="block overflow-hidden rounded-2xl bg-surface shadow-md transition-shadow hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
     >
       <div className="relative h-24">
-        {prospect.photoUrl ? (
-          <img src={prospect.photoUrl} alt="" loading="lazy" className="size-full object-cover" />
-        ) : (
-          <div className="flex size-full items-center justify-center bg-surface-2">
-            <MaterialIcon name="apartment" className="text-3xl text-ink-4" aria-hidden />
-          </div>
+        {/* El placeholder SIEMPRE está debajo: si la URL guardada murió (las de
+            getUrl() caducan), el onError esconde la foto y queda el edificio. */}
+        <div className="flex size-full items-center justify-center bg-surface-2">
+          <MaterialIcon name="apartment" className="text-3xl text-ink-4" aria-hidden />
+        </div>
+        {prospect.photoUrl && (
+          <img
+            src={prospect.photoUrl}
+            alt=""
+            loading="lazy"
+            className="absolute inset-0 size-full object-cover"
+            onError={(event) => {
+              event.currentTarget.style.display = 'none'
+            }}
+          />
         )}
         {/* El fundido disuelve la foto hacia la tarjeta: el nombre se lee sobre el remate. */}
         <div
@@ -41,13 +50,13 @@ export function ProspectCard({ prospect }: { prospect: ProspectSummary }): React
 
       <div className="p-4 pt-1">
         <p className="text-base font-semibold text-ink">{prospect.hotelName}</p>
-        <p className="mt-0.5 text-sm text-ink-3">{prospect.zone}</p>
-
-        <p className="mt-1.5 text-sm text-ink-3">{resolveActivityLabel(prospect)}</p>
+        <p className="mt-1 text-sm text-ink-3">
+          {prospect.zone} · {resolveActivityLabel(prospect)}
+        </p>
 
         <div className="mt-3 flex items-center gap-2">
-          <span className="size-5 shrink-0 rounded-full bg-o-50" aria-hidden />
-          <span className="text-sm text-ink-3">{prospect.owner.shortName}</span>
+          <span className="size-5 shrink-0 rounded-full border border-line bg-o-50" aria-hidden />
+          <span className="text-sm font-medium text-ink-3">{prospect.owner.shortName}</span>
         </div>
       </div>
     </Link>
