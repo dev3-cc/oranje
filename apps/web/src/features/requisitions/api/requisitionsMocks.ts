@@ -8,6 +8,7 @@ import '@/app/sessionApi'
 import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
 import type {
   ApiEnvelope,
+  AssignmentApi,
   CatalogItemApi,
   PaginatedEnvelope,
   RequisitionApi,
@@ -333,6 +334,56 @@ interface CreateBody {
   }>
 }
 
+/**
+ * `coverage.assignment` por posición. Se siembra UNA por cada unidad de
+ * `filled` de los fixtures, para que la pantalla de slots y el conteo del
+ * tablero cuenten la misma historia.
+ */
+const OCCUPANT_NAMES = [
+  'María Sandoval',
+  'José Rivera',
+  'Rosa Navarro',
+  'Ernesto Lara',
+  'Lucía Prado',
+  'Hilda Cortés',
+]
+
+const assignmentsByPosition = new Map<string, AssignmentApi[]>()
+{
+  let occupantIndex = 0
+  for (const requisition of requisitions) {
+    for (const position of requisition.positions) {
+      const seeded: AssignmentApi[] = []
+      for (let ordinal = 1; ordinal <= position.filled; ordinal += 1) {
+        const name = OCCUPANT_NAMES[occupantIndex % OCCUPANT_NAMES.length] as string
+        occupantIndex += 1
+        seeded.push({
+          id: `asg-seed-${position.id}-${String(ordinal)}`,
+          type: 'FIXED',
+          status: 'ACTIVE',
+          worker: { id: `wrk-seed-${String(occupantIndex)}`, fullName: name },
+          slot: { id: `slot-${position.id}-${String(ordinal)}`, ordinal },
+          createdAt: requisition.createdAt,
+        })
+      }
+      if (seeded.length > 0) assignmentsByPosition.set(position.id, seeded)
+    }
+  }
+}
+
+/** El picker manda ids del Pool (`wrk-0001`…); el nombre real vive allá. */
+const PICKER_NAMES: Record<string, string> = {
+  'wrk-0001': 'Ana Rivera Gómez',
+  'wrk-0002': 'Luis Cabrera',
+  'wrk-0003': 'María Fernanda Ortiz',
+  'wrk-0004': 'Pedro Alcántara',
+  'wrk-0005': 'Julia Mendoza',
+}
+
+function mockWorkerNameById(workerId: string): string {
+  return PICKER_NAMES[workerId] ?? 'Colaborador'
+}
+
 const catalogRoute = (path: string, items: CatalogItemApi[]): MockRoute => ({
   method: 'GET',
   path,
@@ -365,8 +416,69 @@ const routes: readonly MockRoute[] = [
   {
     method: 'GET',
     path: '/requisitions/:requisitionId/assignments',
-    /** `coverage` responde plano; los fixtures arrancan sin asignaciones vivas. */
-    resolve: (): ApiEnvelope<never[]> => ({ data: [] }),
+    resolve: ({ params }): ApiEnvelope<AssignmentApi[]> => {
+      const found = requisitions.find((item) => item.id === params.requisitionId)
+      if (!found) throw new Error('REQUISITION_NOT_FOUND')
+      return {
+        data: found.positions.flatMap((position) =>
+          (assignmentsByPosition.get(position.id) ?? []).map((item) => ({ ...item })),
+        ),
+      }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/assignments',
+    /**
+     * RR-15 en versión mock: el motor real lo impone con `FOR UPDATE SKIP
+     * LOCKED` y aquí se imita la consecuencia — sin slot libre, 409 en texto.
+     */
+    resolve: ({
+      body,
+    }): ApiEnvelope<{
+      assignment: AssignmentApi
+      positionCoverage: string
+      requisitionState: string
+    }> => {
+      const payload = (body ?? {}) as {
+        positionId?: string
+        workerId?: string
+        type?: string
+        endDate?: string
+      }
+      const requisition = requisitions.find((item) =>
+        item.positions.some((position) => position.id === payload.positionId),
+      )
+      const position = requisition?.positions.find((item) => item.id === payload.positionId)
+      if (!requisition || !position) throw new Error('POSITION_NOT_FOUND')
+      const taken = assignmentsByPosition.get(position.id) ?? []
+      if (taken.length >= position.quantity) {
+        throw new Error('Otra reclutadora ganó el slot (RR-15): ya no quedan libres')
+      }
+      const created: AssignmentApi = {
+        id: `asg-${String(taken.length + 1)}-${position.id}`,
+        type: payload.type ?? 'FIXED',
+        status: 'ACTIVE',
+        worker: {
+          id: payload.workerId ?? '',
+          fullName: mockWorkerNameById(payload.workerId ?? ''),
+        },
+        slot: { id: `slot-${position.id}-${String(taken.length + 1)}`, ordinal: taken.length + 1 },
+        createdAt: new Date().toISOString(),
+      }
+      assignmentsByPosition.set(position.id, [...taken, created])
+      position.filled += 1
+      requisition.filledSlots += 1
+      /** El semáforo de posiciones, en su versión de juguete: lleno = azul. */
+      const isFull = position.filled >= position.quantity
+      return {
+        data: {
+          assignment: { ...created },
+          positionCoverage: isFull ? 'LIGHT_BLUE' : 'YELLOW',
+          requisitionState: requisition.state.code,
+        },
+      }
+    },
   },
   {
     method: 'POST',

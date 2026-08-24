@@ -9,10 +9,7 @@ import { ModulePlaceholder } from '@/shared/components/ModulePlaceholder'
  * Módulos del sidebar que ya navegan pero todavía no tienen diseño. Cada uno
  * sale de aquí y pasa a ser una feature propia cuando llegue su maqueta.
  */
-const PENDING_MODULES = [
-  { path: 'mi-personal', title: 'Mi Personal' },
-  { path: 'accidentes', title: 'Accidentes' },
-]
+const PENDING_MODULES = [{ path: 'accidentes', title: 'Accidentes' }]
 
 /**
  * React Router 8 en *data mode* (D-17).
@@ -207,6 +204,21 @@ export const router = createBrowserRouter([
             },
           },
           {
+            path: 'self-pick',
+            lazy: async () => {
+              const m = await import('@/features/recruitment')
+              return { Component: m.SelfPickPage }
+            },
+          },
+          {
+            /* La asignación cuelga de la bolsa: se llega desde una tarjeta. */
+            path: 'self-pick/:requisitionId/:positionId',
+            lazy: async () => {
+              const m = await import('@/features/recruitment')
+              return { Component: m.SlotAssignmentPage }
+            },
+          },
+          {
             path: 'reportes',
             lazy: async () => {
               const m = await import('@/features/reports')
@@ -247,6 +259,13 @@ export const router = createBrowserRouter([
             lazy: async () => {
               const m = await import('@/features/contracts')
               return { Component: m.ContractDetailPage }
+            },
+          },
+          {
+            path: 'mi-personal',
+            lazy: async () => {
+              const m = await import('@/features/personnel')
+              return { Component: m.PersonnelPage }
             },
           },
           {

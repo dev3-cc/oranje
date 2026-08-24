@@ -38,7 +38,13 @@ const SCHEDULE: ScheduleApi = {
 
 let entrySequence = 0
 
-function entry(offset: number, workerName: string, start: string, end: string): ScheduleEntryApi {
+/** Los ids son los del Pool: Mi Personal cruza el turno con el semáforo. */
+function entry(
+  offset: number,
+  worker: { id: string; fullName: string },
+  start: string,
+  end: string,
+): ScheduleEntryApi {
   entrySequence += 1
   return {
     id: `sce-${String(entrySequence).padStart(4, '0')}`,
@@ -46,18 +52,27 @@ function entry(offset: number, workerName: string, start: string, end: string): 
     startsAt: `${dayIso(offset)}T${start}:00.000Z`,
     endsAt: `${dayIso(offset)}T${end}:00.000Z`,
     minutes: 480,
-    worker: { id: `wrk-${String(entrySequence)}`, fullName: workerName },
+    worker,
     assignmentId: `asg-${String(entrySequence)}`,
   }
 }
 
+const ANA = { id: 'wrk-0001', fullName: 'Ana Rivera Gómez' }
+const LUIS = { id: 'wrk-0002', fullName: 'Luis Cabrera' }
+const MARIA = { id: 'wrk-0003', fullName: 'María Fernanda Ortiz' }
+const JULIA = { id: 'wrk-0005', fullName: 'Julia Mendoza' }
+
+/** El offset de HOY dentro de la semana, para que Mi Personal siempre tenga turnos. */
+const TODAY_OFFSET = (new Date().getUTCDay() + 6) % 7
+const NEXT_OFFSET = (TODAY_OFFSET + 1) % 7
+
 const ENTRIES: ScheduleEntryApi[] = [
-  entry(0, 'Ana Rivera Gómez', '07:00', '15:30'),
-  entry(0, 'José Rivera', '07:00', '15:30'),
-  entry(1, 'Ana Rivera Gómez', '07:00', '15:30'),
-  entry(1, 'Rosa Navarro', '07:00', '15:30'),
-  entry(2, 'Ana Rivera Gómez', '07:00', '15:30'),
-  entry(3, 'José Rivera', '07:00', '15:30'),
+  entry(TODAY_OFFSET, ANA, '07:00', '15:30'),
+  entry(TODAY_OFFSET, LUIS, '08:00', '16:00'),
+  entry(TODAY_OFFSET, JULIA, '08:00', '16:00'),
+  entry(NEXT_OFFSET, ANA, '07:00', '15:30'),
+  entry(NEXT_OFFSET, MARIA, '07:00', '15:30'),
+  entry(NEXT_OFFSET, LUIS, '08:00', '16:00'),
 ]
 
 const routes: readonly MockRoute[] = [

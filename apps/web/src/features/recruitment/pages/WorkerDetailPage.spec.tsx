@@ -77,7 +77,9 @@ describe('WorkerDetailPage', () => {
     await user.click(screen.getByRole('button', { name: 'Cambiar estado' }))
 
     const dialog = await screen.findByRole('dialog')
-    expect(within(dialog).getByText('BROWN · Asig. temporal')).toBeInTheDocument()
+    expect(
+      await within(dialog).findByText('BROWN · Asig. temporal', undefined, SLOW),
+    ).toBeInTheDocument()
     expect(within(dialog).queryByText(/ORANGE/)).not.toBeInTheDocument()
 
     await user.click(within(dialog).getByRole('radio'))
