@@ -1,46 +1,29 @@
-import { brand, neutral, statusLight, type StatusLightToken } from '@oranje/ui'
+import { neutral, statusLight, type StatusLightToken } from '@oranje/ui'
 import { Html, OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
-import { Color, Vector3, type MeshPhongMaterial } from 'three'
+import { Vector3, type MeshPhongMaterial } from 'three'
 import ThreeGlobe from 'three-globe'
-import { feature } from 'topojson-client'
-import countriesTopo from 'world-atlas/countries-110m.json'
 
 import { useGetHotelMapPointsQuery } from '../api/onboardingApi'
 import type { HotelMapPoint } from '../types/prospect.types'
 
+import earthTexture from '@/assets/globe/earth-blue-marble.jpg'
 import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
 } from '@/shared/constants/onboardingStatus'
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery'
-
-type TopoArgs = Parameters<typeof feature>
-const topology = countriesTopo as unknown as TopoArgs[0] & {
-  objects: { countries: TopoArgs[1] }
-}
-const COUNTRIES = (
-  feature(topology, topology.objects.countries) as unknown as { features: object[] }
-).features
+import { supportsWebGl } from '@/shared/lib/webgl'
 
 const HOME = { lat: 21, lng: -87, altitude: 2.1 }
 
 function buildGlobe(): ThreeGlobe {
-  const globe = new ThreeGlobe()
-    .hexPolygonsData(COUNTRIES)
-    .hexPolygonResolution(3)
-    .hexPolygonMargin(0.55)
-    .hexPolygonColor(() => neutral['ink-4'])
-    .showAtmosphere(true)
-    .atmosphereColor(brand['o-500'])
-    .atmosphereAltitude(0.13)
+  const globe = new ThreeGlobe().globeImageUrl(earthTexture).showAtmosphere(false)
 
   const material = globe.globeMaterial() as MeshPhongMaterial
-  material.color = new Color(neutral['surface-2'])
-  material.transparent = true
-  material.opacity = 0.95
+  material.shininess = 6
 
   return globe
 }
@@ -83,31 +66,28 @@ function GlobeObject({ globe, spots }: { globe: ThreeGlobe; spots: GlobeSpot[] }
       .pointsData(spots)
       .pointLat((point) => (point as GlobeSpot).lat)
       .pointLng((point) => (point as GlobeSpot).lng)
-      .pointColor(() => brand['o-500'])
-      .pointAltitude(0.015)
-      .pointRadius(0.55)
-      .ringsData(spots)
-      .ringLat((ring) => (ring as GlobeSpot).lat)
-      .ringLng((ring) => (ring as GlobeSpot).lng)
-      .ringColor(() => () => brand['o-500'])
-      .ringMaxRadius(3)
-      .ringPropagationSpeed(1.2)
-      .ringRepeatPeriod(1800)
+      .pointColor(() => statusLight['st-rojo'])
+      .pointAltitude(0.012)
+      .pointRadius(0.5)
   }, [globe, spots])
 
   return <primitive object={globe} />
 }
 
-const MAX_CALLOUTS = 4
-const MAX_ROWS = 3
-const CALLOUT_OFFSETS: ReadonlyArray<{ dx: number; dy: number }> = [
-  { dx: 118, dy: -100 },
-  { dx: -118, dy: -70 },
-  { dx: 130, dy: 56 },
-  { dx: -130, dy: 90 },
+const MAX_PINS = 5
+const PIN_OFFSETS: ReadonlyArray<{ dx: number; dy: number }> = [
+  { dx: 28, dy: -96 },
+  { dx: -72, dy: -78 },
+  { dx: 84, dy: -60 },
+  { dx: -44, dy: -120 },
+  { dx: 96, dy: -104 },
 ]
 
-function SpotCallout({
+function initialOf(name: string): string {
+  return name.trim().charAt(0).toUpperCase()
+}
+
+function SpotPin({
   globe,
   spot,
   index,
@@ -121,7 +101,7 @@ function SpotCallout({
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   const position = useMemo(() => {
-    const { x, y, z } = globe.getCoords(spot.lat, spot.lng, 0.06)
+    const { x, y, z } = globe.getCoords(spot.lat, spot.lng, 0.02)
     return new Vector3(x, y, z)
   }, [globe, spot])
 
@@ -129,129 +109,67 @@ function SpotCallout({
     const wrapper = wrapperRef.current
     if (!wrapper) return
     const facing = position.clone().normalize().dot(camera.position.clone().normalize())
-    const isVisible = facing > 0.3
+    const isVisible = facing > 0.35
     wrapper.style.opacity = isVisible ? '1' : '0'
     wrapper.style.pointerEvents = isVisible ? 'auto' : 'none'
   })
 
-  const { dx, dy } = CALLOUT_OFFSETS[index % CALLOUT_OFFSETS.length] as {
-    dx: number
-    dy: number
-  }
-  const width = Math.abs(dx)
-  const height = Math.abs(dy)
-  const isAbove = dy < 0
+  const { dx, dy } = PIN_OFFSETS[index % PIN_OFFSETS.length] as { dx: number; dy: number }
   const [first] = spot.hotels
-  const visibleHotels = spot.hotels.slice(0, MAX_ROWS)
-  const rest = spot.hotels.length - visibleHotels.length
-
   if (!first) return null
+
+  const title = spot.hotels.length === 1 ? first.name : `${String(spot.hotels.length)} hoteles aquí`
 
   return (
     <Html position={position} zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
       <div ref={wrapperRef} className="transition-opacity duration-300">
-        {}
         <svg
           aria-hidden
-          width={width}
-          height={height}
-          style={{
-            position: 'absolute',
-            left: dx >= 0 ? 0 : dx,
-            top: isAbove ? dy : 0,
-            overflow: 'visible',
-            pointerEvents: 'none',
-          }}
+          style={{ position: 'absolute', left: -8, top: -8, overflow: 'visible' }}
+          width={16}
+          height={16}
         >
           <line
-            x1={dx >= 0 ? 0 : width}
-            y1={isAbove ? height : 0}
-            x2={dx >= 0 ? width : 0}
-            y2={isAbove ? 0 : height}
-            stroke={neutral.ink}
-            strokeOpacity={0.5}
+            x1={0}
+            y1={0}
+            x2={dx}
+            y2={dy}
+            stroke={neutral['ink-4']}
+            strokeOpacity={0.8}
             strokeWidth={1}
           />
-          <circle
-            cx={dx >= 0 ? 0 : width}
-            cy={isAbove ? height : 0}
-            r={3.5}
-            fill="none"
-            stroke={neutral.ink}
-            strokeOpacity={0.7}
-            strokeWidth={1.2}
-          />
+          <circle cx={0} cy={0} r={3} fill={statusLight['st-rojo']} />
         </svg>
 
-        {}
         <button
           type="button"
           onClick={() => {
             onOpen(spot)
           }}
-          className="absolute w-48 cursor-pointer overflow-hidden rounded-xl bg-surface/95 text-left shadow-md backdrop-blur-sm transition-shadow hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
-          style={{
-            left: dx,
-            top: dy,
-            transform: `translate(${dx < 0 ? '-100%' : '0'}, ${isAbove ? '-100%' : '0'})`,
-          }}
+          title={`${title} — ${hotelStatusLabel(first)}`}
+          aria-label={`${title}. Abrir en Mi Territorio`}
+          className="group absolute size-12 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
+          style={{ left: dx, top: dy }}
         >
-          {spot.photoUrl && (
-            <span className="relative block h-16 bg-surface-2">
-              <img
-                src={spot.photoUrl}
-                alt=""
-                loading="lazy"
-                className="size-full object-cover"
-                onError={(event) => {
-                  event.currentTarget.style.display = 'none'
-                }}
-              />
-              <span
-                aria-hidden
-                className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-b from-transparent via-surface/70 to-surface"
-              />
+          {spot.photoUrl ? (
+            <img
+              src={spot.photoUrl}
+              alt=""
+              loading="lazy"
+              className="size-12 max-w-none rounded-full border-2 border-surface object-cover shadow-md"
+              onError={(event) => {
+                event.currentTarget.style.display = 'none'
+              }}
+            />
+          ) : (
+            <span
+              aria-hidden
+              className="flex size-12 items-center justify-center rounded-full border-2 border-surface text-base font-bold text-white shadow-md"
+              style={{ backgroundColor: statusLight[hotelStatusToken(first)] }}
+            >
+              {initialOf(first.name)}
             </span>
           )}
-          <span className={`block ${spot.photoUrl ? 'p-2.5 pt-0' : 'p-2.5'}`}>
-            {spot.hotels.length === 1 ? (
-              <>
-                <span className="block truncate text-xs font-semibold text-ink">{first.name}</span>
-                <span className="mt-1 flex items-center gap-1.5 text-[11px] leading-4 text-ink-2">
-                  <span
-                    aria-hidden
-                    className="size-1.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: statusLight[hotelStatusToken(first)] }}
-                  />
-                  {hotelStatusLabel(first)}
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="block truncate text-xs font-semibold text-ink">
-                  {spot.hotels.length} hoteles aquí
-                </span>
-                <span className="mt-0.5 flex flex-col">
-                  {visibleHotels.map((hotel) => (
-                    <span
-                      key={hotel.id}
-                      className="flex items-center gap-1.5 text-[11px] leading-4 text-ink-2"
-                    >
-                      <span
-                        aria-hidden
-                        className="size-1.5 shrink-0 rounded-full"
-                        style={{ backgroundColor: statusLight[hotelStatusToken(hotel)] }}
-                      />
-                      <span className="truncate">{hotel.name}</span>
-                    </span>
-                  ))}
-                  {rest > 0 && (
-                    <span className="text-[11px] leading-4 text-ink-4">y {rest} más</span>
-                  )}
-                </span>
-              </>
-            )}
-          </span>
         </button>
       </div>
     </Html>
@@ -270,7 +188,7 @@ function GlobeCanvas({
   const spots = useMemo(() => groupByLocation(hotels), [hotels])
 
   const annotated = useMemo(
-    () => [...spots].sort((a, b) => b.hotels.length - a.hotels.length).slice(0, MAX_CALLOUTS),
+    () => [...spots].sort((a, b) => b.hotels.length - a.hotels.length).slice(0, MAX_PINS),
     [spots],
   )
 
@@ -279,7 +197,7 @@ function GlobeCanvas({
       ? {
           lat: spots.reduce((sum, spot) => sum + spot.lat, 0) / spots.length,
           lng: spots.reduce((sum, spot) => sum + spot.lng, 0) / spots.length,
-          altitude: 2.1,
+          altitude: 1.45,
         }
       : HOME
     const radius = 100 * (1 + target.altitude)
@@ -297,11 +215,11 @@ function GlobeCanvas({
 
   return (
     <Canvas dpr={[1, 1.5]} camera={camera}>
-      <ambientLight intensity={1.6} />
-      <directionalLight position={[120, 160, 80]} intensity={1.2} />
+      <ambientLight intensity={2.4} />
+      <directionalLight position={[120, 160, 80]} intensity={1.4} />
       <GlobeObject globe={globe} spots={spots} />
       {annotated.map((spot, index) => (
-        <SpotCallout
+        <SpotPin
           key={`${String(spot.lat)},${String(spot.lng)}`}
           globe={globe}
           spot={spot}
@@ -313,19 +231,10 @@ function GlobeCanvas({
         enablePan={false}
         enableZoom={false}
         autoRotate={!reducedMotion}
-        autoRotateSpeed={0.5}
+        autoRotateSpeed={0.4}
       />
     </Canvas>
   )
-}
-
-function supportsWebGl(): boolean {
-  try {
-    const canvas = document.createElement('canvas')
-    return canvas.getContext('webgl2') !== null || canvas.getContext('webgl') !== null
-  } catch {
-    return false
-  }
 }
 
 export function HotelGlobeCard(): ReactNode {
@@ -345,22 +254,26 @@ export function HotelGlobeCard(): ReactNode {
   }
 
   return (
-    <section className="flex flex-col rounded-2xl bg-surface p-5 shadow-md">
-      <h2 className="text-base font-semibold text-ink">El territorio</h2>
-      <p className="mt-0.5 text-sm text-ink-3">
-        Arrástralo. El clic en una tarjeta abre Mi Territorio con ese hotel.
-        {hotels && ` ${hotels.length} hoteles con coordenada.`}
-      </p>
-
-      <div className="mx-auto mt-2 h-96 w-full max-w-3xl">
-        {isError ? (
-          <p className="pt-8 text-center text-sm text-ink-3">
-            No se pudieron cargar los hoteles del globo.
-          </p>
-        ) : (
-          <GlobeCanvas hotels={hotels ?? []} onOpen={openTerritory} />
-        )}
+    <section className="relative overflow-hidden rounded-2xl border border-line bg-surface shadow-md">
+      <div className="relative z-10 px-8 pt-8">
+        <h2 className="text-2xl font-bold text-ink">Por todo el territorio</h2>
+        <p className="mt-2 max-w-md text-sm text-ink-3">
+          Los hoteles de tus zonas, del prospecto al cliente activo.
+          {hotels && ` ${String(hotels.length)} con coordenada.`} Cada pin abre Mi Territorio.
+        </p>
       </div>
+
+      {isError ? (
+        <p className="px-8 py-16 text-center text-sm text-ink-3">
+          No se pudieron cargar los hoteles del globo.
+        </p>
+      ) : (
+        <div className="pointer-events-none relative mt-2 h-96">
+          <div className="pointer-events-auto absolute inset-x-0 top-0 mx-auto h-[48rem] w-full max-w-5xl">
+            <GlobeCanvas hotels={hotels ?? []} onOpen={openTerritory} />
+          </div>
+        </div>
+      )}
     </section>
   )
 }
