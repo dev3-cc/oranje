@@ -6,6 +6,7 @@ import type { AuthorizationRequest, AuthorizationUrgencyPreview } from '../types
 import { Button } from '@/shared/components/Button'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { URGENCY_COLOR_NAME, URGENCY_LABEL } from '@/shared/constants/requisitionStatus'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 import { formatDayMonth } from '@/shared/lib/formatters'
 
 /**
@@ -48,8 +49,16 @@ export function AuthorizationResolutionForm({
     setRootError(null)
     try {
       await authorize({ requisitionId: request.id }).unwrap()
-    } catch {
-      setRootError('No se pudo autorizar. Reintenta en unos segundos.')
+    } catch (error) {
+      /** El 403 no es transitorio: autorizar es de los managers del Hotel (D-09). */
+      setRootError(
+        apiErrorMessage(error, {
+          byStatus: {
+            403: 'Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel (D-09).',
+          },
+          fallback: 'No se pudo autorizar.',
+        }),
+      )
     }
   }
 

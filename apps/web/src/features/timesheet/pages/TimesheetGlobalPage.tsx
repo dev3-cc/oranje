@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { useGetTimesheetWeekQuery } from '../api/timesheetApi'
 import { EMPTY_TIMESHEET_FILTERS } from '../types/timesheet.types'
 
+import { LoadError } from '@/shared/components/LoadError'
 import { MetricCard } from '@/shared/components/MetricCard'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import {
@@ -32,7 +33,12 @@ const HEADERS = [
  * Cuando el backend las exponga, esta pantalla se enciende sola.
  */
 export function TimesheetGlobalPage(): ReactNode {
-  const { data: week, isLoading, isError } = useGetTimesheetWeekQuery(EMPTY_TIMESHEET_FILTERS)
+  const {
+    data: week,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetTimesheetWeekQuery(EMPTY_TIMESHEET_FILTERS)
 
   const rows = week?.rows ?? []
   const rangeLabel =
@@ -64,9 +70,12 @@ export function TimesheetGlobalPage(): ReactNode {
       </div>
 
       {isError && (
-        <p className="rounded-lg border border-line bg-surface p-6 text-sm text-red">
-          No se pudo cargar la semana. Reintenta en unos segundos.
-        </p>
+        <LoadError
+          message="No se pudo cargar la semana."
+          onRetry={() => {
+            void refetch()
+          }}
+        />
       )}
 
       {isLoading && !week ? (

@@ -149,6 +149,12 @@ export const sessionApi = baseApi.injectEndpoints({
       onQueryStarted: async (_arg, { dispatch, queryFulfilled }) => {
         try {
           const { data } = await queryFulfilled
+          /**
+           * La caché entera es del usuario ANTERIOR: sin este reset, entrar
+           * como la Reclutadora seguía enseñando el `/me` (y los prospectos)
+           * de Hugo hasta recargar. Primero se limpia, luego se establece.
+           */
+          dispatch(baseApi.util.resetApiState())
           dispatch(sessionEstablished({ user: data, accessToken: lastAccessToken }))
         } catch {
           dispatch(sessionCleared())
@@ -178,6 +184,8 @@ export const sessionApi = baseApi.injectEndpoints({
           await queryFulfilled
         } finally {
           dispatch(sessionCleared())
+          /** Nada del usuario saliente puede quedar servible en la caché. */
+          dispatch(baseApi.util.resetApiState())
         }
       },
     }),

@@ -79,7 +79,7 @@ describe('el apartado del Colaborador', () => {
     expect(screen.getByText(/Alergias o condiciones médicas/)).toBeInTheDocument()
 
     await user.type(screen.getByLabelText(/Nombre/), 'Rubén Sandoval')
-    await user.type(screen.getByLabelText(/Teléfono/), '+1 404 512 8890')
+    await user.type(screen.getByLabelText(/^Teléfono$/), '404 512 8890')
     await user.selectOptions(screen.getByLabelText(/Parentesco/), 'SPOUSE')
     expect(saveButton).toBeDisabled()
 

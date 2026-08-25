@@ -5,6 +5,7 @@ import { NewRequisitionDialog } from '../components/NewRequisitionDialog'
 import { RequisitionTable } from '../components/RequisitionTable'
 
 import { Button } from '@/shared/components/Button'
+import { LoadError } from '@/shared/components/LoadError'
 import { MetricCard } from '@/shared/components/MetricCard'
 
 /**
@@ -17,7 +18,7 @@ import { MetricCard } from '@/shared/components/MetricCard'
 export function RequisitionBoardPage(): ReactNode {
   const [isNewOpen, setIsNewOpen] = useState(false)
 
-  const { data: board, isLoading, isError } = useGetRequisitionBoardQuery()
+  const { data: board, isLoading, isError, refetch } = useGetRequisitionBoardQuery()
 
   const metrics = board?.metrics
 
@@ -50,9 +51,12 @@ export function RequisitionBoardPage(): ReactNode {
       </header>
 
       {isError && (
-        <p className="rounded-lg border border-line bg-surface p-6 text-sm text-red">
-          No se pudo cargar el tablero. Reintenta en unos segundos.
-        </p>
+        <LoadError
+          message="No se pudo cargar el tablero."
+          onRetry={() => {
+            void refetch()
+          }}
+        />
       )}
 
       {metrics && (

@@ -8,6 +8,7 @@ import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { WORKER_STATUS_TOKEN, workerStatusChipLabel } from '@/shared/constants/workerStatus'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const CONTROL_CLASS =
@@ -214,8 +215,10 @@ export function CreateBlacklistDialog({
 
       {error !== undefined && (
         <p role="alert" className="text-sm text-red">
-          No se pudo registrar el veto. El motor pudo rechazarlo: el GRIS protege y solo hay un veto
-          vigente a la vez.
+          {apiErrorMessage(error, {
+            fallback:
+              'No se pudo registrar el veto. El motor pudo rechazarlo: el GRIS protege y solo hay un veto vigente a la vez.',
+          })}
         </p>
       )}
     </Modal>

@@ -7,9 +7,12 @@ import { ClientFilters } from '../components/ClientFilters'
 import { ClientMapCard } from '../components/ClientMapCard'
 import type { ClientFilters as Filters } from '../types/client.types'
 
+import tratoCerrado from '@/assets/ilustrations/personaje-trato-cerrado.svg'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { HotelPointsMap, type HotelMapPoint } from '@/shared/components/HotelPointsMap'
+import { LoadError } from '@/shared/components/LoadError'
 import { CONTRACT_STATUS_TOKEN } from '@/shared/constants/contractStatus'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 /** Cuánto se espera a que alguien deje de teclear antes de preguntar al servidor. */
 const SEARCH_DEBOUNCE_MS = 300
@@ -47,7 +50,7 @@ export function ClientPortfolioPage(): ReactNode {
     }
   }, [filters])
 
-  const { data: portfolio, isLoading, isError } = useGetClientsQuery(appliedFilters)
+  const { data: portfolio, isLoading, isError, refetch } = useGetClientsQuery(appliedFilters)
 
   const items = useMemo(() => portfolio?.items ?? [], [portfolio])
 
@@ -71,12 +74,27 @@ export function ClientPortfolioPage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight text-ink">Clientes activos</h1>
-        <p className="mt-1.5 text-sm text-ink-3">
-          commercial.vw_client · hoteles con activated_at
-          {portfolio && ` · ${String(portfolio.total)} en cartera`}
-        </p>
+      <header className="relative isolate flex items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-ink">Clientes activos</h1>
+          <p className="mt-1.5 text-sm text-ink-3">
+            {IS_DEV_UI
+              ? 'commercial.vw_client · hoteles con activated_at'
+              : 'Hoteles activados como clientes, listos para generar requisiciones'}
+            {portfolio && ` · ${String(portfolio.total)} en cartera`}
+          </p>
+        </div>
+        {/* Marca de agua: grande, opacada y disuelta con degradado hacia el contenido. */}
+        <img
+          src={tratoCerrado}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute -top-8 right-0 -z-10 hidden h-56 w-auto opacity-30 sm:block"
+          style={{
+            maskImage: 'linear-gradient(210deg, rgb(0 0 0) 25%, transparent 90%)',
+            WebkitMaskImage: 'linear-gradient(210deg, rgb(0 0 0) 25%, transparent 90%)',
+          }}
+        />
       </header>
 
       <ClientFilters
@@ -87,9 +105,12 @@ export function ClientPortfolioPage(): ReactNode {
       />
 
       {isError && (
-        <p className="rounded-lg border border-line bg-surface p-6 text-sm text-red">
-          No se pudo cargar la cartera. Reintenta en unos segundos.
-        </p>
+        <LoadError
+          message="No se pudo cargar la cartera."
+          onRetry={() => {
+            void refetch()
+          }}
+        />
       )}
 
       {isLoading && !portfolio ? (

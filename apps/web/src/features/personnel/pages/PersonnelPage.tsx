@@ -6,6 +6,8 @@ import { useGetPersonnelBoardQuery } from '../api/personnelApi'
 import { StandByDialog } from '../components/StandByDialog'
 import type { PersonnelRow } from '../types/personnel.types'
 
+import mascotaSaludando from '@/assets/mascota/mascota-saludando.png'
+import { LoadError } from '@/shared/components/LoadError'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   workerStatusChipLabel,
@@ -48,12 +50,19 @@ function Kpi({ value, label }: { value: number; label: string }): ReactNode {
  * con el Manager de Área; el GRIS protege — sin Stand-by ni veto (D-27).
  */
 export function PersonnelPage(): ReactNode {
-  const { data: board, isLoading, isError } = useGetPersonnelBoardQuery()
+  const { data: board, isLoading, isError, refetch } = useGetPersonnelBoardQuery()
   const [standByTarget, setStandByTarget] = useState<PersonnelRow | null>(null)
 
   if (isLoading) return <p className="text-sm text-ink-3">Cargando tu personal…</p>
   if (isError || !board) {
-    return <p className="text-sm text-red">No se pudo cargar Mi Personal.</p>
+    return (
+      <LoadError
+        message="No se pudo cargar Mi Personal."
+        onRetry={() => {
+          void refetch()
+        }}
+      />
+    )
   }
 
   return (
@@ -73,92 +82,106 @@ export function PersonnelPage(): ReactNode {
         <Kpi value={board.inAccident} label="En accidente (GRIS)" />
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-line bg-surface">
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-line text-xs text-ink-3 uppercase">
-              <th className="px-5 py-3 font-medium">Colaborador</th>
-              <th className="px-5 py-3 font-medium">Posición</th>
-              <th className="px-5 py-3 font-medium">Semáforo</th>
-              <th className="px-5 py-3 font-medium">Turno hoy</th>
-              <th className="px-5 py-3 font-medium">Marcas</th>
-              <th className="px-5 py-3 font-medium">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
-            {board.rows.map((row) => (
-              <tr key={row.workerId}>
-                <td className="px-5 py-3">
-                  <span className="flex items-center gap-3">
-                    {row.photoUrl ? (
-                      <img
-                        src={row.photoUrl}
-                        alt=""
-                        className="size-8 shrink-0 rounded-full object-cover"
-                      />
-                    ) : (
-                      <span
-                        aria-hidden
-                        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-o-50 text-[11px] font-bold text-o-700"
-                      >
-                        {initialsOf(row.fullName)}
-                      </span>
-                    )}
-                    <span className="font-medium whitespace-nowrap text-ink">{row.fullName}</span>
-                  </span>
-                </td>
-                <td className="px-5 py-3 whitespace-nowrap text-ink-2">{row.positionName}</td>
-                <td className="px-5 py-3">
-                  <StatusLightSoftBadge
-                    token={WORKER_STATUS_TOKEN[row.stateCode as WorkerStatus] ?? 'st-blanco'}
-                    label={workerStatusChipLabel(row.stateCode as WorkerStatus)}
-                  />
-                </td>
-                <td className="px-5 py-3 whitespace-nowrap text-ink-2">
-                  {row.shift
-                    ? `${timeOf(row.shift.startsAt)}–${timeOf(row.shift.endsAt)}`
-                    : (NO_SHIFT_LABEL[row.stateCode] ?? '— descansa')}
-                </td>
-                <td className="px-5 py-3 whitespace-nowrap">
-                  {row.clockInAt ? (
-                    <span className="font-medium text-ink">IN {timeOf(row.clockInAt)}</span>
-                  ) : row.shift ? (
-                    <span className="text-red">Sin entrada</span>
-                  ) : (
-                    <span className="text-ink-4">—</span>
-                  )}
-                </td>
-                <td className="px-5 py-3 whitespace-nowrap">
-                  <span className="flex items-center gap-3 text-sm">
-                    {row.canStandBy && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setStandByTarget(row)
-                        }}
-                        className="cursor-pointer font-medium text-o-700 hover:underline"
-                      >
-                        Stand-by
-                      </button>
-                    )}
-                    <a href={`tel:${row.phone}`} className="text-ink-2 hover:underline">
-                      Contactar
-                    </a>
-                    {/* El Expediente pide permisos de Reclutamiento: el enlace existe,
-                        el API decide (igual que toda la app hasta filtrar por rol). */}
-                    <Link
-                      to={`/pool-colaboradores/${row.workerId}`}
-                      className="text-ink-2 hover:underline"
-                    >
-                      Historial
-                    </Link>
-                  </span>
-                </td>
+      {board.rows.length === 0 && (
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-line px-6 py-12 text-center">
+          <img src={mascotaSaludando} alt="" aria-hidden className="h-32 w-auto" />
+          <p className="text-base font-semibold text-ink">
+            Sin colaboradores asignados esta semana
+          </p>
+          <p className="max-w-md text-sm text-ink-3">
+            El plantel se llena cuando el Schedule programe turnos de tus requisiciones.
+          </p>
+        </div>
+      )}
+
+      {board.rows.length > 0 && (
+        <div className="overflow-x-auto rounded-lg border border-line bg-surface">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-line text-xs text-ink-3 uppercase">
+                <th className="px-5 py-3 font-medium">Colaborador</th>
+                <th className="px-5 py-3 font-medium">Posición</th>
+                <th className="px-5 py-3 font-medium">Semáforo</th>
+                <th className="px-5 py-3 font-medium">Turno hoy</th>
+                <th className="px-5 py-3 font-medium">Marcas</th>
+                <th className="px-5 py-3 font-medium">Acciones</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {board.rows.map((row) => (
+                <tr key={row.workerId}>
+                  <td className="px-5 py-3">
+                    <span className="flex items-center gap-3">
+                      {row.photoUrl ? (
+                        <img
+                          src={row.photoUrl}
+                          alt=""
+                          className="size-8 shrink-0 rounded-full object-cover"
+                        />
+                      ) : (
+                        <span
+                          aria-hidden
+                          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-o-50 text-[11px] font-bold text-o-700"
+                        >
+                          {initialsOf(row.fullName)}
+                        </span>
+                      )}
+                      <span className="font-medium whitespace-nowrap text-ink">{row.fullName}</span>
+                    </span>
+                  </td>
+                  <td className="px-5 py-3 whitespace-nowrap text-ink-2">{row.positionName}</td>
+                  <td className="px-5 py-3">
+                    <StatusLightSoftBadge
+                      token={WORKER_STATUS_TOKEN[row.stateCode as WorkerStatus] ?? 'st-blanco'}
+                      label={workerStatusChipLabel(row.stateCode as WorkerStatus)}
+                    />
+                  </td>
+                  <td className="px-5 py-3 whitespace-nowrap text-ink-2">
+                    {row.shift
+                      ? `${timeOf(row.shift.startsAt)}–${timeOf(row.shift.endsAt)}`
+                      : (NO_SHIFT_LABEL[row.stateCode] ?? '— descansa')}
+                  </td>
+                  <td className="px-5 py-3 whitespace-nowrap">
+                    {row.clockInAt ? (
+                      <span className="font-medium text-ink">IN {timeOf(row.clockInAt)}</span>
+                    ) : row.shift ? (
+                      <span className="text-red">Sin entrada</span>
+                    ) : (
+                      <span className="text-ink-4">—</span>
+                    )}
+                  </td>
+                  <td className="px-5 py-3 whitespace-nowrap">
+                    <span className="flex items-center gap-3 text-sm">
+                      {row.canStandBy && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setStandByTarget(row)
+                          }}
+                          className="cursor-pointer font-medium text-o-700 hover:underline"
+                        >
+                          Stand-by
+                        </button>
+                      )}
+                      <a href={`tel:${row.phone}`} className="text-ink-2 hover:underline">
+                        Contactar
+                      </a>
+                      {/* El Expediente pide permisos de Reclutamiento: el enlace existe,
+                        el API decide (igual que toda la app hasta filtrar por rol). */}
+                      <Link
+                        to={`/pool-colaboradores/${row.workerId}`}
+                        className="text-ink-2 hover:underline"
+                      >
+                        Historial
+                      </Link>
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <p className="flex items-start gap-2 text-xs leading-relaxed text-ink-4">
         <MaterialIcon name="info" aria-hidden className="mt-0.5 text-sm" />

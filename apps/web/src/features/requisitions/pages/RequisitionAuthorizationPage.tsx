@@ -6,6 +6,7 @@ import { AuthorizationPositionsTable } from '../components/AuthorizationPosition
 import { AuthorizationQueueList } from '../components/AuthorizationQueueList'
 import { AuthorizationResolutionForm } from '../components/AuthorizationResolutionForm'
 
+import { LoadError } from '@/shared/components/LoadError'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import {
@@ -25,7 +26,7 @@ import {
 export function RequisitionAuthorizationPage(): ReactNode {
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const { data: queue, isLoading, isError } = useGetAuthorizationQueueQuery()
+  const { data: queue, isLoading, isError, refetch } = useGetAuthorizationQueueQuery()
 
   if (isLoading) {
     return <TableSkeleton rows={4} columns={4} />
@@ -33,8 +34,13 @@ export function RequisitionAuthorizationPage(): ReactNode {
 
   if (isError || !queue) {
     return (
-      <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-surface p-6">
-        <p className="text-sm text-red">No se pudo cargar la cola de autorización.</p>
+      <div className="flex flex-col gap-4">
+        <LoadError
+          message="No se pudo cargar la cola de autorización."
+          onRetry={() => {
+            void refetch()
+          }}
+        />
         <Link to="/requisiciones" className="text-sm font-semibold text-o-700 hover:underline">
           Volver al tablero
         </Link>

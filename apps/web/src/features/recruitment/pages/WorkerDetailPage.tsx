@@ -8,6 +8,7 @@ import {
 } from '../api/workerDetailApi'
 import { ChangeStateDialog } from '../components/ChangeStateDialog'
 
+import mascotaTriste from '@/assets/mascota/mascota-triste.png'
 import { Button } from '@/shared/components/Button'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
@@ -78,7 +79,8 @@ export function WorkerDetailPage(): ReactNode {
 
   if (isError || !worker) {
     return (
-      <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-surface p-6">
+      <div className="flex flex-col items-center gap-4 rounded-lg border border-line bg-surface p-8 text-center">
+        <img src={mascotaTriste} alt="" aria-hidden className="h-32 w-auto" />
         <p className="text-sm text-red">No se encontró al colaborador.</p>
         <Link to="/pool-colaboradores" className="text-sm font-semibold text-o-700 hover:underline">
           Volver al Pool
@@ -188,7 +190,8 @@ export function WorkerDetailPage(): ReactNode {
           <div>
             <h1 className="text-2xl font-bold text-ink">{worker.fullName}</h1>
             <p className="mt-0.5 text-xs text-ink-3">
-              personal.worker · {worker.zone.name} · {worker.position?.name ?? 'Sin posición'}
+              {IS_DEV_UI && 'personal.worker · '}
+              {worker.zone.name} · {worker.position?.name ?? 'Sin posición'}
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <StatusLightSoftBadge token={WORKER_STATUS_TOKEN[status]} label={statusLabel} />
@@ -218,7 +221,14 @@ export function WorkerDetailPage(): ReactNode {
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex flex-col gap-6">
-          <SectionCard title="Identidad" subtitle="las seis son NOT NULL — sin ellas no hay Fase 1">
+          <SectionCard
+            title="Identidad"
+            subtitle={
+              IS_DEV_UI
+                ? 'las seis son NOT NULL — sin ellas no hay Fase 1'
+                : 'Sin estos datos no hay Fase 1'
+            }
+          >
             <div className="grid gap-x-6 gap-y-4 sm:grid-cols-3">
               {identityFields.map((field) => (
                 <Field key={field.foot} {...field} />
@@ -228,7 +238,11 @@ export function WorkerDetailPage(): ReactNode {
 
           <SectionCard
             title="Perfil laboral y salud"
-            subtitle="todas nulables · 9 integran is_profile_complete (vw_worker) — la foto no cuenta"
+            subtitle={
+              IS_DEV_UI
+                ? 'todas nulables · 9 integran is_profile_complete (vw_worker) — la foto no cuenta'
+                : '9 campos obligatorios completan el perfil — la foto no cuenta'
+            }
           >
             <div className="grid gap-x-6 gap-y-4 sm:grid-cols-3">
               {profileFields.map((field) => (
@@ -237,7 +251,10 @@ export function WorkerDetailPage(): ReactNode {
             </div>
           </SectionCard>
 
-          <SectionCard title="Documentos" subtitle="personal.worker_document">
+          <SectionCard
+            title="Documentos"
+            subtitle={IS_DEV_UI ? 'personal.worker_document' : 'El expediente del colaborador'}
+          >
             {(documents?.data ?? []).length === 0 ? (
               <p className="rounded-md border border-dashed border-line px-4 py-6 text-center text-sm text-ink-3">
                 Sin documentos en el expediente.
@@ -290,7 +307,11 @@ export function WorkerDetailPage(): ReactNode {
 
         <SectionCard
           title="Historial del semáforo"
-          subtitle="personal.worker_state_history — la verdad del semáforo"
+          subtitle={
+            IS_DEV_UI
+              ? 'personal.worker_state_history — la verdad del semáforo'
+              : 'Cada cambio de estado, con quién lo hizo y cuándo'
+          }
           className="self-start"
         >
           {history.length === 0 ? (

@@ -1,6 +1,7 @@
 import { MaterialIcon, cn } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
+import personajeAyuda from '@/assets/ilustrations/personaje-ayuda.svg'
 import { Modal } from '@/shared/components/Modal'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
@@ -107,6 +108,7 @@ export function SemaforoHelpDialog({
       className="max-w-xl"
     >
       <div className="flex flex-col gap-5">
+        <img src={personajeAyuda} alt="" aria-hidden className="mx-auto h-32 w-auto" />
         <section>
           <h3 className="text-sm font-semibold text-ink">El camino a cliente</h3>
           <p className="mt-1 text-xs leading-relaxed text-ink-3">

@@ -5,6 +5,7 @@ import { TaxDeadlineBanner } from '../components/TaxDeadlineBanner'
 
 import { Button } from '@/shared/components/Button'
 import { TRANSPORT_LABEL, TRANSPORT_TYPES } from '@/shared/constants/workerEnums'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const CONTROL_CLASS =
@@ -18,7 +19,7 @@ const CONTROL_CLASS =
  */
 export function Phase2Page(): ReactNode {
   const { data: profile } = useGetMyProfileQuery()
-  const [save, { isLoading, isError, isSuccess }] = useCompleteSignupMutation()
+  const [save, { isLoading, isError, isSuccess, error: saveError }] = useCompleteSignupMutation()
 
   const [transportType, setTransportType] = useState('')
 
@@ -100,6 +101,9 @@ export function Phase2Page(): ReactNode {
         </p>
       </section>
 
+      {transportType === '' && (
+        <p className="text-xs text-ink-3">Elige tu transporte para poder enviar</p>
+      )}
       <Button
         variant="primary"
         disabled={!canSubmit}
@@ -117,7 +121,7 @@ export function Phase2Page(): ReactNode {
       )}
       {isError && (
         <p role="alert" className="text-sm text-red">
-          No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.
+          {apiErrorMessage(saveError, { fallback: 'No se pudo guardar el transporte.' })}
         </p>
       )}
 

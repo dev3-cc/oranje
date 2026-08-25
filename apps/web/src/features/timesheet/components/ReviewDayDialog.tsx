@@ -6,6 +6,7 @@ import type { TimesheetEntry } from '../types/timesheet.types'
 
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayMonth } from '@/shared/lib/formatters'
 
@@ -25,7 +26,7 @@ export function ReviewDayDialog({
   onClose: () => void
 }): ReactNode {
   const [note, setNote] = useState('')
-  const [reviewDay, { isLoading, isError }] = useReviewTimesheetDayMutation()
+  const [reviewDay, { isLoading, isError, error: saveError }] = useReviewTimesheetDayMutation()
 
   useEffect(() => {
     setNote(entry?.reviewNote ?? '')
@@ -139,7 +140,7 @@ export function ReviewDayDialog({
 
       {isError && (
         <p role="alert" className="text-sm text-red">
-          No se pudo guardar la revisión. Reintenta.
+          {apiErrorMessage(saveError, { fallback: 'No se pudo guardar la revisión.' })}
         </p>
       )}
     </Modal>

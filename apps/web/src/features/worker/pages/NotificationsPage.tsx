@@ -3,6 +3,8 @@ import type { ReactNode } from 'react'
 
 import { useGetMyNotificationsQuery, useMarkNotificationReadMutation } from '../api/workerApi'
 
+import personajeErrorTecnico from '@/assets/ilustrations/personaje-error-tecnico.svg'
+import personajeNotificaciones from '@/assets/ilustrations/personaje-notificaciones.svg'
 import { formatDayMonthTime } from '@/shared/lib/formatters'
 
 /**
@@ -26,9 +28,12 @@ export function NotificationsPage(): ReactNode {
       </header>
 
       {isError && (
-        <p className="rounded-md bg-surface-2 px-4 py-3 text-sm text-ink-2">
-          Tus avisos llegarán aquí en cuanto el servicio de notificaciones esté activo.
-        </p>
+        <div className="flex flex-col items-center gap-2 rounded-md bg-surface-2 px-4 py-6 text-center">
+          <img src={personajeErrorTecnico} alt="" aria-hidden className="h-28 w-auto" />
+          <p className="text-sm text-ink-2">
+            Tus avisos llegarán aquí en cuanto el servicio de notificaciones esté activo.
+          </p>
+        </div>
       )}
 
       {isLoading && notifications.length === 0 && (
@@ -36,9 +41,10 @@ export function NotificationsPage(): ReactNode {
       )}
 
       {!isLoading && !isError && notifications.length === 0 && (
-        <p className="rounded-md border border-dashed border-line px-4 py-8 text-center text-sm text-ink-3">
-          Sin avisos por ahora.
-        </p>
+        <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-line px-4 py-8 text-center">
+          <img src={personajeNotificaciones} alt="" aria-hidden className="h-28 w-auto" />
+          <p className="text-sm text-ink-3">Sin avisos por ahora.</p>
+        </div>
       )}
 
       <ul className="flex flex-col gap-2.5">

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 
 import type { TaxDeadlineApi } from '../types/worker.types'
 
+import personajeHastaPronto from '@/assets/ilustrations/personaje-hasta-pronto.svg'
 import { formatDate } from '@/shared/lib/formatters'
 
 /**
@@ -46,12 +47,7 @@ export function TaxDeadlineBanner({ deadline }: { deadline: TaxDeadlineApi }): R
 export function SuspendedScreen(): ReactNode {
   return (
     <div className="flex flex-col items-center gap-4 px-6 py-16 text-center">
-      <span
-        aria-hidden
-        className="flex size-14 items-center justify-center rounded-full bg-red/10 text-2xl font-bold text-red"
-      >
-        !
-      </span>
+      <img src={personajeHastaPronto} alt="" aria-hidden className="h-36 w-auto" />
       <h1 className="text-xl font-bold text-ink">Tu acceso está suspendido</h1>
       <p className="max-w-sm text-sm leading-relaxed text-ink-3">
         Pasaron 5 días sin cargar tu SSN o ITIN. Contacta a Oranje (Customer Service) para

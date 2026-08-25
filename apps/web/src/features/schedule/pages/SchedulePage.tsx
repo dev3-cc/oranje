@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { useGetScheduleWeekQuery } from '../api/scheduleApi'
 import type { ScheduleDemandRow } from '../types/schedule.types'
 
+import { LoadError } from '@/shared/components/LoadError'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayNumber, formatWeekRange, formatWeekday } from '@/shared/lib/formatters'
@@ -64,7 +65,7 @@ function DemandRow({ row, days }: { row: ScheduleDemandRow; days: string[] }): R
  * ese vínculo en vez de inventarse.
  */
 export function SchedulePage(): ReactNode {
-  const { data: week, isLoading, isError } = useGetScheduleWeekQuery()
+  const { data: week, isLoading, isError, refetch } = useGetScheduleWeekQuery()
 
   const coverage =
     week && week.totalSlots > 0 ? Math.round((week.filledSlots / week.totalSlots) * 100) : 0
@@ -83,9 +84,12 @@ export function SchedulePage(): ReactNode {
       </header>
 
       {isError && (
-        <p className="rounded-lg border border-line bg-surface p-6 text-sm text-red">
-          No se pudo cargar el schedule. Reintenta en unos segundos.
-        </p>
+        <LoadError
+          message="No se pudo cargar el schedule."
+          onRetry={() => {
+            void refetch()
+          }}
+        />
       )}
 
       {isLoading && !week ? (

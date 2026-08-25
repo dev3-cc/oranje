@@ -5,6 +5,8 @@ import { Link } from 'react-router'
 import { useGetSelfPickBoardQuery } from '../api/selfPickApi'
 import type { SelfPickRow } from '../types/selfPick.types'
 
+import personajeComencemos from '@/assets/ilustrations/personaje-comencemos.svg'
+import { LoadError } from '@/shared/components/LoadError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate } from '@/shared/lib/formatters'
 
@@ -76,7 +78,7 @@ function uniqueOptions(
  * confirma (RR-15) — tomar un slot bloquea ESA fila, no la requisición.
  */
 export function SelfPickPage(): ReactNode {
-  const { data: board, isLoading, isError } = useGetSelfPickBoardQuery()
+  const { data: board, isLoading, isError, refetch } = useGetSelfPickBoardQuery()
 
   const [positionId, setPositionId] = useState(ANY)
   const [modalityId, setModalityId] = useState(ANY)
@@ -93,7 +95,14 @@ export function SelfPickPage(): ReactNode {
 
   if (isLoading) return <p className="text-sm text-ink-3">Cargando la bolsa…</p>
   if (isError || !board) {
-    return <p className="text-sm text-red">No se pudo cargar la bolsa de Self-Pick.</p>
+    return (
+      <LoadError
+        message="No se pudo cargar la bolsa de Self-Pick."
+        onRetry={() => {
+          void refetch()
+        }}
+      />
+    )
   }
 
   return (
@@ -166,9 +175,12 @@ export function SelfPickPage(): ReactNode {
       </div>
 
       {rows.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-line px-4 py-10 text-center text-sm text-ink-3">
-          Sin slots libres con esos filtros. La bolsa se llena al autorizarse requisiciones.
-        </p>
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-line px-4 py-10 text-center">
+          <img src={personajeComencemos} alt="" aria-hidden className="h-32 w-auto" />
+          <p className="text-sm text-ink-3">
+            Sin slots libres con esos filtros. La bolsa se llena al autorizarse requisiciones.
+          </p>
+        </div>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {rows.map((row) => (

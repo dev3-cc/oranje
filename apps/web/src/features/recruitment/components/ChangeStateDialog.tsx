@@ -10,6 +10,7 @@ import {
   WORKER_STATUS_TOKEN,
   type WorkerStatus,
 } from '@/shared/constants/workerStatus'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 
 /**
  * Cambiar el estado del semáforo: solo ofrece lo que `GET /transitions` dice
@@ -30,7 +31,8 @@ export function ChangeStateDialog({
   const { data: transitions = [], isLoading } = useGetWorkerTransitionsQuery(workerId, {
     skip: !isOpen,
   })
-  const [change, { isLoading: isSaving, isError }] = useChangeWorkerStateMutation()
+  const [change, { isLoading: isSaving, isError, error: saveError }] =
+    useChangeWorkerStateMutation()
 
   const [toState, setToState] = useState('')
   const [note, setNote] = useState('')
@@ -61,7 +63,13 @@ export function ChangeStateDialog({
       title="Cambiar estado"
       description={`Hoy: ${currentLabel}. El semáforo solo camina por sus transiciones sembradas.`}
       footer={
-        <div className="flex justify-end gap-3">
+        <div className="flex items-center justify-end gap-3">
+          {transitions.length > 0 && selected === undefined && (
+            <span className="mr-auto text-xs text-ink-3">Elige el estado destino</span>
+          )}
+          {selected?.requiresReason && note.trim() === '' && (
+            <span className="mr-auto text-xs text-ink-3">Esta transición exige un motivo</span>
+          )}
           <Button variant="secondary" onClick={onClose}>
             Cancelar
           </Button>
@@ -129,7 +137,7 @@ export function ChangeStateDialog({
 
         {isError && (
           <p role="alert" className="text-sm text-red">
-            No se pudo aplicar la transición.
+            {apiErrorMessage(saveError, { fallback: 'No se pudo aplicar la transición.' })}
           </p>
         )}
       </div>

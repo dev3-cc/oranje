@@ -4,6 +4,7 @@ import { useSendToStandByMutation } from '../api/personnelApi'
 
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 
 /**
  * Stand-by (Rosa): la transición del semáforo con motivo OBLIGATORIO — la
@@ -20,7 +21,7 @@ export function StandByDialog({
   isOpen: boolean
   onClose: () => void
 }): ReactNode {
-  const [send, { isLoading, isError }] = useSendToStandByMutation()
+  const [send, { isLoading, isError, error: sendError }] = useSendToStandByMutation()
   const [note, setNote] = useState('')
 
   const canSubmit = note.trim() !== '' && !isLoading
@@ -73,7 +74,7 @@ export function StandByDialog({
       </label>
       {isError && (
         <p role="alert" className="mt-2 text-sm text-red">
-          No se pudo mandar a Stand-by. Inténtalo de nuevo.
+          {apiErrorMessage(sendError, { fallback: 'No se pudo mandar a Stand-by.' })}
         </p>
       )}
     </Modal>

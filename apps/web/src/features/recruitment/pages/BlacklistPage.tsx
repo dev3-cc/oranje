@@ -12,6 +12,7 @@ import {
 } from '../types/blacklist.types'
 
 import { Button } from '@/shared/components/Button'
+import { LoadError } from '@/shared/components/LoadError'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayMonth } from '@/shared/lib/formatters'
@@ -41,7 +42,7 @@ export function BlacklistPage(): ReactNode {
   const [liftTarget, setLiftTarget] = useState<BlacklistRow | null>(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
 
-  const { data: rows = [], isLoading, isError } = useGetBlacklistQuery(filters)
+  const { data: rows = [], isLoading, isError, refetch } = useGetBlacklistQuery(filters)
 
   return (
     <div className="flex flex-col gap-6">
@@ -102,9 +103,12 @@ export function BlacklistPage(): ReactNode {
       </div>
 
       {isError && (
-        <p className="rounded-lg border border-line bg-surface p-6 text-sm text-red">
-          No se pudo cargar la Blacklist. Reintenta en unos segundos.
-        </p>
+        <LoadError
+          message="No se pudo cargar la Blacklist."
+          onRetry={() => {
+            void refetch()
+          }}
+        />
       )}
 
       {isLoading && rows.length === 0 ? (

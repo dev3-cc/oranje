@@ -3,6 +3,8 @@ import { Link } from 'react-router'
 
 import { useGetConversionQueueQuery } from '../api/conversionApi'
 
+import conversionIllustration from '@/assets/ilustrations/conversion_naranja.svg'
+import { LoadError } from '@/shared/components/LoadError'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   ONBOARDING_STATUS_LABEL,
@@ -18,23 +20,34 @@ import { formatDaysInStatus } from '@/shared/lib/formatters'
  * las formas que ya existen y se rehace cuando llegue su diseño.
  */
 export function ConversionQueuePage(): ReactNode {
-  const { data: candidates = [], isLoading, isError } = useGetConversionQueueQuery()
+  const { data: candidates = [], isLoading, isError, refetch } = useGetConversionQueueQuery()
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight text-ink">Conversión</h1>
-        <p className="mt-1.5 text-sm text-ink-3">
-          {isLoading
-            ? 'Cargando la cola…'
-            : `${candidates.length} prospectos en Rosa esperando aprobación`}
-        </p>
+      <header className="flex items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-ink">Conversión</h1>
+          <p className="mt-1.5 text-sm text-ink-3">
+            {isLoading
+              ? 'Cargando la cola…'
+              : `${candidates.length} prospectos en Rosa esperando aprobación`}
+          </p>
+        </div>
+        <img
+          src={conversionIllustration}
+          alt=""
+          aria-hidden
+          className="hidden h-20 w-auto sm:block"
+        />
       </header>
 
       {isError && (
-        <p className="rounded-lg border border-line bg-surface p-6 text-sm text-red">
-          No se pudo cargar la cola de conversión. Reintenta en unos segundos.
-        </p>
+        <LoadError
+          message="No se pudo cargar la cola de conversión."
+          onRetry={() => {
+            void refetch()
+          }}
+        />
       )}
 
       {!isLoading && !isError && candidates.length === 0 && (

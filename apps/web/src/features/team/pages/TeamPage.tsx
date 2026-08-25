@@ -3,8 +3,10 @@ import type { ReactNode } from 'react'
 import { useGetTeamOverviewQuery } from '../api/teamApi'
 import type { TeamMemberCard } from '../types/team.types'
 
+import bdcIllustration from '@/assets/ilustrations/bdc.svg'
 import { Button } from '@/shared/components/Button'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { LoadError } from '@/shared/components/LoadError'
 import { MetricCard } from '@/shared/components/MetricCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
@@ -91,7 +93,7 @@ function MemberCard({ member }: { member: TeamMemberCard }): ReactNode {
  * backend le responde 403 a `/team` y esta pantalla se lo dice.
  */
 export function TeamPage(): ReactNode {
-  const { data: overview, isLoading, isError, error } = useGetTeamOverviewQuery()
+  const { data: overview, isLoading, isError, error, refetch } = useGetTeamOverviewQuery()
 
   const status = (error as { status?: number } | undefined)?.status
 
@@ -100,22 +102,34 @@ export function TeamPage(): ReactNode {
   }
 
   if (isError || !overview) {
+    /** El 403 no es transitorio: ahí Reintentar mentiría. */
+    if (status === 403) {
+      return (
+        <p className="rounded-lg border border-line bg-surface p-6 text-sm text-ink-2">
+          Mi Equipo es la pantalla del BDC: tu rol no tiene BDs a cargo.
+        </p>
+      )
+    }
     return (
-      <p className="rounded-lg border border-line bg-surface p-6 text-sm text-ink-2">
-        {status === 403
-          ? 'Mi Equipo es la pantalla del BDC: tu rol no tiene BDs a cargo.'
-          : 'No se pudo cargar el equipo. Reintenta en unos segundos.'}
-      </p>
+      <LoadError
+        message="No se pudo cargar el equipo."
+        onRetry={() => {
+          void refetch()
+        }}
+      />
     )
   }
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight text-ink">Mi Equipo</h1>
-        <p className="mt-1.5 text-sm text-ink-3">
-          Los BDs que te reportan y cómo va su ciclo comercial
-        </p>
+      <header className="flex items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-ink">Mi Equipo</h1>
+          <p className="mt-1.5 text-sm text-ink-3">
+            Los BDs que te reportan y cómo va su ciclo comercial
+          </p>
+        </div>
+        <img src={bdcIllustration} alt="" aria-hidden className="hidden h-20 w-auto sm:block" />
       </header>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">

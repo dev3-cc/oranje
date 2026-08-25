@@ -11,6 +11,7 @@ import {
 } from '../types/timesheet.types'
 
 import { Button } from '@/shared/components/Button'
+import { LoadError } from '@/shared/components/LoadError'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { DEFAULT_COLUMN_WIDTH } from '@/shared/constants/timesheetStatus'
 import { formatWeekRange } from '@/shared/lib/formatters'
@@ -29,7 +30,7 @@ export function TimesheetPage(): ReactNode {
   /** El día abierto en Revisión (maqueta del Supervisor); `null` = cerrado. */
   const [review, setReview] = useState<{ entry: TimesheetEntry; workerName: string } | null>(null)
 
-  const { data: week, isLoading, isError } = useGetTimesheetWeekQuery(filters)
+  const { data: week, isLoading, isError, refetch } = useGetTimesheetWeekQuery(filters)
 
   function toggle(entryId: string): void {
     setSelectedIds((previous) => {
@@ -108,9 +109,12 @@ export function TimesheetPage(): ReactNode {
       )}
 
       {isError && (
-        <p className="rounded-lg border border-line bg-surface p-6 text-sm text-red">
-          No se pudo cargar la semana. Reintenta en unos segundos.
-        </p>
+        <LoadError
+          message="No se pudo cargar la semana."
+          onRetry={() => {
+            void refetch()
+          }}
+        />
       )}
 
       {isLoading && !week ? (

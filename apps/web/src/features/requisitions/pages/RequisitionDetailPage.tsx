@@ -7,7 +7,7 @@ import { RequisitionSummaryStrip } from '../components/RequisitionSummaryStrip'
 import { SlotList } from '../components/SlotList'
 import { StatusHistoryCard } from '../components/StatusHistoryCard'
 
-import { Button } from '@/shared/components/Button'
+import { Button, buttonClass } from '@/shared/components/Button'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
@@ -79,18 +79,26 @@ export function RequisitionDetailPage(): ReactNode {
           </p>
         </div>
 
-        <div className="flex shrink-0 flex-wrap gap-3">
-          {/* Ambas esperan maqueta; se dejan visibles para no mover el encabezado después. */}
+        <div className="flex shrink-0 flex-wrap items-center gap-3">
+          {/* Espera maqueta; se deja visible para no mover el encabezado después. */}
           <Button variant="secondary" disabled title="Pendiente: falta el diseño de la bitácora">
             Ver bitácora
           </Button>
-          <Button
-            variant="primary"
-            disabled
-            title="Pendiente: falta el diseño del cambio de estado"
-          >
-            Cambiar estado
-          </Button>
+          {/*
+            Sin botón «Cambiar estado»: el semáforo camina por HECHOS (D-23) y
+            un botón que jamás se habilita es ruido — aquí va la acción que SÍ
+            mueve el estado según dónde esté la requisición.
+          */}
+          {detail.status === 'APPLE_GREEN' ? (
+            <Link to="/requisiciones/autorizacion" className={buttonClass('primary')}>
+              Ir a Autorización
+            </Link>
+          ) : detail.totals.occupiedCount < detail.totals.slotCount &&
+            detail.status !== 'PURPLE' ? (
+            <Link to="/self-pick" className={buttonClass('primary')}>
+              Cubrir slots en Self-Pick
+            </Link>
+          ) : null}
         </div>
       </header>
 

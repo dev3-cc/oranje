@@ -6,6 +6,7 @@ import type { BlacklistRow } from '../types/blacklist.types'
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayMonth } from '@/shared/lib/formatters'
 
@@ -42,9 +43,6 @@ export function LiftBlacklistDialog({
   }, [row])
 
   if (!row) return null
-
-  const errorCode = (error as { status?: number; data?: { error?: { code?: string } } } | undefined)
-    ?.status
 
   async function submit(): Promise<void> {
     if (!row || liftReason.trim() === '') return
@@ -116,9 +114,10 @@ export function LiftBlacklistDialog({
 
       {error !== undefined && (
         <p role="alert" className="text-sm text-red">
-          {errorCode === 403
-            ? 'Solo el Administrador levanta un veto (blacklist:lift): pídeselo.'
-            : 'No se pudo levantar el veto. Reintenta.'}
+          {apiErrorMessage(error, {
+            byStatus: { 403: 'Solo el Administrador levanta un veto (blacklist:lift): pídeselo.' },
+            fallback: 'No se pudo levantar el veto.',
+          })}
         </p>
       )}
     </Modal>

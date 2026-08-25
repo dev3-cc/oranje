@@ -2,13 +2,16 @@ import { useEffect, useState, type ReactNode } from 'react'
 
 import { useCompleteSignupMutation, useGetMyProfileQuery } from '../api/workerApi'
 
+import mascotaFeliz from '@/assets/mascota/mascota-feliz.png'
 import { Button } from '@/shared/components/Button'
+import { isCompletePhone, PhoneInput } from '@/shared/components/PhoneInput'
 import {
   BLOOD_LABEL,
   BLOOD_TYPES,
   RELATIONSHIP_LABEL,
   RELATIONSHIPS,
 } from '@/shared/constants/workerEnums'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const CONTROL_CLASS =
@@ -40,7 +43,7 @@ function Field({
  */
 export function Phase3Page(): ReactNode {
   const { data: profile } = useGetMyProfileQuery()
-  const [save, { isLoading, isError, isSuccess }] = useCompleteSignupMutation()
+  const [save, { isLoading, isError, isSuccess, error: saveError }] = useCompleteSignupMutation()
 
   const [draft, setDraft] = useState({
     emergencyContactName: '',
@@ -69,10 +72,22 @@ export function Phase3Page(): ReactNode {
 
   const canSubmit =
     draft.emergencyContactName.trim() !== '' &&
-    draft.emergencyContactPhone.trim().length >= 7 &&
+    isCompletePhone(draft.emergencyContactPhone) &&
     draft.emergencyContactRelationship !== '' &&
     draft.bloodType !== '' &&
     !isLoading
+
+  /** Con el botón apagado, DECIR qué falta. */
+  const missingHint =
+    draft.emergencyContactName.trim() === ''
+      ? 'Falta el nombre del contacto de emergencia'
+      : !isCompletePhone(draft.emergencyContactPhone)
+        ? 'El teléfono de emergencia necesita al menos 7 dígitos (sin la lada)'
+        : draft.emergencyContactRelationship === ''
+          ? 'Elige el parentesco'
+          : draft.bloodType === ''
+            ? 'Elige el tipo de sangre'
+            : null
 
   async function submit(): Promise<void> {
     if (!canSubmit) return
@@ -117,13 +132,13 @@ export function Phase3Page(): ReactNode {
         </Field>
 
         <Field label="Teléfono" column="emergency_contact_phone">
-          <input
+          <PhoneInput
             value={draft.emergencyContactPhone}
-            onChange={(event) => {
-              update('emergencyContactPhone')(event.target.value)
+            onChange={(value) => {
+              update('emergencyContactPhone')(value)
             }}
-            placeholder="+1 404 512 8890"
-            className={CONTROL_CLASS}
+            ariaLabel="Teléfono"
+            placeholder="404 512 8890"
           />
         </Field>
 
@@ -178,6 +193,7 @@ export function Phase3Page(): ReactNode {
         </Field>
       </section>
 
+      {missingHint !== null && <p className="text-xs text-ink-3">{missingHint}</p>}
       <Button
         variant="primary"
         disabled={!canSubmit}
@@ -189,13 +205,16 @@ export function Phase3Page(): ReactNode {
       </Button>
 
       {isSuccess && (
-        <p className="rounded-md bg-green/10 px-4 py-3 text-sm text-ink-2">
-          Listo: tu expediente quedó completo. La Reclutadora lo validará (RF-08).
-        </p>
+        <div className="flex items-center gap-3 rounded-md bg-green/10 px-4 py-3">
+          <img src={mascotaFeliz} alt="" aria-hidden className="h-16 w-auto" />
+          <p className="text-sm text-ink-2">
+            Listo: tu expediente quedó completo. La Reclutadora lo validará (RF-08).
+          </p>
+        </div>
       )}
       {isError && (
         <p role="alert" className="text-sm text-red">
-          No se pudo guardar. Inténtalo de nuevo.
+          {apiErrorMessage(saveError, { fallback: 'No se pudo guardar la Fase 3.' })}
         </p>
       )}
     </div>

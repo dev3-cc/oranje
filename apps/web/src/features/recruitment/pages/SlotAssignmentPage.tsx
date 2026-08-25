@@ -9,6 +9,7 @@ import {
 } from '../api/selfPickApi'
 import { ASSIGNMENT_TYPE_LABEL } from '../types/selfPick.types'
 
+import mascotaCelebrando from '@/assets/mascota/mascota-celebrando.png'
 import { Button } from '@/shared/components/Button'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
@@ -16,6 +17,7 @@ import {
   REQUISITION_STATUS_TOKEN,
   type RequisitionStatus,
 } from '@/shared/constants/requisitionStatus'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 /** Semáforo de Posiciones de la Requisición: color por código del seed. */
@@ -31,18 +33,10 @@ const CONTROL_CLASS =
 
 /** El 409 del motor ES la regla RR-15; aquí solo se lee su mensaje. */
 function assignErrorMessage(error: unknown): string {
-  const raw = error as
-    | {
-        status?: number | string
-        data?: { message?: string; error?: { code?: string; message?: string } }
-      }
-    | undefined
-  if (raw?.status === 409) {
-    return 'Otra reclutadora ganó este slot (RR-15): el tablero se actualizó.'
-  }
-  return (
-    raw?.data?.error?.message ?? raw?.data?.message ?? 'No se pudo asignar. Inténtalo de nuevo.'
-  )
+  return apiErrorMessage(error, {
+    byStatus: { 409: 'Otra reclutadora ganó este slot (RR-15): el tablero se actualizó.' },
+    fallback: 'No se pudo asignar. Inténtalo de nuevo.',
+  })
 }
 
 /**
@@ -187,10 +181,13 @@ export function SlotAssignmentPage(): ReactNode {
           className="self-start"
         >
           {board.nextFreeOrdinal === null ? (
-            <p className="text-sm leading-relaxed text-ink-2">
-              Los {board.slots.length} slots están ocupados: la cobertura del renglón quedó
-              completa.
-            </p>
+            <div className="flex flex-col items-center gap-3 text-center">
+              <img src={mascotaCelebrando} alt="" aria-hidden className="h-32 w-auto" />
+              <p className="text-sm leading-relaxed text-ink-2">
+                Los {board.slots.length} slots están ocupados: la cobertura del renglón quedó
+                completa.
+              </p>
+            </div>
           ) : (
             <div className="flex flex-col gap-4">
               <label className="flex flex-col gap-1.5">
@@ -272,6 +269,11 @@ export function SlotAssignmentPage(): ReactNode {
                 </p>
               )}
 
+              {workerId === '' ? (
+                <p className="text-xs text-ink-3">Elige al colaborador para poder asignar</p>
+              ) : type === 'TEMPORARY' && endDate === '' ? (
+                <p className="text-xs text-ink-3">Una temporal necesita fecha de fin</p>
+              ) : null}
               <Button
                 variant="primary"
                 disabled={!canSubmit}
