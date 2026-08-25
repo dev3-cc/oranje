@@ -14,7 +14,8 @@ const SELECT = {
   generalPhone: true,
   address: true,
   placeId: true,
-  photoUrl: true,
+  photoRef: true,
+  photoRefAt: true,
   timeZone: true,
   geofenceRadiusM: true,
   activatedAt: true,
@@ -112,12 +113,19 @@ export class HotelsRepository {
         generalPhone: data.generalPhone ?? null,
         address: data.address ?? null,
         placeId: data.placeId ?? null,
-        photoUrl: data.photoUrl ?? null,
         geofenceRadiusM: data.geofenceRadiusM ?? null,
         createdBy: userId,
         updatedBy: userId,
       },
       select: SELECT,
+    })
+  }
+
+  // La foto la resuelve el servidor contra Places, no la manda el cliente.
+  async setPhotoRef(id: string, photoRef: string | null): Promise<void> {
+    await this.prisma.hotel.update({
+      where: { id },
+      data: { photoRef, photoRefAt: new Date() },
     })
   }
 
@@ -131,7 +139,6 @@ export class HotelsRepository {
         ...(data.generalPhone !== undefined ? { generalPhone: data.generalPhone } : {}),
         ...(data.address !== undefined ? { address: data.address } : {}),
         ...(data.placeId !== undefined ? { placeId: data.placeId } : {}),
-        ...(data.photoUrl !== undefined ? { photoUrl: data.photoUrl } : {}),
         ...(data.geofenceRadiusM !== undefined ? { geofenceRadiusM: data.geofenceRadiusM } : {}),
         updatedBy: userId,
       },

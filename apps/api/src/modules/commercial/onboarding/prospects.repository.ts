@@ -16,7 +16,7 @@ const SELECT = {
     select: {
       id: true,
       name: true,
-      photoUrl: true,
+      photoRef: true,
       zone: { select: { id: true, code: true, name: true } },
     },
   },

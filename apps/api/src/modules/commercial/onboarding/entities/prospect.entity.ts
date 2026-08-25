@@ -4,6 +4,7 @@ export interface ProspectEntity {
     id: string
     name: string
     /** La foto de Places: la tarjeta del tablero la pinta de portada. */
+    /// URL de media compuesta al leer.
     photoUrl: string | null
     zone: { id: string; code: string; name: string }
   }
