@@ -16,12 +16,45 @@ const cards: string[] = []
 
 beforeAll(async () => {
   actorId = (await actor()).id
-  hotelId = (await db.hotel.findFirstOrThrow({ select: { id: true } })).id
-  workerId = (await db.worker.findFirstOrThrow({ select: { id: true } })).id
+
+  const stamp = Date.now()
+  const zone = await db.zone.findFirstOrThrow({ select: { id: true } })
+  const workerState = await db.statusLightState.findFirstOrThrow({
+    where: { code: 'STRONG_GREEN', statusLightCode: 'WORKER' },
+    select: { id: true },
+  })
+
+  hotelId = uuidv7()
+  await db.hotel.create({
+    data: {
+      id: hotelId,
+      name: `Hotel Accidentes ${stamp}`,
+      zoneId: zone.id,
+      timeZone: 'America/Cancun',
+    },
+  })
+
+  workerId = uuidv7()
+  await db.worker.create({
+    data: {
+      id: workerId,
+      fullName: `Accidentado ${stamp}`,
+      birthDate: new Date('1990-01-01'),
+      gender: 'OTHER',
+      phone: '9990000001',
+      address: 'calle de prueba',
+      zoneId: zone.id,
+      statusLightStateId: workerState.id,
+      statusLightCode: 'WORKER',
+      createdBy: actorId,
+    },
+  })
 })
 
 afterAll(async () => {
   await db.workAccident.deleteMany({ where: { id: { in: cards } } })
+  await db.worker.deleteMany({ where: { id: workerId } })
+  await db.hotel.deleteMany({ where: { id: hotelId } })
   await close()
 })
 
