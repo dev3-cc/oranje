@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { StorageService } from '../../../infra/storage/index.js'
 
 import { DocumentRow, DocumentsRepository } from './documents.repository.js'
 import type { CreateDocumentDto } from './dto/document.dto.js'
@@ -11,6 +12,8 @@ export interface DocumentEntity {
   id: string
   documentType: string
   filePath: string
+  /// URL firmada para abrirlo. Caduca en una hora, y es null si no se pudo firmar.
+  url: string | null
   isVerified: boolean
   verifiedBy: { id: string; fullName: string } | null
   verifiedAt: string | null
@@ -24,7 +27,10 @@ export interface DocumentList {
 
 @Injectable()
 export class DocumentsService {
-  constructor(private readonly repo: DocumentsRepository) {}
+  constructor(
+    private readonly repo: DocumentsRepository,
+    private readonly storage: StorageService,
+  ) {}
 
   async list(workerId: string): Promise<DocumentList> {
     await this.worker(workerId)
@@ -32,7 +38,7 @@ export class DocumentsService {
     const hasTaxId = await this.repo.hasTaxId(workerId)
 
     return {
-      data: (await this.repo.listAll(workerId)).map(toEntity),
+      data: await Promise.all((await this.repo.listAll(workerId)).map((row) => this.toEntity(row))),
       meta: { hasTaxId, taxRetentionApplies: !hasTaxId },
     }
   }
@@ -51,7 +57,7 @@ export class DocumentsService {
       })
     }
 
-    return toEntity(
+    return this.toEntity(
       await this.repo.create({
         workerId,
         documentType: dto.documentType,
@@ -74,7 +80,7 @@ export class DocumentsService {
       })
     }
 
-    return toEntity(
+    return this.toEntity(
       await this.repo.verify({ id, workerId, userId: user.id, roleCode: user.roleCode }),
     )
   }
@@ -119,17 +125,18 @@ export class DocumentsService {
 
     return row
   }
-}
 
-function toEntity(row: DocumentRow): DocumentEntity {
-  return {
-    id: row.id,
-    documentType: row.documentType,
-    filePath: row.filePath,
-    isVerified: row.verifiedAt !== null,
-    verifiedBy: row.verifierUser,
-    verifiedAt: row.verifiedAt?.toISOString() ?? null,
-    createdAt: row.createdAt.toISOString(),
+  private async toEntity(row: DocumentRow): Promise<DocumentEntity> {
+    return {
+      id: row.id,
+      documentType: row.documentType,
+      filePath: row.filePath,
+      url: await this.storage.signedUrl(row.filePath),
+      isVerified: row.verifiedAt !== null,
+      verifiedBy: row.verifierUser,
+      verifiedAt: row.verifiedAt?.toISOString() ?? null,
+      createdAt: row.createdAt.toISOString(),
+    }
   }
 }
 
