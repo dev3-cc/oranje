@@ -2,6 +2,14 @@ import { z } from 'zod'
 
 import { createZodDto } from '../../../../common/pipes/index.js'
 
+// La ruta sale de POST /files, y se valida el prefijo: sin esto se podria
+// apuntar la tarjeta del Pool a un documento fiscal de otra carpeta.
+const photoPath = z
+  .string()
+  .trim()
+  .max(500)
+  .regex(/^workers\/photo\/[A-Za-z0-9._-]+$/, 'Debe ser una ruta devuelta por POST /files')
+
 export const GENDERS = ['MALE', 'FEMALE', 'OTHER'] as const
 export const EXPERIENCE_LEVELS = ['NONE', 'ONE_TO_TWO', 'THREE_TO_FIVE', 'MORE_THAN_FIVE'] as const
 export const TRANSPORT_TYPES = ['OWN', 'PUBLIC', 'OTHER'] as const
@@ -26,6 +34,13 @@ export const BLOOD_TYPES = [
   'UNKNOWN',
 ] as const
 
+// Fase 1, la entrevista. Ademas de la identidad, la Reclutadora define el
+// perfil laboral: posicion, modalidad, ingles y experiencia son DECISIONES DE
+// ORANJE, no del candidato (cambio del 2026-08-22).
+//
+// Los cuatro son opcionales aqui porque la fila nace a medias a proposito: eso
+// ES el estado Blanco, y quien decide si el alta esta completa es
+// `is_profile_complete` de la vista.
 export const createWorkerSchema = z.object({
   fullName: z.string().trim().min(1).max(160),
   birthDate: z.coerce.date(),
@@ -33,7 +48,12 @@ export const createWorkerSchema = z.object({
   phone: z.string().trim().min(7).max(32),
   address: z.string().trim().min(1).max(300),
   zoneId: z.uuid(),
-  photoUrl: z.url().max(500).optional(),
+  photoPath: photoPath.optional(),
+
+  catalogPositionId: z.uuid().optional(),
+  hiringModalityId: z.uuid().optional(),
+  englishLevelId: z.uuid().optional(),
+  experienceLevel: z.enum(EXPERIENCE_LEVELS).optional(),
 })
 
 export class CreateWorkerDto extends createZodDto(createWorkerSchema) {}
@@ -44,7 +64,7 @@ export const updateWorkerSchema = z
     phone: z.string().trim().min(7).max(32).optional(),
     address: z.string().trim().min(1).max(300).optional(),
     zoneId: z.uuid().optional(),
-    photoUrl: z.url().max(500).nullish(),
+    photoPath: photoPath.nullish(),
     catalogPositionId: z.uuid().nullish(),
     englishLevelId: z.uuid().nullish(),
     hiringModalityId: z.uuid().nullish(),

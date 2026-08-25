@@ -33,12 +33,42 @@ export interface EntryEntity {
   assignmentId: string
 }
 
+export interface MyShift {
+  id: string
+  workDate: string
+  startsAt: string
+  endsAt: string
+  hotel: string
+  position: string
+}
+
 @Injectable()
 export class SchedulesService {
   constructor(private readonly repo: SchedulesRepository) {}
 
   async list(user: AuthenticatedUser): Promise<ScheduleEntity[]> {
     return (await this.repo.listAll(user.hotelId)).map(toEntity)
+  }
+
+  // Solo sus turnos, y por rango de fechas: la semana la elige el cliente.
+  async mine(user: AuthenticatedUser, from: Date, to: Date): Promise<MyShift[]> {
+    const workerId = await this.repo.workerOfUser(user.id)
+
+    if (workerId === null) {
+      throw new NotFoundException({
+        code: 'WORKER_NOT_LINKED',
+        message: 'Tu cuenta no está ligada a un colaborador',
+      })
+    }
+
+    return (await this.repo.entriesOfWorker(workerId, from, to)).map((e) => ({
+      id: e.id,
+      workDate: e.workDate.toISOString().slice(0, 10),
+      startsAt: e.startsAt.toISOString(),
+      endsAt: e.endsAt.toISOString(),
+      hotel: e.hotelName,
+      position: e.positionName,
+    }))
   }
 
   async get(id: string): Promise<ScheduleEntity> {

@@ -31,9 +31,44 @@ export interface ConsolidationEntity {
   deductions?: DeductionRow[]
 }
 
+// Lo que el colaborador ve de su pago. Ni pay rate, ni deducciones internas,
+// ni facturacion: RR-C-05 se los niega, y por eso es un tipo aparte y no el
+// ConsolidationEntity recortado.
+export interface MyPayment {
+  id: string
+  weekStart: string
+  weekEnd: string
+  netAmount: string
+  paidAt: string | null
+  hotels: string[]
+  hours: number
+}
+
 @Injectable()
 export class ConsolidationsService {
   constructor(private readonly repo: ConsolidationsRepository) {}
+
+  // Solo pagos ya liberados (RR-C-05): el que esta en curso no se le muestra.
+  async mine(user: AuthenticatedUser): Promise<MyPayment[]> {
+    const workerId = await this.repo.workerOfUser(user.id)
+
+    if (workerId === null) {
+      throw new NotFoundException({
+        code: 'WORKER_NOT_LINKED',
+        message: 'Tu cuenta no está ligada a un colaborador',
+      })
+    }
+
+    return (await this.repo.paidOfWorker(workerId)).map((row) => ({
+      id: row.id,
+      weekStart: row.weekStart.toISOString().slice(0, 10),
+      weekEnd: row.weekEnd.toISOString().slice(0, 10),
+      netAmount: row.netAmount,
+      paidAt: row.paidAt?.toISOString() ?? null,
+      hotels: row.hotels,
+      hours: Math.round((row.minutes / 60) * 100) / 100,
+    }))
+  }
 
   async generate(dto: GenerateDto, user: AuthenticatedUser): Promise<{ created: number }> {
     if (dto.weekStart.getUTCDay() !== 1) {

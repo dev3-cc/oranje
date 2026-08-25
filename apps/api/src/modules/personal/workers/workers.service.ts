@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { StorageService } from '../../../infra/storage/index.js'
+import { PermissionsService } from '../../identity/index.js'
 
 import type {
   ChangeStateDto,
@@ -33,7 +35,11 @@ export interface TransitionOption {
 
 @Injectable()
 export class WorkersService {
-  constructor(private readonly repo: WorkersRepository) {}
+  constructor(
+    private readonly repo: WorkersRepository,
+    private readonly storage: StorageService,
+    private readonly permissions: PermissionsService,
+  ) {}
 
   async create(dto: CreateWorkerDto, user: AuthenticatedUser): Promise<WorkerEntity> {
     const age = yearsSince(dto.birthDate)
@@ -53,8 +59,12 @@ export class WorkersService {
       gender: dto.gender,
       phone: dto.phone,
       address: dto.address,
-      photoUrl: dto.photoUrl ?? null,
+      photoPath: dto.photoPath ?? null,
       zoneId: dto.zoneId,
+      catalogPositionId: dto.catalogPositionId ?? null,
+      hiringModalityId: dto.hiringModalityId ?? null,
+      englishLevelId: dto.englishLevelId ?? null,
+      experienceLevel: dto.experienceLevel ?? null,
       stateId: state.id,
       userId: user.id,
       roleCode: user.roleCode,
@@ -63,11 +73,35 @@ export class WorkersService {
     return this.get(id)
   }
 
-  async list(query: QueryWorkersDto): Promise<WorkerBoard> {
-    const { rows, total } = await this.repo.findMany(query)
+  /**
+   * Dos lectores distintos, dos alcances (por eso la ruta no lleva
+   * `@Requires`): Reclutamiento (`recruitment:search_candidates`) ve el Pool
+   * completo; los roles del hotel (`staff:read`, «Ver colaboradores
+   * asignados» — Mi Personal) ven SOLO a quien tiene una asignación activa en
+   * su hotel. El permiso existía sembrado desde la Matriz de Hotel y ningún
+   * endpoint lo pedía — media función, como las que documentó D-32.
+   */
+  async list(query: QueryWorkersDto, user: AuthenticatedUser): Promise<WorkerBoard> {
+    const seesPool = await this.permissions.can(user.roleCode, 'recruitment', 'search_candidates')
+    let assignedToHotelId: string | null = null
+
+    if (!seesPool) {
+      const seesStaff = await this.permissions.can(user.roleCode, 'staff', 'read')
+      if (!seesStaff || !user.hotelId) {
+        throw new ForbiddenException({
+          code: 'FORBIDDEN',
+          message: 'Tu rol no puede listar colaboradores',
+        })
+      }
+      assignedToHotelId = user.hotelId
+    }
+
+    const { rows, total } = await this.repo.findMany(query, assignedToHotelId)
+
+    const photos = await this.signPhotos(rows)
 
     return {
-      data: rows.map(toEntity),
+      data: rows.map((row) => toEntity(row, photos)),
       meta: {
         page: query.page,
         limit: query.limit,
@@ -78,7 +112,18 @@ export class WorkersService {
   }
 
   async get(id: string): Promise<WorkerEntity> {
-    return toEntity(await this.worker(id))
+    const row = await this.worker(id)
+
+    return toEntity(row, await this.signPhotos([row]))
+  }
+
+  // Se firman las rutas distintas, no una por fila: la misma foto en dos filas
+  // se firma una vez.
+  private async signPhotos(rows: WorkerRow[]): Promise<Map<string, string>> {
+    const paths = [...new Set(rows.flatMap((row) => (row.photoPath ? [row.photoPath] : [])))]
+    const urls = await Promise.all(paths.map((path) => this.storage.signedUrl(path)))
+
+    return new Map(paths.map((path, index) => [path, urls[index] as string]))
   }
 
   async update(id: string, dto: UpdateWorkerDto, user: AuthenticatedUser): Promise<WorkerEntity> {
@@ -256,7 +301,7 @@ function yearsSince(date: Date): number {
   return years
 }
 
-function toEntity(row: WorkerRow): WorkerEntity {
+function toEntity(row: WorkerRow, photos: Map<string, string>): WorkerEntity {
   return {
     id: row.id,
     fullName: row.fullName,
@@ -265,7 +310,7 @@ function toEntity(row: WorkerRow): WorkerEntity {
     gender: row.gender,
     phone: row.phone,
     address: row.address,
-    photoUrl: row.photoUrl,
+    photoUrl: row.photoPath ? (photos.get(row.photoPath) ?? null) : null,
     zone: row.zone,
     position: row.position,
     englishLevel: row.englishLevel,

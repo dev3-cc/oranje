@@ -77,6 +77,11 @@ export class TimesheetsService {
   async punch(dto: CreatePunchDto, user: AuthenticatedUser): Promise<PunchResult> {
     const assignment = await this.assignment(dto.assignmentId)
 
+    // La asignación llega en el cuerpo, así que sin esto un colaborador podía
+    // ponchar por otro con solo cambiar el id. Quien poncha es el dueño de la
+    // asignación, y punto: el ponche ajeno es el manual, que es del Supervisor.
+    await this.assertOwnAssignment(assignment, user)
+
     if (!LUNCH_TYPES.includes(dto.type as (typeof LUNCH_TYPES)[number]) && !dto.photoPath) {
       throw new UnprocessableEntityException({
         code: 'PHOTO_REQUIRED',
@@ -155,6 +160,20 @@ export class TimesheetsService {
     })
 
     return rows.map(toTimesheet)
+  }
+
+  // Sus horas: brutas, deducción de lunch y netas. Sin el detalle de otros.
+  async mine(user: AuthenticatedUser): Promise<TimesheetEntity[]> {
+    const workerId = await this.repo.workerOfUser(user.id)
+
+    if (workerId === null) {
+      throw new NotFoundException({
+        code: 'WORKER_NOT_LINKED',
+        message: 'Tu cuenta no está ligada a un colaborador',
+      })
+    }
+
+    return (await this.repo.listOfWorker(workerId)).map(toTimesheet)
   }
 
   async get(id: string): Promise<TimesheetEntity> {
@@ -311,6 +330,20 @@ export class TimesheetsService {
     })
 
     return { dayId, status }
+  }
+
+  private async assertOwnAssignment(
+    assignment: AssignmentContext,
+    user: AuthenticatedUser,
+  ): Promise<void> {
+    const worker = await this.repo.workerOfUser(user.id)
+
+    if (worker === null || worker !== assignment.workerId) {
+      throw new ForbiddenException({
+        code: 'NOT_YOUR_ASSIGNMENT',
+        message: 'Solo se poncha sobre una asignación propia',
+      })
+    }
   }
 
   private async assignment(id: string): Promise<AssignmentContext> {

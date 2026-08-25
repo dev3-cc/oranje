@@ -55,6 +55,10 @@ const ADMIN = 'ROL-ADM-01'
 const ACCOUNTANT = 'ROL-CO-01'
 const ACCOUNTING_MANAGER = 'ROL-CO-02'
 
+const WORKER = 'ROL-C-01'
+
+const INSPECTOR = 'ROL-I-01'
+
 const SYS = 'ROL-SYS-01'
 
 // ---------------------------------------------------------------------------
@@ -940,12 +944,143 @@ const ACCOUNTING: Permission[] = [
   },
 ]
 
+/**
+ * ROL-C-01 Colaborador. Sale de `Arquitecturas/Colaborador/04 - Permisos
+ * Detallados.md`, que no es una Matriz de departamento —el Colaborador es un
+ * rol suelto— pero cumple la misma funcion y es igual de explicita: trae una
+ * seccion de lo que NO puede.
+ *
+ * Todo su alcance es `_own`: RR-C-01 dice que no ve datos de ningun otro
+ * colaborador. El alcance no vive aqui sino en la persona (D-09), y para el
+ * Colaborador es el vinculo `identity.user.id` con `personal.worker`.
+ *
+ * Dos desviaciones frente al documento, ambas por el ponche:
+ *  - dice "Escanear QR y ponchar (6 ponches)", pero D-21 dejo cuatro marcas con
+ *    GPS y foto. El permiso queda como `timesheet:punch`, que es lo que el
+ *    endpoint existente exige.
+ *  - "Generar QR" no se transcribe: ese permiso ya se revoco cuando el ponche
+ *    dejo de usar QR.
+ */
+const WORKER_ROLE: Permission[] = [
+  {
+    module: 'worker',
+    action: 'complete_signup',
+    label: 'Completar el alta — Fases 2 y 3',
+    roles: [WORKER],
+  },
+  {
+    module: 'worker',
+    action: 'read_own',
+    label: 'Ver su perfil, su estado y su semaforo',
+    roles: [WORKER],
+  },
+  {
+    module: 'worker',
+    action: 'update_own_contact',
+    label: 'Editar sus datos de contacto y de emergencia',
+    roles: [WORKER],
+  },
+  {
+    module: 'worker',
+    action: 'set_availability',
+    label: 'Activar y desactivar su disponibilidad voluntaria (RR-C-02)',
+    roles: [WORKER],
+  },
+  {
+    module: 'timesheet',
+    action: 'punch',
+    label: 'Ponchar',
+    roles: [WORKER],
+  },
+  {
+    module: 'schedule',
+    action: 'read_own',
+    label: 'Ver su Schedule de la semana',
+    roles: [WORKER],
+  },
+  {
+    module: 'timesheet',
+    action: 'read_own',
+    label: 'Ver sus horas brutas, la deduccion de lunch y las netas',
+    roles: [WORKER],
+  },
+  {
+    module: 'payroll',
+    action: 'read_own',
+    label: 'Ver los pagos ya liberados — nunca el que esta en curso (RR-C-05)',
+    roles: [WORKER],
+  },
+  {
+    module: 'accident',
+    action: 'report_own',
+    label: 'Reportar un accidente laboral desde la app (RF-C-05)',
+    roles: [WORKER],
+  },
+  {
+    module: 'notification',
+    action: 'read_own',
+    label: 'Ver sus notificaciones',
+    roles: [WORKER],
+  },
+  {
+    module: 'system',
+    action: 'receive_notification',
+    label: 'Recibir notificaciones push',
+    roles: [WORKER],
+  },
+]
+
+/**
+ * Accidente Laboral. **Inspeccion no tiene Matriz de Permisos** —no tiene
+ * carpeta en `Arquitecturas/`—, asi que estas cuatro filas se derivaron del
+ * `Flujo de Accidente Laboral` y de `Reglas de Negocio`. Es el mismo caso que
+ * las seis de `payroll` y `blacklist:lift`: sembradas sin matriz y marcadas
+ * para revision.
+ *
+ * `accident:report_own` no va aqui: es del Colaborador y sale de su
+ * `04 - Permisos Detallados`, que si existe.
+ */
+const INSPECTION: Permission[] = [
+  {
+    module: 'accident',
+    action: 'read',
+    label: 'Ver tarjetas de accidente',
+    roles: [SUPERVISOR, GA, GG, INSPECTOR, SYS],
+  },
+  {
+    module: 'accident',
+    action: 'report',
+    label: 'Reportar un accidente de un colaborador (escenario B)',
+    roles: [SUPERVISOR, GA, GG],
+  },
+  {
+    module: 'accident',
+    action: 'capture_on_site',
+    label: 'Capturar la informacion presencial',
+    roles: [SUPERVISOR],
+  },
+  {
+    module: 'accident',
+    action: 'medical_follow_up',
+    label: 'Capturar el seguimiento medico',
+    roles: [INSPECTOR],
+  },
+  {
+    module: 'accident',
+    action: 'close',
+    label: 'Cerrar la tarjeta con alta medica',
+    roles: [INSPECTOR],
+  },
+]
+
 export const PERMISSIONS: Permission[] = [
   ...SALES,
   ...HOTEL,
   ...RECRUITMENT,
   ...ACCOUNTING,
   ...ADMINISTRATION,
+  ...WORKER_ROLE,
+  ...INSPECTION,
 ]
 
 /**

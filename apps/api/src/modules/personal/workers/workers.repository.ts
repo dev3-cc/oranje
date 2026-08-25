@@ -13,7 +13,7 @@ export interface WorkerRow {
   gender: string
   phone: string
   address: string
-  photoUrl: string | null
+  photoPath: string | null
   experienceLevel: string | null
   transportType: string | null
   emergencyContactName: string | null
@@ -51,7 +51,7 @@ const BASE = `
          w.gender,
          w.phone,
          w.address,
-         w.photo_url AS "photoUrl",
+         w.photo_path AS "photoPath",
          w.experience_level AS "experienceLevel",
          w.transport_type   AS "transportType",
          w.emergency_contact_name         AS "emergencyContactName",
@@ -131,12 +131,30 @@ export class WorkersRepository {
     return rows[0] ?? null
   }
 
-  async findMany(filter: WorkerFilter): Promise<{ rows: WorkerRow[]; total: number }> {
+  async findMany(
+    filter: WorkerFilter,
+    /** Mi Personal: solo colaboradores con asignación ACTIVA en este hotel. */
+    assignedToHotelId: string | null = null,
+  ): Promise<{ rows: WorkerRow[]; total: number }> {
     const where: string[] = []
     const args: unknown[] = []
     const add = (sql: string, value: unknown): void => {
       args.push(value)
       where.push(sql.replace('$n', `$${args.length}`))
+    }
+
+    if (assignedToHotelId) {
+      add(
+        `EXISTS (SELECT 1
+                   FROM coverage.assignment a
+                   JOIN demand.slot sl ON sl.id = a.slot_id
+                   JOIN demand.position p ON p.id = sl.position_id
+                   JOIN demand.requisition r ON r.id = p.requisition_id
+                  WHERE a.worker_id = w.id
+                    AND a.status = 'ACTIVE'
+                    AND r.hotel_id = $n::uuid)`,
+        assignedToHotelId,
+      )
     }
 
     if (filter.state) add('s.code = $n', filter.state)
@@ -178,8 +196,12 @@ export class WorkersRepository {
     gender: string
     phone: string
     address: string
-    photoUrl: string | null
+    photoPath: string | null
     zoneId: string
+    catalogPositionId: string | null
+    hiringModalityId: string | null
+    englishLevelId: string | null
+    experienceLevel: string | null
     stateId: string
     userId: string
     roleCode: string
@@ -195,8 +217,12 @@ export class WorkersRepository {
           gender: params.gender,
           phone: params.phone,
           address: params.address,
-          photoUrl: params.photoUrl,
+          photoPath: params.photoPath,
           zoneId: params.zoneId,
+          catalogPositionId: params.catalogPositionId,
+          hiringModalityId: params.hiringModalityId,
+          englishLevelId: params.englishLevelId,
+          experienceLevel: params.experienceLevel,
           statusLightStateId: params.stateId,
           statusLightCode: WORKER_LIGHT,
           createdBy: params.userId,

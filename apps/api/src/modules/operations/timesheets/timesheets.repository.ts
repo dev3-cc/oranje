@@ -52,6 +52,16 @@ export interface TimesheetRow {
 export class TimesheetsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  // La cuenta de un colaborador puede no existir: en Fase 1 todavia no la tiene.
+  async workerOfUser(userId: string): Promise<string | null> {
+    const row = await this.prisma.worker.findFirst({
+      where: { userId, deletedAt: null },
+      select: { id: true },
+    })
+
+    return row?.id ?? null
+  }
+
   async assignment(id: string): Promise<AssignmentContext | null> {
     const rows = await this.prisma.$queryRaw<
       Array<{
@@ -317,6 +327,22 @@ export class TimesheetsRepository {
        WHERE t.id = ${id}::uuid`
 
     return rows[0] ?? null
+  }
+
+  async listOfWorker(workerId: string): Promise<TimesheetRow[]> {
+    return this.prisma.$queryRaw<TimesheetRow[]>`
+      SELECT t.id,
+             t.week_start AS "weekStart",
+             t.week_end   AS "weekEnd",
+             t.status,
+             t.approved_at AS "approvedAt",
+             t.requisition_id AS "requisitionId",
+             jsonb_build_object('id', w.id, 'fullName', w.full_name) AS worker
+        FROM operations.timesheet t
+        JOIN personal.worker w ON w.id = t.worker_id
+       WHERE t.worker_id = ${workerId}::uuid
+       ORDER BY t.week_start DESC
+       LIMIT 52`
   }
 
   async listAll(params: {

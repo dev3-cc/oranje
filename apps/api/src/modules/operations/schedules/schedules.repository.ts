@@ -34,6 +34,49 @@ const SELECT = {
 export class SchedulesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async workerOfUser(userId: string): Promise<string | null> {
+    const row = await this.prisma.worker.findFirst({
+      where: { userId, deletedAt: null },
+      select: { id: true },
+    })
+
+    return row?.id ?? null
+  }
+
+  // shift_range es un tstzrange, que Prisma no sabe leer: va en SQL.
+  async entriesOfWorker(
+    workerId: string,
+    from: Date,
+    to: Date,
+  ): Promise<
+    Array<{
+      id: string
+      workDate: Date
+      startsAt: Date
+      endsAt: Date
+      hotelName: string
+      positionName: string
+    }>
+  > {
+    return this.prisma.$queryRaw`
+      SELECT e.id,
+             e.work_date               AS "workDate",
+             lower(e.shift_range)      AS "startsAt",
+             upper(e.shift_range)      AS "endsAt",
+             h.name                    AS "hotelName",
+             cp.name                   AS "positionName"
+        FROM operations.schedule_entry e
+        JOIN coverage.assignment a  ON a.id = e.assignment_id
+        JOIN demand.slot s          ON s.id = a.slot_id
+        JOIN demand.position p      ON p.id = s.position_id
+        JOIN catalogs.position cp   ON cp.id = p.catalog_position_id
+        JOIN demand.requisition r   ON r.id = p.requisition_id
+        JOIN commercial.hotel h     ON h.id = r.hotel_id
+       WHERE e.worker_id = ${workerId}::uuid
+         AND e.work_date BETWEEN ${from}::date AND ${to}::date
+       ORDER BY e.work_date, lower(e.shift_range)`
+  }
+
   async hotel(id: string): Promise<{ id: string; timeZone: string } | null> {
     return this.prisma.hotel.findUnique({ where: { id }, select: { id: true, timeZone: true } })
   }

@@ -30,13 +30,20 @@ export class TimesheetsController {
     return { data: await this.timesheets.list(user, status) }
   }
 
+  // Antes que `:id`, o Nest lee "me" como un uuid.
+  @Requires('timesheet', 'read_own')
+  @Get('timesheets/me')
+  async mine(@CurrentUser() user: AuthenticatedUser): Promise<{ data: TimesheetEntity[] }> {
+    return { data: await this.timesheets.mine(user) }
+  }
+
   @Requires('timesheet', 'read_department')
   @Get('timesheets/:id')
   async get(@Param('id', ParseUUIDPipe) id: string): Promise<{ data: TimesheetEntity }> {
     return { data: await this.timesheets.get(id) }
   }
 
-  @Requires('timesheet', 'read_department')
+  @Requires('timesheet', 'punch')
   @Post('punches')
   @HttpCode(HttpStatus.CREATED)
   async punch(
