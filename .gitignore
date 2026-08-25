@@ -20,3 +20,7 @@ packages/*/coverage/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Artefactos de Playwright
+test-results/
+playwright-report/
