@@ -1,3 +1,4 @@
+import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import {
   Sidebar as SidebarRoot,
   SidebarContent,
@@ -15,7 +16,7 @@ import type { ReactNode } from 'react'
 import { NavLink } from 'react-router'
 
 import { useGetSessionQuery, useLogoutMutation } from '@/app/sessionApi'
-import logoOranje from '@/assets/logo/Logo_ORANJE_Orange.png'
+import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
 
 interface NavModule {
   label: string
@@ -89,7 +90,9 @@ export function Sidebar(): ReactNode {
   return (
     <SidebarRoot>
       <SidebarHeader className="h-hd justify-center px-5">
-        <img src={logoOranje} alt="Oranje" className="h-4 w-auto self-start" />
+        <div className="w-44 aspect-[1024/100] self-start" role="img" aria-label="Oranje">
+          <DotLottieReact src={logoAnimado} loop autoplay />
+        </div>
       </SidebarHeader>
 
       <SidebarContent>

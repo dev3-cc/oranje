@@ -1,7 +1,7 @@
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import type { ReactNode } from 'react'
 
-import loadingAnimation from '@/assets/loader/loading.lottie'
+import loadingAnimation from '@/assets/loader/oranje-light.lottie'
 
 export function LoadingOranje({ label = 'Cargando…' }: { label?: string }): ReactNode {
   return (
