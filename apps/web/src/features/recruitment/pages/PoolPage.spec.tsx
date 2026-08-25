@@ -8,14 +8,8 @@ import { PoolPage } from './PoolPage'
 
 import { store } from '@/app/store'
 
-/** Latencia del mock: el margen por omisión se queda corto al filtrar. */
 const SLOW = { timeout: 4000 }
 
-/**
- * El Pool va contra `GET /workers` crudo: siete personas de fixture con los
- * catálogos por id (los mismos de Requisiciones) y los estados del seed.
- * Con router: el nombre de cada fila es un Link al Expediente.
- */
 function renderPool(): void {
   const router = createMemoryRouter([{ path: '/pool-colaboradores', element: <PoolPage /> }], {
     initialEntries: ['/pool-colaboradores'],
@@ -45,7 +39,6 @@ describe('PoolPage', () => {
     expect(screen.getByText('ORANGE · Fijo')).toBeInTheDocument()
     expect(screen.getByText('WHITE · Pre-asignación')).toBeInTheDocument()
     expect(screen.getByText('BROWN · Asig. temporal')).toBeInTheDocument()
-    // Las ramas también existen: el accidentado y el vetado se ven, no se esconden.
     expect(screen.getByText('GRAY · Accidentado')).toBeInTheDocument()
     expect(screen.getByText('BLACK · Blacklist')).toBeInTheDocument()
   })
@@ -56,9 +49,7 @@ describe('PoolPage', () => {
     const row = (await screen.findByText('Pedro Alcántara')).closest('tr')
     const scoped = within(row as HTMLElement)
 
-    // Nace en Blanco con el perfil a medias: los datos llegan en tres fases.
     expect(scoped.getByText('incompleto')).toBeInTheDocument()
-    // D-27: sin el cifrado conectado, `has_tax_id` es siempre `no`.
     expect(scoped.getByText('no')).toBeInTheDocument()
     expect(scoped.getByText('31')).toBeInTheDocument()
   })
@@ -70,7 +61,6 @@ describe('PoolPage', () => {
     expect(await screen.findByText('Ana Rivera Gómez')).toBeInTheDocument()
     expect(screen.getByText('Julia Mendoza')).toBeInTheDocument()
 
-    // El value del option es el ID (`pos-hk`): así viaja a `GET /workers`.
     await user.selectOptions(await screen.findByLabelText('Posición'), 'pos-hk')
 
     await waitFor(() => {
@@ -92,12 +82,10 @@ describe('PoolPage', () => {
     const submit = scoped.getByRole('button', { name: 'Crear colaborador' })
     expect(submit).toBeDisabled()
 
-    // La maqueta lo dice: nace en BLANCO y el perfil se completa por la app.
     expect(scoped.getByText(/Nace en BLANCO/)).toBeInTheDocument()
 
     await user.type(scoped.getByPlaceholderText('María Sandoval Ruiz'), 'Braulio Vega')
     await user.type(scoped.getByLabelText('Fecha de nacimiento'), '1994-05-10')
-    // La lada la pone el selector (+1 por defecto): se teclea solo el nacional.
     await user.type(scoped.getByPlaceholderText('404 790 2517'), '404 555 0199')
     await user.type(scoped.getByPlaceholderText(/Peachtree/), '88 Auburn Ave, Atlanta')
     await user.selectOptions(await scoped.findByLabelText('Zona'), 'centro')
@@ -105,7 +93,6 @@ describe('PoolPage', () => {
 
     await user.click(submit)
 
-    // Aparece en el pool, en Blanco y con el perfil a medias.
     const row = (await screen.findByText('Braulio Vega', undefined, SLOW)).closest('tr')
     const rowScoped = within(row as HTMLElement)
     expect(rowScoped.getByText('WHITE · Pre-asignación')).toBeInTheDocument()
@@ -116,8 +103,22 @@ describe('PoolPage', () => {
     renderPool()
 
     expect((await screen.findAllByText('Conversacional')).length).toBeGreaterThan(0)
-    // Pedro (Blanco, fase 1) aún no tiene posición ni modalidad: rayas.
     const row = screen.getByText('Pedro Alcántara').closest('tr')
     expect(within(row as HTMLElement).getAllByText('—').length).toBeGreaterThan(1)
+  })
+  it('la vista de tarjetas agrupa por semáforo y la tarjeta abre la edición', async () => {
+    const user = userEvent.setup()
+    renderPool()
+
+    await screen.findByText('Ana Rivera Gómez')
+    await user.click(screen.getByRole('button', { name: /Tarjetas/ }))
+
+    expect(screen.getByText('Disponible')).toBeInTheDocument()
+    expect(screen.getByText('Accidentado')).toBeInTheDocument()
+    expect(screen.getAllByText('perfil completo').length).toBeGreaterThan(0)
+
+    const card = screen.getByText('Luis Cabrera').closest('button') as HTMLElement
+    await user.click(card)
+    expect(await screen.findByText('Editar colaborador')).toBeInTheDocument()
   })
 })

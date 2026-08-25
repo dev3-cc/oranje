@@ -26,27 +26,23 @@ describe('NewRequisitionDialog', () => {
     expect(screen.queryByLabelText(/Número/)).not.toBeInTheDocument()
   })
 
-  it('nombra el estado de nacimiento desde las constantes', () => {
-    renderDialog()
-
-    // §5 dice que una requisición nace en VERDE_MANZANA — «En elaboración».
-    expect(screen.getByText(/Nace en En elaboración — por autorizar/)).toBeInTheDocument()
-  })
-
   it('el inspector no se elige: sale de la zona del hotel', async () => {
     const user = userEvent.setup()
     renderDialog()
 
-    const inspector = screen.getByLabelText('Inspector de zona')
-    expect(inspector).toBeDisabled()
-    expect(inspector).toHaveValue('')
+    expect(screen.queryByLabelText('Inspector de zona')).not.toBeInTheDocument()
+    expect(
+      screen.getByText('El Inspector se asigna solo por la zona del hotel (RR-13)'),
+    ).toBeInTheDocument()
 
     await waitFor(() => {
       expect(screen.getByRole('option', { name: 'Hotel Puerto Real' })).toBeInTheDocument()
     })
     await user.selectOptions(screen.getByLabelText('Hotel'), 'htl-psp-0012')
 
-    expect(inspector).toHaveValue('Se congela al guardar — zona Centro (RR-13)')
+    expect(
+      screen.getByText('Zona Centro · el Inspector se congela al guardar (RR-13)'),
+    ).toBeInTheDocument()
   })
 
   it('cada unidad de cantidad es un slot, y el total los suma', async () => {
@@ -100,7 +96,6 @@ describe('NewRequisitionDialog', () => {
 
     await user.selectOptions(screen.getByLabelText('Hotel'), 'htl-psp-0012')
 
-    // Todo por id de catálogo: así viaja el cuerpo real de POST /requisitions.
     await user.selectOptions(screen.getByLabelText('Posición 1'), 'pos-hk')
     await user.selectOptions(screen.getByLabelText('Modalidad 1'), 'mod-ft')
     await user.selectOptions(screen.getByLabelText('Departamento 1'), 'dep-hk')

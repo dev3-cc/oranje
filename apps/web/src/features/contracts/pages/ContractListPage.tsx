@@ -8,19 +8,12 @@ import type { ContractListFilters } from '../types/contract.types'
 import { Button } from '@/shared/components/Button'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { EXPIRY_WARNING_DAYS } from '@/shared/constants/contractStatus'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 
-/** Cuánto se espera a que alguien deje de teclear antes de preguntar al servidor. */
 const SEARCH_DEBOUNCE_MS = 300
 
 const EMPTY_FILTERS: ContractListFilters = { search: '', status: 'ALL', zoneName: 'ALL' }
 
-/**
- * Documentos T&C: los contratos comerciales, uno por hotel.
- *
- * El filtro viaja al servidor, así que la búsqueda se retrasa hasta que quien
- * escribe se detiene: sin eso, «Puerto Real» serían once peticiones y la última
- * en contestar no tiene por qué ser la del texto completo.
- */
 export function ContractListPage(): ReactNode {
   const [filters, setFilters] = useState<ContractListFilters>(EMPTY_FILTERS)
   const [appliedFilters, setAppliedFilters] = useState<ContractListFilters>(EMPTY_FILTERS)
@@ -44,11 +37,13 @@ export function ContractListPage(): ReactNode {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-ink">Documentos T&amp;C</h1>
           <p className="mt-1.5 text-sm text-ink-3">
-            commercial.contract · un contrato por hotel a la vez en ACTIVE
+            {IS_DEV_UI
+              ? 'commercial.contract · un contrato por hotel a la vez en ACTIVE'
+              : 'Un contrato vigente por hotel a la vez'}
           </p>
         </div>
 
-        {/* Pendiente: falta el diseño del alta de contrato */}
+        {}
         <Button variant="primary" disabled title="Pendiente: falta el diseño del alta">
           + Nuevo contrato
         </Button>

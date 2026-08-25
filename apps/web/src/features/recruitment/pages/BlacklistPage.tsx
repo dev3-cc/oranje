@@ -12,13 +12,12 @@ import {
 } from '../types/blacklist.types'
 
 import { Button } from '@/shared/components/Button'
+import { FilterSelect } from '@/shared/components/FilterSelect'
 import { LoadError } from '@/shared/components/LoadError'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
+import { useCan } from '@/shared/hooks/useCan'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayMonth } from '@/shared/lib/formatters'
-
-const CONTROL_CLASS =
-  'rounded-full border border-line bg-surface py-3 pr-9 pl-5 text-sm text-ink focus:border-o-500 focus:outline-none'
 
 const HEADERS = [
   'worker_id → full_name',
@@ -31,15 +30,10 @@ const HEADERS = [
   '',
 ]
 
-/**
- * Blacklist (maqueta de la Reclutadora): el historial completo de vetos, con
- * las tres reglas que el MOTOR hace cumplir (D-27): el Gris protege, un solo
- * veto vigente por colaborador (`ux_blacklist_worker`), y al levantar se
- * vuelve a Blanco. Levantar es exclusivo del Administrador.
- */
 export function BlacklistPage(): ReactNode {
   const [filters, setFilters] = useState<BlacklistFilters>(EMPTY_BLACKLIST_FILTERS)
   const [liftTarget, setLiftTarget] = useState<BlacklistRow | null>(null)
+  const can = useCan()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
 
   const { data: rows = [], isLoading, isError, refetch } = useGetBlacklistQuery(filters)
@@ -62,44 +56,42 @@ export function BlacklistPage(): ReactNode {
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          onClick={() => {
-            setIsCreateOpen(true)
-          }}
-        >
-          + Agregar a Blacklist
-        </Button>
+        {can('blacklist.create') && (
+          <Button
+            variant="primary"
+            onClick={() => {
+              setIsCreateOpen(true)
+            }}
+          >
+            + Agregar a Blacklist
+          </Button>
+        )}
       </header>
 
       <div className="flex flex-wrap items-center gap-4">
-        <select
+        <FilterSelect
+          label="Origen"
+          anyLabel="todos"
           value={filters.source}
-          onChange={(event) => {
-            setFilters((previous) => ({ ...previous, source: event.target.value }))
+          options={BLACKLIST_SOURCES.map((source) => ({
+            value: source,
+            label: BLACKLIST_SOURCE_LABEL[source],
+          }))}
+          onChange={(value) => {
+            setFilters((previous) => ({ ...previous, source: value }))
           }}
-          aria-label="Origen"
-          className={CONTROL_CLASS}
-        >
-          <option value="ALL">Origen: todos</option>
-          {BLACKLIST_SOURCES.map((source) => (
-            <option key={source} value={source}>
-              Origen: {BLACKLIST_SOURCE_LABEL[source]}
-            </option>
-          ))}
-        </select>
+        />
 
-        <select
+        {}
+        <FilterSelect
+          label="Estado"
+          anyLabel="historial completo"
           value={filters.onlyActive ? 'ACTIVE' : 'ALL'}
-          onChange={(event) => {
-            setFilters((previous) => ({ ...previous, onlyActive: event.target.value === 'ACTIVE' }))
+          options={[{ value: 'ACTIVE', label: 'vigentes' }]}
+          onChange={(value) => {
+            setFilters((previous) => ({ ...previous, onlyActive: value === 'ACTIVE' }))
           }}
-          aria-label="Estado"
-          className={CONTROL_CLASS}
-        >
-          <option value="ACTIVE">Estado: vigentes</option>
-          <option value="ALL">Estado: historial completo</option>
-        </select>
+        />
       </div>
 
       {isError && (
@@ -166,7 +158,8 @@ export function BlacklistPage(): ReactNode {
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {row.isActive && (
+                    {}
+                    {row.isActive && can('blacklist.lift') && (
                       <Button
                         variant="secondary"
                         onClick={() => {

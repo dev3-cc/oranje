@@ -8,22 +8,17 @@ import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
 } from '@/shared/constants/onboardingStatus'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 
-/**
- * Embudo por estado del semáforo.
- *
- * Las barras se escalan contra el peldaño MÁS ALTO, no contra el total ni
- * contra un máximo fijo: así la barra más larga siempre llena la pista y las
- * proporciones entre estados se leen de un vistazo, aunque el territorio tenga
- * 30 prospectos o 300.
- */
 export function StatusFunnel({ buckets }: { buckets: FunnelBucket[] }): ReactNode {
   const highest = Math.max(...buckets.map((bucket) => bucket.count), 1)
 
   return (
     <SectionCard
       title="Embudo por estado"
-      subtitle="prospect.onboarding_state_id — solo ciclos abiertos"
+      subtitle={
+        IS_DEV_UI ? 'prospect.onboarding_state_id — solo ciclos abiertos' : 'Solo ciclos abiertos'
+      }
     >
       {buckets.length === 0 ? (
         <p className="py-2 text-sm text-ink-3">Sin prospectos abiertos en el periodo.</p>

@@ -17,10 +17,6 @@ import {
 } from '@/shared/constants/onboardingStatus'
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery'
 
-/**
- * Siluetas de continentes desde `world-atlas` (TopoJSON empaquetado, sin red):
- * la CSP de D-07 no abre hosts para texturas y el globo no las necesita.
- */
 type TopoArgs = Parameters<typeof feature>
 const topology = countriesTopo as unknown as TopoArgs[0] & {
   objects: { countries: TopoArgs[1] }
@@ -29,7 +25,6 @@ const COUNTRIES = (
   feature(topology, topology.objects.countries) as unknown as { features: object[] }
 ).features
 
-/** La vista inicial apunta al territorio: Quintana Roo. */
 const HOME = { lat: 21, lng: -87, altitude: 2.1 }
 
 function buildGlobe(): ThreeGlobe {
@@ -50,17 +45,10 @@ function buildGlobe(): ThreeGlobe {
   return globe
 }
 
-/**
- * Un punto del globo puede ser VARIOS hoteles: se agrupa a nivel ciudad
- * (~11 km) porque a escala planetaria dos hoteles del mismo corredor son el
- * mismo pixel. El estado de cada hotel vive en su tarjeta, no en el punto:
- * todos los puntos van en naranja Oranje, uniformes.
- */
 interface GlobeSpot {
   lat: number
   lng: number
   hotels: HotelMapPoint[]
-  /** La primera foto disponible del punto: la portada de su tarjeta. */
   photoUrl: string | null
 }
 
@@ -79,7 +67,6 @@ function groupByLocation(hotels: HotelMapPoint[]): GlobeSpot[] {
   return [...spots.values()]
 }
 
-/** El chip de estado del hotel: su semáforo, o su condición si no tiene ciclo. */
 function hotelStatusToken(hotel: HotelMapPoint): StatusLightToken {
   if (hotel.isClient) return 'st-naranja'
   return hotel.status ? ONBOARDING_STATUS_TOKEN[hotel.status] : 'st-gris'
@@ -96,12 +83,9 @@ function GlobeObject({ globe, spots }: { globe: ThreeGlobe; spots: GlobeSpot[] }
       .pointsData(spots)
       .pointLat((point) => (point as GlobeSpot).lat)
       .pointLng((point) => (point as GlobeSpot).lng)
-      // Uniformes y de marca: el detalle por hotel lo cuenta la tarjeta.
-      // Bajos y finos: a planeta completo, un cilindro alto se ve como tornillo.
       .pointColor(() => brand['o-500'])
       .pointAltitude(0.015)
       .pointRadius(0.55)
-      // El anillo que pulsa hace encontrable un punto sobre un globo quieto.
       .ringsData(spots)
       .ringLat((ring) => (ring as GlobeSpot).lat)
       .ringLng((ring) => (ring as GlobeSpot).lng)
@@ -114,14 +98,8 @@ function GlobeObject({ globe, spots }: { globe: ThreeGlobe; spots: GlobeSpot[] }
   return <primitive object={globe} />
 }
 
-/** Cuántas tarjetas anotadas caben sin taparse unas a otras. */
 const MAX_CALLOUTS = 4
 const MAX_ROWS = 3
-/**
- * A dónde vuela cada tarjeta desde su punto: un cuadrante por tarjeta
- * (arriba-derecha, arriba-izquierda, abajo-derecha, abajo-izquierda), para que
- * varios puntos vecinos no encimen sus tarjetas ni crucen sus líneas.
- */
 const CALLOUT_OFFSETS: ReadonlyArray<{ dx: number; dy: number }> = [
   { dx: 118, dy: -100 },
   { dx: -118, dy: -70 },
@@ -129,13 +107,6 @@ const CALLOUT_OFFSETS: ReadonlyArray<{ dx: number; dy: number }> = [
   { dx: -130, dy: 90 },
 ]
 
-/**
- * La tarjeta SIEMPRE visible con su línea al punto, al estilo de un mapa
- * técnico anotado. `Html` de drei la reproyecta en cada frame, así que sigue
- * al globo al girar; cuando el punto rota a la cara oculta, se desvanece
- * (el producto punto entre la normal del punto y la cámara lo delata).
- * Clic: abre Mi Territorio con el hotel del punto ya buscado.
- */
 function SpotCallout({
   globe,
   spot,
@@ -179,7 +150,7 @@ function SpotCallout({
   return (
     <Html position={position} zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
       <div ref={wrapperRef} className="transition-opacity duration-300">
-        {/* La línea recta del punto a la tarjeta, como el pin de la referencia. */}
+        {}
         <svg
           aria-hidden
           width={width}
@@ -212,7 +183,7 @@ function SpotCallout({
           />
         </svg>
 
-        {/* Misma anatomía que la tarjeta del pipeline: foto, fundido, datos. */}
+        {}
         <button
           type="button"
           onClick={() => {
@@ -233,7 +204,6 @@ function SpotCallout({
                 loading="lazy"
                 className="size-full object-cover"
                 onError={(event) => {
-                  /** Las URLs guardadas de getUrl() caducan: fuera la rota. */
                   event.currentTarget.style.display = 'none'
                 }}
               />
@@ -299,19 +269,11 @@ function GlobeCanvas({
   const globe = useMemo(buildGlobe, [])
   const spots = useMemo(() => groupByLocation(hotels), [hotels])
 
-  /** Tarjeta solo para los puntos con más hoteles; el resto queda como punto. */
   const annotated = useMemo(
     () => [...spots].sort((a, b) => b.hotels.length - a.hotels.length).slice(0, MAX_CALLOUTS),
     [spots],
   )
 
-  /**
-   * La cámara arranca SOBRE los hoteles, no sobre un punto fijo: centroide de
-   * los puntos. Sin datos, cae al HOME del territorio.
-   *
-   * Altitud 2.1 a propósito: con fov 45, más cerca la esfera no cabe en el
-   * encuadre y se ve un pedazo de planeta recortado en vez de un planeta.
-   */
   const camera = useMemo(() => {
     const target = spots.length
       ? {
@@ -357,28 +319,32 @@ function GlobeCanvas({
   )
 }
 
-/**
- * El globo del territorio: un punto naranja por ciudad con hoteles, tarjetas
- * anotadas con foto y el estado del semáforo de cada hotel, y clic para abrir
- * Mi Territorio con ese hotel buscado. Solo web (xl en adelante): en móvil ni
- * se monta — WebGL y batería no se gastan en un adorno.
- */
+function supportsWebGl(): boolean {
+  try {
+    const canvas = document.createElement('canvas')
+    return canvas.getContext('webgl2') !== null || canvas.getContext('webgl') !== null
+  } catch {
+    return false
+  }
+}
+
 export function HotelGlobeCard(): ReactNode {
   const isWide = useMediaQuery('(min-width: 1280px)')
   const navigate = useNavigate()
-  const { data: hotels, isError } = useGetHotelMapPointsQuery(undefined, { skip: !isWide })
+  const hasWebGl = useMemo(supportsWebGl, [])
+  const { data: hotels, isError } = useGetHotelMapPointsQuery(undefined, {
+    skip: !isWide || !hasWebGl,
+  })
 
-  if (!isWide) return null
+  if (!isWide || !hasWebGl) return null
 
   function openTerritory(spot: GlobeSpot): void {
     const [first] = spot.hotels
-    /** Un hotel: llega ya buscado. Varios: la lista completa del territorio. */
     const search = spot.hotels.length === 1 && first ? `?q=${encodeURIComponent(first.name)}` : ''
     void navigate(`/mi-territorio${search}`)
   }
 
   return (
-    /* La caja sigue el estilo del tablero: radio grande y sombra tintada, sin borde. */
     <section className="flex flex-col rounded-2xl bg-surface p-5 shadow-md">
       <h2 className="text-base font-semibold text-ink">El territorio</h2>
       <p className="mt-0.5 text-sm text-ink-3">

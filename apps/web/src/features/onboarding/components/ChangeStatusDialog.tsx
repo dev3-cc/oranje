@@ -11,6 +11,7 @@ import { SemaforoHelpButton } from './SemaforoHelpDialog'
 
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
+import { Select } from '@/shared/components/Select'
 import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
@@ -23,25 +24,9 @@ export interface ChangeStatusDialogProps {
   prospectId: string
   hotelName: string
   currentStatus: OnboardingStatus
-  /**
-   * Estado destino ya elegido (p. ej. al soltar la tarjeta en una columna).
-   * Solo se preselecciona si el backend lo trae entre las permitidas: si no,
-   * el diálogo abre con la lista honesta y nada marcado.
-   */
   presetStatus?: OnboardingStatus
 }
 
-/**
- * Cambio de estado del semáforo.
- *
- * Las transiciones NO se calculan aquí: se piden al backend, que ya las filtró
- * por el rol de la sesión. Si una no llega, no se puede ejecutar — y el aviso
- * de por qué se ocultó también lo redacta el backend.
- *
- * El motivo se exige cuando la transición trae `requiresReason`, que es el
- * `requires_reason` del catálogo. El botón queda bloqueado hasta que hay uno.
- */
-/** Siglas visibles de los roles autorizados, para citar QUIÉN puede dar el paso. */
 const ROLE_SHORT: Record<string, string> = {
   'ROL-V-01': 'el BD',
   'ROL-V-02': 'el BDC',
@@ -49,11 +34,6 @@ const ROLE_SHORT: Record<string, string> = {
   'ROL-ADM-01': 'el Administrador',
 }
 
-/**
- * La causa real del rechazo Y el camino para resolverla — no un «revisa el
- * motivo» a ciegas: un 422 de PROPOSAL_REQUIRED (D-22) no se arregla
- * eligiendo otro motivo, y un 403 se resuelve pidiéndoselo al rol correcto.
- */
 function transitionErrorMessage(error: unknown): string {
   const data = (
     error as
@@ -122,14 +102,12 @@ export function ChangeStatusDialog({
     { skip: !selectedStatus || !isReasonRequired },
   )
 
-  // Al cerrar se descarta la selección: reabrir no debe heredar el intento previo.
   useEffect(() => {
     if (isOpen) return
     setSelectedStatus(null)
     setReasonId('')
   }, [isOpen])
 
-  /** El arrastre trae destino: se marca solo si el backend lo permite. */
   useEffect(() => {
     if (!isOpen || !presetStatus || selectedStatus !== null || !allowed) return
     if (allowed.transitions.some((transition) => transition.toStatus === presetStatus)) {
@@ -150,7 +128,7 @@ export function ChangeStatusDialog({
       }).unwrap()
       onClose()
     } catch {
-      // El error queda en `saveError` y se pinta abajo; el modal no se cierra.
+      return
     }
   }
 
@@ -253,7 +231,7 @@ export function ChangeStatusDialog({
             )}
           </label>
 
-          <select
+          <Select
             id="status-change-reason"
             value={reasonId}
             disabled={areReasonsLoading}
@@ -262,7 +240,7 @@ export function ChangeStatusDialog({
             }}
             className={cn(
               'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm',
-              'focus:border-o-500 focus:outline-none',
+              'transition-colors hover:border-ink-4 focus:outline-none focus-visible:border-o-500 focus-visible:ring-2 focus-visible:ring-o-500/30',
               reasonId === '' ? 'text-ink-4' : 'text-ink',
             )}
           >
@@ -274,7 +252,7 @@ export function ChangeStatusDialog({
                 {reason.label}
               </option>
             ))}
-          </select>
+          </Select>
 
           {isReasonRequired && (
             <p className="text-xs text-ink-3">
@@ -290,10 +268,7 @@ export function ChangeStatusDialog({
         </p>
       )}
 
-      {/*
-        El semáforo no retrocede (RR-V-07): quien busque «bajar» un estado
-        necesita saber el camino real sin ir a leer el vault.
-      */}
+      {}
       <div className="flex items-start gap-2 rounded-md bg-surface-2 p-3">
         <p className="text-xs leading-relaxed text-ink-3">
           ¿Necesitas regresarlo? El semáforo no retrocede: se sale por una rama y se reactiva hacia

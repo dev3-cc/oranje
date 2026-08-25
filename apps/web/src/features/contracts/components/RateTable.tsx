@@ -4,16 +4,22 @@ import type { ContractRate } from '../types/contract.types'
 import { marginOf } from '../utils/validity'
 
 import { SectionCard } from '@/shared/components/SectionCard'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatMoney } from '@/shared/lib/formatters'
 
-const HEADERS = ['catalog_position', 'pay_rate', 'bill_rate', 'margen']
+const HEADERS = IS_DEV_UI
+  ? ['catalog_position', 'pay_rate', 'bill_rate', 'margen']
+  : ['Posición', 'Se le paga al colaborador', 'Se le factura al hotel', 'Margen']
 
-/** Las tarifas del contrato, una por posición del catálogo. */
 export function RateTable({ rates }: { rates: ContractRate[] }): ReactNode {
   return (
     <SectionCard
       title="Tarifas por posición"
-      subtitle="commercial.contract_rate · una fila por posición del catálogo"
+      subtitle={
+        IS_DEV_UI
+          ? 'commercial.contract_rate · una fila por posición del catálogo'
+          : 'Una tarifa por posición del catálogo'
+      }
     >
       {rates.length === 0 ? (
         <p className="rounded-lg border border-dashed border-line p-6 text-center text-sm text-ink-3">

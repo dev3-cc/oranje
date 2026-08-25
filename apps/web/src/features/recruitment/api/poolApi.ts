@@ -18,15 +18,8 @@ import type {
   WorkerApi,
 } from '@/shared/types/apiContract.types'
 
-/**
- * El Pool sobre el contrato REAL: `GET /workers` con sus filtros por id de
- * catálogo (`state`, `zoneId`, `catalogPositionId`, `englishLevelId`). La
- * modalidad es el único filtro que la API aún no acepta: se aplica al adaptar
- * y se dice en el tipo, no se esconde.
- */
 registerPoolMocks()
 
-/** `fetchWithBQ` de un `queryFn`: el tipo exacto no está exportado por RTK. */
 type FetchWithBQ = (
   args: string | { url: string; params?: Record<string, unknown> },
 ) => Promise<{ data?: unknown; error?: unknown }>
@@ -44,6 +37,7 @@ function toPoolWorker(worker: WorkerApi): PoolWorker {
     status: worker.state.code as WorkerStatus,
     isProfileComplete: worker.isProfileComplete,
     hasTaxId: worker.hasTaxId,
+    createdAt: worker.createdAt,
     isBlacklisted: worker.isBlacklisted,
   }
 }
@@ -76,7 +70,6 @@ async function fetchPool(
   return {
     data: {
       items: workers.map(toPoolWorker),
-      /** Con el filtro local activo, el total honesto es el filtrado. */
       total: filters.hiringModalityId === ANY_VALUE ? board.meta.total : workers.length,
     },
   }
@@ -123,11 +116,6 @@ export const poolApi = baseApi.injectEndpoints({
       ],
     }),
 
-    /**
-     * El alta de la Fase 1 (entrevista): la persona NACE en BLANCO con la fila
-     * a medias — eso ES el estado (D-26). Las fases 2 y 3 llegan por la app.
-     */
-    /** Edición del expediente (PATCH real): mismos campos, todos opcionales. */
     updateWorker: build.mutation<unknown, { workerId: string } & Partial<CreateWorkerRequest>>({
       query: ({ workerId, ...body }) => ({
         url: `/workers/${workerId}`,
@@ -145,7 +133,6 @@ export const poolApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: 'Worker' as const, id: 'LIST' }],
     }),
 
-    /** Los catálogos de los filtros, del backend: no se inventan en código. */
     getPoolOptions: build.query<PoolOptions, void>({
       queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
         const result = await fetchOptions(fetchWithBQ as FetchWithBQ)

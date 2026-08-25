@@ -1,10 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { cn } from '@oranje/ui'
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useFieldArray, useForm, type FieldErrors } from 'react-hook-form'
 
 import {
   useCreateRequisitionMutation,
+  useGetOwnHotelOptionQuery,
   useGetRequisitionFormOptionsQuery,
 } from '../api/requisitionsApi'
 import {
@@ -15,23 +16,16 @@ import {
 } from '../types/requisitionForm.schema'
 
 import { useGetSessionQuery } from '@/app/sessionApi'
+import personajeContratacion from '@/assets/ilustrations/personaje-contratacion.svg'
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
-import {
-  AUTHORIZATION_TRANSITION,
-  REQUISITION_STATUS_LABEL,
-} from '@/shared/constants/requisitionStatus'
+import { Select } from '@/shared/components/Select'
+import { SELECT_FIELD_CLASS, SelectField } from '@/shared/components/SelectField'
+import { apiErrorMessage } from '@/shared/lib/apiError'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'new-requisition'
 
-const HEADER_CONTROL =
-  'w-full rounded-full border border-line bg-surface px-4 py-2.5 text-sm text-ink focus:border-o-500 focus:outline-none disabled:bg-surface-2 disabled:text-ink-3'
-
-/**
- * Los controles de la tabla van sin marco hasta que se enfocan: la maqueta la
- * dibuja como una tabla de lectura, y con nueve recuadros por fila el bloque se
- * vuelve ilegible.
- */
 const CELL_CONTROL =
   'w-full rounded-md border border-transparent bg-transparent px-2 py-1.5 text-sm text-ink hover:border-line focus:border-o-500 focus:bg-surface focus:outline-none'
 
@@ -47,7 +41,6 @@ const HEADERS = [
   'Slots',
 ]
 
-/** La ruta de un campo del arreglo con el tipo que espera React Hook Form. */
 function positionPath<K extends keyof RequisitionPositionDraft>(
   index: number,
   key: K,
@@ -55,7 +48,6 @@ function positionPath<K extends keyof RequisitionPositionDraft>(
   return `positions.${String(index)}.${key}` as `positions.${number}.${K}`
 }
 
-/** Los campos de una fila, para buscar su primer error sin recorrer `unknown`. */
 const POSITION_FIELDS = [
   'catalogPositionId',
   'hiringModalityId',
@@ -65,7 +57,6 @@ const POSITION_FIELDS = [
   'startTime',
 ] as const
 
-/** El primer error de la fila, para no apilar cinco mensajes bajo la tabla. */
 function firstRowError(errors: FieldErrors<RequisitionForm>, index: number): string | undefined {
   const row = errors.positions?.[index]
   if (!row) return undefined
@@ -78,14 +69,6 @@ function firstRowError(errors: FieldErrors<RequisitionForm>, index: number): str
   return undefined
 }
 
-/**
- * Alta de una requisición.
- *
- * El número NO se pide: lo genera el backend al guardar. El inspector tampoco
- * se elige — sale de la zona del hotel (RR-13) —, así que el campo se muestra
- * bloqueado en vez de esconderlo: quien firma tiene que saber a quién le va a
- * tocar antes de guardar.
- */
 export function NewRequisitionDialog({
   isOpen,
   onClose,
@@ -102,6 +85,8 @@ export function NewRequisitionDialog({
     handleSubmit,
     watch,
     setError,
+    setValue,
+    getValues,
     reset,
     formState: { errors },
   } = useForm<RequisitionForm>({
@@ -115,11 +100,6 @@ export function NewRequisitionDialog({
 
   const { fields, append, remove } = useFieldArray({ control, name: 'positions' })
 
-  /**
-   * El alcance manda: el back rechaza con HOTEL_OUT_OF_SCOPE toda requisición
-   * de un hotel ajeno, así que si la sesión TIENE hotel, el campo se fija —
-   * ofrecer el catálogo entero era invitar al 403.
-   */
   const { data: session } = useGetSessionQuery()
   const sessionHotel = session?.hotel ?? null
 
@@ -136,10 +116,28 @@ export function NewRequisitionDialog({
   const department = watch('department')
   const positions = watch('positions')
 
-  const hotel = options?.hotels.find((item) => item.id === hotelId) ?? null
+  const { data: ownHotel } = useGetOwnHotelOptionQuery(sessionHotel?.id ?? '', {
+    skip: !isOpen || !sessionHotel,
+  })
+  const hotel = sessionHotel
+    ? (ownHotel ?? null)
+    : (options?.hotels.find((item) => item.id === hotelId) ?? null)
 
-  // Los slots son la cantidad: una fila que pide 4 camaristas nace con 4 slots
-  // libres. Es aritmética de esta misma pantalla, no un agregado del servidor.
+  const [isPhotoBroken, setIsPhotoBroken] = useState(false)
+  useEffect(() => {
+    setIsPhotoBroken(false)
+  }, [hotel?.photoUrl])
+  const heroPhoto = !isPhotoBroken && hotel?.photoUrl ? hotel.photoUrl : null
+
+  useEffect(() => {
+    if (!department) return
+    getValues('positions').forEach((position, index) => {
+      if (!position.hotelDepartmentId) {
+        setValue(positionPath(index, 'hotelDepartmentId'), department)
+      }
+    })
+  }, [department, getValues, setValue])
+
   const totalSlots = positions.reduce(
     (total, position) => total + (Number(position.quantity) || 0),
     0,
@@ -147,7 +145,6 @@ export function NewRequisitionDialog({
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      /** El cuerpo REAL de `POST /requisitions`: los catálogos van por id. */
       await createRequisition({
         hotelId: values.hotelId,
         positions: values.positions.map((position) => ({
@@ -162,13 +159,13 @@ export function NewRequisitionDialog({
       }).unwrap()
       onClose()
     } catch (error) {
-      /** El 403 no es transitorio: decir «Reintenta» ahí es mentirle al usuario. */
-      const status = (error as { status?: number }).status
       setError('root', {
-        message:
-          status === 403
-            ? 'Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área o el Manager General del hotel.'
-            : 'No se pudo guardar la requisición. Reintenta.',
+        message: apiErrorMessage(error, {
+          byStatus: {
+            403: 'Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área o el Manager General del hotel.',
+          },
+          fallback: 'No se pudo guardar la requisición.',
+        }),
       })
     }
   })
@@ -178,269 +175,333 @@ export function NewRequisitionDialog({
       isOpen={isOpen}
       onClose={onClose}
       title="Nueva requisición"
-      description="El número se genera al guardar — AAAAMMDDHHMM + homoclave de 2 caracteres"
-      className="max-w-[76rem]"
-      footer={
-        <div className="flex justify-end gap-3">
-          <Button variant="secondary" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button variant="primary" type="submit" form={FORM_ID} disabled={isLoading}>
-            Guardar requisición
-          </Button>
-        </div>
-      }
+      chromeless
+      className="max-w-5xl"
     >
-      <form
-        id={FORM_ID}
-        onSubmit={(event) => {
-          void onSubmit(event)
-        }}
-        className="flex flex-col gap-5"
-      >
-        <fieldset className="rounded-xl border border-line p-5">
-          <legend className="px-1 text-lg font-semibold text-ink">Cabecera</legend>
-          {/*
-            El estado de nacimiento sale de las constantes y no escrito a mano:
-            si el semáforo se corrige, esta frase se corrige con él.
-          */}
-          <p className="text-sm text-ink-3">
-            Nace en {REQUISITION_STATUS_LABEL[AUTHORIZATION_TRANSITION.from]} — por autorizar. El
-            Inspector se asigna solo por la zona del hotel (RR-13)
-          </p>
+      <div className="grid max-h-[calc(100vh-3rem)] grid-cols-1 md:grid-cols-[260px_minmax(0,1fr)]">
+        {}
+        <aside className="relative hidden overflow-hidden md:block">
+          {heroPhoto ? (
+            <>
+              <img
+                src={heroPhoto}
+                alt=""
+                aria-hidden
+                loading="lazy"
+                onError={() => {
+                  setIsPhotoBroken(true)
+                }}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div
+                aria-hidden
+                className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/30 to-ink/5"
+              />
+            </>
+          ) : (
+            <div aria-hidden className="absolute inset-0 bg-gradient-to-b from-o-50 to-surface-3">
+              <img
+                src={personajeContratacion}
+                alt=""
+                className="absolute top-1/2 left-1/2 h-52 w-auto -translate-x-1/2 -translate-y-1/2 opacity-90"
+              />
+            </div>
+          )}
 
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <label className="flex flex-col gap-2">
-              <span className="text-sm text-ink-3">Hotel</span>
-              {sessionHotel ? (
-                /* El hotel es el de MI sesión: fijo, como lo exige el alcance. */
-                <input
-                  value={sessionHotel.name}
-                  readOnly
-                  aria-label="Hotel"
-                  title="Solo puedes crear requisiciones de tu hotel"
-                  className={cn(HEADER_CONTROL, 'cursor-not-allowed bg-surface-2')}
-                />
-              ) : (
-                <select {...register('hotelId')} className={HEADER_CONTROL}>
-                  <option value="">Elige el hotel</option>
-                  {(options?.hotels ?? []).map((item) => (
+          <div
+            className={cn(
+              'relative flex h-full flex-col justify-end gap-2.5 p-6',
+              heroPhoto ? 'text-surface' : 'text-ink',
+            )}
+          >
+            <p className="text-2xl leading-tight font-bold">{hotel?.name ?? 'Elige el hotel'}</p>
+            <p className={cn('text-sm', heroPhoto ? 'text-surface/85' : 'text-ink-2')}>
+              {hotel
+                ? `Zona ${hotel.zoneName} · el Inspector se congela al guardar${IS_DEV_UI ? ' (RR-13)' : ''}`
+                : `El Inspector se asigna solo por la zona del hotel${IS_DEV_UI ? ' (RR-13)' : ''}`}
+            </p>
+            <p className="text-sm font-semibold">
+              {fields.length} {fields.length === 1 ? 'posición' : 'posiciones'} · {totalSlots}{' '}
+              {totalSlots === 1 ? 'slot' : 'slots'}
+            </p>
+          </div>
+        </aside>
+
+        {}
+        <section className="flex max-h-[calc(100vh-3rem)] min-w-0 flex-col">
+          <header className="border-b border-line px-6 py-5">
+            <h2 className="text-xl font-bold text-ink">Nueva requisición</h2>
+            {}
+            <p className="mt-1 text-sm text-ink-3">
+              {IS_DEV_UI
+                ? 'El número se genera al guardar — AAAAMMDDHHMM + homoclave de 2 caracteres'
+                : 'El folio se asigna automáticamente al guardar'}
+            </p>
+          </header>
+
+          <form
+            id={FORM_ID}
+            onSubmit={(event) => {
+              void onSubmit(event)
+            }}
+            className="flex flex-1 flex-col gap-6 overflow-y-auto px-6 py-5"
+          >
+            {}
+            <div className="flex max-w-md flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="req-hotel" className="text-sm font-medium text-ink-2">
+                  Hotel
+                </label>
+                {sessionHotel ? (
+                  <input
+                    value={sessionHotel.name}
+                    readOnly
+                    aria-label="Hotel"
+                    title="Solo puedes crear requisiciones de tu hotel"
+                    className={cn(SELECT_FIELD_CLASS, 'w-full cursor-not-allowed bg-surface-2')}
+                  />
+                ) : (
+                  <SelectField
+                    id="req-hotel"
+                    {...register('hotelId')}
+                    disabled={options !== undefined && options.hotels.length === 0}
+                  >
+                    <option value="">
+                      {options !== undefined && options.hotels.length === 0
+                        ? 'Aún no hay clientes activos'
+                        : 'Elige el hotel'}
+                    </option>
+                    {(options?.hotels ?? []).map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
+                  </SelectField>
+                )}
+                {!sessionHotel && options !== undefined && options.hotels.length === 0 && (
+                  <span className="text-xs text-ink-3">
+                    Un hotel puede pedir gente cuando llega a Naranja — cliente activo.
+                  </span>
+                )}
+                {errors.hotelId && (
+                  <span className="text-xs text-red">{errors.hotelId.message}</span>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="req-department" className="text-sm font-medium text-ink-2">
+                  Departamento del hotel
+                </label>
+                <SelectField id="req-department" {...register('department')}>
+                  <option value="">Elige el departamento</option>
+                  {(options?.departments ?? []).map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.name}
                     </option>
                   ))}
-                </select>
-              )}
-              {errors.hotelId && <span className="text-xs text-red">{errors.hotelId.message}</span>}
-            </label>
+                </SelectField>
+              </div>
+            </div>
 
-            <label className="flex flex-col gap-2">
-              <span className="text-sm text-ink-3">Departamento del hotel</span>
-              <select {...register('department')} className={HEADER_CONTROL}>
-                <option value="">Elige el departamento</option>
-                {(options?.departments ?? []).map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="flex flex-col gap-2">
-              <span className="text-sm text-ink-3">Inspector de zona</span>
-              <input
-                readOnly
-                disabled
-                value={hotel ? `Se congela al guardar — zona ${hotel.zoneName} (RR-13)` : ''}
-                placeholder="Se asigna al elegir el hotel"
-                className={HEADER_CONTROL}
-              />
-            </label>
-          </div>
-        </fieldset>
-
-        <fieldset className="rounded-xl border border-line p-5">
-          <legend className="px-1 text-lg font-semibold text-ink">Posiciones solicitadas</legend>
-          <p className="text-sm text-ink-3">
-            Cada unidad de Cantidad genera un slot: la fila que se bloquea al ocupar (D-02, RR-15)
-          </p>
-
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[62rem] border-collapse text-left">
-              <thead>
-                <tr className="border-b border-line">
-                  {HEADERS.map((header) => (
-                    <th
-                      key={header}
-                      scope="col"
-                      className="px-2 py-3 text-xs font-semibold tracking-wide text-ink-3 uppercase"
-                    >
-                      {header}
-                    </th>
-                  ))}
-                  <th scope="col" className="px-2 py-3">
-                    <span className="sr-only">Quitar</span>
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {fields.map((field, index) => {
-                  const quantity = Number(positions[index]?.quantity ?? 0) || 0
-                  const rowError = firstRowError(errors, index)
-
-                  return (
-                    <tr key={field.id} className="border-b border-line last:border-b-0">
-                      <td className="px-2 py-3 text-sm text-ink-3">{index + 1}</td>
-                      <td className="px-2 py-3">
-                        <select
-                          {...register(positionPath(index, 'catalogPositionId'))}
-                          aria-label={`Posición ${String(index + 1)}`}
-                          className={cn(CELL_CONTROL, 'font-semibold', rowError && 'border-red')}
-                        >
-                          <option value="">—</option>
-                          {(options?.positions ?? []).map((item) => (
-                            <option key={item.id} value={item.id}>
-                              {item.name}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-2 py-3">
-                        <select
-                          {...register(positionPath(index, 'hiringModalityId'))}
-                          aria-label={`Modalidad ${String(index + 1)}`}
-                          className={CELL_CONTROL}
-                        >
-                          <option value="">—</option>
-                          {(options?.modalities ?? []).map((item) => (
-                            <option key={item.id} value={item.id}>
-                              {item.name}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-2 py-3">
-                        <select
-                          {...register(positionPath(index, 'englishLevelId'))}
-                          aria-label={`Inglés ${String(index + 1)}`}
-                          className={CELL_CONTROL}
-                        >
-                          <option value="">No requerido</option>
-                          {(options?.englishLevels ?? []).map((item) => (
-                            <option key={item.id} value={item.id}>
-                              {item.name}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-2 py-3">
-                        {/* Cada posición lleva SU departamento: la cabecera solo
-                            propone el más común, y una requisición puede pedir
-                            gente para dos áreas del mismo hotel. */}
-                        <select
-                          {...register(positionPath(index, 'hotelDepartmentId'))}
-                          aria-label={`Departamento ${String(index + 1)}`}
-                          className={CELL_CONTROL}
-                        >
-                          <option value="">—</option>
-                          {(options?.departments ?? []).map((item) => (
-                            <option key={item.id} value={item.id}>
-                              {item.name}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-2 py-3">
-                        <input
-                          {...register(positionPath(index, 'quantity'))}
-                          inputMode="numeric"
-                          aria-label={`Cantidad ${String(index + 1)}`}
-                          className={cn(CELL_CONTROL, 'w-16')}
-                        />
-                      </td>
-                      <td className="px-2 py-3">
-                        <input
-                          type="date"
-                          {...register(positionPath(index, 'startDate'))}
-                          aria-label={`Inicio ${String(index + 1)}`}
-                          className={cn(CELL_CONTROL, 'w-40')}
-                        />
-                      </td>
-                      <td className="px-2 py-3">
-                        <input
-                          type="time"
-                          {...register(positionPath(index, 'startTime'))}
-                          aria-label={`Hora ${String(index + 1)}`}
-                          className={cn(CELL_CONTROL, 'w-28')}
-                        />
-                      </td>
-                      <td className="px-2 py-3">
-                        <span className="inline-flex items-center gap-1.5 rounded-md bg-o-50 px-2.5 py-1 text-sm font-medium whitespace-nowrap text-o-700">
-                          <span
-                            className="material-icons-outlined text-base leading-none"
-                            aria-hidden
-                          >
-                            layers
-                          </span>
-                          {quantity} {quantity === 1 ? 'libre' : 'libres'}
-                        </span>
-                      </td>
-                      <td className="px-2 py-3 text-right">
-                        {/* La última no se puede quitar: una requisición sin
-                            posiciones no pide nada. */}
-                        <button
-                          type="button"
-                          disabled={fields.length === 1}
-                          onClick={() => {
-                            remove(index)
-                          }}
-                          aria-label={`Quitar posición ${String(index + 1)}`}
-                          className="rounded-md px-2 py-1 text-sm text-ink-3 hover:text-red disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          ✕
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {errors.positions?.root?.message !== undefined && (
-            <p className="mt-2 text-sm text-red">{errors.positions.root.message}</p>
-          )}
-          {fields.map((field, index) => {
-            const rowError = firstRowError(errors, index)
-            return rowError === undefined ? null : (
-              <p key={field.id} className="mt-2 text-sm text-red">
-                Posición {index + 1}: {rowError}
+            {}
+            <fieldset>
+              <legend className="text-base font-semibold text-ink">Posiciones solicitadas</legend>
+              <p className="mt-1 text-sm text-ink-3">
+                {IS_DEV_UI
+                  ? 'Cada unidad de Cantidad genera un slot: la fila que se bloquea al ocupar (D-02, RR-15)'
+                  : 'Cada unidad de Cantidad es un lugar por cubrir'}
               </p>
-            )
-          })}
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
-            <Button
-              variant="secondary"
-              onClick={() => {
-                append(emptyPositionDraft(department))
-              }}
-            >
-              + Agregar posición
-            </Button>
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full min-w-[62rem] border-collapse text-left">
+                  <thead>
+                    <tr className="border-b border-line">
+                      {HEADERS.map((header) => (
+                        <th
+                          key={header}
+                          scope="col"
+                          className="px-2 py-3 text-xs font-semibold tracking-wide text-ink-3 uppercase"
+                        >
+                          {header}
+                        </th>
+                      ))}
+                      <th scope="col" className="px-2 py-3">
+                        <span className="sr-only">Quitar</span>
+                      </th>
+                    </tr>
+                  </thead>
 
-            <p className="text-base font-semibold text-ink">
+                  <tbody>
+                    {fields.map((field, index) => {
+                      const quantity = Number(positions[index]?.quantity ?? 0) || 0
+                      const rowError = firstRowError(errors, index)
+
+                      return (
+                        <tr key={field.id} className="border-b border-line last:border-b-0">
+                          <td className="px-2 py-3 text-sm text-ink-3">{index + 1}</td>
+                          <td className="px-2 py-3">
+                            <Select
+                              {...register(positionPath(index, 'catalogPositionId'))}
+                              aria-label={`Posición ${String(index + 1)}`}
+                              className={cn(
+                                CELL_CONTROL,
+                                'font-semibold',
+                                rowError && 'border-red',
+                              )}
+                            >
+                              <option value="">—</option>
+                              {(options?.positions ?? []).map((item) => (
+                                <option key={item.id} value={item.id}>
+                                  {item.name}
+                                </option>
+                              ))}
+                            </Select>
+                          </td>
+                          <td className="px-2 py-3">
+                            <Select
+                              {...register(positionPath(index, 'hiringModalityId'))}
+                              aria-label={`Modalidad ${String(index + 1)}`}
+                              className={CELL_CONTROL}
+                            >
+                              <option value="">—</option>
+                              {(options?.modalities ?? []).map((item) => (
+                                <option key={item.id} value={item.id}>
+                                  {item.name}
+                                </option>
+                              ))}
+                            </Select>
+                          </td>
+                          <td className="px-2 py-3">
+                            <Select
+                              {...register(positionPath(index, 'englishLevelId'))}
+                              aria-label={`Inglés ${String(index + 1)}`}
+                              className={CELL_CONTROL}
+                            >
+                              <option value="">No requerido</option>
+                              {(options?.englishLevels ?? []).map((item) => (
+                                <option key={item.id} value={item.id}>
+                                  {item.name}
+                                </option>
+                              ))}
+                            </Select>
+                          </td>
+                          <td className="px-2 py-3">
+                            {}
+                            <Select
+                              {...register(positionPath(index, 'hotelDepartmentId'))}
+                              aria-label={`Departamento ${String(index + 1)}`}
+                              className={CELL_CONTROL}
+                            >
+                              <option value="">—</option>
+                              {(options?.departments ?? []).map((item) => (
+                                <option key={item.id} value={item.id}>
+                                  {item.name}
+                                </option>
+                              ))}
+                            </Select>
+                          </td>
+                          <td className="px-2 py-3">
+                            <input
+                              {...register(positionPath(index, 'quantity'))}
+                              inputMode="numeric"
+                              aria-label={`Cantidad ${String(index + 1)}`}
+                              className={cn(CELL_CONTROL, 'w-16')}
+                            />
+                          </td>
+                          <td className="px-2 py-3">
+                            <input
+                              type="date"
+                              {...register(positionPath(index, 'startDate'))}
+                              aria-label={`Inicio ${String(index + 1)}`}
+                              className={cn(CELL_CONTROL, 'w-40')}
+                            />
+                          </td>
+                          <td className="px-2 py-3">
+                            <input
+                              type="time"
+                              {...register(positionPath(index, 'startTime'))}
+                              aria-label={`Hora ${String(index + 1)}`}
+                              className={cn(CELL_CONTROL, 'w-28')}
+                            />
+                          </td>
+                          <td className="px-2 py-3">
+                            <span className="inline-flex items-center gap-1.5 rounded-md bg-o-50 px-2.5 py-1 text-sm font-medium whitespace-nowrap text-o-700">
+                              <span
+                                className="material-icons-outlined text-base leading-none"
+                                aria-hidden
+                              >
+                                layers
+                              </span>
+                              {quantity} {quantity === 1 ? 'libre' : 'libres'}
+                            </span>
+                          </td>
+                          <td className="px-2 py-3 text-right">
+                            {}
+                            <button
+                              type="button"
+                              disabled={fields.length === 1}
+                              onClick={() => {
+                                remove(index)
+                              }}
+                              aria-label={`Quitar posición ${String(index + 1)}`}
+                              className="rounded-md px-2 py-1 text-sm text-ink-3 hover:text-red disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              ✕
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {errors.positions?.root?.message !== undefined && (
+                <p className="mt-2 text-sm text-red">{errors.positions.root.message}</p>
+              )}
+              {fields.map((field, index) => {
+                const rowError = firstRowError(errors, index)
+                return rowError === undefined ? null : (
+                  <p key={field.id} className="mt-2 text-sm text-red">
+                    Posición {index + 1}: {rowError}
+                  </p>
+                )
+              })}
+
+              <div className="mt-4">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    append(emptyPositionDraft(department))
+                  }}
+                >
+                  + Agregar posición
+                </Button>
+              </div>
+            </fieldset>
+
+            {errors.root?.message !== undefined && (
+              <p className="text-sm text-red">{errors.root.message}</p>
+            )}
+          </form>
+
+          {}
+          <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-6 py-4">
+            <p className="text-sm font-semibold text-ink">
               Total: {fields.length} {fields.length === 1 ? 'posición' : 'posiciones'} ·{' '}
               {totalSlots} {totalSlots === 1 ? 'slot' : 'slots'}
             </p>
-          </div>
-        </fieldset>
-
-        {errors.root?.message !== undefined && (
-          <p className="text-sm text-red">{errors.root.message}</p>
-        )}
-      </form>
+            <div className="flex gap-3">
+              <Button variant="secondary" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button variant="primary" type="submit" form={FORM_ID} disabled={isLoading}>
+                {isLoading ? 'Guardando…' : 'Guardar requisición'}
+              </Button>
+            </div>
+          </footer>
+        </section>
+      </div>
     </Modal>
   )
 }

@@ -16,7 +16,6 @@ import {
 } from '@/shared/constants/workerStatus'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
-/** Qué explica la ausencia de turno, por estado — como la maqueta. */
 const NO_SHIFT_LABEL: Record<string, string> = {
   PINK: '— pausada',
   GRAY: '— protegido',
@@ -44,11 +43,6 @@ function Kpi({ value, label }: { value: number; label: string }): ReactNode {
   )
 }
 
-/**
- * Mi Personal (maqueta del Supervisor): los colaboradores asignados a sus
- * requisiciones con el semáforo siempre visible. Stand-by (Rosa) se comparte
- * con el Manager de Área; el GRIS protege — sin Stand-by ni veto (D-27).
- */
 export function PersonnelPage(): ReactNode {
   const { data: board, isLoading, isError, refetch } = useGetPersonnelBoardQuery()
   const [standByTarget, setStandByTarget] = useState<PersonnelRow | null>(null)
@@ -166,8 +160,7 @@ export function PersonnelPage(): ReactNode {
                       <a href={`tel:${row.phone}`} className="text-ink-2 hover:underline">
                         Contactar
                       </a>
-                      {/* El Expediente pide permisos de Reclutamiento: el enlace existe,
-                        el API decide (igual que toda la app hasta filtrar por rol). */}
+                      {}
                       <Link
                         to={`/pool-colaboradores/${row.workerId}`}
                         className="text-ink-2 hover:underline"
@@ -186,7 +179,7 @@ export function PersonnelPage(): ReactNode {
       <p className="flex items-start gap-2 text-xs leading-relaxed text-ink-4">
         <MaterialIcon name="info" aria-hidden className="mt-0.5 text-sm" />
         Stand-by (Rosa) es compartido con el Manager de Área. El GRIS (accidente) protege: sin
-        Stand-by ni veto, y sus faltas no cuentan (D-27).
+        Stand-by ni veto, y sus faltas no cuentan{IS_DEV_UI ? ' (D-27)' : ''}.
         {IS_DEV_UI && (
           <code className="block">
             compuesto: /schedules + /timesheets + /workers · Stand-by = transición PINK

@@ -8,12 +8,8 @@ import {
   ONBOARDING_STATUS_TOKEN,
   type OnboardingStatus,
 } from '@/shared/constants/onboardingStatus'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 
-/**
- * Estados en el orden del diagrama. Es el MISMO grafo del seed
- * (`ONBOARDING_TRANSITIONS`) menos las reentradas hacia Azul claro: un Sankey
- * es acíclico y las reentradas son ciclos — se cuentan en la nota al pie.
- */
 const FLOW_STATES: readonly OnboardingStatus[] = [
   'GRAY',
   'LIGHT_BLUE',
@@ -38,10 +34,6 @@ const FLOW_EDGES: ReadonlyArray<[OnboardingStatus, OnboardingStatus]> = [
   ['ORANGE', 'BLACK'],
 ]
 
-/**
- * Grosor mínimo de una cinta: un camino sin prospectos hoy sigue existiendo
- * y debe verse. El número real va rotulado en el nodo, no en el grosor.
- */
 const BASE_FLOW = 0.6
 
 function stateColor(status: OnboardingStatus): string {
@@ -56,13 +48,11 @@ interface FlowNodeProps {
   index: number
 }
 
-/** Nodo del Sankey: la barrita del color del estado + etiqueta + cuenta real. */
 function FlowNode(props: unknown): ReactNode {
   const { x, y, width, height, index } = props as FlowNodeProps
   const status = FLOW_STATES[index]
   if (!status) return null
   const count = STATE_COUNTS.get(status) ?? 0
-  /** Los nodos de la última columna rotulan a la izquierda para no salirse. */
   const labelsLeft = x > 400
 
   return (
@@ -106,7 +96,6 @@ interface FlowLinkProps {
   index: number
 }
 
-/** Cinta con degradado del color del estado origen al destino, como la referencia. */
 function FlowLink(props: unknown): ReactNode {
   const { sourceX, sourceY, sourceControlX, targetX, targetY, targetControlX, linkWidth, index } =
     props as FlowLinkProps
@@ -132,16 +121,8 @@ function FlowLink(props: unknown): ReactNode {
   )
 }
 
-/**
- * Cuentas reales por estado, para rotular los nodos. Módulo-nivel porque los
- * nodos del Sankey de Recharts no reciben props propias: se llenan al render.
- */
 const STATE_COUNTS = new Map<OnboardingStatus, number>()
 
-/**
- * El semáforo como flujo: cada estado un nodo, cada transición del seed una
- * cinta, el grosor según cuántos prospectos hay HOY en el estado destino.
- */
 export function PipelineFlowCard({
   countByStatus,
 }: {
@@ -154,7 +135,6 @@ export function PipelineFlowCard({
     nodes: FLOW_STATES.map((status) => ({ name: ONBOARDING_STATUS_LABEL[status] })),
     links: FLOW_EDGES.map(([from, to]) => {
       const into = countByStatus[to] ?? 0
-      /** Café recibe de Verde y de Rosa: el grosor se reparte entre las dos. */
       const share = to === 'BROWN' ? into / 2 : into
       return {
         source: FLOW_STATES.indexOf(from),
@@ -187,7 +167,7 @@ export function PipelineFlowCard({
 
       <p className="mt-2 text-xs leading-relaxed text-ink-3">
         Las reentradas no se dibujan: Rojo, Café y Negro reactivan siempre hacia Azul claro
-        (RR-V-07), y un Sankey no admite ciclos.
+        {IS_DEV_UI ? ' (RR-V-07)' : ''}, y un Sankey no admite ciclos.
       </p>
     </section>
   )

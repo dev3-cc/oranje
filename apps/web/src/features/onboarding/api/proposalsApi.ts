@@ -10,20 +10,13 @@ import { registerProposalsMocks } from './proposalsMocks'
 
 import { baseApi } from '@/app/baseApi'
 import type { OnboardingStatus } from '@/shared/constants/onboardingStatus'
-import type { ApiEnvelope, ProposalApi, ProspectApi } from '@/shared/types/apiContract.types'
+import type {
+  ApiEnvelope,
+  PaginatedEnvelope,
+  ProposalApi,
+  ProspectApi,
+} from '@/shared/types/apiContract.types'
 
-/**
- * Endpoints de Propuestas sobre el `createApi` único (D-12), alineados al
- * contrato real: TODO vive bajo `/prospects/:id/proposals` — no existe el
- * recurso plano `/proposals/:id`.
- *
- * Las tarifas viajan como STRING en los dos sentidos (`"1250.0000"`): la API
- * valida con regex de decimal y serializa el Decimal con `toFixed(4)`. La
- * frontera numérica es de la UI y se resuelve aquí, en los adaptadores.
- *
- * Se etiquetan con `Prospect` y no con un tag propio: la propuesta cuelga del
- * prospecto y su versión se ve en la tarjeta del tablero.
- */
 registerProposalsMocks()
 
 function toRate(value: string | null): number {
@@ -53,10 +46,6 @@ function adaptDraft(proposal: ProposalApi): ProposalDraft {
   }
 }
 
-/**
- * El workspace se arma con DOS recursos: la lista de versiones y el prospecto
- * (nombre del hotel y semáforo para el encabezado del editor).
- */
 type FetchWithBQ = (
   args: string | { url: string; method?: string; body?: unknown },
 ) => Promise<{ data?: unknown; error?: unknown }>
@@ -89,13 +78,29 @@ async function fetchWorkspace(
 
 export const proposalsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    /**
-     * ⚠ Hueco del contrato: la vista transversal del módulo Propuestas no
-     * tiene endpoint — habría que pedir las propuestas prospecto por
-     * prospecto. Sigue sirviéndose de los fixtures hasta que la API la exponga.
-     */
     getProposalCandidates: build.query<ProposalCandidate[], void>({
-      query: () => '/proposals',
+      queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
+        const bq = fetchWithBQ as FetchWithBQ
+        const res = await bq('/prospects?limit=100&includeClosed=true')
+        if (res.error) return { error: res.error as never }
+
+        const prospects = (res.data as PaginatedEnvelope<ProspectApi>).data
+        const candidates: ProposalCandidate[] = []
+        for (const prospect of prospects) {
+          const last = prospect.lastProposal
+          if (!last) continue
+          candidates.push({
+            prospectId: prospect.id,
+            hotelName: prospect.hotel.name,
+            zone: prospect.hotel.zone.name,
+            prospectStatus: prospect.state.code as OnboardingStatus,
+            latestVersion: last.version,
+            latestVersionStatus: last.isDraft ? 'DRAFT' : 'SENT',
+            latestSentAt: last.sentAt,
+          })
+        }
+        return { data: candidates }
+      },
       providesTags: [{ type: 'Prospect', id: 'LIST' }],
     }),
 
@@ -107,7 +112,6 @@ export const proposalsApi = baseApi.injectEndpoints({
       providesTags: (_result, _error, prospectId) => [{ type: 'Prospect', id: prospectId }],
     }),
 
-    /** Abre la siguiente versión. Es POST y no un efecto del GET: leer no crea. */
     createProposalDraft: build.mutation<ProposalWorkspace, string>({
       queryFn: async (prospectId, _api, _extra, fetchWithBQ) => {
         const bq = fetchWithBQ as FetchWithBQ
@@ -126,10 +130,6 @@ export const proposalsApi = baseApi.injectEndpoints({
       ],
     }),
 
-    /**
-     * ⚠ El PATCH real REEMPLAZA, no parcha: todo campo omitido se persiste
-     * `null`. Por eso siempre viajan los tres valores.
-     */
     saveProposalDraft: build.mutation<ProposalWorkspace, SaveProposalDraftRequest>({
       queryFn: async (request, _api, _extra, fetchWithBQ) => {
         const bq = fetchWithBQ as FetchWithBQ
@@ -160,7 +160,6 @@ export const proposalsApi = baseApi.injectEndpoints({
         const result = await fetchWorkspace(bq, prospectId)
         return 'error' in result ? { error: result.error as never } : { data: result.data }
       },
-      /** También la lista: enviar cambia la versión que muestra la tarjeta del tablero. */
       invalidatesTags: (_result, _error, { prospectId }) => [
         { type: 'Prospect', id: prospectId },
         { type: 'Prospect', id: 'LIST' },

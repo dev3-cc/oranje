@@ -23,15 +23,6 @@ const HEADERS = [
   'Indicador',
 ]
 
-/**
- * Timesheet Global · Cumplimiento (maqueta del Manager General): las horas
- * REALES de cada colaborador del hotel contra las contractuales.
- *
- * El indicador es cálculo automático del sistema (vault: Contrato + Timesheet,
- * sin intervención humana) y las horas contractuales AÚN NO VIAJAN en el
- * contrato de la API: esas columnas dicen la raya, no un número inventado.
- * Cuando el backend las exponga, esta pantalla se enciende sola.
- */
 export function TimesheetGlobalPage(): ReactNode {
   const {
     data: week,
@@ -54,7 +45,7 @@ export function TimesheetGlobalPage(): ReactNode {
         </h1>
         <p className="mt-1.5 text-sm text-ink-3">
           {rangeLabel !== '' && `Semana ${rangeLabel} · `}
-          El Manager General ve todos los departamentos (D-09)
+          El Manager General ve todos los departamentos{IS_DEV_UI ? ' (D-09)' : ''}
         </p>
       </header>
 
@@ -116,7 +107,7 @@ export function TimesheetGlobalPage(): ReactNode {
                   <td className="px-4 py-3 text-sm font-semibold text-ink">
                     {formatHours(row.totalHours)}
                   </td>
-                  {/* Las contractuales no viajan en el contrato: raya, no invento. */}
+                  {}
                   <td className="px-4 py-3 text-sm text-ink-4">—</td>
                   <td className="px-4 py-3 text-sm text-ink-4">—</td>
                   <td className="px-4 py-3 text-sm text-ink-4">—</td>

@@ -33,26 +33,17 @@ function deadline(overrides: Partial<TaxDeadlineApi>): TaxDeadlineApi {
   }
 }
 
-/**
- * El recorrido del Colaborador tras el cambio del 2026-08-22: Rosa llega con
- * la Fase 1 completa (las 4 decisiones de Oranje ya capturadas), le queda el
- * transporte (Fase 2) y emergencia + sangre (Fase 3). Los mocks mutan el
- * MISMO perfil, así que el orden de los tests ES el recorrido.
- */
 describe('el apartado del Colaborador', () => {
   it('la Fase 2 solo pide transporte: los 4 de Oranje ya vienen de la entrevista', async () => {
     renderPage(<Phase2Page />)
     const user = userEvent.setup()
 
-    // Lo que decidió Oranje se dice, no se edita.
     expect(
       await screen.findByText(/Tu posición \(Housekeeper\), modalidad \(Tiempo completo\)/),
     ).toBeInTheDocument()
     expect(screen.queryByLabelText(/Posición/)).not.toBeInTheDocument()
 
-    // El plazo de 3 días, con su día real del fixture.
     expect(screen.getByText(/día 2 de 3/)).toBeInTheDocument()
-    // La carga desde la app no existe todavía: se dice como pendiente.
     expect(screen.getByText('pendiente')).toBeInTheDocument()
 
     const sendButton = screen.getByRole('button', { name: 'Enviar' })
@@ -65,7 +56,7 @@ describe('el apartado del Colaborador', () => {
     expect(
       await screen.findByText('Transporte guardado. Sigue la Fase 3.', undefined, SLOW),
     ).toBeInTheDocument()
-    expect(screen.getByText(/Sigues en BLANCO hasta que la Reclutadora valide/)).toBeInTheDocument()
+    expect(screen.getByText(/Sigues en Blanco hasta que la Reclutadora valide/)).toBeInTheDocument()
   })
 
   it('la Fase 3 cierra el expediente con emergencia, sangre y alergias', async () => {
@@ -75,7 +66,6 @@ describe('el apartado del Colaborador', () => {
     const saveButton = await screen.findByRole('button', { name: 'Guardar' })
     expect(saveButton).toBeDisabled()
 
-    // El vault lo llama así: es medical_notes, no una columna nueva.
     expect(screen.getByText(/Alergias o condiciones médicas/)).toBeInTheDocument()
 
     await user.type(screen.getByLabelText(/Nombre/), 'Rubén Sandoval')
@@ -131,12 +121,10 @@ describe('el apartado del Colaborador', () => {
 
     expect(await screen.findByText('RANJE')).toBeInTheDocument()
     expect(await screen.findByText('Rosa N.', undefined, SLOW)).toBeInTheDocument()
-    // Tras el test anterior queda UNA sin leer (el recordatorio de ponche).
     expect(await screen.findByRole('link', { name: 'Avisos · 1' }, SLOW)).toBeInTheDocument()
   })
 })
 
-/** Los tres momentos del plazo, directo sobre el banner (Reglas § Plazo de SSN/ITIN). */
 describe('TaxDeadlineBanner', () => {
   it('días 1-3: dice cuánto queda y que la retención aplica', () => {
     render(<TaxDeadlineBanner deadline={deadline({ status: 'OK', day: 2 })} />)

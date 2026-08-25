@@ -4,19 +4,14 @@ import { useCompleteSignupMutation, useGetMyProfileQuery } from '../api/workerAp
 import { TaxDeadlineBanner } from '../components/TaxDeadlineBanner'
 
 import { Button } from '@/shared/components/Button'
+import { Select } from '@/shared/components/Select'
 import { TRANSPORT_LABEL, TRANSPORT_TYPES } from '@/shared/constants/workerEnums'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const CONTROL_CLASS =
-  'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink focus:border-o-500 focus:outline-none'
+  'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink transition-colors hover:border-ink-4 focus:outline-none focus-visible:border-o-500 focus-visible:ring-2 focus-visible:ring-o-500/30'
 
-/**
- * Alta · Fase 2 (RF-C-01, cambio del 2026-08-22): solo queda el TRANSPORTE y
- * el SSN/ITIN con su plazo de 3 días — posición, modalidad, inglés y
- * experiencia son decisiones de Oranje y las capturó la Reclutadora en la
- * entrevista. La foto también es de la Fase 1.
- */
 export function Phase2Page(): ReactNode {
   const { data: profile } = useGetMyProfileQuery()
   const [save, { isLoading, isError, isSuccess, error: saveError }] = useCompleteSignupMutation()
@@ -34,7 +29,7 @@ export function Phase2Page(): ReactNode {
     try {
       await save({ transportType }).unwrap()
     } catch {
-      /* el error queda en `isError` */
+      return
     }
   }
 
@@ -66,7 +61,7 @@ export function Phase2Page(): ReactNode {
             ¿Cómo te trasladas?
             {IS_DEV_UI && <code className="text-xs text-ink-4"> · transport_type</code>}
           </span>
-          <select
+          <Select
             value={transportType}
             onChange={(event) => {
               setTransportType(event.target.value)
@@ -79,7 +74,7 @@ export function Phase2Page(): ReactNode {
                 {TRANSPORT_LABEL[type]}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
       </section>
 
@@ -88,8 +83,7 @@ export function Phase2Page(): ReactNode {
 
         {profile && <TaxDeadlineBanner deadline={profile.taxDeadline} />}
 
-        {/* El campo cifrado sigue sin conectarse (D-27) y la carga del documento
-            desde la app aún no tiene endpoint propio: se dice, no se finge. */}
+        {}
         <div className="flex items-center justify-between rounded-md bg-surface-2 px-4 py-3">
           <span className="text-sm text-ink-2">Subir SSN / ITIN desde la app</span>
           <span className="rounded-full border border-dashed border-ink-4 px-2.5 py-0.5 text-xs text-ink-3">
@@ -126,7 +120,7 @@ export function Phase2Page(): ReactNode {
       )}
 
       <p className="text-center text-xs text-ink-4">
-        Sigues en BLANCO hasta que la Reclutadora valide el alta (RF-08)
+        Sigues en Blanco hasta que la Reclutadora valide el alta{IS_DEV_UI ? ' (RF-08)' : ''}
       </p>
     </div>
   )

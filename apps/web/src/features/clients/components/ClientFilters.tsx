@@ -6,16 +6,12 @@ import {
   type ClientFilters as Filters,
 } from '../types/client.types'
 
+import { FilterSelect } from '@/shared/components/FilterSelect'
 import { CONTRACT_STATUSES } from '@/shared/constants/contractStatus'
 
-const CONTROL_CLASS =
-  'rounded-full border border-line bg-surface px-5 py-3 text-sm text-ink focus:border-o-500 focus:outline-none'
+const SEARCH_CLASS =
+  'rounded-full border border-line bg-surface px-5 py-2.5 text-sm text-ink transition-colors placeholder:text-ink-4 hover:bg-surface-2 focus:border-o-500 focus:outline-none'
 
-/**
- * Los cinco controles de la cartera. Todos filtran u ordenan en el SERVIDOR:
- * la cartera es de doce hoteles hoy y de cientos el año que viene, y ordenar
- * solo lo descargado pondría al final una página que no lo es.
- */
 export function ClientFilters({
   filters,
   zoneNames,
@@ -29,8 +25,8 @@ export function ClientFilters({
 }): ReactNode {
   const update =
     <K extends keyof Filters>(key: K) =>
-    (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
-      onChange({ ...filters, [key]: event.target.value as Filters[K] })
+    (value: string): void => {
+      onChange({ ...filters, [key]: value as Filters[K] })
     }
 
   return (
@@ -38,67 +34,52 @@ export function ClientFilters({
       <input
         type="search"
         value={filters.search}
-        onChange={update('search')}
+        onChange={(event: ChangeEvent<HTMLInputElement>) => {
+          update('search')(event.target.value)
+        }}
         placeholder="Buscar hotel…"
         aria-label="Buscar hotel"
-        className={`${CONTROL_CLASS} min-w-64 placeholder:text-ink-4`}
+        className={`${SEARCH_CLASS} min-w-64`}
       />
 
-      <select
+      <FilterSelect
+        label="Zona"
+        anyLabel="todas"
         value={filters.zoneName}
+        options={zoneNames.map((zone) => ({ value: zone, label: zone }))}
         onChange={update('zoneName')}
-        aria-label="Zona"
-        className={CONTROL_CLASS}
-      >
-        <option value="ALL">Zona: todas</option>
-        {zoneNames.map((zone) => (
-          <option key={zone} value={zone}>
-            Zona: {zone}
-          </option>
-        ))}
-      </select>
+      />
 
-      <select
+      <FilterSelect
+        label="Contrato"
+        anyLabel="todos"
         value={filters.contractStatus}
+        options={CONTRACT_STATUSES.map((status) => ({ value: status, label: status }))}
         onChange={update('contractStatus')}
-        aria-label="Contrato"
-        className={CONTROL_CLASS}
-      >
-        <option value="ALL">Contrato: todos</option>
-        {CONTRACT_STATUSES.map((status) => (
-          <option key={status} value={status}>
-            Contrato: {status}
-          </option>
-        ))}
-      </select>
+      />
 
-      <select
+      <FilterSelect
+        label="Cliente desde"
+        anyLabel="siempre"
         value={filters.activationYear}
+        options={activationYears.map((year) => ({ value: String(year), label: String(year) }))}
         onChange={update('activationYear')}
-        aria-label="Cliente desde"
-        className={CONTROL_CLASS}
-      >
-        <option value="ALL">Cliente desde: siempre</option>
-        {activationYears.map((year) => (
-          <option key={year} value={String(year)}>
-            Cliente desde: {year}
-          </option>
-        ))}
-      </select>
+      />
 
-      {/* El orden se va al extremo opuesto: no filtra, así que no es del grupo. */}
-      <select
-        value={filters.sort}
-        onChange={update('sort')}
-        aria-label="Ordenar"
-        className={`${CONTROL_CLASS} ml-auto`}
-      >
-        {CLIENT_SORTS.map((sort) => (
-          <option key={sort} value={sort}>
-            Ordenar: {CLIENT_SORT_LABEL[sort]}
-          </option>
-        ))}
-      </select>
+      {}
+      <span className="ml-auto">
+        <FilterSelect
+          label="Ordenar"
+          anyLabel={CLIENT_SORT_LABEL.RECENT}
+          anyValue="RECENT"
+          value={filters.sort}
+          options={CLIENT_SORTS.filter((sort) => sort !== 'RECENT').map((sort) => ({
+            value: sort,
+            label: CLIENT_SORT_LABEL[sort],
+          }))}
+          onChange={update('sort')}
+        />
+      </span>
     </div>
   )
 }

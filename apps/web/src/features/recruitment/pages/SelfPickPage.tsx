@@ -6,7 +6,9 @@ import { useGetSelfPickBoardQuery } from '../api/selfPickApi'
 import type { SelfPickRow } from '../types/selfPick.types'
 
 import personajeComencemos from '@/assets/ilustrations/personaje-comencemos.svg'
+import { FilterSelect } from '@/shared/components/FilterSelect'
 import { LoadError } from '@/shared/components/LoadError'
+import { Select } from '@/shared/components/Select'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate } from '@/shared/lib/formatters'
 
@@ -14,51 +16,6 @@ const ANY = '__any__'
 
 const FILTER_CLASS =
   'cursor-pointer rounded-md border border-line bg-surface py-2 pr-8 pl-9 text-sm text-ink focus:border-o-500 focus:outline-none appearance-none'
-
-/** Un filtro con icono, como los de la maqueta. Las opciones salen de la bolsa misma. */
-function BoardFilter({
-  icon,
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  icon: string
-  label: string
-  value: string
-  options: Array<{ id: string; name: string }>
-  onChange: (value: string) => void
-}): ReactNode {
-  return (
-    <span className="relative">
-      <MaterialIcon
-        name={icon}
-        aria-hidden
-        className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-base text-ink-3"
-      />
-      <select
-        value={value}
-        onChange={(event) => {
-          onChange(event.target.value)
-        }}
-        aria-label={label}
-        className={FILTER_CLASS}
-      >
-        <option value={ANY}>{label}</option>
-        {options.map((option) => (
-          <option key={option.id} value={option.id}>
-            {option.name}
-          </option>
-        ))}
-      </select>
-      <MaterialIcon
-        name="expand_more"
-        aria-hidden
-        className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-base text-ink-3"
-      />
-    </span>
-  )
-}
 
 function uniqueOptions(
   rows: SelfPickRow[],
@@ -72,11 +29,6 @@ function uniqueOptions(
   return [...map.values()].sort((a, b) => a.name.localeCompare(b.name))
 }
 
-/**
- * Bolsa · Self-Pick (maqueta de la Reclutadora): los renglones con slots
- * libres de las requisiciones autorizadas o en proceso. Gana la primera que
- * confirma (RR-15) — tomar un slot bloquea ESA fila, no la requisición.
- */
 export function SelfPickPage(): ReactNode {
   const { data: board, isLoading, isError, refetch } = useGetSelfPickBoardQuery()
 
@@ -118,14 +70,16 @@ export function SelfPickPage(): ReactNode {
       <p className="flex items-start gap-2.5 rounded-lg bg-o-50 px-4 py-3 text-sm leading-relaxed text-ink-2">
         <MaterialIcon name="flash_on" aria-hidden className="mt-0.5 text-lg text-o-700" />
         <span>
-          <span className="font-semibold text-ink">Gana el primero que confirma (RR-15).</span> Al
-          tomar un slot se bloquea esa fila, no la requisición completa — otro reclutador puede
+          <span className="font-semibold text-ink">
+            Gana el primero que confirma{IS_DEV_UI ? ' (RR-15)' : ''}.
+          </span>{' '}
+          Al tomar un slot se bloquea esa fila, no la requisición completa — otro reclutador puede
           seguir tomando los demás slots de la misma posición.
         </span>
       </p>
 
       <div className="flex flex-wrap items-center gap-3">
-        {/* El contrato de /requisitions no expone la zona del hotel: se dice. */}
+        {}
         <span
           title="GET /requisitions no expone la zona del hotel todavía"
           className="relative inline-block"
@@ -135,41 +89,47 @@ export function SelfPickPage(): ReactNode {
             aria-hidden
             className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-base text-ink-4"
           />
-          <select
+          <Select
             disabled
             aria-label="Zona"
             className={`${FILTER_CLASS} cursor-not-allowed opacity-60`}
           >
             <option>Zona: el contrato no la expone</option>
-          </select>
+          </Select>
         </span>
-        <BoardFilter
+        <FilterSelect
           icon="work"
-          label="Posición: todas"
+          label="Posición"
+          anyLabel="todas"
+          anyValue={ANY}
           value={positionId}
           options={uniqueOptions(board.rows, (row) => ({
             id: row.positionCatalogId,
             name: row.positionName,
-          }))}
+          })).map((option) => ({ value: option.id, label: option.name }))}
           onChange={setPositionId}
         />
-        <BoardFilter
+        <FilterSelect
           icon="badge"
-          label="Modalidad: todas"
+          label="Modalidad"
+          anyLabel="todas"
+          anyValue={ANY}
           value={modalityId}
           options={uniqueOptions(board.rows, (row) => ({
             id: row.modalityId,
             name: row.modalityName,
-          }))}
+          })).map((option) => ({ value: option.id, label: option.name }))}
           onChange={setModalityId}
         />
-        <BoardFilter
+        <FilterSelect
           icon="translate"
-          label="Inglés: cualquiera"
+          label="Inglés"
+          anyLabel="cualquiera"
+          anyValue={ANY}
           value={englishId}
           options={uniqueOptions(board.rows, (row) =>
             row.englishId ? { id: row.englishId, name: row.englishName ?? '' } : null,
-          )}
+          ).map((option) => ({ value: option.id, label: option.name }))}
           onChange={setEnglishId}
         />
       </div>

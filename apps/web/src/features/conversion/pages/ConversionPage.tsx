@@ -13,19 +13,22 @@ import { useGetStatusChangeReasonsQuery } from '@/features/onboarding'
 import { Button } from '@/shared/components/Button'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { SectionCard } from '@/shared/components/SectionCard'
+import { SelectField } from '@/shared/components/SelectField'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
+  type OnboardingStatus,
 } from '@/shared/constants/onboardingStatus'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 
-/**
- * Conversión de un prospecto a cliente activo.
- *
- * Los requisitos, el permiso y lo que ocurre al aprobar los decide el BACKEND y
- * esta pantalla los pinta. No deduce si se puede aprobar contando palomitas:
- * usa `canApprove`, porque las reglas de negocio no pueden vivir en dos sitios.
- */
+function notAwaitingState(error: unknown): OnboardingStatus | null {
+  const data = (error as { data?: { error?: { code?: string; state?: string } } } | undefined)?.data
+    ?.error
+  if (data?.code !== 'NOT_AWAITING_CONVERSION') return null
+  return (data.state as OnboardingStatus | undefined) ?? null
+}
+
 export function ConversionPage(): ReactNode {
   const { prospectId = '' } = useParams()
 
@@ -33,25 +36,87 @@ export function ConversionPage(): ReactNode {
     data: readiness,
     isLoading,
     isError,
+    error,
   } = useGetConversionReadinessQuery(prospectId, { skip: prospectId === '' })
 
   const [createHotelUser, { isLoading: isCreatingUser }] = useCreateHotelUserMutation()
-  const [approveConversion, { isLoading: isApproving }] = useApproveConversionMutation()
-  const [returnToRenegotiation, { isLoading: isReturning }] = useReturnToRenegotiationMutation()
+  const [approveConversion, { isLoading: isApproving, isSuccess: isApproved }] =
+    useApproveConversionMutation()
+  const [returnToRenegotiation, { isLoading: isReturning, isSuccess: isReturned }] =
+    useReturnToRenegotiationMutation()
 
-  /** Rosa → Café exige motivo: el botón abre la elección en vez de ejecutar. */
+  const [actedHotelName, setActedHotelName] = useState('')
+
   const [isReturnOpen, setIsReturnOpen] = useState(false)
   const [returnReason, setReturnReason] = useState('')
   const { data: returnReasons = [] } = useGetStatusChangeReasonsQuery('BROWN', {
     skip: !isReturnOpen,
   })
 
+  if (isApproved) {
+    return (
+      <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-surface p-6">
+        <div className="flex items-center gap-3">
+          <StatusLightSoftBadge token={ONBOARDING_STATUS_TOKEN.ORANGE} label="Naranja" />
+          <p className="text-base font-semibold text-ink">
+            {actedHotelName || 'El hotel'} ya es cliente activo
+          </p>
+        </div>
+        <p className="text-sm text-ink-3">
+          La conversión Rosa → Naranja quedó aprobada: el hotel puede generar requisiciones y el BD
+          queda como su referente comercial.
+        </p>
+        <div className="flex gap-4">
+          <Link to="/clientes-activos" className="text-sm font-semibold text-o-700 hover:underline">
+            Ver en Clientes Activos
+          </Link>
+          <Link to="/conversion" className="text-sm font-semibold text-o-700 hover:underline">
+            Volver a Conversión
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (isReturned) {
+    return (
+      <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-surface p-6">
+        <div className="flex items-center gap-3">
+          <StatusLightSoftBadge token={ONBOARDING_STATUS_TOKEN.BROWN} label="Café" />
+          <p className="text-base font-semibold text-ink">
+            {actedHotelName || 'El prospecto'} volvió a renegociación
+          </p>
+        </div>
+        <p className="text-sm text-ink-3">
+          El ciclo sigue vivo en Café: se retoma desde el Pipeline cuando el hotel se desbloquee.
+        </p>
+        <Link to="/conversion" className="text-sm font-semibold text-o-700 hover:underline">
+          Volver a Conversión
+        </Link>
+      </div>
+    )
+  }
+
   if (isLoading) return <DetailSkeleton />
 
   if (isError || !readiness) {
+    const state = notAwaitingState(error)
     return (
       <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-surface p-6">
-        <p className="text-sm text-red">Este prospecto no está esperando conversión.</p>
+        {state === 'ORANGE' ? (
+          <p className="text-sm text-ink-2">
+            Este hotel <span className="font-semibold">ya es cliente activo</span>: su conversión ya
+            se aprobó.
+          </p>
+        ) : state ? (
+          <p className="text-sm text-ink-2">
+            Este prospecto está en{' '}
+            <span className="font-semibold">{ONBOARDING_STATUS_LABEL[state]}</span> — la conversión
+            sale de Rosa{IS_DEV_UI ? ' (RR-V-02)' : ''}.
+          </p>
+        ) : (
+          <p className="text-sm text-red">No se pudo cargar la conversión. Reintenta.</p>
+        )}
         <Link to="/conversion" className="text-sm font-semibold text-o-700 hover:underline">
           Volver a Conversión
         </Link>
@@ -121,6 +186,7 @@ export function ConversionPage(): ReactNode {
               disabled={!readiness.canApprove || isBusy}
               title={readiness.blockedReason ?? undefined}
               onClick={() => {
+                setActedHotelName(readiness.hotelName)
                 void approveConversion(prospectId)
               }}
             >
@@ -133,24 +199,26 @@ export function ConversionPage(): ReactNode {
               <label htmlFor="returnReason" className="text-sm text-ink-2">
                 Motivo del regreso (obligatorio):
               </label>
-              <select
-                id="returnReason"
-                value={returnReason}
-                onChange={(event) => {
-                  setReturnReason(event.target.value)
-                }}
-                className="rounded-md border border-line bg-surface px-3 py-2 text-sm text-ink"
-              >
-                <option value="">Elige un motivo…</option>
-                {returnReasons.map((reason) => (
-                  <option key={reason.id} value={reason.id}>
-                    {reason.label}
-                  </option>
-                ))}
-              </select>
+              <span className="w-64">
+                <SelectField
+                  id="returnReason"
+                  value={returnReason}
+                  onChange={(event) => {
+                    setReturnReason(event.target.value)
+                  }}
+                >
+                  <option value="">Elige un motivo…</option>
+                  {returnReasons.map((reason) => (
+                    <option key={reason.id} value={reason.id}>
+                      {reason.label}
+                    </option>
+                  ))}
+                </SelectField>
+              </span>
               <Button
                 disabled={returnReason === '' || isBusy}
                 onClick={() => {
+                  setActedHotelName(readiness.hotelName)
                   void returnToRenegotiation({ prospectId, reasonCode: returnReason })
                 }}
               >

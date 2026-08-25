@@ -18,16 +18,8 @@ import type {
   ProspectApi,
 } from '@/shared/types/apiContract.types'
 
-/**
- * La conversión no tiene endpoints propios: se COMPONE del contrato real —
- * el prospecto, sus propuestas, los contactos del hotel y el Usuario del
- * Hotel. Aprobar y devolver son la MISMA transición del semáforo que usa el
- * modal del pipeline (`POST /prospects/:id/transitions`); el backend valida
- * HOTEL_USER_REQUIRED y que el rol sea BDC (RR-V-01).
- */
 registerConversionMocks()
 
-/** `fetchWithBQ` de un `queryFn`: el tipo exacto no está exportado por RTK. */
 type FetchWithBQ = (
   args: string | { url: string; method?: string; body?: unknown; params?: Record<string, unknown> },
 ) => Promise<{ data?: unknown; error?: unknown }>
@@ -41,7 +33,6 @@ interface HotelUserApi {
 
 const APPROVAL_NOTE = 'solo el BDC aprueba esta transición (RR-V-01, RR-V-02)'
 
-/** Qué ocurre al aprobar. El detalle técnico solo acompaña en dev local. */
 function buildEffects(): string[] {
   const effects: Array<[string, string]> = [
     ['El semáforo pasa a Naranja', 'prospect.onboarding_state_id → ORANGE'],
@@ -62,7 +53,6 @@ async function fetchReadiness(
   const prospect = (prospectRes.data as ApiEnvelope<ProspectApi>).data
 
   if (prospect.state.code !== 'PINK') {
-    /** Misma forma de error del backend: la página muestra su aviso de salida. */
     return {
       error: {
         status: 409,
@@ -70,6 +60,7 @@ async function fetchReadiness(
           error: {
             code: 'NOT_AWAITING_CONVERSION',
             message: 'La conversión sale de Rosa: este prospecto está en otro estado',
+            state: prospect.state.code,
           },
         },
       },
@@ -109,7 +100,6 @@ async function fetchReadiness(
     {
       id: 'terms-negotiated',
       label: 'Documento de T&C negociado',
-      /** El T&C aún no se registra en el sistema: llegar a Rosa implica que existe. */
       detail: 'Se negocia en Rosa — el sistema aún no lo registra (pendiente de modelar)',
       isMet: true,
       action: null,
@@ -168,7 +158,6 @@ async function fetchQueue(
   if (listRes.error) return { error: listRes.error }
   const prospects = (listRes.data as PaginatedEnvelope<ProspectApi>).data
 
-  /** El único requisito verificable por fila es el que bloquea: el usuario. */
   const candidates = await Promise.all(
     prospects.map(async (prospect): Promise<ConversionCandidate> => {
       const usersRes = await fetchWithBQ(`/hotels/${prospect.hotel.id}/users`)
@@ -208,7 +197,6 @@ export const conversionApi = baseApi.injectEndpoints({
       providesTags: (_result, _error, prospectId) => [{ type: 'Prospect', id: prospectId }],
     }),
 
-    /** El primer usuario del hotel nace del contacto principal, como Manager General. */
     createHotelUser: build.mutation<
       unknown,
       { prospectId: string; hotelId: string; email: string; fullName: string }
@@ -221,7 +209,6 @@ export const conversionApi = baseApi.injectEndpoints({
       invalidatesTags: (_result, _error, { prospectId }) => [{ type: 'Prospect', id: prospectId }],
     }),
 
-    /** La MISMA transición del modal del pipeline; el backend valida todo. */
     approveConversion: build.mutation<unknown, string>({
       query: (prospectId) => ({
         url: `/prospects/${prospectId}/transitions`,
@@ -235,7 +222,6 @@ export const conversionApi = baseApi.injectEndpoints({
       ],
     }),
 
-    /** Rosa → Café exige motivo (seed: `requires_reason`). */
     returnToRenegotiation: build.mutation<unknown, { prospectId: string; reasonCode: string }>({
       query: ({ prospectId, reasonCode }) => ({
         url: `/prospects/${prospectId}/transitions`,

@@ -3,6 +3,7 @@ import type { ChangeEvent, ReactNode } from 'react'
 
 import type { TimesheetFilters as Filters } from '../types/timesheet.types'
 
+import { Select } from '@/shared/components/Select'
 import {
   COLUMN_WIDTHS,
   TIMESHEET_WEEK_STATUS_LABEL,
@@ -10,9 +11,8 @@ import {
 } from '@/shared/constants/timesheetStatus'
 
 const CONTROL_CLASS =
-  'w-full rounded-lg border border-line bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none'
+  'w-full rounded-lg border border-line bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-ink-4 transition-colors hover:border-ink-4 focus:outline-none focus-visible:border-o-500 focus-visible:ring-2 focus-visible:ring-o-500/30'
 
-/** Etiqueta arriba del control, como en el diseño. */
 function LabeledControl({ label, children }: { label: string; children: ReactNode }): ReactNode {
   return (
     <label className="flex min-w-48 flex-col gap-1.5">
@@ -58,7 +58,7 @@ export function TimesheetToolbar({
         </label>
 
         <LabeledControl label="Requisición">
-          <select
+          <Select
             value={filters.requisitionNumber}
             onChange={update('requisitionNumber')}
             className={CONTROL_CLASS}
@@ -69,22 +69,22 @@ export function TimesheetToolbar({
                 {number}
               </option>
             ))}
-          </select>
+          </Select>
         </LabeledControl>
 
         <LabeledControl label="Estado">
-          <select value={filters.status} onChange={update('status')} className={CONTROL_CLASS}>
+          <Select value={filters.status} onChange={update('status')} className={CONTROL_CLASS}>
             <option value="ALL">Todos los estados</option>
             {TIMESHEET_WEEK_STATUSES.map((status) => (
               <option key={status} value={status}>
                 {TIMESHEET_WEEK_STATUS_LABEL[status]}
               </option>
             ))}
-          </select>
+          </Select>
         </LabeledControl>
 
         <LabeledControl label="Hotel">
-          <select
+          <Select
             value={filters.hotelName}
             onChange={update('hotelName')}
             className={CONTROL_CLASS}
@@ -95,15 +95,11 @@ export function TimesheetToolbar({
                 {hotel}
               </option>
             ))}
-          </select>
+          </Select>
         </LabeledControl>
       </div>
 
-      {/*
-        El zoom NO filtra: cambia cuántos días caben sin hacer scroll. Con 90 px
-        entra la semana completa en una pantalla estrecha; con 180, cada día se
-        lee sin achicar el texto.
-      */}
+      {}
       <div className="flex flex-col items-end gap-1.5">
         <span className="text-xs text-ink-3">Zoom · ancho de columna</span>
         <div

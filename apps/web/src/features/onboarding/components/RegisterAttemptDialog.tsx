@@ -16,6 +16,7 @@ import {
 import { Button } from '@/shared/components/Button'
 import { FormField } from '@/shared/components/FormField'
 import { Modal } from '@/shared/components/Modal'
+import { Select } from '@/shared/components/Select'
 import {
   CONTACT_ATTEMPT_OUTCOME_LABEL,
   CONTACT_ATTEMPT_OUTCOMES,
@@ -23,16 +24,11 @@ import {
   CONTACT_ATTEMPT_TYPES,
 } from '@/shared/constants/contactAttempt'
 
-/** El botón de envío vive en el pie del modal, fuera del `<form>`: los une este id. */
 const FORM_ID = 'register-contact-attempt'
 
 const CONTROL_CLASS =
-  'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm placeholder:text-ink-4 focus:border-o-500 focus:outline-none'
+  'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm placeholder:text-ink-4 transition-colors hover:border-ink-4 focus:outline-none focus-visible:border-o-500 focus-visible:ring-2 focus-visible:ring-o-500/30'
 
-/**
- * `datetime-local` espera `YYYY-MM-DDTHH:mm` en hora LOCAL. `toISOString()` da
- * UTC y en México adelantaría el valor cinco o seis horas.
- */
 function toDateTimeInput(date: Date): string {
   const pad = (value: number): string => String(value).padStart(2, '0')
 
@@ -49,20 +45,9 @@ export interface RegisterAttemptDialogProps {
   prospectId: string
   hotelName: string
   contacts: HotelContact[]
-  /** Con intento, el diálogo corrige en vez de registrar (solo su autor llega aquí). */
   attempt?: ContactAttempt
 }
 
-/**
- * Alta de un intento de contacto.
- *
- * El tipo y el resultado son listas CERRADAS que viven en código, no catálogos
- * que se pidan al backend: el diseño lo dice y es la diferencia con el motivo
- * del cambio de estado, que sí sale de `catalogs.status_change_reason`.
- *
- * El contacto es opcional a propósito — una visita en frío puede no encontrar a
- * nadie— y por eso la primera opción del select es «sin contacto».
- */
 export function RegisterAttemptDialog({
   isOpen,
   onClose,
@@ -82,12 +67,10 @@ export function RegisterAttemptDialog({
   const { register, handleSubmit, setValue, watch, reset, formState } =
     useForm<RegisterContactAttemptForm>({
       resolver: zodResolver(registerContactAttemptSchema),
-      // Valida al escribir para poder bloquear el envío hasta que el alta sea válida.
       mode: 'onChange',
       defaultValues: { hotelContactId: '', notes: '', occurredAt: nowForDateTimeInput() },
     })
 
-  // Al abrir: de cero para registrar, o con los datos del intento al corregir.
   useEffect(() => {
     if (!isOpen) return
     if (attempt) {
@@ -130,7 +113,7 @@ export function RegisterAttemptDialog({
       }
       onClose()
     } catch {
-      // El error queda en `saveError` y se pinta abajo; el modal no se cierra.
+      return
     }
   }
 
@@ -200,14 +183,14 @@ export function RegisterAttemptDialog({
           htmlFor="hotelContactId"
           hint="hotel_contact_id es opcional: una visita en frío puede no encontrar a nadie"
         >
-          <select id="hotelContactId" {...register('hotelContactId')} className={CONTROL_CLASS}>
+          <Select id="hotelContactId" {...register('hotelContactId')} className={CONTROL_CLASS}>
             <option value="">Sin contacto identificado</option>
             {contacts.map((contact) => (
               <option key={contact.id} value={contact.id}>
                 {contact.name} · {contact.role}
               </option>
             ))}
-          </select>
+          </Select>
         </FormField>
 
         <FormField
@@ -216,7 +199,7 @@ export function RegisterAttemptDialog({
           hint="outcome — no contestó · interesado · no interesado · cita agendada"
           error={formState.errors.outcome && 'Elige el resultado del intento'}
         >
-          <select
+          <Select
             id="outcome"
             {...register('outcome')}
             className={cn(CONTROL_CLASS, outcome ? 'text-ink' : 'text-ink-4')}
@@ -227,7 +210,7 @@ export function RegisterAttemptDialog({
                 {CONTACT_ATTEMPT_OUTCOME_LABEL[value]}
               </option>
             ))}
-          </select>
+          </Select>
         </FormField>
 
         <FormField

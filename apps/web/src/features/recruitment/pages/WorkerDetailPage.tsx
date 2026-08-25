@@ -27,7 +27,6 @@ import {
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate } from '@/shared/lib/formatters'
 
-/** Los tipos del CHECK de `worker_document`, en palabras. */
 const DOCUMENT_TYPE_LABEL: Record<string, string> = {
   SSN_ITIN: 'SSN / ITIN',
   ID: 'Identificación oficial',
@@ -56,11 +55,6 @@ function Field({ label, value, foot }: { label: string; value: string; foot: str
   )
 }
 
-/**
- * El Expediente (maqueta «Reclutadora · Reclutamiento — Expediente»): la ficha
- * completa de `personal.worker`, sus documentos y la historia del semáforo —
- * `worker_state_history` es la verdad, la columna de estado es la caché.
- */
 export function WorkerDetailPage(): ReactNode {
   const { workerId = '' } = useParams()
   const [isChangeOpen, setChangeOpen] = useState(false)
@@ -199,7 +193,9 @@ export function WorkerDetailPage(): ReactNode {
                 {worker.isProfileComplete ? 'Perfil completo' : 'Perfil incompleto'}
               </span>
               <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-medium text-ink-2">
-                {worker.hasTaxId ? 'ITIN registrado' : 'Sin ITIN · retención 16% (D-27)'}
+                {worker.hasTaxId
+                  ? 'ITIN registrado'
+                  : `Sin ITIN · retención 16%${IS_DEV_UI ? ' (D-27)' : ''}`}
               </span>
               {worker.isBlacklisted && (
                 <span className="rounded-full bg-ink px-3 py-1 text-xs font-medium text-surface">

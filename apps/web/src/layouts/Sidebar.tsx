@@ -5,70 +5,82 @@ import { NavLink } from 'react-router'
 import { useGetSessionQuery, useLogoutMutation } from '@/app/sessionApi'
 import logoOranje from '@/assets/logo/Logo_ORANJE_Orange.png'
 
-/**
- * Sidebar de 248px (`--sb`): logo arriba, módulos del rol en medio y la tarjeta
- * del usuario abajo.
- *
- * Los módulos los fija el sidebar del rol en `Estructura General App`, no este
- * archivo. TODOS navegan: los que aún no tienen diseño caen en una pantalla que
- * lo dice. Dejarlos sin responder al clic hacía parecer que la app estaba rota.
- *
- * «Propuestas» es una vista transversal de SOLO LECTURA: crear y editar sigue
- * viviendo dentro de cada hotel del pipeline.
- *
- * Sin contadores: la maqueta del Pipeline dibuja una píldora con un 12 en este
- * módulo, pero no se sabe qué cuenta —la página dice 38 abiertos— y un número
- * que nadie sabe leer es peor que ninguno.
- *
- * UN SOLO SIDEBAR PARA TODOS LOS ROLES, a propósito y por ahora. Las maquetas
- * llegan de roles distintos —BD y BDC tienen sidebars diferentes—, y mientras se
- * diseñan los módulos conviven todos aquí para que ninguno quede inalcanzable.
- * La separación por rol se hace en una pasada aparte, al final.
- */
 interface NavModule {
   label: string
   to: string
-  /** Ícono de Material Icons (variante outlined). */
   icon: string
+  roles?: readonly string[]
 }
+
+const BD = 'ROL-V-01'
+const BDC = 'ROL-V-02'
+const RECLUTADORA = 'ROL-R-01'
+const LIDER_GRUPO = 'ROL-R-02'
+const MGR_RECLUTAMIENTO = 'ROL-R-03'
+const SUPERVISOR = 'ROL-H-01'
+const MGR_AREA = 'ROL-H-02'
+const MGR_GENERAL = 'ROL-H-03'
+
+const VENTAS = [BD, BDC] as const
+const RECLUTAMIENTO = [RECLUTADORA, LIDER_GRUPO, MGR_RECLUTAMIENTO] as const
+const HOTEL = [SUPERVISOR, MGR_AREA, MGR_GENERAL] as const
+
+const MAPPED_ROLES: ReadonlySet<string> = new Set([...VENTAS, ...RECLUTAMIENTO, ...HOTEL])
 
 const MODULES: NavModule[] = [
   { label: 'Dashboard', to: '/dashboard', icon: 'space_dashboard' },
-  { label: 'Pipeline', to: '/pipeline', icon: 'view_kanban' },
-  { label: 'Mi Territorio', to: '/mi-territorio', icon: 'map' },
-  { label: 'Propuestas', to: '/propuestas', icon: 'description' },
-  { label: 'Documentos T&C', to: '/documentos-tc', icon: 'gavel' },
-  { label: 'Conversión', to: '/conversion', icon: 'swap_horiz' },
-  { label: 'Clientes Activos', to: '/clientes-activos', icon: 'apartment' },
-  { label: 'Mi Equipo', to: '/mi-equipo', icon: 'groups' },
-  { label: 'Reportes', to: '/reportes', icon: 'bar_chart' },
-  { label: 'Requisiciones', to: '/requisiciones', icon: 'assignment' },
-  { label: 'Pool de Colaboradores', to: '/pool-colaboradores', icon: 'badge' },
-  { label: 'Blacklist', to: '/blacklist', icon: 'block' },
-  { label: 'Schedule', to: '/schedule', icon: 'calendar_month' },
-  { label: 'Timesheet', to: '/timesheet', icon: 'schedule' },
-  { label: 'Timesheet Global', to: '/timesheet-global', icon: 'fact_check' },
-  { label: 'Mi Personal', to: '/mi-personal', icon: 'badge' },
-  { label: 'Accidentes', to: '/accidentes', icon: 'report' },
+  { label: 'Pipeline', to: '/pipeline', icon: 'view_kanban', roles: VENTAS },
+  { label: 'Mi Territorio', to: '/mi-territorio', icon: 'map', roles: VENTAS },
+  { label: 'Propuestas', to: '/propuestas', icon: 'description', roles: VENTAS },
+  { label: 'Documentos T&C', to: '/documentos-tc', icon: 'gavel', roles: VENTAS },
+  { label: 'Conversión', to: '/conversion', icon: 'swap_horiz', roles: [BDC] },
+  { label: 'Clientes Activos', to: '/clientes-activos', icon: 'apartment', roles: VENTAS },
+  { label: 'Mi Equipo', to: '/mi-equipo', icon: 'groups', roles: [BDC] },
+  { label: 'Reportes', to: '/reportes', icon: 'bar_chart', roles: [BDC] },
+  {
+    label: 'Requisiciones',
+    to: '/requisiciones',
+    icon: 'assignment',
+    roles: [...RECLUTAMIENTO, ...HOTEL],
+  },
+  {
+    label: 'Pool de Colaboradores',
+    to: '/pool-colaboradores',
+    icon: 'badge',
+    roles: RECLUTAMIENTO,
+  },
+  {
+    label: 'Self-Pick',
+    to: '/self-pick',
+    icon: 'flash_on',
+    roles: [RECLUTADORA, LIDER_GRUPO],
+  },
+  { label: 'Blacklist', to: '/blacklist', icon: 'block', roles: RECLUTAMIENTO },
+  { label: 'Schedule', to: '/schedule', icon: 'calendar_month', roles: HOTEL },
+  { label: 'Timesheet', to: '/timesheet', icon: 'schedule', roles: HOTEL },
+  { label: 'Timesheet Global', to: '/timesheet-global', icon: 'fact_check', roles: [MGR_GENERAL] },
+  { label: 'Mi Personal', to: '/mi-personal', icon: 'badge', roles: HOTEL },
+  { label: 'Accidentes', to: '/accidentes', icon: 'report', roles: HOTEL },
 ]
+
+function modulesForRole(roleId: string | undefined): NavModule[] {
+  if (!roleId || !MAPPED_ROLES.has(roleId)) return MODULES
+  return MODULES.filter((module) => !module.roles || module.roles.includes(roleId))
+}
 
 export function Sidebar(): ReactNode {
   const { data: session } = useGetSessionQuery()
-  /**
-   * Cerrar sesión no navega a mano: `logout` limpia el slice, el guard ve
-   * `anonymous` y él solo redirige a /login. Una sola puerta de salida.
-   */
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation()
 
   return (
     <aside className="flex w-sb shrink-0 flex-col border-r border-line bg-surface">
-      {/* A la altura del header para que el logo y el buscador queden alineados */}
+      {}
       <div className="flex h-hd shrink-0 items-center gap-3 px-5">
         <img src={logoOranje} alt="Oranje" className="h-4 w-auto" />
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 p-3">
-        {MODULES.map((module) => (
+        {modulesForRole(session?.roleId).map((module) => (
           <NavLink
             key={module.label}
             to={module.to}

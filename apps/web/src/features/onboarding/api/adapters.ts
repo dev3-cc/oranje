@@ -27,19 +27,12 @@ import type {
   TransitionOptionApi,
 } from '@/shared/types/apiContract.types'
 
-/**
- * Adaptadores contrato → vista. Son la ÚNICA frontera entre las formas crudas
- * de `apps/api` (`apiContract.types.ts`) y los tipos que consumen los
- * componentes: si el contrato cambia, se toca aquí y no en las pantallas.
- */
-
 const DAY_MS = 86_400_000
 
 export function daysSince(iso: string): number {
   return Math.max(0, Math.floor((Date.now() - Date.parse(iso)) / DAY_MS))
 }
 
-/** `Ana Ruiz` → `A. Ruiz`, como se firma en las tarjetas del tablero. */
 export function toShortName(fullName: string): string {
   const [first, ...rest] = fullName.trim().split(/\s+/)
   if (!first || rest.length === 0) return fullName
@@ -65,6 +58,7 @@ export function adaptProspectSummary(prospect: ProspectApi): ProspectSummary {
         }
       : null,
     latestProposalVersion: prospect.lastProposal?.version ?? null,
+    latestProposalIsDraft: prospect.lastProposal?.isDraft ?? false,
     owner: {
       id: prospect.owner.id,
       name: prospect.owner.fullName,
@@ -108,7 +102,6 @@ export function adaptHistoryEntry(entry: HistoryEntryApi): StatusHistoryEntry {
     toStatus: entry.toState.code as OnboardingStatus,
     changedAt: entry.occurredAt,
     byName: entry.user.fullName,
-    /** ⚠ Hueco del contrato: la historia no trae el rol de quien movió. */
     byRole: '',
     note: entry.reason?.name ?? '',
   }
@@ -122,7 +115,6 @@ export function adaptTransitions(options: TransitionOptionApi[]): AllowedTransit
       description: ONBOARDING_STATUS_DESCRIPTION[option.toState.code as OnboardingStatus] ?? '',
       requiresReason: option.requiresReason,
     })),
-    /** El backend ya filtra por rol y no explica lo que ocultó. */
     restrictionNote: null,
   }
 }

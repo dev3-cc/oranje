@@ -12,6 +12,7 @@ import { ASSIGNMENT_TYPE_LABEL } from '../types/selfPick.types'
 import mascotaCelebrando from '@/assets/mascota/mascota-celebrando.png'
 import { Button } from '@/shared/components/Button'
 import { SectionCard } from '@/shared/components/SectionCard'
+import { Select } from '@/shared/components/Select'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   REQUISITION_STATUS_TOKEN,
@@ -20,7 +21,6 @@ import {
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
-/** Semáforo de Posiciones de la Requisición: color por código del seed. */
 const COVERAGE_TOKEN: Record<string, StatusLightToken> = {
   RED: 'st-rojo',
   YELLOW: 'st-amarillo',
@@ -29,22 +29,17 @@ const COVERAGE_TOKEN: Record<string, StatusLightToken> = {
 }
 
 const CONTROL_CLASS =
-  'w-full rounded-md border border-line bg-surface px-3.5 py-2.5 text-sm text-ink focus:border-o-500 focus:outline-none'
+  'w-full rounded-md border border-line bg-surface px-3.5 py-2.5 text-sm text-ink transition-colors hover:border-ink-4 focus:outline-none focus-visible:border-o-500 focus-visible:ring-2 focus-visible:ring-o-500/30'
 
-/** El 409 del motor ES la regla RR-15; aquí solo se lee su mensaje. */
 function assignErrorMessage(error: unknown): string {
   return apiErrorMessage(error, {
-    byStatus: { 409: 'Otra reclutadora ganó este slot (RR-15): el tablero se actualizó.' },
+    byStatus: {
+      409: `Otra reclutadora ganó este slot${IS_DEV_UI ? ' (RR-15)' : ''}: el tablero se actualizó.`,
+    },
     fallback: 'No se pudo asignar. Inténtalo de nuevo.',
   })
 }
 
-/**
- * Asignación de slot (maqueta de la Reclutadora): los slots del renglón — uno
- * por unidad de `quantity` — y el formulario que toma el siguiente libre.
- * RR-15 lo hace cumplir el motor con `FOR UPDATE SKIP LOCKED` (D-02): dos
- * reclutadoras sobre el mismo slot y solo una gana; la otra recibe 409.
- */
 export function SlotAssignmentPage(): ReactNode {
   const { requisitionId = '', positionId = '' } = useParams()
 
@@ -97,7 +92,7 @@ export function SlotAssignmentPage(): ReactNode {
       setStartDate('')
       setEndDate('')
     } catch {
-      /* el error queda en `hasFailed` */
+      return
     }
   }
 
@@ -197,7 +192,7 @@ export function SlotAssignmentPage(): ReactNode {
                     <code className="text-xs text-ink-4"> · worker_id → personal.worker</code>
                   )}
                 </span>
-                <select
+                <Select
                   value={workerId}
                   onChange={(event) => {
                     setWorkerId(event.target.value)
@@ -210,14 +205,14 @@ export function SlotAssignmentPage(): ReactNode {
                       {worker.fullName} · {worker.zoneName}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
 
               <label className="flex flex-col gap-1.5">
                 <span className="text-sm text-ink-3">
                   Tipo{IS_DEV_UI && <code className="text-xs text-ink-4"> · type</code>}
                 </span>
-                <select
+                <Select
                   value={type}
                   onChange={(event) => {
                     setType(event.target.value as 'FIXED' | 'TEMPORARY')
@@ -226,7 +221,7 @@ export function SlotAssignmentPage(): ReactNode {
                 >
                   <option value="FIXED">Fijo</option>
                   <option value="TEMPORARY">Temporal</option>
-                </select>
+                </Select>
               </label>
 
               <div className="grid grid-cols-2 gap-3">
@@ -291,9 +286,15 @@ export function SlotAssignmentPage(): ReactNode {
               )}
 
               <p className="text-xs leading-relaxed text-ink-4">
-                Gana el primero, y lo hace cumplir el motor: RR-15 se resuelve con{' '}
-                <code>SKIP LOCKED</code> sobre la fila del slot (D-02) — dos reclutadoras
-                simultáneas y solo una gana; la otra recibe 409.
+                {IS_DEV_UI ? (
+                  <>
+                    Gana el primero, y lo hace cumplir el motor: RR-15 se resuelve con{' '}
+                    <code>SKIP LOCKED</code> sobre la fila del slot (D-02) — dos reclutadoras
+                    simultáneas y solo una gana; la otra recibe 409.
+                  </>
+                ) : (
+                  'Gana la primera que confirma: si alguien se adelanta, el tablero se actualiza al momento.'
+                )}
               </p>
             </div>
           )}

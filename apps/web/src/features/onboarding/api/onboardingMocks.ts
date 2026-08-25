@@ -40,28 +40,14 @@ import type {
 } from '@/shared/types/apiContract.types'
 import type { GeoPoint } from '@/shared/types/geo.types'
 
-/**
- * Fixtures de Onboarding. ANDAMIO TEMPORAL — se borra completo cuando
- * `VITE_USE_MOCKS` deje de usarse; no queda nada de esto en el front.
- *
- * El ESTADO interno sigue en tipos de vista (los fixtures ricos de las
- * capturas), pero las rutas responden las formas CRUDAS del contrato real
- * (`apiContract.types.ts`), con su envoltura `{data, meta}`: así los
- * adaptadores de `adapters.ts` se ejercitan igual con mocks que contra la API.
- */
-
 const OWNER_ANA = { id: 'usr-ana-ruiz', name: 'Ana Ruiz', shortName: 'A. Ruiz' }
 
-/** Rol de la sesión simulada. En el backend sale del token, no de una constante. */
 const CURRENT_ROLE: string = 'BD'
 
-/** Transiciones que solo el BDC puede ejecutar (RBAC simulado). */
 const BDC_ONLY_TRANSITIONS: readonly OnboardingStatus[] = ['ORANGE']
 
-/** Motivo obligatorio: como en el seed, todo lo que cierra o desbloquea un ciclo. */
 const TRANSITIONS_REQUIRING_REASON: readonly OnboardingStatus[] = ['RED', 'BROWN', 'BLACK']
 
-/** Frase corta de la transición; alimenta la nota del historial simulado. */
 const TRANSITION_HINT: Record<OnboardingStatus, string> = {
   GRAY: 'Alta del hotel en el pipeline',
   LIGHT_BLUE: 'Se inicia el contacto',
@@ -92,7 +78,6 @@ const REASONS_BY_STATUS: Partial<Record<OnboardingStatus, StatusChangeReason[]>>
 
 const PROSPECT_PUERTO_REAL_ID = 'psp-0007'
 
-/** `catalogs.zone`. El id es lo que se guarda; la etiqueta, lo que se pinta. */
 const ZONES: Zone[] = [
   { id: 'norte', label: 'Zona Norte' },
   { id: 'centro', label: 'Zona Centro' },
@@ -100,7 +85,6 @@ const ZONES: Zone[] = [
   { id: 'poniente', label: 'Zona Poniente' },
 ]
 
-/** Punto de referencia por zona, para los prospectos que no traen coordenada propia. */
 const ZONE_ANCHOR: Record<string, GeoPoint> = {
   norte: { lat: 21.1743, lng: -86.8466 },
   centro: { lat: 21.1619, lng: -86.8515 },
@@ -121,7 +105,6 @@ function zoneRef(zoneId: string): ZoneRefApi {
   }
 }
 
-/** Estado mutable: una mutación tiene que verse reflejada en la siguiente lectura. */
 let board: ProspectSummary[] = [
   {
     id: 'psp-0001',
@@ -208,7 +191,8 @@ let board: ProspectSummary[] = [
     status: 'GREEN',
     daysInStatus: 5,
     lastAttempt: { channel: 'Correo', outcome: 'Interesado' },
-    latestProposalVersion: 2,
+    latestProposalVersion: 3,
+    latestProposalIsDraft: true,
     owner: OWNER_ANA,
   },
   {
@@ -244,19 +228,6 @@ let board: ProspectSummary[] = [
     latestProposalVersion: 1,
     owner: OWNER_ANA,
   },
-  /*
-   * Los cinco convertidos: son los hoteles de Clientes Activos.
-   *
-   * Están en el tablero porque el detalle y las propuestas se resuelven desde
-   * aquí, pero NO se pintan en él: `PIPELINE_COLUMNS` deja fuera `ORANGE` por
-   * ser terminal, y el tablero es de prospectos abiertos.
-   *
-   * ⚠ Repiten el nombre de cinco prospectos abiertos. Es artefacto de fixture:
-   * en la base hay UNA fila por hotel y este par sería la misma. Se mantiene
-   * así para no convertir a Puerto Real —el prospecto de las capturas del
-   * Pipeline, con sus propuestas y su contrato— en terminal y dejar esa
-   * pantalla sin transiciones que ofrecer.
-   */
   {
     id: 'psp-0012',
     hotelName: 'Hotel Puerto Real',
@@ -314,7 +285,6 @@ let board: ProspectSummary[] = [
   },
 ]
 
-/** Solo Puerto Real está detallado: es el prospecto de las capturas 2 y 3. */
 const details = new Map<string, ProspectDetail>([
   [
     PROSPECT_PUERTO_REAL_ID,
@@ -479,19 +449,12 @@ function isoDaysAgo(days: number): string {
   return `${date.getFullYear()}-${month}-${day}`
 }
 
-/** Con `noUncheckedIndexedAccess`, leer un parámetro de ruta devuelve `string | undefined`. */
 function requireParam(params: Readonly<Record<string, string>>, name: string): string {
   const value = params[name]
   if (!value) throw new Error(`Falta el parámetro de ruta ${name}`)
   return value
 }
 
-/**
- * El camino de GRIS a NARANJA, paso a paso y respetando
- * `ONBOARDING_TRANSITIONS`. Un convertido no puede tener un historial que salte
- * de «Hotel identificado» a «Cliente activo»: esa transición no existe, y el
- * backend jamás podría escribirla.
- */
 const CONVERSION_PATH: readonly OnboardingStatus[] = [
   'GRAY',
   'LIGHT_BLUE',
@@ -501,12 +464,6 @@ const CONVERSION_PATH: readonly OnboardingStatus[] = [
   'ORANGE',
 ]
 
-/**
- * Historial de un prospecto sin captura propia.
- *
- * Para los convertidos se recorre el camino completo; para el resto basta el
- * asiento de alta, que es lo único que se sabe de cierto.
- */
 function buildHistory(summary: ProspectSummary, cycleStartedAt: string): StatusHistoryEntry[] {
   const path = summary.status === 'ORANGE' ? CONVERSION_PATH : ['GRAY' as OnboardingStatus]
 
@@ -521,7 +478,6 @@ function buildHistory(summary: ProspectSummary, cycleStartedAt: string): StatusH
   }))
 }
 
-/** Detalle mínimo para un prospecto que no está en las capturas. */
 function buildDetailFromSummary(summary: ProspectSummary): ProspectDetail {
   const cycleStartedAt = isoDaysAgo(summary.daysInStatus)
 
@@ -542,7 +498,6 @@ function buildDetailFromSummary(summary: ProspectSummary): ProspectDetail {
       geofenceMeters: 150,
       location: ZONE_ANCHOR[zoneIdFromLabel(summary.zone)] ?? ZONE_ANCHOR.centro!,
       photoUrl: null,
-      // Solo un hotel convertido tiene fecha de alta como cliente.
       activatedAsClientAt: summary.status === 'ORANGE' ? cycleStartedAt : null,
     },
     contacts: [],
@@ -551,11 +506,6 @@ function buildDetailFromSummary(summary: ProspectSummary): ProspectDetail {
   }
 }
 
-/**
- * Identidad del prospecto para los fixtures de propuestas, que están en otro
- * archivo de la misma feature. Evita repetir nombres y semáforos en dos sitios:
- * el hotel se llama igual en la ficha y en su propuesta.
- */
 export function getProspectIdentity(
   prospectId: string,
 ): { hotelName: string; status: OnboardingStatus; zone: string } | null {
@@ -576,13 +526,6 @@ function readDetail(prospectId: string): ProspectDetail {
   return built
 }
 
-// ---------------------------------------------------------------------------
-// Serializadores vista → contrato crudo. Son la INVERSA de `adapters.ts`: el
-// estado interno sigue siendo el de las capturas, pero por el cable viajan las
-// formas que sirve `apps/api`.
-// ---------------------------------------------------------------------------
-
-/** Orden del semáforo en el seed; alimenta `displayOrder` y `meta.byState`. */
 const STATE_ORDER: readonly OnboardingStatus[] = [
   'GRAY',
   'LIGHT_BLUE',
@@ -607,7 +550,6 @@ function stateApi(status: OnboardingStatus): ProspectApi['state'] {
   }
 }
 
-/** El id del hotel de un prospecto se deriva del prospecto: una fila por ciclo. */
 function hotelIdOf(prospectId: string): string {
   return `htl-${prospectId}`
 }
@@ -644,8 +586,8 @@ function toProspectApi(summary: ProspectSummary): ProspectApi {
     lastProposal: summary.latestProposalVersion
       ? {
           version: summary.latestProposalVersion,
-          isDraft: false,
-          sentAt: isoDaysAgo(summary.daysInStatus),
+          isDraft: summary.latestProposalIsDraft ?? false,
+          sentAt: summary.latestProposalIsDraft ? null : isoDaysAgo(summary.daysInStatus),
         }
       : null,
   }
@@ -672,10 +614,6 @@ function toHotelApi(detail: ProspectDetail): HotelApi {
   }
 }
 
-/**
- * Cliente activado SIN contrato: el caso que Clientes Activos debe pintar sin
- * fingir folio. Se activó por fuera del pipeline de los fixtures.
- */
 const CLIENT_WITHOUT_CONTRACT_ID = 'htl-0002'
 
 function registeredToHotelApi(hotel: RegisteredHotel): HotelApi {
@@ -716,11 +654,6 @@ function toContactApi(contact: HotelContact, hotelId: string): HotelContactApi {
   }
 }
 
-/**
- * La vista guarda ETIQUETAS (`Llamada`); el contrato lleva CÓDIGOS
- * (`CALL`). Para las etiquetas históricas sin código (`Reunión`, `Visita`) se
- * deja pasar la etiqueta: `adaptAttempt` la pinta tal cual con su `?? type`.
- */
 function codeForLabel(label: string, catalog: Record<string, string>): string {
   const found = Object.entries(catalog).find(([, itemLabel]) => itemLabel === label)
   return found ? found[0] : label
@@ -738,10 +671,6 @@ function toAttemptApi(attempt: ContactAttempt): ContactAttemptApi {
   }
 }
 
-/**
- * La nota de la vista viaja como `reason.name`: es lo que `adaptHistoryEntry`
- * vuelve a leer. `byRole` NO viaja — el contrato real no lo trae.
- */
 function toHistoryApi(entry: StatusHistoryEntry): HistoryEntryApi {
   return {
     id: entry.id,
@@ -757,7 +686,6 @@ function toHistoryApi(entry: StatusHistoryEntry): HistoryEntryApi {
 
 function buildTransitionOptions(status: OnboardingStatus): TransitionOptionApi[] {
   const all = ONBOARDING_TRANSITIONS[status]
-  // RBAC simulado: el backend real filtra por el rol del token.
   const visible = all.filter(
     (target) => CURRENT_ROLE === 'BDC' || !BDC_ONLY_TRANSITIONS.includes(target),
   )
@@ -789,7 +717,6 @@ function buildAttemptSummary(attempts: ContactAttempt[]): AttemptSummaryApi {
 
 let historySequence = 100
 
-/** Aplica la transición sobre el dataset, como haría el backend. */
 function applyTransition(prospectId: string, body: unknown): TransitionResultApi {
   const payload = body as { toState?: OnboardingStatus; reasonCode?: string } | undefined
   const toStatus = payload?.toState
@@ -837,7 +764,6 @@ let prospectSequence = 100
 let contactSequence = 700
 let hotelSequence = 100
 
-/** Hoteles ya dados de alta que NO tienen ciclo abierto: un hotel solo tiene uno. */
 const hotelsWithoutCycle: RegisteredHotel[] = [
   {
     id: 'htl-0001',
@@ -877,7 +803,6 @@ interface CreateHotelBody {
   longitude?: number
 }
 
-/** `POST /hotels`: alta del edificio, con dirección y pin como el contrato real. */
 function createHotel(body: unknown): HotelApi {
   const payload = (body ?? {}) as CreateHotelBody
   const zone = ZONES.find((item) => item.id === payload.zoneId)
@@ -905,7 +830,6 @@ function createHotel(body: unknown): HotelApi {
   return registeredToHotelApi(hotel)
 }
 
-/** `PATCH /hotels/:id`: sobre un registrado o sobre el hotel de un prospecto. */
 function patchHotel(hotelId: string, body: unknown): HotelApi {
   const payload = (body ?? {}) as CreateHotelBody
   const zone = payload.zoneId ? ZONES.find((item) => item.id === payload.zoneId) : null
@@ -962,11 +886,6 @@ interface CreateContactBody {
   isPrimary?: boolean
 }
 
-/**
- * `POST /hotels/:id/contacts`: un contacto por llamada, como el contrato real.
- * Marcar uno nuevo como principal desmarca al anterior (misma transacción del
- * backend). El refine del DTO: hace falta teléfono O correo.
- */
 function createContact(hotelId: string, body: unknown): HotelContactApi {
   const payload = (body ?? {}) as CreateContactBody
   if (!payload.fullName?.trim()) throw new Error('full_name es obligatorio')
@@ -1000,16 +919,13 @@ interface CreateProspectBody {
   needDescription?: string
 }
 
-/** `POST /prospects`: abre el ciclo sobre un hotel YA existente. Nace en GRAY. */
 function createProspect(body: unknown): ProspectApi {
   const payload = (body ?? {}) as CreateProspectBody
   if (!payload.hotelId) throw new Error('Falta `hotelId`')
 
-  // El hotel puede venir de los registrados o de un `POST /hotels` reciente.
   const registeredIndex = hotelsWithoutCycle.findIndex((item) => item.id === payload.hotelId)
   const registered = registeredIndex >= 0 ? hotelsWithoutCycle[registeredIndex] : null
   if (!registered) throw new Error(`No existe el hotel ${payload.hotelId}`)
-  // Abrir el ciclo lo saca de la lista: ya tiene uno.
   hotelsWithoutCycle.splice(registeredIndex, 1)
 
   prospectSequence += 1
@@ -1077,7 +993,6 @@ interface CreateAttemptBody {
   notes?: string
 }
 
-/** Alta de un intento de contacto, con las validaciones que haría el backend. */
 function addContactAttempt(prospectId: string, body: unknown): ContactAttemptApi {
   const payload = (body ?? {}) as CreateAttemptBody
   const detail = readDetail(prospectId)
@@ -1108,7 +1023,6 @@ function addContactAttempt(prospectId: string, body: unknown): ContactAttemptApi
 
   details.set(prospectId, {
     ...detail,
-    // Se reordena en vez de solo anteponer: se puede registrar un intento viejo.
     attempts: [attempt, ...detail.attempts].sort((a, b) =>
       b.occurredAt.localeCompare(a.occurredAt),
     ),
@@ -1140,11 +1054,6 @@ const routes: readonly MockRoute[] = [
         return true
       })
 
-      /**
-       * `total` NO se deriva de `items`: es el total del pipeline del usuario,
-       * mientras que `items` es la página que se pinta. Por eso el encabezado
-       * dice 38 y en el tablero se ven menos tarjetas.
-       */
       return {
         data: items.map(toProspectApi),
         meta: {
@@ -1287,11 +1196,6 @@ const routes: readonly MockRoute[] = [
   {
     method: 'GET',
     path: '/hotels',
-    /**
-     * Como la API real: TODOS los hoteles, con o sin ciclo. Los del tablero
-     * salen de su detalle (coordenada y foto incluidas); los registrados sin
-     * ciclo, de su fixture. Mi Territorio compone sobre esta lista.
-     */
     resolve: (): PaginatedEnvelope<HotelApi> => {
       const data = [
         ...board.map((summary) => toHotelApi(readDetail(summary.id))),
@@ -1341,11 +1245,6 @@ const routes: readonly MockRoute[] = [
       data: createContact(requireParam(params, 'hotelId'), body),
     }),
   },
-  /**
-   * ⚠ Endpoints que la API real AÚN NO tiene (huecos del contrato). Conservan
-   * sus tipos de vista sin envoltura porque sus endpoints del front tampoco
-   * adaptan nada todavía.
-   */
   {
     method: 'GET',
     path: '/catalogs/zones',
@@ -1353,7 +1252,6 @@ const routes: readonly MockRoute[] = [
       data: ZONES.map((zone) => ({ id: zone.id, code: zone.id.toUpperCase(), name: zone.label })),
     }),
   },
-  /** El catálogo real filtra por semáforo y devuelve TODOS sus motivos. */
   {
     method: 'GET',
     path: '/catalogs/reasons',

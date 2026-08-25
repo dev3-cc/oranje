@@ -7,15 +7,9 @@ import { Button } from '@/shared/components/Button'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { URGENCY_COLOR_NAME, URGENCY_LABEL } from '@/shared/constants/requisitionStatus'
 import { apiErrorMessage } from '@/shared/lib/apiError'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayMonth } from '@/shared/lib/formatters'
 
-/**
- * La advertencia de qué pasará al firmar, en palabras.
- *
- * Se arma con los números que manda el backend y no con un `Date` local: la
- * urgencia es una función del reloj, y calcularla aquí haría que una pestaña
- * abierta desde ayer prometiera una cosa y el servidor hiciera otra.
- */
 function describeUrgencyPreview(preview: AuthorizationUrgencyPreview): string {
   const when = preview.daysAhead === 1 ? 'está a 1 día' : `está a ${String(preview.daysAhead)} días`
 
@@ -29,10 +23,6 @@ function describeUrgencyPreview(preview: AuthorizationUrgencyPreview): string {
   )} ${when}, así que ${born} en ${URGENCY_COLOR_NAME[preview.urgency]} (${URGENCY_LABEL[preview.urgency]})`
 }
 
-/**
- * Autorizar. La firma real no lleva motivo ni cuerpo: es el token de quien
- * firma, y el backend congela la urgencia y valida el alcance (D-09).
- */
 export function AuthorizationResolutionForm({
   request,
   authorizerRole,
@@ -50,11 +40,10 @@ export function AuthorizationResolutionForm({
     try {
       await authorize({ requisitionId: request.id }).unwrap()
     } catch (error) {
-      /** El 403 no es transitorio: autorizar es de los managers del Hotel (D-09). */
       setRootError(
         apiErrorMessage(error, {
           byStatus: {
-            403: 'Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel (D-09).',
+            403: `Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel${IS_DEV_UI ? ' (D-09)' : ''}.`,
           },
           fallback: 'No se pudo autorizar.',
         }),
@@ -65,9 +54,13 @@ export function AuthorizationResolutionForm({
   return (
     <SectionCard
       title="Resolución"
-      subtitle="Autorizar congela la urgencia contra la fecha de inicio (RR-H-05)"
+      subtitle={
+        IS_DEV_UI
+          ? 'Autorizar congela la urgencia contra la fecha de inicio (RR-H-05)'
+          : 'Al autorizar se fija la urgencia según la fecha de inicio'
+      }
     >
-      {/* Enter dispara autorizar, que es la acción esperada; rechazar exige el clic. */}
+      {}
       <form
         onSubmit={(event) => {
           event.preventDefault()
@@ -90,8 +83,7 @@ export function AuthorizationResolutionForm({
           </p>
 
           <div className="flex gap-3">
-            {/* El contrato aún no expone el rechazo (pendiente 21 del ADR):
-                el botón lo dice en vez de fingir que firma. */}
+            {}
             <Button
               variant="secondary"
               disabled

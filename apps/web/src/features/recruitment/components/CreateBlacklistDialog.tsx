@@ -6,15 +6,15 @@ import { EMPTY_POOL_FILTERS } from '../types/pool.types'
 
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
+import { Select } from '@/shared/components/Select'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { WORKER_STATUS_TOKEN, workerStatusChipLabel } from '@/shared/constants/workerStatus'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const CONTROL_CLASS =
-  'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none'
+  'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-4 transition-colors hover:border-ink-4 focus:outline-none focus-visible:border-o-500 focus-visible:ring-2 focus-visible:ring-o-500/30'
 
-/** Una pareja etiqueta → valor de la ficha, como en la maqueta. */
 function InfoField({ label, value }: { label: string; value: string }): ReactNode {
   return (
     <div className="flex items-baseline justify-between gap-4">
@@ -24,13 +24,6 @@ function InfoField({ label, value }: { label: string; value: string }): ReactNod
   )
 }
 
-/**
- * Agregar a Blacklist (maqueta de la Reclutadora): se elige a la persona, se
- * ve su situación (estado, vetos previos) y se registra el veto MANUAL con
- * motivo y evidencia obligatorios. Las reglas las hace cumplir el MOTOR: el
- * GRIS protege y `ux_blacklist_worker` impide un segundo veto vigente — aquí
- * solo se explican y se traduce su rechazo.
- */
 export function CreateBlacklistDialog({
   isOpen,
   onClose,
@@ -78,7 +71,7 @@ export function CreateBlacklistDialog({
       }).unwrap()
       onClose()
     } catch {
-      /* el error queda en `error` y se pinta abajo */
+      return
     }
   }
 
@@ -112,7 +105,7 @@ export function CreateBlacklistDialog({
     >
       <label className="flex flex-col gap-2">
         <span className="text-sm font-semibold text-ink">Colaborador</span>
-        <select
+        <Select
           value={workerId}
           onChange={(event) => {
             setWorkerId(event.target.value)
@@ -125,7 +118,7 @@ export function CreateBlacklistDialog({
               {item.fullName}
             </option>
           ))}
-        </select>
+        </Select>
       </label>
 
       {worker && (
@@ -195,7 +188,7 @@ export function CreateBlacklistDialog({
           Evidencia <span className="font-normal text-ink-3">(obligatoria en un veto manual)</span>
           {IS_DEV_UI && <code className="text-xs font-normal text-ink-4"> · evidence_path</code>}
         </span>
-        {/* La carga de archivos aún no existe en el contrato: se registra la referencia. */}
+        {}
         <input
           type="text"
           value={evidencePath}

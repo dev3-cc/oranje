@@ -14,9 +14,9 @@ import {
   CONTRACT_STATUS_TOKEN,
   WEEK_DAY_NAMES,
 } from '@/shared/constants/contractStatus'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate } from '@/shared/lib/formatters'
 
-/** Vigencia sin fin: no es una fecha ausente, es una decisión. */
 const OPEN_ENDED = 'Indefinido'
 
 export function ContractDetailPage(): ReactNode {
@@ -80,7 +80,8 @@ export function ContractDetailPage(): ReactNode {
             />
           </div>
           <p className="mt-1.5 text-sm text-ink-3">
-            commercial.contract · {contract.hotelName} ·{' '}
+            {IS_DEV_UI && 'commercial.contract · '}
+            {contract.hotelName} ·{' '}
             {contract.signedByName === '—'
               ? 'firmado el'
               : `firmado por ${contract.signedByName} el`}{' '}
@@ -89,7 +90,7 @@ export function ContractDetailPage(): ReactNode {
         </div>
 
         <div className="flex shrink-0 flex-wrap gap-3">
-          {/* Las dos esperan maqueta; se dejan visibles para no mover el encabezado después. */}
+          {}
           <Button variant="secondary" disabled title="Pendiente: falta el diseño del PDF">
             Ver PDF
           </Button>
@@ -103,14 +104,18 @@ export function ContractDetailPage(): ReactNode {
         <div className="flex flex-col gap-6 xl:col-span-2">
           <SectionCard
             title="Vigencia y semana de nómina"
-            subtitle="valid_from · valid_to · week_start_day · week_end_day"
+            subtitle={
+              IS_DEV_UI
+                ? 'valid_from · valid_to · week_start_day · week_end_day'
+                : 'La semana de nómina la fija el contrato'
+            }
           >
             <dl className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
               {validityFields.map((field) => (
                 <div key={field.label} className="min-w-0">
                   <dt className="text-sm text-ink-3">{field.label}</dt>
                   <dd className="mt-1 text-lg font-bold text-ink">{field.value}</dd>
-                  <p className="mt-1 text-xs text-ink-3">{field.foot}</p>
+                  {IS_DEV_UI && <p className="mt-1 text-xs text-ink-3">{field.foot}</p>}
                 </div>
               ))}
             </dl>
@@ -125,16 +130,17 @@ export function ContractDetailPage(): ReactNode {
         </div>
 
         <div className="flex flex-col gap-6">
-          <EngineRulesCard />
+          {}
+          {IS_DEV_UI && <EngineRulesCard />}
 
           <section className="rounded-lg bg-yellow/15 p-6">
             <h2 className="text-base font-semibold text-ink">
               El contrato es la fuente del dinero
             </h2>
             <p className="mt-3 text-sm text-ink-2">
-              settlement toma de aquí las tarifas y los multiplicadores para calcular pago y
-              factura. Un cambio de contrato no debe recalcular semanas ya aprobadas: por eso la
-              vigencia tiene fecha, y el consolidado guarda lo que regía ese día.
+              {IS_DEV_UI
+                ? 'settlement toma de aquí las tarifas y los multiplicadores para calcular pago y factura. Un cambio de contrato no debe recalcular semanas ya aprobadas: por eso la vigencia tiene fecha, y el consolidado guarda lo que regía ese día.'
+                : 'La nómina y la factura toman de aquí las tarifas y los multiplicadores. Un cambio de contrato no recalcula semanas ya aprobadas: la vigencia tiene fecha, y el consolidado guarda lo que regía ese día.'}
             </p>
           </section>
         </div>

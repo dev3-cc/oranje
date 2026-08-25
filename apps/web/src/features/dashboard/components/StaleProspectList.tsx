@@ -9,17 +9,18 @@ import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
 } from '@/shared/constants/onboardingStatus'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 
-/**
- * Prospectos que llevan demasiado sin un intento de contacto.
- *
- * El nombre es un enlace a su ficha: esta tarjeta existe para que alguien haga
- * algo con ellos, y obligar a buscarlos otra vez en el tablero sería trabajo de
- * más. La maqueta no lo dibuja como enlace, pero es la acción evidente.
- */
 export function StaleProspectList({ prospects }: { prospects: StaleProspect[] }): ReactNode {
   return (
-    <SectionCard title="Sin actividad reciente" subtitle="Último contact_attempt hace 7+ días">
+    <SectionCard
+      title="Sin actividad reciente"
+      subtitle={
+        IS_DEV_UI
+          ? 'Último contact_attempt hace 7+ días'
+          : 'Sin intento de contacto en 7 días o más'
+      }
+    >
       {prospects.length === 0 ? (
         <p className="py-2 text-sm text-ink-3">
           Ningún prospecto lleva más de 7 días sin un intento. Bien ahí.

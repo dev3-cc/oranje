@@ -19,14 +19,8 @@ import {
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatPercent } from '@/shared/lib/formatters'
 
-/** Los reportes que existen; solo Ventas tiene definición y datos hoy. */
 const REPORT_TABS = ['Ventas', 'Pipeline', 'Desempeño', 'Calidad', 'Ejecutivo'] as const
 
-/**
- * Reportes · Ventas (maqueta del BDC): conversión por BD, dónde se atora el
- * pipeline, qué canal sí logra contacto y por qué se van los ciclos. Todo
- * COMPUESTO del contrato real (la composición más pesada del sistema, D-28).
- */
 export function ReportsPage(): ReactNode {
   const { data: report, isLoading, isError } = useGetSalesReportQuery()
 
@@ -39,7 +33,7 @@ export function ReportsPage(): ReactNode {
             Análisis con historia; el pulso de hoy vive en el Dashboard
           </p>
         </div>
-        {/* Sin backend de envíos: el botón lo dice, no finge programar nada. */}
+        {}
         <Button variant="secondary" disabled title="El envío recurrente aún no tiene backend">
           Programar envío recurrente
         </Button>
@@ -203,7 +197,8 @@ export function ReportsPage(): ReactNode {
               )}
               <p className="mt-3 text-sm text-ink-3">
                 {report.exits.total} salidas · Rojo {report.exits.red} · Café {report.exits.brown} ·
-                Negro {report.exits.black} — reactivables a Azul claro (RR-V-07)
+                Negro {report.exits.black} — reactivables a Azul claro
+                {IS_DEV_UI ? ' (RR-V-07)' : ''}
               </p>
             </SectionCard>
           </div>

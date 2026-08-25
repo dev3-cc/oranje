@@ -5,6 +5,7 @@ import { useCompleteSignupMutation, useGetMyProfileQuery } from '../api/workerAp
 import mascotaFeliz from '@/assets/mascota/mascota-feliz.png'
 import { Button } from '@/shared/components/Button'
 import { isCompletePhone, PhoneInput } from '@/shared/components/PhoneInput'
+import { Select } from '@/shared/components/Select'
 import {
   BLOOD_LABEL,
   BLOOD_TYPES,
@@ -15,7 +16,7 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const CONTROL_CLASS =
-  'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none'
+  'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-4 transition-colors hover:border-ink-4 focus:outline-none focus-visible:border-o-500 focus-visible:ring-2 focus-visible:ring-o-500/30'
 
 function Field({
   label,
@@ -37,10 +38,6 @@ function Field({
   )
 }
 
-/**
- * Alta · Fase 3 (RF-C-02, maqueta móvil): contacto de emergencia y salud —
- * los 4 campos restantes de `is_profile_complete` más las notas médicas.
- */
 export function Phase3Page(): ReactNode {
   const { data: profile } = useGetMyProfileQuery()
   const [save, { isLoading, isError, isSuccess, error: saveError }] = useCompleteSignupMutation()
@@ -77,7 +74,6 @@ export function Phase3Page(): ReactNode {
     draft.bloodType !== '' &&
     !isLoading
 
-  /** Con el botón apagado, DECIR qué falta. */
   const missingHint =
     draft.emergencyContactName.trim() === ''
       ? 'Falta el nombre del contacto de emergencia'
@@ -97,11 +93,10 @@ export function Phase3Page(): ReactNode {
         emergencyContactPhone: draft.emergencyContactPhone.trim(),
         emergencyContactRelationship: draft.emergencyContactRelationship,
         bloodType: draft.bloodType,
-        /** El DTO no acepta null: vacío se omite, no se manda. */
         ...(draft.medicalNotes.trim() !== '' ? { medicalNotes: draft.medicalNotes.trim() } : {}),
       }).unwrap()
     } catch {
-      /* el error queda en `isError` */
+      return
     }
   }
 
@@ -143,7 +138,7 @@ export function Phase3Page(): ReactNode {
         </Field>
 
         <Field label="Parentesco" column="emergency_contact_relationship">
-          <select
+          <Select
             value={draft.emergencyContactRelationship}
             onChange={(event) => {
               update('emergencyContactRelationship')(event.target.value)
@@ -156,7 +151,7 @@ export function Phase3Page(): ReactNode {
                 {RELATIONSHIP_LABEL[relationship]}
               </option>
             ))}
-          </select>
+          </Select>
         </Field>
       </section>
 
@@ -164,7 +159,7 @@ export function Phase3Page(): ReactNode {
         <h2 className="text-sm font-semibold text-ink">Salud</h2>
 
         <Field label="Tipo de sangre" column="blood_type · valores del CHECK (D-26)">
-          <select
+          <Select
             value={draft.bloodType}
             onChange={(event) => {
               update('bloodType')(event.target.value)
@@ -177,7 +172,7 @@ export function Phase3Page(): ReactNode {
                 {BLOOD_LABEL[type]}
               </option>
             ))}
-          </select>
+          </Select>
         </Field>
 
         <Field label="Alergias o condiciones médicas" column="medical_notes">
@@ -208,7 +203,8 @@ export function Phase3Page(): ReactNode {
         <div className="flex items-center gap-3 rounded-md bg-green/10 px-4 py-3">
           <img src={mascotaFeliz} alt="" aria-hidden className="h-16 w-auto" />
           <p className="text-sm text-ink-2">
-            Listo: tu expediente quedó completo. La Reclutadora lo validará (RF-08).
+            Listo: tu expediente quedó completo. La Reclutadora lo validará
+            {IS_DEV_UI ? ' (RF-08)' : ''}.
           </p>
         </div>
       )}

@@ -6,17 +6,6 @@ import { registerMockRoutes } from '@/shared/lib/mockBaseQuery'
 import type { ApiEnvelope, MeApi, SessionApi } from '@/shared/types/apiContract.types'
 import type { SessionUser } from '@/shared/types/session.types'
 
-/**
- * La conversación de auth con `apps/api` (identity §1). Vive en `app/` y no en
- * la feature de login porque el resultado —la sesión— lo consume el shell
- * entero, y el refresh en 401 lo necesita cualquier feature.
- *
- * Las tres mutaciones escriben su resultado en `sessionSlice` vía
- * `onQueryStarted`: los componentes leen la sesión del slice, nunca de la
- * caché de estas mutaciones.
- */
-
-/** `Ana Ruiz` → `A. Ruiz`. Misma regla que las tarjetas del tablero. */
 function toShortName(fullName: string): string {
   const [first, ...rest] = fullName.trim().split(/\s+/)
   if (!first || rest.length === 0) return fullName
@@ -32,16 +21,11 @@ function adaptSessionUser(session: SessionApi): SessionUser {
     roleId: session.user.roleCode,
     roleCode: role.short,
     roleTitle: role.title,
-    /** El login no trae el hotel; lo completa el `GET /me` que sigue. */
     hotel: null,
+    permissions: [],
   }
 }
 
-/**
- * MOCK de `identity/auth`. La «cookie» del refresh se simula con una bandera
- * en localStorage: existe tras un login y sobrevive la recarga, igual que la
- * cookie real; `logout` la borra. Fuera de modo mock nada de esto se registra.
- */
 const MOCK_SESSION_FLAG = 'oranje-mock-session'
 
 const MOCK_SESSION: SessionApi = {
@@ -98,18 +82,19 @@ registerMockRoutes([
         hotel: null,
         department: null,
         zones: [],
-        permissions: ['pipeline.read', 'pipeline.create_prospect', 'proposals.read'],
+        permissions: [
+          'pipeline.read',
+          'pipeline.create_prospect',
+          'proposals.read',
+          'blacklist.read',
+          'blacklist.create',
+          'blacklist.lift',
+        ],
       },
     }),
   },
 ])
 
-/**
- * El accessToken llega en la MISMA respuesta que el usuario, pero a la caché
- * de RTK Query solo debe entrar el `SessionUser`: el token no es estado de la
- * UI ni debe quedar inspeccionable en la caché. `captureToken` lo aparta en el
- * transform y `onQueryStarted` lo recoge para el slice.
- */
 let lastAccessToken = ''
 
 function captureToken(raw: ApiEnvelope<SessionApi>): SessionUser {
@@ -119,7 +104,6 @@ function captureToken(raw: ApiEnvelope<SessionApi>): SessionUser {
 
 export const sessionApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    /** El `/me` real: rol con su nombre del catálogo, no del mapa de etiquetas. */
     getSession: build.query<SessionUser, void>({
       query: () => '/me',
       transformResponse: (raw: ApiEnvelope<MeApi>): SessionUser => ({
@@ -129,15 +113,11 @@ export const sessionApi = baseApi.injectEndpoints({
         roleId: raw.data.role.code,
         roleCode: roleLabelOf(raw.data.role.code).short,
         roleTitle: raw.data.role.name,
-        /** El alcance: el Supervisor crea requisiciones SOLO de este hotel. */
         hotel: raw.data.hotel,
+        permissions: raw.data.permissions,
       }),
     }),
 
-    /**
-     * Login: canjea el idToken de Firebase por la sesión de la API (201).
-     * `credentials: 'include'` para recibir la cookie `oranje_refresh`.
-     */
     createSession: build.mutation<SessionUser, { idToken: string }>({
       query: (body) => ({
         url: '/auth/session',
@@ -149,11 +129,6 @@ export const sessionApi = baseApi.injectEndpoints({
       onQueryStarted: async (_arg, { dispatch, queryFulfilled }) => {
         try {
           const { data } = await queryFulfilled
-          /**
-           * La caché entera es del usuario ANTERIOR: sin este reset, entrar
-           * como la Reclutadora seguía enseñando el `/me` (y los prospectos)
-           * de Hugo hasta recargar. Primero se limpia, luego se establece.
-           */
           dispatch(baseApi.util.resetApiState())
           dispatch(sessionEstablished({ user: data, accessToken: lastAccessToken }))
         } catch {
@@ -162,7 +137,6 @@ export const sessionApi = baseApi.injectEndpoints({
       },
     }),
 
-    /** Reanuda la sesión desde la cookie. Es lo primero que intenta el guard. */
     refreshSession: build.mutation<SessionUser, void>({
       query: () => ({ url: '/auth/refresh', method: 'POST', credentials: 'include' }),
       transformResponse: captureToken,
@@ -176,7 +150,6 @@ export const sessionApi = baseApi.injectEndpoints({
       },
     }),
 
-    /** 204 siempre: la API no falla el logout a propósito (no filtra tokens). */
     logout: build.mutation<void, void>({
       query: () => ({ url: '/auth/logout', method: 'POST', credentials: 'include' }),
       onQueryStarted: async (_arg, { dispatch, queryFulfilled }) => {
@@ -184,7 +157,6 @@ export const sessionApi = baseApi.injectEndpoints({
           await queryFulfilled
         } finally {
           dispatch(sessionCleared())
-          /** Nada del usuario saliente puede quedar servible en la caché. */
           dispatch(baseApi.util.resetApiState())
         }
       },

@@ -16,7 +16,6 @@ import {
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatList, formatPercent } from '@/shared/lib/formatters'
 
-/** Una métrica del BD: etiqueta chica arriba, número grande abajo. */
 function Metric({ label, value }: { label: string; value: string }): ReactNode {
   return (
     <div>
@@ -71,7 +70,7 @@ function MemberCard({ member }: { member: TeamMemberCard }): ReactNode {
       </div>
 
       <div className="mt-auto flex flex-wrap justify-end gap-3">
-        {/* Sin backend todavía: los botones lo dicen, no fingen enviar nada. */}
+        {}
         <Button variant="secondary" disabled title="Las notas al BD aún no existen en el backend">
           Nota al BD
         </Button>
@@ -87,11 +86,6 @@ function MemberCard({ member }: { member: TeamMemberCard }): ReactNode {
   )
 }
 
-/**
- * Mi Equipo (maqueta del BDC): sus BDs con las métricas del ciclo comercial,
- * compuestas de `/team` + `/prospects` (D-28). Un BD no tiene equipo: el
- * backend le responde 403 a `/team` y esta pantalla se lo dice.
- */
 export function TeamPage(): ReactNode {
   const { data: overview, isLoading, isError, error, refetch } = useGetTeamOverviewQuery()
 
@@ -102,7 +96,6 @@ export function TeamPage(): ReactNode {
   }
 
   if (isError || !overview) {
-    /** El 403 no es transitorio: ahí Reintentar mentiría. */
     if (status === 403) {
       return (
         <p className="rounded-lg border border-line bg-surface p-6 text-sm text-ink-2">
@@ -146,7 +139,7 @@ export function TeamPage(): ReactNode {
         <MetricCard
           value={String(overview.quarterConversions)}
           label="Conversiones del trimestre"
-          foot="Rosa → Naranja · RR-V-01"
+          foot={IS_DEV_UI ? 'Rosa → Naranja · RR-V-01' : 'Rosa → Naranja'}
         />
         <MetricCard
           value={

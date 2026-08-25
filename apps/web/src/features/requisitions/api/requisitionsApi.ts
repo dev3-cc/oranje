@@ -3,6 +3,7 @@ import type {
   RequisitionBoard,
   RequisitionDetail,
   RequisitionFormOptions,
+  RequisitionHotelOption,
   RequisitionPosition,
   RequisitionRow,
   RequisitionSlot,
@@ -22,22 +23,14 @@ import type {
   RequisitionPositionApi,
 } from '@/shared/types/apiContract.types'
 
-/**
- * Requisiciones sobre el contrato REAL de `demand`: `GET/POST /requisitions`,
- * `GET /requisitions/:id`, `POST /requisitions/:id/authorize` y las
- * asignaciones de `coverage`. Las métricas del tablero se calculan aquí — el
- * backend aún no las agrega (D-28: cuando exista el agregador, misma forma).
- */
 registerRequisitionsMocks()
 
-/** `fetchWithBQ` de un `queryFn`: el tipo exacto no está exportado por RTK. */
 type FetchWithBQ = (
   args: string | { url: string; method?: string; body?: unknown; params?: Record<string, unknown> },
 ) => Promise<{ data?: unknown; error?: unknown }>
 
 const URGENCY_RANK: Record<string, number> = { RED: 0, YELLOW: 1, STRONG_GREEN: 2 }
 
-/** La urgencia del tablero es la MÁS apremiante entre las posiciones. */
 function worstUrgency(requisition: RequisitionApi): UrgencyLevel {
   const codes = requisition.positions
     .map((position) => position.urgency?.code)
@@ -46,7 +39,6 @@ function worstUrgency(requisition: RequisitionApi): UrgencyLevel {
   return codes.sort((a, b) => (URGENCY_RANK[a] ?? 9) - (URGENCY_RANK[b] ?? 9))[0] as UrgencyLevel
 }
 
-/** El departamento de la fila: el de sus posiciones, o cuántos son si difieren. */
 function rowDepartment(requisition: RequisitionApi): string {
   const names = [...new Set(requisition.positions.map((position) => position.department.name))]
   if (names.length === 0) return '—'
@@ -65,17 +57,10 @@ function toRow(requisition: RequisitionApi): RequisitionRow {
     urgency: worstUrgency(requisition),
     status: requisition.state.code as RequisitionStatus,
     authorizedAt: requisition.authorizedAt,
-    /** El contrato solo da el id del inspector; su nombre aún no tiene endpoint. */
     inspectorName: '—',
   }
 }
 
-/**
- * Los slots por posición se sintetizan del conteo: `coverage` da las
- * asignaciones planas pero SIN la posición del slot, así que los nombres de
- * quienes ocupan no se pueden atribuir por posición sin adivinar. Se listan
- * ocupado/libre y el canal; el nombre queda para cuando el contrato lo exponga.
- */
 function buildSlots(position: RequisitionPositionApi): RequisitionSlot[] {
   return Array.from({ length: position.quantity }, (_item, index) => {
     const isOccupied = index < position.filled
@@ -109,7 +94,6 @@ function toPosition(position: RequisitionPositionApi): RequisitionPosition {
 function toDetail(requisition: RequisitionApi, _assignments: AssignmentApi[]): RequisitionDetail {
   const positions = requisition.positions.map(toPosition)
 
-  /** Historia mínima derivada de la entidad: el contrato no expone la tabla. */
   const history = [
     ...(requisition.authorizedAt
       ? [
@@ -201,17 +185,12 @@ async function fetchFormOptions(
     fetchWithBQ('/catalogs/hiring-modalities'),
     fetchWithBQ('/catalogs/english-levels'),
   ])
-  /**
-   * `/hotels` es de Ventas y a los roles del hotel les responde 403: NO tumba
-   * los catálogos — su modal fija el hotel de la sesión y no necesita lista.
-   */
   for (const res of [departmentsRes, positionsRes, modalitiesRes, englishRes]) {
     if (res.error) return { error: res.error }
   }
 
   return {
     data: {
-      /** Solo los clientes activos generan requisiciones (entran a `vw_client`). */
       hotels: hotelsRes.error
         ? []
         : (hotelsRes.data as PaginatedEnvelope<HotelApi>).data
@@ -220,6 +199,7 @@ async function fetchFormOptions(
               id: hotel.id,
               name: hotel.name,
               zoneName: hotel.zone.name.replace(/^Zona\s+/i, ''),
+              photoUrl: hotel.photoUrl,
             })),
       departments: (departmentsRes.data as ApiEnvelope<CatalogItemApi[]>).data,
       positions: (positionsRes.data as ApiEnvelope<CatalogItemApi[]>).data,
@@ -242,7 +222,6 @@ export const requisitionsApi = baseApi.injectEndpoints({
       ],
     }),
 
-    /** Catálogos del alta: `/catalogs/*` + los hoteles cliente. */
     getRequisitionFormOptions: build.query<RequisitionFormOptions, void>({
       queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
         const result = await fetchFormOptions(fetchWithBQ as FetchWithBQ)
@@ -251,9 +230,19 @@ export const requisitionsApi = baseApi.injectEndpoints({
       providesTags: [{ type: 'Catalog' as const, id: 'REQUISITION_FORM' }],
     }),
 
+    getOwnHotelOption: build.query<RequisitionHotelOption, string>({
+      query: (hotelId) => `/hotels/${hotelId}`,
+      transformResponse: (raw: ApiEnvelope<HotelApi>): RequisitionHotelOption => ({
+        id: raw.data.id,
+        name: raw.data.name,
+        zoneName: raw.data.zone.name.replace(/^Zona\s+/i, ''),
+        photoUrl: raw.data.photoUrl,
+      }),
+      providesTags: (_res, _err, hotelId) => [{ type: 'Hotel' as const, id: hotelId }],
+    }),
+
     createRequisition: build.mutation<unknown, CreateRequisitionRequest>({
       query: (body) => ({ url: '/requisitions', method: 'POST', body }),
-      /** Cambia el tablero y su métrica de «por autorizar», así que se invalida entero. */
       invalidatesTags: [
         { type: 'Requisition' as const, id: 'LIST' },
         { type: 'Requisition' as const, id: 'AUTHORIZATION_QUEUE' },
@@ -284,5 +273,6 @@ export const {
   useGetRequisitionBoardQuery,
   useGetRequisitionQuery,
   useGetRequisitionFormOptionsQuery,
+  useGetOwnHotelOptionQuery,
   useCreateRequisitionMutation,
 } = requisitionsApi

@@ -15,16 +15,8 @@ import type {
   RequisitionApi,
 } from '@/shared/types/apiContract.types'
 
-/**
- * La cola de autorización es el listado REAL filtrado por estado: una
- * requisición espera firma mientras vive en `APPLE_GREEN`. Autorizar es
- * `POST /requisitions/:id/authorize` — el backend congela la urgencia al
- * firmar (RR-H-05) y valida quién puede (D-09). El RECHAZO todavía no existe
- * en el contrato (pendiente 21 del ADR): la pantalla lo dice, no lo finge.
- */
 registerAuthorizationsMocks()
 
-/** `fetchWithBQ` de un `queryFn`: el tipo exacto no está exportado por RTK. */
 type FetchWithBQ = (
   args: string | { url: string; method?: string; params?: Record<string, unknown> },
 ) => Promise<{ data?: unknown; error?: unknown }>
@@ -56,7 +48,6 @@ function toRequest(requisition: RequisitionApi): AuthorizationRequest {
     department: [
       ...new Set(requisition.positions.map((position) => position.department.name)),
     ].join(', '),
-    /** El contrato no expone quién creó la fila; el journal lo sabrá. */
     requestedByName: '—',
     status: 'APPLE_GREEN',
     positionCount: requisition.positions.length,
@@ -97,7 +88,6 @@ async function fetchQueue(
   const requisitions = (listRes.data as PaginatedEnvelope<RequisitionApi>).data
   const me = (meRes.data as ApiEnvelope<{ role: { code: string; name: string } }>).data
 
-  /** D-09: el GM firma cualquier departamento; el de Área, solo el suyo. */
   const scope =
     me.role.code === 'ROL-H-03'
       ? 'todos los departamentos de tu hotel'
@@ -125,16 +115,14 @@ export const authorizationsApi = baseApi.injectEndpoints({
       ],
     }),
 
-    /** Motivos del semáforo de Requisición, del catálogo real. */
-    getStatusChangeReasons: build.query<{ items: StatusChangeReason[] }, void>({
+    getRequisitionReturnReasons: build.query<{ items: StatusChangeReason[] }, void>({
       query: () => ({ url: '/catalogs/reasons', params: { statusLight: 'REQUISITION' } }),
       transformResponse: (raw: ApiEnvelope<Array<{ code: string; name: string }>>) => ({
         items: raw.data.map((reason) => ({ id: reason.code, label: reason.name })),
       }),
-      providesTags: [{ type: 'Catalog' as const, id: 'STATUS_CHANGE_REASON' }],
+      providesTags: [{ type: 'Catalog' as const, id: 'REQUISITION_RETURN_REASONS' }],
     }),
 
-    /** Sin cuerpo: la firma es del token, y la urgencia la congela el backend. */
     authorizeRequisition: build.mutation<unknown, ResolveAuthorizationPayload>({
       query: ({ requisitionId }) => ({
         url: `/requisitions/${requisitionId}/authorize`,
@@ -151,6 +139,6 @@ export const authorizationsApi = baseApi.injectEndpoints({
 
 export const {
   useGetAuthorizationQueueQuery,
-  useGetStatusChangeReasonsQuery,
+  useGetRequisitionReturnReasonsQuery,
   useAuthorizeRequisitionMutation,
 } = authorizationsApi

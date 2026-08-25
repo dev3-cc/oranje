@@ -1,36 +1,12 @@
-import type { ProposalCandidate, ProposalVersionSummary } from '../types/proposal.types'
+import type { ProposalVersionSummary } from '../types/proposal.types'
 
 import { getProspectIdentity, registerOnboardingMocks } from './onboardingMocks'
 
 import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
 import type { ApiEnvelope, ProposalApi } from '@/shared/types/apiContract.types'
 
-/**
- * Fixtures de las propuestas. ANDAMIO TEMPORAL — se borra cuando
- * `VITE_USE_MOCKS` deje de usarse.
- *
- * El estado interno sigue en el tipo de vista (`ProposalVersionSummary`), pero
- * las rutas responden `ProposalApi` con su envoltura, como el contrato real:
- * tarifas como STRING (`"185.0000"`), `isDraft` derivado de `sentAt`, y todo
- * bajo `/prospects/:id/proposals`.
- *
- * El nombre del hotel y su semáforo NO se repiten aquí: salen de
- * `getProspectIdentity`, que lee los mismos fixtures que la ficha del
- * prospecto. La propuesta cuelga del prospecto, y el prospecto tiene un solo
- * nombre.
- *
- * Hotel Mirador reproduce la captura al pie de la letra: v3 en borrador, v2 y
- * v1 enviadas. Hotel Puerto Real se dejó SIN borrador abierto a propósito, para
- * poder ver el estado vacío y el alta de una versión nueva.
- */
-
-/**
- * Versión almacenada. Hoy es idéntica al resumen; se mantiene el alias porque
- * el registro guardado y lo que viaja al front no tienen por qué coincidir.
- */
 type StoredVersion = ProposalVersionSummary
 
-/** De la más nueva a la más vieja. Como mucho UNA en borrador. */
 const versionsByProspect = new Map<string, StoredVersion[]>([
   [
     'psp-0008',
@@ -146,7 +122,6 @@ function todayIso(): string {
   return `${now.getFullYear()}-${month}-${day}`
 }
 
-/** Vista → contrato crudo: la inversa de los adaptadores de `proposalsApi`. */
 function toProposalApi(version: StoredVersion): ProposalApi {
   return {
     id: version.id,
@@ -179,7 +154,6 @@ function createDraft(prospectId: string): ProposalApi {
     throw new Error('Ya hay una versión en borrador')
   }
 
-  // La versión nueva arranca de la última enviada: se negocia sobre lo anterior.
   const [latest] = versions
   const nextVersion = (latest?.version ?? 0) + 1
 
@@ -203,7 +177,6 @@ interface SaveDraftBody {
   billRate?: string
 }
 
-/** Como el contrato real: REEMPLAZO, no parche — campo omitido queda vacío. */
 function saveDraft(prospectId: string, proposalId: string, body: unknown): ProposalApi {
   const payload = (body ?? {}) as SaveDraftBody
   const version = findVersion(prospectId, proposalId)
@@ -227,41 +200,7 @@ function sendProposal(prospectId: string, proposalId: string): ProposalApi {
   return toProposalApi(version)
 }
 
-/**
- * Todos los hoteles que tienen al menos una versión. Los que nunca se
- * cotizaron no salen: el módulo lista propuestas, no prospectos.
- *
- * ⚠ Hueco del contrato: esta vista transversal no tiene endpoint real, así que
- * sigue respondiendo el tipo de vista sin envoltura.
- */
-function listCandidates(): ProposalCandidate[] {
-  const candidates: ProposalCandidate[] = []
-
-  for (const [prospectId, versions] of versionsByProspect) {
-    const identity = getProspectIdentity(prospectId)
-    const [latest] = versions
-    if (!identity || !latest) continue
-
-    candidates.push({
-      prospectId,
-      hotelName: identity.hotelName,
-      zone: identity.zone,
-      prospectStatus: identity.status,
-      latestVersion: latest.version,
-      latestVersionStatus: latest.status,
-      latestSentAt: latest.sentAt,
-    })
-  }
-
-  return candidates
-}
-
 const routes: readonly MockRoute[] = [
-  {
-    method: 'GET',
-    path: '/proposals',
-    resolve: (): ProposalCandidate[] => listCandidates(),
-  },
   {
     method: 'GET',
     path: '/prospects/:prospectId/proposals',
@@ -297,11 +236,6 @@ let areRoutesRegistered = false
 export function registerProposalsMocks(): void {
   if (areRoutesRegistered) return
   areRoutesRegistered = true
-  /**
-   * El workspace también pide `GET /prospects/:id` (nombre del hotel y
-   * semáforo), que vive en los mocks de onboarding: se registran juntos para
-   * que un spec que solo monta el editor no reciba un 501.
-   */
   registerOnboardingMocks()
   registerMockRoutes(routes)
 }

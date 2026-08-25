@@ -1,7 +1,9 @@
+import { MaterialIcon } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
 import { useGetPoolOptionsQuery, useGetWorkerPoolQuery } from '../api/poolApi'
 import { CreateWorkerDialog } from '../components/CreateWorkerDialog'
+import { PoolCardBoard } from '../components/PoolCardBoard'
 import { PoolFilters } from '../components/PoolFilters'
 import { PoolTable } from '../components/PoolTable'
 import { EMPTY_POOL_FILTERS, type PoolFilters as Filters } from '../types/pool.types'
@@ -11,14 +13,11 @@ import { LoadError } from '@/shared/components/LoadError'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
-/**
- * Pool de Colaboradores: quién hay disponible y en qué situación está.
- * Contra `GET /workers` (el contrato real), con los filtros por id de catálogo.
- */
 export function PoolPage(): ReactNode {
   const [filters, setFilters] = useState<Filters>(EMPTY_POOL_FILTERS)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editWorkerId, setEditWorkerId] = useState<string | null>(null)
+  const [view, setView] = useState<'table' | 'cards'>('table')
 
   const { data: pool, isLoading, isError, refetch } = useGetWorkerPoolQuery(filters)
   const { data: options } = useGetPoolOptionsQuery()
@@ -42,14 +41,50 @@ export function PoolPage(): ReactNode {
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          onClick={() => {
-            setIsCreateOpen(true)
-          }}
-        >
-          + Nuevo colaborador
-        </Button>
+        <div className="flex items-center gap-3">
+          <div
+            role="group"
+            aria-label="Vista"
+            className="flex rounded-md border border-line bg-surface p-0.5"
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setView('table')
+              }}
+              aria-pressed={view === 'table'}
+              title="Vista de tabla"
+              className={`flex cursor-pointer items-center gap-1.5 rounded px-3 py-1.5 text-sm ${
+                view === 'table' ? 'bg-o-50 font-semibold text-o-700' : 'text-ink-3 hover:text-ink'
+              }`}
+            >
+              <MaterialIcon name="table_rows" className="text-base" aria-hidden />
+              Tabla
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setView('cards')
+              }}
+              aria-pressed={view === 'cards'}
+              title="Tarjetas por estado del semáforo"
+              className={`flex cursor-pointer items-center gap-1.5 rounded px-3 py-1.5 text-sm ${
+                view === 'cards' ? 'bg-o-50 font-semibold text-o-700' : 'text-ink-3 hover:text-ink'
+              }`}
+            >
+              <MaterialIcon name="view_kanban" className="text-base" aria-hidden />
+              Tarjetas
+            </button>
+          </div>
+          <Button
+            variant="primary"
+            onClick={() => {
+              setIsCreateOpen(true)
+            }}
+          >
+            + Nuevo colaborador
+          </Button>
+        </div>
       </header>
 
       <PoolFilters filters={filters} options={options} onChange={setFilters} />
@@ -66,14 +101,22 @@ export function PoolPage(): ReactNode {
       {isLoading && !pool ? (
         <TableSkeleton rows={6} columns={6} />
       ) : (
-        pool && (
+        pool &&
+        (view === 'table' ? (
           <PoolTable
             items={pool.items}
             onEdit={(worker) => {
               setEditWorkerId(worker.id)
             }}
           />
-        )
+        ) : (
+          <PoolCardBoard
+            items={pool.items}
+            onEdit={(worker) => {
+              setEditWorkerId(worker.id)
+            }}
+          />
+        ))
       )}
 
       {editWorkerId && (

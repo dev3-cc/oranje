@@ -1,5 +1,5 @@
 import { MaterialIcon } from '@oranje/ui'
-import { useEffect, useRef, useState, type ReactNode, type SelectHTMLAttributes } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import {
   useCreateWorkerMutation,
@@ -13,34 +13,13 @@ import personajeContratacion from '@/assets/ilustrations/personaje-contratacion.
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
 import { isCompletePhone, PhoneInput } from '@/shared/components/PhoneInput'
+import { Select } from '@/shared/components/Select'
 import { EXPERIENCE_LABEL, EXPERIENCE_LEVELS } from '@/shared/constants/workerEnums'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const CONTROL_CLASS =
-  'w-full rounded-md border border-line bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none'
-
-/**
- * Select con chevron propio: el nativo pinta su flecha con el cromo del
- * sistema y desentona con los inputs — `appearance-none` + Material Icon.
- */
-function Select({
-  children,
-  ...props
-}: SelectHTMLAttributes<HTMLSelectElement> & { children: ReactNode }): ReactNode {
-  return (
-    <span className="relative w-full">
-      <select {...props} className={`${CONTROL_CLASS} cursor-pointer appearance-none pr-10`}>
-        {children}
-      </select>
-      <MaterialIcon
-        name="expand_more"
-        aria-hidden
-        className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-lg text-ink-3"
-      />
-    </span>
-  )
-}
+  'w-full rounded-md border border-line bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-4 transition-colors hover:border-ink-4 focus:outline-none focus-visible:border-o-500 focus-visible:ring-2 focus-visible:ring-o-500/30'
 
 const GENDERS = [
   { value: 'FEMALE', label: 'Femenino' },
@@ -48,25 +27,29 @@ const GENDERS = [
   { value: 'OTHER', label: 'Otro' },
 ] as const
 
-/** Qué pasa después del alta: las cinco verdades de la maqueta, tal cual. */
-const AFTERMATH = [
-  'Nace en BLANCO: la fila existe a medias, eso ES el estado (D-26).',
-  'El colaborador completa Fase 2 (transporte y SSN/ITIN, con 3 días de plazo) y Fase 3 (emergencia y salud) en la app.',
-  'is_profile_complete vive en vw_worker: los campos obligatorios los declara la vista, sin NOT NULL.',
-  'La Reclutadora valida el alta (RF-08) → pasa a VERDE FUERTE y entra al Pool.',
-  'Sin SSN/ITIN, la retención del 16% aplica automática (D-27).',
-]
+const AFTERMATH = IS_DEV_UI
+  ? [
+      'Nace en BLANCO: la fila existe a medias, eso ES el estado (D-26).',
+      'El colaborador completa Fase 2 (transporte y SSN/ITIN, con 3 días de plazo) y Fase 3 (emergencia y salud) en la app.',
+      'is_profile_complete vive en vw_worker: los campos obligatorios los declara la vista, sin NOT NULL.',
+      'La Reclutadora valida el alta (RF-08) → pasa a VERDE FUERTE y entra al Pool.',
+      'Sin SSN/ITIN, la retención del 16% aplica automática (D-27).',
+    ]
+  : [
+      'Nace en Blanco: el expediente se completa por fases.',
+      'El colaborador completa la Fase 2 (transporte y SSN/ITIN, con 3 días de plazo) y la Fase 3 (emergencia y salud) en la app.',
+      'La Reclutadora valida el alta → pasa a Verde fuerte y entra al Pool.',
+      'Sin SSN/ITIN se aplica la retención del 16% automática.',
+    ]
 
 interface Draft {
   fullName: string
   birthDate: string
-  /** Ruta del bucket que devolvió POST /files; vacío = sin foto. */
   photoPath: string
   gender: 'MALE' | 'FEMALE' | 'OTHER'
   phone: string
   address: string
   zoneId: string
-  /** Decisiones de Oranje (2026-08-22): las captura la Reclutadora, no el candidato. */
   catalogPositionId: string
   hiringModalityId: string
   englishLevelId: string
@@ -87,7 +70,6 @@ const EMPTY_DRAFT: Draft = {
   experienceLevel: '',
 }
 
-/** Una fila del formulario: etiqueta a la izquierda, control a la derecha. */
 function FormRow({
   label,
   column,
@@ -108,11 +90,6 @@ function FormRow({
   )
 }
 
-/**
- * Del error de la API a una frase que diga QUÉ corregir: el back ya distingue
- * el HEIC del iPhone (UNSUPPORTED_FILE_TYPE) del archivo gigante (413) — el
- * genérico «inténtalo de nuevo» escondía justo eso.
- */
 function uploadErrorMessage(error: unknown): string {
   return apiErrorMessage(error, {
     byCode: {
@@ -126,14 +103,12 @@ function uploadErrorMessage(error: unknown): string {
   })
 }
 
-/** La fecha tope del picker: hoy menos 18 años — el back rechaza menores. */
 function maxBirthDate(): string {
   const limit = new Date()
   limit.setFullYear(limit.getFullYear() - 18)
   return limit.toISOString().slice(0, 10)
 }
 
-/** La causa REAL del rechazo del alta, no el «revisa los datos» a ciegas. */
 function saveErrorMessage(error: unknown): string {
   return apiErrorMessage(error, {
     byCode: {
@@ -154,14 +129,6 @@ function initialsOf(fullName: string): string {
     .toUpperCase()
 }
 
-/**
- * Crear colaborador — Fase 1 · Entrevista, en el patrón de ficha de usuario:
- * banda con la escena 3D de la naranja, avatar encimado y filas de etiqueta a
- * la izquierda. La identidad MÁS las decisiones de Oranje sobre el perfil —
- * posición, modalidad, inglés y experiencia dejaron de ser datos que el
- * colaborador declara (Colaborador.md, 2026-08-22). Van opcionales: la fila
- * nace a medias a propósito, eso ES el estado Blanco (`POST /workers`, D-26).
- */
 export function CreateWorkerDialog({
   isOpen,
   onClose,
@@ -169,7 +136,6 @@ export function CreateWorkerDialog({
 }: {
   isOpen: boolean
   onClose: () => void
-  /** Con id, el MISMO modal edita: precarga el expediente y guarda con PATCH. */
   workerId?: string
 }): ReactNode {
   const isEditing = workerId !== undefined
@@ -186,7 +152,6 @@ export function CreateWorkerDialog({
   const isError = hasCreateFailed || hasUpdateFailed
   const saveError = hasUpdateFailed ? updateError : createError
 
-  /** La foto se pica en el avatar de la banda: sube a POST /files y previsualiza local. */
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [uploadPhoto, { isLoading: isUploading, isError: isUploadError, error: uploadError }] =
@@ -198,7 +163,6 @@ export function CreateWorkerDialog({
     setPhotoPreview(null)
   }, [isOpen])
 
-  /** Modo edición: el expediente llena el formulario y la foto ya guardada. */
   useEffect(() => {
     if (!isOpen || !editing) return
     setDraft({
@@ -223,7 +187,7 @@ export function CreateWorkerDialog({
       const stored = await uploadPhoto({ file, purpose: 'WORKER_PHOTO' }).unwrap()
       update('photoPath')(stored.path)
     } catch {
-      /* el error queda en `isUploadError` y se pinta bajo el header */
+      return
     }
   }
 
@@ -245,7 +209,6 @@ export function CreateWorkerDialog({
     if (!canSubmit) return
     try {
       if (isEditing && workerId) {
-        /** El PATCH no acepta nacimiento ni género: son inmutables del alta. */
         await updateWorker({
           workerId,
           fullName: draft.fullName.trim(),
@@ -275,13 +238,12 @@ export function CreateWorkerDialog({
       }
       onClose()
     } catch {
-      /* el error queda en `isError` y se pinta abajo */
+      return
     }
   }
 
   const initials = initialsOf(draft.fullName)
 
-  /** Con el botón apagado, DECIR qué falta — no dejar adivinando. */
   const missingHint =
     draft.fullName.trim() === ''
       ? 'Falta el nombre completo'
@@ -304,19 +266,16 @@ export function CreateWorkerDialog({
       className="max-w-2xl"
     >
       <div className="flex max-h-[calc(100vh-3rem)] flex-col overflow-y-auto">
-        {/* La banda: gradiente cálido + la naranja 3D flotando (si hay WebGL). */}
+        {}
         <div className="relative h-36 shrink-0 bg-gradient-to-r from-o-50 via-o-50/70 to-surface-2">
-          {/* El personaje de Contratación del sistema de marca, completo
-              dentro de la banda: más alto que ella y el modal le corta la
-              cabeza. Sin animación: quieto se ve mejor. */}
+          {}
           <img
             src={personajeContratacion}
             alt=""
             aria-hidden
             className="absolute right-10 bottom-2 h-32 w-auto"
           />
-          {/* El avatar ES el control de la foto: picar carga o reemplaza.
-              Sobresale de la banda a propósito — nada lo recorta. */}
+          {}
           <button
             type="button"
             aria-label={photoPreview ? 'Reemplazar foto' : 'Subir foto'}
@@ -349,7 +308,7 @@ export function CreateWorkerDialog({
                 {isUploading ? 'Subiendo…' : photoPreview ? 'Cambiar' : 'Subir foto'}
               </span>
             </span>
-            {/* El sello de cámara dice sin hover que esto se pica. */}
+            {}
             <span
               aria-hidden
               className="absolute -right-0.5 -bottom-0.5 flex size-8 items-center justify-center rounded-full border-2 border-surface bg-o-500 text-ink shadow-sm"
@@ -360,8 +319,6 @@ export function CreateWorkerDialog({
           <input
             ref={photoInputRef}
             type="file"
-            /* Sin `image/*`: el back no abre HEIC, y al excluirlo iOS convierte
-               la foto a JPEG solo. */
             accept="image/jpeg,image/png,image/webp"
             capture="user"
             className="hidden"
@@ -409,7 +366,6 @@ export function CreateWorkerDialog({
               update('birthDate')(event.target.value)
             }}
             aria-label="Fecha de nacimiento"
-            /* El back exige 18+: el picker no ofrece fechas que van a rebotar. */
             max={maxBirthDate()}
             disabled={isEditing}
             title={isEditing ? 'El nacimiento no se edita: es del alta' : undefined}

@@ -14,17 +14,13 @@ import type { HotelContact } from '../types/prospect.types'
 
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'hotel-contacts-form'
 
 const CONTROL_CLASS =
   'w-full rounded-full border border-line bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none'
 
-/**
- * La ruta de un campo dentro del arreglo, con el tipo que espera React Hook
- * Form. Se arma con `String(index)` por el lint de plantillas y se reafirma el
- * tipo: la plantilla es la misma, solo cambia cómo la lee cada herramienta.
- */
 function draftPath<K extends keyof HotelContactDraft>(
   index: number,
   key: K,
@@ -32,7 +28,6 @@ function draftPath<K extends keyof HotelContactDraft>(
   return `drafts.${String(index)}.${key}` as `drafts.${number}.${K}`
 }
 
-/** Etiqueta + control + nombre de la columna, que es la forma que repite el diseño. */
 function Field({
   label,
   column,
@@ -50,25 +45,21 @@ function Field({
     <div>
       <p className="flex items-baseline gap-2 text-sm font-semibold text-ink">
         {label}
-        {required === true && <span className="text-xs font-bold text-red">NOT NULL</span>}
+        {required === true && (
+          <span className="text-xs font-bold text-red">
+            {IS_DEV_UI ? 'NOT NULL' : 'obligatorio'}
+          </span>
+        )}
       </p>
       <div className="mt-2">{children}</div>
-      {/* El error SUSTITUYE al nombre de columna: así el campo no cambia de alto. */}
+      {}
       <p className={cn('mt-1.5 text-xs', error === undefined ? 'text-ink-4' : 'text-red')}>
-        {error ?? column}
+        {error ?? (IS_DEV_UI ? column : '\u00a0')}
       </p>
     </div>
   )
 }
 
-/**
- * Alta de contactos de un hotel.
- *
- * Se capturan en LOTE: la lista de la izquierda va acumulando borradores y el
- * botón del pie los guarda todos de una vez. No es capricho —
- * `ux_hotel_contact_primary` obliga a que el cambio de principal ocurra en una
- * sola transacción, así que el front no puede mandarlos de uno en uno.
- */
 export function HotelContactsDialog({
   isOpen,
   onClose,
@@ -100,8 +91,6 @@ export function HotelContactsDialog({
 
   const { fields, append } = useFieldArray({ control, name: 'drafts' })
 
-  // Al reabrir se empieza limpio: los borradores de la vez pasada ya se
-  // guardaron o se descartaron, y arrastrarlos daría un alta por accidente.
   useEffect(() => {
     if (!isOpen) return
     reset({ drafts: [EMPTY_CONTACT_DRAFT] })
@@ -112,11 +101,6 @@ export function HotelContactsDialog({
   const currentPrimary = contacts.find((contact) => contact.isPrimary) ?? null
   const draftError = errors.drafts?.[selectedIndex]
 
-  /**
-   * Encender uno apaga los demás. El índice único parcial no admite dos, y
-   * dejar que el usuario marque dos para que el servidor le diga que no es
-   * hacerle perder el viaje.
-   */
   function markPrimary(index: number, isOn: boolean): void {
     drafts.forEach((_, position) => {
       setValue(draftPath(position, 'isPrimary'), isOn && position === index)
@@ -137,7 +121,7 @@ export function HotelContactsDialog({
       }).unwrap()
       onClose()
     } catch {
-      // El error se queda en el formulario; el modal no se cierra.
+      return
     }
   })
 
@@ -149,7 +133,7 @@ export function HotelContactsDialog({
       isOpen={isOpen}
       onClose={onClose}
       title="Agregar contacto"
-      description={`commercial.hotel_contact · ${hotelName}`}
+      description={IS_DEV_UI ? `commercial.hotel_contact · ${hotelName}` : hotelName}
       className="max-w-[64rem]"
       footer={
         <div className="flex justify-end gap-3">
@@ -293,7 +277,7 @@ export function HotelContactsDialog({
               <span>
                 <span className="block text-sm font-semibold text-ink">Marcar como principal</span>
                 <span className="block text-sm text-ink-3">
-                  is_primary ·{' '}
+                  {IS_DEV_UI && 'is_primary · '}
                   {currentPrimary
                     ? `apagado: ${currentPrimary.name} ya lo es`
                     : 'este hotel no tiene principal todavía'}
@@ -307,8 +291,9 @@ export function HotelContactsDialog({
               Un hotel puede tener los contactos que haga falta
             </span>
             <span className="mt-1 block">
-              hotel_contact solo exige full_name y hotel_id. Puesto, teléfono y correo son
-              opcionales: se registra con lo que se tenga y se completa después.
+              {IS_DEV_UI
+                ? 'hotel_contact solo exige full_name y hotel_id. Puesto, teléfono y correo son opcionales: se registra con lo que se tenga y se completa después.'
+                : 'Solo el nombre es obligatorio. Puesto, teléfono y correo se registran con lo que se tenga y se completan después.'}
             </span>
           </p>
         </div>
@@ -318,9 +303,9 @@ export function HotelContactsDialog({
             Solo puede haber un principal por hotel.
           </span>
           <span className="mt-1 block">
-            Lo hace cumplir ux_hotel_contact_primary, un único parcial sobre hotel_id WHERE
-            is_primary. Marcar a otro no es un simple UPDATE: hay que quitar el anterior en la misma
-            transacción, o el motor rechaza el segundo.
+            {IS_DEV_UI
+              ? 'Lo hace cumplir ux_hotel_contact_primary, un único parcial sobre hotel_id WHERE is_primary. Marcar a otro no es un simple UPDATE: hay que quitar el anterior en la misma transacción, o el motor rechaza el segundo.'
+              : 'Al marcar a otro como principal, el anterior deja de serlo en el mismo guardado.'}
           </span>
         </p>
       </form>
