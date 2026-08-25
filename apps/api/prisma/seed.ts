@@ -537,6 +537,384 @@ const BLACKLIST_TRANSITIONS: Array<{
   { from: 'BLACK', to: 'WHITE', roles: ['ROL-ADM-01'], reason: true, evidence: false },
 ]
 
+// ---------------------------------------------------------------------------
+// Tipos de notificación. Transcripción del `Catálogo de Notificaciones` del
+// vault, que a su vez se extrajo de 107 archivos: ninguno se inventó aquí.
+//
+// El `module` es quien PUBLICA el evento, no quien lo recibe.
+// ---------------------------------------------------------------------------
+const NOTIFICATION_TYPES: Array<{
+  code: string
+  name: string
+  description: string
+  module: string
+}> = [
+  // --- Ventas ---
+  {
+    code: 'SALES_PROSPECT_CREATED',
+    module: 'sales',
+    name: 'Perfil del hotel creado',
+    description: 'El BD crea el perfil del hotel. Avisa al BDC (RF-V-02)',
+  },
+  {
+    code: 'SALES_PROPOSAL_SENT',
+    module: 'sales',
+    name: 'Propuesta enviada',
+    description: 'El BD envía la Propuesta. Avisa al BDC (RF-V-05)',
+  },
+  {
+    code: 'SALES_TERMS_CREATED',
+    module: 'sales',
+    name: 'Documento de T&C creado',
+    description: 'El BD crea el Documento de T&C. Avisa al BDC (RF-V-08)',
+  },
+  {
+    code: 'SALES_TERMS_VALIDATED',
+    module: 'sales',
+    name: 'T&C validado',
+    description: 'El BDC valida el T&C. Avisa al BD (RF-V-10)',
+  },
+  {
+    code: 'SALES_TERMS_REJECTED',
+    module: 'sales',
+    name: 'T&C rechazado',
+    description: 'El BDC lo rechaza con observaciones. Avisa al BD (RF-V-10)',
+  },
+  {
+    code: 'SALES_STALLED',
+    module: 'sales',
+    name: 'Prospecto estancado',
+    description: 'Se marca estancamiento (Café). Avisa al BDC (RF-V-17)',
+  },
+  {
+    code: 'SALES_UNBLOCKED',
+    module: 'sales',
+    name: 'Prospecto desbloqueado',
+    description: 'El BDC desbloquea el prospecto. Avisa al BD original (RF-V-18)',
+  },
+  {
+    code: 'SALES_CLOSED_RED',
+    module: 'sales',
+    name: 'Prospecto cerrado en Rojo',
+    description: 'Se cierra como Rojo. Avisa al BD original (RF-V-18)',
+  },
+  {
+    code: 'SALES_CLIENT_BLACK',
+    module: 'sales',
+    name: 'Cliente marcado Negro',
+    description: 'El cliente se marca Negro. Avisa al BD asignado (RF-V-20)',
+  },
+  {
+    code: 'SALES_CONVERSION_APPROVED',
+    module: 'sales',
+    name: 'Conversión aprobada',
+    description: 'El BDC aprueba la conversión a cliente. Avisa al BD y al BDC (RF-V-12)',
+  },
+  {
+    code: 'SALES_REJECTION_HANDLED',
+    module: 'sales',
+    name: 'Rechazo gestionado',
+    description: 'Se gestiona un rechazo (Rojo). Avisa al BDC (RF-V-15)',
+  },
+  {
+    code: 'SALES_AUTO_CONVERSION',
+    module: 'sales',
+    name: 'Conversión automática',
+    description: 'Se dispara el trigger automático de conversión. Avisa al BD asignado',
+  },
+
+  // --- Hotel ---
+  {
+    code: 'REQ_SENT_FOR_APPROVAL',
+    module: 'hotel',
+    name: 'Requisición enviada a autorizar',
+    description: 'El Supervisor la manda a autorizar. Avisa al Manager de Área (RF-H-03)',
+  },
+  {
+    code: 'REQ_AUTHORIZED',
+    module: 'hotel',
+    name: 'Requisición autorizada',
+    description: 'El Manager General o de Área la autoriza. Avisa al Supervisor (RF-H-05)',
+  },
+  {
+    code: 'REQ_REJECTED',
+    module: 'hotel',
+    name: 'Requisición rechazada',
+    description: 'La rechaza con motivo. Avisa al Supervisor (RF-H-06)',
+  },
+  {
+    code: 'REQ_DELETED',
+    module: 'hotel',
+    name: 'Requisición eliminada',
+    description: 'Se elimina una requisición con posiciones. Avisa al Supervisor (RF-H-07)',
+  },
+  {
+    code: 'REQ_TAKEN',
+    module: 'hotel',
+    name: 'Requisición tomada',
+    description: 'Una Reclutadora la toma de la bandeja. Avisa al Supervisor y al Manager de Área',
+  },
+  {
+    code: 'REQ_FULLY_COVERED',
+    module: 'hotel',
+    name: 'Requisición cubierta al 100%',
+    description: 'Llega al 100% de cobertura. Avisa al Supervisor y al Manager de Área',
+  },
+  {
+    code: 'REQ_ESCALATED_DELAY',
+    module: 'hotel',
+    name: 'Requisición demorada',
+    description: 'Lleva demasiado sin cubrirse. Avisa al Manager de Reclutamiento (RF-H-27)',
+  },
+  {
+    code: 'REQ_INSPECTOR_ASSIGNED',
+    module: 'hotel',
+    name: 'Inspector asignado',
+    description: 'Se autoriza y se le asigna Inspector por zona. Avisa al Inspector',
+  },
+  {
+    code: 'WORKER_REPORTED',
+    module: 'hotel',
+    name: 'Colaborador reportado',
+    description: 'El hotel reporta a un colaborador (Rojo). Avisa al Inspector de zona (RF-H-18)',
+  },
+  {
+    code: 'ACCIDENT_REPORTED_A',
+    module: 'hotel',
+    name: 'Accidente reportado por el colaborador',
+    description:
+      'El colaborador reporta desde la app. Avisa al Supervisor y al Inspector, simultáneamente (RF-H-20)',
+  },
+  {
+    code: 'ACCIDENT_REPORTED_B',
+    module: 'hotel',
+    name: 'Accidente reportado por el hotel',
+    description: 'El hotel reporta el accidente. Avisa al Inspector de zona (RF-H-21)',
+  },
+  {
+    code: 'SCHEDULE_EDITED',
+    module: 'hotel',
+    name: 'Schedule editado',
+    description: 'Se edita el Schedule de la semana. Avisa a los colaboradores asignados (RF-H-12)',
+  },
+  {
+    code: 'PUNCH_CORRECTED',
+    module: 'hotel',
+    name: 'Ponche corregido',
+    description: 'El Supervisor corrige un ponche. Avisa al colaborador (RF-H-14)',
+  },
+  {
+    code: 'STANDBY_APPLIED',
+    module: 'hotel',
+    name: 'Enviado a descanso',
+    description:
+      'El hotel manda a descansar (Rosa). Avisa al colaborador y al Manager de Área (RF-H-17)',
+  },
+  {
+    code: 'FILE_COMMENTED',
+    module: 'hotel',
+    name: 'Expediente comentado',
+    description:
+      'Se comenta un expediente. Avisa al Gerente de Departamento y a los destinatarios adicionales (RF-H-26)',
+  },
+
+  // --- Reclutamiento ---
+  {
+    code: 'WORKER_PENDING_REVIEW',
+    module: 'recruitment',
+    name: 'Alta pendiente de revisión',
+    description: 'El colaborador completa la Fase 2. Avisa a la Reclutadora (RF-07)',
+  },
+  {
+    code: 'WORKER_VALIDATED',
+    module: 'recruitment',
+    name: 'Alta validada',
+    description: 'La Reclutadora valida el alta. Avisa al colaborador (RF-08)',
+  },
+  {
+    code: 'WORKER_VALIDATION_REJECTED',
+    module: 'recruitment',
+    name: 'Alta rechazada',
+    description: 'Su alta fue rechazada o necesita correcciones. Avisa al colaborador (RF-C-09)',
+  },
+  {
+    code: 'WORKER_BLACKLISTED',
+    module: 'recruitment',
+    name: 'Agregado a Blacklist',
+    description: 'Se agrega a Blacklist. Avisa al colaborador (RF-12)',
+  },
+  {
+    code: 'REQ_PARTICIPANT_JOINED',
+    module: 'recruitment',
+    name: 'Otra Reclutadora se unió',
+    description:
+      'Otra Reclutadora se une a la requisición. Avisa a los demás participantes (RF-39)',
+  },
+  {
+    code: 'REQ_REASSIGNED',
+    module: 'recruitment',
+    name: 'Requisición reasignada',
+    description:
+      'Se reasigna a otra Reclutadora. Avisa a la de origen y la de destino, y a ambos Líderes (RF-37)',
+  },
+  {
+    code: 'REQ_AUTO_ASSIGNED',
+    module: 'recruitment',
+    name: 'Requisición asignada automáticamente',
+    description:
+      'Lleva 24h sin tomarse y el sistema se la asigna. Avisa a la Reclutadora que la recibió; el Manager NO',
+  },
+  {
+    code: 'COVERAGE_CLOSURE_REVIEWED',
+    module: 'recruitment',
+    name: 'Cierre de cobertura revisado',
+    description: 'El Líder aprueba o rechaza el cierre. Avisa a la Reclutadora (RF-05)',
+  },
+  {
+    code: 'INCIDENT_RESOLVED',
+    module: 'recruitment',
+    name: 'Incidencia resuelta',
+    description: 'Se resuelve una incidencia. Avisa a los involucrados (RF-30)',
+  },
+  {
+    code: 'INCIDENT_ESCALATED',
+    module: 'recruitment',
+    name: 'Incidencia escalada a Comercial',
+    description: 'Se escala a Comercial. Avisa al BD y BDC del hotel (RF-31)',
+  },
+  {
+    code: 'STATUS_FORCED',
+    module: 'recruitment',
+    name: 'Cambio de semáforo forzado',
+    description:
+      'El Manager fuerza un cambio de semáforo. Avisa al Líder y a la Reclutadora afectados (RF-21)',
+  },
+  {
+    code: 'UNASSIGN_REQUESTED',
+    module: 'recruitment',
+    name: 'Desasignación solicitada',
+    description: 'Se solicita desasignar un colaborador. Avisa al hotel (RF-18)',
+  },
+  {
+    code: 'REASSIGN_REQUESTED',
+    module: 'recruitment',
+    name: 'Reasignación solicitada',
+    description: 'Se solicita reasignación. Avisa al Manager (RF-17)',
+  },
+  {
+    code: 'TEAM_CHANGED',
+    module: 'recruitment',
+    name: 'Cambio de equipo',
+    description:
+      'Cambia la relación Líder–Reclutadora. Avisa al usuario y al Líder afectado (RF-29)',
+  },
+  {
+    code: 'REPORT_SENT',
+    module: 'recruitment',
+    name: 'Reporte enviado',
+    description: 'El Líder envía su reporte. Avisa al Manager (RF-25)',
+  },
+
+  // --- Inspección y QA ---
+  {
+    code: 'DISPUTE_RESOLVED',
+    module: 'supervision',
+    name: 'Disputa resuelta',
+    description:
+      'El Inspector resuelve la disputa. Avisa a los involucrados: hotel, Reclutadora y Líder (RF-13)',
+  },
+  {
+    code: 'QUALITY_RED_NO_IMPROVEMENT',
+    module: 'supervision',
+    name: 'Calidad en Rojo sin mejora',
+    description:
+      'Un departamento sigue en Rojo tras la notificación. Lo escala el Manager de QA a dirección',
+  },
+  {
+    code: 'QUALITY_STATE_CHANGED',
+    module: 'supervision',
+    name: 'Indicador de Calidad cambió',
+    description:
+      'Cambia el Indicador de Calidad de un área. Avisa al Manager de QA y al responsable del área',
+  },
+
+  // --- Colaborador ---
+  {
+    code: 'WORKER_ASSIGNED',
+    module: 'coverage',
+    name: 'Nueva asignación',
+    description: 'Nueva asignación: hotel, posición y fechas (RF-C-09)',
+  },
+  {
+    code: 'WORKER_STATE_CHANGED',
+    module: 'recruitment',
+    name: 'Cambio de estado',
+    description: 'Cambió su estado en el Semáforo del Colaborador (RF-C-09)',
+  },
+  {
+    code: 'WORKER_TEMP_ENDED',
+    module: 'coverage',
+    name: 'Asignación temporal terminada',
+    description: 'Terminó su asignación temporal (RF-C-09)',
+  },
+  {
+    code: 'ACCIDENT_CARD_CLOSED',
+    module: 'supervision',
+    name: 'Tarjeta de accidente cerrada',
+    description: 'Se cerró su tarjeta de accidente (RF-C-09)',
+  },
+  {
+    code: 'PUNCH_REMINDER',
+    module: 'operations',
+    name: 'Recordatorio de ponche',
+    description:
+      'Recordatorio de ponche. SIN REGLA DE DISPARO: RF-C-09 lo lista con un "si aplica" y nada más',
+  },
+
+  // --- Operación y pago ---
+  {
+    code: 'HOURS_APPROVED',
+    module: 'operations',
+    name: 'Horas aprobadas',
+    description:
+      'El Manager de Área o el General aprueba las horas. Avisa al colaborador: es lo que libera su pago',
+  },
+  {
+    code: 'HOURS_PENDING',
+    module: 'operations',
+    name: 'Horas sin aprobar',
+    description:
+      'Cierre semanal con horas sin aprobar. Avisa al Manager de Área, que es quien puede aprobar',
+  },
+  {
+    code: 'HOURS_STILL_PENDING',
+    module: 'operations',
+    name: 'Horas siguen sin aprobarse',
+    description:
+      'Avisa al Manager General, que puede aprobar lo que el otro no aprobó. Avisar no es escalar: la responsabilidad no se transfiere',
+  },
+  {
+    code: 'PAYMENT_RELEASED',
+    module: 'settlement',
+    name: 'Pago liberado',
+    description: 'Se libera el pago. Avisa al colaborador con el monto neto',
+  },
+  {
+    code: 'ABSENCE_RECORDED',
+    module: 'operations',
+    name: 'Inasistencia registrada',
+    description:
+      'Se registra una inasistencia. Avisa al colaborador CON EL CONTADOR: "van 2 de 3". Tres acumuladas vetan automáticamente',
+  },
+  {
+    code: 'ABSENCE_WARNING',
+    module: 'operations',
+    name: 'Segunda inasistencia',
+    description:
+      'Avisa a la Reclutadora, que es la suya, para que hable con él antes de que el sistema lo vete',
+  },
+]
+
 async function main(): Promise<void> {
   const log = (s: string): void => {
     process.stdout.write(s + '\n')
@@ -595,6 +973,21 @@ async function main(): Promise<void> {
     })
   }
   log(`hotel_department: ${HOTEL_DEPARTMENTS.length}`)
+
+  for (const t of NOTIFICATION_TYPES) {
+    await prisma.notificationType.upsert({
+      where: { code: t.code },
+      update: { name: t.name, description: t.description, module: t.module },
+      create: {
+        id: uuidv7(),
+        code: t.code,
+        name: t.name,
+        description: t.description,
+        module: t.module,
+      },
+    })
+  }
+  log(`notification_type: ${NOTIFICATION_TYPES.length}`)
 
   for (const p of POSITIONS) {
     const dept = await prisma.hotelDepartment.findUniqueOrThrow({ where: { code: p.department } })

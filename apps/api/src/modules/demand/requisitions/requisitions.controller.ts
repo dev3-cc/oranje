@@ -22,7 +22,12 @@ import { RequisitionBoard, RequisitionsService } from './requisitions.service.js
 export class RequisitionsController {
   constructor(private readonly requisitions: RequisitionsService) {}
 
-  @Requires('requisitions', 'read_own')
+  /**
+   * Sin `@Requires`: leer requisiciones tiene TRES permisos válidos según el
+   * rol (`read_own` del Hotel, `read_all` y `read_authorized_queue` de
+   * Reclutamiento) y el decorador solo sabe exigir un par. El servicio decide
+   * cuál aplica y con qué alcance — mismo patrón que el territorio.
+   */
   @Get()
   list(
     @Query() query: QueryRequisitionsDto,
@@ -31,7 +36,6 @@ export class RequisitionsController {
     return this.requisitions.list(query, user)
   }
 
-  @Requires('requisitions', 'read_own')
   @Get(':id')
   async get(
     @Param('id', ParseUUIDPipe) id: string,

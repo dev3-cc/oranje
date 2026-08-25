@@ -13,7 +13,7 @@ import {
 import { CurrentUser, Requires } from '../../../common/decorators/index.js'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 
-import { ConsolidationEntity, ConsolidationsService } from './consolidations.service.js'
+import { ConsolidationEntity, ConsolidationsService, MyPayment } from './consolidations.service.js'
 import { CreateDeductionDto, GenerateDto } from './dto/generate.dto.js'
 
 @Controller('consolidations')
@@ -29,6 +29,13 @@ export class ConsolidationsController {
     return {
       data: await this.consolidations.list(weekStart ? new Date(weekStart) : undefined, status),
     }
+  }
+
+  // Antes que `:id`. Es la pantalla Mi Pago del colaborador.
+  @Requires('payroll', 'read_own')
+  @Get('me')
+  async mine(@CurrentUser() user: AuthenticatedUser): Promise<{ data: MyPayment[] }> {
+    return { data: await this.consolidations.mine(user) }
   }
 
   @Requires('payroll', 'read')

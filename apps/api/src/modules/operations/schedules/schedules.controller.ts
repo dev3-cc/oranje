@@ -8,6 +8,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
 } from '@nestjs/common'
 
 import { CurrentUser, Requires } from '../../../common/decorators/index.js'
@@ -15,7 +16,8 @@ import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 
 import { CreateEntryDto } from './dto/create-entry.dto.js'
 import { CreateScheduleDto } from './dto/create-schedule.dto.js'
-import { EntryEntity, ScheduleEntity, SchedulesService } from './schedules.service.js'
+import { WeekRangeDto } from './dto/week-range.dto.js'
+import { EntryEntity, MyShift, ScheduleEntity, SchedulesService } from './schedules.service.js'
 
 @Controller('schedules')
 export class SchedulesController {
@@ -25,6 +27,16 @@ export class SchedulesController {
   @Get()
   async list(@CurrentUser() user: AuthenticatedUser): Promise<{ data: ScheduleEntity[] }> {
     return { data: await this.schedules.list(user) }
+  }
+
+  // Antes que `:id`, o Nest lee "me" como un uuid y responde 400.
+  @Requires('schedule', 'read_own')
+  @Get('me')
+  async mine(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() range: WeekRangeDto,
+  ): Promise<{ data: MyShift[] }> {
+    return { data: await this.schedules.mine(user, range.from, range.to) }
   }
 
   @Requires('schedule', 'read_department')

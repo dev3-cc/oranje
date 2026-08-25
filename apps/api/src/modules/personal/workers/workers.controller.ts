@@ -27,10 +27,17 @@ import { TransitionOption, WorkerBoard, WorkersService } from './workers.service
 export class WorkersController {
   constructor(private readonly workers: WorkersService) {}
 
-  @Requires('recruitment', 'search_candidates')
+  /**
+   * Sin `@Requires`: dos permisos válidos con alcances distintos —
+   * Reclutamiento ve el Pool, el hotel ve SUS asignados (Mi Personal).
+   * Decide el servicio, como en requisiciones y territorio.
+   */
   @Get()
-  list(@Query() query: QueryWorkersDto): Promise<WorkerBoard> {
-    return this.workers.list(query)
+  list(
+    @Query() query: QueryWorkersDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<WorkerBoard> {
+    return this.workers.list(query, user)
   }
 
   @Requires('recruitment', 'search_candidates')

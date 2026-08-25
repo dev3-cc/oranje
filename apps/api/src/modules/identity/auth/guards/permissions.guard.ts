@@ -6,14 +6,8 @@ import type { AuthenticatedUser } from '../../../../common/decorators/index.js'
 import { PermisoRequerido, REQUIERE_PERMISO } from '../../../../common/decorators/index.js'
 import { PermissionsService } from '../permissions.service.js'
 
-/**
- * Segundo guard global. Corre después del de identidad, así que ya hay usuario.
- *
- * Una ruta sin `@Requires()` pasa: exigir el decorador en todas obligaría a
- * inventar un permiso para cada endpoint auxiliar. Lo que protege el sistema es
- * que **la acción que importa sí lo lleve** — y el permiso no existe hasta que
- * alguien lo siembra desde la Matriz.
- */
+// Una ruta sin @Requires pasa: exigirlo en todas obligaría a inventar un
+// permiso por endpoint auxiliar.
 @Injectable()
 export class PermissionsGuard implements CanActivate {
   constructor(

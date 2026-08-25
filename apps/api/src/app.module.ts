@@ -2,28 +2,27 @@ import { Module } from '@nestjs/common'
 
 import { ConfigModule } from './config/config.module.js'
 import { HealthModule } from './infra/health/index.js'
+import { PlacesModule } from './infra/places/index.js'
 import { PrismaModule } from './infra/prisma/index.js'
+import { StorageModule } from './infra/storage/index.js'
 import { CatalogsModule } from './modules/catalogs/index.js'
 import { CommercialModule } from './modules/commercial/index.js'
 import { CoverageModule } from './modules/coverage/index.js'
 import { DemandModule } from './modules/demand/index.js'
+import { FilesModule } from './modules/files/index.js'
 import { IdentityModule } from './modules/identity/index.js'
+import { NotificationsModule } from './modules/notifications/index.js'
 import { OperationsModule } from './modules/operations/index.js'
 import { PersonalModule } from './modules/personal/index.js'
 import { SettlementModule } from './modules/settlement/index.js'
+import { SupervisionModule } from './modules/supervision/index.js'
 
-/**
- * Monolito modular — D-01. Los 10 módulos de negocio son carpetas de
- * `src/modules/`, no servicios: `demand → coverage → operations` corren en una
- * sola transacción de Postgres, y esa unión es una regla de negocio (RR-15).
- *
- * Solo se registran los módulos cuyo esquema ya tiene tablas. Los otros siete
- * entran con su primera migración.
- */
 @Module({
   imports: [
     ConfigModule,
     PrismaModule,
+    StorageModule,
+    PlacesModule,
     HealthModule,
     CatalogsModule,
     IdentityModule,
@@ -33,6 +32,9 @@ import { SettlementModule } from './modules/settlement/index.js'
     OperationsModule,
     PersonalModule,
     SettlementModule,
+    FilesModule,
+    NotificationsModule,
+    SupervisionModule,
   ],
 })
 export class AppModule {}

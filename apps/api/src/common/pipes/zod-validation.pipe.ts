@@ -9,11 +9,7 @@ function isZodDto(metatype: unknown): metatype is ZodDtoClass {
   return typeof metatype === 'function' && 'zodSchema' in metatype
 }
 
-/**
- * Pipe global de validación — Estándares de Desarrollo §6.
- * Un argumento que no sea DTO de Zod pasa sin tocarse, para no obligar a
- * declarar un schema por cada `:id` o query param suelto.
- */
+// Un argumento que no sea DTO de Zod pasa sin tocarse.
 @Injectable()
 export class ZodValidationPipe implements PipeTransform {
   transform(value: unknown, metadata: ArgumentMetadata): unknown {
@@ -40,15 +36,8 @@ export class ZodValidationPipe implements PipeTransform {
   }
 }
 
-/**
- * Convierte un schema de Zod en una clase que Nest puede usar como tipo de un
- * `@Body()`. El tipo del parámetro lo sigue infiriendo Zod, así que no hay una
- * segunda declaración que se pueda desincronizar.
- *
- * ```ts
- * export class CreateProspectDto extends createZodDto(createProspectSchema) {}
- * ```
- */
+// El tipo lo infiere Zod, así que no hay una segunda declaración que se
+// pueda desincronizar.
 export function createZodDto<T extends ZodType>(schema: T): { new (): z.infer<T>; zodSchema: T } {
   class ZodDto {
     static readonly zodSchema = schema

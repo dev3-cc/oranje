@@ -14,6 +14,8 @@ const SELECT = {
   generalPhone: true,
   address: true,
   placeId: true,
+  photoRef: true,
+  photoRefAt: true,
   timeZone: true,
   geofenceRadiusM: true,
   activatedAt: true,
@@ -116,6 +118,14 @@ export class HotelsRepository {
         updatedBy: userId,
       },
       select: SELECT,
+    })
+  }
+
+  // La foto la resuelve el servidor contra Places, no la manda el cliente.
+  async setPhotoRef(id: string, photoRef: string | null): Promise<void> {
+    await this.prisma.hotel.update({
+      where: { id },
+      data: { photoRef, photoRefAt: new Date() },
     })
   }
 

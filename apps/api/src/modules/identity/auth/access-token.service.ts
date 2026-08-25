@@ -5,13 +5,9 @@ import type { CryptoKey, KeyObject } from 'jose'
 
 import type { Env } from '../../../config/env.validation.js'
 
-/**
- * Lo que viaja en nuestro token: solo lo que el guard necesita para decidir sin
- * ir a la base. Los permisos NO van aquí — se consultan, porque en el token
- * revocar uno tardaría 15 minutos en surtir efecto.
- */
+// Los permisos NO viajan aquí: en el token, revocar uno tardaría 15 minutos
+// en surtir efecto.
 export interface AccessTokenPayload {
-  /** Nuestro `identity.user.id`, no el uid de Firebase. */
   sub: string
   roleCode: string
   hotelId: string | null
@@ -23,13 +19,8 @@ const AUDIENCE = 'oranje'
 
 type SigningKey = CryptoKey | KeyObject | Uint8Array
 
-/**
- * Firma y verifica el token que protege los CRUD.
- *
- * El algoritmo depende del ambiente: en local basta un secreto compartido, pero
- * con HS256 quien verifica también puede firmar. En los desplegados va RS256,
- * así que la llave privada solo vive donde se emiten los tokens.
- */
+// HS256 en local; RS256 en los desplegados, para que quien verifica no pueda
+// firmar.
 @Injectable()
 export class AccessTokenService {
   private readonly logger = new Logger(AccessTokenService.name)
@@ -66,7 +57,7 @@ export class AccessTokenService {
     try {
       const { verification } = await this.keys
 
-      // El algoritmo se fija: sin esto, un token firmado con otro alg pasaría
+      // Se fija el algoritmo: si no, un token firmado con otro pasaría.
       const { payload } = await jwtVerify(token, verification, {
         issuer: ISSUER,
         audience: AUDIENCE,
@@ -91,7 +82,6 @@ export class AccessTokenService {
     config: ConfigService<Env, true>,
   ): Promise<{ signing: SigningKey; verification: SigningKey }> {
     if (this.alg === 'HS256') {
-      // La validación de entorno ya garantizó que existe fuera de los desplegados
       const secret = new TextEncoder().encode(config.get('JWT_SECRET', { infer: true }))
 
       return { signing: secret, verification: secret }
@@ -100,7 +90,6 @@ export class AccessTokenService {
     const privateKey = config.get('JWT_PRIVATE_KEY', { infer: true })
     const publicKey = config.get('JWT_PUBLIC_KEY', { infer: true })
 
-    // La validación de entorno ya las exigió fuera de local; esto es el cinturón
     if (!privateKey || !publicKey) {
       throw new Error('RS256 exige JWT_PRIVATE_KEY y JWT_PUBLIC_KEY')
     }
@@ -112,10 +101,7 @@ export class AccessTokenService {
   }
 }
 
-/**
- * Secret Manager y los `.env` entregan los saltos del PEM como `\n` literales.
- * Sin esto la llave no importa, y el error de jose no dice por qué.
- */
+// Secret Manager y los .env entregan los saltos del PEM como `\n` literales.
 function normalizePem(valor: string): string {
   return valor.includes('\\n') ? valor.replace(/\\n/g, '\n') : valor
 }

@@ -1,5 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 
+import { PlacesService } from '../../../infra/places/index.js'
+
 import type { CreateHotelDto } from './dto/create-hotel.dto.js'
 import type { QueryHotelsDto } from './dto/query-hotels.dto.js'
 import type { UpdateHotelDto } from './dto/update-hotel.dto.js'
@@ -13,13 +15,16 @@ export interface Paginated<T> {
 
 @Injectable()
 export class HotelsService {
-  constructor(private readonly repo: HotelsRepository) {}
+  constructor(
+    private readonly repo: HotelsRepository,
+    private readonly places: PlacesService,
+  ) {}
 
   async list(query: QueryHotelsDto): Promise<Paginated<HotelEntity>> {
     const { rows, total } = await this.repo.findMany(query)
 
     return {
-      data: rows.map(toEntity),
+      data: rows.map((row) => this.toEntity(row)),
       meta: {
         page: query.page,
         limit: query.limit,
@@ -36,7 +41,7 @@ export class HotelsService {
       throw new NotFoundException({ code: 'HOTEL_NOT_FOUND', message: 'El hotel no existe' })
     }
 
-    return toEntity(row)
+    return this.toEntity(row)
   }
 
   async create(dto: CreateHotelDto, userId: string): Promise<HotelEntity> {
@@ -47,11 +52,11 @@ export class HotelsService {
 
     if (dto.latitude !== undefined && dto.longitude !== undefined) {
       await this.repo.setCoordinates(row.id, dto.latitude, dto.longitude)
-
-      return this.get(row.id)
     }
 
-    return toEntity(row)
+    await this.resolvePhoto(row.id, dto.placeId ?? null, null)
+
+    return this.get(row.id)
   }
 
   async update(id: string, dto: UpdateHotelDto, userId: string): Promise<HotelEntity> {
@@ -75,7 +80,32 @@ export class HotelsService {
 
     await this.repo.update(id, dto, userId)
 
+    if (dto.placeId !== undefined && dto.placeId !== current.placeId) {
+      await this.resolvePhoto(id, dto.placeId, null)
+    }
+
     return this.get(id)
+  }
+
+  // Se resuelve al ESCRIBIR, no en cada lectura: una lista de veinte hoteles
+  // serían veinte llamadas facturables a Places.
+  //
+  // Y se refresca cuando la referencia pasa de 30 días, que es lo que la
+  // política de Google permite guardar de todo lo que no sea el place_id.
+  private async resolvePhoto(
+    id: string,
+    placeId: string | null,
+    resolvedAt: Date | null,
+  ): Promise<void> {
+    if (!placeId || !this.places.enabled || !this.places.isStale(resolvedAt)) {
+      return
+    }
+
+    await this.repo.setPhotoRef(id, await this.places.photoRef(placeId))
+  }
+
+  private toEntity(row: HotelRow): HotelEntity {
+    return { ...toEntity(row), photoUrl: this.places.mediaUrl(row.photoRef) }
   }
 
   private async assertZone(zoneId: string): Promise<void> {
@@ -103,6 +133,7 @@ function toEntity(row: HotelRow): HotelEntity {
     geofenceRadiusM: row.geofenceRadiusM,
     address: row.address,
     placeId: row.placeId,
+    photoUrl: null,
     latitude: row.latitude ?? null,
     longitude: row.longitude ?? null,
     zone: row.zone,

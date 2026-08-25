@@ -6,6 +6,8 @@ export interface WorkerEntity {
   gender: string
   phone: string
   address: string
+  /// URL firmada, no la ruta: caduca en una hora.
+  photoUrl: string | null
   zone: { id: string; code: string; name: string }
   position: { id: string; code: string; name: string } | null
   englishLevel: { id: string; code: string; name: string } | null

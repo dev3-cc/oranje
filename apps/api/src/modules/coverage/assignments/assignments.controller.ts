@@ -21,10 +21,13 @@ import { ReleaseAssignmentDto } from './dto/release-assignment.dto.js'
 export class AssignmentsController {
   constructor(private readonly assignments: AssignmentsService) {}
 
-  @Requires('requisitions', 'read_own')
+  /** Sin `@Requires`: tres permisos válidos según el rol; decide el servicio. */
   @Get('requisitions/:id/assignments')
-  async list(@Param('id', ParseUUIDPipe) id: string): Promise<{ data: AssignmentEntity[] }> {
-    return { data: await this.assignments.list(id) }
+  async list(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: AssignmentEntity[] }> {
+    return { data: await this.assignments.list(id, user) }
   }
 
   @Requires('requisitions', 'take')

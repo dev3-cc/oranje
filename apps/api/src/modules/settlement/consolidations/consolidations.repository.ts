@@ -41,6 +41,47 @@ export interface DeductionRow {
 export class ConsolidationsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  async workerOfUser(userId: string): Promise<string | null> {
+    const row = await this.prisma.worker.findFirst({
+      where: { userId, deletedAt: null },
+      select: { id: true },
+    })
+
+    return row?.id ?? null
+  }
+
+  // Solo PAID. El filtro va en la consulta y no en el servicio: asi no hay
+  // forma de llamar a esto y recibir de mas.
+  async paidOfWorker(workerId: string): Promise<
+    Array<{
+      id: string
+      weekStart: Date
+      weekEnd: Date
+      netAmount: string
+      paidAt: Date | null
+      hotels: string[]
+      minutes: number
+    }>
+  > {
+    return this.prisma.$queryRaw`
+      SELECT c.id,
+             c.week_start   AS "weekStart",
+             c.week_end     AS "weekEnd",
+             c.net_amount::text AS "netAmount",
+             c.paid_at      AS "paidAt",
+             COALESCE(array_agg(DISTINCT h.name) FILTER (WHERE h.name IS NOT NULL), '{}') AS hotels,
+             COALESCE(SUM(d.regular_minutes + d.overtime_minutes), 0)::int AS "minutes"
+        FROM settlement.consolidation c
+        LEFT JOIN settlement.consolidation_detail d ON d.consolidation_id = c.id
+        LEFT JOIN demand.requisition r ON r.id = d.requisition_id
+        LEFT JOIN commercial.hotel h   ON h.id = r.hotel_id
+       WHERE c.worker_id = ${workerId}::uuid
+         AND c.status = 'PAID'
+       GROUP BY c.id
+       ORDER BY c.week_start DESC
+       LIMIT 52`
+  }
+
   async pendingWeeks(weekStart: Date): Promise<number> {
     const day = weekStart.toISOString().slice(0, 10)
 

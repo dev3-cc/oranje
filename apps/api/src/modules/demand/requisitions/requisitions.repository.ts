@@ -124,10 +124,14 @@ export class RequisitionsRepository {
     filter: RequisitionFilter,
     hotelIds: string[] | null,
     departmentId: string | null,
+    /** Estados que el caller NO puede ver (la cola de la Reclutadora excluye el borrador). */
+    excludeStates: string[] | null = null,
   ): Promise<{ rows: RequisitionRow[]; total: number }> {
     const where: Prisma.RequisitionWhereInput = {
       ...(filter.includeDeleted ? {} : { deletedAt: null }),
+      /** `state` y `excludeStates` conviven: pedir un estado excluido da vacío, no un bypass. */
       ...(filter.state ? { statusState: { code: filter.state } } : {}),
+      ...(excludeStates ? { AND: [{ statusState: { code: { notIn: excludeStates } } }] } : {}),
       ...(filter.hotelId ? { hotelId: filter.hotelId } : {}),
       ...(hotelIds ? { hotelId: { in: hotelIds } } : {}),
       ...(filter.departmentId || departmentId

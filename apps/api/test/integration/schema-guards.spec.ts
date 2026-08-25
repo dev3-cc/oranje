@@ -20,6 +20,11 @@ const INDEXES = [
   ['demand', 'ux_position_requisition_line'],
   ['personal', 'ix_worker_pool'],
   ['personal', 'ux_worker_rate_active'],
+  ['notifications', 'ux_device_token'],
+  ['notifications', 'ux_notification_event'],
+  ['notifications', 'ix_notification_user_unread'],
+  ['notifications', 'ix_notification_read_at'],
+  ['supervision', 'ix_work_accident_inspector_open'],
 ] as const
 
 const CONSTRAINTS = [
@@ -29,6 +34,15 @@ const CONSTRAINTS = [
   ['settlement', 'consolidation', 'ck_consolidation_signatures'],
   ['commercial', 'contract_rate', 'ck_contract_rate_margin'],
   ['commercial', 'contract', 'ck_contract_multiplier_margin'],
+  ['notifications', 'notification', 'ck_notification_push'],
+  ['notifications', 'notification', 'ck_notification_read'],
+  ['notifications', 'notification', 'ck_notification_entity'],
+  ['notifications', 'device', 'ck_device_platform'],
+  ['supervision', 'work_accident', 'ck_work_accident_status'],
+  ['supervision', 'work_accident', 'ck_work_accident_close_requires_discharge'],
+  ['supervision', 'work_accident', 'ck_work_accident_transfer_coherent'],
+  ['supervision', 'work_accident', 'ck_work_accident_on_site_complete'],
+  ['supervision', 'work_accident', 'ck_work_accident_closed_complete'],
 ] as const
 
 const VIEWS = [

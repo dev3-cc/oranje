@@ -10,7 +10,14 @@ export const createPunchSchema = z.object({
   type: z.enum(PUNCH_TYPES),
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
-  photoPath: z.string().trim().min(1).max(500).optional(),
+  // La ruta sale de POST /files. Sin validar el prefijo se podria colgar del
+  // ponche la foto de otra carpeta — un documento del expediente, por ejemplo.
+  photoPath: z
+    .string()
+    .trim()
+    .max(500)
+    .regex(/^operations\/punch\/[A-Za-z0-9._-]+$/, 'Debe ser una ruta devuelta por POST /files')
+    .optional(),
   deviceAt: z.coerce.date().optional(),
 })
 
