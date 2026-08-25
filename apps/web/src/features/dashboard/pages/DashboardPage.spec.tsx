@@ -41,15 +41,15 @@ describe('DashboardPage', () => {
     expect(screen.getByText(/sin actividad 7\+ días/)).toBeInTheDocument()
   })
 
-  it('el embudo escala cada barra contra el peldaño más alto', async () => {
+  it('el embudo monta la gráfica cuando hay ciclos abiertos', async () => {
     renderDashboard()
 
-    // Naranja es el máximo (5): llena la pista. Gris (3) queda al 60%.
-    const naranja = await screen.findByRole('img', { name: 'Naranja: 5 prospectos' })
-    const gris = screen.getByRole('img', { name: 'Gris: 3 prospectos' })
-
-    expect(naranja.firstElementChild).toHaveStyle({ width: '100.0%' })
-    expect(gris.firstElementChild).toHaveStyle({ width: '60.0%' })
+    const card = (await screen.findByText('Embudo por estado')).closest('section')
+    expect(card).not.toBeNull()
+    // El alto crece con los peldaños: 6 estados en el fixture, 52px cada uno.
+    const chart = (card as HTMLElement).querySelector('[data-slot="chart"]')
+    expect(chart).not.toBeNull()
+    expect(chart).toHaveStyle({ height: '312px' })
   })
 
   it('cada prospecto inactivo enlaza a su ficha', async () => {

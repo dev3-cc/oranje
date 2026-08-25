@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 
 export function Header(): ReactNode {
   return (
-    <header className="flex h-hd shrink-0 items-center gap-4 border-b border-line bg-surface px-6">
+    <header className="relative flex h-hd shrink-0 items-center gap-4 border-b border-line bg-surface px-6">
       <SidebarTrigger aria-label="Mostrar u ocultar el menú" className="shrink-0 text-ink-3" />
       <div className="relative min-w-0 flex-1">
         <Input
