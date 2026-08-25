@@ -1,16 +1,13 @@
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { useCompleteSignupMutation, useGetMyProfileQuery } from '../api/workerApi'
 import { TaxDeadlineBanner } from '../components/TaxDeadlineBanner'
 
 import { Button } from '@/shared/components/Button'
-import { Select } from '@/shared/components/Select'
 import { TRANSPORT_LABEL, TRANSPORT_TYPES } from '@/shared/constants/workerEnums'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
-
-const CONTROL_CLASS =
-  'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink transition-colors hover:border-ink-4 focus:outline-none focus-visible:border-o-500 focus-visible:ring-2 focus-visible:ring-o-500/30'
 
 export function Phase2Page(): ReactNode {
   const { data: profile } = useGetMyProfileQuery()
@@ -38,7 +35,9 @@ export function Phase2Page(): ReactNode {
       <header>
         <h1 className="text-xl font-bold text-ink">Alta · Fase 2</h1>
         <p className="mt-1 text-xs text-ink-3">
-          RF-C-01 · transporte e identificación fiscal{' '}
+          {IS_DEV_UI
+            ? 'RF-C-01 · transporte e identificación fiscal'
+            : 'Transporte e identificación fiscal'}{' '}
           <span className="rounded-full bg-o-50 px-2 py-0.5 font-semibold text-o-700">
             Fase 2 de 3
           </span>
@@ -56,26 +55,27 @@ export function Phase2Page(): ReactNode {
       <section className="flex flex-col gap-4">
         <h2 className="text-sm font-semibold text-ink">Transporte</h2>
 
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm text-ink-3">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="transportType" className="text-sm text-ink-3">
             ¿Cómo te trasladas?
             {IS_DEV_UI && <code className="text-xs text-ink-4"> · transport_type</code>}
-          </span>
+          </label>
           <Select
-            value={transportType}
-            onChange={(event) => {
-              setTransportType(event.target.value)
-            }}
-            className={CONTROL_CLASS}
+            {...(transportType ? { value: transportType } : {})}
+            onValueChange={setTransportType}
           >
-            <option value="">Elige tu transporte…</option>
-            {TRANSPORT_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {TRANSPORT_LABEL[type]}
-              </option>
-            ))}
+            <SelectTrigger id="transportType" className="w-full">
+              <SelectValue placeholder="Elige tu transporte…" />
+            </SelectTrigger>
+            <SelectContent>
+              {TRANSPORT_TYPES.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {TRANSPORT_LABEL[type]}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
-        </label>
+        </div>
       </section>
 
       <section className="flex flex-col gap-3 border-t border-line pt-4">

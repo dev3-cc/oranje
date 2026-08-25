@@ -1,9 +1,11 @@
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
 import { useGetSalesReportQuery } from '../api/reportsApi'
 
 import { Button } from '@/shared/components/Button'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { LoadError } from '@/shared/components/LoadError'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
@@ -22,7 +24,7 @@ import { formatPercent } from '@/shared/lib/formatters'
 const REPORT_TABS = ['Ventas', 'Pipeline', 'Desempeño', 'Calidad', 'Ejecutivo'] as const
 
 export function ReportsPage(): ReactNode {
-  const { data: report, isLoading, isError } = useGetSalesReportQuery()
+  const { data: report, isLoading, isError, refetch } = useGetSalesReportQuery()
 
   return (
     <div className="flex flex-col gap-6">
@@ -58,9 +60,12 @@ export function ReportsPage(): ReactNode {
       </div>
 
       {isError && (
-        <p className="rounded-lg border border-line bg-surface p-6 text-sm text-red">
-          No se pudo armar el reporte. Reintenta en unos segundos.
-        </p>
+        <LoadError
+          message="No se pudo armar el reporte. Reintenta en unos segundos."
+          onRetry={() => {
+            void refetch()
+          }}
+        />
       )}
 
       {isLoading && !report ? (
@@ -76,30 +81,38 @@ export function ReportsPage(): ReactNode {
                   : 'quién convierte y en cuánto tiempo'
               }
             >
-              <table className="w-full border-collapse text-left">
-                <thead>
-                  <tr className="border-b border-line text-xs tracking-wide text-ink-3 uppercase">
-                    <th className="py-2 pr-2">BD</th>
-                    <th className="px-2 py-2">Abiertos</th>
-                    <th className="px-2 py-2">Convertidos</th>
-                    <th className="px-2 py-2">Tasa</th>
-                    <th className="py-2 pl-2">Días prom.</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table className="text-left">
+                <TableHeader>
+                  <TableRow className="border-line text-xs tracking-wide text-ink-3 uppercase">
+                    <TableHead className="py-2 pr-2 pl-0 font-bold text-ink-3">BD</TableHead>
+                    <TableHead className="px-2 py-2 font-bold text-ink-3">Abiertos</TableHead>
+                    <TableHead className="px-2 py-2 font-bold text-ink-3">Convertidos</TableHead>
+                    <TableHead className="px-2 py-2 font-bold text-ink-3">Tasa</TableHead>
+                    <TableHead className="py-2 pr-0 pl-2 font-bold text-ink-3">
+                      Días prom.
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {report.conversionByBd.map((row) => (
-                    <tr key={row.id} className="border-b border-line last:border-b-0">
-                      <td className="py-2.5 pr-2 text-sm font-semibold text-ink">{row.fullName}</td>
-                      <td className="px-2 py-2.5 text-sm text-ink-2">{row.open}</td>
-                      <td className="px-2 py-2.5 text-sm text-ink-2">{row.converted}</td>
-                      <td className="px-2 py-2.5 text-sm text-ink-2">{formatPercent(row.rate)}</td>
-                      <td className="py-2.5 pl-2 text-sm text-ink-2">
+                    <TableRow key={row.id} className="border-line">
+                      <TableCell className="py-2.5 pr-2 pl-0 text-sm font-semibold whitespace-normal text-ink">
+                        {row.fullName}
+                      </TableCell>
+                      <TableCell className="px-2 py-2.5 text-sm text-ink-2">{row.open}</TableCell>
+                      <TableCell className="px-2 py-2.5 text-sm text-ink-2">
+                        {row.converted}
+                      </TableCell>
+                      <TableCell className="px-2 py-2.5 text-sm text-ink-2">
+                        {formatPercent(row.rate)}
+                      </TableCell>
+                      <TableCell className="py-2.5 pr-0 pl-2 text-sm text-ink-2">
                         {row.averageDays === null ? '—' : `${String(row.averageDays)} d`}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
               <p className="mt-3 text-sm text-ink-3">
                 Total del equipo: {report.teamTotals.open} abiertos · {report.teamTotals.converted}{' '}
                 convertidos · {formatPercent(report.teamTotals.rate)}
@@ -142,36 +155,38 @@ export function ReportsPage(): ReactNode {
               {report.attempts.channels.length === 0 ? (
                 <p className="text-sm text-ink-3">Sin intentos registrados todavía.</p>
               ) : (
-                <table className="w-full border-collapse text-left">
-                  <thead>
-                    <tr className="border-b border-line text-xs tracking-wide text-ink-3 uppercase">
-                      <th className="py-2 pr-2">Resultado</th>
+                <Table className="text-left">
+                  <TableHeader>
+                    <TableRow className="border-line text-xs tracking-wide text-ink-3 uppercase">
+                      <TableHead className="py-2 pr-2 pl-0 font-bold text-ink-3">
+                        Resultado
+                      </TableHead>
                       {report.attempts.channels.map((channel) => (
-                        <th key={channel} className="px-2 py-2">
+                        <TableHead key={channel} className="px-2 py-2 font-bold text-ink-3">
                           {CONTACT_ATTEMPT_TYPE_LABEL[channel as ContactAttemptType] ?? channel}
-                        </th>
+                        </TableHead>
                       ))}
-                    </tr>
-                  </thead>
-                  <tbody>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {report.attempts.rows.map((row) => (
-                      <tr key={row.outcome} className="border-b border-line last:border-b-0">
-                        <td className="py-2.5 pr-2 text-sm font-semibold text-ink">
+                      <TableRow key={row.outcome} className="border-line">
+                        <TableCell className="py-2.5 pr-2 pl-0 text-sm font-semibold whitespace-normal text-ink">
                           {CONTACT_ATTEMPT_OUTCOME_LABEL[row.outcome as ContactAttemptOutcome] ??
                             row.outcome}
-                        </td>
+                        </TableCell>
                         {row.counts.map((count, index) => (
-                          <td
+                          <TableCell
                             key={report.attempts.channels[index]}
                             className="px-2 py-2.5 text-sm text-ink-2"
                           >
                             {count}
-                          </td>
+                          </TableCell>
                         ))}
-                      </tr>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               )}
             </SectionCard>
 

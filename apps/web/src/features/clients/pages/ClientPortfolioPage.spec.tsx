@@ -8,14 +8,8 @@ import { ClientPortfolioPage } from './ClientPortfolioPage'
 
 import { store } from '@/app/store'
 
-/** Debounce más latencia del mock: el margen por omisión no alcanza. */
 const SLOW = { timeout: 4000 }
 
-/**
- * La cartera COMPONE `/hotels` + `/prospects` + `/contracts`: seis clientes —
- * los cinco convertidos de los fixtures de Onboarding más Posada Maya Real,
- * el activado sin contrato.
- */
 function renderPortfolio(): void {
   const router = createMemoryRouter(
     [{ path: '/clientes-activos', element: <ClientPortfolioPage /> }],
@@ -46,11 +40,9 @@ describe('ClientPortfolioPage', () => {
     expect(card).not.toBeNull()
 
     const scoped = within(card as HTMLElement)
-    // La fecha de activación sale de los fixtures dinámicos: solo la frase.
     expect(scoped.getByText(/Zona Centro · cliente desde/)).toBeInTheDocument()
     expect(scoped.getByText('CT-2026-0184')).toBeInTheDocument()
     expect(scoped.getByText('4 posiciones')).toBeInTheDocument()
-    // El rango es lo que se FACTURA al hotel: extremos del `bill_rate`.
     expect(scoped.getByText('$230.00 – $380.00')).toBeInTheDocument()
     expect(scoped.getByText('geocerca 150 m')).toBeInTheDocument()
     expect(scoped.getByText('America/Cancun')).toBeInTheDocument()
@@ -63,10 +55,8 @@ describe('ClientPortfolioPage', () => {
     const scoped = within(card as HTMLElement)
 
     expect(scoped.getByText('sin contrato')).toBeInTheDocument()
-    // Sin contrato no hay folio que abrir, pero la ficha del hotel sigue ahí.
     expect(scoped.queryByRole('link', { name: /CT-/ })).not.toBeInTheDocument()
     expect(scoped.getByRole('link', { name: /Ver detalle/ })).toBeInTheDocument()
-    // La geocerca sí existe aunque el contrato no: son cosas distintas.
     expect(scoped.getByText('geocerca 120 m')).toBeInTheDocument()
   })
 
@@ -76,7 +66,6 @@ describe('ClientPortfolioPage', () => {
     const card = (await screen.findByText('Hotel Mirador')).closest('article')
     const scoped = within(card as HTMLElement)
 
-    // Un cliente es un prospecto en NARANJA: su ficha es la del Pipeline.
     expect(scoped.getByRole('link', { name: /Ver detalle/ })).toHaveAttribute(
       'href',
       '/pipeline/psp-0014',
@@ -92,7 +81,8 @@ describe('ClientPortfolioPage', () => {
     renderPortfolio()
 
     await screen.findByText('Posada Maya Real')
-    await user.selectOptions(screen.getByLabelText('Contrato'), 'EXPIRED')
+    await user.click(screen.getByLabelText('Contrato'))
+    await user.click(await screen.findByRole('option', { name: 'Contrato: EXPIRED' }))
 
     await waitFor(() => {
       expect(screen.queryByText('Posada Maya Real')).not.toBeInTheDocument()

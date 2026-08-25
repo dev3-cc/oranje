@@ -1,4 +1,11 @@
-import { MaterialIcon } from '@oranje/ui'
+import {
+  MaterialIcon,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@oranje/ui'
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
@@ -8,7 +15,6 @@ import type { SelfPickRow } from '../types/selfPick.types'
 import personajeComencemos from '@/assets/ilustrations/personaje-comencemos.svg'
 import { FilterSelect } from '@/shared/components/FilterSelect'
 import { LoadError } from '@/shared/components/LoadError'
-import { Select } from '@/shared/components/Select'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate } from '@/shared/lib/formatters'
 
@@ -89,12 +95,16 @@ export function SelfPickPage(): ReactNode {
             aria-hidden
             className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-base text-ink-4"
           />
-          <Select
-            disabled
-            aria-label="Zona"
-            className={`${FILTER_CLASS} cursor-not-allowed opacity-60`}
-          >
-            <option>Zona: el contrato no la expone</option>
+          <Select disabled value="NA">
+            <SelectTrigger
+              aria-label="Zona"
+              className={`${FILTER_CLASS} w-auto cursor-not-allowed opacity-60 shadow-none`}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="NA">Zona: el contrato no la expone</SelectItem>
+            </SelectContent>
           </Select>
         </span>
         <FilterSelect

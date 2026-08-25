@@ -1,3 +1,4 @@
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
 import { useGetBlacklistQuery } from '../api/blacklistApi'
@@ -106,44 +107,51 @@ export function BlacklistPage(): ReactNode {
       {isLoading && rows.length === 0 ? (
         <TableSkeleton rows={4} columns={7} />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-line bg-surface">
-          <table className="w-full min-w-[72rem] border-collapse text-left">
-            <thead>
-              <tr className="border-b border-line">
+        <div className="rounded-lg border border-line bg-surface">
+          <Table className="min-w-[72rem] text-left">
+            <TableHeader>
+              <TableRow className="border-line">
                 {HEADERS.map((header, index) => (
-                  <th
+                  <TableHead
                     key={header === '' ? `empty-${String(index)}` : header}
                     scope="col"
                     className="px-4 py-3 text-xs font-semibold tracking-wide text-ink-3 uppercase"
                   >
                     {header}
-                  </th>
+                  </TableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {rows.length === 0 && (
-                <tr>
-                  <td colSpan={HEADERS.length} className="px-4 py-8 text-center text-sm text-ink-3">
+                <TableRow>
+                  <TableCell
+                    colSpan={HEADERS.length}
+                    className="px-4 py-8 text-center text-sm text-ink-3"
+                  >
                     Nadie en la Blacklist con este filtro.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
               {rows.map((row) => (
-                <tr key={row.id} className="border-b border-line last:border-b-0">
-                  <td className="px-4 py-3 text-sm font-semibold whitespace-nowrap text-ink">
+                <TableRow key={row.id} className="border-line">
+                  <TableCell className="px-4 py-3 text-sm font-semibold whitespace-nowrap text-ink">
                     {row.workerName}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-ink-2">{row.source}</td>
-                  <td className="max-w-md px-4 py-3 text-sm text-ink-2">{row.reason}</td>
-                  <td className="px-4 py-3 text-sm text-ink-3">{row.evidencePath ?? '—'}</td>
-                  <td className="px-4 py-3 text-sm whitespace-nowrap text-ink-2">
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-sm text-ink-2">{row.source}</TableCell>
+                  <TableCell className="max-w-md px-4 py-3 text-sm whitespace-normal text-ink-2">
+                    {row.reason}
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-sm text-ink-3">
+                    {row.evidencePath ?? '—'}
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-sm whitespace-nowrap text-ink-2">
                     {row.enteredByName}
-                  </td>
-                  <td className="px-4 py-3 text-sm whitespace-nowrap text-ink-3">
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-sm whitespace-nowrap text-ink-3">
                     {formatDayMonth(row.occurredAt)}
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell className="px-4 py-3">
                     {row.isActive ? (
                       <span className="inline-flex rounded-full bg-ink px-2.5 py-1 text-xs font-semibold text-surface">
                         Vigente
@@ -156,8 +164,8 @@ export function BlacklistPage(): ReactNode {
                         Levantada
                       </span>
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-right">
                     {}
                     {row.isActive && can('blacklist.lift') && (
                       <Button
@@ -169,11 +177,11 @@ export function BlacklistPage(): ReactNode {
                         Levantar
                       </Button>
                     )}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
 

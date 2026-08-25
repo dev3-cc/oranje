@@ -1,4 +1,13 @@
-import { cn, type StatusLightToken } from '@oranje/ui'
+import {
+  cn,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  type StatusLightToken,
+} from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 
@@ -12,7 +21,6 @@ import { ASSIGNMENT_TYPE_LABEL } from '../types/selfPick.types'
 import mascotaCelebrando from '@/assets/mascota/mascota-celebrando.png'
 import { Button } from '@/shared/components/Button'
 import { SectionCard } from '@/shared/components/SectionCard'
-import { Select } from '@/shared/components/Select'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   REQUISITION_STATUS_TOKEN,
@@ -27,9 +35,6 @@ const COVERAGE_TOKEN: Record<string, StatusLightToken> = {
   LIGHT_BLUE: 'st-azul-claro',
   GREEN: 'st-verde',
 }
-
-const CONTROL_CLASS =
-  'w-full rounded-md border border-line bg-surface px-3.5 py-2.5 text-sm text-ink transition-colors hover:border-ink-4 focus:outline-none focus-visible:border-o-500 focus-visible:ring-2 focus-visible:ring-o-500/30'
 
 function assignErrorMessage(error: unknown): string {
   return apiErrorMessage(error, {
@@ -185,70 +190,70 @@ export function SlotAssignmentPage(): ReactNode {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm text-ink-3">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="assignment-worker" className="text-sm text-ink-3">
                   Colaborador
                   {IS_DEV_UI && (
                     <code className="text-xs text-ink-4"> · worker_id → personal.worker</code>
                   )}
-                </span>
-                <Select
-                  value={workerId}
-                  onChange={(event) => {
-                    setWorkerId(event.target.value)
-                  }}
-                  className={CONTROL_CLASS}
-                >
-                  <option value="">Elige del Pool (Disponibles)…</option>
-                  {workers.map((worker) => (
-                    <option key={worker.id} value={worker.id}>
-                      {worker.fullName} · {worker.zoneName}
-                    </option>
-                  ))}
+                </label>
+                <Select {...(workerId ? { value: workerId } : {})} onValueChange={setWorkerId}>
+                  <SelectTrigger id="assignment-worker" aria-label="Colaborador" className="w-full">
+                    <SelectValue placeholder="Elige del Pool (Disponibles)…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {workers.map((worker) => (
+                      <SelectItem key={worker.id} value={worker.id}>
+                        {worker.fullName} · {worker.zoneName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
-              </label>
+              </div>
 
-              <label className="flex flex-col gap-1.5">
-                <span className="text-sm text-ink-3">
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="assignment-type" className="text-sm text-ink-3">
                   Tipo{IS_DEV_UI && <code className="text-xs text-ink-4"> · type</code>}
-                </span>
+                </label>
                 <Select
                   value={type}
-                  onChange={(event) => {
-                    setType(event.target.value as 'FIXED' | 'TEMPORARY')
+                  onValueChange={(value) => {
+                    setType(value as 'FIXED' | 'TEMPORARY')
                   }}
-                  className={CONTROL_CLASS}
                 >
-                  <option value="FIXED">Fijo</option>
-                  <option value="TEMPORARY">Temporal</option>
+                  <SelectTrigger id="assignment-type" aria-label="Tipo" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FIXED">Fijo</SelectItem>
+                    <SelectItem value="TEMPORARY">Temporal</SelectItem>
+                  </SelectContent>
                 </Select>
-              </label>
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <label className="flex flex-col gap-1.5">
                   <span className="text-sm text-ink-3">Inicio</span>
-                  <input
+                  <Input
                     type="date"
                     value={startDate}
                     onChange={(event) => {
                       setStartDate(event.target.value)
                     }}
                     aria-label="Fecha de inicio"
-                    className={CONTROL_CLASS}
                   />
                 </label>
                 <label className="flex flex-col gap-1.5">
                   <span className="text-sm text-ink-3">
                     Fin{type === 'TEMPORARY' ? '' : ' (opcional)'}
                   </span>
-                  <input
+                  <Input
                     type="date"
                     value={endDate}
                     onChange={(event) => {
                       setEndDate(event.target.value)
                     }}
                     aria-label="Fecha de fin"
-                    className={CONTROL_CLASS}
                   />
                 </label>
               </div>

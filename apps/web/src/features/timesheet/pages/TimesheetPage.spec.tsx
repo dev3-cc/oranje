@@ -7,14 +7,8 @@ import { TimesheetPage } from './TimesheetPage'
 
 import { store } from '@/app/store'
 
-/** Latencia del mock: el margen por omisión se queda corto al filtrar. */
 const SLOW = { timeout: 4000 }
 
-/**
- * El Timesheet compone `GET /timesheets` + su detalle (días y marcas) sobre la
- * semana ACTUAL: los fixtures derivan sus fechas del lunes de hoy, así que las
- * aserciones hablan de personas y estados, no de fechas fijas.
- */
 function renderTimesheet(): void {
   render(
     <Provider store={store}>
@@ -28,7 +22,6 @@ describe('TimesheetPage', () => {
     renderTimesheet()
 
     expect(await screen.findByText(/^Semana /)).toBeInTheDocument()
-    // La semana arranca en lunes: la primera columna siempre es Lun.
     expect(screen.getByText('Lun')).toBeInTheDocument()
     expect(screen.getByText('Dom')).toBeInTheDocument()
   })
@@ -39,7 +32,6 @@ describe('TimesheetPage', () => {
     const row = (await screen.findByText('Ana Rivera Gómez')).closest('div')?.parentElement
     expect(row).not.toBeNull()
 
-    // 4 días de 8.5h netas: 34h, sumadas por `totals` del detalle.
     expect(within(row as HTMLElement).getByText('34h')).toBeInTheDocument()
   })
 
@@ -54,7 +46,6 @@ describe('TimesheetPage', () => {
   it('una ausencia dice guion, que no es lo mismo que cero horas', async () => {
     renderTimesheet()
 
-    // Luis tiene un día `is_absence`: sin horas y sin marcas.
     const row = (await screen.findByText('Luis Cabrera')).closest('div')?.parentElement
     expect(within(row as HTMLElement).getAllByText('—').length).toBeGreaterThan(0)
   })
@@ -63,14 +54,12 @@ describe('TimesheetPage', () => {
     const user = userEvent.setup()
     renderTimesheet()
 
-    // La anomalía de la maqueta: CLOCK_OUT fuera de la geocerca.
     await user.click(await screen.findByText('Observado'))
 
     const dialog = await screen.findByRole('dialog')
     const scoped = within(dialog)
     expect(scoped.getByText('CLOCK_OUT')).toBeInTheDocument()
     expect(scoped.getByText('fuera de geocerca')).toBeInTheDocument()
-    // La nota es obligatoria: sin ella no se marca revisado.
     expect(scoped.getByRole('button', { name: /marcar revisado/i })).toBeDisabled()
 
     await user.type(scoped.getByRole('textbox'), 'Salió por el acceso de servicio')
@@ -78,7 +67,6 @@ describe('TimesheetPage', () => {
 
     await user.click(scoped.getByRole('button', { name: /marcar revisado/i }))
 
-    // Revisar resuelve la anomalía: el día deja de estar Observado.
     await waitFor(() => {
       expect(screen.queryByText('Observado')).not.toBeInTheDocument()
     }, SLOW)
@@ -92,7 +80,6 @@ describe('TimesheetPage', () => {
     await user.click(checkboxes[0] as HTMLElement)
 
     const summary = screen.getByText('1 día elegido').parentElement
-    // La referencia real es el id de la requisición recortado (sin folio aún).
     expect(within(summary as HTMLElement).getByText(/^req /)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Limpiar' }))
@@ -104,7 +91,8 @@ describe('TimesheetPage', () => {
     renderTimesheet()
 
     await screen.findByText('Julia Mendoza')
-    await user.selectOptions(screen.getByLabelText('Estado'), 'APPROVED')
+    await user.click(screen.getByLabelText('Estado'))
+    await user.click(await screen.findByRole('option', { name: 'Aprobada' }))
 
     await waitFor(() => {
       expect(screen.queryByText('Ana Rivera Gómez')).not.toBeInTheDocument()

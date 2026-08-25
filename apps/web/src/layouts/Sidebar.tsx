@@ -1,4 +1,16 @@
-import { cn } from '@oranje/ui'
+import {
+  Sidebar as SidebarRoot,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  cn,
+  useSidebar,
+} from '@oranje/ui'
 import type { ReactNode } from 'react'
 import { NavLink } from 'react-router'
 
@@ -53,6 +65,7 @@ const MODULES: NavModule[] = [
     label: 'Self-Pick',
     to: '/self-pick',
     icon: 'flash_on',
+    // RF-05: el Manager de Reclutamiento supervisa; no toma requisiciones.
     roles: [RECLUTADORA, LIDER_GRUPO],
   },
   { label: 'Blacklist', to: '/blacklist', icon: 'block', roles: RECLUTAMIENTO },
@@ -71,38 +84,50 @@ function modulesForRole(roleId: string | undefined): NavModule[] {
 export function Sidebar(): ReactNode {
   const { data: session } = useGetSessionQuery()
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation()
+  const { setOpenMobile } = useSidebar()
 
   return (
-    <aside className="flex w-sb shrink-0 flex-col border-r border-line bg-surface">
-      {}
-      <div className="flex h-hd shrink-0 items-center gap-3 px-5">
-        <img src={logoOranje} alt="Oranje" className="h-4 w-auto" />
-      </div>
+    <SidebarRoot>
+      <SidebarHeader className="h-hd justify-center px-5">
+        <img src={logoOranje} alt="Oranje" className="h-4 w-auto self-start" />
+      </SidebarHeader>
 
-      <nav className="flex flex-1 flex-col gap-1 p-3">
-        {modulesForRole(session?.roleId).map((module) => (
-          <NavLink
-            key={module.label}
-            to={module.to}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors',
-                isActive
-                  ? 'bg-o-50 font-semibold text-o-700'
-                  : 'text-ink-2 hover:bg-surface-2 hover:text-ink',
-              )
-            }
-          >
-            <span className="material-icons-outlined text-xl leading-none" aria-hidden>
-              {module.icon}
-            </span>
-            {module.label}
-          </NavLink>
-        ))}
-      </nav>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {modulesForRole(session?.roleId).map((module) => (
+                <SidebarMenuItem key={module.label}>
+                  <SidebarMenuButton asChild className="h-auto">
+                    <NavLink
+                      to={module.to}
+                      onClick={() => {
+                        setOpenMobile(false)
+                      }}
+                      className={({ isActive }) =>
+                        cn(
+                          'flex items-center gap-3 px-3 py-2.5 text-sm',
+                          isActive
+                            ? 'bg-sidebar-accent font-semibold text-sidebar-accent-foreground'
+                            : 'text-ink-2',
+                        )
+                      }
+                    >
+                      <span className="material-icons-outlined text-xl leading-none" aria-hidden>
+                        {module.icon}
+                      </span>
+                      {module.label}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
 
       {session && (
-        <div className="p-3">
+        <SidebarFooter>
           <div className="flex items-center gap-3 rounded-md bg-surface-2 p-3">
             <span className="size-9 shrink-0 rounded-full bg-o-500" aria-hidden />
             <div className="min-w-0 flex-1">
@@ -117,15 +142,15 @@ export function Sidebar(): ReactNode {
               disabled={isLoggingOut}
               title="Cerrar sesión"
               aria-label="Cerrar sesión"
-              className="shrink-0 rounded-md p-2 text-ink-3 transition-colors hover:bg-surface hover:text-red disabled:opacity-50"
+              className="shrink-0 cursor-pointer rounded-md p-2 text-ink-3 transition-colors hover:bg-surface hover:text-red disabled:opacity-50"
             >
               <span className="material-icons-outlined text-xl leading-none" aria-hidden>
                 logout
               </span>
             </button>
           </div>
-        </div>
+        </SidebarFooter>
       )}
-    </aside>
+    </SidebarRoot>
   )
 }

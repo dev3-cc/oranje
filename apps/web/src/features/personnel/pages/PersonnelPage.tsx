@@ -1,4 +1,12 @@
-import { MaterialIcon } from '@oranje/ui'
+import {
+  MaterialIcon,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
@@ -89,22 +97,22 @@ export function PersonnelPage(): ReactNode {
       )}
 
       {board.rows.length > 0 && (
-        <div className="overflow-x-auto rounded-lg border border-line bg-surface">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-line text-xs text-ink-3 uppercase">
-                <th className="px-5 py-3 font-medium">Colaborador</th>
-                <th className="px-5 py-3 font-medium">Posición</th>
-                <th className="px-5 py-3 font-medium">Semáforo</th>
-                <th className="px-5 py-3 font-medium">Turno hoy</th>
-                <th className="px-5 py-3 font-medium">Marcas</th>
-                <th className="px-5 py-3 font-medium">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line">
+        <div className="rounded-lg border border-line bg-surface">
+          <Table className="text-left text-sm">
+            <TableHeader>
+              <TableRow className="border-line text-xs text-ink-3 uppercase">
+                <TableHead className="px-5 py-3 font-medium text-ink-3">Colaborador</TableHead>
+                <TableHead className="px-5 py-3 font-medium text-ink-3">Posición</TableHead>
+                <TableHead className="px-5 py-3 font-medium text-ink-3">Semáforo</TableHead>
+                <TableHead className="px-5 py-3 font-medium text-ink-3">Turno hoy</TableHead>
+                <TableHead className="px-5 py-3 font-medium text-ink-3">Marcas</TableHead>
+                <TableHead className="px-5 py-3 font-medium text-ink-3">Acciones</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {board.rows.map((row) => (
-                <tr key={row.workerId}>
-                  <td className="px-5 py-3">
+                <TableRow key={row.workerId} className="border-line">
+                  <TableCell className="px-5 py-3">
                     <span className="flex items-center gap-3">
                       {row.photoUrl ? (
                         <img
@@ -122,20 +130,20 @@ export function PersonnelPage(): ReactNode {
                       )}
                       <span className="font-medium whitespace-nowrap text-ink">{row.fullName}</span>
                     </span>
-                  </td>
-                  <td className="px-5 py-3 whitespace-nowrap text-ink-2">{row.positionName}</td>
-                  <td className="px-5 py-3">
+                  </TableCell>
+                  <TableCell className="px-5 py-3 text-ink-2">{row.positionName}</TableCell>
+                  <TableCell className="px-5 py-3">
                     <StatusLightSoftBadge
                       token={WORKER_STATUS_TOKEN[row.stateCode as WorkerStatus] ?? 'st-blanco'}
                       label={workerStatusChipLabel(row.stateCode as WorkerStatus)}
                     />
-                  </td>
-                  <td className="px-5 py-3 whitespace-nowrap text-ink-2">
+                  </TableCell>
+                  <TableCell className="px-5 py-3 text-ink-2">
                     {row.shift
                       ? `${timeOf(row.shift.startsAt)}–${timeOf(row.shift.endsAt)}`
                       : (NO_SHIFT_LABEL[row.stateCode] ?? '— descansa')}
-                  </td>
-                  <td className="px-5 py-3 whitespace-nowrap">
+                  </TableCell>
+                  <TableCell className="px-5 py-3">
                     {row.clockInAt ? (
                       <span className="font-medium text-ink">IN {timeOf(row.clockInAt)}</span>
                     ) : row.shift ? (
@@ -143,8 +151,8 @@ export function PersonnelPage(): ReactNode {
                     ) : (
                       <span className="text-ink-4">—</span>
                     )}
-                  </td>
-                  <td className="px-5 py-3 whitespace-nowrap">
+                  </TableCell>
+                  <TableCell className="px-5 py-3">
                     <span className="flex items-center gap-3 text-sm">
                       {row.canStandBy && (
                         <button
@@ -168,11 +176,11 @@ export function PersonnelPage(): ReactNode {
                         Historial
                       </Link>
                     </span>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
 

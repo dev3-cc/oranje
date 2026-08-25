@@ -7,7 +7,6 @@ import { BlacklistPage } from './BlacklistPage'
 
 import { store } from '@/app/store'
 
-/** Latencia del mock: el margen por omisión se queda corto al filtrar. */
 const SLOW = { timeout: 4000 }
 
 function renderBlacklist(): void {
@@ -25,10 +24,10 @@ describe('BlacklistPage', () => {
 
     expect(await screen.findByText('Carlos Beltrán')).toBeInTheDocument()
     expect(screen.getByText('Norma Estrada')).toBeInTheDocument()
-    // El levantado no está: el filtro por omisión es «vigentes».
     expect(screen.queryByText('Pedro Quiroz')).not.toBeInTheDocument()
 
-    await user.selectOptions(screen.getByLabelText('Estado'), 'ALL')
+    await user.click(screen.getByLabelText('Estado'))
+    await user.click(await screen.findByRole('option', { name: 'Estado: historial completo' }))
 
     expect(await screen.findByText('Pedro Quiroz', undefined, SLOW)).toBeInTheDocument()
     expect(screen.getByText('Levantada')).toBeInTheDocument()
@@ -39,7 +38,8 @@ describe('BlacklistPage', () => {
     renderBlacklist()
 
     await screen.findByText('Carlos Beltrán')
-    await user.selectOptions(screen.getByLabelText('Estado'), 'ALL')
+    await user.click(screen.getByLabelText('Estado'))
+    await user.click(await screen.findByRole('option', { name: 'Estado: historial completo' }))
 
     const row = (await screen.findByText('Pedro Quiroz', undefined, SLOW)).closest('tr')
     const scoped = within(row as HTMLElement)
@@ -58,28 +58,21 @@ describe('BlacklistPage', () => {
     const submit = scoped.getByRole('button', { name: 'Vetar colaborador' })
     expect(submit).toBeDisabled()
 
-    // Elegir a alguien pinta su situación; el GRIS protege.
-    await user.selectOptions(
-      await scoped.findByRole('combobox'),
-      scoped.getByRole('option', { name: 'Rogelio Santos' }),
-    )
+    await user.click(await scoped.findByLabelText('Colaborador'))
+    await user.click(await screen.findByRole('option', { name: 'Rogelio Santos' }))
     expect(
       await scoped.findByText('El GRIS protege: un colaborador accidentado no se puede vetar.'),
     ).toBeInTheDocument()
     expect(submit).toBeDisabled()
 
-    // Con alguien vetable, motivo y evidencia lo habilitan.
-    await user.selectOptions(
-      scoped.getByRole('combobox'),
-      scoped.getByRole('option', { name: 'Ana Rivera Gómez' }),
-    )
+    await user.click(scoped.getByLabelText('Colaborador'))
+    await user.click(await screen.findByRole('option', { name: 'Ana Rivera Gómez' }))
     await user.type(scoped.getByPlaceholderText(/Abandonó el turno/), 'Faltas reiteradas')
     await user.type(scoped.getByPlaceholderText('evidencia-turnos.pdf'), 'acta.pdf')
     expect(submit).toBeEnabled()
 
     await user.click(submit)
 
-    // El veto entra vigente y aparece en el listado.
     expect(await screen.findByText('Ana Rivera Gómez', undefined, SLOW)).toBeInTheDocument()
   })
 
@@ -101,13 +94,12 @@ describe('BlacklistPage', () => {
     await user.type(scoped.getByRole('textbox'), 'Acuerdo con el hotel')
     await user.click(lift)
 
-    // Sale de vigentes…
     await waitFor(() => {
       expect(screen.queryByText('Norma Estrada')).not.toBeInTheDocument()
     }, SLOW)
 
-    // …pero la fila sigue en el historial, marcada como levantada.
-    await user.selectOptions(screen.getByLabelText('Estado'), 'ALL')
+    await user.click(screen.getByLabelText('Estado'))
+    await user.click(await screen.findByRole('option', { name: 'Estado: historial completo' }))
     expect(await screen.findByText('Norma Estrada', undefined, SLOW)).toBeInTheDocument()
   })
 })

@@ -1,28 +1,20 @@
+import { Input, SidebarTrigger } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
 import { useGetSessionQuery } from '@/app/sessionApi'
 
-/**
- * Barra superior (`--hd`): buscador global, avisos y perfil.
- *
- * El logo NO va aquí sino en el sidebar: esta barra cubre solo el área de
- * contenido, a la derecha del sidebar. Notificaciones y Perfil sí viven aquí y
- * no en el sidebar (principio 3 de Convenciones de Diseño).
- *
- * ⚠ El buscador todavía no busca: no hay pantalla de resultados ni endpoint de
- * búsqueda. Se deja el campo porque forma parte del shell que se replica.
- */
 export function Header(): ReactNode {
   const { data: session } = useGetSessionQuery()
 
   return (
-    <header className="flex h-hd shrink-0 items-center gap-6 border-b border-line bg-surface px-6">
+    <header className="flex h-hd shrink-0 items-center gap-4 border-b border-line bg-surface px-6">
+      <SidebarTrigger aria-label="Mostrar u ocultar el menú" className="shrink-0 text-ink-3" />
       <div className="relative min-w-0 flex-1">
-        <input
+        <Input
           type="search"
           aria-label="Buscar hoteles y propuestas"
           placeholder="Buscar hoteles, propuestas..."
-          className="w-full rounded-md border border-line bg-surface py-2.5 pr-16 pl-4 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none"
+          className="h-auto py-2.5 pr-16 pl-4"
         />
         <kbd className="pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 text-xs text-ink-4">
           Ctrl K

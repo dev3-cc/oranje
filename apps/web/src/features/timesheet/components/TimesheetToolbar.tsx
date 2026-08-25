@@ -1,17 +1,21 @@
-import { cn } from '@oranje/ui'
-import type { ChangeEvent, ReactNode } from 'react'
+import {
+  cn,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@oranje/ui'
+import type { ReactNode } from 'react'
 
 import type { TimesheetFilters as Filters } from '../types/timesheet.types'
 
-import { Select } from '@/shared/components/Select'
 import {
   COLUMN_WIDTHS,
   TIMESHEET_WEEK_STATUS_LABEL,
   TIMESHEET_WEEK_STATUSES,
 } from '@/shared/constants/timesheetStatus'
-
-const CONTROL_CLASS =
-  'w-full rounded-lg border border-line bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-ink-4 transition-colors hover:border-ink-4 focus:outline-none focus-visible:border-o-500 focus-visible:ring-2 focus-visible:ring-o-500/30'
 
 function LabeledControl({ label, children }: { label: string; children: ReactNode }): ReactNode {
   return (
@@ -39,8 +43,8 @@ export function TimesheetToolbar({
 }): ReactNode {
   const update =
     <K extends keyof Filters>(key: K) =>
-    (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
-      onChange({ ...filters, [key]: event.target.value })
+    (value: string): void => {
+      onChange({ ...filters, [key]: value })
     }
 
   return (
@@ -48,53 +52,61 @@ export function TimesheetToolbar({
       <div className="flex flex-wrap items-end gap-4">
         <label className="min-w-64">
           <span className="sr-only">Buscar colaborador</span>
-          <input
+          <Input
             type="search"
             value={filters.search}
-            onChange={update('search')}
+            onChange={(event) => {
+              update('search')(event.target.value)
+            }}
             placeholder="Buscar colaborador…"
-            className={CONTROL_CLASS}
           />
         </label>
 
         <LabeledControl label="Requisición">
-          <Select
-            value={filters.requisitionNumber}
-            onChange={update('requisitionNumber')}
-            className={CONTROL_CLASS}
-          >
-            <option value="ALL">Todas</option>
-            {requisitionNumbers.map((number) => (
-              <option key={number} value={number}>
-                {number}
-              </option>
-            ))}
+          <Select value={filters.requisitionNumber} onValueChange={update('requisitionNumber')}>
+            <SelectTrigger aria-label="Requisición" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Todas</SelectItem>
+              {requisitionNumbers.map((number) => (
+                <SelectItem key={number} value={number}>
+                  {number}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </LabeledControl>
 
         <LabeledControl label="Estado">
-          <Select value={filters.status} onChange={update('status')} className={CONTROL_CLASS}>
-            <option value="ALL">Todos los estados</option>
-            {TIMESHEET_WEEK_STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {TIMESHEET_WEEK_STATUS_LABEL[status]}
-              </option>
-            ))}
+          <Select value={filters.status} onValueChange={update('status')}>
+            <SelectTrigger aria-label="Estado" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Todos los estados</SelectItem>
+              {TIMESHEET_WEEK_STATUSES.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {TIMESHEET_WEEK_STATUS_LABEL[status]}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </LabeledControl>
 
         <LabeledControl label="Hotel">
-          <Select
-            value={filters.hotelName}
-            onChange={update('hotelName')}
-            className={CONTROL_CLASS}
-          >
-            <option value="ALL">Todos los hoteles</option>
-            {hotelNames.map((hotel) => (
-              <option key={hotel} value={hotel}>
-                {hotel}
-              </option>
-            ))}
+          <Select value={filters.hotelName} onValueChange={update('hotelName')}>
+            <SelectTrigger aria-label="Hotel" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Todos los hoteles</SelectItem>
+              {hotelNames.map((hotel) => (
+                <SelectItem key={hotel} value={hotel}>
+                  {hotel}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </LabeledControl>
       </div>

@@ -1,5 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
+  Alert,
+  AlertDescription,
   Checkbox,
   Input,
   Select,
@@ -47,11 +49,6 @@ import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'prospect-form'
 
-/**
- * Zonas horarias de operación: solo EE. UU., que es donde están los hoteles
- * cliente. Identificadores IANA, no catálogo de negocio — si la operación
- * vuelve a México, aquí se agregan sus zonas.
- */
 const TIME_ZONES = [
   { value: 'America/New_York', label: 'Este — Atlanta, Miami, Nueva York' },
   { value: 'America/Chicago', label: 'Central — Chicago, Houston, Dallas' },
@@ -60,12 +57,6 @@ const TIME_ZONES = [
   { value: 'America/Los_Angeles', label: 'Pacífico — Los Ángeles, Las Vegas' },
 ] as const
 
-/**
- * Campo del modal: etiqueta, marca de obligatorio, control y —debajo— el nombre
- * de la columna. Las anotaciones de esquema (NOT NULL, columna) solo se pintan
- * en dev local (IS_DEV_UI): son documentación para construir contra la base,
- * no producto.
- */
 function Field({
   label,
   htmlFor,
@@ -112,11 +103,6 @@ function Field({
   )
 }
 
-/**
- * Del error de la API a una frase que diga QUÉ corregir. El fallback genérico
- * queda solo para lo que de verdad no se sabe: un «revisa los datos» ante un
- * 409 de ciclo abierto mandaba a revisar campos que estaban bien.
- */
 function saveErrorMessage(error: unknown): string {
   const data = (
     error as
@@ -133,7 +119,6 @@ function saveErrorMessage(error: unknown): string {
   return 'No se pudo guardar. Revisa los datos e inténtalo de nuevo.'
 }
 
-/** El sufijo de esquema (`· commercial.hotel`) solo se pinta en dev local. */
 function SectionTitle({ children, schema }: { children: ReactNode; schema?: string }): ReactNode {
   return (
     <h3 className="text-sm font-semibold text-ink">
@@ -152,7 +137,6 @@ const WIZARD_STEPS: Array<{ step: WizardStep; label: string }> = [
   { step: 4, label: 'El ciclo' },
 ]
 
-/** Qué campos valida «Continuar» en cada paso. */
 const STEP_FIELDS: Record<WizardStep, Array<keyof ProspectFormValues>> = {
   1: ['hotelSource', 'existingHotelId', 'hotelName', 'zoneId', 'timeZone'],
   2: ['location', 'geofenceMeters'],
@@ -160,7 +144,6 @@ const STEP_FIELDS: Record<WizardStep, Array<keyof ProspectFormValues>> = {
   4: ['ownerUserId'],
 }
 
-/** Indicador del wizard. Los pasos ya recorridos son clicables para volver. */
 function StepIndicator({
   current,
   onStepClick,
@@ -204,7 +187,7 @@ function StepIndicator({
                   step
                 )}
               </span>
-              {/* Compacto: solo el paso activo dice su nombre; el resto, su número. */}
+              {}
               <span
                 className={cn('whitespace-nowrap', isActive ? 'font-semibold text-ink' : 'hidden')}
               >
@@ -221,21 +204,10 @@ function StepIndicator({
 export interface ProspectFormDialogProps {
   isOpen: boolean
   onClose: () => void
-  /** Sin prospecto se abre en alta; con él, en edición. */
   prospect?: ProspectDetail
   onCreated?: (prospect: ProspectDetail) => void
 }
 
-/**
- * Alta y edición de un prospecto, en un solo modal.
- *
- * Cubre las tres tablas a la vez porque abrir un ciclo son tres inserciones que
- * no tienen sentido por separado: el edificio (`commercial.hotel`), su primer
- * contacto (`commercial.hotel_contact`) y el ciclo (`commercial.prospect`).
- *
- * El mismo componente edita: cambia el título, oculta el selector de origen del
- * hotel —un ciclo abierto no cambia de edificio— y manda PATCH en vez de POST.
- */
 export function ProspectFormDialog({
   isOpen,
   onClose,
@@ -285,12 +257,6 @@ export function ProspectFormDialog({
       defaultValues: defaults,
     })
 
-  /**
-   * Al abrir se parte de los valores del prospecto, o de cero si es un alta.
-   * `defaults` NO va en las dependencias: se recrea en cada render y reiniciaría
-   * el formulario mientras se escribe. Lo que importa es qué prospecto se está
-   * editando y cuándo se abre.
-   */
   useEffect(() => {
     if (isOpen) {
       reset(defaults)
@@ -302,15 +268,9 @@ export function ProspectFormDialog({
 
   const values = watch()
   const isBusy = isCreating || isUpdating
-  /** Foto del lugar según Google: SOLO preview de la sesión (la URL es efímera). */
   const [placePhotoUrl, setPlacePhotoUrl] = useState<string | null>(null)
-  /** Lo que sí se persiste: el back resuelve la foto estable con el place_id. */
   const [placeId, setPlaceId] = useState<string | null>(null)
 
-  /**
-   * Wizard de 3 pasos. «Continuar» valida SOLO los campos del paso en turno:
-   * así el error aparece junto a lo que se está llenando, no al final.
-   */
   const [step, setStep] = useState<WizardStep>(1)
 
   async function goNext(): Promise<void> {
@@ -319,10 +279,6 @@ export function ProspectFormDialog({
   }
   const isExistingHotel = values.hotelSource === 'EXISTING'
 
-  /**
-   * Elegir un sitio autollena lo que Places sabe. La coordenada pasa a ser la
-   * de Google, así que el pin deja de estar «movido a mano».
-   */
   function applyPlace(place: PlaceAutofill): void {
     setValue('hotelName', place.name, { shouldValidate: true })
     setValue('address', place.address)
@@ -333,7 +289,6 @@ export function ProspectFormDialog({
     setPlaceId(place.placeId)
   }
 
-  /** Arrastrar o clicar mueve la coordenada a mano: ya no es la de Google. */
   function movePin(point: { lat: number; lng: number }): void {
     setValue('location', point, { shouldValidate: true })
     setValue('placeLocation', null)
@@ -395,7 +350,7 @@ export function ProspectFormDialog({
       }
       onClose()
     } catch {
-      // Queda en `hasCreateFailed` / `hasUpdateFailed`; el modal no se cierra.
+      return
     }
   }
 
@@ -409,7 +364,7 @@ export function ProspectFormDialog({
       title={isEditing ? 'Editar prospecto' : 'Nuevo prospecto'}
       className="h-[88vh] max-w-[95rem]"
     >
-      {/* Lienzo estilo Estates: el mapa ES el modal; todo lo demás flota. */}
+      {}
       <form
         id={FORM_ID}
         noValidate
@@ -423,15 +378,14 @@ export function ProspectFormDialog({
             value={values.location}
             geofenceMeters={values.geofenceMeters}
             onMovePin={movePin}
-            /* Paso de Ubicación en modo Uber: el pin fijo, el mapa se arrastra. */
             centerPin={step === 2}
             followPoint={values.placeLocation}
             className="absolute inset-0 h-full rounded-none border-0"
           />
 
-          {/* Flotantes superiores izquierdos: título y origen del hotel */}
+          {}
           <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-3">
-            {/* Chip, no heading: el título accesible ya lo pone el Dialog (sr-only). */}
+            {}
             <p className="rounded-full bg-surface/95 px-4 py-2 text-sm font-bold text-ink shadow-md backdrop-blur">
               {isEditing ? 'Editar prospecto' : 'Nuevo prospecto'}
             </p>
@@ -464,17 +418,15 @@ export function ProspectFormDialog({
             )}
           </div>
 
-          {/* Panel flotante derecho: la ficha que guía los pasos */}
+          {}
           <section className="absolute top-14 right-4 bottom-4 z-10 flex w-md flex-col overflow-hidden rounded-xl bg-surface/95 shadow-lg backdrop-blur">
             {placePhotoUrl && (
-              /* Hero: la foto de Places se disuelve hacia el panel. */
               <div className="relative shrink-0">
                 <img
                   src={placePhotoUrl}
                   alt={`Foto de ${values.hotelName || 'el hotel'} según Google`}
                   className="h-32 w-full object-cover"
                   onError={() => {
-                    /** Al editar llega la URL guardada, que pudo caducar. */
                     setPlacePhotoUrl(null)
                   }}
                 />
@@ -482,7 +434,7 @@ export function ProspectFormDialog({
                   aria-hidden
                   className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent via-surface/85 to-surface"
                 />
-                {/* El nombre pisa la franja ya sólida del fundido: siempre legible. */}
+                {}
                 <p className="absolute bottom-0.5 left-4 text-base font-semibold text-ink">
                   {values.hotelName}
                 </p>
@@ -621,8 +573,7 @@ export function ProspectFormDialog({
                                       {zone.label}
                                     </SelectItem>
                                   ))}
-                                  {/* Zona heredada (p. ej. México, de antes de acotar a
-                                      EE. UU.): se conserva visible al editar, cruda. */}
+                                  {}
                                   {!TIME_ZONES.some((zone) => zone.value === field.value) && (
                                     <SelectItem value={field.value}>{field.value}</SelectItem>
                                   )}
@@ -639,11 +590,7 @@ export function ProspectFormDialog({
                     <>
                       <SectionTitle>Ubicación</SectionTitle>
 
-                      {/*
-                        El buscador es un ATAJO, no el requisito: si el hotel no
-                        está en Google, se arrastra el mapa y ya. Lo obligatorio
-                        es la coordenada, y por eso el error se pinta aquí.
-                      */}
+                      {}
                       <Field
                         label="Buscar en Google (opcional)"
                         note="si el hotel aparece, pin, dirección y foto llegan solos; si no existe en Google, arrastra el mapa hasta la entrada"
@@ -706,7 +653,7 @@ export function ProspectFormDialog({
                   {step === 3 && (
                     <section className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4">
                       <SectionTitle schema="commercial.hotel_contact">Primer contacto</SectionTitle>
-                      {/* UX writing: sin esto se llenaba con los datos de quien captura. */}
+                      {}
                       <p className="-mt-2 text-sm leading-relaxed text-ink-3">
                         La persona DEL HOTEL con quien hablas: la gerente, el de compras, quien te
                         atendió. No son tus datos — a esta persona le llegará la propuesta.
@@ -790,10 +737,7 @@ export function ProspectFormDialog({
                             column="owner_user_id"
                             error={formState.errors.ownerUserId?.message}
                           >
-                            {/*
-                      ⚠ Un solo dueño posible: no existe endpoint de equipo
-                      todavía, así que solo se ofrece quien tiene la sesión.
-                    */}
+                            {}
                             <Controller
                               control={control}
                               name="ownerUserId"
@@ -853,12 +797,11 @@ export function ProspectFormDialog({
             </div>
 
             {(hasCreateFailed || hasUpdateFailed) && (
-              <p
-                role="alert"
-                className="mx-4 mb-3 shrink-0 rounded-md bg-red/10 p-3 text-sm text-red"
-              >
-                {saveErrorMessage(hasCreateFailed ? createError : updateError)}
-              </p>
+              <Alert variant="destructive" className="mx-4 mb-3 w-auto shrink-0">
+                <AlertDescription>
+                  {saveErrorMessage(hasCreateFailed ? createError : updateError)}
+                </AlertDescription>
+              </Alert>
             )}
 
             <footer className="flex shrink-0 items-center justify-end gap-3 border-t border-line px-4 py-3">

@@ -31,7 +31,9 @@ interface HotelUserApi {
   role: { code: string; name: string }
 }
 
-const APPROVAL_NOTE = 'solo el BDC aprueba esta transición (RR-V-01, RR-V-02)'
+const APPROVAL_NOTE = IS_DEV_UI
+  ? 'solo el BDC aprueba esta transición (RR-V-01, RR-V-02)'
+  : 'solo el BDC aprueba esta transición'
 
 function buildEffects(): string[] {
   const effects: Array<[string, string]> = [
@@ -93,7 +95,7 @@ async function fetchReadiness(
       label: 'Propuesta enviada',
       detail: sentProposal
         ? `Propuesta v${String(sentProposal.version)} · ${formatDayMonth(sentProposal.sentAt as string)}`
-        : 'Sin propuesta enviada — se elabora y envía en Verde (D-22)',
+        : `Sin propuesta enviada — se elabora y envía en Verde${IS_DEV_UI ? ' (D-22)' : ''}`,
       isMet: sentProposal !== undefined,
       action: null,
     },
@@ -119,7 +121,7 @@ async function fetchReadiness(
       detail: hotelUser
         ? `${hotelUser.fullName} · ${hotelUser.role.name}`
         : primaryContact?.email
-          ? 'No existe todavía — bloquea la conversión (RR-V-02)'
+          ? `No existe todavía — bloquea la conversión${IS_DEV_UI ? ' (RR-V-02)' : ''}`
           : 'No existe, y el contacto principal no tiene correo: agrégaselo para poder crearlo',
       isMet: hotelUser !== undefined,
       action:
@@ -143,7 +145,7 @@ async function fetchReadiness(
       canApprove,
       blockedReason: canApprove
         ? null
-        : 'Falta el Usuario del Hotel: sin él, el backend rechaza la transición (HOTEL_USER_REQUIRED)',
+        : `Falta el Usuario del Hotel: sin él no se puede aprobar${IS_DEV_UI ? ' (HOTEL_USER_REQUIRED)' : ''}`,
       hotelUserDraft: primaryContact?.email
         ? { email: primaryContact.email, fullName: primaryContact.fullName }
         : null,

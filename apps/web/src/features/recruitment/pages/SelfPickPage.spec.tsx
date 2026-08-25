@@ -43,7 +43,8 @@ describe('la Bolsa Self-Pick', () => {
     const user = userEvent.setup()
 
     await screen.findByText('13 slots libres en 5 requisiciones autorizadas', undefined, SLOW)
-    await user.selectOptions(screen.getByLabelText('Posición'), 'pos-ck')
+    await user.click(screen.getByLabelText('Posición'))
+    await user.click(await screen.findByRole('option', { name: 'Posición: Cocinero' }))
 
     expect(screen.getByRole('heading', { name: 'Cocinero' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Housekeeper' })).not.toBeInTheDocument()
@@ -64,10 +65,13 @@ describe('la Bolsa Self-Pick', () => {
     expect(screen.getByText('Asignar al slot 5')).toBeInTheDocument()
 
     const assignButton = screen.getByRole('button', { name: 'Asignar' })
-    await user.selectOptions(screen.getByLabelText(/Colaborador/), 'wrk-0001')
-    await user.selectOptions(screen.getByLabelText(/Tipo/), 'TEMPORARY')
+    await user.click(screen.getByLabelText('Colaborador'))
+    await user.click(await screen.findByRole('option', { name: 'Ana Rivera Gómez · Zona Centro' }))
+    await user.click(screen.getByLabelText('Tipo'))
+    await user.click(await screen.findByRole('option', { name: 'Temporal' }))
     expect(assignButton).toBeDisabled()
-    await user.selectOptions(screen.getByLabelText(/Tipo/), 'FIXED')
+    await user.click(screen.getByLabelText('Tipo'))
+    await user.click(await screen.findByRole('option', { name: 'Fijo' }))
     expect(assignButton).toBeEnabled()
 
     await user.click(assignButton)
@@ -87,7 +91,10 @@ describe('la Bolsa Self-Pick', () => {
     await user.click(folio.closest('a') as HTMLElement)
 
     await screen.findByText('Asignar al slot 6', undefined, SLOW)
-    await user.selectOptions(screen.getByLabelText(/Colaborador/), 'wrk-0003')
+    await user.click(screen.getByLabelText('Colaborador'))
+    await user.click(
+      await screen.findByRole('option', { name: 'María Fernanda Ortiz · Zona Centro' }),
+    )
     await user.click(screen.getByRole('button', { name: 'Asignar' }))
 
     expect(await screen.findByText('Renglón completo', undefined, SLOW)).toBeInTheDocument()

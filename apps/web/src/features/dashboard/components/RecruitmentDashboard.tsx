@@ -5,11 +5,12 @@ import { useGetRecruitmentOverviewQuery } from '../api/roleDashboardsApi'
 import { RequisitionMiniList } from './RequisitionMiniList'
 
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { LoadError } from '@/shared/components/LoadError'
 import { MetricCard } from '@/shared/components/MetricCard'
 import type { SessionUser } from '@/shared/types/session.types'
 
 export function RecruitmentDashboard({ session }: { session: SessionUser }): ReactNode {
-  const { data: overview, isLoading, isError } = useGetRecruitmentOverviewQuery()
+  const { data: overview, isLoading, isError, refetch } = useGetRecruitmentOverviewQuery()
 
   if (isLoading) {
     return <CardGridSkeleton cards={6} className="grid-cols-1 md:grid-cols-2 xl:grid-cols-3" />
@@ -17,9 +18,12 @@ export function RecruitmentDashboard({ session }: { session: SessionUser }): Rea
 
   if (isError || !overview) {
     return (
-      <p className="rounded-lg border border-line bg-surface p-6 text-sm text-red">
-        No se pudo cargar el dashboard. Reintenta en unos segundos.
-      </p>
+      <LoadError
+        message="No se pudo cargar el dashboard. Reintenta en unos segundos."
+        onRetry={() => {
+          void refetch()
+        }}
+      />
     )
   }
 

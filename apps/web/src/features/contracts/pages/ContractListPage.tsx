@@ -6,6 +6,7 @@ import { ContractTable } from '../components/ContractTable'
 import type { ContractListFilters } from '../types/contract.types'
 
 import { Button } from '@/shared/components/Button'
+import { LoadError } from '@/shared/components/LoadError'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { EXPIRY_WARNING_DAYS } from '@/shared/constants/contractStatus'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
@@ -29,7 +30,7 @@ export function ContractListPage(): ReactNode {
     }
   }, [filters])
 
-  const { data: list, isLoading, isError } = useGetContractsQuery(appliedFilters)
+  const { data: list, isLoading, isError, refetch } = useGetContractsQuery(appliedFilters)
 
   return (
     <div className="flex flex-col gap-6">
@@ -58,9 +59,12 @@ export function ContractListPage(): ReactNode {
       />
 
       {isError && (
-        <p className="rounded-lg border border-line bg-surface p-6 text-sm text-red">
-          No se pudieron cargar los contratos. Reintenta en unos segundos.
-        </p>
+        <LoadError
+          message="No se pudieron cargar los contratos. Reintenta en unos segundos."
+          onRetry={() => {
+            void refetch()
+          }}
+        />
       )}
 
       {isLoading && !list ? (

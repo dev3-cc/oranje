@@ -49,7 +49,8 @@ describe('el apartado del Colaborador', () => {
     const sendButton = screen.getByRole('button', { name: 'Enviar' })
     expect(sendButton).toBeDisabled()
 
-    await user.selectOptions(screen.getByLabelText(/trasladas/), 'PUBLIC')
+    await user.click(screen.getByLabelText(/trasladas/))
+    await user.click(await screen.findByRole('option', { name: 'Público' }))
     expect(sendButton).toBeEnabled()
 
     await user.click(sendButton)
@@ -70,10 +71,12 @@ describe('el apartado del Colaborador', () => {
 
     await user.type(screen.getByLabelText(/Nombre/), 'Rubén Sandoval')
     await user.type(screen.getByLabelText(/^Teléfono$/), '404 512 8890')
-    await user.selectOptions(screen.getByLabelText(/Parentesco/), 'SPOUSE')
+    await user.click(screen.getByLabelText(/Parentesco/))
+    await user.click(await screen.findByRole('option', { name: 'Cónyuge' }))
     expect(saveButton).toBeDisabled()
 
-    await user.selectOptions(screen.getByLabelText(/Tipo de sangre/), 'O_POS')
+    await user.click(screen.getByLabelText(/Tipo de sangre/))
+    await user.click(await screen.findByRole('option', { name: 'O+' }))
     expect(saveButton).toBeEnabled()
 
     await user.click(saveButton)

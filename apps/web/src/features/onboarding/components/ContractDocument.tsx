@@ -1,3 +1,4 @@
+import { Table, TableBody, TableCell, TableHead, TableRow } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
 import type { ProposalVersionSummary } from '../types/proposal.types'
@@ -11,18 +12,6 @@ function todayIso(): string {
   return `${now.getFullYear()}-${month}-${day}`
 }
 
-/**
- * El documento del contrato, sin nada del modal alrededor.
- *
- * Se pinta DOS veces: dentro del modal para verlo en pantalla, y portalizado a
- * `#print-root` para imprimirlo. Separarlo así es lo que arregla el recorte: el
- * panel del modal tiene `overflow-y: auto` y `max-height`, y al imprimir solo
- * salía el trozo que cabía en pantalla.
- *
- * Todos los datos salen de la versión de la propuesta. Nada se captura aquí.
- *
- * ⚠ EL CLAUSULADO ES UN MARCADOR DE POSICIÓN — ver «Vigencia y condiciones».
- */
 export function ContractDocument({
   hotelName,
   version,
@@ -96,30 +85,43 @@ export function ContractDocument({
 
       <section className="mt-6">
         <h4 className="text-sm font-bold tracking-wide text-ink uppercase">Tarifas</h4>
-        <table className="mt-3 w-full text-sm">
-          <tbody>
-            <tr className="border-b border-line">
-              <th scope="row" className="py-2.5 text-left font-normal text-ink-3">
+        <Table className="mt-3 text-sm">
+          <TableBody>
+            <TableRow className="border-line">
+              <TableHead
+                scope="row"
+                className="h-auto px-0 py-2.5 text-left font-normal text-ink-3"
+              >
                 Pay rate por hora
-              </th>
-              <td className="py-2.5 text-right text-ink">{formatMoney(version.payRate)}</td>
-            </tr>
-            <tr className="border-b border-line">
-              <th scope="row" className="py-2.5 text-left font-normal text-ink-3">
+              </TableHead>
+              <TableCell className="px-0 py-2.5 text-right text-ink">
+                {formatMoney(version.payRate)}
+              </TableCell>
+            </TableRow>
+            <TableRow className="border-line">
+              <TableHead
+                scope="row"
+                className="h-auto px-0 py-2.5 text-left font-normal text-ink-3"
+              >
                 Bill rate por hora
-              </th>
-              <td className="py-2.5 text-right text-ink">{formatMoney(version.billRate)}</td>
-            </tr>
-            <tr>
-              <th scope="row" className="py-2.5 text-left font-semibold text-ink">
+              </TableHead>
+              <TableCell className="px-0 py-2.5 text-right text-ink">
+                {formatMoney(version.billRate)}
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableHead
+                scope="row"
+                className="h-auto px-0 py-2.5 text-left font-semibold text-ink"
+              >
                 Margen bruto por hora
-              </th>
-              <td className="py-2.5 text-right font-semibold text-ink">
+              </TableHead>
+              <TableCell className="px-0 py-2.5 text-right font-semibold text-ink">
                 {formatMoney(margin)} · {marginPercent.toFixed(1)}%
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
         <p className="mt-2 text-xs text-ink-3">
           Tarifas globales, no por posición. Importes en pesos por hora trabajada.
         </p>

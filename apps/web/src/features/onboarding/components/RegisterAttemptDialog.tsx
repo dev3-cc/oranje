@@ -1,7 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { cn } from '@oranje/ui'
+import {
+  cn,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@oranje/ui'
 import { useEffect, type ReactNode } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 
 import {
   useRegisterContactAttemptMutation,
@@ -16,7 +24,6 @@ import {
 import { Button } from '@/shared/components/Button'
 import { FormField } from '@/shared/components/FormField'
 import { Modal } from '@/shared/components/Modal'
-import { Select } from '@/shared/components/Select'
 import {
   CONTACT_ATTEMPT_OUTCOME_LABEL,
   CONTACT_ATTEMPT_OUTCOMES,
@@ -26,8 +33,7 @@ import {
 
 const FORM_ID = 'register-contact-attempt'
 
-const CONTROL_CLASS =
-  'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm placeholder:text-ink-4 transition-colors hover:border-ink-4 focus:outline-none focus-visible:border-o-500 focus-visible:ring-2 focus-visible:ring-o-500/30'
+const NO_CONTACT = 'NONE'
 
 function toDateTimeInput(date: Date): string {
   const pad = (value: number): string => String(value).padStart(2, '0')
@@ -64,7 +70,7 @@ export function RegisterAttemptDialog({
   const isLoading = isCreating || isUpdating
   const saveError = isEditing ? updateError : createError
 
-  const { register, handleSubmit, setValue, watch, reset, formState } =
+  const { register, control, handleSubmit, setValue, watch, reset, formState } =
     useForm<RegisterContactAttemptForm>({
       resolver: zodResolver(registerContactAttemptSchema),
       mode: 'onChange',
@@ -87,7 +93,6 @@ export function RegisterAttemptDialog({
   }, [isOpen, attempt, reset])
 
   const attemptType = watch('attemptType')
-  const outcome = watch('outcome')
 
   async function onSubmit(values: RegisterContactAttemptForm): Promise<void> {
     try {
@@ -183,14 +188,30 @@ export function RegisterAttemptDialog({
           htmlFor="hotelContactId"
           hint="hotel_contact_id es opcional: una visita en frío puede no encontrar a nadie"
         >
-          <Select id="hotelContactId" {...register('hotelContactId')} className={CONTROL_CLASS}>
-            <option value="">Sin contacto identificado</option>
-            {contacts.map((contact) => (
-              <option key={contact.id} value={contact.id}>
-                {contact.name} · {contact.role}
-              </option>
-            ))}
-          </Select>
+          <Controller
+            control={control}
+            name="hotelContactId"
+            render={({ field }) => (
+              <Select
+                value={field.value === '' ? NO_CONTACT : field.value}
+                onValueChange={(value) => {
+                  field.onChange(value === NO_CONTACT ? '' : value)
+                }}
+              >
+                <SelectTrigger id="hotelContactId" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_CONTACT}>Sin contacto identificado</SelectItem>
+                  {contacts.map((contact) => (
+                    <SelectItem key={contact.id} value={contact.id}>
+                      {contact.name} · {contact.role}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
         </FormField>
 
         <FormField
@@ -199,18 +220,27 @@ export function RegisterAttemptDialog({
           hint="outcome — no contestó · interesado · no interesado · cita agendada"
           error={formState.errors.outcome && 'Elige el resultado del intento'}
         >
-          <Select
-            id="outcome"
-            {...register('outcome')}
-            className={cn(CONTROL_CLASS, outcome ? 'text-ink' : 'text-ink-4')}
-          >
-            <option value="">Selecciona un resultado...</option>
-            {CONTACT_ATTEMPT_OUTCOMES.map((value) => (
-              <option key={value} value={value} className="text-ink">
-                {CONTACT_ATTEMPT_OUTCOME_LABEL[value]}
-              </option>
-            ))}
-          </Select>
+          <Controller
+            control={control}
+            name="outcome"
+            render={({ field }) => (
+              <Select
+                {...(field.value ? { value: field.value } : {})}
+                onValueChange={field.onChange}
+              >
+                <SelectTrigger id="outcome" className="w-full">
+                  <SelectValue placeholder="Selecciona un resultado..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {CONTACT_ATTEMPT_OUTCOMES.map((value) => (
+                    <SelectItem key={value} value={value}>
+                      {CONTACT_ATTEMPT_OUTCOME_LABEL[value]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
         </FormField>
 
         <FormField
@@ -218,22 +248,11 @@ export function RegisterAttemptDialog({
           htmlFor="occurredAt"
           error={formState.errors.occurredAt && 'Indica cuándo ocurrió el intento'}
         >
-          <input
-            id="occurredAt"
-            type="datetime-local"
-            {...register('occurredAt')}
-            className={cn(CONTROL_CLASS, 'text-ink')}
-          />
+          <Input id="occurredAt" type="datetime-local" {...register('occurredAt')} />
         </FormField>
 
         <FormField label="Notas" htmlFor="notes">
-          <input
-            id="notes"
-            type="text"
-            placeholder="Escribe una nota..."
-            {...register('notes')}
-            className={cn(CONTROL_CLASS, 'text-ink')}
-          />
+          <Input id="notes" type="text" placeholder="Escribe una nota..." {...register('notes')} />
         </FormField>
 
         {saveError !== undefined && (

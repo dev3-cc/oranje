@@ -1,3 +1,4 @@
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 
@@ -13,7 +14,6 @@ import { useGetStatusChangeReasonsQuery } from '@/features/onboarding'
 import { Button } from '@/shared/components/Button'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { SectionCard } from '@/shared/components/SectionCard'
-import { SelectField } from '@/shared/components/SelectField'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   ONBOARDING_STATUS_LABEL,
@@ -200,20 +200,21 @@ export function ConversionPage(): ReactNode {
                 Motivo del regreso (obligatorio):
               </label>
               <span className="w-64">
-                <SelectField
-                  id="returnReason"
-                  value={returnReason}
-                  onChange={(event) => {
-                    setReturnReason(event.target.value)
-                  }}
+                <Select
+                  {...(returnReason ? { value: returnReason } : {})}
+                  onValueChange={setReturnReason}
                 >
-                  <option value="">Elige un motivo…</option>
-                  {returnReasons.map((reason) => (
-                    <option key={reason.id} value={reason.id}>
-                      {reason.label}
-                    </option>
-                  ))}
-                </SelectField>
+                  <SelectTrigger id="returnReason" className="w-full">
+                    <SelectValue placeholder="Elige un motivo…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {returnReasons.map((reason) => (
+                      <SelectItem key={reason.id} value={reason.id}>
+                        {reason.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </span>
               <Button
                 disabled={returnReason === '' || isBusy}

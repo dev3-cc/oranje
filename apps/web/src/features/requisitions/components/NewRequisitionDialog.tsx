@@ -1,7 +1,21 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { cn } from '@oranje/ui'
+import {
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  cn,
+} from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
-import { useFieldArray, useForm, type FieldErrors } from 'react-hook-form'
+import { Controller, useFieldArray, useForm, type FieldErrors } from 'react-hook-form'
 
 import {
   useCreateRequisitionMutation,
@@ -19,12 +33,12 @@ import { useGetSessionQuery } from '@/app/sessionApi'
 import personajeContratacion from '@/assets/ilustrations/personaje-contratacion.svg'
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
-import { Select } from '@/shared/components/Select'
-import { SELECT_FIELD_CLASS, SelectField } from '@/shared/components/SelectField'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'new-requisition'
+
+const NO_ENGLISH = 'NONE'
 
 const CELL_CONTROL =
   'w-full rounded-md border border-transparent bg-transparent px-2 py-1.5 text-sm text-ink hover:border-line focus:border-o-500 focus:bg-surface focus:outline-none'
@@ -253,30 +267,42 @@ export function NewRequisitionDialog({
                   Hotel
                 </label>
                 {sessionHotel ? (
-                  <input
+                  <Input
                     value={sessionHotel.name}
                     readOnly
                     aria-label="Hotel"
                     title="Solo puedes crear requisiciones de tu hotel"
-                    className={cn(SELECT_FIELD_CLASS, 'w-full cursor-not-allowed bg-surface-2')}
+                    className="cursor-not-allowed bg-surface-2"
                   />
                 ) : (
-                  <SelectField
-                    id="req-hotel"
-                    {...register('hotelId')}
-                    disabled={options !== undefined && options.hotels.length === 0}
-                  >
-                    <option value="">
-                      {options !== undefined && options.hotels.length === 0
-                        ? 'Aún no hay clientes activos'
-                        : 'Elige el hotel'}
-                    </option>
-                    {(options?.hotels ?? []).map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.name}
-                      </option>
-                    ))}
-                  </SelectField>
+                  <Controller
+                    control={control}
+                    name="hotelId"
+                    render={({ field }) => (
+                      <Select
+                        {...(field.value ? { value: field.value } : {})}
+                        onValueChange={field.onChange}
+                        disabled={options !== undefined && options.hotels.length === 0}
+                      >
+                        <SelectTrigger id="req-hotel" aria-label="Hotel" className="w-full">
+                          <SelectValue
+                            placeholder={
+                              options !== undefined && options.hotels.length === 0
+                                ? 'Aún no hay clientes activos'
+                                : 'Elige el hotel'
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(options?.hotels ?? []).map((item) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {item.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 )}
                 {!sessionHotel && options !== undefined && options.hotels.length === 0 && (
                   <span className="text-xs text-ink-3">
@@ -292,14 +318,31 @@ export function NewRequisitionDialog({
                 <label htmlFor="req-department" className="text-sm font-medium text-ink-2">
                   Departamento del hotel
                 </label>
-                <SelectField id="req-department" {...register('department')}>
-                  <option value="">Elige el departamento</option>
-                  {(options?.departments ?? []).map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </SelectField>
+                <Controller
+                  control={control}
+                  name="department"
+                  render={({ field }) => (
+                    <Select
+                      {...(field.value ? { value: field.value } : {})}
+                      onValueChange={field.onChange}
+                    >
+                      <SelectTrigger
+                        id="req-department"
+                        aria-label="Departamento del hotel"
+                        className="w-full"
+                      >
+                        <SelectValue placeholder="Elige el departamento" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(options?.departments ?? []).map((item) => (
+                          <SelectItem key={item.id} value={item.id}>
+                            {item.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             </div>
 
@@ -312,119 +355,171 @@ export function NewRequisitionDialog({
                   : 'Cada unidad de Cantidad es un lugar por cubrir'}
               </p>
 
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[62rem] border-collapse text-left">
-                  <thead>
-                    <tr className="border-b border-line">
+              <div className="mt-4">
+                <Table className="min-w-[62rem] text-left">
+                  <TableHeader>
+                    <TableRow className="border-line">
                       {HEADERS.map((header) => (
-                        <th
+                        <TableHead
                           key={header}
                           scope="col"
                           className="px-2 py-3 text-xs font-semibold tracking-wide text-ink-3 uppercase"
                         >
                           {header}
-                        </th>
+                        </TableHead>
                       ))}
-                      <th scope="col" className="px-2 py-3">
+                      <TableHead scope="col" className="px-2 py-3">
                         <span className="sr-only">Quitar</span>
-                      </th>
-                    </tr>
-                  </thead>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
 
-                  <tbody>
+                  <TableBody>
                     {fields.map((field, index) => {
                       const quantity = Number(positions[index]?.quantity ?? 0) || 0
                       const rowError = firstRowError(errors, index)
 
                       return (
-                        <tr key={field.id} className="border-b border-line last:border-b-0">
-                          <td className="px-2 py-3 text-sm text-ink-3">{index + 1}</td>
-                          <td className="px-2 py-3">
-                            <Select
-                              {...register(positionPath(index, 'catalogPositionId'))}
-                              aria-label={`Posición ${String(index + 1)}`}
-                              className={cn(
-                                CELL_CONTROL,
-                                'font-semibold',
-                                rowError && 'border-red',
+                        <TableRow key={field.id} className="border-line">
+                          <TableCell className="px-2 py-3 text-sm text-ink-3">
+                            {index + 1}
+                          </TableCell>
+                          <TableCell className="px-2 py-3">
+                            <Controller
+                              control={control}
+                              name={positionPath(index, 'catalogPositionId')}
+                              render={({ field }) => (
+                                <Select
+                                  {...(field.value ? { value: field.value } : {})}
+                                  onValueChange={field.onChange}
+                                >
+                                  <SelectTrigger
+                                    aria-label={`Posición ${String(index + 1)}`}
+                                    className={cn(
+                                      'h-9 w-full font-semibold',
+                                      rowError && 'border-red',
+                                    )}
+                                  >
+                                    <SelectValue placeholder="—" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {(options?.positions ?? []).map((item) => (
+                                      <SelectItem key={item.id} value={item.id}>
+                                        {item.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                               )}
-                            >
-                              <option value="">—</option>
-                              {(options?.positions ?? []).map((item) => (
-                                <option key={item.id} value={item.id}>
-                                  {item.name}
-                                </option>
-                              ))}
-                            </Select>
-                          </td>
-                          <td className="px-2 py-3">
-                            <Select
-                              {...register(positionPath(index, 'hiringModalityId'))}
-                              aria-label={`Modalidad ${String(index + 1)}`}
-                              className={CELL_CONTROL}
-                            >
-                              <option value="">—</option>
-                              {(options?.modalities ?? []).map((item) => (
-                                <option key={item.id} value={item.id}>
-                                  {item.name}
-                                </option>
-                              ))}
-                            </Select>
-                          </td>
-                          <td className="px-2 py-3">
-                            <Select
-                              {...register(positionPath(index, 'englishLevelId'))}
-                              aria-label={`Inglés ${String(index + 1)}`}
-                              className={CELL_CONTROL}
-                            >
-                              <option value="">No requerido</option>
-                              {(options?.englishLevels ?? []).map((item) => (
-                                <option key={item.id} value={item.id}>
-                                  {item.name}
-                                </option>
-                              ))}
-                            </Select>
-                          </td>
-                          <td className="px-2 py-3">
+                            />
+                          </TableCell>
+                          <TableCell className="px-2 py-3">
+                            <Controller
+                              control={control}
+                              name={positionPath(index, 'hiringModalityId')}
+                              render={({ field }) => (
+                                <Select
+                                  {...(field.value ? { value: field.value } : {})}
+                                  onValueChange={field.onChange}
+                                >
+                                  <SelectTrigger
+                                    aria-label={`Modalidad ${String(index + 1)}`}
+                                    className="h-9 w-full"
+                                  >
+                                    <SelectValue placeholder="—" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {(options?.modalities ?? []).map((item) => (
+                                      <SelectItem key={item.id} value={item.id}>
+                                        {item.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                          </TableCell>
+                          <TableCell className="px-2 py-3">
+                            <Controller
+                              control={control}
+                              name={positionPath(index, 'englishLevelId')}
+                              render={({ field }) => (
+                                <Select
+                                  value={field.value === '' ? NO_ENGLISH : field.value}
+                                  onValueChange={(value) => {
+                                    field.onChange(value === NO_ENGLISH ? '' : value)
+                                  }}
+                                >
+                                  <SelectTrigger
+                                    aria-label={`Inglés ${String(index + 1)}`}
+                                    className="h-9 w-full"
+                                  >
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value={NO_ENGLISH}>No requerido</SelectItem>
+                                    {(options?.englishLevels ?? []).map((item) => (
+                                      <SelectItem key={item.id} value={item.id}>
+                                        {item.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                          </TableCell>
+                          <TableCell className="px-2 py-3">
                             {}
-                            <Select
-                              {...register(positionPath(index, 'hotelDepartmentId'))}
-                              aria-label={`Departamento ${String(index + 1)}`}
-                              className={CELL_CONTROL}
-                            >
-                              <option value="">—</option>
-                              {(options?.departments ?? []).map((item) => (
-                                <option key={item.id} value={item.id}>
-                                  {item.name}
-                                </option>
-                              ))}
-                            </Select>
-                          </td>
-                          <td className="px-2 py-3">
+                            <Controller
+                              control={control}
+                              name={positionPath(index, 'hotelDepartmentId')}
+                              render={({ field }) => (
+                                <Select
+                                  {...(field.value ? { value: field.value } : {})}
+                                  onValueChange={field.onChange}
+                                >
+                                  <SelectTrigger
+                                    aria-label={`Departamento ${String(index + 1)}`}
+                                    className="h-9 w-full"
+                                  >
+                                    <SelectValue placeholder="—" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {(options?.departments ?? []).map((item) => (
+                                      <SelectItem key={item.id} value={item.id}>
+                                        {item.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                          </TableCell>
+                          <TableCell className="px-2 py-3">
                             <input
                               {...register(positionPath(index, 'quantity'))}
                               inputMode="numeric"
                               aria-label={`Cantidad ${String(index + 1)}`}
                               className={cn(CELL_CONTROL, 'w-16')}
                             />
-                          </td>
-                          <td className="px-2 py-3">
+                          </TableCell>
+                          <TableCell className="px-2 py-3">
                             <input
                               type="date"
                               {...register(positionPath(index, 'startDate'))}
                               aria-label={`Inicio ${String(index + 1)}`}
                               className={cn(CELL_CONTROL, 'w-40')}
                             />
-                          </td>
-                          <td className="px-2 py-3">
+                          </TableCell>
+                          <TableCell className="px-2 py-3">
                             <input
                               type="time"
                               {...register(positionPath(index, 'startTime'))}
                               aria-label={`Hora ${String(index + 1)}`}
                               className={cn(CELL_CONTROL, 'w-28')}
                             />
-                          </td>
-                          <td className="px-2 py-3">
+                          </TableCell>
+                          <TableCell className="px-2 py-3">
                             <span className="inline-flex items-center gap-1.5 rounded-md bg-o-50 px-2.5 py-1 text-sm font-medium whitespace-nowrap text-o-700">
                               <span
                                 className="material-icons-outlined text-base leading-none"
@@ -434,8 +529,8 @@ export function NewRequisitionDialog({
                               </span>
                               {quantity} {quantity === 1 ? 'libre' : 'libres'}
                             </span>
-                          </td>
-                          <td className="px-2 py-3 text-right">
+                          </TableCell>
+                          <TableCell className="px-2 py-3 text-right">
                             {}
                             <button
                               type="button"
@@ -448,12 +543,12 @@ export function NewRequisitionDialog({
                             >
                               ✕
                             </button>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       )
                     })}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               {errors.positions?.root?.message !== undefined && (

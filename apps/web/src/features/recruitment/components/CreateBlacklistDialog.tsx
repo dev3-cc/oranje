@@ -1,3 +1,12 @@
+import {
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { useCreateBlacklistEntryMutation, useGetWorkerBlacklistQuery } from '../api/blacklistApi'
@@ -6,14 +15,10 @@ import { EMPTY_POOL_FILTERS } from '../types/pool.types'
 
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
-import { Select } from '@/shared/components/Select'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { WORKER_STATUS_TOKEN, workerStatusChipLabel } from '@/shared/constants/workerStatus'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
-
-const CONTROL_CLASS =
-  'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-4 transition-colors hover:border-ink-4 focus:outline-none focus-visible:border-o-500 focus-visible:ring-2 focus-visible:ring-o-500/30'
 
 function InfoField({ label, value }: { label: string; value: string }): ReactNode {
   return (
@@ -103,23 +108,23 @@ export function CreateBlacklistDialog({
         </>
       }
     >
-      <label className="flex flex-col gap-2">
-        <span className="text-sm font-semibold text-ink">Colaborador</span>
-        <Select
-          value={workerId}
-          onChange={(event) => {
-            setWorkerId(event.target.value)
-          }}
-          className={CONTROL_CLASS}
-        >
-          <option value="">Elige a la persona…</option>
-          {(pool?.items ?? []).map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.fullName}
-            </option>
-          ))}
+      <div className="flex flex-col gap-2">
+        <label htmlFor="blacklist-worker" className="text-sm font-semibold text-ink">
+          Colaborador
+        </label>
+        <Select {...(workerId ? { value: workerId } : {})} onValueChange={setWorkerId}>
+          <SelectTrigger id="blacklist-worker" aria-label="Colaborador" className="w-full">
+            <SelectValue placeholder="Elige a la persona…" />
+          </SelectTrigger>
+          <SelectContent>
+            {(pool?.items ?? []).map((item) => (
+              <SelectItem key={item.id} value={item.id}>
+                {item.fullName}
+              </SelectItem>
+            ))}
+          </SelectContent>
         </Select>
-      </label>
+      </div>
 
       {worker && (
         <>
@@ -172,14 +177,13 @@ export function CreateBlacklistDialog({
           Motivo del veto <span className="font-normal text-ink-3">(obligatorio)</span>
           {IS_DEV_UI && <code className="text-xs font-normal text-ink-4"> · reason</code>}
         </span>
-        <textarea
+        <Textarea
           value={reason}
           onChange={(event) => {
             setReason(event.target.value)
           }}
           rows={3}
           placeholder="P. ej. «Abandonó el turno sin aviso en dos ocasiones.»"
-          className={CONTROL_CLASS}
         />
       </label>
 
@@ -189,14 +193,13 @@ export function CreateBlacklistDialog({
           {IS_DEV_UI && <code className="text-xs font-normal text-ink-4"> · evidence_path</code>}
         </span>
         {}
-        <input
+        <Input
           type="text"
           value={evidencePath}
           onChange={(event) => {
             setEvidencePath(event.target.value)
           }}
           placeholder="evidencia-turnos.pdf"
-          className={CONTROL_CLASS}
         />
       </label>
 

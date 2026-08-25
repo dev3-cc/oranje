@@ -20,6 +20,11 @@ const CONTACTS: HotelContact[] = [
   },
 ]
 
+async function pick(triggerLabel: string, optionName: string): Promise<void> {
+  await userEvent.click(screen.getByLabelText(triggerLabel))
+  await userEvent.click(await screen.findByRole('option', { name: optionName }))
+}
+
 function renderDialog(onClose = vi.fn()): { onClose: ReturnType<typeof vi.fn> } {
   render(
     <Provider store={store}>
@@ -44,10 +49,9 @@ describe('RegisterAttemptDialog', () => {
     expect(submit).toBeDisabled()
 
     await userEvent.click(screen.getByRole('button', { name: 'Llamada' }))
-    // Con el tipo pero sin resultado sigue bloqueado.
     expect(submit).toBeDisabled()
 
-    await userEvent.selectOptions(screen.getByLabelText('Resultado'), 'INTERESTED')
+    await pick('Resultado', 'Interesado')
     await waitFor(() => {
       expect(submit).toBeEnabled()
     })
@@ -57,15 +61,14 @@ describe('RegisterAttemptDialog', () => {
     renderDialog()
 
     const contactSelect = screen.getByLabelText('Contacto del hotel')
-    expect(contactSelect).toHaveValue('')
-    expect(screen.getByRole('option', { name: 'Sin contacto identificado' })).toBeInTheDocument()
+    expect(contactSelect).toHaveTextContent('Sin contacto identificado')
   })
 
   it('registra el intento y cierra el modal', async () => {
     const { onClose } = renderDialog()
 
     await userEvent.click(screen.getByRole('button', { name: 'Visita en frío' }))
-    await userEvent.selectOptions(screen.getByLabelText('Resultado'), 'MEETING_SET')
+    await pick('Resultado', 'Cita agendada')
     await userEvent.click(screen.getByRole('button', { name: 'Registrar intento' }))
 
     await waitFor(() => {

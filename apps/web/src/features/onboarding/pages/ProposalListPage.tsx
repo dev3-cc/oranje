@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 
 import { useGetProposalCandidatesQuery } from '../api/proposalsApi'
 
+import { LoadError } from '@/shared/components/LoadError'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   ONBOARDING_STATUS_LABEL,
@@ -10,24 +11,8 @@ import {
 } from '@/shared/constants/onboardingStatus'
 import { formatDate } from '@/shared/lib/formatters'
 
-/**
- * Módulo Propuestas: vista transversal de los hoteles que tienen alguna.
- *
- * Es de SOLO LECTURA. Crear versiones y editarlas vive dentro de cada hotel del
- * pipeline, y cada fila lleva justo ahí. Duplicar aquí el editor sería tener dos
- * sitios donde cambiar lo mismo.
- *
- * ⚠ Esta pantalla NO tiene maqueta. Se armó reusando las formas que ya existen
- * en Pipeline y Mi Territorio, sin inventar patrones nuevos. Se rehace cuando
- * llegue su diseño.
- *
- * Vive en `features/onboarding` y no en una feature propia porque comparte los
- * datos y el contrato con la propuesta del hotel; §4 pide una carpeta por
- * módulo del sidebar, pero partir la propuesta en dos features obligaría a
- * duplicar sus tipos.
- */
 export function ProposalListPage(): ReactNode {
-  const { data: candidates = [], isLoading, isError } = useGetProposalCandidatesQuery()
+  const { data: candidates = [], isLoading, isError, refetch } = useGetProposalCandidatesQuery()
 
   return (
     <div className="flex flex-col gap-6">
@@ -41,9 +26,12 @@ export function ProposalListPage(): ReactNode {
       </header>
 
       {isError && (
-        <p className="rounded-lg border border-line bg-surface p-6 text-sm text-red">
-          No se pudieron cargar las propuestas. Reintenta en unos segundos.
-        </p>
+        <LoadError
+          message="No se pudieron cargar las propuestas. Reintenta en unos segundos."
+          onRetry={() => {
+            void refetch()
+          }}
+        />
       )}
 
       {!isLoading && !isError && candidates.length === 0 && (

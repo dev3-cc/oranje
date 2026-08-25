@@ -1,3 +1,4 @@
+import { Alert, AlertDescription } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
 import { useAuthorizeRequisitionMutation } from '../api/authorizationsApi'
@@ -75,7 +76,11 @@ export function AuthorizationResolutionForm({
           {describeUrgencyPreview(request.urgencyPreview)}
         </p>
 
-        {rootError !== null && <p className="text-sm text-red">{rootError}</p>}
+        {rootError !== null && (
+          <Alert variant="destructive">
+            <AlertDescription>{rootError}</AlertDescription>
+          </Alert>
+        )}
 
         <div className="flex flex-wrap items-center justify-between gap-4">
           <p className="text-sm text-ink-3">

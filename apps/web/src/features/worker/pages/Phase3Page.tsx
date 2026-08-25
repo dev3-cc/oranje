@@ -1,3 +1,12 @@
+import {
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { useCompleteSignupMutation, useGetMyProfileQuery } from '../api/workerApi'
@@ -5,7 +14,6 @@ import { useCompleteSignupMutation, useGetMyProfileQuery } from '../api/workerAp
 import mascotaFeliz from '@/assets/mascota/mascota-feliz.png'
 import { Button } from '@/shared/components/Button'
 import { isCompletePhone, PhoneInput } from '@/shared/components/PhoneInput'
-import { Select } from '@/shared/components/Select'
 import {
   BLOOD_LABEL,
   BLOOD_TYPES,
@@ -15,26 +23,25 @@ import {
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
-const CONTROL_CLASS =
-  'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-4 transition-colors hover:border-ink-4 focus:outline-none focus-visible:border-o-500 focus-visible:ring-2 focus-visible:ring-o-500/30'
-
 function Field({
   label,
+  htmlFor,
   column,
   children,
 }: {
   label: string
+  htmlFor?: string
   column: string
   children: ReactNode
 }): ReactNode {
   return (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-sm text-ink-3">
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={htmlFor} className="text-sm text-ink-3">
         {label}
         {IS_DEV_UI && <code className="text-xs text-ink-4"> · {column}</code>}
-      </span>
+      </label>
       {children}
-    </label>
+    </div>
   )
 }
 
@@ -105,7 +112,7 @@ export function Phase3Page(): ReactNode {
       <header>
         <h1 className="text-xl font-bold text-ink">Alta · Fase 3</h1>
         <p className="mt-1 text-xs text-ink-3">
-          RF-C-02 · emergencia y salud{' '}
+          {IS_DEV_UI ? 'RF-C-02 · emergencia y salud' : 'Emergencia y salud'}{' '}
           <span className="rounded-full bg-o-50 px-2 py-0.5 font-semibold text-o-700">
             Fase 3 de 3
           </span>
@@ -115,14 +122,14 @@ export function Phase3Page(): ReactNode {
       <section className="flex flex-col gap-4">
         <h2 className="text-sm font-semibold text-ink">Contacto de emergencia</h2>
 
-        <Field label="Nombre" column="emergency_contact_name">
-          <input
+        <Field label="Nombre" htmlFor="emergencyContactName" column="emergency_contact_name">
+          <Input
+            id="emergencyContactName"
             value={draft.emergencyContactName}
             onChange={(event) => {
               update('emergencyContactName')(event.target.value)
             }}
             placeholder="Rubén Sandoval"
-            className={CONTROL_CLASS}
           />
         </Field>
 
@@ -137,20 +144,27 @@ export function Phase3Page(): ReactNode {
           />
         </Field>
 
-        <Field label="Parentesco" column="emergency_contact_relationship">
+        <Field
+          label="Parentesco"
+          htmlFor="emergencyContactRelationship"
+          column="emergency_contact_relationship"
+        >
           <Select
-            value={draft.emergencyContactRelationship}
-            onChange={(event) => {
-              update('emergencyContactRelationship')(event.target.value)
-            }}
-            className={CONTROL_CLASS}
+            {...(draft.emergencyContactRelationship
+              ? { value: draft.emergencyContactRelationship }
+              : {})}
+            onValueChange={update('emergencyContactRelationship')}
           >
-            <option value="">¿Qué es de ti?</option>
-            {RELATIONSHIPS.map((relationship) => (
-              <option key={relationship} value={relationship}>
-                {RELATIONSHIP_LABEL[relationship]}
-              </option>
-            ))}
+            <SelectTrigger id="emergencyContactRelationship" className="w-full">
+              <SelectValue placeholder="¿Qué es de ti?" />
+            </SelectTrigger>
+            <SelectContent>
+              {RELATIONSHIPS.map((relationship) => (
+                <SelectItem key={relationship} value={relationship}>
+                  {RELATIONSHIP_LABEL[relationship]}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </Field>
       </section>
@@ -158,32 +172,37 @@ export function Phase3Page(): ReactNode {
       <section className="flex flex-col gap-4 border-t border-line pt-4">
         <h2 className="text-sm font-semibold text-ink">Salud</h2>
 
-        <Field label="Tipo de sangre" column="blood_type · valores del CHECK (D-26)">
+        <Field
+          label="Tipo de sangre"
+          htmlFor="bloodType"
+          column="blood_type · valores del CHECK (D-26)"
+        >
           <Select
-            value={draft.bloodType}
-            onChange={(event) => {
-              update('bloodType')(event.target.value)
-            }}
-            className={CONTROL_CLASS}
+            {...(draft.bloodType ? { value: draft.bloodType } : {})}
+            onValueChange={update('bloodType')}
           >
-            <option value="">Elige tu tipo…</option>
-            {BLOOD_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {BLOOD_LABEL[type]}
-              </option>
-            ))}
+            <SelectTrigger id="bloodType" className="w-full">
+              <SelectValue placeholder="Elige tu tipo…" />
+            </SelectTrigger>
+            <SelectContent>
+              {BLOOD_TYPES.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {BLOOD_LABEL[type]}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </Field>
 
-        <Field label="Alergias o condiciones médicas" column="medical_notes">
-          <textarea
+        <Field label="Alergias o condiciones médicas" htmlFor="medicalNotes" column="medical_notes">
+          <Textarea
+            id="medicalNotes"
             value={draft.medicalNotes}
             onChange={(event) => {
               update('medicalNotes')(event.target.value)
             }}
             rows={3}
             placeholder="Ninguna"
-            className={CONTROL_CLASS}
           />
         </Field>
       </section>

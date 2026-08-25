@@ -1,4 +1,12 @@
-import { cn, StatusLightBadge } from '@oranje/ui'
+import {
+  cn,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  StatusLightBadge,
+} from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
 import {
@@ -11,7 +19,6 @@ import { SemaforoHelpButton } from './SemaforoHelpDialog'
 
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
-import { Select } from '@/shared/components/Select'
 import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
@@ -232,26 +239,25 @@ export function ChangeStatusDialog({
           </label>
 
           <Select
-            id="status-change-reason"
-            value={reasonId}
+            key={selectedStatus ?? 'none'}
+            {...(reasonId ? { value: reasonId } : {})}
             disabled={areReasonsLoading}
-            onChange={(event) => {
-              setReasonId(event.target.value)
-            }}
-            className={cn(
-              'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm',
-              'transition-colors hover:border-ink-4 focus:outline-none focus-visible:border-o-500 focus-visible:ring-2 focus-visible:ring-o-500/30',
-              reasonId === '' ? 'text-ink-4' : 'text-ink',
-            )}
+            onValueChange={setReasonId}
           >
-            <option value="">
-              {areReasonsLoading ? 'Cargando catálogo…' : 'Selecciona un motivo del catálogo...'}
-            </option>
-            {reasons.map((reason) => (
-              <option key={reason.id} value={reason.id} className="text-ink">
-                {reason.label}
-              </option>
-            ))}
+            <SelectTrigger id="status-change-reason" className="w-full">
+              <SelectValue
+                placeholder={
+                  areReasonsLoading ? 'Cargando catálogo…' : 'Selecciona un motivo del catálogo...'
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {reasons.map((reason) => (
+                <SelectItem key={reason.id} value={reason.id}>
+                  {reason.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
 
           {isReasonRequired && (

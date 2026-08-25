@@ -1,3 +1,4 @@
+import { Input } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
 export function isCompletePhone(value: string): boolean {
@@ -16,7 +17,7 @@ export function PhoneInput({
   placeholder?: string
 }): ReactNode {
   return (
-    <input
+    <Input
       value={value}
       onChange={(event) => {
         onChange(event.target.value.replace(/[^\d\s+-]/g, ''))
@@ -24,7 +25,6 @@ export function PhoneInput({
       inputMode="tel"
       aria-label={ariaLabel}
       placeholder={placeholder}
-      className="w-full rounded-md border border-line bg-surface px-3.5 py-2.5 text-sm text-ink transition-colors placeholder:text-ink-4 hover:border-ink-4 focus:outline-none focus-visible:border-o-500 focus-visible:ring-2 focus-visible:ring-o-500/30"
     />
   )
 }

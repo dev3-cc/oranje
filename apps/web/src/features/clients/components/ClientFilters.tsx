@@ -1,3 +1,4 @@
+import { Input } from '@oranje/ui'
 import type { ChangeEvent, ReactNode } from 'react'
 
 import {
@@ -8,9 +9,6 @@ import {
 
 import { FilterSelect } from '@/shared/components/FilterSelect'
 import { CONTRACT_STATUSES } from '@/shared/constants/contractStatus'
-
-const SEARCH_CLASS =
-  'rounded-full border border-line bg-surface px-5 py-2.5 text-sm text-ink transition-colors placeholder:text-ink-4 hover:bg-surface-2 focus:border-o-500 focus:outline-none'
 
 export function ClientFilters({
   filters,
@@ -31,7 +29,7 @@ export function ClientFilters({
 
   return (
     <div className="flex flex-wrap items-center gap-4">
-      <input
+      <Input
         type="search"
         value={filters.search}
         onChange={(event: ChangeEvent<HTMLInputElement>) => {
@@ -39,7 +37,7 @@ export function ClientFilters({
         }}
         placeholder="Buscar hotel…"
         aria-label="Buscar hotel"
-        className={`${SEARCH_CLASS} min-w-64`}
+        className="h-auto min-w-64 rounded-full px-5 py-2.5 hover:bg-surface-2"
       />
 
       <FilterSelect

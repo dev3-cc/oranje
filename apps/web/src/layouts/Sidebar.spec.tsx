@@ -1,3 +1,4 @@
+import { SidebarProvider } from '@oranje/ui'
 import { render, screen } from '@testing-library/react'
 import { Provider } from 'react-redux'
 import { createMemoryRouter, RouterProvider } from 'react-router'
@@ -7,10 +8,6 @@ import { Sidebar } from './Sidebar'
 
 import { store } from '@/app/store'
 
-/**
- * Regresión: los módulos sin diseño se pintaban como texto muerto y el clic no
- * hacía nada, lo que se leía como app rota. Todos tienen que navegar.
- */
 const EXPECTED_LINKS: [string, string][] = [
   ['Dashboard', '/dashboard'],
   ['Pipeline', '/pipeline'],
@@ -38,7 +35,9 @@ function renderSidebar(): void {
 
   render(
     <Provider store={store}>
-      <RouterProvider router={router} />
+      <SidebarProvider>
+        <RouterProvider router={router} />
+      </SidebarProvider>
     </Provider>,
   )
 }
@@ -48,15 +47,10 @@ describe('Sidebar', () => {
     renderSidebar()
 
     for (const [label, href] of EXPECTED_LINKS) {
-      // Ancla exacta: «Timesheet» no debe casar también con «Timesheet Global».
       expect(screen.getByRole('link', { name: label })).toHaveAttribute('href', href)
     }
   })
 
-  /**
-   * La maqueta del Pipeline dibuja una píldora con un 12 sobre este módulo,
-   * pero no se sabe qué cuenta: la página dice 38 prospectos abiertos.
-   */
   it('no pinta contadores mientras no se sepa qué cuentan', () => {
     renderSidebar()
 

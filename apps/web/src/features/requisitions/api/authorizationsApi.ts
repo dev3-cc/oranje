@@ -9,6 +9,7 @@ import { registerAuthorizationsMocks } from './authorizationsMocks'
 
 import { baseApi } from '@/app/baseApi'
 import type { UrgencyLevel } from '@/shared/constants/requisitionStatus'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 import type {
   ApiEnvelope,
   PaginatedEnvelope,
@@ -91,7 +92,7 @@ async function fetchQueue(
   const scope =
     me.role.code === 'ROL-H-03'
       ? 'todos los departamentos de tu hotel'
-      : 'solo tu departamento (D-09)'
+      : `solo tu departamento${IS_DEV_UI ? ' (D-09)' : ''}`
 
   return {
     data: {

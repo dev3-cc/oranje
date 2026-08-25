@@ -8,35 +8,29 @@ import { TerritoryOwnerPicker } from '../components/TerritoryOwnerPicker'
 import { TerritoryZoneChips } from '../components/TerritoryZoneChips'
 
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { LoadError } from '@/shared/components/LoadError'
 import { useDebounce } from '@/shared/hooks/useDebounce'
 
 export function TerritoryPage(): ReactNode {
-  /** `?q=`: el globo del pipeline manda aquí con el hotel ya buscado. */
   const [searchParams] = useSearchParams()
   const [zoneId, setZoneId] = useState<string | null>(null)
   const [searchInput, setSearchInput] = useState(searchParams.get('q') ?? '')
   const [pickedHotelId, setPickedHotelId] = useState<string | null>(null)
-  /** `null` = el mío. El BDC lo cambia con el selector. */
   const [ownerId, setOwnerId] = useState<string | null>(null)
 
   const search = useDebounce(searchInput)
-  /** Sin equipo la consulta falla con 403 y la lista queda vacía: el BD no ve selector. */
   const { data: owners = [] } = useGetTerritoryOwnersQuery()
   const {
     data: territory,
     isLoading,
     isError,
+    refetch,
   } = useGetTerritoryQuery({ zoneId, search, userId: ownerId })
 
   const ownerName = owners.find((owner) => owner.id === ownerId)?.fullName ?? null
 
   const hotels = territory?.hotels ?? []
 
-  /**
-   * Cae al primero de la lista cuando no hay elegido, o cuando el elegido se
-   * fue al filtrar: el mapa sin ficha se ve incompleto, y el diseño arranca con
-   * el primer hotel seleccionado.
-   */
   const selectedHotel = hotels.find((hotel) => hotel.id === pickedHotelId) ?? hotels[0] ?? null
 
   return (
@@ -51,7 +45,6 @@ export function TerritoryPage(): ReactNode {
           selectedId={ownerId}
           onSelect={(id) => {
             setOwnerId(id)
-            /** El hotel elegido es de otro territorio: la ficha caería vacía. */
             setPickedHotelId(null)
           }}
         />
@@ -80,7 +73,12 @@ export function TerritoryPage(): ReactNode {
           {isLoading && <CardGridSkeleton cards={3} className="grid-cols-1" />}
 
           {isError && (
-            <p className="text-sm text-red">No se pudo cargar tu territorio. Reintenta.</p>
+            <LoadError
+              message="No se pudo cargar tu territorio. Reintenta."
+              onRetry={() => {
+                void refetch()
+              }}
+            />
           )}
 
           {!isLoading && !isError && hotels.length === 0 && (

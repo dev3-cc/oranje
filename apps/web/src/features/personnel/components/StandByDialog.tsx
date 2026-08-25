@@ -1,3 +1,4 @@
+import { Alert, AlertDescription } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
 import { useSendToStandByMutation } from '../api/personnelApi'
@@ -6,10 +7,6 @@ import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 
-/**
- * Stand-by (Rosa): la transición del semáforo con motivo OBLIGATORIO — la
- * comparten el Supervisor y el Manager de Área (seed: los 3 roles del hotel).
- */
 export function StandByDialog({
   workerId,
   workerName,
@@ -33,7 +30,7 @@ export function StandByDialog({
       setNote('')
       onClose()
     } catch {
-      /* el error queda en `isError` */
+      return
     }
   }
 
@@ -73,9 +70,11 @@ export function StandByDialog({
         />
       </label>
       {isError && (
-        <p role="alert" className="mt-2 text-sm text-red">
-          {apiErrorMessage(sendError, { fallback: 'No se pudo mandar a Stand-by.' })}
-        </p>
+        <Alert variant="destructive" className="mt-2">
+          <AlertDescription>
+            {apiErrorMessage(sendError, { fallback: 'No se pudo mandar a Stand-by.' })}
+          </AlertDescription>
+        </Alert>
       )}
     </Modal>
   )

@@ -1,9 +1,3 @@
-/**
- * Única superficie pública de @oranje/ui.
- *
- * Los estilos NO se exportan por aquí: se importan por su ruta
- * (`@oranje/ui/styles/tokens.css`) desde el `globals.css` de cada app.
- */
 export { cn } from './lib/utils'
 export { KpiCard, type KpiCardProps } from './components/KpiCard'
 export { StatusLightBadge, type StatusLightBadgeProps } from './components/StatusLightBadge'
@@ -11,11 +5,6 @@ export { MaterialIcon } from './components/material-icon'
 export { DataTable } from './components/DataTable'
 export type { ColumnDef } from '@tanstack/react-table'
 
-/**
- * Primitivas copiadas de shadcn/ui (D-16): tematizadas vía `shadcn-vars.css`
- * —derivado de los tokens Oranje— e iconografía Material. Se re-exportan aquí
- * porque la superficie pública del paquete es una sola (§6).
- */
 export { Skeleton } from './components/ui/skeleton'
 export {
   Table,
@@ -69,3 +58,51 @@ export {
   useFormField,
 } from './components/ui/form'
 export * from '../tokens'
+
+export { Alert, AlertDescription, AlertTitle } from './components/ui/alert'
+export {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from './components/ui/card'
+export { Separator } from './components/ui/separator'
+export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './components/ui/tooltip'
+export {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from './components/ui/sheet'
+export {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './components/ui/dropdown-menu'
+export {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarRail,
+  SidebarSeparator,
+  SidebarTrigger,
+  useSidebar,
+} from './components/ui/sidebar'

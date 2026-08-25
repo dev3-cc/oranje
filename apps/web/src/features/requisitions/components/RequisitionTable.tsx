@@ -1,4 +1,12 @@
-import { statusLight } from '@oranje/ui'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  statusLight,
+} from '@oranje/ui'
 import type { ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
 
@@ -27,16 +35,8 @@ const HEADERS = [
   'Inspector',
 ]
 
-/** Sin autorizar todavía: guion largo, no celda vacía. */
 const NOT_AUTHORIZED = '—'
 
-/**
- * Tabla del tablero de Requisiciones.
- *
- * Scroll horizontal propio: son nueve columnas y en pantallas estrechas la
- * alternativa sería recortarlas o apilar la tabla, y ninguna de las dos deja
- * comparar filas, que es para lo que existe.
- */
 export function RequisitionTable({ items }: { items: RequisitionRow[] }): ReactNode {
   const navigate = useNavigate()
 
@@ -49,49 +49,53 @@ export function RequisitionTable({ items }: { items: RequisitionRow[] }): ReactN
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-line bg-surface">
-      <table className="w-full min-w-[68rem] border-collapse text-left">
-        <thead>
-          <tr className="border-b border-line">
+    <div className="rounded-lg border border-line bg-surface">
+      <Table className="min-w-[68rem] text-left">
+        <TableHeader>
+          <TableRow className="border-line">
             {HEADERS.map((header) => (
-              <th
+              <TableHead
                 key={header}
                 scope="col"
                 className="px-4 py-3.5 text-xs font-semibold tracking-wide text-ink-3 uppercase"
               >
                 {header}
-              </th>
+              </TableHead>
             ))}
-          </tr>
-        </thead>
+          </TableRow>
+        </TableHeader>
 
-        <tbody>
+        <TableBody>
           {items.map((item) => (
-            <tr
+            <TableRow
               key={item.id}
               onClick={() => {
                 void navigate(`/requisiciones/${item.id}`)
               }}
-              className="cursor-pointer border-b border-line last:border-b-0 hover:bg-surface-2"
+              className="cursor-pointer border-line hover:bg-surface-2"
             >
-              <td className="px-4 py-4 text-sm font-medium whitespace-nowrap">
-                {/* Enlace y no `onClick` en la fila: así conserva abrir en pestaña nueva. */}
+              <TableCell className="px-4 py-4 text-sm font-medium whitespace-nowrap">
+                {}
                 <Link
                   to={`/requisiciones/${item.id}`}
                   className="rounded-sm text-ink hover:text-o-700 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
                 >
                   {item.number}
                 </Link>
-              </td>
-              <td className="px-4 py-4 text-sm whitespace-nowrap text-ink-2">{item.hotelName}</td>
-              <td className="px-4 py-4 text-sm whitespace-nowrap text-ink-2">{item.department}</td>
-              <td className="px-4 py-4 text-sm text-ink-2">{item.positions}</td>
+              </TableCell>
+              <TableCell className="px-4 py-4 text-sm whitespace-nowrap text-ink-2">
+                {item.hotelName}
+              </TableCell>
+              <TableCell className="px-4 py-4 text-sm whitespace-nowrap text-ink-2">
+                {item.department}
+              </TableCell>
+              <TableCell className="px-4 py-4 text-sm text-ink-2">{item.positions}</TableCell>
 
-              <td className="px-4 py-4">
+              <TableCell className="px-4 py-4">
                 <CoverageBar coverage={item.coverage} />
-              </td>
+              </TableCell>
 
-              <td className="px-4 py-4 whitespace-nowrap">
+              <TableCell className="px-4 py-4 whitespace-nowrap">
                 <span className="flex items-center gap-2 text-sm text-ink-2">
                   <span
                     className="size-2 shrink-0 rounded-full"
@@ -100,26 +104,26 @@ export function RequisitionTable({ items }: { items: RequisitionRow[] }): ReactN
                   />
                   {URGENCY_LABEL[item.urgency]}
                 </span>
-              </td>
+              </TableCell>
 
-              <td className="px-4 py-4">
+              <TableCell className="px-4 py-4">
                 <StatusLightSoftBadge
                   token={REQUISITION_STATUS_TOKEN[item.status]}
                   label={REQUISITION_STATUS_LABEL[item.status]}
                 />
-              </td>
+              </TableCell>
 
-              <td className="px-4 py-4 text-sm whitespace-nowrap text-ink-2">
+              <TableCell className="px-4 py-4 text-sm whitespace-nowrap text-ink-2">
                 {item.authorizedAt ? formatDayMonthTime(item.authorizedAt) : NOT_AUTHORIZED}
-              </td>
+              </TableCell>
 
-              <td className="px-4 py-4 text-sm whitespace-nowrap text-ink-2">
+              <TableCell className="px-4 py-4 text-sm whitespace-nowrap text-ink-2">
                 {item.inspectorName}
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   )
 }

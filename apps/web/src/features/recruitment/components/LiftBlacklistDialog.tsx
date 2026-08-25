@@ -1,3 +1,4 @@
+import { Alert, AlertDescription } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { useLiftBlacklistMutation } from '../api/blacklistApi'
@@ -10,7 +11,6 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayMonth } from '@/shared/lib/formatters'
 
-/** Una pareja etiqueta → valor de la ficha del veto, como en la maqueta. */
 function EntryField({ label, value }: { label: string; value: string }): ReactNode {
   return (
     <div className="flex items-baseline justify-between gap-4">
@@ -20,18 +20,10 @@ function EntryField({ label, value }: { label: string; value: string }): ReactNo
   )
 }
 
-/**
- * Levantar de Blacklist (maqueta de la Reclutadora). La fila NO se borra: se
- * marca como levantada con quién y por qué, y el colaborador vuelve a BLANCO —
- * reingresa por la validación de la Reclutadora, no directo a disponible.
- * `blacklist:lift` es del Administrador: a otros roles el backend les da 403
- * y la pantalla lo dice.
- */
 export function LiftBlacklistDialog({
   row,
   onClose,
 }: {
-  /** `null` = cerrado. */
   row: BlacklistRow | null
   onClose: () => void
 }): ReactNode {
@@ -50,7 +42,7 @@ export function LiftBlacklistDialog({
       await lift({ workerId: row.workerId, liftReason: liftReason.trim() }).unwrap()
       onClose()
     } catch {
-      /* el error queda en `error` y se pinta abajo */
+      return
     }
   }
 
@@ -113,12 +105,16 @@ export function LiftBlacklistDialog({
       </p>
 
       {error !== undefined && (
-        <p role="alert" className="text-sm text-red">
-          {apiErrorMessage(error, {
-            byStatus: { 403: 'Solo el Administrador levanta un veto (blacklist:lift): pídeselo.' },
-            fallback: 'No se pudo levantar el veto.',
-          })}
-        </p>
+        <Alert variant="destructive">
+          <AlertDescription>
+            {apiErrorMessage(error, {
+              byStatus: {
+                403: 'Solo el Administrador levanta un veto (blacklist:lift): pídeselo.',
+              },
+              fallback: 'No se pudo levantar el veto.',
+            })}
+          </AlertDescription>
+        </Alert>
       )}
     </Modal>
   )

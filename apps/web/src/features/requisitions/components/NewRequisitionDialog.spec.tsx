@@ -7,6 +7,15 @@ import { NewRequisitionDialog } from './NewRequisitionDialog'
 
 import { store } from '@/app/store'
 
+async function pick(
+  user: ReturnType<typeof userEvent.setup>,
+  triggerLabel: string,
+  optionName: string,
+): Promise<void> {
+  await user.click(screen.getByLabelText(triggerLabel))
+  await user.click(await screen.findByRole('option', { name: optionName }))
+}
+
 function renderDialog(onClose = vi.fn()): { onClose: () => void } {
   render(
     <Provider store={store}>
@@ -35,10 +44,7 @@ describe('NewRequisitionDialog', () => {
       screen.getByText('El Inspector se asigna solo por la zona del hotel (RR-13)'),
     ).toBeInTheDocument()
 
-    await waitFor(() => {
-      expect(screen.getByRole('option', { name: 'Hotel Puerto Real' })).toBeInTheDocument()
-    })
-    await user.selectOptions(screen.getByLabelText('Hotel'), 'htl-psp-0012')
+    await pick(user, 'Hotel', 'Hotel Puerto Real')
 
     expect(
       screen.getByText('Zona Centro · el Inspector se congela al guardar (RR-13)'),
@@ -90,15 +96,11 @@ describe('NewRequisitionDialog', () => {
       </Provider>,
     )
 
-    await waitFor(() => {
-      expect(screen.getByRole('option', { name: 'Hotel Puerto Real' })).toBeInTheDocument()
-    })
+    await pick(user, 'Hotel', 'Hotel Puerto Real')
 
-    await user.selectOptions(screen.getByLabelText('Hotel'), 'htl-psp-0012')
-
-    await user.selectOptions(screen.getByLabelText('Posición 1'), 'pos-hk')
-    await user.selectOptions(screen.getByLabelText('Modalidad 1'), 'mod-ft')
-    await user.selectOptions(screen.getByLabelText('Departamento 1'), 'dep-hk')
+    await pick(user, 'Posición 1', 'Housekeeper')
+    await pick(user, 'Modalidad 1', 'Tiempo completo')
+    await pick(user, 'Departamento 1', 'Housekeeping')
 
     const row = screen.getByLabelText('Posición 1').closest('tr')
     const date = within(row as HTMLElement).getByLabelText('Inicio 1')

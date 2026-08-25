@@ -1,3 +1,4 @@
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
 import { useGetTimesheetWeekQuery } from '../api/timesheetApi'
@@ -72,50 +73,53 @@ export function TimesheetGlobalPage(): ReactNode {
       {isLoading && !week ? (
         <TableSkeleton rows={6} columns={7} />
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-line bg-surface">
-          <table className="w-full min-w-[64rem] border-collapse text-left">
-            <thead>
-              <tr className="border-b border-line">
+        <div className="rounded-lg border border-line bg-surface">
+          <Table className="min-w-[64rem] text-left">
+            <TableHeader>
+              <TableRow className="border-line">
                 {HEADERS.map((header) => (
-                  <th
+                  <TableHead
                     key={header}
                     scope="col"
                     className="px-4 py-3 text-xs font-semibold tracking-wide text-ink-3 uppercase"
                   >
                     {header}
-                  </th>
+                  </TableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {rows.length === 0 && (
-                <tr>
-                  <td colSpan={HEADERS.length} className="px-4 py-8 text-center text-sm text-ink-3">
+                <TableRow className="border-line">
+                  <TableCell
+                    colSpan={HEADERS.length}
+                    className="px-4 py-8 text-center text-sm text-ink-3"
+                  >
                     Sin timesheets esta semana.
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
               {rows.map((row) => (
-                <tr key={row.timesheetId} className="border-b border-line last:border-b-0">
-                  <td className="px-4 py-3 text-sm font-semibold whitespace-nowrap text-ink">
+                <TableRow key={row.timesheetId} className="border-line">
+                  <TableCell className="px-4 py-3 text-sm font-semibold text-ink">
                     {row.workerName}
-                  </td>
-                  <td className="px-4 py-3 text-sm whitespace-nowrap text-ink-3">
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-sm text-ink-3">
                     {TIMESHEET_WEEK_STATUS_LABEL[row.weekStatus as TimesheetWeekStatus] ??
                       row.weekStatus}
-                  </td>
-                  <td className="px-4 py-3 text-sm font-semibold text-ink">
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-sm font-semibold text-ink">
                     {formatHours(row.totalHours)}
-                  </td>
+                  </TableCell>
                   {}
-                  <td className="px-4 py-3 text-sm text-ink-4">—</td>
-                  <td className="px-4 py-3 text-sm text-ink-4">—</td>
-                  <td className="px-4 py-3 text-sm text-ink-4">—</td>
-                  <td className="px-4 py-3 text-sm text-ink-4">—</td>
-                </tr>
+                  <TableCell className="px-4 py-3 text-sm text-ink-4">—</TableCell>
+                  <TableCell className="px-4 py-3 text-sm text-ink-4">—</TableCell>
+                  <TableCell className="px-4 py-3 text-sm text-ink-4">—</TableCell>
+                  <TableCell className="px-4 py-3 text-sm text-ink-4">—</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
 

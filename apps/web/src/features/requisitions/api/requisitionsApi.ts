@@ -13,6 +13,7 @@ import { registerRequisitionsMocks } from './requisitionsMocks'
 
 import { baseApi } from '@/app/baseApi'
 import type { RequisitionStatus, UrgencyLevel } from '@/shared/constants/requisitionStatus'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 import type {
   ApiEnvelope,
   AssignmentApi,
@@ -168,7 +169,7 @@ async function fetchBoard(
           0,
         ),
         urgentCount: open.filter((row) => row.urgency === 'RED').length,
-        urgentRuleId: 'RR-H-05',
+        urgentRuleId: IS_DEV_UI ? 'RR-H-05' : 'menos de 72 h para el inicio',
       },
       items: rows,
     },

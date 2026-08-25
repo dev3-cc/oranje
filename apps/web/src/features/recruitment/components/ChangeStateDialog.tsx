@@ -1,3 +1,4 @@
+import { Alert, AlertDescription } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
 import { useChangeWorkerStateMutation, useGetWorkerTransitionsQuery } from '../api/workerDetailApi'
@@ -12,11 +13,6 @@ import {
 } from '@/shared/constants/workerStatus'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 
-/**
- * Cambiar el estado del semáforo: solo ofrece lo que `GET /transitions` dice
- * que MI rol puede disparar — el resto de las aristas son del sistema, del
- * hotel o del Inspector, y aquí ni se pintan. Una lista vacía se dice.
- */
 export function ChangeStateDialog({
   workerId,
   currentLabel,
@@ -52,7 +48,7 @@ export function ChangeStateDialog({
       setNote('')
       onClose()
     } catch {
-      /* el error queda en `isError` */
+      return
     }
   }
 
@@ -136,9 +132,11 @@ export function ChangeStateDialog({
         )}
 
         {isError && (
-          <p role="alert" className="text-sm text-red">
-            {apiErrorMessage(saveError, { fallback: 'No se pudo aplicar la transición.' })}
-          </p>
+          <Alert variant="destructive">
+            <AlertDescription>
+              {apiErrorMessage(saveError, { fallback: 'No se pudo aplicar la transición.' })}
+            </AlertDescription>
+          </Alert>
         )}
       </div>
     </Modal>

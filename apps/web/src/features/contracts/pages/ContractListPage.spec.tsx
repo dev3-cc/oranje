@@ -8,7 +8,6 @@ import { ContractListPage } from './ContractListPage'
 
 import { store } from '@/app/store'
 
-/** Debounce de búsqueda más latencia del mock: el margen por omisión no alcanza. */
 const SLOW = { timeout: 4000 }
 
 function renderList(): void {
@@ -40,7 +39,6 @@ describe('ContractListPage', () => {
     expect(screen.getByText('vence en 45 días')).toBeInTheDocument()
     expect(screen.getByText('vencido')).toBeInTheDocument()
 
-    // Un borrador no tiene periodo: ni fechas ni cuenta regresiva.
     expect(screen.getByText('sin vigencia')).toBeInTheDocument()
     const draft = screen.getByText('CT-2026-0203').closest('tr')
     expect(within(draft as HTMLElement).getByText('— · —')).toBeInTheDocument()
@@ -67,12 +65,11 @@ describe('ContractListPage', () => {
 
     expect(await screen.findByText('3 meses restantes')).toBeInTheDocument()
 
-    await user.selectOptions(screen.getByLabelText('Avisar cuando falten'), '180')
+    await user.click(screen.getByLabelText('Avisar cuando falten'))
+    await user.click(await screen.findByRole('option', { name: 'Vence en: 180 días' }))
 
-    // El mismo contrato, ahora dentro de la ventana de aviso...
     expect(screen.getByText('vence en 94 días')).toBeInTheDocument()
     expect(screen.queryByText('3 meses restantes')).not.toBeInTheDocument()
-    // ...y ninguna fila desapareció, que es la diferencia con un filtro.
     expect(screen.getByText('10 meses restantes')).toBeInTheDocument()
     expect(screen.getAllByRole('row')).toHaveLength(6)
   })
@@ -82,7 +79,8 @@ describe('ContractListPage', () => {
     renderList()
 
     await screen.findByText('CT-2026-0184')
-    await user.selectOptions(screen.getByLabelText('Estado'), 'DRAFT')
+    await user.click(screen.getByLabelText('Estado'))
+    await user.click(await screen.findByRole('option', { name: 'Estado: DRAFT' }))
 
     await waitFor(() => {
       expect(screen.queryByText('CT-2026-0184')).not.toBeInTheDocument()
@@ -97,8 +95,6 @@ describe('ContractListPage', () => {
     await screen.findByText('CT-2026-0184')
     await user.type(screen.getByLabelText('Buscar por hotel o número'), 'Mirador')
 
-    // Se espera a que DESAPAREZCAN los demás: «Mirador» ya estaba en pantalla
-    // desde la carga inicial, así que buscarlo pasaría antes del debounce.
     await waitFor(() => {
       expect(screen.queryByText('CT-2026-0184')).not.toBeInTheDocument()
     }, SLOW)

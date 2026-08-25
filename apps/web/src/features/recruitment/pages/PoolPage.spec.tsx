@@ -61,7 +61,8 @@ describe('PoolPage', () => {
     expect(await screen.findByText('Ana Rivera Gómez')).toBeInTheDocument()
     expect(screen.getByText('Julia Mendoza')).toBeInTheDocument()
 
-    await user.selectOptions(await screen.findByLabelText('Posición'), 'pos-hk')
+    await user.click(await screen.findByLabelText('Posición'))
+    await user.click(await screen.findByRole('option', { name: 'Posición: Housekeeper' }))
 
     await waitFor(() => {
       expect(screen.queryByText('Julia Mendoza')).not.toBeInTheDocument()
@@ -88,7 +89,8 @@ describe('PoolPage', () => {
     await user.type(scoped.getByLabelText('Fecha de nacimiento'), '1994-05-10')
     await user.type(scoped.getByPlaceholderText('404 790 2517'), '404 555 0199')
     await user.type(scoped.getByPlaceholderText(/Peachtree/), '88 Auburn Ave, Atlanta')
-    await user.selectOptions(await scoped.findByLabelText('Zona'), 'centro')
+    await user.click(await scoped.findByLabelText('Zona'))
+    await user.click(await screen.findByRole('option', { name: 'Zona Centro' }))
     expect(submit).toBeEnabled()
 
     await user.click(submit)

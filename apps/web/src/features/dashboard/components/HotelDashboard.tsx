@@ -5,12 +5,13 @@ import { useGetHotelOverviewQuery } from '../api/roleDashboardsApi'
 import { RequisitionMiniList } from './RequisitionMiniList'
 
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { LoadError } from '@/shared/components/LoadError'
 import { MetricCard } from '@/shared/components/MetricCard'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import type { SessionUser } from '@/shared/types/session.types'
 
 export function HotelDashboard({ session }: { session: SessionUser }): ReactNode {
-  const { data: overview, isLoading, isError } = useGetHotelOverviewQuery()
+  const { data: overview, isLoading, isError, refetch } = useGetHotelOverviewQuery()
 
   if (isLoading) {
     return <CardGridSkeleton cards={6} className="grid-cols-1 md:grid-cols-2 xl:grid-cols-3" />
@@ -18,9 +19,12 @@ export function HotelDashboard({ session }: { session: SessionUser }): ReactNode
 
   if (isError || !overview) {
     return (
-      <p className="rounded-lg border border-line bg-surface p-6 text-sm text-red">
-        No se pudo cargar el dashboard. Reintenta en unos segundos.
-      </p>
+      <LoadError
+        message="No se pudo cargar el dashboard. Reintenta en unos segundos."
+        onRetry={() => {
+          void refetch()
+        }}
+      />
     )
   }
 

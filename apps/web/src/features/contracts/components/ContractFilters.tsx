@@ -1,16 +1,11 @@
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@oranje/ui'
+import { Input } from '@oranje/ui'
 import type { ChangeEvent, ReactNode } from 'react'
 
 import type { ContractListFilters } from '../types/contract.types'
 
 import { FilterSelect } from '@/shared/components/FilterSelect'
-import { Select } from '@/shared/components/Select'
 import { CONTRACT_STATUSES, EXPIRY_WINDOWS } from '@/shared/constants/contractStatus'
-
-const SEARCH_CLASS =
-  'rounded-full border border-line bg-surface px-5 py-2.5 text-sm text-ink transition-colors placeholder:text-ink-4 hover:bg-surface-2 focus:border-o-500 focus:outline-none'
-
-const WINDOW_CLASS =
-  'cursor-pointer rounded-full border border-line bg-surface py-2.5 pl-4 text-sm text-ink transition-colors hover:bg-surface-2 focus:border-o-500 focus:outline-none'
 
 export function ContractFilters({
   filters,
@@ -33,7 +28,7 @@ export function ContractFilters({
 
   return (
     <div className="flex flex-wrap items-center gap-4">
-      <input
+      <Input
         type="search"
         value={filters.search}
         onChange={(event: ChangeEvent<HTMLInputElement>) => {
@@ -41,7 +36,7 @@ export function ContractFilters({
         }}
         placeholder="Buscar por hotel o número…"
         aria-label="Buscar por hotel o número"
-        className={`${SEARCH_CLASS} min-w-72 flex-1`}
+        className="h-auto min-w-72 flex-1 rounded-full px-5 py-2.5 hover:bg-surface-2"
       />
 
       <FilterSelect
@@ -61,18 +56,21 @@ export function ContractFilters({
       />
 
       <Select
-        value={warningDays}
-        onChange={(event) => {
-          onWarningDaysChange(Number(event.target.value))
+        value={String(warningDays)}
+        onValueChange={(value) => {
+          onWarningDaysChange(Number(value))
         }}
-        aria-label="Avisar cuando falten"
-        className={WINDOW_CLASS}
       >
-        {EXPIRY_WINDOWS.map((days) => (
-          <option key={days} value={days}>
-            Vence en: {days} días
-          </option>
-        ))}
+        <SelectTrigger aria-label="Avisar cuando falten" className="rounded-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {EXPIRY_WINDOWS.map((days) => (
+            <SelectItem key={days} value={String(days)}>
+              Vence en: {days} días
+            </SelectItem>
+          ))}
+        </SelectContent>
       </Select>
     </div>
   )

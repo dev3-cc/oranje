@@ -1,4 +1,12 @@
-import { MaterialIcon } from '@oranje/ui'
+import {
+  Input,
+  MaterialIcon,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@oranje/ui'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import {
@@ -13,13 +21,11 @@ import personajeContratacion from '@/assets/ilustrations/personaje-contratacion.
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
 import { isCompletePhone, PhoneInput } from '@/shared/components/PhoneInput'
-import { Select } from '@/shared/components/Select'
 import { EXPERIENCE_LABEL, EXPERIENCE_LEVELS } from '@/shared/constants/workerEnums'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
-const CONTROL_CLASS =
-  'w-full rounded-md border border-line bg-surface px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-4 transition-colors hover:border-ink-4 focus:outline-none focus-visible:border-o-500 focus-visible:ring-2 focus-visible:ring-o-500/30'
+const UNSET = 'UNSET'
 
 const GENDERS = [
   { value: 'FEMALE', label: 'Femenino' },
@@ -347,19 +353,18 @@ export function CreateWorkerDialog({
         </header>
 
         <FormRow label="Nombre completo" column="full_name">
-          <input
+          <Input
             value={draft.fullName}
             onChange={(event) => {
               update('fullName')(event.target.value)
             }}
             aria-label="Nombre completo"
             placeholder="María Sandoval Ruiz"
-            className={CONTROL_CLASS}
           />
         </FormRow>
 
         <FormRow label="Nacimiento y género" column="birth_date · gender">
-          <input
+          <Input
             type="date"
             value={draft.birthDate}
             onChange={(event) => {
@@ -369,22 +374,28 @@ export function CreateWorkerDialog({
             max={maxBirthDate()}
             disabled={isEditing}
             title={isEditing ? 'El nacimiento no se edita: es del alta' : undefined}
-            className={CONTROL_CLASS}
           />
           <Select
             value={draft.gender}
-            onChange={(event) => {
-              update('gender')(event.target.value as Draft['gender'])
+            onValueChange={(value) => {
+              update('gender')(value as Draft['gender'])
             }}
-            aria-label="Género"
             disabled={isEditing}
-            title={isEditing ? 'El género no se edita: es del alta' : undefined}
           >
-            {GENDERS.map((gender) => (
-              <option key={gender.value} value={gender.value}>
-                {gender.label}
-              </option>
-            ))}
+            <SelectTrigger
+              aria-label="Género"
+              title={isEditing ? 'El género no se edita: es del alta' : undefined}
+              className="w-full"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {GENDERS.map((gender) => (
+                <SelectItem key={gender.value} value={gender.value}>
+                  {gender.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </FormRow>
 
@@ -398,30 +409,30 @@ export function CreateWorkerDialog({
             placeholder="404 790 2517"
           />
           <Select
-            value={draft.zoneId}
-            onChange={(event) => {
-              update('zoneId')(event.target.value)
-            }}
-            aria-label="Zona"
+            {...(draft.zoneId ? { value: draft.zoneId } : {})}
+            onValueChange={update('zoneId')}
           >
-            <option value="">Elige la zona…</option>
-            {(options?.zones ?? []).map((zone) => (
-              <option key={zone.id} value={zone.id}>
-                {zone.name}
-              </option>
-            ))}
+            <SelectTrigger aria-label="Zona" className="w-full">
+              <SelectValue placeholder="Elige la zona…" />
+            </SelectTrigger>
+            <SelectContent>
+              {(options?.zones ?? []).map((zone) => (
+                <SelectItem key={zone.id} value={zone.id}>
+                  {zone.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </FormRow>
 
         <FormRow label="Domicilio" column="address">
-          <input
+          <Input
             value={draft.address}
             onChange={(event) => {
               update('address')(event.target.value)
             }}
             aria-label="Domicilio"
             placeholder="1280 Peachtree St NE, Atlanta"
-            className={CONTROL_CLASS}
           />
         </FormRow>
 
@@ -434,63 +445,79 @@ export function CreateWorkerDialog({
 
         <FormRow label="Posición y modalidad" column="catalog_position_id · hiring_modality_id">
           <Select
-            value={draft.catalogPositionId}
-            onChange={(event) => {
-              update('catalogPositionId')(event.target.value)
+            value={draft.catalogPositionId === '' ? UNSET : draft.catalogPositionId}
+            onValueChange={(value) => {
+              update('catalogPositionId')(value === UNSET ? '' : value)
             }}
-            aria-label="Posición"
           >
-            <option value="">Sin definir aún…</option>
-            {(options?.positions ?? []).map((position) => (
-              <option key={position.id} value={position.id}>
-                {position.name}
-              </option>
-            ))}
+            <SelectTrigger aria-label="Posición" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={UNSET}>Sin definir aún…</SelectItem>
+              {(options?.positions ?? []).map((position) => (
+                <SelectItem key={position.id} value={position.id}>
+                  {position.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
           <Select
-            value={draft.hiringModalityId}
-            onChange={(event) => {
-              update('hiringModalityId')(event.target.value)
+            value={draft.hiringModalityId === '' ? UNSET : draft.hiringModalityId}
+            onValueChange={(value) => {
+              update('hiringModalityId')(value === UNSET ? '' : value)
             }}
-            aria-label="Modalidad"
           >
-            <option value="">Sin definir aún…</option>
-            {(options?.modalities ?? []).map((modality) => (
-              <option key={modality.id} value={modality.id}>
-                {modality.name}
-              </option>
-            ))}
+            <SelectTrigger aria-label="Modalidad" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={UNSET}>Sin definir aún…</SelectItem>
+              {(options?.modalities ?? []).map((modality) => (
+                <SelectItem key={modality.id} value={modality.id}>
+                  {modality.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </FormRow>
 
         <FormRow label="Inglés y experiencia" column="english_level_id · experience_level">
           <Select
-            value={draft.englishLevelId}
-            onChange={(event) => {
-              update('englishLevelId')(event.target.value)
+            value={draft.englishLevelId === '' ? UNSET : draft.englishLevelId}
+            onValueChange={(value) => {
+              update('englishLevelId')(value === UNSET ? '' : value)
             }}
-            aria-label="Nivel de inglés"
           >
-            <option value="">Sin definir aún…</option>
-            {(options?.englishLevels ?? []).map((level) => (
-              <option key={level.id} value={level.id}>
-                {level.name}
-              </option>
-            ))}
+            <SelectTrigger aria-label="Nivel de inglés" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={UNSET}>Sin definir aún…</SelectItem>
+              {(options?.englishLevels ?? []).map((level) => (
+                <SelectItem key={level.id} value={level.id}>
+                  {level.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
           <Select
-            value={draft.experienceLevel}
-            onChange={(event) => {
-              update('experienceLevel')(event.target.value)
+            value={draft.experienceLevel === '' ? UNSET : draft.experienceLevel}
+            onValueChange={(value) => {
+              update('experienceLevel')(value === UNSET ? '' : value)
             }}
-            aria-label="Experiencia"
           >
-            <option value="">Sin definir aún…</option>
-            {EXPERIENCE_LEVELS.map((level) => (
-              <option key={level} value={level}>
-                {EXPERIENCE_LABEL[level]}
-              </option>
-            ))}
+            <SelectTrigger aria-label="Experiencia" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={UNSET}>Sin definir aún…</SelectItem>
+              {EXPERIENCE_LEVELS.map((level) => (
+                <SelectItem key={level} value={level}>
+                  {EXPERIENCE_LABEL[level]}
+                </SelectItem>
+              ))}
+            </SelectContent>
           </Select>
         </FormRow>
 

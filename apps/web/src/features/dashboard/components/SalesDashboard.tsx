@@ -7,11 +7,12 @@ import { StaleProspectList } from './StaleProspectList'
 import { StatusFunnel } from './StatusFunnel'
 
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { LoadError } from '@/shared/components/LoadError'
 import { MetricCard } from '@/shared/components/MetricCard'
 import { formatList, formatPercent } from '@/shared/lib/formatters'
 
 export function SalesDashboard(): ReactNode {
-  const { data: overview, isLoading, isError } = useGetDashboardOverviewQuery()
+  const { data: overview, isLoading, isError, refetch } = useGetDashboardOverviewQuery()
 
   if (isLoading) {
     return <CardGridSkeleton cards={6} className="grid-cols-1 md:grid-cols-2 xl:grid-cols-3" />
@@ -19,9 +20,12 @@ export function SalesDashboard(): ReactNode {
 
   if (isError || !overview) {
     return (
-      <p className="rounded-lg border border-line bg-surface p-6 text-sm text-red">
-        No se pudo cargar el dashboard. Reintenta en unos segundos.
-      </p>
+      <LoadError
+        message="No se pudo cargar el dashboard. Reintenta en unos segundos."
+        onRetry={() => {
+          void refetch()
+        }}
+      />
     )
   }
 

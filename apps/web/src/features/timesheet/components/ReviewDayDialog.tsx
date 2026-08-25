@@ -1,4 +1,4 @@
-import { cn } from '@oranje/ui'
+import { Alert, AlertDescription, cn } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { useReviewTimesheetDayMutation } from '../api/timesheetApi'
@@ -10,17 +10,11 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayMonth } from '@/shared/lib/formatters'
 
-/**
- * Revisión del día (maqueta del Supervisor): las 4 marcas con su geocerca y
- * sus dos relojes, y la nota obligatoria que resuelve el día. Es el paso del
- * Supervisor de D-09 — revisa y anota; aprobar es de otro rol.
- */
 export function ReviewDayDialog({
   entry,
   workerName,
   onClose,
 }: {
-  /** `null` = cerrado. */
   entry: TimesheetEntry | null
   workerName: string
   onClose: () => void
@@ -39,7 +33,7 @@ export function ReviewDayDialog({
     try {
       await reviewTimesheetDay()
     } catch {
-      /* el error queda en `isError` y se pinta abajo */
+      return
     }
   }
 
@@ -139,9 +133,11 @@ export function ReviewDayDialog({
       </label>
 
       {isError && (
-        <p role="alert" className="text-sm text-red">
-          {apiErrorMessage(saveError, { fallback: 'No se pudo guardar la revisión.' })}
-        </p>
+        <Alert variant="destructive">
+          <AlertDescription>
+            {apiErrorMessage(saveError, { fallback: 'No se pudo guardar la revisión.' })}
+          </AlertDescription>
+        </Alert>
       )}
     </Modal>
   )
