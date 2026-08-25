@@ -23,6 +23,12 @@ export interface ChangeStatusDialogProps {
   prospectId: string
   hotelName: string
   currentStatus: OnboardingStatus
+  /**
+   * Estado destino ya elegido (p. ej. al soltar la tarjeta en una columna).
+   * Solo se preselecciona si el backend lo trae entre las permitidas: si no,
+   * el diálogo abre con la lista honesta y nada marcado.
+   */
+  presetStatus?: OnboardingStatus
 }
 
 /**
@@ -96,6 +102,7 @@ export function ChangeStatusDialog({
   prospectId,
   hotelName,
   currentStatus,
+  presetStatus,
 }: ChangeStatusDialogProps): ReactNode {
   const [selectedStatus, setSelectedStatus] = useState<OnboardingStatus | null>(null)
   const [reasonId, setReasonId] = useState('')
@@ -121,6 +128,14 @@ export function ChangeStatusDialog({
     setSelectedStatus(null)
     setReasonId('')
   }, [isOpen])
+
+  /** El arrastre trae destino: se marca solo si el backend lo permite. */
+  useEffect(() => {
+    if (!isOpen || !presetStatus || selectedStatus !== null || !allowed) return
+    if (allowed.transitions.some((transition) => transition.toStatus === presetStatus)) {
+      setSelectedStatus(presetStatus)
+    }
+  }, [isOpen, presetStatus, selectedStatus, allowed])
 
   const canSubmit = selectedStatus !== null && (!isReasonRequired || reasonId !== '') && !isSaving
 
