@@ -83,8 +83,27 @@ export class RequisitionsService {
     )
   }
 
+  /**
+   * Quién lee depende de CUÁL de los tres permisos tiene (por eso la ruta no
+   * lleva `@Requires`, como el territorio): `read_own` (Hotel, acota a su
+   * hotel), `read_all` (Líder/Manager de Reclutamiento y GG, todo) y
+   * `read_authorized_queue` (Reclutadora: la cola — nunca ve borradores).
+   * Antes el guard exigía solo `read_own` y Reclutamiento, con sus permisos
+   * sembrados, recibía 403 en su propio módulo.
+   */
   async list(query: QueryRequisitionsDto, user: AuthenticatedUser): Promise<RequisitionBoard> {
-    const seesAll = await this.permissions.can(user.roleCode, 'requisitions', 'read_all')
+    const [readOwn, seesAll, queueOnly] = await Promise.all([
+      this.permissions.can(user.roleCode, 'requisitions', 'read_own'),
+      this.permissions.can(user.roleCode, 'requisitions', 'read_all'),
+      this.permissions.can(user.roleCode, 'requisitions', 'read_authorized_queue'),
+    ])
+    if (!readOwn && !seesAll && !queueOnly) {
+      throw new ForbiddenException({
+        code: 'FORBIDDEN',
+        message: 'Tu rol no puede leer requisiciones',
+      })
+    }
+
     const hotelIds = seesAll || !user.hotelId ? null : [user.hotelId]
 
     const byDepartment = await this.permissions.can(
@@ -94,7 +113,10 @@ export class RequisitionsService {
     )
     const departmentId = byDepartment ? user.departmentId : null
 
-    const { rows, total } = await this.repo.findMany(query, hotelIds, departmentId)
+    /** La Reclutadora ve la cola desde la autorización; el borrador no existe para ella. */
+    const excludeStates = !readOwn && !seesAll ? [DRAFT] : null
+
+    const { rows, total } = await this.repo.findMany(query, hotelIds, departmentId, excludeStates)
 
     return {
       data: rows.map(toEntity),
@@ -108,12 +130,32 @@ export class RequisitionsService {
   }
 
   async get(id: string, user: AuthenticatedUser): Promise<RequisitionEntity> {
+    const [readOwn, seesAll, queueOnly] = await Promise.all([
+      this.permissions.can(user.roleCode, 'requisitions', 'read_own'),
+      this.permissions.can(user.roleCode, 'requisitions', 'read_all'),
+      this.permissions.can(user.roleCode, 'requisitions', 'read_authorized_queue'),
+    ])
+    if (!readOwn && !seesAll && !queueOnly) {
+      throw new ForbiddenException({
+        code: 'FORBIDDEN',
+        message: 'Tu rol no puede leer requisiciones',
+      })
+    }
+
     const row = await this.requisition(id)
 
     if (user.hotelId && row.hotel.id !== user.hotelId) {
       throw new ForbiddenException({
         code: 'HOTEL_OUT_OF_SCOPE',
         message: 'Esta requisición no es de tu hotel',
+      })
+    }
+
+    /** Mismo criterio que el listado: la cola no incluye borradores. */
+    if (!readOwn && !seesAll && row.statusState.code === DRAFT) {
+      throw new ForbiddenException({
+        code: 'FORBIDDEN',
+        message: 'Esta requisición todavía no está autorizada',
       })
     }
 

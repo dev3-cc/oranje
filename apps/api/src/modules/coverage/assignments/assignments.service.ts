@@ -1,11 +1,13 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { PermissionsService } from '../../identity/index.js'
 
 import {
   AssignmentRow,
@@ -43,9 +45,29 @@ export interface AssignmentResult {
 
 @Injectable()
 export class AssignmentsService {
-  constructor(private readonly repo: AssignmentsRepository) {}
+  constructor(
+    private readonly repo: AssignmentsRepository,
+    private readonly permissions: PermissionsService,
+  ) {}
 
-  async list(requisitionId: string): Promise<AssignmentEntity[]> {
+  /**
+   * Leer asignaciones acepta los mismos tres permisos que leer la requisición
+   * (`read_own` del Hotel, `read_all` y `read_authorized_queue` de
+   * Reclutamiento): el tablero de slots del Self-Pick vive de esta lista.
+   */
+  async list(requisitionId: string, user: AuthenticatedUser): Promise<AssignmentEntity[]> {
+    const allowed = await Promise.all([
+      this.permissions.can(user.roleCode, 'requisitions', 'read_own'),
+      this.permissions.can(user.roleCode, 'requisitions', 'read_all'),
+      this.permissions.can(user.roleCode, 'requisitions', 'read_authorized_queue'),
+    ])
+    if (!allowed.some(Boolean)) {
+      throw new ForbiddenException({
+        code: 'FORBIDDEN',
+        message: 'Tu rol no puede leer asignaciones',
+      })
+    }
+
     return (await this.repo.listByRequisition(requisitionId)).map(toEntity)
   }
 
