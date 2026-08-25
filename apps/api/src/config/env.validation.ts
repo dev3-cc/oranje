@@ -53,7 +53,24 @@ const baseSchema = z.object({
 
   RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(120),
 
+  // Places. La del SERVIDOR resuelve la foto del hotel y no sale de aqui; la
+  // del NAVEGADOR va dentro de la URL de media que consume el <img> del
+  // front, y es publica por diseno (D-17). Sin ellas el hotel no tiene foto.
+  GOOGLE_PLACES_API_KEY: optionalVar(z.string().min(1)),
+  GOOGLE_MAPS_BROWSER_KEY: optionalVar(z.string().min(1)),
+
   STORAGE_BUCKET: z.string().min(1),
+  // El consumidor de eventos y el push. Sin ellas el modulo arranca pero
+  // responde 401 en /notifications/events y no manda ningun push.
+  PUBSUB_AUDIENCE: optionalVar(z.string().min(1)),
+  PUBSUB_SERVICE_ACCOUNT: optionalVar(z.string().email()),
+  FIREBASE_PROJECT_ID: optionalVar(z.string().min(1)),
+  // Solo fuera de Cloud Run: ahi la cuenta va adjunta y firma sola.
+  STORAGE_SIGNER_SERVICE_ACCOUNT: optionalVar(z.string().min(1)),
+  // Tambien solo en local, y solo si la maquina trabaja en varios proyectos de
+  // GCP: dice a cual cobrarle la llamada. Va declarada aqui porque el esquema
+  // descarta lo que no declara, y sin esta linea nunca llegaba al servicio.
+  GOOGLE_CLOUD_QUOTA_PROJECT: optionalVar(z.string().min(1)),
 
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 })

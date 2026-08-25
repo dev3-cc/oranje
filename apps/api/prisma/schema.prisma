@@ -298,6 +298,16 @@ model User {
   daysReviewed       TimesheetDay[] @relation("timesheetDayReviewedBy")
   punchesRegistered  PunchMark[]    @relation("punchRegisteredBy")
 
+  notifications Notification[]
+  devices       Device[]
+
+  accidentsReported  WorkAccident[] @relation("accidentReportedBy")
+  accidentsInspected WorkAccident[] @relation("accidentInspector")
+  accidentsCaptured  WorkAccident[] @relation("accidentCapturedBy")
+  accidentsClosed    WorkAccident[] @relation("accidentClosedBy")
+  accidentsCreated   WorkAccident[] @relation("accidentCreatedBy")
+  accidentsUpdated   WorkAccident[] @relation("accidentUpdatedBy")
+
   contractsSigned Contract[] @relation("contractSignedBy")
 
   workerRatesAuthorized    WorkerRate[]    @relation("workerRateAuthorizedBy")
@@ -366,8 +376,14 @@ model Hotel {
   /// El identificador estable de Google Places. Sobrevive a que alguien
   /// reescriba la calle a mano.
   placeId String? @map("place_id") @db.Text
-  /// Foto del lugar según Places. Solo URL: el binario es de Google.
-  photoUrl String? @map("photo_url") @db.Text
+  /// El resource name de la foto en Places (`places/{id}/photos/{ref}`), no una
+  /// URL: la que devuelve el SDK del navegador lleva token de sesión y muere.
+  /// La URL de media se compone al leer.
+  photoRef String? @map("photo_ref") @db.Text
+  /// Cuándo se resolvió. La política de Google permite guardar el place_id
+  /// indefinidamente pero el resto del contenido de Places solo 30 días, así
+  /// que esto es lo que dice cuándo hay que volver a pedirla.
+  photoRefAt DateTime? @map("photo_ref_at") @db.Timestamptz(6)
 
   coordinates      Unsupported("public.geography(Point, 4326)")?
   geofenceRadiusM  Int?                                  @map("geofence_radius_m")
@@ -394,6 +410,7 @@ model Hotel {
   updater   User?  @relation("hotelUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
 
   schedules Schedule[]
+  accidents WorkAccident[]
 
   contracts Contract[]
 
@@ -907,9 +924,10 @@ model Worker {
   gender    String   @db.Text
   phone     String   @db.Text
   address   String   @db.Text
-  /// Para la tarjeta del Pool. Solo la URL; no es un documento del expediente
-  /// ni una foto de ponche.
-  photoUrl  String?  @map("photo_url") @db.Text
+  /// Para la tarjeta del Pool. La ruta en el bucket, no una URL: el bucket es
+  /// privado y la URL se firma al leer. No es un documento del expediente ni
+  /// una foto de ponche.
+  photoPath String?  @map("photo_path") @db.Text
   /// La asigna la Reclutadora. Guardada y no derivada del domicilio porque
   /// derivarla exige geocodificar, y el Pool filtra por zona siempre.
   zoneId String @map("zone_id") @db.Uuid
@@ -966,6 +984,7 @@ model Worker {
   statusState     StatusLightState @relation("workerState", fields: [statusLightStateId, statusLightCode], references: [id, statusLightCode], onDelete: Restrict)
 
   documents      WorkerDocument[]
+  accidents      WorkAccident[]
   stateHistory   WorkerStateHistory[]
   assignments    Assignment[]
   blacklistEntries BlacklistEntry[]
@@ -1734,4 +1753,159 @@ model InvoiceDetail {
   @@index([workerId], map: "ix_invoice_detail_worker")
   @@map("invoice_detail")
   @@schema("settlement")
+}
+
+/// Los tipos de aviso. Es catalogo y no `text` + CHECK porque son mas de
+/// cincuenta y crecen con cada feature: un CHECK obligaria a una migracion por
+/// cada aviso nuevo.
+model NotificationType {
+  id          String  @db.Uuid
+  code        String  @db.Text
+  name        String  @db.Text
+  description String? @db.Text
+  /// El modulo que lo publica: sales, hotel, recruitment, worker, payroll…
+  module   String  @db.Text
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  notifications Notification[]
+
+  @@id([id])
+  @@unique([code], map: "ux_notification_type_code")
+  @@index([module], map: "ix_notification_type_module")
+  @@map("notification_type")
+  @@schema("catalogs")
+}
+
+/// Una fila POR DESTINATARIO, no una con lista: el vault dice "notifica
+/// simultaneamente al Supervisor e Inspector", y cada quien la lee en su
+/// momento. El fan-out ocurre al escribir.
+///
+/// No se particiona aunque el journal si: aqui las leidas SE BORRAN a los 30
+/// dias, asi que la tabla se mantiene chica sola.
+model Notification {
+  id                 String @db.Uuid
+  userId             String @map("user_id") @db.Uuid
+  notificationTypeId String @map("notification_type_id") @db.Uuid
+
+  title String @db.Text
+  body  String @db.Text
+
+  /// Polimorfico y SIN llave foranea, igual que el journal: borrar una
+  /// requisicion no puede borrar los avisos que ya recibio la gente.
+  entityType String? @map("entity_type") @db.Text
+  entityId   String? @map("entity_id") @db.Uuid
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  /// Cuando salio a FCM. El push es el aviso; la lista es el registro.
+  pushedAt  DateTime? @map("pushed_at") @db.Timestamptz(6)
+  pushError String?   @map("push_error") @db.Text
+  /// NULO = no leida. Las no leidas no se borran nunca.
+  readAt DateTime? @map("read_at") @db.Timestamptz(6)
+
+  user User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  type NotificationType @relation(fields: [notificationTypeId], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@index([userId, createdAt], map: "ix_notification_user_created")
+  @@map("notification")
+  @@schema("notifications")
+}
+
+/// A donde se manda el push. Una persona puede tener varios dispositivos, y por
+/// eso es tabla y no una columna en `identity.user`.
+///
+/// El token de FCM ROTA: Firebase lo renueva solo. Por eso el dispositivo no se
+/// borra al cerrar sesion — se marca `revoked_at`, y queda el rastro de desde
+/// donde entro esa persona.
+model Device {
+  id     String @db.Uuid
+  userId String @map("user_id") @db.Uuid
+
+  fcmToken String @map("fcm_token") @db.Text
+  /// WEB | ANDROID | IOS
+  platform String @db.Text
+
+  lastSeenAt DateTime? @map("last_seen_at") @db.Timestamptz(6)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@map("device")
+  @@schema("notifications")
+}
+
+/// La tarjeta de accidente. Primera tabla de `supervision`.
+///
+/// Todo lo presencial y lo medico es NULABLE a proposito: en el escenario A la
+/// tarjeta nace solo con la cabecera y se completa en dos momentos por dos
+/// roles distintos. Una tarjeta a medias ES un estado del flujo.
+///
+/// No guarda el estado del colaborador: GRAY es un hecho de la persona
+/// (`personal.worker`), no de la tarjeta. Guardarlo en las dos seria tener dos
+/// fuentes que se contradicen a la primera correccion manual.
+model WorkAccident {
+  id String @db.Uuid
+  /// AAAAMMDDHHMM + homoclave, como la Requisicion.
+  number String @db.Text
+
+  hotelId          String  @map("hotel_id") @db.Uuid
+  workerId         String  @map("worker_id") @db.Uuid
+  reportedByUserId String  @map("reported_by_user_id") @db.Uuid
+  /// Congelado al crear: la zona se puede reasignar y la tarjeta debe
+  /// conservar quien la atendio.
+  inspectorId String? @map("inspector_id") @db.Uuid
+
+  occurredAt DateTime @map("occurred_at") @db.Timestamptz(6)
+  /// REPORTED | ON_SITE_CAPTURED | MEDICAL_FOLLOW_UP | CLOSED.
+  /// Los cuatro son PROPUESTA: el vault nunca los nombra.
+  status String @default("REPORTED") @db.Text
+
+  siteLocation     String? @map("site_location") @db.Text
+  circumstances    String? @db.Text
+  /// Texto libre a proposito: los testigos pueden no ser colaboradores ni
+  /// usuarios del sistema, y ninguna pantalla filtra por testigo.
+  witnesses        String? @db.Text
+  immediateCare    String? @map("immediate_care") @db.Text
+  onSiteCapturedBy String? @map("on_site_captured_by") @db.Uuid
+  onSiteCapturedAt DateTime? @map("on_site_captured_at") @db.Timestamptz(6)
+
+  /// NULO es "aun no se captura el seguimiento", que no es lo mismo que FALSE.
+  isTransferred  Boolean? @map("is_transferred")
+  medicalCenter  String?  @map("medical_center") @db.Text
+  diagnosis      String?  @db.Text
+  disabilityDays Int?     @map("disability_days")
+  medicalNotes   String?  @map("medical_notes") @db.Text
+
+  medicalDischargeDate DateTime? @map("medical_discharge_date") @db.Date
+  closedBy             String?   @map("closed_by") @db.Uuid
+  closedAt             DateTime? @map("closed_at") @db.Timestamptz(6)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+  createdBy String    @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+
+  hotel           Hotel  @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+  worker          Worker @relation(fields: [workerId], references: [id], onDelete: Restrict)
+  reportedByUser  User   @relation("accidentReportedBy", fields: [reportedByUserId], references: [id], onDelete: Restrict)
+  inspector       User?  @relation("accidentInspector", fields: [inspectorId], references: [id], onDelete: Restrict)
+  capturedByUser  User?  @relation("accidentCapturedBy", fields: [onSiteCapturedBy], references: [id], onDelete: Restrict)
+  closedByUser    User?  @relation("accidentClosedBy", fields: [closedBy], references: [id], onDelete: Restrict)
+  createdByUser   User   @relation("accidentCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  updatedByUser   User?  @relation("accidentUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@unique([number], map: "ux_work_accident_number")
+  @@index([workerId], map: "ix_work_accident_worker")
+  @@index([hotelId], map: "ix_work_accident_hotel")
+  @@index([reportedByUserId], map: "ix_work_accident_reported_by")
+  @@index([onSiteCapturedBy], map: "ix_work_accident_on_site_captured_by")
+  @@index([closedBy], map: "ix_work_accident_closed_by")
+  @@map("work_accident")
+  @@schema("supervision")
 }
