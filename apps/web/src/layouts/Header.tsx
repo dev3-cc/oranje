@@ -1,11 +1,7 @@
 import { Input, SidebarTrigger } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
-import { useGetSessionQuery } from '@/app/sessionApi'
-
 export function Header(): ReactNode {
-  const { data: session } = useGetSessionQuery()
-
   return (
     <header className="flex h-hd shrink-0 items-center gap-4 border-b border-line bg-surface px-6">
       <SidebarTrigger aria-label="Mostrar u ocultar el menú" className="shrink-0 text-ink-3" />
@@ -23,21 +19,15 @@ export function Header(): ReactNode {
 
       <button
         type="button"
-        className="flex shrink-0 items-center gap-2 rounded-md px-2 py-1.5 text-sm text-ink-2 transition-colors hover:bg-surface-2"
+        aria-label="Notificaciones"
+        title="Notificaciones"
+        className="relative shrink-0 cursor-pointer rounded-md p-2 text-ink-2 transition-colors hover:bg-surface-2"
       >
-        Avisos
-        <span className="flex min-w-5 items-center justify-center rounded-full bg-red px-1.5 py-0.5 text-xs font-semibold text-white">
-          3
+        <span className="material-icons-outlined text-2xl leading-none" aria-hidden>
+          notifications
         </span>
-      </button>
-
-      <button
-        type="button"
-        className="flex shrink-0 items-center gap-2.5 rounded-md px-2 py-1.5 transition-colors hover:bg-surface-2"
-      >
-        <span className="size-8 shrink-0 rounded-full bg-o-50" aria-hidden />
-        <span className="text-sm text-ink">
-          {session ? `${session.name} · ${session.roleCode}` : '—'}
+        <span className="absolute top-0.5 right-0.5 flex min-w-4 items-center justify-center rounded-full bg-red px-1 text-[10px] font-semibold text-white">
+          3
         </span>
       </button>
     </header>

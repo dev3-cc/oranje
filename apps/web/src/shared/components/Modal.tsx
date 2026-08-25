@@ -75,7 +75,12 @@ export function Modal({
         }}
       >
         <DialogContent
-          className={cn('overflow-hidden p-0', 'sm:max-w-2xl', className, widthOverrides)}
+          className={cn(
+            'w-[calc(100vw-2rem)] max-h-[calc(100dvh-2rem)] overflow-hidden p-0',
+            'sm:max-w-2xl',
+            className,
+            widthOverrides,
+          )}
           aria-describedby={undefined}
           onInteractOutside={keepPlacesInteraction}
           onPointerDownOutside={keepPlacesInteraction}
@@ -96,7 +101,7 @@ export function Modal({
     >
       <DialogContent
         className={cn(
-          'max-h-[calc(100vh-3rem)] gap-5 overflow-y-auto',
+          'w-[calc(100vw-2rem)] max-h-[calc(100dvh-3rem)] gap-5 overflow-y-auto',
           'sm:max-w-2xl',
           className,
           widthOverrides,
