@@ -59,7 +59,7 @@ const COLUMNS: ColumnDef<PoolWorker, unknown>[] = [
             /* El nombre va al Expediente; la fila, al modal de edición. */
             event.stopPropagation()
           }}
-          className="text-base font-bold whitespace-nowrap text-ink hover:text-o-700 hover:underline"
+          className="text-sm font-bold whitespace-nowrap text-ink hover:text-o-700 hover:underline"
         >
           {row.original.fullName}
         </Link>
@@ -70,22 +70,22 @@ const COLUMNS: ColumnDef<PoolWorker, unknown>[] = [
   {
     accessorKey: 'zoneName',
     header: col('zone', 'Zona'),
-    cell: ({ row }) => <span className="whitespace-nowrap">{row.original.zoneName}</span>,
+    cell: ({ row }) => <span>{row.original.zoneName}</span>,
   },
   {
     accessorKey: 'catalogPosition',
     header: col('catalog_position', 'Posición'),
-    cell: ({ row }) => <span className="whitespace-nowrap">{row.original.catalogPosition}</span>,
+    cell: ({ row }) => <span>{row.original.catalogPosition}</span>,
   },
   {
     accessorKey: 'englishLevel',
     header: col('english_level', 'Inglés'),
-    cell: ({ row }) => <span className="whitespace-nowrap">{row.original.englishLevel}</span>,
+    cell: ({ row }) => <span>{row.original.englishLevel}</span>,
   },
   {
     accessorKey: 'hiringModality',
     header: col('hiring_modality', 'Modalidad'),
-    cell: ({ row }) => <span className="whitespace-nowrap">{row.original.hiringModality}</span>,
+    cell: ({ row }) => <span>{row.original.hiringModality}</span>,
   },
   {
     accessorKey: 'status',
@@ -127,7 +127,7 @@ export function PoolTable({
       columns={COLUMNS}
       data={items}
       emptyMessage="Nadie en el pool coincide con el filtro."
-      minWidthClassName="min-w-[72rem]"
+      dense
       onRowClick={onEdit}
     />
   )

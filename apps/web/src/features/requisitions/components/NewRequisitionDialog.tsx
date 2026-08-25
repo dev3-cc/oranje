@@ -6,12 +6,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
   cn,
 } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
@@ -39,21 +33,6 @@ import { IS_DEV_UI } from '@/shared/lib/devMode'
 const FORM_ID = 'new-requisition'
 
 const NO_ENGLISH = 'NONE'
-
-const CELL_CONTROL =
-  'w-full rounded-md border border-transparent bg-transparent px-2 py-1.5 text-sm text-ink hover:border-line focus:border-o-500 focus:bg-surface focus:outline-none'
-
-const HEADERS = [
-  '#',
-  'Posición',
-  'Modalidad',
-  'Inglés',
-  'Departamento',
-  'Cant.',
-  'Inicio',
-  'Hora',
-  'Slots',
-]
 
 function positionPath<K extends keyof RequisitionPositionDraft>(
   index: number,
@@ -355,214 +334,198 @@ export function NewRequisitionDialog({
                   : 'Cada unidad de Cantidad es un lugar por cubrir'}
               </p>
 
-              <div className="mt-4">
-                <Table className="min-w-[62rem] text-left">
-                  <TableHeader>
-                    <TableRow className="border-line">
-                      {HEADERS.map((header) => (
-                        <TableHead
-                          key={header}
-                          scope="col"
-                          className="px-2 py-3 text-xs font-semibold tracking-wide text-ink-3 uppercase"
-                        >
-                          {header}
-                        </TableHead>
-                      ))}
-                      <TableHead scope="col" className="px-2 py-3">
-                        <span className="sr-only">Quitar</span>
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
+              <div className="mt-4 flex flex-col gap-4">
+                {fields.map((field, index) => {
+                  const quantity = Number(positions[index]?.quantity ?? 0) || 0
+                  const rowError = firstRowError(errors, index)
 
-                  <TableBody>
-                    {fields.map((field, index) => {
-                      const quantity = Number(positions[index]?.quantity ?? 0) || 0
-                      const rowError = firstRowError(errors, index)
+                  return (
+                    <div
+                      key={field.id}
+                      className={cn('rounded-lg border border-line p-4', rowError && 'border-red')}
+                    >
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-ink">Posición {index + 1}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 rounded-md bg-o-50 px-2.5 py-1 text-sm font-medium whitespace-nowrap text-o-700">
+                            <span
+                              className="material-icons-outlined text-base leading-none"
+                              aria-hidden
+                            >
+                              layers
+                            </span>
+                            {quantity} {quantity === 1 ? 'slot libre' : 'slots libres'}
+                          </span>
+                          <button
+                            type="button"
+                            disabled={fields.length === 1}
+                            onClick={() => {
+                              remove(index)
+                            }}
+                            aria-label={`Quitar posición ${String(index + 1)}`}
+                            className="cursor-pointer rounded-md px-2 py-1 text-sm text-ink-3 hover:text-red disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      </div>
 
-                      return (
-                        <TableRow key={field.id} className="border-line">
-                          <TableCell className="px-2 py-3 text-sm text-ink-3">
-                            {index + 1}
-                          </TableCell>
-                          <TableCell className="px-2 py-3">
-                            <Controller
-                              control={control}
-                              name={positionPath(index, 'catalogPositionId')}
-                              render={({ field }) => (
-                                <Select
-                                  {...(field.value ? { value: field.value } : {})}
-                                  onValueChange={field.onChange}
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        <label className="flex flex-col gap-1.5">
+                          <span className="text-xs font-medium text-ink-3">Posición</span>
+                          <Controller
+                            control={control}
+                            name={positionPath(index, 'catalogPositionId')}
+                            render={({ field: f }) => (
+                              <Select
+                                {...(f.value ? { value: f.value } : {})}
+                                onValueChange={f.onChange}
+                              >
+                                <SelectTrigger
+                                  aria-label={`Posición ${String(index + 1)}`}
+                                  className="w-full font-semibold"
                                 >
-                                  <SelectTrigger
-                                    aria-label={`Posición ${String(index + 1)}`}
-                                    className={cn(
-                                      'h-9 w-full font-semibold',
-                                      rowError && 'border-red',
-                                    )}
-                                  >
-                                    <SelectValue placeholder="—" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {(options?.positions ?? []).map((item) => (
-                                      <SelectItem key={item.id} value={item.id}>
-                                        {item.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell className="px-2 py-3">
-                            <Controller
-                              control={control}
-                              name={positionPath(index, 'hiringModalityId')}
-                              render={({ field }) => (
-                                <Select
-                                  {...(field.value ? { value: field.value } : {})}
-                                  onValueChange={field.onChange}
+                                  <SelectValue placeholder="Elige la posición" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(options?.positions ?? []).map((item) => (
+                                    <SelectItem key={item.id} value={item.id}>
+                                      {item.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                        </label>
+
+                        <label className="flex flex-col gap-1.5">
+                          <span className="text-xs font-medium text-ink-3">Modalidad</span>
+                          <Controller
+                            control={control}
+                            name={positionPath(index, 'hiringModalityId')}
+                            render={({ field: f }) => (
+                              <Select
+                                {...(f.value ? { value: f.value } : {})}
+                                onValueChange={f.onChange}
+                              >
+                                <SelectTrigger
+                                  aria-label={`Modalidad ${String(index + 1)}`}
+                                  className="w-full"
                                 >
-                                  <SelectTrigger
-                                    aria-label={`Modalidad ${String(index + 1)}`}
-                                    className="h-9 w-full"
-                                  >
-                                    <SelectValue placeholder="—" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {(options?.modalities ?? []).map((item) => (
-                                      <SelectItem key={item.id} value={item.id}>
-                                        {item.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell className="px-2 py-3">
-                            <Controller
-                              control={control}
-                              name={positionPath(index, 'englishLevelId')}
-                              render={({ field }) => (
-                                <Select
-                                  value={field.value === '' ? NO_ENGLISH : field.value}
-                                  onValueChange={(value) => {
-                                    field.onChange(value === NO_ENGLISH ? '' : value)
-                                  }}
+                                  <SelectValue placeholder="Elige la modalidad" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(options?.modalities ?? []).map((item) => (
+                                    <SelectItem key={item.id} value={item.id}>
+                                      {item.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                        </label>
+
+                        <label className="flex flex-col gap-1.5">
+                          <span className="text-xs font-medium text-ink-3">Inglés</span>
+                          <Controller
+                            control={control}
+                            name={positionPath(index, 'englishLevelId')}
+                            render={({ field: f }) => (
+                              <Select
+                                value={f.value === '' ? NO_ENGLISH : f.value}
+                                onValueChange={(value) => {
+                                  f.onChange(value === NO_ENGLISH ? '' : value)
+                                }}
+                              >
+                                <SelectTrigger
+                                  aria-label={`Inglés ${String(index + 1)}`}
+                                  className="w-full"
                                 >
-                                  <SelectTrigger
-                                    aria-label={`Inglés ${String(index + 1)}`}
-                                    className="h-9 w-full"
-                                  >
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value={NO_ENGLISH}>No requerido</SelectItem>
-                                    {(options?.englishLevels ?? []).map((item) => (
-                                      <SelectItem key={item.id} value={item.id}>
-                                        {item.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell className="px-2 py-3">
-                            {}
-                            <Controller
-                              control={control}
-                              name={positionPath(index, 'hotelDepartmentId')}
-                              render={({ field }) => (
-                                <Select
-                                  {...(field.value ? { value: field.value } : {})}
-                                  onValueChange={field.onChange}
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value={NO_ENGLISH}>No requerido</SelectItem>
+                                  {(options?.englishLevels ?? []).map((item) => (
+                                    <SelectItem key={item.id} value={item.id}>
+                                      {item.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                        </label>
+
+                        <label className="flex flex-col gap-1.5">
+                          <span className="text-xs font-medium text-ink-3">Departamento</span>
+                          <Controller
+                            control={control}
+                            name={positionPath(index, 'hotelDepartmentId')}
+                            render={({ field: f }) => (
+                              <Select
+                                {...(f.value ? { value: f.value } : {})}
+                                onValueChange={f.onChange}
+                              >
+                                <SelectTrigger
+                                  aria-label={`Departamento ${String(index + 1)}`}
+                                  className="w-full"
                                 >
-                                  <SelectTrigger
-                                    aria-label={`Departamento ${String(index + 1)}`}
-                                    className="h-9 w-full"
-                                  >
-                                    <SelectValue placeholder="—" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {(options?.departments ?? []).map((item) => (
-                                      <SelectItem key={item.id} value={item.id}>
-                                        {item.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              )}
-                            />
-                          </TableCell>
-                          <TableCell className="px-2 py-3">
-                            <input
-                              {...register(positionPath(index, 'quantity'))}
-                              inputMode="numeric"
-                              aria-label={`Cantidad ${String(index + 1)}`}
-                              className={cn(CELL_CONTROL, 'w-16')}
-                            />
-                          </TableCell>
-                          <TableCell className="px-2 py-3">
-                            <input
+                                  <SelectValue placeholder="Elige el departamento" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(options?.departments ?? []).map((item) => (
+                                    <SelectItem key={item.id} value={item.id}>
+                                      {item.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                        </label>
+
+                        <label className="flex flex-col gap-1.5">
+                          <span className="text-xs font-medium text-ink-3">Cantidad</span>
+                          <Input
+                            {...register(positionPath(index, 'quantity'))}
+                            inputMode="numeric"
+                            aria-label={`Cantidad ${String(index + 1)}`}
+                          />
+                        </label>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <label className="flex flex-col gap-1.5">
+                            <span className="text-xs font-medium text-ink-3">Inicio</span>
+                            <Input
                               type="date"
                               {...register(positionPath(index, 'startDate'))}
                               aria-label={`Inicio ${String(index + 1)}`}
-                              className={cn(CELL_CONTROL, 'w-40')}
                             />
-                          </TableCell>
-                          <TableCell className="px-2 py-3">
-                            <input
+                          </label>
+                          <label className="flex flex-col gap-1.5">
+                            <span className="text-xs font-medium text-ink-3">Hora</span>
+                            <Input
                               type="time"
                               {...register(positionPath(index, 'startTime'))}
                               aria-label={`Hora ${String(index + 1)}`}
-                              className={cn(CELL_CONTROL, 'w-28')}
                             />
-                          </TableCell>
-                          <TableCell className="px-2 py-3">
-                            <span className="inline-flex items-center gap-1.5 rounded-md bg-o-50 px-2.5 py-1 text-sm font-medium whitespace-nowrap text-o-700">
-                              <span
-                                className="material-icons-outlined text-base leading-none"
-                                aria-hidden
-                              >
-                                layers
-                              </span>
-                              {quantity} {quantity === 1 ? 'libre' : 'libres'}
-                            </span>
-                          </TableCell>
-                          <TableCell className="px-2 py-3 text-right">
-                            {}
-                            <button
-                              type="button"
-                              disabled={fields.length === 1}
-                              onClick={() => {
-                                remove(index)
-                              }}
-                              aria-label={`Quitar posición ${String(index + 1)}`}
-                              className="rounded-md px-2 py-1 text-sm text-ink-3 hover:text-red disabled:cursor-not-allowed disabled:opacity-40"
-                            >
-                              ✕
-                            </button>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                </Table>
+                          </label>
+                        </div>
+                      </div>
+
+                      {rowError !== undefined && (
+                        <p className="mt-2 text-sm text-red">{rowError}</p>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
 
               {errors.positions?.root?.message !== undefined && (
                 <p className="mt-2 text-sm text-red">{errors.positions.root.message}</p>
               )}
-              {fields.map((field, index) => {
-                const rowError = firstRowError(errors, index)
-                return rowError === undefined ? null : (
-                  <p key={field.id} className="mt-2 text-sm text-red">
-                    Posición {index + 1}: {rowError}
-                  </p>
-                )
-              })}
-
               <div className="mt-4">
                 <Button
                   variant="secondary"

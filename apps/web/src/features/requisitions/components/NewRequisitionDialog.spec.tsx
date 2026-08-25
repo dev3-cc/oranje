@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { describe, expect, it, vi } from 'vitest'
@@ -61,7 +61,7 @@ describe('NewRequisitionDialog', () => {
     await user.clear(quantity)
     await user.type(quantity, '4')
 
-    expect(screen.getByText('4 libres')).toBeInTheDocument()
+    expect(screen.getByText('4 slots libres')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: '+ Agregar posición' }))
     expect(screen.getByText('Total: 2 posiciones · 5 slots')).toBeInTheDocument()
@@ -84,7 +84,7 @@ describe('NewRequisitionDialog', () => {
     await user.click(screen.getByRole('button', { name: 'Guardar requisición' }))
 
     expect(await screen.findByText('Falta el hotel')).toBeInTheDocument()
-    expect(screen.getByText('Posición 1: Falta la posición')).toBeInTheDocument()
+    expect(screen.getByText('Falta la posición')).toBeInTheDocument()
   })
 
   it('guarda y cierra cuando el alta está completa', async () => {
@@ -102,9 +102,7 @@ describe('NewRequisitionDialog', () => {
     await pick(user, 'Modalidad 1', 'Tiempo completo')
     await pick(user, 'Departamento 1', 'Housekeeping')
 
-    const row = screen.getByLabelText('Posición 1').closest('tr')
-    const date = within(row as HTMLElement).getByLabelText('Inicio 1')
-    await user.type(date, '2026-09-18')
+    await user.type(screen.getByLabelText('Inicio 1'), '2026-09-18')
 
     await user.click(screen.getByRole('button', { name: 'Guardar requisición' }))
 
