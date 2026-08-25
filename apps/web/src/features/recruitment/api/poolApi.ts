@@ -127,6 +127,19 @@ export const poolApi = baseApi.injectEndpoints({
      * El alta de la Fase 1 (entrevista): la persona NACE en BLANCO con la fila
      * a medias — eso ES el estado (D-26). Las fases 2 y 3 llegan por la app.
      */
+    /** Edición del expediente (PATCH real): mismos campos, todos opcionales. */
+    updateWorker: build.mutation<unknown, { workerId: string } & Partial<CreateWorkerRequest>>({
+      query: ({ workerId, ...body }) => ({
+        url: `/workers/${workerId}`,
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: (_res, _err, { workerId }) => [
+        { type: 'Worker' as const, id: 'LIST' },
+        { type: 'Worker' as const, id: workerId },
+      ],
+    }),
+
     createWorker: build.mutation<unknown, CreateWorkerRequest>({
       query: (body) => ({ url: '/workers', method: 'POST', body }),
       invalidatesTags: [{ type: 'Worker' as const, id: 'LIST' }],
@@ -143,4 +156,9 @@ export const poolApi = baseApi.injectEndpoints({
   }),
 })
 
-export const { useGetWorkerPoolQuery, useGetPoolOptionsQuery, useCreateWorkerMutation } = poolApi
+export const {
+  useGetWorkerPoolQuery,
+  useGetPoolOptionsQuery,
+  useCreateWorkerMutation,
+  useUpdateWorkerMutation,
+} = poolApi

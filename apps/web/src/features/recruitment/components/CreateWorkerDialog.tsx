@@ -1,13 +1,20 @@
 import { MaterialIcon } from '@oranje/ui'
 import { useEffect, useRef, useState, type ReactNode, type SelectHTMLAttributes } from 'react'
 
-import { useCreateWorkerMutation, useGetPoolOptionsQuery } from '../api/poolApi'
+import {
+  useCreateWorkerMutation,
+  useGetPoolOptionsQuery,
+  useUpdateWorkerMutation,
+} from '../api/poolApi'
+import { useGetWorkerDetailQuery } from '../api/workerDetailApi'
 
 import { useUploadFileMutation } from '@/app/filesApi'
 import personajeContratacion from '@/assets/ilustrations/personaje-contratacion.svg'
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
+import { isCompletePhone, PhoneInput } from '@/shared/components/PhoneInput'
 import { EXPERIENCE_LABEL, EXPERIENCE_LEVELS } from '@/shared/constants/workerEnums'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const CONTROL_CLASS =
@@ -107,16 +114,34 @@ function FormRow({
  * genérico «inténtalo de nuevo» escondía justo eso.
  */
 function uploadErrorMessage(error: unknown): string {
-  const raw = error as
-    { status?: number | string; data?: { error?: { code?: string; message?: string } } } | undefined
-  if (raw?.data?.error?.code === 'UNSUPPORTED_FILE_TYPE') {
-    return 'Ese formato no se puede procesar (los HEIC del iPhone no entran): usa JPG, PNG o WebP.'
-  }
-  if (raw?.status === 413) {
-    return 'La imagen pasa de 15 MB: toma la foto con menos resolución o comprímela.'
-  }
-  if (raw?.data?.error?.message) return raw.data.error.message
-  return 'No se pudo subir la foto. Revisa tu conexión e inténtalo de nuevo.'
+  return apiErrorMessage(error, {
+    byCode: {
+      UNSUPPORTED_FILE_TYPE:
+        'Ese formato no se puede procesar (los HEIC del iPhone no entran): usa JPG, PNG o WebP.',
+    },
+    byStatus: {
+      413: 'La imagen pasa de 15 MB: toma la foto con menos resolución o comprímela.',
+    },
+    fallback: 'No se pudo subir la foto. Revisa tu conexión e inténtalo de nuevo.',
+  })
+}
+
+/** La fecha tope del picker: hoy menos 18 años — el back rechaza menores. */
+function maxBirthDate(): string {
+  const limit = new Date()
+  limit.setFullYear(limit.getFullYear() - 18)
+  return limit.toISOString().slice(0, 10)
+}
+
+/** La causa REAL del rechazo del alta, no el «revisa los datos» a ciegas. */
+function saveErrorMessage(error: unknown): string {
+  return apiErrorMessage(error, {
+    byCode: {
+      WORKER_UNDERAGE: (info) =>
+        `${info.message ?? 'Menor de edad'} — revisa la fecha de nacimiento.`,
+    },
+    fallback: 'No se pudo guardar el colaborador. Revisa los datos e inténtalo de nuevo.',
+  })
 }
 
 function initialsOf(fullName: string): string {
@@ -140,13 +165,26 @@ function initialsOf(fullName: string): string {
 export function CreateWorkerDialog({
   isOpen,
   onClose,
+  workerId,
 }: {
   isOpen: boolean
   onClose: () => void
+  /** Con id, el MISMO modal edita: precarga el expediente y guarda con PATCH. */
+  workerId?: string
 }): ReactNode {
+  const isEditing = workerId !== undefined
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT)
   const { data: options } = useGetPoolOptionsQuery(undefined, { skip: !isOpen })
-  const [createWorker, { isLoading, isError }] = useCreateWorkerMutation()
+  const { data: editing } = useGetWorkerDetailQuery(workerId ?? '', {
+    skip: !isOpen || !isEditing,
+  })
+  const [createWorker, { isLoading: isCreating, isError: hasCreateFailed, error: createError }] =
+    useCreateWorkerMutation()
+  const [updateWorker, { isLoading: isUpdating, isError: hasUpdateFailed, error: updateError }] =
+    useUpdateWorkerMutation()
+  const isLoading = isCreating || isUpdating
+  const isError = hasCreateFailed || hasUpdateFailed
+  const saveError = hasUpdateFailed ? updateError : createError
 
   /** La foto se pica en el avatar de la banda: sube a POST /files y previsualiza local. */
   const photoInputRef = useRef<HTMLInputElement>(null)
@@ -159,6 +197,25 @@ export function CreateWorkerDialog({
     setDraft(EMPTY_DRAFT)
     setPhotoPreview(null)
   }, [isOpen])
+
+  /** Modo edición: el expediente llena el formulario y la foto ya guardada. */
+  useEffect(() => {
+    if (!isOpen || !editing) return
+    setDraft({
+      fullName: editing.fullName,
+      birthDate: editing.birthDate.slice(0, 10),
+      photoPath: '',
+      gender: editing.gender as Draft['gender'],
+      phone: editing.phone,
+      address: editing.address,
+      zoneId: editing.zone.id,
+      catalogPositionId: editing.position?.id ?? '',
+      hiringModalityId: editing.hiringModality?.id ?? '',
+      englishLevelId: editing.englishLevel?.id ?? '',
+      experienceLevel: editing.experienceLevel ?? '',
+    })
+    setPhotoPreview(editing.photoUrl)
+  }, [isOpen, editing])
 
   async function handlePhoto(file: File): Promise<void> {
     setPhotoPreview(URL.createObjectURL(file))
@@ -179,7 +236,7 @@ export function CreateWorkerDialog({
   const canSubmit =
     draft.fullName.trim() !== '' &&
     draft.birthDate !== '' &&
-    draft.phone.trim().length >= 7 &&
+    isCompletePhone(draft.phone) &&
     draft.address.trim() !== '' &&
     draft.zoneId !== '' &&
     !isLoading
@@ -187,19 +244,35 @@ export function CreateWorkerDialog({
   async function submit(): Promise<void> {
     if (!canSubmit) return
     try {
-      await createWorker({
-        fullName: draft.fullName.trim(),
-        birthDate: draft.birthDate,
-        gender: draft.gender,
-        phone: draft.phone.trim(),
-        address: draft.address.trim(),
-        zoneId: draft.zoneId,
-        ...(draft.photoPath !== '' ? { photoPath: draft.photoPath } : {}),
-        ...(draft.catalogPositionId !== '' ? { catalogPositionId: draft.catalogPositionId } : {}),
-        ...(draft.hiringModalityId !== '' ? { hiringModalityId: draft.hiringModalityId } : {}),
-        ...(draft.englishLevelId !== '' ? { englishLevelId: draft.englishLevelId } : {}),
-        ...(draft.experienceLevel !== '' ? { experienceLevel: draft.experienceLevel } : {}),
-      }).unwrap()
+      if (isEditing && workerId) {
+        /** El PATCH no acepta nacimiento ni género: son inmutables del alta. */
+        await updateWorker({
+          workerId,
+          fullName: draft.fullName.trim(),
+          phone: draft.phone.trim(),
+          address: draft.address.trim(),
+          zoneId: draft.zoneId,
+          ...(draft.photoPath !== '' ? { photoPath: draft.photoPath } : {}),
+          ...(draft.catalogPositionId !== '' ? { catalogPositionId: draft.catalogPositionId } : {}),
+          ...(draft.hiringModalityId !== '' ? { hiringModalityId: draft.hiringModalityId } : {}),
+          ...(draft.englishLevelId !== '' ? { englishLevelId: draft.englishLevelId } : {}),
+          ...(draft.experienceLevel !== '' ? { experienceLevel: draft.experienceLevel } : {}),
+        }).unwrap()
+      } else {
+        await createWorker({
+          fullName: draft.fullName.trim(),
+          birthDate: draft.birthDate,
+          gender: draft.gender,
+          phone: draft.phone.trim(),
+          address: draft.address.trim(),
+          zoneId: draft.zoneId,
+          ...(draft.photoPath !== '' ? { photoPath: draft.photoPath } : {}),
+          ...(draft.catalogPositionId !== '' ? { catalogPositionId: draft.catalogPositionId } : {}),
+          ...(draft.hiringModalityId !== '' ? { hiringModalityId: draft.hiringModalityId } : {}),
+          ...(draft.englishLevelId !== '' ? { englishLevelId: draft.englishLevelId } : {}),
+          ...(draft.experienceLevel !== '' ? { experienceLevel: draft.experienceLevel } : {}),
+        }).unwrap()
+      }
       onClose()
     } catch {
       /* el error queda en `isError` y se pinta abajo */
@@ -208,11 +281,25 @@ export function CreateWorkerDialog({
 
   const initials = initialsOf(draft.fullName)
 
+  /** Con el botón apagado, DECIR qué falta — no dejar adivinando. */
+  const missingHint =
+    draft.fullName.trim() === ''
+      ? 'Falta el nombre completo'
+      : draft.birthDate === ''
+        ? 'Falta la fecha de nacimiento'
+        : !isCompletePhone(draft.phone)
+          ? 'El teléfono necesita al menos 7 dígitos (sin contar la lada)'
+          : draft.address.trim() === ''
+            ? 'Falta el domicilio'
+            : draft.zoneId === ''
+              ? 'Elige la zona'
+              : null
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Crear colaborador — Fase 1 · Entrevista"
+      title={isEditing ? 'Editar colaborador' : 'Crear colaborador — Fase 1 · Entrevista'}
       chromeless
       className="max-w-2xl"
     >
@@ -291,7 +378,8 @@ export function CreateWorkerDialog({
             {draft.fullName.trim() === '' ? 'Nuevo colaborador' : draft.fullName}
           </h2>
           <p className="mt-0.5 text-xs text-ink-3">
-            Fase 1 · Entrevista{IS_DEV_UI && ' — personal.worker · nace en BLANCO'}
+            {isEditing ? 'Editar expediente' : 'Fase 1 · Entrevista'}
+            {IS_DEV_UI && !isEditing && ' — personal.worker · nace en BLANCO'}
             {IS_DEV_UI && <code className="text-[11px] text-ink-4"> · photo_path</code>}
           </p>
           {isUploadError && (
@@ -321,6 +409,10 @@ export function CreateWorkerDialog({
               update('birthDate')(event.target.value)
             }}
             aria-label="Fecha de nacimiento"
+            /* El back exige 18+: el picker no ofrece fechas que van a rebotar. */
+            max={maxBirthDate()}
+            disabled={isEditing}
+            title={isEditing ? 'El nacimiento no se edita: es del alta' : undefined}
             className={CONTROL_CLASS}
           />
           <Select
@@ -329,6 +421,8 @@ export function CreateWorkerDialog({
               update('gender')(event.target.value as Draft['gender'])
             }}
             aria-label="Género"
+            disabled={isEditing}
+            title={isEditing ? 'El género no se edita: es del alta' : undefined}
           >
             {GENDERS.map((gender) => (
               <option key={gender.value} value={gender.value}>
@@ -339,14 +433,13 @@ export function CreateWorkerDialog({
         </FormRow>
 
         <FormRow label="Teléfono y zona" column="phone · zone_id">
-          <input
+          <PhoneInput
             value={draft.phone}
-            onChange={(event) => {
-              update('phone')(event.target.value)
+            onChange={(value) => {
+              update('phone')(value)
             }}
-            aria-label="Teléfono"
-            placeholder="+1 404 790 2517"
-            className={CONTROL_CLASS}
+            ariaLabel="Teléfono"
+            placeholder="404 790 2517"
           />
           <Select
             value={draft.zoneId}
@@ -461,11 +554,14 @@ export function CreateWorkerDialog({
 
         {isError && (
           <p role="alert" className="px-6 pb-2 text-sm text-red">
-            No se pudo crear el colaborador. Revisa los datos e inténtalo de nuevo.
+            {saveErrorMessage(saveError)}
           </p>
         )}
 
         <div className="flex items-center justify-end gap-3 border-t border-line px-6 py-4">
+          {missingHint !== null && (
+            <span className="mr-auto text-xs text-ink-3">{missingHint}</span>
+          )}
           <Button onClick={onClose} disabled={isLoading}>
             Cancelar
           </Button>
@@ -476,7 +572,7 @@ export function CreateWorkerDialog({
               void submit()
             }}
           >
-            {isLoading ? 'Creando…' : 'Crear colaborador'}
+            {isLoading ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear colaborador'}
           </Button>
         </div>
       </div>

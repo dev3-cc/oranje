@@ -58,6 +58,12 @@ export const workerDetailApi = baseApi.injectEndpoints({
       ],
     }),
 
+    /**
+     * ÚNICO endpoint que NO desenvuelve el sobre a propósito: su `meta`
+     * (`hasTaxId`, `taxRetentionApplies`) es dato real que la vista lee.
+     * `WorkerDocumentListApi` ES el sobre — no lo cambies a `WorkerDocumentApi[]`
+     * sin aplanar aquí, o la vista lee `undefined` (el bug que tuvo Propuestas).
+     */
     getWorkerDocuments: build.query<WorkerDocumentListApi, string>({
       query: (workerId) => `/workers/${workerId}/documents`,
       providesTags: (_res, _err, workerId) => [

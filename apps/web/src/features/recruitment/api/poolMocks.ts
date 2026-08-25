@@ -233,6 +233,42 @@ const routes: readonly MockRoute[] = [
     },
   },
   {
+    method: 'PATCH',
+    path: '/workers/:workerId',
+    resolve: ({ params, body }): ApiEnvelope<WorkerApi> => {
+      const found = workers.find((worker) => worker.id === params.workerId)
+      if (!found) throw new Error('WORKER_NOT_FOUND')
+      const payload = (body ?? {}) as Partial<{
+        fullName: string
+        phone: string
+        address: string
+        zoneId: string
+        catalogPositionId: string
+        hiringModalityId: string
+        englishLevelId: string
+        experienceLevel: string
+        photoPath: string
+      }>
+      if (payload.fullName !== undefined) found.fullName = payload.fullName
+      if (payload.phone !== undefined) found.phone = payload.phone
+      if (payload.address !== undefined) found.address = payload.address
+      if (payload.zoneId !== undefined) {
+        found.zone = ZONES.find((zone) => zone.id === payload.zoneId) ?? found.zone
+      }
+      if (payload.catalogPositionId !== undefined) {
+        found.position = POSITION[payload.catalogPositionId] ?? found.position
+      }
+      if (payload.hiringModalityId !== undefined) {
+        found.hiringModality = MODALITY[payload.hiringModalityId] ?? found.hiringModality
+      }
+      if (payload.englishLevelId !== undefined) {
+        found.englishLevel = ENGLISH[payload.englishLevelId] ?? found.englishLevel
+      }
+      if (payload.experienceLevel !== undefined) found.experienceLevel = payload.experienceLevel
+      return { data: { ...found } }
+    },
+  },
+  {
     method: 'GET',
     path: '/workers/:workerId',
     resolve: ({ params }): ApiEnvelope<WorkerApi> => {

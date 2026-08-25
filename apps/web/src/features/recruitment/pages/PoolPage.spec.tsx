@@ -97,7 +97,8 @@ describe('PoolPage', () => {
 
     await user.type(scoped.getByPlaceholderText('María Sandoval Ruiz'), 'Braulio Vega')
     await user.type(scoped.getByLabelText('Fecha de nacimiento'), '1994-05-10')
-    await user.type(scoped.getByPlaceholderText('+1 404 790 2517'), '+1 404 555 0199')
+    // La lada la pone el selector (+1 por defecto): se teclea solo el nacional.
+    await user.type(scoped.getByPlaceholderText('404 790 2517'), '404 555 0199')
     await user.type(scoped.getByPlaceholderText(/Peachtree/), '88 Auburn Ave, Atlanta')
     await user.selectOptions(await scoped.findByLabelText('Zona'), 'centro')
     expect(submit).toBeEnabled()

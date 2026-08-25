@@ -7,7 +7,9 @@ import { PoolTable } from '../components/PoolTable'
 import { EMPTY_POOL_FILTERS, type PoolFilters as Filters } from '../types/pool.types'
 
 import { Button } from '@/shared/components/Button'
+import { LoadError } from '@/shared/components/LoadError'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 /**
  * Pool de Colaboradores: quién hay disponible y en qué situación está.
@@ -16,8 +18,9 @@ import { TableSkeleton } from '@/shared/components/TableSkeleton'
 export function PoolPage(): ReactNode {
   const [filters, setFilters] = useState<Filters>(EMPTY_POOL_FILTERS)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [editWorkerId, setEditWorkerId] = useState<string | null>(null)
 
-  const { data: pool, isLoading, isError } = useGetWorkerPoolQuery(filters)
+  const { data: pool, isLoading, isError, refetch } = useGetWorkerPoolQuery(filters)
   const { data: options } = useGetPoolOptionsQuery()
 
   return (
@@ -32,7 +35,9 @@ export function PoolPage(): ReactNode {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-ink">Pool de Colaboradores</h1>
           <p className="mt-1.5 text-sm text-ink-3">
-            personal.worker · vw_worker deriva edad y perfil completo
+            {IS_DEV_UI
+              ? 'personal.worker · vw_worker deriva edad y perfil completo'
+              : 'Colaboradores validados, listos para asignar a una requisición'}
             {pool && ` · ${String(pool.total)} en el pool`}
           </p>
         </div>
@@ -50,15 +55,35 @@ export function PoolPage(): ReactNode {
       <PoolFilters filters={filters} options={options} onChange={setFilters} />
 
       {isError && (
-        <p className="rounded-lg border border-line bg-surface p-6 text-sm text-red">
-          No se pudo cargar el pool. Reintenta en unos segundos.
-        </p>
+        <LoadError
+          message="No se pudo cargar el pool."
+          onRetry={() => {
+            void refetch()
+          }}
+        />
       )}
 
       {isLoading && !pool ? (
         <TableSkeleton rows={6} columns={6} />
       ) : (
-        pool && <PoolTable items={pool.items} />
+        pool && (
+          <PoolTable
+            items={pool.items}
+            onEdit={(worker) => {
+              setEditWorkerId(worker.id)
+            }}
+          />
+        )
+      )}
+
+      {editWorkerId && (
+        <CreateWorkerDialog
+          isOpen
+          workerId={editWorkerId}
+          onClose={() => {
+            setEditWorkerId(null)
+          }}
+        />
       )}
 
       <CreateWorkerDialog

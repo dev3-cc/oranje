@@ -29,6 +29,7 @@ export function DataTable<T>({
   data,
   emptyMessage = 'Sin resultados.',
   minWidthClassName,
+  onRowClick,
 }: {
   columns: ColumnDef<T, unknown>[]
   data: T[]
@@ -36,6 +37,8 @@ export function DataTable<T>({
   emptyMessage?: string
   /** Ancho mínimo para tablas anchas; el contenedor ya scrollea en x. */
   minWidthClassName?: string
+  /** La fila entera actúa (abrir, editar). Los links internos hacen stopPropagation. */
+  onRowClick?: (row: T) => void
 }): ReactNode {
   const [sorting, setSorting] = useState<SortingState>([])
 
@@ -95,7 +98,17 @@ export function DataTable<T>({
         </TableHeader>
         <TableBody>
           {table.getRowModel().rows.map((row) => (
-            <TableRow key={row.id} className="border-line hover:bg-surface-2">
+            <TableRow
+              key={row.id}
+              className={cn('border-line hover:bg-surface-2', onRowClick && 'cursor-pointer')}
+              onClick={
+                onRowClick
+                  ? () => {
+                      onRowClick(row.original)
+                    }
+                  : undefined
+              }
+            >
               {row.getVisibleCells().map((cell) => (
                 <TableCell key={cell.id} className="px-5 py-5 text-base text-ink-2">
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}

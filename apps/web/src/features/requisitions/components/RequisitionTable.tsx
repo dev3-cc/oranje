@@ -1,6 +1,6 @@
 import { statusLight } from '@oranje/ui'
 import type { ReactNode } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 
 import type { RequisitionRow } from '../types/requisition.types'
 
@@ -38,6 +38,8 @@ const NOT_AUTHORIZED = '—'
  * comparar filas, que es para lo que existe.
  */
 export function RequisitionTable({ items }: { items: RequisitionRow[] }): ReactNode {
+  const navigate = useNavigate()
+
   if (items.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
@@ -65,7 +67,13 @@ export function RequisitionTable({ items }: { items: RequisitionRow[] }): ReactN
 
         <tbody>
           {items.map((item) => (
-            <tr key={item.id} className="border-b border-line last:border-b-0 hover:bg-surface-2">
+            <tr
+              key={item.id}
+              onClick={() => {
+                void navigate(`/requisiciones/${item.id}`)
+              }}
+              className="cursor-pointer border-b border-line last:border-b-0 hover:bg-surface-2"
+            >
               <td className="px-4 py-4 text-sm font-medium whitespace-nowrap">
                 {/* Enlace y no `onClick` en la fila: así conserva abrir en pestaña nueva. */}
                 <Link
