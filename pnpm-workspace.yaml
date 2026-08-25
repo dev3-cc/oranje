@@ -10,6 +10,15 @@ allowBuilds:
   prisma: true
   esbuild: true
   unrs-resolver: true
+  # Tailwind 4 compila su motor en Rust: sin esto el web no construye estilos.
+  '@tailwindcss/oxide': true
+  # Denegados a propósito: sus postinstall no hacen falta para Firebase Auth,
+  # que es lo único que el web consume del SDK (D-05).
+  '@firebase/util': false
+  protobufjs: false
+
+minimumReleaseAgeExclude:
+  - '@testing-library/jest-dom@7.0.1'
 
 # Una sola versión de TypeScript en todo el monorepo.
 # Fijada en 6 a propósito: typescript-eslint todavía no soporta TS 7, y el

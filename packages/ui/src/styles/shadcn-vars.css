@@ -1,0 +1,68 @@
+/**
+ * Variables de shadcn/ui — DERIVADAS de los tokens Oranje, nunca al revés (D-16).
+ *
+ * Ningún componente copiado define un color propio: todos leen de aquí, y aquí
+ * todo apunta a `tokens.css`. Si un valor de este archivo deja de ser un
+ * `var(--token)`, se abrió una segunda fuente de tema.
+ *
+ * Los `--st-*` quedan FUERA de este mapeo a propósito: son la escala del
+ * semáforo, la consume `SemaforoBadge` y no tienen nada que hacer en --primary.
+ */
+
+:root {
+  --background: var(--bg);
+  --foreground: var(--ink);
+
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+
+  /**
+   * Regla 1 de contraste: sobre --o-500 el texto va en --ink, NUNCA blanco.
+   * El naranja da 2.5:1 con blanco (reprueba AA) y 7.4:1 con --ink.
+   * Como el botón primario es naranja, esto toca todas las pantallas.
+   */
+  --primary: var(--o-500);
+  --primary-foreground: var(--ink);
+
+  --secondary: var(--surface-3);
+  --secondary-foreground: var(--ink-2);
+
+  --muted: var(--surface-2);
+  --muted-foreground: var(--ink-3);
+
+  --accent: var(--o-50);
+  --accent-foreground: var(--o-700);
+
+  --destructive: var(--red);
+  --destructive-foreground: #ffffff;
+
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--o-500);
+
+  --radius: var(--r-md);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}

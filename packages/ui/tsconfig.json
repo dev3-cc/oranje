@@ -1,7 +1,16 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../config/tsconfig/react.json",
   "compilerOptions": {
-    "noEmit": true
+    /* Sin `types`: este paquete no toca APIs de Node ni de Vite. */
+    /**
+     * `@ui/*` y no `@/*`: cada app ya define `@/*` apuntando a SU `src/`, y
+     * este paquete se consume por fuente, así que un `@/lib/utils` escrito aquí
+     * se resolvería contra `apps/web/src/lib/utils` y no existiría.
+     * El prefijo propio es lo que permite compartir el código sin colisión.
+     */
+    "paths": {
+      "@ui/*": ["./src/*"]
+    }
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "tokens.ts", "tailwind-preset.ts"]
 }
