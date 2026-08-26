@@ -3,6 +3,7 @@ import {
   cn,
   Input,
   MaterialIcon,
+  toast,
   Select,
   SelectContent,
   SelectItem,
@@ -28,6 +29,12 @@ import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'staff-user-form'
 const NOBODY = 'NONE'
+const PENDING_ROLES: ReadonlySet<string> = new Set([
+  'ROL-Q-01',
+  'ROL-Q-02',
+  'ROL-CS-01',
+  'ROL-CS-02',
+])
 
 const userFormSchema = z
   .object({
@@ -117,6 +124,8 @@ export function UserFormDialog({
   const [isActive, setIsActive] = useState(true)
   const [photoPath, setPhotoPath] = useState<string | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [created, setCreated] = useState<{ email: string; mode: AccessMode } | null>(null)
+  const [confirmingBaja, setConfirmingBaja] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
   const {
@@ -148,6 +157,8 @@ export function UserFormDialog({
     updateState.reset()
     resendState.reset()
     setIsActive(user?.isActive ?? true)
+    setCreated(null)
+    setConfirmingBaja(false)
     setPhotoPath(null)
     setPhotoPreview(user?.photoUrl ?? null)
     reset({
@@ -189,7 +200,17 @@ export function UserFormDialog({
         ...(values.accessMode === 'PASSWORD' ? { password: values.password } : {}),
         ...(photoPath ? { photoPath } : {}),
       }).unwrap()
+      setCreated({ email: values.email, mode: values.accessMode })
+      return
     }
+    toast.success('Cambios guardados')
+    onClose()
+  }
+
+  async function darDeBaja(): Promise<void> {
+    if (!isEditing) return
+    await updateUser({ id: user.id, body: { isActive: false } }).unwrap()
+    toast.success('Usuario dado de baja')
     onClose()
   }
 
@@ -279,214 +300,266 @@ export function UserFormDialog({
           )}
         </header>
 
-        <form
-          id={FORM_ID}
-          noValidate
-          onSubmit={(event) => {
-            void handleSubmit(onSubmit)(event)
-          }}
-        >
-          <FormRow label="Nombre completo" column="full_name">
-            <Input
-              aria-label="Nombre completo"
-              {...register('fullName')}
-              placeholder="Nombre y apellidos"
-            />
-            {errors.fullName && <p className="text-xs text-red">{errors.fullName.message}</p>}
-          </FormRow>
-
-          <FormRow label="Correo" column="email · inmutable">
-            <Input
-              aria-label="Correo"
-              type="email"
-              {...register('email')}
-              placeholder="persona@casacurtidor.com"
-              disabled={isEditing}
-              className={cn(isEditing && 'cursor-not-allowed bg-surface-2')}
-            />
-            <p className="text-xs text-ink-3">
-              {isEditing
-                ? 'Cambiar de persona es dar de baja este usuario y dar de alta al nuevo.'
-                : 'Inmutable después del alta: es el vínculo con la cuenta de Firebase.'}
+        {created ? (
+          <div className="flex flex-col items-center gap-3 border-t border-line px-8 py-12 text-center">
+            <span className="flex size-14 items-center justify-center rounded-full bg-green/10">
+              <MaterialIcon name="mark_email_read" className="text-3xl text-green" />
+            </span>
+            <p className="text-lg font-bold text-ink">
+              {created.mode === 'INVITATION' ? 'Invitación enviada a:' : 'Usuario creado'}
             </p>
-            {errors.email && <p className="text-xs text-red">{errors.email.message}</p>}
-          </FormRow>
-
-          <FormRow label="Rol" column="role_id">
-            <Controller
-              control={control}
-              name="roleCode"
-              render={({ field }) => (
-                <Select
-                  {...(field.value ? { value: field.value } : {})}
-                  onValueChange={field.onChange}
-                >
-                  <SelectTrigger aria-label="Rol" className="w-full">
-                    <SelectValue placeholder="Elige el rol" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roles.map((role) => (
-                      <SelectItem key={role.code} value={role.code}>
-                        {role.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            <p className="text-xs text-ink-3">
-              Solo roles internos de Oranje — los de Hotel nacen en la Conversión.
+            <p className="text-sm font-semibold text-o-700">{created.email}</p>
+            <p className="max-w-sm text-xs leading-relaxed text-ink-3">
+              {created.mode === 'INVITATION'
+                ? 'La persona recibirá un correo para establecer su contraseña. Hasta su primer login, su cuenta aparece como «Invitación enviada».'
+                : 'Ya puede entrar con la contraseña que definiste. Compártesela por un canal seguro — no viaja por correo.'}
             </p>
-            {errors.roleCode && <p className="text-xs text-red">{errors.roleCode.message}</p>}
-          </FormRow>
-
-          <FormRow label="Reporta a" column="reports_to_user_id">
-            <Controller
-              control={control}
-              name="reportsToUserId"
-              render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger aria-label="Reporta a" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NOBODY}>Nadie (punta de la jerarquía)</SelectItem>
-                    {reportsToOptions
-                      .filter((option) => option.id !== user?.id)
-                      .map((option) => (
-                        <SelectItem key={option.id} value={option.id}>
-                          {option.fullName} · {option.role.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            <p className="text-xs text-ink-3">El BD apunta a su BDC; la Reclutadora a su Líder.</p>
-          </FormRow>
-
-          {!isEditing && (
-            <FormRow label="Acceso" column="firebase_uid · primer login">
-              <Controller
-                control={control}
-                name="accessMode"
-                render={({ field }) => (
-                  <div className="flex w-fit gap-1 rounded-xl bg-surface-2 p-1">
-                    {(
-                      [
-                        ['INVITATION', 'Enviar invitación por correo'],
-                        ['PASSWORD', 'Definir contraseña'],
-                      ] as Array<[AccessMode, string]>
-                    ).map(([mode, label]) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => {
-                          field.onChange(mode)
-                        }}
-                        className={cn(
-                          'cursor-pointer rounded-lg px-3.5 py-2 text-xs transition-colors',
-                          field.value === mode
-                            ? 'border border-line bg-surface font-semibold text-ink'
-                            : 'text-ink-3 hover:text-ink',
-                        )}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              />
-              {accessMode === 'INVITATION' ? (
-                <p className="rounded-xl bg-o-50 px-4 py-3 text-xs leading-relaxed text-o-700">
-                  Aquí no se captura contraseña: al crear, la persona recibe un correo de invitación
-                  y establece la suya. Hasta su primer login la cuenta aparece como «Invitación
-                  enviada».
-                </p>
-              ) : (
-                <>
-                  <Input aria-label="Contraseña" type="password" {...register('password')} />
-                  <p className="text-xs text-ink-3">
-                    Es su contraseña de uso: puede cambiarla cuando quiera con «¿Olvidaste tu
-                    contraseña?». No se envía por correo.
-                  </p>
-                  {errors.password && <p className="text-xs text-red">{errors.password.message}</p>}
-                </>
-              )}
-            </FormRow>
-          )}
-
-          {isEditing && !user.hasAccount && (
-            <FormRow label="Invitación" column="hasAccount:false">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-xs text-ink-2">
-                  {resendState.isSuccess
-                    ? 'Invitación reenviada: la persona tiene un correo nuevo para establecer su contraseña.'
-                    : 'Aún no hace su primer login.'}
-                </span>
-                {!resendState.isSuccess && (
-                  <Button
-                    type="button"
-                    disabled={resendState.isLoading}
-                    onClick={() => {
-                      void resendInvitation(user.id)
-                    }}
-                  >
-                    {resendState.isLoading ? 'Enviando…' : 'Reenviar invitación'}
-                  </Button>
-                )}
-              </div>
-            </FormRow>
-          )}
-
-          {isEditing && (
-            <FormRow label="Estado" column="is_active">
-              <label className="flex w-fit cursor-pointer items-center gap-3">
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={isActive}
-                  aria-label="Activo"
-                  onClick={() => {
-                    setIsActive((value) => !value)
-                  }}
-                  className={cn(
-                    'relative h-5 w-9 cursor-pointer rounded-full transition-colors',
-                    isActive ? 'bg-o-500' : 'bg-surface-3',
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'absolute top-0.5 size-4 rounded-full bg-white shadow transition-all',
-                      isActive ? 'left-4' : 'left-0.5',
-                    )}
-                  />
-                </button>
-                <span className="text-sm text-ink-2">
-                  {isActive ? 'Activo — puede entrar al sistema' : 'De baja — ya no puede entrar'}
-                </span>
-              </label>
-              <p className="text-xs text-ink-3">
-                Dar de baja no borra nada: la persona deja de entrar y su historial queda.
-              </p>
-            </FormRow>
-          )}
-
-          {saveError !== undefined && (
-            <p role="alert" className="px-6 pb-2 text-sm text-red">
-              {apiErrorMessage(saveError)}
-            </p>
-          )}
-
-          <div className="flex items-center justify-end gap-3 border-t border-line px-6 py-4">
-            <Button type="button" onClick={onClose} disabled={isBusy}>
-              Cancelar
-            </Button>
-            <Button type="submit" form={FORM_ID} variant="primary" disabled={isBusy}>
-              {isBusy ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear usuario'}
+            <Button variant="primary" className="mt-2" onClick={onClose}>
+              Listo
             </Button>
           </div>
-        </form>
+        ) : (
+          <form
+            id={FORM_ID}
+            noValidate
+            onSubmit={(event) => {
+              void handleSubmit(onSubmit)(event)
+            }}
+          >
+            <FormRow label="Nombre completo" column="full_name">
+              <Input
+                aria-label="Nombre completo"
+                {...register('fullName')}
+                placeholder="Nombre y apellidos"
+              />
+              {errors.fullName && <p className="text-xs text-red">{errors.fullName.message}</p>}
+            </FormRow>
+
+            <FormRow label="Correo" column="email · inmutable">
+              <Input
+                aria-label="Correo"
+                type="email"
+                {...register('email')}
+                placeholder="persona@casacurtidor.com"
+                disabled={isEditing}
+                className={cn(isEditing && 'cursor-not-allowed bg-surface-2')}
+              />
+              <p className="text-xs text-ink-3">
+                {isEditing
+                  ? 'Cambiar de persona es dar de baja este usuario y dar de alta al nuevo.'
+                  : 'Inmutable después del alta: es el vínculo con la cuenta de Firebase.'}
+              </p>
+              {errors.email && <p className="text-xs text-red">{errors.email.message}</p>}
+            </FormRow>
+
+            <FormRow label="Rol" column="role_id">
+              <Controller
+                control={control}
+                name="roleCode"
+                render={({ field }) => (
+                  <Select
+                    {...(field.value ? { value: field.value } : {})}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger aria-label="Rol" className="w-full">
+                      <SelectValue placeholder="Elige el rol" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roles.map((role) =>
+                        PENDING_ROLES.has(role.code) ? (
+                          <SelectItem key={role.code} value={role.code} disabled>
+                            {role.name} — próximamente
+                          </SelectItem>
+                        ) : (
+                          <SelectItem key={role.code} value={role.code}>
+                            {role.name}
+                          </SelectItem>
+                        ),
+                      )}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              <p className="text-xs text-ink-3">
+                Solo roles internos de Oranje — los de Hotel nacen en la Conversión.
+              </p>
+              {errors.roleCode && <p className="text-xs text-red">{errors.roleCode.message}</p>}
+            </FormRow>
+
+            <FormRow label="Reporta a" column="reports_to_user_id">
+              <Controller
+                control={control}
+                name="reportsToUserId"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger aria-label="Reporta a" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NOBODY}>Nadie (punta de la jerarquía)</SelectItem>
+                      {reportsToOptions
+                        .filter((option) => option.id !== user?.id)
+                        .map((option) => (
+                          <SelectItem key={option.id} value={option.id}>
+                            {option.fullName} · {option.role.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              <p className="text-xs text-ink-3">
+                El BD apunta a su BDC; la Reclutadora a su Líder.
+              </p>
+            </FormRow>
+
+            {!isEditing && (
+              <FormRow label="Acceso" column="firebase_uid · primer login">
+                <Controller
+                  control={control}
+                  name="accessMode"
+                  render={({ field }) => (
+                    <div className="flex w-fit gap-1 rounded-xl bg-surface-2 p-1">
+                      {(
+                        [
+                          ['INVITATION', 'Enviar invitación por correo'],
+                          ['PASSWORD', 'Definir contraseña'],
+                        ] as Array<[AccessMode, string]>
+                      ).map(([mode, label]) => (
+                        <button
+                          key={mode}
+                          type="button"
+                          onClick={() => {
+                            field.onChange(mode)
+                          }}
+                          className={cn(
+                            'cursor-pointer rounded-lg px-3.5 py-2 text-xs transition-colors',
+                            field.value === mode
+                              ? 'border border-line bg-surface font-semibold text-ink'
+                              : 'text-ink-3 hover:text-ink',
+                          )}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                />
+                {accessMode === 'INVITATION' ? (
+                  <p className="rounded-xl bg-o-50 px-4 py-3 text-xs leading-relaxed text-o-700">
+                    Aquí no se captura contraseña: al crear, la persona recibe un correo de
+                    invitación y establece la suya. Hasta su primer login la cuenta aparece como
+                    «Invitación enviada».
+                  </p>
+                ) : (
+                  <>
+                    <Input aria-label="Contraseña" type="password" {...register('password')} />
+                    <p className="text-xs text-ink-3">
+                      Es su contraseña de uso: puede cambiarla cuando quiera con «¿Olvidaste tu
+                      contraseña?». No se envía por correo.
+                    </p>
+                    {errors.password && (
+                      <p className="text-xs text-red">{errors.password.message}</p>
+                    )}
+                  </>
+                )}
+              </FormRow>
+            )}
+
+            {isEditing && !user.hasAccount && (
+              <FormRow label="Invitación" column="hasAccount:false">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-xs text-ink-2">
+                    {resendState.isSuccess
+                      ? 'Invitación reenviada: la persona tiene un correo nuevo para establecer su contraseña.'
+                      : 'Aún no hace su primer login.'}
+                  </span>
+                  {!resendState.isSuccess && (
+                    <Button
+                      type="button"
+                      disabled={resendState.isLoading}
+                      onClick={() => {
+                        void resendInvitation(user.id).then(() => {
+                          toast.success('Invitación enviada')
+                        })
+                      }}
+                    >
+                      {resendState.isLoading ? 'Enviando…' : 'Reenviar invitación'}
+                    </Button>
+                  )}
+                </div>
+              </FormRow>
+            )}
+
+            {isEditing && (
+              <FormRow label="Estado" column="is_active">
+                <label className="flex w-fit cursor-pointer items-center gap-3">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={isActive}
+                    aria-label="Activo"
+                    onClick={() => {
+                      setIsActive((value) => !value)
+                    }}
+                    className={cn(
+                      'relative h-5 w-9 cursor-pointer rounded-full transition-colors',
+                      isActive ? 'bg-o-500' : 'bg-surface-3',
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'absolute top-0.5 size-4 rounded-full bg-white shadow transition-all',
+                        isActive ? 'left-4' : 'left-0.5',
+                      )}
+                    />
+                  </button>
+                  <span className="text-sm text-ink-2">
+                    {isActive ? 'Activo — puede entrar al sistema' : 'De baja — ya no puede entrar'}
+                  </span>
+                </label>
+                <p className="text-xs text-ink-3">
+                  Dar de baja no borra nada: la persona deja de entrar y su historial queda.
+                </p>
+              </FormRow>
+            )}
+
+            {saveError !== undefined && (
+              <p role="alert" className="px-6 pb-2 text-sm text-red">
+                {apiErrorMessage(saveError)}
+              </p>
+            )}
+
+            <div className="flex items-center gap-3 border-t border-line px-6 py-4">
+              {isEditing && user.isActive && (
+                <Button
+                  type="button"
+                  disabled={isBusy}
+                  onClick={() => {
+                    if (!confirmingBaja) {
+                      setConfirmingBaja(true)
+                      return
+                    }
+                    void darDeBaja()
+                  }}
+                  className={cn(
+                    'text-red',
+                    confirmingBaja && 'border border-red/40 bg-red/5 font-semibold',
+                  )}
+                >
+                  {confirmingBaja ? '¿Confirmar baja?' : 'Dar de baja'}
+                </Button>
+              )}
+              <span className="flex-1" />
+              <Button type="button" onClick={onClose} disabled={isBusy}>
+                Cancelar
+              </Button>
+              <Button type="submit" form={FORM_ID} variant="primary" disabled={isBusy}>
+                {isBusy ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear usuario'}
+              </Button>
+            </div>
+          </form>
+        )}
       </div>
     </Modal>
   )

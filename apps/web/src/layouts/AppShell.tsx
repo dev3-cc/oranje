@@ -1,4 +1,4 @@
-import { SidebarInset, SidebarProvider } from '@oranje/ui'
+import { SidebarInset, SidebarProvider, Toaster } from '@oranje/ui'
 import type { CSSProperties, ReactNode } from 'react'
 import { Outlet } from 'react-router'
 
@@ -21,6 +21,7 @@ export function AppShell(): ReactNode {
           <Outlet />
         </div>
       </SidebarInset>
+      <Toaster />
     </SidebarProvider>
   )
 }
