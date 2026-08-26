@@ -47,10 +47,11 @@ export class AuthService {
   async createSession(idToken: string, userAgent: string | null): Promise<Session> {
     const identity = await this.firebase.verify(idToken)
 
-    const user = await this.prisma.user.findUnique({
-      where: { firebaseUid: identity.uid },
-      select: USER_FIELDS,
-    })
+    const user =
+      (await this.prisma.user.findUnique({
+        where: { firebaseUid: identity.uid },
+        select: USER_FIELDS,
+      })) ?? (await this.linkProvisionedUser(identity.uid, identity.email))
 
     // Existir en Firebase no basta: sin fila aquí, es un desconocido.
     if (!user) {
@@ -121,6 +122,33 @@ export class AuthService {
 
   async logoutAll(userId: string): Promise<number> {
     return this.refreshTokens.revokeAllOf(userId)
+  }
+
+  /**
+   * Primer login de un usuario pre-aprovisionado: el alta crea la fila con
+   * `firebase_uid` nulo (el uid no existe antes que la cuenta). Si el correo
+   * del token coincide con una fila sin cuenta, se enlaza aquí.
+   */
+  private async linkProvisionedUser(
+    uid: string,
+    email: string | null,
+  ): Promise<UserForSession | null> {
+    if (!email) return null
+
+    const pending = await this.prisma.user.findFirst({
+      where: { email: email.toLowerCase(), firebaseUid: null },
+      select: { id: true },
+    })
+
+    if (!pending) return null
+
+    this.logger.log(`Cuenta enlazada por primer login: ${email}`)
+
+    return this.prisma.user.update({
+      where: { id: pending.id },
+      data: { firebaseUid: uid },
+      select: USER_FIELDS,
+    })
   }
 
   private assertActive(user: UserForSession): void {
