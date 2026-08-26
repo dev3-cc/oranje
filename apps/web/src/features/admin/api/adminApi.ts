@@ -20,6 +20,7 @@ export interface CreateStaffUserBody {
   reportsToUserId?: string
   password?: string
   sendWelcomeEmail?: boolean
+  photoPath?: string
 }
 
 export interface UpdateStaffUserBody {
@@ -27,6 +28,7 @@ export interface UpdateStaffUserBody {
   roleCode?: string
   reportsToUserId?: string | null
   isActive?: boolean
+  photoPath?: string | null
 }
 
 export const adminApi = baseApi.injectEndpoints({

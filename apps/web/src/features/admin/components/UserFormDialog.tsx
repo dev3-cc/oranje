@@ -2,13 +2,14 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import {
   cn,
   Input,
+  MaterialIcon,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@oranje/ui'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -19,8 +20,9 @@ import {
 } from '../api/adminApi'
 import type { AccessMode, RoleOption, StaffUser } from '../types/admin.types'
 
+import { useUploadFileMutation } from '@/app/filesApi'
+import personajeBienvenida from '@/assets/ilustrations/personaje-bienvenida.svg'
 import { Button } from '@/shared/components/Button'
-import { FormField } from '@/shared/components/FormField'
 import { Modal } from '@/shared/components/Modal'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
@@ -38,11 +40,7 @@ const userFormSchema = z
   })
   .superRefine((values, context) => {
     if (values.accessMode === 'PASSWORD' && values.password.length < 8) {
-      context.addIssue({
-        code: 'custom',
-        path: ['password'],
-        message: 'Mínimo 8 caracteres',
-      })
+      context.addIssue({ code: 'custom', path: ['password'], message: 'Mínimo 8 caracteres' })
     }
   })
 
@@ -68,6 +66,35 @@ function apiErrorMessage(error: unknown): string {
   }
 }
 
+function initialsOf(fullName: string): string {
+  return fullName
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => word.charAt(0))
+    .join('')
+    .toUpperCase()
+}
+
+function FormRow({
+  label,
+  column,
+  children,
+}: {
+  label: string
+  column?: string
+  children: ReactNode
+}): ReactNode {
+  return (
+    <div className="grid grid-cols-1 gap-2 border-t border-line px-6 py-4 sm:grid-cols-[190px_1fr] sm:gap-6">
+      <span className="pt-2.5 text-sm font-medium text-ink-2">
+        {label}
+        {IS_DEV_UI && column && <code className="block text-[11px] text-ink-4">{column}</code>}
+      </span>
+      <div className="flex flex-col gap-2">{children}</div>
+    </div>
+  )
+}
+
 export function UserFormDialog({
   isOpen,
   onClose,
@@ -85,8 +112,12 @@ export function UserFormDialog({
   const [createUser, createState] = useCreateStaffUserMutation()
   const [updateUser, updateState] = useUpdateStaffUserMutation()
   const [resendInvitation, resendState] = useResendInvitationMutation()
+  const [uploadFile, { isLoading: isUploading, isError: isUploadError }] = useUploadFileMutation()
   const isBusy = createState.isLoading || updateState.isLoading
   const [isActive, setIsActive] = useState(true)
+  const [photoPath, setPhotoPath] = useState<string | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
 
   const {
     register,
@@ -109,6 +140,7 @@ export function UserFormDialog({
   })
 
   const accessMode = watch('accessMode')
+  const fullName = watch('fullName')
 
   useEffect(() => {
     if (!isOpen) return
@@ -116,6 +148,8 @@ export function UserFormDialog({
     updateState.reset()
     resendState.reset()
     setIsActive(user?.isActive ?? true)
+    setPhotoPath(null)
+    setPhotoPreview(user?.photoUrl ?? null)
     reset({
       fullName: user?.fullName ?? '',
       email: user?.email ?? '',
@@ -125,6 +159,12 @@ export function UserFormDialog({
       password: '',
     })
   }, [isOpen, user, reset])
+
+  async function onPhotoPicked(file: File): Promise<void> {
+    const uploaded = await uploadFile({ file, purpose: 'USER_PHOTO' }).unwrap()
+    setPhotoPath(uploaded.path)
+    setPhotoPreview(uploaded.url ?? URL.createObjectURL(file))
+  }
 
   async function onSubmit(values: UserFormValues): Promise<void> {
     const reportsToUserId = values.reportsToUserId === NOBODY ? undefined : values.reportsToUserId
@@ -137,6 +177,7 @@ export function UserFormDialog({
           roleCode: values.roleCode,
           reportsToUserId: reportsToUserId ?? null,
           isActive,
+          ...(photoPath ? { photoPath } : {}),
         },
       }).unwrap()
     } else {
@@ -146,241 +187,307 @@ export function UserFormDialog({
         roleCode: values.roleCode,
         ...(reportsToUserId ? { reportsToUserId } : {}),
         ...(values.accessMode === 'PASSWORD' ? { password: values.password } : {}),
+        ...(photoPath ? { photoPath } : {}),
       }).unwrap()
     }
     onClose()
   }
 
   const saveError = createState.error ?? updateState.error
+  const initials = initialsOf(fullName)
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={isEditing ? 'Editar usuario' : 'Nuevo usuario'}
-      description={
-        IS_DEV_UI
-          ? isEditing
-            ? 'PATCH /users/:id · el correo es inmutable'
-            : 'POST /users · Firebase es la autoridad de identidad (D-05)'
-          : isEditing
-            ? 'El correo no se puede cambiar.'
-            : 'La persona entra con su correo; la contraseña depende del acceso que elijas.'
-      }
-      className="max-w-lg"
-      footer={
-        <>
-          <Button type="button" onClick={onClose} disabled={isBusy}>
-            Cancelar
-          </Button>
-          <Button type="submit" form={FORM_ID} variant="primary" disabled={isBusy}>
-            {isBusy ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear usuario'}
-          </Button>
-        </>
-      }
+      chromeless
+      className="max-w-2xl"
     >
-      <form
-        id={FORM_ID}
-        noValidate
-        className="flex flex-col gap-4"
-        onSubmit={(event) => {
-          void handleSubmit(onSubmit)(event)
-        }}
-      >
-        <FormField label="Nombre completo" htmlFor="su-name" error={errors.fullName?.message}>
-          <Input id="su-name" {...register('fullName')} placeholder="Nombre y apellidos" />
-        </FormField>
-
-        <FormField
-          label="Correo"
-          htmlFor="su-email"
-          error={errors.email?.message}
-          hint={
-            isEditing
-              ? 'Cambiar de persona es dar de baja este usuario y dar de alta al nuevo.'
-              : 'Inmutable después del alta: es el vínculo con la cuenta de Firebase.'
-          }
-        >
-          <Input
-            id="su-email"
-            type="email"
-            {...register('email')}
-            placeholder="persona@casacurtidor.com"
-            disabled={isEditing}
-            className={cn(isEditing && 'cursor-not-allowed bg-surface-2')}
+      <div className="flex max-h-[calc(100vh-3rem)] flex-col overflow-y-auto">
+        <div className="relative h-32 shrink-0 bg-gradient-to-r from-o-50 via-o-50/70 to-surface-2">
+          <img
+            src={personajeBienvenida}
+            alt=""
+            aria-hidden
+            className="absolute right-10 bottom-2 h-28 w-auto"
           />
-        </FormField>
-
-        <FormField
-          label="Rol"
-          htmlFor="su-role"
-          error={errors.roleCode?.message}
-          hint="Solo roles internos de Oranje — los de Hotel nacen en la Conversión."
-        >
-          <Controller
-            control={control}
-            name="roleCode"
-            render={({ field }) => (
-              <Select
-                {...(field.value ? { value: field.value } : {})}
-                onValueChange={field.onChange}
+          <button
+            type="button"
+            aria-label={photoPreview ? 'Reemplazar foto' : 'Subir foto'}
+            title={photoPreview ? 'Reemplazar foto' : 'Subir foto'}
+            disabled={isUploading}
+            onClick={() => {
+              photoInputRef.current?.click()
+            }}
+            className="group absolute -bottom-11 left-8 z-10 size-22 cursor-pointer rounded-full border-4 border-surface bg-o-50 shadow-md transition-shadow hover:shadow-lg focus:outline-2 focus:outline-offset-2 focus:outline-o-500 disabled:cursor-wait"
+          >
+            <span className="block size-full overflow-hidden rounded-full">
+              {photoPreview ? (
+                <img src={photoPreview} alt="" className="size-full object-cover" />
+              ) : initials !== '' ? (
+                <span
+                  aria-hidden
+                  className="flex size-full items-center justify-center text-xl font-bold text-o-700"
+                >
+                  {initials}
+                </span>
+              ) : (
+                <span aria-hidden className="flex size-full items-center justify-center">
+                  <MaterialIcon name="photo_camera" className="text-2xl text-o-700" />
+                </span>
+              )}
+              <span
+                aria-hidden
+                className="absolute inset-x-1 bottom-1 rounded-full bg-ink/60 py-0.5 text-center text-[10px] font-semibold text-surface opacity-0 transition-opacity group-hover:opacity-100"
               >
-                <SelectTrigger id="su-role" aria-label="Rol" className="w-full">
-                  <SelectValue placeholder="Elige el rol" />
-                </SelectTrigger>
-                <SelectContent>
-                  {roles.map((role) => (
-                    <SelectItem key={role.code} value={role.code}>
-                      {role.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+                {isUploading ? 'Subiendo…' : photoPreview ? 'Cambiar' : 'Subir foto'}
+              </span>
+            </span>
+            <span
+              aria-hidden
+              className="absolute -right-0.5 -bottom-0.5 flex size-7 items-center justify-center rounded-full border-2 border-surface bg-o-500 text-ink shadow-sm"
+            >
+              <MaterialIcon name="photo_camera" className="text-sm" />
+            </span>
+          </button>
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0]
+              if (file) void onPhotoPicked(file)
+              event.target.value = ''
+            }}
           />
-        </FormField>
+        </div>
 
-        <FormField
-          label="Reporta a"
-          htmlFor="su-reports"
-          hint="El BD apunta a su BDC; la Reclutadora a su Líder. Opcional."
+        <header className="px-8 pt-14 pb-5">
+          <h2 className="text-xl font-bold text-ink">
+            {fullName.trim() === '' ? 'Nuevo usuario' : fullName}
+          </h2>
+          <p className="mt-0.5 text-xs text-ink-3">
+            {isEditing ? 'Editar personal del sistema' : 'Alta de personal del sistema'}
+            {IS_DEV_UI && <code className="text-[11px] text-ink-4"> · identity.user</code>}
+          </p>
+          {isUploadError && (
+            <p role="alert" className="mt-1 text-xs text-red">
+              No se pudo subir la foto. Intenta con otra imagen.
+            </p>
+          )}
+        </header>
+
+        <form
+          id={FORM_ID}
+          noValidate
+          onSubmit={(event) => {
+            void handleSubmit(onSubmit)(event)
+          }}
         >
-          <Controller
-            control={control}
-            name="reportsToUserId"
-            render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger id="su-reports" aria-label="Reporta a" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={NOBODY}>Nadie (punta de la jerarquía)</SelectItem>
-                  {reportsToOptions
-                    .filter((option) => option.id !== user?.id)
-                    .map((option) => (
-                      <SelectItem key={option.id} value={option.id}>
-                        {option.fullName} · {option.role.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
-        </FormField>
+          <FormRow label="Nombre completo" column="full_name">
+            <Input
+              aria-label="Nombre completo"
+              {...register('fullName')}
+              placeholder="Nombre y apellidos"
+            />
+            {errors.fullName && <p className="text-xs text-red">{errors.fullName.message}</p>}
+          </FormRow>
 
-        {!isEditing && (
-          <FormField label="Acceso">
+          <FormRow label="Correo" column="email · inmutable">
+            <Input
+              aria-label="Correo"
+              type="email"
+              {...register('email')}
+              placeholder="persona@casacurtidor.com"
+              disabled={isEditing}
+              className={cn(isEditing && 'cursor-not-allowed bg-surface-2')}
+            />
+            <p className="text-xs text-ink-3">
+              {isEditing
+                ? 'Cambiar de persona es dar de baja este usuario y dar de alta al nuevo.'
+                : 'Inmutable después del alta: es el vínculo con la cuenta de Firebase.'}
+            </p>
+            {errors.email && <p className="text-xs text-red">{errors.email.message}</p>}
+          </FormRow>
+
+          <FormRow label="Rol" column="role_id">
             <Controller
               control={control}
-              name="accessMode"
+              name="roleCode"
               render={({ field }) => (
-                <div className="flex w-fit gap-1 rounded-xl bg-surface-2 p-1">
-                  {(
-                    [
-                      ['INVITATION', 'Enviar invitación por correo'],
-                      ['PASSWORD', 'Definir contraseña'],
-                    ] as Array<[AccessMode, string]>
-                  ).map(([mode, label]) => (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() => {
-                        field.onChange(mode)
-                      }}
-                      className={cn(
-                        'cursor-pointer rounded-lg px-3.5 py-2 text-xs transition-colors',
-                        field.value === mode
-                          ? 'border border-line bg-surface font-semibold text-ink'
-                          : 'text-ink-3 hover:text-ink',
-                      )}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
+                <Select
+                  {...(field.value ? { value: field.value } : {})}
+                  onValueChange={field.onChange}
+                >
+                  <SelectTrigger aria-label="Rol" className="w-full">
+                    <SelectValue placeholder="Elige el rol" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((role) => (
+                      <SelectItem key={role.code} value={role.code}>
+                        {role.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
             />
-          </FormField>
-        )}
-
-        {!isEditing && accessMode === 'INVITATION' && (
-          <p className="rounded-xl bg-o-50 px-4 py-3 text-xs leading-relaxed text-o-700">
-            Aquí no se captura contraseña: al crear, la persona recibe un correo de invitación y
-            establece la suya. Hasta su primer login la cuenta aparece como «Invitación enviada».
-          </p>
-        )}
-
-        {!isEditing && accessMode === 'PASSWORD' && (
-          <FormField
-            label="Contraseña"
-            htmlFor="su-password"
-            error={errors.password?.message}
-            hint="Es su contraseña de uso: puede cambiarla cuando quiera con «¿Olvidaste tu contraseña?». No se envía por correo."
-          >
-            <Input id="su-password" type="password" {...register('password')} />
-          </FormField>
-        )}
-
-        {isEditing && !user.hasAccount && (
-          <div className="flex flex-wrap items-center gap-3 rounded-xl bg-surface-2 px-4 py-3">
-            <span className="text-xs text-ink-2">
-              {resendState.isSuccess
-                ? 'Invitación reenviada: la persona tiene un correo nuevo para establecer su contraseña.'
-                : 'Aún no hace su primer login: su invitación puede reenviarse.'}
-            </span>
-            {!resendState.isSuccess && (
-              <Button
-                type="button"
-                disabled={resendState.isLoading}
-                onClick={() => {
-                  void resendInvitation(user.id)
-                }}
-              >
-                {resendState.isLoading ? 'Enviando…' : 'Reenviar invitación'}
-              </Button>
-            )}
-          </div>
-        )}
-
-        {isEditing && (
-          <FormField label="Estado">
-            <label className="flex w-fit cursor-pointer items-center gap-3">
-              <button
-                type="button"
-                role="switch"
-                aria-checked={isActive}
-                aria-label="Activo"
-                onClick={() => {
-                  setIsActive((value) => !value)
-                }}
-                className={cn(
-                  'relative h-5 w-9 cursor-pointer rounded-full transition-colors',
-                  isActive ? 'bg-o-500' : 'bg-surface-3',
-                )}
-              >
-                <span
-                  className={cn(
-                    'absolute top-0.5 size-4 rounded-full bg-white shadow transition-all',
-                    isActive ? 'left-4' : 'left-0.5',
-                  )}
-                />
-              </button>
-              <span className="text-sm text-ink-2">
-                {isActive ? 'Activo — puede entrar al sistema' : 'De baja — ya no puede entrar'}
-              </span>
-            </label>
             <p className="text-xs text-ink-3">
-              Dar de baja no borra nada: la persona deja de entrar y su historial queda.
+              Solo roles internos de Oranje — los de Hotel nacen en la Conversión.
             </p>
-          </FormField>
-        )}
+            {errors.roleCode && <p className="text-xs text-red">{errors.roleCode.message}</p>}
+          </FormRow>
 
-        {saveError !== undefined && (
-          <p className="rounded-xl border border-red/40 bg-red/5 px-4 py-3 text-sm text-red">
-            {apiErrorMessage(saveError)}
-          </p>
-        )}
-      </form>
+          <FormRow label="Reporta a" column="reports_to_user_id">
+            <Controller
+              control={control}
+              name="reportsToUserId"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger aria-label="Reporta a" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NOBODY}>Nadie (punta de la jerarquía)</SelectItem>
+                    {reportsToOptions
+                      .filter((option) => option.id !== user?.id)
+                      .map((option) => (
+                        <SelectItem key={option.id} value={option.id}>
+                          {option.fullName} · {option.role.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <p className="text-xs text-ink-3">El BD apunta a su BDC; la Reclutadora a su Líder.</p>
+          </FormRow>
+
+          {!isEditing && (
+            <FormRow label="Acceso" column="firebase_uid · primer login">
+              <Controller
+                control={control}
+                name="accessMode"
+                render={({ field }) => (
+                  <div className="flex w-fit gap-1 rounded-xl bg-surface-2 p-1">
+                    {(
+                      [
+                        ['INVITATION', 'Enviar invitación por correo'],
+                        ['PASSWORD', 'Definir contraseña'],
+                      ] as Array<[AccessMode, string]>
+                    ).map(([mode, label]) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => {
+                          field.onChange(mode)
+                        }}
+                        className={cn(
+                          'cursor-pointer rounded-lg px-3.5 py-2 text-xs transition-colors',
+                          field.value === mode
+                            ? 'border border-line bg-surface font-semibold text-ink'
+                            : 'text-ink-3 hover:text-ink',
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              />
+              {accessMode === 'INVITATION' ? (
+                <p className="rounded-xl bg-o-50 px-4 py-3 text-xs leading-relaxed text-o-700">
+                  Aquí no se captura contraseña: al crear, la persona recibe un correo de invitación
+                  y establece la suya. Hasta su primer login la cuenta aparece como «Invitación
+                  enviada».
+                </p>
+              ) : (
+                <>
+                  <Input aria-label="Contraseña" type="password" {...register('password')} />
+                  <p className="text-xs text-ink-3">
+                    Es su contraseña de uso: puede cambiarla cuando quiera con «¿Olvidaste tu
+                    contraseña?». No se envía por correo.
+                  </p>
+                  {errors.password && <p className="text-xs text-red">{errors.password.message}</p>}
+                </>
+              )}
+            </FormRow>
+          )}
+
+          {isEditing && !user.hasAccount && (
+            <FormRow label="Invitación" column="hasAccount:false">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-xs text-ink-2">
+                  {resendState.isSuccess
+                    ? 'Invitación reenviada: la persona tiene un correo nuevo para establecer su contraseña.'
+                    : 'Aún no hace su primer login.'}
+                </span>
+                {!resendState.isSuccess && (
+                  <Button
+                    type="button"
+                    disabled={resendState.isLoading}
+                    onClick={() => {
+                      void resendInvitation(user.id)
+                    }}
+                  >
+                    {resendState.isLoading ? 'Enviando…' : 'Reenviar invitación'}
+                  </Button>
+                )}
+              </div>
+            </FormRow>
+          )}
+
+          {isEditing && (
+            <FormRow label="Estado" column="is_active">
+              <label className="flex w-fit cursor-pointer items-center gap-3">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isActive}
+                  aria-label="Activo"
+                  onClick={() => {
+                    setIsActive((value) => !value)
+                  }}
+                  className={cn(
+                    'relative h-5 w-9 cursor-pointer rounded-full transition-colors',
+                    isActive ? 'bg-o-500' : 'bg-surface-3',
+                  )}
+                >
+                  <span
+                    className={cn(
+                      'absolute top-0.5 size-4 rounded-full bg-white shadow transition-all',
+                      isActive ? 'left-4' : 'left-0.5',
+                    )}
+                  />
+                </button>
+                <span className="text-sm text-ink-2">
+                  {isActive ? 'Activo — puede entrar al sistema' : 'De baja — ya no puede entrar'}
+                </span>
+              </label>
+              <p className="text-xs text-ink-3">
+                Dar de baja no borra nada: la persona deja de entrar y su historial queda.
+              </p>
+            </FormRow>
+          )}
+
+          {saveError !== undefined && (
+            <p role="alert" className="px-6 pb-2 text-sm text-red">
+              {apiErrorMessage(saveError)}
+            </p>
+          )}
+
+          <div className="flex items-center justify-end gap-3 border-t border-line px-6 py-4">
+            <Button type="button" onClick={onClose} disabled={isBusy}>
+              Cancelar
+            </Button>
+            <Button type="submit" form={FORM_ID} variant="primary" disabled={isBusy}>
+              {isBusy ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear usuario'}
+            </Button>
+          </div>
+        </form>
+      </div>
     </Modal>
   )
 }

@@ -27,16 +27,18 @@ describe('UsersPage', () => {
     expect(screen.queryByText('Sofía Vega')).not.toBeInTheDocument()
   })
 
-  it('incluir inactivos trae a la gente dada de baja', async () => {
+  it('la pestaña de inactivos trae a la gente dada de baja, con su conteo', async () => {
     const user = userEvent.setup()
     renderUsers()
     await screen.findByText('Hugo Curtidor')
 
-    await user.click(screen.getByRole('combobox', { name: 'Inactivos' }))
-    await user.click(await screen.findByRole('option', { name: /incluidos/ }))
+    const inactiveTab = screen.getByRole('button', { name: /Inactivos/ })
+    expect(inactiveTab).toHaveTextContent('1')
+    await user.click(inactiveTab)
 
     expect(await screen.findByText('Sofía Vega')).toBeInTheDocument()
     expect(screen.getByText('Inactivo')).toBeInTheDocument()
+    expect(screen.queryByText('Hugo Curtidor')).not.toBeInTheDocument()
   })
 
   it('el alta por invitación no pide contraseña; definirla la exige de 8+', async () => {

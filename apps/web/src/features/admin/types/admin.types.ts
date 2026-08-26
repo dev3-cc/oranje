@@ -4,6 +4,7 @@ export interface StaffUser {
   fullName: string
   role: { code: string; name: string }
   reportsToUserId: string | null
+  photoUrl?: string | null
   hasAccount: boolean
   isActive: boolean
   createdAt: string
