@@ -15,7 +15,7 @@ export interface RefreshTokenRow {
   replacedById: string | null
 }
 
-/** Del token en claro nunca se guarda nada: solo su SHA-256. */
+// Del token en claro no se guarda nada: solo su SHA-256.
 function hash(token: string): string {
   return createHash('sha256').update(token).digest('hex')
 }
@@ -60,7 +60,6 @@ export class RefreshTokenRepository {
     })
   }
 
-  /** Cierra todas las sesiones vivas de un usuario. */
   async revokeAllOf(userId: string): Promise<number> {
     const { count } = await this.prisma.refreshToken.updateMany({
       where: { userId, revokedAt: null },

@@ -1,11 +1,13 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { PlacesService } from '../../../infra/places/index.js'
 import { PermissionsService } from '../../identity/index.js'
 
 import type { CloseProspectDto } from './dto/close-prospect.dto.js'
 import type { CreateProspectDto } from './dto/create-prospect.dto.js'
 import type { QueryProspectsDto } from './dto/query-prospects.dto.js'
+import type { UpdateProspectDto } from './dto/update-prospect.dto.js'
 import type { ProspectEntity } from './entities/prospect.entity.js'
 import { ProspectRow, ProspectsRepository } from './prospects.repository.js'
 
@@ -27,6 +29,7 @@ export class ProspectsService {
   constructor(
     private readonly repo: ProspectsRepository,
     private readonly permissions: PermissionsService,
+    private readonly places: PlacesService,
   ) {}
 
   async create(dto: CreateProspectDto, user: AuthenticatedUser): Promise<ProspectEntity> {
@@ -53,7 +56,7 @@ export class ProspectsService {
       })
     }
 
-    return toEntity(
+    return this.toEntity(
       await this.repo.create(dto.hotelId, ownerUserId, dto.needDescription ?? null, user.id),
     )
   }
@@ -72,7 +75,7 @@ export class ProspectsService {
     ])
 
     return {
-      data: rows.map(toEntity),
+      data: rows.map((row) => this.toEntity(row)),
       meta: {
         page: query.page,
         limit: query.limit,
@@ -90,7 +93,43 @@ export class ProspectsService {
       throw new NotFoundException({ code: 'PROSPECT_NOT_FOUND', message: 'El prospecto no existe' })
     }
 
-    return toEntity(row)
+    return this.toEntity(row)
+  }
+
+  async update(
+    id: string,
+    dto: UpdateProspectDto,
+    user: AuthenticatedUser,
+  ): Promise<ProspectEntity> {
+    const row = await this.repo.findById(id)
+
+    if (!row) {
+      throw new NotFoundException({ code: 'PROSPECT_NOT_FOUND', message: 'El prospecto no existe' })
+    }
+
+    if (row.closedAt !== null) {
+      throw new ConflictException({
+        code: 'PROSPECT_CLOSED',
+        message: 'Un ciclo cerrado ya no se edita',
+      })
+    }
+
+    if (dto.ownerUserId !== undefined && !(await this.repo.userExists(dto.ownerUserId))) {
+      throw new NotFoundException({
+        code: 'OWNER_NOT_FOUND',
+        message: 'El usuario dueño del ciclo no existe o está desactivado',
+      })
+    }
+
+    return this.toEntity(
+      await this.repo.update({
+        id,
+        ownerUserId: dto.ownerUserId,
+        needDescription: dto.needDescription,
+        userId: user.id,
+        roleCode: user.roleCode,
+      }),
+    )
   }
 
   async close(id: string, dto: CloseProspectDto, user: AuthenticatedUser): Promise<ProspectEntity> {
@@ -123,7 +162,7 @@ export class ProspectsService {
       })
     }
 
-    return toEntity(
+    return this.toEntity(
       await this.repo.close({
         id,
         reasonId: reason.id,
@@ -133,6 +172,13 @@ export class ProspectsService {
         stateCode: row.onboardingState.code,
       }),
     )
+  }
+
+  // La URL de media se compone al leer: lo que se guarda es el resource name.
+  private toEntity(row: ProspectRow): ProspectEntity {
+    const base = toEntity(row)
+
+    return { ...base, hotel: { ...base.hotel, photoUrl: this.places.mediaUrl(row.hotel.photoRef) } }
   }
 
   private async scope(
@@ -152,7 +198,7 @@ export class ProspectsService {
 function toEntity(row: ProspectRow): ProspectEntity {
   return {
     id: row.id,
-    hotel: row.hotel,
+    hotel: { ...row.hotel, photoUrl: null },
     owner: row.owner,
     state: {
       code: row.onboardingState.code,
@@ -166,6 +212,20 @@ function toEntity(row: ProspectRow): ProspectEntity {
     openedAt: row.openedAt.toISOString(),
     closedAt: row.closedAt?.toISOString() ?? null,
     attemptCount: row._count.attempts,
+    lastAttempt: row.attempts[0]
+      ? {
+          occurredAt: row.attempts[0].occurredAt.toISOString(),
+          attemptType: row.attempts[0].attemptType,
+          outcome: row.attempts[0].outcome,
+        }
+      : null,
+    lastProposal: row.proposals[0]
+      ? {
+          version: row.proposals[0].version,
+          isDraft: row.proposals[0].sentAt === null,
+          sentAt: row.proposals[0].sentAt?.toISOString() ?? null,
+        }
+      : null,
     isOpen: row.closedAt === null,
   }
 }

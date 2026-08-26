@@ -24,10 +24,7 @@ interface ErrorBody {
   }
 }
 
-/**
- * Toda respuesta de error sale con la misma forma — Estándares de Desarrollo §4.
- * El `code` es estable y catalogado: el frontend decide con él, no con el `message`.
- */
+// El `code` es estable: el frontend decide con él, no con el `message`.
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name)
@@ -40,7 +37,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     const { status, body } = this.describe(exception, traceId)
 
-    // El stack queda en el log, nunca en el body
     if (status >= 500) {
       this.logger.error(
         `${request.method} ${request.url} — ${traceId}`,
@@ -56,7 +52,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const status = exception.getStatus()
       const payload = exception.getResponse()
 
-      // Lo que lanzó ZodValidationPipe ya trae code, message y details
       if (typeof payload === 'object' && payload !== null && 'code' in payload) {
         const { code, message, details } = payload as Partial<ErrorBody['error']>
 
@@ -89,7 +84,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
   }
 
-  /** Código genérico para las excepciones de Nest que no traen el suyo. */
   private defaultCode(status: number): string {
     const byStatus: Record<number, string> = {
       [HttpStatus.BAD_REQUEST]: 'BAD_REQUEST',

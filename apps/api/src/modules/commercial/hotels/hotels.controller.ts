@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -13,6 +14,7 @@ import {
 
 import { CurrentUser, Requires } from '../../../common/decorators/index.js'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { PermissionsService } from '../../identity/index.js'
 
 import { CreateHotelDto } from './dto/create-hotel.dto.js'
 import { QueryHotelsDto } from './dto/query-hotels.dto.js'
@@ -22,7 +24,10 @@ import { HotelsService, Paginated } from './hotels.service.js'
 
 @Controller('hotels')
 export class HotelsController {
-  constructor(private readonly hotels: HotelsService) {}
+  constructor(
+    private readonly hotels: HotelsService,
+    private readonly permissions: PermissionsService,
+  ) {}
 
   @Requires('pipeline', 'read')
   @Get()
@@ -30,9 +35,25 @@ export class HotelsController {
     return this.hotels.list(query)
   }
 
-  @Requires('pipeline', 'read')
+  /**
+   * Sin `@Requires`: la ficha de un hotel es de Ventas (`pipeline:read`),
+   * PERO tu propio hotel lo puedes leer siempre — el Supervisor y los
+   * Managers necesitan su nombre, su foto y su geocerca sin permisos de
+   * Ventas. Mismo patrón que el territorio.
+   */
   @Get(':id')
-  async get(@Param('id', ParseUUIDPipe) id: string): Promise<{ data: HotelEntity }> {
+  async get(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: HotelEntity }> {
+    const isOwnHotel = user.hotelId === id
+    if (!isOwnHotel && !(await this.permissions.can(user.roleCode, 'pipeline', 'read'))) {
+      throw new ForbiddenException({
+        code: 'FORBIDDEN',
+        message: 'Ver la ficha de otro hotel requiere permisos de Ventas',
+      })
+    }
+
     return { data: await this.hotels.get(id) }
   }
 

@@ -1,0 +1,11 @@
+-- La foto del Colaborador, para la tarjeta del Pool.
+--
+-- Es la persona, no un documento: por eso columna y no una fila mas en
+-- worker_document, que guarda SSN/ITIN, identificacion y comprobante de
+-- domicilio. Un tipo PHOTO ahi la habria metido en el expediente fiscal.
+--
+-- No confundir con las del ponche: esas viven en operations.punch_mark y son
+-- evidencia de presencia, una por marca y por jornada.
+--
+-- Solo la URL, igual que en el hotel. Nulable: nadie la exige para validar.
+ALTER TABLE personal.worker ADD COLUMN photo_url text;

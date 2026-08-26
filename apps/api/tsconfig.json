@@ -2,8 +2,9 @@
   "extends": "../../packages/config/tsconfig/nestjs.json",
   "compilerOptions": {
     // Explícito porque los globales de Jest no entraban solos.
-    // @types/express no va aquí: se importa por su nombre, no declara globales
-    "types": ["node", "jest"],
+    // @types/express no va aquí: se importa por su nombre. multer sí, porque su
+    // tipo de archivo solo existe como global.
+    "types": ["node", "jest", "multer"],
 
     // Lo exige ts-jest con module: NodeNext
     "isolatedModules": true

@@ -13,13 +13,28 @@ const SELECT = {
   openedAt: true,
   closedAt: true,
   hotel: {
-    select: { id: true, name: true, zone: { select: { id: true, code: true, name: true } } },
+    select: {
+      id: true,
+      name: true,
+      photoRef: true,
+      zone: { select: { id: true, code: true, name: true } },
+    },
   },
   owner: { select: { id: true, fullName: true } },
   onboardingState: {
     select: { id: true, code: true, color: true, name: true, isBranch: true, displayOrder: true },
   },
   history: { select: { occurredAt: true }, orderBy: { occurredAt: 'desc' }, take: 1 },
+  attempts: {
+    select: { occurredAt: true, attemptType: true, outcome: true },
+    orderBy: { occurredAt: 'desc' },
+    take: 1,
+  },
+  proposals: {
+    select: { version: true, sentAt: true },
+    orderBy: { version: 'desc' },
+    take: 1,
+  },
   _count: { select: { attempts: true } },
 } as const
 
@@ -158,6 +173,45 @@ export class ProspectsRepository {
 
   async findById(id: string): Promise<ProspectRow | null> {
     return this.prisma.prospect.findUnique({ where: { id }, select: SELECT })
+  }
+
+  async update(params: {
+    id: string
+    ownerUserId?: string | undefined
+    needDescription?: string | null | undefined
+    userId: string
+    roleCode: string
+  }): Promise<ProspectRow> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.prospect.update({
+        where: { id: params.id },
+        data: {
+          ...(params.ownerUserId !== undefined ? { ownerUserId: params.ownerUserId } : {}),
+          ...(params.needDescription !== undefined
+            ? { needDescription: params.needDescription }
+            : {}),
+          updatedAt: new Date(),
+          updatedBy: params.userId,
+        },
+      })
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'commercial.prospect',
+          entityId: params.id,
+          eventType: 'PROSPECT_UPDATED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: {
+            ...(params.ownerUserId !== undefined ? { ownerUserId: params.ownerUserId } : {}),
+            ...(params.needDescription !== undefined ? { needDescriptionChanged: true } : {}),
+          },
+        },
+      })
+    })
+
+    return this.prisma.prospect.findUniqueOrThrow({ where: { id: params.id }, select: SELECT })
   }
 
   async reasonByCode(code: string): Promise<{ id: string } | null> {

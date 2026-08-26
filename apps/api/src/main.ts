@@ -13,27 +13,22 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService<Env, true>)
   const appEnv = config.get('APP_ENV', { infer: true })
 
-  // §4: la versión va en la ruta
   app.setGlobalPrefix('api/v1')
 
-  // El refresh token viaja en cookie httpOnly (§6), no en el body
   app.use(cookieParser())
 
-  // §6: ningún body llega a un controller sin validar
   app.useGlobalPipes(new ZodValidationPipe())
 
-  // §4: todo error sale con la misma forma
   app.useGlobalFilters(new HttpExceptionFilter())
 
-  // §6: lista blanca explícita. En local se abre porque el front corre en otro
-  // puerto y no hay nada que proteger; fuera de local la lista es obligatoria y
-  // la validación de entorno no deja arrancar sin ella
+  // En local se abre: el front corre en otro puerto. Fuera de local la lista
+  // es obligatoria y sin ella la app no arranca.
   app.enableCors({
     origin: appEnv === 'local' ? true : config.get('CORS_ORIGINS', { infer: true }),
     credentials: true,
   })
 
-  // Sin esto, un SIGTERM mata el proceso sin cerrar el pool de Postgres
+  // Sin esto un SIGTERM mata el proceso sin cerrar el pool.
   app.enableShutdownHooks()
 
   const port = config.get('PORT', { infer: true })

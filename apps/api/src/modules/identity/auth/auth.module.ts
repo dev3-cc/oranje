@@ -16,8 +16,6 @@ import { RefreshTokenRepository } from './refresh-token.repository.js'
 
 @Module({
   imports: [
-    // §6: rate limiting global. El límite sale del ambiente — en local estorba,
-    // en la nube es la primera defensa. El login lo aprieta con @Throttle
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService<Env, true>) => [
@@ -33,8 +31,7 @@ import { RefreshTokenRepository } from './refresh-token.repository.js'
     RefreshTokenRepository,
     PermissionsService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
-    // El orden importa: primero quién eres, después qué puedes. El de permisos
-    // da por hecho que ya hay usuario en el request
+    // El orden importa: primero quién eres, después qué puedes.
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: PermissionsGuard },
   ],

@@ -44,17 +44,16 @@ export class AuthService {
     private readonly refreshTokens: RefreshTokenRepository,
   ) {}
 
-  /** Crear sesión: entra el ID token de Firebase, sale el nuestro. */
   async createSession(idToken: string, userAgent: string | null): Promise<Session> {
     const identity = await this.firebase.verify(idToken)
 
-    const user = await this.prisma.user.findUnique({
-      where: { firebaseUid: identity.uid },
-      select: USER_FIELDS,
-    })
+    const user =
+      (await this.prisma.user.findUnique({
+        where: { firebaseUid: identity.uid },
+        select: USER_FIELDS,
+      })) ?? (await this.linkProvisionedUser(identity.uid, identity.email))
 
-    // Existir en Firebase no basta: hay que estar dado de alta en Oranje con un
-    // rol. Sin fila aquí, el token es el de un desconocido
+    // Existir en Firebase no basta: sin fila aquí, es un desconocido.
     if (!user) {
       throw new UnauthorizedException({
         code: 'USER_NOT_REGISTERED',
@@ -69,11 +68,8 @@ export class AuthService {
     return session
   }
 
-  /**
-   * Rotación: cada refresh quema el anterior. Si llega uno ya reemplazado o
-   * revocado, alguien más tiene una copia — se cierran TODAS las sesiones del
-   * usuario, no solo la que llegó.
-   */
+  // Si llega un refresh ya usado, alguien más tiene una copia: se cierran
+  // TODAS las sesiones del usuario.
   async refresh(token: string, userAgent: string | null): Promise<Session> {
     const stored = await this.refreshTokens.find(token)
 
@@ -115,20 +111,44 @@ export class AuthService {
     return session
   }
 
-  /** Matar la sesión actual. */
   async logout(token: string): Promise<void> {
     const stored = await this.refreshTokens.find(token)
 
-    // Si no existe o ya estaba revocado, para el cliente el resultado es el
-    // mismo. No se distingue, para no filtrar qué tokens existen
+    // No se distingue si existía, para no filtrar qué tokens hay.
     if (stored && stored.revokedAt === null) {
       await this.refreshTokens.revoke(stored.id)
     }
   }
 
-  /** Matar todas las sesiones del usuario. */
   async logoutAll(userId: string): Promise<number> {
     return this.refreshTokens.revokeAllOf(userId)
+  }
+
+  /**
+   * Primer login de un usuario pre-aprovisionado: el alta crea la fila con
+   * `firebase_uid` nulo (el uid no existe antes que la cuenta). Si el correo
+   * del token coincide con una fila sin cuenta, se enlaza aquí.
+   */
+  private async linkProvisionedUser(
+    uid: string,
+    email: string | null,
+  ): Promise<UserForSession | null> {
+    if (!email) return null
+
+    const pending = await this.prisma.user.findFirst({
+      where: { email: email.toLowerCase(), firebaseUid: null },
+      select: { id: true },
+    })
+
+    if (!pending) return null
+
+    this.logger.log(`Cuenta enlazada por primer login: ${email}`)
+
+    return this.prisma.user.update({
+      where: { id: pending.id },
+      data: { firebaseUid: uid },
+      select: USER_FIELDS,
+    })
   }
 
   private assertActive(user: UserForSession): void {

@@ -9,7 +9,6 @@ import { createRemoteJWKSet, decodeJwt, jwtVerify } from 'jose'
 
 import type { Env } from '../../../config/env.validation.js'
 
-/** Lo único que nos interesa del ID token de Firebase. */
 export interface FirebaseIdentity {
   uid: string
   email: string | null
@@ -18,19 +17,11 @@ export interface FirebaseIdentity {
 const JWKS_DE_GOOGLE =
   'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
 
-/**
- * Verifica el ID token que emite Firebase Auth al hacer login.
- *
- * No usa `firebase-admin`: eso exigiría una llave de cuenta de servicio en cada
- * ambiente para hacer algo que es verificar una firma contra un JWKS público.
- *
- * Tres modos, según cómo esté configurado el ambiente:
- *
- *   sin configurar   `/auth/session` responde 503. El resto de la API funciona:
- *                    un token de Oranje ya emitido se sigue verificando
- *   emulador         se decodifica SIN verificar. Solo es seguro en localhost
- *   Firebase real    se verifica contra el JWKS de Google
- */
+// Sin firebase-admin: verificar una firma contra un JWKS público no justifica
+// una llave de cuenta de servicio en cada ambiente.
+//
+// Si el issuer dice localhost se asume el EMULADOR y el token se decodifica sin
+// verificar. Con Firebase real se verifica contra el JWKS de Google.
 @Injectable()
 export class FirebaseTokenService {
   private readonly logger = new Logger(FirebaseTokenService.name)

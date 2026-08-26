@@ -2,7 +2,8 @@
  * La Matriz de Permisos, como filas.
  *
  * Sale de los tres `06 - Matriz de Permisos.md` del vault — Ventas, Hotel y
- * Reclutamiento. Cada entrada conserva la etiqueta en español del documento
+ * Reclutamiento — más las de Contabilidad, que no tiene matriz y se derivaron
+ * de `Flujo de Nómina`. Cada entrada conserva la etiqueta en español del documento
  * original: es lo que permite auditar esta tabla contra su fuente sin adivinar
  * qué fila corresponde a cuál.
  *
@@ -14,10 +15,14 @@
  *   1. El rol Administrador. En las tres matrices aparece como ⏸️ EN PAUSA
  *      «mientras se estabilizan las reglas de negocio». Sembrarlo sería
  *      inventar permisos que el negocio no ha decidido.
- *   2. Los cuatro departamentos sin arquitectura — Inspección, QA, Customer
- *      Service y Contabilidad. Sus roles existen en `identity.role` y se quedan
- *      sin una sola fila aquí: no pueden hacer nada hasta que su matriz exista.
- *      Es la dirección segura del error.
+ *   2. Tres de los cuatro departamentos sin arquitectura — Inspección, QA y
+ *      Customer Service. Sus roles existen en `identity.role` y se quedan sin
+ *      una sola fila aquí: no pueden hacer nada hasta que su matriz exista. Es
+ *      la dirección segura del error.
+ *      Contabilidad SÍ tiene filas desde el 2026-08-18, derivadas de
+ *      `Flujo de Nómina` porque el Consolidado necesitaba autorización y el
+ *      flujo sí dice quién valida y quién autoriza. Se marcan aparte para que
+ *      se revisen cuando su matriz exista.
  *   3. Blacklist › «Resolver disputa» y «Remover de Blacklist». La matriz de
  *      Reclutamiento las marca como del Inspector de zona y del Administrador,
  *      ninguno de los cuales es rol de ese departamento.
@@ -46,6 +51,13 @@ const GG = 'ROL-H-03'
 const RECRUITER = 'ROL-R-01'
 const GROUP_LEAD = 'ROL-R-02'
 const RECRUITMENT_MANAGER = 'ROL-R-03'
+const ADMIN = 'ROL-ADM-01'
+const ACCOUNTANT = 'ROL-CO-01'
+const ACCOUNTING_MANAGER = 'ROL-CO-02'
+
+const WORKER = 'ROL-C-01'
+
+const INSPECTOR = 'ROL-I-01'
 
 const SYS = 'ROL-SYS-01'
 
@@ -190,6 +202,12 @@ const SALES: Permission[] = [
     action: 'read_prospects',
     label: 'Ver prospectos por ruta',
     roles: [BD, BDC, SYS],
+  },
+  {
+    module: 'territory',
+    action: 'assign',
+    label: 'Asignar territorio a un BD',
+    roles: [BDC, ADMIN],
   },
   {
     module: 'territory',
@@ -865,7 +883,221 @@ const RECRUITMENT: Permission[] = [
   },
 ]
 
-export const PERMISSIONS: Permission[] = [...SALES, ...HOTEL, ...RECRUITMENT]
+// ---------------------------------------------------------------------------
+// CONTABILIDAD — Contadora y Manager de Contabilidad
+//
+// Sin Matriz de Permisos en Arquitecturas/: el departamento no tiene carpeta.
+// Estas filas se derivan de `Flujo de Nomina`, que si dice quien hace que — la
+// Contadora valida, el Manager de Contabilidad autoriza —, y coinciden con las
+// dos firmas que ck_consolidation_signatures ya exige en la base.
+// ---------------------------------------------------------------------------
+// El levantamiento del veto no esta en la matriz de Reclutamiento: el propio
+// encabezado explica que «Remover de Blacklist» quedo fuera por ser del
+// Administrador, que no es rol de ese departamento. La fila se deriva de
+// `Core/Modulos/Blacklist` —«solo por un perfil de Administrador», 2026-08-13— y
+// coincide con la unica transicion BLACK -> WHITE sembrada, autorizada a ROL-ADM-01.
+const ADMINISTRATION: Permission[] = [
+  {
+    module: 'blacklist',
+    action: 'lift',
+    label: 'Remover de Blacklist',
+    roles: [ADMIN],
+  },
+]
+
+/**
+ * Administración del sistema — la única fila propia del Administrador,
+ * confirmada en la Matriz de Ventas §CONFIGURACIÓN. El resto del rol sigue
+ * EN PAUSA: gestionar cuentas es operación del sistema, no una regla del
+ * negocio pendiente de decidir.
+ */
+const SYSTEM_ADMINISTRATION: Permission[] = [
+  {
+    module: 'users',
+    action: 'manage',
+    label: 'Alta y gestión del personal del sistema',
+    roles: [ADMIN],
+  },
+]
+
+const ACCOUNTING: Permission[] = [
+  {
+    module: 'payroll',
+    action: 'read',
+    label: 'Ver el Consolidado Semanal',
+    roles: [ACCOUNTANT, ACCOUNTING_MANAGER, SYS],
+  },
+  {
+    module: 'payroll',
+    action: 'generate',
+    label: 'Generar el Consolidado de la semana',
+    roles: [ACCOUNTANT, ACCOUNTING_MANAGER, SYS],
+  },
+  {
+    module: 'payroll',
+    action: 'validate',
+    label: 'Validar el Pre-Payroll',
+    roles: [ACCOUNTANT],
+  },
+  {
+    module: 'payroll',
+    action: 'authorize',
+    label: 'Autorizar y liberar la nomina',
+    roles: [ACCOUNTING_MANAGER],
+  },
+  {
+    module: 'payroll',
+    action: 'mark_paid',
+    label: 'Registrar el pago',
+    roles: [ACCOUNTING_MANAGER, SYS],
+  },
+  {
+    module: 'payroll',
+    action: 'manage_deductions',
+    label: 'Aplicar y reembolsar deducciones',
+    roles: [ACCOUNTANT, ACCOUNTING_MANAGER],
+  },
+]
+
+/**
+ * ROL-C-01 Colaborador. Sale de `Arquitecturas/Colaborador/04 - Permisos
+ * Detallados.md`, que no es una Matriz de departamento —el Colaborador es un
+ * rol suelto— pero cumple la misma funcion y es igual de explicita: trae una
+ * seccion de lo que NO puede.
+ *
+ * Todo su alcance es `_own`: RR-C-01 dice que no ve datos de ningun otro
+ * colaborador. El alcance no vive aqui sino en la persona (D-09), y para el
+ * Colaborador es el vinculo `identity.user.id` con `personal.worker`.
+ *
+ * Dos desviaciones frente al documento, ambas por el ponche:
+ *  - dice "Escanear QR y ponchar (6 ponches)", pero D-21 dejo cuatro marcas con
+ *    GPS y foto. El permiso queda como `timesheet:punch`, que es lo que el
+ *    endpoint existente exige.
+ *  - "Generar QR" no se transcribe: ese permiso ya se revoco cuando el ponche
+ *    dejo de usar QR.
+ */
+const WORKER_ROLE: Permission[] = [
+  {
+    module: 'worker',
+    action: 'complete_signup',
+    label: 'Completar el alta — Fases 2 y 3',
+    roles: [WORKER],
+  },
+  {
+    module: 'worker',
+    action: 'read_own',
+    label: 'Ver su perfil, su estado y su semaforo',
+    roles: [WORKER],
+  },
+  {
+    module: 'worker',
+    action: 'update_own_contact',
+    label: 'Editar sus datos de contacto y de emergencia',
+    roles: [WORKER],
+  },
+  {
+    module: 'worker',
+    action: 'set_availability',
+    label: 'Activar y desactivar su disponibilidad voluntaria (RR-C-02)',
+    roles: [WORKER],
+  },
+  {
+    module: 'timesheet',
+    action: 'punch',
+    label: 'Ponchar',
+    roles: [WORKER],
+  },
+  {
+    module: 'schedule',
+    action: 'read_own',
+    label: 'Ver su Schedule de la semana',
+    roles: [WORKER],
+  },
+  {
+    module: 'timesheet',
+    action: 'read_own',
+    label: 'Ver sus horas brutas, la deduccion de lunch y las netas',
+    roles: [WORKER],
+  },
+  {
+    module: 'payroll',
+    action: 'read_own',
+    label: 'Ver los pagos ya liberados — nunca el que esta en curso (RR-C-05)',
+    roles: [WORKER],
+  },
+  {
+    module: 'accident',
+    action: 'report_own',
+    label: 'Reportar un accidente laboral desde la app (RF-C-05)',
+    roles: [WORKER],
+  },
+  {
+    module: 'notification',
+    action: 'read_own',
+    label: 'Ver sus notificaciones',
+    roles: [WORKER],
+  },
+  {
+    module: 'system',
+    action: 'receive_notification',
+    label: 'Recibir notificaciones push',
+    roles: [WORKER],
+  },
+]
+
+/**
+ * Accidente Laboral. **Inspeccion no tiene Matriz de Permisos** —no tiene
+ * carpeta en `Arquitecturas/`—, asi que estas cuatro filas se derivaron del
+ * `Flujo de Accidente Laboral` y de `Reglas de Negocio`. Es el mismo caso que
+ * las seis de `payroll` y `blacklist:lift`: sembradas sin matriz y marcadas
+ * para revision.
+ *
+ * `accident:report_own` no va aqui: es del Colaborador y sale de su
+ * `04 - Permisos Detallados`, que si existe.
+ */
+const INSPECTION: Permission[] = [
+  {
+    module: 'accident',
+    action: 'read',
+    label: 'Ver tarjetas de accidente',
+    roles: [SUPERVISOR, GA, GG, INSPECTOR, SYS],
+  },
+  {
+    module: 'accident',
+    action: 'report',
+    label: 'Reportar un accidente de un colaborador (escenario B)',
+    roles: [SUPERVISOR, GA, GG],
+  },
+  {
+    module: 'accident',
+    action: 'capture_on_site',
+    label: 'Capturar la informacion presencial',
+    roles: [SUPERVISOR],
+  },
+  {
+    module: 'accident',
+    action: 'medical_follow_up',
+    label: 'Capturar el seguimiento medico',
+    roles: [INSPECTOR],
+  },
+  {
+    module: 'accident',
+    action: 'close',
+    label: 'Cerrar la tarjeta con alta medica',
+    roles: [INSPECTOR],
+  },
+]
+
+export const PERMISSIONS: Permission[] = [
+  ...SALES,
+  ...HOTEL,
+  ...RECRUITMENT,
+  ...ACCOUNTING,
+  ...ADMINISTRATION,
+  ...WORKER_ROLE,
+  ...INSPECTION,
+  ...SYSTEM_ADMINISTRATION,
+]
 
 /**
  * Aplana a filas de `identity.role_permission` y quita duplicados.
