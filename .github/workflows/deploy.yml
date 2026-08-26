@@ -127,6 +127,8 @@ jobs:
             echo "flag=--allow-unauthenticated" >> "$GITHUB_OUTPUT"
           fi
 
+      # Las variables van con delimitador ^@^ porque --set-env-vars separa por
+      # coma y CORS_ORIGINS es una lista separada por comas.
       - name: Desplegar en Cloud Run
         run: |
           gcloud run deploy "$SERVICIO" \
@@ -135,7 +137,7 @@ jobs:
             --project "${{ vars.GCP_PROJECT_ID }}" \
             --service-account "${{ vars.RUNTIME_SERVICE_ACCOUNT }}" \
             --set-cloudsql-instances "${{ vars.CLOUDSQL_INSTANCE }}" \
-            --set-env-vars "APP_ENV=${{ vars.APP_ENV }},NODE_ENV=production,AUTH_ISSUER_URL=${{ vars.AUTH_ISSUER_URL }},AUTH_AUDIENCE=${{ vars.AUTH_AUDIENCE }},CORS_ORIGINS=${{ vars.CORS_ORIGINS }},STORAGE_BUCKET=${{ vars.STORAGE_BUCKET }},COOKIE_SECURE=true,LOG_LEVEL=info" \
+            --set-env-vars "^@^APP_ENV=${{ vars.APP_ENV }}@NODE_ENV=production@AUTH_ISSUER_URL=${{ vars.AUTH_ISSUER_URL }}@AUTH_AUDIENCE=${{ vars.AUTH_AUDIENCE }}@CORS_ORIGINS=${{ vars.CORS_ORIGINS }}@STORAGE_BUCKET=${{ vars.STORAGE_BUCKET }}@COOKIE_SECURE=true@LOG_LEVEL=info" \
             --set-secrets "DATABASE_URL=oranje-database-url:latest,JWT_PRIVATE_KEY=oranje-jwt-private-key:latest,JWT_PUBLIC_KEY=oranje-jwt-public-key:latest" \
             --min-instances "${{ vars.MIN_INSTANCES }}" \
             --max-instances "${{ vars.MAX_INSTANCES }}" \
