@@ -42,6 +42,14 @@ const CONFIG: Record<Purpose, PurposeConfig> = {
     quality: 75,
     allowsPdf: false,
   },
+  USER_PHOTO: {
+    folder: 'users/photo',
+    module: 'users',
+    action: 'manage',
+    maxSide: 512,
+    quality: 80,
+    allowsPdf: false,
+  },
 }
 
 const PDF_MIME = 'application/pdf'

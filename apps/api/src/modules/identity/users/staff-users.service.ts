@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { StorageService } from '../../../infra/storage/index.js'
 
 import { HOTEL_ROLES } from './dto/create-hotel-user.dto.js'
 import type { CreateStaffUserDto } from './dto/create-staff-user.dto.js'
@@ -45,13 +46,15 @@ export class StaffUsersService {
   constructor(
     private readonly repo: StaffUsersRepository,
     private readonly accounts: FirebaseAccountsService,
+    private readonly storage: StorageService,
   ) {}
 
   async list(query: QueryStaffUsersDto): Promise<Paginated<StaffUserEntity>> {
     const { rows, total } = await this.repo.findMany(query)
+    const photos = await this.signPhotos(rows)
 
     return {
-      data: rows.map(toEntity),
+      data: rows.map((row) => toEntity(row, photos)),
       meta: {
         page: query.page,
         limit: query.limit,
@@ -68,7 +71,16 @@ export class StaffUsersService {
       throw new NotFoundException({ code: 'USER_NOT_FOUND', message: 'El usuario no existe' })
     }
 
-    return toEntity(row)
+    return toEntity(row, await this.signPhotos([row]))
+  }
+
+  // Se firman las rutas distintas, no una por fila: la misma foto en dos filas
+  // se firma una vez. Si el firmado falla, la URL va null y el listado vive.
+  private async signPhotos(rows: StaffUserRow[]): Promise<Map<string, string | null>> {
+    const paths = [...new Set(rows.flatMap((row) => (row.photoPath ? [row.photoPath] : [])))]
+    const urls = await Promise.all(paths.map((path) => this.storage.signedUrl(path)))
+
+    return new Map(paths.map((path, index) => [path, urls[index] ?? null]))
   }
 
   async create(dto: CreateStaffUserDto, actor: AuthenticatedUser): Promise<StaffUserEntity> {
@@ -99,6 +111,7 @@ export class StaffUsersService {
       roleId,
       roleCode: dto.roleCode,
       reportsToUserId: dto.reportsToUserId ?? null,
+      photoPath: dto.photoPath ?? null,
       credentialOrigin: dto.password !== undefined ? 'password' : 'invitation',
       actorUserId: actor.id,
       actorRole: actor.roleCode,
@@ -115,7 +128,7 @@ export class StaffUsersService {
       await this.sendInvitation(row.id, row.email, actorRef, 'welcome')
     }
 
-    return toEntity(row)
+    return toEntity(row, await this.signPhotos([row]))
   }
 
   async update(
@@ -141,19 +154,20 @@ export class StaffUsersService {
       await this.assertReportsTo(dto.reportsToUserId)
     }
 
-    return toEntity(
-      await this.repo.update(
-        id,
-        {
-          ...(dto.fullName !== undefined ? { fullName: dto.fullName } : {}),
-          ...(roleId !== undefined ? { roleId } : {}),
-          ...(dto.reportsToUserId !== undefined ? { reportsToUserId: dto.reportsToUserId } : {}),
-          ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
-        },
-        { userId: actor.id, role: actor.roleCode },
-        { ...dto },
-      ),
+    const row = await this.repo.update(
+      id,
+      {
+        ...(dto.fullName !== undefined ? { fullName: dto.fullName } : {}),
+        ...(roleId !== undefined ? { roleId } : {}),
+        ...(dto.reportsToUserId !== undefined ? { reportsToUserId: dto.reportsToUserId } : {}),
+        ...(dto.photoPath !== undefined ? { photoPath: dto.photoPath } : {}),
+        ...(dto.isActive !== undefined ? { isActive: dto.isActive } : {}),
+      },
+      { userId: actor.id, role: actor.roleCode },
+      { ...dto },
     )
+
+    return toEntity(row, await this.signPhotos([row]))
   }
 
   /**
@@ -189,7 +203,7 @@ export class StaffUsersService {
       })
     }
 
-    return toEntity(row)
+    return toEntity(row, await this.signPhotos([row]))
   }
 
   private async createAccountWithPassword(email: string, password: string): Promise<void> {
@@ -286,13 +300,14 @@ export class StaffUsersService {
   }
 }
 
-function toEntity(row: StaffUserRow): StaffUserEntity {
+function toEntity(row: StaffUserRow, photos: Map<string, string | null>): StaffUserEntity {
   return {
     id: row.id,
     email: row.email,
     fullName: row.fullName,
     role: row.role,
     reportsToUserId: row.reportsToUserId,
+    photoUrl: row.photoPath ? (photos.get(row.photoPath) ?? null) : null,
     hasAccount: row.firebaseUid !== null,
     isActive: row.isActive,
     createdAt: row.createdAt.toISOString(),

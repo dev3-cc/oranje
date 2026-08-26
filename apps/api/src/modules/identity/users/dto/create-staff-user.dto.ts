@@ -2,6 +2,15 @@ import { z } from 'zod'
 
 import { createZodDto } from '../../../../common/pipes/index.js'
 
+// La ruta sale de POST /files con purpose USER_PHOTO, y se valida el prefijo:
+// la lección del alta del Pool — sin esto se podría apuntar la foto a un
+// documento ajeno de otra carpeta.
+export const staffPhotoPath = z
+  .string()
+  .trim()
+  .max(500)
+  .regex(/^users\/photo\/[A-Za-z0-9._-]+$/, 'Debe ser una ruta devuelta por POST /files')
+
 /**
  * Firebase es la autoridad de identidad (D-05). La credencial nace de dos
  * maneras, a elección del Administrador:
@@ -23,6 +32,7 @@ export const createStaffUserSchema = z.object({
   roleCode: z.string().trim().toUpperCase().min(1).max(20),
   /** El BD apunta a su BDC; la Reclutadora a su Líder. Nulo en la punta. */
   reportsToUserId: z.uuid().optional(),
+  photoPath: staffPhotoPath.optional(),
   password: z.string().min(8).max(128).optional(),
   /**
    * Con `password`, el correo de bienvenida («tienes cuenta con este correo,

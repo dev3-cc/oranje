@@ -12,6 +12,7 @@ const SELECT = {
   fullName: true,
   firebaseUid: true,
   reportsToUserId: true,
+  photoPath: true,
   isActive: true,
   createdAt: true,
   role: { select: { code: true, name: true } },
@@ -75,6 +76,7 @@ export class StaffUsersRepository {
     roleId: string
     roleCode: string
     reportsToUserId: string | null
+    photoPath: string | null
     /** Cómo nace el acceso. La contraseña en sí JAMÁS llega aquí. */
     credentialOrigin: 'invitation' | 'password'
     actorUserId: string
@@ -90,6 +92,7 @@ export class StaffUsersRepository {
           fullName: params.fullName,
           roleId: params.roleId,
           reportsToUserId: params.reportsToUserId,
+          photoPath: params.photoPath,
         },
       })
 
@@ -119,6 +122,7 @@ export class StaffUsersRepository {
       fullName?: string
       roleId?: string
       reportsToUserId?: string | null
+      photoPath?: string | null
       isActive?: boolean
     },
     actor: { userId: string; role: string },
@@ -131,6 +135,7 @@ export class StaffUsersRepository {
           ...(data.fullName !== undefined ? { fullName: data.fullName } : {}),
           ...(data.roleId !== undefined ? { roleId: data.roleId } : {}),
           ...(data.reportsToUserId !== undefined ? { reportsToUserId: data.reportsToUserId } : {}),
+          ...(data.photoPath !== undefined ? { photoPath: data.photoPath } : {}),
           ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
         },
       })
