@@ -905,6 +905,21 @@ const ADMINISTRATION: Permission[] = [
   },
 ]
 
+/**
+ * Administración del sistema — la única fila propia del Administrador,
+ * confirmada en la Matriz de Ventas §CONFIGURACIÓN. El resto del rol sigue
+ * EN PAUSA: gestionar cuentas es operación del sistema, no una regla del
+ * negocio pendiente de decidir.
+ */
+const SYSTEM_ADMINISTRATION: Permission[] = [
+  {
+    module: 'users',
+    action: 'manage',
+    label: 'Alta y gestión del personal del sistema',
+    roles: [ADMIN],
+  },
+]
+
 const ACCOUNTING: Permission[] = [
   {
     module: 'payroll',
@@ -1081,6 +1096,7 @@ export const PERMISSIONS: Permission[] = [
   ...ADMINISTRATION,
   ...WORKER_ROLE,
   ...INSPECTION,
+  ...SYSTEM_ADMINISTRATION,
 ]
 
 /**
