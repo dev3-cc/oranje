@@ -48,7 +48,28 @@ const routes: readonly MockRoute[] = [
   {
     method: 'GET',
     path: '/team',
-    resolve: (): ApiEnvelope<TeamMemberApi[]> => ({ data: MEMBERS }),
+    /** Copias: RTK congela lo servido y el PUT de zonas muta el store. */
+    resolve: (): ApiEnvelope<TeamMemberApi[]> => ({
+      data: MEMBERS.map((member) => ({
+        ...member,
+        zones: member.zones.map((zone) => ({ ...zone })),
+      })),
+    }),
+  },
+  {
+    method: 'PUT',
+    path: '/users/:userId/zones',
+    resolve: ({ params, body }): { data: null } => {
+      const member = MEMBERS.find((item) => item.id === params.userId)
+      if (!member) throw new Error('USER_NOT_FOUND')
+      const zoneIds = ((body ?? {}) as { zoneIds?: string[] }).zoneIds ?? []
+      member.zones = zoneIds.map((zoneId) => ({
+        id: zoneId,
+        code: zoneId.toUpperCase(),
+        name: `Zona ${zoneId.charAt(0).toUpperCase()}${zoneId.slice(1)}`,
+      }))
+      return { data: null }
+    },
   },
 ]
 

@@ -7,6 +7,12 @@ import { NewRequisitionDialog } from './NewRequisitionDialog'
 
 import { store } from '@/app/store'
 
+async function toPositions(user: ReturnType<typeof userEvent.setup>): Promise<void> {
+  await pick(user, 'Hotel', 'Hotel Puerto Real')
+  await user.click(screen.getByRole('button', { name: 'Continuar' }))
+  await screen.findByText('Posiciones solicitadas')
+}
+
 async function pick(
   user: ReturnType<typeof userEvent.setup>,
   triggerLabel: string,
@@ -16,44 +22,43 @@ async function pick(
   await user.click(await screen.findByRole('option', { name: optionName }))
 }
 
-function renderDialog(onClose = vi.fn()): { onClose: () => void } {
+async function renderDialog(onClose = vi.fn()): Promise<{ onClose: () => void }> {
   render(
     <Provider store={store}>
       <NewRequisitionDialog isOpen onClose={onClose} />
     </Provider>,
   )
+  await userEvent.setup().click(await screen.findByRole('button', { name: 'Saltar' }))
   return { onClose }
 }
 
 describe('NewRequisitionDialog', () => {
-  it('no pide el folio: lo genera el backend al guardar', () => {
-    renderDialog()
+  it('no pide el folio: lo genera el backend al guardar', async () => {
+    await renderDialog()
 
-    expect(
-      screen.getByText('El número se genera al guardar — AAAAMMDDHHMM + homoclave de 2 caracteres'),
-    ).toBeInTheDocument()
+    expect(screen.getByText(/El folio se asigna automáticamente al guardar/)).toBeInTheDocument()
+    expect(screen.getByText('AAAAMMDDHHMM + homoclave')).toBeInTheDocument()
     expect(screen.queryByLabelText(/Número/)).not.toBeInTheDocument()
   })
 
   it('el inspector no se elige: sale de la zona del hotel', async () => {
     const user = userEvent.setup()
-    renderDialog()
+    await renderDialog()
 
     expect(screen.queryByLabelText('Inspector de zona')).not.toBeInTheDocument()
     expect(
-      screen.getByText('El Inspector se asigna solo por la zona del hotel (RR-13)'),
+      screen.getByText(/El Inspector se asigna solo por la zona del hotel/),
     ).toBeInTheDocument()
 
     await pick(user, 'Hotel', 'Hotel Puerto Real')
 
-    expect(
-      screen.getByText('Zona Centro · el Inspector se congela al guardar (RR-13)'),
-    ).toBeInTheDocument()
+    expect(screen.getByText(/Zona Centro · el Inspector se congela al guardar/)).toBeInTheDocument()
   })
 
   it('cada unidad de cantidad es un slot, y el total los suma', async () => {
     const user = userEvent.setup()
-    renderDialog()
+    await renderDialog()
+    await toPositions(user)
 
     expect(screen.getByText('Total: 1 posición · 1 slot')).toBeInTheDocument()
 
@@ -69,7 +74,8 @@ describe('NewRequisitionDialog', () => {
 
   it('no deja quitar la última posición', async () => {
     const user = userEvent.setup()
-    renderDialog()
+    await renderDialog()
+    await toPositions(user)
 
     expect(screen.getByRole('button', { name: 'Quitar posición 1' })).toBeDisabled()
 
@@ -77,14 +83,16 @@ describe('NewRequisitionDialog', () => {
     expect(screen.getByRole('button', { name: 'Quitar posición 1' })).toBeEnabled()
   })
 
-  it('exige hotel y los catálogos de la posición', async () => {
+  it('cada paso exige lo suyo: primero el hotel, luego la posición', async () => {
     const user = userEvent.setup()
-    renderDialog()
+    await renderDialog()
 
-    await user.click(screen.getByRole('button', { name: 'Guardar requisición' }))
-
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
     expect(await screen.findByText('Falta el hotel')).toBeInTheDocument()
-    expect(screen.getByText('Falta la posición')).toBeInTheDocument()
+
+    await toPositions(user)
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+    expect(await screen.findByText('Falta la posición')).toBeInTheDocument()
   })
 
   it('guarda y cierra cuando el alta está completa', async () => {
@@ -95,8 +103,9 @@ describe('NewRequisitionDialog', () => {
         <NewRequisitionDialog isOpen onClose={onClose} />
       </Provider>,
     )
+    await user.click(await screen.findByRole('button', { name: 'Saltar' }))
 
-    await pick(user, 'Hotel', 'Hotel Puerto Real')
+    await toPositions(user)
 
     await pick(user, 'Posición 1', 'Housekeeper')
     await pick(user, 'Modalidad 1', 'Tiempo completo')
@@ -104,7 +113,15 @@ describe('NewRequisitionDialog', () => {
 
     await user.type(screen.getByLabelText('Inicio 1'), '2026-09-18')
 
-    await user.click(screen.getByRole('button', { name: 'Guardar requisición' }))
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+    expect(await screen.findByText(/Nace en Borrador/)).toBeInTheDocument()
+
+    // El botón se arma 350ms después de llegar a Revisión: frena el doble clic.
+    const save = screen.getByRole('button', { name: 'Guardar requisición' })
+    await waitFor(() => {
+      expect(save).toBeEnabled()
+    })
+    await user.click(save)
 
     await waitFor(() => {
       expect(onClose).toHaveBeenCalled()

@@ -285,6 +285,59 @@ export const onboardingApi = baseApi.injectEndpoints({
       },
       invalidatesTags: (_result, _error, { prospectId }) => [{ type: 'Prospect', id: prospectId }],
     }),
+    updateHotelContact: build.mutation<
+      ProspectDetail,
+      {
+        prospectId: string
+        contactId: string
+        patch: {
+          fullName?: string
+          jobTitle?: string | null
+          phone?: string | null
+          email?: string | null
+          isPrimary?: boolean
+          isActive?: boolean
+        }
+      }
+    >({
+      queryFn: async ({ prospectId, contactId, patch }, _api, _extra, fetchWithBQ) => {
+        const bq = fetchWithBQ as FetchWithBQ
+
+        const prospectRes = await bq(`/prospects/${prospectId}`)
+        if (prospectRes.error) return { error: prospectRes.error as never }
+        const hotelId = (prospectRes.data as ApiEnvelope<ProspectApi>).data.hotel.id
+
+        const res = await bq({
+          url: `/hotels/${hotelId}/contacts/${contactId}`,
+          method: 'PATCH',
+          body: patch,
+        })
+        if (res.error) return { error: res.error as never }
+
+        const detail = await fetchProspectDetail(bq, prospectId)
+        return 'error' in detail ? { error: detail.error as never } : { data: detail.data }
+      },
+      invalidatesTags: (_result, _error, { prospectId }) => [{ type: 'Prospect', id: prospectId }],
+    }),
+    deleteHotelContact: build.mutation<ProspectDetail, { prospectId: string; contactId: string }>({
+      queryFn: async ({ prospectId, contactId }, _api, _extra, fetchWithBQ) => {
+        const bq = fetchWithBQ as FetchWithBQ
+
+        const prospectRes = await bq(`/prospects/${prospectId}`)
+        if (prospectRes.error) return { error: prospectRes.error as never }
+        const hotelId = (prospectRes.data as ApiEnvelope<ProspectApi>).data.hotel.id
+
+        const res = await bq({
+          url: `/hotels/${hotelId}/contacts/${contactId}`,
+          method: 'DELETE',
+        })
+        if (res.error) return { error: res.error as never }
+
+        const detail = await fetchProspectDetail(bq, prospectId)
+        return 'error' in detail ? { error: detail.error as never } : { data: detail.data }
+      },
+      invalidatesTags: (_result, _error, { prospectId }) => [{ type: 'Prospect', id: prospectId }],
+    }),
 
     /** Hoteles ya registrados, para el modo «Hotel ya registrado» del alta. */
     getRegisteredHotels: build.query<RegisteredHotel[], void>({
@@ -469,6 +522,29 @@ export const onboardingApi = baseApi.injectEndpoints({
   }),
 })
 
+/**
+ * Archivar el ciclo (`POST /prospects/:id/close`): NO es marcar Rojo o Negro
+ * — esos son reactivables. Cerrar libera al hotel para un ciclo nuevo, y el
+ * back rechaza cerrarlo en Naranja (un cliente activo primero pasa a Negro).
+ */
+export const closeProspectApi = onboardingApi.injectEndpoints({
+  endpoints: (build) => ({
+    closeProspect: build.mutation<void, { prospectId: string; reasonCode: string; note?: string }>({
+      query: ({ prospectId, ...body }) => ({
+        url: `/prospects/${prospectId}/close`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (_result, _error, { prospectId }) => [
+        { type: 'Prospect', id: prospectId },
+        { type: 'Prospect', id: 'LIST' },
+      ],
+    }),
+  }),
+})
+
+export const { useCloseProspectMutation } = closeProspectApi
+
 export const {
   useGetPipelineBoardQuery,
   useGetProspectQuery,
@@ -476,6 +552,8 @@ export const {
   useGetZonesQuery,
   useCreateProspectMutation,
   useAddHotelContactsMutation,
+  useUpdateHotelContactMutation,
+  useDeleteHotelContactMutation,
   useGetRegisteredHotelsQuery,
   useGetHotelMapPointsQuery,
   useUpdateProspectMutation,

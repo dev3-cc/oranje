@@ -48,6 +48,8 @@ export interface TimesheetEntry {
 export interface TimesheetRow {
   /** El id del TIMESHEET (semana × persona × requisición): contra él se envía/aprueba. */
   timesheetId: string
+  /** La requisición del timesheet: con ella se resuelve el assignment del ponche manual. */
+  requisitionId: string
   workerId: string
   workerName: string
   /** El contrato aún no expone el puesto: raya, no un dato inventado. */

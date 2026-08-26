@@ -31,6 +31,8 @@ export interface ClientCard {
    */
   prospectId: string
   hotelName: string
+  /** La foto de Places compuesta al leer (D-34); `null` si el hotel no tiene. */
+  photoUrl: string | null
   zoneName: string
   /** `activated_at`: el día que el hotel dejó de ser prospecto. ISO sin hora. */
   activatedAt: string

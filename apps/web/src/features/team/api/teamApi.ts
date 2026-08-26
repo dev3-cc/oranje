@@ -1,4 +1,4 @@
-import type { TeamMemberCard, TeamOverview } from '../types/team.types'
+import type { TeamMemberCard, TeamMemberCycle, TeamOverview } from '../types/team.types'
 
 import { registerTeamMocks } from './teamMocks'
 
@@ -58,6 +58,7 @@ function buildMemberCard(member: TeamMemberApi, prospects: ProspectApi[]): TeamM
     id: member.id,
     fullName: member.fullName,
     zoneNames: member.zones.map((zone) => zone.name.replace(/^Zona\s+/i, '')),
+    zones: member.zones.map((zone) => ({ id: zone.id, name: zone.name })),
     openProspects: open.length,
     quarterConversions,
     conversionRate:
@@ -78,6 +79,18 @@ function buildMemberCard(member: TeamMemberApi, prospects: ProspectApi[]): TeamM
       status: status,
       count: open.filter((prospect) => prospect.state.code === status).length,
     })),
+    openCycles: open
+      .map((prospect) => ({
+        prospectId: prospect.id,
+        hotelName: prospect.hotel.name,
+        status: prospect.state.code as TeamMemberCycle['status'],
+        daysSinceAttempt: daysBetween(
+          prospect.lastAttempt?.occurredAt ?? prospect.openedAt,
+          new Date().toISOString(),
+        ),
+      }))
+      /** Los más olvidados arriba: es lo que el BDC viene a vigilar. */
+      .sort((a, b) => b.daysSinceAttempt - a.daysSinceAttempt),
   }
 }
 
@@ -121,7 +134,27 @@ export const teamApi = baseApi.injectEndpoints({
       },
       providesTags: [{ type: 'Prospect' as const, id: 'LIST' }],
     }),
+
+    getTeamZones: build.query<Array<{ id: string; name: string }>, void>({
+      query: () => '/catalogs/zones',
+      transformResponse: (raw: ApiEnvelope<Array<{ id: string; name: string }>>) =>
+        raw.data.map((zone) => ({ id: zone.id, name: zone.name })),
+      providesTags: [{ type: 'Catalog' as const, id: 'ZONE' }],
+    }),
+
+    /**
+     * `PUT /users/:id/zones` (territory:assign — BDC y Administrador): la
+     * lista COMPLETA reemplaza a la anterior, como lo define el back.
+     */
+    setTerritory: build.mutation<unknown, { userId: string; zoneIds: string[] }>({
+      query: ({ userId, zoneIds }) => ({
+        url: `/users/${userId}/zones`,
+        method: 'PUT',
+        body: { zoneIds },
+      }),
+      invalidatesTags: [{ type: 'Prospect' as const, id: 'LIST' }],
+    }),
   }),
 })
 
-export const { useGetTeamOverviewQuery } = teamApi
+export const { useGetTeamOverviewQuery, useGetTeamZonesQuery, useSetTerritoryMutation } = teamApi

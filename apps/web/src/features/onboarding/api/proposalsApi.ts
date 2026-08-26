@@ -1,6 +1,7 @@
 import type {
   ProposalCandidate,
   ProposalDraft,
+  ProposalTarget,
   ProposalVersionSummary,
   ProposalWorkspace,
   SaveProposalDraftRequest,
@@ -104,6 +105,36 @@ export const proposalsApi = baseApi.injectEndpoints({
       providesTags: [{ type: 'Prospect', id: 'LIST' }],
     }),
 
+    /**
+     * A quién se le puede abrir una propuesta NUEVA: prospectos en Verde o
+     * Café (la regla del back) que todavía no tienen ninguna. Los que ya
+     * tienen versiones se siguen desde su fila de la lista.
+     */
+    getProposalTargets: build.query<ProposalTarget[], void>({
+      queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
+        const bq = fetchWithBQ as FetchWithBQ
+        const res = await bq('/prospects?limit=100')
+        if (res.error) return { error: res.error as never }
+
+        const prospects = (res.data as PaginatedEnvelope<ProspectApi>).data
+        return {
+          data: prospects
+            .filter(
+              (prospect) =>
+                (prospect.state.code === 'GREEN' || prospect.state.code === 'BROWN') &&
+                !prospect.lastProposal,
+            )
+            .map((prospect) => ({
+              prospectId: prospect.id,
+              hotelName: prospect.hotel.name,
+              zone: prospect.hotel.zone.name,
+              prospectStatus: prospect.state.code as OnboardingStatus,
+            })),
+        }
+      },
+      providesTags: [{ type: 'Prospect', id: 'LIST' }],
+    }),
+
     getProposalWorkspace: build.query<ProposalWorkspace, string>({
       queryFn: async (prospectId, _api, _extra, fetchWithBQ) => {
         const result = await fetchWorkspace(fetchWithBQ as FetchWithBQ, prospectId)
@@ -170,6 +201,7 @@ export const proposalsApi = baseApi.injectEndpoints({
 
 export const {
   useGetProposalCandidatesQuery,
+  useGetProposalTargetsQuery,
   useGetProposalWorkspaceQuery,
   useCreateProposalDraftMutation,
   useSaveProposalDraftMutation,

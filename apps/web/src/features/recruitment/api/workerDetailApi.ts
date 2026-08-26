@@ -70,6 +70,46 @@ export const workerDetailApi = baseApi.injectEndpoints({
         { type: 'Worker' as const, id: `${workerId}-documents` },
       ],
     }),
+
+    /** La ruta viene de `POST /files` (WORKER_DOCUMENT): el back valida el prefijo. */
+    createWorkerDocument: build.mutation<
+      void,
+      { workerId: string; documentType: string; filePath: string }
+    >({
+      query: ({ workerId, ...body }) => ({
+        url: `/workers/${workerId}/documents`,
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: (_res, _err, { workerId }) => [
+        { type: 'Worker' as const, id: `${workerId}-documents` },
+      ],
+    }),
+
+    /**
+     * VERIFICAR es lo que levanta la retención del 16% cuando el documento es
+     * el SSN/ITIN (D-33): cargar corre el plazo, verificar libera. Es permiso
+     * de validación (`recruitment:validate_signup`), no de captura.
+     */
+    verifyWorkerDocument: build.mutation<void, { workerId: string; documentId: string }>({
+      query: ({ workerId, documentId }) => ({
+        url: `/workers/${workerId}/documents/${documentId}/verify`,
+        method: 'POST',
+      }),
+      invalidatesTags: (_res, _err, { workerId }) => [
+        { type: 'Worker' as const, id: `${workerId}-documents` },
+      ],
+    }),
+
+    deleteWorkerDocument: build.mutation<void, { workerId: string; documentId: string }>({
+      query: ({ workerId, documentId }) => ({
+        url: `/workers/${workerId}/documents/${documentId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (_res, _err, { workerId }) => [
+        { type: 'Worker' as const, id: `${workerId}-documents` },
+      ],
+    }),
   }),
 })
 
@@ -79,4 +119,7 @@ export const {
   useGetWorkerTransitionsQuery,
   useChangeWorkerStateMutation,
   useGetWorkerDocumentsQuery,
+  useCreateWorkerDocumentMutation,
+  useVerifyWorkerDocumentMutation,
+  useDeleteWorkerDocumentMutation,
 } = workerDetailApi

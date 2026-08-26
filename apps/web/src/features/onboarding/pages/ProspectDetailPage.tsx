@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router'
 
 import { useDeleteContactAttemptMutation, useGetProspectQuery } from '../api/onboardingApi'
 import { useGetProposalWorkspaceQuery } from '../api/proposalsApi'
+import { ArchiveCycleDialog } from '../components/ArchiveCycleDialog'
 import { ChangeStatusDialog } from '../components/ChangeStatusDialog'
 import { ContactAttemptLog } from '../components/ContactAttemptLog'
 import { HotelContactList } from '../components/HotelContactList'
@@ -28,6 +29,7 @@ import { formatDate } from '@/shared/lib/formatters'
 export function ProspectDetailPage(): ReactNode {
   const { prospectId = '' } = useParams()
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false)
+  const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
   const [attemptToEdit, setAttemptToEdit] = useState<ContactAttempt | null>(null)
   const { data: session } = useGetSessionQuery()
   const [deleteAttempt] = useDeleteContactAttemptMutation()
@@ -137,6 +139,17 @@ export function ProspectDetailPage(): ReactNode {
               >
                 Cambiar estado
               </Button>
+              {prospect.status !== 'ORANGE' && (
+                <Button
+                  variant="secondary"
+                  title="Cierra el ciclo definitivamente y libera al hotel"
+                  onClick={() => {
+                    setIsArchiveDialogOpen(true)
+                  }}
+                >
+                  Archivar
+                </Button>
+              )}
             </div>
           </div>
           <div className="absolute inset-x-6 bottom-4">
@@ -211,6 +224,17 @@ export function ProspectDetailPage(): ReactNode {
             >
               Cambiar estado
             </Button>
+            {prospect.status !== 'ORANGE' && (
+              <Button
+                variant="secondary"
+                title="Cierra el ciclo definitivamente y libera al hotel"
+                onClick={() => {
+                  setIsArchiveDialogOpen(true)
+                }}
+              >
+                Archivar
+              </Button>
+            )}
           </div>
         </header>
       )}
@@ -286,6 +310,15 @@ export function ProspectDetailPage(): ReactNode {
         prospectId={prospect.id}
         hotelName={prospect.hotelName}
         currentStatus={prospect.status}
+      />
+
+      <ArchiveCycleDialog
+        isOpen={isArchiveDialogOpen}
+        onClose={() => {
+          setIsArchiveDialogOpen(false)
+        }}
+        prospectId={prospect.id}
+        hotelName={prospect.hotelName}
       />
     </div>
   )

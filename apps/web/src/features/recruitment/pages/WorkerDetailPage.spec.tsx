@@ -52,7 +52,10 @@ describe('WorkerDetailPage', () => {
   it('los documentos salen con su verificación real: dos verificados y el ITIN pendiente', async () => {
     renderDetail()
 
-    expect(await screen.findByText('Identificación oficial', undefined, SLOW)).toBeInTheDocument()
+    // El selector del alta también dice «Identificación oficial»: se cuenta ≥1 fila.
+    expect(
+      (await screen.findAllByText('Identificación oficial', undefined, SLOW)).length,
+    ).toBeGreaterThan(0)
     expect(screen.getByText('Comprobante de domicilio')).toBeInTheDocument()
     expect(screen.getAllByText('Verificado')).toHaveLength(2)
     const itinRow = screen.getByText('SSN / ITIN').closest('li') as HTMLElement

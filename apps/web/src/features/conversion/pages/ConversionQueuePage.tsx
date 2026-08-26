@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import { useGetConversionQueueQuery } from '../api/conversionApi'
 
 import conversionIllustration from '@/assets/ilustrations/conversion_naranja.svg'
+import { EmptyState } from '@/shared/components/EmptyState'
 import { LoadError } from '@/shared/components/LoadError'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
@@ -51,9 +52,10 @@ export function ConversionQueuePage(): ReactNode {
       )}
 
       {!isLoading && !isError && candidates.length === 0 && (
-        <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-          Nada por convertir: ningún prospecto llegó a Rosa todavía.
-        </p>
+        <EmptyState
+          title="Nada por convertir"
+          text="Ningún prospecto llegó a Rosa todavía. Un hotel entra aquí cuando su Documento de T&C se negocia y el BD lo mueve a Rosa en el Pipeline; entonces el BDC aprueba la conversión."
+        />
       )}
 
       {candidates.length > 0 && (

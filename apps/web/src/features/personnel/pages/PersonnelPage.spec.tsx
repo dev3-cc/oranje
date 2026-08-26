@@ -56,6 +56,8 @@ describe('PersonnelPage', () => {
       'tr',
     ) as HTMLElement
     await user.click(within(luisRow).getByText('Stand-by'))
+    await user.click(await screen.findByRole('button', { name: 'Continuar' }))
+    await user.click(await screen.findByRole('button', { name: 'Continuar' }))
 
     const dialog = await screen.findByRole('dialog')
     const sendButton = within(dialog).getByRole('button', { name: 'Mandar a Stand-by' })

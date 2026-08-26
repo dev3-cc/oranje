@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import type { TimesheetEntry, TimesheetWeek } from '../types/timesheet.types'
+import type { TimesheetEntry, TimesheetRow, TimesheetWeek } from '../types/timesheet.types'
 
 import { TimesheetDayCell } from './TimesheetDayCell'
 import { WorkerWeekSummary } from './WorkerWeekSummary'
@@ -26,12 +26,14 @@ export function TimesheetGrid({
   selectedIds,
   onToggle,
   onReview,
+  onManualPunch,
 }: {
   week: TimesheetWeek
   columnWidth: number
   selectedIds: Set<string>
   onToggle: (entryId: string) => void
   onReview: (entry: TimesheetEntry, workerName: string) => void
+  onManualPunch: (row: TimesheetRow) => void
 }): ReactNode {
   const template = `${String(WORKER_COLUMN_PX)}px repeat(${String(week.days.length)}, ${String(columnWidth)}px)`
 
@@ -71,7 +73,7 @@ export function TimesheetGrid({
               style={{ gridTemplateColumns: template }}
             >
               <div className="px-5 py-4">
-                <WorkerWeekSummary row={row} />
+                <WorkerWeekSummary row={row} onManualPunch={onManualPunch} />
               </div>
 
               {week.days.map((day) => {

@@ -8,7 +8,7 @@ import { ProposalEditorPage } from './ProposalEditorPage'
 
 import { store } from '@/app/store'
 
-function renderEditor(prospectId: string): void {
+async function renderEditor(prospectId: string): Promise<void> {
   const router = createMemoryRouter(
     [{ path: '/pipeline/:prospectId/propuesta', element: <ProposalEditorPage /> }],
     { initialEntries: [`/pipeline/${prospectId}/propuesta`] },
@@ -19,15 +19,19 @@ function renderEditor(prospectId: string): void {
       <RouterProvider router={router} />
     </Provider>,
   )
+  /* El intro de página se ve solo la PRIMERA vez (useIntroSeen): tras el
+     primer test queda visto en el localStorage de jsdom y ya no aparece. */
+  const skip = screen.queryByRole('button', { name: 'Saltar' })
+  if (skip) await userEvent.click(skip)
 }
 
 describe('ProposalEditorPage', () => {
   it('carga el borrador abierto y su historial de versiones', async () => {
-    renderEditor('psp-0008')
+    await renderEditor('psp-0008')
 
     expect(await screen.findByText('Propuesta · Hotel Mirador')).toBeInTheDocument()
     expect(
-      screen.getByText('Versión 3 · borrador · sent_at es NULL hasta enviarla'),
+      screen.getByText(/Versión 3 · borrador · sent_at es NULL hasta enviarla/),
     ).toBeInTheDocument()
 
     // Las tarifas del borrador llegan al formulario.
@@ -42,7 +46,7 @@ describe('ProposalEditorPage', () => {
   })
 
   it('sin borrador abierto no deja editar y ofrece abrir una versión nueva', async () => {
-    renderEditor('psp-0007')
+    await renderEditor('psp-0007')
 
     expect(await screen.findByText('Sin versión abierta')).toBeInTheDocument()
     expect(screen.queryByLabelText('Pay rate')).not.toBeInTheDocument()
@@ -51,7 +55,7 @@ describe('ProposalEditorPage', () => {
   })
 
   it('no deja facturar por debajo de lo que se paga', async () => {
-    renderEditor('psp-0008')
+    await renderEditor('psp-0008')
 
     const billRate = await screen.findByLabelText('Bill rate')
     await userEvent.clear(billRate)
@@ -63,7 +67,7 @@ describe('ProposalEditorPage', () => {
   })
 
   it('el icono de PDF abre el contrato con las tarifas de ESA versión', async () => {
-    renderEditor('psp-0008')
+    await renderEditor('psp-0008')
 
     await userEvent.click(
       await screen.findByRole('button', { name: 'Vista previa del contrato de la Propuesta v1' }),
@@ -80,7 +84,7 @@ describe('ProposalEditorPage', () => {
   })
 
   it('la versión nueva arranca con las tarifas de la anterior', async () => {
-    renderEditor('psp-0011')
+    await renderEditor('psp-0011')
 
     await userEvent.click(await screen.findByRole('button', { name: 'Nueva versión' }))
 
@@ -88,7 +92,7 @@ describe('ProposalEditorPage', () => {
     expect(await screen.findByLabelText('Pay rate')).toHaveValue(172)
     expect(screen.getByLabelText('Bill rate')).toHaveValue(250)
     expect(
-      screen.getByText('Versión 2 · borrador · sent_at es NULL hasta enviarla'),
+      screen.getByText(/Versión 2 · borrador · sent_at es NULL hasta enviarla/),
     ).toBeInTheDocument()
   })
 })

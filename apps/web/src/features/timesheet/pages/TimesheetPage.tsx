@@ -1,6 +1,7 @@
 import { useMemo, useState, type ReactNode } from 'react'
 
 import { useGetTimesheetWeekQuery } from '../api/timesheetApi'
+import { ManualPunchDialog } from '../components/ManualPunchDialog'
 import { ReviewDayDialog } from '../components/ReviewDayDialog'
 import { TimesheetGrid } from '../components/TimesheetGrid'
 import { TimesheetToolbar } from '../components/TimesheetToolbar'
@@ -8,6 +9,7 @@ import {
   EMPTY_TIMESHEET_FILTERS,
   type TimesheetEntry,
   type TimesheetFilters,
+  type TimesheetRow,
 } from '../types/timesheet.types'
 
 import { Button } from '@/shared/components/Button'
@@ -29,6 +31,8 @@ export function TimesheetPage(): ReactNode {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   /** El día abierto en Revisión (maqueta del Supervisor); `null` = cerrado. */
   const [review, setReview] = useState<{ entry: TimesheetEntry; workerName: string } | null>(null)
+  /** La fila con el diálogo de marca manual abierto; `null` = cerrado. */
+  const [manualPunchRow, setManualPunchRow] = useState<TimesheetRow | null>(null)
 
   const { data: week, isLoading, isError, refetch } = useGetTimesheetWeekQuery(filters)
 
@@ -129,9 +133,17 @@ export function TimesheetPage(): ReactNode {
             onReview={(entry, workerName) => {
               setReview({ entry, workerName })
             }}
+            onManualPunch={setManualPunchRow}
           />
         )
       )}
+
+      <ManualPunchDialog
+        row={manualPunchRow}
+        onClose={() => {
+          setManualPunchRow(null)
+        }}
+      />
 
       <ReviewDayDialog
         entry={review?.entry ?? null}

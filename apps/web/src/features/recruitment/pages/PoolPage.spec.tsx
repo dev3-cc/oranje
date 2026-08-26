@@ -80,7 +80,13 @@ describe('PoolPage', () => {
 
     const dialog = await screen.findByRole('dialog')
     const scoped = within(dialog)
-    const submit = scoped.getByRole('button', { name: 'Crear colaborador' })
+
+    // La intro de 3 diapositivas precede al formulario: se pasa completa.
+    await user.click(scoped.getByRole('button', { name: 'Continuar' }))
+    await user.click(scoped.getByRole('button', { name: 'Continuar' }))
+    await user.click(scoped.getByRole('button', { name: 'Comenzar el alta' }))
+
+    const submit = await scoped.findByRole('button', { name: 'Crear colaborador' })
     expect(submit).toBeDisabled()
 
     expect(scoped.getByText(/Nace en BLANCO/)).toBeInTheDocument()

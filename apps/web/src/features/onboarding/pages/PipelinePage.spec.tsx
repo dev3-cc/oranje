@@ -54,6 +54,7 @@ describe('PipelinePage', () => {
     renderPipeline()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Nuevo prospecto' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Saltar' }))
 
     const dialog = await screen.findByRole('dialog')
     expect(within(dialog).getByRole('heading', { name: 'Nuevo prospecto' })).toBeInTheDocument()

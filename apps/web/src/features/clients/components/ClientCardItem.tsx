@@ -4,6 +4,8 @@ import { Link } from 'react-router'
 
 import type { ClientCard } from '../types/client.types'
 
+import { HotelPhoto } from './HotelPhoto'
+
 import { Button } from '@/shared/components/Button'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TOKEN } from '@/shared/constants/contractStatus'
@@ -55,11 +57,9 @@ export function ClientCardItem({
             onClick={() => {
               onSelect(client.id)
             }}
-            className="flex size-20 shrink-0 items-center justify-center rounded-lg bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
+            className="size-20 shrink-0 overflow-hidden rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
           >
-            <span className="material-icons-outlined text-2xl text-o-500" aria-hidden>
-              apartment
-            </span>
+            <HotelPhoto photoUrl={client.photoUrl} className="size-full rounded-lg" />
           </button>
 
           <div className="min-w-0 flex-1">

@@ -3,6 +3,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { useGetContractsQuery } from '../api/contractsApi'
 import { ContractFilters } from '../components/ContractFilters'
 import { ContractTable } from '../components/ContractTable'
+import { NewContractDialog } from '../components/NewContractDialog'
 import type { ContractListFilters } from '../types/contract.types'
 
 import { Button } from '@/shared/components/Button'
@@ -17,6 +18,7 @@ const EMPTY_FILTERS: ContractListFilters = { search: '', status: 'ALL', zoneName
 
 export function ContractListPage(): ReactNode {
   const [filters, setFilters] = useState<ContractListFilters>(EMPTY_FILTERS)
+  const [isCreating, setIsCreating] = useState(false)
   const [appliedFilters, setAppliedFilters] = useState<ContractListFilters>(EMPTY_FILTERS)
   const [warningDays, setWarningDays] = useState(EXPIRY_WARNING_DAYS)
 
@@ -44,11 +46,22 @@ export function ContractListPage(): ReactNode {
           </p>
         </div>
 
-        {}
-        <Button variant="primary" disabled title="Pendiente: falta el diseño del alta">
+        <Button
+          variant="primary"
+          onClick={() => {
+            setIsCreating(true)
+          }}
+        >
           + Nuevo contrato
         </Button>
       </header>
+
+      <NewContractDialog
+        isOpen={isCreating}
+        onClose={() => {
+          setIsCreating(false)
+        }}
+      />
 
       <ContractFilters
         filters={filters}

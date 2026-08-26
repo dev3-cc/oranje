@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 
-import { useGetContractQuery } from '../api/contractsApi'
+import { useGetContractQuery, useTransitionContractMutation } from '../api/contractsApi'
+import { EditRateDialog } from '../components/EditRateDialog'
 import { EngineRulesCard } from '../components/EngineRulesCard'
 import { MultiplierTable } from '../components/MultiplierTable'
 import { RateTable } from '../components/RateTable'
@@ -14,6 +15,7 @@ import {
   CONTRACT_STATUS_TOKEN,
   WEEK_DAY_NAMES,
 } from '@/shared/constants/contractStatus'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate } from '@/shared/lib/formatters'
 
@@ -27,6 +29,25 @@ export function ContractDetailPage(): ReactNode {
     isLoading,
     isError,
   } = useGetContractQuery(contractId, { skip: contractId === '' })
+
+  const [isEditingRate, setIsEditingRate] = useState(false)
+  /** Los cierres piden un segundo clic: el botón se vuelve «¿Confirmar…?». */
+  const [confirming, setConfirming] = useState<'activate' | 'expire' | 'cancel' | null>(null)
+  const [transition, { isLoading: isTransitioning, isError: hasTransitionFailed, error }] =
+    useTransitionContractMutation()
+
+  async function run(action: 'activate' | 'expire' | 'cancel'): Promise<void> {
+    if (confirming !== action) {
+      setConfirming(action)
+      return
+    }
+    setConfirming(null)
+    try {
+      await transition({ contractId, action }).unwrap()
+    } catch {
+      return
+    }
+  }
 
   if (isLoading) {
     return <p className="text-sm text-ink-3">Cargando contrato…</p>
@@ -94,11 +115,75 @@ export function ContractDetailPage(): ReactNode {
           <Button variant="secondary" disabled title="Pendiente: falta el diseño del PDF">
             Ver PDF
           </Button>
-          <Button variant="primary" disabled title="Pendiente: falta el diseño de la edición">
-            Editar contrato
-          </Button>
+
+          {/* Las acciones dependen del estado: DRAFT se edita y activa; ACTIVE solo se expira. */}
+          {contract.status === 'DRAFT' && (
+            <>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setIsEditingRate(true)
+                }}
+              >
+                Editar tarifas
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={isTransitioning}
+                onClick={() => {
+                  void run('cancel')
+                }}
+              >
+                {confirming === 'cancel' ? '¿Confirmar cancelación?' : 'Cancelar borrador'}
+              </Button>
+              <Button
+                variant="primary"
+                disabled={isTransitioning}
+                onClick={() => {
+                  void run('activate')
+                }}
+              >
+                {confirming === 'activate' ? '¿Confirmar activación?' : 'Activar contrato'}
+              </Button>
+            </>
+          )}
+          {contract.status === 'ACTIVE' && (
+            <Button
+              variant="secondary"
+              disabled={isTransitioning}
+              onClick={() => {
+                void run('expire')
+              }}
+            >
+              {confirming === 'expire' ? '¿Confirmar expiración?' : 'Marcar expirado'}
+            </Button>
+          )}
         </div>
       </header>
+
+      {hasTransitionFailed && (
+        <p role="alert" className="text-sm text-red">
+          {apiErrorMessage(error, {
+            byCode: {
+              CONTRACT_WITHOUT_RATES: 'No se puede activar sin tarifas: agrega al menos una.',
+              CONTRACT_ALREADY_ACTIVE:
+                'Este hotel ya tiene un contrato vigente: primero hay que expirarlo.',
+              CONTRACT_NOT_DRAFT: 'Este contrato ya dejó de ser borrador.',
+              CONTRACT_NOT_ACTIVE: 'Solo un contrato vigente se puede expirar.',
+              CONTRACT_ALREADY_CLOSED: 'Este contrato ya está cerrado.',
+            },
+            fallback: 'No se pudo cambiar el estado del contrato. Inténtalo de nuevo.',
+          })}
+        </p>
+      )}
+
+      <EditRateDialog
+        contractId={contractId}
+        isOpen={isEditingRate}
+        onClose={() => {
+          setIsEditingRate(false)
+        }}
+      />
 
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-3">
         <div className="flex flex-col gap-6 xl:col-span-2">
