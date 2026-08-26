@@ -1,9 +1,11 @@
-import { SidebarInset, SidebarProvider } from '@oranje/ui'
+import { SidebarInset, SidebarProvider, Toaster } from '@oranje/ui'
 import type { CSSProperties, ReactNode } from 'react'
 import { Outlet } from 'react-router'
 
 import { Header } from './Header'
 import { Sidebar } from './Sidebar'
+
+import { BackgroundBeams } from '@/shared/components/BackgroundBeams'
 
 export function AppShell(): ReactNode {
   return (
@@ -12,12 +14,14 @@ export function AppShell(): ReactNode {
       className="h-screen overflow-hidden bg-bg"
     >
       <Sidebar />
-      <SidebarInset className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden bg-bg">
+      <SidebarInset className="relative flex h-screen min-w-0 flex-1 flex-col overflow-hidden bg-bg">
+        <BackgroundBeams />
         <Header />
-        <div className="min-w-0 flex-1 overflow-y-auto p-6">
+        <div className="relative min-w-0 flex-1 overflow-y-auto p-6">
           <Outlet />
         </div>
       </SidebarInset>
+      <Toaster />
     </SidebarProvider>
   )
 }

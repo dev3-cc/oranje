@@ -55,6 +55,7 @@ export const baseApi = createApi({
     'WorkAccident',
     'BlacklistEntry',
     'Catalog',
+    'StaffUser',
   ],
   endpoints: () => ({}),
 })

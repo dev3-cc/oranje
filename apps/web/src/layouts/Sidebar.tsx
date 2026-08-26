@@ -1,3 +1,4 @@
+import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import {
   Sidebar as SidebarRoot,
   SidebarContent,
@@ -15,7 +16,7 @@ import type { ReactNode } from 'react'
 import { NavLink } from 'react-router'
 
 import { useGetSessionQuery, useLogoutMutation } from '@/app/sessionApi'
-import logoOranje from '@/assets/logo/Logo_ORANJE_Orange.png'
+import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
 
 interface NavModule {
   label: string
@@ -32,15 +33,19 @@ const MGR_RECLUTAMIENTO = 'ROL-R-03'
 const SUPERVISOR = 'ROL-H-01'
 const MGR_AREA = 'ROL-H-02'
 const MGR_GENERAL = 'ROL-H-03'
+const ADMIN = 'ROL-ADM-01'
 
 const VENTAS = [BD, BDC] as const
 const RECLUTAMIENTO = [RECLUTADORA, LIDER_GRUPO, MGR_RECLUTAMIENTO] as const
 const HOTEL = [SUPERVISOR, MGR_AREA, MGR_GENERAL] as const
 
-const MAPPED_ROLES: ReadonlySet<string> = new Set([...VENTAS, ...RECLUTAMIENTO, ...HOTEL])
+const STAFF = [...VENTAS, ...RECLUTAMIENTO, ...HOTEL] as const
+
+const MAPPED_ROLES: ReadonlySet<string> = new Set([...STAFF, ADMIN])
 
 const MODULES: NavModule[] = [
-  { label: 'Dashboard', to: '/dashboard', icon: 'space_dashboard' },
+  { label: 'Dashboard', to: '/dashboard', icon: 'space_dashboard', roles: STAFF },
+  { label: 'Usuarios', to: '/usuarios', icon: 'manage_accounts', roles: [ADMIN] },
   { label: 'Pipeline', to: '/pipeline', icon: 'view_kanban', roles: VENTAS },
   { label: 'Mi Territorio', to: '/mi-territorio', icon: 'map', roles: VENTAS },
   { label: 'Propuestas', to: '/propuestas', icon: 'description', roles: VENTAS },
@@ -89,7 +94,9 @@ export function Sidebar(): ReactNode {
   return (
     <SidebarRoot>
       <SidebarHeader className="h-hd justify-center px-5">
-        <img src={logoOranje} alt="Oranje" className="h-4 w-auto self-start" />
+        <div className="w-44 aspect-[1024/100] self-start" role="img" aria-label="Oranje">
+          <DotLottieReact src={logoAnimado} loop autoplay />
+        </div>
       </SidebarHeader>
 
       <SidebarContent>

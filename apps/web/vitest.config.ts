@@ -5,8 +5,12 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [react()],
+  assetsInclude: ['**/*.lottie'],
   resolve: {
     alias: {
+      '@lottiefiles/dotlottie-react': fileURLToPath(
+        new URL('./src/test/stubs/dotlottie-react.tsx', import.meta.url),
+      ),
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       '@ui': fileURLToPath(new URL('../../packages/ui/src', import.meta.url)),
     },

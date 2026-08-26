@@ -10,7 +10,12 @@ import type { ApiEnvelope } from '@/shared/types/apiContract.types'
  * (foto del colaborador, documentos, ponche).
  */
 
-export const FILE_PURPOSES = ['WORKER_PHOTO', 'WORKER_DOCUMENT', 'PUNCH_PHOTO'] as const
+export const FILE_PURPOSES = [
+  'WORKER_PHOTO',
+  'WORKER_DOCUMENT',
+  'PUNCH_PHOTO',
+  'USER_PHOTO',
+] as const
 
 export type FilePurpose = (typeof FILE_PURPOSES)[number]
 

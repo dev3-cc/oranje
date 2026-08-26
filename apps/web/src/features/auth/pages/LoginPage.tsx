@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import { Input } from '@oranje/ui'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useState, type ReactNode } from 'react'
@@ -11,7 +12,7 @@ import { loginSchema, type LoginFormValues } from '../types/login.schema'
 import { useAppSelector } from '@/app/hooks'
 import { useCreateSessionMutation } from '@/app/sessionApi'
 import { selectSessionStatus } from '@/app/sessionSlice'
-import logoOranje from '@/assets/logo/Logo_ORANJE_Orange.png'
+import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
 import { requestPasswordReset, signInWithEmail } from '@/shared/lib/firebase'
 
 /**
@@ -171,14 +172,16 @@ export function LoginPage(): ReactNode {
       >
         {/* Columna del formulario: 340–400px, como la referencia. */}
         <section className="flex w-full flex-col justify-center gap-8 p-8 sm:p-10 md:max-w-100">
-          <motion.img
-            src={logoOranje}
-            alt="Oranje"
-            className="h-5 w-auto self-start"
+          <motion.div
+            role="img"
+            aria-label="Oranje"
+            className="h-6 aspect-[1024/120] self-start"
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15, duration: 0.4 }}
-          />
+          >
+            <DotLottieReact src={logoAnimado} loop autoplay />
+          </motion.div>
 
           <AnimatePresence mode="wait" initial={false}>
             {mode === 'login' ? (

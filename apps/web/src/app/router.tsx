@@ -83,6 +83,13 @@ export const router = createBrowserRouter([
             },
           },
           {
+            path: 'usuarios',
+            lazy: async () => {
+              const m = await import('@/features/admin')
+              return { Component: m.UsersPage }
+            },
+          },
+          {
             path: 'pipeline',
             lazy: async () => {
               const m = await import('@/features/onboarding')
