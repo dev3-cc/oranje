@@ -33,15 +33,19 @@ const MGR_RECLUTAMIENTO = 'ROL-R-03'
 const SUPERVISOR = 'ROL-H-01'
 const MGR_AREA = 'ROL-H-02'
 const MGR_GENERAL = 'ROL-H-03'
+const ADMIN = 'ROL-ADM-01'
 
 const VENTAS = [BD, BDC] as const
 const RECLUTAMIENTO = [RECLUTADORA, LIDER_GRUPO, MGR_RECLUTAMIENTO] as const
 const HOTEL = [SUPERVISOR, MGR_AREA, MGR_GENERAL] as const
 
-const MAPPED_ROLES: ReadonlySet<string> = new Set([...VENTAS, ...RECLUTAMIENTO, ...HOTEL])
+const STAFF = [...VENTAS, ...RECLUTAMIENTO, ...HOTEL] as const
+
+const MAPPED_ROLES: ReadonlySet<string> = new Set([...STAFF, ADMIN])
 
 const MODULES: NavModule[] = [
-  { label: 'Dashboard', to: '/dashboard', icon: 'space_dashboard' },
+  { label: 'Dashboard', to: '/dashboard', icon: 'space_dashboard', roles: STAFF },
+  { label: 'Usuarios', to: '/usuarios', icon: 'manage_accounts', roles: [ADMIN] },
   { label: 'Pipeline', to: '/pipeline', icon: 'view_kanban', roles: VENTAS },
   { label: 'Mi Territorio', to: '/mi-territorio', icon: 'map', roles: VENTAS },
   { label: 'Propuestas', to: '/propuestas', icon: 'description', roles: VENTAS },
