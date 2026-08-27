@@ -13,19 +13,43 @@ import {
 import { ProposalVersionHistory } from '../components/ProposalVersionHistory'
 import { proposalDraftSchema, type ProposalDraftForm } from '../types/proposalDraft.schema'
 
+import { useGetSessionQuery } from '@/app/sessionApi'
+import personajePago from '@/assets/ilustrations/personaje-pago-procesado.svg'
+import personajePresentacion from '@/assets/ilustrations/personaje-presentacion.svg'
+import personajeRetro from '@/assets/ilustrations/personaje-retroalimentacion.svg'
 import { Button } from '@/shared/components/Button'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { FormField } from '@/shared/components/FormField'
+import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { SectionCard } from '@/shared/components/SectionCard'
 import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
 } from '@/shared/constants/onboardingStatus'
+import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 
 const FORM_ID = 'proposal-draft'
 
 const CONTROL_CLASS =
   'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none'
+
+const INTRO_SLIDES = [
+  {
+    image: personajePresentacion,
+    title: 'La propuesta vive en Verde',
+    text: 'Se elabora y se envía con el hotel en Verde — y de ahí no se avanza sin propuesta enviada.',
+  },
+  {
+    image: personajePago,
+    title: 'Tarifas globales, por ahora',
+    text: 'Pay y bill generales para todo el hotel. Cotizar por posición llegará como cambio aditivo.',
+  },
+  {
+    image: personajeRetro,
+    title: 'Lo enviado no se edita',
+    text: 'Cada envío congela una versión. Renegociar es abrir una nueva, que arranca con las tarifas de la anterior.',
+  },
+] as const
 
 export function ProposalEditorPage(): ReactNode {
   const { prospectId = '' } = useParams()
@@ -36,9 +60,14 @@ export function ProposalEditorPage(): ReactNode {
     isError,
   } = useGetProposalWorkspaceQuery(prospectId, { skip: prospectId === '' })
 
+  const { data: session } = useGetSessionQuery()
   const [saveDraft, { isLoading: isSaving }] = useSaveProposalDraftMutation()
   const [sendProposal, { isLoading: isSending }] = useSendProposalMutation()
-  const [createDraft, { isLoading: isCreating }] = useCreateProposalDraftMutation()
+  const [createDraft, { isLoading: isCreating, isError: hasCreateFailed }] =
+    useCreateProposalDraftMutation()
+  /** El intro de página se ve UNA vez; «¿Cómo funciona?» lo reabre. */
+  const { isIntroOpen, dismissIntro, reopenIntro } = useIntroSeen('proposal-editor')
+  const isBd = session?.roleId === 'ROL-V-01'
 
   const { register, handleSubmit, reset, formState } = useForm<ProposalDraftForm>({
     resolver: zodResolver(proposalDraftSchema),
@@ -114,6 +143,14 @@ export function ProposalEditorPage(): ReactNode {
             {draft
               ? `Versión ${draft.version} · borrador · sent_at es NULL hasta enviarla`
               : 'Sin versión abierta · la última ya se envió'}
+            {' · '}
+            <button
+              type="button"
+              onClick={reopenIntro}
+              className="cursor-pointer font-medium text-o-700 hover:underline"
+            >
+              ¿Cómo funciona?
+            </button>
           </p>
         </div>
 
@@ -135,79 +172,110 @@ export function ProposalEditorPage(): ReactNode {
         )}
       </header>
 
-      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        {draft ? (
-          <form
-            id={FORM_ID}
-            noValidate
-            onSubmit={(event) => {
-              void handleSubmit(persist)(event)
-            }}
-            className="flex flex-col gap-5"
-          >
-            <SectionCard title="Servicios ofrecidos">
-              <FormField
-                label="Descripción"
-                htmlFor="servicesNote"
-                hint="services_note — texto libre"
-                error={formState.errors.servicesNote?.message}
+      {isIntroOpen ? (
+        <div className="max-w-2xl rounded-lg border border-line bg-surface">
+          <OnboardingIntro
+            slides={INTRO_SLIDES}
+            startLabel="Ir a la propuesta"
+            onDone={dismissIntro}
+          />
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+            {draft ? (
+              <form
+                id={FORM_ID}
+                noValidate
+                onSubmit={(event) => {
+                  void handleSubmit(persist)(event)
+                }}
+                className="flex flex-col gap-5"
               >
-                <input
-                  id="servicesNote"
-                  type="text"
-                  placeholder="Housekeeping y Steward para temporada alta…"
-                  {...register('servicesNote')}
-                  className={CONTROL_CLASS}
-                />
-              </FormField>
-            </SectionCard>
+                <SectionCard title="Servicios ofrecidos">
+                  <FormField
+                    label="Descripción"
+                    htmlFor="servicesNote"
+                    hint="services_note — texto libre"
+                    error={formState.errors.servicesNote?.message}
+                  >
+                    <input
+                      id="servicesNote"
+                      type="text"
+                      placeholder="Housekeeping y Steward para temporada alta…"
+                      {...register('servicesNote')}
+                      className={CONTROL_CLASS}
+                    />
+                  </FormField>
+                </SectionCard>
 
-            <SectionCard title="Tarifas tentativas">
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <FormField
-                  label="Pay rate"
-                  htmlFor="payRate"
-                  error={formState.errors.payRate?.message}
-                >
-                  <MoneyInput id="payRate" {...register('payRate', { valueAsNumber: true })} />
-                </FormField>
+                <SectionCard title="Tarifas tentativas">
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <FormField
+                      label="Pay rate"
+                      htmlFor="payRate"
+                      error={formState.errors.payRate?.message}
+                    >
+                      <MoneyInput id="payRate" {...register('payRate', { valueAsNumber: true })} />
+                    </FormField>
 
-                <FormField
-                  label="Bill rate"
-                  htmlFor="billRate"
-                  error={formState.errors.billRate?.message}
-                >
-                  <MoneyInput id="billRate" {...register('billRate', { valueAsNumber: true })} />
-                </FormField>
-              </div>
+                    <FormField
+                      label="Bill rate"
+                      htmlFor="billRate"
+                      error={formState.errors.billRate?.message}
+                    >
+                      <MoneyInput
+                        id="billRate"
+                        {...register('billRate', { valueAsNumber: true })}
+                      />
+                    </FormField>
+                  </div>
 
-              <p className="mt-5 rounded-md bg-o-50 p-4 text-sm leading-relaxed text-ink-2">
-                Tarifas globales, no por posición. Cuando el negocio cotice Chef y Housekeeper por
-                separado se agrega proposal_rate — migración aditiva, sin tocar esta pantalla.
-              </p>
-            </SectionCard>
-          </form>
-        ) : (
-          <SectionCard title="Sin versión abierta">
-            <p className="text-sm leading-relaxed text-ink-3">
-              La última versión ya se envió. Las enviadas no se editan: para renegociar se abre una
-              versión nueva, que arranca con las tarifas de la anterior.
-            </p>
-            <Button
-              variant="primary"
-              className="mt-5"
-              disabled={isBusy}
-              onClick={() => {
-                void createDraft(prospectId)
-              }}
-            >
-              {isCreating ? 'Abriendo…' : 'Nueva versión'}
-            </Button>
-          </SectionCard>
-        )}
+                  <p className="mt-5 rounded-md bg-o-50 p-4 text-sm leading-relaxed text-ink-2">
+                    Tarifas globales, no por posición. Cuando el negocio cotice Chef y Housekeeper
+                    por separado se agrega proposal_rate — migración aditiva, sin tocar esta
+                    pantalla.
+                  </p>
+                </SectionCard>
+              </form>
+            ) : (
+              <SectionCard title="Sin versión abierta">
+                <p className="text-sm leading-relaxed text-ink-3">
+                  La última versión ya se envió. Las enviadas no se editan: para renegociar se abre
+                  una versión nueva, que arranca con las tarifas de la anterior.
+                </p>
+                {isBd ? (
+                  <>
+                    <Button
+                      variant="primary"
+                      className="mt-5"
+                      disabled={isBusy}
+                      onClick={() => {
+                        void createDraft(prospectId)
+                      }}
+                    >
+                      {isCreating ? 'Abriendo…' : 'Nueva versión'}
+                    </Button>
+                    {hasCreateFailed && (
+                      <p role="alert" className="mt-3 text-sm text-red">
+                        No se pudo abrir la versión. Solo el Business Developer dueño del ciclo
+                        puede elaborar la propuesta.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="mt-5 rounded-md bg-o-50 px-4 py-3 text-sm text-o-700">
+                    Abrir versiones es del Business Developer dueño del ciclo — tu rol consulta y
+                    acompaña, pero la propuesta la elabora él.
+                  </p>
+                )}
+              </SectionCard>
+            )}
 
-        <ProposalVersionHistory hotelName={workspace.hotelName} versions={workspace.versions} />
-      </div>
+            <ProposalVersionHistory hotelName={workspace.hotelName} versions={workspace.versions} />
+          </div>
+        </>
+      )}
     </div>
   )
 }

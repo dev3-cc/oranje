@@ -35,10 +35,15 @@ import { HotelLocationMap } from './HotelLocationMap'
 import { PlacesSearchField, type PlaceAutofill } from './PlacesSearchField'
 
 import { useGetSessionQuery } from '@/app/sessionApi'
+import personajeComencemos from '@/assets/ilustrations/personaje-comencemos.svg'
+import personajePresentacion from '@/assets/ilustrations/personaje-presentacion.svg'
+import personajeTratoCerrado from '@/assets/ilustrations/personaje-trato-cerrado.svg'
 import { Button } from '@/shared/components/Button'
 import { MapsScope } from '@/shared/components/MapsScope'
 import { Modal } from '@/shared/components/Modal'
+import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
+import { StepIndicator } from '@/shared/components/StepIndicator'
 import {
   ONBOARDING_STATUS_DESCRIPTION,
   ONBOARDING_STATUS_LABEL,
@@ -48,6 +53,24 @@ import {
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'prospect-form'
+
+const INTRO_SLIDES = [
+  {
+    image: personajeComencemos,
+    title: 'Un hotel, un ciclo',
+    text: 'Dar de alta el hotel abre su ciclo comercial en Gris. Un hotel solo puede tener un ciclo abierto a la vez.',
+  },
+  {
+    image: personajePresentacion,
+    title: 'La ubicación importa',
+    text: 'El pin exacto y la geocerca validarán los ponches cuando sea cliente: arrástralo a la entrada real del personal.',
+  },
+  {
+    image: personajeTratoCerrado,
+    title: 'De Gris a Naranja',
+    text: 'El semáforo lo acompaña del primer contacto hasta cliente activo — cada paso queda en su historia.',
+  },
+] as const
 
 const TIME_ZONES = [
   { value: 'America/New_York', label: 'Este — Atlanta, Miami, Nueva York' },
@@ -144,63 +167,6 @@ const STEP_FIELDS: Record<WizardStep, Array<keyof ProspectFormValues>> = {
   4: ['ownerUserId'],
 }
 
-function StepIndicator({
-  current,
-  onStepClick,
-}: {
-  current: WizardStep
-  onStepClick: (step: WizardStep) => void
-}): ReactNode {
-  return (
-    <ol className="flex items-center gap-2">
-      {WIZARD_STEPS.map(({ step, label }, index) => {
-        const isDone = step < current
-        const isActive = step === current
-        return (
-          <li key={step} className="flex items-center gap-2">
-            {index > 0 && <span className="h-px w-4 bg-line" aria-hidden />}
-            <button
-              type="button"
-              disabled={!isDone}
-              onClick={() => {
-                onStepClick(step)
-              }}
-              aria-current={isActive ? 'step' : undefined}
-              className={cn(
-                'flex items-center gap-2 rounded-full py-1 pr-3 pl-1 text-sm transition-colors',
-                isDone && 'cursor-pointer hover:bg-surface-2',
-              )}
-            >
-              <span
-                className={cn(
-                  'flex size-6 items-center justify-center rounded-full text-xs font-semibold',
-                  isActive && 'bg-o-500 text-ink',
-                  isDone && 'bg-green text-white',
-                  !isActive && !isDone && 'border border-line text-ink-3',
-                )}
-              >
-                {isDone ? (
-                  <span className="material-icons-outlined text-sm leading-none" aria-hidden>
-                    check
-                  </span>
-                ) : (
-                  step
-                )}
-              </span>
-              {}
-              <span
-                className={cn('whitespace-nowrap', isActive ? 'font-semibold text-ink' : 'hidden')}
-              >
-                {label}
-              </span>
-            </button>
-          </li>
-        )
-      })}
-    </ol>
-  )
-}
-
 export interface ProspectFormDialogProps {
   isOpen: boolean
   onClose: () => void
@@ -287,6 +253,11 @@ export function ProspectFormDialog({
   const [placeId, setPlaceId] = useState<string | null>(null)
 
   const [step, setStep] = useState<WizardStep>(1)
+  const [showIntro, setShowIntro] = useState(false)
+
+  useEffect(() => {
+    if (isOpen) setShowIntro(!isEditing)
+  }, [isOpen, isEditing])
 
   async function goNext(): Promise<void> {
     const isStepValid = await trigger(STEP_FIELDS[step])
@@ -377,404 +348,204 @@ export function ProspectFormDialog({
       isOpen={isOpen}
       onClose={onClose}
       title={isEditing ? 'Editar prospecto' : 'Nuevo prospecto'}
-      className="h-[88vh] max-w-[95rem]"
+      className={showIntro && !isEditing ? 'max-w-2xl' : 'h-[88vh] max-w-[95rem]'}
     >
-      {}
-      <form
-        id={FORM_ID}
-        noValidate
-        onSubmit={(event) => {
-          if (step < 4) {
-            event.preventDefault()
-            void goNext()
-            return
-          }
-          void handleSubmit(onSubmit)(event)
-        }}
-        className="relative h-full"
-      >
-        <MapsScope>
-          <HotelLocationMap
-            value={values.location}
-            geofenceMeters={values.geofenceMeters}
-            onMovePin={movePin}
-            centerPin={step === 2}
-            followPoint={values.placeLocation}
-            className="absolute inset-0 h-full rounded-none border-0"
-          />
+      {showIntro && !isEditing ? (
+        <OnboardingIntro
+          slides={INTRO_SLIDES}
+          startLabel="Comenzar el alta"
+          onDone={() => {
+            setShowIntro(false)
+          }}
+        />
+      ) : (
+        <form
+          id={FORM_ID}
+          noValidate
+          onSubmit={(event) => {
+            if (step < 4) {
+              event.preventDefault()
+              void goNext()
+              return
+            }
+            void handleSubmit(onSubmit)(event)
+          }}
+          className="relative h-full"
+        >
+          <MapsScope>
+            <HotelLocationMap
+              value={values.location}
+              geofenceMeters={values.geofenceMeters}
+              onMovePin={movePin}
+              centerPin={step === 2}
+              followPoint={values.placeLocation}
+              className="absolute inset-0 h-full rounded-none border-0"
+            />
 
-          {}
-          <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-3">
             {}
-            <p className="rounded-full bg-surface/95 px-4 py-2 text-sm font-bold text-ink shadow-md backdrop-blur">
-              {isEditing ? 'Editar prospecto' : 'Nuevo prospecto'}
-            </p>
-            {!isEditing && step === 1 && (
-              <div className="flex gap-1 rounded-full bg-surface/95 p-1 shadow-md backdrop-blur">
-                {(
-                  [
-                    ['NEW', 'Hotel nuevo'],
-                    ['EXISTING', 'Hotel ya registrado'],
-                  ] as const
-                ).map(([source, label]) => (
-                  <button
-                    key={source}
-                    type="button"
-                    aria-pressed={values.hotelSource === source}
-                    onClick={() => {
-                      setValue('hotelSource', source, { shouldValidate: true })
-                    }}
-                    className={cn(
-                      'rounded-full px-3 py-1.5 text-sm transition-colors',
-                      values.hotelSource === source
-                        ? 'bg-o-500 font-semibold text-ink'
-                        : 'text-ink-3 hover:text-ink-2',
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {}
-          <section className="absolute inset-x-2 top-16 bottom-2 z-10 flex flex-col overflow-hidden rounded-xl bg-surface/95 shadow-lg backdrop-blur md:inset-x-auto md:top-14 md:right-4 md:bottom-4 md:w-md">
-            {placePhotoUrl && (
-              <div className="relative shrink-0">
-                <img
-                  src={placePhotoUrl}
-                  alt={`Foto de ${values.hotelName || 'el hotel'} según Google`}
-                  className="h-32 w-full object-cover"
-                  onError={() => {
-                    setPlacePhotoUrl(null)
-                  }}
-                />
-                <div
-                  aria-hidden
-                  className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent via-surface/85 to-surface"
-                />
-                {}
-                <p className="absolute bottom-0.5 left-4 text-base font-semibold text-ink">
-                  {values.hotelName}
-                </p>
-              </div>
-            )}
-
-            <div className="shrink-0 px-4 pt-3">
-              <StepIndicator
-                current={step}
-                onStepClick={(target) => {
-                  setStep(target)
-                }}
-              />
+            <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-3">
+              {}
+              <p className="rounded-full bg-surface/95 px-4 py-2 text-sm font-bold text-ink shadow-md backdrop-blur">
+                {isEditing ? 'Editar prospecto' : 'Nuevo prospecto'}
+              </p>
+              {!isEditing && step === 1 && (
+                <div className="flex gap-1 rounded-full bg-surface/95 p-1 shadow-md backdrop-blur">
+                  {(
+                    [
+                      ['NEW', 'Hotel nuevo'],
+                      ['EXISTING', 'Hotel ya registrado'],
+                    ] as const
+                  ).map(([source, label]) => (
+                    <button
+                      key={source}
+                      type="button"
+                      aria-pressed={values.hotelSource === source}
+                      onClick={() => {
+                        setValue('hotelSource', source, { shouldValidate: true })
+                      }}
+                      className={cn(
+                        'rounded-full px-3 py-1.5 text-sm transition-colors',
+                        values.hotelSource === source
+                          ? 'bg-o-500 font-semibold text-ink'
+                          : 'text-ink-3 hover:text-ink-2',
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={step}
-                  initial={{ opacity: 0, x: 24 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -24 }}
-                  transition={{ duration: 0.22, ease: 'easeOut' }}
-                  className="flex flex-col gap-4"
-                >
-                  {step === 1 && (
-                    <>
-                      <SectionTitle schema="commercial.hotel">El edificio</SectionTitle>
+            {}
+            <section className="absolute inset-x-2 top-16 bottom-2 z-10 flex flex-col overflow-hidden rounded-xl bg-surface/95 shadow-lg backdrop-blur md:inset-x-auto md:top-14 md:right-4 md:bottom-4 md:w-md">
+              {placePhotoUrl && (
+                <div className="relative shrink-0">
+                  <img
+                    src={placePhotoUrl}
+                    alt={`Foto de ${values.hotelName || 'el hotel'} según Google`}
+                    className="h-32 w-full object-cover"
+                    onError={() => {
+                      setPlacePhotoUrl(null)
+                    }}
+                  />
+                  <div
+                    aria-hidden
+                    className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-b from-transparent via-surface/85 to-surface"
+                  />
+                  {}
+                  <p className="absolute bottom-0.5 left-4 text-base font-semibold text-ink">
+                    {values.hotelName}
+                  </p>
+                </div>
+              )}
 
-                      {isExistingHotel && (
+              <div className="shrink-0 px-4 pt-3">
+                <StepIndicator
+                  steps={WIZARD_STEPS}
+                  current={step}
+                  onStepClick={(target) => {
+                    setStep(target as WizardStep)
+                  }}
+                />
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.div
+                    key={step}
+                    initial={{ opacity: 0, x: 24 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -24 }}
+                    transition={{ duration: 0.22, ease: 'easeOut' }}
+                    className="flex flex-col gap-4"
+                  >
+                    {step === 1 && (
+                      <>
+                        <SectionTitle schema="commercial.hotel">El edificio</SectionTitle>
+
+                        {isExistingHotel && (
+                          <Field
+                            label="Hotel registrado"
+                            htmlFor="existingHotelId"
+                            isRequired
+                            column="hotel_id · solo hoteles sin ciclo abierto"
+                            error={formState.errors.existingHotelId?.message}
+                          >
+                            <Controller
+                              control={control}
+                              name="existingHotelId"
+                              render={({ field }) => (
+                                <Select
+                                  {...(field.value ? { value: field.value } : {})}
+                                  onValueChange={(value) => {
+                                    field.onChange(value)
+                                    applyRegisteredHotel(value)
+                                  }}
+                                >
+                                  <SelectTrigger id="existingHotelId" className="w-full">
+                                    <SelectValue
+                                      placeholder={
+                                        registeredHotels.length === 0
+                                          ? 'No hay hoteles libres: todos tienen ciclo abierto'
+                                          : 'Elige un hotel…'
+                                      }
+                                    />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {registeredHotels.map((hotel) => (
+                                      <SelectItem key={hotel.id} value={hotel.id}>
+                                        {hotel.name} · {hotel.zone}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                          </Field>
+                        )}
+
                         <Field
-                          label="Hotel registrado"
-                          htmlFor="existingHotelId"
+                          label="Nombre del hotel"
+                          htmlFor="hotelName"
                           isRequired
-                          column="hotel_id · solo hoteles sin ciclo abierto"
-                          error={formState.errors.existingHotelId?.message}
-                        >
-                          <Controller
-                            control={control}
-                            name="existingHotelId"
-                            render={({ field }) => (
-                              <Select
-                                {...(field.value ? { value: field.value } : {})}
-                                onValueChange={(value) => {
-                                  field.onChange(value)
-                                  applyRegisteredHotel(value)
-                                }}
-                              >
-                                <SelectTrigger id="existingHotelId" className="w-full">
-                                  <SelectValue
-                                    placeholder={
-                                      registeredHotels.length === 0
-                                        ? 'No hay hoteles libres: todos tienen ciclo abierto'
-                                        : 'Elige un hotel…'
-                                    }
-                                  />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {registeredHotels.map((hotel) => (
-                                    <SelectItem key={hotel.id} value={hotel.id}>
-                                      {hotel.name} · {hotel.zone}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
-                          />
-                        </Field>
-                      )}
-
-                      <Field
-                        label="Nombre del hotel"
-                        htmlFor="hotelName"
-                        isRequired
-                        column="name"
-                        error={formState.errors.hotelName?.message}
-                      >
-                        <Input
-                          id="hotelName"
-                          type="text"
-                          placeholder="Hotel Puerto Real"
-                          disabled={isExistingHotel}
-                          {...register('hotelName')}
-                        />
-                      </Field>
-
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <Field
-                          label="Zona"
-                          htmlFor="zoneId"
-                          isRequired
-                          column="zone_id + catalogs.zone"
-                          error={formState.errors.zoneId?.message}
-                        >
-                          <Controller
-                            control={control}
-                            name="zoneId"
-                            render={({ field }) => (
-                              <Select
-                                {...(field.value ? { value: field.value } : {})}
-                                onValueChange={field.onChange}
-                              >
-                                <SelectTrigger id="zoneId" className="w-full">
-                                  <SelectValue placeholder="Selecciona una zona" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {zones.map((zone) => (
-                                    <SelectItem key={zone.id} value={zone.id}>
-                                      {zone.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
-                          />
-                        </Field>
-
-                        <Field
-                          label="Zona horaria"
-                          htmlFor="timeZone"
-                          isRequired
-                          column="time_zone"
-                          error={formState.errors.timeZone?.message}
-                        >
-                          <Controller
-                            control={control}
-                            name="timeZone"
-                            render={({ field }) => (
-                              <Select value={field.value} onValueChange={field.onChange}>
-                                <SelectTrigger id="timeZone" className="w-full">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {TIME_ZONES.map((zone) => (
-                                    <SelectItem key={zone.value} value={zone.value}>
-                                      {zone.label}
-                                    </SelectItem>
-                                  ))}
-                                  {}
-                                  {!TIME_ZONES.some((zone) => zone.value === field.value) && (
-                                    <SelectItem value={field.value}>{field.value}</SelectItem>
-                                  )}
-                                </SelectContent>
-                              </Select>
-                            )}
-                          />
-                        </Field>
-                      </div>
-                    </>
-                  )}
-
-                  {step === 2 && (
-                    <>
-                      <SectionTitle>Ubicación</SectionTitle>
-
-                      {}
-                      <Field
-                        label="Buscar en Google (opcional)"
-                        note="si el hotel aparece, pin, dirección y foto llegan solos; si no existe en Google, arrastra el mapa hasta la entrada"
-                        column="latitude + longitude"
-                        error={formState.errors.location?.message}
-                      >
-                        <PlacesSearchField defaultValue={values.address} onPick={applyPlace} />
-                      </Field>
-
-                      <Field
-                        label="Radio de geocerca"
-                        htmlFor="geofenceMeters"
-                        column="geofence_radius_m · lo evalúa ST_DWithin en el servidor (D-08)"
-                        error={formState.errors.geofenceMeters?.message}
-                      >
-                        <div className="flex items-center gap-4">
-                          <Controller
-                            control={control}
-                            name="geofenceMeters"
-                            render={({ field }) => (
-                              <Slider
-                                min={GEOFENCE_MIN_M}
-                                max={GEOFENCE_MAX_M}
-                                step={GEOFENCE_STEP_M}
-                                value={[field.value]}
-                                onValueChange={([meters]) => {
-                                  field.onChange(meters)
-                                }}
-                                aria-label="Radio de geocerca"
-                                className="min-w-0 flex-1"
-                              />
-                            )}
-                          />
-                          <span className="w-14 shrink-0 text-right text-sm font-semibold text-ink">
-                            {values.geofenceMeters} m
-                          </span>
-                        </div>
-                      </Field>
-
-                      {!placePhotoUrl && (
-                        <p className="rounded-lg border border-line bg-surface p-4 text-sm text-ink-3">
-                          Sin foto todavía: al elegir el hotel en el buscador, Oranje la trae y se
-                          guardará automáticamente
-                        </p>
-                      )}
-
-                      <div className="rounded-md bg-o-50 p-4">
-                        <p className="text-sm font-semibold text-o-700">
-                          El pin se arrastra a propósito.
-                        </p>
-                        <p className="mt-1 text-sm leading-relaxed text-ink-2">
-                          Google devuelve el centro del lugar, que casi nunca es por donde entra el
-                          colaborador. Arrástralo en el mapa a la entrada real: unos metros de más
-                          rechazan ponches legítimos.
-                        </p>
-                      </div>
-                    </>
-                  )}
-
-                  {step === 3 && (
-                    <section className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4">
-                      <SectionTitle schema="commercial.hotel_contact">Primer contacto</SectionTitle>
-                      {}
-                      <p className="-mt-2 text-sm leading-relaxed text-ink-3">
-                        La persona DEL HOTEL con quien hablas: la gerente, el de compras, quien te
-                        atendió. No son tus datos — a esta persona le llegará la propuesta.
-                      </p>
-
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <Field
-                          label="Nombre"
-                          htmlFor="contactFullName"
-                          isRequired={!isEditing}
-                          column="full_name"
-                          error={formState.errors.contactFullName?.message}
+                          column="name"
+                          error={formState.errors.hotelName?.message}
                         >
                           <Input
-                            id="contactFullName"
+                            id="hotelName"
                             type="text"
-                            placeholder="Marta Solís"
-                            {...register('contactFullName')}
+                            placeholder="Hotel Puerto Real"
+                            disabled={isExistingHotel}
+                            {...register('hotelName')}
                           />
                         </Field>
-
-                        <Field label="Puesto" htmlFor="contactJobTitle" column="job_title">
-                          <Input
-                            id="contactJobTitle"
-                            type="text"
-                            placeholder="Gerente de Compras"
-                            {...register('contactJobTitle')}
-                          />
-                        </Field>
-
-                        <Field label="Teléfono" htmlFor="contactPhone" column="phone">
-                          <Input
-                            id="contactPhone"
-                            type="tel"
-                            placeholder="+1 404 555 0134"
-                            {...register('contactPhone')}
-                          />
-                        </Field>
-
-                        <Field
-                          label="Correo"
-                          htmlFor="contactEmail"
-                          column="email"
-                          error={formState.errors.contactEmail?.message}
-                        >
-                          <Input
-                            id="contactEmail"
-                            type="email"
-                            placeholder="marta.solis@puertoreal.mx"
-                            {...register('contactEmail')}
-                          />
-                        </Field>
-                      </div>
-
-                      <label className="flex cursor-pointer items-center gap-3 rounded-md bg-o-50 px-3 py-2.5">
-                        <Controller
-                          control={control}
-                          name="isPrimaryContact"
-                          render={({ field }) => (
-                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                          )}
-                        />
-                        <span className="text-sm font-semibold text-ink">
-                          Es el contacto principal
-                        </span>
-                        {IS_DEV_UI && <span className="text-xs text-ink-3">is_primary</span>}
-                      </label>
-                    </section>
-                  )}
-
-                  {step === 4 && (
-                    <>
-                      <section className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4">
-                        <SectionTitle schema="commercial.prospect">El ciclo comercial</SectionTitle>
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                           <Field
-                            label="Dueño del prospecto"
-                            htmlFor="ownerUserId"
+                            label="Zona"
+                            htmlFor="zoneId"
                             isRequired
-                            column="owner_user_id"
-                            error={formState.errors.ownerUserId?.message}
+                            column="zone_id + catalogs.zone"
+                            error={formState.errors.zoneId?.message}
                           >
-                            {}
                             <Controller
                               control={control}
-                              name="ownerUserId"
+                              name="zoneId"
                               render={({ field }) => (
                                 <Select
                                   {...(field.value ? { value: field.value } : {})}
                                   onValueChange={field.onChange}
                                 >
-                                  <SelectTrigger id="ownerUserId" className="w-full">
-                                    <SelectValue placeholder="Elige al dueño" />
+                                  <SelectTrigger id="zoneId" className="w-full">
+                                    <SelectValue placeholder="Selecciona una zona" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {session && (
-                                      <SelectItem value={session.id}>
-                                        {session.name} · {session.roleCode}
+                                    {zones.map((zone) => (
+                                      <SelectItem key={zone.id} value={zone.id}>
+                                        {zone.label}
                                       </SelectItem>
-                                    )}
+                                    ))}
                                   </SelectContent>
                                 </Select>
                               )}
@@ -782,87 +553,301 @@ export function ProspectFormDialog({
                           </Field>
 
                           <Field
-                            label="Qué necesita"
-                            htmlFor="needDescription"
-                            column="need_description"
+                            label="Zona horaria"
+                            htmlFor="timeZone"
+                            isRequired
+                            column="time_zone"
+                            error={formState.errors.timeZone?.message}
+                          >
+                            <Controller
+                              control={control}
+                              name="timeZone"
+                              render={({ field }) => (
+                                <Select value={field.value} onValueChange={field.onChange}>
+                                  <SelectTrigger id="timeZone" className="w-full">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {TIME_ZONES.map((zone) => (
+                                      <SelectItem key={zone.value} value={zone.value}>
+                                        {zone.label}
+                                      </SelectItem>
+                                    ))}
+                                    {}
+                                    {!TIME_ZONES.some((zone) => zone.value === field.value) && (
+                                      <SelectItem value={field.value}>{field.value}</SelectItem>
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                          </Field>
+                        </div>
+                      </>
+                    )}
+
+                    {step === 2 && (
+                      <>
+                        <SectionTitle>Ubicación</SectionTitle>
+
+                        {}
+                        <Field
+                          label="Buscar en Google (opcional)"
+                          note="si el hotel aparece, pin, dirección y foto llegan solos; si no existe en Google, arrastra el mapa hasta la entrada"
+                          column="latitude + longitude"
+                          error={formState.errors.location?.message}
+                        >
+                          <PlacesSearchField defaultValue={values.address} onPick={applyPlace} />
+                        </Field>
+
+                        <Field
+                          label="Radio de geocerca"
+                          htmlFor="geofenceMeters"
+                          column="geofence_radius_m · lo evalúa ST_DWithin en el servidor (D-08)"
+                          error={formState.errors.geofenceMeters?.message}
+                        >
+                          <div className="flex items-center gap-4">
+                            <Controller
+                              control={control}
+                              name="geofenceMeters"
+                              render={({ field }) => (
+                                <Slider
+                                  min={GEOFENCE_MIN_M}
+                                  max={GEOFENCE_MAX_M}
+                                  step={GEOFENCE_STEP_M}
+                                  value={[field.value]}
+                                  onValueChange={([meters]) => {
+                                    field.onChange(meters)
+                                  }}
+                                  aria-label="Radio de geocerca"
+                                  className="min-w-0 flex-1"
+                                />
+                              )}
+                            />
+                            <span className="w-14 shrink-0 text-right text-sm font-semibold text-ink">
+                              {values.geofenceMeters} m
+                            </span>
+                          </div>
+                        </Field>
+
+                        {!placePhotoUrl && (
+                          <p className="rounded-lg border border-line bg-surface p-4 text-sm text-ink-3">
+                            Sin foto todavía: al elegir el hotel en el buscador, Oranje la trae y se
+                            guardará automáticamente
+                          </p>
+                        )}
+
+                        <div className="rounded-md bg-o-50 p-4">
+                          <p className="text-sm font-semibold text-o-700">
+                            El pin se arrastra a propósito.
+                          </p>
+                          <p className="mt-1 text-sm leading-relaxed text-ink-2">
+                            Google devuelve el centro del lugar, que casi nunca es por donde entra
+                            el colaborador. Arrástralo en el mapa a la entrada real: unos metros de
+                            más rechazan ponches legítimos.
+                          </p>
+                        </div>
+                      </>
+                    )}
+
+                    {step === 3 && (
+                      <section className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4">
+                        <SectionTitle schema="commercial.hotel_contact">
+                          Primer contacto
+                        </SectionTitle>
+                        {}
+                        <p className="-mt-2 text-sm leading-relaxed text-ink-3">
+                          La persona DEL HOTEL con quien hablas: la gerente, el de compras, quien te
+                          atendió. No son tus datos — a esta persona le llegará la propuesta.
+                        </p>
+
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <Field
+                            label="Nombre"
+                            htmlFor="contactFullName"
+                            isRequired={!isEditing}
+                            column="full_name"
+                            error={formState.errors.contactFullName?.message}
                           >
                             <Input
-                              id="needDescription"
+                              id="contactFullName"
                               type="text"
-                              placeholder="2 camaristas y 1 houseman"
-                              {...register('needDescription')}
+                              placeholder="Marta Solís"
+                              {...register('contactFullName')}
+                            />
+                          </Field>
+
+                          <Field label="Puesto" htmlFor="contactJobTitle" column="job_title">
+                            <Input
+                              id="contactJobTitle"
+                              type="text"
+                              placeholder="Gerente de Compras"
+                              {...register('contactJobTitle')}
+                            />
+                          </Field>
+
+                          <Field label="Teléfono" htmlFor="contactPhone" column="phone">
+                            <Input
+                              id="contactPhone"
+                              type="tel"
+                              placeholder="+1 404 555 0134"
+                              {...register('contactPhone')}
+                            />
+                          </Field>
+
+                          <Field
+                            label="Correo"
+                            htmlFor="contactEmail"
+                            column="email"
+                            error={formState.errors.contactEmail?.message}
+                          >
+                            <Input
+                              id="contactEmail"
+                              type="email"
+                              placeholder="marta.solis@puertoreal.mx"
+                              {...register('contactEmail')}
                             />
                           </Field>
                         </div>
 
-                        <Field
-                          label={isEditing ? 'Estado actual' : 'Estado inicial'}
-                          column="ck_prospect_light fija el semáforo a ONBOARDING · un solo ciclo abierto por hotel"
-                        >
-                          <div className="flex items-center gap-3">
-                            <StatusLightSoftBadge
-                              token={ONBOARDING_STATUS_TOKEN[status]}
-                              label={ONBOARDING_STATUS_LABEL[status]}
-                            />
-                            <span className="text-sm text-ink-3">
-                              {ONBOARDING_STATUS_DESCRIPTION[status]}
-                            </span>
-                          </div>
-                        </Field>
+                        <label className="flex cursor-pointer items-center gap-3 rounded-md bg-o-50 px-3 py-2.5">
+                          <Controller
+                            control={control}
+                            name="isPrimaryContact"
+                            render={({ field }) => (
+                              <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                            )}
+                          />
+                          <span className="text-sm font-semibold text-ink">
+                            Es el contacto principal
+                          </span>
+                          {IS_DEV_UI && <span className="text-xs text-ink-3">is_primary</span>}
+                        </label>
                       </section>
-                    </>
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            </div>
+                    )}
 
-            {(hasCreateFailed || hasUpdateFailed) && (
-              <Alert variant="destructive" className="mx-4 mb-3 w-auto shrink-0">
-                <AlertDescription>
-                  {saveErrorMessage(hasCreateFailed ? createError : updateError)}
-                </AlertDescription>
-              </Alert>
-            )}
+                    {step === 4 && (
+                      <>
+                        <section className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4">
+                          <SectionTitle schema="commercial.prospect">
+                            El ciclo comercial
+                          </SectionTitle>
 
-            <footer className="flex shrink-0 items-center justify-end gap-3 border-t border-line px-4 py-3">
-              <Button type="button" onClick={onClose} disabled={isBusy}>
-                Cancelar
-              </Button>
-              {step > 1 && (
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setStep((step - 1) as WizardStep)
-                  }}
-                  disabled={isBusy}
-                >
-                  Atrás
-                </Button>
+                          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <Field
+                              label="Dueño del prospecto"
+                              htmlFor="ownerUserId"
+                              isRequired
+                              column="owner_user_id"
+                              error={formState.errors.ownerUserId?.message}
+                            >
+                              {}
+                              <Controller
+                                control={control}
+                                name="ownerUserId"
+                                render={({ field }) => (
+                                  <Select
+                                    {...(field.value ? { value: field.value } : {})}
+                                    onValueChange={field.onChange}
+                                  >
+                                    <SelectTrigger id="ownerUserId" className="w-full">
+                                      <SelectValue placeholder="Elige al dueño" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {session && (
+                                        <SelectItem value={session.id}>
+                                          {session.name} · {session.roleCode}
+                                        </SelectItem>
+                                      )}
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              />
+                            </Field>
+
+                            <Field
+                              label="Qué necesita"
+                              htmlFor="needDescription"
+                              column="need_description"
+                            >
+                              <Input
+                                id="needDescription"
+                                type="text"
+                                placeholder="2 camaristas y 1 houseman"
+                                {...register('needDescription')}
+                              />
+                            </Field>
+                          </div>
+
+                          <Field
+                            label={isEditing ? 'Estado actual' : 'Estado inicial'}
+                            column="ck_prospect_light fija el semáforo a ONBOARDING · un solo ciclo abierto por hotel"
+                          >
+                            <div className="flex items-center gap-3">
+                              <StatusLightSoftBadge
+                                token={ONBOARDING_STATUS_TOKEN[status]}
+                                label={ONBOARDING_STATUS_LABEL[status]}
+                              />
+                              <span className="text-sm text-ink-3">
+                                {ONBOARDING_STATUS_DESCRIPTION[status]}
+                              </span>
+                            </div>
+                          </Field>
+                        </section>
+                      </>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {(hasCreateFailed || hasUpdateFailed) && (
+                <Alert variant="destructive" className="mx-4 mb-3 w-auto shrink-0">
+                  <AlertDescription>
+                    {saveErrorMessage(hasCreateFailed ? createError : updateError)}
+                  </AlertDescription>
+                </Alert>
               )}
-              {step < 4 ? (
-                <Button
-                  variant="primary"
-                  type="button"
-                  onClick={() => {
-                    void goNext()
-                  }}
-                >
-                  Continuar
+
+              <footer className="flex shrink-0 items-center justify-end gap-3 border-t border-line px-4 py-3">
+                <Button type="button" onClick={onClose} disabled={isBusy}>
+                  Cancelar
                 </Button>
-              ) : (
-                <Button
-                  variant="primary"
-                  type="submit"
-                  form={FORM_ID}
-                  disabled={!formState.isValid || isBusy}
-                >
-                  {isBusy ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear prospecto'}
-                </Button>
-              )}
-            </footer>
-          </section>
-        </MapsScope>
-      </form>
+                {step > 1 && (
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setStep((step - 1) as WizardStep)
+                    }}
+                    disabled={isBusy}
+                  >
+                    Atrás
+                  </Button>
+                )}
+                {step < 4 ? (
+                  <Button
+                    variant="primary"
+                    type="button"
+                    onClick={() => {
+                      void goNext()
+                    }}
+                  >
+                    Continuar
+                  </Button>
+                ) : (
+                  <Button
+                    variant="primary"
+                    type="submit"
+                    form={FORM_ID}
+                    disabled={!formState.isValid || isBusy}
+                  >
+                    {isBusy ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear prospecto'}
+                  </Button>
+                )}
+              </footer>
+            </section>
+          </MapsScope>
+        </form>
+      )}
     </Modal>
   )
 }

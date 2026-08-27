@@ -18,14 +18,35 @@ import { useGetWorkerDetailQuery } from '../api/workerDetailApi'
 
 import { useUploadFileMutation } from '@/app/filesApi'
 import personajeContratacion from '@/assets/ilustrations/personaje-contratacion.svg'
+import personajeEncuesta from '@/assets/ilustrations/personaje-encuesta.svg'
+import personajeGracias from '@/assets/ilustrations/personaje-gracias.svg'
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
+import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { isCompletePhone, PhoneInput } from '@/shared/components/PhoneInput'
 import { EXPERIENCE_LABEL, EXPERIENCE_LEVELS } from '@/shared/constants/workerEnums'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const UNSET = 'UNSET'
+
+const INTRO_SLIDES = [
+  {
+    image: personajeContratacion,
+    title: 'La entrevista es la Fase 1',
+    text: 'Posición, modalidad, inglés y experiencia se deciden aquí: son decisiones de Oranje, no del colaborador.',
+  },
+  {
+    image: personajeEncuesta,
+    title: 'El expediente se completa por fases',
+    text: 'Nace en Blanco: el colaborador termina las fases 2 y 3 en su app — transporte y SSN/ITIN con 3 días de plazo.',
+  },
+  {
+    image: personajeGracias,
+    title: 'Validar lo hace entrar al Pool',
+    text: 'Cuando valides el alta pasa a Verde fuerte y queda disponible para asignarse a un hotel.',
+  },
+] as const
 
 const GENDERS = [
   { value: 'FEMALE', label: 'Femenino' },
@@ -163,11 +184,14 @@ export function CreateWorkerDialog({
   const [uploadPhoto, { isLoading: isUploading, isError: isUploadError, error: uploadError }] =
     useUploadFileMutation()
 
+  const [showIntro, setShowIntro] = useState(false)
+
   useEffect(() => {
     if (!isOpen) return
     setDraft(EMPTY_DRAFT)
     setPhotoPreview(null)
-  }, [isOpen])
+    setShowIntro(!isEditing)
+  }, [isOpen, isEditing])
 
   useEffect(() => {
     if (!isOpen || !editing) return
@@ -272,292 +296,306 @@ export function CreateWorkerDialog({
       className="max-w-2xl"
     >
       <div className="flex max-h-[calc(100vh-3rem)] flex-col overflow-y-auto">
-        {}
-        <div className="relative h-36 shrink-0 bg-gradient-to-r from-o-50 via-o-50/70 to-surface-2">
-          {}
-          <img
-            src={personajeContratacion}
-            alt=""
-            aria-hidden
-            className="absolute right-10 bottom-2 h-32 w-auto"
-          />
-          {}
-          <button
-            type="button"
-            aria-label={photoPreview ? 'Reemplazar foto' : 'Subir foto'}
-            title={photoPreview ? 'Reemplazar foto' : 'Subir foto'}
-            disabled={isUploading}
-            onClick={() => {
-              photoInputRef.current?.click()
+        {showIntro && !isEditing ? (
+          <OnboardingIntro
+            slides={INTRO_SLIDES}
+            startLabel="Comenzar el alta"
+            onDone={() => {
+              setShowIntro(false)
             }}
-            className="group absolute -bottom-12 left-8 z-10 size-24 cursor-pointer rounded-full border-4 border-surface bg-o-50 shadow-md transition-shadow hover:shadow-lg focus:outline-2 focus:outline-offset-2 focus:outline-o-500 disabled:cursor-wait"
-          >
-            <span className="block size-full overflow-hidden rounded-full">
-              {photoPreview ? (
-                <img src={photoPreview} alt="" className="size-full object-cover" />
-              ) : initials !== '' ? (
+          />
+        ) : (
+          <>
+            {}
+            <div className="relative h-36 shrink-0 bg-gradient-to-r from-o-50 via-o-50/70 to-surface-2">
+              {}
+              <img
+                src={personajeContratacion}
+                alt=""
+                aria-hidden
+                className="absolute right-10 bottom-2 h-32 w-auto"
+              />
+              {}
+              <button
+                type="button"
+                aria-label={photoPreview ? 'Reemplazar foto' : 'Subir foto'}
+                title={photoPreview ? 'Reemplazar foto' : 'Subir foto'}
+                disabled={isUploading}
+                onClick={() => {
+                  photoInputRef.current?.click()
+                }}
+                className="group absolute -bottom-12 left-8 z-10 size-24 cursor-pointer rounded-full border-4 border-surface bg-o-50 shadow-md transition-shadow hover:shadow-lg focus:outline-2 focus:outline-offset-2 focus:outline-o-500 disabled:cursor-wait"
+              >
+                <span className="block size-full overflow-hidden rounded-full">
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="" className="size-full object-cover" />
+                  ) : initials !== '' ? (
+                    <span
+                      aria-hidden
+                      className="flex size-full items-center justify-center text-2xl font-bold text-o-700"
+                    >
+                      {initials}
+                    </span>
+                  ) : (
+                    <span aria-hidden className="flex size-full items-center justify-center">
+                      <MaterialIcon name="photo_camera" className="text-3xl text-o-700" />
+                    </span>
+                  )}
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-1 bottom-1 rounded-full bg-ink/60 py-0.5 text-center text-[10px] font-semibold text-surface opacity-0 transition-opacity group-hover:opacity-100"
+                  >
+                    {isUploading ? 'Subiendo…' : photoPreview ? 'Cambiar' : 'Subir foto'}
+                  </span>
+                </span>
+                {}
                 <span
                   aria-hidden
-                  className="flex size-full items-center justify-center text-2xl font-bold text-o-700"
+                  className="absolute -right-0.5 -bottom-0.5 flex size-8 items-center justify-center rounded-full border-2 border-surface bg-o-500 text-ink shadow-sm"
                 >
-                  {initials}
+                  <MaterialIcon name="photo_camera" className="text-base" />
                 </span>
-              ) : (
-                <span aria-hidden className="flex size-full items-center justify-center">
-                  <MaterialIcon name="photo_camera" className="text-3xl text-o-700" />
-                </span>
+              </button>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                capture="user"
+                className="hidden"
+                aria-label="Foto del colaborador"
+                onChange={(event) => {
+                  const file = event.target.files?.[0]
+                  if (file) void handlePhoto(file)
+                }}
+              />
+            </div>
+
+            <header className="px-8 pt-16 pb-5">
+              <h2 className="text-xl font-bold text-ink">
+                {draft.fullName.trim() === '' ? 'Nuevo colaborador' : draft.fullName}
+              </h2>
+              <p className="mt-0.5 text-xs text-ink-3">
+                {isEditing ? 'Editar expediente' : 'Fase 1 · Entrevista'}
+                {IS_DEV_UI && !isEditing && ' — personal.worker · nace en BLANCO'}
+                {IS_DEV_UI && <code className="text-[11px] text-ink-4"> · photo_path</code>}
+              </p>
+              {isUploadError && (
+                <p role="alert" className="mt-1 text-xs text-red">
+                  {uploadErrorMessage(uploadError)}
+                </p>
               )}
-              <span
-                aria-hidden
-                className="absolute inset-x-1 bottom-1 rounded-full bg-ink/60 py-0.5 text-center text-[10px] font-semibold text-surface opacity-0 transition-opacity group-hover:opacity-100"
+            </header>
+
+            <FormRow label="Nombre completo" column="full_name">
+              <Input
+                value={draft.fullName}
+                onChange={(event) => {
+                  update('fullName')(event.target.value)
+                }}
+                aria-label="Nombre completo"
+                placeholder="María Sandoval Ruiz"
+              />
+            </FormRow>
+
+            <FormRow label="Nacimiento y género" column="birth_date · gender">
+              <Input
+                type="date"
+                value={draft.birthDate}
+                onChange={(event) => {
+                  update('birthDate')(event.target.value)
+                }}
+                aria-label="Fecha de nacimiento"
+                max={maxBirthDate()}
+                disabled={isEditing}
+                title={isEditing ? 'El nacimiento no se edita: es del alta' : undefined}
+              />
+              <Select
+                value={draft.gender}
+                onValueChange={(value) => {
+                  update('gender')(value as Draft['gender'])
+                }}
+                disabled={isEditing}
               >
-                {isUploading ? 'Subiendo…' : photoPreview ? 'Cambiar' : 'Subir foto'}
-              </span>
-            </span>
-            {}
-            <span
-              aria-hidden
-              className="absolute -right-0.5 -bottom-0.5 flex size-8 items-center justify-center rounded-full border-2 border-surface bg-o-500 text-ink shadow-sm"
-            >
-              <MaterialIcon name="photo_camera" className="text-base" />
-            </span>
-          </button>
-          <input
-            ref={photoInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            capture="user"
-            className="hidden"
-            aria-label="Foto del colaborador"
-            onChange={(event) => {
-              const file = event.target.files?.[0]
-              if (file) void handlePhoto(file)
-            }}
-          />
-        </div>
+                <SelectTrigger
+                  aria-label="Género"
+                  title={isEditing ? 'El género no se edita: es del alta' : undefined}
+                  className="w-full"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {GENDERS.map((gender) => (
+                    <SelectItem key={gender.value} value={gender.value}>
+                      {gender.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormRow>
 
-        <header className="px-8 pt-16 pb-5">
-          <h2 className="text-xl font-bold text-ink">
-            {draft.fullName.trim() === '' ? 'Nuevo colaborador' : draft.fullName}
-          </h2>
-          <p className="mt-0.5 text-xs text-ink-3">
-            {isEditing ? 'Editar expediente' : 'Fase 1 · Entrevista'}
-            {IS_DEV_UI && !isEditing && ' — personal.worker · nace en BLANCO'}
-            {IS_DEV_UI && <code className="text-[11px] text-ink-4"> · photo_path</code>}
-          </p>
-          {isUploadError && (
-            <p role="alert" className="mt-1 text-xs text-red">
-              {uploadErrorMessage(uploadError)}
-            </p>
-          )}
-        </header>
+            <FormRow label="Teléfono y zona" column="phone · zone_id">
+              <PhoneInput
+                value={draft.phone}
+                onChange={(value) => {
+                  update('phone')(value)
+                }}
+                ariaLabel="Teléfono"
+                placeholder="404 790 2517"
+              />
+              <Select
+                {...(draft.zoneId ? { value: draft.zoneId } : {})}
+                onValueChange={update('zoneId')}
+              >
+                <SelectTrigger aria-label="Zona" className="w-full">
+                  <SelectValue placeholder="Elige la zona…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(options?.zones ?? []).map((zone) => (
+                    <SelectItem key={zone.id} value={zone.id}>
+                      {zone.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormRow>
 
-        <FormRow label="Nombre completo" column="full_name">
-          <Input
-            value={draft.fullName}
-            onChange={(event) => {
-              update('fullName')(event.target.value)
-            }}
-            aria-label="Nombre completo"
-            placeholder="María Sandoval Ruiz"
-          />
-        </FormRow>
+            <FormRow label="Domicilio" column="address">
+              <Input
+                value={draft.address}
+                onChange={(event) => {
+                  update('address')(event.target.value)
+                }}
+                aria-label="Domicilio"
+                placeholder="1280 Peachtree St NE, Atlanta"
+              />
+            </FormRow>
 
-        <FormRow label="Nacimiento y género" column="birth_date · gender">
-          <Input
-            type="date"
-            value={draft.birthDate}
-            onChange={(event) => {
-              update('birthDate')(event.target.value)
-            }}
-            aria-label="Fecha de nacimiento"
-            max={maxBirthDate()}
-            disabled={isEditing}
-            title={isEditing ? 'El nacimiento no se edita: es del alta' : undefined}
-          />
-          <Select
-            value={draft.gender}
-            onValueChange={(value) => {
-              update('gender')(value as Draft['gender'])
-            }}
-            disabled={isEditing}
-          >
-            <SelectTrigger
-              aria-label="Género"
-              title={isEditing ? 'El género no se edita: es del alta' : undefined}
-              className="w-full"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {GENDERS.map((gender) => (
-                <SelectItem key={gender.value} value={gender.value}>
-                  {gender.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FormRow>
+            <div className="border-t border-line bg-surface-2/60 px-6 py-3">
+              <h3 className="text-sm font-semibold text-ink">
+                Decisiones de Oranje sobre su perfil
+              </h3>
+              <p className="text-xs text-ink-4">
+                Las define la Reclutadora en la entrevista; el candidato ya no las declara
+              </p>
+            </div>
 
-        <FormRow label="Teléfono y zona" column="phone · zone_id">
-          <PhoneInput
-            value={draft.phone}
-            onChange={(value) => {
-              update('phone')(value)
-            }}
-            ariaLabel="Teléfono"
-            placeholder="404 790 2517"
-          />
-          <Select
-            {...(draft.zoneId ? { value: draft.zoneId } : {})}
-            onValueChange={update('zoneId')}
-          >
-            <SelectTrigger aria-label="Zona" className="w-full">
-              <SelectValue placeholder="Elige la zona…" />
-            </SelectTrigger>
-            <SelectContent>
-              {(options?.zones ?? []).map((zone) => (
-                <SelectItem key={zone.id} value={zone.id}>
-                  {zone.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FormRow>
+            <FormRow label="Posición y modalidad" column="catalog_position_id · hiring_modality_id">
+              <Select
+                value={draft.catalogPositionId === '' ? UNSET : draft.catalogPositionId}
+                onValueChange={(value) => {
+                  update('catalogPositionId')(value === UNSET ? '' : value)
+                }}
+              >
+                <SelectTrigger aria-label="Posición" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UNSET}>Sin definir aún…</SelectItem>
+                  {(options?.positions ?? []).map((position) => (
+                    <SelectItem key={position.id} value={position.id}>
+                      {position.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={draft.hiringModalityId === '' ? UNSET : draft.hiringModalityId}
+                onValueChange={(value) => {
+                  update('hiringModalityId')(value === UNSET ? '' : value)
+                }}
+              >
+                <SelectTrigger aria-label="Modalidad" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UNSET}>Sin definir aún…</SelectItem>
+                  {(options?.modalities ?? []).map((modality) => (
+                    <SelectItem key={modality.id} value={modality.id}>
+                      {modality.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormRow>
 
-        <FormRow label="Domicilio" column="address">
-          <Input
-            value={draft.address}
-            onChange={(event) => {
-              update('address')(event.target.value)
-            }}
-            aria-label="Domicilio"
-            placeholder="1280 Peachtree St NE, Atlanta"
-          />
-        </FormRow>
+            <FormRow label="Inglés y experiencia" column="english_level_id · experience_level">
+              <Select
+                value={draft.englishLevelId === '' ? UNSET : draft.englishLevelId}
+                onValueChange={(value) => {
+                  update('englishLevelId')(value === UNSET ? '' : value)
+                }}
+              >
+                <SelectTrigger aria-label="Nivel de inglés" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UNSET}>Sin definir aún…</SelectItem>
+                  {(options?.englishLevels ?? []).map((level) => (
+                    <SelectItem key={level.id} value={level.id}>
+                      {level.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={draft.experienceLevel === '' ? UNSET : draft.experienceLevel}
+                onValueChange={(value) => {
+                  update('experienceLevel')(value === UNSET ? '' : value)
+                }}
+              >
+                <SelectTrigger aria-label="Experiencia" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UNSET}>Sin definir aún…</SelectItem>
+                  {EXPERIENCE_LEVELS.map((level) => (
+                    <SelectItem key={level} value={level}>
+                      {EXPERIENCE_LABEL[level]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormRow>
 
-        <div className="border-t border-line bg-surface-2/60 px-6 py-3">
-          <h3 className="text-sm font-semibold text-ink">Decisiones de Oranje sobre su perfil</h3>
-          <p className="text-xs text-ink-4">
-            Las define la Reclutadora en la entrevista; el candidato ya no las declara
-          </p>
-        </div>
+            <details className="border-t border-line px-6 py-3">
+              <summary className="cursor-pointer text-xs font-semibold text-ink-3 select-none">
+                Qué pasa después del alta
+              </summary>
+              <ul className="mt-2.5 flex flex-col gap-2">
+                {AFTERMATH.map((line) => (
+                  <li key={line} className="flex gap-2.5 text-xs leading-relaxed text-ink-2">
+                    <span className="mt-1 size-1.5 shrink-0 rounded-full bg-o-500" aria-hidden />
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            </details>
 
-        <FormRow label="Posición y modalidad" column="catalog_position_id · hiring_modality_id">
-          <Select
-            value={draft.catalogPositionId === '' ? UNSET : draft.catalogPositionId}
-            onValueChange={(value) => {
-              update('catalogPositionId')(value === UNSET ? '' : value)
-            }}
-          >
-            <SelectTrigger aria-label="Posición" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={UNSET}>Sin definir aún…</SelectItem>
-              {(options?.positions ?? []).map((position) => (
-                <SelectItem key={position.id} value={position.id}>
-                  {position.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={draft.hiringModalityId === '' ? UNSET : draft.hiringModalityId}
-            onValueChange={(value) => {
-              update('hiringModalityId')(value === UNSET ? '' : value)
-            }}
-          >
-            <SelectTrigger aria-label="Modalidad" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={UNSET}>Sin definir aún…</SelectItem>
-              {(options?.modalities ?? []).map((modality) => (
-                <SelectItem key={modality.id} value={modality.id}>
-                  {modality.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FormRow>
+            {isError && (
+              <p role="alert" className="px-6 pb-2 text-sm text-red">
+                {saveErrorMessage(saveError)}
+              </p>
+            )}
 
-        <FormRow label="Inglés y experiencia" column="english_level_id · experience_level">
-          <Select
-            value={draft.englishLevelId === '' ? UNSET : draft.englishLevelId}
-            onValueChange={(value) => {
-              update('englishLevelId')(value === UNSET ? '' : value)
-            }}
-          >
-            <SelectTrigger aria-label="Nivel de inglés" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={UNSET}>Sin definir aún…</SelectItem>
-              {(options?.englishLevels ?? []).map((level) => (
-                <SelectItem key={level.id} value={level.id}>
-                  {level.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={draft.experienceLevel === '' ? UNSET : draft.experienceLevel}
-            onValueChange={(value) => {
-              update('experienceLevel')(value === UNSET ? '' : value)
-            }}
-          >
-            <SelectTrigger aria-label="Experiencia" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={UNSET}>Sin definir aún…</SelectItem>
-              {EXPERIENCE_LEVELS.map((level) => (
-                <SelectItem key={level} value={level}>
-                  {EXPERIENCE_LABEL[level]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FormRow>
-
-        <details className="border-t border-line px-6 py-3">
-          <summary className="cursor-pointer text-xs font-semibold text-ink-3 select-none">
-            Qué pasa después del alta
-          </summary>
-          <ul className="mt-2.5 flex flex-col gap-2">
-            {AFTERMATH.map((line) => (
-              <li key={line} className="flex gap-2.5 text-xs leading-relaxed text-ink-2">
-                <span className="mt-1 size-1.5 shrink-0 rounded-full bg-o-500" aria-hidden />
-                {line}
-              </li>
-            ))}
-          </ul>
-        </details>
-
-        {isError && (
-          <p role="alert" className="px-6 pb-2 text-sm text-red">
-            {saveErrorMessage(saveError)}
-          </p>
+            <div className="flex items-center justify-end gap-3 border-t border-line px-6 py-4">
+              {missingHint !== null && (
+                <span className="mr-auto text-xs text-ink-3">{missingHint}</span>
+              )}
+              <Button onClick={onClose} disabled={isLoading}>
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                disabled={!canSubmit}
+                onClick={() => {
+                  void submit()
+                }}
+              >
+                {isLoading ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear colaborador'}
+              </Button>
+            </div>
+          </>
         )}
-
-        <div className="flex items-center justify-end gap-3 border-t border-line px-6 py-4">
-          {missingHint !== null && (
-            <span className="mr-auto text-xs text-ink-3">{missingHint}</span>
-          )}
-          <Button onClick={onClose} disabled={isLoading}>
-            Cancelar
-          </Button>
-          <Button
-            variant="primary"
-            disabled={!canSubmit}
-            onClick={() => {
-              void submit()
-            }}
-          >
-            {isLoading ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear colaborador'}
-          </Button>
-        </div>
       </div>
     </Modal>
   )

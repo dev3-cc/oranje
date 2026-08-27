@@ -14,6 +14,7 @@ import type { RequisitionRow } from '../types/requisition.types'
 
 import { CoverageBar } from './CoverageBar'
 
+import { EmptyState } from '@/shared/components/EmptyState'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   REQUISITION_STATUS_LABEL,
@@ -42,9 +43,10 @@ export function RequisitionTable({ items }: { items: RequisitionRow[] }): ReactN
 
   if (items.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-        No hay requisiciones que mostrar.
-      </p>
+      <EmptyState
+        title="Sin requisiciones que mostrar"
+        text="Cuando un hotel pida personal, su requisición aparecerá aquí con su semáforo. Los borradores solo los ve quien los crea."
+      />
     )
   }
 

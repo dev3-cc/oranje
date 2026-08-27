@@ -123,6 +123,7 @@ async function fetchWeek(
 
     rows.push({
       timesheetId: sheet.id,
+      requisitionId: detail.requisitionId,
       workerId: detail.worker.id,
       workerName: detail.worker.fullName,
       jobTitle: '—',
@@ -184,7 +185,82 @@ export const timesheetApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [{ type: 'Timesheet' as const, id: 'LIST' }],
     }),
+
+    /** El Supervisor manda la semana a revisión; el back la frena si quedan anomalías. */
+    submitTimesheet: build.mutation<unknown, string>({
+      query: (timesheetId) => ({ url: `/timesheets/${timesheetId}/submit`, method: 'POST' }),
+      invalidatesTags: [{ type: 'Timesheet' as const, id: 'LIST' }],
+    }),
+
+    /** Aprobar es del Manager de Área (su depto) o General (D-09): al resto, 403. */
+    approveTimesheet: build.mutation<unknown, string>({
+      query: (timesheetId) => ({ url: `/timesheets/${timesheetId}/approve`, method: 'POST' }),
+      invalidatesTags: [{ type: 'Timesheet' as const, id: 'LIST' }],
+    }),
+
+    /**
+     * Marca manual: el DTO real pide el ASSIGNMENT, que el timesheet no trae —
+     * se resuelve aquí buscando la asignación del colaborador en la requisición
+     * de la fila (patrón D-28), y el motivo es obligatorio.
+     */
+    createManualPunch: build.mutation<unknown, ManualPunchRequest>({
+      queryFn: async (request, _api, _extra, fetchWithBQ) => {
+        const bq = fetchWithBQ as FetchWithBQ
+        const assignmentsRes = await bq(`/requisitions/${request.requisitionId}/assignments`)
+        if (assignmentsRes.error) return { error: assignmentsRes.error as never }
+
+        const assignments = (
+          assignmentsRes.data as ApiEnvelope<Array<{ id: string; worker: { id: string } }>>
+        ).data
+        const assignment = assignments.find((item) => item.worker.id === request.workerId)
+        if (!assignment) {
+          return {
+            error: {
+              status: 404,
+              data: {
+                error: {
+                  code: 'ASSIGNMENT_NOT_FOUND',
+                  message: 'El colaborador no tiene asignación en esta requisición',
+                },
+              },
+            } as never,
+          }
+        }
+
+        const punchRes = await bq({
+          url: '/punches/manual',
+          method: 'POST',
+          body: {
+            assignmentId: assignment.id,
+            type: request.type,
+            workDate: request.workDate,
+            occurredAt: request.occurredAt,
+            reason: request.reason,
+          },
+        })
+        if (punchRes.error) return { error: punchRes.error as never }
+        return { data: null }
+      },
+      invalidatesTags: [{ type: 'Timesheet' as const, id: 'LIST' }],
+    }),
   }),
 })
 
-export const { useGetTimesheetWeekQuery, useReviewTimesheetDayMutation } = timesheetApi
+export interface ManualPunchRequest {
+  requisitionId: string
+  workerId: string
+  type: 'CLOCK_IN' | 'LUNCH_OUT' | 'LUNCH_IN' | 'CLOCK_OUT'
+  /** ISO sin hora: el día al que pertenece la marca. */
+  workDate: string
+  /** ISO completo: cuándo ocurrió de verdad, según quien la captura. */
+  occurredAt: string
+  reason: string
+}
+
+export const {
+  useGetTimesheetWeekQuery,
+  useReviewTimesheetDayMutation,
+  useSubmitTimesheetMutation,
+  useApproveTimesheetMutation,
+  useCreateManualPunchMutation,
+} = timesheetApi

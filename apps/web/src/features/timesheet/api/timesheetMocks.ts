@@ -1,5 +1,7 @@
 /* Solo `/me` es ajeno: lo registra la sesión. Con mocks apagados, no-op. */
 import '@/app/sessionApi'
+// eslint-disable-next-line no-restricted-imports
+import { registerRequisitionsMocks } from '@/features/requisitions/api/requisitionsMocks'
 import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
 import type {
   ApiEnvelope,
@@ -195,6 +197,36 @@ const routes: readonly MockRoute[] = [
       throw new Error('DAY_NOT_FOUND')
     },
   },
+  {
+    method: 'POST',
+    path: '/timesheets/:timesheetId/submit',
+    resolve: ({ params }): ApiEnvelope<TimesheetApi> => {
+      const found = timesheets.find((sheet) => sheet.id === params.timesheetId)
+      if (!found) throw new Error('TIMESHEET_NOT_FOUND')
+      if (found.status !== 'OPEN') throw new Error('TIMESHEET_NOT_OPEN')
+      if (found.days.some((day) => day.hasAnomaly)) throw new Error('ANOMALIES_PENDING')
+      found.status = 'PENDING_APPROVAL'
+      return { data: { ...found } }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/timesheets/:timesheetId/approve',
+    resolve: ({ params }): ApiEnvelope<TimesheetApi> => {
+      const found = timesheets.find((sheet) => sheet.id === params.timesheetId)
+      if (!found) throw new Error('TIMESHEET_NOT_FOUND')
+      if (found.status !== 'PENDING_APPROVAL') throw new Error('TIMESHEET_NOT_PENDING')
+      found.status = 'APPROVED'
+      found.approvedAt = new Date().toISOString()
+      return { data: { ...found } }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/punches/manual',
+    /** El mock solo confirma: el grid recarga del store y la marca no se simula. */
+    resolve: (): { data: null } => ({ data: null }),
+  },
 ]
 
 let areRoutesRegistered = false
@@ -203,4 +235,7 @@ export function registerTimesheetMocks(): void {
   if (areRoutesRegistered) return
   areRoutesRegistered = true
   registerMockRoutes(routes)
+  // La marca manual resuelve el assignment en `/requisitions/:id/assignments`,
+  // cuyo mock registra Requisiciones.
+  registerRequisitionsMocks()
 }

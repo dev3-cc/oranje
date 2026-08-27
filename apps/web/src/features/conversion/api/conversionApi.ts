@@ -118,15 +118,20 @@ async function fetchReadiness(
     {
       id: 'hotel-user',
       label: 'Usuario del Hotel creado',
+      /**
+       * El QUÉ antes del clic: esta fila confundió a un usuario real que ya
+       * sabía quién era el contacto — le faltaba saber qué es la cuenta, a
+       * quién se le crea y qué habilita (Usuario del Hotel, RR-V-02).
+       */
       detail: hotelUser
         ? `${hotelUser.fullName} · ${hotelUser.role.name}`
         : primaryContact?.email
-          ? `No existe todavía — bloquea la conversión${IS_DEV_UI ? ' (RR-V-02)' : ''}`
+          ? `La cuenta con la que el hotel opera Oranje: pedir requisiciones, administrar su Schedule y aprobar horas. Se crea para el contacto principal — ${primaryContact.fullName} · ${primaryContact.email} — y sin ella la conversión se bloquea${IS_DEV_UI ? ' (RR-V-02)' : ''}`
           : 'No existe, y el contacto principal no tiene correo: agrégaselo para poder crearlo',
       isMet: hotelUser !== undefined,
       action:
         !hotelUser && primaryContact?.email
-          ? { kind: 'CREATE_HOTEL_USER', label: 'Crear usuario' }
+          ? { kind: 'CREATE_HOTEL_USER', label: 'Crear cuenta del hotel' }
           : null,
     },
   ]

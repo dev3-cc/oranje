@@ -25,7 +25,7 @@ async function pick(triggerLabel: string, optionName: string): Promise<void> {
   await userEvent.click(await screen.findByRole('option', { name: optionName }))
 }
 
-function renderDialog(onClose = vi.fn()): { onClose: ReturnType<typeof vi.fn> } {
+async function renderDialog(onClose = vi.fn()): Promise<{ onClose: ReturnType<typeof vi.fn> }> {
   render(
     <Provider store={store}>
       <RegisterAttemptDialog
@@ -38,12 +38,13 @@ function renderDialog(onClose = vi.fn()): { onClose: ReturnType<typeof vi.fn> } 
     </Provider>,
   )
 
+  await userEvent.setup().click(await screen.findByRole('button', { name: 'Saltar' }))
   return { onClose }
 }
 
 describe('RegisterAttemptDialog', () => {
   it('no deja registrar hasta que hay tipo y resultado', async () => {
-    renderDialog()
+    await renderDialog()
 
     const submit = screen.getByRole('button', { name: 'Registrar intento' })
     expect(submit).toBeDisabled()
@@ -57,15 +58,15 @@ describe('RegisterAttemptDialog', () => {
     })
   })
 
-  it('el contacto es opcional: ofrece registrar sin nadie', () => {
-    renderDialog()
+  it('el contacto es opcional: ofrece registrar sin nadie', async () => {
+    await renderDialog()
 
     const contactSelect = screen.getByLabelText('Contacto del hotel')
     expect(contactSelect).toHaveTextContent('Sin contacto identificado')
   })
 
   it('registra el intento y cierra el modal', async () => {
-    const { onClose } = renderDialog()
+    const { onClose } = await renderDialog()
 
     await userEvent.click(screen.getByRole('button', { name: 'Visita en frío' }))
     await pick('Resultado', 'Cita agendada')

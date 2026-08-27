@@ -1,8 +1,11 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
 import { useGetProposalCandidatesQuery } from '../api/proposalsApi'
+import { NewProposalDialog } from '../components/NewProposalDialog'
 
+import { Button } from '@/shared/components/Button'
+import { EmptyState } from '@/shared/components/EmptyState'
 import { LoadError } from '@/shared/components/LoadError'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
@@ -13,17 +16,35 @@ import { formatDate } from '@/shared/lib/formatters'
 
 export function ProposalListPage(): ReactNode {
   const { data: candidates = [], isLoading, isError, refetch } = useGetProposalCandidatesQuery()
+  const [isCreating, setIsCreating] = useState(false)
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight text-ink">Propuestas</h1>
-        <p className="mt-1.5 text-sm text-ink-3">
-          {isLoading
-            ? 'Cargando propuestas…'
-            : `${candidates.length} hoteles con propuesta · se editan desde su ficha`}
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-ink">Propuestas</h1>
+          <p className="mt-1.5 text-sm text-ink-3">
+            {isLoading
+              ? 'Cargando propuestas…'
+              : `${candidates.length} hoteles con propuesta · se editan desde su ficha`}
+          </p>
+        </div>
+        <Button
+          variant="primary"
+          onClick={() => {
+            setIsCreating(true)
+          }}
+        >
+          + Nueva propuesta
+        </Button>
       </header>
+
+      <NewProposalDialog
+        isOpen={isCreating}
+        onClose={() => {
+          setIsCreating(false)
+        }}
+      />
 
       {isError && (
         <LoadError
@@ -35,10 +56,20 @@ export function ProposalListPage(): ReactNode {
       )}
 
       {!isLoading && !isError && candidates.length === 0 && (
-        <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-          Todavía no se ha cotizado ningún hotel. Las propuestas se abren desde la ficha del
-          prospecto.
-        </p>
+        <EmptyState
+          title="Todavía no se cotiza ningún hotel"
+          text="La propuesta se abre cuando un prospecto llega a Verde. Usa «Nueva propuesta» aquí arriba o entra a la ficha del prospecto."
+          action={
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setIsCreating(true)
+              }}
+            >
+              + Nueva propuesta
+            </Button>
+          }
+        />
       )}
 
       {candidates.length > 0 && (

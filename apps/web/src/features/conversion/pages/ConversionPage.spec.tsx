@@ -39,9 +39,7 @@ describe('ConversionPage', () => {
   it('sin usuario del hotel la aprobación queda bloqueada y dice por qué', async () => {
     renderConversion('psp-0007')
 
-    expect(
-      await screen.findByText('No existe todavía — bloquea la conversión (RR-V-02)'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText(/Se crea para el contacto principal/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Aprobar conversión' })).toBeDisabled()
     expect(screen.getByText(/HOTEL_USER_REQUIRED/)).toBeInTheDocument()
   })
@@ -49,7 +47,7 @@ describe('ConversionPage', () => {
   it('crear el usuario del hotel desbloquea la aprobación sin salir de la pantalla', async () => {
     renderConversion('psp-0007')
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Crear usuario' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Crear cuenta del hotel' }))
 
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Aprobar conversión' })).toBeEnabled()

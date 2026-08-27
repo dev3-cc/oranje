@@ -75,6 +75,14 @@ export interface ProposalCandidate {
   latestSentAt: string | null
 }
 
+/** Un prospecto al que se le puede abrir su PRIMERA propuesta (Verde o Café). */
+export interface ProposalTarget {
+  prospectId: string
+  hotelName: string
+  zone: string
+  prospectStatus: OnboardingStatus
+}
+
 export interface SaveProposalDraftRequest {
   proposalId: string
   /** Solo para invalidar la caché del prospecto; no viaja en el cuerpo. */

@@ -1,13 +1,25 @@
-import { useState, type ReactNode } from 'react'
+import {
+  MaterialIcon,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@oranje/ui'
+import { useRef, useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 
 import {
+  useCreateWorkerDocumentMutation,
+  useDeleteWorkerDocumentMutation,
   useGetWorkerDetailQuery,
   useGetWorkerDocumentsQuery,
   useGetWorkerHistoryQuery,
+  useVerifyWorkerDocumentMutation,
 } from '../api/workerDetailApi'
 import { ChangeStateDialog } from '../components/ChangeStateDialog'
 
+import { useUploadFileMutation } from '@/app/filesApi'
 import mascotaTriste from '@/assets/mascota/mascota-triste.png'
 import { Button } from '@/shared/components/Button'
 import { SectionCard } from '@/shared/components/SectionCard'
@@ -24,6 +36,7 @@ import {
   WORKER_STATUS_TOKEN,
   type WorkerStatus,
 } from '@/shared/constants/workerStatus'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate } from '@/shared/lib/formatters'
 
@@ -66,6 +79,52 @@ export function WorkerDetailPage(): ReactNode {
   } = useGetWorkerDetailQuery(workerId, { skip: workerId === '' })
   const { data: history = [] } = useGetWorkerHistoryQuery(workerId, { skip: workerId === '' })
   const { data: documents } = useGetWorkerDocumentsQuery(workerId, { skip: workerId === '' })
+
+  /** Alta de documento: el archivo primero al bucket, luego la fila del expediente. */
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadType, setUploadType] = useState('ID')
+  const [uploadFile, { isLoading: isUploadingFile }] = useUploadFileMutation()
+  const [createDocument, { isLoading: isSavingDocument }] = useCreateWorkerDocumentMutation()
+  const [verifyDocument] = useVerifyWorkerDocumentMutation()
+  const [deleteDocument] = useDeleteWorkerDocumentMutation()
+  const [documentError, setDocumentError] = useState<string | null>(null)
+  /** Borrar pide segundo clic sobre la misma fila. */
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null)
+  const isUploading = isUploadingFile || isSavingDocument
+
+  async function handleDocumentFile(file: File): Promise<void> {
+    setDocumentError(null)
+    try {
+      const stored = await uploadFile({ file, purpose: 'WORKER_DOCUMENT' }).unwrap()
+      await createDocument({ workerId, documentType: uploadType, filePath: stored.path }).unwrap()
+    } catch (error) {
+      setDocumentError(
+        apiErrorMessage(error, {
+          byCode: {
+            UNSUPPORTED_FILE_TYPE:
+              'Ese formato no se puede procesar (los HEIC del iPhone no entran): usa JPG, PNG, WebP o PDF.',
+          },
+          byStatus: {
+            413: 'El archivo pasa de 15 MB: comprímelo o escanéalo con menos resolución.',
+          },
+          fallback: 'No se pudo subir el documento. Inténtalo de nuevo.',
+        }),
+      )
+    }
+  }
+
+  async function handleDelete(documentId: string): Promise<void> {
+    if (confirmingDeleteId !== documentId) {
+      setConfirmingDeleteId(documentId)
+      return
+    }
+    setConfirmingDeleteId(null)
+    try {
+      await deleteDocument({ workerId, documentId }).unwrap()
+    } catch {
+      setDocumentError('No se pudo borrar el documento. Inténtalo de nuevo.')
+    }
+  }
 
   if (isLoading) {
     return <p className="text-sm text-ink-3">Cargando expediente…</p>
@@ -251,6 +310,48 @@ export function WorkerDetailPage(): ReactNode {
             title="Documentos"
             subtitle={IS_DEV_UI ? 'personal.worker_document' : 'El expediente del colaborador'}
           >
+            {/* Alta: tipo + archivo. Verificar el SSN/ITIN es lo que levanta la retención. */}
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-md bg-surface-2 p-3">
+              <Select value={uploadType} onValueChange={setUploadType}>
+                <SelectTrigger aria-label="Tipo de documento" className="w-56">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(DOCUMENT_TYPE_LABEL).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="secondary"
+                disabled={isUploading}
+                onClick={() => {
+                  fileInputRef.current?.click()
+                }}
+              >
+                {isUploading ? 'Subiendo…' : 'Subir documento'}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                className="hidden"
+                aria-label="Archivo del documento"
+                onChange={(event) => {
+                  const file = event.target.files?.[0]
+                  event.target.value = ''
+                  if (file) void handleDocumentFile(file)
+                }}
+              />
+              {documentError && (
+                <p role="alert" className="w-full text-xs text-red">
+                  {documentError}
+                </p>
+              )}
+            </div>
+
             {(documents?.data ?? []).length === 0 ? (
               <p className="rounded-md border border-dashed border-line px-4 py-6 text-center text-sm text-ink-3">
                 Sin documentos en el expediente.
@@ -289,6 +390,38 @@ export function WorkerDetailPage(): ReactNode {
                     >
                       {doc.isVerified ? 'Verificado' : 'Pendiente'}
                     </span>
+                    {!doc.isVerified && (
+                      <Button
+                        variant="secondary"
+                        className="px-3 py-1 text-xs"
+                        title="Verificar el documento (si es el SSN/ITIN, levanta la retención)"
+                        onClick={() => {
+                          void verifyDocument({ workerId, documentId: doc.id })
+                        }}
+                      >
+                        Verificar
+                      </Button>
+                    )}
+                    <button
+                      type="button"
+                      aria-label={`Borrar ${DOCUMENT_TYPE_LABEL[doc.documentType] ?? doc.documentType}`}
+                      title={
+                        confirmingDeleteId === doc.id
+                          ? 'Otro clic lo borra definitivamente'
+                          : 'Borrar el documento'
+                      }
+                      onClick={() => {
+                        void handleDelete(doc.id)
+                      }}
+                      className={`cursor-pointer rounded-md p-1.5 transition-colors hover:bg-surface-2 ${
+                        confirmingDeleteId === doc.id ? 'text-red' : 'text-ink-3 hover:text-red'
+                      }`}
+                    >
+                      <MaterialIcon
+                        name={confirmingDeleteId === doc.id ? 'delete_forever' : 'delete'}
+                        className="text-lg"
+                      />
+                    </button>
                   </li>
                 ))}
               </ul>

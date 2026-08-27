@@ -4,8 +4,12 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { useLiftBlacklistMutation } from '../api/blacklistApi'
 import type { BlacklistRow } from '../types/blacklist.types'
 
+import personajeAyuda from '@/assets/ilustrations/personaje-ayuda.svg'
+import personajeComencemos from '@/assets/ilustrations/personaje-comencemos.svg'
+import personajeRetro from '@/assets/ilustrations/personaje-retroalimentacion.svg'
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
+import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
@@ -20,6 +24,24 @@ function EntryField({ label, value }: { label: string; value: string }): ReactNo
   )
 }
 
+const INTRO_SLIDES = [
+  {
+    image: personajeAyuda,
+    title: 'Solo el Administrador levanta',
+    text: 'El veto lo puede quitar únicamente el Administrador — si no eres tú, esta acción va a rebotar.',
+  },
+  {
+    image: personajeComencemos,
+    title: 'Vuelve a Blanco, no al Pool',
+    text: 'Al levantarlo, la persona reingresa por la validación de la Reclutadora, como si empezara.',
+  },
+  {
+    image: personajeRetro,
+    title: 'El historial queda',
+    text: 'La fila no se borra: se marca levantada con tu motivo, y el pasado sigue consultable.',
+  },
+] as const
+
 export function LiftBlacklistDialog({
   row,
   onClose,
@@ -29,9 +51,11 @@ export function LiftBlacklistDialog({
 }): ReactNode {
   const [liftReason, setLiftReason] = useState('')
   const [lift, { isLoading, error }] = useLiftBlacklistMutation()
+  const [showIntro, setShowIntro] = useState(false)
 
   useEffect(() => {
     setLiftReason('')
+    if (row) setShowIntro(true)
   }, [row])
 
   if (!row) return null
@@ -54,67 +78,81 @@ export function LiftBlacklistDialog({
       description={`coverage.blacklist_entry · la fila no se borra: se marca como levantada`}
       className="max-w-xl"
       footer={
-        <>
-          <Button onClick={onClose} disabled={isLoading}>
-            Cancelar
-          </Button>
-          <Button
-            variant="primary"
-            disabled={liftReason.trim() === '' || isLoading}
-            onClick={() => {
-              void submit()
-            }}
-          >
-            {isLoading ? 'Levantando…' : 'Levantar el veto'}
-          </Button>
-        </>
+        showIntro ? null : (
+          <>
+            <Button onClick={onClose} disabled={isLoading}>
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              disabled={liftReason.trim() === '' || isLoading}
+              onClick={() => {
+                void submit()
+              }}
+            >
+              {isLoading ? 'Levantando…' : 'Levantar el veto'}
+            </Button>
+          </>
+        )
       }
     >
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-base font-semibold text-ink">{row.workerName}</p>
-        <StatusLightSoftBadge token="st-negro" label="BLACK · Blacklist" />
-      </div>
-
-      <div className="flex flex-col gap-2 rounded-md bg-surface-2 p-4">
-        <EntryField label="source" value={row.source} />
-        <EntryField label="reason" value={row.reason} />
-        <EntryField label="evidence_path" value={row.evidencePath ?? '—'} />
-        <EntryField label="entered_by" value={row.enteredByName} />
-        <EntryField label="occurred_at" value={formatDayMonth(row.occurredAt)} />
-      </div>
-
-      <label className="flex flex-col gap-2">
-        <span className="text-sm font-semibold text-ink">
-          Motivo del levantamiento <span className="font-normal text-ink-3">(obligatorio)</span>
-          {IS_DEV_UI && <code className="text-xs font-normal text-ink-4"> · lift_reason</code>}
-        </span>
-        <textarea
-          value={liftReason}
-          onChange={(event) => {
-            setLiftReason(event.target.value)
+      {showIntro ? (
+        <OnboardingIntro
+          slides={INTRO_SLIDES}
+          startLabel="Continuar"
+          onDone={() => {
+            setShowIntro(false)
           }}
-          rows={3}
-          placeholder="P. ej. «Acuerdo con el hotel; reincorporación autorizada por el Manager de Reclutamiento.»"
-          className="rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none"
         />
-      </label>
+      ) : (
+        <>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-base font-semibold text-ink">{row.workerName}</p>
+            <StatusLightSoftBadge token="st-negro" label="BLACK · Blacklist" />
+          </div>
 
-      <p className="rounded-md bg-surface-2 p-3 text-xs leading-relaxed text-ink-3">
-        Al levantarlo, el colaborador vuelve a <span className="font-semibold">Blanco</span> — no a
-        disponible: reingresa por la validación de la Reclutadora.
-      </p>
+          <div className="flex flex-col gap-2 rounded-md bg-surface-2 p-4">
+            <EntryField label="source" value={row.source} />
+            <EntryField label="reason" value={row.reason} />
+            <EntryField label="evidence_path" value={row.evidencePath ?? '—'} />
+            <EntryField label="entered_by" value={row.enteredByName} />
+            <EntryField label="occurred_at" value={formatDayMonth(row.occurredAt)} />
+          </div>
 
-      {error !== undefined && (
-        <Alert variant="destructive">
-          <AlertDescription>
-            {apiErrorMessage(error, {
-              byStatus: {
-                403: 'Solo el Administrador levanta un veto (blacklist:lift): pídeselo.',
-              },
-              fallback: 'No se pudo levantar el veto.',
-            })}
-          </AlertDescription>
-        </Alert>
+          <label className="flex flex-col gap-2">
+            <span className="text-sm font-semibold text-ink">
+              Motivo del levantamiento <span className="font-normal text-ink-3">(obligatorio)</span>
+              {IS_DEV_UI && <code className="text-xs font-normal text-ink-4"> · lift_reason</code>}
+            </span>
+            <textarea
+              value={liftReason}
+              onChange={(event) => {
+                setLiftReason(event.target.value)
+              }}
+              rows={3}
+              placeholder="P. ej. «Acuerdo con el hotel; reincorporación autorizada por el Manager de Reclutamiento.»"
+              className="rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none"
+            />
+          </label>
+
+          <p className="rounded-md bg-surface-2 p-3 text-xs leading-relaxed text-ink-3">
+            Al levantarlo, el colaborador vuelve a <span className="font-semibold">Blanco</span> —
+            no a disponible: reingresa por la validación de la Reclutadora.
+          </p>
+
+          {error !== undefined && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                {apiErrorMessage(error, {
+                  byStatus: {
+                    403: 'Solo el Administrador levanta un veto (blacklist:lift): pídeselo.',
+                  },
+                  fallback: 'No se pudo levantar el veto.',
+                })}
+              </AlertDescription>
+            </Alert>
+          )}
+        </>
       )}
     </Modal>
   )

@@ -42,17 +42,20 @@ const PROSPECT: ProspectDetail = {
   history: [],
 }
 
-function renderDialog(prospect?: ProspectDetail): void {
+async function renderDialog(prospect?: ProspectDetail): Promise<void> {
   render(
     <Provider store={store}>
       <ProspectFormDialog isOpen onClose={vi.fn()} {...(prospect ? { prospect } : {})} />
     </Provider>,
   )
+  if (!prospect) {
+    await userEvent.setup().click(await screen.findByRole('button', { name: 'Saltar' }))
+  }
 }
 
 describe('ProspectFormDialog', () => {
-  it('en alta ofrece elegir entre hotel nuevo y hotel ya registrado', () => {
-    renderDialog()
+  it('en alta ofrece elegir entre hotel nuevo y hotel ya registrado', async () => {
+    await renderDialog()
 
     expect(screen.getByRole('heading', { name: 'Nuevo prospecto' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Hotel nuevo' })).toBeInTheDocument()
@@ -62,7 +65,7 @@ describe('ProspectFormDialog', () => {
   /** El wizard no avanza del paso 1 con los obligatorios vacíos. */
   it('en alta no deja avanzar sin los datos obligatorios', async () => {
     const user = userEvent.setup()
-    renderDialog()
+    await renderDialog()
 
     // Crear vive en el paso 3; en el 1 solo existe Continuar.
     expect(screen.queryByRole('button', { name: 'Crear prospecto' })).not.toBeInTheDocument()
@@ -75,8 +78,8 @@ describe('ProspectFormDialog', () => {
   })
 
   /** Un ciclo abierto no cambia de edificio: elegir origen no aplica al editar. */
-  it('en edición desaparece el selector de origen del hotel', () => {
-    renderDialog(PROSPECT)
+  it('en edición desaparece el selector de origen del hotel', async () => {
+    await renderDialog(PROSPECT)
 
     expect(screen.getByRole('heading', { name: 'Editar prospecto' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Hotel ya registrado' })).not.toBeInTheDocument()
@@ -84,7 +87,7 @@ describe('ProspectFormDialog', () => {
 
   it('en edición llega con los datos y el wizard recorre hasta el ciclo', async () => {
     const user = userEvent.setup()
-    renderDialog(PROSPECT)
+    await renderDialog(PROSPECT)
 
     // Paso 1: el edificio, prellenado.
     expect(screen.getByLabelText('Nombre del hotel')).toHaveValue('Hotel Puerto Real')
@@ -112,7 +115,7 @@ describe('ProspectFormDialog', () => {
 
   it('el radio de geocerca llega del prospecto y se lee en los dos sitios', async () => {
     const user = userEvent.setup()
-    renderDialog(PROSPECT)
+    await renderDialog(PROSPECT)
 
     // El deslizador vive en el paso 2 (Ubicación); la ficha, en los demás pasos.
     await user.click(screen.getByRole('button', { name: 'Continuar' }))

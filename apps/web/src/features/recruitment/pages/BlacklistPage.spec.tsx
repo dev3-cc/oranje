@@ -52,6 +52,7 @@ describe('BlacklistPage', () => {
     renderBlacklist()
 
     await user.click(await screen.findByRole('button', { name: '+ Agregar a Blacklist' }))
+    await user.click(await screen.findByRole('button', { name: 'Saltar' }))
 
     const dialog = await screen.findByRole('dialog')
     const scoped = within(dialog)
@@ -82,6 +83,7 @@ describe('BlacklistPage', () => {
 
     const row = (await screen.findByText('Norma Estrada')).closest('tr')
     await user.click(within(row as HTMLElement).getByRole('button', { name: 'Levantar' }))
+    await user.click(await screen.findByRole('button', { name: 'Saltar' }))
 
     const dialog = await screen.findByRole('dialog')
     const scoped = within(dialog)

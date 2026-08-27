@@ -55,6 +55,7 @@ describe('TimesheetPage', () => {
     renderTimesheet()
 
     await user.click(await screen.findByText('Observado'))
+    await user.click(await screen.findByRole('button', { name: 'Saltar' }))
 
     const dialog = await screen.findByRole('dialog')
     const scoped = within(dialog)

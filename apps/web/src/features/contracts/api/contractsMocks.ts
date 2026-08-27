@@ -4,6 +4,8 @@
  */
 // eslint-disable-next-line no-restricted-imports
 import { registerOnboardingMocks } from '@/features/onboarding/api/onboardingMocks'
+// eslint-disable-next-line no-restricted-imports
+import { registerRequisitionsMocks } from '@/features/requisitions/api/requisitionsMocks'
 import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
 import type { ApiEnvelope, ContractApi, ContractRateApi } from '@/shared/types/apiContract.types'
 
@@ -165,10 +167,97 @@ const routes: readonly MockRoute[] = [
     resolve: ({ params }): ApiEnvelope<ContractApi> => {
       const contract = CONTRACTS.find((item) => item.id === params.contractId)
       if (!contract) throw new Error('CONTRACT_NOT_FOUND')
-      return { data: contract }
+      return { data: snapshot(contract) }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/contracts',
+    resolve: ({ body }): ApiEnvelope<ContractApi> => {
+      const dto = body as {
+        hotelId: string
+        validFrom: string
+        validTo?: string
+        rates: Array<{ catalogPositionId: string; payRate: string; billRate: string }>
+      }
+      mockContractSequence += 1
+      const id = `ct-new-${String(mockContractSequence)}`
+      const created: StoredContract = {
+        ...buildContract({
+          id,
+          number: `CT-2026-9${String(mockContractSequence).padStart(3, '0')}`,
+          hotelId: dto.hotelId,
+          hotelName: 'Hotel nuevo',
+          status: 'DRAFT',
+          validFrom: dto.validFrom,
+          validTo: dto.validTo ?? null,
+          signedAt: null,
+          positionCount: 0,
+        }),
+        rates: dto.rates.map((rate, index) => ({
+          id: `rate-${id}-${String(index + 1)}`,
+          payRate: rate.payRate,
+          billRate: rate.billRate,
+          position: CATALOG[index % CATALOG.length]?.position ?? {
+            id: rate.catalogPositionId,
+            code: 'POS',
+            name: 'Posición',
+          },
+        })),
+      }
+      CONTRACTS.push(created)
+      return { data: snapshot(created) }
+    },
+  },
+  {
+    method: 'PUT',
+    path: '/contracts/:contractId/rates',
+    resolve: ({ params, body }): ApiEnvelope<ContractApi> => {
+      const contract = CONTRACTS.find((item) => item.id === params.contractId)
+      if (!contract) throw new Error('CONTRACT_NOT_FOUND')
+      const dto = body as { catalogPositionId: string; payRate: string; billRate: string }
+      const existing = contract.rates.find((rate) => rate.position.id === dto.catalogPositionId)
+      if (existing) {
+        existing.payRate = dto.payRate
+        existing.billRate = dto.billRate
+      } else {
+        contract.rates.push({
+          id: `rate-${contract.id}-${String(contract.rates.length + 1)}`,
+          payRate: dto.payRate,
+          billRate: dto.billRate,
+          position: CATALOG[contract.rates.length % CATALOG.length]?.position ?? {
+            id: dto.catalogPositionId,
+            code: 'POS',
+            name: 'Posición',
+          },
+        })
+      }
+      return { data: snapshot(contract) }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/contracts/:contractId/:action',
+    resolve: ({ params }): ApiEnvelope<ContractApi> => {
+      const contract = CONTRACTS.find((item) => item.id === params.contractId)
+      if (!contract) throw new Error('CONTRACT_NOT_FOUND')
+      const nextStatus = { activate: 'ACTIVE', expire: 'EXPIRED', cancel: 'CANCELLED' }[
+        params.action ?? ''
+      ]
+      if (!nextStatus) throw new Error('UNKNOWN_ACTION')
+      contract.status = nextStatus
+      if (nextStatus === 'ACTIVE') contract.signedAt = isoInDays(0)
+      return { data: snapshot(contract) }
     },
   },
 ]
+
+let mockContractSequence = 0
+
+/** RTK congela lo que sirve: cada respuesta va con SUS copias, nunca la referencia viva. */
+function snapshot(contract: StoredContract): ContractApi {
+  return { ...contract, rates: contract.rates.map((rate) => ({ ...rate })) }
+}
 
 let areRoutesRegistered = false
 
@@ -176,6 +265,8 @@ export function registerContractsMocks(): void {
   if (areRoutesRegistered) return
   areRoutesRegistered = true
   registerMockRoutes(routes)
-  // La zona de cada fila sale de `/hotels`, que registra Onboarding.
+  // La zona de cada fila sale de `/hotels`, que registra Onboarding; las
+  // posiciones del alta salen de `/catalogs/positions`, que registra Requisiciones.
   registerOnboardingMocks()
+  registerRequisitionsMocks()
 }

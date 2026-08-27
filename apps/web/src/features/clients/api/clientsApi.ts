@@ -100,6 +100,7 @@ async function fetchPortfolio(
         /** Sin ciclo en el sistema (activado por fuera), la ficha es el hotel. */
         prospectId: prospectByHotel.get(hotel.id)?.id ?? hotel.id,
         hotelName: hotel.name,
+        photoUrl: hotel.photoUrl,
         zoneName: hotel.zone.name.replace(/^Zona\s+/i, ''),
         activatedAt: hotel.activatedAt as string,
         timezone: hotel.timeZone,

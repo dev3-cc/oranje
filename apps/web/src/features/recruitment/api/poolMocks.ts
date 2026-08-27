@@ -326,6 +326,51 @@ const routes: readonly MockRoute[] = [
       meta: { hasTaxId: false, taxRetentionApplies: true },
     }),
   },
+  {
+    method: 'POST',
+    path: '/workers/:workerId/documents',
+    resolve: ({ params, body }): { data: null } => {
+      const workerId = params.workerId ?? ''
+      const dto = body as { documentType: string; filePath: string }
+      const list = DOCUMENTS[workerId] ?? (DOCUMENTS[workerId] = [])
+      list.unshift({
+        id: `doc-${String(Date.now())}`,
+        documentType: dto.documentType,
+        filePath: dto.filePath,
+        url: null,
+        isVerified: false,
+        verifiedBy: null,
+        verifiedAt: null,
+        createdAt: new Date().toISOString(),
+      })
+      return { data: null }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/workers/:workerId/documents/:documentId/verify',
+    resolve: ({ params }): { data: null } => {
+      const doc = (DOCUMENTS[params.workerId ?? ''] ?? []).find(
+        (item) => item.id === params.documentId,
+      )
+      if (!doc) throw new Error('DOCUMENT_NOT_FOUND')
+      doc.isVerified = true
+      doc.verifiedBy = { id: 'usr-diana', fullName: 'Diana Roldán' }
+      doc.verifiedAt = new Date().toISOString()
+      return { data: null }
+    },
+  },
+  {
+    method: 'DELETE',
+    path: '/workers/:workerId/documents/:documentId',
+    resolve: ({ params }): { data: null } => {
+      const workerId = params.workerId ?? ''
+      DOCUMENTS[workerId] = (DOCUMENTS[workerId] ?? []).filter(
+        (item) => item.id !== params.documentId,
+      )
+      return { data: null }
+    },
+  },
 ]
 
 /**

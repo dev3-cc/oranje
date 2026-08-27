@@ -178,7 +178,106 @@ export const contractsApi = baseApi.injectEndpoints({
         { type: 'Contract' as const, id: contractId },
       ],
     }),
+
+    /** Lo que el alta necesita elegir: el hotel cliente y las posiciones del catálogo. */
+    getContractFormOptions: build.query<ContractFormOptions, void>({
+      queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
+        const bq = fetchWithBQ as FetchWithBQ
+        const [hotelsRes, positionsRes] = await Promise.all([
+          bq({ url: '/hotels', params: { limit: 100 } }),
+          bq('/catalogs/positions'),
+        ])
+        if (hotelsRes.error) return { error: hotelsRes.error as never }
+        if (positionsRes.error) return { error: positionsRes.error as never }
+        return {
+          data: {
+            hotels: (hotelsRes.data as PaginatedEnvelope<HotelApi>).data
+              .filter((hotel) => hotel.isClient)
+              .map((hotel) => ({ id: hotel.id, name: hotel.name })),
+            positions: (
+              positionsRes.data as ApiEnvelope<Array<{ id: string; name: string }>>
+            ).data.map((item) => ({ id: item.id, name: item.name })),
+          },
+        }
+      },
+      providesTags: [{ type: 'Catalog' as const, id: 'CONTRACT_FORM' }],
+    }),
+
+    /** El contrato nace en DRAFT con al menos una tarifa (guard del back). */
+    createContract: build.mutation<ContractDetail, CreateContractRequest>({
+      query: (body) => ({ url: '/contracts', method: 'POST', body }),
+      transformResponse: (raw: ApiEnvelope<ContractApi>) => toContractDetail(raw.data),
+      invalidatesTags: [{ type: 'Contract' as const, id: 'LIST' }],
+    }),
+
+    /** Alta o corrección de una tarifa; el back solo lo permite en DRAFT. */
+    upsertContractRate: build.mutation<
+      ContractDetail,
+      { contractId: string; catalogPositionId: string; payRate: string; billRate: string }
+    >({
+      query: ({ contractId, ...body }) => ({
+        url: `/contracts/${contractId}/rates`,
+        method: 'PUT',
+        body,
+      }),
+      transformResponse: (raw: ApiEnvelope<ContractApi>) => toContractDetail(raw.data),
+      invalidatesTags: (_result, _error, { contractId }) => [
+        { type: 'Contract' as const, id: contractId },
+        { type: 'Contract' as const, id: 'LIST' },
+      ],
+    }),
+
+    /**
+     * activate / expire / cancel: los tres son hechos, no ediciones — el
+     * status del contrato nunca se escribe directo (mismo criterio que los
+     * semáforos, D-23). Invalidan también `Hotel`: la cartera de Clientes
+     * Activos compone su chip de contrato de aquí.
+     */
+    transitionContract: build.mutation<
+      ContractDetail,
+      { contractId: string; action: 'activate' | 'expire' | 'cancel' }
+    >({
+      query: ({ contractId, action }) => ({
+        url: `/contracts/${contractId}/${action}`,
+        method: 'POST',
+      }),
+      transformResponse: (raw: ApiEnvelope<ContractApi>) => toContractDetail(raw.data),
+      invalidatesTags: (_result, _error, { contractId }) => [
+        { type: 'Contract' as const, id: contractId },
+        { type: 'Contract' as const, id: 'LIST' },
+        { type: 'Hotel' as const, id: 'LIST' },
+      ],
+    }),
   }),
 })
 
-export const { useGetContractsQuery, useGetContractQuery } = contractsApi
+export interface ContractFormOptions {
+  hotels: Array<{ id: string; name: string }>
+  positions: Array<{ id: string; name: string }>
+}
+
+/** El cuerpo de `POST /contracts`, transcrito del DTO real (`contract.dto.ts`). */
+export interface CreateContractRequest {
+  hotelId: string
+  prospectId?: string
+  validFrom: string
+  validTo?: string
+  weekStartDay: number
+  weekEndDay: number
+  overtimeBillMultiplier: number
+  overtimePayMultiplier: number
+  holidayBillMultiplier: number
+  holidayPayMultiplier: number
+  deductsMeals: boolean
+  splitsInvoiceByMonth: boolean
+  rates: Array<{ catalogPositionId: string; payRate: string; billRate: string }>
+}
+
+export const {
+  useGetContractsQuery,
+  useGetContractQuery,
+  useGetContractFormOptionsQuery,
+  useCreateContractMutation,
+  useUpsertContractRateMutation,
+  useTransitionContractMutation,
+} = contractsApi

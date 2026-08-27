@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 
 import type { ClientCard } from '../types/client.types'
 
+import { HotelPhoto } from './HotelPhoto'
+
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TOKEN } from '@/shared/constants/contractStatus'
 
@@ -20,10 +22,8 @@ export function ClientMapCard({ client }: { client: ClientCard }): ReactNode {
       ver. `pointer-events-none` para que no atrape el arrastre del mapa.
     */
     <div className="pointer-events-none absolute top-6 left-6 z-10 w-64 max-w-[calc(100%-3rem)] rounded-xl border border-line bg-surface p-3 shadow-lg">
-      <div className="flex h-20 items-center justify-center rounded-lg bg-surface-3">
-        <span className="material-icons-outlined text-2xl text-o-500" aria-hidden>
-          apartment
-        </span>
+      <div className="h-20 overflow-hidden rounded-lg">
+        <HotelPhoto photoUrl={client.photoUrl} className="size-full rounded-lg" />
       </div>
 
       <p className="mt-3 text-base font-bold text-ink">{client.hotelName}</p>

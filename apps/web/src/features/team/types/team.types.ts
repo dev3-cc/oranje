@@ -11,6 +11,8 @@ export interface TeamMemberCard {
   fullName: string
   /** Nombres de las zonas asignadas; vacío = sin territorio repartido. */
   zoneNames: string[]
+  /** Las zonas con su id: lo que la asignación de territorio edita. */
+  zones: Array<{ id: string; name: string }>
   openProspects: number
   /** Naranjas cuyo ciclo convirtió dentro del trimestre en curso. */
   quarterConversions: number
@@ -22,6 +24,16 @@ export interface TeamMemberCard {
   staleCount: number
   /** Ciclos abiertos por estado del semáforo, en orden del pipeline. */
   byState: Array<{ status: OnboardingStatus; count: number }>
+  /** Los ciclos abiertos del BD, para la tabla del panel de detalle. */
+  openCycles: TeamMemberCycle[]
+}
+
+export interface TeamMemberCycle {
+  prospectId: string
+  hotelName: string
+  status: OnboardingStatus
+  /** Días desde el último intento de contacto (o desde la apertura si no hay). */
+  daysSinceAttempt: number
 }
 
 export interface TeamOverview {

@@ -47,6 +47,8 @@ describe('UsersPage', () => {
     await screen.findByText('Hugo Curtidor')
 
     await user.click(screen.getByRole('button', { name: '+ Nuevo usuario' }))
+    expect(await screen.findByText('Bienvenido al alta de personal')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Saltar' }))
     expect(await screen.findByText(/recibe un correo de invitación/)).toBeInTheDocument()
     expect(screen.queryByLabelText('Contraseña')).not.toBeInTheDocument()
 

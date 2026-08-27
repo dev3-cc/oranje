@@ -134,8 +134,12 @@ export function LoginPage(): ReactNode {
       /** Firebase autentica (D-05); la API canjea el idToken por LA sesión. */
       const idToken = await signInWithEmail(values.email, values.password)
       await createSession({ idToken }).unwrap()
-      const from = (location.state as { from?: string } | null)?.from ?? '/'
-      void navigate(from, { replace: true })
+      /*
+       * SIEMPRE al Dashboard, nunca al `from`: quien entra puede ser OTRA
+       * persona con otro rol, y `from` es la ruta del usuario anterior — una
+       * Reclutadora deja /pool, entra un BD y aterrizaría en un 403.
+       */
+      void navigate('/', { replace: true })
     } catch (error) {
       setSubmitError(loginErrorMessage(error))
     }

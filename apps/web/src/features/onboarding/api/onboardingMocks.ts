@@ -1118,6 +1118,12 @@ const routes: readonly MockRoute[] = [
     }),
   },
   {
+    method: 'POST',
+    path: '/prospects/:prospectId/close',
+    /** El mock solo confirma: la lista con `includeClosed` no distingue fixtures cerrados. */
+    resolve: (): { data: null } => ({ data: null }),
+  },
+  {
     method: 'GET',
     path: '/prospects/:prospectId/history',
     resolve: ({ params }): ApiEnvelope<HistoryEntryApi[]> => ({
