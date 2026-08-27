@@ -256,6 +256,10 @@ model User {
   /// El BD apunta a su BDC; la Reclutadora a su Líder de Grupo. Nulo en la punta.
   reportsToUserId String? @map("reports_to_user_id") @db.Uuid
 
+  /// La ruta del objeto en el bucket (D-30): la URL se firma al leer, jamás se
+  /// guarda — sería una credencial vencida.
+  photoPath String? @map("photo_path") @db.Text
+
   isActive Boolean @default(true) @map("is_active")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)

@@ -3,9 +3,11 @@ import type { ConfigService } from '@nestjs/config'
 import { GoogleAuth } from 'google-auth-library'
 
 import type { PrismaService } from '../../src/infra/prisma/index.js'
+import type { StorageService } from '../../src/infra/storage/index.js'
 import { RolesService } from '../../src/modules/identity/roles/roles.service.js'
 import type { CreateStaffUserDto } from '../../src/modules/identity/users/dto/create-staff-user.dto.js'
 import { createStaffUserSchema } from '../../src/modules/identity/users/dto/create-staff-user.dto.js'
+import { queryStaffUsersSchema } from '../../src/modules/identity/users/dto/query-staff-users.dto.js'
 import { updateStaffUserSchema } from '../../src/modules/identity/users/dto/update-staff-user.dto.js'
 import { FirebaseAccountsService } from '../../src/modules/identity/users/firebase-accounts.service.js'
 import { StaffUsersRepository } from '../../src/modules/identity/users/staff-users.repository.js'
@@ -58,6 +60,12 @@ let auth: { id: string; roleCode: string; hotelId: null; departmentId: null }
 const stamp = Date.now()
 const created: string[] = []
 
+// El bucket tampoco se toca: lo que fija el contrato es que la entidad trae la
+// URL firmada al leer, y null cuando el firmado falla (D-30).
+const storageFake = {
+  signedUrl: jest.fn((path: string) => Promise.resolve(`https://firmada.local/${path}`)),
+}
+
 async function rowByEmail(
   email: string,
 ): Promise<{ id: string; firebaseUid: string | null } | null> {
@@ -95,6 +103,7 @@ beforeAll(async () => {
   service = new StaffUsersService(
     new StaffUsersRepository(db as unknown as PrismaService),
     new FirebaseAccountsService(config),
+    storageFake as unknown as StorageService,
   )
 })
 
@@ -303,6 +312,66 @@ describe('el reenvío de la invitación', () => {
     await db.user.update({ where: { id }, data: { firebaseUid: `uid-${stamp}` } })
 
     await expect(service.resendInvitation(id, auth)).rejects.toThrow(ConflictException)
+  })
+})
+
+describe('la foto (D-30)', () => {
+  const path = `users/photo/foto-${stamp}.webp`
+
+  it('el alta acepta photoPath del prefijo users/photo/ y regresa la URL firmada', async () => {
+    const email = `con-foto-${stamp}@oranje.local`
+
+    const entity = await service.create(dto({ email, photoPath: path }), auth)
+
+    expect(entity.photoUrl).toBe(`https://firmada.local/${path}`)
+    await rowByEmail(email)
+  })
+
+  it('un prefijo ajeno es 400: no se apunta a un documento de otra carpeta', () => {
+    const ajenos = [
+      'workers/photo/foto.webp',
+      'workers/document/fiscal.pdf',
+      'users/photo/../fuga.webp',
+    ]
+
+    for (const malo of ajenos) {
+      expect(
+        createStaffUserSchema.safeParse({
+          email: 'x@y.z',
+          fullName: 'X',
+          roleCode: 'ROL-V-01',
+          photoPath: malo,
+        }).success,
+      ).toBe(false)
+      expect(updateStaffUserSchema.safeParse({ photoPath: malo }).success).toBe(false)
+    }
+  })
+
+  it('el listado firma la foto y PATCH photoPath:null la quita', async () => {
+    const email = `quita-foto-${stamp}@oranje.local`
+    const { id } = await service.create(dto({ email, photoPath: path }), auth)
+
+    created.push(id)
+
+    const listado = await service.list(queryStaffUsersSchema.parse({ search: email }))
+
+    expect(listado.data[0]!.photoUrl).toBe(`https://firmada.local/${path}`)
+
+    const sinFoto = await service.update(id, updateStaffUserSchema.parse({ photoPath: null }), auth)
+
+    expect(sinFoto.photoUrl).toBeNull()
+  })
+
+  it('si el firmado falla, photoUrl va null sin tumbar la lectura', async () => {
+    const email = `firma-caida-${stamp}@oranje.local`
+    const { id } = await service.create(dto({ email, photoPath: path }), auth)
+
+    created.push(id)
+    storageFake.signedUrl.mockResolvedValueOnce(null as never)
+
+    const entity = await service.get(id)
+
+    expect(entity.photoUrl).toBeNull()
   })
 })
 

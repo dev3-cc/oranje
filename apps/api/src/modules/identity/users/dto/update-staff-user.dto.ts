@@ -2,6 +2,8 @@ import { z } from 'zod'
 
 import { createZodDto } from '../../../../common/pipes/index.js'
 
+import { staffPhotoPath } from './create-staff-user.dto.js'
+
 /**
  * El correo NO se edita: es el vínculo con la cuenta de Firebase. Cambiar de
  * persona es dar de baja (`isActive: false`) y dar de alta a la nueva.
@@ -14,6 +16,8 @@ export const updateStaffUserSchema = z
     roleCode: z.string().trim().toUpperCase().min(1).max(20).optional(),
     /** `null` explícito = ya no reporta a nadie. */
     reportsToUserId: z.uuid().nullable().optional(),
+    /** `null` explícito = quitar la foto. */
+    photoPath: staffPhotoPath.nullable().optional(),
     isActive: z.boolean().optional(),
   })
   .strict()
