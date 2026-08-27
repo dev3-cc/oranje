@@ -190,6 +190,7 @@ export function UserFormDialog({
     reset,
     control,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
@@ -215,6 +216,34 @@ export function UserFormDialog({
       option.id !== user?.id &&
       (allowedSuperiors === undefined || allowedSuperiors.includes(option.role.code)),
   )
+  const reportsToUserId = watch('reportsToUserId')
+
+  /**
+   * El jefe se propone solo: con UN candidato posible se preselecciona (se
+   * puede quitar), y al cambiar de rol un jefe que dejó de ser válido se
+   * limpia en vez de quedarse guardado en silencio.
+   */
+  /** Un auto-pick por rol: si la persona luego elige «Nadie», se respeta. */
+  const autoPickedForRole = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!isOpen || !roleCode) return
+    const isValid =
+      reportsToUserId === NOBODY || superiorOptions.some((option) => option.id === reportsToUserId)
+    if (!isValid) {
+      setValue('reportsToUserId', NOBODY)
+      return
+    }
+    if (
+      reportsToUserId === NOBODY &&
+      superiorOptions.length === 1 &&
+      autoPickedForRole.current !== roleCode
+    ) {
+      autoPickedForRole.current = roleCode
+      setValue('reportsToUserId', superiorOptions[0]?.id ?? NOBODY)
+    }
+    /* `superiorOptions` es derivado de roleCode y de la lista: alcanza con estos. */
+  }, [isOpen, roleCode, reportsToUserId, reportsToOptions.length])
 
   useEffect(() => {
     if (!isOpen) return
@@ -480,7 +509,11 @@ export function UserFormDialog({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value={NOBODY}>Nadie (punta de la jerarquía)</SelectItem>
+                          <SelectItem value={NOBODY}>
+                            {allowedSuperiors !== undefined && allowedSuperiors.length === 0
+                              ? 'Nadie — la punta de la jerarquía'
+                              : 'Nadie (sin jefe por ahora)'}
+                          </SelectItem>
                           {superiorOptions.map((option) => (
                             <SelectItem key={option.id} value={option.id}>
                               {option.fullName} · {option.role.name}
@@ -497,6 +530,16 @@ export function UserFormDialog({
                         ? 'Todavía no hay nadie dado de alta con el rol superior a este.'
                         : 'Solo se ofrecen los superiores del rol elegido: el BD apunta a su BDC, la Reclutadora a su Líder.'}
                   </p>
+                  {roleCode &&
+                    reportsToUserId === NOBODY &&
+                    allowedSuperiors !== undefined &&
+                    allowedSuperiors.length > 0 &&
+                    superiorOptions.length > 0 && (
+                      <p className="text-xs font-medium text-o-700">
+                        Este rol normalmente reporta a alguien: sin jefe no aparecerá en ningún «Mi
+                        Equipo».
+                      </p>
+                    )}
                 </FormRow>
 
                 {!isEditing && (
