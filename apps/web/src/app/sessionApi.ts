@@ -19,6 +19,8 @@ function adaptSessionUser(session: SessionApi): SessionUser {
     name: session.user.fullName,
     shortName: toShortName(session.user.fullName),
     roleId: session.user.roleCode,
+    /** El canje de sesión no trae foto: llega con el `GET /me` que sigue. */
+    photoUrl: null,
     roleCode: role.short,
     roleTitle: role.title,
     hotel: null,
@@ -74,6 +76,7 @@ registerMockRoutes([
         id: MOCK_SESSION.user.id,
         email: MOCK_SESSION.user.email,
         fullName: MOCK_SESSION.user.fullName,
+        photoUrl: null,
         role: {
           code: MOCK_SESSION.user.roleCode,
           name: 'Business Developer',
@@ -111,6 +114,7 @@ export const sessionApi = baseApi.injectEndpoints({
         name: raw.data.fullName,
         shortName: toShortName(raw.data.fullName),
         roleId: raw.data.role.code,
+        photoUrl: raw.data.photoUrl,
         roleCode: roleLabelOf(raw.data.role.code).short,
         roleTitle: raw.data.role.name,
         hotel: raw.data.hotel,

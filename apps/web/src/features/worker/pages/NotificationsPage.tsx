@@ -5,6 +5,7 @@ import { useGetMyNotificationsQuery, useMarkNotificationReadMutation } from '../
 
 import personajeErrorTecnico from '@/assets/ilustrations/personaje-error-tecnico.svg'
 import personajeNotificaciones from '@/assets/ilustrations/personaje-notificaciones.svg'
+import { LoadingState } from '@/shared/components/LoadingState'
 import { formatDayMonthTime } from '@/shared/lib/formatters'
 
 /**
@@ -36,9 +37,7 @@ export function NotificationsPage(): ReactNode {
         </div>
       )}
 
-      {isLoading && notifications.length === 0 && (
-        <p className="text-sm text-ink-3">Cargando avisos…</p>
-      )}
+      {isLoading && notifications.length === 0 && <LoadingState label="Cargando tus avisos…" />}
 
       {!isLoading && !isError && notifications.length === 0 && (
         <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-line px-4 py-8 text-center">

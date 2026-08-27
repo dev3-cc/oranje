@@ -5,6 +5,7 @@ import { useGetConversionQueueQuery } from '../api/conversionApi'
 
 import conversionIllustration from '@/assets/ilustrations/conversion_naranja.svg'
 import { EmptyState } from '@/shared/components/EmptyState'
+import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
@@ -27,7 +28,9 @@ export function ConversionQueuePage(): ReactNode {
     <div className="flex flex-col gap-6">
       <header className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-ink">Conversión</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
+            <FoldText text="Conversión" />
+          </h1>
           <p className="mt-1.5 text-sm text-ink-3">
             {isLoading
               ? 'Cargando la cola…'

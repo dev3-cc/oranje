@@ -7,6 +7,7 @@ import type { StaffUser } from '../types/admin.types'
 
 import { Button } from '@/shared/components/Button'
 import { FilterSelect } from '@/shared/components/FilterSelect'
+import { LoadingState } from '@/shared/components/LoadingState'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const DATE_FORMAT = new Intl.DateTimeFormat('es-MX', {
@@ -133,7 +134,7 @@ export function UsersPage(): ReactNode {
       </div>
 
       {isLoading ? (
-        <p className="py-8 text-center text-sm text-ink-3">Cargando usuarios…</p>
+        <LoadingState label="Cargando el personal del sistema…" />
       ) : visible.length === 0 ? (
         <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
           {tab === 'active' ? 'Nadie coincide con el filtro.' : 'Nadie está de baja.'}

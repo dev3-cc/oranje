@@ -9,6 +9,7 @@ import personajeSinResultados from '@/assets/ilustrations/personaje-sin-resultad
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
+import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 
 /**
@@ -47,13 +48,12 @@ export function AssignTerritoryDialog({
   const [setTerritory, { isLoading, isError, error }] = useSetTerritoryMutation()
 
   const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [showIntro, setShowIntro] = useState(false)
+  const { isIntroOpen: showIntro, dismissIntro } = useIntroSeen('assign-territory')
 
   useEffect(() => {
     if (!member) return
     /* `?? []`: una caché del overview anterior a este campo no debe tumbar la página. */
     setSelected(new Set((member.zones ?? []).map((zone) => zone.id)))
-    setShowIntro(true)
   }, [member])
 
   function toggle(zoneId: string): void {
@@ -89,7 +89,7 @@ export function AssignTerritoryDialog({
           slides={INTRO_SLIDES}
           startLabel="Repartir el territorio"
           onDone={() => {
-            setShowIntro(false)
+            dismissIntro()
           }}
         />
       ) : (

@@ -31,6 +31,7 @@ import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { StepIndicator } from '@/shared/components/StepIndicator'
+import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
@@ -125,7 +126,7 @@ export function NewRequisitionDialog({
   const { data: session } = useGetSessionQuery()
   const sessionHotel = session?.hotel ?? null
 
-  const [showIntro, setShowIntro] = useState(false)
+  const { isIntroOpen: showIntro, dismissIntro } = useIntroSeen('new-requisition')
   const [step, setStep] = useState(1)
   const [isReviewArmed, setIsReviewArmed] = useState(false)
 
@@ -149,7 +150,6 @@ export function NewRequisitionDialog({
 
   useEffect(() => {
     if (!isOpen) return
-    setShowIntro(true)
     setStep(1)
     reset({
       hotelId: sessionHotel?.id ?? '',
@@ -229,7 +229,7 @@ export function NewRequisitionDialog({
           slides={INTRO_SLIDES}
           startLabel="Comenzar la requisición"
           onDone={() => {
-            setShowIntro(false)
+            dismissIntro()
           }}
         />
       ) : (

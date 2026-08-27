@@ -16,6 +16,7 @@ import type { PersonnelRow } from '../types/personnel.types'
 
 import mascotaSaludando from '@/assets/mascota/mascota-saludando.png'
 import { LoadError } from '@/shared/components/LoadError'
+import { LoadingState } from '@/shared/components/LoadingState'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   workerStatusChipLabel,
@@ -55,7 +56,7 @@ export function PersonnelPage(): ReactNode {
   const { data: board, isLoading, isError, refetch } = useGetPersonnelBoardQuery()
   const [standByTarget, setStandByTarget] = useState<PersonnelRow | null>(null)
 
-  if (isLoading) return <p className="text-sm text-ink-3">Cargando tu personal…</p>
+  if (isLoading) return <LoadingState label="Cargando tu personal…" />
   if (isError || !board) {
     return (
       <LoadError

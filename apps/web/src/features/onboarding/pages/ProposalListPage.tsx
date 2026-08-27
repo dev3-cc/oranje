@@ -6,7 +6,9 @@ import { NewProposalDialog } from '../components/NewProposalDialog'
 
 import { Button } from '@/shared/components/Button'
 import { EmptyState } from '@/shared/components/EmptyState'
+import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
+import { LoadingState } from '@/shared/components/LoadingState'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   ONBOARDING_STATUS_LABEL,
@@ -22,7 +24,9 @@ export function ProposalListPage(): ReactNode {
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-ink">Propuestas</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
+            <FoldText text="Propuestas" />
+          </h1>
           <p className="mt-1.5 text-sm text-ink-3">
             {isLoading
               ? 'Cargando propuestas…'
@@ -45,6 +49,8 @@ export function ProposalListPage(): ReactNode {
           setIsCreating(false)
         }}
       />
+
+      {isLoading && <LoadingState label="Cargando las propuestas…" />}
 
       {isError && (
         <LoadError

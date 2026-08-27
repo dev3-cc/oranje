@@ -9,6 +9,7 @@ import { PoolTable } from '../components/PoolTable'
 import { EMPTY_POOL_FILTERS, type PoolFilters as Filters } from '../types/pool.types'
 
 import { Button } from '@/shared/components/Button'
+import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
@@ -32,7 +33,9 @@ export function PoolPage(): ReactNode {
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-ink">Pool de Colaboradores</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
+            <FoldText text="Pool de Colaboradores" />
+          </h1>
           <p className="mt-1.5 text-sm text-ink-3">
             {IS_DEV_UI
               ? 'personal.worker · vw_worker deriva edad y perfil completo'

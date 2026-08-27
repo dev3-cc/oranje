@@ -19,6 +19,7 @@ import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { WEEK_DAY_NAMES } from '@/shared/constants/contractStatus'
+import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
@@ -94,11 +95,10 @@ export function NewContractDialog({
   const [weekStartDay, setWeekStartDay] = useState(1)
   const [rateRows, setRateRows] = useState<RateDraft[]>([EMPTY_RATE])
 
-  const [showIntro, setShowIntro] = useState(false)
+  const { isIntroOpen: showIntro, dismissIntro } = useIntroSeen('new-contract')
 
   useEffect(() => {
     if (!isOpen) return
-    setShowIntro(true)
     setHotelId('')
     setValidFrom('')
     setValidTo('')
@@ -151,7 +151,7 @@ export function NewContractDialog({
           slides={INTRO_SLIDES}
           startLabel="Comenzar el contrato"
           onDone={() => {
-            setShowIntro(false)
+            dismissIntro()
           }}
         />
       ) : (
@@ -236,14 +236,17 @@ export function NewContractDialog({
             </p>
             {rateRows.map((row, index) => (
               /* El índice ES la identidad de la fila del borrador. */
-              <div key={String(index)} className="flex items-center gap-2">
+              <div key={String(index)} className="flex flex-wrap items-center gap-2">
                 <Select
                   {...(row.catalogPositionId ? { value: row.catalogPositionId } : {})}
                   onValueChange={(value) => {
                     updateRate(index, { catalogPositionId: value })
                   }}
                 >
-                  <SelectTrigger aria-label={`Posición ${String(index + 1)}`} className="flex-1">
+                  <SelectTrigger
+                    aria-label={`Posición ${String(index + 1)}`}
+                    className="w-full min-w-0 sm:w-auto sm:flex-1"
+                  >
                     <SelectValue placeholder="Posición…" />
                   </SelectTrigger>
                   <SelectContent>

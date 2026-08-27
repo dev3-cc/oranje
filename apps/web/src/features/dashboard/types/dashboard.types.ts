@@ -61,3 +61,22 @@ export interface HotelOverview {
   pendingTimesheets: number
   requisitions: DashboardRequisition[]
 }
+
+/** Series semanales de la persona, derivadas de sus prospectos (D-28). */
+export interface MyActivity {
+  weekLabels: string[]
+  openedPerWeek: number[]
+  convertedPerWeek: number[]
+  totalOpen: number
+  totalConverted: number
+}
+
+/** El avance de un BD a cargo, para la tarjeta «Tu equipo» del dashboard. */
+export interface TeamMemberProgress {
+  id: string
+  fullName: string
+  openProspects: number
+  conversions: number
+  /** Convertidos sobre terminados, 0–1. */
+  conversionRate: number
+}

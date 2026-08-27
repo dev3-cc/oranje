@@ -37,19 +37,20 @@ describe('DashboardPage', () => {
      * dan 100%; los 16 ciclos del tablero están abiertos.
      */
     expect(await screen.findByText('100%')).toBeInTheDocument()
-    expect(screen.getByText('16')).toBeInTheDocument()
+    // «Tu actividad» repite el 16 (abiertos): basta con que exista al menos uno.
+    expect(screen.getAllByText('16').length).toBeGreaterThan(0)
     expect(screen.getByText(/sin actividad 7\+ días/)).toBeInTheDocument()
   })
 
   it('el embudo monta la gráfica cuando hay ciclos abiertos', async () => {
     renderDashboard()
 
-    const card = (await screen.findByText('Embudo por estado')).closest('section')
+    const card = (await screen.findByText('Pipeline por estado')).closest('section')
     expect(card).not.toBeNull()
-    // El alto crece con los peldaños: 6 estados en el fixture, 52px cada uno.
+    // La dona de shadcn monta su ChartContainer; la leyenda trae los estados.
     const chart = (card as HTMLElement).querySelector('[data-slot="chart"]')
     expect(chart).not.toBeNull()
-    expect(chart).toHaveStyle({ height: '312px' })
+    expect(within(card as HTMLElement).getByText('Gris')).toBeInTheDocument()
   })
 
   it('cada prospecto inactivo enlaza a su ficha', async () => {

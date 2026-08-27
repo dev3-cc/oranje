@@ -5,6 +5,10 @@ import type { ReactNode } from 'react'
  * Esqueleto de tabla: encabezado + filas con la primera columna más ancha,
  * como toda tabla del sistema (folio o nombre primero). Sustituye a los
  * «Cargando…» de texto en las vistas de lista.
+ *
+ * UNA sola señal de carga (skill): el skeleton previsualiza la estructura y
+ * su pulso ya dice «vivo» — la animación de datos (DataLoader) es para las
+ * cargas SIN estructura que anticipar, nunca encimada aquí.
  */
 export function TableSkeleton({
   rows = 6,

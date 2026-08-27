@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { useGetScheduleWeekQuery } from '../api/scheduleApi'
 import type { ScheduleDemandRow } from '../types/schedule.types'
 
+import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
@@ -74,7 +75,9 @@ export function SchedulePage(): ReactNode {
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight text-ink">Schedule del hotel</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-ink">
+          <FoldText text="Schedule del hotel" />
+        </h1>
         <p className="mt-1.5 text-sm text-ink-3">
           {week && week.days.length > 0
             ? `${week.hotelName} · Semana ${formatWeekRange(week.days[0] ?? '', week.days[6] ?? '')}`

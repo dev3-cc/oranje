@@ -13,6 +13,7 @@ import {
 } from '../types/timesheet.types'
 
 import { Button } from '@/shared/components/Button'
+import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { DEFAULT_COLUMN_WIDTH } from '@/shared/constants/timesheetStatus'
@@ -68,7 +69,9 @@ export function TimesheetPage(): ReactNode {
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-baseline gap-3">
-        <h1 className="text-3xl font-bold tracking-tight text-ink">Timesheet</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-ink">
+          <FoldText text="Timesheet" />
+        </h1>
         {/* El rango sale de los días que llegaron, no de un texto aparte: así el
             título no puede decir una semana distinta de la que se ve. */}
         {rangeLabel !== '' && <p className="text-base text-ink-3">Semana {rangeLabel}</p>}

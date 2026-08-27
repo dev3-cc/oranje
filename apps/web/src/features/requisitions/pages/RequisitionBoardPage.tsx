@@ -5,6 +5,7 @@ import { NewRequisitionDialog } from '../components/NewRequisitionDialog'
 import { RequisitionTable } from '../components/RequisitionTable'
 
 import { Button } from '@/shared/components/Button'
+import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { MetricCard } from '@/shared/components/MetricCard'
 
@@ -32,7 +33,9 @@ export function RequisitionBoardPage(): ReactNode {
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-ink">Requisiciones</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
+            <FoldText text="Requisiciones" />
+          </h1>
           <p className="mt-1.5 text-sm text-ink-3">
             {isLoading || !metrics
               ? 'Cargando requisiciones…'

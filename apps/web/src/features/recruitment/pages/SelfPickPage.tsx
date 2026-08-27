@@ -15,6 +15,7 @@ import type { SelfPickRow } from '../types/selfPick.types'
 import personajeComencemos from '@/assets/ilustrations/personaje-comencemos.svg'
 import { FilterSelect } from '@/shared/components/FilterSelect'
 import { LoadError } from '@/shared/components/LoadError'
+import { LoadingState } from '@/shared/components/LoadingState'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate } from '@/shared/lib/formatters'
 
@@ -51,7 +52,7 @@ export function SelfPickPage(): ReactNode {
     })
   }, [board, positionId, modalityId, englishId])
 
-  if (isLoading) return <p className="text-sm text-ink-3">Cargando la bolsa…</p>
+  if (isLoading) return <LoadingState label="Cargando la bolsa de requisiciones…" />
   if (isError || !board) {
     return (
       <LoadError
