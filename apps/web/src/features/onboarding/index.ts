@@ -13,3 +13,6 @@ export { ProposalVersionPage } from './pages/ProposalVersionPage'
 
 /** La conversión reusa el catálogo de motivos del semáforo. */
 export { useGetStatusChangeReasonsQuery } from './api/onboardingApi'
+
+export { useGetHotelMapPointsQuery } from './api/onboardingApi'
+export type { HotelMapPoint } from './types/prospect.types'

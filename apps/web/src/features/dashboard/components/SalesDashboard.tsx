@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { Suspense, lazy, type ReactNode } from 'react'
 
 import { useGetDashboardOverviewQuery } from '../api/dashboardApi'
 
@@ -10,6 +10,10 @@ import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { LoadError } from '@/shared/components/LoadError'
 import { MetricCard } from '@/shared/components/MetricCard'
 import { formatList, formatPercent } from '@/shared/lib/formatters'
+
+const DashboardGlobe = lazy(() =>
+  import('./DashboardGlobe').then((module) => ({ default: module.DashboardGlobe })),
+)
 
 export function SalesDashboard(): ReactNode {
   const { data: overview, isLoading, isError, refetch } = useGetDashboardOverviewQuery()
@@ -37,11 +41,16 @@ export function SalesDashboard(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight text-ink">Dashboard</h1>
-        <p className="mt-1.5 text-sm text-ink-3">
-          {owner.name} · {owner.roleLabel} · zonas {formatList(scope.zones)} · {scope.periodLabel}
-        </p>
+      <header className="relative overflow-hidden rounded-2xl bg-surface px-6 py-7 shadow-md sm:px-8">
+        <div className="relative z-10 max-w-xl">
+          <h1 className="text-3xl font-bold tracking-tight text-ink">Dashboard</h1>
+          <p className="mt-1.5 text-sm text-ink-3">
+            {owner.name} · {owner.roleLabel} · zonas {formatList(scope.zones)} · {scope.periodLabel}
+          </p>
+        </div>
+        <Suspense fallback={null}>
+          <DashboardGlobe />
+        </Suspense>
       </header>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">

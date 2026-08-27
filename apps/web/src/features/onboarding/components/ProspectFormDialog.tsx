@@ -222,10 +222,14 @@ export function ProspectFormDialog({
     skip: isEditing,
   })
 
-  const [createProspect, { isLoading: isCreating, isError: hasCreateFailed, error: createError }] =
-    useCreateProspectMutation()
-  const [updateProspect, { isLoading: isUpdating, isError: hasUpdateFailed, error: updateError }] =
-    useUpdateProspectMutation()
+  const [
+    createProspect,
+    { isLoading: isCreating, isError: hasCreateFailed, error: createError, reset: resetCreate },
+  ] = useCreateProspectMutation()
+  const [
+    updateProspect,
+    { isLoading: isUpdating, isError: hasUpdateFailed, error: updateError, reset: resetUpdate },
+  ] = useUpdateProspectMutation()
 
   const primaryContact = prospect?.contacts.find((contact) => contact.isPrimary)
 
@@ -256,6 +260,17 @@ export function ProspectFormDialog({
       mode: 'onChange',
       defaultValues: defaults,
     })
+
+  useEffect(() => {
+    if (!hasCreateFailed && !hasUpdateFailed) return
+    const subscription = watch(() => {
+      resetCreate()
+      resetUpdate()
+    })
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [hasCreateFailed, hasUpdateFailed, watch, resetCreate, resetUpdate])
 
   useEffect(() => {
     if (isOpen) {
@@ -369,6 +384,11 @@ export function ProspectFormDialog({
         id={FORM_ID}
         noValidate
         onSubmit={(event) => {
+          if (step < 4) {
+            event.preventDefault()
+            void goNext()
+            return
+          }
           void handleSubmit(onSubmit)(event)
         }}
         className="relative h-full"
@@ -419,7 +439,7 @@ export function ProspectFormDialog({
           </div>
 
           {}
-          <section className="absolute top-14 right-4 bottom-4 z-10 flex w-md flex-col overflow-hidden rounded-xl bg-surface/95 shadow-lg backdrop-blur">
+          <section className="absolute inset-x-2 top-16 bottom-2 z-10 flex flex-col overflow-hidden rounded-xl bg-surface/95 shadow-lg backdrop-blur md:inset-x-auto md:top-14 md:right-4 md:bottom-4 md:w-md">
             {placePhotoUrl && (
               <div className="relative shrink-0">
                 <img
@@ -805,11 +825,12 @@ export function ProspectFormDialog({
             )}
 
             <footer className="flex shrink-0 items-center justify-end gap-3 border-t border-line px-4 py-3">
-              <Button onClick={onClose} disabled={isBusy}>
+              <Button type="button" onClick={onClose} disabled={isBusy}>
                 Cancelar
               </Button>
               {step > 1 && (
                 <Button
+                  type="button"
                   onClick={() => {
                     setStep((step - 1) as WizardStep)
                   }}

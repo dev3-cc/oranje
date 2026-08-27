@@ -1,8 +1,12 @@
-import type { ReactNode } from 'react'
+import { Suspense, lazy, type ReactNode } from 'react'
 
 import { useGetHotelOverviewQuery } from '../api/roleDashboardsApi'
 
 import { RequisitionMiniList } from './RequisitionMiniList'
+
+const DashboardGlobe = lazy(() =>
+  import('./DashboardGlobe').then((module) => ({ default: module.DashboardGlobe })),
+)
 
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { LoadError } from '@/shared/components/LoadError'
@@ -30,12 +34,17 @@ export function HotelDashboard({ session }: { session: SessionUser }): ReactNode
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight text-ink">Dashboard</h1>
-        <p className="mt-1.5 text-sm text-ink-3">
-          {session.name} · {session.roleTitle}
-          {session.hotel ? ` · ${session.hotel.name}` : ''}
-        </p>
+      <header className="relative overflow-hidden rounded-2xl bg-surface px-6 py-7 shadow-md sm:px-8">
+        <div className="relative z-10 max-w-xl">
+          <h1 className="text-3xl font-bold tracking-tight text-ink">Dashboard</h1>
+          <p className="mt-1.5 text-sm text-ink-3">
+            {session.name} · {session.roleTitle}
+            {session.hotel ? ` · ${session.hotel.name}` : ''}
+          </p>
+        </div>
+        <Suspense fallback={null}>
+          <DashboardGlobe />
+        </Suspense>
       </header>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">

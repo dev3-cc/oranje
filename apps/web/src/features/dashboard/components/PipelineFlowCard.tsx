@@ -152,17 +152,19 @@ export function PipelineFlowCard({
         destino.
       </p>
 
-      <div className="mt-3 h-80">
-        <ResponsiveContainer width="100%" height="100%">
-          <Sankey
-            data={data}
-            node={<FlowNode />}
-            link={<FlowLink />}
-            nodePadding={26}
-            nodeWidth={8}
-            margin={{ top: 8, right: 120, bottom: 8, left: 8 }}
-          />
-        </ResponsiveContainer>
+      <div className="mt-3 overflow-x-auto">
+        <div className="h-80 min-w-[42rem]">
+          <ResponsiveContainer width="100%" height="100%">
+            <Sankey
+              data={data}
+              node={<FlowNode />}
+              link={<FlowLink />}
+              nodePadding={26}
+              nodeWidth={8}
+              margin={{ top: 8, right: 120, bottom: 8, left: 8 }}
+            />
+          </ResponsiveContainer>
+        </div>
       </div>
 
       <p className="mt-2 text-xs leading-relaxed text-ink-3">
