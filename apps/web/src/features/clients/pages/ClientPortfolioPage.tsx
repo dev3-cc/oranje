@@ -9,6 +9,7 @@ import type { ClientFilters as Filters } from '../types/client.types'
 
 import tratoCerrado from '@/assets/ilustrations/personaje-trato-cerrado.svg'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { FoldText } from '@/shared/components/FoldText'
 import { HotelPointsMap, type HotelMapPoint } from '@/shared/components/HotelPointsMap'
 import { LoadError } from '@/shared/components/LoadError'
 import { CONTRACT_STATUS_TOKEN } from '@/shared/constants/contractStatus'
@@ -76,7 +77,9 @@ export function ClientPortfolioPage(): ReactNode {
     <div className="flex flex-col gap-6">
       <header className="relative isolate flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-ink">Clientes activos</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
+            <FoldText text="Clientes activos" />
+          </h1>
           <p className="mt-1.5 text-sm text-ink-3">
             {IS_DEV_UI
               ? 'commercial.vw_client · hoteles con activated_at'

@@ -19,10 +19,8 @@ async function renderEditor(prospectId: string): Promise<void> {
       <RouterProvider router={router} />
     </Provider>,
   )
-  /* El intro de página se ve solo la PRIMERA vez (useIntroSeen): tras el
-     primer test queda visto en el localStorage de jsdom y ya no aparece. */
-  const skip = screen.queryByRole('button', { name: 'Saltar' })
-  if (skip) await userEvent.click(skip)
+  /* Sin storage en jsdom el intro es fail-open: sale siempre y se salta. */
+  await userEvent.click(await screen.findByRole('button', { name: 'Saltar' }))
 }
 
 describe('ProposalEditorPage', () => {

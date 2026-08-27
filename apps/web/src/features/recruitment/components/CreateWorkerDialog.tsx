@@ -25,6 +25,7 @@ import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { isCompletePhone, PhoneInput } from '@/shared/components/PhoneInput'
 import { EXPERIENCE_LABEL, EXPERIENCE_LEVELS } from '@/shared/constants/workerEnums'
+import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
@@ -184,13 +185,12 @@ export function CreateWorkerDialog({
   const [uploadPhoto, { isLoading: isUploading, isError: isUploadError, error: uploadError }] =
     useUploadFileMutation()
 
-  const [showIntro, setShowIntro] = useState(false)
+  const { isIntroOpen: showIntro, dismissIntro } = useIntroSeen('create-worker')
 
   useEffect(() => {
     if (!isOpen) return
     setDraft(EMPTY_DRAFT)
     setPhotoPreview(null)
-    setShowIntro(!isEditing)
   }, [isOpen, isEditing])
 
   useEffect(() => {
@@ -301,7 +301,7 @@ export function CreateWorkerDialog({
             slides={INTRO_SLIDES}
             startLabel="Comenzar el alta"
             onDone={() => {
-              setShowIntro(false)
+              dismissIntro()
             }}
           />
         ) : (

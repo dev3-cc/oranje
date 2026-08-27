@@ -22,6 +22,7 @@ import { ChangeStateDialog } from '../components/ChangeStateDialog'
 import { useUploadFileMutation } from '@/app/filesApi'
 import mascotaTriste from '@/assets/mascota/mascota-triste.png'
 import { Button } from '@/shared/components/Button'
+import { LoadingState } from '@/shared/components/LoadingState'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
@@ -127,7 +128,7 @@ export function WorkerDetailPage(): ReactNode {
   }
 
   if (isLoading) {
-    return <p className="text-sm text-ink-3">Cargando expediente…</p>
+    return <LoadingState label="Cargando el expediente…" />
   }
 
   if (isError || !worker) {

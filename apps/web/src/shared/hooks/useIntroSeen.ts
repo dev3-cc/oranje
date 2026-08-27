@@ -1,13 +1,14 @@
 import { useState } from 'react'
 
 /**
- * Un onboarding de PÁGINA se ve una sola vez — bloquear el contenido en cada
- * visita convierte la ayuda en estorbo. El visto se recuerda por pantalla en
- * `localStorage` (conveniencia por navegador, no estado de negocio) y
- * `reopen` lo vuelve a mostrar a demanda («¿Cómo funciona?»).
+ * Un onboarding se ve UNA vez: el visto queda en `localStorage` por pantalla
+ * (conveniencia por navegador, no estado de negocio) y `reopen` lo vuelve a
+ * mostrar a demanda («¿Cómo funciona?»).
  *
- * Si `localStorage` no está disponible, el intro se da por visto: mejor
- * perder la bienvenida que bloquear la pantalla en cada carga.
+ * Sin storage disponible (el jsdom de vitest no lo trae; navegadores con
+ * datos bloqueados tampoco) el intro SE MUESTRA y el visto no persiste:
+ * fail-open — es descartable, y esconderlo rompería los specs que lo
+ * atraviesan.
  */
 export function useIntroSeen(screenKey: string): {
   isIntroOpen: boolean
@@ -18,9 +19,9 @@ export function useIntroSeen(screenKey: string): {
 
   const [isIntroOpen, setIntroOpen] = useState<boolean>(() => {
     try {
-      return localStorage.getItem(storageKey) !== 'true'
+      return window.localStorage.getItem(storageKey) !== 'true'
     } catch {
-      return false
+      return true
     }
   })
 
@@ -29,7 +30,7 @@ export function useIntroSeen(screenKey: string): {
     dismissIntro: () => {
       setIntroOpen(false)
       try {
-        localStorage.setItem(storageKey, 'true')
+        window.localStorage.setItem(storageKey, 'true')
       } catch {
         /* Sin storage el visto no persiste; la sesión actual sí lo respeta. */
       }

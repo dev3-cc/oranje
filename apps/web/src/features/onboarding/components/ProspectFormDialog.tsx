@@ -50,6 +50,7 @@ import {
   ONBOARDING_STATUS_TOKEN,
   type OnboardingStatus,
 } from '@/shared/constants/onboardingStatus'
+import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'prospect-form'
@@ -253,11 +254,9 @@ export function ProspectFormDialog({
   const [placeId, setPlaceId] = useState<string | null>(null)
 
   const [step, setStep] = useState<WizardStep>(1)
-  const [showIntro, setShowIntro] = useState(false)
+  const { isIntroOpen: showIntro, dismissIntro } = useIntroSeen('create-prospect')
 
-  useEffect(() => {
-    if (isOpen) setShowIntro(!isEditing)
-  }, [isOpen, isEditing])
+  useEffect(() => {}, [isOpen, isEditing])
 
   async function goNext(): Promise<void> {
     const isStepValid = await trigger(STEP_FIELDS[step])
@@ -355,7 +354,7 @@ export function ProspectFormDialog({
           slides={INTRO_SLIDES}
           startLabel="Comenzar el alta"
           onDone={() => {
-            setShowIntro(false)
+            dismissIntro()
           }}
         />
       ) : (

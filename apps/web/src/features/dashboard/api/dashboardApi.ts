@@ -1,4 +1,10 @@
-import type { DashboardOverview, FunnelBucket, StaleProspect } from '../types/dashboard.types'
+import type {
+  DashboardOverview,
+  FunnelBucket,
+  MyActivity,
+  StaleProspect,
+  TeamMemberProgress,
+} from '../types/dashboard.types'
 
 import { registerDashboardMocks } from './dashboardMocks'
 
@@ -9,6 +15,7 @@ import type {
   HotelApi,
   PaginatedEnvelope,
   ProspectApi,
+  TeamMemberApi,
 } from '@/shared/types/apiContract.types'
 
 /**
@@ -133,6 +140,109 @@ async function fetchOverview(
   }
 }
 
+/** Las últimas 8 semanas como cubetas [lunes, lunes+7). */
+function weeklyBuckets(): Array<{ start: Date; label: string }> {
+  const now = new Date()
+  const monday = new Date(now)
+  monday.setHours(0, 0, 0, 0)
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7))
+  return Array.from({ length: 8 }, (_item, index) => {
+    const start = new Date(monday)
+    start.setDate(start.getDate() - (7 - index - 1) * 7)
+    return {
+      start,
+      label: start.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }),
+    }
+  })
+}
+
+function countPerWeek(dates: string[], buckets: Array<{ start: Date }>): number[] {
+  return buckets.map((bucket, index) => {
+    const end = new Date(bucket.start)
+    end.setDate(end.getDate() + 7)
+    const isLast = index === buckets.length - 1
+    return dates.filter((iso) => {
+      const at = new Date(iso)
+      return at >= bucket.start && (isLast || at < end)
+    }).length
+  })
+}
+
+/**
+ * La actividad de la persona, derivada del MISMO contrato (D-28): sus ciclos
+ * abiertos por semana y sus conversiones por semana — el endpoint de
+ * actividad histórica (`GET /me/activity`) sigue pendiente en el back.
+ */
+async function fetchMyActivity(
+  fetchWithBQ: FetchWithBQ,
+): Promise<{ data: MyActivity } | { error: unknown }> {
+  const res = await fetchWithBQ({ url: '/prospects', params: { limit: 100, includeClosed: true } })
+  if (res.error) return { error: res.error }
+
+  const prospects = (res.data as PaginatedEnvelope<ProspectApi>).data
+  const buckets = weeklyBuckets()
+  const converted = prospects.filter((prospect) => prospect.state.code === 'ORANGE')
+
+  return {
+    data: {
+      weekLabels: buckets.map((bucket) => bucket.label),
+      openedPerWeek: countPerWeek(
+        prospects.map((prospect) => prospect.openedAt),
+        buckets,
+      ),
+      convertedPerWeek: countPerWeek(
+        converted.map((prospect) => prospect.stateSince),
+        buckets,
+      ),
+      totalOpen: prospects.filter((prospect) => prospect.isOpen).length,
+      totalConverted: converted.length,
+    },
+  }
+}
+
+/**
+ * El avance de la gente a cargo (`reports_to`): si nadie le reporta al que
+ * pregunta —o su rol ni siquiera puede ver `/team` (403)— la lista va VACÍA
+ * y la tarjeta no se pinta. Composición mínima, hermana de Mi Equipo.
+ */
+async function fetchTeamProgress(
+  fetchWithBQ: FetchWithBQ,
+): Promise<{ data: TeamMemberProgress[] } | { error: unknown }> {
+  const teamRes = await fetchWithBQ('/team')
+  if (teamRes.error) {
+    const status = (teamRes.error as { status?: number }).status
+    if (status === 403) return { data: [] }
+    return { error: teamRes.error }
+  }
+
+  const prospectsRes = await fetchWithBQ({
+    url: '/prospects',
+    params: { limit: 100, includeClosed: true },
+  })
+  if (prospectsRes.error) return { error: prospectsRes.error }
+
+  const members = (teamRes.data as ApiEnvelope<TeamMemberApi[]>).data
+  const prospects = (prospectsRes.data as PaginatedEnvelope<ProspectApi>).data
+
+  return {
+    data: members.map((member) => {
+      const own = prospects.filter((prospect) => prospect.owner.id === member.id)
+      const open = own.filter((prospect) => prospect.isOpen && prospect.state.code !== 'ORANGE')
+      const converted = own.filter((prospect) => prospect.state.code === 'ORANGE')
+      const finished =
+        converted.length +
+        own.filter((p) => p.closedAt !== null && p.state.code !== 'ORANGE').length
+      return {
+        id: member.id,
+        fullName: member.fullName,
+        openProspects: open.length,
+        conversions: converted.length,
+        conversionRate: finished === 0 ? 0 : converted.length / finished,
+      }
+    }),
+  }
+}
+
 export const dashboardApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     getDashboardOverview: build.query<DashboardOverview, void>({
@@ -149,7 +259,24 @@ export const dashboardApi = baseApi.injectEndpoints({
         { type: 'Hotel', id: 'LIST' },
       ],
     }),
+
+    getMyActivity: build.query<MyActivity, void>({
+      queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
+        const result = await fetchMyActivity(fetchWithBQ as FetchWithBQ)
+        return 'error' in result ? { error: result.error as never } : { data: result.data }
+      },
+      providesTags: [{ type: 'Prospect', id: 'LIST' }],
+    }),
+
+    getTeamProgress: build.query<TeamMemberProgress[], void>({
+      queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
+        const result = await fetchTeamProgress(fetchWithBQ as FetchWithBQ)
+        return 'error' in result ? { error: result.error as never } : { data: result.data }
+      },
+      providesTags: [{ type: 'Prospect', id: 'LIST' }],
+    }),
   }),
 })
 
-export const { useGetDashboardOverviewQuery } = dashboardApi
+export const { useGetDashboardOverviewQuery, useGetMyActivityQuery, useGetTeamProgressQuery } =
+  dashboardApi

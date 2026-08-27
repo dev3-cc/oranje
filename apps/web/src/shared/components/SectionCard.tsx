@@ -1,6 +1,8 @@
 import { cn } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
+import { FoldText } from './FoldText'
+
 /**
  * Tarjeta con título que agrupa cada bloque del detalle del prospecto.
  *
@@ -25,7 +27,9 @@ export function SectionCard({
     <section className={cn('rounded-lg border border-line bg-surface p-6', className)}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold text-ink">{title}</h2>
+          <h2 className="text-lg font-semibold text-ink">
+            <FoldText text={title} />
+          </h2>
           {subtitle && <p className="mt-1 text-xs text-ink-3">{subtitle}</p>}
         </div>
         {action}

@@ -116,6 +116,8 @@ export interface MeApi {
   id: string
   email: string
   fullName: string
+  /** URL firmada de la foto del usuario (D-30); `null` sin foto. */
+  photoUrl: string | null
   role: { code: string; name: string; department: string | null }
   hotel: { id: string; name: string } | null
   department: { id: string; code: string; name: string } | null

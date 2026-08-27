@@ -18,6 +18,7 @@ import personajeErrorTecnico from '@/assets/ilustrations/personaje-error-tecnico
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
+import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 
 const PUNCH_TYPE_LABEL: Record<string, string> = {
@@ -65,11 +66,10 @@ export function ManualPunchDialog({
   const [type, setType] = useState('CLOCK_IN')
   const [reason, setReason] = useState('')
 
-  const [showIntro, setShowIntro] = useState(false)
+  const { isIntroOpen: showIntro, dismissIntro } = useIntroSeen('manual-punch')
 
   useEffect(() => {
     if (!isOpen) return
-    setShowIntro(true)
     setWorkDate('')
     setTime('')
     setType('CLOCK_IN')
@@ -109,7 +109,7 @@ export function ManualPunchDialog({
           slides={INTRO_SLIDES}
           startLabel="Registrar la marca"
           onDone={() => {
-            setShowIntro(false)
+            dismissIntro()
           }}
         />
       ) : (

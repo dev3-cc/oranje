@@ -20,11 +20,23 @@ const LEGEND_ITEMS: { status: OnboardingStatus; label: string }[] = [
   { status: 'RED', label: 'Rechazo' },
 ]
 
-export function TerritoryMapLegend(): ReactNode {
+export function TerritoryMapLegend({
+  isBehindCard = false,
+}: {
+  isBehindCard?: boolean
+}): ReactNode {
   return (
-    <ul className="absolute bottom-6 left-6 z-10 flex flex-wrap items-center gap-4 rounded-full bg-surface/95 px-5 py-2.5 shadow-md">
+    /* En móvil la hoja del hotel ocupa el pie del mapa: la leyenda se cede. */
+    <ul
+      className={`absolute bottom-3 left-3 z-10 flex-wrap items-center gap-2.5 rounded-full bg-surface/95 px-4 py-2 shadow-md sm:bottom-6 sm:left-6 sm:flex sm:gap-4 sm:px-5 sm:py-2.5 ${
+        isBehindCard ? 'hidden' : 'flex'
+      }`}
+    >
       {LEGEND_ITEMS.map((item) => (
-        <li key={item.status} className="flex items-center gap-2 text-sm text-ink-2">
+        <li
+          key={item.status}
+          className="flex items-center gap-1.5 text-xs text-ink-2 sm:gap-2 sm:text-sm"
+        >
           <span
             className="size-2.5 shrink-0 rounded-full"
             style={{ backgroundColor: statusLight[ONBOARDING_STATUS_TOKEN[item.status]] }}

@@ -5,6 +5,7 @@ import { useGetSalesReportQuery } from '../api/reportsApi'
 
 import { Button } from '@/shared/components/Button'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
@@ -30,7 +31,9 @@ export function ReportsPage(): ReactNode {
     <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-ink">Reportes</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
+            <FoldText text="Reportes" />
+          </h1>
           <p className="mt-1.5 text-sm text-ink-3">
             Análisis con historia; el pulso de hoy vive en el Dashboard
           </p>

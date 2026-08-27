@@ -1,7 +1,8 @@
-import { statusLight } from '@oranje/ui'
-import type { ReactNode } from 'react'
-import { ResponsiveContainer, Sankey } from 'recharts'
+import { statusLight, statusLightForeground } from '@oranje/ui'
+import { gsap } from 'gsap'
+import { useEffect, useRef, type ReactNode } from 'react'
 
+import { SectionCard } from '@/shared/components/SectionCard'
 import {
   ONBOARDING_STATUS_DESCRIPTION,
   ONBOARDING_STATUS_LABEL,
@@ -10,167 +11,150 @@ import {
 } from '@/shared/constants/onboardingStatus'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
-const FLOW_STATES: readonly OnboardingStatus[] = [
-  'GRAY',
-  'LIGHT_BLUE',
-  'GREEN',
-  'YELLOW',
-  'PINK',
-  'ORANGE',
-  'RED',
-  'BROWN',
-  'BLACK',
-]
+/**
+ * El flujo del semáforo como CAMINO animado con GSAP (reemplaza al Sankey,
+ * que con pocos prospectos cruzaba cintas y encimaba etiquetas): la línea se
+ * dibuja de Gris a Naranja, cada nodo aparece cuando la línea lo alcanza y
+ * su conteo sube contando. Los desvíos (Café, Rojo, Negro) cuelgan abajo con
+ * conector punteado — reactivan siempre hacia Azul claro (RR-V-07), y eso se
+ * dice en palabras en vez de dibujarse como ciclo.
+ */
+const MAIN_PATH: OnboardingStatus[] = ['GRAY', 'LIGHT_BLUE', 'GREEN', 'YELLOW', 'PINK', 'ORANGE']
+const DETOURS: OnboardingStatus[] = ['BROWN', 'RED', 'BLACK']
 
-const FLOW_EDGES: ReadonlyArray<[OnboardingStatus, OnboardingStatus]> = [
-  ['GRAY', 'LIGHT_BLUE'],
-  ['LIGHT_BLUE', 'GREEN'],
-  ['GREEN', 'YELLOW'],
-  ['GREEN', 'RED'],
-  ['GREEN', 'BROWN'],
-  ['YELLOW', 'PINK'],
-  ['PINK', 'ORANGE'],
-  ['PINK', 'BROWN'],
-  ['ORANGE', 'BLACK'],
-]
-
-const BASE_FLOW = 0.6
-
-function stateColor(status: OnboardingStatus): string {
-  return statusLight[ONBOARDING_STATUS_TOKEN[status]]
-}
-
-interface FlowNodeProps {
-  x: number
-  y: number
-  width: number
-  height: number
-  index: number
-}
-
-function FlowNode(props: unknown): ReactNode {
-  const { x, y, width, height, index } = props as FlowNodeProps
-  const status = FLOW_STATES[index]
-  if (!status) return null
-  const count = STATE_COUNTS.get(status) ?? 0
-  const labelsLeft = x > 400
+function FlowNode({
+  status,
+  count,
+  isDetour = false,
+}: {
+  status: OnboardingStatus
+  count: number
+  isDetour?: boolean
+}): ReactNode {
+  const token = ONBOARDING_STATUS_TOKEN[status]
 
   return (
-    <g>
-      <rect
-        x={x}
-        y={y}
-        width={width}
-        height={Math.max(height, 4)}
-        rx={3}
-        fill={stateColor(status)}
-      />
-      <text
-        x={labelsLeft ? x - 8 : x + width + 8}
-        y={y + Math.max(height, 4) / 2 - 4}
-        textAnchor={labelsLeft ? 'end' : 'start'}
-        className="fill-ink text-[11px] font-semibold"
+    <div
+      data-flow-node
+      className={`flex w-24 shrink-0 flex-col items-center text-center ${isDetour ? 'opacity-90' : ''}`}
+    >
+      <span
+        className="flex size-12 items-center justify-center rounded-full text-base font-bold shadow-sm"
+        style={{ backgroundColor: statusLight[token], color: statusLightForeground[token] }}
       >
-        {ONBOARDING_STATUS_LABEL[status]} · {count}
-      </text>
-      <text
-        x={labelsLeft ? x - 8 : x + width + 8}
-        y={y + Math.max(height, 4) / 2 + 9}
-        textAnchor={labelsLeft ? 'end' : 'start'}
-        className="fill-ink-3 text-[10px]"
-      >
+        <span data-flow-count data-count={count}>
+          0
+        </span>
+      </span>
+      <p className="mt-2 text-sm font-semibold text-ink">{ONBOARDING_STATUS_LABEL[status]}</p>
+      <p className="mt-0.5 text-xs leading-tight text-ink-3">
         {ONBOARDING_STATUS_DESCRIPTION[status]}
-      </text>
-    </g>
+      </p>
+    </div>
   )
 }
-
-interface FlowLinkProps {
-  sourceX: number
-  sourceY: number
-  sourceControlX: number
-  targetX: number
-  targetY: number
-  targetControlX: number
-  linkWidth: number
-  index: number
-}
-
-function FlowLink(props: unknown): ReactNode {
-  const { sourceX, sourceY, sourceControlX, targetX, targetY, targetControlX, linkWidth, index } =
-    props as FlowLinkProps
-  const edge = FLOW_EDGES[index]
-  if (!edge) return null
-  const gradientId = `pipeline-flow-${edge[0]}-${edge[1]}`
-
-  return (
-    <g>
-      <defs>
-        <linearGradient id={gradientId} x1={sourceX} x2={targetX} gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor={stateColor(edge[0])} stopOpacity={0.45} />
-          <stop offset="100%" stopColor={stateColor(edge[1])} stopOpacity={0.45} />
-        </linearGradient>
-      </defs>
-      <path
-        d={`M${sourceX},${sourceY} C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}`}
-        fill="none"
-        stroke={`url(#${gradientId})`}
-        strokeWidth={Math.max(linkWidth, 2)}
-      />
-    </g>
-  )
-}
-
-const STATE_COUNTS = new Map<OnboardingStatus, number>()
 
 export function PipelineFlowCard({
   countByStatus,
 }: {
   countByStatus: Partial<Record<OnboardingStatus, number>>
 }): ReactNode {
-  STATE_COUNTS.clear()
-  for (const status of FLOW_STATES) STATE_COUNTS.set(status, countByStatus[status] ?? 0)
+  const rootRef = useRef<HTMLDivElement>(null)
 
-  const data = {
-    nodes: FLOW_STATES.map((status) => ({ name: ONBOARDING_STATUS_LABEL[status] })),
-    links: FLOW_EDGES.map(([from, to]) => {
-      const into = countByStatus[to] ?? 0
-      const share = to === 'BROWN' ? into / 2 : into
-      return {
-        source: FLOW_STATES.indexOf(from),
-        target: FLOW_STATES.indexOf(to),
-        value: share + BASE_FLOW,
+  useEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+
+    const nodes = root.querySelectorAll('[data-flow-node]')
+    const lines = root.querySelectorAll('[data-flow-line]')
+    const counts = root.querySelectorAll<HTMLElement>('[data-flow-count]')
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+
+    const timeline = gsap.timeline()
+    if (reduceMotion) {
+      gsap.set(nodes, { opacity: 1, scale: 1 })
+      gsap.set(lines, { scaleX: 1 })
+    } else {
+      timeline
+        .fromTo(
+          lines,
+          { scaleX: 0, transformOrigin: 'left center' },
+          { scaleX: 1, duration: 0.9, ease: 'power2.out', stagger: 0.1 },
+          0,
+        )
+        .fromTo(
+          nodes,
+          { opacity: 0, scale: 0.6 },
+          { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(1.6)', stagger: 0.12 },
+          0.1,
+        )
+    }
+    /* El conteo SUBE contando hasta su valor real. */
+    counts.forEach((element) => {
+      const target = Number(element.dataset.count ?? '0')
+      if (reduceMotion) {
+        element.textContent = String(target)
+        return
       }
-    }),
-  }
+      const counter = { value: 0 }
+      timeline.to(
+        counter,
+        {
+          value: target,
+          duration: 0.8,
+          ease: 'power1.out',
+          snap: { value: 1 },
+          onUpdate: () => {
+            element.textContent = String(Math.round(counter.value))
+          },
+        },
+        0.4,
+      )
+    })
+
+    return () => {
+      timeline.kill()
+    }
+  }, [countByStatus])
 
   return (
-    <section className="rounded-lg border border-line bg-surface p-5">
-      <h2 className="text-base font-semibold text-ink">El flujo del semáforo</h2>
-      <p className="mt-0.5 text-sm text-ink-3">
-        Cada cinta es una transición válida; el grosor, cuántos prospectos hay hoy en el estado
-        destino.
-      </p>
+    <SectionCard
+      title="El flujo del semáforo"
+      subtitle={
+        IS_DEV_UI
+          ? 'catalogs.status_light_transition — el camino principal; los desvíos abajo'
+          : 'El camino principal del ciclo; los desvíos abajo'
+      }
+    >
+      <div ref={rootRef} className="overflow-x-auto pb-2">
+        {/* El camino principal: Gris → … → Naranja, la línea se dibuja sola. */}
+        <div className="flex min-w-max items-start">
+          {MAIN_PATH.map((status, index) => (
+            <div key={status} className="flex items-start">
+              {index > 0 && (
+                <div
+                  data-flow-line
+                  aria-hidden
+                  className="mx-1 mt-6 h-1 w-8 rounded-full bg-line sm:w-14"
+                />
+              )}
+              <FlowNode status={status} count={countByStatus[status] ?? 0} />
+            </div>
+          ))}
+        </div>
 
-      <div className="mt-3 overflow-x-auto">
-        <div className="h-80 min-w-[42rem]">
-          <ResponsiveContainer width="100%" height="100%">
-            <Sankey
-              data={data}
-              node={<FlowNode />}
-              link={<FlowLink />}
-              nodePadding={26}
-              nodeWidth={8}
-              margin={{ top: 8, right: 120, bottom: 8, left: 8 }}
-            />
-          </ResponsiveContainer>
+        {/* Los desvíos: pausa, rechazo y cierre, con su conector punteado. */}
+        <div className="mt-4 flex min-w-max items-start gap-2 border-t border-dashed border-line pt-4">
+          {DETOURS.map((status) => (
+            <FlowNode key={status} status={status} count={countByStatus[status] ?? 0} isDetour />
+          ))}
+          <p className="max-w-56 self-center pl-2 text-xs leading-relaxed text-ink-3">
+            {IS_DEV_UI
+              ? 'Rojo, Café y Negro reactivan siempre hacia Azul claro (RR-V-07).'
+              : 'Rojo, Café y Negro pueden reactivarse: vuelven a Azul claro.'}
+          </p>
         </div>
       </div>
-
-      <p className="mt-2 text-xs leading-relaxed text-ink-3">
-        Las reentradas no se dibujan: Rojo, Café y Negro reactivan siempre hacia Azul claro
-        {IS_DEV_UI ? ' (RR-V-07)' : ''}, y un Sankey no admite ciclos.
-      </p>
-    </section>
+    </SectionCard>
   )
 }

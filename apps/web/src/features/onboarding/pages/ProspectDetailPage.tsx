@@ -26,6 +26,10 @@ import {
 } from '@/shared/constants/onboardingStatus'
 import { formatDate } from '@/shared/lib/formatters'
 
+/** Botón secundario SOBRE la foto: pastilla translúcida oscura, texto blanco. */
+const HERO_GHOST_BUTTON =
+  'inline-flex cursor-pointer items-center justify-center rounded-md bg-white/15 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white'
+
 export function ProspectDetailPage(): ReactNode {
   const { prospectId = '' } = useParams()
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false)
@@ -82,49 +86,45 @@ export function ProspectDetailPage(): ReactNode {
         <span className="text-ink-2">{prospect.hotelName}</span>
       </nav>
 
-      {/* Con foto (Places, persistida): hero con fundido al fondo de la página. */}
+      {/* Con foto: hero al estilo Netflix — la foto manda, el velo oscuro
+          sostiene el texto blanco y las ACCIONES viven bajo el título, como
+          la fila de Play. Nada flota suelto sobre la foto (en móvil no cabía). */}
       {prospect.hotel.photoUrl && !isPhotoDead ? (
-        <header className="relative overflow-hidden rounded-xl">
+        <header className="relative overflow-hidden rounded-xl bg-ink">
           <img
             src={prospect.hotel.photoUrl}
             alt={`Foto de ${prospect.hotelName} según Google`}
-            className="h-72 w-full object-cover"
+            className="absolute inset-0 size-full object-cover"
             onError={() => {
               setPhotoDead(true)
             }}
           />
           <div
             aria-hidden
-            className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-b from-transparent via-bg/85 to-bg"
+            className="absolute inset-0 bg-gradient-to-t from-ink via-ink/55 to-ink/5"
           />
-          <div className="absolute top-4 right-4">
-            <div className="flex items-center gap-3">
-              {/* Abre el MISMO modal del alta, en modo edición: un solo formulario. */}
-              <button
-                type="button"
-                aria-label="Editar la información del cliente"
-                title="Editar la información del cliente"
-                onClick={() => {
-                  setIsEditDialogOpen(true)
-                }}
-                className="flex size-10 shrink-0 items-center justify-center rounded-md border border-line text-ink-3 transition-colors hover:bg-surface-2 hover:text-o-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
-              >
-                <span className="material-icons-outlined text-xl leading-none" aria-hidden>
-                  edit
-                </span>
-              </button>
-              <Button
-                onClick={() => {
-                  setIsAttemptDialogOpen(true)
-                }}
-              >
-                Registrar intento
-              </Button>
-              {/*
-            Un estado terminal no tiene a dónde ir: `NARANJA` es un cliente
-            activo y `ROJO` un rechazo, y ninguno declara transiciones. Abrir el
-            diálogo solo para enseñar una lista vacía es peor que no ofrecerlo.
-          */}
+
+          <div className="relative flex min-h-72 flex-col justify-end p-5 sm:min-h-80 sm:p-7">
+            <StatusLightBadge
+              token={ONBOARDING_STATUS_TOKEN[prospect.status]}
+              label={statusLabel}
+              className="w-fit"
+            />
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-white drop-shadow-sm sm:text-4xl">
+              {prospect.hotelName}
+            </h1>
+            <p className="mt-1.5 text-sm text-white/85">
+              Ciclo abierto desde {formatDate(prospect.cycleStartedAt)} · {prospect.daysInStatus}{' '}
+              días en {statusLabel} · Dueño: {prospect.owner.name}
+            </p>
+
+            {/*
+              Un estado terminal no tiene a dónde ir: `NARANJA` es un cliente
+              activo y `ROJO` un rechazo, y ninguno declara transiciones. Abrir
+              el diálogo solo para enseñar una lista vacía es peor que no
+              ofrecerlo.
+            */}
+            <div className="mt-4 flex flex-wrap items-center gap-2.5">
               <Button
                 variant="primary"
                 disabled={isTerminalStatus(prospect.status)}
@@ -139,32 +139,41 @@ export function ProspectDetailPage(): ReactNode {
               >
                 Cambiar estado
               </Button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAttemptDialogOpen(true)
+                }}
+                className={HERO_GHOST_BUTTON}
+              >
+                Registrar intento
+              </button>
               {prospect.status !== 'ORANGE' && (
-                <Button
-                  variant="secondary"
+                <button
+                  type="button"
                   title="Cierra el ciclo definitivamente y libera al hotel"
                   onClick={() => {
                     setIsArchiveDialogOpen(true)
                   }}
+                  className={HERO_GHOST_BUTTON}
                 >
                   Archivar
-                </Button>
+                </button>
               )}
-            </div>
-          </div>
-          <div className="absolute inset-x-6 bottom-4">
-            <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-3xl font-bold tracking-tight text-ink">{prospect.hotelName}</h1>
-                <StatusLightBadge
-                  token={ONBOARDING_STATUS_TOKEN[prospect.status]}
-                  label={statusLabel}
-                />
-              </div>
-              <p className="mt-1.5 text-sm text-ink-3">
-                Ciclo abierto desde {formatDate(prospect.cycleStartedAt)} · {prospect.daysInStatus}{' '}
-                días en {statusLabel} · Dueño: {prospect.owner.name}
-              </p>
+              {/* Abre el MISMO modal del alta, en modo edición: un solo formulario. */}
+              <button
+                type="button"
+                aria-label="Editar la información del cliente"
+                title="Editar la información del cliente"
+                onClick={() => {
+                  setIsEditDialogOpen(true)
+                }}
+                className={`${HERO_GHOST_BUTTON} px-2.5`}
+              >
+                <span className="material-icons-outlined text-xl leading-none" aria-hidden>
+                  edit
+                </span>
+              </button>
             </div>
           </div>
         </header>

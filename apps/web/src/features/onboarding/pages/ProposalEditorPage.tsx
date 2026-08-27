@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { cn, StatusLightBadge } from '@oranje/ui'
-import { useEffect, type ComponentProps, type ReactNode } from 'react'
+import { cn, StatusLightBadge, toast } from '@oranje/ui'
+import { useEffect, useState, type ComponentProps, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useParams } from 'react-router'
 
@@ -27,6 +27,7 @@ import {
   ONBOARDING_STATUS_TOKEN,
 } from '@/shared/constants/onboardingStatus'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 
 const FORM_ID = 'proposal-draft'
 
@@ -63,13 +64,15 @@ export function ProposalEditorPage(): ReactNode {
   const { data: session } = useGetSessionQuery()
   const [saveDraft, { isLoading: isSaving }] = useSaveProposalDraftMutation()
   const [sendProposal, { isLoading: isSending }] = useSendProposalMutation()
+  /** El error del guardado/envío SE VE: tragárselo dejaba botones «muertos». */
+  const [actionError, setActionError] = useState<string | null>(null)
   const [createDraft, { isLoading: isCreating, isError: hasCreateFailed }] =
     useCreateProposalDraftMutation()
   /** El intro de página se ve UNA vez; «¿Cómo funciona?» lo reabre. */
   const { isIntroOpen, dismissIntro, reopenIntro } = useIntroSeen('proposal-editor')
   const isBd = session?.roleId === 'ROL-V-01'
 
-  const { register, handleSubmit, reset, formState } = useForm<ProposalDraftForm>({
+  const { register, handleSubmit, reset, trigger, formState } = useForm<ProposalDraftForm>({
     resolver: zodResolver(proposalDraftSchema),
     mode: 'onChange',
     defaultValues: { servicesNote: '', payRate: 0, billRate: 0 },
@@ -85,7 +88,13 @@ export function ProposalEditorPage(): ReactNode {
       payRate: draft.payRate,
       billRate: draft.billRate,
     })
-  }, [draft, reset])
+    /*
+     * `reset` NO valida: sin esto `isValid` se queda en false y los botones
+     * del encabezado quedan muertos hasta que se toca un campo — un borrador
+     * que llega completo debe poder guardarse o enviarse de inmediato.
+     */
+    void trigger()
+  }, [draft, reset, trigger])
 
   if (isLoading) return <DetailSkeleton />
 
@@ -100,16 +109,38 @@ export function ProposalEditorPage(): ReactNode {
     )
   }
 
+  function actionErrorMessage(error: unknown): string {
+    return apiErrorMessage(error, {
+      byCode: {
+        PROPOSAL_STATE: `La propuesta se trabaja con el hotel en Verde o Café — este está en ${workspace ? ONBOARDING_STATUS_LABEL[workspace.prospectStatus] : 'otro estado'}.`,
+        PROPOSAL_SENT: 'Esta versión ya se envió: lo enviado no se edita — abre una versión nueva.',
+      },
+      fallback: 'No se pudo guardar la propuesta. Inténtalo de nuevo.',
+    })
+  }
+
   async function persist(values: ProposalDraftForm): Promise<void> {
     if (!draft) return
-    await saveDraft({ proposalId: draft.id, prospectId, ...values }).unwrap()
+    setActionError(null)
+    try {
+      await saveDraft({ proposalId: draft.id, prospectId, ...values }).unwrap()
+      toast.success('Borrador guardado')
+    } catch (error) {
+      setActionError(actionErrorMessage(error))
+      throw error
+    }
   }
 
   /** Enviar guarda primero: si no, se enviaría la versión sin los cambios en pantalla. */
   async function persistAndSend(values: ProposalDraftForm): Promise<void> {
     if (!draft) return
-    await persist(values)
-    await sendProposal({ proposalId: draft.id, prospectId }).unwrap()
+    try {
+      await persist(values)
+      await sendProposal({ proposalId: draft.id, prospectId }).unwrap()
+      toast.success('Propuesta enviada al hotel')
+    } catch (error) {
+      setActionError(actionErrorMessage(error))
+    }
   }
 
   const isBusy = isSaving || isSending || isCreating
@@ -172,6 +203,12 @@ export function ProposalEditorPage(): ReactNode {
         )}
       </header>
 
+      {actionError !== null && (
+        <p role="alert" className="text-sm text-red">
+          {actionError}
+        </p>
+      )}
+
       {isIntroOpen ? (
         <div className="max-w-2xl rounded-lg border border-line bg-surface">
           <OnboardingIntro
@@ -188,7 +225,9 @@ export function ProposalEditorPage(): ReactNode {
                 id={FORM_ID}
                 noValidate
                 onSubmit={(event) => {
-                  void handleSubmit(persist)(event)
+                  void handleSubmit(async (values) => {
+                    await persist(values).catch(() => undefined)
+                  })(event)
                 }}
                 className="flex flex-col gap-5"
               >

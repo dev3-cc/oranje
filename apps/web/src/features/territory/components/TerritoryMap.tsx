@@ -13,6 +13,8 @@ export interface TerritoryMapProps {
   hotels: TerritoryHotel[]
   selectedHotel: TerritoryHotel | null
   onSelect: (hotelId: string) => void
+  /** Cerrar la ficha (en móvil es la única forma de recuperar el mapa). */
+  onClose: () => void
   className?: string
 }
 
@@ -26,6 +28,7 @@ export function TerritoryMap({
   hotels,
   selectedHotel,
   onSelect,
+  onClose,
   className,
 }: TerritoryMapProps): ReactNode {
   const points = useMemo<HotelMapPoint[]>(
@@ -46,8 +49,8 @@ export function TerritoryMap({
       onSelect={onSelect}
       className={className}
     >
-      {selectedHotel && <HotelMapCard hotel={selectedHotel} />}
-      <TerritoryMapLegend />
+      {selectedHotel && <HotelMapCard hotel={selectedHotel} onClose={onClose} />}
+      <TerritoryMapLegend isBehindCard={selectedHotel !== null} />
     </HotelPointsMap>
   )
 }

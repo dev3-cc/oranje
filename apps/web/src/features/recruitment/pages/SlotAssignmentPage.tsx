@@ -20,6 +20,7 @@ import { ASSIGNMENT_TYPE_LABEL } from '../types/selfPick.types'
 
 import mascotaCelebrando from '@/assets/mascota/mascota-celebrando.png'
 import { Button } from '@/shared/components/Button'
+import { LoadingState } from '@/shared/components/LoadingState'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
@@ -65,7 +66,7 @@ export function SlotAssignmentPage(): ReactNode {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
 
-  if (isLoading) return <p className="text-sm text-ink-3">Cargando los slots…</p>
+  if (isLoading) return <LoadingState label="Cargando los slots…" />
   if (isError || !board) {
     return (
       <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-surface p-6">

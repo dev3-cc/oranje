@@ -8,6 +8,7 @@ import { MultiplierTable } from '../components/MultiplierTable'
 import { RateTable } from '../components/RateTable'
 
 import { Button } from '@/shared/components/Button'
+import { LoadingState } from '@/shared/components/LoadingState'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
@@ -50,7 +51,7 @@ export function ContractDetailPage(): ReactNode {
   }
 
   if (isLoading) {
-    return <p className="text-sm text-ink-3">Cargando contrato…</p>
+    return <LoadingState label="Cargando el contrato…" />
   }
 
   if (isError || !contract) {

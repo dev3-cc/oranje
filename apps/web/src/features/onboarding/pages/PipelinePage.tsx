@@ -14,6 +14,7 @@ import type { ProspectSummary } from '../types/prospect.types'
 import { useGetSessionQuery } from '@/app/sessionApi'
 import pipelineIllustration from '@/assets/ilustrations/pipeline.svg'
 import { Button } from '@/shared/components/Button'
+import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import {
   ONBOARDING_TRANSITIONS,
@@ -72,7 +73,9 @@ export function PipelinePage(): ReactNode {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight text-ink">Pipeline</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-ink">
+              <FoldText text="Pipeline" />
+            </h1>
             <SemaforoHelpButton />
           </div>
           <p className="mt-1 text-sm text-ink-3">

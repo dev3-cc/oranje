@@ -28,6 +28,7 @@ import personajePresentacion from '@/assets/ilustrations/personaje-presentacion.
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
+import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'staff-user-form'
@@ -181,7 +182,7 @@ export function UserFormDialog({
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [created, setCreated] = useState<{ email: string; mode: AccessMode } | null>(null)
   const [confirmingBaja, setConfirmingBaja] = useState(false)
-  const [showIntro, setShowIntro] = useState(false)
+  const { isIntroOpen: showIntro, dismissIntro } = useIntroSeen('create-user')
   const photoInputRef = useRef<HTMLInputElement>(null)
 
   const {
@@ -253,7 +254,6 @@ export function UserFormDialog({
     setIsActive(user?.isActive ?? true)
     setCreated(null)
     setConfirmingBaja(false)
-    setShowIntro(user === null)
     setPhotoPath(null)
     setPhotoPreview(user?.photoUrl ?? null)
     reset({
@@ -326,7 +326,7 @@ export function UserFormDialog({
             slides={INTRO_SLIDES}
             startLabel="Comenzar el alta"
             onDone={() => {
-              setShowIntro(false)
+              dismissIntro()
             }}
           />
         ) : (

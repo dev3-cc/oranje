@@ -94,7 +94,8 @@ describe('RequisitionAuthorizationPage', () => {
     const user = userEvent.setup()
     renderQueue()
 
-    const queueList = (await screen.findByText('Pendientes')).closest('section')
+    /* FoldText duplica el texto (sr-only + palabras animadas): se toma el primero. */
+    const queueList = (await screen.findAllByText('Pendientes'))[0]?.closest('section') ?? null
     expect(within(queueList as HTMLElement).getAllByRole('listitem')).toHaveLength(3)
 
     await user.click(screen.getByRole('button', { name: 'Autorizar requisición' }))

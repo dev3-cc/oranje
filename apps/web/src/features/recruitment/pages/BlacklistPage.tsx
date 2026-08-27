@@ -14,6 +14,7 @@ import {
 
 import { Button } from '@/shared/components/Button'
 import { FilterSelect } from '@/shared/components/FilterSelect'
+import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { useCan } from '@/shared/hooks/useCan'
@@ -49,7 +50,9 @@ export function BlacklistPage(): ReactNode {
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-ink">Blacklist</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
+            <FoldText text="Blacklist" />
+          </h1>
           <p className="mt-1.5 text-sm text-ink-3">
             {IS_DEV_UI
               ? 'coverage.blacklist_entry · un colaborador activo a la vez (ux_blacklist_worker)'

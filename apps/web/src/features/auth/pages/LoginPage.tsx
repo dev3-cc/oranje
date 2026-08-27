@@ -14,6 +14,7 @@ import { useCreateSessionMutation } from '@/app/sessionApi'
 import { selectSessionStatus } from '@/app/sessionSlice'
 import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
 import { requestPasswordReset, signInWithEmail } from '@/shared/lib/firebase'
+import { readLastRoute } from '@/shared/lib/lastRoute'
 
 /**
  * Login — la única pantalla pública. Layout partido como la referencia de
@@ -133,13 +134,14 @@ export function LoginPage(): ReactNode {
     try {
       /** Firebase autentica (D-05); la API canjea el idToken por LA sesión. */
       const idToken = await signInWithEmail(values.email, values.password)
-      await createSession({ idToken }).unwrap()
+      const user = await createSession({ idToken }).unwrap()
       /*
-       * SIEMPRE al Dashboard, nunca al `from`: quien entra puede ser OTRA
-       * persona con otro rol, y `from` es la ruta del usuario anterior — una
-       * Reclutadora deja /pool, entra un BD y aterrizaría en un 403.
+       * La MISMA persona reanuda donde estaba (la sesión murió, no su
+       * trabajo); otra persona arranca en el Dashboard — heredar la ruta del
+       * usuario anterior era aterrizar en un 403 ajeno.
        */
-      void navigate('/', { replace: true })
+      const last = readLastRoute()
+      void navigate(last !== null && last.userId === user.id ? last.path : '/', { replace: true })
     } catch (error) {
       setSubmitError(loginErrorMessage(error))
     }

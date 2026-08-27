@@ -10,6 +10,7 @@ import bdcIllustration from '@/assets/ilustrations/bdc.svg'
 import { Button } from '@/shared/components/Button'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { EmptyState } from '@/shared/components/EmptyState'
+import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { MetricCard } from '@/shared/components/MetricCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
@@ -245,7 +246,9 @@ export function TeamPage(): ReactNode {
     <div className="flex flex-col gap-6">
       <header className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-ink">Mi Equipo</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
+            <FoldText text="Mi Equipo" />
+          </h1>
           <p className="mt-1.5 text-sm text-ink-3">
             Los BDs que te reportan y cómo va su ciclo comercial
           </p>

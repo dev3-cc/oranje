@@ -5,6 +5,7 @@ import { useGetRecruitmentOverviewQuery } from '../api/roleDashboardsApi'
 import { RequisitionMiniList } from './RequisitionMiniList'
 
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { MetricCard } from '@/shared/components/MetricCard'
 import type { SessionUser } from '@/shared/types/session.types'
@@ -30,7 +31,9 @@ export function RecruitmentDashboard({ session }: { session: SessionUser }): Rea
   return (
     <div className="flex flex-col gap-6">
       <header>
-        <h1 className="text-3xl font-bold tracking-tight text-ink">Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-ink">
+          <FoldText text="Dashboard" />
+        </h1>
         <p className="mt-1.5 text-sm text-ink-3">
           {session.name} · {session.roleTitle}
         </p>

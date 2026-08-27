@@ -6,6 +6,7 @@ import { useCreateProposalDraftMutation, useGetProposalTargetsQuery } from '../a
 import personajePago from '@/assets/ilustrations/personaje-pago-procesado.svg'
 import personajePresentacion from '@/assets/ilustrations/personaje-presentacion.svg'
 import personajeRetro from '@/assets/ilustrations/personaje-retroalimentacion.svg'
+import { Button } from '@/shared/components/Button'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
@@ -14,6 +15,7 @@ import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
 } from '@/shared/constants/onboardingStatus'
+import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 
 /**
@@ -52,11 +54,9 @@ export function NewProposalDialog({
   })
   const [createDraft, { isLoading: isCreating, isError, error }] = useCreateProposalDraftMutation()
   const [pendingId, setPendingId] = useState<string | null>(null)
-  const [showIntro, setShowIntro] = useState(false)
+  const { isIntroOpen: showIntro, dismissIntro } = useIntroSeen('new-proposal')
 
-  useEffect(() => {
-    if (isOpen) setShowIntro(true)
-  }, [isOpen])
+  useEffect(() => {}, [isOpen])
 
   async function start(prospectId: string): Promise<void> {
     setPendingId(prospectId)
@@ -81,7 +81,7 @@ export function NewProposalDialog({
           slides={INTRO_SLIDES}
           startLabel="Elegir el hotel"
           onDone={() => {
-            setShowIntro(false)
+            dismissIntro()
           }}
         />
       ) : (
@@ -100,6 +100,11 @@ export function NewProposalDialog({
             <EmptyState
               title="Ningún hotel espera propuesta"
               text="La propuesta se abre cuando un prospecto está en Verde (o vuelve en Café) y todavía no tiene una. Los hoteles que ya tienen propuesta se siguen desde su fila de la lista."
+              action={
+                <Button variant="secondary" onClick={onClose}>
+                  Entendido
+                </Button>
+              }
             />
           )}
 

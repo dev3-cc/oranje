@@ -101,7 +101,7 @@ export function Modal({
     >
       <DialogContent
         className={cn(
-          'w-[calc(100vw-2rem)] max-h-[calc(100dvh-3rem)] gap-5 overflow-y-auto',
+          'w-[calc(100%-2rem)] max-w-[calc(100%-2rem)] max-h-[calc(100dvh-3rem)] gap-5 overflow-x-hidden overflow-y-auto',
           'sm:max-w-2xl',
           className,
           widthOverrides,

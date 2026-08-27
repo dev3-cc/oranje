@@ -9,6 +9,7 @@ const DashboardGlobe = lazy(() =>
 )
 
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { MetricCard } from '@/shared/components/MetricCard'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
@@ -36,7 +37,9 @@ export function HotelDashboard({ session }: { session: SessionUser }): ReactNode
     <div className="flex flex-col gap-6">
       <header className="relative overflow-hidden rounded-2xl bg-surface px-6 py-7 shadow-md sm:px-8">
         <div className="relative z-10 max-w-xl">
-          <h1 className="text-3xl font-bold tracking-tight text-ink">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
+            <FoldText text="Dashboard" />
+          </h1>
           <p className="mt-1.5 text-sm text-ink-3">
             {session.name} · {session.roleTitle}
             {session.hotel ? ` · ${session.hotel.name}` : ''}
