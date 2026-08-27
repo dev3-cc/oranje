@@ -138,7 +138,7 @@ jobs:
             --service-account "${{ vars.RUNTIME_SERVICE_ACCOUNT }}" \
             --set-cloudsql-instances "${{ vars.CLOUDSQL_INSTANCE }}" \
             --set-env-vars "^@^APP_ENV=${{ vars.APP_ENV }}@NODE_ENV=production@AUTH_ISSUER_URL=${{ vars.AUTH_ISSUER_URL }}@AUTH_AUDIENCE=${{ vars.AUTH_AUDIENCE }}@CORS_ORIGINS=${{ vars.CORS_ORIGINS }}@STORAGE_BUCKET=${{ vars.STORAGE_BUCKET }}@COOKIE_SECURE=true@LOG_LEVEL=info" \
-            --set-secrets "DATABASE_URL=oranje-database-url:latest,JWT_PRIVATE_KEY=oranje-jwt-private-key:latest,JWT_PUBLIC_KEY=oranje-jwt-public-key:latest" \
+            --set-secrets "DATABASE_URL=oranje-database-url:latest,JWT_PRIVATE_KEY=oranje-jwt-private-key:latest,JWT_PUBLIC_KEY=oranje-jwt-public-key:latest,GOOGLE_PLACES_API_KEY=oranje-places-api-key:latest" \
             --min-instances "${{ vars.MIN_INSTANCES }}" \
             --max-instances "${{ vars.MAX_INSTANCES }}" \
             ${{ steps.acceso.outputs.flag }}
