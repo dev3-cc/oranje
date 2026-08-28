@@ -132,6 +132,8 @@ export interface TeamMemberApi {
   fullName: string
   email: string
   role: { code: string; name: string }
+  /** URL firmada de la foto del BD (D-30); `null` sin foto. */
+  photoUrl: string | null
   zones: ZoneRefApi[]
   openProspects: number
 }

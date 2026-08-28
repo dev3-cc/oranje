@@ -69,6 +69,24 @@ export const workerApi = baseApi.injectEndpoints({
   }),
 })
 
+export const availabilityApi = workerApi.injectEndpoints({
+  endpoints: (build) => ({
+    /**
+     * Amarillo = «disponible por voluntad propia». Autoservicio sin
+     * aprobación; si el semáforo no lo permite desde el estado actual, el
+     * back responde y se muestra en palabras. Volver a Verde fuerte NO es
+     * una transición del semáforo: el Colaborador solo enciende.
+     */
+    setAvailable: build.mutation<MyProfile, void>({
+      query: () => ({ url: '/workers/me/availability', method: 'POST' }),
+      transformResponse: (raw: ApiEnvelope<MyProfile>) => raw.data,
+      invalidatesTags: [{ type: 'Worker' as const, id: 'ME' }],
+    }),
+  }),
+})
+
+export const { useSetAvailableMutation } = availabilityApi
+
 export const {
   useGetMyProfileQuery,
   useCompleteSignupMutation,

@@ -235,6 +235,7 @@ async function fetchTeamProgress(
       return {
         id: member.id,
         fullName: member.fullName,
+        photoUrl: member.photoUrl,
         openProspects: open.length,
         conversions: converted.length,
         conversionRate: finished === 0 ? 0 : converted.length / finished,

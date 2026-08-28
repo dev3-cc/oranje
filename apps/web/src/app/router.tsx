@@ -47,7 +47,20 @@ export const router = createBrowserRouter([
           return { Component: m.MobileShell }
         },
         children: [
-          { index: true, element: <Navigate to="/colaborador/alta-2" replace /> },
+          {
+            index: true,
+            lazy: async () => {
+              const m = await import('@/features/worker')
+              return { Component: m.HomePage }
+            },
+          },
+          {
+            path: 'perfil',
+            lazy: async () => {
+              const m = await import('@/features/worker')
+              return { Component: m.ProfilePage }
+            },
+          },
           {
             path: 'alta-2',
             lazy: async () => {

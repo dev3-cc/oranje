@@ -57,6 +57,7 @@ function buildMemberCard(member: TeamMemberApi, prospects: ProspectApi[]): TeamM
   return {
     id: member.id,
     fullName: member.fullName,
+    photoUrl: member.photoUrl,
     zoneNames: member.zones.map((zone) => zone.name.replace(/^Zona\s+/i, '')),
     zones: member.zones.map((zone) => ({ id: zone.id, name: zone.name })),
     openProspects: open.length,

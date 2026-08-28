@@ -102,6 +102,17 @@ const routes: readonly MockRoute[] = [
     }),
   },
   {
+    method: 'POST',
+    path: '/workers/me/availability',
+    resolve: (): ApiEnvelope<MyProfile> => {
+      if (!['STRONG_GREEN', 'ORANGE', 'PINK'].includes(profile.state.code)) {
+        throw new Error('TRANSITION_NOT_ALLOWED')
+      }
+      profile.state = { code: 'YELLOW', color: 'Amarillo', name: 'Disponible por voluntad' }
+      return { data: { ...profile, taxDeadline: { ...profile.taxDeadline } } }
+    },
+  },
+  {
     method: 'PATCH',
     path: '/workers/me/signup',
     resolve: ({ body }): ApiEnvelope<MyProfile> => {

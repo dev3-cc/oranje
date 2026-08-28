@@ -19,6 +19,7 @@ const MEMBERS: TeamMemberApi[] = [
     fullName: 'Ana Ruiz',
     email: 'ana.ruiz@casacurtidor.com',
     role: { code: 'ROL-V-01', name: 'Business Developer' },
+    photoUrl: null,
     zones: [
       { id: 'norte', code: 'NORTE', name: 'Zona Norte' },
       { id: 'centro', code: 'CENTRO', name: 'Zona Centro' },
@@ -31,6 +32,7 @@ const MEMBERS: TeamMemberApi[] = [
     fullName: 'Diego Peña',
     email: 'diego.pena@casacurtidor.com',
     role: { code: 'ROL-V-01', name: 'Business Developer' },
+    photoUrl: null,
     zones: [{ id: 'este', code: 'ESTE', name: 'Zona Este' }],
     openProspects: 0,
   },
@@ -39,6 +41,7 @@ const MEMBERS: TeamMemberApi[] = [
     fullName: 'Rocío Lima',
     email: 'rocio.lima@casacurtidor.com',
     role: { code: 'ROL-V-01', name: 'Business Developer' },
+    photoUrl: null,
     zones: [],
     openProspects: 0,
   },

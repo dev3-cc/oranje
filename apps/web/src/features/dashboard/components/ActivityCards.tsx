@@ -259,9 +259,18 @@ export function TeamProgressCard(): ReactNode {
                   animate={{ opacity: 1, y: 0, rotate: TILE_TILT[index % TILE_TILT.length] ?? 0 }}
                   transition={{ duration: 0.4, delay: index * 0.08 }}
                   title={`${member.fullName} · ${String(member.openProspects)} abiertos · ${formatPercent(member.conversionRate)}`}
-                  className="-ml-3 flex size-16 items-center justify-center rounded-2xl border-4 border-surface bg-o-500/15 text-lg font-bold text-o-700 shadow-md"
+                  className="-ml-3 flex size-16 items-center justify-center overflow-hidden rounded-2xl border-4 border-surface bg-o-500/15 text-lg font-bold text-o-700 shadow-md"
                 >
-                  {initialsOf(member.fullName)}
+                  {member.photoUrl ? (
+                    <img
+                      src={member.photoUrl}
+                      alt=""
+                      aria-hidden
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    initialsOf(member.fullName)
+                  )}
                 </motion.div>
               ))}
               {members.length > 6 && (
