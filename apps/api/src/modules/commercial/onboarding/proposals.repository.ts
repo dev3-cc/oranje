@@ -149,6 +149,32 @@ export class ProposalsRepository {
     return this.prisma.proposal.findUniqueOrThrow({ where: { id }, select: SELECT })
   }
 
+  // El journal va ANTES del delete y en la misma transaccion: la fila muere,
+  // el rastro no.
+  async discardDraft(params: {
+    prospectId: string
+    proposalId: string
+    version: number
+    userId: string
+    roleCode: string
+  }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'commercial.prospect',
+          entityId: params.prospectId,
+          eventType: 'PROPOSAL_DRAFT_DISCARDED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: { proposalId: params.proposalId, version: params.version },
+        },
+      })
+
+      await tx.proposal.delete({ where: { id: params.proposalId } })
+    })
+  }
+
   async send(params: {
     prospectId: string
     proposalId: string
