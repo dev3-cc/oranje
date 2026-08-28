@@ -23,10 +23,12 @@ export class FirebaseAccountsError extends Error {
 export class FirebaseAccountsService {
   private readonly logger = new Logger(FirebaseAccountsService.name)
   private readonly projectId: string | undefined
+  private readonly quotaProject: string | undefined
   private readonly auth = new GoogleAuth({ scopes: SCOPES })
 
   constructor(config: ConfigService<Record<string, unknown>, true>) {
     this.projectId = config.get<string>('FIREBASE_PROJECT_ID')
+    this.quotaProject = config.get<string>('GOOGLE_CLOUD_QUOTA_PROJECT')
   }
 
   /**
@@ -72,12 +74,23 @@ export class FirebaseAccountsService {
     return this.projectId
   }
 
+  // Con credenciales de usuario —el ADC de una maquina local— Identity Toolkit
+  // exige `x-goog-user-project` y sin el responde 403. En Cloud Run la cuenta
+  // va adjunta, no hay quota project y el header sobra: por eso alla funcionaba
+  // y aqui no.
+  //
+  // Sale del env y no de `auth.getClient()` porque esa llamada resuelve las
+  // credenciales, y en CI no hay ninguna.
   private async call(path: string, body: Record<string, unknown>): Promise<void> {
     const token = await this.auth.getAccessToken()
 
     const response = await fetch(`${BASE}/${path}`, {
       method: 'POST',
-      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+      headers: {
+        authorization: `Bearer ${String(token)}`,
+        'content-type': 'application/json',
+        ...(this.quotaProject ? { 'x-goog-user-project': this.quotaProject } : {}),
+      },
       body: JSON.stringify(body),
     })
 
@@ -106,5 +119,5 @@ async function errorCode(response: { status: number; json(): Promise<unknown> })
     // Cuerpo no-JSON: queda el status.
   }
 
-  return `HTTP_${response.status}`
+  return `HTTP_${String(response.status)}`
 }
