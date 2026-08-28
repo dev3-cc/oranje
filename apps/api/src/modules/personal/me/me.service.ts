@@ -34,6 +34,21 @@ export class MeService {
     }
   }
 
+  // La misma forma que /workers/:id/history. Sin filas es [] y no 404: un
+  // colaborador recien creado no tiene historia todavia, y eso es valido.
+  async history(user: AuthenticatedUser): Promise<
+    Array<{
+      id: string
+      fromState: string | null
+      toState: string
+      reason: string | null
+      occurredAt: string
+      userName: string
+    }>
+  > {
+    return this.workers.history(await this.workerId(user))
+  }
+
   async completeSignup(dto: UpdateWorkerDto, user: AuthenticatedUser): Promise<WorkerEntity> {
     return this.workers.update(await this.workerId(user), dto, user)
   }

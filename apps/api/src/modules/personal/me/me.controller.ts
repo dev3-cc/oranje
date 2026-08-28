@@ -20,6 +20,21 @@ export class MeController {
     return { data: await this.me.get(user) }
   }
 
+  @Requires('worker', 'read_own')
+  @Get('history')
+  async history(@CurrentUser() user: AuthenticatedUser): Promise<{
+    data: Array<{
+      id: string
+      fromState: string | null
+      toState: string
+      reason: string | null
+      occurredAt: string
+      userName: string
+    }>
+  }> {
+    return { data: await this.me.history(user) }
+  }
+
   @Requires('worker', 'complete_signup')
   @Patch('signup')
   async completeSignup(
