@@ -112,6 +112,34 @@ export class ProposalsService {
     )
   }
 
+  // Sin assertOpen a proposito: el caso que resuelve es "lo abri por error y el
+  // ciclo ya avanzo", y exigir Verde o Cafe dejaria el borrador atorado.
+  async discardDraft(
+    prospectId: string,
+    proposalId: string,
+    user: AuthenticatedUser,
+  ): Promise<void> {
+    await this.prospect(prospectId)
+
+    const proposal = await this.proposal(prospectId, proposalId)
+
+    if (proposal.sentAt !== null) {
+      throw new ConflictException({
+        code: 'PROPOSAL_SENT',
+        message:
+          'Lo enviado no se borra: es historia con el hotel. Abre una versión nueva si hay que renegociar.',
+      })
+    }
+
+    await this.repo.discardDraft({
+      prospectId,
+      proposalId,
+      version: proposal.version,
+      userId: user.id,
+      roleCode: user.roleCode,
+    })
+  }
+
   async hasSent(prospectId: string): Promise<boolean> {
     return (await this.repo.lastSent(prospectId)) !== null
   }
