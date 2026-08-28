@@ -62,12 +62,21 @@ function MemberRow({
           isSelected ? 'border-o-500 bg-o-50' : 'border-line bg-surface hover:bg-surface-2',
         )}
       >
-        <span
-          aria-hidden
-          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-o-500/15 text-sm font-bold text-o-700"
-        >
-          {initialsOf(member.fullName)}
-        </span>
+        {member.photoUrl ? (
+          <img
+            src={member.photoUrl}
+            alt=""
+            aria-hidden
+            className="size-11 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <span
+            aria-hidden
+            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-o-500/15 text-sm font-bold text-o-700"
+          >
+            {initialsOf(member.fullName)}
+          </span>
+        )}
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold text-ink">{member.fullName}</span>
           <span className="block text-xs text-ink-3">
@@ -95,12 +104,21 @@ function MemberDetail({
     <article className="flex flex-col gap-6 rounded-xl border border-line bg-surface p-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
-          <span
-            aria-hidden
-            className="flex size-16 items-center justify-center rounded-full bg-o-500/15 text-xl font-bold text-o-700"
-          >
-            {initialsOf(member.fullName)}
-          </span>
+          {member.photoUrl ? (
+            <img
+              src={member.photoUrl}
+              alt=""
+              aria-hidden
+              className="size-16 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <span
+              aria-hidden
+              className="flex size-16 items-center justify-center rounded-full bg-o-500/15 text-xl font-bold text-o-700"
+            >
+              {initialsOf(member.fullName)}
+            </span>
+          )}
           <div>
             <h2 className="text-2xl font-bold text-ink">{member.fullName}</h2>
             <p className="text-sm text-ink-3">

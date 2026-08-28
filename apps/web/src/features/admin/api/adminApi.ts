@@ -53,7 +53,25 @@ export const adminApi = baseApi.injectEndpoints({
     createStaffUser: build.mutation<StaffUser, CreateStaffUserBody>({
       query: (body) => ({ url: '/users', method: 'POST', body }),
       transformResponse: (response: ApiEnvelope<StaffUser>) => response.data,
-      invalidatesTags: ['StaffUser'],
+      /**
+       * El back ya devolvió la fila creada: se SUMA a cada lista cacheada al
+       * frente, sin volver a pedir el GET. Un filtro de rol que no lo
+       * incluye lo deja fuera, como haría el servidor.
+       */
+      onQueryStarted: async (_body, api) => {
+        const { data: created } = await api.queryFulfilled
+        for (const args of adminApi.util.selectCachedArgsForQuery(
+          api.getState(),
+          'getStaffUsers',
+        )) {
+          if (args.roleCode && args.roleCode !== created.role.code) continue
+          api.dispatch(
+            adminApi.util.updateQueryData('getStaffUsers', args, (draft) => {
+              if (!draft.some((user) => user.id === created.id)) draft.unshift(created)
+            }),
+          )
+        }
+      },
     }),
     updateStaffUser: build.mutation<StaffUser, { id: string; body: UpdateStaffUserBody }>({
       query: ({ id, body }) => ({ url: `/users/${id}`, method: 'PATCH', body }),

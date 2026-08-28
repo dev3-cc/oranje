@@ -53,14 +53,20 @@ export function MobileShell(): ReactNode {
         </header>
 
         <nav aria-label="Secciones" className="flex gap-1 border-b border-line px-4 py-2.5">
+          <NavLink to="/colaborador" end className={tabClass}>
+            Inicio
+          </NavLink>
           <NavLink to="/colaborador/alta-2" className={tabClass}>
-            Alta · Fase 2
+            Alta 2
           </NavLink>
           <NavLink to="/colaborador/alta-3" className={tabClass}>
-            Fase 3
+            Alta 3
           </NavLink>
           <NavLink to="/colaborador/avisos" className={tabClass}>
             Avisos{unread > 0 && ` · ${String(unread)}`}
+          </NavLink>
+          <NavLink to="/colaborador/perfil" className={tabClass}>
+            Perfil
           </NavLink>
         </nav>
 

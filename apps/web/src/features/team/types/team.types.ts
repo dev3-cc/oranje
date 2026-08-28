@@ -9,6 +9,7 @@ import type { OnboardingStatus } from '@/shared/constants/onboardingStatus'
 export interface TeamMemberCard {
   id: string
   fullName: string
+  photoUrl: string | null
   /** Nombres de las zonas asignadas; vacío = sin territorio repartido. */
   zoneNames: string[]
   /** Las zonas con su id: lo que la asignación de territorio edita. */

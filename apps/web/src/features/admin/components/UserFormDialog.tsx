@@ -28,6 +28,7 @@ import personajePresentacion from '@/assets/ilustrations/personaje-presentacion.
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
+import { PasswordInput } from '@/shared/components/PasswordInput'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
@@ -122,7 +123,10 @@ function apiErrorMessage(error: unknown): string {
     case 'SUPERVISOR_NOT_FOUND':
       return 'La persona a la que reporta no existe o está de baja.'
     case 'FIREBASE_UNAVAILABLE':
-      return 'El usuario quedó guardado, pero su cuenta de acceso no se pudo crear. Reintenta la invitación más tarde.'
+      /* Con contraseña la cuenta va ANTES de la fila: si Firebase no responde, NO se guardó nada. */
+      return 'Firebase no respondió y el usuario NO se creó. Inténtalo de nuevo en un momento.'
+    case 'INVITATION_FAILED':
+      return 'El usuario quedó guardado, pero el correo de invitación no salió: reenvíala desde su ficha.'
     default:
       return 'No se pudo guardar. Revisa los datos e intenta de nuevo.'
   }
@@ -582,7 +586,7 @@ export function UserFormDialog({
                       </p>
                     ) : (
                       <>
-                        <Input aria-label="Contraseña" type="password" {...register('password')} />
+                        <PasswordInput aria-label="Contraseña" {...register('password')} />
                         <p className="text-xs text-ink-3">
                           Es su contraseña de uso: puede cambiarla cuando quiera con «¿Olvidaste tu
                           contraseña?». No se envía por correo.

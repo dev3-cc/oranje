@@ -75,6 +75,7 @@ export interface MyActivity {
 export interface TeamMemberProgress {
   id: string
   fullName: string
+  photoUrl: string | null
   openProspects: number
   conversions: number
   /** Convertidos sobre terminados, 0–1. */
