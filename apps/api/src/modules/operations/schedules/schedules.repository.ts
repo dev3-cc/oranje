@@ -51,19 +51,25 @@ export class SchedulesRepository {
   ): Promise<
     Array<{
       id: string
+      assignmentId: string
       workDate: Date
       startsAt: Date
       endsAt: Date
       hotelName: string
+      hotelPhotoRef: string | null
+      hotelTimeZone: string
       positionName: string
     }>
   > {
     return this.prisma.$queryRaw`
       SELECT e.id,
+             e.assignment_id           AS "assignmentId",
              e.work_date               AS "workDate",
              lower(e.shift_range)      AS "startsAt",
              upper(e.shift_range)      AS "endsAt",
              h.name                    AS "hotelName",
+             h.photo_ref               AS "hotelPhotoRef",
+             h.time_zone               AS "hotelTimeZone",
              cp.name                   AS "positionName"
         FROM operations.schedule_entry e
         JOIN coverage.assignment a  ON a.id = e.assignment_id
@@ -177,13 +183,21 @@ export class SchedulesRepository {
        ORDER BY e.work_date, lower(e.shift_range)`
   }
 
+  // La hora la teclea el Supervisor EN EL HOTEL, asi que se interpreta en la
+  // zona del hotel y no en UTC: un «07:00» de Cancun guardado como 07:00Z son
+  // las 02:00 de la manana alla.
+  //
+  // La conversion la hace Postgres con AT TIME ZONE, que trae la base IANA y
+  // sabe de horario de verano; hacerla en JS seria reimplementarla peor.
   async addEntry(params: {
     scheduleId: string
     assignmentId: string
     workerId: string
     workDate: Date
-    startsAt: Date
-    endsAt: Date
+    /// Hora de pared local, «AAAA-MM-DD HH:MM».
+    startsLocal: string
+    endsLocal: string
+    timeZone: string
     userId: string
     roleCode: string
   }): Promise<string> {
@@ -199,7 +213,10 @@ export class SchedulesRepository {
           ${params.assignmentId}::uuid,
           ${params.workerId}::uuid,
           ${params.workDate.toISOString().slice(0, 10)}::date,
-          tstzrange(${params.startsAt}::timestamptz, ${params.endsAt}::timestamptz, '[)')
+          tstzrange(
+            ${params.startsLocal}::timestamp AT TIME ZONE ${params.timeZone},
+            ${params.endsLocal}::timestamp   AT TIME ZONE ${params.timeZone},
+            '[)')
         )`
 
       await tx.journalEntry.create({
