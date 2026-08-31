@@ -8,8 +8,11 @@ import type { Purpose } from './dto/upload.dto.js'
 
 interface PurposeConfig {
   folder: string
-  module: string
-  action: string
+  /// Cualquiera de estos pares abre el destino. Son varios porque al mismo
+  /// archivo llegan roles distintos por caminos distintos: el documento fiscal
+  /// lo sube la Reclutadora desde el expediente y el propio colaborador desde
+  /// /empleado.
+  allow: Array<{ module: string; action: string }>
   maxSide: number
   quality: number
   allowsPdf: boolean
@@ -20,32 +23,38 @@ interface PurposeConfig {
 const CONFIG: Record<Purpose, PurposeConfig> = {
   WORKER_PHOTO: {
     folder: 'workers/photo',
-    module: 'recruitment',
-    action: 'update_worker',
+    // La captura la Reclutadora en la entrevista (Fase 1), no el colaborador.
+    allow: [{ module: 'recruitment', action: 'update_worker' }],
     maxSide: 512,
     quality: 80,
     allowsPdf: false,
   },
   WORKER_DOCUMENT: {
     folder: 'workers/document',
-    module: 'recruitment',
-    action: 'update_worker',
+    allow: [
+      { module: 'recruitment', action: 'update_worker' },
+      // El colaborador sube su SSN/ITIN desde /empleado (RF-C-01).
+      { module: 'worker', action: 'complete_signup' },
+    ],
     maxSide: 2000,
     quality: 85,
     allowsPdf: true,
   },
   PUNCH_PHOTO: {
     folder: 'operations/punch',
-    module: 'timesheet',
-    action: 'read_department',
+    allow: [
+      // Quien poncha es el colaborador; el ponche manual del Supervisor no
+      // lleva foto, pero revisar y corregir sí pasa por aquí.
+      { module: 'timesheet', action: 'punch' },
+      { module: 'timesheet', action: 'read_department' },
+    ],
     maxSide: 800,
     quality: 75,
     allowsPdf: false,
   },
   USER_PHOTO: {
     folder: 'users/photo',
-    module: 'users',
-    action: 'manage',
+    allow: [{ module: 'users', action: 'manage' }],
     maxSide: 512,
     quality: 80,
     allowsPdf: false,
@@ -84,7 +93,7 @@ export class FilesService {
 
     const config = CONFIG[purpose]
 
-    if (!(await this.permissions.can(actor.roleCode, config.module, config.action))) {
+    if (!(await this.allowed(actor.roleCode, config))) {
       throw new ForbiddenException({
         code: 'FORBIDDEN',
         message: 'Esta acción requiere un permiso que tu rol no tiene',
@@ -118,6 +127,16 @@ export class FilesService {
       bytes: processed.buffer.length,
       originalBytes: file.size,
     }
+  }
+
+  private async allowed(roleCode: string, config: PurposeConfig): Promise<boolean> {
+    for (const { module, action } of config.allow) {
+      if (await this.permissions.can(roleCode, module, action)) {
+        return true
+      }
+    }
+
+    return false
   }
 
   // El `mimetype` lo declara el cliente y puede mentir. Que sharp lo abra es la

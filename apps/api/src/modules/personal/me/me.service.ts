@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { PrismaService } from '../../../infra/prisma/index.js'
+import { DocumentsService } from '../documents/documents.service.js'
+import type { DocumentEntity } from '../documents/documents.service.js'
 import type { UpdateWorkerDto } from '../workers/dto/create-worker.dto.js'
 import type { WorkerEntity } from '../workers/entities/worker.entity.js'
 import { WorkersService } from '../workers/workers.service.js'
@@ -21,6 +23,7 @@ export class MeService {
     private readonly prisma: PrismaService,
     private readonly workers: WorkersService,
     private readonly deadline: TaxDeadlineService,
+    private readonly documents: DocumentsService,
   ) {}
 
   // La ficha trae el plazo: el aviso interceptor del dia 4 lo pinta el front
@@ -47,6 +50,20 @@ export class MeService {
     }>
   > {
     return this.workers.history(await this.workerId(user))
+  }
+
+  // El colaborador sube SU documento fiscal (RF-C-01). Nace sin verificar:
+  // verificar sigue siendo de la Reclutadora.
+  async uploadDocument(
+    dto: { documentType: 'SSN_ITIN'; filePath: string },
+    user: AuthenticatedUser,
+  ): Promise<DocumentEntity> {
+    const document = await this.documents.createOwn(await this.workerId(user), dto.filePath, user)
+
+    // Que el acceso vuelva ya, no cuando expire la cache del guard.
+    this.deadline.invalidate(user.id)
+
+    return document
   }
 
   async completeSignup(dto: UpdateWorkerDto, user: AuthenticatedUser): Promise<WorkerEntity> {

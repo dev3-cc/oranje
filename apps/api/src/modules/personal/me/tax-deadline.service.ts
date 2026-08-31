@@ -33,9 +33,21 @@ export interface TaxDeadline {
 
 // Se calcula al leer y no lo escribe un job: un job que deja de correr
 // suspende a nadie o a todos, y aqui la fecha del alta ya dice todo.
+// Se cachea porque el guard lo consulta en CADA peticion del colaborador.
+const CACHE_TTL_MS = 60_000
+
 @Injectable()
 export class TaxDeadlineService {
+  private readonly cache = new Map<string, { suspended: boolean; expiresAt: number }>()
+
   constructor(private readonly prisma: PrismaService) {}
+
+  // Al subir el documento la suspension se levanta AL INSTANTE. Sin esto la
+  // persona sube su SSN y sigue fuera hasta que expire la cache, que es
+  // exactamente el momento en que menos se entiende.
+  invalidate(userId: string): void {
+    this.cache.delete(userId)
+  }
 
   async of(workerId: string, createdAt: Date, now = new Date()): Promise<TaxDeadline> {
     const document = await this.prisma.workerDocument.findFirst({
@@ -70,16 +82,23 @@ export class TaxDeadlineService {
   }
 
   async isSuspended(userId: string): Promise<boolean> {
+    const cached = this.cache.get(userId)
+
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.suspended
+    }
+
     const worker = await this.prisma.worker.findFirst({
       where: { userId, deletedAt: null },
       select: { id: true, createdAt: true },
     })
 
-    if (!worker) {
-      return false
-    }
+    const suspended =
+      worker !== null && (await this.of(worker.id, worker.createdAt)).status === 'SUSPENDED'
 
-    return (await this.of(worker.id, worker.createdAt)).status === 'SUSPENDED'
+    this.cache.set(userId, { suspended, expiresAt: Date.now() + CACHE_TTL_MS })
+
+    return suspended
   }
 }
 

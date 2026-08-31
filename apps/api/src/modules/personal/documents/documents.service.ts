@@ -68,6 +68,36 @@ export class DocumentsService {
     )
   }
 
+  // El alta que hace el propio colaborador. A diferencia de la de la
+  // Reclutadora, un SSN_ITIN sin verificar NO choca: lo reemplaza, porque la
+  // persona se puede equivocar de archivo y no tiene forma de borrarlo.
+  async createOwn(
+    workerId: string,
+    filePath: string,
+    user: AuthenticatedUser,
+  ): Promise<DocumentEntity> {
+    const current = await this.repo.unverifiedOfType(workerId, TAX_DOCUMENT)
+
+    if (current?.verifiedAt != null) {
+      throw new ConflictException({
+        code: 'DOCUMENT_VERIFIED',
+        message: 'Tu documento ya fue verificado: pide el cambio a Oranje',
+      })
+    }
+
+    return this.toEntity(
+      await this.repo.create({
+        workerId,
+        documentType: TAX_DOCUMENT,
+        filePath,
+        userId: user.id,
+        roleCode: user.roleCode,
+        origin: 'SELF',
+        ...(current ? { replaceId: current.id } : {}),
+      }),
+    )
+  }
+
   async verify(workerId: string, id: string, user: AuthenticatedUser): Promise<DocumentEntity> {
     await this.worker(workerId)
 
