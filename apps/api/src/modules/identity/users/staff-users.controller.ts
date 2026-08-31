@@ -17,7 +17,7 @@ import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { CreateStaffUserDto } from './dto/create-staff-user.dto.js'
 import { QueryStaffUsersDto } from './dto/query-staff-users.dto.js'
 import { UpdateStaffUserDto } from './dto/update-staff-user.dto.js'
-import type { StaffUserEntity } from './entities/staff-user.entity.js'
+import type { StaffUserEntity, StaffUserWithInvitation } from './entities/staff-user.entity.js'
 import { Paginated, StaffUsersService } from './staff-users.service.js'
 
 /** Personal del sistema. `users:manage` es solo del Administrador (Matriz de Ventas §CONFIGURACIÓN). */
@@ -43,7 +43,7 @@ export class StaffUsersController {
   async create(
     @Body() dto: CreateStaffUserDto,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<{ data: StaffUserEntity }> {
+  ): Promise<{ data: StaffUserWithInvitation }> {
     return { data: await this.users.create(dto, user) }
   }
 
@@ -63,7 +63,7 @@ export class StaffUsersController {
   async resendInvitation(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<{ data: StaffUserEntity }> {
+  ): Promise<{ data: StaffUserWithInvitation }> {
     return { data: await this.users.resendInvitation(id, user) }
   }
 }

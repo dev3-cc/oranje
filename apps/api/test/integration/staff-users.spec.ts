@@ -397,3 +397,77 @@ describe('users:manage', () => {
     expect(row).not.toBeNull()
   })
 })
+
+describe('la respuesta dice si el correo salió', () => {
+  it('el correo sale: invitationSent true y sin error', async () => {
+    const entity = await service.create(dto({ email: `sale-${Date.now()}@oranje.local` }), auth)
+
+    created.push(entity.id)
+
+    expect(entity.invitationSent).toBe(true)
+    expect(entity).not.toHaveProperty('invitationError')
+  })
+
+  // Lo que pasó de verdad el 26-ago: el usuario se creó y la pantalla dijo
+  // «Usuario creado» sobre un correo que nunca salió.
+  it('el correo falla: el usuario SÍ se crea, pero la respuesta lo cuenta', async () => {
+    const email = `falla-${Date.now()}@oranje.local`
+
+    fetchMock.mockImplementation(() =>
+      respondError('Your application is authenticating by using local ADC', 403),
+    )
+
+    const entity = await service.create(dto({ email }), auth)
+
+    expect(entity.id).toBeTruthy()
+    expect(entity.invitationSent).toBe(false)
+    expect(entity.invitationError).toBe('FIREBASE_UNAVAILABLE')
+
+    expect(await db.user.findUnique({ where: { id: entity.id } })).not.toBeNull()
+
+    created.push(entity.id)
+  })
+
+  it('un correo que Identity Toolkit rechaza se distingue de Firebase caído', async () => {
+    fetchMock.mockImplementation(() => respondError('INVALID_EMAIL'))
+
+    const entity = await service.create(dto({ email: `malo-${Date.now()}@oranje.local` }), auth)
+
+    expect(entity.invitationError).toBe('EMAIL_REJECTED')
+
+    created.push(entity.id)
+  })
+
+  it('sin correo pedido, invitationSent es false y no hay error', async () => {
+    const entity = await service.create(
+      dto({
+        email: `sin-correo-${Date.now()}@oranje.local`,
+        password: 'Prueba12345!',
+        sendWelcomeEmail: false,
+      }),
+      auth,
+    )
+
+    expect(entity.invitationSent).toBe(false)
+    expect(entity).not.toHaveProperty('invitationError')
+
+    created.push(entity.id)
+  })
+
+  it('el journal guarda el error COMPLETO, no la primera palabra', async () => {
+    const email = `detalle-${Date.now()}@oranje.local`
+    const mensaje = 'Your application is authenticating by using local ADC'
+
+    fetchMock.mockImplementation(() => respondError(mensaje, 403))
+
+    const entity = await service.create(dto({ email }), auth)
+
+    const entry = await db.journalEntry.findFirst({
+      where: { entityId: entity.id, eventType: 'STAFF_USER_INVITATION_FAILED' },
+    })
+
+    expect(entry?.payload).toMatchObject({ error: 'Your', detail: mensaje })
+
+    created.push(entity.id)
+  })
+})

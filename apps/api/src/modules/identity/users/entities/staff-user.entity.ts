@@ -19,3 +19,19 @@ export interface StaffUserEntity {
   isActive: boolean
   createdAt: string
 }
+
+/** Los tres códigos que el front necesita distinguir. */
+export type InvitationErrorCode = 'FIREBASE_UNAVAILABLE' | 'EMAIL_REJECTED' | 'UNKNOWN'
+
+/**
+ * El alta y el reenvío cuentan si el correo SALIÓ. Antes respondían 201 aunque
+ * la invitación fallara, y la pantalla decía «Usuario creado» sobre un correo
+ * que nunca se mandó.
+ *
+ * `invitationSent: false` SIN `invitationError` significa que no se pidió
+ * ningún correo — alta con contraseña y `sendWelcomeEmail: false`.
+ */
+export interface StaffUserWithInvitation extends StaffUserEntity {
+  invitationSent: boolean
+  invitationError?: InvitationErrorCode
+}
