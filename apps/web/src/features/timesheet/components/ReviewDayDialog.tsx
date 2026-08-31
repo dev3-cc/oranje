@@ -14,6 +14,13 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayMonth } from '@/shared/lib/formatters'
 
+const PUNCH_TYPE_LABEL: Record<string, string> = {
+  CLOCK_IN: 'Entrada',
+  LUNCH_OUT: 'Salida a lunch',
+  LUNCH_IN: 'Regreso de lunch',
+  CLOCK_OUT: 'Salida',
+}
+
 const INTRO_SLIDES = [
   {
     image: personajeCronograma,
@@ -133,7 +140,9 @@ export function ReviewDayDialog({
                     key={punch.id}
                     className="grid grid-cols-[7rem_1fr_auto_auto] items-center gap-3 rounded-md bg-surface-2 px-3 py-2 text-sm"
                   >
-                    <span className="font-semibold text-ink">{punch.type}</span>
+                    <span className="font-semibold text-ink">
+                      {PUNCH_TYPE_LABEL[punch.type] ?? punch.type}
+                    </span>
                     <span
                       className={cn(
                         'text-xs',
@@ -141,13 +150,13 @@ export function ReviewDayDialog({
                       )}
                     >
                       {punch.isManual
-                        ? `manual: ${punch.manualReason ?? 'sin motivo'}`
+                        ? `Manual · ${punch.manualReason ?? 'sin motivo'}`
                         : punch.insideGeofence === false
                           ? 'fuera de geocerca'
-                          : 'dentro'}
+                          : 'dentro de la geocerca'}
                     </span>
-                    <span className="text-xs text-ink-3">device {punch.deviceTime ?? '—'}</span>
-                    <span className="text-xs text-ink-2">server {punch.serverTime}</span>
+                    <span className="text-xs text-ink-3">teléfono {punch.deviceTime ?? '—'}</span>
+                    <span className="text-xs text-ink-2">servidor {punch.serverTime}</span>
                   </li>
                 ))}
               </ul>
@@ -173,7 +182,9 @@ export function ReviewDayDialog({
           {isError && (
             <Alert variant="destructive">
               <AlertDescription>
-                {apiErrorMessage(saveError, { fallback: 'No se pudo guardar la revisión.' })}
+                {apiErrorMessage(saveError, {
+                  fallback: 'No se pudo guardar la revisión. Inténtalo de nuevo.',
+                })}
               </AlertDescription>
             </Alert>
           )}

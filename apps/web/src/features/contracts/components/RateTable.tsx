@@ -24,7 +24,8 @@ export function RateTable({ rates }: { rates: ContractRate[] }): ReactNode {
     >
       {rates.length === 0 ? (
         <p className="rounded-lg border border-dashed border-line p-6 text-center text-sm text-ink-3">
-          Todavía no se cotiza ninguna posición.
+          Todavía no se cotiza ninguna posición. Agrégala con «Editar tarifas» mientras el contrato
+          sea borrador.
         </p>
       ) : (
         <Table className="min-w-[34rem] text-left">

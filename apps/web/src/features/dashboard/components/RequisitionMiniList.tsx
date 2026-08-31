@@ -37,7 +37,7 @@ export function RequisitionMiniList({
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
                   <span className="text-sm text-ink-3">
-                    {requisition.filledSlots}/{requisition.totalSlots} slots
+                    {requisition.filledSlots}/{requisition.totalSlots} cubiertos
                   </span>
                   <span className="flex items-center gap-1.5 text-sm text-ink-2">
                     <span

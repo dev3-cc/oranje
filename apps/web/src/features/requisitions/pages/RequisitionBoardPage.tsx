@@ -49,13 +49,13 @@ export function RequisitionBoardPage(): ReactNode {
             setIsNewOpen(true)
           }}
         >
-          Nueva requisición
+          Crear requisición
         </Button>
       </header>
 
       {isError && (
         <LoadError
-          message="No se pudo cargar el tablero."
+          message="No se pudo cargar el Tablero de Requisiciones. Revisa tu conexión e inténtalo de nuevo."
           onRetry={() => {
             void refetch()
           }}

@@ -8,6 +8,7 @@ import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
 } from '@/shared/constants/onboardingStatus'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate } from '@/shared/lib/formatters'
 
 /**
@@ -21,7 +22,11 @@ export function StatusTimeline({ history }: { history: StatusHistoryEntry[] }): 
   return (
     <SectionCard
       title="Timeline del semáforo"
-      subtitle="prospect_state_history — la verdad del semáforo"
+      subtitle={
+        IS_DEV_UI
+          ? 'prospect_state_history — la verdad del semáforo'
+          : 'Cada cambio de estado, con quién lo hizo y por qué'
+      }
     >
       <ol className="flex flex-col gap-5">
         {history.map((entry) => (

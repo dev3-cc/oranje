@@ -137,10 +137,12 @@ function saveErrorMessage(error: unknown): string {
   if (code === 'PROSPECT_ALREADY_OPEN') {
     return 'Este hotel ya tiene un ciclo comercial abierto: ciérralo o elige otro hotel.'
   }
-  if (code === 'HOTEL_NAME_TAKEN') return 'Ya existe un hotel con ese nombre.'
+  if (code === 'HOTEL_NAME_TAKEN') {
+    return 'Ya existe un hotel con ese nombre: elige «Hotel ya registrado» o cambia el nombre.'
+  }
   if (data?.error?.message) return data.error.message
   if (typeof data?.message === 'string') return data.message
-  return 'No se pudo guardar. Revisa los datos e inténtalo de nuevo.'
+  return 'No se pudo guardar el prospecto. Revisa los datos e inténtalo de nuevo.'
 }
 
 function SectionTitle({ children, schema }: { children: ReactNode; schema?: string }): ReactNode {
@@ -537,7 +539,7 @@ export function ProspectFormDialog({
                                   onValueChange={field.onChange}
                                 >
                                   <SelectTrigger id="zoneId" className="w-full">
-                                    <SelectValue placeholder="Selecciona una zona" />
+                                    <SelectValue placeholder="Elige la zona" />
                                   </SelectTrigger>
                                   <SelectContent>
                                     {zones.map((zone) => (
@@ -631,8 +633,8 @@ export function ProspectFormDialog({
 
                         {!placePhotoUrl && (
                           <p className="rounded-lg border border-line bg-surface p-4 text-sm text-ink-3">
-                            Sin foto todavía: al elegir el hotel en el buscador, Oranje la trae y se
-                            guardará automáticamente
+                            Sin foto todavía. Al elegir el hotel en el buscador, la foto llega sola
+                            y se guarda con el prospecto.
                           </p>
                         )}
 
@@ -656,8 +658,8 @@ export function ProspectFormDialog({
                         </SectionTitle>
                         {}
                         <p className="-mt-2 text-sm leading-relaxed text-ink-3">
-                          La persona DEL HOTEL con quien hablas: la gerente, el de compras, quien te
-                          atendió. No son tus datos — a esta persona le llegará la propuesta.
+                          La persona del hotel con quien hablas: la gerente, el de compras, quien te
+                          atendió. No son tus datos: a esta persona le llegará la propuesta.
                         </p>
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -85,7 +85,7 @@ export function RecruitmentDashboard({ session }: { session: SessionUser }): Rea
 
         <RequisitionMiniList
           title="Cola del Self-Pick"
-          subtitle="Autorizadas y en proceso — el borrador no existe para Reclutamiento"
+          subtitle="Autorizadas y en proceso; los borradores no se muestran a Reclutamiento"
           requisitions={overview.queue}
           emptyLabel="No hay requisiciones autorizadas por ahora."
         />

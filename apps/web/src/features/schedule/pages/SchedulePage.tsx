@@ -36,7 +36,7 @@ function DemandRow({ row, days }: { row: ScheduleDemandRow; days: string[] }): R
           {row.startTime} · demanda {row.quantity}
         </p>
         <p className="text-xs text-ink-4">
-          línea {row.lineNumber} · {row.requisitionNumber}
+          renglón {row.lineNumber} · {row.requisitionNumber}
         </p>
       </div>
       {days.map((day) => (
@@ -88,7 +88,7 @@ export function SchedulePage(): ReactNode {
 
       {isError && (
         <LoadError
-          message="No se pudo cargar el schedule."
+          message="No se pudo cargar el Schedule. Revisa tu conexión e inténtalo de nuevo."
           onRetry={() => {
             void refetch()
           }}
@@ -121,7 +121,8 @@ export function SchedulePage(): ReactNode {
 
                 {week.demand.length === 0 ? (
                   <p className="px-4 py-8 text-center text-sm text-ink-3">
-                    Sin demanda autorizada esta semana.
+                    No hay requisiciones autorizadas para esta semana. Cuando un Manager autorice
+                    una, sus posiciones aparecerán aquí.
                   </p>
                 ) : (
                   week.demand.map((row) => (
@@ -152,7 +153,9 @@ export function SchedulePage(): ReactNode {
                 )}
               </h2>
               {week.entries.length === 0 ? (
-                <p className="mt-2 text-sm text-ink-3">Nadie programado todavía.</p>
+                <p className="mt-2 text-sm text-ink-3">
+                  Nadie programado todavía: los turnos aparecen conforme se cubren los slots.
+                </p>
               ) : (
                 <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   {week.days.map((day) => {

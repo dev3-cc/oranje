@@ -34,6 +34,7 @@ import {
   CONTACT_ATTEMPT_TYPE_LABEL,
   CONTACT_ATTEMPT_TYPES,
 } from '@/shared/constants/contactAttempt'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'register-contact-attempt'
 
@@ -152,7 +153,7 @@ export function RegisterAttemptDialog({
       isOpen={isOpen}
       onClose={onClose}
       title={isEditing ? 'Corregir intento de contacto' : 'Registrar intento de contacto'}
-      description={`${hotelName} · commercial.contact_attempt`}
+      description={IS_DEV_UI ? `${hotelName} · commercial.contact_attempt` : hotelName}
       footer={
         showIntro ? null : (
           <>
@@ -190,7 +191,11 @@ export function RegisterAttemptDialog({
         >
           <FormField
             label="Tipo de intento"
-            hint="attempt_type — lista cerrada con CHECK, no catálogo"
+            hint={
+              IS_DEV_UI
+                ? 'attempt_type — lista cerrada con CHECK, no catálogo'
+                : 'Por dónde buscaste al hotel'
+            }
             error={formState.errors.attemptType && 'Elige el tipo de intento'}
           >
             <div className="grid grid-cols-3 gap-3">
@@ -222,7 +227,11 @@ export function RegisterAttemptDialog({
           <FormField
             label="Contacto del hotel"
             htmlFor="hotelContactId"
-            hint="hotel_contact_id es opcional: una visita en frío puede no encontrar a nadie"
+            hint={
+              IS_DEV_UI
+                ? 'hotel_contact_id es opcional: una visita en frío puede no encontrar a nadie'
+                : 'Opcional: en una visita en frío puedes no encontrar a nadie'
+            }
           >
             <Controller
               control={control}
@@ -253,7 +262,11 @@ export function RegisterAttemptDialog({
           <FormField
             label="Resultado"
             htmlFor="outcome"
-            hint="outcome — no contestó · interesado · no interesado · cita agendada"
+            hint={
+              IS_DEV_UI
+                ? 'outcome — no contestó · interesado · no interesado · cita agendada'
+                : 'Qué pasó con este intento'
+            }
             error={formState.errors.outcome && 'Elige el resultado del intento'}
           >
             <Controller
@@ -265,7 +278,7 @@ export function RegisterAttemptDialog({
                   onValueChange={field.onChange}
                 >
                   <SelectTrigger id="outcome" className="w-full">
-                    <SelectValue placeholder="Selecciona un resultado..." />
+                    <SelectValue placeholder="Elige el resultado…" />
                   </SelectTrigger>
                   <SelectContent>
                     {CONTACT_ATTEMPT_OUTCOMES.map((value) => (
@@ -291,7 +304,7 @@ export function RegisterAttemptDialog({
             <Input
               id="notes"
               type="text"
-              placeholder="Escribe una nota..."
+              placeholder="Pidió que llamáramos la próxima semana"
               {...register('notes')}
             />
           </FormField>

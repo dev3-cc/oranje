@@ -39,7 +39,7 @@ export function ReportsPage(): ReactNode {
           </p>
         </div>
         {}
-        <Button variant="secondary" disabled title="El envío recurrente aún no tiene backend">
+        <Button variant="secondary" disabled title="El envío recurrente llega pronto">
           Programar envío recurrente
         </Button>
       </header>
@@ -156,7 +156,9 @@ export function ReportsPage(): ReactNode {
               }
             >
               {report.attempts.channels.length === 0 ? (
-                <p className="text-sm text-ink-3">Sin intentos registrados todavía.</p>
+                <p className="text-sm text-ink-3">
+                  Sin intentos registrados todavía. Se llenan desde la bitácora de cada prospecto.
+                </p>
               ) : (
                 <Table className="text-left">
                   <TableHeader>
@@ -202,7 +204,9 @@ export function ReportsPage(): ReactNode {
               }
             >
               {report.exitReasons.length === 0 ? (
-                <p className="text-sm text-ink-3">Sin salidas registradas todavía.</p>
+                <p className="text-sm text-ink-3">
+                  Sin salidas registradas todavía. Ningún ciclo se ha ido a Rojo, Café o Negro.
+                </p>
               ) : (
                 <ul className="flex flex-col gap-2.5">
                   {report.exitReasons.map((reason) => (

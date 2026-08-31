@@ -41,9 +41,11 @@ export function RequisitionDetailPage(): ReactNode {
   if (isError || !detail) {
     return (
       <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-surface p-6">
-        <p className="text-sm text-red">No se encontró la requisición.</p>
+        <p className="text-sm text-red">
+          No se encontró la requisición: puede que se haya eliminado o que el enlace sea viejo.
+        </p>
         <Link to="/requisiciones" className="text-sm font-semibold text-o-700 hover:underline">
-          Volver al tablero
+          Volver al Tablero de Requisiciones
         </Link>
       </div>
     )
@@ -81,7 +83,7 @@ export function RequisitionDetailPage(): ReactNode {
 
         <div className="flex shrink-0 flex-wrap items-center gap-3">
           {/* Espera maqueta; se deja visible para no mover el encabezado después. */}
-          <Button variant="secondary" disabled title="Pendiente: falta el diseño de la bitácora">
+          <Button variant="secondary" disabled title="La bitácora estará disponible próximamente">
             Ver bitácora
           </Button>
           {/*

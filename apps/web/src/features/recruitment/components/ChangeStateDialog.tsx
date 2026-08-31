@@ -57,14 +57,14 @@ export function ChangeStateDialog({
       isOpen={isOpen}
       onClose={onClose}
       title="Cambiar estado"
-      description={`Hoy: ${currentLabel}. El semáforo solo camina por sus transiciones sembradas.`}
+      description={`Estado actual: ${currentLabel}. Solo puedes elegir los cambios permitidos para tu rol.`}
       footer={
         <div className="flex items-center justify-end gap-3">
           {transitions.length > 0 && selected === undefined && (
-            <span className="mr-auto text-xs text-ink-3">Elige el estado destino</span>
+            <span className="mr-auto text-xs text-ink-3">Elige el nuevo estado</span>
           )}
           {selected?.requiresReason && note.trim() === '' && (
-            <span className="mr-auto text-xs text-ink-3">Esta transición exige un motivo</span>
+            <span className="mr-auto text-xs text-ink-3">Este cambio necesita un motivo</span>
           )}
           <Button variant="secondary" onClick={onClose}>
             Cancelar
@@ -76,18 +76,18 @@ export function ChangeStateDialog({
               void submit()
             }}
           >
-            {isSaving ? 'Aplicando…' : 'Aplicar transición'}
+            {isSaving ? 'Cambiando…' : 'Cambiar estado'}
           </Button>
         </div>
       }
     >
       <div className="flex flex-col gap-3">
-        {isLoading && <p className="text-sm text-ink-3">Consultando transiciones…</p>}
+        {isLoading && <p className="text-sm text-ink-3">Buscando los cambios disponibles…</p>}
 
         {!isLoading && transitions.length === 0 && (
           <p className="rounded-md bg-surface-2 px-4 py-3 text-sm text-ink-2">
-            Desde este estado tu rol no dispara ninguna transición: las que salen de aquí son del
-            sistema, del hotel o del Inspector.
+            Desde este estado tu rol no puede hacer ningún cambio: los siguientes los hace el
+            sistema, el Hotel o el Inspector.
           </p>
         )}
 
@@ -118,7 +118,7 @@ export function ChangeStateDialog({
         {transitions.length > 0 && (
           <label className="flex flex-col gap-1.5">
             <span className="text-sm text-ink-3">
-              Nota{selected?.requiresReason ? '' : ' (opcional)'}
+              Motivo{selected?.requiresReason ? '' : ' (opcional)'}
             </span>
             <textarea
               value={note}
@@ -134,7 +134,9 @@ export function ChangeStateDialog({
         {isError && (
           <Alert variant="destructive">
             <AlertDescription>
-              {apiErrorMessage(saveError, { fallback: 'No se pudo aplicar la transición.' })}
+              {apiErrorMessage(saveError, {
+                fallback: 'No se pudo cambiar el estado. Inténtalo de nuevo.',
+              })}
             </AlertDescription>
           </Alert>
         )}

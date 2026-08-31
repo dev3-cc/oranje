@@ -20,7 +20,7 @@ export function LoadError({
       <img src={personajeErrorTecnico} alt="" aria-hidden className="h-32 w-auto" />
       <AlertDescription className="justify-items-center">{message}</AlertDescription>
       <Button variant="secondary" onClick={onRetry}>
-        Reintentar
+        Volver a cargar
       </Button>
     </Alert>
   )

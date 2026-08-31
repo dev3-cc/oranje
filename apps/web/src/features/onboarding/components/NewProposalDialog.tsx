@@ -32,7 +32,7 @@ const INTRO_SLIDES = [
   {
     image: personajePago,
     title: 'Tarifas globales, por ahora',
-    text: 'Pay y bill generales para todo el hotel. Cotizar por posición llegará como cambio aditivo.',
+    text: 'Un pay rate y un bill rate para todo el hotel. Cotizar por posición llegará más adelante.',
   },
   {
     image: personajeRetro,
@@ -89,12 +89,13 @@ export function NewProposalDialog({
           {isError && (
             <p role="alert" className="text-sm text-red">
               {apiErrorMessage(error, {
-                fallback: 'No se pudo abrir el borrador. Inténtalo de nuevo.',
+                fallback:
+                  'No se pudo abrir el borrador. Revisa que el hotel siga en Verde e inténtalo de nuevo.',
               })}
             </p>
           )}
 
-          {isLoading && <p className="p-4 text-sm text-ink-3">Buscando prospectos…</p>}
+          {isLoading && <p className="p-4 text-sm text-ink-3">Buscando hoteles en Verde…</p>}
 
           {!isLoading && targets.length === 0 && (
             <EmptyState
@@ -102,7 +103,7 @@ export function NewProposalDialog({
               text="La propuesta se abre cuando un prospecto está en Verde (o vuelve en Café) y todavía no tiene una. Los hoteles que ya tienen propuesta se siguen desde su fila de la lista."
               action={
                 <Button variant="secondary" onClick={onClose}>
-                  Entendido
+                  Cerrar
                 </Button>
               }
             />

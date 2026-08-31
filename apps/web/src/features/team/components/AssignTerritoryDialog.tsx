@@ -98,7 +98,7 @@ export function AssignTerritoryDialog({
             <p role="alert" className="text-sm text-red">
               {apiErrorMessage(error, {
                 byStatus: {
-                  403: 'Asignar territorio es del BDC o del Administrador (Matriz de Ventas).',
+                  403: 'Solo el BDC o el Administrador pueden asignar territorio.',
                 },
                 fallback: 'No se pudo guardar el territorio. Inténtalo de nuevo.',
               })}

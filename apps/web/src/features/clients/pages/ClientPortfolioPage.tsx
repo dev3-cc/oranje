@@ -109,7 +109,7 @@ export function ClientPortfolioPage(): ReactNode {
 
       {isError && (
         <LoadError
-          message="No se pudo cargar la cartera."
+          message="No se pudo cargar Clientes Activos. Reintenta en unos segundos."
           onRetry={() => {
             void refetch()
           }}
@@ -122,7 +122,7 @@ export function ClientPortfolioPage(): ReactNode {
         <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
           {items.length === 0 ? (
             <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-              Ningún hotel coincide con el filtro.
+              Ningún hotel coincide con estos filtros. Cambia la búsqueda o quita un filtro.
             </p>
           ) : (
             <ul className="flex flex-col gap-4">

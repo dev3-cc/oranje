@@ -26,9 +26,9 @@ describe('ContractListPage', () => {
   it('muestra el estado con el valor del enum, sin traducir', async () => {
     renderList()
 
-    expect(await screen.findAllByText('ACTIVE')).toHaveLength(3)
-    expect(screen.getByText('EXPIRED')).toBeInTheDocument()
-    expect(screen.getByText('DRAFT')).toBeInTheDocument()
+    expect(await screen.findAllByText('Activo')).toHaveLength(3)
+    expect(screen.getByText('Expirado')).toBeInTheDocument()
+    expect(screen.getByText('Borrador')).toBeInTheDocument()
   })
 
   it('cuenta la vigencia en meses, en días o la da por vencida', async () => {

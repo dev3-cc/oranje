@@ -31,7 +31,7 @@ export function ContractDocument({
       </header>
 
       <p className="mt-5 rounded-md bg-yellow/25 p-4 text-sm font-semibold text-ink">
-        VISTA PREVIA SIN VALIDEZ LEGAL — el clausulado es un marcador de posición.
+        VISTA PREVIA SIN VALIDEZ LEGAL: el clausulado todavía no está redactado.
       </p>
 
       <section className="mt-6">
@@ -132,9 +132,8 @@ export function ContractDocument({
           Vigencia y condiciones
         </h4>
         <p className="mt-3 text-sm leading-relaxed text-ink-3">
-          Pendiente: el clausulado (vigencia, causales de terminación, penalizaciones y condiciones
-          de pago) debe salir de la plantilla de Documentos T&amp;C. Este bloque no se redactó desde
-          el front.
+          El clausulado (vigencia, causales de terminación, penalizaciones y condiciones de pago)
+          saldrá de la plantilla de Documentos T&amp;C cuando esté lista.
         </p>
       </section>
 

@@ -125,7 +125,7 @@ export function ClientCardItem({
             <Button
               variant="secondary"
               disabled
-              title="Pendiente: el formulario de hotel vive hoy dentro de Onboarding"
+              title="Por ahora, edita el hotel desde su ficha en el Pipeline"
               className="border-transparent bg-transparent px-2"
             >
               Editar hotel

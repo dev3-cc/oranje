@@ -45,7 +45,7 @@ const INTRO_SLIDES = [
   {
     image: personajeGracias,
     title: 'Validar lo hace entrar al Pool',
-    text: 'Cuando valides el alta pasa a Verde fuerte y queda disponible para asignarse a un hotel.',
+    text: 'Cuando valides el alta, pasa a Verde fuerte y queda disponible para asignarse a un hotel.',
   },
 ] as const
 
@@ -65,9 +65,9 @@ const AFTERMATH = IS_DEV_UI
     ]
   : [
       'Nace en Blanco: el expediente se completa por fases.',
-      'El colaborador completa la Fase 2 (transporte y SSN/ITIN, con 3 días de plazo) y la Fase 3 (emergencia y salud) en la app.',
-      'La Reclutadora valida el alta → pasa a Verde fuerte y entra al Pool.',
-      'Sin SSN/ITIN se aplica la retención del 16% automática.',
+      'El colaborador completa la Fase 2 (transporte y SSN/ITIN, con 3 días de plazo) y la Fase 3 (contacto de emergencia y salud) desde su app.',
+      'Cuando la Reclutadora valida el alta, pasa a Verde fuerte y entra al Pool de Colaboradores.',
+      'Sin SSN/ITIN verificado se le aplica la retención del 16% de forma automática.',
     ]
 
 interface Draft {
@@ -141,7 +141,7 @@ function saveErrorMessage(error: unknown): string {
   return apiErrorMessage(error, {
     byCode: {
       WORKER_UNDERAGE: (info) =>
-        `${info.message ?? 'Menor de edad'} — revisa la fecha de nacimiento.`,
+        `${info.message ?? 'Es menor de edad'}: revisa la fecha de nacimiento.`,
     },
     fallback: 'No se pudo guardar el colaborador. Revisa los datos e inténtalo de nuevo.',
   })
@@ -407,7 +407,9 @@ export function CreateWorkerDialog({
                 aria-label="Fecha de nacimiento"
                 max={maxBirthDate()}
                 disabled={isEditing}
-                title={isEditing ? 'El nacimiento no se edita: es del alta' : undefined}
+                title={
+                  isEditing ? 'La fecha de nacimiento se fija en el alta y no se edita' : undefined
+                }
               />
               <Select
                 value={draft.gender}
@@ -418,7 +420,7 @@ export function CreateWorkerDialog({
               >
                 <SelectTrigger
                   aria-label="Género"
-                  title={isEditing ? 'El género no se edita: es del alta' : undefined}
+                  title={isEditing ? 'El género se fija en el alta y no se edita' : undefined}
                   className="w-full"
                 >
                   <SelectValue />
@@ -475,7 +477,7 @@ export function CreateWorkerDialog({
                 Decisiones de Oranje sobre su perfil
               </h3>
               <p className="text-xs text-ink-4">
-                Las define la Reclutadora en la entrevista; el candidato ya no las declara
+                Las defines tú en la entrevista; el candidato no las declara
               </p>
             </div>
 

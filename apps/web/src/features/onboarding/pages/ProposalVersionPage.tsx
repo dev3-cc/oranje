@@ -13,6 +13,7 @@ import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
 } from '@/shared/constants/onboardingStatus'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate, formatMoney } from '@/shared/lib/formatters'
 
 /**
@@ -42,7 +43,9 @@ export function ProposalVersionPage(): ReactNode {
   if (isError || !workspace || !selected) {
     return (
       <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-surface p-6">
-        <p className="text-sm text-red">No se encontró esa versión de la propuesta.</p>
+        <p className="text-sm text-red">
+          Esa versión de la propuesta no existe. Vuelve a Propuestas y elige otra.
+        </p>
         <Link to="/propuestas" className="text-sm font-semibold text-o-700 hover:underline">
           Volver a Propuestas
         </Link>
@@ -81,7 +84,9 @@ export function ProposalVersionPage(): ReactNode {
           <p className="mt-1.5 text-sm text-ink-3">
             {selected.sentAt
               ? `Enviada ${formatDate(selected.sentAt)} · ${selected.byName}`
-              : 'Borrador sin enviar · sent_at es NULL hasta enviarla'}
+              : IS_DEV_UI
+                ? 'Borrador sin enviar · sent_at es NULL hasta enviarla'
+                : 'Borrador sin enviar'}
           </p>
         </div>
 

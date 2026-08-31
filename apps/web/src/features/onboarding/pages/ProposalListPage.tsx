@@ -30,7 +30,7 @@ export function ProposalListPage(): ReactNode {
           <p className="mt-1.5 text-sm text-ink-3">
             {isLoading
               ? 'Cargando propuestas…'
-              : `${candidates.length} hoteles con propuesta · se editan desde su ficha`}
+              : `${candidates.length} hoteles con propuesta · cada una se edita desde la ficha del hotel`}
           </p>
         </div>
         <Button
@@ -39,7 +39,7 @@ export function ProposalListPage(): ReactNode {
             setIsCreating(true)
           }}
         >
-          + Nueva propuesta
+          Nueva propuesta
         </Button>
       </header>
 
@@ -63,8 +63,8 @@ export function ProposalListPage(): ReactNode {
 
       {!isLoading && !isError && candidates.length === 0 && (
         <EmptyState
-          title="Todavía no se cotiza ningún hotel"
-          text="La propuesta se abre cuando un prospecto llega a Verde. Usa «Nueva propuesta» aquí arriba o entra a la ficha del prospecto."
+          title="Aún no hay propuestas"
+          text="La propuesta se abre cuando un prospecto llega a Verde. Crea la primera con «Nueva propuesta» o desde la ficha del prospecto."
           action={
             <Button
               variant="secondary"
@@ -72,7 +72,7 @@ export function ProposalListPage(): ReactNode {
                 setIsCreating(true)
               }}
             >
-              + Nueva propuesta
+              Nueva propuesta
             </Button>
           }
         />

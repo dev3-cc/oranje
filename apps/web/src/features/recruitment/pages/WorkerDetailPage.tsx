@@ -34,6 +34,7 @@ import {
 } from '@/shared/constants/workerEnums'
 import {
   workerStatusChipLabel,
+  WORKER_STATUS_LABEL,
   WORKER_STATUS_TOKEN,
   type WorkerStatus,
 } from '@/shared/constants/workerStatus'
@@ -46,6 +47,11 @@ const DOCUMENT_TYPE_LABEL: Record<string, string> = {
   ID: 'Identificación oficial',
   PROOF_OF_ADDRESS: 'Comprobante de domicilio',
   OTHER: 'Otro',
+}
+
+/** En dev el historial habla en códigos (documentación viva); en build, en el nombre del estado. */
+function stateName(code: string): string {
+  return IS_DEV_UI ? code : (WORKER_STATUS_LABEL[code as WorkerStatus] ?? code)
 }
 
 function initialsOf(fullName: string): string {
@@ -135,9 +141,11 @@ export function WorkerDetailPage(): ReactNode {
     return (
       <div className="flex flex-col items-center gap-4 rounded-lg border border-line bg-surface p-8 text-center">
         <img src={mascotaTriste} alt="" aria-hidden className="h-32 w-auto" />
-        <p className="text-sm text-red">No se encontró al colaborador.</p>
+        <p className="text-sm text-red">
+          No se encontró al colaborador: puede que el enlace sea viejo o que ya no esté en el Pool.
+        </p>
         <Link to="/pool-colaboradores" className="text-sm font-semibold text-o-700 hover:underline">
-          Volver al Pool
+          Volver al Pool de Colaboradores
         </Link>
       </div>
     )
@@ -158,7 +166,7 @@ export function WorkerDetailPage(): ReactNode {
     { label: 'Zona', value: worker.zone.name, foot: 'zone_id' },
     {
       label: 'Usuario del sistema',
-      value: worker.hasAccount ? 'Con cuenta' : '—',
+      value: worker.hasAccount ? 'Con cuenta' : 'Sin cuenta todavía',
       foot: 'user_id · nulable — sin cuenta hasta el primer login',
     },
     { label: 'Dirección', value: worker.address, foot: 'address' },
@@ -297,7 +305,7 @@ export function WorkerDetailPage(): ReactNode {
             subtitle={
               IS_DEV_UI
                 ? 'todas nulables · 9 integran is_profile_complete (vw_worker) — la foto no cuenta'
-                : '9 campos obligatorios completan el perfil — la foto no cuenta'
+                : 'Con estos 9 datos el perfil queda completo; la foto no cuenta'
             }
           >
             <div className="grid gap-x-6 gap-y-4 sm:grid-cols-3">
@@ -309,7 +317,11 @@ export function WorkerDetailPage(): ReactNode {
 
           <SectionCard
             title="Documentos"
-            subtitle={IS_DEV_UI ? 'personal.worker_document' : 'El expediente del colaborador'}
+            subtitle={
+              IS_DEV_UI
+                ? 'personal.worker_document'
+                : 'Sube y verifica los documentos del Expediente'
+            }
           >
             {/* Alta: tipo + archivo. Verificar el SSN/ITIN es lo que levanta la retención. */}
             <div className="mb-4 flex flex-wrap items-center gap-3 rounded-md bg-surface-2 p-3">
@@ -355,7 +367,7 @@ export function WorkerDetailPage(): ReactNode {
 
             {(documents?.data ?? []).length === 0 ? (
               <p className="rounded-md border border-dashed border-line px-4 py-6 text-center text-sm text-ink-3">
-                Sin documentos en el expediente.
+                Aún no hay documentos. Elige el tipo y súbelo desde aquí arriba.
               </p>
             ) : (
               <ul className="divide-y divide-line">
@@ -400,7 +412,7 @@ export function WorkerDetailPage(): ReactNode {
                           void verifyDocument({ workerId, documentId: doc.id })
                         }}
                       >
-                        Verificar
+                        Verificar documento
                       </Button>
                     )}
                     <button
@@ -445,7 +457,7 @@ export function WorkerDetailPage(): ReactNode {
           className="self-start"
         >
           {history.length === 0 ? (
-            <p className="text-sm text-ink-3">Sin movimientos registrados.</p>
+            <p className="text-sm text-ink-3">Aún no hay cambios de estado.</p>
           ) : (
             <ol className="relative flex flex-col gap-5 border-l-2 border-line pl-5">
               {history.map((entry) => (
@@ -455,7 +467,8 @@ export function WorkerDetailPage(): ReactNode {
                     className="absolute top-1 -left-[26px] size-2.5 rounded-full bg-o-500"
                   />
                   <p className="text-sm font-semibold text-ink">
-                    {entry.fromState ?? '—'} → {entry.toState}
+                    {entry.fromState === null ? '—' : stateName(entry.fromState)} →{' '}
+                    {stateName(entry.toState)}
                   </p>
                   <p className="mt-0.5 text-xs text-ink-3">
                     {formatDate(entry.occurredAt)} · {entry.userName}

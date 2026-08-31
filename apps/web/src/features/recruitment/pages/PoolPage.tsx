@@ -39,7 +39,7 @@ export function PoolPage(): ReactNode {
           <p className="mt-1.5 text-sm text-ink-3">
             {IS_DEV_UI
               ? 'personal.worker · vw_worker deriva edad y perfil completo'
-              : 'Colaboradores validados, listos para asignar a una requisición'}
+              : 'Colaboradores con su estado en el Semáforo; los Disponibles se pueden asignar a una requisición'}
             {pool && ` · ${String(pool.total)} en el pool`}
           </p>
         </div>
@@ -70,7 +70,7 @@ export function PoolPage(): ReactNode {
                 setView('cards')
               }}
               aria-pressed={view === 'cards'}
-              title="Tarjetas por estado del semáforo"
+              title="Tarjetas agrupadas por estado del Semáforo"
               className={`flex cursor-pointer items-center gap-1.5 rounded px-3 py-1.5 text-sm ${
                 view === 'cards' ? 'bg-o-50 font-semibold text-o-700' : 'text-ink-3 hover:text-ink'
               }`}
@@ -85,7 +85,7 @@ export function PoolPage(): ReactNode {
               setIsCreateOpen(true)
             }}
           >
-            + Nuevo colaborador
+            Crear colaborador
           </Button>
         </div>
       </header>
@@ -94,7 +94,7 @@ export function PoolPage(): ReactNode {
 
       {isError && (
         <LoadError
-          message="No se pudo cargar el pool."
+          message="No se pudo cargar el Pool de Colaboradores. Revisa tu conexión e inténtalo de nuevo."
           onRetry={() => {
             void refetch()
           }}

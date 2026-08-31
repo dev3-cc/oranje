@@ -210,7 +210,8 @@ export function NewRequisitionDialog({
           byStatus: {
             403: 'Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área o el Manager General del hotel.',
           },
-          fallback: 'No se pudo guardar la requisición.',
+          fallback:
+            'No se pudo guardar la requisición. Revisa las posiciones e inténtalo de nuevo.',
         }),
       })
     }
@@ -357,7 +358,8 @@ export function NewRequisitionDialog({
                     )}
                     {!sessionHotel && options !== undefined && options.hotels.length === 0 && (
                       <span className="text-xs text-ink-3">
-                        Un hotel puede pedir gente cuando llega a Naranja — cliente activo.
+                        Un hotel puede pedir personal cuando llega a Naranja, es decir, cuando ya es
+                        cliente activo.
                       </span>
                     )}
                     {errors.hotelId && (
@@ -611,7 +613,7 @@ export function NewRequisitionDialog({
                         append(emptyPositionDraft(department))
                       }}
                     >
-                      + Agregar posición
+                      Agregar posición
                     </Button>
                   </div>
                 </fieldset>

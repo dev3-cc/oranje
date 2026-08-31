@@ -35,7 +35,9 @@ export function ProposalVersionList({
       {isLoading && <p className="py-2 text-sm text-ink-3">Cargando propuestas…</p>}
 
       {!isLoading && versions.length === 0 && (
-        <p className="py-2 text-sm text-ink-3">Todavía no se envía ninguna propuesta.</p>
+        <p className="py-2 text-sm text-ink-3">
+          Todavía no hay propuesta para este hotel. Empieza con «Abrir propuesta».
+        </p>
       )}
 
       {versions.length > 0 && (

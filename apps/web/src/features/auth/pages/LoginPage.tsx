@@ -91,17 +91,26 @@ function HotelBackdrop(): ReactNode {
 
 /** Un solo mensaje para credenciales malas: no se revela cuál mitad falló. */
 function loginErrorMessage(error: unknown): string {
-  const code =
-    typeof error === 'object' && error !== null
-      ? ((error as { data?: { error?: { code?: string } } }).data?.error?.code ?? '')
-      : ''
+  const failure = (error ?? {}) as {
+    status?: number | string
+    data?: { error?: { code?: string } }
+  }
+  const code = failure.data?.error?.code ?? ''
+  /* Sin respuesta del API (caído, sin red, CORS): no es culpa de la contraseña. */
+  if (
+    failure.status === 'FETCH_ERROR' ||
+    failure.status === 'TIMEOUT_ERROR' ||
+    (typeof failure.status === 'number' && failure.status >= 500)
+  ) {
+    return 'No pudimos conectar con Oranje. Revisa tu conexión e inténtalo en un momento.'
+  }
   if (code === 'LOGIN_NOT_CONFIGURED') {
-    return 'Este ambiente no tiene el login configurado. Avisa al administrador.'
+    return 'El acceso no está configurado en este ambiente. Avisa al Administrador.'
   }
   if (code === 'USER_NOT_REGISTERED' || code === 'USER_INACTIVE') {
-    return 'Tu cuenta no está activa en Oranje. Avisa al administrador.'
+    return 'Tu cuenta no está activa en Oranje. Pide al Administrador que la active.'
   }
-  return 'No se pudo iniciar sesión. Revisa tu correo y contraseña.'
+  return 'El correo o la contraseña no coinciden. Revísalos e inténtalo de nuevo.'
 }
 
 type AuthMode = 'login' | 'reset'
@@ -155,7 +164,7 @@ export function LoginPage(): ReactNode {
   async function onRequestReset(): Promise<void> {
     const email = getValues('email').trim()
     if (!email) {
-      setSubmitError('Escribe tu correo para mandarte el enlace.')
+      setSubmitError('Escribe tu correo y te mandamos el enlace.')
       return
     }
     setSubmitError(null)
@@ -219,7 +228,7 @@ export function LoginPage(): ReactNode {
                       id="email"
                       type="email"
                       autoComplete="email"
-                      placeholder="tu@oranje.mx"
+                      placeholder="ana@oranje.mx"
                       className="h-auto px-4 py-3"
                       {...register('email')}
                     />
@@ -288,12 +297,12 @@ export function LoginPage(): ReactNode {
                     whileTap={{ scale: isSubmitting ? 1 : 0.985 }}
                     className="rounded-md bg-o-500 px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-o-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {isSubmitting ? 'Entrando…' : 'Entrar'}
+                    {isSubmitting ? 'Iniciando sesión…' : 'Iniciar sesión'}
                   </motion.button>
                 </form>
 
                 <p className="text-xs text-ink-4">
-                  ¿Sin acceso? El alta de usuarios la hace el administrador de tu departamento.
+                  ¿Sin acceso? Pídele el alta al Administrador de tu departamento.
                 </p>
               </motion.div>
             ) : (
@@ -315,7 +324,7 @@ export function LoginPage(): ReactNode {
                 {resetSentTo ? (
                   <p className="rounded-md bg-surface-2 p-4 text-sm text-ink-2">
                     Si <span className="font-semibold">{resetSentTo}</span> está registrado en
-                    Oranje, el enlace ya va en camino. Revisa también el spam.
+                    Oranje, el enlace ya va en camino. Revisa también la carpeta de spam.
                   </p>
                 ) : (
                   <div className="flex flex-col gap-5">
@@ -327,7 +336,7 @@ export function LoginPage(): ReactNode {
                         id="email"
                         type="email"
                         autoComplete="email"
-                        placeholder="tu@oranje.mx"
+                        placeholder="ana@oranje.mx"
                         className="h-auto px-4 py-3"
                         {...register('email')}
                       />
@@ -348,7 +357,7 @@ export function LoginPage(): ReactNode {
                       }}
                       className="rounded-md bg-o-500 px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-o-700"
                     >
-                      Mandar enlace
+                      Enviar enlace
                     </motion.button>
                   </div>
                 )}

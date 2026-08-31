@@ -126,7 +126,7 @@ export function PoolTable({
     <DataTable
       columns={COLUMNS}
       data={items}
-      emptyMessage="Nadie en el pool coincide con el filtro."
+      emptyMessage="Ningún colaborador coincide con estos filtros. Cambia o quita un filtro para ver más."
       dense
       onRowClick={onEdit}
     />

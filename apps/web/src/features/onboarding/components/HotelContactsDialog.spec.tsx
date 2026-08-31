@@ -66,7 +66,7 @@ describe('HotelContactsDialog', () => {
     const user = userEvent.setup()
     renderDialog()
 
-    await user.type(screen.getByPlaceholderText('Nombre y apellidos'), 'Luis Cano')
+    await user.type(screen.getByPlaceholderText('Laura Méndez'), 'Luis Cano')
     await user.type(screen.getByPlaceholderText('nombre@hotel.mx'), 'luis-arroba-hotel')
     await user.click(screen.getByRole('button', { name: 'Agregar contacto' }))
 
@@ -76,17 +76,19 @@ describe('HotelContactsDialog', () => {
   it('dice quién tiene hoy el principal, que es lo que impide marcarlo', () => {
     renderDialog()
 
-    expect(screen.getByText('is_primary · apagado: Marta Solís ya lo es')).toBeInTheDocument()
+    expect(
+      screen.getByText('is_primary · Marta Solís ya es el principal; si marcas este, lo reemplaza'),
+    ).toBeInTheDocument()
   })
 
   it('se pueden encolar varios y solo uno queda como principal', async () => {
     const user = userEvent.setup()
     renderDialog()
 
-    await user.type(screen.getByPlaceholderText('Nombre y apellidos'), 'Luis Cano')
+    await user.type(screen.getByPlaceholderText('Laura Méndez'), 'Luis Cano')
     await user.click(screen.getByRole('checkbox'))
 
-    await user.click(screen.getByRole('button', { name: '+ Agregar contacto' }))
+    await user.click(screen.getByRole('button', { name: 'Agregar otro contacto' }))
     expect(screen.getByText('2 registrados · 2 sin guardar')).toBeInTheDocument()
 
     // El segundo borrador arranca sin principal, y marcarlo apaga al primero.
@@ -97,7 +99,7 @@ describe('HotelContactsDialog', () => {
     const drafts = screen.getAllByText('sin guardar')
     expect(drafts).toHaveLength(2)
 
-    await user.type(screen.getByPlaceholderText('Nombre y apellidos'), 'Ana Ruiz')
+    await user.type(screen.getByPlaceholderText('Laura Méndez'), 'Ana Ruiz')
     await user.click(screen.getByRole('button', { name: 'Agregar 2 contactos' }))
 
     // Volver al primero: perdió el principal al dárselo al segundo.

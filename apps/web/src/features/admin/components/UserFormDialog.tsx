@@ -84,16 +84,20 @@ const PENDING_ROLES: ReadonlySet<string> = new Set([
 
 const userFormSchema = z
   .object({
-    fullName: z.string().trim().min(1, 'Falta el nombre').max(160),
-    email: z.string().trim().email('No parece un correo válido').max(255),
-    roleCode: z.string().min(1, 'Falta el rol'),
+    fullName: z.string().trim().min(1, 'Escribe el nombre completo').max(160),
+    email: z.string().trim().email('Escribe un correo válido, como ana@casacurtidor.com').max(255),
+    roleCode: z.string().min(1, 'Elige un rol'),
     reportsToUserId: z.string(),
     accessMode: z.enum(['INVITATION', 'PASSWORD']),
     password: z.string(),
   })
   .superRefine((values, context) => {
     if (values.accessMode === 'PASSWORD' && values.password.length < 8) {
-      context.addIssue({ code: 'custom', path: ['password'], message: 'Mínimo 8 caracteres' })
+      context.addIssue({
+        code: 'custom',
+        path: ['password'],
+        message: 'La contraseña necesita al menos 8 caracteres',
+      })
     }
   })
 
@@ -119,16 +123,16 @@ function apiErrorMessage(error: unknown): string {
     case 'USE_HOTEL_USERS':
       return 'Ese rol no se da de alta aquí: los usuarios del Hotel nacen en la Conversión.'
     case 'ROLE_NOT_FOUND':
-      return 'Ese rol no existe en el catálogo.'
+      return 'Ese rol ya no existe. Recarga la página y vuelve a elegirlo.'
     case 'SUPERVISOR_NOT_FOUND':
       return 'La persona a la que reporta no existe o está de baja.'
     case 'FIREBASE_UNAVAILABLE':
       /* Con contraseña la cuenta va ANTES de la fila: si Firebase no responde, NO se guardó nada. */
-      return 'Firebase no respondió y el usuario NO se creó. Inténtalo de nuevo en un momento.'
+      return 'El servicio de acceso no respondió y el usuario no se creó. Inténtalo de nuevo en un momento.'
     case 'INVITATION_FAILED':
       return 'El usuario quedó guardado, pero el correo de invitación no salió: reenvíala desde su ficha.'
     default:
-      return 'No se pudo guardar. Revisa los datos e intenta de nuevo.'
+      return 'No se pudo guardar el usuario. Revisa los datos e inténtalo de nuevo.'
   }
 }
 
@@ -302,7 +306,7 @@ export function UserFormDialog({
       setCreated({ email: values.email, mode: values.accessMode })
       return
     }
-    toast.success('Cambios guardados')
+    toast.success('Usuario actualizado')
     onClose()
   }
 
@@ -428,11 +432,11 @@ export function UserFormDialog({
                 <p className="text-sm font-semibold text-o-700">{created.email}</p>
                 <p className="max-w-sm text-xs leading-relaxed text-ink-3">
                   {created.mode === 'INVITATION'
-                    ? 'La persona recibirá un correo para establecer su contraseña. Hasta su primer login, su cuenta aparece como «Invitación enviada».'
+                    ? 'La persona recibirá un correo para establecer su contraseña. Hasta que entre por primera vez, su cuenta aparece como «Invitación enviada».'
                     : 'Ya puede entrar con la contraseña que definiste. Compártesela por un canal seguro — no viaja por correo.'}
                 </p>
                 <Button variant="primary" className="mt-2" onClick={onClose}>
-                  Listo
+                  Cerrar
                 </Button>
               </div>
             ) : (
@@ -447,7 +451,7 @@ export function UserFormDialog({
                   <Input
                     aria-label="Nombre completo"
                     {...register('fullName')}
-                    placeholder="Nombre y apellidos"
+                    placeholder="Ana López García"
                   />
                   {errors.fullName && <p className="text-xs text-red">{errors.fullName.message}</p>}
                 </FormRow>
@@ -457,14 +461,14 @@ export function UserFormDialog({
                     aria-label="Correo"
                     type="email"
                     {...register('email')}
-                    placeholder="persona@casacurtidor.com"
+                    placeholder="ana@casacurtidor.com"
                     disabled={isEditing}
                     className={cn(isEditing && 'cursor-not-allowed bg-surface-2')}
                   />
                   <p className="text-xs text-ink-3">
                     {isEditing
                       ? 'Cambiar de persona es dar de baja este usuario y dar de alta al nuevo.'
-                      : 'Inmutable después del alta: es el vínculo con la cuenta de Firebase.'}
+                      : 'No se podrá cambiar después del alta: es el correo con el que la persona entra.'}
                   </p>
                   {errors.email && <p className="text-xs text-red">{errors.email.message}</p>}
                 </FormRow>
@@ -531,7 +535,7 @@ export function UserFormDialog({
                     {allowedSuperiors !== undefined && allowedSuperiors.length === 0
                       ? 'El Administrador no reporta a nadie.'
                       : roleCode && superiorOptions.length === 0
-                        ? 'Todavía no hay nadie dado de alta con el rol superior a este.'
+                        ? 'Aún no hay nadie dado de alta con el rol al que reporta. Da de alta primero a esa persona.'
                         : 'Solo se ofrecen los superiores del rol elegido: el BD apunta a su BDC, la Reclutadora a su Líder.'}
                   </p>
                   {roleCode &&
@@ -581,8 +585,8 @@ export function UserFormDialog({
                     {accessMode === 'INVITATION' ? (
                       <p className="rounded-xl bg-o-50 px-4 py-3 text-xs leading-relaxed text-o-700">
                         Aquí no se captura contraseña: al crear, la persona recibe un correo de
-                        invitación y establece la suya. Hasta su primer login la cuenta aparece como
-                        «Invitación enviada».
+                        invitación y establece la suya. Hasta que entre por primera vez, la cuenta
+                        aparece como «Invitación enviada».
                       </p>
                     ) : (
                       <>
@@ -605,7 +609,7 @@ export function UserFormDialog({
                       <span className="text-xs text-ink-2">
                         {resendState.isSuccess
                           ? 'Invitación reenviada: la persona tiene un correo nuevo para establecer su contraseña.'
-                          : 'Aún no hace su primer login.'}
+                          : 'Todavía no ha entrado por primera vez.'}
                       </span>
                       {!resendState.isSuccess && (
                         <Button
@@ -682,7 +686,7 @@ export function UserFormDialog({
                         confirmingBaja && 'border border-red/40 bg-red/5 font-semibold',
                       )}
                     >
-                      {confirmingBaja ? '¿Confirmar baja?' : 'Dar de baja'}
+                      {confirmingBaja ? 'Sí, dar de baja' : 'Dar de baja'}
                     </Button>
                   )}
                   <span className="flex-1" />

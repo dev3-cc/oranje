@@ -60,7 +60,7 @@ export function StandByDialog({
       isOpen={isOpen}
       onClose={onClose}
       title={`Mandar a Stand-by a ${workerName}`}
-      description="Pasa a Rosa: pausado, sin turnos nuevos, hasta que el hotel lo reactive."
+      description="Pasa a Rosa: queda en pausa, sin turnos nuevos, hasta que el Hotel lo reactive."
       footer={
         showIntro ? null : (
           <div className="flex justify-end gap-3">
@@ -74,7 +74,7 @@ export function StandByDialog({
                 void submit()
               }}
             >
-              {isLoading ? 'Enviando…' : 'Mandar a Stand-by'}
+              {isLoading ? 'Mandando…' : 'Mandar a Stand-by'}
             </Button>
           </div>
         )
@@ -105,7 +105,9 @@ export function StandByDialog({
           {isError && (
             <Alert variant="destructive" className="mt-2">
               <AlertDescription>
-                {apiErrorMessage(sendError, { fallback: 'No se pudo mandar a Stand-by.' })}
+                {apiErrorMessage(sendError, {
+                  fallback: 'No se pudo mandar a Stand-by. Inténtalo de nuevo.',
+                })}
               </AlertDescription>
             </Alert>
           )}

@@ -64,7 +64,7 @@ describe('la Bolsa Self-Pick', () => {
     expect(screen.getAllByText('libre')).toHaveLength(2)
     expect(screen.getByText('Asignar al slot 5')).toBeInTheDocument()
 
-    const assignButton = screen.getByRole('button', { name: 'Asignar' })
+    const assignButton = screen.getByRole('button', { name: 'Asignar colaborador' })
     await user.click(screen.getByLabelText('Colaborador'))
     await user.click(await screen.findByRole('option', { name: 'Ana Rivera Gómez · Zona Centro' }))
     await user.click(screen.getByLabelText('Tipo'))
@@ -95,7 +95,7 @@ describe('la Bolsa Self-Pick', () => {
     await user.click(
       await screen.findByRole('option', { name: 'María Fernanda Ortiz · Zona Centro' }),
     )
-    await user.click(screen.getByRole('button', { name: 'Asignar' }))
+    await user.click(screen.getByRole('button', { name: 'Asignar colaborador' }))
 
     expect(await screen.findByText('Renglón completo', undefined, SLOW)).toBeInTheDocument()
     expect(screen.getByText(/Los 6 slots están ocupados/)).toBeInTheDocument()

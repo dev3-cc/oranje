@@ -82,7 +82,7 @@ export function HotelMapCard({
       )}
 
       <Link to={`/pipeline/${hotel.id}`} className={buttonClass('primary', 'mt-4 w-full sm:mt-5')}>
-        Abrir ficha
+        Abrir ficha del hotel
       </Link>
     </article>
   )

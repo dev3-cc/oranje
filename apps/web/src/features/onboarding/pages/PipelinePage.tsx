@@ -87,7 +87,7 @@ export function PipelinePage(): ReactNode {
 
         <div className="flex items-center gap-3">
           {/* Pendiente: ninguna de las dos pantallas destino está diseñada todavía */}
-          <Button disabled title="Pendiente: falta el diseño de la vista tabla">
+          <Button disabled title="La vista tabla llega pronto">
             Vista tabla
           </Button>
           <Button
@@ -128,7 +128,7 @@ export function PipelinePage(): ReactNode {
 
       {isError && (
         <LoadError
-          message="No se pudo cargar el pipeline."
+          message="No se pudo cargar el Pipeline. Reintenta en unos segundos."
           onRetry={() => {
             void refetch()
           }}

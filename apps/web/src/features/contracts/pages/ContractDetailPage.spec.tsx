@@ -65,6 +65,6 @@ describe('ContractDetailPage', () => {
     renderDetail('ct-0203')
 
     expect(await screen.findByText('Indefinido')).toBeInTheDocument()
-    expect(screen.getByText('Todavía no se cotiza ninguna posición.')).toBeInTheDocument()
+    expect(screen.getByText(/Todavía no se cotiza ninguna posición/)).toBeInTheDocument()
   })
 })

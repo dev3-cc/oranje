@@ -45,7 +45,7 @@ export function ContractListPage(): ReactNode {
           <p className="mt-1.5 text-sm text-ink-3">
             {IS_DEV_UI
               ? 'commercial.contract · un contrato por hotel a la vez en ACTIVE'
-              : 'Un contrato vigente por hotel a la vez'}
+              : 'Los contratos de cada hotel: solo uno vigente a la vez'}
           </p>
         </div>
 
@@ -55,7 +55,7 @@ export function ContractListPage(): ReactNode {
             setIsCreating(true)
           }}
         >
-          + Nuevo contrato
+          Agregar contrato
         </Button>
       </header>
 

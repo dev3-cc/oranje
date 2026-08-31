@@ -54,12 +54,12 @@ export function WorkerWeekSummary({
           byCode: {
             ANOMALIES_PENDING:
               'Quedan días con anomalía sin resolver: revísalos antes de enviar la semana.',
-            TIMESHEET_NOT_OPEN: 'Esta semana ya se envió.',
-            TIMESHEET_NOT_PENDING: 'Solo se aprueba una semana en revisión.',
+            TIMESHEET_NOT_OPEN: 'Esta semana ya se envió a aprobación: no admite más cambios.',
+            TIMESHEET_NOT_PENDING: 'Solo se aprueba una semana enviada a aprobación.',
             DEPARTMENT_OUT_OF_SCOPE: 'Esta semana es de otro departamento: no te toca aprobarla.',
           },
           byStatus: {
-            403: 'Aprobar es del Manager de Área o del Manager General (D-09).',
+            403: 'Solo el Manager de Área o el Manager General pueden aprobar la semana.',
           },
           fallback: 'No se pudo cambiar la semana. Inténtalo de nuevo.',
         }),

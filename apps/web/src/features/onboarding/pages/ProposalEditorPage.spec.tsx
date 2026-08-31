@@ -49,7 +49,7 @@ describe('ProposalEditorPage', () => {
     expect(await screen.findByText('Sin versión abierta')).toBeInTheDocument()
     expect(screen.queryByLabelText('Pay rate')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Enviar propuesta/ })).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Nueva versión' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Abrir versión nueva' })).toBeInTheDocument()
   })
 
   it('no deja facturar por debajo de lo que se paga', async () => {
@@ -84,7 +84,7 @@ describe('ProposalEditorPage', () => {
   it('la versión nueva arranca con las tarifas de la anterior', async () => {
     await renderEditor('psp-0011')
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Nueva versión' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Abrir versión nueva' }))
 
     // Villas Coral tenía v1 enviada con pay 172 / bill 250.
     expect(await screen.findByLabelText('Pay rate')).toHaveValue(172)

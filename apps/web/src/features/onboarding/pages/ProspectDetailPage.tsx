@@ -66,9 +66,11 @@ export function ProspectDetailPage(): ReactNode {
   if (isError || !prospect) {
     return (
       <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-surface p-6">
-        <p className="text-sm text-red">No se encontró el prospecto.</p>
+        <p className="text-sm text-red">
+          Este prospecto no existe o ya no está disponible. Vuelve al Pipeline y elige otro.
+        </p>
         <Link to="/pipeline" className="text-sm font-semibold text-o-700 hover:underline">
-          Volver al pipeline
+          Volver al Pipeline
         </Link>
       </div>
     )
@@ -130,7 +132,7 @@ export function ProspectDetailPage(): ReactNode {
                 disabled={isTerminalStatus(prospect.status)}
                 title={
                   isTerminalStatus(prospect.status)
-                    ? `${statusLabel} es un estado final: no admite más cambios`
+                    ? `${statusLabel} es un estado final: el ciclo ya no cambia de estado`
                     : undefined
                 }
                 onClick={() => {
@@ -157,14 +159,14 @@ export function ProspectDetailPage(): ReactNode {
                   }}
                   className={HERO_GHOST_BUTTON}
                 >
-                  Archivar
+                  Archivar ciclo
                 </button>
               )}
               {/* Abre el MISMO modal del alta, en modo edición: un solo formulario. */}
               <button
                 type="button"
-                aria-label="Editar la información del cliente"
-                title="Editar la información del cliente"
+                aria-label="Editar datos del hotel"
+                title="Editar datos del hotel"
                 onClick={() => {
                   setIsEditDialogOpen(true)
                 }}
@@ -196,8 +198,8 @@ export function ProspectDetailPage(): ReactNode {
             {/* Abre el MISMO modal del alta, en modo edición: un solo formulario. */}
             <button
               type="button"
-              aria-label="Editar la información del cliente"
-              title="Editar la información del cliente"
+              aria-label="Editar datos del hotel"
+              title="Editar datos del hotel"
               onClick={() => {
                 setIsEditDialogOpen(true)
               }}
@@ -224,7 +226,7 @@ export function ProspectDetailPage(): ReactNode {
               disabled={isTerminalStatus(prospect.status)}
               title={
                 isTerminalStatus(prospect.status)
-                  ? `${statusLabel} es un estado final: no admite más cambios`
+                  ? `${statusLabel} es un estado final: el ciclo ya no cambia de estado`
                   : undefined
               }
               onClick={() => {
@@ -241,7 +243,7 @@ export function ProspectDetailPage(): ReactNode {
                   setIsArchiveDialogOpen(true)
                 }}
               >
-                Archivar
+                Archivar ciclo
               </Button>
             )}
           </div>

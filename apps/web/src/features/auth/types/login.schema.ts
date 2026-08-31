@@ -6,7 +6,11 @@ import { z } from 'zod'
  * evita el viaje vacío.
  */
 export const loginSchema = z.object({
-  email: z.string().trim().min(1, 'Escribe tu correo').email('Ese correo no parece válido'),
+  email: z
+    .string()
+    .trim()
+    .min(1, 'Escribe tu correo')
+    .email('Escribe un correo válido, como ana@oranje.mx'),
   password: z.string().min(1, 'Escribe tu contraseña'),
 })
 

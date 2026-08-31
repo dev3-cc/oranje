@@ -36,13 +36,13 @@ export function RequisitionAuthorizationPage(): ReactNode {
     return (
       <div className="flex flex-col gap-4">
         <LoadError
-          message="No se pudo cargar la cola de autorización."
+          message="No se pudo cargar la cola de autorización. Revisa tu conexión e inténtalo de nuevo."
           onRetry={() => {
             void refetch()
           }}
         />
         <Link to="/requisiciones" className="text-sm font-semibold text-o-700 hover:underline">
-          Volver al tablero
+          Volver al Tablero de Requisiciones
         </Link>
       </div>
     )
@@ -66,9 +66,7 @@ export function RequisitionAuthorizationPage(): ReactNode {
       </nav>
 
       <header>
-        <h1 className="text-3xl font-bold tracking-tight text-ink">
-          Autorización de requisiciones
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight text-ink">Requisiciones por autorizar</h1>
         <p className="mt-1.5 text-sm text-ink-3">
           {queue.items.length === 1
             ? '1 espera tu firma'
@@ -114,7 +112,7 @@ export function RequisitionAuthorizationPage(): ReactNode {
           </div>
         ) : (
           <p className="rounded-lg border border-line bg-surface p-8 text-center text-sm text-ink-3 xl:col-span-2">
-            Nada pendiente. Todo lo que llegó ya se resolvió.
+            No hay requisiciones por autorizar. Cuando un Supervisor cree una, aparecerá aquí.
           </p>
         )}
       </div>

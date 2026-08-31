@@ -75,7 +75,7 @@ export function HotelDashboard({ session }: { session: SessionUser }): ReactNode
 
       <RequisitionMiniList
         title="Requisiciones del hotel"
-        subtitle="Las más recientes, con su cobertura en slots"
+        subtitle="Las más recientes, con su cobertura"
         requisitions={overview.requisitions}
         emptyLabel="Este hotel no tiene requisiciones todavía."
       />

@@ -56,14 +56,22 @@ export function TimesheetGlobalPage(): ReactNode {
           label="Colaboradores evaluados"
           foot="con timesheet esta semana"
         />
-        <MetricCard value="—" label="Verde · cumplimiento" foot="espera horas contractuales" />
-        <MetricCard value="—" label="Amarillo · desviación" foot="espera horas contractuales" />
-        <MetricCard value="—" label="Rojo · anomalía" foot="espera horas contractuales" />
+        <MetricCard
+          value="—"
+          label="Verde · cumplimiento"
+          foot="pendiente de horas contractuales"
+        />
+        <MetricCard
+          value="—"
+          label="Amarillo · desviación"
+          foot="pendiente de horas contractuales"
+        />
+        <MetricCard value="—" label="Rojo · anomalía" foot="pendiente de horas contractuales" />
       </div>
 
       {isError && (
         <LoadError
-          message="No se pudo cargar la semana."
+          message="No se pudo cargar la semana del Timesheet Global. Reintenta en unos segundos."
           onRetry={() => {
             void refetch()
           }}
@@ -95,7 +103,8 @@ export function TimesheetGlobalPage(): ReactNode {
                     colSpan={HEADERS.length}
                     className="px-4 py-8 text-center text-sm text-ink-3"
                   >
-                    Sin timesheets esta semana.
+                    Nadie tiene Timesheet esta semana. Las filas aparecen cuando los Supervisores
+                    registran horas.
                   </TableCell>
                 </TableRow>
               )}
@@ -124,15 +133,14 @@ export function TimesheetGlobalPage(): ReactNode {
       )}
 
       <p className="rounded-md bg-surface-2 p-3 text-xs leading-relaxed text-ink-3">
-        El indicador de cumplimiento lo calcula el sistema comparando el Contrato contra el
-        Timesheet, sin intervención humana. Las horas contractuales por colaborador{' '}
-        <span className="font-semibold">aún no viajan en el contrato de la API</span>: hasta que el
-        backend las exponga, esas columnas quedan en raya en vez de inventarse
+        El Indicador de Cumplimiento del Timesheet lo calcula el sistema comparando el Contrato con
+        el Timesheet, sin intervención humana. Las horas contractuales por colaborador{' '}
+        <span className="font-semibold">todavía no están disponibles</span>: hasta que lo estén,
+        esas columnas muestran una raya en vez de un dato inventado
         {IS_DEV_UI && (
           <code className="text-ink-4"> · pendiente 13 del ADR (duración del turno)</code>
         )}
-        . El GRIS del semáforo del Colaborador tampoco evalúa: un accidentado queda fuera de la
-        medición semanal.
+        . Un Colaborador en Gris (accidente) tampoco se evalúa: queda fuera de la medición semanal.
       </p>
     </div>
   )

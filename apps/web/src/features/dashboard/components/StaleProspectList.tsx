@@ -23,7 +23,7 @@ export function StaleProspectList({ prospects }: { prospects: StaleProspect[] })
     >
       {prospects.length === 0 ? (
         <p className="py-2 text-sm text-ink-3">
-          Ningún prospecto lleva más de 7 días sin un intento. Bien ahí.
+          Ningún prospecto lleva más de 7 días sin un intento de contacto.
         </p>
       ) : (
         <ul className="flex flex-col gap-5">

@@ -24,7 +24,10 @@ export const requisitionPositionDraftSchema = z.object({
   hotelDepartmentId: z.string().min(1, 'Falta el departamento'),
   quantity: z
     .string()
-    .refine((value) => QUANTITY_PATTERN.test(value) && Number(value) >= 1, 'Mínimo 1'),
+    .refine(
+      (value) => QUANTITY_PATTERN.test(value) && Number(value) >= 1,
+      'Pide al menos 1 persona',
+    ),
   startDate: z.string().min(1, 'Falta la fecha de inicio'),
   startTime: z.string().min(1, 'Falta la hora'),
 })

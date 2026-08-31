@@ -131,7 +131,7 @@ function PlacesAutocompleteInput({
         onInput={(event) => {
           setHasText(event.currentTarget.value !== '')
         }}
-        placeholder={places ? 'Busca el hotel o su dirección…' : 'Buscador no disponible'}
+        placeholder={places ? 'Hotel Puerto Real, Cancún' : 'El buscador no está disponible'}
         aria-label="Buscar la ubicación del hotel"
         className={`${CONTROL_CLASS} border-o-500 pr-11`}
       />
@@ -175,7 +175,7 @@ export function PlacesSearchField({
       <input
         type="text"
         disabled
-        placeholder="Buscador no disponible: falta la API key de Google Maps"
+        placeholder="Buscador no disponible: marca la ubicación directo en el mapa"
         aria-label="Buscar la ubicación del hotel"
         className={`${CONTROL_CLASS} border-line`}
       />
