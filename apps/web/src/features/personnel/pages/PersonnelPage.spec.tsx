@@ -39,9 +39,9 @@ describe('PersonnelPage', () => {
     // Rogelio no está programado, pero el GRIS protege y SE VE.
     const grayRow = screen.getByText('Rogelio Santos').closest('tr') as HTMLElement
     expect(within(grayRow).getByText('GRAY · Accidentado')).toBeInTheDocument()
-    expect(within(grayRow).getByText('— protegido')).toBeInTheDocument()
+    expect(within(grayRow).getByText('Protegido (Gris)')).toBeInTheDocument()
     // Al protegido NO se le ofrece Stand-by (el GRIS protege, D-27).
-    expect(within(grayRow).queryByText('Stand-by')).not.toBeInTheDocument()
+    expect(within(grayRow).queryByText('Mandar a Stand-by')).not.toBeInTheDocument()
 
     expect(screen.getByText('Asignados hoy')).toBeInTheDocument()
     expect(screen.getByText('En accidente (GRIS)')).toBeInTheDocument()
@@ -55,7 +55,7 @@ describe('PersonnelPage', () => {
     const luisRow = (await screen.findByText('Luis Cabrera', undefined, SLOW)).closest(
       'tr',
     ) as HTMLElement
-    await user.click(within(luisRow).getByText('Stand-by'))
+    await user.click(within(luisRow).getByText('Mandar a Stand-by'))
     await user.click(await screen.findByRole('button', { name: 'Continuar' }))
     await user.click(await screen.findByRole('button', { name: 'Continuar' }))
 
@@ -77,6 +77,8 @@ describe('PersonnelPage', () => {
     }, SLOW)
     // En Rosa ya no se re-ofrece Stand-by, y el turno se lee como pausado.
     const updatedRow = screen.getByText('Luis Cabrera').closest('tr') as HTMLElement
-    expect(within(updatedRow).queryByRole('button', { name: 'Stand-by' })).not.toBeInTheDocument()
+    expect(
+      within(updatedRow).queryByRole('button', { name: 'Mandar a Stand-by' }),
+    ).not.toBeInTheDocument()
   })
 })

@@ -9,12 +9,13 @@ import type {
 import { registerWorkerMocks } from './workerMocks'
 
 import { baseApi } from '@/app/baseApi'
-import type { ApiEnvelope } from '@/shared/types/apiContract.types'
+import type { ApiEnvelope, WorkerHistoryEntryApi } from '@/shared/types/apiContract.types'
 
 /**
  * El contrato PROPIO del Colaborador (todo `_own`, el alcance sale del token):
- * `GET /workers/me` (mi expediente + el plazo de SSN/ITIN), `PATCH
- * /workers/me/signup` (fases 2 y 3) y mis notificaciones.
+ * `GET /workers/me` (mi expediente + el plazo de SSN/ITIN), `GET
+ * /workers/me/history` (mi semáforo), `PATCH /workers/me/signup` (fases 2 y
+ * 3) y mis notificaciones.
  */
 registerWorkerMocks()
 
@@ -37,6 +38,27 @@ export const workerApi = baseApi.injectEndpoints({
       query: () => '/workers/me',
       transformResponse: (raw: ApiEnvelope<MyProfile>) => raw.data,
       providesTags: [{ type: 'Worker' as const, id: 'ME' }],
+    }),
+
+    /**
+     * Mi recorrido por el semáforo, la misma forma que `/workers/:id/history`
+     * y del más reciente al más viejo. Sin filas es `[]`, no 404. Comparte
+     * la etiqueta ME: encender disponibilidad lo refresca.
+     */
+    getMyHistory: build.query<WorkerHistoryEntryApi[], void>({
+      query: () => '/workers/me/history',
+      transformResponse: (raw: ApiEnvelope<WorkerHistoryEntryApi[]>) => raw.data,
+      providesTags: [{ type: 'Worker' as const, id: 'ME' }],
+    }),
+
+    /**
+     * Mi SSN/ITIN (RF-C-01): la persona lo sube ella misma. La ruta sale de
+     * `POST /files` (WORKER_DOCUMENT) y el back valida el prefijo; el
+     * documento nace sin verificar — verificar sigue siendo de la Reclutadora.
+     */
+    uploadMyDocument: build.mutation<unknown, { documentType: 'SSN_ITIN'; filePath: string }>({
+      query: (body) => ({ url: '/workers/me/documents', method: 'POST', body }),
+      invalidatesTags: [{ type: 'Worker' as const, id: 'ME' }],
     }),
 
     /** Fases 2 y 3 (RF-C-01/02): campos opcionales, al menos uno por envío. */
@@ -89,7 +111,9 @@ export const { useSetAvailableMutation } = availabilityApi
 
 export const {
   useGetMyProfileQuery,
+  useGetMyHistoryQuery,
   useCompleteSignupMutation,
+  useUploadMyDocumentMutation,
   useGetMyNotificationsQuery,
   useMarkNotificationReadMutation,
 } = workerApi

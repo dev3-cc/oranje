@@ -47,7 +47,7 @@ export function ConversionQueuePage(): ReactNode {
 
       {isError && (
         <LoadError
-          message="No se pudo cargar la cola de conversión."
+          message="No se pudo cargar la cola de Conversión. Reintenta en unos segundos."
           onRetry={() => {
             void refetch()
           }}

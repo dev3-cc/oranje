@@ -40,9 +40,9 @@ const COVERAGE_TOKEN: Record<string, StatusLightToken> = {
 function assignErrorMessage(error: unknown): string {
   return apiErrorMessage(error, {
     byStatus: {
-      409: `Otra reclutadora ganó este slot${IS_DEV_UI ? ' (RR-15)' : ''}: el tablero se actualizó.`,
+      409: `Otra Reclutadora tomó este slot antes${IS_DEV_UI ? ' (RR-15)' : ''}: el tablero ya se actualizó, revisa el siguiente libre.`,
     },
-    fallback: 'No se pudo asignar. Inténtalo de nuevo.',
+    fallback: 'No se pudo asignar al colaborador. Inténtalo de nuevo.',
   })
 }
 
@@ -70,9 +70,11 @@ export function SlotAssignmentPage(): ReactNode {
   if (isError || !board) {
     return (
       <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-surface p-6">
-        <p className="text-sm text-red">No se encontró el renglón.</p>
+        <p className="text-sm text-red">
+          No se encontró esta posición: puede que ya se haya cubierto o eliminado.
+        </p>
         <Link to="/self-pick" className="text-sm font-semibold text-o-700 hover:underline">
-          Volver a la bolsa
+          Volver a la Bolsa
         </Link>
       </div>
     )
@@ -124,17 +126,32 @@ export function SlotAssignmentPage(): ReactNode {
               REQUISITION_STATUS_TOKEN[board.requisitionState.code as RequisitionStatus] ??
               'st-gris'
             }
-            label={`Requisición · ${board.requisitionState.code} · ${board.requisitionState.name}`}
+            label={
+              IS_DEV_UI
+                ? `Requisición · ${board.requisitionState.code} · ${board.requisitionState.name}`
+                : `Requisición · ${board.requisitionState.name}`
+            }
           />
           <StatusLightSoftBadge
             token={COVERAGE_TOKEN[board.coverage.code] ?? 'st-gris'}
-            label={`Cobertura · ${board.coverage.code} · ${board.coverage.name}`}
+            label={
+              IS_DEV_UI
+                ? `Cobertura · ${board.coverage.code} · ${board.coverage.name}`
+                : `Cobertura · ${board.coverage.name}`
+            }
           />
         </div>
       </header>
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
-        <SectionCard title="Slots del renglón" subtitle="demand.slot · uno por unidad de quantity">
+        <SectionCard
+          title="Slots del renglón"
+          subtitle={
+            IS_DEV_UI
+              ? 'demand.slot · uno por unidad de quantity'
+              : 'Un slot por cada persona pedida en la posición'
+          }
+        >
           <ul className="divide-y divide-line">
             {board.slots.map((slot) => (
               <li key={slot.ordinal} className="flex items-center gap-4 py-3">
@@ -178,7 +195,7 @@ export function SlotAssignmentPage(): ReactNode {
               ? 'Renglón completo'
               : `Asignar al slot ${String(board.nextFreeOrdinal)}`
           }
-          subtitle="coverage.assignment"
+          subtitle={IS_DEV_UI ? 'coverage.assignment' : 'Elige quién ocupa el siguiente slot libre'}
           className="self-start"
         >
           {board.nextFreeOrdinal === null ? (
@@ -200,7 +217,7 @@ export function SlotAssignmentPage(): ReactNode {
                 </label>
                 <Select {...(workerId ? { value: workerId } : {})} onValueChange={setWorkerId}>
                   <SelectTrigger id="assignment-worker" aria-label="Colaborador" className="w-full">
-                    <SelectValue placeholder="Elige del Pool (Disponibles)…" />
+                    <SelectValue placeholder="Elige a un colaborador Disponible…" />
                   </SelectTrigger>
                   <SelectContent>
                     {workers.map((worker) => (
@@ -265,15 +282,15 @@ export function SlotAssignmentPage(): ReactNode {
               )}
               {type === 'TEMPORARY' && (
                 <p className="text-xs text-ink-3">
-                  Una asignación temporal necesita fecha de fin: al vencer, el colaborador vuelve a
-                  su estado previo (Café, RR del Colaborador).
+                  Una asignación temporal necesita fecha de fin: mientras dure, el colaborador está
+                  en Café y al vencer vuelve a su estado anterior.
                 </p>
               )}
 
               {workerId === '' ? (
-                <p className="text-xs text-ink-3">Elige al colaborador para poder asignar</p>
+                <p className="text-xs text-ink-3">Elige a un colaborador para asignar</p>
               ) : type === 'TEMPORARY' && endDate === '' ? (
-                <p className="text-xs text-ink-3">Una temporal necesita fecha de fin</p>
+                <p className="text-xs text-ink-3">Una asignación temporal necesita fecha de fin</p>
               ) : null}
               <Button
                 variant="primary"
@@ -282,7 +299,7 @@ export function SlotAssignmentPage(): ReactNode {
                   void submit()
                 }}
               >
-                {isSaving ? 'Asignando…' : 'Asignar'}
+                {isSaving ? 'Asignando…' : 'Asignar colaborador'}
               </Button>
 
               {hasFailed && (

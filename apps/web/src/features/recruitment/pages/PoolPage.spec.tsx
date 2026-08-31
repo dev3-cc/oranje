@@ -76,7 +76,7 @@ describe('PoolPage', () => {
     renderPool()
 
     await screen.findByText('Ana Rivera Gómez')
-    await user.click(screen.getByRole('button', { name: '+ Nuevo colaborador' }))
+    await user.click(screen.getByRole('button', { name: 'Crear colaborador' }))
 
     const dialog = await screen.findByRole('dialog')
     const scoped = within(dialog)

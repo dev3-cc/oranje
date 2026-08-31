@@ -1,8 +1,9 @@
 import { cn } from '@oranje/ui'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useState, type ReactNode } from 'react'
 
 import { Button } from '@/shared/components/Button'
+import { MOTION } from '@/shared/lib/motion'
 
 export interface OnboardingSlide {
   image: string
@@ -20,6 +21,7 @@ export function OnboardingIntro({
   startLabel: string
 }): ReactNode {
   const [slide, setSlide] = useState(0)
+  const reduceMotion = useReducedMotion() ?? false
   const isLast = slide >= slides.length - 1
 
   return (
@@ -33,10 +35,10 @@ export function OnboardingIntro({
       <AnimatePresence mode="wait">
         <motion.div
           key={slide}
-          initial={{ opacity: 0, x: 24 }}
+          initial={{ opacity: 0, x: reduceMotion ? 0 : 24 }}
           animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -24 }}
-          transition={{ duration: 0.22 }}
+          exit={{ opacity: 0, x: reduceMotion ? 0 : -24 }}
+          transition={{ duration: reduceMotion ? 0 : MOTION.enter, ease: MOTION.easeOut }}
           className="flex flex-col items-center gap-4"
         >
           <img src={slides[slide]?.image} alt="" aria-hidden className="h-44 w-auto" />

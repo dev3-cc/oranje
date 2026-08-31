@@ -26,7 +26,7 @@ export function TerritoryOwnerPicker({ owners, selectedId, onSelect }: Props): R
         onSelect(value === MINE ? null : value)
       }}
     >
-      <SelectTrigger aria-label="Territorio de quién" className="mt-4 w-full">
+      <SelectTrigger aria-label="De quién es el territorio" className="mt-4 w-full">
         <SelectValue />
       </SelectTrigger>
 

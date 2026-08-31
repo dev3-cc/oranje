@@ -28,6 +28,7 @@ import {
 } from '@/shared/constants/onboardingStatus'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'proposal-draft'
 
@@ -43,7 +44,7 @@ const INTRO_SLIDES = [
   {
     image: personajePago,
     title: 'Tarifas globales, por ahora',
-    text: 'Pay y bill generales para todo el hotel. Cotizar por posición llegará como cambio aditivo.',
+    text: 'Un pay rate y un bill rate para todo el hotel. Cotizar por posición llegará más adelante.',
   },
   {
     image: personajeRetro,
@@ -101,9 +102,12 @@ export function ProposalEditorPage(): ReactNode {
   if (isError || !workspace) {
     return (
       <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-surface p-6">
-        <p className="text-sm text-red">No se encontró la propuesta de este hotel.</p>
+        <p className="text-sm text-red">
+          Este hotel no tiene propuesta o el enlace ya no sirve. Vuelve al Pipeline y ábrela desde
+          su ficha.
+        </p>
         <Link to="/pipeline" className="text-sm font-semibold text-o-700 hover:underline">
-          Volver al pipeline
+          Volver al Pipeline
         </Link>
       </div>
     )
@@ -115,7 +119,7 @@ export function ProposalEditorPage(): ReactNode {
         PROPOSAL_STATE: `La propuesta se trabaja con el hotel en Verde o Café — este está en ${workspace ? ONBOARDING_STATUS_LABEL[workspace.prospectStatus] : 'otro estado'}.`,
         PROPOSAL_SENT: 'Esta versión ya se envió: lo enviado no se edita — abre una versión nueva.',
       },
-      fallback: 'No se pudo guardar la propuesta. Inténtalo de nuevo.',
+      fallback: 'No se pudo guardar la propuesta. Revisa las tarifas e inténtalo de nuevo.',
     })
   }
 
@@ -172,7 +176,9 @@ export function ProposalEditorPage(): ReactNode {
           </div>
           <p className="mt-1.5 text-sm text-ink-3">
             {draft
-              ? `Versión ${draft.version} · borrador · sent_at es NULL hasta enviarla`
+              ? IS_DEV_UI
+                ? `Versión ${draft.version} · borrador · sent_at es NULL hasta enviarla`
+                : `Versión ${draft.version} · borrador sin enviar`
               : 'Sin versión abierta · la última ya se envió'}
             {' · '}
             <button
@@ -235,7 +241,11 @@ export function ProposalEditorPage(): ReactNode {
                   <FormField
                     label="Descripción"
                     htmlFor="servicesNote"
-                    hint="services_note — texto libre"
+                    hint={
+                      IS_DEV_UI
+                        ? 'services_note — texto libre'
+                        : 'Qué va a cubrir Oranje en este hotel'
+                    }
                     error={formState.errors.servicesNote?.message}
                   >
                     <input
@@ -271,9 +281,9 @@ export function ProposalEditorPage(): ReactNode {
                   </div>
 
                   <p className="mt-5 rounded-md bg-o-50 p-4 text-sm leading-relaxed text-ink-2">
-                    Tarifas globales, no por posición. Cuando el negocio cotice Chef y Housekeeper
-                    por separado se agrega proposal_rate — migración aditiva, sin tocar esta
-                    pantalla.
+                    {IS_DEV_UI
+                      ? 'Tarifas globales, no por posición. Cuando el negocio cotice Chef y Housekeeper por separado se agrega proposal_rate — migración aditiva, sin tocar esta pantalla.'
+                      : 'Las tarifas aplican a todo el hotel, no por posición. Cotizar por posición llegará más adelante.'}
                   </p>
                 </SectionCard>
               </form>
@@ -293,19 +303,19 @@ export function ProposalEditorPage(): ReactNode {
                         void createDraft(prospectId)
                       }}
                     >
-                      {isCreating ? 'Abriendo…' : 'Nueva versión'}
+                      {isCreating ? 'Abriendo…' : 'Abrir versión nueva'}
                     </Button>
                     {hasCreateFailed && (
                       <p role="alert" className="mt-3 text-sm text-red">
-                        No se pudo abrir la versión. Solo el Business Developer dueño del ciclo
-                        puede elaborar la propuesta.
+                        No se pudo abrir la versión: solo el BD dueño del ciclo puede elaborar la
+                        propuesta.
                       </p>
                     )}
                   </>
                 ) : (
                   <p className="mt-5 rounded-md bg-o-50 px-4 py-3 text-sm text-o-700">
-                    Abrir versiones es del Business Developer dueño del ciclo — tu rol consulta y
-                    acompaña, pero la propuesta la elabora él.
+                    Solo el BD dueño del ciclo abre versiones nuevas. Desde tu rol puedes consultar
+                    la propuesta, no editarla.
                   </p>
                 )}
               </SectionCard>

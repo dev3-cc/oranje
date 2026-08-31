@@ -7,12 +7,14 @@ import { AssignTerritoryDialog } from '../components/AssignTerritoryDialog'
 import type { TeamMemberCard } from '../types/team.types'
 
 import bdcIllustration from '@/assets/ilustrations/bdc.svg'
+import personajeAcceso from '@/assets/ilustrations/personaje-acceso-protegido.svg'
 import { Button } from '@/shared/components/Button'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { MetricCard } from '@/shared/components/MetricCard'
+import { NoticeCard } from '@/shared/components/NoticeCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   ONBOARDING_STATUS_LABEL,
@@ -141,7 +143,7 @@ function MemberDetail({
             Asignar territorio
           </Button>
           {}
-          <Button variant="secondary" disabled title="Las notas al BD aún no existen en el backend">
+          <Button variant="secondary" disabled title="Las notas al BD llegan pronto">
             Nota al BD
           </Button>
           <Button
@@ -242,14 +244,14 @@ export function TeamPage(): ReactNode {
   if (isError || !overview) {
     if (status === 403) {
       return (
-        <p className="rounded-lg border border-line bg-surface p-6 text-sm text-ink-2">
-          Mi Equipo es la pantalla del BDC: tu rol no tiene BDs a cargo.
-        </p>
+        <NoticeCard image={personajeAcceso} title="Mi Equipo solo la ve el BDC" role="status">
+          Tu rol no tiene BDs a cargo, así que aquí no hay nada que mostrar.
+        </NoticeCard>
       )
     }
     return (
       <LoadError
-        message="No se pudo cargar el equipo."
+        message="No se pudo cargar Mi Equipo. Reintenta en unos segundos."
         onRetry={() => {
           void refetch()
         }}

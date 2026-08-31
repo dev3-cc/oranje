@@ -51,7 +51,7 @@ describe('BlacklistPage', () => {
     const user = userEvent.setup()
     renderBlacklist()
 
-    await user.click(await screen.findByRole('button', { name: '+ Agregar a Blacklist' }))
+    await user.click(await screen.findByRole('button', { name: 'Agregar a Blacklist' }))
     await user.click(await screen.findByRole('button', { name: 'Saltar' }))
 
     const dialog = await screen.findByRole('dialog')
@@ -82,7 +82,7 @@ describe('BlacklistPage', () => {
     renderBlacklist()
 
     const row = (await screen.findByText('Norma Estrada')).closest('tr')
-    await user.click(within(row as HTMLElement).getByRole('button', { name: 'Levantar' }))
+    await user.click(within(row as HTMLElement).getByRole('button', { name: 'Levantar veto' }))
     await user.click(await screen.findByRole('button', { name: 'Saltar' }))
 
     const dialog = await screen.findByRole('dialog')

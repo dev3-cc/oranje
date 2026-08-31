@@ -63,7 +63,7 @@ export function EditRateDialog({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Tarifa por posición"
+      title="Definir tarifa por posición"
       description="Si la posición ya tiene tarifa, esta la reemplaza."
     >
       <div className="flex flex-col gap-4">
@@ -99,7 +99,7 @@ export function EditRateDialog({
 
         <div className="grid grid-cols-2 gap-4">
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-ink-2">Se le paga</span>
+            <span className="text-sm font-medium text-ink-2">Se le paga al colaborador</span>
             <Input
               inputMode="decimal"
               placeholder="20.00"
@@ -111,7 +111,7 @@ export function EditRateDialog({
             />
           </label>
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-ink-2">Se factura</span>
+            <span className="text-sm font-medium text-ink-2">Se le factura al hotel</span>
             <Input
               inputMode="decimal"
               placeholder="35.00"

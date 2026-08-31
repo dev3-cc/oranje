@@ -20,7 +20,11 @@ import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
-import { WORKER_STATUS_TOKEN, workerStatusChipLabel } from '@/shared/constants/workerStatus'
+import {
+  WORKER_STATUS_LABEL,
+  WORKER_STATUS_TOKEN,
+  workerStatusChipLabel,
+} from '@/shared/constants/workerStatus'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
@@ -113,7 +117,7 @@ export function CreateBlacklistDialog({
       description={
         IS_DEV_UI
           ? 'coverage.blacklist_entry · nueva fila con veto vigente — ux_blacklist_worker impide un segundo veto activo'
-          : 'El veto entra vigente; el historial de la persona nunca se borra'
+          : 'El veto queda vigente desde ahora; el historial de la persona nunca se borra'
       }
       className="max-w-xl"
       footer={
@@ -179,26 +183,41 @@ export function CreateBlacklistDialog({
               </div>
 
               <div className="flex flex-col gap-2 rounded-md bg-surface-2 p-4">
-                <InfoField label="worker_state" value={worker.status} />
                 <InfoField
-                  label="accidents_open"
-                  value={isProtected ? 'está en GRIS — protegido' : '0 · no está en GRIS'}
+                  label={IS_DEV_UI ? 'worker_state' : 'Estado'}
+                  value={IS_DEV_UI ? worker.status : WORKER_STATUS_LABEL[worker.status]}
                 />
                 <InfoField
-                  label="vetoes_previos"
+                  label={IS_DEV_UI ? 'accidents_open' : 'Accidente abierto'}
+                  value={
+                    IS_DEV_UI
+                      ? isProtected
+                        ? 'está en GRIS — protegido'
+                        : '0 · no está en GRIS'
+                      : isProtected
+                        ? 'Sí: está en Gris y protegido'
+                        : 'No'
+                  }
+                />
+                <InfoField
+                  label={IS_DEV_UI ? 'vetoes_previos' : 'Vetos anteriores'}
                   value={
                     hasActiveVeto
-                      ? 'ya tiene un veto VIGENTE'
+                      ? IS_DEV_UI
+                        ? 'ya tiene un veto VIGENTE'
+                        : 'Uno vigente ahora mismo'
                       : previousLifted > 0
-                        ? `${String(previousLifted)} · levantados`
-                        : 'ninguno'
+                        ? `${String(previousLifted)} ${previousLifted === 1 ? 'levantado' : 'levantados'}`
+                        : 'Ninguno'
                   }
                 />
               </div>
 
               {isProtected && (
                 <p className="rounded-md bg-yellow/15 px-4 py-3 text-sm text-ink-2">
-                  El GRIS protege: un colaborador accidentado no se puede vetar.
+                  {IS_DEV_UI
+                    ? 'El GRIS protege: un colaborador accidentado no se puede vetar.'
+                    : 'Está en Gris por un accidente laboral: no se puede vetar hasta que su caso se resuelva.'}
                 </p>
               )}
               {hasActiveVeto && (
@@ -244,16 +263,16 @@ export function CreateBlacklistDialog({
           </label>
 
           <p className="rounded-md bg-surface-2 p-3 text-xs leading-relaxed text-ink-3">
-            Origen <span className="font-semibold">MANUAL</span> — los vetos por ausencias o disputa
-            los genera el sistema. Al vetar, el semáforo de la persona pasa a{' '}
-            <span className="font-semibold">Negro</span> y sale del Pool.
+            Este veto es <span className="font-semibold">manual</span>; los vetos por ausencias o
+            disputa los genera el sistema. Al vetar, la persona pasa a{' '}
+            <span className="font-semibold">Negro</span> y sale del Pool de Colaboradores.
           </p>
 
           {error !== undefined && (
             <p role="alert" className="text-sm text-red">
               {apiErrorMessage(error, {
                 fallback:
-                  'No se pudo registrar el veto. El motor pudo rechazarlo: el GRIS protege y solo hay un veto vigente a la vez.',
+                  'No se pudo registrar el veto. Revisa que la persona no esté en Gris ni tenga ya un veto vigente, e inténtalo de nuevo.',
               })}
             </p>
           )}

@@ -6,7 +6,7 @@ import type {
 } from '../types/worker.types'
 
 import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
-import type { ApiEnvelope } from '@/shared/types/apiContract.types'
+import type { ApiEnvelope, WorkerHistoryEntryApi } from '@/shared/types/apiContract.types'
 
 /**
  * Fixtures del apartado del Colaborador con las formas del contrato real.
@@ -48,6 +48,18 @@ const profile: MyProfile = {
     taxRetentionApplies: true,
   },
 }
+
+/** Mi semáforo, del más reciente al más viejo: nacer en BLANCO no tiene `fromState`. */
+const history: WorkerHistoryEntryApi[] = [
+  {
+    id: 'wsh-yo-1',
+    fromState: null,
+    toState: 'WHITE',
+    reason: null,
+    occurredAt: profile.createdAt,
+    userName: 'Lucía Ferrer',
+  },
+]
 
 function isoDaysAgo(days: number): string {
   return new Date(Date.now() - days * 86_400_000).toISOString()
@@ -92,7 +104,96 @@ const notifications: NotificationApi[] = [
   },
 ]
 
+/** El ponche en mock: un turno hoy y las marcas que se van acumulando. */
+const todayIsoLocal = (): string => {
+  const now = new Date()
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10)
+}
+const todayPunches: Array<{
+  id: string
+  type: string
+  serverAt: string
+  deviceAt: string | null
+  insideGeofence: boolean | null
+  isManual: boolean
+  manualReason: string | null
+}> = []
+
 const routes: readonly MockRoute[] = [
+  {
+    method: 'GET',
+    path: '/schedules/me',
+    resolve: (): ApiEnvelope<unknown[]> => ({
+      data: [
+        {
+          id: 'shift-today',
+          workDate: todayIsoLocal(),
+          startsAt: `${todayIsoLocal()}T07:00:00.000Z`,
+          endsAt: `${todayIsoLocal()}T15:00:00.000Z`,
+          hotel: 'Hotel Puerto Real',
+          hotelPhotoUrl: 'https://picsum.photos/seed/oranje-hotel/900/600',
+          hotelTimeZone: 'America/Cancun',
+          position: 'Housekeeper',
+          assignmentId: 'asg-mock-1',
+        },
+      ],
+    }),
+  },
+  {
+    method: 'GET',
+    path: '/timesheets/me',
+    resolve: (): ApiEnvelope<unknown[]> => ({
+      data: [
+        {
+          id: 'ts-me',
+          worker: { id: 'wrk-me', fullName: profile.fullName },
+          requisitionId: 'req-mock',
+          weekStart: '2000-01-01',
+          weekEnd: '2999-12-31',
+          status: 'OPEN',
+          approvedAt: null,
+          days: [
+            {
+              id: 'day-today',
+              workDate: todayIsoLocal(),
+              punches: todayPunches.map((item) => ({ ...item })),
+            },
+          ],
+        },
+      ],
+    }),
+  },
+  {
+    method: 'POST',
+    path: '/punches',
+    resolve: ({ body }): ApiEnvelope<unknown> => {
+      const dto = body as { type: string; photoPath?: string }
+      if (['CLOCK_IN', 'CLOCK_OUT'].includes(dto.type) && !dto.photoPath) {
+        throw new Error('PHOTO_REQUIRED')
+      }
+      const mark = {
+        id: `punch-${String(todayPunches.length + 1)}`,
+        type: dto.type,
+        serverAt: new Date().toISOString(),
+        deviceAt: new Date().toISOString(),
+        insideGeofence: true,
+        isManual: false,
+        manualReason: null,
+      }
+      todayPunches.push(mark)
+      return {
+        data: { punch: { ...mark }, dayId: 'day-today', grossMinutes: 0, hasAnomaly: false },
+      }
+    },
+  },
+  {
+    method: 'GET',
+    path: '/workers/me/history',
+    /** Copias: la vista no debe poder mutar la fixture a través de RTK. */
+    resolve: (): ApiEnvelope<WorkerHistoryEntryApi[]> => ({
+      data: history.map((entry) => ({ ...entry })),
+    }),
+  },
   {
     method: 'GET',
     path: '/workers/me',
@@ -108,8 +209,24 @@ const routes: readonly MockRoute[] = [
       if (!['STRONG_GREEN', 'ORANGE', 'PINK'].includes(profile.state.code)) {
         throw new Error('TRANSITION_NOT_ALLOWED')
       }
+      history.unshift({
+        id: `wsh-yo-${String(history.length + 1)}`,
+        fromState: profile.state.code,
+        toState: 'YELLOW',
+        reason: null,
+        occurredAt: new Date().toISOString(),
+        userName: profile.fullName,
+      })
       profile.state = { code: 'YELLOW', color: 'Amarillo', name: 'Disponible por voluntad' }
       return { data: { ...profile, taxDeadline: { ...profile.taxDeadline } } }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/workers/me/documents',
+    resolve: (): ApiEnvelope<{ id: string }> => {
+      profile.taxDeadline = { ...profile.taxDeadline, hasDocument: true, status: 'OK' }
+      return { data: { id: 'doc-yo-1' } }
     },
   },
   {

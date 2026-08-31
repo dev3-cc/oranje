@@ -18,6 +18,7 @@
     "@hello-pangea/dnd": "^18.0.1",
     "@hookform/resolvers": "^5.7.1",
     "@lottiefiles/dotlottie-react": "^0.19.15",
+    "@mediapipe/tasks-vision": "^1.0.1",
     "@oranje/contracts": "workspace:*",
     "@oranje/domain": "workspace:*",
     "@oranje/ui": "workspace:*",

@@ -262,7 +262,7 @@ export function HotelContactsDialog({
                   confirmingDelete && 'border border-red/40 bg-red/5 font-semibold',
                 )}
               >
-                {confirmingDelete ? '¿Confirmar eliminación?' : 'Eliminar'}
+                {confirmingDelete ? 'Sí, eliminar contacto' : 'Eliminar contacto'}
               </Button>
             )}
             <span className="flex-1" />
@@ -314,7 +314,7 @@ export function HotelContactsDialog({
               }}
               className="rounded-md bg-o-50 px-3 py-1.5 text-sm font-medium text-o-700 hover:bg-o-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
             >
-              + Agregar contacto
+              Agregar otro contacto
             </button>
           </div>
 
@@ -400,7 +400,7 @@ export function HotelContactsDialog({
                       setEditDraft({ ...editDraft, fullName: event.target.value })
                     }}
                     aria-label="Nombre completo del contacto"
-                    placeholder="Nombre y apellidos"
+                    placeholder="Laura Méndez"
                     className={CONTROL_CLASS}
                   />
                 </Field>
@@ -411,7 +411,7 @@ export function HotelContactsDialog({
                     onChange={(event) => {
                       setEditDraft({ ...editDraft, jobTitle: event.target.value })
                     }}
-                    placeholder="Ej. Ama de Llaves"
+                    placeholder="Ama de llaves"
                     className={CONTROL_CLASS}
                   />
                 </Field>
@@ -422,7 +422,7 @@ export function HotelContactsDialog({
                     onChange={(event) => {
                       setEditDraft({ ...editDraft, phone: event.target.value })
                     }}
-                    placeholder="+52 …"
+                    placeholder="+52 998 123 4567"
                     className={CONTROL_CLASS}
                   />
                 </Field>
@@ -466,7 +466,7 @@ export function HotelContactsDialog({
               {(updateState.error !== undefined ||
                 (deleteState.error !== undefined && !hasAttempts)) && (
                 <p role="alert" className="mt-3 text-sm text-red">
-                  No se pudo guardar el cambio. Intenta de nuevo.
+                  No se pudo guardar el contacto. Revisa los datos e inténtalo de nuevo.
                 </p>
               )}
               {hasAttempts && (
@@ -474,8 +474,8 @@ export function HotelContactsDialog({
                   role="alert"
                   className="mt-3 rounded-lg bg-yellow/15 px-4 py-3 text-sm text-ink-2"
                 >
-                  Este contacto tiene intentos de contacto registrados y no puede borrarse: su
-                  historia respalda la bitácora. Desactívalo y dejará de aparecer.
+                  Este contacto aparece en la bitácora de intentos, así que no se puede borrar.
+                  Desactívalo y dejará de mostrarse.
                 </p>
               )}
             </fieldset>
@@ -494,7 +494,7 @@ export function HotelContactsDialog({
                 >
                   <input
                     {...register(draftPath(selectedIndex, 'fullName'))}
-                    placeholder="Nombre y apellidos"
+                    placeholder="Laura Méndez"
                     className={cn(
                       CONTROL_CLASS,
                       draftError?.fullName ? 'border-red' : 'border-o-500',
@@ -505,7 +505,7 @@ export function HotelContactsDialog({
                 <Field label="Puesto" column="job_title">
                   <input
                     {...register(draftPath(selectedIndex, 'jobTitle'))}
-                    placeholder="Ej. Ama de Llaves"
+                    placeholder="Ama de llaves"
                     className={CONTROL_CLASS}
                   />
                 </Field>
@@ -513,7 +513,7 @@ export function HotelContactsDialog({
                 <Field label="Teléfono" column="phone">
                   <input
                     {...register(draftPath(selectedIndex, 'phone'))}
-                    placeholder="+52 …"
+                    placeholder="+52 998 123 4567"
                     className={CONTROL_CLASS}
                   />
                 </Field>
@@ -543,7 +543,7 @@ export function HotelContactsDialog({
                   <span className="block text-sm text-ink-3">
                     {IS_DEV_UI && 'is_primary · '}
                     {currentPrimary
-                      ? `apagado: ${currentPrimary.name} ya lo es`
+                      ? `${currentPrimary.name} ya es el principal; si marcas este, lo reemplaza`
                       : 'este hotel no tiene principal todavía'}
                   </span>
                 </span>

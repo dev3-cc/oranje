@@ -21,16 +21,18 @@ import { useCan } from '@/shared/hooks/useCan'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayMonth } from '@/shared/lib/formatters'
 
-const HEADERS = [
-  'worker_id → full_name',
-  'source',
-  'reason',
-  'evidence_path',
-  'entered_by',
-  'occurred_at',
-  'estado',
-  '',
-]
+const HEADERS = IS_DEV_UI
+  ? [
+      'worker_id → full_name',
+      'source',
+      'reason',
+      'evidence_path',
+      'entered_by',
+      'occurred_at',
+      'estado',
+      '',
+    ]
+  : ['Colaborador', 'Origen', 'Motivo', 'Evidencia', 'Registró', 'Fecha', 'Estado', '']
 
 export function BlacklistPage(): ReactNode {
   const [filters, setFilters] = useState<BlacklistFilters>(EMPTY_BLACKLIST_FILTERS)
@@ -67,7 +69,7 @@ export function BlacklistPage(): ReactNode {
               setIsCreateOpen(true)
             }}
           >
-            + Agregar a Blacklist
+            Agregar a Blacklist
           </Button>
         )}
       </header>
@@ -100,7 +102,7 @@ export function BlacklistPage(): ReactNode {
 
       {isError && (
         <LoadError
-          message="No se pudo cargar la Blacklist."
+          message="No se pudo cargar la Blacklist. Revisa tu conexión e inténtalo de nuevo."
           onRetry={() => {
             void refetch()
           }}
@@ -132,7 +134,8 @@ export function BlacklistPage(): ReactNode {
                     colSpan={HEADERS.length}
                     className="px-4 py-8 text-center text-sm text-ink-3"
                   >
-                    Nadie en la Blacklist con este filtro.
+                    No hay vetos con estos filtros. Prueba con otro origen o con el historial
+                    completo.
                   </TableCell>
                 </TableRow>
               )}
@@ -141,7 +144,9 @@ export function BlacklistPage(): ReactNode {
                   <TableCell className="px-4 py-3 text-sm font-semibold whitespace-nowrap text-ink">
                     {row.workerName}
                   </TableCell>
-                  <TableCell className="px-4 py-3 text-sm text-ink-2">{row.source}</TableCell>
+                  <TableCell className="px-4 py-3 text-sm text-ink-2">
+                    {IS_DEV_UI ? row.source : BLACKLIST_SOURCE_LABEL[row.source]}
+                  </TableCell>
                   <TableCell className="max-w-md px-4 py-3 text-sm whitespace-normal text-ink-2">
                     {row.reason}
                   </TableCell>
@@ -177,7 +182,7 @@ export function BlacklistPage(): ReactNode {
                           setLiftTarget(row)
                         }}
                       >
-                        Levantar
+                        Levantar veto
                       </Button>
                     )}
                   </TableCell>
@@ -189,7 +194,7 @@ export function BlacklistPage(): ReactNode {
       )}
 
       <p className="rounded-md bg-surface-2 p-3 text-xs leading-relaxed text-ink-3">
-        Tres reglas que el motor hace cumplir: un colaborador en{' '}
+        Tres reglas que el sistema hace cumplir siempre: un colaborador en{' '}
         <span className="font-semibold">Gris</span> (accidentado) no se puede vetar; solo hay un
         veto vigente a la vez y el historial nunca se borra; y al levantarlo la persona vuelve a{' '}
         <span className="font-semibold">Blanco</span>, reingresando por la validación de la

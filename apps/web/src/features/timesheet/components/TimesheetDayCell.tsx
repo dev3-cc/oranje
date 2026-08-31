@@ -101,7 +101,7 @@ export function TimesheetDayCell({
             : `${entry.startTime} – ${entry.endTime}`}
         </p>
         <p className="mt-0.5 truncate text-xs font-medium text-ink-3">
-          {entry.requisitionNumber ?? 'Sin req.'}
+          {entry.requisitionNumber ?? 'Sin requisición'}
         </p>
       </button>
     </div>

@@ -41,7 +41,7 @@ export function PoolCardBoard({
   if (columns.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-        Nadie en el pool coincide con el filtro.
+        Ningún colaborador coincide con estos filtros. Cambia o quita un filtro para ver más.
       </p>
     )
   }
@@ -119,7 +119,9 @@ export function PoolCardBoard({
                       {worker.englishLevel === '—' ? 'Sin inglés registrado' : worker.englishLevel}
                     </span>
                     <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-ink-2">
-                      {worker.hiringModality === '—' ? 'Sin modalidad' : worker.hiringModality}
+                      {worker.hiringModality === '—'
+                        ? 'Sin modalidad definida'
+                        : worker.hiringModality}
                     </span>
                     <span
                       className={

@@ -46,7 +46,7 @@ describe('UsersPage', () => {
     renderUsers()
     await screen.findByText('Hugo Curtidor')
 
-    await user.click(screen.getByRole('button', { name: '+ Nuevo usuario' }))
+    await user.click(screen.getByRole('button', { name: 'Agregar usuario' }))
     expect(await screen.findByText('Bienvenido al alta de personal')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Saltar' }))
     expect(await screen.findByText(/recibe un correo de invitación/)).toBeInTheDocument()
@@ -60,7 +60,9 @@ describe('UsersPage', () => {
     await user.type(screen.getByLabelText('Correo'), 'prueba@casacurtidor.com')
     await user.type(password, 'corta')
     await user.click(screen.getByRole('button', { name: 'Crear usuario' }))
-    expect(await screen.findByText('Mínimo 8 caracteres')).toBeInTheDocument()
+    expect(
+      await screen.findByText('La contraseña necesita al menos 8 caracteres'),
+    ).toBeInTheDocument()
   })
 
   it('editar bloquea el correo: cambiar de persona es baja y alta', async () => {

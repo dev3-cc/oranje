@@ -26,8 +26,8 @@ import {
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const NO_SHIFT_LABEL: Record<string, string> = {
-  PINK: '— pausada',
-  GRAY: '— protegido',
+  PINK: 'Pausado (Stand-by)',
+  GRAY: 'Protegido (Gris)',
 }
 
 function initialsOf(fullName: string): string {
@@ -56,11 +56,11 @@ export function PersonnelPage(): ReactNode {
   const { data: board, isLoading, isError, refetch } = useGetPersonnelBoardQuery()
   const [standByTarget, setStandByTarget] = useState<PersonnelRow | null>(null)
 
-  if (isLoading) return <LoadingState label="Cargando tu personal…" />
+  if (isLoading) return <LoadingState label="Cargando Mi Personal…" />
   if (isError || !board) {
     return (
       <LoadError
-        message="No se pudo cargar Mi Personal."
+        message="No se pudo cargar Mi Personal. Revisa tu conexión e inténtalo de nuevo."
         onRetry={() => {
           void refetch()
         }}
@@ -73,8 +73,8 @@ export function PersonnelPage(): ReactNode {
       <header>
         <h1 className="text-2xl font-bold text-ink">Mi Personal</h1>
         <p className="mt-1 text-sm text-ink-3">
-          Colaboradores asignados a tus requisiciones · el semáforo siempre visible · Stand-by
-          (Rosa) compartido con el Manager de Área
+          Los colaboradores asignados a tus requisiciones, con su estado en el Semáforo. El Stand-by
+          (Rosa) lo compartes con el Manager de Área.
         </p>
       </header>
 
@@ -82,17 +82,19 @@ export function PersonnelPage(): ReactNode {
         <Kpi value={board.assignedToday} label="Asignados hoy" />
         <Kpi value={board.clockedInToday} label="Con entrada registrada" />
         <Kpi value={board.inStandBy} label="En Stand-by" />
-        <Kpi value={board.inAccident} label="En accidente (GRIS)" />
+        <Kpi
+          value={board.inAccident}
+          label={IS_DEV_UI ? 'En accidente (GRIS)' : 'En accidente (Gris)'}
+        />
       </div>
 
       {board.rows.length === 0 && (
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-line px-6 py-12 text-center">
           <img src={mascotaSaludando} alt="" aria-hidden className="h-32 w-auto" />
-          <p className="text-base font-semibold text-ink">
-            Sin colaboradores asignados esta semana
-          </p>
+          <p className="text-base font-semibold text-ink">Aún no tienes colaboradores asignados</p>
           <p className="max-w-md text-sm text-ink-3">
-            El plantel se llena cuando el Schedule programe turnos de tus requisiciones.
+            Cuando el Schedule programe turnos de tus requisiciones, aparecerán aquí con su estado y
+            sus marcas del día.
           </p>
         </div>
       )}
@@ -105,7 +107,7 @@ export function PersonnelPage(): ReactNode {
                 <TableHead className="px-5 py-3 font-medium text-ink-3">Colaborador</TableHead>
                 <TableHead className="px-5 py-3 font-medium text-ink-3">Posición</TableHead>
                 <TableHead className="px-5 py-3 font-medium text-ink-3">Semáforo</TableHead>
-                <TableHead className="px-5 py-3 font-medium text-ink-3">Turno hoy</TableHead>
+                <TableHead className="px-5 py-3 font-medium text-ink-3">Turno de hoy</TableHead>
                 <TableHead className="px-5 py-3 font-medium text-ink-3">Marcas</TableHead>
                 <TableHead className="px-5 py-3 font-medium text-ink-3">Acciones</TableHead>
               </TableRow>
@@ -142,11 +144,11 @@ export function PersonnelPage(): ReactNode {
                   <TableCell className="px-5 py-3 text-ink-2">
                     {row.shift
                       ? `${timeOf(row.shift.startsAt)}–${timeOf(row.shift.endsAt)}`
-                      : (NO_SHIFT_LABEL[row.stateCode] ?? '— descansa')}
+                      : (NO_SHIFT_LABEL[row.stateCode] ?? 'Descansa')}
                   </TableCell>
                   <TableCell className="px-5 py-3">
                     {row.clockInAt ? (
-                      <span className="font-medium text-ink">IN {timeOf(row.clockInAt)}</span>
+                      <span className="font-medium text-ink">Entrada {timeOf(row.clockInAt)}</span>
                     ) : row.shift ? (
                       <span className="text-red">Sin entrada</span>
                     ) : (
@@ -163,18 +165,18 @@ export function PersonnelPage(): ReactNode {
                           }}
                           className="cursor-pointer font-medium text-o-700 hover:underline"
                         >
-                          Stand-by
+                          Mandar a Stand-by
                         </button>
                       )}
                       <a href={`tel:${row.phone}`} className="text-ink-2 hover:underline">
-                        Contactar
+                        Llamar
                       </a>
                       {}
                       <Link
                         to={`/pool-colaboradores/${row.workerId}`}
                         className="text-ink-2 hover:underline"
                       >
-                        Historial
+                        Ver Expediente
                       </Link>
                     </span>
                   </TableCell>
@@ -187,8 +189,9 @@ export function PersonnelPage(): ReactNode {
 
       <p className="flex items-start gap-2 text-xs leading-relaxed text-ink-4">
         <MaterialIcon name="info" aria-hidden className="mt-0.5 text-sm" />
-        Stand-by (Rosa) es compartido con el Manager de Área. El GRIS (accidente) protege: sin
-        Stand-by ni veto, y sus faltas no cuentan{IS_DEV_UI ? ' (D-27)' : ''}.
+        El Stand-by (Rosa) lo compartes con el Manager de Área. Un colaborador en Gris (accidente)
+        está protegido: no se manda a Stand-by, no se veta y sus faltas no cuentan
+        {IS_DEV_UI ? ' (D-27)' : ''}.
         {IS_DEV_UI && (
           <code className="block">
             compuesto: /schedules + /timesheets + /workers · Stand-by = transición PINK

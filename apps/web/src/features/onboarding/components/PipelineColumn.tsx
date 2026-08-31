@@ -63,7 +63,7 @@ export function PipelineColumn({
           >
             {prospects.length === 0 && !snapshot.isDraggingOver && (
               <p className="rounded-2xl border border-dashed border-line px-3 py-6 text-center text-sm text-ink-4">
-                Sin prospectos
+                Sin prospectos en este estado
               </p>
             )}
             {prospects.map((prospect, index) => (

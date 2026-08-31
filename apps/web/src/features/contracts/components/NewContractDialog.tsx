@@ -194,7 +194,7 @@ export function NewContractDialog({
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-ink-2">Hasta (opcional)</span>
+              <span className="text-sm font-medium text-ink-2">Vigente hasta (opcional)</span>
               <Input
                 type="date"
                 value={validTo}
@@ -206,7 +206,7 @@ export function NewContractDialog({
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-ink-2">Semana inicia en</span>
+              <span className="text-sm font-medium text-ink-2">La semana de nómina empieza en</span>
               <Select
                 value={String(weekStartDay)}
                 onValueChange={(value) => {

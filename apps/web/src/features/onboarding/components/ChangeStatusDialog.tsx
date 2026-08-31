@@ -24,6 +24,7 @@ import {
   ONBOARDING_STATUS_TOKEN,
   type OnboardingStatus,
 } from '@/shared/constants/onboardingStatus'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 export interface ChangeStatusDialogProps {
   isOpen: boolean
@@ -76,7 +77,7 @@ function transitionErrorMessage(error: unknown): string {
       .join(', ')
     return targets
       ? `Desde aquí el semáforo solo permite ir a: ${targets}.`
-      : 'El semáforo no tiene ese paso configurado.'
+      : 'Ese paso no existe en el Semáforo: elige otro estado.'
   }
   if (code === 'REASON_REQUIRED') return 'Esta transición exige un motivo: elígelo de la lista.'
   if (data?.error?.message) return data.error.message
@@ -144,7 +145,7 @@ export function ChangeStatusDialog({
       isOpen={isOpen}
       onClose={onClose}
       title="Cambiar estado"
-      description={`${hotelName} · desde ${ONBOARDING_STATUS_LABEL[currentStatus]}. Solo se muestran las transiciones que tu rol puede ejecutar.`}
+      description={`${hotelName} · desde ${ONBOARDING_STATUS_LABEL[currentStatus]}. Solo ves los pasos que tu rol puede dar.`}
       footer={
         <>
           <Button onClick={onClose} disabled={isSaving}>
@@ -162,11 +163,13 @@ export function ChangeStatusDialog({
         </>
       }
     >
-      {areTransitionsLoading && <p className="text-sm text-ink-3">Cargando transiciones…</p>}
+      {areTransitionsLoading && (
+        <p className="text-sm text-ink-3">Cargando los pasos disponibles…</p>
+      )}
 
       {!areTransitionsLoading && allowed?.transitions.length === 0 && (
         <p className="rounded-md bg-surface-2 p-4 text-sm text-ink-2">
-          No hay transiciones disponibles para tu rol desde este estado.
+          Desde este estado tu rol no puede mover el prospecto a otro.
         </p>
       )}
 
@@ -246,9 +249,7 @@ export function ChangeStatusDialog({
           >
             <SelectTrigger id="status-change-reason" className="w-full">
               <SelectValue
-                placeholder={
-                  areReasonsLoading ? 'Cargando catálogo…' : 'Selecciona un motivo del catálogo...'
-                }
+                placeholder={areReasonsLoading ? 'Cargando motivos…' : 'Elige el motivo…'}
               />
             </SelectTrigger>
             <SelectContent>
@@ -262,7 +263,9 @@ export function ChangeStatusDialog({
 
           {isReasonRequired && (
             <p className="text-xs text-ink-3">
-              catalogs.status_change_reason — requires_reason está activo en esta transición
+              {IS_DEV_UI
+                ? 'catalogs.status_change_reason — requires_reason está activo en esta transición'
+                : 'El motivo queda en el historial del prospecto.'}
             </p>
           )}
         </div>

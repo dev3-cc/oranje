@@ -9,7 +9,7 @@ import { ValidityCell } from './ValidityCell'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TOKEN } from '@/shared/constants/contractStatus'
 
-const HEADERS = ['number', 'hotel', 'estado', 'vigencia', 'posiciones', 'overtime · festivo', '']
+const HEADERS = ['Número', 'Hotel', 'Estado', 'Vigencia', 'Posiciones', 'Overtime · Festivo', '']
 
 const NO_MULTIPLIER = '—'
 
@@ -27,7 +27,7 @@ export function ContractTable({
   if (items.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-        Ningún contrato coincide con el filtro.
+        Ningún contrato coincide con esos filtros. Cambia el estado, la zona o la búsqueda.
       </p>
     )
   }

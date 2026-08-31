@@ -110,7 +110,7 @@ export function UsersPage(): ReactNode {
           onChange={(event) => {
             setSearch(event.target.value)
           }}
-          placeholder="Buscar por nombre o correo…"
+          placeholder="Ana López o ana@casacurtidor.com"
           aria-label="Buscar usuario"
           className="h-auto w-64 rounded-full py-2.5"
         />
@@ -129,7 +129,7 @@ export function UsersPage(): ReactNode {
             setIsFormOpen(true)
           }}
         >
-          + Nuevo usuario
+          Agregar usuario
         </Button>
       </div>
 
@@ -137,7 +137,9 @@ export function UsersPage(): ReactNode {
         <LoadingState label="Cargando el personal del sistema…" />
       ) : visible.length === 0 ? (
         <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-          {tab === 'active' ? 'Nadie coincide con el filtro.' : 'Nadie está de baja.'}
+          {tab === 'active'
+            ? 'Nadie coincide con esa búsqueda. Prueba otro nombre, correo o rol.'
+            : 'Nadie está de baja. Las personas que des de baja aparecerán aquí.'}
         </p>
       ) : (
         <ul className="overflow-hidden rounded-2xl border border-line bg-surface">
@@ -180,7 +182,7 @@ export function UsersPage(): ReactNode {
                       {user.fullName}
                     </span>
                     {user.hasAccount && (
-                      <span title="Cuenta enlazada" aria-label="Cuenta enlazada">
+                      <span title="Ya entró al sistema" aria-label="Ya entró al sistema">
                         <MaterialIcon name="verified" className="shrink-0 text-base text-o-500" />
                       </span>
                     )}
@@ -206,7 +208,7 @@ export function UsersPage(): ReactNode {
                     </span>
                   ) : user.hasAccount ? (
                     <span className="rounded-full bg-green/10 px-2.5 py-1 text-xs font-semibold text-green">
-                      Enlazada
+                      Ya entró
                     </span>
                   ) : (
                     <span className="rounded-full bg-yellow/15 px-2.5 py-1 text-xs font-semibold text-o-700">
@@ -221,9 +223,9 @@ export function UsersPage(): ReactNode {
       )}
 
       <p className="text-xs leading-relaxed text-ink-3">
-        El correo no se edita: es el vínculo con la cuenta de Firebase — cambiar de persona es dar
-        de baja y dar de alta. La cuenta se enlaza sola en el primer login. Los roles de Hotel no se
-        dan de alta aquí: nacen en la Conversión{IS_DEV_UI ? ' (RR-V-02)' : ''}.
+        El correo no se edita: es con el que la persona entra. Para cambiar de persona, da de baja y
+        da de alta. La cuenta queda enlazada la primera vez que entra. Los roles de Hotel no se dan
+        de alta aquí: nacen en la Conversión{IS_DEV_UI ? ' (RR-V-02)' : ''}.
       </p>
 
       <UserFormDialog

@@ -86,7 +86,7 @@ export function ContactAttemptLog({
                           }}
                           className="rounded px-2 py-0.5 text-xs text-ink-3 hover:bg-surface-2"
                         >
-                          No
+                          Conservar
                         </button>
                       </span>
                     ) : (

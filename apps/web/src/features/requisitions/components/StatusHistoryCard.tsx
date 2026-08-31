@@ -8,6 +8,7 @@ import {
   REQUISITION_STATUS_LABEL,
   REQUISITION_STATUS_TOKEN,
 } from '@/shared/constants/requisitionStatus'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayMonthTime } from '@/shared/lib/formatters'
 
 /**
@@ -19,7 +20,14 @@ import { formatDayMonthTime } from '@/shared/lib/formatters'
  */
 export function StatusHistoryCard({ history }: { history: RequisitionStatusEvent[] }): ReactNode {
   return (
-    <SectionCard title="Historia de estado" subtitle="Append-only: sin updated_at ni deleted_at">
+    <SectionCard
+      title="Historia de estado"
+      subtitle={
+        IS_DEV_UI
+          ? 'Append-only: sin updated_at ni deleted_at'
+          : 'Cada cambio queda registrado; nada se edita ni se borra'
+      }
+    >
       <ol className="flex flex-col">
         {history.map((event, index) => (
           <li key={event.id} className={index === 0 ? '' : 'mt-5 border-t border-line pt-5'}>

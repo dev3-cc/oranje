@@ -35,7 +35,7 @@ export function AuthorizationQueueList({
     <SectionCard title="Pendientes" subtitle="Ordenadas por fecha de inicio más próxima">
       {items.length === 0 ? (
         <p className="rounded-lg border border-dashed border-line p-6 text-center text-sm text-ink-3">
-          No queda nada esperando tu firma.
+          No hay requisiciones esperando tu firma.
         </p>
       ) : (
         <ul className="flex flex-col gap-3">

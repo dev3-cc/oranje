@@ -2,7 +2,7 @@ import { Alert, AlertDescription } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { useLiftBlacklistMutation } from '../api/blacklistApi'
-import type { BlacklistRow } from '../types/blacklist.types'
+import { BLACKLIST_SOURCE_LABEL, type BlacklistRow } from '../types/blacklist.types'
 
 import personajeAyuda from '@/assets/ilustrations/personaje-ayuda.svg'
 import personajeComencemos from '@/assets/ilustrations/personaje-comencemos.svg'
@@ -28,7 +28,7 @@ const INTRO_SLIDES = [
   {
     image: personajeAyuda,
     title: 'Solo el Administrador levanta',
-    text: 'El veto lo puede quitar únicamente el Administrador — si no eres tú, esta acción va a rebotar.',
+    text: 'El veto lo puede quitar únicamente el Administrador; si no eres tú, el sistema va a rechazar la acción.',
   },
   {
     image: personajeComencemos,
@@ -75,7 +75,11 @@ export function LiftBlacklistDialog({
       isOpen
       onClose={onClose}
       title="Levantar de Blacklist"
-      description={`coverage.blacklist_entry · la fila no se borra: se marca como levantada`}
+      description={
+        IS_DEV_UI
+          ? 'coverage.blacklist_entry · la fila no se borra: se marca como levantada'
+          : 'El veto no se borra: queda en el historial como levantado, con tu motivo'
+      }
       className="max-w-xl"
       footer={
         showIntro ? null : (
@@ -112,11 +116,20 @@ export function LiftBlacklistDialog({
           </div>
 
           <div className="flex flex-col gap-2 rounded-md bg-surface-2 p-4">
-            <EntryField label="source" value={row.source} />
-            <EntryField label="reason" value={row.reason} />
-            <EntryField label="evidence_path" value={row.evidencePath ?? '—'} />
-            <EntryField label="entered_by" value={row.enteredByName} />
-            <EntryField label="occurred_at" value={formatDayMonth(row.occurredAt)} />
+            <EntryField
+              label={IS_DEV_UI ? 'source' : 'Origen'}
+              value={IS_DEV_UI ? row.source : BLACKLIST_SOURCE_LABEL[row.source]}
+            />
+            <EntryField label={IS_DEV_UI ? 'reason' : 'Motivo'} value={row.reason} />
+            <EntryField
+              label={IS_DEV_UI ? 'evidence_path' : 'Evidencia'}
+              value={row.evidencePath ?? '—'}
+            />
+            <EntryField label={IS_DEV_UI ? 'entered_by' : 'Registró'} value={row.enteredByName} />
+            <EntryField
+              label={IS_DEV_UI ? 'occurred_at' : 'Fecha'}
+              value={formatDayMonth(row.occurredAt)}
+            />
           </div>
 
           <label className="flex flex-col gap-2">
@@ -145,9 +158,9 @@ export function LiftBlacklistDialog({
               <AlertDescription>
                 {apiErrorMessage(error, {
                   byStatus: {
-                    403: 'Solo el Administrador levanta un veto (blacklist:lift): pídeselo.',
+                    403: `Solo el Administrador puede levantar un veto${IS_DEV_UI ? ' (blacklist:lift)' : ''}: pídeselo.`,
                   },
-                  fallback: 'No se pudo levantar el veto.',
+                  fallback: 'No se pudo levantar el veto. Inténtalo de nuevo.',
                 })}
               </AlertDescription>
             </Alert>

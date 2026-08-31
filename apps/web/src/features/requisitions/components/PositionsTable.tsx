@@ -24,7 +24,7 @@ export function PositionsTable({
   return (
     <SectionCard
       title="Posiciones"
-      subtitle="Cada posición carga dos semáforos: Cobertura (contada sobre slots) y Urgencia (derivada de su fecha de inicio)"
+      subtitle="Cada posición lleva dos semáforos: Cobertura (cuántos slots están ocupados) y Urgencia (cuánto falta para su inicio)"
     >
       <Table className="min-w-[46rem] text-left">
         <TableHeader>

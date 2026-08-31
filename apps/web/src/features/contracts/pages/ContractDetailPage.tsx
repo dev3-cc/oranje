@@ -57,7 +57,9 @@ export function ContractDetailPage(): ReactNode {
   if (isError || !contract) {
     return (
       <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-surface p-6">
-        <p className="text-sm text-red">No se encontró el contrato.</p>
+        <p className="text-sm text-red">
+          Este contrato no existe o fue borrado. Vuelve a la lista y elige otro.
+        </p>
         <Link to="/documentos-tc" className="text-sm font-semibold text-o-700 hover:underline">
           Volver a Documentos T&amp;C
         </Link>
@@ -113,7 +115,7 @@ export function ContractDetailPage(): ReactNode {
 
         <div className="flex shrink-0 flex-wrap gap-3">
           {}
-          <Button variant="secondary" disabled title="Pendiente: falta el diseño del PDF">
+          <Button variant="secondary" disabled title="El PDF del contrato aún no está disponible">
             Ver PDF
           </Button>
 
@@ -135,7 +137,7 @@ export function ContractDetailPage(): ReactNode {
                   void run('cancel')
                 }}
               >
-                {confirming === 'cancel' ? '¿Confirmar cancelación?' : 'Cancelar borrador'}
+                {confirming === 'cancel' ? 'Sí, cancelar borrador' : 'Cancelar borrador'}
               </Button>
               <Button
                 variant="primary"
@@ -144,7 +146,7 @@ export function ContractDetailPage(): ReactNode {
                   void run('activate')
                 }}
               >
-                {confirming === 'activate' ? '¿Confirmar activación?' : 'Activar contrato'}
+                {confirming === 'activate' ? 'Sí, activar contrato' : 'Activar contrato'}
               </Button>
             </>
           )}
@@ -156,7 +158,7 @@ export function ContractDetailPage(): ReactNode {
                 void run('expire')
               }}
             >
-              {confirming === 'expire' ? '¿Confirmar expiración?' : 'Marcar expirado'}
+              {confirming === 'expire' ? 'Sí, marcar expirado' : 'Marcar expirado'}
             </Button>
           )}
         </div>
@@ -169,9 +171,10 @@ export function ContractDetailPage(): ReactNode {
               CONTRACT_WITHOUT_RATES: 'No se puede activar sin tarifas: agrega al menos una.',
               CONTRACT_ALREADY_ACTIVE:
                 'Este hotel ya tiene un contrato vigente: primero hay que expirarlo.',
-              CONTRACT_NOT_DRAFT: 'Este contrato ya dejó de ser borrador.',
-              CONTRACT_NOT_ACTIVE: 'Solo un contrato vigente se puede expirar.',
-              CONTRACT_ALREADY_CLOSED: 'Este contrato ya está cerrado.',
+              CONTRACT_NOT_DRAFT:
+                'Este contrato ya no es borrador: no se puede editar ni cancelar.',
+              CONTRACT_NOT_ACTIVE: 'Solo un contrato vigente se puede marcar expirado.',
+              CONTRACT_ALREADY_CLOSED: 'Este contrato ya está cerrado: no admite más cambios.',
             },
             fallback: 'No se pudo cambiar el estado del contrato. Inténtalo de nuevo.',
           })}
@@ -221,7 +224,7 @@ export function ContractDetailPage(): ReactNode {
 
           <section className="rounded-lg bg-yellow/15 p-6">
             <h2 className="text-base font-semibold text-ink">
-              El contrato es la fuente del dinero
+              De aquí salen la nómina y la factura
             </h2>
             <p className="mt-3 text-sm text-ink-2">
               {IS_DEV_UI

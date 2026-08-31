@@ -44,7 +44,7 @@ export function RequisitionTable({ items }: { items: RequisitionRow[] }): ReactN
   if (items.length === 0) {
     return (
       <EmptyState
-        title="Sin requisiciones que mostrar"
+        title="Aún no hay requisiciones"
         text="Cuando un hotel pida personal, su requisición aparecerá aquí con su semáforo. Los borradores solo los ve quien los crea."
       />
     )

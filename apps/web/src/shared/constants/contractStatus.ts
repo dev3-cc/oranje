@@ -3,19 +3,19 @@ import type { StatusLightToken } from '@oranje/ui'
 /**
  * Estado de `commercial.contract`.
  *
- * NO es un semáforo del vault: son los tres valores del enum de la tabla, y por
- * eso se muestran tal cual —`ACTIVE`, `EXPIRED`, `DRAFT`— como en el diseño.
- * Cuando se decida enseñarlos en español, es esta constante y nada más.
+ * NO es un semáforo del vault: son los valores del enum de la tabla. El
+ * código viaja en inglés (D-11) y lo que lee la persona va en español —
+ * esta constante es el único lugar donde se traduce.
  */
 export const CONTRACT_STATUSES = ['DRAFT', 'ACTIVE', 'EXPIRED', 'CANCELLED'] as const
 
 export type ContractStatus = (typeof CONTRACT_STATUSES)[number]
 
 export const CONTRACT_STATUS_LABEL: Record<ContractStatus, string> = {
-  DRAFT: 'DRAFT',
-  ACTIVE: 'ACTIVE',
-  EXPIRED: 'EXPIRED',
-  CANCELLED: 'CANCELLED',
+  DRAFT: 'Borrador',
+  ACTIVE: 'Activo',
+  EXPIRED: 'Expirado',
+  CANCELLED: 'Cancelado',
 }
 
 export const CONTRACT_STATUS_TOKEN: Record<ContractStatus, StatusLightToken> = {

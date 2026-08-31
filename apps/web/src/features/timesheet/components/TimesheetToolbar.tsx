@@ -58,7 +58,7 @@ export function TimesheetToolbar({
             onChange={(event) => {
               update('search')(event.target.value)
             }}
-            placeholder="Buscar colaborador…"
+            placeholder="Nombre del colaborador, p. ej. Ana Rivera"
           />
         </label>
 

@@ -70,7 +70,7 @@ export function ArchiveCycleDialog({
                 PROSPECT_IS_CLIENT:
                   'Un hotel en Naranja es cliente activo: primero pásalo a Negro y luego archiva.',
                 PROSPECT_CLOSED: 'Este ciclo ya estaba cerrado.',
-                REASON_NOT_FOUND: 'Ese motivo no existe en el catálogo.',
+                REASON_NOT_FOUND: 'Ese motivo ya no está disponible: elige otro de la lista.',
               },
               fallback: 'No se pudo archivar el ciclo. Inténtalo de nuevo.',
             })}

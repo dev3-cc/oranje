@@ -27,7 +27,9 @@ export function HotelContactList({
       }
     >
       {contacts.length === 0 ? (
-        <p className="py-2 text-sm text-ink-3">Sin contactos capturados.</p>
+        <p className="py-2 text-sm text-ink-3">
+          Todavía no hay contactos. Usa «Editar» para agregar el primero.
+        </p>
       ) : (
         <ul className="flex flex-col gap-3">
           {contacts.map((contact) => (

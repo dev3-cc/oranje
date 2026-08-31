@@ -265,7 +265,7 @@ export function HotelGlobeCard(): ReactNode {
 
       {isError ? (
         <p className="px-8 py-16 text-center text-sm text-ink-3">
-          No se pudieron cargar los hoteles del globo.
+          No se pudieron cargar los hoteles del mapa. Recarga la página para reintentar.
         </p>
       ) : (
         <div className="pointer-events-none relative mt-2 h-96">

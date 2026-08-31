@@ -4,18 +4,19 @@ import type { ReactNode } from 'react'
 import type { RequisitionPosition, RequisitionSlot } from '../types/requisition.types'
 
 import { SectionCard } from '@/shared/components/SectionCard'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayMonthTime } from '@/shared/lib/formatters'
 
 /**
  * Los slots de una posición, uno por renglón.
  *
- * El estado se escribe con el valor del enum —`occupied`, `free`— como en la
- * maqueta. Es el dato crudo de la API; si se decide que el usuario final lea
- * «Ocupado» y «Libre», el cambio es esta constante y nada más.
+ * En dev el estado se escribe con el valor del enum —`occupied`, `free`— como
+ * en la maqueta (documentación viva del contrato); en build, la persona lee
+ * «Ocupado» y «Libre».
  */
 const SLOT_STATUS_LABEL: Record<RequisitionSlot['status'], string> = {
-  occupied: 'occupied',
-  free: 'free',
+  occupied: IS_DEV_UI ? 'occupied' : 'Ocupado',
+  free: IS_DEV_UI ? 'free' : 'Libre',
 }
 
 function SlotRow({ slot }: { slot: RequisitionSlot }): ReactNode {
@@ -72,7 +73,11 @@ export function SlotList({ position }: { position: RequisitionPosition }): React
   return (
     <SectionCard
       title={`Slots de la posición ${String(position.index)} · ${position.name}`}
-      subtitle="La unidad de bloqueo. Un slot libre se puede borrar; uno ocupado no (FK de coverage.assignment)"
+      subtitle={
+        IS_DEV_UI
+          ? 'La unidad de bloqueo. Un slot libre se puede borrar; uno ocupado no (FK de coverage.assignment)'
+          : 'Cada slot es un lugar por cubrir. Un slot libre se puede borrar; uno ocupado no.'
+      }
     >
       <ul className="flex flex-col gap-3">
         {position.slots.map((slot) => (

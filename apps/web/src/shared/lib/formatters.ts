@@ -115,6 +115,19 @@ export function formatWeekRange(fromIso: string, toIso: string): string {
 }
 
 /** `7.1` -> `7.1h`; `8` -> `8h`. Las horas no arrastran decimales de más. */
+/**
+ * Hora de un instante en la zona que se pida (IANA). Sin zona, la del
+ * navegador. Un turno se lee SIEMPRE en la zona del hotel: 07:00 en Cancún es
+ * 07:00 aunque la persona mire el teléfono desde otra ciudad.
+ */
+export function formatTimeIn(iso: string, timeZone?: string): string {
+  return new Date(iso).toLocaleTimeString('es-MX', {
+    hour: '2-digit',
+    minute: '2-digit',
+    ...(timeZone ? { timeZone } : {}),
+  })
+}
+
 export function formatHours(hours: number): string {
   return `${String(Math.round(hours * 10) / 10)}h`
 }

@@ -34,7 +34,7 @@ export function ContractFilters({
         onChange={(event: ChangeEvent<HTMLInputElement>) => {
           update('search')(event.target.value)
         }}
-        placeholder="Buscar por hotel o número…"
+        placeholder="Hotel Puerto Real o CT-2026-0184"
         aria-label="Buscar por hotel o número"
         className="h-auto min-w-72 flex-1 rounded-full px-5 py-2.5 hover:bg-surface-2"
       />

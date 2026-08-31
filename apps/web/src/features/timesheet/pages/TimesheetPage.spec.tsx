@@ -59,7 +59,7 @@ describe('TimesheetPage', () => {
 
     const dialog = await screen.findByRole('dialog')
     const scoped = within(dialog)
-    expect(scoped.getByText('CLOCK_OUT')).toBeInTheDocument()
+    expect(scoped.getByText('Salida')).toBeInTheDocument()
     expect(scoped.getByText('fuera de geocerca')).toBeInTheDocument()
     expect(scoped.getByRole('button', { name: /marcar revisado/i })).toBeDisabled()
 
@@ -83,7 +83,7 @@ describe('TimesheetPage', () => {
     const summary = screen.getByText('1 día elegido').parentElement
     expect(within(summary as HTMLElement).getByText(/^req /)).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Limpiar' }))
+    await user.click(screen.getByRole('button', { name: 'Quitar selección' }))
     expect(screen.queryByText('1 día elegido')).not.toBeInTheDocument()
   })
 

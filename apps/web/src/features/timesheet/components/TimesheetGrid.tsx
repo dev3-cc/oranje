@@ -40,7 +40,7 @@ export function TimesheetGrid({
   if (week.rows.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-        Nadie coincide con el filtro esta semana.
+        Nadie coincide con esos filtros esta semana. Cambia la requisición, el estado o el hotel.
       </p>
     )
   }

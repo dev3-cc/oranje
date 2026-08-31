@@ -61,7 +61,10 @@ export const prospectFormSchema = z
     contactJobTitle: z.string(),
     contactPhone: z.string(),
     /** Vacío es válido: no todos los contactos dan correo. */
-    contactEmail: z.union([z.literal(''), z.email('El correo no se ve bien')]),
+    contactEmail: z.union([
+      z.literal(''),
+      z.email('Escribe un correo válido, como marta@hotel.mx'),
+    ]),
     isPrimaryContact: z.boolean(),
 
     ownerUserId: z.string().min(1, 'Elige al dueño del prospecto'),

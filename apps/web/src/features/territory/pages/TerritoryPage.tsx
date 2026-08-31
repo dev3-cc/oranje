@@ -71,7 +71,7 @@ export function TerritoryPage(): ReactNode {
             setSearchInput(event.target.value)
           }}
           aria-label="Buscar hotel en mi territorio"
-          placeholder="Buscar hotel en mi territorio..."
+          placeholder="Nombre del hotel, p. ej. Puerto Real"
           className="mt-4 w-full rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none"
         />
         {/* La lista de abajo ES el resultado: aquí solo se avisa que se busca. */}
@@ -108,7 +108,8 @@ export function TerritoryPage(): ReactNode {
 
           {!isLoading && !isError && !isFetching && hotels.length === 0 && (
             <p className="rounded-md border border-dashed border-line px-4 py-8 text-center text-sm text-ink-3">
-              Ningún hotel de tu territorio coincide con el filtro.
+              Ningún hotel de tu territorio coincide con estos filtros. Cambia la búsqueda o elige
+              otra zona.
             </p>
           )}
 

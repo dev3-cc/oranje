@@ -46,7 +46,7 @@ export function AuthorizationResolutionForm({
           byStatus: {
             403: `Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel${IS_DEV_UI ? ' (D-09)' : ''}.`,
           },
-          fallback: 'No se pudo autorizar.',
+          fallback: 'No se pudo autorizar la requisición. Inténtalo de nuevo.',
         }),
       )
     }
@@ -92,7 +92,11 @@ export function AuthorizationResolutionForm({
             <Button
               variant="secondary"
               disabled
-              title="El rechazo aún no existe en el backend (pendiente 21 del ADR)"
+              title={
+                IS_DEV_UI
+                  ? 'El rechazo aún no existe en el backend (pendiente 21 del ADR)'
+                  : 'Rechazar estará disponible próximamente'
+              }
             >
               Rechazar
             </Button>

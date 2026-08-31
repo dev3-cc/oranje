@@ -10,9 +10,12 @@ import {
 } from '../api/conversionApi'
 import { RequirementRow } from '../components/RequirementRow'
 
+import personajeCronograma from '@/assets/ilustrations/personaje-cronograma.svg'
+import personajeTratoCerrado from '@/assets/ilustrations/personaje-trato-cerrado.svg'
 import { useGetStatusChangeReasonsQuery } from '@/features/onboarding'
 import { Button } from '@/shared/components/Button'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
+import { NoticeCard } from '@/shared/components/NoticeCard'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
@@ -104,18 +107,19 @@ export function ConversionPage(): ReactNode {
     return (
       <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-surface p-6">
         {state === 'ORANGE' ? (
-          <p className="text-sm text-ink-2">
-            Este hotel <span className="font-semibold">ya es cliente activo</span>: su conversión ya
-            se aprobó.
-          </p>
+          <NoticeCard image={personajeTratoCerrado} title="Este hotel ya es cliente activo">
+            Su conversión ya se aprobó: no hay nada que convertir.
+          </NoticeCard>
         ) : state ? (
-          <p className="text-sm text-ink-2">
+          <NoticeCard image={personajeCronograma} title="Todavía no toca convertir">
             Este prospecto está en{' '}
             <span className="font-semibold">{ONBOARDING_STATUS_LABEL[state]}</span> — la conversión
             sale de Rosa{IS_DEV_UI ? ' (RR-V-02)' : ''}.
-          </p>
+          </NoticeCard>
         ) : (
-          <p className="text-sm text-red">No se pudo cargar la conversión. Reintenta.</p>
+          <p className="text-sm text-red">
+            No se pudo cargar la conversión de este hotel. Recarga la página para reintentar.
+          </p>
         )}
         <Link to="/conversion" className="text-sm font-semibold text-o-700 hover:underline">
           Volver a Conversión

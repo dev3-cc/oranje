@@ -105,10 +105,10 @@ export function TimesheetPage(): ReactNode {
                 setSelectedIds(new Set())
               }}
             >
-              Limpiar
+              Quitar selección
             </Button>
             {/* Pendiente: falta el diseño del pago en bloque */}
-            <Button variant="primary" disabled title="Pendiente: falta el diseño del pago">
+            <Button variant="primary" disabled title="El pago en bloque aún no está disponible">
               Pagar seleccionados
             </Button>
           </div>
@@ -117,7 +117,7 @@ export function TimesheetPage(): ReactNode {
 
       {isError && (
         <LoadError
-          message="No se pudo cargar la semana."
+          message="No se pudo cargar la semana del Timesheet. Reintenta en unos segundos."
           onRetry={() => {
             void refetch()
           }}

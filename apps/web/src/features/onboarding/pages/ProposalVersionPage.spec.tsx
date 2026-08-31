@@ -51,7 +51,9 @@ describe('ProposalVersionPage', () => {
     renderVersion('psp-0008', '99')
 
     expect(
-      await screen.findByText('No se encontró esa versión de la propuesta.'),
+      await screen.findByText(
+        'Esa versión de la propuesta no existe. Vuelve a Propuestas y elige otra.',
+      ),
     ).toBeInTheDocument()
   })
 })

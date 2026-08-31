@@ -52,11 +52,11 @@ export function SelfPickPage(): ReactNode {
     })
   }, [board, positionId, modalityId, englishId])
 
-  if (isLoading) return <LoadingState label="Cargando la bolsa de requisiciones…" />
+  if (isLoading) return <LoadingState label="Cargando la Bolsa de Self-Pick…" />
   if (isError || !board) {
     return (
       <LoadError
-        message="No se pudo cargar la bolsa de Self-Pick."
+        message="No se pudo cargar la Bolsa de Self-Pick. Revisa tu conexión e inténtalo de nuevo."
         onRetry={() => {
           void refetch()
         }}
@@ -80,15 +80,19 @@ export function SelfPickPage(): ReactNode {
           <span className="font-semibold text-ink">
             Gana el primero que confirma{IS_DEV_UI ? ' (RR-15)' : ''}.
           </span>{' '}
-          Al tomar un slot se bloquea esa fila, no la requisición completa — otro reclutador puede
-          seguir tomando los demás slots de la misma posición.
+          Al tomar un slot se bloquea solo ese slot, no la requisición completa: otra Reclutadora
+          puede seguir tomando los demás de la misma posición.
         </span>
       </p>
 
       <div className="flex flex-wrap items-center gap-3">
         {}
         <span
-          title="GET /requisitions no expone la zona del hotel todavía"
+          title={
+            IS_DEV_UI
+              ? 'GET /requisitions no expone la zona del hotel todavía'
+              : 'El filtro por zona estará disponible próximamente'
+          }
           className="relative inline-block"
         >
           <MaterialIcon
@@ -104,7 +108,9 @@ export function SelfPickPage(): ReactNode {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="NA">Zona: el contrato no la expone</SelectItem>
+              <SelectItem value="NA">
+                {IS_DEV_UI ? 'Zona: el contrato no la expone' : 'Zona: próximamente'}
+              </SelectItem>
             </SelectContent>
           </Select>
         </span>
@@ -149,7 +155,8 @@ export function SelfPickPage(): ReactNode {
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-line px-4 py-10 text-center">
           <img src={personajeComencemos} alt="" aria-hidden className="h-32 w-auto" />
           <p className="text-sm text-ink-3">
-            Sin slots libres con esos filtros. La bolsa se llena al autorizarse requisiciones.
+            No hay slots libres con estos filtros. La Bolsa se llena cuando un Manager autoriza una
+            requisición; prueba a quitar un filtro.
           </p>
         </div>
       ) : (

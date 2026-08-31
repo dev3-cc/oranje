@@ -86,7 +86,7 @@ describe('WorkerDetailPage', () => {
     expect(within(dialog).queryByText(/ORANGE/)).not.toBeInTheDocument()
 
     await user.click(within(dialog).getByRole('radio'))
-    await user.click(within(dialog).getByRole('button', { name: 'Aplicar transición' }))
+    await user.click(within(dialog).getByRole('button', { name: 'Cambiar estado' }))
 
     // El chip del encabezado se actualiza porque la mutación invalida la ficha.
     await waitFor(() => {

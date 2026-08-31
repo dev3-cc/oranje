@@ -1,9 +1,9 @@
 import { StatusLightBadge } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
-import { useGetMyProfileQuery } from '../api/workerApi'
+import { useGetMyHistoryQuery, useGetMyProfileQuery } from '../api/workerApi'
+import { WorkerSkeleton } from '../components/WorkerSkeleton'
 
-import { LoadingState } from '@/shared/components/LoadingState'
 import {
   BLOOD_LABEL,
   EXPERIENCE_LABEL,
@@ -11,11 +11,12 @@ import {
   TRANSPORT_LABEL,
 } from '@/shared/constants/workerEnums'
 import {
-  workerStatusChipLabel,
+  WORKER_STATUS_LABEL,
   WORKER_STATUS_TOKEN,
   type WorkerStatus,
 } from '@/shared/constants/workerStatus'
 import { formatDate } from '@/shared/lib/formatters'
+import type { WorkerHistoryEntryApi } from '@/shared/types/apiContract.types'
 
 function Row({ label, value }: { label: string; value: string }): ReactNode {
   return (
@@ -29,14 +30,43 @@ function Row({ label, value }: { label: string; value: string }): ReactNode {
 /**
  * Mi Perfil (maqueta «Mi Perfil solo-lectura»): lo que Oranje sabe de la
  * persona, sin editar — lo de Fase 1 lo decide Reclutamiento y lo de las
- * fases 2 y 3 se corrige en sus pantallas. El timeline del semáforo queda
- * como el estado actual con su fecha de alta: `GET /workers/me/history` no
- * existe todavía en el contrato (pendiente del back).
+ * fases 2 y 3 se corrige en sus pantallas. El timeline es mi propio
+ * `worker_state_history` (`GET /workers/me/history`), del más reciente al
+ * más viejo; mientras llega, o si viene vacío, se muestra el estado de hoy.
  */
+
+/** Un paso del semáforo, en palabras: quién te movió y por qué, si lo dijo. */
+function HistoryStep({
+  entry,
+  isCurrent,
+}: {
+  entry: WorkerHistoryEntryApi
+  isCurrent: boolean
+}): ReactNode {
+  const toState = entry.toState as WorkerStatus
+  const detail = [formatDate(entry.occurredAt), entry.userName].join(' · ')
+
+  return (
+    <li className="flex gap-3">
+      <span
+        className={`mt-1.5 size-2.5 shrink-0 rounded-full ${isCurrent ? 'bg-o-500' : 'bg-surface-3'}`}
+        aria-hidden
+      />
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-ink">
+          {entry.fromState === null ? 'Alta en Oranje' : WORKER_STATUS_LABEL[toState]}
+        </p>
+        <p className="text-xs text-ink-3">{detail}</p>
+        {entry.reason !== null && <p className="mt-0.5 text-xs text-ink-2">{entry.reason}</p>}
+      </div>
+    </li>
+  )
+}
 export function ProfilePage(): ReactNode {
   const { data: profile, isLoading } = useGetMyProfileQuery()
+  const { data: history = [] } = useGetMyHistoryQuery()
 
-  if (isLoading || !profile) return <LoadingState label="Abriendo tu perfil…" />
+  if (isLoading || !profile) return <WorkerSkeleton variant="profile" />
 
   const status = profile.state.code as WorkerStatus
 
@@ -64,29 +94,34 @@ export function ProfilePage(): ReactNode {
             {profile.position?.name ?? 'Sin posición asignada'} · {profile.zone.name}
           </p>
         </div>
-        <StatusLightBadge
-          token={WORKER_STATUS_TOKEN[status]}
-          label={workerStatusChipLabel(status)}
-        />
+        <StatusLightBadge token={WORKER_STATUS_TOKEN[status]} label={WORKER_STATUS_LABEL[status]} />
       </section>
 
       <section className="rounded-xl border border-line bg-surface p-4">
         <h2 className="text-sm font-semibold text-ink">Tu semáforo</h2>
         <ol className="mt-2 flex flex-col gap-2">
-          <li className="flex gap-3">
-            <span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-o-500" aria-hidden />
-            <div>
-              <p className="text-sm font-medium text-ink">{workerStatusChipLabel(status)}</p>
-              <p className="text-xs text-ink-3">Tu estado hoy</p>
-            </div>
-          </li>
-          <li className="flex gap-3">
-            <span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-surface-3" aria-hidden />
-            <div>
-              <p className="text-sm font-medium text-ink">Alta en Oranje</p>
-              <p className="text-xs text-ink-3">{formatDate(profile.createdAt)}</p>
-            </div>
-          </li>
+          {history.length === 0 ? (
+            <>
+              <li className="flex gap-3">
+                <span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-o-500" aria-hidden />
+                <div>
+                  <p className="text-sm font-medium text-ink">{WORKER_STATUS_LABEL[status]}</p>
+                  <p className="text-xs text-ink-3">Tu estado hoy</p>
+                </div>
+              </li>
+              <li className="flex gap-3">
+                <span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-surface-3" aria-hidden />
+                <div>
+                  <p className="text-sm font-medium text-ink">Alta en Oranje</p>
+                  <p className="text-xs text-ink-3">{formatDate(profile.createdAt)}</p>
+                </div>
+              </li>
+            </>
+          ) : (
+            history.map((entry, index) => (
+              <HistoryStep key={entry.id} entry={entry} isCurrent={index === 0} />
+            ))
+          )}
         </ol>
       </section>
 

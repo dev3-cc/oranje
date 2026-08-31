@@ -6,6 +6,7 @@ import type { ProposalVersionSummary } from '../types/proposal.types'
 import { ContractPreviewButton } from './ContractPreviewButton'
 
 import { SectionCard } from '@/shared/components/SectionCard'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate, formatMoney } from '@/shared/lib/formatters'
 
 /** Sin fecha de envío: el borrador todavía no tiene `sent_at`. */
@@ -21,7 +22,7 @@ export function ProposalVersionHistory({
   return (
     <SectionCard title="Historial de versiones">
       {versions.length === 0 ? (
-        <p className="py-2 text-sm text-ink-3">Todavía no hay ninguna versión.</p>
+        <p className="py-2 text-sm text-ink-3">Todavía no hay versiones de la propuesta.</p>
       ) : (
         <ul className="flex flex-col gap-3">
           {versions.map((version) => (
@@ -55,7 +56,9 @@ export function ProposalVersionHistory({
       )}
 
       <p className="mt-4 text-xs text-ink-3">
-        ux_proposal_prospect_version — una fila por versión; no se borran al cerrar
+        {IS_DEV_UI
+          ? 'ux_proposal_prospect_version — una fila por versión; no se borran al cerrar'
+          : 'Cada envío queda como una versión; ninguna se borra.'}
       </p>
     </SectionCard>
   )
