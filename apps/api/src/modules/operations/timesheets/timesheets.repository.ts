@@ -62,6 +62,26 @@ export class TimesheetsRepository {
     return row?.id ?? null
   }
 
+  // El turno de HOY de un colaborador, con la fecha LOCAL DEL HOTEL: a las
+  // 23:00 en Cancun ya es el dia siguiente en UTC, y el turno se buscaria mal.
+  //
+  // Devuelve todos los del dia y no el primero: RR-05 impide dos turnos que se
+  // encimen por horas, pero no dos en el mismo dia — quien decide que hacer con
+  // eso es el servicio.
+  async shiftsToday(workerId: string): Promise<Array<{ assignmentId: string }>> {
+    return this.prisma.$queryRaw<Array<{ assignmentId: string }>>`
+      SELECT e.assignment_id AS "assignmentId"
+        FROM operations.schedule_entry e
+        JOIN coverage.assignment a  ON a.id = e.assignment_id
+        JOIN demand.slot s          ON s.id = a.slot_id
+        JOIN demand."position" p    ON p.id = s.position_id
+        JOIN demand.requisition r   ON r.id = p.requisition_id
+        JOIN commercial.hotel h     ON h.id = r.hotel_id
+       WHERE e.worker_id = ${workerId}::uuid
+         AND e.work_date = (now() AT TIME ZONE h.time_zone)::date
+       ORDER BY lower(e.shift_range)`
+  }
+
   async assignment(id: string): Promise<AssignmentContext | null> {
     const rows = await this.prisma.$queryRaw<
       Array<{

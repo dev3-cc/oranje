@@ -75,11 +75,11 @@ export class TimesheetsService {
   constructor(private readonly repo: TimesheetsRepository) {}
 
   async punch(dto: CreatePunchDto, user: AuthenticatedUser): Promise<PunchResult> {
-    const assignment = await this.assignment(dto.assignmentId)
+    const assignment = await this.assignment(dto.assignmentId ?? (await this.assignmentToday(user)))
 
-    // La asignación llega en el cuerpo, así que sin esto un colaborador podía
-    // ponchar por otro con solo cambiar el id. Quien poncha es el dueño de la
-    // asignación, y punto: el ponche ajeno es el manual, que es del Supervisor.
+    // La asignación puede llegar en el cuerpo, así que sin esto un colaborador
+    // podía ponchar por otro con solo cambiar el id. Quien poncha es el dueño
+    // de la asignación: el ponche ajeno es el manual, que es del Supervisor.
     await this.assertOwnAssignment(assignment, user)
 
     if (!LUNCH_TYPES.includes(dto.type as (typeof LUNCH_TYPES)[number]) && !dto.photoPath) {
@@ -162,7 +162,11 @@ export class TimesheetsService {
     return rows.map(toTimesheet)
   }
 
-  // Sus horas: brutas, deducción de lunch y netas. Sin el detalle de otros.
+  // Sus horas, con el detalle de cada día y sus marcas: de ahí sale el día de
+  // hoy que la pantalla del ponche necesita para saber cuál marca toca.
+  //
+  // Solo la semana en curso trae detalle; las anteriores van como cabecera,
+  // porque cargar cada marca de un año de historial no lo pide nadie.
   async mine(user: AuthenticatedUser): Promise<TimesheetEntity[]> {
     const workerId = await this.repo.workerOfUser(user.id)
 
@@ -173,7 +177,25 @@ export class TimesheetsService {
       })
     }
 
-    return (await this.repo.listOfWorker(workerId)).map(toTimesheet)
+    const sheets = await this.repo.listOfWorker(workerId)
+
+    return Promise.all(
+      sheets.map(async (sheet, index) => (index === 0 ? this.withDays(sheet) : toTimesheet(sheet))),
+    )
+  }
+
+  private async withDays(sheet: TimesheetRow): Promise<TimesheetEntity> {
+    const days = await this.repo.days(sheet.id)
+
+    return {
+      ...toTimesheet(sheet),
+      days: await Promise.all(days.map(async (d) => toDay(d, await this.repo.punches(d.id)))),
+      totals: {
+        grossMinutes: days.reduce((t, d) => t + d.grossMinutes, 0),
+        netMinutes: days.reduce((t, d) => t + d.netMinutes, 0),
+        overtimeMinutes: days.reduce((t, d) => t + d.overtimeMinutes, 0),
+      },
+    }
   }
 
   async get(id: string): Promise<TimesheetEntity> {
@@ -330,6 +352,39 @@ export class TimesheetsService {
     })
 
     return { dayId, status }
+  }
+
+  // Sin `assignmentId` en el cuerpo se resuelve el turno de HOY del colaborador
+  // del token. Es lo que permite ponchar desde la app sin que el cliente
+  // conozca su asignación — ningún endpoint suyo la exponía.
+  private async assignmentToday(user: AuthenticatedUser): Promise<string> {
+    const workerId = await this.repo.workerOfUser(user.id)
+
+    if (workerId === null) {
+      throw new NotFoundException({
+        code: 'WORKER_NOT_LINKED',
+        message: 'Tu cuenta no está ligada a un colaborador',
+      })
+    }
+
+    const shifts = await this.repo.shiftsToday(workerId)
+
+    if (shifts.length === 0) {
+      throw new NotFoundException({
+        code: 'NO_SHIFT_TODAY',
+        message: 'No tienes turno programado hoy',
+      })
+    }
+
+    if (shifts.length > 1) {
+      throw new ConflictException({
+        code: 'MULTIPLE_SHIFTS_TODAY',
+        message: 'Tienes más de un turno hoy: di en cuál estás ponchando',
+        details: shifts.map((s) => ({ field: 'assignmentId', value: s.assignmentId })),
+      })
+    }
+
+    return (shifts[0] as { assignmentId: string }).assignmentId
   }
 
   private async assertOwnAssignment(
