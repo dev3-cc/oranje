@@ -21,6 +21,7 @@
     "auth:keys": "tsx scripts/generate-keys.ts",
     "token:local": "tsx scripts/token-local.ts",
     "hotels:photos": "tsx scripts/resolver-fotos-hotel.ts",
+    "files:clean": "tsx scripts/limpiar-archivos-de-prueba.ts",
     "test:db": "jest --config jest.integration.config.cjs",
     "db:bootstrap": "psql \"$MIGRATE_DATABASE_URL\" -v ON_ERROR_STOP=1 -f prisma/bootstrap.sql",
     "db:grants": "psql \"$MIGRATE_DATABASE_URL\" -v ON_ERROR_STOP=1 -f prisma/grants.sql"
