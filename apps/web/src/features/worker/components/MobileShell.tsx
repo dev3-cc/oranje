@@ -198,6 +198,9 @@ export function MobileShell(): ReactNode {
           <NavLink to="/colaborador/perfil" className={tabClass}>
             {tab('Perfil')}
           </NavLink>
+          <NavLink to="/colaborador/perfil" className={tabClass}>
+            Perfil
+          </NavLink>
         </nav>
 
         {/*

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -63,6 +64,18 @@ export class ProposalsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: ProposalEntity }> {
     return { data: await this.proposals.update(id, proposalId, dto, user) }
+  }
+
+  // El mismo par que crea el borrador: quien puede abrirlo puede descartarlo.
+  @Requires('proposals', 'create')
+  @Delete('prospects/:id/proposals/:proposalId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async discardDraft(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('proposalId', ParseUUIDPipe) proposalId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<void> {
+    return this.proposals.discardDraft(id, proposalId, user)
   }
 
   @Requires('proposals', 'send')
