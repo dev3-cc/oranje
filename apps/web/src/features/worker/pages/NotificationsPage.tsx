@@ -2,10 +2,10 @@ import { cn } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
 import { useGetMyNotificationsQuery, useMarkNotificationReadMutation } from '../api/workerApi'
+import { WorkerSkeleton } from '../components/WorkerSkeleton'
 
 import personajeErrorTecnico from '@/assets/ilustrations/personaje-error-tecnico.svg'
 import personajeNotificaciones from '@/assets/ilustrations/personaje-notificaciones.svg'
-import { LoadingState } from '@/shared/components/LoadingState'
 import { formatDayMonthTime } from '@/shared/lib/formatters'
 
 /**
@@ -37,7 +37,7 @@ export function NotificationsPage(): ReactNode {
         </div>
       )}
 
-      {isLoading && notifications.length === 0 && <LoadingState label="Cargando tus avisos…" />}
+      {isLoading && notifications.length === 0 && <WorkerSkeleton variant="list" />}
 
       {!isLoading && !isError && notifications.length === 0 && (
         <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-line px-4 py-8 text-center">

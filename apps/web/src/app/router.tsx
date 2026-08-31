@@ -1,6 +1,7 @@
-import { createBrowserRouter, Navigate } from 'react-router'
+import { createBrowserRouter } from 'react-router'
 
 import { RequireSession } from './RequireSession'
+import { RoleHome } from './RoleHome'
 
 import { AppShell } from '@/layouts/AppShell'
 import { ModulePlaceholder } from '@/shared/components/ModulePlaceholder'
@@ -62,6 +63,13 @@ export const router = createBrowserRouter([
             },
           },
           {
+            path: 'ponchar',
+            lazy: async () => {
+              const m = await import('@/features/worker')
+              return { Component: m.PunchPage }
+            },
+          },
+          {
             path: 'alta-2',
             lazy: async () => {
               const m = await import('@/features/worker')
@@ -87,7 +95,7 @@ export const router = createBrowserRouter([
       {
         Component: AppShell,
         children: [
-          { index: true, element: <Navigate to="/dashboard" replace /> },
+          { index: true, Component: RoleHome },
           {
             path: 'dashboard',
             lazy: async () => {

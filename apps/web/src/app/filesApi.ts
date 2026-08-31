@@ -35,11 +35,21 @@ registerMockRoutes([
     method: 'POST',
     path: '/files',
     /** El mock no guarda bytes: devuelve la forma real con un path plausible. */
-    resolve: (): ApiEnvelope<UploadedFileApi> => {
+    resolve: ({ body }): ApiEnvelope<UploadedFileApi> => {
       mockFileSequence += 1
+      const raw = body instanceof FormData ? body.get('purpose') : null
+      const purpose = typeof raw === 'string' ? raw : ''
+      const folder =
+        purpose === 'PUNCH_PHOTO'
+          ? 'operations/punch'
+          : purpose === 'WORKER_DOCUMENT'
+            ? 'workers/document'
+            : purpose === 'USER_PHOTO'
+              ? 'users/photo'
+              : 'workers/photo'
       return {
         data: {
-          path: `workers/photo/mock-${String(mockFileSequence).padStart(3, '0')}.jpg`,
+          path: `${folder}/mock-${String(mockFileSequence).padStart(3, '0')}.jpg`,
           url: null,
           contentType: 'image/jpeg',
           bytes: 120_000,

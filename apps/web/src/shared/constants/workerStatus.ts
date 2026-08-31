@@ -1,5 +1,7 @@
 import type { StatusLightToken } from '@oranje/ui'
 
+import { IS_DEV_UI } from '@/shared/lib/devMode'
+
 /**
  * Semáforo del Colaborador: los 12 estados del seed real
  * (`apps/api/prisma/seed.ts`, semáforo WORKER). Un cambio allá obliga a
@@ -64,5 +66,6 @@ export const WORKER_STATUS_TOKEN: Record<WorkerStatus, StatusLightToken> = {
  * `BROWN` es una asignación temporal.
  */
 export function workerStatusChipLabel(status: WorkerStatus): string {
-  return `${status} · ${WORKER_STATUS_LABEL[status]}`
+  /** En dev el código acompaña (documentación viva); en build el color ya es el estado. */
+  return IS_DEV_UI ? `${status} · ${WORKER_STATUS_LABEL[status]}` : WORKER_STATUS_LABEL[status]
 }

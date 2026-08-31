@@ -1,8 +1,10 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
+import { Link } from 'react-router'
 
 import { useCompleteSignupMutation, useGetMyProfileQuery } from '../api/workerApi'
 import { TaxDeadlineBanner } from '../components/TaxDeadlineBanner'
+import { TaxDocumentUploader } from '../components/TaxDocumentUploader'
 
 import { Button } from '@/shared/components/Button'
 import { TRANSPORT_LABEL, TRANSPORT_TYPES } from '@/shared/constants/workerEnums'
@@ -14,6 +16,8 @@ export function Phase2Page(): ReactNode {
   const [save, { isLoading, isError, isSuccess, error: saveError }] = useCompleteSignupMutation()
 
   const [transportType, setTransportType] = useState('')
+
+  const hasDocument = profile?.taxDeadline.hasDocument ?? false
 
   useEffect(() => {
     if (profile?.transportType) setTransportType(profile.transportType)
@@ -33,13 +37,13 @@ export function Phase2Page(): ReactNode {
   return (
     <div className="flex flex-col gap-5">
       <header>
-        <h1 className="text-xl font-bold text-ink">Alta · Fase 2</h1>
+        <h1 className="text-xl font-bold text-ink">Cómo llegas al trabajo</h1>
         <p className="mt-1 text-xs text-ink-3">
           {IS_DEV_UI
             ? 'RF-C-01 · transporte e identificación fiscal'
-            : 'Transporte e identificación fiscal'}{' '}
+            : 'Tu transporte y tu SSN o ITIN'}{' '}
           <span className="rounded-full bg-o-50 px-2 py-0.5 font-semibold text-o-700">
-            Fase 2 de 3
+            Paso 1 de 2
           </span>
         </p>
       </header>
@@ -83,16 +87,7 @@ export function Phase2Page(): ReactNode {
 
         {profile && <TaxDeadlineBanner deadline={profile.taxDeadline} />}
 
-        {}
-        <div className="flex items-center justify-between rounded-md bg-surface-2 px-4 py-3">
-          <span className="text-sm text-ink-2">Subir SSN / ITIN desde la app</span>
-          <span className="rounded-full border border-dashed border-ink-4 px-2.5 py-0.5 text-xs text-ink-3">
-            pendiente
-          </span>
-        </div>
-        <p className="text-xs text-ink-4">
-          Mientras tanto, entrégalo a tu Reclutadora: ella lo sube a tu expediente.
-        </p>
+        <TaxDocumentUploader hasDocument={hasDocument} />
       </section>
 
       {transportType === '' && (
@@ -110,7 +105,10 @@ export function Phase2Page(): ReactNode {
 
       {isSuccess && (
         <p className="rounded-md bg-green/10 px-4 py-3 text-sm text-ink-2">
-          Transporte guardado. Sigue la Fase 3.
+          Transporte guardado.{' '}
+          <Link to="/colaborador/alta-3" className="font-semibold text-o-700 underline">
+            Sigue con tu contacto de emergencia →
+          </Link>
         </p>
       )}
       {isError && (

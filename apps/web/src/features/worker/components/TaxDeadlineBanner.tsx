@@ -2,7 +2,13 @@ import type { ReactNode } from 'react'
 
 import type { TaxDeadlineApi } from '../types/worker.types'
 
+import { TaxDocumentUploader } from './TaxDocumentUploader'
+
+import personajeCronograma from '@/assets/ilustrations/personaje-cronograma.svg'
 import personajeHastaPronto from '@/assets/ilustrations/personaje-hasta-pronto.svg'
+import personajePagoProcesado from '@/assets/ilustrations/personaje-pago-procesado.svg'
+import personajeUrgente from '@/assets/ilustrations/personaje-urgente.svg'
+import { NoticeCard } from '@/shared/components/NoticeCard'
 import { formatDate } from '@/shared/lib/formatters'
 
 /**
@@ -13,46 +19,51 @@ import { formatDate } from '@/shared/lib/formatters'
 export function TaxDeadlineBanner({ deadline }: { deadline: TaxDeadlineApi }): ReactNode {
   if (deadline.hasDocument) {
     return (
-      <p className="rounded-md bg-green/10 px-4 py-3 text-sm text-ink-2">
+      <NoticeCard image={personajePagoProcesado} title="SSN/ITIN recibido" role="status">
         Tu SSN/ITIN está {deadline.isDocumentVerified ? 'verificado' : 'cargado, en verificación'}.
-        {deadline.taxRetentionApplies &&
-          ' La retención del 16% sigue activa hasta que quede verificado (reembolsable).'}
-      </p>
+        {!deadline.isDocumentVerified && ' Cuando Oranje lo verifique, tu pago queda habilitado.'}
+      </NoticeCard>
     )
   }
 
   if (deadline.status === 'NOTICE') {
     return (
-      <p
+      <NoticeCard
+        image={personajeUrgente}
+        title="Ya debiste cargar tu SSN o ITIN"
+        tone="warning"
         role="alert"
-        className="rounded-md border border-yellow bg-yellow/15 px-4 py-3 text-sm text-ink"
       >
-        <span className="font-bold">Ya debiste cargar tu SSN o ITIN</span> — el plazo venció el{' '}
-        {formatDate(deadline.dueAt)} (vas en el día {deadline.day}). Mañana se suspende tu acceso.
-        La retención del 16% sigue activa (reembolsable).
-      </p>
+        El plazo venció el {formatDate(deadline.dueAt)} (vas en el día {deadline.day}). Mañana se
+        suspende tu acceso, y sin tu SSN o ITIN no se te puede pagar.
+      </NoticeCard>
     )
   }
 
   return (
-    <p className="rounded-md bg-surface-2 px-4 py-3 text-sm text-ink-2">
-      Tienes hasta el <span className="font-semibold">{formatDate(deadline.dueAt)}</span> para
-      cargar tu SSN o ITIN (día {deadline.day} de 3). Sin él aplica la retención del 16%
-      (reembolsable).
-    </p>
+    <NoticeCard image={personajeCronograma} title="Carga tu SSN o ITIN" role="status">
+      Tienes hasta el <span className="font-semibold">{formatDate(deadline.dueAt)}</span> (día{' '}
+      {deadline.day} de 3). Sin él no se te puede pagar.
+    </NoticeCard>
   )
 }
 
-/** Día 5: el acceso se suspende — solo el acceso, tus datos no se pierden. */
+/**
+ * Día 5: el acceso se suspende — solo el acceso, tus datos no se pierden. La
+ * salida está AQUÍ: subir el documento levanta la suspensión al instante
+ * (D-33); Customer Service es el camino si no puedes subirlo.
+ */
 export function SuspendedScreen(): ReactNode {
   return (
-    <div className="flex flex-col items-center gap-4 px-6 py-16 text-center">
+    <div className="flex flex-col items-center gap-4 px-6 py-10 text-center">
       <img src={personajeHastaPronto} alt="" aria-hidden className="h-36 w-auto" />
       <h1 className="text-xl font-bold text-ink">Tu acceso está suspendido</h1>
       <p className="max-w-sm text-sm leading-relaxed text-ink-3">
-        Pasaron 5 días sin cargar tu SSN o ITIN. Contacta a Oranje (Customer Service) para
-        desbloquearlo — tus datos y tu historial no se pierden.
+        Pasaron 5 días sin cargar tu SSN o ITIN. Súbelo aquí y tu acceso vuelve al instante — tus
+        datos y tu historial no se pierden. Si no puedes subirlo, contacta a Oranje (Customer
+        Service).
       </p>
+      <TaxDocumentUploader hasDocument={false} />
     </div>
   )
 }

@@ -17,8 +17,14 @@ import { store } from '@/app/store'
 
 const SLOW = { timeout: 4000 }
 
+/* Con Router: la Fase 2 enlaza a la Fase 3 y un <Link> fuera de un Router truena. */
 function renderPage(page: ReactElement): void {
-  render(<Provider store={store}>{page}</Provider>)
+  const router = createMemoryRouter([{ path: '/', element: page }], { initialEntries: ['/'] })
+  render(
+    <Provider store={store}>
+      <RouterProvider router={router} />
+    </Provider>,
+  )
 }
 
 function deadline(overrides: Partial<TaxDeadlineApi>): TaxDeadlineApi {
@@ -44,7 +50,7 @@ describe('el apartado del Colaborador', () => {
     expect(screen.queryByLabelText(/Posición/)).not.toBeInTheDocument()
 
     expect(screen.getByText(/día 2 de 3/)).toBeInTheDocument()
-    expect(screen.getByText('pendiente')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Subir mi SSN o ITIN' })).toBeInTheDocument()
 
     const sendButton = screen.getByRole('button', { name: 'Enviar' })
     expect(sendButton).toBeDisabled()
@@ -55,7 +61,8 @@ describe('el apartado del Colaborador', () => {
 
     await user.click(sendButton)
     expect(
-      await screen.findByText('Transporte guardado. Sigue la Fase 3.', undefined, SLOW),
+      /* El «Sigue la Fase 3» ahora es un enlace: se busca el texto que lo precede. */
+      await screen.findByText(/Transporte guardado\./, undefined, SLOW),
     ).toBeInTheDocument()
     expect(screen.getByText(/Sigues en Blanco hasta que la Reclutadora valide/)).toBeInTheDocument()
   })
@@ -105,7 +112,7 @@ describe('el apartado del Colaborador', () => {
     }, SLOW)
   })
 
-  it('el shell imita al móvil: ORANJE, mi nombre corto y las no leídas en el tab', async () => {
+  it('el shell imita al móvil: logo, mi avatar con menú y las no leídas en el tab', async () => {
     const router = createMemoryRouter(
       [
         {
@@ -122,17 +129,19 @@ describe('el apartado del Colaborador', () => {
       </Provider>,
     )
 
-    expect(await screen.findByText('RANJE')).toBeInTheDocument()
-    expect(await screen.findByText('Rosa N.', undefined, SLOW)).toBeInTheDocument()
+    expect(await screen.findByRole('img', { name: 'Oranje' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('button', { name: 'Cuenta de Rosa N.' }, SLOW),
+    ).toBeInTheDocument()
     expect(await screen.findByRole('link', { name: 'Avisos · 1' }, SLOW)).toBeInTheDocument()
   })
 })
 
 describe('TaxDeadlineBanner', () => {
-  it('días 1-3: dice cuánto queda y que la retención aplica', () => {
+  it('días 1-3: dice cuánto queda y que sin el documento no hay pago', () => {
     render(<TaxDeadlineBanner deadline={deadline({ status: 'OK', day: 2 })} />)
     expect(screen.getByText(/día 2 de 3/)).toBeInTheDocument()
-    expect(screen.getByText(/retención del 16%/)).toBeInTheDocument()
+    expect(screen.getByText(/no se te puede pagar/)).toBeInTheDocument()
   })
 
   it('día 4: el interceptor avisa que mañana se suspende el acceso', () => {
@@ -140,15 +149,20 @@ describe('TaxDeadlineBanner', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Mañana se suspende tu acceso')
   })
 
-  it('con documento cargado: en verificación, y la retención sigue hasta verificar', () => {
+  it('con documento cargado: en verificación, y el pago se habilita al verificar', () => {
     render(<TaxDeadlineBanner deadline={deadline({ hasDocument: true })} />)
     expect(screen.getByText(/cargado, en verificación/)).toBeInTheDocument()
-    expect(screen.getByText(/sigue activa/)).toBeInTheDocument()
+    expect(screen.getByText(/pago queda habilitado/)).toBeInTheDocument()
   })
 
-  it('día 5: la pantalla de suspensión manda a Customer Service sin perder datos', () => {
-    render(<SuspendedScreen />)
+  it('día 5: la suspensión ofrece subir el documento aquí mismo, y CS como salida', () => {
+    render(
+      <Provider store={store}>
+        <SuspendedScreen />
+      </Provider>,
+    )
     expect(screen.getByText('Tu acceso está suspendido')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Subir mi SSN o ITIN' })).toBeInTheDocument()
     expect(screen.getByText(/Customer Service/)).toBeInTheDocument()
     expect(screen.getByText(/no se pierden/)).toBeInTheDocument()
   })

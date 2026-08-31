@@ -13,7 +13,11 @@ export interface RoleLabel {
   title: string
 }
 
+/** El único rol que NO usa el shell del staff: su apartado es `/colaborador`. */
+export const WORKER_ROLE = 'ROL-C-01'
+
 export const ROLE_LABEL: Partial<Record<string, RoleLabel>> = {
+  'ROL-C-01': { short: 'COLAB', title: 'Colaborador' },
   'ROL-V-01': { short: 'BD', title: 'Business Developer' },
   'ROL-V-02': { short: 'BDC', title: 'Business Developer Coordinator' },
   'ROL-ADM-01': { short: 'ADMIN', title: 'Administrador' },

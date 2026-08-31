@@ -110,11 +110,11 @@ export function Phase3Page(): ReactNode {
   return (
     <div className="flex flex-col gap-5">
       <header>
-        <h1 className="text-xl font-bold text-ink">Alta · Fase 3</h1>
+        <h1 className="text-xl font-bold text-ink">Por si algo pasa</h1>
         <p className="mt-1 text-xs text-ink-3">
-          {IS_DEV_UI ? 'RF-C-02 · emergencia y salud' : 'Emergencia y salud'}{' '}
+          {IS_DEV_UI ? 'RF-C-02 · emergencia y salud' : 'A quién llamamos y qué debemos saber'}{' '}
           <span className="rounded-full bg-o-50 px-2 py-0.5 font-semibold text-o-700">
-            Fase 3 de 3
+            Paso 2 de 2
           </span>
         </p>
       </header>
@@ -229,7 +229,9 @@ export function Phase3Page(): ReactNode {
       )}
       {isError && (
         <p role="alert" className="text-sm text-red">
-          {apiErrorMessage(saveError, { fallback: 'No se pudo guardar la Fase 3.' })}
+          {apiErrorMessage(saveError, {
+            fallback: 'No se pudieron guardar tus datos. Inténtalo de nuevo.',
+          })}
         </p>
       )}
     </div>
