@@ -44,7 +44,8 @@ describe('ContractListPage', () => {
     expect(within(draft as HTMLElement).getByText('sin vigencia')).toBeInTheDocument()
   })
 
-  it('elegir un renglón abre su documento a la derecha', async () => {
+  /* Monta la lista Y el documento embebido: en el runner cargado no cabe en los 5 s por defecto. */
+  it('elegir un renglón abre su documento a la derecha', { timeout: 20_000 }, async () => {
     const user = userEvent.setup()
     renderList()
 
