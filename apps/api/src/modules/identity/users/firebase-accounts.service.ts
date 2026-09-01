@@ -12,9 +12,18 @@ const SCOPES = [
 
 const BASE = 'https://identitytoolkit.googleapis.com/v1'
 
-/** Error de Identity Toolkit con su código (`EMAIL_EXISTS`, …) a la mano. */
+/**
+ * Error de Identity Toolkit con su código (`EMAIL_EXISTS`, …) a la mano.
+ *
+ * `detail` guarda el mensaje COMPLETO de Google. El código se corta en la
+ * primera palabra para poder compararlo, y con eso solo el journal registraba
+ * cosas como «Your», que no dicen nada al diagnosticar.
+ */
 export class FirebaseAccountsError extends Error {
-  constructor(readonly code: string) {
+  constructor(
+    readonly code: string,
+    readonly detail: string,
+  ) {
     super(`Identity Toolkit respondió ${code}`)
   }
 }
@@ -68,7 +77,10 @@ export class FirebaseAccountsService {
 
   private project(): string {
     if (!this.projectId) {
-      throw new FirebaseAccountsError('FIREBASE_PROJECT_ID_MISSING')
+      throw new FirebaseAccountsError(
+        'FIREBASE_PROJECT_ID_MISSING',
+        'Falta FIREBASE_PROJECT_ID en el ambiente',
+      )
     }
 
     return this.projectId
@@ -98,26 +110,31 @@ export class FirebaseAccountsService {
       return
     }
 
-    const code = await errorCode(response)
+    const { code, detail } = await errorOf(response)
 
-    this.logger.warn(`Identity Toolkit rechazó ${path.split('/').pop()}: ${code}`)
+    this.logger.warn(`Identity Toolkit rechazó ${path.split('/').pop()}: ${detail}`)
 
-    throw new FirebaseAccountsError(code)
+    throw new FirebaseAccountsError(code, detail)
   }
 }
 
 /** Identity Toolkit responde `{ error: { message: 'EMAIL_EXISTS : …' } }`. */
-async function errorCode(response: { status: number; json(): Promise<unknown> }): Promise<string> {
+async function errorOf(response: {
+  status: number
+  json(): Promise<unknown>
+}): Promise<{ code: string; detail: string }> {
   try {
     const data = (await response.json()) as { error?: { message?: string } }
     const message = data.error?.message
 
     if (message) {
-      return message.split(/[\s:]/, 1)[0] ?? message
+      return { code: message.split(/[\s:]/, 1)[0] ?? message, detail: message }
     }
   } catch {
     // Cuerpo no-JSON: queda el status.
   }
 
-  return `HTTP_${String(response.status)}`
+  const code = `HTTP_${String(response.status)}`
+
+  return { code, detail: code }
 }

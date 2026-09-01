@@ -13,7 +13,7 @@ import {
 import { CurrentUser, Requires } from '../../../common/decorators/index.js'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 
-import { CreateRequisitionDto } from './dto/create-requisition.dto.js'
+import { CreateRequisitionDto, DeleteRequisitionDto } from './dto/create-requisition.dto.js'
 import { QueryRequisitionsDto } from './dto/query-requisitions.dto.js'
 import type { RequisitionEntity } from './entities/requisition.entity.js'
 import { RequisitionBoard, RequisitionsService } from './requisitions.service.js'
@@ -52,6 +52,24 @@ export class RequisitionsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: RequisitionEntity }> {
     return { data: await this.requisitions.create(dto, user) }
+  }
+
+  /**
+   * Eliminar es pasar a Morado, no borrar la fila — por eso es POST y no
+   * DELETE: el recurso sigue existiendo y `GET /:id` lo sigue sirviendo.
+   *
+   * Sin `@Requires`: quien puede lo dice la tabla de transiciones, y el
+   * borrador además solo lo quita su creador. La Matriz no tiene un par para
+   * esto, y el semáforo sí.
+   */
+  @Post(':id/delete')
+  @HttpCode(HttpStatus.OK)
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: DeleteRequisitionDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: RequisitionEntity }> {
+    return { data: await this.requisitions.remove(id, dto.reason ?? null, user) }
   }
 
   @Requires('requisitions', 'authorize')

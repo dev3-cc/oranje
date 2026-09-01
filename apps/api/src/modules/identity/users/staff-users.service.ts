@@ -14,7 +14,11 @@ import { HOTEL_ROLES } from './dto/create-hotel-user.dto.js'
 import type { CreateStaffUserDto } from './dto/create-staff-user.dto.js'
 import type { QueryStaffUsersDto } from './dto/query-staff-users.dto.js'
 import type { UpdateStaffUserDto } from './dto/update-staff-user.dto.js'
-import type { StaffUserEntity } from './entities/staff-user.entity.js'
+import type {
+  InvitationErrorCode,
+  StaffUserEntity,
+  StaffUserWithInvitation,
+} from './entities/staff-user.entity.js'
 import { FirebaseAccountsError, FirebaseAccountsService } from './firebase-accounts.service.js'
 import { StaffUserRow, StaffUsersRepository } from './staff-users.repository.js'
 
@@ -24,6 +28,29 @@ export interface Paginated<T> {
 }
 
 type InvitationKind = 'invitation' | 'welcome' | 'resend'
+
+interface InvitationResult {
+  sent: boolean
+  error?: InvitationErrorCode
+}
+
+// Identity Toolkit devuelve decenas de codigos; al front solo le sirven tres.
+// Lo que el correo rechaza es cosa del dato —se corrige y se reintenta—; lo
+// demas es que Firebase no respondio.
+const EMAIL_CODES = new Set([
+  'INVALID_EMAIL',
+  'MISSING_EMAIL',
+  'EMAIL_NOT_FOUND',
+  'INVALID_RECIPIENT_EMAIL',
+])
+
+function invitationError(code: string): InvitationErrorCode {
+  if (EMAIL_CODES.has(code)) {
+    return 'EMAIL_REJECTED'
+  }
+
+  return code === 'UNKNOWN' ? 'UNKNOWN' : 'FIREBASE_UNAVAILABLE'
+}
 
 /**
  * Personal del SISTEMA: los roles de territorio y oficina. Los roles del hotel
@@ -83,7 +110,10 @@ export class StaffUsersService {
     return new Map(paths.map((path, index) => [path, urls[index] ?? null]))
   }
 
-  async create(dto: CreateStaffUserDto, actor: AuthenticatedUser): Promise<StaffUserEntity> {
+  async create(
+    dto: CreateStaffUserDto,
+    actor: AuthenticatedUser,
+  ): Promise<StaffUserWithInvitation> {
     const roleId = await this.resolveRole(dto.roleCode)
 
     if (await this.repo.emailTaken(dto.email)) {
@@ -119,16 +149,19 @@ export class StaffUsersService {
 
     const actorRef = { userId: actor.id, role: actor.roleCode }
 
+    // Sin correo pedido no hay nada que reportar: `sent` en false y sin error.
+    let invitation: InvitationResult = { sent: false }
+
     if (dto.password === undefined) {
-      await this.sendInvitation(row.id, row.email, actorRef, 'invitation')
+      invitation = await this.sendInvitation(row.id, row.email, actorRef, 'invitation')
     } else if (dto.sendWelcomeEmail) {
       // El correo de bienvenida es el mismo sendOobCode («tienes cuenta con
       // este correo, establece la tuya aquí») y NUNCA lleva la contraseña; el
       // canal para decirla lo elige el Administrador.
-      await this.sendInvitation(row.id, row.email, actorRef, 'welcome')
+      invitation = await this.sendInvitation(row.id, row.email, actorRef, 'welcome')
     }
 
-    return toEntity(row, await this.signPhotos([row]))
+    return withInvitation(toEntity(row, await this.signPhotos([row])), invitation)
   }
 
   async update(
@@ -175,7 +208,7 @@ export class StaffUsersService {
    * «Invitación enviada» de la maqueta sale de `hasAccount: false`). A
    * diferencia del alta, aquí un fallo SÍ es error: reenviar ES el reintento.
    */
-  async resendInvitation(id: string, actor: AuthenticatedUser): Promise<StaffUserEntity> {
+  async resendInvitation(id: string, actor: AuthenticatedUser): Promise<StaffUserWithInvitation> {
     const row = await this.repo.findById(id)
 
     if (!row) {
@@ -189,21 +222,22 @@ export class StaffUsersService {
       })
     }
 
-    const sent = await this.sendInvitation(
+    const invitation = await this.sendInvitation(
       row.id,
       row.email,
       { userId: actor.id, role: actor.roleCode },
       'resend',
     )
 
-    if (!sent) {
+    if (!invitation.sent) {
       throw new ServiceUnavailableException({
         code: 'INVITATION_FAILED',
         message: 'Firebase no pudo mandar el correo; intenta de nuevo',
+        details: [{ field: 'invitationError', value: invitation.error ?? 'UNKNOWN' }],
       })
     }
 
-    return toEntity(row, await this.signPhotos([row]))
+    return withInvitation(toEntity(row, await this.signPhotos([row])), invitation)
   }
 
   private async createAccountWithPassword(email: string, password: string): Promise<void> {
@@ -239,7 +273,7 @@ export class StaffUsersService {
     email: string,
     actor: { userId: string; role: string },
     kind: InvitationKind,
-  ): Promise<boolean> {
+  ): Promise<InvitationResult> {
     try {
       if (kind !== 'welcome') {
         // EMAIL_EXISTS aquí NO es error: la cuenta pudo crearse a mano y el
@@ -250,23 +284,27 @@ export class StaffUsersService {
       await this.accounts.sendPasswordReset(email)
       await this.repo.journal(userId, 'STAFF_USER_INVITATION_SENT', actor, { email, kind })
 
-      return true
+      return { sent: true }
     } catch (error) {
       const code = error instanceof FirebaseAccountsError ? error.code : 'UNKNOWN'
+      const detail = error instanceof FirebaseAccountsError ? error.detail : String(error)
 
-      this.logger.warn(`La invitación a ${email} no salió: ${code}`)
+      this.logger.warn(`La invitación a ${email} no salió: ${detail}`)
 
       try {
+        // El detalle completo, no el codigo cortado: el journal es donde se
+        // diagnostica esto despues.
         await this.repo.journal(userId, 'STAFF_USER_INVITATION_FAILED', actor, {
           email,
           kind,
           error: code,
+          detail,
         })
       } catch {
         // Si ni el journal se pudo, ya quedó en el log: el alta no se cae.
       }
 
-      return false
+      return { sent: false, error: invitationError(code) }
     }
   }
 
@@ -297,6 +335,17 @@ export class StaffUsersService {
         message: 'A quien reporta no existe o está inactivo',
       })
     }
+  }
+}
+
+function withInvitation(
+  entity: StaffUserEntity,
+  invitation: InvitationResult,
+): StaffUserWithInvitation {
+  return {
+    ...entity,
+    invitationSent: invitation.sent,
+    ...(invitation.error ? { invitationError: invitation.error } : {}),
   }
 }
 

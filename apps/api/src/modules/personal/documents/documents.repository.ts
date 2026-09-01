@@ -46,6 +46,17 @@ export class DocumentsRepository {
     return this.prisma.workerDocument.findFirst({ where: { id, workerId }, select: SELECT })
   }
 
+  async unverifiedOfType(
+    workerId: string,
+    documentType: string,
+  ): Promise<{ id: string; verifiedAt: Date | null } | null> {
+    return this.prisma.workerDocument.findFirst({
+      where: { workerId, documentType },
+      select: { id: true, verifiedAt: true },
+      orderBy: { createdAt: 'desc' },
+    })
+  }
+
   async ofType(workerId: string, documentType: string): Promise<{ id: string } | null> {
     return this.prisma.workerDocument.findFirst({
       where: { workerId, documentType },
@@ -53,16 +64,29 @@ export class DocumentsRepository {
     })
   }
 
+  // `origin` distingue quien lo subio: SELF es el propio colaborador desde
+  // /empleado, STAFF la Reclutadora desde el expediente. El evento no cambia de
+  // nombre —es el mismo hecho— y partirlo fragmentaria la historia.
+  //
+  // `replaceId` es el documento sin verificar que este reemplaza: la persona se
+  // puede equivocar de archivo, y se va en la MISMA transaccion para que no
+  // exista un instante sin documento.
   async create(params: {
     workerId: string
     documentType: string
     filePath: string
     userId: string
     roleCode: string
+    origin?: 'SELF' | 'STAFF'
+    replaceId?: string
   }): Promise<DocumentRow> {
     const id = uuidv7()
 
     await this.prisma.$transaction(async (tx) => {
+      if (params.replaceId) {
+        await tx.workerDocument.delete({ where: { id: params.replaceId } })
+      }
+
       await tx.workerDocument.create({
         data: {
           id,
@@ -80,7 +104,12 @@ export class DocumentsRepository {
           eventType: 'DOCUMENT_UPLOADED',
           actorUserId: params.userId,
           actorRole: params.roleCode,
-          payload: { workerId: params.workerId, documentType: params.documentType },
+          payload: {
+            workerId: params.workerId,
+            documentType: params.documentType,
+            origin: params.origin ?? 'STAFF',
+            ...(params.replaceId ? { replaced: params.replaceId } : {}),
+          },
         },
       })
     })

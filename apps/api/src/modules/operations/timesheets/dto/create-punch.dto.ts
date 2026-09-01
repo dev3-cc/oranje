@@ -6,7 +6,10 @@ export const PUNCH_TYPES = ['CLOCK_IN', 'LUNCH_OUT', 'LUNCH_IN', 'CLOCK_OUT'] as
 export const LUNCH_TYPES = ['LUNCH_OUT', 'LUNCH_IN'] as const
 
 export const createPunchSchema = z.object({
-  assignmentId: z.uuid(),
+  // Opcional: el Colaborador no conoce su asignacion —ningun endpoint suyo la
+  // exponia— asi que el servidor resuelve su turno de hoy. Se sigue aceptando
+  // para quien si la tenga.
+  assignmentId: z.uuid().optional(),
   type: z.enum(PUNCH_TYPES),
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),

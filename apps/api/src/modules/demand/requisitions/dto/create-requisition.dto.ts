@@ -23,3 +23,13 @@ export const createRequisitionSchema = z.object({
 })
 
 export class CreateRequisitionDto extends createZodDto(createRequisitionSchema) {}
+
+// El motivo va al journal como texto: no hay catálogo de motivos para la
+// Requisición y no se inventa uno para un consumidor que no existe. Es
+// obligatorio desde Verde en adelante, y eso lo decide el servicio: aquí no se
+// sabe en qué estado está.
+export const deleteRequisitionSchema = z.object({
+  reason: z.string().trim().min(1).max(500).optional(),
+})
+
+export class DeleteRequisitionDto extends createZodDto(deleteRequisitionSchema) {}

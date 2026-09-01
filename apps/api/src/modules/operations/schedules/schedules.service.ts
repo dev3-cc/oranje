@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { PlacesService } from '../../../infra/places/index.js'
 
 import type { CreateEntryDto } from './dto/create-entry.dto.js'
 import type { CreateScheduleDto } from './dto/create-schedule.dto.js'
@@ -35,16 +36,29 @@ export interface EntryEntity {
 
 export interface MyShift {
   id: string
+  /// Lo que POST /punches necesita. El colaborador puede ponchar sin mandarlo
+  /// —el servidor resuelve el turno de hoy— pero el front lo usa para saber si
+  /// el turno esta ligado a una asignacion.
+  assignmentId: string
   workDate: string
   startsAt: string
   endsAt: string
   hotel: string
+  /// La zona IANA del hotel. El front formatea las horas con esta, no con el
+  /// reloj del teléfono: un turno de Cancún visto desde otra zona se corre.
+  hotelTimeZone: string
+  /// URL de media de Places compuesta al leer (D-34). Null si el hotel no
+  /// tiene foto o si no hay llave: nunca rompe la respuesta.
+  hotelPhotoUrl: string | null
   position: string
 }
 
 @Injectable()
 export class SchedulesService {
-  constructor(private readonly repo: SchedulesRepository) {}
+  constructor(
+    private readonly repo: SchedulesRepository,
+    private readonly places: PlacesService,
+  ) {}
 
   async list(user: AuthenticatedUser): Promise<ScheduleEntity[]> {
     return (await this.repo.listAll(user.hotelId)).map(toEntity)
@@ -63,10 +77,13 @@ export class SchedulesService {
 
     return (await this.repo.entriesOfWorker(workerId, from, to)).map((e) => ({
       id: e.id,
+      assignmentId: e.assignmentId,
       workDate: e.workDate.toISOString().slice(0, 10),
       startsAt: e.startsAt.toISOString(),
       endsAt: e.endsAt.toISOString(),
       hotel: e.hotelName,
+      hotelTimeZone: e.hotelTimeZone,
+      hotelPhotoUrl: this.places.mediaUrl(e.hotelPhotoRef),
       position: e.positionName,
     }))
   }
@@ -152,9 +169,9 @@ export class SchedulesService {
 
     this.assertInsideWeek(dto.workDate, schedule)
 
-    const { startsAt, endsAt } = shiftBounds(dto)
+    const { startsLocal, endsLocal, hours } = shiftBounds(dto)
 
-    if (endsAt.getTime() - startsAt.getTime() > MAX_SHIFT_HOURS * 3_600_000) {
+    if (hours > MAX_SHIFT_HOURS) {
       throw new UnprocessableEntityException({
         code: 'SHIFT_TOO_LONG',
         message: `Un turno no puede pasar de ${MAX_SHIFT_HOURS} horas`,
@@ -166,8 +183,9 @@ export class SchedulesService {
       assignmentId: dto.assignmentId,
       workerId: assignment.workerId,
       workDate: dto.workDate,
-      startsAt,
-      endsAt,
+      startsLocal,
+      endsLocal,
+      timeZone: schedule.hotel.timeZone,
       workerName: assignment.workerName,
       user,
     })
@@ -209,8 +227,9 @@ export class SchedulesService {
     assignmentId: string
     workerId: string
     workDate: Date
-    startsAt: Date
-    endsAt: Date
+    startsLocal: string
+    endsLocal: string
+    timeZone: string
     workerName: string
     user: AuthenticatedUser
   }): Promise<string> {
@@ -220,8 +239,9 @@ export class SchedulesService {
         assignmentId: params.assignmentId,
         workerId: params.workerId,
         workDate: params.workDate,
-        startsAt: params.startsAt,
-        endsAt: params.endsAt,
+        startsLocal: params.startsLocal,
+        endsLocal: params.endsLocal,
+        timeZone: params.timeZone,
         userId: params.user.id,
         roleCode: params.user.roleCode,
       })
@@ -264,16 +284,33 @@ export class SchedulesService {
   }
 }
 
-function shiftBounds(dto: CreateEntryDto): { startsAt: Date; endsAt: Date } {
+/**
+ * La hora de PARED que el Supervisor tecleó, sin zona: quien la ancla es
+ * Postgres con la del hotel.
+ *
+ * `hours` se mide sobre esa hora de pared —que es lo que el Supervisor quiso
+ * decir— y no sobre el instante real; en el día que cambia el horario de verano
+ * difieren en una hora, y para un tope de sanidad la de pared es la correcta.
+ */
+function shiftBounds(dto: CreateEntryDto): {
+  startsLocal: string
+  endsLocal: string
+  hours: number
+} {
   const day = dto.workDate.toISOString().slice(0, 10)
-  const startsAt = new Date(`${day}T${dto.startTime}:00Z`)
-  const endsAt = new Date(`${day}T${dto.endTime}:00Z`)
+  const start = new Date(`${day}T${dto.startTime}:00Z`)
+  const end = new Date(`${day}T${dto.endTime}:00Z`)
 
-  if (endsAt <= startsAt) {
-    endsAt.setUTCDate(endsAt.getUTCDate() + 1)
+  // El turno nocturno cruza medianoche: termina al día siguiente.
+  if (end <= start) {
+    end.setUTCDate(end.getUTCDate() + 1)
   }
 
-  return { startsAt, endsAt }
+  return {
+    startsLocal: `${day} ${dto.startTime}:00`,
+    endsLocal: `${end.toISOString().slice(0, 10)} ${dto.endTime}:00`,
+    hours: (end.getTime() - start.getTime()) / 3_600_000,
+  }
 }
 
 function isOverlap(error: unknown): boolean {

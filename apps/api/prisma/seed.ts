@@ -458,6 +458,45 @@ const OTHER_TRANSITIONS: Array<{
     note: 'cerro con cobertura incompleta',
   },
 
+  // Morado · Eliminada. Desde cualquier estado MENOS Azul claro: una
+  // requisición cubierta al 100% ya no se elimina, se archivó sola.
+  //
+  // El borrador lo puede quitar quien opera el hotel; lo AUTORIZADO en
+  // adelante, solo el Manager General — a esa altura ya movió al equipo de
+  // Reclutamiento. Quién exactamente dentro del rol lo decide el servicio.
+  {
+    light: 'REQUISITION',
+    from: 'APPLE_GREEN',
+    to: 'PURPLE',
+    roles: ['ROL-H-01', 'ROL-H-02', 'ROL-H-03'],
+    reason: false,
+    note: 'el borrador lo quita su creador o el GM',
+  },
+  {
+    light: 'REQUISITION',
+    from: 'GREEN',
+    to: 'PURPLE',
+    roles: ['ROL-H-03'],
+    reason: true,
+    note: 'ya autorizada: exige motivo',
+  },
+  {
+    light: 'REQUISITION',
+    from: 'YELLOW',
+    to: 'PURPLE',
+    roles: ['ROL-H-03'],
+    reason: true,
+    note: 'con reclutadoras trabajandola: exige motivo',
+  },
+  {
+    light: 'REQUISITION',
+    from: 'RED',
+    to: 'PURPLE',
+    roles: ['ROL-H-03'],
+    reason: true,
+    note: 'cerrada a medias: exige motivo',
+  },
+
   // --- Indicador de Calidad ---
   // Autoriza el MANAGER de QA, no el Operador, que solo propone: la transición
   // se efectúa al aprobar. Verde es el estado inicial y no lleva fila.

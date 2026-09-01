@@ -36,3 +36,16 @@ export const updateOwnContactSchema = z
   .refine((v) => Object.keys(v).length > 0, { message: 'No hay nada que cambiar' })
 
 export class UpdateOwnContactDto extends createZodDto(updateOwnContactSchema) {}
+
+// Solo el fiscal: la identificación y el comprobante de domicilio los sube la
+// Reclutadora al expediente.
+export const uploadOwnDocumentSchema = z.object({
+  documentType: z.literal('SSN_ITIN'),
+  filePath: z
+    .string()
+    .trim()
+    .max(500)
+    .regex(/^workers\/document\/[A-Za-z0-9._-]+$/, 'Debe ser una ruta devuelta por POST /files'),
+})
+
+export class UploadOwnDocumentDto extends createZodDto(uploadOwnDocumentSchema) {}
