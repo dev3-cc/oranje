@@ -1,4 +1,4 @@
-import { Alert, AlertDescription } from '@oranje/ui'
+import { Alert, AlertDescription, toast } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { useLiftBlacklistMutation } from '../api/blacklistApi'
@@ -64,6 +64,7 @@ export function LiftBlacklistDialog({
     if (!row || liftReason.trim() === '') return
     try {
       await lift({ workerId: row.workerId, liftReason: liftReason.trim() }).unwrap()
+      toast.success('Veto levantado — vuelve a Blanco')
       onClose()
     } catch {
       return

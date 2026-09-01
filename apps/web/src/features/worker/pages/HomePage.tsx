@@ -1,5 +1,5 @@
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
-import { MaterialIcon, statusLight } from '@oranje/ui'
+import { MaterialIcon, statusLight, toast } from '@oranje/ui'
 import { useReducedMotion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
@@ -15,6 +15,7 @@ import personajeNotificaciones from '@/assets/ilustrations/personaje-notificacio
 import personajePerfil from '@/assets/ilustrations/personaje-perfil.svg'
 import personajeSubiendo from '@/assets/ilustrations/personaje-subiendo.svg'
 import { Button } from '@/shared/components/Button'
+import { HotelPhotoBackdrop } from '@/shared/components/HotelPhotoBackdrop'
 import { NoticeCard } from '@/shared/components/NoticeCard'
 import { OnboardingIntro, type OnboardingSlide } from '@/shared/components/OnboardingIntro'
 import {
@@ -115,10 +116,8 @@ function Hero({
   )
 
   const background = (
-    <div aria-hidden className="absolute inset-0 -z-10 bg-gradient-to-br from-o-500 to-o-700">
-      {shift?.hotelPhotoUrl && (
-        <img src={shift.hotelPhotoUrl} alt="" className="size-full object-cover" />
-      )}
+    <div aria-hidden className="absolute inset-0 -z-10">
+      <HotelPhotoBackdrop photoUrl={shift?.hotelPhotoUrl} />
       <div className="absolute inset-0 bg-gradient-to-t from-ink/90 via-ink/40 to-ink/10" />
     </div>
   )
@@ -249,6 +248,11 @@ export function HomePage(): ReactNode {
                 disabled={isSwitching}
                 onClick={() => {
                   void setAvailable()
+                    .unwrap()
+                    .then(() => {
+                      toast.success('Ya estás disponible')
+                    })
+                    .catch(() => {})
                 }}
               >
                 {isSwitching ? 'Un momento…' : 'Marcarme disponible'}

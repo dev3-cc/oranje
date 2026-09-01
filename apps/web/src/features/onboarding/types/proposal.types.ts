@@ -49,6 +49,10 @@ export interface ProposalDraft {
 export interface ProposalWorkspace {
   prospectId: string
   hotelName: string
+  /** El BD dueño del ciclo — quien elabora y envía. La foto llega de `/team` (firmada) si el rol puede verla. */
+  owner: { id: string; name: string; photoUrl: string | null }
+  /** Dirección del hotel (`commercial.hotel.address`), para el machote del contrato. */
+  hotelAddress: string | null
   /** Semáforo del prospecto, para el chip del encabezado. */
   prospectStatus: OnboardingStatus
   /**

@@ -6,6 +6,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  toast,
 } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
@@ -33,7 +34,7 @@ interface RateDraft {
 const INTRO_SLIDES = [
   {
     image: personajeAcceso,
-    title: 'El contrato es el candado',
+    title: 'Solo el contrato define lo que se paga y se factura',
     text: 'Un hotel solo puede tener un contrato vigente a la vez: es lo que respalda cada asignación y cada factura.',
   },
   {
@@ -43,8 +44,8 @@ const INTRO_SLIDES = [
   },
   {
     image: personajePago,
-    title: 'Las tarifas viven en el borrador',
-    text: 'Nace en Borrador: las tarifas por posición se afinan ahí y activarlo es el paso final.',
+    title: 'Las tarifas solo se editan en borrador',
+    text: 'Se crea como borrador. Ajusta las tarifas por posición y actívalo cuando esté listo.',
   },
 ] as const
 
@@ -108,6 +109,12 @@ export function NewContractDialog({
 
   const completeRates = rateRows.filter(isCompleteRate)
   const canSubmit = hotelId !== '' && validFrom !== '' && completeRates.length > 0 && !isLoading
+  /** Un botón apagado sin explicación es un muro: se dice qué falta. */
+  const missing = [
+    hotelId === '' ? 'elige el hotel' : null,
+    validFrom === '' ? 'pon desde cuándo rige' : null,
+    completeRates.length === 0 ? 'completa al menos una posición con su pago y su factura' : null,
+  ].filter((item): item is string => item !== null)
 
   function updateRate(index: number, patch: Partial<RateDraft>): void {
     setRateRows((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)))
@@ -131,6 +138,7 @@ export function NewContractDialog({
         splitsInvoiceByMonth: false,
         rates: completeRates,
       }).unwrap()
+      toast.success('Contrato creado — en Borrador')
       onClose()
       void navigate(`/documentos-tc/${created.id}`)
     } catch {
@@ -313,7 +321,12 @@ export function NewContractDialog({
             )}
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-line pt-4">
+          <div className="flex items-center justify-end gap-3 border-t border-line pt-4">
+            {missing.length > 0 && !isLoading && (
+              <p className="mr-auto self-center text-xs text-ink-3">
+                Para crear: {missing.join(' · ')}.
+              </p>
+            )}
             <Button variant="secondary" onClick={onClose}>
               Cancelar
             </Button>

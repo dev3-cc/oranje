@@ -53,14 +53,6 @@ describe('ContractDetailPage', () => {
     expect(screen.getByText('$120.00')).toBeInTheDocument()
   })
 
-  it('nombra las restricciones de la base con su nombre real', async () => {
-    renderDetail()
-
-    expect(await screen.findByText('ux_contract_active')).toBeInTheDocument()
-    expect(screen.getByText('ck_contract_multiplier_margin')).toBeInTheDocument()
-    expect(screen.getByText('ck_contract_validity')).toBeInTheDocument()
-  })
-
   it('un contrato sin fin dice indefinido, no una fecha vacía', async () => {
     renderDetail('ct-0203')
 

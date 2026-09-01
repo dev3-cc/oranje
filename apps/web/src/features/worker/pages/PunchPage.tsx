@@ -17,16 +17,24 @@ import { WorkerSkeleton } from '../components/WorkerSkeleton'
 import { useUploadFileMutation } from '@/app/filesApi'
 import checkinLottie from '@/assets/check/oranje-checkin.lottie'
 import checkoutLottie from '@/assets/check/oranje-checkout.lottie'
+import exitoEntradaLottie from '@/assets/check/oranje-exito-entrada.lottie'
+import exitoSalidaLottie from '@/assets/check/oranje-exito-salida.lottie'
+import registrandoEntradaLottie from '@/assets/check/oranje-registrando-entrada.lottie'
+import registrandoSalidaLottie from '@/assets/check/oranje-registrando-salida.lottie'
+import verificandoEntradaLottie from '@/assets/check/oranje-verificando-entrada.lottie'
+import verificandoSalidaLottie from '@/assets/check/oranje-verificando-salida.lottie'
 import personajeAcceso from '@/assets/ilustrations/personaje-acceso-protegido.svg'
 import personajeCronograma from '@/assets/ilustrations/personaje-cronograma.svg'
 import personajeFoto from '@/assets/ilustrations/personaje-foto.svg'
 import mascotaCelebrando from '@/assets/mascota/mascota-celebrando.png'
 import mascotaPensando from '@/assets/mascota/mascota-pensando.png'
+import errorLottie from '@/assets/selfie/oranje-error.lottie'
+import fueraDelHotelLottie from '@/assets/selfie/oranje-fuera-del-hotel.lottie'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { LoadError } from '@/shared/components/LoadError'
 import { OnboardingIntro, type OnboardingSlide } from '@/shared/components/OnboardingIntro'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
-import { apiErrorMessage } from '@/shared/lib/apiError'
+import { apiErrorMessage, readApiError } from '@/shared/lib/apiError'
 import { formatTimeIn } from '@/shared/lib/formatters'
 import { tapFeedback } from '@/shared/lib/motion'
 
@@ -105,6 +113,27 @@ function confirmPunch(): void {
     /* Sin audio tampoco. */
   }
 }
+
+/**
+ * En qué va la marca mientras se guarda: «registrando» cubre ubicación y foto,
+ * «verificando» la espera del servidor (geocerca y registro), «éxito» es el
+ * check que celebra la marca guardada, y los desenlaces malos: «fuera del
+ * hotel» (la geocerca dijo que no) o «error» para todo lo demás. Cada fase
+ * trae su propia naranja animada.
+ */
+type PunchPhase = 'idle' | 'registering' | 'verifying' | 'success' | 'outside' | 'error'
+
+/** La naranja animada de cada fase, en su sentido: entrar o salir. */
+const PHASE_LOTTIE: Record<Exclude<PunchPhase, 'idle'>, Record<'in' | 'out', string>> = {
+  registering: { in: registrandoEntradaLottie, out: registrandoSalidaLottie },
+  verifying: { in: verificandoEntradaLottie, out: verificandoSalidaLottie },
+  success: { in: exitoEntradaLottie, out: exitoSalidaLottie },
+  outside: { in: fueraDelHotelLottie, out: fueraDelHotelLottie },
+  error: { in: errorLottie, out: errorLottie },
+}
+
+/** Cuánto se queda el desenlace —éxito o error— antes de devolverle su lugar al reloj. */
+const OUTCOME_VISIBLE_MS = 2500
 
 const INTRO_SLIDES: readonly OnboardingSlide[] = [
   {
@@ -212,6 +241,11 @@ export function PunchPage(): ReactNode {
 
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [failure, setFailure] = useState<string | null>(null)
+  const [phase, setPhase] = useState<PunchPhase>('idle')
+  /** El sentido de la marca en curso, fijado al ponchar: el refetch tras el éxito no lo mueve. */
+  const [direction, setDirection] = useState<'in' | 'out'>('in')
+  /** La foto recién tomada, en el encuadre del botón mientras la marca se guarda. */
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [isCameraOpen, setCameraOpen] = useState(false)
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
 
@@ -263,7 +297,7 @@ export function PunchPage(): ReactNode {
   const next = PUNCH_ORDER.find((type) => marks[type] === undefined) ?? null
   const isDayComplete = next === null
   const needsPhoto = next !== null && NEEDS_PHOTO.has(next)
-  const isBusy = isUploading || isPunching
+  const isBusy = phase !== 'idle' || isUploading || isPunching
   const canPunch = next !== null && isOnline && !isBusy
   /** Entrar y volver del lunch «entran»; salir al lunch y salir «salen». */
   const isEntering = next === 'CLOCK_IN' || next === 'LUNCH_IN'
@@ -271,12 +305,22 @@ export function PunchPage(): ReactNode {
   async function submit(photo: File | null): Promise<void> {
     if (!canPunch || next === null) return
     setFailure(null)
+    setDirection(isEntering ? 'in' : 'out')
+    setPhase('registering')
+    const preview = photo ? URL.createObjectURL(photo) : null
+    setPhotoPreview(preview)
+    const backToIdle = (): void => {
+      setPhase('idle')
+      setPhotoPreview(null)
+      if (preview) URL.revokeObjectURL(preview)
+    }
     try {
       const { latitude, longitude } = await locate()
       let photoPath: string | undefined
       if (photo) {
         photoPath = (await uploadFile({ file: photo, purpose: 'PUNCH_PHOTO' }).unwrap()).path
       }
+      setPhase('verifying')
       await punch({
         ...(shift?.assignmentId !== undefined ? { assignmentId: shift.assignmentId } : {}),
         type: next,
@@ -285,8 +329,12 @@ export function PunchPage(): ReactNode {
         ...(photoPath !== undefined ? { photoPath } : {}),
       }).unwrap()
       confirmPunch()
+      setPhase('success')
+      window.setTimeout(backToIdle, OUTCOME_VISIBLE_MS)
     } catch (error) {
       setFailure(punchErrorMessage(error))
+      setPhase(readApiError(error).code === 'OUTSIDE_GEOFENCE' ? 'outside' : 'error')
+      window.setTimeout(backToIdle, OUTCOME_VISIBLE_MS)
     }
   }
 
@@ -325,11 +373,42 @@ export function PunchPage(): ReactNode {
         </p>
       </section>
 
-      <section className="text-center">
-        <p className="text-5xl font-bold tracking-tight text-ink" aria-live="off">
-          {clockOf(now)}
-        </p>
-        <p className="mt-1 text-sm text-ink-3">{longDateOf(now)}</p>
+      {/* Mientras la marca se guarda, la hora le presta su lugar a la fase:
+          el encuadre se queda solo con la foto y el texto se lee aquí arriba. */}
+      <section className="text-center" aria-live="polite">
+        {isBusy ? (
+          <>
+            <p className="text-4xl font-bold tracking-tight text-ink">
+              {phase === 'success'
+                ? '¡Listo!'
+                : phase === 'outside'
+                  ? 'Fuera del hotel'
+                  : phase === 'error'
+                    ? 'No se guardó'
+                    : phase === 'verifying'
+                      ? 'Verificando…'
+                      : 'Registrando…'}
+            </p>
+            <p className="mt-1 text-sm text-ink-3">
+              {phase === 'success'
+                ? 'Tu marca quedó registrada'
+                : phase === 'outside' || phase === 'error'
+                  ? 'La marca no quedó registrada'
+                  : phase === 'verifying'
+                    ? 'Confirmando que estás en el hotel'
+                    : photoPreview !== null
+                      ? 'Guardando tu ubicación y tu foto'
+                      : 'Guardando tu ubicación'}
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-5xl font-bold tracking-tight text-ink" aria-live="off">
+              {clockOf(now)}
+            </p>
+            <p className="mt-1 text-sm text-ink-3">{longDateOf(now)}</p>
+          </>
+        )}
       </section>
 
       {!isOnline && (
@@ -339,13 +418,27 @@ export function PunchPage(): ReactNode {
         </p>
       )}
 
-      {/* El botón: la naranja del check-in o del check-out orbita DETRÁS, como fondo. */}
+      {/* El botón: la naranja del check-in o del check-out orbita DETRÁS, como fondo.
+          Mientras la marca se guarda, la naranja cambia a la de la fase en curso:
+          registrando (ubicación y foto) y luego verificando (el servidor). */}
       <div className="relative mx-auto flex size-80 items-center justify-center">
-        <span aria-hidden className="absolute inset-0 scale-125">
+        <span
+          aria-hidden
+          className={`pointer-events-none absolute inset-0 scale-125 ${
+            /* Con la foto en el encuadre, los corchetes del lottie la enmarcan POR ENCIMA. */
+            isBusy && photoPreview !== null ? 'z-20' : ''
+          }`}
+        >
           <DotLottieReact
-            key={isEntering ? 'in' : 'out'}
-            src={isEntering ? checkinLottie : checkoutLottie}
-            loop
+            key={`${phase}-${phase === 'idle' ? (isEntering ? 'in' : 'out') : direction}`}
+            src={
+              phase === 'idle'
+                ? isEntering
+                  ? checkinLottie
+                  : checkoutLottie
+                : PHASE_LOTTIE[phase][direction]
+            }
+            loop={phase !== 'success' && phase !== 'outside' && phase !== 'error'}
             autoplay={!reduceMotion}
           />
         </span>
@@ -362,17 +455,45 @@ export function PunchPage(): ReactNode {
             disabled={!canPunch}
             {...tapFeedback(reduceMotion)}
             aria-label={`Ponchar ${PUNCH_LABEL[next].toLowerCase()}`}
-            className="relative z-10 flex size-36 cursor-pointer touch-manipulation flex-col items-center justify-center rounded-full bg-surface shadow-lg transition-shadow hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-o-500 disabled:cursor-not-allowed disabled:opacity-60"
+            className={`relative z-10 flex size-36 cursor-pointer touch-manipulation flex-col items-center justify-center overflow-hidden bg-surface shadow-lg transition-[border-radius,box-shadow] duration-300 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-o-500 disabled:cursor-not-allowed ${
+              /* Con la foto en el encuadre, el círculo se vuelve cuadro: es el
+                 recuadro que los corchetes del lottie están enmarcando. */
+              isBusy && photoPreview !== null ? 'rounded-2xl' : 'rounded-full'
+            } ${isBusy ? '' : 'disabled:opacity-60'}`}
           >
-            <MaterialIcon
-              name={isEntering ? 'login' : 'logout'}
-              className="text-4xl text-o-700"
-              aria-hidden
-            />
-            <span className="mt-1 text-base font-bold text-ink">
-              {isBusy ? 'Registrando…' : PUNCH_LABEL[next]}
-            </span>
-            {needsPhoto && !isBusy && <span className="text-[11px] text-ink-3">con tu foto</span>}
+            {isBusy && photoPreview !== null ? (
+              /* Solo la foto en el encuadre: la fase se lee arriba, donde la hora. */
+              <img
+                src={photoPreview}
+                alt=""
+                aria-hidden
+                className="absolute inset-0 size-full object-cover"
+              />
+            ) : (
+              <>
+                <MaterialIcon
+                  name={isEntering ? 'login' : 'logout'}
+                  className="text-4xl text-o-700"
+                  aria-hidden
+                />
+                <span className="mt-1 text-base font-bold text-ink">
+                  {phase === 'success'
+                    ? '¡Listo!'
+                    : phase === 'outside'
+                      ? 'Fuera del hotel'
+                      : phase === 'error'
+                        ? 'No se guardó'
+                        : phase === 'verifying'
+                          ? 'Verificando…'
+                          : isBusy
+                            ? 'Registrando…'
+                            : PUNCH_LABEL[next]}
+                </span>
+                {needsPhoto && !isBusy && (
+                  <span className="text-[11px] text-ink-3">con tu foto</span>
+                )}
+              </>
+            )}
           </motion.button>
         )}
       </div>

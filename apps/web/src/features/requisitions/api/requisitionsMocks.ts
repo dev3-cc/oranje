@@ -122,7 +122,12 @@ function buildRequisition(input: {
   return {
     id: input.id,
     number: input.number,
-    hotel: { id: input.hotelId, name: input.hotelName },
+    hotel: {
+      id: input.hotelId,
+      name: input.hotelName,
+      photoUrl: `https://picsum.photos/seed/${input.hotelId}/640/360`,
+    },
+    createdBy: { id: 'usr-gm', fullName: 'Gerardo Luna', photoUrl: null },
     state: REQ_STATE[input.state] ?? (REQ_STATE.APPLE_GREEN as StatusRefApi),
     areaManagerUserId: null,
     authorizedBy: input.authorizedHoursAgo === undefined ? null : 'usr-gm',
@@ -511,6 +516,11 @@ const routes: readonly MockRoute[] = [
       requisitions.unshift(created)
       return { data: created }
     },
+  },
+  {
+    method: 'POST',
+    path: '/requisitions/:requisitionId/delete',
+    resolve: () => ({ data: { deleted: true } }),
   },
   {
     method: 'POST',

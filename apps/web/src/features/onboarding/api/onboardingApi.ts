@@ -468,6 +468,22 @@ export const onboardingApi = baseApi.injectEndpoints({
       ],
     }),
 
+    /**
+     * Descartar un borrador de propuesta (PR #17 del API): solo si
+     * `isDraft`; una enviada es historia y no se toca. El editor navega de
+     * vuelta a la ficha al terminar.
+     */
+    discardProposalDraft: build.mutation<void, { prospectId: string; proposalId: string }>({
+      query: ({ prospectId, proposalId }) => ({
+        url: `/prospects/${prospectId}/proposals/${proposalId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (_result, _error, { prospectId }) => [
+        { type: 'Prospect', id: prospectId },
+        { type: 'Prospect', id: 'LIST' },
+      ],
+    }),
+
     /** Borrado de un intento: SOLO su autor — el de prueba o el capturado doble. */
     deleteContactAttempt: build.mutation<void, { prospectId: string; attemptId: string }>({
       query: ({ prospectId, attemptId }) => ({
@@ -543,7 +559,7 @@ export const closeProspectApi = onboardingApi.injectEndpoints({
   }),
 })
 
-export const { useCloseProspectMutation } = closeProspectApi
+export const { useDiscardProposalDraftMutation, useCloseProspectMutation } = closeProspectApi
 
 export const {
   useGetPipelineBoardQuery,

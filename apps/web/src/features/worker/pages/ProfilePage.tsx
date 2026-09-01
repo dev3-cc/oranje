@@ -1,9 +1,11 @@
 import { StatusLightBadge } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
+import { useGetTodayPunchingQuery } from '../api/punchApi'
 import { useGetMyHistoryQuery, useGetMyProfileQuery } from '../api/workerApi'
 import { WorkerSkeleton } from '../components/WorkerSkeleton'
 
+import { HotelPhotoBackdrop } from '@/shared/components/HotelPhotoBackdrop'
 import {
   BLOOD_LABEL,
   EXPERIENCE_LABEL,
@@ -21,8 +23,8 @@ import type { WorkerHistoryEntryApi } from '@/shared/types/apiContract.types'
 function Row({ label, value }: { label: string; value: string }): ReactNode {
   return (
     <div className="flex items-start justify-between gap-4 py-2.5">
-      <dt className="text-sm text-ink-3">{label}</dt>
-      <dd className="text-right text-sm font-medium text-ink">{value}</dd>
+      <dt className="text-sm text-white/70">{label}</dt>
+      <dd className="text-right text-sm font-medium text-white">{value}</dd>
     </div>
   )
 }
@@ -49,15 +51,15 @@ function HistoryStep({
   return (
     <li className="flex gap-3">
       <span
-        className={`mt-1.5 size-2.5 shrink-0 rounded-full ${isCurrent ? 'bg-o-500' : 'bg-surface-3'}`}
+        className={`mt-1.5 size-2.5 shrink-0 rounded-full ${isCurrent ? 'bg-o-500' : 'bg-white/40'}`}
         aria-hidden
       />
       <div className="min-w-0">
-        <p className="text-sm font-medium text-ink">
+        <p className="text-sm font-medium text-white">
           {entry.fromState === null ? 'Alta en Oranje' : WORKER_STATUS_LABEL[toState]}
         </p>
-        <p className="text-xs text-ink-3">{detail}</p>
-        {entry.reason !== null && <p className="mt-0.5 text-xs text-ink-2">{entry.reason}</p>}
+        <p className="text-xs text-white/70">{detail}</p>
+        {entry.reason !== null && <p className="mt-0.5 text-xs text-white/80">{entry.reason}</p>}
       </div>
     </li>
   )
@@ -65,13 +67,27 @@ function HistoryStep({
 export function ProfilePage(): ReactNode {
   const { data: profile, isLoading } = useGetMyProfileQuery()
   const { data: history = [] } = useGetMyHistoryQuery()
+  const { data: today } = useGetTodayPunchingQuery()
+  const backdropUrl = today?.shift?.hotelPhotoUrl ?? null
 
   if (isLoading || !profile) return <WorkerSkeleton variant="profile" />
 
   const status = profile.state.code as WorkerStatus
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="relative isolate -mx-5 -mt-5 flex flex-col gap-5 px-5 pt-5 pb-2">
+      {/*
+       * El fondo: la foto del hotel de hoy desenfocada (o el degradado Oranje)
+       * detrás de todo el perfil; las tarjetas van en vidrio encima —
+       * translúcidas y con desenfoque— y el texto se lee porque el vidrio
+       * es claro (surface al 75 %), no por suerte.
+       */}
+      <div aria-hidden className="absolute inset-0 -z-10 overflow-hidden">
+        <HotelPhotoBackdrop photoUrl={backdropUrl} />
+        {/* El velo oscuro es lo que hace legible el vidrio claro con texto blanco (mismo hero de Inicio). */}
+        <div className="absolute inset-0 bg-ink/65" />
+      </div>
+
       <section className="flex flex-col items-center gap-3 text-center">
         {profile.photoUrl ? (
           <img
@@ -89,31 +105,31 @@ export function ProfilePage(): ReactNode {
           </span>
         )}
         <div>
-          <h1 className="text-2xl font-bold text-ink">{profile.fullName}</h1>
-          <p className="text-sm text-ink-3">
+          <h1 className="text-2xl font-bold text-white drop-shadow-sm">{profile.fullName}</h1>
+          <p className="text-sm text-white/80">
             {profile.position?.name ?? 'Sin posición asignada'} · {profile.zone.name}
           </p>
         </div>
         <StatusLightBadge token={WORKER_STATUS_TOKEN[status]} label={WORKER_STATUS_LABEL[status]} />
       </section>
 
-      <section className="rounded-xl border border-line bg-surface p-4">
-        <h2 className="text-sm font-semibold text-ink">Tu semáforo</h2>
+      <section className="rounded-2xl bg-white/15 p-4 text-white backdrop-blur-sm">
+        <h2 className="text-sm font-semibold text-white">Tu semáforo</h2>
         <ol className="mt-2 flex flex-col gap-2">
           {history.length === 0 ? (
             <>
               <li className="flex gap-3">
                 <span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-o-500" aria-hidden />
                 <div>
-                  <p className="text-sm font-medium text-ink">{WORKER_STATUS_LABEL[status]}</p>
-                  <p className="text-xs text-ink-3">Tu estado hoy</p>
+                  <p className="text-sm font-medium text-white">{WORKER_STATUS_LABEL[status]}</p>
+                  <p className="text-xs text-white/70">Tu estado hoy</p>
                 </div>
               </li>
               <li className="flex gap-3">
-                <span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-surface-3" aria-hidden />
+                <span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-white/40" aria-hidden />
                 <div>
-                  <p className="text-sm font-medium text-ink">Alta en Oranje</p>
-                  <p className="text-xs text-ink-3">{formatDate(profile.createdAt)}</p>
+                  <p className="text-sm font-medium text-white">Alta en Oranje</p>
+                  <p className="text-xs text-white/70">{formatDate(profile.createdAt)}</p>
                 </div>
               </li>
             </>
@@ -125,9 +141,9 @@ export function ProfilePage(): ReactNode {
         </ol>
       </section>
 
-      <section className="rounded-xl border border-line bg-surface p-4">
-        <h2 className="text-sm font-semibold text-ink">Lo que decide Oranje</h2>
-        <dl className="mt-1 divide-y divide-line">
+      <section className="rounded-2xl bg-white/15 p-4 text-white backdrop-blur-sm">
+        <h2 className="text-sm font-semibold text-white">Lo que decide Oranje</h2>
+        <dl className="mt-1 divide-y divide-white/15">
           <Row label="Posición" value={profile.position?.name ?? '—'} />
           <Row label="Modalidad" value={profile.hiringModality?.name ?? '—'} />
           <Row label="Inglés" value={profile.englishLevel?.name ?? '—'} />
@@ -143,9 +159,9 @@ export function ProfilePage(): ReactNode {
         </dl>
       </section>
 
-      <section className="rounded-xl border border-line bg-surface p-4">
-        <h2 className="text-sm font-semibold text-ink">Tus datos</h2>
-        <dl className="mt-1 divide-y divide-line">
+      <section className="rounded-2xl bg-white/15 p-4 text-white backdrop-blur-sm">
+        <h2 className="text-sm font-semibold text-white">Tus datos</h2>
+        <dl className="mt-1 divide-y divide-white/15">
           <Row label="Teléfono" value={profile.phone} />
           <Row label="Domicilio" value={profile.address} />
           <Row

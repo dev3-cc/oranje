@@ -1,4 +1,4 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@oranje/ui'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, toast } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 
@@ -11,6 +11,7 @@ import {
 import { RequirementRow } from '../components/RequirementRow'
 
 import personajeCronograma from '@/assets/ilustrations/personaje-cronograma.svg'
+import personajeManager from '@/assets/ilustrations/personaje-manager.svg'
 import personajeTratoCerrado from '@/assets/ilustrations/personaje-trato-cerrado.svg'
 import { useGetStatusChangeReasonsQuery } from '@/features/onboarding'
 import { Button } from '@/shared/components/Button'
@@ -23,6 +24,7 @@ import {
   ONBOARDING_STATUS_TOKEN,
   type OnboardingStatus,
 } from '@/shared/constants/onboardingStatus'
+import { useCan } from '@/shared/hooks/useCan'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 function notAwaitingState(error: unknown): OnboardingStatus | null {
@@ -47,6 +49,11 @@ export function ConversionPage(): ReactNode {
     useApproveConversionMutation()
   const [returnToRenegotiation, { isLoading: isReturning, isSuccess: isReturned }] =
     useReturnToRenegotiationMutation()
+
+  const can = useCan()
+  /** Aprobar la conversión y crear el Usuario del Hotel son del BDC: a los demás no se les ofrecen. */
+  const canApprove = can('conversion:approve')
+  const canCreateHotelUser = can('conversion:create_hotel_user')
 
   const [actedHotelName, setActedHotelName] = useState('')
 
@@ -159,7 +166,7 @@ export function ConversionPage(): ReactNode {
               {readiness.requirements.map((requirement) => (
                 <RequirementRow
                   key={requirement.id}
-                  requirement={requirement}
+                  requirement={canCreateHotelUser ? requirement : { ...requirement, action: null }}
                   isActing={isCreatingUser}
                   onAct={() => {
                     if (!readiness.hotelUserDraft) return
@@ -169,34 +176,53 @@ export function ConversionPage(): ReactNode {
                       email: readiness.hotelUserDraft.email,
                       fullName: readiness.hotelUserDraft.fullName,
                     })
+                      .unwrap()
+                      .then(() => {
+                        toast.success('Cuenta del hotel creada')
+                      })
+                      .catch(() => {})
                   }}
                 />
               ))}
             </ul>
           )}
 
-          <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
-            <Button
-              disabled={isBusy}
-              onClick={() => {
-                setIsReturnOpen((open) => !open)
-              }}
-            >
-              Devolver a Café
-            </Button>
+          {canApprove ? (
+            <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
+              <Button
+                disabled={isBusy}
+                onClick={() => {
+                  setIsReturnOpen((open) => !open)
+                }}
+              >
+                Devolver a Café
+              </Button>
 
-            <Button
-              variant="primary"
-              disabled={!readiness.canApprove || isBusy}
-              title={readiness.blockedReason ?? undefined}
-              onClick={() => {
-                setActedHotelName(readiness.hotelName)
-                void approveConversion(prospectId)
-              }}
-            >
-              {isApproving ? 'Aprobando…' : 'Aprobar conversión'}
-            </Button>
-          </div>
+              <Button
+                variant="primary"
+                disabled={!readiness.canApprove || isBusy}
+                title={readiness.blockedReason ?? undefined}
+                onClick={() => {
+                  setActedHotelName(readiness.hotelName)
+                  void approveConversion(prospectId)
+                    .unwrap()
+                    .then(() => {
+                      toast.success('Conversión aprobada')
+                    })
+                    .catch(() => {})
+                }}
+              >
+                {isApproving ? 'Aprobando…' : 'Aprobar conversión'}
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-6">
+              <NoticeCard image={personajeManager} title="La aprobación es del BDC" role="status">
+                Aprobar la conversión Rosa → Naranja —o devolverla a Café— es del BDC. Cuando la
+                apruebe, el hotel queda como cliente activo y puede generar requisiciones.
+              </NoticeCard>
+            </div>
+          )}
 
           {isReturnOpen && (
             <div className="mt-4 flex flex-wrap items-center justify-end gap-3 rounded-md bg-surface-2 p-3">
@@ -225,6 +251,11 @@ export function ConversionPage(): ReactNode {
                 onClick={() => {
                   setActedHotelName(readiness.hotelName)
                   void returnToRenegotiation({ prospectId, reasonCode: returnReason })
+                    .unwrap()
+                    .then(() => {
+                      toast.success('Devuelto a Café')
+                    })
+                    .catch(() => {})
                 }}
               >
                 {isReturning ? 'Devolviendo…' : 'Confirmar regreso'}

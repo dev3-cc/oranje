@@ -6,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
+  toast,
 } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
@@ -89,6 +90,7 @@ export function ManualPunchDialog({
         occurredAt: new Date(`${workDate}T${time}:00`).toISOString(),
         reason: reason.trim(),
       }).unwrap()
+      toast.success('Marca manual registrada')
       onClose()
     } catch {
       return

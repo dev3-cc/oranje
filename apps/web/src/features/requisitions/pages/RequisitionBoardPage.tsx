@@ -2,12 +2,14 @@ import { useState, type ReactNode } from 'react'
 
 import { useGetRequisitionBoardQuery } from '../api/requisitionsApi'
 import { NewRequisitionDialog } from '../components/NewRequisitionDialog'
-import { RequisitionTable } from '../components/RequisitionTable'
+import { RequisitionCardList } from '../components/RequisitionCardList'
 
 import { Button } from '@/shared/components/Button'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { MetricCard } from '@/shared/components/MetricCard'
+import { TableSkeleton } from '@/shared/components/TableSkeleton'
+import { useCan } from '@/shared/hooks/useCan'
 
 /**
  * Tablero de Requisiciones del supervisor.
@@ -18,6 +20,9 @@ import { MetricCard } from '@/shared/components/MetricCard'
  */
 export function RequisitionBoardPage(): ReactNode {
   const [isNewOpen, setIsNewOpen] = useState(false)
+  const can = useCan()
+  /** Crear es del hotel (requisitions:create): Reclutamiento consulta el tablero sin el botón. */
+  const canCreate = can('requisitions:create')
 
   const { data: board, isLoading, isError, refetch } = useGetRequisitionBoardQuery()
 
@@ -43,15 +48,24 @@ export function RequisitionBoardPage(): ReactNode {
           </p>
         </div>
 
-        <Button
-          variant="primary"
-          onClick={() => {
-            setIsNewOpen(true)
-          }}
-        >
-          Crear requisición
-        </Button>
+        {canCreate ? (
+          <Button
+            variant="primary"
+            onClick={() => {
+              setIsNewOpen(true)
+            }}
+          >
+            Crear requisición
+          </Button>
+        ) : (
+          <p className="max-w-xs text-right text-xs text-ink-3">
+            Las requisiciones las crea el hotel: el Supervisor, el Manager de Área o el Manager
+            General.
+          </p>
+        )}
       </header>
+
+      {isLoading && <TableSkeleton rows={6} columns={6} />}
 
       {isError && (
         <LoadError
@@ -94,7 +108,7 @@ export function RequisitionBoardPage(): ReactNode {
         </div>
       )}
 
-      {board && <RequisitionTable items={board.items} />}
+      {board && <RequisitionCardList items={board.items} />}
 
       <NewRequisitionDialog
         isOpen={isNewOpen}

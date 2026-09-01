@@ -64,10 +64,9 @@ describe('PersonnelPage', () => {
     // Sin motivo no pasa: la transición del seed lo marca con reason.
     expect(sendButton).toBeDisabled()
 
-    await user.type(
-      within(dialog).getByLabelText(/Motivo/),
-      'Bajó la ocupación del hotel esta semana',
-    )
+    // El motivo ahora es del catálogo (encargo 12): se elige, no se redacta.
+    await user.click(within(dialog).getByLabelText('Motivo del Stand-by'))
+    await user.click(await screen.findByRole('option', { name: 'Temporada baja' }))
     expect(sendButton).toBeEnabled()
     await user.click(sendButton)
 

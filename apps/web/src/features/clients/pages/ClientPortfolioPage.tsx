@@ -1,10 +1,10 @@
 import { statusLight } from '@oranje/ui'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react'
 
 import { useGetClientsQuery } from '../api/clientsApi'
 import { ClientCardItem } from '../components/ClientCardItem'
 import { ClientFilters } from '../components/ClientFilters'
-import { ClientMapCard } from '../components/ClientMapCard'
+import { ClientSpotlightCard } from '../components/ClientSpotlightCard'
 import type { ClientFilters as Filters } from '../types/client.types'
 
 import tratoCerrado from '@/assets/ilustrations/personaje-trato-cerrado.svg'
@@ -14,6 +14,14 @@ import { HotelPointsMap, type HotelMapPoint } from '@/shared/components/HotelPoi
 import { LoadError } from '@/shared/components/LoadError'
 import { CONTRACT_STATUS_TOKEN } from '@/shared/constants/contractStatus'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
+import { supportsWebGl } from '@/shared/lib/webgl'
+
+/* La vitrina trae ogl (WebGL): entra en perezoso, como el globo del dashboard. */
+const CircularGallery = lazy(() =>
+  import('@/shared/components/CircularGallery').then((module) => ({
+    default: module.CircularGallery,
+  })),
+)
 
 /** Cuánto se espera a que alguien deje de teclear antes de preguntar al servidor. */
 const SEARCH_DEBOUNCE_MS = 300
@@ -73,6 +81,28 @@ export function ClientPortfolioPage(): ReactNode {
   // Si el filtro se llevó al hotel elegido, manda el primero de los que quedan.
   const selected = items.find((client) => client.id === selectedId) ?? items[0] ?? null
 
+  /** Las tres cifras de la píldora del mapa. */
+  const activeContracts = items.filter((client) => client.contract?.status === 'ACTIVE').length
+  const averageTenure = useMemo(() => {
+    if (items.length === 0) return '—'
+    const months =
+      items.reduce(
+        (sum, client) =>
+          sum +
+          Math.max(0, (Date.now() - new Date(client.activatedAt).getTime()) / (30.44 * 86_400_000)),
+        0,
+      ) / items.length
+    return months >= 12 ? `${String(Math.round(months / 12))} a` : `${String(Math.round(months))} m`
+  }, [items])
+  /** Solo clientes con foto: la vitrina es de imágenes reales, no de placeholders. */
+  const galleryItems = useMemo(
+    () =>
+      items
+        .filter((client) => client.photoUrl !== null)
+        .map((client) => ({ image: client.photoUrl ?? '', text: client.hotelName })),
+    [items],
+  )
+
   return (
     <div className="flex flex-col gap-6">
       <header className="relative isolate flex items-end justify-between gap-4">
@@ -100,6 +130,19 @@ export function ClientPortfolioPage(): ReactNode {
         />
       </header>
 
+      {/*
+       * La vitrina (Circular Gallery de reactbits): los clientes con foto, en
+       * arco y arrastrables. Solo si hay al menos 3 con foto y WebGL responde;
+       * la rejilla de abajo sigue siendo la lista completa.
+       */}
+      {galleryItems.length >= 3 && supportsWebGl() && (
+        <div className="h-64 overflow-hidden rounded-2xl bg-ink">
+          <Suspense fallback={null}>
+            <CircularGallery items={galleryItems} bend={2.5} borderRadius={0.06} />
+          </Suspense>
+        </div>
+      )}
+
       <ClientFilters
         filters={filters}
         zoneNames={portfolio?.zoneNames ?? []}
@@ -119,32 +162,55 @@ export function ClientPortfolioPage(): ReactNode {
       {isLoading && !portfolio ? (
         <CardGridSkeleton cards={4} />
       ) : (
-        <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
+        /* La referencia: la ficha grande a la izquierda, el mapa dominante a la derecha. */
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
           {items.length === 0 ? (
             <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
               Ningún hotel coincide con estos filtros. Cambia la búsqueda o quita un filtro.
             </p>
           ) : (
-            <ul className="flex flex-col gap-4">
-              {items.map((client) => (
-                <ClientCardItem
-                  key={client.id}
-                  client={client}
-                  isSelected={client.id === selected?.id}
-                  onSelect={setSelectedId}
-                />
-              ))}
-            </ul>
+            <div className="flex flex-col gap-4">
+              {selected && <ClientSpotlightCard client={selected} />}
+              <ul className="flex flex-col gap-3">
+                {items
+                  .filter((client) => client.id !== selected?.id)
+                  .map((client) => (
+                    <ClientCardItem
+                      key={client.id}
+                      client={client}
+                      isSelected={false}
+                      onSelect={setSelectedId}
+                    />
+                  ))}
+              </ul>
+            </div>
           )}
 
-          <HotelPointsMap
-            points={points}
-            selectedId={selected?.id ?? null}
-            onSelect={setSelectedId}
-            className="min-h-[42rem] xl:sticky xl:top-6"
-          >
-            {selected && <ClientMapCard client={selected} />}
-          </HotelPointsMap>
+          <div className="relative">
+            <HotelPointsMap
+              points={points}
+              selectedId={selected?.id ?? null}
+              onSelect={setSelectedId}
+              className="min-h-[42rem] lg:sticky lg:top-6"
+            />
+            {/* La píldora oscura de métricas, flotando sobre el mapa (referencia). */}
+            {portfolio && (
+              <div className="pointer-events-none absolute top-4 left-1/2 z-10 flex -translate-x-1/2 items-stretch divide-x divide-white/20 rounded-2xl bg-ink/90 px-2 py-2.5 text-white shadow-lg backdrop-blur-sm">
+                <div className="px-4 text-center">
+                  <p className="text-lg leading-tight font-bold">{portfolio.total}</p>
+                  <p className="text-[11px] text-white/70">clientes</p>
+                </div>
+                <div className="px-4 text-center">
+                  <p className="text-lg leading-tight font-bold">{activeContracts}</p>
+                  <p className="text-[11px] text-white/70">con contrato vigente</p>
+                </div>
+                <div className="px-4 text-center">
+                  <p className="text-lg leading-tight font-bold">{averageTenure}</p>
+                  <p className="text-[11px] text-white/70">promedio como cliente</p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -13,9 +13,9 @@ import { useGetSelfPickBoardQuery } from '../api/selfPickApi'
 import type { SelfPickRow } from '../types/selfPick.types'
 
 import personajeComencemos from '@/assets/ilustrations/personaje-comencemos.svg'
+import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { FilterSelect } from '@/shared/components/FilterSelect'
 import { LoadError } from '@/shared/components/LoadError'
-import { LoadingState } from '@/shared/components/LoadingState'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate } from '@/shared/lib/formatters'
 
@@ -52,7 +52,8 @@ export function SelfPickPage(): ReactNode {
     })
   }, [board, positionId, modalityId, englishId])
 
-  if (isLoading) return <LoadingState label="Cargando la Bolsa de Self-Pick…" />
+  if (isLoading)
+    return <CardGridSkeleton cards={6} className="grid-cols-1 md:grid-cols-2 xl:grid-cols-3" />
   if (isError || !board) {
     return (
       <LoadError

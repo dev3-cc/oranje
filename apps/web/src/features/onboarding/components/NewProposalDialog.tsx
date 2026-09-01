@@ -1,3 +1,4 @@
+import { toast } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 
@@ -62,6 +63,7 @@ export function NewProposalDialog({
     setPendingId(prospectId)
     try {
       await createDraft(prospectId).unwrap()
+      toast.success('Borrador v1 abierto')
       onClose()
       void navigate(`/pipeline/${prospectId}/propuesta`)
     } catch {
@@ -89,6 +91,9 @@ export function NewProposalDialog({
           {isError && (
             <p role="alert" className="text-sm text-red">
               {apiErrorMessage(error, {
+                byStatus: {
+                  403: 'Las propuestas las elabora el BD dueño de cada prospecto: pídele que la abra.',
+                },
                 fallback:
                   'No se pudo abrir el borrador. Revisa que el hotel siga en Verde e inténtalo de nuevo.',
               })}

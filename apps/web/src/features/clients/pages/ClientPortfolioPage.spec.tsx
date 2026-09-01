@@ -30,7 +30,9 @@ describe('ClientPortfolioPage', () => {
     expect(
       await screen.findByText('commercial.vw_client · hoteles con activated_at · 6 en cartera'),
     ).toBeInTheDocument()
-    expect(screen.getAllByRole('listitem')).toHaveLength(6)
+    // El elegido vive en la tarjeta grande; la lista trae a los otros 5.
+    expect(screen.getAllByRole('listitem')).toHaveLength(5)
+    expect(screen.getByRole('link', { name: 'Abrir ficha del hotel' })).toBeInTheDocument()
   })
 
   it('la tarjeta arma lo que vw_client no trae: contrato, zona y tarifas', async () => {
@@ -56,8 +58,9 @@ describe('ClientPortfolioPage', () => {
 
     expect(scoped.getByText('sin contrato')).toBeInTheDocument()
     expect(scoped.queryByRole('link', { name: /CT-/ })).not.toBeInTheDocument()
-    expect(scoped.getByRole('link', { name: /Ver detalle/ })).toBeInTheDocument()
-    expect(scoped.getByText('geocerca 120 m')).toBeInTheDocument()
+    // Es el elegido: su artículo es la tarjeta grande, con el CTA y la geocerca en su tile.
+    expect(scoped.getByRole('link', { name: 'Abrir ficha del hotel' })).toBeInTheDocument()
+    expect(scoped.getByText('120 m')).toBeInTheDocument()
   })
 
   it('«Ver detalle» abre la ficha del hotel, y el folio su contrato', async () => {

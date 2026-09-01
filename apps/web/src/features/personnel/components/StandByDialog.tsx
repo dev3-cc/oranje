@@ -1,4 +1,13 @@
-import { Alert, AlertDescription } from '@oranje/ui'
+import {
+  Alert,
+  AlertDescription,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  toast,
+} from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { useSendToStandByMutation } from '../api/personnelApi'
@@ -35,6 +44,7 @@ export function StandByDialog({
   onClose: () => void
 }): ReactNode {
   const [send, { isLoading, isError, error: sendError }] = useSendToStandByMutation()
+  const [reasonCode, setReasonCode] = useState('')
   const [note, setNote] = useState('')
   const [showIntro, setShowIntro] = useState(false)
 
@@ -42,12 +52,18 @@ export function StandByDialog({
     if (isOpen) setShowIntro(true)
   }, [isOpen])
 
-  const canSubmit = note.trim() !== '' && !isLoading
+  const canSubmit = reasonCode !== '' && !isLoading
 
   async function submit(): Promise<void> {
     if (!canSubmit) return
     try {
-      await send({ workerId, note: note.trim() }).unwrap()
+      await send({
+        workerId,
+        reasonCode,
+        ...(note.trim() ? { note: note.trim() } : {}),
+      }).unwrap()
+      toast.success(`${workerName} quedó en Stand-by`)
+      setReasonCode('')
       setNote('')
       onClose()
     } catch {
@@ -90,8 +106,21 @@ export function StandByDialog({
         />
       ) : (
         <>
+          {/* El motivo sale del catálogo (encargo 12): el back lo valida y queda en la historia. */}
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm text-ink-3">Motivo (obligatorio)</span>
+            <span className="text-sm text-ink-3">Motivo</span>
+            <Select value={reasonCode} onValueChange={setReasonCode}>
+              <SelectTrigger aria-label="Motivo del Stand-by">
+                <SelectValue placeholder="Elige el motivo…" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="VACATION">Vacaciones</SelectItem>
+                <SelectItem value="LOW_SEASON">Temporada baja</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="mt-3 flex flex-col gap-1.5">
+            <span className="text-sm text-ink-3">Nota (opcional)</span>
             <textarea
               value={note}
               onChange={(event) => {

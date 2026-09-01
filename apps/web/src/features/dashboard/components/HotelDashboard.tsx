@@ -2,6 +2,8 @@ import { Suspense, lazy, type ReactNode } from 'react'
 
 import { useGetHotelOverviewQuery } from '../api/roleDashboardsApi'
 
+import { StatTile } from './ActivityCards'
+import { IdentityHeader } from './IdentityHeader'
 import { RequisitionMiniList } from './RequisitionMiniList'
 
 const DashboardGlobe = lazy(() =>
@@ -9,9 +11,7 @@ const DashboardGlobe = lazy(() =>
 )
 
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
-import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
-import { MetricCard } from '@/shared/components/MetricCard'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import type { SessionUser } from '@/shared/types/session.types'
 
@@ -35,41 +35,43 @@ export function HotelDashboard({ session }: { session: SessionUser }): ReactNode
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="relative overflow-hidden rounded-2xl bg-surface px-6 py-7 shadow-md sm:px-8">
-        <div className="relative z-10 max-w-xl">
-          <h1 className="text-3xl font-bold tracking-tight text-ink">
-            <FoldText text="Dashboard" />
-          </h1>
-          <p className="mt-1.5 text-sm text-ink-3">
-            {session.name} · {session.roleTitle}
-            {session.hotel ? ` · ${session.hotel.name}` : ''}
-          </p>
-        </div>
+      <IdentityHeader
+        name={session.name}
+        subtitle={`${session.roleTitle}${session.hotel ? ` · ${session.hotel.name}` : ''}`}
+      >
         <Suspense fallback={null}>
           <DashboardGlobe />
         </Suspense>
-      </header>
+      </IdentityHeader>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatTile
           value={String(overview.openRequisitions)}
           label="Requisiciones abiertas"
           foot="Autorizadas y en proceso"
+          tintClass="bg-o-500/10"
+          delay={0.05}
         />
-        <MetricCard
+        <StatTile
           value={String(overview.draftRequisitions)}
           label="Por autorizar"
           foot="En elaboración (Verde manzana)"
+          tintClass="bg-st-verde-manzana/10"
+          delay={0.12}
         />
-        <MetricCard
+        <StatTile
           value={String(overview.coveredRequisitions)}
           label="Cubiertas"
           foot="Al 100% (Azul claro)"
+          tintClass="bg-st-azul-claro/10"
+          delay={0.18}
         />
-        <MetricCard
+        <StatTile
           value={String(overview.pendingTimesheets)}
           label="Timesheets sin aprobar"
           foot={IS_DEV_UI ? 'Sin aprobación no se paga (D-09)' : 'Sin aprobación no se paga'}
+          tintClass="bg-yellow/15"
+          delay={0.24}
         />
       </div>
 

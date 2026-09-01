@@ -1,4 +1,4 @@
-import { Alert, AlertDescription } from '@oranje/ui'
+import { Alert, AlertDescription, toast } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
 import { useAuthorizeRequisitionMutation } from '../api/authorizationsApi'
@@ -40,6 +40,7 @@ export function AuthorizationResolutionForm({
     setRootError(null)
     try {
       await authorize({ requisitionId: request.id }).unwrap()
+      toast.success('Requisición autorizada')
     } catch (error) {
       setRootError(
         apiErrorMessage(error, {

@@ -6,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
   StatusLightBadge,
+  toast,
 } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
@@ -134,6 +135,7 @@ export function ChangeStatusDialog({
         toStatus: selectedStatus,
         ...(isReasonRequired ? { reasonId } : {}),
       }).unwrap()
+      toast.success(`Estado cambiado a ${ONBOARDING_STATUS_LABEL[selectedStatus]}`)
       onClose()
     } catch {
       return

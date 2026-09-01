@@ -216,6 +216,11 @@ const routes: readonly MockRoute[] = [
     }),
   },
   {
+    method: 'DELETE',
+    path: '/prospects/:prospectId/proposals/:proposalId',
+    resolve: () => ({ data: { deleted: true } }),
+  },
+  {
     method: 'PATCH',
     path: '/prospects/:prospectId/proposals/:proposalId',
     resolve: ({ params, body }): ApiEnvelope<ProposalApi> => ({

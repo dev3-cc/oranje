@@ -6,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
+  toast,
 } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
@@ -102,6 +103,7 @@ export function Phase3Page(): ReactNode {
         bloodType: draft.bloodType,
         ...(draft.medicalNotes.trim() !== '' ? { medicalNotes: draft.medicalNotes.trim() } : {}),
       }).unwrap()
+      toast.success('Datos de emergencia guardados')
     } catch {
       return
     }

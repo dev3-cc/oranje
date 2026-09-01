@@ -5,9 +5,12 @@ import { useGetStaffRolesQuery, useGetStaffUsersQuery } from '../api/adminApi'
 import { UserFormDialog } from '../components/UserFormDialog'
 import type { StaffUser } from '../types/admin.types'
 
+import personajeConfiguracion from '@/assets/ilustrations/personaje-configuracion.svg'
 import { Button } from '@/shared/components/Button'
 import { FilterSelect } from '@/shared/components/FilterSelect'
-import { LoadingState } from '@/shared/components/LoadingState'
+import { LoadError } from '@/shared/components/LoadError'
+import { NoticeCard } from '@/shared/components/NoticeCard'
+import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const DATE_FORMAT = new Intl.DateTimeFormat('es-MX', {
@@ -50,7 +53,13 @@ export function UsersPage(): ReactNode {
   const [isFormOpen, setIsFormOpen] = useState(false)
 
   const { data: roles = [] } = useGetStaffRolesQuery()
-  const { data: users = [], isLoading } = useGetStaffUsersQuery({
+  const {
+    data: users = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useGetStaffUsersQuery({
     ...(search.trim() ? { search: search.trim() } : {}),
     ...(roleFilter !== 'ALL' ? { roleCode: roleFilter } : {}),
     includeInactive: true,
@@ -60,6 +69,20 @@ export function UsersPage(): ReactNode {
   const inactive = useMemo(() => users.filter((user) => !user.isActive), [users])
   const visible = tab === 'active' ? active : inactive
   const nameById = useMemo(() => new Map(users.map((user) => [user.id, user.fullName])), [users])
+
+  /* El módulo entero es del Administrador (users:manage): el 403 dice quién sigue. */
+  if ((error as { status?: number } | undefined)?.status === 403) {
+    return (
+      <NoticeCard
+        image={personajeConfiguracion}
+        title="Usuarios del sistema es del Administrador"
+        role="status"
+      >
+        El alta, la edición y la baja del personal interno de Oranje las hace el Administrador; tu
+        rol no tiene este módulo.
+      </NoticeCard>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -133,8 +156,15 @@ export function UsersPage(): ReactNode {
         </Button>
       </div>
 
-      {isLoading ? (
-        <LoadingState label="Cargando el personal del sistema…" />
+      {isError ? (
+        <LoadError
+          message="No se pudieron cargar los usuarios. Reintenta en unos segundos."
+          onRetry={() => {
+            void refetch()
+          }}
+        />
+      ) : isLoading ? (
+        <TableSkeleton rows={6} columns={4} />
       ) : visible.length === 0 ? (
         <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
           {tab === 'active'

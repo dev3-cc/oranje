@@ -11,6 +11,7 @@ import {
   SelectValue,
   Slider,
   cn,
+  toast,
 } from '@oranje/ui'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState, type ReactNode } from 'react'
@@ -324,6 +325,7 @@ export function ProspectFormDialog({
           ownerUserId: form.ownerUserId,
           needDescription: form.needDescription,
         }).unwrap()
+        toast.success('Prospecto actualizado')
       } else {
         const created = await createProspect({
           hotelSource: form.hotelSource,
@@ -333,6 +335,7 @@ export function ProspectFormDialog({
           ownerUserId: form.ownerUserId,
           needDescription: form.needDescription,
         }).unwrap()
+        toast.success(`Prospecto creado — ${form.hotelName}`)
         onCreated?.(created)
       }
       onClose()

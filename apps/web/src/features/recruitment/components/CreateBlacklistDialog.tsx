@@ -6,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
   Textarea,
+  toast,
 } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
@@ -103,6 +104,7 @@ export function CreateBlacklistDialog({
         reason: reason.trim(),
         evidencePath: evidencePath.trim(),
       }).unwrap()
+      toast.success(`Veto registrado — ${worker.fullName}`)
       onClose()
     } catch {
       return

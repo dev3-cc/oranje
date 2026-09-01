@@ -278,6 +278,7 @@ export function UserFormDialog({
     const uploaded = await uploadFile({ file, purpose: 'USER_PHOTO' }).unwrap()
     setPhotoPath(uploaded.path)
     setPhotoPreview(uploaded.url ?? URL.createObjectURL(file))
+    toast.success('Foto subida')
   }
 
   async function onSubmit(values: UserFormValues): Promise<void> {
@@ -303,10 +304,15 @@ export function UserFormDialog({
         ...(values.accessMode === 'PASSWORD' ? { password: values.password } : {}),
         ...(photoPath ? { photoPath } : {}),
       }).unwrap()
+      toast.success(
+        values.accessMode === 'INVITATION'
+          ? `Usuario creado — invitación enviada a ${values.email}`
+          : 'Usuario creado',
+      )
       setCreated({ email: values.email, mode: values.accessMode })
       return
     }
-    toast.success('Usuario actualizado')
+    toast.success(user?.isActive === false && isActive ? 'Usuario activado' : 'Usuario actualizado')
     onClose()
   }
 

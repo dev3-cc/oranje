@@ -229,12 +229,15 @@ export interface RequisitionPositionApi {
 export interface RequisitionApi {
   id: string
   number: string
-  hotel: { id: string; name: string }
+  /** `photoUrl` compuesta al leer (D-34); opcional: el contrato la está ganando. */
+  hotel: { id: string; name: string; photoUrl?: string | null }
   state: StatusRefApi
   areaManagerUserId: string | null
   authorizedBy: string | null
   authorizedAt: string | null
   inspectorId: string | null
+  /** Quién la elaboró, para la tarjeta del tablero; opcional: encargo al back. */
+  createdBy?: { id: string; fullName: string; photoUrl: string | null } | null
   positions: RequisitionPositionApi[]
   totalSlots: number
   filledSlots: number

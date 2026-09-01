@@ -1,4 +1,12 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Textarea } from '@oranje/ui'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+  toast,
+} from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 
@@ -47,6 +55,7 @@ export function ArchiveCycleDialog({
         reasonCode,
         ...(note.trim() !== '' ? { note: note.trim() } : {}),
       }).unwrap()
+      toast.success('Ciclo archivado')
       onClose()
       /** El ciclo ya no existe como abierto: de vuelta al tablero. */
       void navigate('/pipeline')

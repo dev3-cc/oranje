@@ -25,11 +25,13 @@ export function ContractPreviewDialog({
   isOpen,
   onClose,
   hotelName,
+  hotelAddress = null,
   version,
 }: {
   isOpen: boolean
   onClose: () => void
   hotelName: string
+  hotelAddress?: string | null
   version: ProposalVersionSummary
 }): ReactNode {
   const printRoot = document.getElementById('print-root')
@@ -56,7 +58,7 @@ export function ContractPreviewDialog({
       }
     >
       <div className="rounded-md border border-line bg-surface px-8 py-7">
-        <ContractDocument hotelName={hotelName} version={version} />
+        <ContractDocument hotelName={hotelName} hotelAddress={hotelAddress} version={version} />
       </div>
 
       {/*
@@ -66,7 +68,7 @@ export function ContractPreviewDialog({
       {printRoot !== null &&
         createPortal(
           <div aria-hidden="true">
-            <ContractDocument hotelName={hotelName} version={version} />
+            <ContractDocument hotelName={hotelName} hotelAddress={hotelAddress} version={version} />
           </div>,
           printRoot,
         )}

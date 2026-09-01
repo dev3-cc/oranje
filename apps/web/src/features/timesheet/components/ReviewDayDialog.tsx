@@ -1,4 +1,4 @@
-import { Alert, AlertDescription, cn } from '@oranje/ui'
+import { Alert, AlertDescription, cn, toast } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { useReviewTimesheetDayMutation } from '../api/timesheetApi'
@@ -71,6 +71,7 @@ export function ReviewDayDialog({
   async function reviewTimesheetDay(): Promise<void> {
     if (!entry) return
     await reviewDay({ dayId: entry.id, note: note.trim() }).unwrap()
+    toast.success('Día revisado')
     onClose()
   }
 

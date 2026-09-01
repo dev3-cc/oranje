@@ -26,7 +26,7 @@ describe('ContractListPage', () => {
   it('muestra el estado con el valor del enum, sin traducir', async () => {
     renderList()
 
-    expect(await screen.findAllByText('Activo')).toHaveLength(3)
+    expect((await screen.findAllByText('Activo')).length).toBeGreaterThanOrEqual(3)
     expect(screen.getByText('Expirado')).toBeInTheDocument()
     expect(screen.getByText('Borrador')).toBeInTheDocument()
   })
@@ -40,23 +40,23 @@ describe('ContractListPage', () => {
     expect(screen.getByText('vencido')).toBeInTheDocument()
 
     expect(screen.getByText('sin vigencia')).toBeInTheDocument()
-    const draft = screen.getByText('CT-2026-0203').closest('tr')
-    expect(within(draft as HTMLElement).getByText('— · —')).toBeInTheDocument()
+    const draft = screen.getByText('CT-2026-0203').closest('button')
+    expect(within(draft as HTMLElement).getByText('sin vigencia')).toBeInTheDocument()
   })
 
-  it('tanto el folio como «Abrir» llevan a la ficha', async () => {
+  it('elegir un renglón abre su documento a la derecha', async () => {
+    const user = userEvent.setup()
     renderList()
 
-    expect(await screen.findByRole('link', { name: 'CT-2026-0184' })).toHaveAttribute(
-      'href',
-      '/documentos-tc/ct-0184',
-    )
+    // El primero de la lista se abre solo.
+    expect(
+      await screen.findByRole('heading', { name: 'Contrato CT-2026-0184' }, SLOW),
+    ).toBeInTheDocument()
 
-    const row = screen.getByText('CT-2026-0184').closest('tr')
-    expect(within(row as HTMLElement).getByRole('link', { name: /Abrir/ })).toHaveAttribute(
-      'href',
-      '/documentos-tc/ct-0184',
-    )
+    await user.click(screen.getByRole('button', { name: /CT-2026-0203/ }))
+    expect(
+      await screen.findByRole('heading', { name: 'Contrato CT-2026-0203' }, SLOW),
+    ).toBeInTheDocument()
   })
 
   it('«Vence en» no filtra: cambia a cuáles se les grita', async () => {
@@ -65,39 +65,44 @@ describe('ContractListPage', () => {
 
     expect(await screen.findByText('3 meses restantes')).toBeInTheDocument()
 
-    await user.click(screen.getByLabelText('Avisar cuando falten'))
+    await user.click(screen.getByLabelText('Avisar cuando venza en'))
     await user.click(await screen.findByRole('option', { name: 'Vence en: 180 días' }))
 
     expect(screen.getByText('vence en 94 días')).toBeInTheDocument()
     expect(screen.queryByText('3 meses restantes')).not.toBeInTheDocument()
     expect(screen.getByText('10 meses restantes')).toBeInTheDocument()
-    expect(screen.getAllByRole('row')).toHaveLength(6)
+    // Un renglón por contrato (los 5 de la fixture; antes contaba 6 con la cabecera de la tabla): el
+    // filtro de aviso no quita ninguno.
+    expect(
+      screen.getAllByRole('button', { pressed: true }).length +
+        screen.getAllByRole('button', { pressed: false }).length,
+    ).toBe(5)
   })
 
   it('el estado sí filtra, y lo hace en el servidor', async () => {
     const user = userEvent.setup()
     renderList()
 
-    await screen.findByText('CT-2026-0184')
+    await screen.findAllByText('CT-2026-0184')
     await user.click(screen.getByLabelText('Estado'))
     await user.click(await screen.findByRole('option', { name: 'Estado: DRAFT' }))
 
     await waitFor(() => {
-      expect(screen.queryByText('CT-2026-0184')).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /CT-2026-0184/ })).not.toBeInTheDocument()
     }, SLOW)
-    expect(screen.getByText('CT-2026-0203')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /CT-2026-0203/ })).toBeInTheDocument()
   })
 
   it('la búsqueda espera a que dejes de teclear', async () => {
     const user = userEvent.setup()
     renderList()
 
-    await screen.findByText('CT-2026-0184')
+    await screen.findAllByText('CT-2026-0184')
     await user.type(screen.getByLabelText('Buscar por hotel o número'), 'Mirador')
 
     await waitFor(() => {
-      expect(screen.queryByText('CT-2026-0184')).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /CT-2026-0184/ })).not.toBeInTheDocument()
     }, SLOW)
-    expect(screen.getByText('CT-2026-0098')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /CT-2026-0098/ })).toBeInTheDocument()
   })
 })

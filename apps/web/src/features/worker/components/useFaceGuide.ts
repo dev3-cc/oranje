@@ -16,8 +16,12 @@ const MEDIAPIPE_VERSION = '1.0.1'
 const WASM_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm`
 const MODEL_URL = '/mediapipe/blaze_face_short_range.tflite'
 
-/** El óvalo de la guía, en fracciones del cuadro (mismos valores que el SVG). */
-const OVAL = { cx: 0.5, cy: 0.46, rx: 0.3, ry: 0.36 }
+/**
+ * El óvalo de la guía en fracciones del cuadro. La guía visual tiene
+ * proporción fija 3:4 centrada, así que esto es una aproximación tolerante
+ * (el factor 0.55 de la elipse ya perdona el recorte del object-cover).
+ */
+const OVAL = { cx: 0.5, cy: 0.5, rx: 0.34, ry: 0.34 }
 /** Ancho mínimo de la cara respecto al cuadro para que la foto sirva. */
 const MIN_FACE_WIDTH = 0.22
 const FRAME_INTERVAL_MS = 120

@@ -58,7 +58,7 @@ export function MultiplierTable({
       subtitle={
         IS_DEV_UI
           ? 'los cuatro son NOT NULL y ninguno puede bajar de 1.00'
-          : 'Overtime y día festivo, pactados en el contrato — nunca por debajo de 1.00'
+          : 'Overtime y día festivo según el contrato (mínimo 1.00×)'
       }
     >
       <Table className="min-w-[34rem] text-left">

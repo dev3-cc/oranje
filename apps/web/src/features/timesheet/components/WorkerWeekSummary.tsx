@@ -1,3 +1,4 @@
+import { toast } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
 import { useApproveTimesheetMutation, useSubmitTimesheetMutation } from '../api/timesheetApi'
@@ -7,6 +8,7 @@ import {
   TIMESHEET_WEEK_STATUS_LABEL,
   type TimesheetWeekStatus,
 } from '@/shared/constants/timesheetStatus'
+import { useCan } from '@/shared/hooks/useCan'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { formatHours } from '@/shared/lib/formatters'
 
@@ -42,12 +44,20 @@ export function WorkerWeekSummary({
   const [submitSheet, { isLoading: isSubmitting }] = useSubmitTimesheetMutation()
   const [approveSheet, { isLoading: isApproving }] = useApproveTimesheetMutation()
   const [actionError, setActionError] = useState<string | null>(null)
+  const can = useCan()
+  /** Aprobar es de los Managers (timesheet:approve_hours); el Supervisor envía y captura. */
+  const canApprove = can('timesheet:approve_hours')
 
   async function runAction(action: 'submit' | 'approve'): Promise<void> {
     setActionError(null)
     try {
-      if (action === 'submit') await submitSheet(row.timesheetId).unwrap()
-      else await approveSheet(row.timesheetId).unwrap()
+      if (action === 'submit') {
+        await submitSheet(row.timesheetId).unwrap()
+        toast.success('Semana enviada a revisión')
+      } else {
+        await approveSheet(row.timesheetId).unwrap()
+        toast.success('Semana aprobada')
+      }
     } catch (error) {
       setActionError(
         apiErrorMessage(error, {
@@ -145,18 +155,23 @@ export function WorkerWeekSummary({
               )}
             </>
           )}
-          {row.weekStatus === 'PENDING_APPROVAL' && (
-            <button
-              type="button"
-              disabled={isApproving}
-              onClick={() => {
-                void runAction('approve')
-              }}
-              className="cursor-pointer rounded-md bg-green/15 px-2.5 py-1 text-xs font-semibold text-ink-2 transition-colors hover:bg-green/25 disabled:cursor-wait disabled:opacity-60"
-            >
-              {isApproving ? 'Aprobando…' : 'Aprobar semana'}
-            </button>
-          )}
+          {row.weekStatus === 'PENDING_APPROVAL' &&
+            (canApprove ? (
+              <button
+                type="button"
+                disabled={isApproving}
+                onClick={() => {
+                  void runAction('approve')
+                }}
+                className="cursor-pointer rounded-md bg-green/15 px-2.5 py-1 text-xs font-semibold text-ink-2 transition-colors hover:bg-green/25 disabled:cursor-wait disabled:opacity-60"
+              >
+                {isApproving ? 'Aprobando…' : 'Aprobar semana'}
+              </button>
+            ) : (
+              <span className="rounded-md border border-dashed border-line px-2.5 py-1 text-xs text-ink-3">
+                La aprueba el Manager de Área o el Manager General
+              </span>
+            ))}
         </div>
 
         {actionError !== null && (

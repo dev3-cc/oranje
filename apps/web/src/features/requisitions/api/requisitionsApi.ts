@@ -59,6 +59,10 @@ function toRow(requisition: RequisitionApi): RequisitionRow {
     status: requisition.state.code as RequisitionStatus,
     authorizedAt: requisition.authorizedAt,
     inspectorName: '—',
+    hotelPhotoUrl: requisition.hotel.photoUrl ?? null,
+    creator: requisition.createdBy
+      ? { name: requisition.createdBy.fullName, photoUrl: requisition.createdBy.photoUrl }
+      : null,
   }
 }
 
@@ -242,6 +246,23 @@ export const requisitionsApi = baseApi.injectEndpoints({
       providesTags: (_res, _err, hotelId) => [{ type: 'Hotel' as const, id: hotelId }],
     }),
 
+    /**
+     * Eliminar = transición a Morado (encargo 10): el borrador lo quita su
+     * creador sin motivo; una autorizada/en proceso, el Manager General con
+     * motivo. La fila nunca se borra: GET /:id la sigue sirviendo.
+     */
+    deleteRequisition: build.mutation<unknown, { requisitionId: string; reason?: string }>({
+      query: ({ requisitionId, reason }) => ({
+        url: `/requisitions/${requisitionId}/delete`,
+        method: 'POST',
+        body: reason === undefined ? {} : { reason },
+      }),
+      invalidatesTags: (_res, _err, { requisitionId }) => [
+        { type: 'Requisition' as const, id: 'LIST' },
+        { type: 'Requisition' as const, id: requisitionId },
+      ],
+    }),
+
     createRequisition: build.mutation<unknown, CreateRequisitionRequest>({
       query: (body) => ({ url: '/requisitions', method: 'POST', body }),
       invalidatesTags: [
@@ -271,6 +292,7 @@ export const requisitionsApi = baseApi.injectEndpoints({
 })
 
 export const {
+  useDeleteRequisitionMutation,
   useGetRequisitionBoardQuery,
   useGetRequisitionQuery,
   useGetRequisitionFormOptionsQuery,

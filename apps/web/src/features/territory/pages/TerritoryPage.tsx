@@ -49,8 +49,8 @@ export function TerritoryPage(): ReactNode {
         (isWideScreen() ? (hotels[0] ?? null) : null))
 
   return (
-    <div className="grid grid-cols-1 gap-5 xl:h-full xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-      <section className="flex flex-col rounded-lg border border-line bg-surface p-6 xl:min-h-0">
+    <div className="grid grid-cols-1 gap-5 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
+      <section className="flex flex-col rounded-lg border border-line bg-surface p-6 lg:min-h-0">
         <h1 className="text-2xl font-bold tracking-tight text-ink">
           {ownerName ? `Territorio de ${ownerName}` : 'Mi Territorio'}
         </h1>
@@ -94,7 +94,7 @@ export function TerritoryPage(): ReactNode {
           />
         </div>
 
-        <div className="mt-4 flex max-h-80 flex-col gap-3 overflow-y-auto xl:max-h-none xl:min-h-0 xl:flex-1">
+        <div className="mt-4 flex max-h-80 flex-col gap-3 overflow-y-auto lg:max-h-none lg:min-h-0 lg:flex-1">
           {isLoading && <CardGridSkeleton cards={3} className="grid-cols-1" />}
 
           {isError && (

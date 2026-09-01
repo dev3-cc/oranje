@@ -8,13 +8,20 @@ import { cn } from '@ui/lib/utils'
 export function MaterialIcon({
   name,
   className,
+  style,
 }: {
   /** Nombre de la ligadura: `close`, `check`, `expand_more`… */
   name: string
   className?: string
+  /** Para tamaños fuera de la escala (marcas de agua): la fuente fija 24px y hay que pisarlo. */
+  style?: React.CSSProperties
 }) {
   return (
-    <span aria-hidden className={cn('material-icons-outlined leading-none select-none', className)}>
+    <span
+      aria-hidden
+      style={style}
+      className={cn('material-icons-outlined leading-none select-none', className)}
+    >
       {name}
     </span>
   )

@@ -16,6 +16,9 @@ export interface RequisitionRow {
   status: RequisitionStatus
   authorizedAt: string | null
   inspectorName: string
+  /** La foto del hotel (Places) y quién la pidió — llegan cuando el back los exponga. */
+  hotelPhotoUrl: string | null
+  creator: { name: string; photoUrl: string | null } | null
 }
 
 export interface RequisitionBoardMetrics {

@@ -6,6 +6,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  toast,
 } from '@oranje/ui'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
@@ -216,6 +217,7 @@ export function CreateWorkerDialog({
     try {
       const stored = await uploadPhoto({ file, purpose: 'WORKER_PHOTO' }).unwrap()
       update('photoPath')(stored.path)
+      toast.success('Foto subida')
     } catch {
       return
     }
@@ -251,6 +253,7 @@ export function CreateWorkerDialog({
           ...(draft.englishLevelId !== '' ? { englishLevelId: draft.englishLevelId } : {}),
           ...(draft.experienceLevel !== '' ? { experienceLevel: draft.experienceLevel } : {}),
         }).unwrap()
+        toast.success('Colaborador actualizado')
       } else {
         await createWorker({
           fullName: draft.fullName.trim(),
@@ -265,6 +268,7 @@ export function CreateWorkerDialog({
           ...(draft.englishLevelId !== '' ? { englishLevelId: draft.englishLevelId } : {}),
           ...(draft.experienceLevel !== '' ? { experienceLevel: draft.experienceLevel } : {}),
         }).unwrap()
+        toast.success(`Colaborador creado — ${draft.fullName.trim()}`)
       }
       onClose()
     } catch {

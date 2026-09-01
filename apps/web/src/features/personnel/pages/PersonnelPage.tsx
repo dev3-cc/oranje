@@ -15,8 +15,8 @@ import { StandByDialog } from '../components/StandByDialog'
 import type { PersonnelRow } from '../types/personnel.types'
 
 import mascotaSaludando from '@/assets/mascota/mascota-saludando.png'
+import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { LoadError } from '@/shared/components/LoadError'
-import { LoadingState } from '@/shared/components/LoadingState'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   workerStatusChipLabel,
@@ -56,7 +56,8 @@ export function PersonnelPage(): ReactNode {
   const { data: board, isLoading, isError, refetch } = useGetPersonnelBoardQuery()
   const [standByTarget, setStandByTarget] = useState<PersonnelRow | null>(null)
 
-  if (isLoading) return <LoadingState label="Cargando Mi Personal…" />
+  if (isLoading)
+    return <CardGridSkeleton cards={6} className="grid-cols-1 md:grid-cols-2 xl:grid-cols-3" />
   if (isError || !board) {
     return (
       <LoadError

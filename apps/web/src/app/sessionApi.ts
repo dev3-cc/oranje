@@ -85,13 +85,32 @@ registerMockRoutes([
         hotel: null,
         department: null,
         zones: [],
+        /**
+         * La UNIÓN de todo lo que la UI consulta con `useCan`: en modo mock
+         * ningún botón se esconde. Los recortes por rol solo aplican contra la
+         * API real, que manda la lista exacta de `identity.role_permission`.
+         */
         permissions: [
           'pipeline.read',
           'pipeline.create_prospect',
           'proposals.read',
+          'proposals.create',
+          'proposals.send',
           'blacklist.read',
           'blacklist.create',
           'blacklist.lift',
+          'conversion.approve',
+          'conversion.create_hotel_user',
+          'terms_and_conditions.update',
+          'terms_and_conditions.approve',
+          'requisitions.create',
+          'requisitions.authorize',
+          'requisitions.take',
+          'requisitions.delete_empty',
+          'recruitment.create_worker',
+          'recruitment.update_worker',
+          'recruitment.validate_signup',
+          'timesheet.approve_hours',
         ],
       },
     }),

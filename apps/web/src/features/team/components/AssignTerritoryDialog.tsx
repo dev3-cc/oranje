@@ -1,3 +1,4 @@
+import { toast } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { useGetTeamZonesQuery, useSetTerritoryMutation } from '../api/teamApi'
@@ -69,6 +70,7 @@ export function AssignTerritoryDialog({
     if (!member || isLoading) return
     try {
       await setTerritory({ userId: member.id, zoneIds: [...selected] }).unwrap()
+      toast.success(`Territorio asignado a ${member.fullName}`)
       onClose()
     } catch {
       return

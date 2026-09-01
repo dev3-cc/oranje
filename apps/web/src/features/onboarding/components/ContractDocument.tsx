@@ -14,9 +14,11 @@ function todayIso(): string {
 
 export function ContractDocument({
   hotelName,
+  hotelAddress = null,
   version,
 }: {
   hotelName: string
+  hotelAddress?: string | null
   version: ProposalVersionSummary
 }): ReactNode {
   const margin = version.billRate - version.payRate
@@ -43,7 +45,10 @@ export function ContractDocument({
           </div>
           <div className="flex items-baseline justify-between gap-6">
             <dt className="text-sm text-ink-3">Cliente</dt>
-            <dd className="text-sm text-ink">{hotelName}</dd>
+            <dd className="text-right text-sm text-ink">
+              {hotelName}
+              {hotelAddress && <span className="block text-xs text-ink-3">{hotelAddress}</span>}
+            </dd>
           </div>
         </dl>
       </section>
