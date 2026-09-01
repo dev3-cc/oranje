@@ -2,12 +2,12 @@ import type { ReactNode } from 'react'
 
 import { useGetRecruitmentOverviewQuery } from '../api/roleDashboardsApi'
 
+import { StatTile } from './ActivityCards'
+import { IdentityHeader } from './IdentityHeader'
 import { RequisitionMiniList } from './RequisitionMiniList'
 
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
-import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
-import { MetricCard } from '@/shared/components/MetricCard'
 import type { SessionUser } from '@/shared/types/session.types'
 
 export function RecruitmentDashboard({ session }: { session: SessionUser }): ReactNode {
@@ -30,35 +30,36 @@ export function RecruitmentDashboard({ session }: { session: SessionUser }): Rea
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight text-ink">
-          <FoldText text="Dashboard" />
-        </h1>
-        <p className="mt-1.5 text-sm text-ink-3">
-          {session.name} · {session.roleTitle}
-        </p>
-      </header>
+      <IdentityHeader name={session.name} subtitle={session.roleTitle} />
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatTile
           value={String(overview.poolTotal)}
           label="Colaboradores en el Pool"
-          foot={`${overview.poolPendingValidation} en Blanco, por validar`}
+          foot={`${String(overview.poolPendingValidation)} en Blanco, por validar`}
+          tintClass="bg-o-500/10"
+          delay={0.05}
         />
-        <MetricCard
+        <StatTile
           value={String(overview.poolAvailable)}
           label="Disponibles"
           foot="Verde fuerte, sin veto vigente"
+          tintClass="bg-st-verde/10"
+          delay={0.12}
         />
-        <MetricCard
+        <StatTile
           value={String(overview.queueOpen)}
           label="Requisiciones en cola"
           foot="Autorizadas, sin tomar (Self-Pick)"
+          tintClass="bg-st-azul-claro/10"
+          delay={0.18}
         />
-        <MetricCard
+        <StatTile
           value={String(overview.queueInProgress)}
           label="En proceso"
-          foot="Tomadas por una reclutadora"
+          foot="Tomadas por una Reclutadora"
+          tintClass="bg-surface-2"
+          delay={0.24}
         />
       </div>
 

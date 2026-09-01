@@ -1,4 +1,4 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@oranje/ui'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, toast } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
@@ -29,6 +29,7 @@ export function Phase2Page(): ReactNode {
     if (!canSubmit) return
     try {
       await save({ transportType }).unwrap()
+      toast.success('Transporte guardado')
     } catch {
       return
     }

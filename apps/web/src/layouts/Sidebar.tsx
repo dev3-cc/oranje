@@ -135,26 +135,60 @@ export function Sidebar(): ReactNode {
 
       {session && (
         <SidebarFooter>
-          <div className="flex items-center gap-3 rounded-md bg-surface-2 p-3">
-            <span className="size-9 shrink-0 rounded-full bg-o-500" aria-hidden />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-ink">{session.shortName}</p>
-              <p className="truncate text-xs text-ink-3">{session.roleTitle}</p>
+          {/* La tarjeta de perfil (referencia): portada difuminada con el logo, avatar encimado, nombre y rol. */}
+          <div className="overflow-hidden rounded-xl border border-line bg-surface">
+            <div className="relative h-14">
+              <div
+                aria-hidden
+                className="absolute inset-0 bg-gradient-to-br from-o-50 via-o-500/25 to-o-500/50 blur-[1px]"
+              />
+              <div
+                className="absolute top-2 right-2 w-16 opacity-70"
+                role="img"
+                aria-label="Oranje"
+              >
+                <DotLottieReact src={logoAnimado} loop autoplay />
+              </div>
+              <div className="absolute -bottom-5 left-3">
+                {session.photoUrl ? (
+                  <img
+                    src={session.photoUrl}
+                    alt=""
+                    aria-hidden
+                    className="size-11 rounded-full border-2 border-surface object-cover shadow-sm"
+                  />
+                ) : (
+                  <span
+                    aria-hidden
+                    className="flex size-11 items-center justify-center rounded-full border-2 border-surface bg-o-500 text-sm font-bold text-ink shadow-sm"
+                  >
+                    {session.shortName.charAt(0)}
+                  </span>
+                )}
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                void logout()
-              }}
-              disabled={isLoggingOut}
-              title="Cerrar sesión"
-              aria-label="Cerrar sesión"
-              className="shrink-0 cursor-pointer rounded-md p-2 text-ink-3 transition-colors hover:bg-surface hover:text-red disabled:opacity-50"
-            >
-              <span className="material-icons-outlined text-xl leading-none" aria-hidden>
-                logout
-              </span>
-            </button>
+            <div className="flex items-end justify-between gap-2 px-3 pt-6 pb-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-ink">{session.shortName}</p>
+                <p className="truncate text-xs text-ink-3">{session.roleTitle}</p>
+              </div>
+              <div className="flex shrink-0 items-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void logout()
+                  }}
+                  disabled={isLoggingOut}
+                  title="Cerrar sesión"
+                  aria-label="Cerrar sesión"
+                  className="cursor-pointer rounded-md p-2 text-ink-3 transition-colors hover:bg-surface-2 hover:text-red disabled:opacity-50"
+                >
+                  <span className="material-icons-outlined text-xl leading-none" aria-hidden>
+                    logout
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
         </SidebarFooter>
       )}

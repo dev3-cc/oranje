@@ -37,7 +37,7 @@ export function ClientFilters({
         }}
         placeholder="Nombre del hotel, p. ej. Puerto Real"
         aria-label="Buscar hotel"
-        className="h-auto min-w-64 rounded-full px-5 py-2.5 hover:bg-surface-2"
+        className="h-auto w-full max-w-md min-w-64 rounded-full px-5 py-2.5 hover:bg-surface-2"
       />
 
       <FilterSelect

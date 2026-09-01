@@ -145,15 +145,17 @@ export const personnelApi = baseApi.injectEndpoints({
       ],
     }),
 
-    /** Stand-by (Rosa): la transición del semáforo, con motivo obligatorio. */
-    sendToStandBy: build.mutation<unknown, { workerId: string; note: string }>({
-      query: ({ workerId, note }) => ({
-        url: `/workers/${workerId}/transitions`,
-        method: 'POST',
-        body: { toState: 'PINK', note },
-      }),
-      invalidatesTags: [{ type: 'Worker' as const, id: 'LIST' }],
-    }),
+    /** Stand-by (Rosa): la transición del semáforo, con motivo del catálogo (encargo 12) y nota opcional. */
+    sendToStandBy: build.mutation<unknown, { workerId: string; reasonCode: string; note?: string }>(
+      {
+        query: ({ workerId, reasonCode, note }) => ({
+          url: `/workers/${workerId}/transitions`,
+          method: 'POST',
+          body: { toState: 'PINK', reasonCode, ...(note ? { note } : {}) },
+        }),
+        invalidatesTags: [{ type: 'Worker' as const, id: 'LIST' }],
+      },
+    ),
   }),
 })
 

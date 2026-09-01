@@ -7,6 +7,7 @@ import type {
 import { registerConversionMocks } from './conversionMocks'
 
 import { baseApi } from '@/app/baseApi'
+import { adaptProspectSummary, type ProspectSummary } from '@/features/onboarding'
 import type { OnboardingStatus } from '@/shared/constants/onboardingStatus'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayMonth } from '@/shared/lib/formatters'
@@ -196,6 +197,21 @@ export const conversionApi = baseApi.injectEndpoints({
       providesTags: [{ type: 'Prospect', id: 'LIST' }],
     }),
 
+    /**
+     * Los aprobados recientes: prospectos ya en Naranja, del más nuevo al
+     * más viejo, con la MISMA forma que las tarjetas del Pipeline (mismo
+     * adaptador). Es memoria de la pantalla: los clientes viven en Clientes
+     * Activos.
+     */
+    getRecentConversions: build.query<ProspectSummary[], void>({
+      query: () => ({ url: '/prospects', params: { state: 'ORANGE', limit: 6 } }),
+      transformResponse: (raw: PaginatedEnvelope<ProspectApi>) =>
+        [...raw.data]
+          .sort((a, b) => b.stateSince.localeCompare(a.stateSince))
+          .map(adaptProspectSummary),
+      providesTags: [{ type: 'Prospect', id: 'LIST' }],
+    }),
+
     getConversionReadiness: build.query<ConversionReadiness, string>({
       queryFn: async (prospectId, _api, _extra, fetchWithBQ) => {
         const result = await fetchReadiness(fetchWithBQ as FetchWithBQ, prospectId)
@@ -245,6 +261,7 @@ export const conversionApi = baseApi.injectEndpoints({
 
 export const {
   useGetConversionQueueQuery,
+  useGetRecentConversionsQuery,
   useGetConversionReadinessQuery,
   useCreateHotelUserMutation,
   useApproveConversionMutation,

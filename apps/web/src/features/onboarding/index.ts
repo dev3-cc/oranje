@@ -16,3 +16,6 @@ export { useGetStatusChangeReasonsQuery } from './api/onboardingApi'
 
 export { useGetHotelMapPointsQuery } from './api/onboardingApi'
 export type { HotelMapPoint } from './types/prospect.types'
+export { ProspectCard } from './components/ProspectCard'
+export { adaptProspectSummary } from './api/adapters'
+export type { ProspectSummary } from './types/prospect.types'

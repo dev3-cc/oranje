@@ -66,10 +66,26 @@ async function fetchWorkspace(
   const proposals = (proposalsRes.data as ApiEnvelope<ProposalApi[]>).data
   const draft = proposals.find((proposal) => proposal.isDraft) ?? null
 
+  /* La dirección vive en el hotel, no en el prospecto: el machote la jala de ahí. Si falla, el documento sale sin ella. */
+  /* La foto del dueño vive en /team (firmada). El BD dueño recibe 403 ahí: entonces va sin foto (la ficha lo muestra con iniciales). */
+  const teamRes = await fetchWithBQ('/team')
+  const ownerPhotoUrl = teamRes.error
+    ? null
+    : ((teamRes.data as ApiEnvelope<Array<{ id: string; photoUrl: string | null }>>).data.find(
+        (member) => member.id === prospect.owner.id,
+      )?.photoUrl ?? null)
+
+  const hotelRes = await fetchWithBQ(`/hotels/${prospect.hotel.id}`)
+  const hotelAddress = hotelRes.error
+    ? null
+    : ((hotelRes.data as ApiEnvelope<{ address: string | null }>).data.address ?? null)
+
   return {
     data: {
       prospectId,
       hotelName: prospect.hotel.name,
+      owner: { id: prospect.owner.id, name: prospect.owner.fullName, photoUrl: ownerPhotoUrl },
+      hotelAddress,
       prospectStatus: prospect.state.code as OnboardingStatus,
       draft: draft ? adaptDraft(draft) : null,
       versions: proposals.map(adaptVersion),

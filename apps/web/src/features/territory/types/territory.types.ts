@@ -23,6 +23,8 @@ export interface TerritoryHotel {
   /** Es el id del prospecto: «Abrir ficha» lleva a su detalle. */
   id: string
   hotelName: string
+  /** Foto de Places del hotel (D-34): la portada de la tarjeta y de la ficha del mapa. */
+  photoUrl: string | null
   zoneId: string
   /** Nombre completo para la lista: `Zona Centro`. */
   zone: string

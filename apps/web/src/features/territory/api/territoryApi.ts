@@ -49,6 +49,7 @@ function toTerritoryHotel(
 
   const base = {
     hotelName: hotel.name,
+    photoUrl: hotel.photoUrl,
     zoneId: hotel.zone.id,
     zone: hotel.zone.name,
     location: { lat: hotel.latitude, lng: hotel.longitude },

@@ -1,4 +1,12 @@
-import { Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@oranje/ui'
+import {
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  toast,
+} from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { useGetContractFormOptionsQuery, useUpsertContractRateMutation } from '../api/contractsApi'
@@ -53,6 +61,7 @@ export function EditRateDialog({
     if (!canSubmit) return
     try {
       await upsertRate({ contractId, catalogPositionId: positionId, payRate, billRate }).unwrap()
+      toast.success('Tarifa guardada')
       onClose()
     } catch {
       return

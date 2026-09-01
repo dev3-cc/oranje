@@ -106,76 +106,79 @@ export function ProspectDetailPage(): ReactNode {
             className="absolute inset-0 bg-gradient-to-t from-ink via-ink/55 to-ink/5"
           />
 
-          <div className="relative flex min-h-72 flex-col justify-end p-5 sm:min-h-80 sm:p-7">
-            <StatusLightBadge
-              token={ONBOARDING_STATUS_TOKEN[prospect.status]}
-              label={statusLabel}
-              className="w-fit"
-            />
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-white drop-shadow-sm sm:text-4xl">
-              {prospect.hotelName}
-            </h1>
-            <p className="mt-1.5 text-sm text-white/85">
-              Ciclo abierto desde {formatDate(prospect.cycleStartedAt)} · {prospect.daysInStatus}{' '}
-              días en {statusLabel} · Dueño: {prospect.owner.name}
-            </p>
+          <div className="relative flex min-h-72 flex-col justify-end p-3 sm:min-h-80 sm:p-4">
+            {/* El panel de vidrio oscuro: el mismo del hero de Inicio y de las tarjetas. */}
+            <div className="rounded-2xl bg-white/15 p-4 backdrop-blur-sm sm:max-w-2xl sm:p-5">
+              <StatusLightBadge
+                token={ONBOARDING_STATUS_TOKEN[prospect.status]}
+                label={statusLabel}
+                className="w-fit"
+              />
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-white drop-shadow-sm sm:text-4xl">
+                {prospect.hotelName}
+              </h1>
+              <p className="mt-1.5 text-sm text-white/85">
+                Ciclo abierto desde {formatDate(prospect.cycleStartedAt)} · {prospect.daysInStatus}{' '}
+                días en {statusLabel} · Dueño: {prospect.owner.name}
+              </p>
 
-            {/*
+              {/*
               Un estado terminal no tiene a dónde ir: `NARANJA` es un cliente
               activo y `ROJO` un rechazo, y ninguno declara transiciones. Abrir
               el diálogo solo para enseñar una lista vacía es peor que no
               ofrecerlo.
             */}
-            <div className="mt-4 flex flex-wrap items-center gap-2.5">
-              <Button
-                variant="primary"
-                disabled={isTerminalStatus(prospect.status)}
-                title={
-                  isTerminalStatus(prospect.status)
-                    ? `${statusLabel} es un estado final: el ciclo ya no cambia de estado`
-                    : undefined
-                }
-                onClick={() => {
-                  setIsStatusDialogOpen(true)
-                }}
-              >
-                Cambiar estado
-              </Button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsAttemptDialogOpen(true)
-                }}
-                className={HERO_GHOST_BUTTON}
-              >
-                Registrar intento
-              </button>
-              {prospect.status !== 'ORANGE' && (
+              <div className="mt-4 flex flex-wrap items-center gap-2.5">
+                <Button
+                  variant="primary"
+                  disabled={isTerminalStatus(prospect.status)}
+                  title={
+                    isTerminalStatus(prospect.status)
+                      ? `${statusLabel} es un estado final: el ciclo ya no cambia de estado`
+                      : undefined
+                  }
+                  onClick={() => {
+                    setIsStatusDialogOpen(true)
+                  }}
+                >
+                  Cambiar estado
+                </Button>
                 <button
                   type="button"
-                  title="Cierra el ciclo definitivamente y libera al hotel"
                   onClick={() => {
-                    setIsArchiveDialogOpen(true)
+                    setIsAttemptDialogOpen(true)
                   }}
                   className={HERO_GHOST_BUTTON}
                 >
-                  Archivar ciclo
+                  Registrar intento
                 </button>
-              )}
-              {/* Abre el MISMO modal del alta, en modo edición: un solo formulario. */}
-              <button
-                type="button"
-                aria-label="Editar datos del hotel"
-                title="Editar datos del hotel"
-                onClick={() => {
-                  setIsEditDialogOpen(true)
-                }}
-                className={`${HERO_GHOST_BUTTON} px-2.5`}
-              >
-                <span className="material-icons-outlined text-xl leading-none" aria-hidden>
-                  edit
-                </span>
-              </button>
+                {prospect.status !== 'ORANGE' && (
+                  <button
+                    type="button"
+                    title="Cierra el ciclo definitivamente y libera al hotel"
+                    onClick={() => {
+                      setIsArchiveDialogOpen(true)
+                    }}
+                    className={HERO_GHOST_BUTTON}
+                  >
+                    Archivar ciclo
+                  </button>
+                )}
+                {/* Abre el MISMO modal del alta, en modo edición: un solo formulario. */}
+                <button
+                  type="button"
+                  aria-label="Editar datos del hotel"
+                  title="Editar datos del hotel"
+                  onClick={() => {
+                    setIsEditDialogOpen(true)
+                  }}
+                  className={`${HERO_GHOST_BUTTON} px-2.5`}
+                >
+                  <span className="material-icons-outlined text-xl leading-none" aria-hidden>
+                    edit
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </header>

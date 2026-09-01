@@ -168,6 +168,11 @@ export function HotelContactsDialog({
           isPrimary: draft.isPrimary,
         })),
       }).unwrap()
+      toast.success(
+        values.drafts.length === 1
+          ? 'Contacto agregado'
+          : `${String(values.drafts.length)} contactos agregados`,
+      )
       onClose()
     } catch {
       return

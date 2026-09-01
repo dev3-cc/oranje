@@ -46,7 +46,8 @@ describe('ProposalEditorPage', () => {
   it('sin borrador abierto no deja editar y ofrece abrir una versión nueva', async () => {
     await renderEditor('psp-0007')
 
-    expect(await screen.findByText('Sin versión abierta')).toBeInTheDocument()
+    // Sin borrador, el panel enseña la última ENVIADA en solo lectura.
+    expect(await screen.findByText(/Última enviada · v/)).toBeInTheDocument()
     expect(screen.queryByLabelText('Pay rate')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Enviar propuesta/ })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Abrir versión nueva' })).toBeInTheDocument()

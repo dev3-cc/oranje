@@ -36,7 +36,7 @@ export function ContractFilters({
         }}
         placeholder="Hotel Puerto Real o CT-2026-0184"
         aria-label="Buscar por hotel o número"
-        className="h-auto min-w-72 flex-1 rounded-full px-5 py-2.5 hover:bg-surface-2"
+        className="h-auto w-full max-w-md min-w-72 rounded-full px-5 py-2.5 hover:bg-surface-2"
       />
 
       <FilterSelect
@@ -61,7 +61,7 @@ export function ContractFilters({
           onWarningDaysChange(Number(value))
         }}
       >
-        <SelectTrigger aria-label="Avisar cuando falten" className="rounded-full">
+        <SelectTrigger aria-label="Avisar cuando venza en" className="rounded-full">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

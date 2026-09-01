@@ -12,6 +12,7 @@ import { Button } from '@/shared/components/Button'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
+import { useCan } from '@/shared/hooks/useCan'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 export function PoolPage(): ReactNode {
@@ -19,6 +20,9 @@ export function PoolPage(): ReactNode {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editWorkerId, setEditWorkerId] = useState<string | null>(null)
   const [view, setView] = useState<'table' | 'cards'>('table')
+  const can = useCan()
+  /** El alta es de Reclutamiento (recruitment:create_worker); Hotel solo consulta. */
+  const canCreate = can('recruitment:create_worker')
 
   const { data: pool, isLoading, isError, refetch } = useGetWorkerPoolQuery(filters)
   const { data: options } = useGetPoolOptionsQuery()
@@ -79,14 +83,20 @@ export function PoolPage(): ReactNode {
               Tarjetas
             </button>
           </div>
-          <Button
-            variant="primary"
-            onClick={() => {
-              setIsCreateOpen(true)
-            }}
-          >
-            Crear colaborador
-          </Button>
+          {canCreate ? (
+            <Button
+              variant="primary"
+              onClick={() => {
+                setIsCreateOpen(true)
+              }}
+            >
+              Crear colaborador
+            </Button>
+          ) : (
+            <p className="max-w-56 text-right text-xs text-ink-3">
+              El alta es de Reclutamiento: la Reclutadora captura la Fase 1 en la entrevista.
+            </p>
+          )}
         </div>
       </header>
 

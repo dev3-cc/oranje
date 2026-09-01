@@ -1,4 +1,4 @@
-import { Alert, AlertDescription } from '@oranje/ui'
+import { Alert, AlertDescription, toast } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
 import { useChangeWorkerStateMutation, useGetWorkerTransitionsQuery } from '../api/workerDetailApi'
@@ -44,6 +44,7 @@ export function ChangeStateDialog({
         toState: selected.toState,
         ...(note.trim() !== '' ? { note: note.trim() } : {}),
       }).unwrap()
+      toast.success(`Estado cambiado a ${workerStatusChipLabel(selected.toState as WorkerStatus)}`)
       setToState('')
       setNote('')
       onClose()

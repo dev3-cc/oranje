@@ -64,9 +64,18 @@ export function apiErrorMessage(
     return options.byStatus[info.status] as string
   }
 
+  /*
+   * El 403 del API dice «Tu rol no puede create en proposals»: es el guard
+   * hablando en códigos. Aquí se traduce a algo que una persona entiende;
+   * quién SÍ puede lo dice cada pantalla con su `byStatus[403]`.
+   */
+  if (info.status === 403 && (!info.message || /^Tu rol no puede /.test(info.message))) {
+    return 'Esta acción no está en tu rol. Si la necesitas, pídesela a quien sí la tiene.'
+  }
+
   if (info.message) return info.message
 
-  if (info.status === 403) return 'Esta acción requiere un permiso que tu rol no tiene.'
+  if (info.status === 403) return 'Esta acción no está en tu rol.'
   if (info.status === 404) return 'Eso ya no existe: alguien lo movió o lo borró.'
   if (info.status === 413) return 'El archivo es demasiado grande para el servidor.'
   if (info.status === 'FETCH_ERROR') {

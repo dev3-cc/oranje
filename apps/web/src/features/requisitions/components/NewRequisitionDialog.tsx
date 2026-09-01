@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
   cn,
+  toast,
 } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Controller, useFieldArray, useForm, type FieldErrors } from 'react-hook-form'
@@ -204,6 +205,23 @@ export function NewRequisitionDialog({
         })),
       }).unwrap()
       onClose()
+      /*
+       * El momento donde nace la confusión: crear NO es terminar. La
+       * requisición queda en Borrador y Reclutamiento no la ve hasta que un
+       * Manager la autoriza — se dice aquí, cuando acaba de pasar, no solo
+       * en el onboarding que se ve una vez.
+       */
+      toast.success('Requisición creada — quedó en Borrador', {
+        description:
+          'Reclutamiento la verá cuando un Manager la autorice. Sin la firma, para ellos no existe.',
+        duration: 8000,
+        action: {
+          label: 'Ir a autorizar',
+          onClick: () => {
+            window.location.assign('/requisiciones/autorizacion')
+          },
+        },
+      })
     } catch (error) {
       setError('root', {
         message: apiErrorMessage(error, {

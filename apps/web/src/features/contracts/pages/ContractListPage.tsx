@@ -2,14 +2,17 @@ import { useEffect, useState, type ReactNode } from 'react'
 
 import { useGetContractsQuery } from '../api/contractsApi'
 import { ContractFilters } from '../components/ContractFilters'
-import { ContractTable } from '../components/ContractTable'
+import { ContractRowList } from '../components/ContractRowList'
 import { NewContractDialog } from '../components/NewContractDialog'
 import type { ContractListFilters } from '../types/contract.types'
 
+import { ContractDetailPage } from './ContractDetailPage'
+
 import { Button } from '@/shared/components/Button'
+import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
-import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { EXPIRY_WARNING_DAYS } from '@/shared/constants/contractStatus'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
@@ -22,6 +25,7 @@ export function ContractListPage(): ReactNode {
   const [isCreating, setIsCreating] = useState(false)
   const [appliedFilters, setAppliedFilters] = useState<ContractListFilters>(EMPTY_FILTERS)
   const [warningDays, setWarningDays] = useState(EXPIRY_WARNING_DAYS)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -34,6 +38,8 @@ export function ContractListPage(): ReactNode {
   }, [filters])
 
   const { data: list, isLoading, isError, refetch } = useGetContractsQuery(appliedFilters)
+  /** Siempre hay un contrato elegido: el marcado o el primero de la lista filtrada. */
+  const selected = list?.items.find((row) => row.id === selectedId) ?? list?.items[0] ?? null
 
   return (
     <div className="flex flex-col gap-6">
@@ -84,9 +90,36 @@ export function ContractListPage(): ReactNode {
       )}
 
       {isLoading && !list ? (
-        <TableSkeleton rows={6} columns={6} />
+        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+          <CardGridSkeleton cards={5} className="grid-cols-1" />
+          <DetailSkeleton />
+        </div>
       ) : (
-        list && <ContractTable items={list.items} warningDays={warningDays} />
+        list && (
+          /* Lista a la izquierda, el documento con su verificación a la derecha (como Mi Equipo). */
+          <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+            <ContractRowList
+              items={list.items}
+              warningDays={warningDays}
+              selectedId={selected?.id ?? null}
+              onSelect={setSelectedId}
+            />
+            {selected && (
+              <ContractDetailPage
+                contractId={selected.id}
+                embedded
+                activeContractNumber={
+                  list.items.find(
+                    (row) =>
+                      row.hotelName === selected.hotelName &&
+                      row.status === 'ACTIVE' &&
+                      row.id !== selected.id,
+                  )?.number ?? null
+                }
+              />
+            )}
+          </div>
+        )
       )}
     </div>
   )

@@ -6,7 +6,9 @@ import { AuthorizationPositionsTable } from '../components/AuthorizationPosition
 import { AuthorizationQueueList } from '../components/AuthorizationQueueList'
 import { AuthorizationResolutionForm } from '../components/AuthorizationResolutionForm'
 
+import personajeManager from '@/assets/ilustrations/personaje-manager.svg'
 import { LoadError } from '@/shared/components/LoadError'
+import { NoticeCard } from '@/shared/components/NoticeCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import {
@@ -14,6 +16,7 @@ import {
   REQUISITION_STATUS_LABEL,
   REQUISITION_STATUS_TOKEN,
 } from '@/shared/constants/requisitionStatus'
+import { useCan } from '@/shared/hooks/useCan'
 
 /**
  * Cola de autorización: lo que espera la firma del Manager.
@@ -25,6 +28,9 @@ import {
  */
 export function RequisitionAuthorizationPage(): ReactNode {
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const can = useCan()
+  /** Firmar es de los Managers (requisitions:authorize); los demás solo consultan la cola. */
+  const canAuthorize = can('requisitions:authorize')
 
   const { data: queue, isLoading, isError, refetch } = useGetAuthorizationQueueQuery()
 
@@ -69,8 +75,8 @@ export function RequisitionAuthorizationPage(): ReactNode {
         <h1 className="text-3xl font-bold tracking-tight text-ink">Requisiciones por autorizar</h1>
         <p className="mt-1.5 text-sm text-ink-3">
           {queue.items.length === 1
-            ? '1 espera tu firma'
-            : `${String(queue.items.length)} esperan tu firma`}
+            ? `1 espera ${canAuthorize ? 'tu firma' : 'la firma del Manager'}`
+            : `${String(queue.items.length)} esperan ${canAuthorize ? 'tu firma' : 'la firma del Manager'}`}
           . Autorizar mueve {fromLabel} → {toLabel} y arranca el reloj de la urgencia
         </p>
       </header>
@@ -104,11 +110,18 @@ export function RequisitionAuthorizationPage(): ReactNode {
               </div>
             </section>
 
-            <AuthorizationResolutionForm
-              request={selected}
-              authorizerRole={queue.authorizerRole}
-              authorizerScope={queue.authorizerScope}
-            />
+            {canAuthorize ? (
+              <AuthorizationResolutionForm
+                request={selected}
+                authorizerRole={queue.authorizerRole}
+                authorizerScope={queue.authorizerScope}
+              />
+            ) : (
+              <NoticeCard image={personajeManager} title="La firma es del Manager" role="status">
+                Autorizar es del Manager de Área o del Manager General: cuando firmen, la
+                requisición pasa a Autorizada y Reclutamiento la ve en la Bolsa del Self-Pick.
+              </NoticeCard>
+            )}
           </div>
         ) : (
           <p className="rounded-lg border border-line bg-surface p-8 text-center text-sm text-ink-3 xl:col-span-2">

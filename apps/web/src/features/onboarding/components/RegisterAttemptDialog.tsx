@@ -7,6 +7,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  toast,
 } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Controller, useForm } from 'react-hook-form'
@@ -132,6 +133,7 @@ export function RegisterAttemptDialog({
           hotelContactId: values.hotelContactId || null,
           notes: values.notes || null,
         }).unwrap()
+        toast.success('Intento corregido')
       } else {
         await registerAttempt({
           prospectId,
@@ -141,6 +143,7 @@ export function RegisterAttemptDialog({
           ...(values.hotelContactId ? { hotelContactId: values.hotelContactId } : {}),
           ...(values.notes ? { notes: values.notes } : {}),
         }).unwrap()
+        toast.success('Intento registrado')
       }
       onClose()
     } catch {

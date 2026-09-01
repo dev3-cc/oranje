@@ -1,4 +1,4 @@
-import { MaterialIcon } from '@oranje/ui'
+import { MaterialIcon, toast } from '@oranje/ui'
 import { useRef, useState, type ReactNode } from 'react'
 
 import { useUploadMyDocumentMutation } from '../api/workerApi'
@@ -25,6 +25,7 @@ export function TaxDocumentUploader({ hasDocument }: { hasDocument: boolean }): 
     try {
       const { path } = await uploadFile({ file, purpose: 'WORKER_DOCUMENT' }).unwrap()
       await uploadDocument({ documentType: 'SSN_ITIN', filePath: path }).unwrap()
+      toast.success('SSN o ITIN subido')
     } catch (cause) {
       setError(
         apiErrorMessage(cause, {

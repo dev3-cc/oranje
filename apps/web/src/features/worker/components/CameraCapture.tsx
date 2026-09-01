@@ -1,8 +1,11 @@
+import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import { MaterialIcon } from '@oranje/ui'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { FACE_GUIDE_HINT, useFaceGuide } from './useFaceGuide'
 
+import encuadreBuscandoLottie from '@/assets/selfie/oranje-encuadre-buscando.lottie'
+import encuadreListoLottie from '@/assets/selfie/oranje-encuadre-listo.lottie'
 import { Button } from '@/shared/components/Button'
 
 /**
@@ -105,30 +108,29 @@ export function CameraCapture({
           className="size-full object-cover"
           style={{ transform: 'scaleX(-1)' }}
         />
-        {/* La guía: un óvalo donde va la cara, con el resto oscurecido. Sin librería: el encuadre lo hace la persona. */}
+        {/* La guía: un círculo centrado (igual en móvil y escritorio) con el aro Lottie en su borde. */}
         {isReady && (
           <div aria-hidden className="pointer-events-none absolute inset-0">
-            <svg className="size-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-              <defs>
-                <mask id="face-guide-mask">
-                  <rect width="100" height="100" fill="white" />
-                  <ellipse cx="50" cy="46" rx="30" ry="36" fill="black" />
-                </mask>
-              </defs>
-              <rect
-                width="100"
-                height="100"
-                fill="rgba(26,17,8,0.55)"
-                mask="url(#face-guide-mask)"
-              />
-            </svg>
-            {/* La circunferencia ES el semáforo del encuadre: blanca mientras
-                acomodas, verde cuando la cara está bien. Es un div con borde:
-                el trazo del SVG estirado no se pinta parejo. */}
-            <div
-              className={`absolute rounded-[50%] border-4 transition-colors duration-200 ${guide === 'ok' ? 'border-green' : 'border-white/85'}`}
-              style={{ left: '20%', width: '60%', top: '10%', height: '72%' }}
-            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              {/* La guía es un CÍRCULO (el asset del aro lo es): su sombra gigante oscurece el
+                  resto y el aro Lottie —punteado buscando, verde listo— cae justo en el borde. */}
+              <div
+                className="relative rounded-full"
+                style={{
+                  width: 'min(72%, 46vh)',
+                  aspectRatio: '1 / 1',
+                  boxShadow: '0 0 0 200vmax rgba(26, 17, 8, 0.55)',
+                }}
+              >
+                <DotLottieReact
+                  key={guide === 'ok' ? 'listo' : 'buscando'}
+                  src={guide === 'ok' ? encuadreListoLottie : encuadreBuscandoLottie}
+                  loop
+                  autoplay
+                  className="absolute -inset-[7%] size-auto"
+                />
+              </div>
+            </div>
             <div className="absolute inset-x-0 bottom-10 text-center">
               <p
                 role="status"

@@ -42,9 +42,9 @@ describe('RequisitionBoardPage', () => {
     expect((await screen.findAllByText('En elaboración')).length).toBeGreaterThan(0)
     expect(screen.getAllByText('En proceso').length).toBeGreaterThan(0)
 
-    // «Autorizada» es también el nombre de una columna: se busca en su fila.
-    const row = screen.getByText('202608140700·E1').closest('tr')
-    expect(within(row as HTMLElement).getByText('Autorizada')).toBeInTheDocument()
+    // «Autorizada» vive como badge de estado en su tarjeta.
+    const card = screen.getByText(/202608140700·E1/).closest('a')
+    expect(within(card as HTMLElement).getByText('Autorizada')).toBeInTheDocument()
   })
 
   it('la cobertura dice en palabras si está cubierta, parcial o sin cubrir', async () => {
@@ -58,10 +58,10 @@ describe('RequisitionBoardPage', () => {
   it('una requisición sin autorizar no inventa fecha', async () => {
     renderBoard()
 
-    const row = (await screen.findByText('202608190930·K7')).closest('tr')
-    expect(row).not.toBeNull()
-    // Dos rayas: la fecha que no existe y el inspector sin endpoint de nombre.
-    expect(within(row as HTMLElement).getAllByText('—').length).toBeGreaterThan(0)
+    const card = (await screen.findByText(/202608190930·K7/)).closest('a')
+    expect(card).not.toBeNull()
+    // Sin autorizar, la tarjeta dice «Borrador» en vez de inventar una fecha.
+    expect(within(card as HTMLElement).getByText('Borrador')).toBeInTheDocument()
   })
 
   it('«Por autorizar» es la única métrica que lleva a algún lado', async () => {
@@ -77,7 +77,7 @@ describe('RequisitionBoardPage', () => {
   it('el folio lleva al detalle', async () => {
     renderBoard()
 
-    expect(await screen.findByRole('link', { name: '202608120930·K7' })).toHaveAttribute(
+    expect((await screen.findByText(/202608120930·K7/)).closest('a')).toHaveAttribute(
       'href',
       '/requisiciones/req-0004',
     )

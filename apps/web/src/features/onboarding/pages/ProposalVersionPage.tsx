@@ -91,7 +91,11 @@ export function ProposalVersionPage(): ReactNode {
         </div>
 
         <div className="flex items-center gap-3">
-          <ContractPreviewButton hotelName={workspace.hotelName} version={selected} />
+          <ContractPreviewButton
+            hotelName={workspace.hotelName}
+            hotelAddress={workspace.hotelAddress}
+            version={selected}
+          />
           <Link to={`/pipeline/${prospectId}/propuesta`} className={buttonClass('secondary')}>
             Abrir en el editor
           </Link>
@@ -124,7 +128,11 @@ export function ProposalVersionPage(): ReactNode {
           </SectionCard>
         </div>
 
-        <ProposalVersionHistory hotelName={workspace.hotelName} versions={workspace.versions} />
+        <ProposalVersionHistory
+          hotelName={workspace.hotelName}
+          hotelAddress={workspace.hotelAddress}
+          versions={workspace.versions}
+        />
       </div>
     </div>
   )

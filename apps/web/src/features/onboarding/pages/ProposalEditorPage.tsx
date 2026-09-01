@@ -2,8 +2,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { cn, StatusLightBadge, toast } from '@oranje/ui'
 import { useEffect, useState, type ComponentProps, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
-import { Link, useParams } from 'react-router'
+import { Link, useNavigate, useParams } from 'react-router'
 
+import { useDiscardProposalDraftMutation } from '../api/onboardingApi'
 import {
   useCreateProposalDraftMutation,
   useGetProposalWorkspaceQuery,
@@ -13,7 +14,6 @@ import {
 import { ProposalVersionHistory } from '../components/ProposalVersionHistory'
 import { proposalDraftSchema, type ProposalDraftForm } from '../types/proposalDraft.schema'
 
-import { useGetSessionQuery } from '@/app/sessionApi'
 import personajePago from '@/assets/ilustrations/personaje-pago-procesado.svg'
 import personajePresentacion from '@/assets/ilustrations/personaje-presentacion.svg'
 import personajeRetro from '@/assets/ilustrations/personaje-retroalimentacion.svg'
@@ -26,9 +26,11 @@ import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
 } from '@/shared/constants/onboardingStatus'
+import { useCan } from '@/shared/hooks/useCan'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
+import { formatDate } from '@/shared/lib/formatters'
 
 const FORM_ID = 'proposal-draft'
 
@@ -53,8 +55,17 @@ const INTRO_SLIDES = [
   },
 ] as const
 
-export function ProposalEditorPage(): ReactNode {
-  const { prospectId = '' } = useParams()
+export function ProposalEditorPage({
+  prospectId: prospectIdProp,
+  embedded = false,
+}: {
+  /** Embebido en la lista de Propuestas (lista-detalle): el id llega por prop. */
+  prospectId?: string
+  embedded?: boolean
+} = {}): ReactNode {
+  const params = useParams()
+  const prospectId = prospectIdProp ?? params.prospectId ?? ''
+  const navigate = useNavigate()
 
   const {
     data: workspace,
@@ -62,16 +73,20 @@ export function ProposalEditorPage(): ReactNode {
     isError,
   } = useGetProposalWorkspaceQuery(prospectId, { skip: prospectId === '' })
 
-  const { data: session } = useGetSessionQuery()
   const [saveDraft, { isLoading: isSaving }] = useSaveProposalDraftMutation()
   const [sendProposal, { isLoading: isSending }] = useSendProposalMutation()
   /** El error del guardado/envío SE VE: tragárselo dejaba botones «muertos». */
   const [actionError, setActionError] = useState<string | null>(null)
   const [createDraft, { isLoading: isCreating, isError: hasCreateFailed }] =
     useCreateProposalDraftMutation()
+  const [discardDraft, { isLoading: isDiscarding }] = useDiscardProposalDraftMutation()
+  /** Descartar pide un segundo toque: es destructivo, como las demás bajas. */
+  const [isDiscardArmed, setDiscardArmed] = useState(false)
   /** El intro de página se ve UNA vez; «¿Cómo funciona?» lo reabre. */
   const { isIntroOpen, dismissIntro, reopenIntro } = useIntroSeen('proposal-editor')
-  const isBd = session?.roleId === 'ROL-V-01'
+  const can = useCan()
+  /** Elaborar, enviar y descartar son del BD dueño (proposals:create/:send); el resto consulta. */
+  const canEdit = can('proposals:create')
 
   const { register, handleSubmit, reset, trigger, formState } = useForm<ProposalDraftForm>({
     resolver: zodResolver(proposalDraftSchema),
@@ -80,6 +95,11 @@ export function ProposalEditorPage(): ReactNode {
   })
 
   const draft = workspace?.draft ?? null
+  /** La última ENVIADA: lo que se enseña cuando no hay borrador abierto. */
+  const lastSent =
+    workspace?.versions
+      .filter((version) => version.sentAt !== null)
+      .sort((a, b) => b.version - a.version)[0] ?? null
 
   // El formulario se rellena cuando llega el borrador, y al cambiar de versión.
   useEffect(() => {
@@ -147,21 +167,43 @@ export function ProposalEditorPage(): ReactNode {
     }
   }
 
-  const isBusy = isSaving || isSending || isCreating
+  const isBusy = isSaving || isSending || isCreating || isDiscarding
+
+  async function discard(): Promise<void> {
+    if (!draft) return
+    setActionError(null)
+    try {
+      await discardDraft({ proposalId: draft.id, prospectId }).unwrap()
+      toast.success('Borrador descartado')
+      void navigate(`/pipeline/${prospectId}`)
+    } catch (error) {
+      setDiscardArmed(false)
+      setActionError(
+        apiErrorMessage(error, {
+          byCode: {
+            PROPOSAL_NOT_DRAFT: 'Esta versión ya se envió: lo enviado no se descarta.',
+          },
+          fallback: 'No se pudo descartar el borrador. Inténtalo de nuevo.',
+        }),
+      )
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
-      <nav aria-label="Ruta" className="flex items-center gap-2 text-sm text-ink-3">
-        <Link to="/pipeline" className="hover:text-o-700">
-          Pipeline
-        </Link>
-        <span aria-hidden>›</span>
-        <Link to={`/pipeline/${prospectId}`} className="hover:text-o-700">
-          {workspace.hotelName}
-        </Link>
-        <span aria-hidden>›</span>
-        <span className="text-ink-2">Propuesta</span>
-      </nav>
+      {!embedded && (
+        <nav aria-label="Ruta" className="flex items-center gap-2 text-sm text-ink-3">
+          <Link to="/pipeline" className="hover:text-o-700">
+            Pipeline
+          </Link>
+          <span aria-hidden>›</span>
+          <Link to={`/pipeline/${prospectId}`} className="hover:text-o-700">
+            {workspace.hotelName}
+          </Link>
+          <span aria-hidden>›</span>
+          <span className="text-ink-2">Propuesta</span>
+        </nav>
+      )}
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
@@ -180,6 +222,13 @@ export function ProposalEditorPage(): ReactNode {
                 ? `Versión ${draft.version} · borrador · sent_at es NULL hasta enviarla`
                 : `Versión ${draft.version} · borrador sin enviar`
               : 'Sin versión abierta · la última ya se envió'}
+            {draft && lastSent && (
+              <span className="text-ink-2">
+                {' '}
+                · el hotel tiene la v{lastSent.version} (enviada{' '}
+                {lastSent.sentAt ? formatDate(lastSent.sentAt) : '—'})
+              </span>
+            )}
             {' · '}
             <button
               type="button"
@@ -191,8 +240,26 @@ export function ProposalEditorPage(): ReactNode {
           </p>
         </div>
 
-        {draft && (
+        {draft && canEdit && (
           <div className="flex items-center gap-3">
+            <Button
+              disabled={isBusy}
+              className={isDiscardArmed ? 'bg-red text-white hover:bg-red' : 'text-red'}
+              onClick={() => {
+                if (!isDiscardArmed) {
+                  setDiscardArmed(true)
+                  toast('¿Seguro? Toca «Sí, descartar borrador» para confirmar.')
+                  return
+                }
+                void discard()
+              }}
+            >
+              {isDiscarding
+                ? 'Descartando…'
+                : isDiscardArmed
+                  ? 'Sí, descartar borrador'
+                  : 'Descartar borrador'}
+            </Button>
             <Button type="submit" form={FORM_ID} disabled={!formState.isValid || isBusy}>
               {isSaving ? 'Guardando…' : 'Guardar borrador'}
             </Button>
@@ -226,7 +293,59 @@ export function ProposalEditorPage(): ReactNode {
       ) : (
         <>
           <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            {draft ? (
+            {draft && !canEdit ? (
+              /* Quien consulta ve VALORES, no un formulario: inputs con errores de validación parecían una captura pendiente. */
+              <SectionCard title={`Borrador v${draft.version} · en elaboración`}>
+                {/* Quién lo elabora, con cara: es a quien le pides el cambio. */}
+                <div className="mb-4 flex items-center gap-2.5">
+                  {workspace.owner.photoUrl ? (
+                    <img
+                      src={workspace.owner.photoUrl}
+                      alt=""
+                      aria-hidden
+                      className="size-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span
+                      aria-hidden
+                      className="flex size-8 items-center justify-center rounded-full bg-o-500/15 text-xs font-bold text-o-700"
+                    >
+                      {workspace.owner.name
+                        .trim()
+                        .split(/\s+/)
+                        .slice(0, 2)
+                        .map((word) => word.charAt(0))
+                        .join('')
+                        .toUpperCase()}
+                    </span>
+                  )}
+                  <p className="text-sm text-ink-2">
+                    Lo elabora <span className="font-semibold">{workspace.owner.name}</span> — el BD
+                    dueño del ciclo.
+                  </p>
+                </div>
+                <dl className="flex flex-col divide-y divide-line rounded-lg border border-line">
+                  <div className="flex items-start justify-between gap-4 p-3">
+                    <dt className="text-sm text-ink-3">Servicios ofrecidos</dt>
+                    <dd className="text-right text-sm font-medium text-ink">
+                      {draft.servicesNote || 'Aún sin describir'}
+                    </dd>
+                  </div>
+                  <div className="flex items-center justify-between gap-4 p-3">
+                    <dt className="text-sm text-ink-3">Pay rate</dt>
+                    <dd className="text-sm font-medium text-ink">${draft.payRate.toFixed(2)}</dd>
+                  </div>
+                  <div className="flex items-center justify-between gap-4 p-3">
+                    <dt className="text-sm text-ink-3">Bill rate</dt>
+                    <dd className="text-sm font-medium text-ink">${draft.billRate.toFixed(2)}</dd>
+                  </div>
+                </dl>
+                <p className="mt-4 text-sm leading-relaxed text-ink-3">
+                  Es un borrador en elaboración: los valores pueden cambiar hasta que el BD la
+                  envíe. Cuando la envíe, aquí verás la versión final.
+                </p>
+              </SectionCard>
+            ) : draft ? (
               <form
                 id={FORM_ID}
                 noValidate
@@ -288,12 +407,45 @@ export function ProposalEditorPage(): ReactNode {
                 </SectionCard>
               </form>
             ) : (
-              <SectionCard title="Sin versión abierta">
+              <SectionCard
+                title={lastSent ? `Última enviada · v${lastSent.version}` : 'Sin versión abierta'}
+              >
+                {/* Lo que la propuesta INCLUYE se ve aquí mismo, sea cual sea tu rol. */}
+                {lastSent && (
+                  <dl className="mb-4 flex flex-col divide-y divide-line rounded-lg border border-line">
+                    <div className="flex items-start justify-between gap-4 p-3">
+                      <dt className="text-sm text-ink-3">Servicios ofrecidos</dt>
+                      <dd className="text-right text-sm font-medium text-ink">
+                        {lastSent.servicesNote || '—'}
+                      </dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-4 p-3">
+                      <dt className="text-sm text-ink-3">Pay rate</dt>
+                      <dd className="text-sm font-medium text-ink">
+                        ${lastSent.payRate.toFixed(2)}
+                      </dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-4 p-3">
+                      <dt className="text-sm text-ink-3">Bill rate</dt>
+                      <dd className="text-sm font-medium text-ink">
+                        ${lastSent.billRate.toFixed(2)}
+                      </dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-4 p-3">
+                      <dt className="text-sm text-ink-3">Enviada</dt>
+                      <dd className="text-sm font-medium text-ink">
+                        {lastSent.sentAt ? formatDate(lastSent.sentAt) : '—'}
+                        {lastSent.byName ? ` · por ${lastSent.byName}` : ''}
+                      </dd>
+                    </div>
+                  </dl>
+                )}
                 <p className="text-sm leading-relaxed text-ink-3">
-                  La última versión ya se envió. Las enviadas no se editan: para renegociar se abre
-                  una versión nueva, que arranca con las tarifas de la anterior.
+                  Las enviadas no se editan: para renegociar se abre una versión nueva, que arranca
+                  con las tarifas de la anterior. El contrato de esta versión se abre desde el
+                  historial.
                 </p>
-                {isBd ? (
+                {canEdit ? (
                   <>
                     <Button
                       variant="primary"
@@ -301,6 +453,11 @@ export function ProposalEditorPage(): ReactNode {
                       disabled={isBusy}
                       onClick={() => {
                         void createDraft(prospectId)
+                          .unwrap()
+                          .then(() => {
+                            toast.success('Versión nueva abierta')
+                          })
+                          .catch(() => {})
                       }}
                     >
                       {isCreating ? 'Abriendo…' : 'Abrir versión nueva'}
@@ -321,7 +478,11 @@ export function ProposalEditorPage(): ReactNode {
               </SectionCard>
             )}
 
-            <ProposalVersionHistory hotelName={workspace.hotelName} versions={workspace.versions} />
+            <ProposalVersionHistory
+              hotelName={workspace.hotelName}
+              hotelAddress={workspace.hotelAddress}
+              versions={workspace.versions}
+            />
           </div>
         </>
       )}

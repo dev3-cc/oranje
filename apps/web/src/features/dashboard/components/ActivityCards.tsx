@@ -83,7 +83,7 @@ function SparkCard({
 }
 
 /** Tarjeta de dato sin serie: tinte, número grande y su pie — la hermana quieta del SparkCard. */
-function StatTile({
+export function StatTile({
   value,
   label,
   foot,

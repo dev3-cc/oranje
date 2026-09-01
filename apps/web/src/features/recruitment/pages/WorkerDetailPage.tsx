@@ -5,6 +5,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  toast,
 } from '@oranje/ui'
 import { useRef, useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
@@ -22,7 +23,7 @@ import { ChangeStateDialog } from '../components/ChangeStateDialog'
 import { useUploadFileMutation } from '@/app/filesApi'
 import mascotaTriste from '@/assets/mascota/mascota-triste.png'
 import { Button } from '@/shared/components/Button'
-import { LoadingState } from '@/shared/components/LoadingState'
+import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
@@ -38,6 +39,7 @@ import {
   WORKER_STATUS_TOKEN,
   type WorkerStatus,
 } from '@/shared/constants/workerStatus'
+import { useCan } from '@/shared/hooks/useCan'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate } from '@/shared/lib/formatters'
@@ -78,6 +80,10 @@ function Field({ label, value, foot }: { label: string; value: string; foot: str
 export function WorkerDetailPage(): ReactNode {
   const { workerId = '' } = useParams()
   const [isChangeOpen, setChangeOpen] = useState(false)
+  const can = useCan()
+  /** Mover el semáforo y verificar documentos es de quien valida (recruitment:validate_signup). */
+  const canValidate = can('recruitment:validate_signup')
+  const canEditDocuments = can('recruitment:update_worker')
 
   const {
     data: worker,
@@ -104,6 +110,7 @@ export function WorkerDetailPage(): ReactNode {
     try {
       const stored = await uploadFile({ file, purpose: 'WORKER_DOCUMENT' }).unwrap()
       await createDocument({ workerId, documentType: uploadType, filePath: stored.path }).unwrap()
+      toast.success('Documento subido')
     } catch (error) {
       setDocumentError(
         apiErrorMessage(error, {
@@ -128,13 +135,14 @@ export function WorkerDetailPage(): ReactNode {
     setConfirmingDeleteId(null)
     try {
       await deleteDocument({ workerId, documentId }).unwrap()
+      toast.success('Documento borrado')
     } catch {
       setDocumentError('No se pudo borrar el documento. Inténtalo de nuevo.')
     }
   }
 
   if (isLoading) {
-    return <LoadingState label="Cargando el expediente…" />
+    return <DetailSkeleton />
   }
 
   if (isError || !worker) {
@@ -273,14 +281,20 @@ export function WorkerDetailPage(): ReactNode {
             </div>
           </div>
         </div>
-        <Button
-          variant="primary"
-          onClick={() => {
-            setChangeOpen(true)
-          }}
-        >
-          Cambiar estado
-        </Button>
+        {canValidate ? (
+          <Button
+            variant="primary"
+            onClick={() => {
+              setChangeOpen(true)
+            }}
+          >
+            Cambiar estado
+          </Button>
+        ) : (
+          <p className="max-w-60 text-right text-xs text-ink-3">
+            El estado del semáforo lo mueven la Reclutadora o el Líder de Grupo.
+          </p>
+        )}
       </header>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -324,46 +338,48 @@ export function WorkerDetailPage(): ReactNode {
             }
           >
             {/* Alta: tipo + archivo. Verificar el SSN/ITIN es lo que levanta la retención. */}
-            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-md bg-surface-2 p-3">
-              <Select value={uploadType} onValueChange={setUploadType}>
-                <SelectTrigger aria-label="Tipo de documento" className="w-56">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(DOCUMENT_TYPE_LABEL).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                variant="secondary"
-                disabled={isUploading}
-                onClick={() => {
-                  fileInputRef.current?.click()
-                }}
-              >
-                {isUploading ? 'Subiendo…' : 'Subir documento'}
-              </Button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,application/pdf"
-                className="hidden"
-                aria-label="Archivo del documento"
-                onChange={(event) => {
-                  const file = event.target.files?.[0]
-                  event.target.value = ''
-                  if (file) void handleDocumentFile(file)
-                }}
-              />
-              {documentError && (
-                <p role="alert" className="w-full text-xs text-red">
-                  {documentError}
-                </p>
-              )}
-            </div>
+            {canEditDocuments && (
+              <div className="mb-4 flex flex-wrap items-center gap-3 rounded-md bg-surface-2 p-3">
+                <Select value={uploadType} onValueChange={setUploadType}>
+                  <SelectTrigger aria-label="Tipo de documento" className="w-56">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(DOCUMENT_TYPE_LABEL).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="secondary"
+                  disabled={isUploading}
+                  onClick={() => {
+                    fileInputRef.current?.click()
+                  }}
+                >
+                  {isUploading ? 'Subiendo…' : 'Subir documento'}
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  className="hidden"
+                  aria-label="Archivo del documento"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0]
+                    event.target.value = ''
+                    if (file) void handleDocumentFile(file)
+                  }}
+                />
+                {documentError && (
+                  <p role="alert" className="w-full text-xs text-red">
+                    {documentError}
+                  </p>
+                )}
+              </div>
+            )}
 
             {(documents?.data ?? []).length === 0 ? (
               <p className="rounded-md border border-dashed border-line px-4 py-6 text-center text-sm text-ink-3">
@@ -403,38 +419,45 @@ export function WorkerDetailPage(): ReactNode {
                     >
                       {doc.isVerified ? 'Verificado' : 'Pendiente'}
                     </span>
-                    {!doc.isVerified && (
+                    {!doc.isVerified && canValidate && (
                       <Button
                         variant="secondary"
                         className="px-3 py-1 text-xs"
                         title="Verificar el documento (si es el SSN/ITIN, levanta la retención)"
                         onClick={() => {
                           void verifyDocument({ workerId, documentId: doc.id })
+                            .unwrap()
+                            .then(() => {
+                              toast.success('Documento verificado')
+                            })
+                            .catch(() => {})
                         }}
                       >
                         Verificar documento
                       </Button>
                     )}
-                    <button
-                      type="button"
-                      aria-label={`Borrar ${DOCUMENT_TYPE_LABEL[doc.documentType] ?? doc.documentType}`}
-                      title={
-                        confirmingDeleteId === doc.id
-                          ? 'Otro clic lo borra definitivamente'
-                          : 'Borrar el documento'
-                      }
-                      onClick={() => {
-                        void handleDelete(doc.id)
-                      }}
-                      className={`cursor-pointer rounded-md p-1.5 transition-colors hover:bg-surface-2 ${
-                        confirmingDeleteId === doc.id ? 'text-red' : 'text-ink-3 hover:text-red'
-                      }`}
-                    >
-                      <MaterialIcon
-                        name={confirmingDeleteId === doc.id ? 'delete_forever' : 'delete'}
-                        className="text-lg"
-                      />
-                    </button>
+                    {canEditDocuments && (
+                      <button
+                        type="button"
+                        aria-label={`Borrar ${DOCUMENT_TYPE_LABEL[doc.documentType] ?? doc.documentType}`}
+                        title={
+                          confirmingDeleteId === doc.id
+                            ? 'Otro clic lo borra definitivamente'
+                            : 'Borrar el documento'
+                        }
+                        onClick={() => {
+                          void handleDelete(doc.id)
+                        }}
+                        className={`cursor-pointer rounded-md p-1.5 transition-colors hover:bg-surface-2 ${
+                          confirmingDeleteId === doc.id ? 'text-red' : 'text-ink-3 hover:text-red'
+                        }`}
+                      >
+                        <MaterialIcon
+                          name={confirmingDeleteId === doc.id ? 'delete_forever' : 'delete'}
+                          className="text-lg"
+                        />
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
