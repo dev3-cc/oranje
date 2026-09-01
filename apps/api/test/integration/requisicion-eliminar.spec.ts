@@ -38,6 +38,36 @@ let modalityId: string
 const created: string[] = []
 const users: string[] = []
 const hotels: string[] = []
+const workers: string[] = []
+
+// En CI la base nace sembrada pero SIN colaboradores: la prueba que necesita
+// uno lo crea, no lo busca.
+async function colaborador(): Promise<string> {
+  const actorId = (await actor()).id
+  const white = await db.statusLightState.findFirstOrThrow({
+    where: { code: 'WHITE', statusLightCode: 'WORKER' },
+    select: { id: true },
+  })
+  const worker = await db.worker.create({
+    data: {
+      id: uuidv7(),
+      fullName: 'Colaborador de la prueba',
+      birthDate: new Date('1995-01-01'),
+      gender: 'MALE',
+      phone: '9990000000',
+      address: 'Calle 1',
+      zoneId,
+      statusLightStateId: white.id,
+      statusLightCode: 'WORKER',
+      createdBy: actorId,
+    },
+    select: { id: true },
+  })
+
+  workers.push(worker.id)
+
+  return worker.id
+}
 
 async function usuario(roleCode: string, etiqueta: string): Promise<AuthenticatedUser> {
   const role = await db.role.findFirstOrThrow({ where: { code: roleCode } })
@@ -117,6 +147,7 @@ afterAll(async () => {
   await db.slot.deleteMany({ where: { position: { requisitionId: { in: created } } } })
   await db.position.deleteMany({ where: { requisitionId: { in: created } } })
   await db.requisition.deleteMany({ where: { id: { in: created } } })
+  await db.worker.deleteMany({ where: { id: { in: workers } } })
 
   // Los usuarios apuntan al hotel, así que van primero. Y el journal es
   // inmutable (RR-16) y retiene al actor: al que dejó rastro se le desactiva.
@@ -236,11 +267,11 @@ describe('eliminar no desasigna gente en silencio', () => {
       where: { position: { requisitionId: id } },
       select: { id: true },
     })
-    const worker = await db.worker.findFirstOrThrow({ select: { id: true } })
+    const workerId = await colaborador()
 
     await db.$executeRaw`
       INSERT INTO coverage.assignment (id, slot_id, worker_id, type, validity, status, assigned_by)
-      VALUES (${uuidv7()}::uuid, ${slot.id}::uuid, ${worker.id}::uuid, 'FIXED',
+      VALUES (${uuidv7()}::uuid, ${slot.id}::uuid, ${workerId}::uuid, 'FIXED',
               daterange(current_date, NULL), 'ACTIVE', ${gm.id}::uuid)`
 
     await expect(requisitions.remove(id, 'ya no hace falta', gm)).rejects.toMatchObject({
