@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { PlacesService } from '../../../infra/places/index.js'
+import { StorageService } from '../../../infra/storage/index.js'
 import { PermissionsService } from '../../identity/index.js'
 
 import type { CreateRequisitionDto } from './dto/create-requisition.dto.js'
@@ -21,6 +23,8 @@ import {
 } from './requisitions.repository.js'
 
 const DRAFT = 'APPLE_GREEN'
+const DELETED = 'PURPLE'
+const GENERAL_MANAGER = 'ROL-H-03'
 const AUTHORIZED = 'GREEN'
 const EMPTY_COVERAGE = 'GOLD'
 const AUTHORIZED_COVERAGE = 'ORANGE'
@@ -38,6 +42,8 @@ export class RequisitionsService {
   constructor(
     private readonly repo: RequisitionsRepository,
     private readonly permissions: PermissionsService,
+    private readonly places: PlacesService,
+    private readonly storage: StorageService,
   ) {}
 
   async create(dto: CreateRequisitionDto, user: AuthenticatedUser): Promise<RequisitionEntity> {
@@ -60,7 +66,7 @@ export class RequisitionsService {
       this.stateOf(COVERAGE_LIGHT, EMPTY_COVERAGE),
     ])
 
-    return toEntity(
+    return this.decorateOne(
       await this.repo.create({
         number: await this.nextNumber(),
         hotelId: dto.hotelId,
@@ -113,13 +119,22 @@ export class RequisitionsService {
     )
     const departmentId = byDepartment ? user.departmentId : null
 
-    /** La Reclutadora ve la cola desde la autorización; el borrador no existe para ella. */
-    const excludeStates = !readOwn && !seesAll ? [DRAFT] : null
+    /**
+     * Una requisición eliminada no está en ninguna lista ni cola: para el
+     * trabajo del día no existe. `GET /:id` sí la sirve, para el enlace viejo
+     * y para el journal.
+     *
+     * La Reclutadora además no ve el borrador: la cola empieza en la
+     * autorización.
+     */
+    const excludeStates = !readOwn && !seesAll ? [DRAFT, DELETED] : [DELETED]
 
     const { rows, total } = await this.repo.findMany(query, hotelIds, departmentId, excludeStates)
 
+    const photos = await this.signCreatorPhotos(rows)
+
     return {
-      data: rows.map(toEntity),
+      data: rows.map((row) => this.decorate(toEntity(row), row, photos)),
       meta: {
         page: query.page,
         limit: query.limit,
@@ -159,7 +174,130 @@ export class RequisitionsService {
       })
     }
 
-    return toEntity(row)
+    return this.decorateOne(row)
+  }
+
+  // Se firman las rutas DISTINTAS, no una por fila: el mismo Supervisor pide
+  // muchas requisiciones y su foto se firma una vez. Cada firma es una llamada
+  // a IAM.
+  private async signCreatorPhotos(rows: RequisitionRow[]): Promise<Map<string, string>> {
+    const paths = [
+      ...new Set(rows.flatMap((r) => (r.creator?.photoPath ? [r.creator.photoPath] : []))),
+    ]
+    const urls = await Promise.all(paths.map((path) => this.storage.signedUrl(path)))
+
+    return new Map(
+      paths.flatMap((path, index) => {
+        const url = urls[index]
+
+        return url ? [[path, url] as [string, string]] : []
+      }),
+    )
+  }
+
+  // Una sola fila: firma la suya y decora. Es el camino de `get`, `create`,
+  // `authorize` y `remove`.
+  private async decorateOne(row: RequisitionRow): Promise<RequisitionEntity> {
+    return this.decorate(toEntity(row), row, await this.signCreatorPhotos([row]))
+  }
+
+  private decorate(
+    entity: RequisitionEntity,
+    row: RequisitionRow,
+    photos: Map<string, string>,
+  ): RequisitionEntity {
+    return {
+      ...entity,
+      hotel: { ...entity.hotel, photoUrl: this.places.mediaUrl(row.hotel.photoRef) },
+      createdBy: row.creator
+        ? {
+            id: row.creator.id,
+            fullName: row.creator.fullName,
+            photoUrl: row.creator.photoPath ? (photos.get(row.creator.photoPath) ?? null) : null,
+          }
+        : null,
+    }
+  }
+
+  /**
+   * Eliminar es pasar a Morado, no borrar la fila: la requisición es historia
+   * del hotel.
+   *
+   * Quién puede es MÁS ESTRECHO que el rol, como el `inspector_id` de la
+   * tarjeta de accidente: el borrador solo lo quita SU CREADOR o el Manager
+   * General; de la autorización en adelante, solo el Manager General, porque a
+   * esa altura ya movió al equipo de Reclutamiento.
+   */
+  async remove(
+    id: string,
+    reason: string | null,
+    user: AuthenticatedUser,
+  ): Promise<RequisitionEntity> {
+    const row = await this.requisition(id)
+
+    if (user.hotelId && row.hotel.id !== user.hotelId) {
+      throw new ForbiddenException({
+        code: 'HOTEL_OUT_OF_SCOPE',
+        message: 'Esta requisición no es de tu hotel',
+      })
+    }
+
+    const from = row.statusState.code
+
+    if (from === DELETED) {
+      throw new ConflictException({
+        code: 'REQUISITION_ALREADY_DELETED',
+        message: 'Esta requisición ya está eliminada',
+      })
+    }
+
+    const toState = await this.stateOf(REQUISITION_LIGHT, DELETED)
+    const fromState = await this.stateOf(REQUISITION_LIGHT, from)
+
+    if (!(await this.repo.transitionAllowed(fromState.id, toState.id, user.roleCode))) {
+      throw new ConflictException({
+        code: 'TRANSITION_NOT_ALLOWED',
+        message: `Una requisición en ${from} no se elimina`,
+      })
+    }
+
+    if (from === DRAFT) {
+      // El borrador es de quien lo escribió. El Manager General entra igual:
+      // es quien responde por el hotel entero.
+      if (row.createdBy !== user.id && user.roleCode !== GENERAL_MANAGER) {
+        throw new ForbiddenException({
+          code: 'NOT_YOUR_DRAFT',
+          message: 'Este borrador lo creó alguien más',
+        })
+      }
+    } else if (!reason) {
+      throw new UnprocessableEntityException({
+        code: 'REASON_REQUIRED',
+        message: `Eliminar una requisición en ${from} exige un motivo`,
+      })
+    }
+
+    // Eliminar no desasigna gente en silencio.
+    const active = await this.repo.activeAssignments(id)
+
+    if (active > 0) {
+      throw new ConflictException({
+        code: 'REQUISITION_HAS_ASSIGNMENTS',
+        message: `Hay ${active} colaborador(es) asignados: libéralos antes de eliminar`,
+      })
+    }
+
+    return this.decorateOne(
+      await this.repo.remove({
+        id,
+        fromStateId: fromState.id,
+        toStateId: toState.id,
+        fromCode: from,
+        reason: from === DRAFT ? (reason ?? null) : reason,
+        userId: user.id,
+        roleCode: user.roleCode,
+      }),
+    )
   }
 
   async authorize(id: string, user: AuthenticatedUser): Promise<RequisitionEntity> {
@@ -190,7 +328,7 @@ export class RequisitionsService {
       })),
     )
 
-    return toEntity(
+    return this.decorateOne(
       await this.repo.authorize({
         id,
         fromStateId: (await this.stateOf(REQUISITION_LIGHT, DRAFT)).id,
@@ -347,13 +485,17 @@ function toPosition(p: RequisitionRow['positions'][number]): PositionEntity {
   }
 }
 
+// La foto del hotel se COMPONE (D-34) y la del creador se FIRMA (D-30): son
+// dos mecanismos distintos porque el binario de una es de Google y el de la
+// otra es nuestro.
 function toEntity(row: RequisitionRow): RequisitionEntity {
   const positions = row.positions.map(toPosition)
 
   return {
     id: row.id,
     number: row.number,
-    hotel: row.hotel,
+    hotel: { id: row.hotel.id, name: row.hotel.name, photoUrl: null },
+    createdBy: null,
     state: row.statusState,
     areaManagerUserId: row.areaManagerUserId,
     authorizedBy: row.authorizedBy,

@@ -14,12 +14,14 @@ const SELECT = {
   id: true,
   number: true,
   areaManagerUserId: true,
+  createdBy: true,
   authorizedBy: true,
   authorizedAt: true,
   inspectorId: true,
   createdAt: true,
   updatedAt: true,
-  hotel: { select: { id: true, name: true } },
+  hotel: { select: { id: true, name: true, photoRef: true } },
+  creator: { select: { id: true, fullName: true, photoPath: true } },
   statusState: { select: STATUS },
   positions: {
     where: { deletedAt: null },
@@ -237,6 +239,82 @@ export class RequisitionsRepository {
     })
 
     return this.prisma.requisition.findUniqueOrThrow({ where: { id }, select: SELECT })
+  }
+
+  // Quien puede pasar de un estado a otro lo dice la tabla de transiciones, no
+  // una lista en el codigo.
+  async transitionAllowed(
+    fromStateId: string,
+    toStateId: string,
+    roleCode: string,
+  ): Promise<boolean> {
+    return (
+      (await this.prisma.statusLightTransition.count({
+        where: { fromStateId, toStateId, authorizedRole: { code: roleCode } },
+      })) > 0
+    )
+  }
+
+  // Eliminar es transicion a Morado, NUNCA un DELETE de la fila: la
+  // requisicion es historia del hotel y su timeline vive en
+  // requisition_state_history.
+  async remove(params: {
+    id: string
+    fromStateId: string
+    toStateId: string
+    fromCode: string
+    reason: string | null
+    userId: string
+    roleCode: string
+  }): Promise<RequisitionRow> {
+    const now = new Date()
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.requisition.update({
+        where: { id: params.id },
+        data: {
+          statusLightStateId: params.toStateId,
+          updatedAt: now,
+          updatedBy: params.userId,
+        },
+      })
+
+      await tx.requisitionStateHistory.create({
+        data: {
+          id: uuidv7(),
+          requisitionId: params.id,
+          fromStateId: params.fromStateId,
+          toStateId: params.toStateId,
+          statusLightCode: REQUISITION_LIGHT,
+          userId: params.userId,
+        },
+      })
+
+      // El motivo va al journal y no a `reason_id`: no hay catalogo de motivos
+      // para la Requisicion, y no se inventa uno para un consumidor que no
+      // existe. Si el negocio pide agrupar por motivo, ahi se crea.
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'demand.requisition',
+          entityId: params.id,
+          eventType: 'REQUISITION_DELETED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: { fromState: params.fromCode, reason: params.reason },
+        },
+      })
+    })
+
+    return this.prisma.requisition.findUniqueOrThrow({ where: { id: params.id }, select: SELECT })
+  }
+
+  // Eliminar no desasigna gente en silencio: si hay alguien trabajando, primero
+  // se le libera.
+  async activeAssignments(requisitionId: string): Promise<number> {
+    return this.prisma.assignment.count({
+      where: { status: 'ACTIVE', slot: { position: { requisitionId } } },
+    })
   }
 
   async authorize(params: {
