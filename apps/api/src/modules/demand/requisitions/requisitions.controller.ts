@@ -58,9 +58,20 @@ export class RequisitionsController {
    * Eliminar es pasar a Morado, no borrar la fila — por eso es POST y no
    * DELETE: el recurso sigue existiendo y `GET /:id` lo sigue sirviendo.
    *
-   * Sin `@Requires`: quien puede lo dice la tabla de transiciones, y el
-   * borrador además solo lo quita su creador. La Matriz no tiene un par para
-   * esto, y el semáforo sí.
+   * SIN `@Requires`, y el front no tiene que adivinar: quien puede lo dice la
+   * tabla de transiciones, que es más fina que un par de la Matriz.
+   *
+   * | Estado | Quién | Motivo |
+   * |---|---|---|
+   * | `APPLE_GREEN` | su CREADOR, o `ROL-H-03` | no |
+   * | `GREEN`, `YELLOW`, `RED` | `ROL-H-03` | sí |
+   * | `LIGHT_BLUE` | nadie: una cubierta no se elimina | — |
+   *
+   * Para guardear el botón, `requisitions:delete_empty` sirve de proxy en el
+   * BORRADOR y nada más: no vale de la autorización en adelante, donde solo
+   * entra el Manager General. Lo que decide de verdad es el estado más quién
+   * la creó, y eso el front lo tiene en la propia requisición
+   * (`state.code` y `createdBy.id`).
    */
   @Post(':id/delete')
   @HttpCode(HttpStatus.OK)

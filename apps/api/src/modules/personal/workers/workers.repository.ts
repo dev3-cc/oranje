@@ -131,6 +131,24 @@ export class WorkersRepository {
     return rows[0] ?? null
   }
 
+  // ¿Este colaborador tiene asignacion ACTIVA en este hotel? Es el alcance de
+  // los roles de Hotel sobre Mi Personal: ven a quien esta trabajando con
+  // ellos, no al Pool entero.
+  async isAssignedToHotel(workerId: string, hotelId: string): Promise<boolean> {
+    const rows = await this.prisma.$queryRaw<Array<{ existe: boolean }>>`
+      SELECT EXISTS (
+        SELECT 1
+          FROM coverage.assignment a
+          JOIN demand.slot sl        ON sl.id = a.slot_id
+          JOIN demand."position" p   ON p.id = sl.position_id
+          JOIN demand.requisition r  ON r.id = p.requisition_id
+         WHERE a.worker_id = ${workerId}::uuid
+           AND a.status = 'ACTIVE'
+           AND r.hotel_id = ${hotelId}::uuid) AS existe`
+
+    return rows[0]?.existe ?? false
+  }
+
   async findMany(
     filter: WorkerFilter,
     /** Mi Personal: solo colaboradores con asignación ACTIVA en este hotel. */
