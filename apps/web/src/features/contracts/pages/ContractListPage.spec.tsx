@@ -22,7 +22,12 @@ function renderList(): void {
   )
 }
 
-describe('ContractListPage', () => {
+/*
+ * Toda la suite con tiempo propio: la pantalla monta la lista Y el documento
+ * embebido, y en el runner del CI (suite en paralelo) cualquiera de sus casos
+ * puede pasarse de los 5 s por defecto. En local pasan siempre.
+ */
+describe('ContractListPage', { timeout: 20_000 }, () => {
   it('muestra el estado con el valor del enum, sin traducir', async () => {
     renderList()
 
@@ -44,8 +49,7 @@ describe('ContractListPage', () => {
     expect(within(draft as HTMLElement).getByText('sin vigencia')).toBeInTheDocument()
   })
 
-  /* Monta la lista Y el documento embebido: en el runner cargado no cabe en los 5 s por defecto. */
-  it('elegir un renglón abre su documento a la derecha', { timeout: 20_000 }, async () => {
+  it('elegir un renglón abre su documento a la derecha', async () => {
     const user = userEvent.setup()
     renderList()
 
