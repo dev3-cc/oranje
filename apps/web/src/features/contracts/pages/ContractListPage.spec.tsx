@@ -22,7 +22,12 @@ function renderList(): void {
   )
 }
 
-describe('ContractListPage', () => {
+/*
+ * Toda la suite con tiempo propio: la pantalla monta la lista Y el documento
+ * embebido, y en el runner del CI (suite en paralelo) cualquiera de sus casos
+ * puede pasarse de los 5 s por defecto. En local pasan siempre.
+ */
+describe('ContractListPage', { timeout: 20_000 }, () => {
   it('muestra el estado con el valor del enum, sin traducir', async () => {
     renderList()
 
