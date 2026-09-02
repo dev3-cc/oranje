@@ -21,6 +21,7 @@ import { WorkerRow, WorkersRepository } from './workers.repository.js'
 
 const PENDING_VALIDATION = 'WHITE'
 const AVAILABLE = 'STRONG_GREEN'
+const STANDBY = 'PINK'
 const MIN_AGE = 18
 
 export interface WorkerBoard {
@@ -111,6 +112,72 @@ export class WorkersService {
     }
   }
 
+  /**
+   * Reclutamiento ve la ficha completa; los roles de Hotel la ven de QUIEN
+   * TIENEN ASIGNADO —`staff:read_history`, «Ver Expediente» desde Mi Personal—.
+   *
+   * Sin `@Requires` en la ruta: dos permisos válidos con alcances distintos, el
+   * mismo patrón que requisiciones y territorio.
+   */
+  async getScoped(id: string, user: AuthenticatedUser): Promise<WorkerEntity> {
+    await this.assertCanSee(id, user)
+
+    return this.get(id)
+  }
+
+  private async assertCanChangeState(
+    id: string,
+    toState: string,
+    user: AuthenticatedUser,
+  ): Promise<void> {
+    if (await this.permissions.can(user.roleCode, 'recruitment', 'validate_signup')) {
+      return
+    }
+
+    if (!(await this.permissions.can(user.roleCode, 'staff', 'set_standby'))) {
+      throw new ForbiddenException({
+        code: 'FORBIDDEN',
+        message: 'Tu rol no puede cambiar el estado de un colaborador',
+      })
+    }
+
+    if (toState !== STANDBY) {
+      throw new ForbiddenException({
+        code: 'ONLY_STANDBY',
+        message: 'Desde tu hotel solo puedes mandar a Stand-by',
+      })
+    }
+
+    if (!user.hotelId || !(await this.repo.isAssignedToHotel(id, user.hotelId))) {
+      throw new ForbiddenException({
+        code: 'WORKER_NOT_ASSIGNED_TO_YOU',
+        message: 'Este colaborador no está asignado a tu hotel',
+      })
+    }
+  }
+
+  private async assertCanSee(id: string, user: AuthenticatedUser): Promise<void> {
+    if (await this.permissions.can(user.roleCode, 'recruitment', 'search_candidates')) {
+      return
+    }
+
+    const seesStaff = await this.permissions.can(user.roleCode, 'staff', 'read_history')
+
+    if (!seesStaff || !user.hotelId) {
+      throw new ForbiddenException({
+        code: 'FORBIDDEN',
+        message: 'Tu rol no puede ver el expediente de un colaborador',
+      })
+    }
+
+    if (!(await this.repo.isAssignedToHotel(id, user.hotelId))) {
+      throw new ForbiddenException({
+        code: 'WORKER_NOT_ASSIGNED_TO_YOU',
+        message: 'Este colaborador no está asignado a tu hotel',
+      })
+    }
+  }
+
   async get(id: string): Promise<WorkerEntity> {
     const row = await this.worker(id)
 
@@ -148,11 +215,23 @@ export class WorkersService {
       .map((s) => ({ toState: s.code as string, requiresReason: s.requiresReason }))
   }
 
+  /**
+   * Quién puede mover a un colaborador lo decide la tabla de transiciones. La
+   * ruta acepta DOS permisos porque llegan dos roles por caminos distintos:
+   * Reclutamiento valida el alta (`recruitment:validate_signup`) y el hotel
+   * manda a descansar (`staff:set_standby`) desde Mi Personal.
+   *
+   * El del hotel viene con alcance: solo sobre quien tiene asignado, y solo a
+   * Stand-by. Sin eso, `staff:set_standby` abriría las doce transiciones del
+   * semáforo sobre cualquier colaborador.
+   */
   async changeState(
     id: string,
     dto: ChangeStateDto,
     user: AuthenticatedUser,
   ): Promise<WorkerEntity> {
+    await this.assertCanChangeState(id, dto.toState, user)
+
     const worker = await this.worker(id)
     const current = await this.stateOfWorker(id)
     const steps = await this.repo.allowedFrom(current.stateId)

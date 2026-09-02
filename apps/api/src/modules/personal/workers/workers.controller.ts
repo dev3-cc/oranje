@@ -40,10 +40,18 @@ export class WorkersController {
     return this.workers.list(query, user)
   }
 
-  @Requires('recruitment', 'search_candidates')
+  /**
+   * Sin `@Requires`: dos permisos válidos con alcances distintos.
+   * `recruitment:search_candidates` ve el Pool entero; `staff:read_history` ve
+   * a quien tiene asignado (Mi Personal). Decide el servicio, como en
+   * requisiciones y territorio.
+   */
   @Get(':id')
-  async get(@Param('id', ParseUUIDPipe) id: string): Promise<{ data: WorkerEntity }> {
-    return { data: await this.workers.get(id) }
+  async get(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: WorkerEntity }> {
+    return { data: await this.workers.getScoped(id, user) }
   }
 
   @Requires('recruitment', 'create_worker')
@@ -75,7 +83,11 @@ export class WorkersController {
     return { data: await this.workers.available(id, user) }
   }
 
-  @Requires('recruitment', 'validate_signup')
+  /**
+   * Sin `@Requires`: `recruitment:validate_signup` mueve el semáforo completo;
+   * `staff:set_standby` solo manda a Stand-by y solo a quien el hotel tiene
+   * asignado. Decide el servicio.
+   */
   @Post(':id/transitions')
   @HttpCode(HttpStatus.OK)
   async changeState(
