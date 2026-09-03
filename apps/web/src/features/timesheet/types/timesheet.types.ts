@@ -98,6 +98,14 @@ export const EMPTY_TIMESHEET_FILTERS: TimesheetFilters = {
   weekStart: ANY_VALUE,
 }
 
+/** Identidad que acompaña a la Revisión del día: el hero del modal. */
+export interface ReviewContext {
+  workerPhotoUrl: string | null
+  jobTitle: string | null
+  hotelName: string | null
+  hotelPhotoUrl: string | null
+}
+
 export interface ReviewDayRequest {
   dayId: string
   note: string

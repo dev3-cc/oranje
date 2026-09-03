@@ -22,6 +22,7 @@ import { addDaysIso, resolveWeek } from '../lib/weekNavigation'
 import {
   ANY_VALUE,
   EMPTY_TIMESHEET_FILTERS,
+  type ReviewContext,
   type TimesheetEntry,
   type TimesheetFilters,
   type TimesheetRow,
@@ -54,7 +55,11 @@ export function TimesheetPage(): ReactNode {
   const [view, setView] = useState<TimesheetView>('DAYS')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   /** El día abierto en Revisión (maqueta del Supervisor); `null` = cerrado. */
-  const [review, setReview] = useState<{ entry: TimesheetEntry; workerName: string } | null>(null)
+  const [review, setReview] = useState<{
+    entry: TimesheetEntry
+    workerName: string
+    context: ReviewContext | null
+  } | null>(null)
   /** La fila con el diálogo de marca manual abierto; `null` = cerrado. */
   const [manualPunchRow, setManualPunchRow] = useState<TimesheetRow | null>(null)
 
@@ -247,9 +252,10 @@ export function TimesheetPage(): ReactNode {
                   selectedWeek={selectedWeek}
                   columnWidth={columnWidth}
                   selectedIds={selectedIds}
+                  selectable={canPay}
                   onToggle={toggle}
-                  onReview={(entry, workerName) => {
-                    setReview({ entry, workerName })
+                  onReview={(entry, workerName, context) => {
+                    setReview({ entry, workerName, context: context ?? null })
                   }}
                   onManualPunch={setManualPunchRow}
                 />
@@ -260,7 +266,7 @@ export function TimesheetPage(): ReactNode {
               <TimesheetHoursView
                 week={week}
                 onReview={(entry, workerName) => {
-                  setReview({ entry, workerName })
+                  setReview({ entry, workerName, context: null })
                 }}
               />
             )}
@@ -284,6 +290,7 @@ export function TimesheetPage(): ReactNode {
       <ReviewDayDialog
         entry={review?.entry ?? null}
         workerName={review?.workerName ?? ''}
+        context={review?.context ?? null}
         onClose={() => {
           setReview(null)
         }}

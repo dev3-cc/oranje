@@ -1,19 +1,21 @@
-import { Alert, AlertDescription, cn, toast } from '@oranje/ui'
+import { Alert, AlertDescription, cn, MaterialIcon, statusLight, toast } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { useReviewTimesheetDayMutation } from '../api/timesheetApi'
-import type { TimesheetEntry } from '../types/timesheet.types'
+import type { ReviewContext, TimesheetEntry } from '../types/timesheet.types'
 
 import personajeAyuda from '@/assets/ilustrations/personaje-ayuda.svg'
 import personajeCronograma from '@/assets/ilustrations/personaje-cronograma.svg'
 import personajePago from '@/assets/ilustrations/personaje-pago-procesado.svg'
 import { Button } from '@/shared/components/Button'
+import { HotelPhotoBackdrop } from '@/shared/components/HotelPhotoBackdrop'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
+import { TIMESHEET_STATUS_LABEL, TIMESHEET_STATUS_TOKEN } from '@/shared/constants/timesheetStatus'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
-import { formatDayMonth } from '@/shared/lib/formatters'
+import { formatDayMonth, formatHours } from '@/shared/lib/formatters'
 
 const PUNCH_TYPE_LABEL: Record<string, string> = {
   CLOCK_IN: 'Entrada',
@@ -43,10 +45,13 @@ const INTRO_SLIDES = [
 export function ReviewDayDialog({
   entry,
   workerName,
+  context = null,
   onClose,
 }: {
   entry: TimesheetEntry | null
   workerName: string
+  /** Identidad del hero (fotos y hotel); sin él, el hero degrada con calma. */
+  context?: ReviewContext | null
   onClose: () => void
 }): ReactNode {
   const [note, setNote] = useState('')
@@ -119,6 +124,82 @@ export function ReviewDayDialog({
         />
       ) : (
         <>
+          {/* El hero: la foto del hotel de fondo bajo cristal, la persona al
+              centro y el resumen del día en tiles — la ficha antes del acta. */}
+          <div className="relative overflow-hidden rounded-xl">
+            <HotelPhotoBackdrop photoUrl={context?.hotelPhotoUrl ?? null} />
+            <div
+              aria-hidden
+              className="absolute inset-0 bg-gradient-to-b from-ink/45 via-ink/60 to-ink/80"
+            />
+            <div className="relative flex flex-col items-center gap-1.5 px-4 py-5 text-center">
+              {context?.workerPhotoUrl ? (
+                <img
+                  src={context.workerPhotoUrl}
+                  alt=""
+                  className="size-16 rounded-full object-cover ring-2 ring-white/70"
+                  onError={(event) => {
+                    event.currentTarget.style.display = 'none'
+                  }}
+                />
+              ) : (
+                <span
+                  aria-hidden
+                  className="flex size-16 items-center justify-center rounded-full bg-o-500 text-xl font-bold text-ink ring-2 ring-white/70"
+                >
+                  {workerName.charAt(0)}
+                </span>
+              )}
+              <p className="text-lg font-bold text-white">{workerName}</p>
+              <div className="flex flex-wrap items-center justify-center gap-1.5">
+                {context?.hotelName != null && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-semibold text-white">
+                    <MaterialIcon name="apartment" className="text-sm" aria-hidden />
+                    {context.hotelName}
+                  </span>
+                )}
+                <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-semibold text-white">
+                  {formatDayMonth(entry.date)}
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-semibold text-white">
+                  <span
+                    className="size-2 rounded-full"
+                    style={{ backgroundColor: statusLight[TIMESHEET_STATUS_TOKEN[entry.status]] }}
+                    aria-hidden
+                  />
+                  {TIMESHEET_STATUS_LABEL[entry.status]}
+                </span>
+              </div>
+
+              <div className="mt-3 grid w-full grid-cols-2 gap-2">
+                <div className="flex items-center gap-2.5 rounded-lg bg-white/95 p-2.5 text-left">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-o-50">
+                    <MaterialIcon name="schedule" className="text-lg text-o-700" aria-hidden />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[10px] text-ink-3">Horas netas</span>
+                    <span className="block truncate text-base font-bold text-ink">
+                      {entry.hours === null ? '—' : formatHours(entry.hours)}
+                    </span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5 rounded-lg bg-white/95 p-2.5 text-left">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-purple/10">
+                    <MaterialIcon name="login" className="text-lg text-purple" aria-hidden />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[10px] text-ink-3">Entrada – Salida</span>
+                    <span className="block truncate text-base font-bold text-ink">
+                      {entry.startTime === null || entry.endTime === null
+                        ? '—'
+                        : `${entry.startTime} – ${entry.endTime}`}
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {entry.hasAnomaly && (
             <p className="rounded-md bg-yellow/15 px-4 py-3 text-sm text-ink-2">
               El día tiene una anomalía sin resolver

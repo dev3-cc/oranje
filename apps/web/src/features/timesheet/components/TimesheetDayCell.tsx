@@ -1,4 +1,4 @@
-import { cn, MaterialIcon, statusLight } from '@oranje/ui'
+import { cn, statusLight } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
 import type { TimesheetEntry } from '../types/timesheet.types'
@@ -34,11 +34,15 @@ const PUNCH_CLASS = {
 export function TimesheetDayCell({
   entry,
   isSelected,
+  selectable = true,
   onToggle,
   onReview,
 }: {
   entry: TimesheetEntry
   isSelected: boolean
+  /** La casilla de selección existe PARA el pago en bloque: sin permiso de
+      pago no se dibuja — una affordance sin acción disponible solo confunde. */
+  selectable?: boolean
   onToggle: (entryId: string) => void
   /** Abre la Revisión del día (maqueta del Supervisor). */
   onReview: (entry: TimesheetEntry) => void
@@ -53,28 +57,40 @@ export function TimesheetDayCell({
           aria-label={PUNCH_STATE_LABEL[entry.punch]}
           role="img"
           className={cn(
-            'flex size-3.5 items-center justify-center rounded-full border-2',
+            'flex size-3.5 items-center justify-center overflow-hidden rounded-full border-2',
             PUNCH_CLASS[entry.punch],
           )}
           style={
             entry.punch === 'COMPLETE' ? { backgroundColor: statusLight['st-verde'] } : undefined
           }
         >
-          {/* La paloma: el color nunca habla solo (entrada y salida completas). */}
+          {/* La paloma: el color nunca habla solo (entrada y salida completas).
+              SVG propio — la ligadura de Material se deforma a este tamaño. */}
           {entry.punch === 'COMPLETE' && (
-            <MaterialIcon name="check" className="text-[10px] font-bold text-white" />
+            <svg viewBox="0 0 12 12" className="size-2.5" aria-hidden>
+              <path
+                d="M2.5 6.5l2.4 2.4 4.6-5"
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           )}
         </span>
 
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={() => {
-            onToggle(entry.id)
-          }}
-          aria-label={`Seleccionar ${entry.date}`}
-          className="size-3.5 appearance-none rounded-full border-2 border-purple checked:bg-purple focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple"
-        />
+        {selectable && (
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => {
+              onToggle(entry.id)
+            }}
+            aria-label={`Seleccionar ${entry.date}`}
+            className="size-3.5 appearance-none rounded-full border-2 border-purple checked:bg-purple focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple"
+          />
+        )}
       </div>
 
       <button

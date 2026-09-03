@@ -4,6 +4,7 @@ import { useContext, useState, type ReactNode } from 'react'
 
 import { todayIso } from '../lib/weekNavigation'
 import type {
+  ReviewContext,
   TimelineRow,
   TimesheetEntry,
   TimesheetRow,
@@ -108,6 +109,7 @@ export function TimesheetGrid({
   selectedWeek,
   columnWidth,
   selectedIds,
+  selectable = true,
   onToggle,
   onReview,
   onManualPunch,
@@ -117,8 +119,10 @@ export function TimesheetGrid({
   selectedWeek: string
   columnWidth: number
   selectedIds: Set<string>
+  /** `false` = sin casillas: la selección solo existe para el pago en bloque. */
+  selectable?: boolean
   onToggle: (entryId: string) => void
-  onReview: (entry: TimesheetEntry, workerName: string) => void
+  onReview: (entry: TimesheetEntry, workerName: string, context?: ReviewContext) => void
   onManualPunch: (row: TimesheetRow) => void
 }): ReactNode {
   const { isDragging } = useContext(WeekDragContext)
@@ -185,9 +189,15 @@ export function TimesheetGrid({
                         <TimesheetDayCell
                           entry={entry}
                           isSelected={selectedIds.has(entry.id)}
+                          selectable={selectable}
                           onToggle={onToggle}
                           onReview={(item) => {
-                            onReview(item, row.workerName)
+                            onReview(item, row.workerName, {
+                              workerPhotoUrl: row.photoUrl,
+                              jobTitle: row.jobTitle,
+                              hotelName: row.hotelName,
+                              hotelPhotoUrl: row.hotelPhotoUrl,
+                            })
                           }}
                         />
                       </li>
@@ -299,17 +309,6 @@ export function TimesheetGrid({
                                   className="pointer-events-none absolute -inset-y-1.5 -left-1 z-0"
                                   style={{ width: runLength * columnWidth - 8 }}
                                 >
-                                  {/* La caja se explica sola (patrón fieldset):
-                                      el folio montado en el borde dice QUÉ
-                                      agrupa el contorno. */}
-                                  {row.entries[0]?.requisitionNumber != null && (
-                                    <span
-                                      title="Los días dentro del contorno pertenecen a esta requisición"
-                                      className="pointer-events-auto absolute -bottom-2 left-3 max-w-[85%] cursor-help truncate rounded-full border border-o-500/40 bg-surface px-1.5 text-[9px] leading-4 font-semibold text-o-700"
-                                    >
-                                      {row.entries[0].requisitionNumber}
-                                    </span>
-                                  )}
                                   {isLit ? (
                                     <MovingBorderBox
                                       as="div"
@@ -330,9 +329,15 @@ export function TimesheetGrid({
                                 <TimesheetDayCell
                                   entry={entry}
                                   isSelected={selectedIds.has(entry.id)}
+                                  selectable={selectable}
                                   onToggle={onToggle}
                                   onReview={(item) => {
-                                    onReview(item, row.workerName)
+                                    onReview(item, row.workerName, {
+                                      workerPhotoUrl: row.photoUrl,
+                                      jobTitle: row.jobTitle,
+                                      hotelName: row.hotelName,
+                                      hotelPhotoUrl: row.hotelPhotoUrl,
+                                    })
                                   }}
                                 />
                               </div>
