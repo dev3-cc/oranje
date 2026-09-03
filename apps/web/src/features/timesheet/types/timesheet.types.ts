@@ -71,6 +71,10 @@ export interface TimesheetWeek {
   /** Para armar los filtros sin deducirlos de las filas que quedaron visibles. */
   requisitionNumbers: string[]
   hotelNames: string[]
+  /** El lunes de la semana enseñada; `''` cuando no llegó nada. */
+  weekStart: string
+  /** Los lunes con datos, ascendentes: por ellos caminan ‹ ›, «Hoy» y el tirador. */
+  availableWeeks: string[]
 }
 
 /** Ningún filtro puesto en esa columna. */
@@ -82,6 +86,8 @@ export interface TimesheetFilters {
   /** Estado de la SEMANA (`OPEN | PENDING_APPROVAL | APPROVED`): va al servidor. */
   status: string
   hotelName: string
+  /** Lunes ISO de la semana a enseñar; `ALL` = la más reciente con datos. */
+  weekStart: string
 }
 
 export const EMPTY_TIMESHEET_FILTERS: TimesheetFilters = {
@@ -89,9 +95,60 @@ export const EMPTY_TIMESHEET_FILTERS: TimesheetFilters = {
   requisitionNumber: ANY_VALUE,
   status: ANY_VALUE,
   hotelName: ANY_VALUE,
+  weekStart: ANY_VALUE,
 }
 
 export interface ReviewDayRequest {
   dayId: string
   note: string
+}
+
+/**
+ * Una fila de la CINTA continua: la misma persona (y requisición) a lo largo
+ * de TODAS las semanas cargadas. Sus días forman una línea de tiempo sin
+ * cortes — es lo que permite que las fechas vecinas entren en vivo al
+ * arrastrar, sin esperar una recarga.
+ */
+export interface TimelineRow {
+  workerId: string
+  requisitionId: string
+  workerName: string
+  jobTitle: string
+  hotelName: string
+  /** Foto del colaborador (de `/workers`, D-28); `null` honesto si no hay. */
+  photoUrl: string | null
+  /** Todos los días con registro, de todas las semanas. */
+  entries: TimesheetEntry[]
+  /** El resumen de cada semana (el timesheet es semana × persona × requisición). */
+  byWeek: Record<string, { timesheetId: string; weekStatus: string; totalHours: number }>
+}
+
+export interface TimesheetTimeline {
+  /** Días CONTINUOS, del lunes de la primera semana al domingo de la última. */
+  days: string[]
+  rows: TimelineRow[]
+  availableWeeks: string[]
+  requisitionNumbers: string[]
+  hotelNames: string[]
+  /** Foto del hotel (compuesta de las requisiciones, D-34); `null` honesto. */
+  hotelPhotoUrl: string | null
+}
+
+/** Un día del mes con actividad: el agregado de las jornadas de esa fecha. */
+export interface TimesheetMonthDay {
+  date: string
+  /** Horas netas sumadas del día; las ausencias no suman horas. */
+  netHours: number
+  /** Cuántas personas tuvieron jornada (o ausencia) ese día. */
+  people: number
+  pending: number
+  observed: number
+  reviewed: number
+  absences: number
+}
+
+export interface TimesheetMonth {
+  /** `YYYY-MM` del mes enseñado: el de la semana elegida. `''` sin datos. */
+  month: string
+  days: TimesheetMonthDay[]
 }

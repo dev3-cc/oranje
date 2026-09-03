@@ -1,9 +1,19 @@
-import { toast } from '@oranje/ui'
+import {
+  cn,
+  MaterialIcon,
+  toast,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
+import { Link } from 'react-router'
 
 import { useApproveTimesheetMutation, useSubmitTimesheetMutation } from '../api/timesheetApi'
 import type { TimesheetRow } from '../types/timesheet.types'
 
+import { HotelPhotoBackdrop } from '@/shared/components/HotelPhotoBackdrop'
 import {
   TIMESHEET_WEEK_STATUS_LABEL,
   type TimesheetWeekStatus,
@@ -12,15 +22,47 @@ import { useCan } from '@/shared/hooks/useCan'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { formatHours } from '@/shared/lib/formatters'
 
-/** Un dato de la fila: contorno tenue, sin color de estado. */
-function Chip({ children, isPending }: { children: ReactNode; isPending?: boolean }): ReactNode {
+/**
+ * Quiénes pueden aprobar la semana (D-09), como tooltip. Circulitos con el
+ * monograma del ROL — el contrato de hoy no deja al Supervisor leer nombres ni
+ * fotos de los managers de su hotel (403 en `/team` y en los usuarios del
+ * hotel); cuando el back lo exponga, aquí van las caras reales.
+ */
+function ApproverTooltip({ children }: { children: ReactNode }): ReactNode {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipContent side="top" className="max-w-60">
+          <p className="mb-1.5 text-xs font-semibold">Aprueban la semana:</p>
+          <div className="flex flex-col gap-1.5">
+            <p className="flex items-center gap-2 text-xs">
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-o-500 text-[9px] font-bold text-ink">
+                MA
+              </span>
+              Manager de Área (su departamento)
+            </p>
+            <p className="flex items-center gap-2 text-xs">
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-o-500 text-[9px] font-bold text-ink">
+                MG
+              </span>
+              Manager General (cualquier departamento)
+            </p>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
+
+/** Una pastilla de dato sobre el vidrio oscuro. */
+function Pill({ children, className }: { children: ReactNode; className?: string }): ReactNode {
   return (
     <span
-      className={
-        isPending === true
-          ? 'inline-flex items-center rounded-md border border-dashed border-purple px-2.5 py-1 text-xs font-medium text-purple'
-          : 'inline-flex items-center rounded-md border border-line px-2.5 py-1 text-xs font-medium text-ink-3'
-      }
+      className={cn(
+        'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold',
+        className ?? 'bg-white/15 text-white',
+      )}
     >
       {children}
     </span>
@@ -28,17 +70,25 @@ function Chip({ children, isPending }: { children: ReactNode; isPending?: boolea
 }
 
 /**
- * La columna fija de la izquierda: quién es, cuánto lleva y qué le falta.
+ * La columna fija de la izquierda como tarjeta con identidad: la foto del
+ * hotel de fondo bajo un vidrio oscuro (el patrón del Perfil del Colaborador),
+ * la foto de la persona en grande y los datos como pastillas. El texto va en
+ * blanco sobre `ink` — la foto ambienta, nunca compite con la lectura.
  *
- * El total lo manda el backend sumado y NO se deriva de las celdas visibles: la
- * semana puede traer días fuera de la ventana, y una barra que cambia al hacer
- * scroll no sirve para nada.
+ * El total lo manda el backend sumado y NO se deriva de las celdas visibles:
+ * la semana puede traer días fuera de la ventana.
  */
 export function WorkerWeekSummary({
   row,
+  photoUrl = null,
+  hotelPhotoUrl = null,
   onManualPunch,
 }: {
   row: TimesheetRow
+  /** Foto del colaborador; `null` = iniciales sobre naranja. */
+  photoUrl?: string | null
+  /** Foto del hotel para el fondo; `null` = placeholder de marca. */
+  hotelPhotoUrl?: string | null
   onManualPunch?: (row: TimesheetRow) => void
 }): ReactNode {
   const [submitSheet, { isLoading: isSubmitting }] = useSubmitTimesheetMutation()
@@ -83,52 +133,95 @@ export function WorkerWeekSummary({
       ? Math.min(1, row.totalHours / row.targetHours)
       : null
 
+  const requisitionRef = row.entries[0]?.requisitionNumber ?? null
+
   return (
-    <div className="flex gap-3">
-      <span
-        className="flex size-11 shrink-0 items-center justify-center rounded-full bg-o-500 text-sm font-bold text-white"
+    <div className="relative overflow-hidden rounded-xl">
+      <HotelPhotoBackdrop photoUrl={hotelPhotoUrl} />
+      {/* El cristal negro en degradado: arriba se asoma el hotel, abajo manda
+          el texto — mismo efecto que las tarjetas del Perfil del Colaborador. */}
+      <div
         aria-hidden
-      >
-        {row.workerName.charAt(0)}
-      </span>
+        className="absolute inset-0 bg-gradient-to-b from-ink/45 via-ink/65 to-ink/85"
+      />
 
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-base font-bold text-ink">{row.workerName}</p>
-        <p className="truncate text-xs text-ink-3">{row.jobTitle}</p>
-
-        <p className="mt-1 text-2xl font-bold text-ink">
-          {formatHours(row.totalHours)}
-          {row.targetHours !== null && (
-            <span className="ml-1 text-sm font-normal text-ink-3">
-              / {formatHours(row.targetHours)}
+      <div className="relative flex flex-col gap-2 p-2.5">
+        {/* La foto grande a la izquierda; la info a su derecha (patrón ficha). */}
+        <div className="flex items-center gap-2.5">
+          {photoUrl ? (
+            <img
+              src={photoUrl}
+              alt=""
+              className="size-16 shrink-0 rounded-xl object-cover ring-1 ring-white/60"
+              onError={(event) => {
+                event.currentTarget.style.display = 'none'
+              }}
+            />
+          ) : (
+            <span
+              aria-hidden
+              className="flex size-16 shrink-0 items-center justify-center rounded-xl bg-o-500 text-xl font-bold text-ink ring-1 ring-white/60"
+            >
+              {row.workerName.charAt(0)}
             </span>
           )}
-        </p>
+
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold text-white">{row.workerName}</p>
+            <p className="mt-0.5 flex items-center gap-1 text-xs text-white/85">
+              <MaterialIcon name="schedule" className="text-sm" aria-hidden />
+              {formatHours(row.totalHours)}
+              {row.targetHours !== null && (
+                <span className="text-white/60">/ {formatHours(row.targetHours)}</span>
+              )}
+              <span className="text-white/60">esta semana</span>
+            </p>
+          </div>
+        </div>
 
         {progress !== null && (
           <div
-            className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-3"
+            className="h-1.5 overflow-hidden rounded-full bg-white/20"
             role="img"
             aria-label={`${formatHours(row.totalHours)} de la meta`}
           >
             {progress > 0 && (
               <div
-                className="h-full rounded-full bg-green"
+                className="h-full rounded-full bg-o-500"
                 style={{ width: `${(progress * 100).toFixed(1)}%` }}
               />
             )}
           </div>
         )}
 
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {/* El ciclo de D-09, tal cual viene: abierta, enviada o aprobada. */}
-          <Chip isPending={row.weekStatus === 'PENDING_APPROVAL'}>
+          <Pill
+            className={
+              row.weekStatus === 'PENDING_APPROVAL'
+                ? 'border border-dashed border-white/70 bg-purple/40 text-white'
+                : 'bg-white/15 text-white'
+            }
+          >
             {TIMESHEET_WEEK_STATUS_LABEL[row.weekStatus as TimesheetWeekStatus] ?? row.weekStatus}
-          </Chip>
+          </Pill>
+          {/* Un timesheet ES una requisición por semana. El badge es discreto
+              (la tarjeta ya tiene bastante naranja) y ABRE la requisición. */}
+          {requisitionRef !== null && (
+            <Link
+              to={`/requisiciones/${row.requisitionId}`}
+              title="Abrir la requisición"
+              className="inline-flex items-center gap-1 rounded-full border border-white/35 bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white transition-colors hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
+            >
+              <MaterialIcon name="assignment" className="text-xs" />
+              {requisitionRef}
+              <MaterialIcon name="chevron_right" className="text-xs" />
+            </Link>
+          )}
         </div>
 
-        {/* El ciclo completo de D-09 en la fila: enviar (SUP) y aprobar (managers). */}
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        {/* El ciclo completo de D-09 en la tarjeta: enviar (SUP) y aprobar (managers). */}
+        <div className="flex flex-wrap gap-1.5">
           {row.weekStatus === 'OPEN' && (
             <>
               <button
@@ -137,7 +230,7 @@ export function WorkerWeekSummary({
                 onClick={() => {
                   void runAction('submit')
                 }}
-                className="cursor-pointer rounded-md bg-o-50 px-2.5 py-1 text-xs font-semibold text-o-700 transition-colors hover:bg-o-500/20 disabled:cursor-wait disabled:opacity-60"
+                className="cursor-pointer rounded-md bg-o-500 px-2 py-1 text-[11px] font-semibold text-ink transition-colors hover:bg-o-500/85 disabled:cursor-wait disabled:opacity-60"
               >
                 {isSubmitting ? 'Enviando…' : 'Enviar a revisión'}
               </button>
@@ -148,7 +241,7 @@ export function WorkerWeekSummary({
                   onClick={() => {
                     onManualPunch(row)
                   }}
-                  className="cursor-pointer rounded-md border border-line px-2.5 py-1 text-xs font-medium text-ink-3 transition-colors hover:bg-surface-2 hover:text-ink"
+                  className="cursor-pointer rounded-md border border-white/40 px-2 py-1 text-[11px] font-medium text-white transition-colors hover:bg-white/10"
                 >
                   Marca manual
                 </button>
@@ -157,25 +250,29 @@ export function WorkerWeekSummary({
           )}
           {row.weekStatus === 'PENDING_APPROVAL' &&
             (canApprove ? (
-              <button
-                type="button"
-                disabled={isApproving}
-                onClick={() => {
-                  void runAction('approve')
-                }}
-                className="cursor-pointer rounded-md bg-green/15 px-2.5 py-1 text-xs font-semibold text-ink-2 transition-colors hover:bg-green/25 disabled:cursor-wait disabled:opacity-60"
-              >
-                {isApproving ? 'Aprobando…' : 'Aprobar semana'}
-              </button>
+              <ApproverTooltip>
+                <button
+                  type="button"
+                  disabled={isApproving}
+                  onClick={() => {
+                    void runAction('approve')
+                  }}
+                  className="cursor-pointer rounded-md bg-green px-2 py-1 text-[11px] font-semibold text-ink transition-colors hover:bg-green/85 disabled:cursor-wait disabled:opacity-60"
+                >
+                  {isApproving ? 'Aprobando…' : 'Aprobar semana'}
+                </button>
+              </ApproverTooltip>
             ) : (
-              <span className="rounded-md border border-dashed border-line px-2.5 py-1 text-xs text-ink-3">
-                La aprueba el Manager de Área o el Manager General
-              </span>
+              <ApproverTooltip>
+                <span className="max-w-full cursor-help truncate rounded-md border border-dashed border-white/40 px-2 py-1 text-[10px] text-white/80">
+                  Esperando aprobación
+                </span>
+              </ApproverTooltip>
             ))}
         </div>
 
         {actionError !== null && (
-          <p role="alert" className="mt-1.5 text-xs text-red">
+          <p role="alert" className="rounded-md bg-white/90 px-2 py-1 text-xs font-medium text-red">
             {actionError}
           </p>
         )}

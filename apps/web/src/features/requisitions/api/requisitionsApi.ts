@@ -66,21 +66,34 @@ function toRow(requisition: RequisitionApi): RequisitionRow {
   }
 }
 
-function buildSlots(position: RequisitionPositionApi): RequisitionSlot[] {
+/**
+ * Los slots ocupados se llenan con las asignaciones ACTIVAS reales. El
+ * contrato no dice a qué POSICIÓN pertenece cada asignación (solo el ordinal
+ * del slot), así que se casan por ordinal y, si no hay, en orden — exacto con
+ * una posición; aproximado con varias (encargo al back si llega a doler).
+ */
+function buildSlots(position: RequisitionPositionApi, pool: AssignmentApi[]): RequisitionSlot[] {
   return Array.from({ length: position.quantity }, (_item, index) => {
     const isOccupied = index < position.filled
+    let assignment: AssignmentApi | null = null
+    if (isOccupied) {
+      const byOrdinal = pool.findIndex((item) => item.slot.ordinal === index + 1)
+      const poolIndex = byOrdinal >= 0 ? byOrdinal : 0
+      assignment = pool[poolIndex] ?? null
+      if (assignment) pool.splice(poolIndex, 1)
+    }
     return {
       id: `${position.id}-slot-${String(index + 1)}`,
       index: index + 1,
       status: isOccupied ? 'occupied' : 'free',
-      assigneeName: null,
-      assignedAt: null,
+      assigneeName: assignment?.worker.fullName ?? null,
+      assignedAt: assignment?.createdAt ?? null,
       offerChannel: isOccupied ? null : 'Visible en la Bolsa · Self-Pick',
     }
   })
 }
 
-function toPosition(position: RequisitionPositionApi): RequisitionPosition {
+function toPosition(position: RequisitionPositionApi, pool: AssignmentApi[]): RequisitionPosition {
   return {
     id: position.id,
     index: position.lineNumber,
@@ -92,12 +105,13 @@ function toPosition(position: RequisitionPositionApi): RequisitionPosition {
     coverage: { filled: position.filled, total: position.quantity },
     urgency: (position.urgency?.code ?? 'STRONG_GREEN') as UrgencyLevel,
     modality: position.hiringModality.name,
-    slots: buildSlots(position),
+    slots: buildSlots(position, pool),
   }
 }
 
-function toDetail(requisition: RequisitionApi, _assignments: AssignmentApi[]): RequisitionDetail {
-  const positions = requisition.positions.map(toPosition)
+function toDetail(requisition: RequisitionApi, assignments: AssignmentApi[]): RequisitionDetail {
+  const pool = assignments.filter((item) => item.status === 'ACTIVE')
+  const positions = requisition.positions.map((position) => toPosition(position, pool))
 
   const history = [
     ...(requisition.authorizedAt
