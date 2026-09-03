@@ -131,7 +131,8 @@ function toDetail(requisition: RequisitionApi, assignments: AssignmentApi[]): Re
       fromStatus: null,
       toStatus: 'APPLE_GREEN' as RequisitionStatus,
       action: 'Creada',
-      byName: '—',
+      /* Quien la creó ES el autor de este evento; el dato ya venía (D-30). */
+      byName: requisition.createdBy?.fullName ?? '—',
       at: requisition.createdAt,
     },
   ]
@@ -142,7 +143,7 @@ function toDetail(requisition: RequisitionApi, assignments: AssignmentApi[]): Re
     hotelName: requisition.hotel.name,
     department: rowDepartment(requisition),
     status: requisition.state.code as RequisitionStatus,
-    createdByName: '—',
+    createdByName: requisition.createdBy?.fullName ?? '—',
     createdAt: requisition.createdAt,
     authorizedByName: requisition.authorizedAt ? '—' : null,
     authorizedAt: requisition.authorizedAt,

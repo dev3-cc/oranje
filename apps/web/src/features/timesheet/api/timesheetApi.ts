@@ -43,6 +43,44 @@ function timeOf(iso: string): string {
   return iso.slice(11, 16)
 }
 
+/** Lo que el Timesheet necesita saber de cada requisición: folio y hotel. */
+interface RequisitionRefInfo {
+  number: string
+  hotelName: string
+  hotelPhotoUrl: string | null
+}
+
+/**
+ * Índice id → folio/hotel desde `/requisitions` (composición D-28). Tolerante
+ * a fallos: sin él, el folio cae al id recortado y el hotel al de `/me`
+ * (criterio D-30 — un dato de adorno no tumba la pantalla).
+ */
+async function fetchRequisitionIndex(
+  fetchWithBQ: FetchWithBQ,
+): Promise<Map<string, RequisitionRefInfo>> {
+  const index = new Map<string, RequisitionRefInfo>()
+  const res = await fetchWithBQ('/requisitions')
+  if (res.error) return index
+  const items = (
+    res.data as ApiEnvelope<
+      Array<{ id: string; number: string; hotel: { name: string; photoUrl?: string | null } }>
+    >
+  ).data
+  for (const item of items) {
+    index.set(item.id, {
+      number: item.number,
+      hotelName: item.hotel.name,
+      hotelPhotoUrl: item.hotel.photoUrl ?? null,
+    })
+  }
+  return index
+}
+
+/** El folio REAL si el índice lo tiene; si no, el id recortado (fallback honesto). */
+function requisitionRefOf(index: Map<string, RequisitionRefInfo>, requisitionId: string): string {
+  return index.get(requisitionId)?.number ?? `req ${requisitionId.slice(0, 8)}`
+}
+
 function toPunch(punch: TimesheetPunchApi): TimesheetPunch {
   return {
     id: punch.id,
@@ -87,19 +125,20 @@ async function fetchWeek(
   fetchWithBQ: FetchWithBQ,
   filters: TimesheetFilters,
 ): Promise<{ data: TimesheetWeek } | { error: unknown }> {
-  const [listRes, meRes] = await Promise.all([
+  const [listRes, meRes, requisitionIndex] = await Promise.all([
     fetchWithBQ({
       url: '/timesheets',
       params: { ...(filters.status !== ANY_VALUE ? { status: filters.status } : {}) },
     }),
     fetchWithBQ('/me'),
+    fetchRequisitionIndex(fetchWithBQ),
   ])
   if (listRes.error) return { error: listRes.error }
   if (meRes.error) return { error: meRes.error }
 
   const timesheets = (listRes.data as ApiEnvelope<TimesheetApi[]>).data
   const me = (meRes.data as ApiEnvelope<{ hotel: { name: string } | null }>).data
-  const hotelName = me.hotel?.name ?? '—'
+  const fallbackHotel = me.hotel?.name ?? '—'
 
   if (timesheets.length === 0) {
     return {
@@ -134,8 +173,8 @@ async function fetchWeek(
     const detailRes = details[index]
     if (!detailRes || detailRes.error) continue
     const detail = (detailRes.data as ApiEnvelope<TimesheetApi>).data
-    /** El contrato da el id de la requisición, no su folio: se enseña recortado. */
-    const requisitionRef = `req ${detail.requisitionId.slice(0, 8)}`
+    /** El folio REAL sale del índice de requisiciones (ya no el id recortado). */
+    const requisitionRef = requisitionRefOf(requisitionIndex, detail.requisitionId)
 
     rows.push({
       timesheetId: sheet.id,
@@ -143,7 +182,7 @@ async function fetchWeek(
       workerId: detail.worker.id,
       workerName: detail.worker.fullName,
       jobTitle: '—',
-      hotelName,
+      hotelName: requisitionIndex.get(detail.requisitionId)?.hotelName ?? fallbackHotel,
       weekStatus: detail.status,
       totalHours: Math.round(((detail.totals?.netMinutes ?? 0) / 60) * 100) / 100,
       targetHours: null,
@@ -174,7 +213,7 @@ async function fetchWeek(
       days,
       rows: visible,
       requisitionNumbers,
-      hotelNames: [hotelName].filter((name) => name !== '—'),
+      hotelNames: [...new Set(rows.map((row) => row.hotelName))].filter((name) => name !== '—'),
       weekStart,
       availableWeeks,
     },
@@ -193,38 +232,38 @@ async function fetchTimeline(
   fetchWithBQ: FetchWithBQ,
   filters: TimesheetFilters,
 ): Promise<{ data: TimesheetTimeline } | { error: unknown }> {
-  const [listRes, meRes, workersRes, requisitionsRes] = await Promise.all([
+  const [listRes, meRes, workersRes, requisitionIndex] = await Promise.all([
     fetchWithBQ({
       url: '/timesheets',
       params: { ...(filters.status !== ANY_VALUE ? { status: filters.status } : {}) },
     }),
     fetchWithBQ('/me'),
-    /* Las FOTOS se componen aparte (D-28): la del colaborador vive en
-       `/workers` y la del hotel llega en las requisiciones (D-34). Si algo de
-       esto falla, la foto va en null y la pantalla sigue (criterio D-30). */
+    /* Composición D-28: `/workers` trae la foto Y el puesto de la persona; el
+       índice de requisiciones trae folio real y hotel (nombre + foto, D-34).
+       Si algo de esto falla, la fila degrada con fallbacks (criterio D-30). */
     fetchWithBQ({ url: '/workers', params: { limit: 100 } }),
-    fetchWithBQ('/requisitions'),
+    fetchRequisitionIndex(fetchWithBQ),
   ])
   if (listRes.error) return { error: listRes.error }
   if (meRes.error) return { error: meRes.error }
 
   const timesheets = (listRes.data as ApiEnvelope<TimesheetApi[]>).data
   const me = (meRes.data as ApiEnvelope<{ hotel: { name: string } | null }>).data
-  const hotelName = me.hotel?.name ?? '—'
+  const fallbackHotel = me.hotel?.name ?? '—'
 
-  const photoByWorker = new Map<string, string | null>()
+  const workerInfo = new Map<string, { photoUrl: string | null; jobTitle: string }>()
   if (!workersRes.error) {
-    const workers = (workersRes.data as { data: Array<{ id: string; photoUrl: string | null }> })
-      .data
-    for (const worker of workers) photoByWorker.set(worker.id, worker.photoUrl)
-  }
-
-  let hotelPhotoUrl: string | null = null
-  if (!requisitionsRes.error) {
-    const requisitions = (
-      requisitionsRes.data as ApiEnvelope<Array<{ hotel: { photoUrl?: string | null } }>>
+    const workers = (
+      workersRes.data as {
+        data: Array<{ id: string; photoUrl: string | null; position: { name: string } | null }>
+      }
     ).data
-    hotelPhotoUrl = requisitions.find((item) => item.hotel.photoUrl)?.hotel.photoUrl ?? null
+    for (const worker of workers) {
+      workerInfo.set(worker.id, {
+        photoUrl: worker.photoUrl,
+        jobTitle: worker.position?.name ?? '—',
+      })
+    }
   }
 
   if (timesheets.length === 0) {
@@ -235,7 +274,6 @@ async function fetchTimeline(
         availableWeeks: [],
         requisitionNumbers: [],
         hotelNames: [],
-        hotelPhotoUrl,
       },
     }
   }
@@ -260,16 +298,20 @@ async function fetchTimeline(
     const detailRes = details[index]
     if (!detailRes || detailRes.error) continue
     const detail = (detailRes.data as ApiEnvelope<TimesheetApi>).data
-    const requisitionRef = `req ${detail.requisitionId.slice(0, 8)}`
+    const requisitionRef = requisitionRefOf(requisitionIndex, detail.requisitionId)
+    const requisitionInfo = requisitionIndex.get(detail.requisitionId)
 
     const key = `${detail.worker.id}|${detail.requisitionId}`
     const row = rows.get(key) ?? {
       workerId: detail.worker.id,
       requisitionId: detail.requisitionId,
       workerName: detail.worker.fullName,
-      jobTitle: '—',
-      hotelName,
-      photoUrl: photoByWorker.get(detail.worker.id) ?? null,
+      jobTitle: workerInfo.get(detail.worker.id)?.jobTitle ?? '—',
+      /* El hotel es el de LA REQUISICIÓN de la fila, no el de quien mira: con
+         un rol multi-hotel, cada fila dice el suyo y el filtro sirve. */
+      hotelName: requisitionInfo?.hotelName ?? fallbackHotel,
+      hotelPhotoUrl: requisitionInfo?.hotelPhotoUrl ?? null,
+      photoUrl: workerInfo.get(detail.worker.id)?.photoUrl ?? null,
       entries: [],
       byWeek: {},
     }
@@ -307,8 +349,7 @@ async function fetchTimeline(
       rows: visible,
       availableWeeks,
       requisitionNumbers,
-      hotelNames: [hotelName].filter((name) => name !== '—'),
-      hotelPhotoUrl,
+      hotelNames: [...new Set(allRows.map((row) => row.hotelName))].filter((name) => name !== '—'),
     },
   }
 }
@@ -322,10 +363,13 @@ async function fetchMonth(
   fetchWithBQ: FetchWithBQ,
   filters: TimesheetFilters,
 ): Promise<{ data: TimesheetMonth } | { error: unknown }> {
-  const listRes = await fetchWithBQ({
-    url: '/timesheets',
-    params: { ...(filters.status !== ANY_VALUE ? { status: filters.status } : {}) },
-  })
+  const [listRes, requisitionIndex] = await Promise.all([
+    fetchWithBQ({
+      url: '/timesheets',
+      params: { ...(filters.status !== ANY_VALUE ? { status: filters.status } : {}) },
+    }),
+    fetchRequisitionIndex(fetchWithBQ),
+  ])
   if (listRes.error) return { error: listRes.error }
 
   const timesheets = (listRes.data as ApiEnvelope<TimesheetApi[]>).data
@@ -351,7 +395,7 @@ async function fetchMonth(
     ) {
       continue
     }
-    const requisitionRef = `req ${detail.requisitionId.slice(0, 8)}`
+    const requisitionRef = requisitionRefOf(requisitionIndex, detail.requisitionId)
     if (filters.requisitionNumber !== ANY_VALUE && requisitionRef !== filters.requisitionNumber) {
       continue
     }

@@ -115,6 +115,8 @@ export interface TimelineRow {
   workerName: string
   jobTitle: string
   hotelName: string
+  /** Foto del hotel DE LA REQUISICIÓN de la fila (D-34); `null` honesto. */
+  hotelPhotoUrl: string | null
   /** Foto del colaborador (de `/workers`, D-28); `null` honesto si no hay. */
   photoUrl: string | null
   /** Todos los días con registro, de todas las semanas. */
@@ -130,8 +132,6 @@ export interface TimesheetTimeline {
   availableWeeks: string[]
   requisitionNumbers: string[]
   hotelNames: string[]
-  /** Foto del hotel (compuesta de las requisiciones, D-34); `null` honesto. */
-  hotelPhotoUrl: string | null
 }
 
 /** Un día del mes con actividad: el agregado de las jornadas de esa fecha. */

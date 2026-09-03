@@ -28,12 +28,14 @@ function renderDetail(requisitionId = 'req-0005'): void {
 }
 
 describe('RequisitionDetailPage', () => {
-  it('encabeza con el folio y no inventa quién la creó', async () => {
+  it('encabeza con el folio y dice quién la creó', async () => {
     renderDetail()
 
     expect(await screen.findByRole('heading', { name: '202608130800·D4' })).toBeInTheDocument()
-    // El contrato no expone al creador: raya, no un nombre fingido.
-    expect(screen.getByText(/Villas Coral · Housekeeping · creada por —/)).toBeInTheDocument()
+    // El creador viene en la misma respuesta (`createdBy`): ya no es una raya.
+    expect(
+      screen.getByText(/Villas Coral · Housekeeping · creada por Gerardo Luna/),
+    ).toBeInTheDocument()
   })
 
   it('los totales salen de la entidad, no de contar chips', async () => {

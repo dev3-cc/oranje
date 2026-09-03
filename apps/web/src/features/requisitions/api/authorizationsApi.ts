@@ -49,7 +49,8 @@ function toRequest(requisition: RequisitionApi): AuthorizationRequest {
     department: [
       ...new Set(requisition.positions.map((position) => position.department.name)),
     ].join(', '),
-    requestedByName: '—',
+    /* El autorizador decide viendo QUIÉN pide; el contrato ya lo trae. */
+    requestedByName: requisition.createdBy?.fullName ?? '—',
     status: 'APPLE_GREEN',
     positionCount: requisition.positions.length,
     slotCount: requisition.totalSlots,

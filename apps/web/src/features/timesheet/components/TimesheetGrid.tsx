@@ -160,7 +160,7 @@ export function TimesheetGrid({
                 <WorkerWeekSummary
                   row={summary}
                   photoUrl={row.photoUrl}
-                  hotelPhotoUrl={timeline.hotelPhotoUrl}
+                  hotelPhotoUrl={row.hotelPhotoUrl}
                   onManualPunch={onManualPunch}
                 />
               ) : (
@@ -253,7 +253,7 @@ export function TimesheetGrid({
                     <WorkerWeekSummary
                       row={summary}
                       photoUrl={row.photoUrl}
-                      hotelPhotoUrl={timeline.hotelPhotoUrl}
+                      hotelPhotoUrl={row.hotelPhotoUrl}
                       onManualPunch={onManualPunch}
                     />
                   ) : (
