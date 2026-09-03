@@ -37,6 +37,7 @@ import {
   TIMESHEET_STATUS_TOKEN,
   TIMESHEET_STATUSES,
 } from '@/shared/constants/timesheetStatus'
+import { useCan } from '@/shared/hooks/useCan'
 import { formatWeekRange } from '@/shared/lib/formatters'
 
 /**
@@ -56,6 +57,10 @@ export function TimesheetPage(): ReactNode {
   const [review, setReview] = useState<{ entry: TimesheetEntry; workerName: string } | null>(null)
   /** La fila con el diálogo de marca manual abierto; `null` = cerrado. */
   const [manualPunchRow, setManualPunchRow] = useState<TimesheetRow | null>(null)
+
+  const can = useCan()
+  /** Pagar es de Contabilidad (doble firma del Flujo de Nómina), no del Hotel. */
+  const canPay = can('payroll:validate') || can('payroll:authorize')
 
   const { data: week, isLoading, isError, refetch } = useGetTimesheetWeekQuery(filters)
   /**
@@ -175,7 +180,7 @@ export function TimesheetPage(): ReactNode {
               ` · ${String(selection.withoutRequisition)} sin requisición`}
           </p>
 
-          <div className="ml-auto flex gap-3">
+          <div className="ml-auto flex flex-wrap items-center gap-3">
             <Button
               variant="secondary"
               onClick={() => {
@@ -184,10 +189,18 @@ export function TimesheetPage(): ReactNode {
             >
               Quitar selección
             </Button>
-            {/* Pendiente: falta el diseño del pago en bloque */}
-            <Button variant="primary" disabled title="El pago en bloque aún no está disponible">
-              Pagar seleccionados
-            </Button>
+            {/* Pagar NO es del Hotel: doble firma de Contabilidad (Flujo de
+                Nómina). Quien no puede no ve un botón muerto — ve quién sí,
+                que es el patrón acordado del barrido de permisos. */}
+            {canPay ? (
+              <Button variant="primary" disabled title="El pago en bloque aún no está disponible">
+                Pagar seleccionados
+              </Button>
+            ) : (
+              <span className="rounded-md border border-dashed border-line px-2.5 py-1 text-xs text-ink-3">
+                El pago lo hace Contabilidad cuando la semana está aprobada
+              </span>
+            )}
           </div>
         </div>
       )}
