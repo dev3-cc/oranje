@@ -10,6 +10,7 @@ import personajePago from '@/assets/ilustrations/personaje-pago-procesado.svg'
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
+import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayMonth } from '@/shared/lib/formatters'
@@ -50,12 +51,14 @@ export function ReviewDayDialog({
 }): ReactNode {
   const [note, setNote] = useState('')
   const [reviewDay, { isLoading, isError, error: saveError }] = useReviewTimesheetDayMutation()
+  /** El onboarding se ve UNA vez por navegador; después, directo a las marcas. */
+  const { isIntroOpen, dismissIntro } = useIntroSeen('revision-dia')
   const [showIntro, setShowIntro] = useState(false)
 
   useEffect(() => {
     setNote(entry?.reviewNote ?? '')
-    if (entry) setShowIntro(true)
-  }, [entry])
+    if (entry) setShowIntro(isIntroOpen)
+  }, [entry, isIntroOpen])
 
   if (!entry) return null
 
@@ -110,6 +113,7 @@ export function ReviewDayDialog({
           slides={INTRO_SLIDES}
           startLabel="Revisar el día"
           onDone={() => {
+            dismissIntro()
             setShowIntro(false)
           }}
         />

@@ -1,6 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
+import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
 import { TimesheetPage } from './TimesheetPage'
@@ -12,7 +13,10 @@ const SLOW = { timeout: 4000 }
 function renderTimesheet(): void {
   render(
     <Provider store={store}>
-      <TimesheetPage />
+      {/* El badge de requisición es un Link: la página necesita un Router. */}
+      <MemoryRouter>
+        <TimesheetPage />
+      </MemoryRouter>
     </Provider>,
   )
 }
@@ -22,17 +26,17 @@ describe('TimesheetPage', () => {
     renderTimesheet()
 
     expect(await screen.findByText(/^Semana /)).toBeInTheDocument()
-    expect(screen.getByText('Lun')).toBeInTheDocument()
-    expect(screen.getByText('Dom')).toBeInTheDocument()
+    // La cinta continua trae un «Lun» por cada semana cargada.
+    expect((await screen.findAllByText('Lun')).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Dom').length).toBeGreaterThan(0)
   })
 
   it('los totales de la fila los manda el backend, no las celdas visibles', async () => {
     renderTimesheet()
 
-    const row = (await screen.findByText('Ana Rivera Gómez')).closest('div')?.parentElement
-    expect(row).not.toBeNull()
-
-    expect(within(row as HTMLElement).getByText('34h')).toBeInTheDocument()
+    // La página dibuja dos variantes (móvil + escritorio): puede haber duplicados.
+    expect((await screen.findAllByText('Ana Rivera Gómez')).length).toBeGreaterThan(0)
+    expect(screen.getAllByText('34h').length).toBeGreaterThan(0)
   })
 
   it('la fila enseña el estado de la SEMANA: abierta, enviada o aprobada', async () => {
@@ -46,7 +50,11 @@ describe('TimesheetPage', () => {
   it('una ausencia dice guion, que no es lo mismo que cero horas', async () => {
     renderTimesheet()
 
-    const row = (await screen.findByText('Luis Cabrera')).closest('div')?.parentElement
+    // La FILA de escritorio es el ancestro con borde inferior (tarjeta + celdas);
+    // la variante móvil duplica el nombre, así que se busca la que lo tiene.
+    const row = (await screen.findAllByText('Luis Cabrera'))
+      .map((name) => name.closest('div.border-b'))
+      .find(Boolean)
     expect(within(row as HTMLElement).getAllByText('—').length).toBeGreaterThan(0)
   })
 
@@ -54,7 +62,9 @@ describe('TimesheetPage', () => {
     const user = userEvent.setup()
     renderTimesheet()
 
-    await user.click(await screen.findByText('Observado'))
+    // «Observado» vive también en la leyenda: el del día es el que está en un botón.
+    const chips = await screen.findAllByText('Observado')
+    await user.click(chips.find((chip) => chip.closest('button') !== null) as HTMLElement)
     await user.click(await screen.findByRole('button', { name: 'Saltar' }))
 
     const dialog = await screen.findByRole('dialog')
@@ -69,7 +79,10 @@ describe('TimesheetPage', () => {
     await user.click(scoped.getByRole('button', { name: /marcar revisado/i }))
 
     await waitFor(() => {
-      expect(screen.queryByText('Observado')).not.toBeInTheDocument()
+      const remaining = screen
+        .queryAllByText('Observado')
+        .filter((chip) => chip.closest('button') !== null)
+      expect(remaining).toHaveLength(0)
     }, SLOW)
   })
 
@@ -91,13 +104,17 @@ describe('TimesheetPage', () => {
     const user = userEvent.setup()
     renderTimesheet()
 
-    await screen.findByText('Julia Mendoza')
+    await screen.findAllByText('Julia Mendoza')
     await user.click(screen.getByLabelText('Estado'))
     await user.click(await screen.findByRole('option', { name: 'Aprobada' }))
 
+    // Luis no tiene NINGUNA semana aprobada: su fila se va de la cinta. Ana
+    // conserva la suya (la semana anterior está aprobada), pero la semana
+    // visible queda en silencio.
     await waitFor(() => {
-      expect(screen.queryByText('Ana Rivera Gómez')).not.toBeInTheDocument()
+      expect(screen.queryAllByText('Luis Cabrera')).toHaveLength(0)
     }, SLOW)
-    expect(screen.getByText('Julia Mendoza')).toBeInTheDocument()
+    expect(screen.getAllByText('Julia Mendoza').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Sin timesheet esta semana').length).toBeGreaterThan(0)
   })
 })

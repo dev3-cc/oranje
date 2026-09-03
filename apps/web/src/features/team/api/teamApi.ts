@@ -60,7 +60,10 @@ function buildMemberCard(member: TeamMemberApi, prospects: ProspectApi[]): TeamM
     photoUrl: member.photoUrl,
     zoneNames: member.zones.map((zone) => zone.name.replace(/^Zona\s+/i, '')),
     zones: member.zones.map((zone) => ({ id: zone.id, name: zone.name })),
-    openProspects: open.length,
+    /* El backend lo cuenta SIN el tope de paginación de esta página de
+       prospectos: usar `open.length` discrepaba de Mi Territorio en cuanto
+       hubiera más de 100. */
+    openProspects: member.openProspects,
     quarterConversions,
     conversionRate:
       open.length + converted.length === 0

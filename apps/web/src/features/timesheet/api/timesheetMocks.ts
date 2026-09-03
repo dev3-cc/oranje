@@ -158,6 +158,26 @@ const timesheets: StoredTimesheet[] = [
     approvedAt: `${dayIso(4)}T18:00:00.000Z`,
     days: [fullDay({ offset: 0, reviewNote: 'ok' }), fullDay({ offset: 1, reviewNote: 'ok' })],
   },
+  /**
+   * La semana ANTERIOR: existe para que ‹ ›, «Hoy» y el tirador tengan a dónde
+   * ir en local. Cerrada y aprobada, como estaría en la vida real.
+   */
+  {
+    id: 'ts-0004',
+    worker: { id: 'wrk-0001', fullName: 'Ana Rivera Gómez' },
+    requisitionId: 'a1b2c3d4-0000-7000-8000-000000000001',
+    weekStart: dayIso(-7),
+    weekEnd: dayIso(-1),
+    status: 'APPROVED',
+    approvedAt: `${dayIso(-1)}T18:00:00.000Z`,
+    days: [
+      fullDay({ offset: -7, reviewNote: 'ok' }),
+      fullDay({ offset: -6, reviewNote: 'ok' }),
+      fullDay({ offset: -5, reviewNote: 'ok' }),
+      fullDay({ offset: -4, reviewNote: 'ok' }),
+      fullDay({ offset: -3, reviewNote: 'ok' }),
+    ],
+  },
 ]
 
 const routes: readonly MockRoute[] = [

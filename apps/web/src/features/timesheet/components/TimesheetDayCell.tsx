@@ -76,13 +76,16 @@ export function TimesheetDayCell({
         }}
         title="Revisar el día"
         className={cn(
-          'w-full cursor-pointer rounded-lg p-3 text-left transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500',
+          /* `bg-surface` DEBAJO del tinte: el color del estado va con alfa y,
+             sin fondo sólido, el carril de atrás se transparenta y lo ensucia. */
+          'w-full cursor-pointer rounded-lg bg-surface p-3 text-left transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500',
           isSelected && 'ring-2 ring-purple',
         )}
-        style={{ backgroundColor: `${color}26` }}
+        style={{ backgroundImage: `linear-gradient(${color}26, ${color}26)` }}
       >
         <p className="flex items-center justify-between gap-2">
-          <span className="flex min-w-0 items-center gap-1.5 text-sm font-semibold text-ink-2">
+          {/* `text-xs`: «Pendiente» completo cabe hasta en la columna angosta. */}
+          <span className="flex min-w-0 items-center gap-1.5 text-xs font-semibold text-ink-2">
             <span
               className="size-2 shrink-0 rounded-full"
               style={{ backgroundColor: color }}
@@ -100,9 +103,8 @@ export function TimesheetDayCell({
             ? NO_HOURS
             : `${entry.startTime} – ${entry.endTime}`}
         </p>
-        <p className="mt-0.5 truncate text-xs font-medium text-ink-3">
-          {entry.requisitionNumber ?? 'Sin requisición'}
-        </p>
+        {/* La requisición NO se repite aquí: la fila entera es una requisición
+            y ya lo dice —una sola vez— el badge de la ficha del colaborador. */}
       </button>
     </div>
   )
