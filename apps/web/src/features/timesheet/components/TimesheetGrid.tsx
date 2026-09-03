@@ -1,5 +1,5 @@
 import { cn } from '@oranje/ui'
-import { useReducedMotion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useContext, useState, type ReactNode } from 'react'
 
 import { todayIso } from '../lib/weekNavigation'
@@ -263,19 +263,31 @@ export function TimesheetGrid({
                 className="flex border-b border-line last:border-b-0"
               >
                 <div className="sticky left-0 z-20 w-52 shrink-0 border-r border-line bg-surface px-2 py-3 lg:w-[260px] lg:px-3">
-                  {summary ? (
-                    <WorkerWeekSummary
-                      row={summary}
-                      photoUrl={row.photoUrl}
-                      hotelPhotoUrl={row.hotelPhotoUrl}
-                      onManualPunch={onManualPunch}
-                      onRequisitionHover={(hovering) => {
-                        setLitRowKey(hovering ? rowKey : null)
-                      }}
-                    />
-                  ) : (
-                    <QuietRow row={row} />
-                  )}
+                  {/* El cambio ficha ⇄ «sin timesheet» al asentar la cinta es
+                      un FUNDIDO, no un golpe. */}
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    <motion.div
+                      key={summary ? `resumen-${selectedWeek}` : 'quieto'}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: reduceMotion ? 0 : 0.25 }}
+                    >
+                      {summary ? (
+                        <WorkerWeekSummary
+                          row={summary}
+                          photoUrl={row.photoUrl}
+                          hotelPhotoUrl={row.hotelPhotoUrl}
+                          onManualPunch={onManualPunch}
+                          onRequisitionHover={(hovering) => {
+                            setLitRowKey(hovering ? rowKey : null)
+                          }}
+                        />
+                      ) : (
+                        <QuietRow row={row} />
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
 
                 <div className="overflow-hidden" style={{ width: viewportWidth }}>

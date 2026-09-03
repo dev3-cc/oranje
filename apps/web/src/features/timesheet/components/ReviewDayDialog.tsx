@@ -1,4 +1,4 @@
-import { Alert, AlertDescription, cn, MaterialIcon, statusLight, toast } from '@oranje/ui'
+import { Alert, AlertDescription, MaterialIcon, statusLight, toast } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { useReviewTimesheetDayMutation } from '../api/timesheetApi'
@@ -88,7 +88,7 @@ export function ReviewDayDialog({
       isOpen
       onClose={onClose}
       title="Revisión del día"
-      description={`${workerName} · ${formatDayMonth(entry.date)}${IS_DEV_UI ? ' · operations.timesheet_day' : ''}`}
+      {...(IS_DEV_UI ? { description: 'operations.timesheet_day' } : {})}
       className="max-w-2xl"
       footer={
         showIntro ? null : (
@@ -224,25 +224,32 @@ export function ReviewDayDialog({
                 {entry.punches.map((punch) => (
                   <li
                     key={punch.id}
-                    className="grid grid-cols-[7rem_1fr_auto_auto] items-center gap-3 rounded-md bg-surface-2 px-3 py-2 text-sm"
+                    className="grid grid-cols-[7rem_1fr_auto] items-center gap-3 rounded-md bg-surface-2 px-3 py-2 text-sm"
                   >
                     <span className="font-semibold text-ink">
                       {PUNCH_TYPE_LABEL[punch.type] ?? punch.type}
                     </span>
-                    <span
-                      className={cn(
-                        'text-xs',
-                        punch.insideGeofence === false ? 'font-semibold text-red' : 'text-ink-3',
-                      )}
-                    >
+                    {/* Solo la EXCEPCIÓN habla: dentro de la geocerca es lo
+                        esperado y no se anuncia cuatro veces. */}
+                    <span className="text-xs font-semibold text-red">
                       {punch.isManual
                         ? `Manual · ${punch.manualReason ?? 'sin motivo'}`
                         : punch.insideGeofence === false
-                          ? 'fuera de geocerca'
-                          : 'dentro de la geocerca'}
+                          ? 'Fuera de la geocerca'
+                          : ''}
                     </span>
-                    <span className="text-xs text-ink-3">teléfono {punch.deviceTime ?? '—'}</span>
-                    <span className="text-xs text-ink-2">servidor {punch.serverTime}</span>
+                    {/* Un solo reloj cuando coinciden; los dos SOLO si difieren
+                        (la discrepancia es el dato — D-08: manda el servidor). */}
+                    {punch.deviceTime !== null && punch.deviceTime !== punch.serverTime ? (
+                      <span className="text-xs text-ink-3">
+                        teléfono {punch.deviceTime} ·{' '}
+                        <span className="font-semibold text-ink-2">
+                          servidor {punch.serverTime}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-xs font-semibold text-ink-2">{punch.serverTime}</span>
+                    )}
                   </li>
                 ))}
               </ul>

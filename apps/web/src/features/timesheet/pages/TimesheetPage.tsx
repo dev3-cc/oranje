@@ -262,14 +262,18 @@ export function TimesheetPage(): ReactNode {
               ) : (
                 <TableSkeleton rows={7} columns={8} />
               ))}
-            {view === 'HOURS' && (
-              <TimesheetHoursView
-                week={week}
-                onReview={(entry, workerName) => {
-                  setReview({ entry, workerName, context: null })
-                }}
-              />
-            )}
+            {view === 'HOURS' &&
+              (timeline ? (
+                <TimesheetHoursView
+                  timeline={timeline}
+                  selectedWeek={selectedWeek}
+                  onReview={(entry, workerName, context) => {
+                    setReview({ entry, workerName, context: context ?? null })
+                  }}
+                />
+              ) : (
+                <TableSkeleton rows={7} columns={8} />
+              ))}
             {view === 'MONTH' &&
               (month ? (
                 <TimesheetMonthView month={month} onPickDay={pickMonthDay} />
