@@ -165,6 +165,13 @@ export function TimesheetPage(): ReactNode {
               {TIMESHEET_STATUS_LABEL[status]}
             </span>
           ))}
+          {/* El contorno del carril también se explica en la leyenda. */}
+          {view === 'DAYS' && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-ink-3">
+              <span className="h-3.5 w-6 rounded-md border border-o-500/50" aria-hidden />
+              Días de una misma requisición
+            </span>
+          )}
         </div>
       )}
 

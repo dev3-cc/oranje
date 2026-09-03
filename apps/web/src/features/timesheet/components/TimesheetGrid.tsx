@@ -299,6 +299,17 @@ export function TimesheetGrid({
                                   className="pointer-events-none absolute -inset-y-1.5 -left-1 z-0"
                                   style={{ width: runLength * columnWidth - 8 }}
                                 >
+                                  {/* La caja se explica sola (patrón fieldset):
+                                      el folio montado en el borde dice QUÉ
+                                      agrupa el contorno. */}
+                                  {row.entries[0]?.requisitionNumber != null && (
+                                    <span
+                                      title="Los días dentro del contorno pertenecen a esta requisición"
+                                      className="pointer-events-auto absolute -bottom-2 left-3 max-w-[85%] cursor-help truncate rounded-full border border-o-500/40 bg-surface px-1.5 text-[9px] leading-4 font-semibold text-o-700"
+                                    >
+                                      {row.entries[0].requisitionNumber}
+                                    </span>
+                                  )}
                                   {isLit ? (
                                     <MovingBorderBox
                                       as="div"

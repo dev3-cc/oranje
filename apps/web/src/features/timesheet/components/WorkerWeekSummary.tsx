@@ -206,6 +206,8 @@ export function WorkerWeekSummary({
                 : 'bg-white/15 text-white'
             }
           >
+            {/* La semana aprobada lleva su paloma: color + señal, nunca color solo. */}
+            {row.weekStatus === 'APPROVED' && <MaterialIcon name="check" className="text-xs" />}
             {TIMESHEET_WEEK_STATUS_LABEL[row.weekStatus as TimesheetWeekStatus] ?? row.weekStatus}
           </Pill>
           {/* Un timesheet ES una requisición por semana. El badge es discreto

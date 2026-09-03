@@ -1,4 +1,4 @@
-import { cn, statusLight } from '@oranje/ui'
+import { cn, MaterialIcon, statusLight } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
 import type { TimesheetEntry } from '../types/timesheet.types'
@@ -52,11 +52,19 @@ export function TimesheetDayCell({
           title={PUNCH_STATE_LABEL[entry.punch]}
           aria-label={PUNCH_STATE_LABEL[entry.punch]}
           role="img"
-          className={cn('size-3.5 rounded-full border-2', PUNCH_CLASS[entry.punch])}
+          className={cn(
+            'flex size-3.5 items-center justify-center rounded-full border-2',
+            PUNCH_CLASS[entry.punch],
+          )}
           style={
             entry.punch === 'COMPLETE' ? { backgroundColor: statusLight['st-verde'] } : undefined
           }
-        />
+        >
+          {/* La paloma: el color nunca habla solo (entrada y salida completas). */}
+          {entry.punch === 'COMPLETE' && (
+            <MaterialIcon name="check" className="text-[10px] font-bold text-white" />
+          )}
+        </span>
 
         <input
           type="checkbox"
