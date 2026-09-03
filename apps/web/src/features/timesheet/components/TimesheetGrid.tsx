@@ -1,6 +1,6 @@
 import { cn } from '@oranje/ui'
 import { useReducedMotion } from 'framer-motion'
-import { useContext, type ReactNode } from 'react'
+import { useContext, useState, type ReactNode } from 'react'
 
 import { todayIso } from '../lib/weekNavigation'
 import type {
@@ -124,6 +124,8 @@ export function TimesheetGrid({
   const { isDragging } = useContext(WeekDragContext)
   const reduceMotion = useReducedMotion() ?? false
   const today = todayIso()
+  /** Fila cuyo badge de requisición está bajo el puntero: su tramo se enciende. */
+  const [litRowKey, setLitRowKey] = useState<string | null>(null)
 
   const baseIndex = Math.max(timeline.days.indexOf(selectedWeek), 0)
   const weekDays = timeline.days.slice(baseIndex, baseIndex + 7)
@@ -242,6 +244,8 @@ export function TimesheetGrid({
             const runStartsByIndex = new Map(
               runsOf(timeline.days, byDate).map((run) => [run.start, run.length]),
             )
+            const rowKey = `${row.workerId}|${row.requisitionId}`
+            const isLit = litRowKey === rowKey && !reduceMotion
 
             return (
               <div
@@ -255,6 +259,9 @@ export function TimesheetGrid({
                       photoUrl={row.photoUrl}
                       hotelPhotoUrl={row.hotelPhotoUrl}
                       onManualPunch={onManualPunch}
+                      onRequisitionHover={(hovering) => {
+                        setLitRowKey(hovering ? rowKey : null)
+                      }}
                     />
                   ) : (
                     <QuietRow row={row} />
@@ -283,25 +290,28 @@ export function TimesheetGrid({
                             cero: nadie fichó, y dibujar algo sugiere lo contrario. */}
                           {entry && (
                             <div className="relative">
+                              {/* En reposo, contorno quieto (la fila ya agrupa);
+                                  el borde vivo SOLO responde al hover del badge
+                                  de la requisición: motion con propósito. */}
                               {runLength !== undefined && (
                                 <span
                                   aria-hidden
                                   className="pointer-events-none absolute -inset-y-1.5 -left-1 z-0"
                                   style={{ width: runLength * columnWidth - 8 }}
                                 >
-                                  {reduceMotion ? (
-                                    <span className="block h-full w-full rounded-xl border border-o-500/30" />
-                                  ) : (
+                                  {isLit ? (
                                     <MovingBorderBox
                                       as="div"
-                                      duration={6000}
+                                      duration={3000}
                                       borderRadius="0.75rem"
                                       containerClassName="pointer-events-none h-full w-full p-[1.5px] text-base"
                                       borderClassName="h-[3px] w-16 rounded-full bg-[linear-gradient(90deg,transparent,#FF8000,transparent)] opacity-90"
-                                      className="h-full w-full items-stretch justify-start border border-o-500/25 bg-transparent backdrop-blur-none"
+                                      className="h-full w-full items-stretch justify-start border border-o-500/40 bg-transparent backdrop-blur-none"
                                     >
                                       <span />
                                     </MovingBorderBox>
+                                  ) : (
+                                    <span className="block h-full w-full rounded-xl border border-o-500/25" />
                                   )}
                                 </span>
                               )}
