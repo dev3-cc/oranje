@@ -22,6 +22,7 @@ import { addDaysIso, resolveWeek } from '../lib/weekNavigation'
 import {
   ANY_VALUE,
   EMPTY_TIMESHEET_FILTERS,
+  type ReviewContext,
   type TimesheetEntry,
   type TimesheetFilters,
   type TimesheetRow,
@@ -37,6 +38,7 @@ import {
   TIMESHEET_STATUS_TOKEN,
   TIMESHEET_STATUSES,
 } from '@/shared/constants/timesheetStatus'
+import { useCan } from '@/shared/hooks/useCan'
 import { formatWeekRange } from '@/shared/lib/formatters'
 
 /**
@@ -53,9 +55,17 @@ export function TimesheetPage(): ReactNode {
   const [view, setView] = useState<TimesheetView>('DAYS')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   /** El día abierto en Revisión (maqueta del Supervisor); `null` = cerrado. */
-  const [review, setReview] = useState<{ entry: TimesheetEntry; workerName: string } | null>(null)
+  const [review, setReview] = useState<{
+    entry: TimesheetEntry
+    workerName: string
+    context: ReviewContext | null
+  } | null>(null)
   /** La fila con el diálogo de marca manual abierto; `null` = cerrado. */
   const [manualPunchRow, setManualPunchRow] = useState<TimesheetRow | null>(null)
+
+  const can = useCan()
+  /** Pagar es de Contabilidad (doble firma del Flujo de Nómina), no del Hotel. */
+  const canPay = can('payroll:validate') || can('payroll:authorize')
 
   const { data: week, isLoading, isError, refetch } = useGetTimesheetWeekQuery(filters)
   /**
@@ -160,6 +170,13 @@ export function TimesheetPage(): ReactNode {
               {TIMESHEET_STATUS_LABEL[status]}
             </span>
           ))}
+          {/* El contorno del carril también se explica en la leyenda. */}
+          {view === 'DAYS' && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-ink-3">
+              <span className="h-3.5 w-6 rounded-md border border-o-500/50" aria-hidden />
+              Días de una misma requisición
+            </span>
+          )}
         </div>
       )}
 
@@ -175,7 +192,7 @@ export function TimesheetPage(): ReactNode {
               ` · ${String(selection.withoutRequisition)} sin requisición`}
           </p>
 
-          <div className="ml-auto flex gap-3">
+          <div className="ml-auto flex flex-wrap items-center gap-3">
             <Button
               variant="secondary"
               onClick={() => {
@@ -184,10 +201,18 @@ export function TimesheetPage(): ReactNode {
             >
               Quitar selección
             </Button>
-            {/* Pendiente: falta el diseño del pago en bloque */}
-            <Button variant="primary" disabled title="El pago en bloque aún no está disponible">
-              Pagar seleccionados
-            </Button>
+            {/* Pagar NO es del Hotel: doble firma de Contabilidad (Flujo de
+                Nómina). Quien no puede no ve un botón muerto — ve quién sí,
+                que es el patrón acordado del barrido de permisos. */}
+            {canPay ? (
+              <Button variant="primary" disabled title="El pago en bloque aún no está disponible">
+                Pagar seleccionados
+              </Button>
+            ) : (
+              <span className="rounded-md border border-dashed border-line px-2.5 py-1 text-xs text-ink-3">
+                El pago lo hace Contabilidad cuando la semana está aprobada
+              </span>
+            )}
           </div>
         </div>
       )}
@@ -227,23 +252,28 @@ export function TimesheetPage(): ReactNode {
                   selectedWeek={selectedWeek}
                   columnWidth={columnWidth}
                   selectedIds={selectedIds}
+                  selectable={canPay}
                   onToggle={toggle}
-                  onReview={(entry, workerName) => {
-                    setReview({ entry, workerName })
+                  onReview={(entry, workerName, context) => {
+                    setReview({ entry, workerName, context: context ?? null })
                   }}
                   onManualPunch={setManualPunchRow}
                 />
               ) : (
                 <TableSkeleton rows={7} columns={8} />
               ))}
-            {view === 'HOURS' && (
-              <TimesheetHoursView
-                week={week}
-                onReview={(entry, workerName) => {
-                  setReview({ entry, workerName })
-                }}
-              />
-            )}
+            {view === 'HOURS' &&
+              (timeline ? (
+                <TimesheetHoursView
+                  timeline={timeline}
+                  selectedWeek={selectedWeek}
+                  onReview={(entry, workerName, context) => {
+                    setReview({ entry, workerName, context: context ?? null })
+                  }}
+                />
+              ) : (
+                <TableSkeleton rows={7} columns={8} />
+              ))}
             {view === 'MONTH' &&
               (month ? (
                 <TimesheetMonthView month={month} onPickDay={pickMonthDay} />
@@ -264,6 +294,7 @@ export function TimesheetPage(): ReactNode {
       <ReviewDayDialog
         entry={review?.entry ?? null}
         workerName={review?.workerName ?? ''}
+        context={review?.context ?? null}
         onClose={() => {
           setReview(null)
         }}

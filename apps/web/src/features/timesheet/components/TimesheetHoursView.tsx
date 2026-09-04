@@ -10,30 +10,103 @@ import {
   minutesOf,
   nowOffset,
 } from '../lib/hoursGeometry'
-import { todayIso } from '../lib/weekNavigation'
-import type { TimesheetEntry, TimesheetWeek } from '../types/timesheet.types'
+import { addDaysIso, todayIso } from '../lib/weekNavigation'
+import type {
+  ReviewContext,
+  TimelineRow,
+  TimesheetEntry,
+  TimesheetTimeline,
+} from '../types/timesheet.types'
 
 import { Button } from '@/shared/components/Button'
 import { TIMESHEET_STATUS_LABEL, TIMESHEET_STATUS_TOKEN } from '@/shared/constants/timesheetStatus'
 import { formatDayNumber, formatWeekday } from '@/shared/lib/formatters'
 
-/** Un bloque: las jornadas del día que comparten horario, agrupadas. */
+/** Un bloque: las jornadas del día que comparten horario y requisición. */
 interface HourBlock {
   key: string
   day: string
   start: string
   end: string
-  /** La requisición del grupo: dos turnos iguales de requisiciones distintas son dos bloques. */
+  /** La requisición del grupo (folio); se enseña en el panel, no en el bloque. */
   requisition: string | null
   top: number
   height: number
-  people: Array<{ entry: TimesheetEntry; workerName: string }>
+  people: Array<{ entry: TimesheetEntry; row: TimelineRow }>
+}
+
+/** El estado que manda en el grupo: el que pide atención primero. */
+const STATUS_PRIORITY = ['OBSERVED', 'PENDING', 'REVIEWED'] as const
+function dominantStatus(block: HourBlock): (typeof STATUS_PRIORITY)[number] {
+  for (const status of STATUS_PRIORITY) {
+    if (block.people.some((person) => person.entry.status === status)) return status
+  }
+  return 'REVIEWED'
 }
 
 /** `Ana Rivera Gómez` → `AR`. */
 function initialsOf(name: string): string {
   const parts = name.split(' ').filter(Boolean)
   return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase()
+}
+
+/** La cara de la persona: su foto, o sus iniciales sobre naranja (D-30). */
+function PersonAvatar({ row, className }: { row: TimelineRow; className: string }): ReactNode {
+  if (row.photoUrl) {
+    return (
+      <img
+        src={row.photoUrl}
+        alt=""
+        className={cn('rounded-full object-cover', className)}
+        onError={(event) => {
+          event.currentTarget.style.display = 'none'
+        }}
+      />
+    )
+  }
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        'flex items-center justify-center rounded-full bg-o-500 font-bold text-ink',
+        className,
+      )}
+    >
+      {initialsOf(row.workerName)}
+    </span>
+  )
+}
+
+/** El contexto que viaja a la Revisión del día: el hero del modal. */
+function contextOf(row: TimelineRow): ReviewContext {
+  return {
+    workerPhotoUrl: row.photoUrl,
+    jobTitle: row.jobTitle,
+    hotelName: row.hotelName,
+    hotelPhotoUrl: row.hotelPhotoUrl,
+  }
+}
+
+/**
+ * Empaquetado por carriles: bloques que se solapan en el tiempo se reparten
+ * el ancho de la columna en vez de taparse (dos requisiciones con el mismo
+ * horario son dos bloques lado a lado).
+ */
+function withLanes(
+  blocks: HourBlock[],
+): Array<{ block: HourBlock; lane: number; laneCount: number }> {
+  const sorted = [...blocks].sort((a, b) => a.top - b.top || b.height - a.height)
+  const laneEnds: number[] = []
+  const placed = sorted.map((block) => {
+    let lane = laneEnds.findIndex((end) => end <= block.top)
+    if (lane === -1) {
+      lane = laneEnds.length
+      laneEnds.push(0)
+    }
+    laneEnds[lane] = block.top + block.height
+    return { block, lane }
+  })
+  return placed.map((item) => ({ ...item, laneCount: laneEnds.length }))
 }
 
 /** Tinte de columna: hoy naranja suave, fin de semana gris; celdas legibles. */
@@ -83,17 +156,21 @@ function useNowMinutes(): number {
 }
 
 /**
- * La vista Horas: las mismas jornadas de la semana, dibujadas sobre una
- * rejilla de 06:00 a 22:00. Un bloque agrupa a quienes comparten horario ese
- * día — nunca un bloque por persona: quince jornadas idénticas encimadas no se
- * pueden leer. El detalle del bloque vive en el panel lateral.
+ * La vista Horas: las jornadas de la semana elegida sobre una rejilla de
+ * 06:00 a 22:00, bebiendo de la CINTA (por eso trae fotos y hotel). Un bloque
+ * agrupa a quienes comparten horario y requisición — nunca un bloque por
+ * persona — y se pinta con el tinte del estado que más atención pide, con su
+ * banda de color abajo. El detalle vive en el panel lateral.
  */
 export function TimesheetHoursView({
-  week,
+  timeline,
+  selectedWeek,
   onReview,
 }: {
-  week: TimesheetWeek
-  onReview: (entry: TimesheetEntry, workerName: string) => void
+  timeline: TimesheetTimeline
+  /** Lunes ISO de la semana a dibujar. */
+  selectedWeek: string
+  onReview: (entry: TimesheetEntry, workerName: string, context?: ReviewContext) => void
 }): ReactNode {
   const today = todayIso()
   const nowMinutes = useNowMinutes()
@@ -101,10 +178,17 @@ export function TimesheetHoursView({
   /** El día abierto en la agenda móvil; sin elección: hoy, o el primero con turnos. */
   const [agendaDay, setAgendaDay] = useState<string | null>(null)
 
+  const weekDays = useMemo(
+    () => Array.from({ length: 7 }, (_item, index) => addDaysIso(selectedWeek, index)),
+    [selectedWeek],
+  )
+
   const blocksByDay = useMemo(() => {
+    const inWeek = new Set(weekDays)
     const groups = new Map<string, HourBlock>()
-    for (const row of week.rows) {
+    for (const row of timeline.rows) {
       for (const entry of row.entries) {
+        if (!inWeek.has(entry.date)) continue
         if (entry.isAbsence || entry.startTime === null || entry.endTime === null) continue
         const rect = blockRect(entry.startTime, entry.endTime)
         if (!rect) continue
@@ -119,7 +203,7 @@ export function TimesheetHoursView({
           height: rect.height,
           people: [],
         }
-        block.people.push({ entry, workerName: row.workerName })
+        block.people.push({ entry, row })
         groups.set(key, block)
       }
     }
@@ -130,7 +214,7 @@ export function TimesheetHoursView({
       byDay.set(block.day, list)
     }
     return byDay
-  }, [week])
+  }, [timeline, weekDays])
 
   const selected =
     selectedKey === null
@@ -138,33 +222,24 @@ export function TimesheetHoursView({
       : ([...blocksByDay.values()].flat().find((block) => block.key === selectedKey) ?? null)
 
   const hasBlocks = blocksByDay.size > 0
-  const nowTop = week.days.includes(today) ? nowOffset(nowMinutes) : null
+  const nowTop = weekDays.includes(today) ? nowOffset(nowMinutes) : null
   const hours = Array.from(
     { length: HOURS_END - HOURS_START },
     (_item, index) => HOURS_START + index,
   )
   const activeDay =
     agendaDay ??
-    (week.days.includes(today) ? today : ([...blocksByDay.keys()].sort()[0] ?? week.days[0] ?? ''))
+    (weekDays.includes(today) ? today : ([...blocksByDay.keys()].sort()[0] ?? weekDays[0] ?? ''))
   const agendaBlocks = [...(blocksByDay.get(activeDay) ?? [])].sort((first, second) =>
     first.start < second.start ? -1 : 1,
   )
-
-  if (!hasBlocks) {
-    return (
-      <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-        Esta semana no hay jornadas con horas para dibujar. La vista Días también enseña ausencias y
-        pendientes.
-      </p>
-    )
-  }
 
   return (
     <div className="flex flex-col gap-4 lg:flex-row">
       {/* ——— AGENDA DE UN DÍA (móvil): tira de días + tarjetas por hora ——— */}
       <div className="flex flex-col gap-3 lg:hidden">
         <div className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1">
-          {week.days.map((day) => {
+          {weekDays.map((day) => {
             const hasShift = blocksByDay.has(day)
             const isActive = day === activeDay
             return (
@@ -236,11 +311,11 @@ export function TimesheetHoursView({
                   backgroundImage: `repeating-linear-gradient(to bottom, rgba(26, 17, 8, 0.06) 0 1px, transparent 1px ${String(HOUR_PX)}px)`,
                 }}
               >
-                {agendaBlocks.map((block) => {
+                {withLanes(agendaBlocks).map(({ block, lane, laneCount }) => {
                   const progress = shiftProgress(block, today, nowMinutes)
-                  const pending = block.people.filter((p) => p.entry.status === 'PENDING').length
-                  const observed = block.people.filter((p) => p.entry.status === 'OBSERVED').length
-                  const reviewed = block.people.filter((p) => p.entry.status === 'REVIEWED').length
+                  const blockColor = statusLight[TIMESHEET_STATUS_TOKEN[dominantStatus(block)]]
+                  const single = block.people.length === 1 ? block.people[0] : null
+                  const laneWidth = 100 / laneCount
                   return (
                     <button
                       key={block.key}
@@ -249,86 +324,60 @@ export function TimesheetHoursView({
                         setSelectedKey(block.key === selectedKey ? null : block.key)
                       }}
                       className={cn(
-                        'absolute right-2 left-2 flex cursor-pointer flex-col items-stretch justify-start overflow-hidden rounded-xl border bg-surface p-3 text-left shadow-sm transition-shadow hover:shadow-md',
-                        'border-l-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500',
-                        block.key === selectedKey
-                          ? 'border-o-500 bg-o-500/10 ring-1 ring-o-500'
-                          : 'border-line border-l-o-500',
+                        'absolute flex cursor-pointer flex-col items-stretch justify-start overflow-hidden rounded-xl bg-surface p-3 text-left shadow-sm transition-shadow hover:shadow-md',
+                        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500',
+                        block.key === selectedKey && 'ring-2 ring-o-500',
                       )}
-                      style={{ top: block.top + 2, height: block.height - 4 }}
+                      style={{
+                        top: block.top + 2,
+                        height: block.height - 4,
+                        left: `calc(${String(lane * laneWidth)}% + 8px)`,
+                        width: `calc(${String(laneWidth)}% - 12px)`,
+                        backgroundImage: `linear-gradient(${blockColor}33, ${blockColor}33)`,
+                      }}
                     >
-                      <span className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-bold text-ink">
-                          {block.start} – {block.end}
+                      <span className="flex items-start justify-between gap-2">
+                        <span className="min-w-0">
+                          <span className="block truncate text-sm font-bold text-ink">
+                            {block.start} – {block.end}
+                          </span>
+                          <span className="block truncate text-xs text-ink-2">
+                            {single
+                              ? single.row.workerName
+                              : `${String(block.people.length)} colaboradores`}
+                          </span>
                         </span>
-                        <span className="flex items-center">
+                        <span className="flex shrink-0 items-center">
                           {block.people.slice(0, 3).map((person, personIndex) => (
-                            <span
+                            <PersonAvatar
                               key={person.entry.id}
+                              row={person.row}
                               className={cn(
-                                'flex size-6 items-center justify-center rounded-full bg-o-500 text-[9px] font-bold text-ink ring-2 ring-surface',
-                                personIndex > 0 && '-ml-1.5',
+                                'size-7 text-[9px] ring-2 ring-surface',
+                                personIndex > 0 && '-ml-2',
                               )}
-                            >
-                              {initialsOf(person.workerName)}
-                            </span>
+                            />
                           ))}
                           {block.people.length > 3 && (
-                            <span className="ml-1 text-[10px] font-semibold text-ink-3">
+                            <span className="ml-1 rounded-full bg-surface px-1.5 text-[10px] font-bold text-ink">
                               +{String(block.people.length - 3)}
                             </span>
                           )}
                         </span>
                       </span>
 
-                      {block.height >= 88 && (
-                        <span className="mt-1 flex flex-wrap items-center gap-2">
-                          {block.requisition !== null && (
-                            <span className="text-[10px] font-semibold text-o-700">
-                              {block.requisition}
-                            </span>
-                          )}
-                          {pending > 0 && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-ink-2">
-                              <span
-                                className="size-1.5 rounded-full"
-                                style={{ backgroundColor: statusLight['st-azul-claro'] }}
-                                aria-hidden
-                              />
-                              {pending} pend.
-                            </span>
-                          )}
-                          {observed > 0 && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-ink-2">
-                              <span
-                                className="size-1.5 rounded-full"
-                                style={{ backgroundColor: statusLight['st-amarillo'] }}
-                                aria-hidden
-                              />
-                              {observed} obs.
-                            </span>
-                          )}
-                          {reviewed > 0 && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-ink-2">
-                              <span
-                                className="size-1.5 rounded-full"
-                                style={{ backgroundColor: statusLight['st-morado'] }}
-                                aria-hidden
-                              />
-                              {reviewed} rev.
-                            </span>
-                          )}
-                        </span>
-                      )}
-
-                      {/* Cuánto va de la jornada: la barra al pie de la tarjeta. */}
-                      <span
-                        aria-hidden
-                        className="absolute inset-x-0 bottom-0 block h-1.5 bg-ink/10"
-                      >
+                      {/* Cuánto va de la jornada, sobre la pista del estado. */}
+                      <span aria-hidden className="absolute inset-x-0 bottom-0 block h-1.5">
                         <span
-                          className="block h-full bg-o-500"
-                          style={{ width: `${String((progress * 100).toFixed(0))}%` }}
+                          className="absolute inset-0"
+                          style={{ backgroundColor: `${blockColor}55` }}
+                        />
+                        <span
+                          className="absolute inset-y-0 left-0"
+                          style={{
+                            backgroundColor: blockColor,
+                            width: `${String((progress * 100).toFixed(0))}%`,
+                          }}
                         />
                       </span>
                     </button>
@@ -363,7 +412,7 @@ export function TimesheetHoursView({
                 className="grid grid-cols-7"
                 style={{ transform: 'translateX(var(--week-drag-x, 0px))' }}
               >
-                {week.days.map((day) => (
+                {weekDays.map((day) => (
                   <div
                     key={day}
                     className={cn(
@@ -407,7 +456,7 @@ export function TimesheetHoursView({
                 className="grid grid-cols-7"
                 style={{ transform: 'translateX(var(--week-drag-x, 0px))' }}
               >
-                {week.days.map((day) => (
+                {weekDays.map((day) => (
                   <div
                     key={day}
                     className={cn('relative border-l border-line', dayTint(day, today))}
@@ -416,61 +465,85 @@ export function TimesheetHoursView({
                       backgroundImage: `repeating-linear-gradient(to bottom, rgba(26, 17, 8, 0.06) 0 1px, transparent 1px ${String(HOUR_PX)}px)`,
                     }}
                   >
-                    {(blocksByDay.get(day) ?? []).map((block) => (
-                      <button
-                        key={block.key}
-                        type="button"
-                        onClick={() => {
-                          setSelectedKey(block.key === selectedKey ? null : block.key)
-                        }}
-                        title={`${block.start} – ${block.end} · ${String(block.people.length)} en el turno`}
-                        className={cn(
-                          'absolute right-1 left-1 flex cursor-pointer flex-col items-stretch justify-start overflow-hidden rounded-lg border bg-surface p-1.5 text-left shadow-sm transition-shadow hover:shadow-md',
-                          'border-l-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500',
-                          block.key === selectedKey
-                            ? 'border-o-500 bg-o-500/10 ring-1 ring-o-500'
-                            : 'border-line border-l-o-500',
-                        )}
-                        style={{ top: block.top + 1, height: block.height - 2 }}
-                      >
-                        <p className="truncate text-[11px] font-semibold text-ink">
-                          {block.start} – {block.end}
-                        </p>
-                        <p className="truncate text-[10px] text-ink-3">
-                          {block.people.length === 1
-                            ? block.people[0]?.workerName
-                            : `${String(block.people.length)} colaboradores`}
-                        </p>
-                        {block.requisition !== null && block.height >= 64 && (
-                          <p className="truncate text-[9px] font-semibold text-o-700">
-                            {block.requisition}
-                          </p>
-                        )}
-                        {block.height >= 88 && (
-                          <span className="absolute bottom-1.5 left-1.5 flex items-center">
-                            {block.people.slice(0, 3).map((person, index) => (
-                              <span
-                                key={person.entry.id}
-                                className={cn(
-                                  'flex size-5 items-center justify-center rounded-full bg-o-500 text-[8px] font-bold text-ink ring-2 ring-surface',
-                                  index > 0 && '-ml-1.5',
-                                )}
-                              >
-                                {initialsOf(person.workerName)}
+                    {withLanes(blocksByDay.get(day) ?? []).map(({ block, lane, laneCount }) => {
+                      const blockColor = statusLight[TIMESHEET_STATUS_TOKEN[dominantStatus(block)]]
+                      const single = block.people.length === 1 ? block.people[0] : null
+                      const laneWidth = 100 / laneCount
+                      return (
+                        <button
+                          key={block.key}
+                          type="button"
+                          onClick={() => {
+                            setSelectedKey(block.key === selectedKey ? null : block.key)
+                          }}
+                          title={`${block.start} – ${block.end} · ${String(block.people.length)} en el turno`}
+                          className={cn(
+                            'absolute flex cursor-pointer flex-col items-stretch justify-start overflow-hidden rounded-xl bg-surface p-2 text-left shadow-sm transition-shadow hover:shadow-md',
+                            'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500',
+                            block.key === selectedKey && 'ring-2 ring-o-500',
+                          )}
+                          style={{
+                            top: block.top + 1,
+                            height: block.height - 2,
+                            left: `calc(${String(lane * laneWidth)}% + 4px)`,
+                            width: `calc(${String(laneWidth)}% - 7px)`,
+                            backgroundImage: `linear-gradient(${blockColor}33, ${blockColor}33)`,
+                          }}
+                        >
+                          {/* La persona al frente: cara, nombre y su horario. */}
+                          {block.height >= 72 && (
+                            <span className="mb-1 flex items-center justify-between gap-1">
+                              <span className="flex items-center">
+                                {block.people.slice(0, 3).map((person, personIndex) => (
+                                  <PersonAvatar
+                                    key={person.entry.id}
+                                    row={person.row}
+                                    className={cn(
+                                      'size-6 text-[8px] ring-2 ring-surface',
+                                      personIndex > 0 && '-ml-2',
+                                    )}
+                                  />
+                                ))}
                               </span>
-                            ))}
-                            {block.people.length > 3 && (
-                              <span className="ml-1 text-[9px] font-semibold text-ink-3">
-                                +{String(block.people.length - 3)}
-                              </span>
-                            )}
+                              {block.people.length > 1 && (
+                                <span className="rounded-full bg-surface px-1.5 text-[9px] font-bold text-ink">
+                                  {block.people.length}
+                                </span>
+                              )}
+                            </span>
+                          )}
+                          <span className="block truncate text-[11px] font-bold text-ink">
+                            {block.start} – {block.end}
                           </span>
-                        )}
-                      </button>
-                    ))}
+                          <span className="block truncate text-[10px] text-ink-2">
+                            {single
+                              ? single.row.workerName
+                              : `${String(block.people.length)} colaboradores`}
+                          </span>
+
+                          {/* La banda del estado, abajo — color + leyenda arriba. */}
+                          <span
+                            aria-hidden
+                            className="absolute inset-x-0 bottom-0 h-1.5"
+                            style={{ backgroundColor: blockColor }}
+                          />
+                        </button>
+                      )
+                    })}
                   </div>
                 ))}
               </div>
+
+              {/* Semana sin jornadas: el calendario SE QUEDA (no se evapora al
+                  deslizar); el aviso flota encima y nada más. */}
+              {!hasBlocks && (
+                <div className="pointer-events-none absolute inset-0 z-10 flex items-start justify-center pt-16">
+                  <p className="rounded-full border border-dashed border-line bg-surface/95 px-4 py-2 text-sm text-ink-3 shadow-sm">
+                    Esta semana no hay jornadas con horas. La vista Días también enseña ausencias y
+                    pendientes.
+                  </p>
+                </div>
+              )}
 
               {/* La hora actual, solo si hoy está a la vista y dentro del lienzo.
                 Vive en el visor (no en la hoja): marca el tiempo, no una fecha,
@@ -525,16 +598,14 @@ export function TimesheetHoursView({
             </div>
 
             <ul className="flex flex-col gap-3">
-              {selected.people.map(({ entry, workerName }) => {
+              {selected.people.map(({ entry, row }) => {
                 const color = statusLight[TIMESHEET_STATUS_TOKEN[entry.status]]
                 return (
                   <li key={entry.id} className="flex items-center gap-3">
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-o-500 text-[10px] font-bold text-ink">
-                      {initialsOf(workerName)}
-                    </span>
+                    <PersonAvatar row={row} className="size-8 shrink-0 text-[10px]" />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-semibold text-ink">
-                        {workerName}
+                        {row.workerName}
                       </span>
                       <span className="flex items-center gap-1.5 text-xs text-ink-3">
                         <span
@@ -549,7 +620,7 @@ export function TimesheetHoursView({
                     <Button
                       variant="secondary"
                       onClick={() => {
-                        onReview(entry, workerName)
+                        onReview(entry, row.workerName, contextOf(row))
                       }}
                     >
                       Revisar

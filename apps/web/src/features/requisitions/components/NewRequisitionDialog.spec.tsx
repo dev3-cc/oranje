@@ -9,6 +9,8 @@ import { store } from '@/app/store'
 
 async function toPositions(user: ReturnType<typeof userEvent.setup>): Promise<void> {
   await pick(user, 'Hotel', 'Hotel Puerto Real')
+  // El departamento se elige UNA vez aquí y baja a todas las posiciones.
+  await pick(user, 'Departamento del hotel', 'Housekeeping')
   await user.click(screen.getByRole('button', { name: 'Continuar' }))
   await screen.findByText('Posiciones solicitadas')
 }
@@ -68,7 +70,7 @@ describe('NewRequisitionDialog', () => {
 
     expect(screen.getByText('4 slots libres')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Agregar posición' }))
+    await user.click(screen.getByRole('button', { name: 'Agregar otra posición' }))
     expect(screen.getByText('Total: 2 posiciones · 5 slots')).toBeInTheDocument()
   })
 
@@ -79,7 +81,7 @@ describe('NewRequisitionDialog', () => {
 
     expect(screen.getByRole('button', { name: 'Quitar posición 1' })).toBeDisabled()
 
-    await user.click(screen.getByRole('button', { name: 'Agregar posición' }))
+    await user.click(screen.getByRole('button', { name: 'Agregar otra posición' }))
     expect(screen.getByRole('button', { name: 'Quitar posición 1' })).toBeEnabled()
   })
 
@@ -109,7 +111,8 @@ describe('NewRequisitionDialog', () => {
 
     await pick(user, 'Posición 1', 'Housekeeper')
     await pick(user, 'Modalidad 1', 'Tiempo completo')
-    await pick(user, 'Departamento 1', 'Housekeeping')
+    // El Departamento ya NO se pide por fila: bajó del paso 1.
+    expect(screen.queryByLabelText('Departamento 1')).not.toBeInTheDocument()
 
     await user.type(screen.getByLabelText('Inicio 1'), '2026-09-18')
 

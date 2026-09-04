@@ -98,6 +98,18 @@ export function WeekSlider({
     rootRef.current?.style.setProperty('--week-drag-x', `${String(value)}px`)
   }
 
+  /* Cambiar de vista hereda `--week-drag-x` del gesto anterior (la cinta de
+     Días publica valores grandes): la hoja nueva nace corrida y con la pista
+     colgada. Al cambiar de modo se limpia TODO el estado del gesto. */
+  useEffect(() => {
+    cancelAnimationFrame(settleRaf.current)
+    gesture.current = null
+    skipSync.current = false
+    setIsDragging(false)
+    setHint(null)
+    setDragX(0)
+  }, [continuous])
+
   /* ‹ ›, «Hoy» o el mes cambian la semana desde fuera: la ventana SÍ se alinea
      a ella (var → 0). El arrastre marca `skipSync`: ahí la cinta se queda. */
   useEffect(() => {

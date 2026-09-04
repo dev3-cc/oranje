@@ -15,6 +15,7 @@ import { Controller, useFieldArray, useForm, type FieldErrors } from 'react-hook
 import {
   useCreateRequisitionMutation,
   useGetOwnHotelOptionQuery,
+  useGetPositionsForDepartmentQuery,
   useGetRequisitionFormOptionsQuery,
 } from '../api/requisitionsApi'
 import {
@@ -176,14 +177,32 @@ export function NewRequisitionDialog({
   }, [hotel?.photoUrl])
   const heroPhoto = !isPhotoBroken && hotel?.photoUrl ? hotel.photoUrl : null
 
+  /* El departamento se pregunta UNA vez (paso 1) y baja a todas las
+     posiciones: preguntarlo de nuevo por fila era el mismo dato dos veces. */
   useEffect(() => {
     if (!department) return
-    getValues('positions').forEach((position, index) => {
-      if (!position.hotelDepartmentId) {
-        setValue(positionPath(index, 'hotelDepartmentId'), department)
-      }
+    getValues('positions').forEach((_position, index) => {
+      setValue(positionPath(index, 'hotelDepartmentId'), department)
     })
   }, [department, getValues, setValue])
+
+  /* Las posiciones se acotan al departamento elegido (el catálogo del vault
+     agrupa por departamento): Housekeeping ofrece Housekeeper, no Chef. */
+  const { data: departmentPositions } = useGetPositionsForDepartmentQuery(department, {
+    skip: !isOpen || department === '',
+  })
+
+  /* Si el departamento cambia, una posición del anterior deja de ser válida:
+     se limpia para que el select no enseñe un puesto que ya no está. */
+  useEffect(() => {
+    if (departmentPositions === undefined) return
+    const valid = new Set(departmentPositions.map((item) => item.id))
+    getValues('positions').forEach((position, index) => {
+      if (position.catalogPositionId !== '' && !valid.has(position.catalogPositionId)) {
+        setValue(positionPath(index, 'catalogPositionId'), '')
+      }
+    })
+  }, [departmentPositions, getValues, setValue])
 
   const totalSlots = positions.reduce(
     (total, position) => total + (Number(position.quantity) || 0),
@@ -414,6 +433,11 @@ export function NewRequisitionDialog({
                         </Select>
                       )}
                     />
+                    {/* Sin esto el paso «no avanzaba» en silencio: la
+                        validación corría pero su queja no se pintaba. */}
+                    {errors.department && (
+                      <span className="text-xs text-red">{errors.department.message}</span>
+                    )}
                   </div>
                 </div>
               )}
@@ -461,9 +485,17 @@ export function NewRequisitionDialog({
                                   remove(index)
                                 }}
                                 aria-label={`Quitar posición ${String(index + 1)}`}
-                                className="cursor-pointer rounded-md px-2 py-1 text-sm text-ink-3 hover:text-red disabled:cursor-not-allowed disabled:opacity-40"
+                                title="Quitar esta posición del pedido"
+                                className="cursor-pointer rounded-md px-2 py-1 text-ink-3 transition-colors hover:text-red disabled:cursor-not-allowed disabled:opacity-40"
                               >
-                                ✕
+                                {/* Basurero y no ✕: esto ELIMINA la posición,
+                                    no cierra nada. */}
+                                <span
+                                  className="material-icons-outlined text-lg leading-none"
+                                  aria-hidden
+                                >
+                                  delete
+                                </span>
                               </button>
                             </div>
                           </div>
@@ -486,7 +518,7 @@ export function NewRequisitionDialog({
                                       <SelectValue placeholder="Elige la posición" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      {(options?.positions ?? []).map((item) => (
+                                      {(departmentPositions ?? []).map((item) => (
                                         <SelectItem key={item.id} value={item.id}>
                                           {item.name}
                                         </SelectItem>
@@ -556,34 +588,8 @@ export function NewRequisitionDialog({
                               />
                             </label>
 
-                            <label className="flex flex-col gap-1.5">
-                              <span className="text-xs font-medium text-ink-3">Departamento</span>
-                              <Controller
-                                control={control}
-                                name={positionPath(index, 'hotelDepartmentId')}
-                                render={({ field: f }) => (
-                                  <Select
-                                    {...(f.value ? { value: f.value } : {})}
-                                    onValueChange={f.onChange}
-                                  >
-                                    <SelectTrigger
-                                      aria-label={`Departamento ${String(index + 1)}`}
-                                      className="w-full"
-                                    >
-                                      <SelectValue placeholder="Elige el departamento" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {(options?.departments ?? []).map((item) => (
-                                        <SelectItem key={item.id} value={item.id}>
-                                          {item.name}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                )}
-                              />
-                            </label>
-
+                            {/* El Departamento NO se repite aquí: se eligió en
+                                el paso 1 y baja solo a cada posición. */}
                             <label className="flex flex-col gap-1.5">
                               <span className="text-xs font-medium text-ink-3">Cantidad</span>
                               <Input
@@ -593,24 +599,30 @@ export function NewRequisitionDialog({
                               />
                             </label>
 
-                            <div className="grid grid-cols-2 gap-3">
-                              <label className="flex flex-col gap-1.5">
-                                <span className="text-xs font-medium text-ink-3">Inicio</span>
-                                <Input
-                                  type="date"
-                                  {...register(positionPath(index, 'startDate'))}
-                                  aria-label={`Inicio ${String(index + 1)}`}
-                                />
-                              </label>
-                              <label className="flex flex-col gap-1.5">
-                                <span className="text-xs font-medium text-ink-3">Hora</span>
-                                <Input
-                                  type="time"
-                                  {...register(positionPath(index, 'startTime'))}
-                                  aria-label={`Hora ${String(index + 1)}`}
-                                />
-                              </label>
-                            </div>
+                            {/* Inicio y Hora como celdas propias de la rejilla:
+                                partidos en media celda la fecha se truncaba
+                                («17/09/20…») con el icono encimado. */}
+                            <label className="flex flex-col gap-1.5">
+                              <span className="text-xs font-medium text-ink-3">Inicio</span>
+                              {/* `[color-scheme:light]` + tinta plena: sin esto
+                                  el date/time nativo sale desvaído y casi no
+                                  se lee sobre el fondo crema. */}
+                              <Input
+                                type="date"
+                                {...register(positionPath(index, 'startDate'))}
+                                aria-label={`Inicio ${String(index + 1)}`}
+                                className="w-full min-w-0 text-ink [color-scheme:light]"
+                              />
+                            </label>
+                            <label className="flex flex-col gap-1.5">
+                              <span className="text-xs font-medium text-ink-3">Hora</span>
+                              <Input
+                                type="time"
+                                {...register(positionPath(index, 'startTime'))}
+                                aria-label={`Hora ${String(index + 1)}`}
+                                className="w-full min-w-0 text-ink [color-scheme:light]"
+                              />
+                            </label>
                           </div>
 
                           {rowError !== undefined && (
@@ -631,7 +643,7 @@ export function NewRequisitionDialog({
                         append(emptyPositionDraft(department))
                       }}
                     >
-                      Agregar posición
+                      Agregar otra posición
                     </Button>
                   </div>
                 </fieldset>
@@ -644,13 +656,18 @@ export function NewRequisitionDialog({
                     <p className="mt-1 text-base font-bold text-ink">
                       {hotel?.name ?? sessionHotel?.name ?? '—'}
                     </p>
-                    {department !== '' && <p className="text-sm text-ink-2">{department}</p>}
+                    {department !== '' && (
+                      <p className="text-sm text-ink-2">
+                        {options?.departments.find((item) => item.id === department)?.name ??
+                          department}
+                      </p>
+                    )}
                   </div>
                   <div className="rounded-lg border border-line p-4">
                     <p className="text-xs font-semibold text-ink-3 uppercase">Posiciones</p>
                     <ul className="mt-2 flex flex-col gap-2">
                       {positions.map((position, index) => {
-                        const label = options?.positions.find(
+                        const label = (departmentPositions ?? options?.positions ?? []).find(
                           (item) => item.id === position.catalogPositionId,
                         )?.name
                         return (

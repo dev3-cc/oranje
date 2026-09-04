@@ -1,9 +1,10 @@
 import { cn } from '@oranje/ui'
-import { useReducedMotion } from 'framer-motion'
-import { useContext, type ReactNode } from 'react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { useContext, useState, type ReactNode } from 'react'
 
 import { todayIso } from '../lib/weekNavigation'
 import type {
+  ReviewContext,
   TimelineRow,
   TimesheetEntry,
   TimesheetRow,
@@ -108,6 +109,7 @@ export function TimesheetGrid({
   selectedWeek,
   columnWidth,
   selectedIds,
+  selectable = true,
   onToggle,
   onReview,
   onManualPunch,
@@ -117,13 +119,17 @@ export function TimesheetGrid({
   selectedWeek: string
   columnWidth: number
   selectedIds: Set<string>
+  /** `false` = sin casillas: la selección solo existe para el pago en bloque. */
+  selectable?: boolean
   onToggle: (entryId: string) => void
-  onReview: (entry: TimesheetEntry, workerName: string) => void
+  onReview: (entry: TimesheetEntry, workerName: string, context?: ReviewContext) => void
   onManualPunch: (row: TimesheetRow) => void
 }): ReactNode {
   const { isDragging } = useContext(WeekDragContext)
   const reduceMotion = useReducedMotion() ?? false
   const today = todayIso()
+  /** Fila cuyo badge de requisición está bajo el puntero: su tramo se enciende. */
+  const [litRowKey, setLitRowKey] = useState<string | null>(null)
 
   const baseIndex = Math.max(timeline.days.indexOf(selectedWeek), 0)
   const weekDays = timeline.days.slice(baseIndex, baseIndex + 7)
@@ -166,12 +172,29 @@ export function TimesheetGrid({
               ) : (
                 <QuietRow row={row} />
               )}
-              {daysWithEntry.length === 0 ? (
-                <p className="px-1 text-xs text-ink-3">Sin días registrados esta semana.</p>
-              ) : (
+              {/* La semana COMPLETA, Lun→Dom: los días sin registro van como
+                  fantasma angosto — así la tira se lee como calendario y no
+                  como una lista suelta de tarjetas. La fila sin nada no repite
+                  el aviso: la propia tarjeta ya lo dice. */}
+              {daysWithEntry.length > 0 && (
                 <ul className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1">
-                  {daysWithEntry.map((day) => {
-                    const entry = byDate.get(day) as TimesheetEntry
+                  {weekDays.map((day) => {
+                    const entry = byDate.get(day)
+                    if (entry === undefined) {
+                      return (
+                        <li
+                          key={day}
+                          className="flex w-16 shrink-0 snap-start flex-col items-center justify-between rounded-xl border border-dashed border-line/80 p-2"
+                        >
+                          <p className="text-[11px] font-semibold text-ink-4">
+                            {formatWeekday(day)} {formatDayNumber(day)}
+                          </p>
+                          <p className="text-xs text-ink-4" title="Sin registro este día">
+                            —
+                          </p>
+                        </li>
+                      )
+                    }
                     return (
                       <li
                         key={day}
@@ -183,9 +206,15 @@ export function TimesheetGrid({
                         <TimesheetDayCell
                           entry={entry}
                           isSelected={selectedIds.has(entry.id)}
+                          selectable={selectable}
                           onToggle={onToggle}
                           onReview={(item) => {
-                            onReview(item, row.workerName)
+                            onReview(item, row.workerName, {
+                              workerPhotoUrl: row.photoUrl,
+                              jobTitle: row.jobTitle,
+                              hotelName: row.hotelName,
+                              hotelPhotoUrl: row.hotelPhotoUrl,
+                            })
                           }}
                         />
                       </li>
@@ -242,6 +271,8 @@ export function TimesheetGrid({
             const runStartsByIndex = new Map(
               runsOf(timeline.days, byDate).map((run) => [run.start, run.length]),
             )
+            const rowKey = `${row.workerId}|${row.requisitionId}`
+            const isLit = litRowKey === rowKey && !reduceMotion
 
             return (
               <div
@@ -249,16 +280,31 @@ export function TimesheetGrid({
                 className="flex border-b border-line last:border-b-0"
               >
                 <div className="sticky left-0 z-20 w-52 shrink-0 border-r border-line bg-surface px-2 py-3 lg:w-[260px] lg:px-3">
-                  {summary ? (
-                    <WorkerWeekSummary
-                      row={summary}
-                      photoUrl={row.photoUrl}
-                      hotelPhotoUrl={row.hotelPhotoUrl}
-                      onManualPunch={onManualPunch}
-                    />
-                  ) : (
-                    <QuietRow row={row} />
-                  )}
+                  {/* El cambio ficha ⇄ «sin timesheet» al asentar la cinta es
+                      un FUNDIDO, no un golpe. */}
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    <motion.div
+                      key={summary ? `resumen-${selectedWeek}` : 'quieto'}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: reduceMotion ? 0 : 0.25 }}
+                    >
+                      {summary ? (
+                        <WorkerWeekSummary
+                          row={summary}
+                          photoUrl={row.photoUrl}
+                          hotelPhotoUrl={row.hotelPhotoUrl}
+                          onManualPunch={onManualPunch}
+                          onRequisitionHover={(hovering) => {
+                            setLitRowKey(hovering ? rowKey : null)
+                          }}
+                        />
+                      ) : (
+                        <QuietRow row={row} />
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
 
                 <div className="overflow-hidden" style={{ width: viewportWidth }}>
@@ -283,25 +329,28 @@ export function TimesheetGrid({
                             cero: nadie fichó, y dibujar algo sugiere lo contrario. */}
                           {entry && (
                             <div className="relative">
+                              {/* En reposo, contorno quieto (la fila ya agrupa);
+                                  el borde vivo SOLO responde al hover del badge
+                                  de la requisición: motion con propósito. */}
                               {runLength !== undefined && (
                                 <span
                                   aria-hidden
                                   className="pointer-events-none absolute -inset-y-1.5 -left-1 z-0"
                                   style={{ width: runLength * columnWidth - 8 }}
                                 >
-                                  {reduceMotion ? (
-                                    <span className="block h-full w-full rounded-xl border border-o-500/30" />
-                                  ) : (
+                                  {isLit ? (
                                     <MovingBorderBox
                                       as="div"
-                                      duration={6000}
+                                      duration={3000}
                                       borderRadius="0.75rem"
                                       containerClassName="pointer-events-none h-full w-full p-[1.5px] text-base"
                                       borderClassName="h-[3px] w-16 rounded-full bg-[linear-gradient(90deg,transparent,#FF8000,transparent)] opacity-90"
-                                      className="h-full w-full items-stretch justify-start border border-o-500/25 bg-transparent backdrop-blur-none"
+                                      className="h-full w-full items-stretch justify-start border border-o-500/40 bg-transparent backdrop-blur-none"
                                     >
                                       <span />
                                     </MovingBorderBox>
+                                  ) : (
+                                    <span className="block h-full w-full rounded-xl border border-o-500/25" />
                                   )}
                                 </span>
                               )}
@@ -309,9 +358,15 @@ export function TimesheetGrid({
                                 <TimesheetDayCell
                                   entry={entry}
                                   isSelected={selectedIds.has(entry.id)}
+                                  selectable={selectable}
                                   onToggle={onToggle}
                                   onReview={(item) => {
-                                    onReview(item, row.workerName)
+                                    onReview(item, row.workerName, {
+                                      workerPhotoUrl: row.photoUrl,
+                                      jobTitle: row.jobTitle,
+                                      hotelName: row.hotelName,
+                                      hotelPhotoUrl: row.hotelPhotoUrl,
+                                    })
                                   }}
                                 />
                               </div>

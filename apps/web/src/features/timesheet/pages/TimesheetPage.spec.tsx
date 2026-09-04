@@ -70,7 +70,7 @@ describe('TimesheetPage', () => {
     const dialog = await screen.findByRole('dialog')
     const scoped = within(dialog)
     expect(scoped.getByText('Salida')).toBeInTheDocument()
-    expect(scoped.getByText('fuera de geocerca')).toBeInTheDocument()
+    expect(scoped.getByText('Fuera de la geocerca')).toBeInTheDocument()
     expect(scoped.getByRole('button', { name: /marcar revisado/i })).toBeDisabled()
 
     await user.type(scoped.getByRole('textbox'), 'Salió por el acceso de servicio')

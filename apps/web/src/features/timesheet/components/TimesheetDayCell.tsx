@@ -1,4 +1,11 @@
-import { cn, statusLight } from '@oranje/ui'
+import {
+  cn,
+  statusLight,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@oranje/ui'
 import type { ReactNode } from 'react'
 
 import type { TimesheetEntry } from '../types/timesheet.types'
@@ -20,6 +27,13 @@ const PUNCH_CLASS = {
   NO_SHIFT: 'border-dashed border-ink-4 bg-transparent',
 } as const
 
+/** Qué significa el punto, con el detalle que el chip no cuenta. */
+const PUNCH_STATE_DETAIL = {
+  COMPLETE: 'La persona marcó su entrada y su salida. Revisar el día es aparte: lo dice el chip.',
+  INCOMPLETE: 'Hay entrada sin salida (o al revés). Así la semana no puede irse a aprobación.',
+  NO_SHIFT: 'Ese día no tenía turno programado.',
+} as const
+
 /**
  * Un día de una persona.
  *
@@ -34,11 +48,15 @@ const PUNCH_CLASS = {
 export function TimesheetDayCell({
   entry,
   isSelected,
+  selectable = true,
   onToggle,
   onReview,
 }: {
   entry: TimesheetEntry
   isSelected: boolean
+  /** La casilla de selección existe PARA el pago en bloque: sin permiso de
+      pago no se dibuja — una affordance sin acción disponible solo confunde. */
+  selectable?: boolean
   onToggle: (entryId: string) => void
   /** Abre la Revisión del día (maqueta del Supervisor). */
   onReview: (entry: TimesheetEntry) => void
@@ -48,25 +66,59 @@ export function TimesheetDayCell({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-center gap-2">
-        <span
-          title={PUNCH_STATE_LABEL[entry.punch]}
-          aria-label={PUNCH_STATE_LABEL[entry.punch]}
-          role="img"
-          className={cn('size-3.5 rounded-full border-2', PUNCH_CLASS[entry.punch])}
-          style={
-            entry.punch === 'COMPLETE' ? { backgroundColor: statusLight['st-verde'] } : undefined
-          }
-        />
+        {/* El tooltip explica el punto (patrón del ApproverTooltip de la ficha):
+            un símbolo de 14px no puede cargar su propia leyenda. */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span
+                aria-label={PUNCH_STATE_LABEL[entry.punch]}
+                role="img"
+                tabIndex={0}
+                className={cn(
+                  'flex size-3.5 cursor-help items-center justify-center overflow-hidden rounded-full border-2',
+                  PUNCH_CLASS[entry.punch],
+                )}
+                style={
+                  entry.punch === 'COMPLETE'
+                    ? { backgroundColor: statusLight['st-verde'] }
+                    : undefined
+                }
+              >
+                {/* La paloma: el color nunca habla solo (entrada y salida completas).
+                    SVG propio — la ligadura de Material se deforma a este tamaño. */}
+                {entry.punch === 'COMPLETE' && (
+                  <svg viewBox="0 0 12 12" className="size-2.5" aria-hidden>
+                    <path
+                      d="M2.5 6.5l2.4 2.4 4.6-5"
+                      fill="none"
+                      stroke="white"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-52">
+              <p className="text-xs font-semibold">{PUNCH_STATE_LABEL[entry.punch]}</p>
+              <p className="mt-0.5 text-xs">{PUNCH_STATE_DETAIL[entry.punch]}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={() => {
-            onToggle(entry.id)
-          }}
-          aria-label={`Seleccionar ${entry.date}`}
-          className="size-3.5 appearance-none rounded-full border-2 border-purple checked:bg-purple focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple"
-        />
+        {selectable && (
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => {
+              onToggle(entry.id)
+            }}
+            aria-label={`Seleccionar ${entry.date}`}
+            className="size-3.5 appearance-none rounded-full border-2 border-purple checked:bg-purple focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple"
+          />
+        )}
       </div>
 
       <button

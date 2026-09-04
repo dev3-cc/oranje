@@ -84,8 +84,16 @@ const PENDING_ROLES: ReadonlySet<string> = new Set([
 
 const userFormSchema = z
   .object({
-    fullName: z.string().trim().min(1, 'Escribe el nombre completo').max(160),
-    email: z.string().trim().email('Escribe un correo válido, como ana@casacurtidor.com').max(255),
+    fullName: z
+      .string()
+      .trim()
+      .min(1, 'Escribe el nombre completo')
+      .max(160, 'Máximo 160 caracteres'),
+    email: z
+      .string()
+      .trim()
+      .email('Escribe un correo válido, como ana@casacurtidor.com')
+      .max(255, 'Máximo 255 caracteres'),
     roleCode: z.string().min(1, 'Elige un rol'),
     reportsToUserId: z.string(),
     accessMode: z.enum(['INVITATION', 'PASSWORD']),

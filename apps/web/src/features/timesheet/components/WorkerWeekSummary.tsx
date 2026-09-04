@@ -83,6 +83,7 @@ export function WorkerWeekSummary({
   photoUrl = null,
   hotelPhotoUrl = null,
   onManualPunch,
+  onRequisitionHover,
 }: {
   row: TimesheetRow
   /** Foto del colaborador; `null` = iniciales sobre naranja. */
@@ -90,6 +91,8 @@ export function WorkerWeekSummary({
   /** Foto del hotel para el fondo; `null` = placeholder de marca. */
   hotelPhotoUrl?: string | null
   onManualPunch?: (row: TimesheetRow) => void
+  /** Pasar el puntero por el badge de la requisición enciende su tramo de días. */
+  onRequisitionHover?: (hovering: boolean) => void
 }): ReactNode {
   const [submitSheet, { isLoading: isSubmitting }] = useSubmitTimesheetMutation()
   const [approveSheet, { isLoading: isApproving }] = useApproveTimesheetMutation()
@@ -203,6 +206,8 @@ export function WorkerWeekSummary({
                 : 'bg-white/15 text-white'
             }
           >
+            {/* La semana aprobada lleva su paloma: color + señal, nunca color solo. */}
+            {row.weekStatus === 'APPROVED' && <MaterialIcon name="check" className="text-xs" />}
             {TIMESHEET_WEEK_STATUS_LABEL[row.weekStatus as TimesheetWeekStatus] ?? row.weekStatus}
           </Pill>
           {/* Un timesheet ES una requisición por semana. El badge es discreto
@@ -211,6 +216,10 @@ export function WorkerWeekSummary({
             <Link
               to={`/requisiciones/${row.requisitionId}`}
               title="Abrir la requisición"
+              onMouseEnter={() => onRequisitionHover?.(true)}
+              onMouseLeave={() => onRequisitionHover?.(false)}
+              onFocus={() => onRequisitionHover?.(true)}
+              onBlur={() => onRequisitionHover?.(false)}
               className="inline-flex items-center gap-1 rounded-full border border-white/35 bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white transition-colors hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
             >
               <MaterialIcon name="assignment" className="text-xs" />

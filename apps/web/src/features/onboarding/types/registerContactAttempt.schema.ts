@@ -17,7 +17,7 @@ export const registerContactAttemptSchema = z.object({
   hotelContactId: z.string(),
   outcome: z.enum(CONTACT_ATTEMPT_OUTCOMES),
   /** Formato de `<input type="datetime-local">`: `2026-06-18T11:30`. */
-  occurredAt: z.string().min(1),
+  occurredAt: z.string().min(1, 'Falta la fecha y hora del intento'),
   notes: z.string(),
 })
 
