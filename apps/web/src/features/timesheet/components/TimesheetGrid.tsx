@@ -172,12 +172,29 @@ export function TimesheetGrid({
               ) : (
                 <QuietRow row={row} />
               )}
-              {daysWithEntry.length === 0 ? (
-                <p className="px-1 text-xs text-ink-3">Sin días registrados esta semana.</p>
-              ) : (
+              {/* La semana COMPLETA, Lun→Dom: los días sin registro van como
+                  fantasma angosto — así la tira se lee como calendario y no
+                  como una lista suelta de tarjetas. La fila sin nada no repite
+                  el aviso: la propia tarjeta ya lo dice. */}
+              {daysWithEntry.length > 0 && (
                 <ul className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1">
-                  {daysWithEntry.map((day) => {
-                    const entry = byDate.get(day) as TimesheetEntry
+                  {weekDays.map((day) => {
+                    const entry = byDate.get(day)
+                    if (entry === undefined) {
+                      return (
+                        <li
+                          key={day}
+                          className="flex w-16 shrink-0 snap-start flex-col items-center justify-between rounded-xl border border-dashed border-line/80 p-2"
+                        >
+                          <p className="text-[11px] font-semibold text-ink-4">
+                            {formatWeekday(day)} {formatDayNumber(day)}
+                          </p>
+                          <p className="text-xs text-ink-4" title="Sin registro este día">
+                            —
+                          </p>
+                        </li>
+                      )
+                    }
                     return (
                       <li
                         key={day}
