@@ -13,6 +13,7 @@ import { LUNCH_TYPES } from './dto/create-punch.dto.js'
 import {
   AssignmentContext,
   DayRow,
+  EnsureDayParams,
   PunchRow,
   TimesheetRow,
   TimesheetsRepository,
@@ -90,11 +91,11 @@ export class TimesheetsService {
     }
 
     const now = new Date()
-    const { dayId, status } = await this.openDay(assignment, now)
+    const { dayId, status, ensure } = await this.openDay(assignment, now)
 
     this.assertEditable(status)
 
-    if (await this.repo.punchExists(dayId, dto.type)) {
+    if (dayId !== null && (await this.repo.punchExists(dayId, dto.type))) {
       throw new ConflictException({
         code: 'PUNCH_ALREADY_REGISTERED',
         message: `Ya hay una marca ${dto.type} en este día`,
@@ -112,8 +113,10 @@ export class TimesheetsService {
       })
     }
 
-    const id = await this.repo.addPunch({
-      dayId,
+    // Crear el día (si hacía falta) e insertar la marca son un solo hecho:
+    // si esto lanza, no queda ningún rastro de un día que nunca tuvo marca.
+    const { id, dayId: resolvedDayId } = await this.repo.addPunch({
+      ensure,
       type: dto.type,
       latitude: dto.latitude,
       longitude: dto.longitude,
@@ -124,24 +127,24 @@ export class TimesheetsService {
       roleCode: user.roleCode,
     })
 
-    return this.afterPunch(dayId, id)
+    return this.afterPunch(resolvedDayId, id)
   }
 
   async manualPunch(dto: CreateManualPunchDto, user: AuthenticatedUser): Promise<PunchResult> {
     const assignment = await this.assignment(dto.assignmentId)
-    const { dayId, status } = await this.openDay(assignment, dto.workDate)
+    const { dayId, status, ensure } = await this.openDay(assignment, dto.workDate)
 
     this.assertEditable(status)
 
-    if (await this.repo.punchExists(dayId, dto.type)) {
+    if (dayId !== null && (await this.repo.punchExists(dayId, dto.type))) {
       throw new ConflictException({
         code: 'PUNCH_ALREADY_REGISTERED',
         message: `Ya hay una marca ${dto.type} en este día`,
       })
     }
 
-    const id = await this.repo.addManualPunch({
-      dayId,
+    const { id, dayId: resolvedDayId } = await this.repo.addManualPunch({
+      ensure,
       type: dto.type,
       occurredAt: dto.occurredAt,
       reason: dto.reason,
@@ -149,7 +152,7 @@ export class TimesheetsService {
       roleCode: user.roleCode,
     })
 
-    return this.afterPunch(dayId, id)
+    return this.afterPunch(resolvedDayId, id)
   }
 
   async list(user: AuthenticatedUser, status?: string): Promise<TimesheetEntity[]> {
@@ -329,10 +332,17 @@ export class TimesheetsService {
     }
   }
 
+  // Read-only a propósito: solo LEE si el timesheet/día ya existen, nunca los
+  // crea. Si el timesheet no existe todavía es uno nuevo — su estado por
+  // defecto es OPEN y la validación pasa trivialmente; si el día no existe,
+  // no puede tener marcas y `punchExists` se salta igual de trivial. Crear
+  // de verdad ocurre solo al final, dentro de la transacción que también
+  // inserta la marca (ver `addPunch`/`addManualPunch`), para que un intento
+  // rechazado no deje una fila fantasma.
   private async openDay(
     assignment: AssignmentContext,
     when: Date,
-  ): Promise<{ dayId: string; status: string }> {
+  ): Promise<{ dayId: string | null; status: string; ensure: EnsureDayParams }> {
     const schedule = await this.repo.scheduleOf(assignment.hotelId, when)
 
     if (!schedule) {
@@ -342,16 +352,28 @@ export class TimesheetsService {
       })
     }
 
-    const { dayId, status } = await this.repo.ensureDay({
-      scheduleId: schedule.id,
+    const workDate = new Date(`${when.toISOString().slice(0, 10)}T00:00:00Z`)
+
+    const timesheet = await this.repo.findTimesheet({
       workerId: assignment.workerId,
       requisitionId: assignment.requisitionId,
       weekStart: schedule.weekStart,
-      weekEnd: schedule.weekEnd,
-      workDate: new Date(`${when.toISOString().slice(0, 10)}T00:00:00Z`),
     })
 
-    return { dayId, status }
+    const day = timesheet ? await this.repo.findDay(timesheet.id, workDate) : null
+
+    return {
+      dayId: day?.id ?? null,
+      status: timesheet?.status ?? OPEN,
+      ensure: {
+        scheduleId: schedule.id,
+        workerId: assignment.workerId,
+        requisitionId: assignment.requisitionId,
+        weekStart: schedule.weekStart,
+        weekEnd: schedule.weekEnd,
+        workDate,
+      },
+    }
   }
 
   // Sin `assignmentId` en el cuerpo se resuelve el turno de HOY del colaborador
