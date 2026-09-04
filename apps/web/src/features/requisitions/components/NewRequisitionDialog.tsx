@@ -176,12 +176,12 @@ export function NewRequisitionDialog({
   }, [hotel?.photoUrl])
   const heroPhoto = !isPhotoBroken && hotel?.photoUrl ? hotel.photoUrl : null
 
+  /* El departamento se pregunta UNA vez (paso 1) y baja a todas las
+     posiciones: preguntarlo de nuevo por fila era el mismo dato dos veces. */
   useEffect(() => {
     if (!department) return
-    getValues('positions').forEach((position, index) => {
-      if (!position.hotelDepartmentId) {
-        setValue(positionPath(index, 'hotelDepartmentId'), department)
-      }
+    getValues('positions').forEach((_position, index) => {
+      setValue(positionPath(index, 'hotelDepartmentId'), department)
     })
   }, [department, getValues, setValue])
 
@@ -414,6 +414,11 @@ export function NewRequisitionDialog({
                         </Select>
                       )}
                     />
+                    {/* Sin esto el paso «no avanzaba» en silencio: la
+                        validación corría pero su queja no se pintaba. */}
+                    {errors.department && (
+                      <span className="text-xs text-red">{errors.department.message}</span>
+                    )}
                   </div>
                 </div>
               )}
@@ -556,34 +561,8 @@ export function NewRequisitionDialog({
                               />
                             </label>
 
-                            <label className="flex flex-col gap-1.5">
-                              <span className="text-xs font-medium text-ink-3">Departamento</span>
-                              <Controller
-                                control={control}
-                                name={positionPath(index, 'hotelDepartmentId')}
-                                render={({ field: f }) => (
-                                  <Select
-                                    {...(f.value ? { value: f.value } : {})}
-                                    onValueChange={f.onChange}
-                                  >
-                                    <SelectTrigger
-                                      aria-label={`Departamento ${String(index + 1)}`}
-                                      className="w-full"
-                                    >
-                                      <SelectValue placeholder="Elige el departamento" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {(options?.departments ?? []).map((item) => (
-                                        <SelectItem key={item.id} value={item.id}>
-                                          {item.name}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                )}
-                              />
-                            </label>
-
+                            {/* El Departamento NO se repite aquí: se eligió en
+                                el paso 1 y baja solo a cada posición. */}
                             <label className="flex flex-col gap-1.5">
                               <span className="text-xs font-medium text-ink-3">Cantidad</span>
                               <Input
@@ -596,10 +575,14 @@ export function NewRequisitionDialog({
                             <div className="grid grid-cols-2 gap-3">
                               <label className="flex flex-col gap-1.5">
                                 <span className="text-xs font-medium text-ink-3">Inicio</span>
+                                {/* `[color-scheme:light]` + tinta plena: sin esto
+                                    el date/time nativo sale desvaído y casi no
+                                    se lee sobre el fondo crema. */}
                                 <Input
                                   type="date"
                                   {...register(positionPath(index, 'startDate'))}
                                   aria-label={`Inicio ${String(index + 1)}`}
+                                  className="min-w-0 text-ink [color-scheme:light]"
                                 />
                               </label>
                               <label className="flex flex-col gap-1.5">
@@ -608,6 +591,7 @@ export function NewRequisitionDialog({
                                   type="time"
                                   {...register(positionPath(index, 'startTime'))}
                                   aria-label={`Hora ${String(index + 1)}`}
+                                  className="min-w-0 text-ink [color-scheme:light]"
                                 />
                               </label>
                             </div>
@@ -644,7 +628,12 @@ export function NewRequisitionDialog({
                     <p className="mt-1 text-base font-bold text-ink">
                       {hotel?.name ?? sessionHotel?.name ?? '—'}
                     </p>
-                    {department !== '' && <p className="text-sm text-ink-2">{department}</p>}
+                    {department !== '' && (
+                      <p className="text-sm text-ink-2">
+                        {options?.departments.find((item) => item.id === department)?.name ??
+                          department}
+                      </p>
+                    )}
                   </div>
                   <div className="rounded-lg border border-line p-4">
                     <p className="text-xs font-semibold text-ink-3 uppercase">Posiciones</p>
