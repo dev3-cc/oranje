@@ -1,5 +1,6 @@
 import { cn, MaterialIcon, statusLight } from '@oranje/ui'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useReducedMotion } from 'framer-motion'
+import { useContext, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 
 import {
   GRID_HEIGHT,
@@ -15,12 +16,16 @@ import type {
   ReviewContext,
   TimelineRow,
   TimesheetEntry,
+  TimesheetRow,
   TimesheetTimeline,
 } from '../types/timesheet.types'
+
+import { WeekDragContext } from './WeekSlider'
 
 import { Button } from '@/shared/components/Button'
 import { TIMESHEET_STATUS_LABEL, TIMESHEET_STATUS_TOKEN } from '@/shared/constants/timesheetStatus'
 import { formatDayNumber, formatWeekday } from '@/shared/lib/formatters'
+import { MOTION } from '@/shared/lib/motion'
 
 /** Un bloque: las jornadas del día que comparten horario y requisición. */
 interface HourBlock {
@@ -170,10 +175,33 @@ export function TimesheetHoursView({
   timeline: TimesheetTimeline
   /** Lunes ISO de la semana a dibujar. */
   selectedWeek: string
-  onReview: (entry: TimesheetEntry, workerName: string, context?: ReviewContext) => void
+  onReview: (
+    entry: TimesheetEntry,
+    workerName: string,
+    context: ReviewContext | undefined,
+    manualPunchTarget: Pick<TimesheetRow, 'requisitionId' | 'workerId' | 'workerName'>,
+  ) => void
 }): ReactNode {
   const today = todayIso()
   const nowMinutes = useNowMinutes()
+  const { isDragging } = useContext(WeekDragContext)
+  const reduceMotion = useReducedMotion() ?? false
+  /**
+   * El transform que traduce la zona de fechas (WeekSlider lo publica en
+   * `--week-drag-x`). Mientras el dedo manda, sin transición — la variable
+   * cambia a cada `pointermove`, y una transición ahí se sentiría con
+   * retraso. Al soltar (`isDragging` ya en `false`), la misma variable puede
+   * caer de golpe a 0 (WeekSlider la resetea al confirmar la navegación): con
+   * la transición encendida, ese reset se ANIMA en vez de saltar — mismo
+   * patrón que ya usa `TimesheetGrid` (la cinta continua de Días).
+   */
+  const dateTransform: CSSProperties = {
+    transform: 'translateX(var(--week-drag-x, 0px))',
+    transition:
+      isDragging || reduceMotion
+        ? 'none'
+        : `transform ${String(MOTION.enter * 1000)}ms cubic-bezier(0, 0, 0.2, 1)`,
+  }
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   /** El día abierto en la agenda móvil; sin elección: hoy, o el primero con turnos. */
   const [agendaDay, setAgendaDay] = useState<string | null>(null)
@@ -408,10 +436,7 @@ export function TimesheetHoursView({
           <div className="flex border-b border-line">
             <div className="w-12 shrink-0" />
             <div className="flex-1 overflow-hidden">
-              <div
-                className="grid grid-cols-7"
-                style={{ transform: 'translateX(var(--week-drag-x, 0px))' }}
-              >
+              <div className="grid grid-cols-7" style={dateTransform}>
                 {weekDays.map((day) => (
                   <div
                     key={day}
@@ -452,10 +477,7 @@ export function TimesheetHoursView({
             </div>
 
             <div className="relative flex-1 overflow-hidden">
-              <div
-                className="grid grid-cols-7"
-                style={{ transform: 'translateX(var(--week-drag-x, 0px))' }}
-              >
+              <div className="grid grid-cols-7" style={dateTransform}>
                 {weekDays.map((day) => (
                   <div
                     key={day}
@@ -620,10 +642,17 @@ export function TimesheetHoursView({
                     <Button
                       variant="secondary"
                       onClick={() => {
-                        onReview(entry, row.workerName, contextOf(row))
+                        onReview(entry, row.workerName, contextOf(row), {
+                          requisitionId: row.requisitionId,
+                          workerId: row.workerId,
+                          workerName: row.workerName,
+                        })
                       }}
                     >
-                      Revisar
+                      {/* "Revisar" en un día ya Revisado prometía una acción que
+                          no iba a pasar — el botón abre lo mismo, pero lo que
+                          hay del otro lado ya no es una revisión pendiente. */}
+                      {entry.status === 'REVIEWED' ? 'Ver revisión' : 'Revisar'}
                     </Button>
                   </li>
                 )

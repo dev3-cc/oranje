@@ -126,7 +126,7 @@ export function TimesheetDayCell({
         onClick={() => {
           onReview(entry)
         }}
-        title="Revisar el día"
+        title={entry.status === 'REVIEWED' ? 'Ver revisión del día' : 'Revisar el día'}
         className={cn(
           /* `bg-surface` DEBAJO del tinte: el color del estado va con alfa y,
              sin fondo sólido, el carril de atrás se transparenta y lo ensucia. */

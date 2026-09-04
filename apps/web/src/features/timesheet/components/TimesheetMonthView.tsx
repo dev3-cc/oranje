@@ -1,10 +1,14 @@
 import { cn, statusLight } from '@oranje/ui'
-import { useMemo, type ReactNode } from 'react'
+import { useReducedMotion } from 'framer-motion'
+import { useContext, useMemo, type ReactNode } from 'react'
 
 import { addDaysIso, todayIso } from '../lib/weekNavigation'
 import type { TimesheetMonth, TimesheetMonthDay } from '../types/timesheet.types'
 
+import { WeekDragContext } from './WeekSlider'
+
 import { formatHours } from '@/shared/lib/formatters'
+import { MOTION } from '@/shared/lib/motion'
 
 const WEEKDAY_HEADERS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
@@ -54,6 +58,8 @@ export function TimesheetMonthView({
   onPickDay: (date: string) => void
 }): ReactNode {
   const today = todayIso()
+  const { isDragging } = useContext(WeekDragContext)
+  const reduceMotion = useReducedMotion() ?? false
   const byDate = useMemo(() => new Map(month.days.map((day) => [day.date, day])), [month])
 
   const cells = useMemo(() => {
@@ -84,7 +90,17 @@ export function TimesheetMonthView({
        Días y Horas): el cuerpo de la página nunca scrollea horizontal. */
     <div
       className="overflow-hidden rounded-lg border border-line bg-surface"
-      style={{ transform: 'translateX(var(--week-drag-x, 0px))' }}
+      style={{
+        transform: 'translateX(var(--week-drag-x, 0px))',
+        /* Mismo patrón que TimesheetGrid/TimesheetHoursView: sin transición
+           mientras el dedo manda (la variable cambia a cada pointermove), y
+           encendida al soltar para que el reset a 0 de WeekSlider se ANIME en
+           vez de saltar. */
+        transition:
+          isDragging || reduceMotion
+            ? 'none'
+            : `transform ${String(MOTION.enter * 1000)}ms cubic-bezier(0, 0, 0.2, 1)`,
+      }}
     >
       <div>
         <p className="border-b border-line px-5 py-3 text-sm font-bold text-ink">

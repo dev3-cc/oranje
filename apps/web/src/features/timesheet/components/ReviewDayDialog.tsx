@@ -46,12 +46,15 @@ export function ReviewDayDialog({
   entry,
   workerName,
   context = null,
+  onManualPunch,
   onClose,
 }: {
   entry: TimesheetEntry | null
   workerName: string
   /** Identidad del hero (fotos y hotel); sin él, el hero degrada con calma. */
   context?: ReviewContext | null
+  /** Abre Marca manual para este mismo día; `undefined` = el botón no se dibuja. */
+  onManualPunch?: (() => void) | undefined
   onClose: () => void
 }): ReactNode {
   const [note, setNote] = useState('')
@@ -105,9 +108,13 @@ export function ReviewDayDialog({
             >
               {isLoading
                 ? 'Guardando…'
-                : entry.hasAnomaly
-                  ? 'Resolver y marcar revisado'
-                  : 'Marcar revisado'}
+                : /* Ya Revisado: lo que hace este botón es guardar la nota
+                     editada, no "marcar" algo que ya está marcado. */
+                  entry.status === 'REVIEWED'
+                  ? 'Guardar cambios'
+                  : entry.hasAnomaly
+                    ? 'Resolver y marcar revisado'
+                    : 'Marcar revisado'}
             </Button>
           </>
         )
@@ -116,7 +123,7 @@ export function ReviewDayDialog({
       {showIntro ? (
         <OnboardingIntro
           slides={INTRO_SLIDES}
-          startLabel="Revisar el día"
+          startLabel={entry.status === 'REVIEWED' ? 'Ver revisión' : 'Revisar el día'}
           onDone={() => {
             dismissIntro()
             setShowIntro(false)
@@ -216,9 +223,21 @@ export function ReviewDayDialog({
               )}
             </h3>
             {entry.punches.length === 0 ? (
-              <p className="mt-2 text-sm text-ink-3">
-                Sin marcas: el día está registrado como ausencia.
-              </p>
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm text-ink-3">
+                  {/* Cero marcas no siempre es ausencia: puede ser un ponche
+                      rechazado (geocerca, duplicado) sin ninguna huella —
+                      isAbsence es el dato real, no una suposición del conteo. */}
+                  {entry.isAbsence
+                    ? 'Sin marcas: el día está registrado como ausencia.'
+                    : 'Sin marcas registradas todavía.'}
+                </p>
+                {onManualPunch && (
+                  <Button variant="secondary" onClick={onManualPunch}>
+                    Agregar marca manual
+                  </Button>
+                )}
+              </div>
             ) : (
               <ul className="mt-2 flex flex-col gap-1.5">
                 {entry.punches.map((punch) => (
@@ -253,6 +272,11 @@ export function ReviewDayDialog({
                   </li>
                 ))}
               </ul>
+            )}
+            {entry.punch === 'INCOMPLETE' && onManualPunch && (
+              <Button variant="secondary" className="mt-2" onClick={onManualPunch}>
+                Agregar la marca que falta
+              </Button>
             )}
           </section>
 

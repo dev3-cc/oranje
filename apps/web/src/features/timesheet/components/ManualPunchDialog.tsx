@@ -54,9 +54,12 @@ const INTRO_SLIDES = [
 
 export function ManualPunchDialog({
   row,
+  initialDate = null,
   onClose,
 }: {
-  row: TimesheetRow | null
+  row: Pick<TimesheetRow, 'requisitionId' | 'workerId' | 'workerName'> | null
+  /** Precarga el día cuando se abre desde la Revisión de un día puntual. */
+  initialDate?: string | null
   onClose: () => void
 }): ReactNode {
   const isOpen = row !== null
@@ -71,11 +74,11 @@ export function ManualPunchDialog({
 
   useEffect(() => {
     if (!isOpen) return
-    setWorkDate('')
+    setWorkDate(initialDate ?? '')
     setTime('')
     setType('CLOCK_IN')
     setReason('')
-  }, [isOpen])
+  }, [isOpen, initialDate])
 
   const canSubmit = workDate !== '' && time !== '' && reason.trim() !== '' && !isLoading
 

@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
   createContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
@@ -12,14 +13,21 @@ import {
 import { addDaysIso, diffDaysIso, weekContaining } from '../lib/weekNavigation'
 
 import { formatWeekRange } from '@/shared/lib/formatters'
-import { MOTION } from '@/shared/lib/motion'
+import { MOTION, slideTransition, slideVariants } from '@/shared/lib/motion'
 
 /** Cuánto hay que arrastrar para que un jalón corto cuente como una semana. */
 const DRAG_THRESHOLD_PX = 90
 /** Rango del jalón en modo paginado (Horas/Mes, que remontan su contenido). */
 const DRAG_RANGE_PX = 170
-/** Movimiento mínimo antes de considerar el gesto un arrastre (no un click). */
-const DRAG_START_PX = 6
+/**
+ * Movimiento mínimo antes de considerar el gesto un arrastre (no un click).
+ * En modo continuo la cinta se queda donde se suelta (sin imán a la semana),
+ * así que un click con unos px de temblor del mouse quedaba mal clasificado
+ * como arrastre y dejaba la cinta corrida esos px para siempre — nadie la
+ * regresaba a 0 porque, para un arrastre real, ese es justo el comportamiento
+ * querido. El umbral sube para que un click normal no lo dispare.
+ */
+const DRAG_START_PX = 12
 
 /** Las vistas lo leen para apagar su transición mientras el dedo manda. */
 export const WeekDragContext = createContext<{ isDragging: boolean }>({ isDragging: false })
@@ -30,9 +38,12 @@ export const WeekDragContext = createContext<{ isDragging: boolean }>({ isDraggi
  * del colaborador y el riel de horas quedan fijos.
  *
  * En modo `continuous` (la vista Días) la vista dibuja la CINTA completa de
- * semanas: al arrastrar, las fechas vecinas entran en vivo y la cinta SE QUEDA
- * DONDE LA SUELTES — sin imán a los bordes de semana; el título y el resumen
- * se actualizan a la semana que quedó a la vista. Los botones ‹ › y «Hoy» sí
+ * semanas: al arrastrar, las fechas vecinas entran en vivo y al soltar la
+ * cinta ENCAJA AL DÍA MÁS CERCANO — si el gesto reveló más de la mitad de un
+ * día vecino, se queda en ese día completo; menos de la mitad, vuelve al de
+ * origen. El ancla es el DÍA, nunca la semana entera (eso sería el imán que
+ * decidimos no querer); el título y el resumen se actualizan a la semana que
+ * quedó a la vista. Los botones ‹ › y «Hoy» sí
  * alinean la ventana a su semana (son controles discretos). En modo paginado
  * (Horas/Mes) el contenido se remonta al navegar y entra con un fundido. Más
  * allá del principio o el final, la hoja opone resistencia y regresa al borde.
@@ -81,6 +92,25 @@ export function WeekSlider({
   const canDrag = continuous ? totalDays > 7 : availableWeeks.length > 1
 
   /**
+   * Modo paginado: hacia dónde viajó la última navegación (+1 = semana más
+   * reciente, -1 = más vieja) — de un arrastre o de ‹ ›/«Hoy»/el mes, da
+   * igual el origen. Se deriva comparando el índice de ESTE render contra el
+   * del anterior, ajustado EN RENDER (no en un efecto) para que el
+   * `motion.div` de abajo ya vea la dirección correcta en el mismo ciclo en
+   * que `weekStart` cambió — un efecto llegaría un render tarde y el primer
+   * cuadro de la animación saldría con la dirección vieja.
+   */
+  const prevIndexRef = useRef(index)
+  const [direction, setDirection] = useState(1)
+  if (continuous) {
+    prevIndexRef.current = index
+  } else if (index !== prevIndexRef.current) {
+    const nextDirection = index > prevIndexRef.current ? 1 : -1
+    if (nextDirection !== direction) setDirection(nextDirection)
+    prevIndexRef.current = index
+  }
+
+  /**
    * Geometría de la cinta: `ribbonX` es el translate real de la hoja
    * (= -basePx + var). 0 = la cinta al principio (la semana más vieja);
    * `minRibbonX` = el final (la más reciente pegada a la derecha).
@@ -91,6 +121,18 @@ export function WeekSlider({
   const minRibbonX = -Math.max(totalDays - 7, 0) * columnWidth
   /** Navegación nacida del arrastre: no re-alinear la cinta a la semana. */
   const skipSync = useRef(false)
+  /**
+   * El RIBBON (`-basePx + var`, la posición visual — independiente de qué
+   * semana es "la base") que `settle()` quiere conservar al cruzar de
+   * semana. Se aplica en el layout effect de abajo, NUNCA en `settle()`
+   * mismo: `basePx` ahí todavía es el de la semana VIEJA (`weekStart` no ha
+   * cambiado, `onNavigate` solo lo pidió) — rebasar el var contra un
+   * `basePx` que el string de `transform` del render actual no conoce deja
+   * la cinta con la base vieja horneada + un var pensado para la base
+   * nueva, un valor internamente inconsistente, hasta que React confirme el
+   * cambio de `weekStart`.
+   */
+  const pendingRibbon = useRef<number | null>(null)
   const dragStartVar = useRef(0)
 
   function setDragX(value: number): void {
@@ -105,21 +147,38 @@ export function WeekSlider({
     cancelAnimationFrame(settleRaf.current)
     gesture.current = null
     skipSync.current = false
+    pendingRibbon.current = null
     setIsDragging(false)
     setHint(null)
     setDragX(0)
   }, [continuous])
 
-  /* ‹ ›, «Hoy» o el mes cambian la semana desde fuera: la ventana SÍ se alinea
-     a ella (var → 0). El arrastre marca `skipSync`: ahí la cinta se queda. */
-  useEffect(() => {
+  /*
+   * ‹ ›, «Hoy» o el mes cambian la semana desde fuera: la ventana SÍ se
+   * alinea a ella (var → 0). El arrastre marca `skipSync`: ahí la cinta se
+   * queda — y si además cruzó de semana, aquí es donde se rebasa el var, NO
+   * en `settle()`. `useLayoutEffect` (no `useEffect`) es lo que importa:
+   * corre síncrono tras el commit y ANTES de que el navegador pinte, así
+   * que la corrección de la base nunca llega tarde a un frame ya pintado —
+   * verificado con capturas por `requestAnimationFrame` que, con el
+   * `useEffect` original, mostraban la cinta animando ~250ms desde una
+   * base vieja hasta la correcta, invadiendo la columna fija del
+   * colaborador (bug reportado).
+   */
+  useLayoutEffect(() => {
     if (!continuous) return
     if (skipSync.current) {
       skipSync.current = false
+      if (pendingRibbon.current !== null) {
+        /* `basePx` de ESTE render ya es el de la semana nueva (`weekStart`
+           acaba de cambiar): recién aquí es seguro rebasar. */
+        setDragX(pendingRibbon.current + basePx)
+        pendingRibbon.current = null
+      }
       return
     }
     setDragX(0)
-  }, [continuous, weekStart])
+  }, [continuous, weekStart, basePx])
 
   /** El translate pedido, con resistencia más allá del principio o el final. */
   function clampContinuous(desiredVar: number): number {
@@ -171,39 +230,81 @@ export function WeekSlider({
     setHint(null)
 
     if (continuous) {
-      const ribbon = -basePx + offsetRef.current
-      /* La cinta se queda DONDE LA SOLTASTE. Solo se recoge el sobrante de la
-         resistencia si jalaste más allá del principio o el final. */
-      const target = weekAtRibbon(ribbon)
-      let nextBase = basePx
+      const rawRibbon = -basePx + offsetRef.current
+      const clampedRibbon = Math.min(Math.max(rawRibbon, minRibbonX), 0)
+      /*
+       * Encaja al DÍA más cercano, no a la semana: si el gesto reveló más de
+       * la mitad de un día vecino, la cinta se queda en ese día completo; si
+       * reveló menos de la mitad, vuelve al día de origen. `Math.round` ES
+       * la regla del 50% — redondear por COLUMNA (un día) y no por semana es
+       * justo lo que mantiene el ancla en días. Esto también absorbe el
+       * click-con-temblor: un jalón de unos px, muy por debajo de medio
+       * `columnWidth`, redondea de vuelta al mismo día de donde salió — ya
+       * no hace falta una guardia aparte para eso.
+       */
+      const snappedRibbon = Math.min(
+        Math.max(Math.round(clampedRibbon / columnWidth) * columnWidth, minRibbonX),
+        0,
+      )
+      const target = weekAtRibbon(snappedRibbon)
+
+      setIsDragging(false)
+
       if (target !== weekStart) {
         skipSync.current = true
-        nextBase = Math.max(diffDaysIso(firstWeek, target), 0) * columnWidth
         /* Misma posición visual bajo la nueva base: `ribbon = -base + var` es
-           constante, así que la var absorbe el cambio de base CON SU SIGNO. */
-        setDragX(offsetRef.current + (nextBase - basePx))
+           constante, así que la var debe absorber el cambio de base CON SU
+           SIGNO — pero NO AQUÍ: `basePx` en este `settle()` sigue siendo el
+           de la semana VIEJA (`weekStart` todavía no cambió, `onNavigate`
+           recién lo está pidiendo). Rebasar el var ya mismo lo dejaría
+           coherente con una base que el `transform` del render actual
+           todavía no conoce. Se guarda el RIBBON ya encajado y el layout
+           effect de arriba lo aplica cuando `basePx` ya es el de `target`. */
+        pendingRibbon.current = snappedRibbon
         onNavigate(target)
+        return
       }
-      setIsDragging(false)
-      if (ribbon > 0 || ribbon < minRibbonX) {
-        const boundaryVar = (ribbon > 0 ? 0 : minRibbonX) + nextBase
-        /* Con la transición de la vista ya activa, regresa suave al borde. */
+
+      /* Sin cambio de semana: nada más va a mover el var, así que el doble
+         rAF espera a que el commit de `isDragging=false` reactive la
+         transición CSS antes de tocarlo — si no, el encaje se ve como un
+         salto instantáneo en vez de animado (mismo patrón que ya usaba el
+         regreso al borde). */
+      requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            setDragX(boundaryVar)
-          })
+          setDragX(snappedRibbon + basePx)
         })
-      }
+      })
       return
     }
 
     const shift = prospectiveShift(offsetRef.current)
     if (shift !== 0) {
       onNavigate(availableWeeks[index + shift] as string)
-      setDragX(0)
-    } else {
-      animateBack()
+      setIsDragging(false)
+      /*
+       * `setDragX` muta `--week-drag-x` en el DOM directamente, fuera de
+       * React, y corre SÍNCRONO en este mismo tick — si se dispara aquí, pisa
+       * la variable MIENTRAS el nodo todavía trae `transition: none` del
+       * render actual (TimesheetHoursView/TimesheetMonthView solo apagan esa
+       * transición cuando `isDragging` es `true`, y React no reacciona al
+       * `setIsDragging(false)` de arriba hasta su PRÓXIMO commit, no en esta
+       * misma línea). El reset a 0 llegaría instantáneo, sin nada que lo
+       * anime — el salto reportado, medido en Playwright como un brinco de
+       * ~150px en un solo frame. El doble rAF espera a que ese commit
+       * (`isDragging=false`, transición ya encendida) haya pintado antes de
+       * tocar la variable — mismo patrón que el encaje sin cambio de semana
+       * de arriba, y que ya usaba `TimesheetGrid` para la cinta continua.
+       */
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setDragX(0)
+        })
+      })
+      return
     }
+
+    animateBack()
     setIsDragging(false)
   }
 
@@ -274,6 +375,41 @@ export function WeekSlider({
     if (!current || event.pointerId !== current.pointerId) return
     gesture.current = null
     if (current.active) {
+      /*
+       * `DRAG_START_PX` es deliberadamente bajo para que un arrastre real dé
+       * retroalimentación viva de inmediato — pero un click normal con el
+       * temblor típico del mouse (10-15px entre mousedown y mouseup) lo cruza
+       * igual. Dos problemas distintos nacen de ahí, y los dos se resuelven
+       * aquí con el mismo criterio: si el soltar quedó por debajo del umbral
+       * que cuenta como arrastre intencional (mismo criterio que `settle()`
+       * usa para revertir la cinta: MEDIO `columnWidth`, no uno completo — un
+       * jalón de 60% de columna ya mueve la cinta a un día vecino en
+       * `settle()`, así que aquí también cuenta como arrastre real; con el
+       * umbral completo, ese mismo 60% se colaba como "click" y reproducía un
+       * `.click()` de verdad sobre lo que hubiera bajo el dedo — comprobado:
+       * abría Revisión del día con un simple jalón de snap), el gesto fue un
+       * click, no un arrastre.
+       *
+       * (1) `setPointerCapture`, ya activo desde que se cruzó `DRAG_START_PX`,
+       * hace que el navegador retargetee el `click` de compatibilidad AL
+       * ELEMENTO QUE CAPTURÓ — este mismo div —, nunca al botón/enlace que
+       * estaba bajo el dedo (comprobado: soltar la captura aquí no alcanza a
+       * corregirlo, el navegador ya fijó el target). Así que si el gesto fue
+       * un click, se reproduce a mano sobre el elemento real bajo el puntero
+       * — `.click()` dispara un evento normal que burbujea por sus
+       * ancestros, así que si `elementFromPoint` cae en un ícono o texto
+       * DENTRO del botón, el botón lo recibe igual.
+       * (2) El click nativo mal dirigido (el del punto 1, con target = este
+       * div) todavía va a llegar después: se suprime con `suppressClick`,
+       * como ya hacía este código para cualquier arrastre real.
+       */
+      const finalDx = Math.abs(event.clientX - current.startX)
+      const realDragThreshold = continuous ? columnWidth / 2 : DRAG_THRESHOLD_PX
+      const wasRealDrag = finalDx >= realDragThreshold
+      if (!wasRealDrag) {
+        const realTarget = document.elementFromPoint(event.clientX, event.clientY)
+        if (realTarget instanceof HTMLElement) realTarget.click()
+      }
       suppressClick.current = true
       settle()
     }
@@ -309,23 +445,35 @@ export function WeekSlider({
         style={{ touchAction: allowTouchDrag ? 'pan-y' : 'pan-x pan-y' }}
         className={cn(
           'relative',
-          canDrag && (isDragging ? 'cursor-grabbing select-none' : 'cursor-grab'),
+          /* `select-none` va SIEMPRE que se pueda arrastrar, no solo mientras
+             `isDragging` ya es true: la selección nativa de texto arranca en
+             los primeros px del gesto, antes de que cruce `DRAG_START_PX` y
+             se clasifique como arrastre — para entonces ya quedó pegada. */
+          canDrag && 'select-none',
+          canDrag && (isDragging ? 'cursor-grabbing' : 'cursor-grab'),
         )}
       >
         <WeekDragContext.Provider value={{ isDragging }}>
           {continuous ? (
             children
           ) : (
-            <AnimatePresence mode="popLayout" initial={false}>
+            /*
+             * Deslizamiento direccional real (no solo fundido): la semana que
+             * sale se va hacia el lado de la navegación y la que entra viene
+             * del lado opuesto, como una cinta. `custom` va tanto en
+             * `AnimatePresence` (así la semana que SALE recibe la dirección
+             * vigente al momento de salir, no la que tenía cuando montó) como
+             * en el propio `motion.div` (para su entrada/estado presente).
+             */
+            <AnimatePresence mode="popLayout" initial={false} custom={{ direction, reduceMotion }}>
               <motion.div
                 key={weekStart}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{
-                  duration: reduceMotion ? 0 : MOTION.enter,
-                  ease: [...MOTION.easeOut],
-                }}
+                custom={{ direction, reduceMotion }}
+                variants={slideVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={slideTransition(reduceMotion)}
               >
                 {children}
               </motion.div>
