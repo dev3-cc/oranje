@@ -918,6 +918,15 @@ const SYSTEM_ADMINISTRATION: Permission[] = [
     label: 'Alta y gestión del personal del sistema',
     roles: [ADMIN],
   },
+  {
+    // Decisión de Hugo (2026-09-04): los catálogos dejan de vivir solo en el
+    // seed — el Administrador los gestiona desde la app (CRUD completo; el
+    // DELETE lo frena la FK cuando la fila está en uso).
+    module: 'catalogs',
+    action: 'manage',
+    label: 'Gestionar los catálogos del sistema',
+    roles: [ADMIN],
+  },
 ]
 
 const ACCOUNTING: Permission[] = [
