@@ -91,6 +91,7 @@ registerMockRoutes([
          * API real, que manda la lista exacta de `identity.role_permission`.
          */
         permissions: [
+          'catalogs.manage',
           'payroll.validate',
           'pipeline.read',
           'pipeline.create_prospect',

@@ -23,6 +23,18 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
 import { formatHours } from '@/shared/lib/formatters'
 
 /**
+ * Pastilla del estado de la SEMANA (D-09): abierta (gris, nadie ha actuado),
+ * enviada (naranja, esperando a un manager) o aprobada (verde, éxito). Set
+ * propio — no repite los colores del semáforo de Día (azul claro/amarillo/
+ * morado) que conviven en la misma pantalla.
+ */
+const WEEK_STATUS_PILL_CLASS: Record<TimesheetWeekStatus, string> = {
+  OPEN: 'bg-st-gris/35 text-white',
+  PENDING_APPROVAL: 'border border-dashed border-white/70 bg-st-naranja/40 text-white',
+  APPROVED: 'bg-st-verde/40 text-white',
+}
+
+/**
  * Quiénes pueden aprobar la semana (D-09), como tooltip. Circulitos con el
  * monograma del ROL — el contrato de hoy no deja al Supervisor leer nombres ni
  * fotos de los managers de su hotel (403 en `/team` y en los usuarios del
@@ -198,12 +210,11 @@ export function WorkerWeekSummary({
         )}
 
         <div className="flex flex-wrap gap-1.5">
-          {/* El ciclo de D-09, tal cual viene: abierta, enviada o aprobada. */}
+          {/* El ciclo de D-09: abierta (gris) → enviada (naranja) → aprobada (verde). */}
           <Pill
             className={
-              row.weekStatus === 'PENDING_APPROVAL'
-                ? 'border border-dashed border-white/70 bg-purple/40 text-white'
-                : 'bg-white/15 text-white'
+              WEEK_STATUS_PILL_CLASS[row.weekStatus as TimesheetWeekStatus] ??
+              'bg-white/15 text-white'
             }
           >
             {/* La semana aprobada lleva su paloma: color + señal, nunca color solo. */}

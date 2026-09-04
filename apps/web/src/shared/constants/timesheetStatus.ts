@@ -41,6 +41,16 @@ export const TIMESHEET_WEEK_STATUS_LABEL: Record<TimesheetWeekStatus, string> = 
   APPROVED: 'Aprobada',
 }
 
+/**
+ * Set propio, sin pisar los colores que ya usa el estado del DÍA (azul
+ * claro/amarillo/morado) — los dos semáforos conviven en la misma pantalla.
+ */
+export const TIMESHEET_WEEK_STATUS_TOKEN: Record<TimesheetWeekStatus, StatusLightToken> = {
+  OPEN: 'st-gris',
+  PENDING_APPROVAL: 'st-naranja',
+  APPROVED: 'st-verde',
+}
+
 export const PUNCH_STATES = ['COMPLETE', 'INCOMPLETE', 'NO_SHIFT'] as const
 
 export type PunchState = (typeof PUNCH_STATES)[number]

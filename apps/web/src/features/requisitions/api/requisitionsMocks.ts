@@ -397,10 +397,20 @@ function mockWorkerNameById(workerId: string): string {
   return PICKER_NAMES[workerId] ?? 'Colaborador'
 }
 
+/** Qué lista muta cada `:kind` de la escritura de catálogos del Administrador. */
+const CATALOG_FIXTURES: Record<string, CatalogItemApi[] | undefined> = {
+  'hotel-departments': DEPARTMENTS,
+  positions: POSITIONS,
+  'hiring-modalities': MODALITIES,
+  'english-levels': ENGLISH,
+}
+
 const catalogRoute = (path: string, items: CatalogItemApi[]): MockRoute => ({
   method: 'GET',
   path,
-  resolve: (): ApiEnvelope<CatalogItemApi[]> => ({ data: items }),
+  /* COPIAS, no la referencia: RTK congela lo que recibe y los writes de la
+     pantalla de catálogos deben poder seguir mutando el fixture. */
+  resolve: (): ApiEnvelope<CatalogItemApi[]> => ({ data: items.map((item) => ({ ...item })) }),
 })
 
 const routes: readonly MockRoute[] = [
@@ -408,15 +418,86 @@ const routes: readonly MockRoute[] = [
   {
     method: 'GET',
     path: '/catalogs/positions',
-    /* Como el back real: `?departmentId` acota al departamento (D-28). */
-    resolve: ({ search }): ApiEnvelope<CatalogItemApi[]> => {
+    /* Como el back real: `?departmentId` acota, y cada puesto dice su
+       departamento (lo pinta la pantalla de catálogos del Administrador). */
+    resolve: ({ search }): ApiEnvelope<Array<CatalogItemApi & { hotelDepartmentId?: string }>> => {
       const departmentId = search.get('departmentId')
+      const rows =
+        departmentId === null
+          ? POSITIONS
+          : POSITIONS.filter((item) => POSITION_DEPARTMENT[item.id] === departmentId)
       return {
-        data:
-          departmentId === null
-            ? POSITIONS
-            : POSITIONS.filter((item) => POSITION_DEPARTMENT[item.id] === departmentId),
+        data: rows.map((item) => ({
+          ...item,
+          ...(POSITION_DEPARTMENT[item.id]
+            ? { hotelDepartmentId: POSITION_DEPARTMENT[item.id] }
+            : {}),
+        })),
       }
+    },
+  },
+  /* ——— Escritura de catálogos (pantalla del Administrador). Los fixtures
+     viven en este archivo, así que sus writes también. ——— */
+  {
+    method: 'POST',
+    path: '/catalogs/:kind',
+    resolve: ({ params, body }): ApiEnvelope<CatalogItemApi> => {
+      const { name, hotelDepartmentId } = body as { name: string; hotelDepartmentId?: string }
+      const list = CATALOG_FIXTURES[params['kind'] ?? '']
+      if (!list) throw new Error('Ese catálogo no se administra desde aquí')
+      const code = name.toUpperCase().replace(/[^A-Z0-9]+/g, '_')
+      if (list.some((item) => item.code === code)) {
+        throw new Error('Ya existe una fila con ese nombre en el catálogo')
+      }
+      if (params['kind'] === 'positions' && !hotelDepartmentId) {
+        throw new Error('Una posición pertenece a un departamento: elige a cuál')
+      }
+      const row = { id: `mock-cat-${String(Date.now())}`, code, name }
+      list.push(row)
+      if (params['kind'] === 'positions' && hotelDepartmentId) {
+        POSITION_DEPARTMENT[row.id] = hotelDepartmentId
+      }
+      // Copia: RTK congela lo que recibe y el fixture debe seguir mutable.
+      return { data: { ...row } }
+    },
+  },
+  {
+    method: 'PATCH',
+    path: '/catalogs/:kind/:id',
+    resolve: ({ params, body }): ApiEnvelope<CatalogItemApi> => {
+      const list = CATALOG_FIXTURES[params['kind'] ?? '']
+      const row = list?.find((item) => item.id === params['id'])
+      if (!row) throw new Error('Esa fila del catálogo no existe')
+      const { name, hotelDepartmentId } = body as { name?: string; hotelDepartmentId?: string }
+      if (name !== undefined) {
+        row.name = name
+        row.code = name.toUpperCase().replace(/[^A-Z0-9]+/g, '_')
+      }
+      if (params['kind'] === 'positions' && hotelDepartmentId) {
+        POSITION_DEPARTMENT[row.id] = hotelDepartmentId
+      }
+      return { data: { ...row } }
+    },
+  },
+  {
+    method: 'DELETE',
+    path: '/catalogs/:kind/:id',
+    resolve: ({ params }): { ok: true } => {
+      const kind = params['kind'] ?? ''
+      const list = CATALOG_FIXTURES[kind]
+      const index = list?.findIndex((item) => item.id === params['id']) ?? -1
+      if (!list || index === -1) throw new Error('Esa fila del catálogo no existe')
+      /* La FK del back, simulada: un departamento con puestos no se elimina. */
+      if (
+        kind === 'hotel-departments' &&
+        Object.values(POSITION_DEPARTMENT).includes(params['id'] ?? '')
+      ) {
+        throw new Error(
+          'El departamento tiene posiciones u operación colgando de él: no se puede eliminar',
+        )
+      }
+      list.splice(index, 1)
+      return { ok: true }
     },
   },
   catalogRoute('/catalogs/hiring-modalities', MODALITIES),

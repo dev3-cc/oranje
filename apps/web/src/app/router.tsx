@@ -111,6 +111,13 @@ export const router = createBrowserRouter([
             },
           },
           {
+            path: 'catalogos',
+            lazy: async () => {
+              const m = await import('@/features/admin')
+              return { Component: m.CatalogsPage }
+            },
+          },
+          {
             path: 'pipeline',
             lazy: async () => {
               const m = await import('@/features/onboarding')

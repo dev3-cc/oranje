@@ -46,6 +46,7 @@ const MAPPED_ROLES: ReadonlySet<string> = new Set([...STAFF, ADMIN])
 const MODULES: NavModule[] = [
   { label: 'Dashboard', to: '/dashboard', icon: 'space_dashboard', roles: STAFF },
   { label: 'Usuarios', to: '/usuarios', icon: 'manage_accounts', roles: [ADMIN] },
+  { label: 'Catálogos', to: '/catalogos', icon: 'category', roles: [ADMIN] },
   { label: 'Pipeline', to: '/pipeline', icon: 'view_kanban', roles: VENTAS },
   { label: 'Mi Territorio', to: '/mi-territorio', icon: 'map', roles: VENTAS },
   { label: 'Propuestas', to: '/propuestas', icon: 'description', roles: VENTAS },
