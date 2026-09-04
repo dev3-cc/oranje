@@ -41,10 +41,14 @@ export class CatalogsService {
     })
   }
 
-  async positions(departmentId?: string): Promise<CatalogItem[]> {
+  async positions(
+    departmentId?: string,
+  ): Promise<Array<CatalogItem & { hotelDepartmentId: string }>> {
+    /* `hotelDepartmentId` viaja: la pantalla de catálogos del Administrador
+       pinta a qué departamento pertenece cada puesto (cambio aditivo). */
     return this.prisma.catalogPosition.findMany({
       where: departmentId ? { hotelDepartmentId: departmentId } : {},
-      select: { id: true, code: true, name: true },
+      select: { id: true, code: true, name: true, hotelDepartmentId: true },
       orderBy: { name: 'asc' },
     })
   }
