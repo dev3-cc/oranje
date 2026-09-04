@@ -36,6 +36,14 @@ const POSITIONS: CatalogItemApi[] = [
   { id: 'pos-ck', code: 'COOK', name: 'Cocinero' },
 ]
 
+/** Igual que `catalogs.position.hotel_department_id`: cada puesto es de UN depto. */
+const POSITION_DEPARTMENT: Record<string, string> = {
+  'pos-hk': 'dep-hk',
+  'pos-hm': 'dep-hk',
+  'pos-ln': 'dep-hk',
+  'pos-ck': 'dep-fb',
+}
+
 const MODALITIES: CatalogItemApi[] = [
   { id: 'mod-ft', code: 'FULL_TIME', name: 'Tiempo completo' },
   { id: 'mod-pt', code: 'PART_TIME', name: 'Medio tiempo' },
@@ -397,7 +405,20 @@ const catalogRoute = (path: string, items: CatalogItemApi[]): MockRoute => ({
 
 const routes: readonly MockRoute[] = [
   catalogRoute('/catalogs/hotel-departments', DEPARTMENTS),
-  catalogRoute('/catalogs/positions', POSITIONS),
+  {
+    method: 'GET',
+    path: '/catalogs/positions',
+    /* Como el back real: `?departmentId` acota al departamento (D-28). */
+    resolve: ({ search }): ApiEnvelope<CatalogItemApi[]> => {
+      const departmentId = search.get('departmentId')
+      return {
+        data:
+          departmentId === null
+            ? POSITIONS
+            : POSITIONS.filter((item) => POSITION_DEPARTMENT[item.id] === departmentId),
+      }
+    },
+  },
   catalogRoute('/catalogs/hiring-modalities', MODALITIES),
   catalogRoute('/catalogs/english-levels', ENGLISH),
   {

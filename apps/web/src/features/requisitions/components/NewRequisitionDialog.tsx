@@ -15,6 +15,7 @@ import { Controller, useFieldArray, useForm, type FieldErrors } from 'react-hook
 import {
   useCreateRequisitionMutation,
   useGetOwnHotelOptionQuery,
+  useGetPositionsForDepartmentQuery,
   useGetRequisitionFormOptionsQuery,
 } from '../api/requisitionsApi'
 import {
@@ -184,6 +185,24 @@ export function NewRequisitionDialog({
       setValue(positionPath(index, 'hotelDepartmentId'), department)
     })
   }, [department, getValues, setValue])
+
+  /* Las posiciones se acotan al departamento elegido (el catálogo del vault
+     agrupa por departamento): Housekeeping ofrece Housekeeper, no Chef. */
+  const { data: departmentPositions } = useGetPositionsForDepartmentQuery(department, {
+    skip: !isOpen || department === '',
+  })
+
+  /* Si el departamento cambia, una posición del anterior deja de ser válida:
+     se limpia para que el select no enseñe un puesto que ya no está. */
+  useEffect(() => {
+    if (departmentPositions === undefined) return
+    const valid = new Set(departmentPositions.map((item) => item.id))
+    getValues('positions').forEach((position, index) => {
+      if (position.catalogPositionId !== '' && !valid.has(position.catalogPositionId)) {
+        setValue(positionPath(index, 'catalogPositionId'), '')
+      }
+    })
+  }, [departmentPositions, getValues, setValue])
 
   const totalSlots = positions.reduce(
     (total, position) => total + (Number(position.quantity) || 0),
@@ -491,7 +510,7 @@ export function NewRequisitionDialog({
                                       <SelectValue placeholder="Elige la posición" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      {(options?.positions ?? []).map((item) => (
+                                      {(departmentPositions ?? []).map((item) => (
                                         <SelectItem key={item.id} value={item.id}>
                                           {item.name}
                                         </SelectItem>
@@ -639,7 +658,7 @@ export function NewRequisitionDialog({
                     <p className="text-xs font-semibold text-ink-3 uppercase">Posiciones</p>
                     <ul className="mt-2 flex flex-col gap-2">
                       {positions.map((position, index) => {
-                        const label = options?.positions.find(
+                        const label = (departmentPositions ?? options?.positions ?? []).find(
                           (item) => item.id === position.catalogPositionId,
                         )?.name
                         return (
