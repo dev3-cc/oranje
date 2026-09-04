@@ -70,7 +70,7 @@ describe('NewRequisitionDialog', () => {
 
     expect(screen.getByText('4 slots libres')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Agregar posición' }))
+    await user.click(screen.getByRole('button', { name: 'Agregar otra posición' }))
     expect(screen.getByText('Total: 2 posiciones · 5 slots')).toBeInTheDocument()
   })
 
@@ -81,7 +81,7 @@ describe('NewRequisitionDialog', () => {
 
     expect(screen.getByRole('button', { name: 'Quitar posición 1' })).toBeDisabled()
 
-    await user.click(screen.getByRole('button', { name: 'Agregar posición' }))
+    await user.click(screen.getByRole('button', { name: 'Agregar otra posición' }))
     expect(screen.getByRole('button', { name: 'Quitar posición 1' })).toBeEnabled()
   })
 

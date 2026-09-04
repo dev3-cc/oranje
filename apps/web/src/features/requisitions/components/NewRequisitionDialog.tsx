@@ -485,9 +485,17 @@ export function NewRequisitionDialog({
                                   remove(index)
                                 }}
                                 aria-label={`Quitar posición ${String(index + 1)}`}
-                                className="cursor-pointer rounded-md px-2 py-1 text-sm text-ink-3 hover:text-red disabled:cursor-not-allowed disabled:opacity-40"
+                                title="Quitar esta posición del pedido"
+                                className="cursor-pointer rounded-md px-2 py-1 text-ink-3 transition-colors hover:text-red disabled:cursor-not-allowed disabled:opacity-40"
                               >
-                                ✕
+                                {/* Basurero y no ✕: esto ELIMINA la posición,
+                                    no cierra nada. */}
+                                <span
+                                  className="material-icons-outlined text-lg leading-none"
+                                  aria-hidden
+                                >
+                                  delete
+                                </span>
                               </button>
                             </div>
                           </div>
@@ -591,29 +599,30 @@ export function NewRequisitionDialog({
                               />
                             </label>
 
-                            <div className="grid grid-cols-2 gap-3">
-                              <label className="flex flex-col gap-1.5">
-                                <span className="text-xs font-medium text-ink-3">Inicio</span>
-                                {/* `[color-scheme:light]` + tinta plena: sin esto
-                                    el date/time nativo sale desvaído y casi no
-                                    se lee sobre el fondo crema. */}
-                                <Input
-                                  type="date"
-                                  {...register(positionPath(index, 'startDate'))}
-                                  aria-label={`Inicio ${String(index + 1)}`}
-                                  className="min-w-0 text-ink [color-scheme:light]"
-                                />
-                              </label>
-                              <label className="flex flex-col gap-1.5">
-                                <span className="text-xs font-medium text-ink-3">Hora</span>
-                                <Input
-                                  type="time"
-                                  {...register(positionPath(index, 'startTime'))}
-                                  aria-label={`Hora ${String(index + 1)}`}
-                                  className="min-w-0 text-ink [color-scheme:light]"
-                                />
-                              </label>
-                            </div>
+                            {/* Inicio y Hora como celdas propias de la rejilla:
+                                partidos en media celda la fecha se truncaba
+                                («17/09/20…») con el icono encimado. */}
+                            <label className="flex flex-col gap-1.5">
+                              <span className="text-xs font-medium text-ink-3">Inicio</span>
+                              {/* `[color-scheme:light]` + tinta plena: sin esto
+                                  el date/time nativo sale desvaído y casi no
+                                  se lee sobre el fondo crema. */}
+                              <Input
+                                type="date"
+                                {...register(positionPath(index, 'startDate'))}
+                                aria-label={`Inicio ${String(index + 1)}`}
+                                className="w-full min-w-0 text-ink [color-scheme:light]"
+                              />
+                            </label>
+                            <label className="flex flex-col gap-1.5">
+                              <span className="text-xs font-medium text-ink-3">Hora</span>
+                              <Input
+                                type="time"
+                                {...register(positionPath(index, 'startTime'))}
+                                aria-label={`Hora ${String(index + 1)}`}
+                                className="w-full min-w-0 text-ink [color-scheme:light]"
+                              />
+                            </label>
                           </div>
 
                           {rowError !== undefined && (
@@ -634,7 +643,7 @@ export function NewRequisitionDialog({
                         append(emptyPositionDraft(department))
                       }}
                     >
-                      Agregar posición
+                      Agregar otra posición
                     </Button>
                   </div>
                 </fieldset>

@@ -292,9 +292,11 @@ export function NewContractDialog({
                   onClick={() => {
                     setRateRows((rows) => rows.filter((_row, i) => i !== index))
                   }}
+                  title="Quitar esta posición del contrato"
                   className="cursor-pointer rounded-md p-1.5 text-ink-3 hover:bg-surface-2 hover:text-red disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  <MaterialIcon name="close" className="text-lg" />
+                  {/* Basurero y no ✕: elimina la fila, no cierra nada. */}
+                  <MaterialIcon name="delete" className="text-lg" />
                 </button>
               </div>
             ))}
