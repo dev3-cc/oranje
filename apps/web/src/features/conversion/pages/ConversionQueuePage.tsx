@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
 import { useGetConversionQueueQuery, useGetRecentConversionsQuery } from '../api/conversionApi'
@@ -9,12 +9,15 @@ import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
+import { MagicCard } from '@/shared/components/MagicCard'
+import { SearchField } from '@/shared/components/SearchField'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
 } from '@/shared/constants/onboardingStatus'
 import { formatDaysInStatus } from '@/shared/lib/formatters'
+import { matchesSearch } from '@/shared/lib/text'
 
 /**
  * Cola de conversión: prospectos en Rosa esperando la aprobación del BDC.
@@ -26,6 +29,10 @@ import { formatDaysInStatus } from '@/shared/lib/formatters'
 export function ConversionQueuePage(): ReactNode {
   const { data: candidates = [], isLoading, isError, refetch } = useGetConversionQueueQuery()
   const { data: recent = [] } = useGetRecentConversionsQuery()
+  /** Por hotel, EN MEMORIA: la cola ya está cargada entera. */
+  const [search, setSearch] = useState('')
+
+  const visible = candidates.filter((candidate) => matchesSearch(search, candidate.hotelName))
 
   return (
     <div className="flex flex-col gap-6">
@@ -67,32 +74,52 @@ export function ConversionQueuePage(): ReactNode {
       )}
 
       {candidates.length > 0 && (
-        <ul className="flex flex-col gap-3">
-          {candidates.map((candidate) => (
-            <li key={candidate.prospectId}>
-              <Link
-                to={`/conversion/${candidate.prospectId}`}
-                className="flex items-center justify-between gap-4 rounded-md border border-line bg-surface p-4 transition-colors hover:bg-surface-2"
-              >
-                <div className="min-w-0">
-                  <p className="text-base font-semibold text-ink">{candidate.hotelName}</p>
-                  <p className="mt-1 text-sm text-ink-3">
-                    {candidate.zone} · {formatDaysInStatus(candidate.daysInStatus)}
-                  </p>
-                </div>
+        <SearchField
+          value={search}
+          onChange={setSearch}
+          label="Buscar hotel en la cola"
+          placeholder="Nombre del hotel, p. ej. Puerto Real…"
+          className="w-full max-w-md"
+        />
+      )}
 
-                <div className="flex shrink-0 items-center gap-4">
-                  <p className="text-sm text-ink-2">
-                    {candidate.pendingRequirements === 0
-                      ? 'Listo para aprobar'
-                      : `${candidate.pendingRequirements} requisitos pendientes`}
-                  </p>
-                  <StatusLightSoftBadge
-                    token={ONBOARDING_STATUS_TOKEN[candidate.status]}
-                    label={ONBOARDING_STATUS_LABEL[candidate.status]}
-                  />
-                </div>
-              </Link>
+      {candidates.length > 0 && visible.length === 0 && (
+        <EmptyState
+          title={`Ningún hotel de la cola se llama «${search.trim()}»`}
+          text="Cambia la búsqueda o límpiala para volver a ver todos los prospectos en Rosa."
+        />
+      )}
+
+      {visible.length > 0 && (
+        <ul className="flex flex-col gap-3">
+          {visible.map((candidate) => (
+            <li key={candidate.prospectId}>
+              {/* Magic Bento (reactbits): la fila avisa al pasar; se apaga sola en táctil y reduced motion. */}
+              <MagicCard className="rounded-md">
+                <Link
+                  to={`/conversion/${candidate.prospectId}`}
+                  className="flex items-center justify-between gap-4 rounded-md border border-line bg-surface p-4 transition-colors hover:bg-surface-2"
+                >
+                  <div className="min-w-0">
+                    <p className="text-base font-semibold text-ink">{candidate.hotelName}</p>
+                    <p className="mt-1 text-sm text-ink-3">
+                      {candidate.zone} · {formatDaysInStatus(candidate.daysInStatus)}
+                    </p>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-4">
+                    <p className="text-sm text-ink-2">
+                      {candidate.pendingRequirements === 0
+                        ? 'Listo para aprobar'
+                        : `${candidate.pendingRequirements} requisitos pendientes`}
+                    </p>
+                    <StatusLightSoftBadge
+                      token={ONBOARDING_STATUS_TOKEN[candidate.status]}
+                      label={ONBOARDING_STATUS_LABEL[candidate.status]}
+                    />
+                  </div>
+                </Link>
+              </MagicCard>
             </li>
           ))}
         </ul>

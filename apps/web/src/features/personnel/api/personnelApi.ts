@@ -1,4 +1,4 @@
-import type { PersonnelBoard, PersonnelRow } from '../types/personnel.types'
+import type { PersonnelBoard, PersonnelPerformance, PersonnelRow } from '../types/personnel.types'
 
 import { baseApi } from '@/app/baseApi'
 /*
@@ -40,6 +40,66 @@ const OPERATIONAL_STATES = new Set(['APPLE_GREEN', 'LIGHT_BLUE', 'ORANGE', 'BROW
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10)
+}
+
+/** Minutos de retraso de una entrada frente a su turno (negativo = temprano). */
+function lateMinutes(clockInIso: string, shiftStartIso: string): number {
+  return Math.round((new Date(clockInIso).getTime() - new Date(shiftStartIso).getTime()) / 60_000)
+}
+
+function ratio(part: number, total: number): number | null {
+  return total === 0 ? null : Math.round((part / total) * 100)
+}
+
+/**
+ * La semana medida en HECHOS: turnos pasados del Schedule contra las marcas
+ * del ponche. Sin días comparables no hay medida — se responde `null`, jamás
+ * un número inventado.
+ */
+function performanceOf(
+  workerId: string,
+  entries: ScheduleEntryApi[],
+  timesheets: TimesheetApi[],
+  today: string,
+): PersonnelPerformance | null {
+  const pastShifts = entries.filter(
+    (entry) => entry.worker.id === workerId && entry.workDate <= today,
+  )
+  const shiftByDate = new Map(pastShifts.map((entry) => [entry.workDate, entry]))
+
+  const days = timesheets
+    .filter((sheet) => sheet.worker.id === workerId)
+    .flatMap((sheet) => sheet.days ?? [])
+    .filter((day) => day.workDate <= today && day.punches.length > 0)
+
+  if (pastShifts.length === 0 && days.length === 0) return null
+
+  const daysWithShift = days.filter((day) => shiftByDate.has(day.workDate))
+  const onTime = daysWithShift.filter((day) => {
+    const clockIn = day.punches.find((punch) => punch.type === 'CLOCK_IN')
+    const shift = shiftByDate.get(day.workDate)
+    return clockIn !== undefined && shift !== undefined
+      ? lateMinutes(clockIn.serverAt, shift.startsAt) <= 10
+      : false
+  })
+  const complete = days.filter(
+    (day) =>
+      day.punches.some((punch) => punch.type === 'CLOCK_IN') &&
+      day.punches.some((punch) => punch.type === 'CLOCK_OUT'),
+  )
+  const punches = days.flatMap((day) => day.punches)
+  const withGeofence = punches.filter((punch) => punch.insideGeofence !== null)
+
+  return {
+    attendance: ratio(daysWithShift.length, pastShifts.length),
+    punctuality: ratio(onTime.length, daysWithShift.length),
+    completeness: ratio(complete.length, days.length),
+    geofence: ratio(
+      withGeofence.filter((punch) => punch.insideGeofence === true).length,
+      withGeofence.length,
+    ),
+    cleanDays: ratio(days.filter((day) => !day.hasAnomaly).length, days.length),
+  }
 }
 
 async function fetchBoard(
@@ -116,6 +176,17 @@ async function fetchBoard(
         shift: shift ? { startsAt: shift.startsAt, endsAt: shift.endsAt } : null,
         clockInAt: clockInByWorker.get(workerId) ?? null,
         canStandBy: OPERATIONAL_STATES.has(worker.state.code),
+        performance: performanceOf(workerId, entries, timesheets, today),
+        personal: {
+          age: worker.age,
+          gender: worker.gender,
+          zoneName: worker.zone.name,
+          englishLevel: worker.englishLevel?.name ?? null,
+          hiringModality: worker.hiringModality?.name ?? null,
+          transportType: worker.transportType,
+          bloodType: worker.bloodType,
+          emergencyContact: worker.emergencyContact,
+        },
       }
     })
     .filter((row): row is PersonnelRow => row !== null)
@@ -145,6 +216,17 @@ export const personnelApi = baseApi.injectEndpoints({
       ],
     }),
 
+    /** La foto del hotel del Supervisor para el hero de la ficha (D-34: la
+        URL se compone al leer; sin foto, el backdrop degrada a la marca). */
+    getHotelCard: build.query<{ name: string; photoUrl: string | null }, string>({
+      query: (hotelId) => `/hotels/${hotelId}`,
+      transformResponse: (raw: { data: { name: string; photoUrl: string | null } }) => ({
+        name: raw.data.name,
+        photoUrl: raw.data.photoUrl,
+      }),
+      providesTags: (_res, _err, hotelId) => [{ type: 'Hotel' as const, id: hotelId }],
+    }),
+
     /** Stand-by (Rosa): la transición del semáforo, con motivo del catálogo (encargo 12) y nota opcional. */
     sendToStandBy: build.mutation<unknown, { workerId: string; reasonCode: string; note?: string }>(
       {
@@ -159,4 +241,5 @@ export const personnelApi = baseApi.injectEndpoints({
   }),
 })
 
-export const { useGetPersonnelBoardQuery, useSendToStandByMutation } = personnelApi
+export const { useGetPersonnelBoardQuery, useGetHotelCardQuery, useSendToStandByMutation } =
+  personnelApi

@@ -32,33 +32,36 @@ describe('PoolPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('el chip del semáforo enseña el código y lo que significa', async () => {
+  it('el chip del semáforo dice el estado en palabras, nunca el color', async () => {
     renderPool()
 
-    expect((await screen.findAllByText('STRONG_GREEN · Disponible')).length).toBe(2)
-    expect(screen.getByText('ORANGE · Fijo')).toBeInTheDocument()
-    expect(screen.getByText('WHITE · Pre-asignación')).toBeInTheDocument()
-    expect(screen.getByText('BROWN · Asig. temporal')).toBeInTheDocument()
-    expect(screen.getByText('GRAY · Accidentado')).toBeInTheDocument()
-    expect(screen.getByText('BLACK · Blacklist')).toBeInTheDocument()
+    expect((await screen.findAllByText(/Disponible/)).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Fijo/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Pre-asignación/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Asig. temporal/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Accidentado/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Blacklist/).length).toBeGreaterThan(0)
   })
 
-  it('perfil e ITIN se leen en palabras', async () => {
+  it('perfil e ITIN hablan solo como excepción, en el detalle', async () => {
+    const user = userEvent.setup()
     renderPool()
 
-    const row = (await screen.findByText('Pedro Alcántara')).closest('tr')
-    const scoped = within(row as HTMLElement)
+    const row = (await screen.findByText('Pedro Alcántara')).closest('li') as HTMLElement
+    await user.click(within(row).getByRole('button'))
 
-    expect(scoped.getByText('incompleto')).toBeInTheDocument()
-    expect(scoped.getByText('no')).toBeInTheDocument()
-    expect(scoped.getByText('31')).toBeInTheDocument()
+    const detail = screen.getByRole('article')
+    expect(within(detail).getByText(/Perfil incompleto/)).toBeInTheDocument()
+    expect(within(detail).getByText(/Sin ITIN/)).toBeInTheDocument()
+    expect(within(detail).getByText('31 años')).toBeInTheDocument()
   })
 
   it('los filtros van por id de catálogo y filtran en el servidor', async () => {
     const user = userEvent.setup()
     renderPool()
 
-    expect(await screen.findByText('Ana Rivera Gómez')).toBeInTheDocument()
+    // La primera viene elegida: su nombre vive en la fila Y en el detalle.
+    expect((await screen.findAllByText('Ana Rivera Gómez')).length).toBeGreaterThan(0)
     expect(screen.getByText('Julia Mendoza')).toBeInTheDocument()
 
     await user.click(await screen.findByLabelText('Posición'))
@@ -67,15 +70,47 @@ describe('PoolPage', () => {
     await waitFor(() => {
       expect(screen.queryByText('Julia Mendoza')).not.toBeInTheDocument()
     }, SLOW)
-    expect(screen.getByText('Ana Rivera Gómez')).toBeInTheDocument()
+    expect(screen.getAllByText('Ana Rivera Gómez').length).toBeGreaterThan(0)
     expect(screen.getByText('Rogelio Santos')).toBeInTheDocument()
+  })
+
+  it('buscar «Ana» va al servidor y deja solo a Ana, sin distinguir acentos', async () => {
+    const user = userEvent.setup()
+    renderPool()
+
+    expect((await screen.findAllByText('Ana Rivera Gómez')).length).toBeGreaterThan(0)
+    expect(screen.getByText('Julia Mendoza')).toBeInTheDocument()
+
+    const field = screen.getByLabelText('Buscar colaborador')
+    await user.type(field, 'Ana')
+
+    // La búsqueda espera a que se deje de teclear y viaja como `?search=`.
+    await waitFor(() => {
+      expect(screen.queryByText('Julia Mendoza')).not.toBeInTheDocument()
+    }, SLOW)
+    expect(screen.queryByText('Luis Cabrera')).not.toBeInTheDocument()
+    expect(screen.queryByText('Pedro Alcántara')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Ana Rivera Gómez').length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: /Quitar filtros/ })).toBeInTheDocument()
+
+    // «gomez» encuentra «Gómez»: el acento no separa.
+    await user.clear(field)
+    await user.type(field, 'gomez')
+    await waitFor(() => {
+      expect(screen.getAllByText('Ana Rivera Gómez').length).toBeGreaterThan(0)
+    }, SLOW)
+    expect(screen.queryByText('Julia Mendoza')).not.toBeInTheDocument()
+
+    // Quitar filtros devuelve el pool completo.
+    await user.click(screen.getByRole('button', { name: /Quitar filtros/ }))
+    expect(await screen.findByText('Julia Mendoza', undefined, SLOW)).toBeInTheDocument()
   })
 
   it('el alta de Fase 1 crea a la persona y nace en Blanco', async () => {
     const user = userEvent.setup()
     renderPool()
 
-    await screen.findByText('Ana Rivera Gómez')
+    await screen.findAllByText('Ana Rivera Gómez')
     await user.click(screen.getByRole('button', { name: 'Crear colaborador' }))
 
     const dialog = await screen.findByRole('dialog')
@@ -101,32 +136,32 @@ describe('PoolPage', () => {
 
     await user.click(submit)
 
-    const row = (await screen.findByText('Braulio Vega', undefined, SLOW)).closest('tr')
-    const rowScoped = within(row as HTMLElement)
-    expect(rowScoped.getByText('WHITE · Pre-asignación')).toBeInTheDocument()
-    expect(rowScoped.getByText('incompleto')).toBeInTheDocument()
-  })
+    // Recién creado puede quedar elegido (fila + detalle): se toma la fila.
+    const row = (await screen.findAllByText('Braulio Vega', undefined, SLOW))
+      .map((node) => node.closest('li'))
+      .find(Boolean)
+    // La fila dice su estado en palabras: recién nacido = Pre-asignación.
+    expect(within(row as HTMLElement).getByText(/Pre-asignación/)).toBeInTheDocument()
+    // El recorrido entero (intro + formulario + refetch) no cabe en 5 s.
+  }, 15000)
 
-  it('posición e inglés llegan como nombre del catálogo, o raya si faltan', async () => {
-    renderPool()
-
-    expect((await screen.findAllByText('Conversacional')).length).toBeGreaterThan(0)
-    const row = screen.getByText('Pedro Alcántara').closest('tr')
-    expect(within(row as HTMLElement).getAllByText('—').length).toBeGreaterThan(1)
-  })
-  it('la vista de tarjetas agrupa por semáforo y la tarjeta abre la edición', async () => {
+  it('el detalle dice los catálogos por nombre, o raya si faltan', async () => {
     const user = userEvent.setup()
     renderPool()
 
-    await screen.findByText('Ana Rivera Gómez')
-    await user.click(screen.getByRole('button', { name: /Tarjetas/ }))
+    const row = (await screen.findByText('Pedro Alcántara')).closest('li') as HTMLElement
+    await user.click(within(row).getByRole('button'))
+    const detail = screen.getByRole('article')
+    expect(within(detail).getAllByText('—').length).toBeGreaterThan(0)
+  })
 
-    expect(screen.getByText('Disponible')).toBeInTheDocument()
-    expect(screen.getByText('Accidentado')).toBeInTheDocument()
-    expect(screen.getAllByText('perfil completo').length).toBeGreaterThan(0)
+  it('la fila abre el detalle y desde ahí se edita', async () => {
+    const user = userEvent.setup()
+    renderPool()
 
-    const card = screen.getByText('Luis Cabrera').closest('button') as HTMLElement
-    await user.click(card)
+    const row = (await screen.findByText('Luis Cabrera')).closest('li') as HTMLElement
+    await user.click(within(row).getByRole('button'))
+    await user.click(within(screen.getByRole('article')).getByRole('button', { name: 'Editar' }))
     expect(await screen.findByText('Editar colaborador')).toBeInTheDocument()
   })
 })

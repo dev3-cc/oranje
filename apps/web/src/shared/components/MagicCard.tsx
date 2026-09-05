@@ -1,12 +1,25 @@
+import { cn } from '@oranje/ui'
 import { gsap } from 'gsap'
 import { useCallback, useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
+
+import { useMediaQuery } from '@/shared/hooks/useMediaQuery'
 
 /**
  * La tarjeta de Magic Bento de reactbits (fuente oficial ts-tailwind,
  * DavidHDev/react-bits), adaptada: partículas al hover, glow de borde que
  * sigue al cursor y ripple al clic — con el naranja Oranje y sin tilt ni
- * magnetismo por defecto (es una app de trabajo). `disableAnimations` la
- * apaga entera (reduced motion y móvil).
+ * magnetismo por defecto (es una app de trabajo).
+ *
+ * Es el acento de TODA fila que representa a una persona o a un cliente
+ * (Pool, Mi Personal, Mi Equipo, Pipeline, Conversión, requisiciones…):
+ * el hover ya avisa con fondo y cursor — esto solo lo remata. Por eso se
+ * apaga sola donde no aporta: con `prefers-reduced-motion` (regla de la
+ * skill) y en pantallas sin hover (táctil: nunca se vería el efecto y sí
+ * costaría). `disableAnimations` la apaga a mano.
+ *
+ * Lleva `overflow-hidden` para recortar partículas y ripple, y eso se
+ * comería el anillo de foco del hijo: el anillo se pinta aquí, en el
+ * envoltorio, cuando el hijo tiene foco visible por teclado.
  */
 const DEFAULT_PARTICLE_COUNT = 6
 /** RGB de `--o-500` (#FF8000). */
@@ -47,6 +60,10 @@ export function MagicCard({
   clickEffect?: boolean
   disableAnimations?: boolean
 }): ReactNode {
+  const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
+  const noHover = useMediaQuery('(hover: none)')
+  const isOff = disableAnimations || reduceMotion || noHover
+
   const cardRef = useRef<HTMLDivElement>(null)
   const particlesRef = useRef<HTMLDivElement[]>([])
   const timeoutsRef = useRef<Array<ReturnType<typeof setTimeout>>>([])
@@ -118,7 +135,7 @@ export function MagicCard({
   }, [initializeParticles])
 
   useEffect(() => {
-    if (disableAnimations || !cardRef.current) return
+    if (isOff || !cardRef.current) return
     const element = cardRef.current
 
     const handleMouseEnter = (): void => {
@@ -194,12 +211,16 @@ export function MagicCard({
       element.removeEventListener('click', handleClick)
       clearAllParticles()
     }
-  }, [animateParticles, clearAllParticles, disableAnimations, clickEffect, glowColor])
+  }, [animateParticles, clearAllParticles, isOff, clickEffect, glowColor])
 
   return (
     <div
       ref={cardRef}
-      className={`magic-card relative overflow-hidden ${className}`}
+      className={cn(
+        'magic-card relative overflow-hidden',
+        'has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-o-500',
+        className,
+      )}
       style={
         {
           ...style,

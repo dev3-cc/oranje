@@ -31,7 +31,7 @@ describe('TeamPage', () => {
   it('los KPIs del equipo suman lo de todos los BDs', async () => {
     renderTeam()
 
-    const kpi = (await screen.findByText('BDs a cargo')).closest('a,div')
+    const kpi = (await screen.findByText('BDs a cargo')).closest('[data-slot=card]')
     expect(within(kpi as HTMLElement).getByText('3')).toBeInTheDocument()
     expect(screen.getByText('Prospectos abiertos del equipo')).toBeInTheDocument()
     expect(screen.getByText('Conversiones del trimestre')).toBeInTheDocument()
@@ -65,6 +65,24 @@ describe('TeamPage', () => {
     expect(scoped.getByText('BD · sin territorio asignado todavía')).toBeInTheDocument()
     // Sin conversiones no hay promedio que inventar: raya.
     expect(scoped.getByText('—')).toBeInTheDocument()
+  })
+
+  it('el buscador filtra a los BDs en memoria y el panel sigue al primero visible', async () => {
+    const user = userEvent.setup()
+    renderTeam()
+
+    await screen.findByRole('heading', { name: 'Ana Ruiz' })
+    const field = screen.getByLabelText('Buscar BD')
+
+    // «rocio» encuentra «Rocío» y el panel pasa a ella.
+    await user.type(field, 'rocio')
+    expect(screen.queryByRole('button', { name: /Ana Ruiz/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Rocío Lima' })).toBeInTheDocument()
+
+    await user.clear(field)
+    await user.type(field, 'zzz')
+    expect(screen.queryByRole('article')).not.toBeInTheDocument()
+    expect(screen.getByText(/Ningún BD de tu equipo se llama «zzz»/)).toBeInTheDocument()
   })
 
   it('las acciones sin backend están deshabilitadas y lo dicen', async () => {

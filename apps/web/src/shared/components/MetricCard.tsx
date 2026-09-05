@@ -1,4 +1,13 @@
-import { cn } from '@oranje/ui'
+import {
+  Card,
+  CardAction,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  cn,
+  MaterialIcon,
+} from '@oranje/ui'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
@@ -11,14 +20,19 @@ const TONE_CLASS: Record<MetricTone, string> = {
 }
 
 /**
- * Métrica de encabezado: cifra grande, qué mide y de dónde sale.
+ * Métrica de encabezado, sobre la `Card` compuesta de shadcn con la receta
+ * del bloque `dashboard-01` (SectionCards): qué mide arriba en voz baja, la
+ * cifra grande en números tabulares, el ícono como `CardAction` y el pie en
+ * el `CardFooter`. El velo naranja de abajo hacia arriba es el del bloque,
+ * con el primario de Oranje.
  *
  * El pie no es decorativo: sin él, un «21%» o un «5» no dicen de qué. Es la
  * diferencia entre un tablero que informa y uno que solo enseña números.
  *
- * ⚠ No se usa `KpiCard` de `packages/ui`: aquella pone la etiqueta ENCIMA del
- * valor y exige ícono y tendencia. Cuando se pueda tocar ese paquete, lo
- * razonable es unificarlas ahí y borrar esta.
+ * El cero se pinta en gris: un «0» del mismo peso que un «12» grita igual, y
+ * en un tablero de hoy el cero suele ser la respuesta tranquila («nadie en
+ * accidente»), no la alarma. El tono `danger` solo pinta el ícono: el color
+ * nunca habla solo, la etiqueta ya dice qué pasa.
  */
 export function MetricCard({
   value,
@@ -41,30 +55,37 @@ export function MetricCard({
    */
   to?: string
 }): ReactNode {
+  const isZero = /^0([^\d]|$)/.test(value.trim())
+
   const content = (
-    <div
+    <Card
       className={cn(
-        'h-full rounded-lg border border-line bg-surface p-5',
-        to !== undefined && 'transition-colors hover:border-o-500 hover:bg-o-50',
+        '@container/card h-full gap-3 bg-gradient-to-t from-o-500/5 to-card py-5 shadow-xs',
+        to !== undefined && 'transition-colors hover:border-o-500 hover:from-o-500/10',
       )}
     >
-      {icon && (
-        <span
+      <CardHeader className="px-5">
+        <CardDescription className="text-ink-2">{label}</CardDescription>
+        <CardTitle
           className={cn(
-            'mb-4 flex size-10 items-center justify-center rounded-md',
-            TONE_CLASS[tone],
+            'text-3xl font-semibold tracking-tight tabular-nums @[220px]/card:text-4xl',
+            isZero ? 'text-ink-3' : 'text-ink',
           )}
         >
-          <span className="material-icons-outlined text-xl leading-none" aria-hidden>
-            {icon}
-          </span>
-        </span>
-      )}
-
-      <p className="text-4xl tracking-tight text-ink">{value}</p>
-      <p className="mt-3 text-sm text-ink">{label}</p>
-      <p className="mt-1 text-xs text-ink-3">{foot}</p>
-    </div>
+          {value}
+        </CardTitle>
+        {icon && (
+          <CardAction>
+            <span
+              className={cn('flex size-9 items-center justify-center rounded-md', TONE_CLASS[tone])}
+            >
+              <MaterialIcon name={icon} className="text-xl" aria-hidden />
+            </span>
+          </CardAction>
+        )}
+      </CardHeader>
+      <CardFooter className="px-5 text-xs text-ink-3">{foot}</CardFooter>
+    </Card>
   )
 
   if (to === undefined) return content
@@ -72,7 +93,7 @@ export function MetricCard({
   return (
     <Link
       to={to}
-      className="block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
+      className="block rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
     >
       {content}
     </Link>

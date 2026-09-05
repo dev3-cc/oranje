@@ -1,6 +1,7 @@
 import {
   MaterialIcon,
   Select,
+  statusLight,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -23,6 +24,7 @@ import { ChangeStateDialog } from '../components/ChangeStateDialog'
 import { useUploadFileMutation } from '@/app/filesApi'
 import mascotaTriste from '@/assets/mascota/mascota-triste.png'
 import { Button } from '@/shared/components/Button'
+import { CautionPill } from '@/shared/components/CautionPill'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
@@ -65,14 +67,35 @@ function initialsOf(fullName: string): string {
     .toUpperCase()
 }
 
-function Field({ label, value, foot }: { label: string; value: string; foot: string }): ReactNode {
+function Field({
+  label,
+  value,
+  foot,
+  icon,
+}: {
+  label: string
+  value: string
+  foot: string
+  icon?: string
+}): ReactNode {
   return (
-    <div className="min-w-0">
-      <p className="text-xs text-ink-3">{label}</p>
-      <p className="mt-0.5 truncate text-sm font-medium text-ink" title={value}>
-        {value}
-      </p>
-      {IS_DEV_UI && <code className="text-[11px] text-ink-4">{foot}</code>}
+    <div className="flex min-w-0 items-start gap-2.5">
+      {icon !== undefined && (
+        <span
+          aria-hidden
+          className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-2"
+        >
+          <MaterialIcon name={icon} className="text-base text-ink-3" />
+        </span>
+      )}
+      <span className="min-w-0">
+        <p className="text-xs text-ink-3">{label}</p>
+        <p className="mt-0.5 text-sm font-medium break-words text-ink">{value}</p>
+        {/* El pie de dev cabe donde caiga, sin partirse palabra por palabra. */}
+        {IS_DEV_UI && (
+          <code className="block text-[11px] leading-snug break-words text-ink-4">{foot}</code>
+        )}
+      </span>
     </div>
   )
 }
@@ -163,27 +186,49 @@ export function WorkerDetailPage(): ReactNode {
   const statusLabel = workerStatusChipLabel(status)
 
   const identityFields = [
-    { label: 'Nombre completo', value: worker.fullName, foot: 'full_name' },
+    { label: 'Nombre completo', value: worker.fullName, foot: 'full_name', icon: 'person' },
     {
       label: 'Nacimiento',
       value: `${formatDate(worker.birthDate)} · ${String(worker.age)} años`,
       foot: 'birth_date · la edad se calcula en vw_worker',
+      icon: 'cake',
     },
-    { label: 'Género', value: GENDER_LABEL[worker.gender] ?? worker.gender, foot: 'gender' },
-    { label: 'Teléfono', value: worker.phone, foot: 'phone' },
-    { label: 'Zona', value: worker.zone.name, foot: 'zone_id' },
+    {
+      label: 'Género',
+      value: GENDER_LABEL[worker.gender] ?? worker.gender,
+      foot: 'gender',
+      icon: 'face',
+    },
+    { label: 'Teléfono', value: worker.phone, foot: 'phone', icon: 'call' },
+    { label: 'Zona', value: worker.zone.name, foot: 'zone_id', icon: 'map' },
     {
       label: 'Usuario del sistema',
       value: worker.hasAccount ? 'Con cuenta' : 'Sin cuenta todavía',
       foot: 'user_id · nulable — sin cuenta hasta el primer login',
+      icon: 'account_circle',
     },
-    { label: 'Dirección', value: worker.address, foot: 'address' },
+    { label: 'Dirección', value: worker.address, foot: 'address', icon: 'home' },
   ]
 
   const profileFields = [
-    { label: 'Posición', value: worker.position?.name ?? '—', foot: 'catalog_position_id' },
-    { label: 'Inglés', value: worker.englishLevel?.name ?? '—', foot: 'english_level_id' },
-    { label: 'Modalidad', value: worker.hiringModality?.name ?? '—', foot: 'hiring_modality_id' },
+    {
+      label: 'Posición',
+      value: worker.position?.name ?? '—',
+      foot: 'catalog_position_id',
+      icon: 'badge',
+    },
+    {
+      label: 'Inglés',
+      value: worker.englishLevel?.name ?? '—',
+      foot: 'english_level_id',
+      icon: 'translate',
+    },
+    {
+      label: 'Modalidad',
+      value: worker.hiringModality?.name ?? '—',
+      foot: 'hiring_modality_id',
+      icon: 'work',
+    },
     {
       label: 'Experiencia',
       value:
@@ -191,6 +236,7 @@ export function WorkerDetailPage(): ReactNode {
           ? '—'
           : (EXPERIENCE_LABEL[worker.experienceLevel] ?? worker.experienceLevel),
       foot: 'experience_level',
+      icon: 'trending_up',
     },
     {
       label: 'Transporte',
@@ -199,21 +245,25 @@ export function WorkerDetailPage(): ReactNode {
           ? '—'
           : (TRANSPORT_LABEL[worker.transportType] ?? worker.transportType),
       foot: 'transport_type',
+      icon: 'commute',
     },
     {
       label: 'Tipo de sangre',
       value: worker.bloodType === null ? '—' : (BLOOD_LABEL[worker.bloodType] ?? worker.bloodType),
       foot: 'blood_type',
+      icon: 'bloodtype',
     },
     {
       label: 'Contacto de emergencia',
       value: worker.emergencyContact?.name ?? '—',
       foot: 'emergency_contact_name',
+      icon: 'contact_phone',
     },
     {
       label: 'Teléfono de emergencia',
       value: worker.emergencyContact?.phone ?? '—',
       foot: 'emergency_contact_phone',
+      icon: 'call',
     },
     {
       label: 'Parentesco',
@@ -223,11 +273,13 @@ export function WorkerDetailPage(): ReactNode {
           : (RELATIONSHIP_LABEL[worker.emergencyContact.relationship] ??
             worker.emergencyContact.relationship),
       foot: 'emergency_contact_relationship',
+      icon: 'group',
     },
     {
       label: 'Notas médicas',
       value: '—',
       foot: 'medical_notes · el contrato de /workers/:id no la expone',
+      icon: 'medical_services',
     },
   ]
 
@@ -241,63 +293,91 @@ export function WorkerDetailPage(): ReactNode {
         <span className="font-semibold text-ink-2">{worker.fullName}</span>
       </nav>
 
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-center gap-4">
-          {worker.photoUrl ? (
-            <img
-              src={worker.photoUrl}
-              alt=""
-              className="size-14 shrink-0 rounded-full object-cover"
-            />
-          ) : (
-            <span
-              aria-hidden
-              className="flex size-14 shrink-0 items-center justify-center rounded-full bg-o-50 text-base font-bold text-o-700"
-            >
-              {initialsOf(worker.fullName)}
-            </span>
-          )}
+      {/* La PORTADA (referencia de Hugo): banda de degradado de marca, el
+          avatar traslapando el borde con el semáforo como anillo, el estado
+          junto al nombre y desde cuándo está en el Pool. */}
+      <header className="overflow-hidden rounded-xl border border-line bg-surface">
+        <div aria-hidden className="h-24 bg-gradient-to-r from-o-500/35 via-o-50 to-o-500/15" />
+        <div className="flex flex-wrap items-start justify-between gap-4 px-6 pb-5">
           <div>
-            <h1 className="text-2xl font-bold text-ink">{worker.fullName}</h1>
-            <p className="mt-0.5 text-xs text-ink-3">
-              {IS_DEV_UI && 'personal.worker · '}
-              {worker.zone.name} · {worker.position?.name ?? 'Sin posición'}
-            </p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
+            {worker.photoUrl ? (
+              <img
+                src={worker.photoUrl}
+                alt=""
+                style={{ borderColor: statusLight[WORKER_STATUS_TOKEN[status]] }}
+                className="-mt-10 size-20 rounded-full border-2 object-cover ring-4 ring-surface"
+              />
+            ) : (
+              <span
+                aria-hidden
+                style={{ borderColor: statusLight[WORKER_STATUS_TOKEN[status]] }}
+                className="-mt-10 flex size-20 items-center justify-center rounded-full border-2 bg-o-50 text-xl font-bold text-o-700 ring-4 ring-surface"
+              >
+                {initialsOf(worker.fullName)}
+              </span>
+            )}
+
+            <div className="mt-3 flex flex-wrap items-center gap-2.5">
+              <h1 className="text-2xl font-bold text-ink">{worker.fullName}</h1>
+              {/* El estado pegado al nombre, como el «Verified» de la referencia. */}
               <StatusLightSoftBadge token={WORKER_STATUS_TOKEN[status]} label={statusLabel} />
-              <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-medium text-ink-2">
-                {worker.isProfileComplete ? 'Perfil completo' : 'Perfil incompleto'}
-              </span>
-              <span className="rounded-full bg-surface-2 px-3 py-1 text-xs font-medium text-ink-2">
-                {worker.hasTaxId
-                  ? 'ITIN registrado'
-                  : `Sin ITIN · retención 16%${IS_DEV_UI ? ' (D-27)' : ''}`}
-              </span>
               {worker.isBlacklisted && (
                 <span className="rounded-full bg-ink px-3 py-1 text-xs font-medium text-surface">
                   En Blacklist
                 </span>
               )}
             </div>
+
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-3">
+              <span className="inline-flex items-center gap-1.5">
+                <MaterialIcon name="event" className="text-base" aria-hidden />
+                En el Pool desde el {formatDate(worker.createdAt)}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <MaterialIcon name="map" className="text-base" aria-hidden />
+                {worker.zone.name}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <MaterialIcon name="badge" className="text-base" aria-hidden />
+                {worker.position?.name ?? 'Sin posición'}
+              </span>
+            </p>
+
+            {/* Las EXCEPCIONES hablan en voz baja, con icono + palabras. */}
+            {(!worker.isProfileComplete || !worker.hasTaxId) && (
+              <p className="mt-2.5 flex flex-wrap items-center gap-2">
+                {!worker.isProfileComplete && <CautionPill>Perfil incompleto</CautionPill>}
+                {!worker.hasTaxId && (
+                  <CautionPill>
+                    Sin ITIN: aplica retención del 16%{IS_DEV_UI ? ' (D-27)' : ''}
+                  </CautionPill>
+                )}
+              </p>
+            )}
+          </div>
+
+          {/* `ml-auto`: si envuelve a su propia línea, se pega a la derecha en
+              vez de quedar descolgada en medio. */}
+          <div className="mt-4 ml-auto">
+            {canValidate ? (
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setChangeOpen(true)
+                }}
+              >
+                Cambiar estado
+              </Button>
+            ) : (
+              <p className="max-w-60 text-xs text-ink-3 sm:text-right">
+                El estado del semáforo lo mueven la Reclutadora o el Líder de Grupo.
+              </p>
+            )}
           </div>
         </div>
-        {canValidate ? (
-          <Button
-            variant="primary"
-            onClick={() => {
-              setChangeOpen(true)
-            }}
-          >
-            Cambiar estado
-          </Button>
-        ) : (
-          <p className="max-w-60 text-right text-xs text-ink-3">
-            El estado del semáforo lo mueven la Reclutadora o el Líder de Grupo.
-          </p>
-        )}
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex flex-col gap-6">
           <SectionCard
             title="Identidad"
@@ -307,10 +387,12 @@ export function WorkerDetailPage(): ReactNode {
                 : 'Sin estos datos no hay Fase 1'
             }
           >
-            <div className="grid gap-x-6 gap-y-4 sm:grid-cols-3">
-              {identityFields.map((field) => (
-                <Field key={field.foot} {...field} />
-              ))}
+            <div className="@container">
+              <div className="grid gap-x-6 gap-y-4 @md:grid-cols-2 @2xl:grid-cols-3">
+                {identityFields.map((field) => (
+                  <Field key={field.foot} {...field} />
+                ))}
+              </div>
             </div>
           </SectionCard>
 
@@ -322,10 +404,12 @@ export function WorkerDetailPage(): ReactNode {
                 : 'Con estos 9 datos el perfil queda completo; la foto no cuenta'
             }
           >
-            <div className="grid gap-x-6 gap-y-4 sm:grid-cols-3">
-              {profileFields.map((field) => (
-                <Field key={field.foot} {...field} />
-              ))}
+            <div className="@container">
+              <div className="grid gap-x-6 gap-y-4 @md:grid-cols-2 @2xl:grid-cols-3">
+                {profileFields.map((field) => (
+                  <Field key={field.foot} {...field} />
+                ))}
+              </div>
             </div>
           </SectionCard>
 

@@ -6,6 +6,7 @@ export { DataTable } from './components/DataTable'
 export type { ColumnDef } from '@tanstack/react-table'
 
 export { Skeleton } from './components/ui/skeleton'
+export { Spinner } from './components/ui/spinner'
 export {
   Table,
   TableBody,
@@ -62,6 +63,7 @@ export * from '../tokens'
 export { Alert, AlertDescription, AlertTitle } from './components/ui/alert'
 export {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardFooter,

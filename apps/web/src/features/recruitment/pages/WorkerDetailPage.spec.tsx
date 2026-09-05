@@ -28,10 +28,11 @@ describe('WorkerDetailPage', () => {
     renderDetail()
 
     expect(await screen.findByRole('heading', { name: 'Ana Rivera Gómez' })).toBeInTheDocument()
-    expect(screen.getByText('STRONG_GREEN · Disponible')).toBeInTheDocument()
-    expect(screen.getByText('Perfil completo')).toBeInTheDocument()
-    // D-27: el cifrado no está conectado — se dice la consecuencia, no «ITIN registrado».
-    expect(screen.getByText('Sin ITIN · retención 16% (D-27)')).toBeInTheDocument()
+    expect(screen.getByText('Disponible')).toBeInTheDocument()
+    // Lo que está bien NO se anuncia (perfil completo = silencio); la
+    // excepción sí habla. D-27: se dice la consecuencia, no «ITIN registrado».
+    expect(screen.queryByText(/Perfil incompleto/)).not.toBeInTheDocument()
+    expect(screen.getByText(/Sin ITIN: aplica retención del 16%/)).toBeInTheDocument()
   })
 
   it('identidad y perfil hablan en palabras, y lo que el contrato no trae va en raya', async () => {
@@ -80,9 +81,7 @@ describe('WorkerDetailPage', () => {
     await user.click(screen.getByRole('button', { name: 'Cambiar estado' }))
 
     const dialog = await screen.findByRole('dialog')
-    expect(
-      await within(dialog).findByText('BROWN · Asig. temporal', undefined, SLOW),
-    ).toBeInTheDocument()
+    expect(await within(dialog).findByText('Asig. temporal', undefined, SLOW)).toBeInTheDocument()
     expect(within(dialog).queryByText(/ORANGE/)).not.toBeInTheDocument()
 
     await user.click(within(dialog).getByRole('radio'))
@@ -90,7 +89,7 @@ describe('WorkerDetailPage', () => {
 
     // El chip del encabezado se actualiza porque la mutación invalida la ficha.
     await waitFor(() => {
-      expect(screen.getByText('BROWN · Asig. temporal')).toBeInTheDocument()
+      expect(screen.getByText('Asig. temporal')).toBeInTheDocument()
     }, SLOW)
     // Y la historia ganó su fila: la verdad del semáforo es la tabla de historia.
     expect(await screen.findByText('STRONG_GREEN → BROWN', undefined, SLOW)).toBeInTheDocument()

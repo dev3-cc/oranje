@@ -23,6 +23,25 @@ import {
 import { useRef } from 'react'
 import { cn } from '@oranje/ui'
 
+/**
+ * Adaptación de casa: `borderRadius` (rem/px) a número de px, para pasarlo
+ * como `rx`/`ry` DEL MISMO valor al `<rect>` guía (ver `MovingBorder` abajo).
+ * El original fijaba `rx="30%" ry="30%"` sin importar `borderRadius` — un
+ * porcentaje se resuelve contra el ancho (rx) y el alto (ry) del SVG por
+ * separado, así que en una caja ancha y baja (como el marco de una corrida de
+ * días) da una esquina MUY elíptica (p.ej. rx≈158px, ry≈30px) mientras el
+ * borde CSS visible es un radio simétrico de ~12px — el "cometa" viaja por
+ * una curva bastante distinta a la línea que se ve, y se sale de ella en las
+ * esquinas. Con `rx=ry` en px, calcado del mismo radio visible, la guía y la
+ * línea coinciden.
+ */
+function borderRadiusToPx(value: string): number {
+  const match = /^([\d.]+)(px|rem)?$/.exec(value.trim())
+  if (!match) return 0
+  const amount = parseFloat(match[1] ?? '0')
+  return match[2] === 'rem' ? amount * 16 : amount
+}
+
 export function Button({
   borderRadius = '1.75rem',
   children,
@@ -42,6 +61,10 @@ export function Button({
   className?: string
   [key: string]: any
 }) {
+  /** Mismo factor 0.96 que ya reduce el borde CSS interno: la guía debe medir
+      lo mismo que la línea que se ve, no el radio exterior sin reducir. */
+  const cornerRadiusPx = borderRadiusToPx(borderRadius) * 0.96
+
   return (
     <Component
       className={cn(
@@ -54,7 +77,7 @@ export function Button({
       {...otherProps}
     >
       <div className="absolute inset-0" style={{ borderRadius: `calc(${borderRadius} * 0.96)` }}>
-        <MovingBorder duration={duration} rx="30%" ry="30%">
+        <MovingBorder duration={duration} rx={cornerRadiusPx} ry={cornerRadiusPx}>
           <div
             className={cn(
               'h-20 w-20 bg-[radial-gradient(#0ea5e9_40%,transparent_60%)] opacity-[0.8]',
@@ -88,8 +111,8 @@ export const MovingBorder = ({
 }: {
   children: React.ReactNode
   duration?: number
-  rx?: string
-  ry?: string
+  rx?: string | number
+  ry?: string | number
   [key: string]: any
 }) => {
   const pathRef = useRef<any>()
@@ -117,8 +140,32 @@ export const MovingBorder = ({
       ? pathRef.current.getPointAtLength(val).y
       : 0,
   )
+  /**
+   * Adaptación de casa: el original solo traslada — nunca rota — el
+   * `borderClassName` que el CALLER pone dentro. Con el blob circular de la
+   * demo (`radial-gradient`, simétrico) eso no se nota; con una barra
+   * direccional como la nuestra (`h-[3px] w-16`, un segmento horizontal), no
+   * rotar significa que en los lados VERTICALES del marco la barra se queda
+   * horizontal y cruza perpendicular sobre la línea — ~32px de cada lado del
+   * punto real, la mitad metiéndose a la tarjeta. Se rota según la tangente
+   * del recorrido (dos puntos cercanos sobre el mismo `<rect>`), 0° en los
+   * lados horizontales y 90° en los verticales, interpolando en las esquinas.
+   */
+  const angle = useTransform(progress, (val) => {
+    if (typeof pathRef.current?.getPointAtLength !== 'function') return 0
+    const length = pathRef.current.getTotalLength()
+    if (!length) return 0
+    const eps = 0.5
+    const p1 = pathRef.current.getPointAtLength(val)
+    const p2 = pathRef.current.getPointAtLength((val + eps) % length)
+    return (Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180) / Math.PI
+  })
 
-  const transform = useMotionTemplate`translateX(${x}px) translateY(${y}px) translateX(-50%) translateY(-50%)`
+  /* `rotate` va AL FINAL de la lista: en CSS el transform se aplica de
+     derecha a izquierda, así que rota la barra sobre su propio centro
+     ANTES de que las traslaciones la reubiquen sobre el punto del path —
+     "gira en su lugar, luego mueve", no al revés. */
+  const transform = useMotionTemplate`translateX(${x}px) translateY(${y}px) translateX(-50%) translateY(-50%) rotate(${angle}deg)`
 
   return (
     <>
