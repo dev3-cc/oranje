@@ -59,9 +59,16 @@ export function TimesheetPage(): ReactNode {
     entry: TimesheetEntry
     workerName: string
     context: ReviewContext | null
+    /** Con qué abrir Marca manual si la piden desde aquí mismo. */
+    manualPunchTarget: Pick<TimesheetRow, 'requisitionId' | 'workerId' | 'workerName'>
   } | null>(null)
   /** La fila con el diálogo de marca manual abierto; `null` = cerrado. */
-  const [manualPunchRow, setManualPunchRow] = useState<TimesheetRow | null>(null)
+  const [manualPunchRow, setManualPunchRow] = useState<Pick<
+    TimesheetRow,
+    'requisitionId' | 'workerId' | 'workerName'
+  > | null>(null)
+  /** El día a precargar cuando Marca manual se abrió desde Revisión del día. */
+  const [manualPunchInitialDate, setManualPunchInitialDate] = useState<string | null>(null)
 
   const can = useCan()
   /** Pagar es de Contabilidad (doble firma del Flujo de Nómina), no del Hotel. */
@@ -254,10 +261,13 @@ export function TimesheetPage(): ReactNode {
                   selectedIds={selectedIds}
                   selectable={canPay}
                   onToggle={toggle}
-                  onReview={(entry, workerName, context) => {
-                    setReview({ entry, workerName, context: context ?? null })
+                  onReview={(entry, workerName, context, manualPunchTarget) => {
+                    setReview({ entry, workerName, context: context ?? null, manualPunchTarget })
                   }}
-                  onManualPunch={setManualPunchRow}
+                  onManualPunch={(row) => {
+                    setManualPunchRow(row)
+                    setManualPunchInitialDate(null)
+                  }}
                 />
               ) : (
                 <TableSkeleton rows={7} columns={8} />
@@ -267,8 +277,8 @@ export function TimesheetPage(): ReactNode {
                 <TimesheetHoursView
                   timeline={timeline}
                   selectedWeek={selectedWeek}
-                  onReview={(entry, workerName, context) => {
-                    setReview({ entry, workerName, context: context ?? null })
+                  onReview={(entry, workerName, context, manualPunchTarget) => {
+                    setReview({ entry, workerName, context: context ?? null, manualPunchTarget })
                   }}
                 />
               ) : (
@@ -286,8 +296,10 @@ export function TimesheetPage(): ReactNode {
 
       <ManualPunchDialog
         row={manualPunchRow}
+        initialDate={manualPunchInitialDate}
         onClose={() => {
           setManualPunchRow(null)
+          setManualPunchInitialDate(null)
         }}
       />
 
@@ -295,6 +307,15 @@ export function TimesheetPage(): ReactNode {
         entry={review?.entry ?? null}
         workerName={review?.workerName ?? ''}
         context={review?.context ?? null}
+        onManualPunch={
+          review
+            ? () => {
+                setManualPunchRow(review.manualPunchTarget)
+                setManualPunchInitialDate(review.entry.date)
+                setReview(null)
+              }
+            : undefined
+        }
         onClose={() => {
           setReview(null)
         }}

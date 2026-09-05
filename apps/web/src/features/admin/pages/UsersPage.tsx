@@ -1,4 +1,4 @@
-import { cn, Input, MaterialIcon } from '@oranje/ui'
+import { cn, MaterialIcon } from '@oranje/ui'
 import { useMemo, useState, type ReactNode } from 'react'
 
 import { useGetStaffRolesQuery, useGetStaffUsersQuery } from '../api/adminApi'
@@ -7,10 +7,13 @@ import type { StaffUser } from '../types/admin.types'
 
 import personajeConfiguracion from '@/assets/ilustrations/personaje-configuracion.svg'
 import { Button } from '@/shared/components/Button'
+import { FilterReset } from '@/shared/components/FilterReset'
 import { FilterSelect } from '@/shared/components/FilterSelect'
 import { LoadError } from '@/shared/components/LoadError'
 import { NoticeCard } from '@/shared/components/NoticeCard'
+import { SearchField } from '@/shared/components/SearchField'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
+import { useDebounce } from '@/shared/hooks/useDebounce'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const DATE_FORMAT = new Intl.DateTimeFormat('es-MX', {
@@ -52,16 +55,28 @@ export function UsersPage(): ReactNode {
   const [editing, setEditing] = useState<StaffUser | null>(null)
   const [isFormOpen, setIsFormOpen] = useState(false)
 
+  /* El campo responde al instante; la consulta espera a que se deje de teclear. */
+  const settledSearch = useDebounce(search).trim()
+  const hasFilters = search.trim() !== '' || roleFilter !== 'ALL'
+
   const { data: roles = [] } = useGetStaffRolesQuery()
   const {
     data: users = [],
     isLoading,
+    isFetching,
     isError,
     error,
     refetch,
   } = useGetStaffUsersQuery({
-    ...(search.trim() ? { search: search.trim() } : {}),
+    ...(settledSearch ? { search: settledSearch } : {}),
     ...(roleFilter !== 'ALL' ? { roleCode: roleFilter } : {}),
+    /*
+     * A propósito, no un olvido. `includeInactive` es «también los inactivos»,
+     * no «solo»: la pestaña Inactivos necesitaría la lista completa de todos
+     * modos, y de esta misma respuesta salen el contador de la OTRA pestaña y
+     * el «Reporta a» del formulario (solo activos). Una consulta con todo es
+     * más barata que dos, y el personal interno cabe en una página.
+     */
     includeInactive: true,
   })
 
@@ -127,15 +142,13 @@ export function UsersPage(): ReactNode {
           </button>
         ))}
         <span className="flex-1" />
-        <Input
-          type="search"
+        <SearchField
+          isSearching={isFetching && settledSearch !== ''}
           value={search}
-          onChange={(event) => {
-            setSearch(event.target.value)
-          }}
-          placeholder="Ana López o ana@casacurtidor.com"
-          aria-label="Buscar usuario"
-          className="h-auto w-64 rounded-full py-2.5"
+          onChange={setSearch}
+          label="Buscar usuario"
+          placeholder="Nombre o correo, p. ej. Ana López…"
+          className="w-72"
         />
         <FilterSelect
           label="Rol"
@@ -144,6 +157,13 @@ export function UsersPage(): ReactNode {
           options={roles.map((role) => ({ value: role.code, label: role.name }))}
           onChange={setRoleFilter}
           icon="badge"
+        />
+        <FilterReset
+          activeCount={(search.trim() !== '' ? 1 : 0) + (roleFilter !== 'ALL' ? 1 : 0)}
+          onReset={() => {
+            setSearch('')
+            setRoleFilter('ALL')
+          }}
         />
         <Button
           variant="primary"
@@ -167,9 +187,11 @@ export function UsersPage(): ReactNode {
         <TableSkeleton rows={6} columns={4} />
       ) : visible.length === 0 ? (
         <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-          {tab === 'active'
-            ? 'Nadie coincide con esa búsqueda. Prueba otro nombre, correo o rol.'
-            : 'Nadie está de baja. Las personas que des de baja aparecerán aquí.'}
+          {hasFilters
+            ? 'Nadie coincide con esa búsqueda. Prueba otro nombre, correo o rol, o quita los filtros.'
+            : tab === 'active'
+              ? 'Todavía no hay personal activo. Agrega al primer usuario con el botón de arriba.'
+              : 'Nadie está de baja. Las personas que des de baja aparecerán aquí.'}
         </p>
       ) : (
         <ul className="overflow-hidden rounded-2xl border border-line bg-surface">

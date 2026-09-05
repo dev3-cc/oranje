@@ -15,9 +15,9 @@ import { store } from '@/app/store'
  * propósito: los fixtures repiten cinco hoteles como prospecto abierto y como
  * cliente convertido (ver el aviso en `onboardingMocks.ts`).
  */
-function renderTerritory(): void {
+function renderTerritory(initialEntry = '/mi-territorio'): ReturnType<typeof createMemoryRouter> {
   const router = createMemoryRouter([{ path: '/mi-territorio', element: <TerritoryPage /> }], {
-    initialEntries: ['/mi-territorio'],
+    initialEntries: [initialEntry],
   })
 
   render(
@@ -25,7 +25,11 @@ function renderTerritory(): void {
       <RouterProvider router={router} />
     </Provider>,
   )
+
+  return router
 }
+
+const SEARCH_LABEL = 'Buscar hotel en mi territorio'
 
 describe('TerritoryPage', () => {
   it('lista los hoteles del territorio con su zona', async () => {
@@ -52,6 +56,39 @@ describe('TerritoryPage', () => {
     expect((await screen.findAllByText('Suites del Carmen')).length).toBeGreaterThan(0)
     await waitFor(() => {
       expect(screen.queryAllByText('Hotel Puerto Real')).toHaveLength(0)
+    })
+  })
+
+  it('la búsqueda entra por la URL, y la URL sigue a la búsqueda', async () => {
+    const router = renderTerritory('/mi-territorio?q=carmen')
+
+    expect(screen.getByLabelText(SEARCH_LABEL)).toHaveValue('carmen')
+    expect((await screen.findAllByText('Suites del Carmen')).length).toBeGreaterThan(0)
+    await waitFor(() => {
+      expect(screen.queryAllByText('Hotel Puerto Real')).toHaveLength(0)
+    })
+
+    await userEvent.clear(screen.getByLabelText(SEARCH_LABEL))
+    await userEvent.type(screen.getByLabelText(SEARCH_LABEL), 'puerto')
+    await waitFor(() => {
+      expect(router.state.location.search).toBe('?q=puerto')
+    })
+    expect((await screen.findAllByText('Hotel Puerto Real')).length).toBeGreaterThan(0)
+  })
+
+  it('«Quitar filtros» limpia búsqueda y zona, y la búsqueda se va de la URL', async () => {
+    const router = renderTerritory('/mi-territorio?q=carmen')
+    await screen.findAllByText('Suites del Carmen')
+
+    await userEvent.click(screen.getByRole('button', { name: /^Sur\s*\d+$/ }))
+    expect(screen.getByRole('button', { name: /Quitar filtros/ })).toHaveTextContent('2')
+
+    await userEvent.click(screen.getByRole('button', { name: /Quitar filtros/ }))
+    expect(screen.getByLabelText(SEARCH_LABEL)).toHaveValue('')
+    expect(screen.queryByRole('button', { name: /Quitar filtros/ })).not.toBeInTheDocument()
+    expect((await screen.findAllByText('Hotel Puerto Real')).length).toBeGreaterThan(0)
+    await waitFor(() => {
+      expect(router.state.location.search).toBe('')
     })
   })
 

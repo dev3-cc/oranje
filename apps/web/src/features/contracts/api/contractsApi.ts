@@ -10,6 +10,7 @@ import { registerContractsMocks } from './contractsMocks'
 
 import { baseApi } from '@/app/baseApi'
 import type { ContractStatus } from '@/shared/constants/contractStatus'
+import { matchesSearch } from '@/shared/lib/text'
 import type {
   ApiEnvelope,
   ContractApi,
@@ -97,9 +98,9 @@ export function toContractDetail(contract: ContractApi): ContractDetail {
   }
 }
 
-/** Minúsculas y sin acentos, para que «bahia» encuentre «Bahía». */
-function normalize(value: string): string {
-  return value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+/** Vence dentro del plazo: tiene cuenta regresiva, no pasó y cabe en N días. */
+function expiresWithin(row: ContractRow, days: number): boolean {
+  return row.daysRemaining !== null && row.daysRemaining >= 0 && row.daysRemaining <= days
 }
 
 async function fetchContractList(
@@ -141,13 +142,8 @@ async function fetchContractList(
   const items = rows.filter((row) => {
     if (filters.status !== ANY_VALUE && row.status !== filters.status) return false
     if (filters.zoneName !== ANY_VALUE && row.zoneName !== filters.zoneName) return false
-    if (
-      filters.search &&
-      !normalize(`${row.number} ${row.hotelName}`).includes(normalize(filters.search))
-    ) {
-      return false
-    }
-    return true
+    if (filters.expiresInDays !== null && !expiresWithin(row, filters.expiresInDays)) return false
+    return matchesSearch(filters.search, row.number, row.hotelName)
   })
 
   return {

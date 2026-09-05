@@ -29,6 +29,30 @@ describe('CatalogsPage', () => {
     expect(within(housekeeper).getByText('Housekeeping')).toBeInTheDocument()
   })
 
+  it('el buscador filtra la pestaña en memoria y el vacío dice cómo salir', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    expect(await screen.findByText('Housekeeping')).toBeInTheDocument()
+    const field = screen.getByLabelText('Buscar en Departamentos')
+
+    // Sin acentos ni mayúsculas: «alim» encuentra «Alimentos».
+    await user.type(field, 'ALIM')
+    expect(screen.getByText('Alimentos')).toBeInTheDocument()
+    expect(screen.queryByText('Housekeeping')).not.toBeInTheDocument()
+
+    await user.clear(field)
+    await user.type(field, 'zzz')
+    expect(
+      screen.getByText('Ninguna fila coincide con «zzz». Cambia la búsqueda o agrégala.'),
+    ).toBeInTheDocument()
+
+    // Cambiar de pestaña limpia la búsqueda: la pestaña nueva se abre completa.
+    await user.click(screen.getByRole('tab', { name: 'Posiciones' }))
+    expect(await screen.findByText('Housekeeper')).toBeInTheDocument()
+    expect(screen.getByLabelText('Buscar en Posiciones')).toHaveValue('')
+  })
+
   it('agrega una modalidad nueva desde el diálogo', async () => {
     const user = userEvent.setup()
     renderPage()

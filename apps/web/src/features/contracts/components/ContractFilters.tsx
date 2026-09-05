@@ -1,42 +1,44 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@oranje/ui'
-import { Input } from '@oranje/ui'
-import type { ChangeEvent, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
-import type { ContractListFilters } from '../types/contract.types'
+import { ANY_VALUE, type ContractListFilters } from '../types/contract.types'
 
+import { FilterReset } from '@/shared/components/FilterReset'
 import { FilterSelect } from '@/shared/components/FilterSelect'
+import { SearchField } from '@/shared/components/SearchField'
 import { CONTRACT_STATUSES, EXPIRY_WINDOWS } from '@/shared/constants/contractStatus'
 
 export function ContractFilters({
   filters,
   zoneNames,
-  warningDays,
   onChange,
-  onWarningDaysChange,
+  onReset,
 }: {
   filters: ContractListFilters
   zoneNames: string[]
-  warningDays: number
   onChange: (filters: ContractListFilters) => void
-  onWarningDaysChange: (days: number) => void
+  onReset: () => void
 }): ReactNode {
   const update =
     <K extends keyof ContractListFilters>(key: K) =>
-    (value: string): void => {
-      onChange({ ...filters, [key]: value as ContractListFilters[K] })
+    (value: ContractListFilters[K]): void => {
+      onChange({ ...filters, [key]: value })
     }
 
+  const activeCount = [
+    filters.search.trim() !== '',
+    filters.status !== ANY_VALUE,
+    filters.zoneName !== ANY_VALUE,
+    filters.expiresInDays !== null,
+  ].filter(Boolean).length
+
   return (
-    <div className="flex flex-wrap items-center gap-4">
-      <Input
-        type="search"
+    <div className="flex flex-wrap items-center gap-3">
+      <SearchField
         value={filters.search}
-        onChange={(event: ChangeEvent<HTMLInputElement>) => {
-          update('search')(event.target.value)
-        }}
-        placeholder="Hotel Puerto Real o CT-2026-0184"
-        aria-label="Buscar por hotel o número"
-        className="h-auto w-full max-w-md min-w-72 rounded-full px-5 py-2.5 hover:bg-surface-2"
+        onChange={update('search')}
+        label="Buscar contrato"
+        placeholder="Hotel o número de contrato, p. ej. Puerto Real…"
+        className="w-full max-w-md"
       />
 
       <FilterSelect
@@ -44,7 +46,9 @@ export function ContractFilters({
         anyLabel="todos"
         value={filters.status}
         options={CONTRACT_STATUSES.map((status) => ({ value: status, label: status }))}
-        onChange={update('status')}
+        onChange={(value) => {
+          update('status')(value as ContractListFilters['status'])
+        }}
       />
 
       <FilterSelect
@@ -55,23 +59,23 @@ export function ContractFilters({
         onChange={update('zoneName')}
       />
 
-      <Select
-        value={String(warningDays)}
-        onValueChange={(value) => {
-          onWarningDaysChange(Number(value))
+      {/* Filtra de verdad: fuera quedan los que no vencen en ese plazo. El
+          mismo plazo es el umbral de «vence en N días» de cada renglón. */}
+      <FilterSelect
+        icon="event"
+        label="Vencimiento"
+        anyLabel="todos"
+        value={filters.expiresInDays === null ? ANY_VALUE : String(filters.expiresInDays)}
+        options={EXPIRY_WINDOWS.map((days) => ({
+          value: String(days),
+          label: `en ${String(days)} días`,
+        }))}
+        onChange={(value) => {
+          update('expiresInDays')(value === ANY_VALUE ? null : Number(value))
         }}
-      >
-        <SelectTrigger aria-label="Avisar cuando venza en" className="rounded-full">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {EXPIRY_WINDOWS.map((days) => (
-            <SelectItem key={days} value={String(days)}>
-              Vence en: {days} días
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      />
+
+      <FilterReset activeCount={activeCount} onReset={onReset} />
     </div>
   )
 }

@@ -25,10 +25,12 @@ import { Button } from '@/shared/components/Button'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { Modal } from '@/shared/components/Modal'
+import { SearchField } from '@/shared/components/SearchField'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { useCan } from '@/shared/hooks/useCan'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
+import { matchesSearch } from '@/shared/lib/text'
 
 /** Cada pestaña: cómo se llama, su singular y de qué lista bebe. */
 interface TabConfig {
@@ -36,6 +38,8 @@ interface TabConfig {
   pick: (data: AdminCatalogs) => AdminCatalogItem[]
   /** Singular para los textos de los diálogos. */
   noun: string
+  /** El buscador enseña el patrón con un ejemplo de ESA pestaña. */
+  searchPlaceholder: string
 }
 
 const TAB_CONFIG: Record<ManagedCatalog, TabConfig> = {
@@ -43,13 +47,25 @@ const TAB_CONFIG: Record<ManagedCatalog, TabConfig> = {
     label: 'Departamentos',
     pick: (data) => data.departments,
     noun: 'departamento',
+    searchPlaceholder: 'Nombre del departamento, p. ej. Housekeeping…',
   },
-  positions: { label: 'Posiciones', pick: (data) => data.positions, noun: 'posición' },
-  'hiring-modalities': { label: 'Modalidades', pick: (data) => data.modalities, noun: 'modalidad' },
+  positions: {
+    label: 'Posiciones',
+    pick: (data) => data.positions,
+    noun: 'posición',
+    searchPlaceholder: 'Nombre de la posición, p. ej. Steward…',
+  },
+  'hiring-modalities': {
+    label: 'Modalidades',
+    pick: (data) => data.modalities,
+    noun: 'modalidad',
+    searchPlaceholder: 'Nombre de la modalidad, p. ej. Tiempo completo…',
+  },
   'english-levels': {
     label: 'Niveles de inglés',
     pick: (data) => data.englishLevels,
     noun: 'nivel de inglés',
+    searchPlaceholder: 'Nombre del nivel, p. ej. Conversacional…',
   },
 }
 
@@ -74,6 +90,8 @@ export function CatalogsPage(): ReactNode {
   const { data, isLoading, isError, refetch } = useGetAdminCatalogsQuery()
 
   const [active, setActive] = useState<ManagedCatalog>('hotel-departments')
+  /** Filtra EN MEMORIA la pestaña activa por nombre; se vacía al cambiar de pestaña. */
+  const [search, setSearch] = useState('')
   const [editor, setEditor] = useState<EditorState | null>(null)
   const [pendingDelete, setPendingDelete] = useState<{
     catalog: ManagedCatalog
@@ -83,6 +101,7 @@ export function CatalogsPage(): ReactNode {
 
   const tab = { catalog: active, ...TAB_CONFIG[active] }
   const rows = data ? tab.pick(data) : []
+  const visibleRows = rows.filter((row) => matchesSearch(search, row.name))
   const departmentName = (id: string | undefined): string =>
     data?.departments.find((department) => department.id === id)?.name ?? '—'
 
@@ -126,6 +145,7 @@ export function CatalogsPage(): ReactNode {
             aria-selected={item.catalog === active}
             onClick={() => {
               setActive(item.catalog)
+              setSearch('')
             }}
             className={cn(
               'cursor-pointer rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors',
@@ -138,6 +158,14 @@ export function CatalogsPage(): ReactNode {
           </button>
         ))}
       </div>
+
+      <SearchField
+        value={search}
+        onChange={setSearch}
+        label={`Buscar en ${tab.label}`}
+        placeholder={tab.searchPlaceholder}
+        className="w-full max-w-md"
+      />
 
       {isError && (
         <LoadError
@@ -154,9 +182,13 @@ export function CatalogsPage(): ReactNode {
         <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
           Este catálogo está vacío. Agrega su primera fila con el botón de arriba.
         </p>
+      ) : visibleRows.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+          Ninguna fila coincide con «{search.trim()}». Cambia la búsqueda o agrégala.
+        </p>
       ) : (
         <ul className="overflow-hidden rounded-lg border border-line bg-surface">
-          {rows.map((row) => (
+          {visibleRows.map((row) => (
             <li
               key={row.id}
               className="flex items-center gap-3 border-b border-line px-5 py-3 last:border-b-0"

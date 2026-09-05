@@ -13,8 +13,10 @@ import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
+import { MagicCard } from '@/shared/components/MagicCard'
 import { MetricCard } from '@/shared/components/MetricCard'
 import { NoticeCard } from '@/shared/components/NoticeCard'
+import { SearchField } from '@/shared/components/SearchField'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   ONBOARDING_STATUS_LABEL,
@@ -22,6 +24,7 @@ import {
 } from '@/shared/constants/onboardingStatus'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatList, formatPercent } from '@/shared/lib/formatters'
+import { matchesSearch } from '@/shared/lib/text'
 
 function initialsOf(fullName: string): string {
   return fullName
@@ -54,42 +57,45 @@ function MemberRow({
 }): ReactNode {
   return (
     <li>
-      <button
-        type="button"
-        onClick={() => {
-          onSelect(member.id)
-        }}
-        className={cn(
-          'flex w-full cursor-pointer items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500',
-          isSelected ? 'border-o-500 bg-o-50' : 'border-line bg-surface hover:bg-surface-2',
-        )}
-      >
-        {member.photoUrl ? (
-          <img
-            src={member.photoUrl}
-            alt=""
-            aria-hidden
-            className="size-11 shrink-0 rounded-full object-cover"
-          />
-        ) : (
-          <span
-            aria-hidden
-            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-o-500/15 text-sm font-bold text-o-700"
-          >
-            {initialsOf(member.fullName)}
+      {/* Magic Bento (reactbits): la fila avisa al pasar; se apaga sola en táctil y reduced motion. */}
+      <MagicCard className="rounded-xl">
+        <button
+          type="button"
+          onClick={() => {
+            onSelect(member.id)
+          }}
+          className={cn(
+            'flex w-full cursor-pointer items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500',
+            isSelected ? 'border-o-500 bg-o-50' : 'border-line bg-surface hover:bg-surface-2',
+          )}
+        >
+          {member.photoUrl ? (
+            <img
+              src={member.photoUrl}
+              alt=""
+              aria-hidden
+              className="size-11 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <span
+              aria-hidden
+              className="flex size-11 shrink-0 items-center justify-center rounded-full bg-o-500/15 text-sm font-bold text-o-700"
+            >
+              {initialsOf(member.fullName)}
+            </span>
+          )}
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-semibold text-ink">{member.fullName}</span>
+            <span className="block text-xs text-ink-3">
+              {member.openProspects} {member.openProspects === 1 ? 'abierto' : 'abiertos'}
+              {member.staleCount > 0 && ` · ${String(member.staleCount)} sin actividad`}
+            </span>
           </span>
-        )}
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold text-ink">{member.fullName}</span>
-          <span className="block text-xs text-ink-3">
-            {member.openProspects} {member.openProspects === 1 ? 'abierto' : 'abiertos'}
-            {member.staleCount > 0 && ` · ${String(member.staleCount)} sin actividad`}
+          <span className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-xs font-semibold text-ink-2">
+            {member.quarterConversions} conv.
           </span>
-        </span>
-        <span className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-xs font-semibold text-ink-2">
-          {member.quarterConversions} conv.
-        </span>
-      </button>
+        </button>
+      </MagicCard>
     </li>
   )
 }
@@ -234,6 +240,8 @@ export function TeamPage(): ReactNode {
   const { data: overview, isLoading, isError, error, refetch } = useGetTeamOverviewQuery()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [territoryMember, setTerritoryMember] = useState<TeamMemberCard | null>(null)
+  /** Por nombre, EN MEMORIA: el equipo ya está cargado entero. */
+  const [search, setSearch] = useState('')
 
   const status = (error as { status?: number } | undefined)?.status
 
@@ -259,8 +267,10 @@ export function TeamPage(): ReactNode {
     )
   }
 
-  const selected =
-    overview.members.find((member) => member.id === selectedId) ?? overview.members[0]
+  const visibleMembers = overview.members.filter((member) => matchesSearch(search, member.fullName))
+  /* El elegido sale de lo VISIBLE: si la búsqueda lo deja fuera, el panel
+     pasa al primero que sí se ve, y sin nadie visible no se pinta a nadie. */
+  const selected = visibleMembers.find((member) => member.id === selectedId) ?? visibleMembers[0]
 
   return (
     <div className="flex flex-col gap-6">
@@ -311,16 +321,31 @@ export function TeamPage(): ReactNode {
       ) : (
         /* Lista a la izquierda, detalle a la derecha: un BD siempre elegido. */
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[300px_1fr]">
-          <ul className="flex flex-col gap-2">
-            {overview.members.map((member) => (
-              <MemberRow
-                key={member.id}
-                member={member}
-                isSelected={member.id === selected?.id}
-                onSelect={setSelectedId}
-              />
-            ))}
-          </ul>
+          <div className="flex flex-col gap-3">
+            <SearchField
+              value={search}
+              onChange={setSearch}
+              label="Buscar BD"
+              placeholder="Nombre del BD, p. ej. Rocío Lima…"
+            />
+            {visibleMembers.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-line bg-surface p-6 text-center text-sm text-ink-3">
+                Ningún BD de tu equipo se llama «{search.trim()}». Cambia la búsqueda o límpiala
+                para ver a todos.
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {visibleMembers.map((member) => (
+                  <MemberRow
+                    key={member.id}
+                    member={member}
+                    isSelected={member.id === selected?.id}
+                    onSelect={setSelectedId}
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
 
           {selected && <MemberDetail member={selected} onAssignTerritory={setTerritoryMember} />}
         </div>

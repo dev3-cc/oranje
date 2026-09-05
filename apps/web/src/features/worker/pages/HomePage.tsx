@@ -218,7 +218,7 @@ export function HomePage(): ReactNode {
           action={
             <Link
               to="/colaborador/alta-2"
-              className="inline-flex min-h-11 touch-manipulation items-center rounded-md bg-o-500 px-4 text-sm font-semibold text-ink transition-colors hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-700"
+              className="inline-flex min-h-11 touch-manipulation items-center rounded-md bg-o-200 px-4 text-sm font-semibold text-o-900 transition-colors hover:bg-o-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-700"
             >
               Completar mis datos
             </Link>

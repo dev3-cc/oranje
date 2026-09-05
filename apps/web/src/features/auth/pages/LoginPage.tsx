@@ -295,7 +295,7 @@ export function LoginPage(): ReactNode {
                     disabled={isSubmitting}
                     whileHover={{ scale: isSubmitting ? 1 : 1.015 }}
                     whileTap={{ scale: isSubmitting ? 1 : 0.985 }}
-                    className="rounded-md bg-o-500 px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-o-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="rounded-md bg-o-200 px-4 py-3 text-sm font-semibold text-o-900 transition-colors hover:bg-o-300 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {isSubmitting ? 'Iniciando sesión…' : 'Iniciar sesión'}
                   </motion.button>
@@ -355,7 +355,7 @@ export function LoginPage(): ReactNode {
                       onClick={() => {
                         void onRequestReset()
                       }}
-                      className="rounded-md bg-o-500 px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-o-700"
+                      className="rounded-md bg-o-200 px-4 py-3 text-sm font-semibold text-o-900 transition-colors hover:bg-o-300"
                     >
                       Enviar enlace
                     </motion.button>

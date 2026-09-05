@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router'
 
 import { useGetTerritoryOwnersQuery, useGetTerritoryQuery } from '../api/territoryApi'
@@ -8,7 +8,9 @@ import { TerritoryOwnerPicker } from '../components/TerritoryOwnerPicker'
 import { TerritoryZoneChips } from '../components/TerritoryZoneChips'
 
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { FilterReset } from '@/shared/components/FilterReset'
 import { LoadError } from '@/shared/components/LoadError'
+import { SearchField } from '@/shared/components/SearchField'
 import { useDebounce } from '@/shared/hooks/useDebounce'
 
 /** jsdom no trae matchMedia: en pruebas se asume pantalla ancha. */
@@ -17,13 +19,42 @@ function isWideScreen(): boolean {
 }
 
 export function TerritoryPage(): ReactNode {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [zoneId, setZoneId] = useState<string | null>(null)
   const [searchInput, setSearchInput] = useState(searchParams.get('q') ?? '')
   const [pickedHotelId, setPickedHotelId] = useState<string | null>(null)
   const [ownerId, setOwnerId] = useState<string | null>(null)
 
   const search = useDebounce(searchInput)
+
+  /*
+   * La URL refleja la búsqueda (`?q=`): un enlace o un refresh vuelven al
+   * mismo resultado. Se escribe la asentada y con `replace` — una entrada de
+   * historial por tecla haría inservible el botón Atrás. `writtenQ` recuerda
+   * lo último que pasó por aquí para distinguir un cambio nuestro de uno
+   * ajeno (el enlace del menú sin `?q=` mientras la página sigue montada).
+   */
+  const writtenQ = useRef(searchParams.get('q') ?? '')
+  useEffect(() => {
+    if (search === writtenQ.current) return
+    writtenQ.current = search
+    setSearchParams(
+      (previous) => {
+        const next = new URLSearchParams(previous)
+        if (search === '') next.delete('q')
+        else next.set('q', search)
+        return next
+      },
+      { replace: true },
+    )
+  }, [search, setSearchParams])
+  useEffect(() => {
+    const q = searchParams.get('q') ?? ''
+    if (q === writtenQ.current) return
+    writtenQ.current = q
+    setSearchInput(q)
+  }, [searchParams])
+
   const { data: owners = [] } = useGetTerritoryOwnersQuery()
   const {
     data: territory,
@@ -64,33 +95,29 @@ export function TerritoryPage(): ReactNode {
           }}
         />
 
-        <input
-          type="search"
+        <SearchField
           value={searchInput}
-          onChange={(event) => {
-            setSearchInput(event.target.value)
-          }}
-          aria-label="Buscar hotel en mi territorio"
-          placeholder="Nombre del hotel, p. ej. Puerto Real"
-          className="mt-4 w-full rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none"
+          onChange={setSearchInput}
+          isSearching={isFetching && searchInput !== ''}
+          label="Buscar hotel en mi territorio"
+          placeholder="Nombre del hotel, p. ej. Puerto Real…"
+          className="mt-4 w-full"
         />
-        {/* La lista de abajo ES el resultado: aquí solo se avisa que se busca. */}
-        {isFetching && searchInput !== '' && (
-          <p className="mt-1.5 flex items-center gap-2 text-xs text-ink-3" role="status">
-            <span
-              aria-hidden
-              className="size-3 animate-spin rounded-full border-2 border-o-500 border-t-transparent"
-            />
-            Buscando «{searchInput}»…
-          </p>
-        )}
 
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           <TerritoryZoneChips
             zones={territory?.zones ?? []}
             total={territory?.total ?? 0}
             selectedZoneId={zoneId}
             onSelect={setZoneId}
+          />
+          {/* De quién es el territorio no es un filtro: es el alcance de la pantalla. */}
+          <FilterReset
+            activeCount={(searchInput.trim() !== '' ? 1 : 0) + (zoneId !== null ? 1 : 0)}
+            onReset={() => {
+              setSearchInput('')
+              setZoneId(null)
+            }}
           />
         </div>
 

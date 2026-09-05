@@ -1,7 +1,5 @@
 import type { StatusLightToken } from '@oranje/ui'
 
-import { IS_DEV_UI } from '@/shared/lib/devMode'
-
 /**
  * Semáforo del Colaborador: los 12 estados del seed real
  * (`apps/api/prisma/seed.ts`, semáforo WORKER). Un cambio allá obliga a
@@ -66,6 +64,8 @@ export const WORKER_STATUS_TOKEN: Record<WorkerStatus, StatusLightToken> = {
  * `BROWN` es una asignación temporal.
  */
 export function workerStatusChipLabel(status: WorkerStatus): string {
-  /** En dev el código acompaña (documentación viva); en build el color ya es el estado. */
-  return IS_DEV_UI ? `${status} · ${WORKER_STATUS_LABEL[status]}` : WORKER_STATUS_LABEL[status]
+  /* Regla de Hugo (2026-09-04): el chip NUNCA dice el color — en ningún
+     semáforo, ni en dev. El color se VE en el punto/anillo; el texto dice el
+     estado en palabras. El código vive en el vault y en la base, no en la UI. */
+  return WORKER_STATUS_LABEL[status]
 }

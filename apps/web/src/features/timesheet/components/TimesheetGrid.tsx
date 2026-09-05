@@ -1,4 +1,4 @@
-import { cn } from '@oranje/ui'
+import { cn, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@oranje/ui'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useContext, useState, type ReactNode } from 'react'
 
@@ -122,7 +122,12 @@ export function TimesheetGrid({
   /** `false` = sin casillas: la selección solo existe para el pago en bloque. */
   selectable?: boolean
   onToggle: (entryId: string) => void
-  onReview: (entry: TimesheetEntry, workerName: string, context?: ReviewContext) => void
+  onReview: (
+    entry: TimesheetEntry,
+    workerName: string,
+    context: ReviewContext | undefined,
+    manualPunchTarget: Pick<TimesheetRow, 'requisitionId' | 'workerId' | 'workerName'>,
+  ) => void
   onManualPunch: (row: TimesheetRow) => void
 }): ReactNode {
   const { isDragging } = useContext(WeekDragContext)
@@ -209,12 +214,21 @@ export function TimesheetGrid({
                           selectable={selectable}
                           onToggle={onToggle}
                           onReview={(item) => {
-                            onReview(item, row.workerName, {
-                              workerPhotoUrl: row.photoUrl,
-                              jobTitle: row.jobTitle,
-                              hotelName: row.hotelName,
-                              hotelPhotoUrl: row.hotelPhotoUrl,
-                            })
+                            onReview(
+                              item,
+                              row.workerName,
+                              {
+                                workerPhotoUrl: row.photoUrl,
+                                jobTitle: row.jobTitle,
+                                hotelName: row.hotelName,
+                                hotelPhotoUrl: row.hotelPhotoUrl,
+                              },
+                              {
+                                requisitionId: row.requisitionId,
+                                workerId: row.workerId,
+                                workerName: row.workerName,
+                              },
+                            )
                           }}
                         />
                       </li>
@@ -329,30 +343,50 @@ export function TimesheetGrid({
                             cero: nadie fichó, y dibujar algo sugiere lo contrario. */}
                           {entry && (
                             <div className="relative">
-                              {/* En reposo, contorno quieto (la fila ya agrupa);
-                                  el borde vivo SOLO responde al hover del badge
-                                  de la requisición: motion con propósito. */}
+                              {/* En reposo, contorno quieto pero VISIBLE (punteado,
+                                  no se pierde contra el fondo); el borde vivo
+                                  anima con el hover del badge de la requisición
+                                  O el de la banda misma — las dos formas de
+                                  preguntar "esto de quién es" encienden lo mismo. */}
                               {runLength !== undefined && (
-                                <span
-                                  aria-hidden
-                                  className="pointer-events-none absolute -inset-y-1.5 -left-1 z-0"
-                                  style={{ width: runLength * columnWidth - 8 }}
-                                >
-                                  {isLit ? (
-                                    <MovingBorderBox
-                                      as="div"
-                                      duration={3000}
-                                      borderRadius="0.75rem"
-                                      containerClassName="pointer-events-none h-full w-full p-[1.5px] text-base"
-                                      borderClassName="h-[3px] w-16 rounded-full bg-[linear-gradient(90deg,transparent,#FF8000,transparent)] opacity-90"
-                                      className="h-full w-full items-stretch justify-start border border-o-500/40 bg-transparent backdrop-blur-none"
-                                    >
-                                      <span />
-                                    </MovingBorderBox>
-                                  ) : (
-                                    <span className="block h-full w-full rounded-xl border border-o-500/25" />
-                                  )}
-                                </span>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <span
+                                        className="absolute -inset-y-1.5 -left-1 z-0 cursor-help"
+                                        style={{ width: runLength * columnWidth - 8 }}
+                                        onMouseEnter={() => {
+                                          setLitRowKey(rowKey)
+                                        }}
+                                        onMouseLeave={() => {
+                                          setLitRowKey(null)
+                                        }}
+                                      >
+                                        {isLit ? (
+                                          <MovingBorderBox
+                                            as="div"
+                                            duration={3000}
+                                            borderRadius="0.75rem"
+                                            containerClassName="pointer-events-none h-full w-full p-[1.5px] text-base"
+                                            borderClassName="h-[3px] w-16 rounded-full bg-[linear-gradient(90deg,transparent,#FF8000,transparent)] opacity-90"
+                                            className="h-full w-full items-stretch justify-start border border-o-500/40 bg-transparent backdrop-blur-none"
+                                          >
+                                            <span />
+                                          </MovingBorderBox>
+                                        ) : (
+                                          <span className="block h-full w-full rounded-xl border-2 border-dashed border-o-500/70" />
+                                        )}
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">
+                                      <p className="text-xs font-semibold">{row.hotelName}</p>
+                                      <p className="text-xs text-ink-3">
+                                        {row.entries[0]?.requisitionNumber ?? 'Sin folio'} · días de
+                                        esta requisición
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               )}
                               <div className="relative">
                                 <TimesheetDayCell
@@ -361,12 +395,21 @@ export function TimesheetGrid({
                                   selectable={selectable}
                                   onToggle={onToggle}
                                   onReview={(item) => {
-                                    onReview(item, row.workerName, {
-                                      workerPhotoUrl: row.photoUrl,
-                                      jobTitle: row.jobTitle,
-                                      hotelName: row.hotelName,
-                                      hotelPhotoUrl: row.hotelPhotoUrl,
-                                    })
+                                    onReview(
+                                      item,
+                                      row.workerName,
+                                      {
+                                        workerPhotoUrl: row.photoUrl,
+                                        jobTitle: row.jobTitle,
+                                        hotelName: row.hotelName,
+                                        hotelPhotoUrl: row.hotelPhotoUrl,
+                                      },
+                                      {
+                                        requisitionId: row.requisitionId,
+                                        workerId: row.workerId,
+                                        workerName: row.workerName,
+                                      },
+                                    )
                                   }}
                                 />
                               </div>

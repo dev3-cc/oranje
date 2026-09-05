@@ -1,22 +1,17 @@
-import {
-  cn,
-  Input,
-  MaterialIcon,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@oranje/ui'
-import type { ReactNode } from 'react'
+import { cn, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@oranje/ui'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
-import type { TimesheetFilters as Filters } from '../types/timesheet.types'
+import { useGetTimesheetWeekQuery } from '../api/timesheetApi'
+import { ANY_VALUE, type TimesheetFilters as Filters } from '../types/timesheet.types'
 
+import { FilterReset } from '@/shared/components/FilterReset'
+import { SearchField } from '@/shared/components/SearchField'
 import {
   COLUMN_WIDTHS,
   TIMESHEET_WEEK_STATUS_LABEL,
   TIMESHEET_WEEK_STATUSES,
 } from '@/shared/constants/timesheetStatus'
+import { useDebounce } from '@/shared/hooks/useDebounce'
 
 function LabeledControl({ label, children }: { label: string; children: ReactNode }): ReactNode {
   return (
@@ -51,30 +46,65 @@ export function TimesheetToolbar({
       onChange({ ...filters, [key]: value })
     }
 
+  /*
+   * El buscador responde al instante y la consulta espera: el texto vive aquí
+   * como borrador y solo el valor asentado (300 ms sin teclear) sube a
+   * `filters.search`, que es lo que va al servidor. Los selects no esperan:
+   * elegir uno es una sola acción, no una ráfaga.
+   */
+  const [draft, setDraft] = useState(filters.search)
+  const settledSearch = useDebounce(draft)
+  /* La misma llave de caché que la página: cero consultas extra, solo el
+     estado. Mientras el texto no ha asentado o la semana nueva viene en
+     vuelo, el campo enseña el Spinner — la rejilla vieja ya no «se queda
+     quieta» sin avisar (regla de la skill: indicador si pasa de 300 ms). */
+  const { isFetching } = useGetTimesheetWeekQuery(filters)
+  const isSearching = draft.trim() !== '' && (draft.trim() !== filters.search.trim() || isFetching)
+  /* Props frescas para el efecto SIN depender de ellas: si dependiera de
+     `filters`, cambiar un select re-enviaría el texto asentado viejo. */
+  const latest = useRef({ filters, onChange })
+  useEffect(() => {
+    latest.current = { filters, onChange }
+  })
+  useEffect(() => {
+    const { filters: current, onChange: emit } = latest.current
+    if (settledSearch !== current.search) emit({ ...current, search: settledSearch })
+  }, [settledSearch])
+  /* Si la búsqueda cambia desde fuera (el padre la resetea), el borrador la sigue. */
+  useEffect(() => {
+    setDraft(filters.search)
+  }, [filters.search])
+
+  /* La semana (`weekStart`) es navegación, no filtro: ni cuenta ni se quita. */
+  const activeFilters =
+    (draft.trim() !== '' ? 1 : 0) +
+    [filters.requisitionNumber, filters.status, filters.hotelName].filter(
+      (value) => value !== ANY_VALUE,
+    ).length
+
+  const resetFilters = (): void => {
+    setDraft('')
+    onChange({
+      ...filters,
+      search: '',
+      requisitionNumber: ANY_VALUE,
+      status: ANY_VALUE,
+      hotelName: ANY_VALUE,
+    })
+  }
+
   return (
     /* Los filtros viven en su propia tarjeta: una franja, no piezas sueltas. */
     <div className="flex flex-wrap items-end justify-between gap-x-5 gap-y-3 rounded-xl border border-line bg-surface px-4 py-3">
       <div className="flex flex-wrap items-end gap-3">
-        {/* Filtra EN VIVO al teclear: por eso no lleva botón de buscar (el
-            botón es para búsquedas que disparan una consulta cara); la lupa
-            es la afordancia que pide el patrón. */}
-        <label className="relative min-w-60 flex-1">
-          <span className="sr-only">Buscar colaborador</span>
-          <MaterialIcon
-            name="search"
-            aria-hidden
-            className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-lg text-ink-4"
-          />
-          <Input
-            type="search"
-            value={filters.search}
-            onChange={(event) => {
-              update('search')(event.target.value)
-            }}
-            placeholder="Nombre del colaborador, p. ej. Ana Rivera"
-            className="pl-10"
-          />
-        </label>
+        <SearchField
+          isSearching={isSearching}
+          value={draft}
+          onChange={setDraft}
+          label="Buscar colaborador"
+          placeholder="Nombre del colaborador, p. ej. Ana Rivera…"
+          className="flex-1"
+        />
 
         <LabeledControl label="Requisición">
           <Select value={filters.requisitionNumber} onValueChange={update('requisitionNumber')}>
@@ -123,6 +153,8 @@ export function TimesheetToolbar({
             </SelectContent>
           </Select>
         </LabeledControl>
+
+        <FilterReset activeCount={activeFilters} onReset={resetFilters} />
       </div>
 
       {showZoom && (

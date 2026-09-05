@@ -23,8 +23,11 @@
    * El naranja da 2.5:1 con blanco (reprueba AA) y 7.4:1 con --ink.
    * Como el botón primario es naranja, esto toca todas las pantallas.
    */
-  --primary: var(--o-500);
-  --primary-foreground: var(--ink);
+  /* Botón primario en PASTEL (decisión de Hugo, 2026-09-05): el naranja pleno
+     como relleno pesaba en toda la app. Texto en el café del Portfolio: 5.6:1.
+     --o-500 sigue siendo la marca (chips, anillos, foco), no el botón. */
+  --primary: var(--o-200);
+  --primary-foreground: var(--o-900);
 
   --secondary: var(--surface-3);
   --secondary-foreground: var(--ink-2);

@@ -90,6 +90,30 @@ describe('RequisitionAuthorizationPage', () => {
     expect(reject).toHaveAttribute('title', expect.stringContaining('pendiente 21'))
   })
 
+  it('el buscador recorta la cola en memoria y el panel sigue a la primera visible', async () => {
+    const user = userEvent.setup()
+    renderQueue()
+
+    const queueList = (await screen.findAllByText('Pendientes'))[0]?.closest('section') ?? null
+    expect(within(queueList as HTMLElement).getAllByRole('listitem')).toHaveLength(3)
+
+    const field = screen.getByLabelText('Buscar pendiente')
+    await user.type(field, 'mirador')
+    expect(within(queueList as HTMLElement).getAllByRole('listitem')).toHaveLength(1)
+    // La elegida (req-0001) salió del recorte: el panel pasa a la de Mirador.
+    expect(screen.getByRole('heading', { name: '202608201110·C9' })).toBeInTheDocument()
+
+    await user.clear(field)
+    await user.type(field, 'zzz')
+    expect(
+      within(queueList as HTMLElement).getByText(/Ninguna pendiente coincide con «zzz»/),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Autorizar requisición' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Limpiar la búsqueda' }))
+    expect(within(queueList as HTMLElement).getAllByRole('listitem')).toHaveLength(3)
+  })
+
   it('autorizar la saca de la cola y la selección cae en la siguiente', async () => {
     const user = userEvent.setup()
     renderQueue()

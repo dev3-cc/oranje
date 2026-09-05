@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it } from 'vitest'
@@ -72,6 +73,33 @@ describe('RequisitionBoardPage', () => {
       '/requisiciones/autorizacion',
     )
     expect(screen.queryByRole('link', { name: /Urgentes/ })).not.toBeInTheDocument()
+  })
+
+  it('el buscador y el estado recortan el tablero en memoria, y el vacío nombra el filtro', async () => {
+    const user = userEvent.setup()
+    renderBoard()
+
+    await screen.findByText(/202608190930·K7/)
+    const field = screen.getByLabelText('Buscar requisición')
+
+    // Por hotel: quedan solo las tarjetas de Hotel Mirador.
+    await user.type(field, 'mirador')
+    expect(screen.queryByText(/202608190930·K7/)).not.toBeInTheDocument()
+    expect(screen.getByText(/202608160500·G3/)).toBeInTheDocument()
+    expect(screen.getAllByText('Hotel Mirador').length).toBeGreaterThan(0)
+
+    // Por folio, sin nada que coincida: el vacío dice qué filtro lo causa.
+    await user.clear(field)
+    await user.type(field, 'zzz')
+    expect(screen.getByText(/Ninguna requisición coincide con búsqueda «zzz»/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Quitar filtros/ }))
+
+    // Por estado, en palabras del semáforo: solo las Autorizadas.
+    await user.click(screen.getByLabelText('Estado'))
+    await user.click(await screen.findByRole('option', { name: 'Estado: Autorizada' }))
+    expect(screen.getByText(/202608140700·E1/)).toBeInTheDocument()
+    expect(screen.queryByText(/202608190930·K7/)).not.toBeInTheDocument()
+    expect(screen.queryByText('En elaboración')).not.toBeInTheDocument()
   })
 
   it('el folio lleva al detalle', async () => {

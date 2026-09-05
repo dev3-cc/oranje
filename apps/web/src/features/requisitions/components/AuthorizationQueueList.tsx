@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 
 import type { AuthorizationRequest } from '../types/requisition.types'
 
+import { MagicCard } from '@/shared/components/MagicCard'
 import { SectionCard } from '@/shared/components/SectionCard'
 
 /** `2 pos · 2 slots`, con el singular donde toca. */
@@ -26,16 +27,19 @@ export function AuthorizationQueueList({
   items,
   selectedId,
   onSelect,
+  emptyMessage = 'No hay requisiciones esperando tu firma.',
 }: {
   items: AuthorizationRequest[]
   selectedId: string
   onSelect: (requisitionId: string) => void
+  /** Qué decir sin renglones: la cola vacía y un filtro que no deja nada no son lo mismo. */
+  emptyMessage?: string
 }): ReactNode {
   return (
     <SectionCard title="Pendientes" subtitle="Ordenadas por fecha de inicio más próxima">
       {items.length === 0 ? (
         <p className="rounded-lg border border-dashed border-line p-6 text-center text-sm text-ink-3">
-          No hay requisiciones esperando tu firma.
+          {emptyMessage}
         </p>
       ) : (
         <ul className="flex flex-col gap-3">
@@ -44,35 +48,41 @@ export function AuthorizationQueueList({
 
             return (
               <li key={item.id}>
-                <button
-                  type="button"
-                  aria-current={isSelected ? 'true' : undefined}
-                  onClick={() => {
-                    onSelect(item.id)
-                  }}
-                  className={cn(
-                    'w-full rounded-lg border px-4 py-3.5 text-left transition-colors',
-                    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500',
-                    isSelected
-                      ? 'border-o-500 bg-o-50'
-                      : 'border-line bg-surface hover:bg-surface-2',
-                  )}
-                >
-                  <p
-                    className={cn('text-sm font-semibold', isSelected ? 'text-o-700' : 'text-ink')}
+                {/* Magic Bento (reactbits): la fila avisa al pasar; se apaga sola en táctil y reduced motion. */}
+                <MagicCard className="rounded-lg">
+                  <button
+                    type="button"
+                    aria-current={isSelected ? 'true' : undefined}
+                    onClick={() => {
+                      onSelect(item.id)
+                    }}
+                    className={cn(
+                      'w-full rounded-lg border px-4 py-3.5 text-left transition-colors',
+                      'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500',
+                      isSelected
+                        ? 'border-o-500 bg-o-50'
+                        : 'border-line bg-surface hover:bg-surface-2',
+                    )}
                   >
-                    {item.number}
-                  </p>
-                  <p className="mt-1 text-sm text-ink-2">{item.hotelName}</p>
-                  <p className="mt-0.5 text-sm text-ink-3">{describeSize(item)}</p>
+                    <p
+                      className={cn(
+                        'text-sm font-semibold',
+                        isSelected ? 'text-o-700' : 'text-ink',
+                      )}
+                    >
+                      {item.number}
+                    </p>
+                    <p className="mt-1 text-sm text-ink-2">{item.hotelName}</p>
+                    <p className="mt-0.5 text-sm text-ink-3">{describeSize(item)}</p>
 
-                  <p className="mt-2 flex items-center gap-1.5 text-sm text-red">
-                    <span className="material-icons-outlined text-base leading-none" aria-hidden>
-                      schedule
-                    </span>
-                    {describeStart(item.startsInDays)}
-                  </p>
-                </button>
+                    <p className="mt-2 flex items-center gap-1.5 text-sm text-red">
+                      <span className="material-icons-outlined text-base leading-none" aria-hidden>
+                        schedule
+                      </span>
+                      {describeStart(item.startsInDays)}
+                    </p>
+                  </button>
+                </MagicCard>
               </li>
             )
           })}

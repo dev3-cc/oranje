@@ -9,6 +9,7 @@ import { AuthorizationResolutionForm } from '../components/AuthorizationResoluti
 import personajeManager from '@/assets/ilustrations/personaje-manager.svg'
 import { LoadError } from '@/shared/components/LoadError'
 import { NoticeCard } from '@/shared/components/NoticeCard'
+import { SearchField } from '@/shared/components/SearchField'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import {
@@ -17,6 +18,7 @@ import {
   REQUISITION_STATUS_TOKEN,
 } from '@/shared/constants/requisitionStatus'
 import { useCan } from '@/shared/hooks/useCan'
+import { matchesSearch } from '@/shared/lib/text'
 
 /**
  * Cola de autorización: lo que espera la firma del Manager.
@@ -28,6 +30,8 @@ import { useCan } from '@/shared/hooks/useCan'
  */
 export function RequisitionAuthorizationPage(): ReactNode {
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  /** Por folio u hotel, EN MEMORIA: la cola ya está cargada entera. */
+  const [search, setSearch] = useState('')
   const can = useCan()
   /** Firmar es de los Managers (requisitions:authorize); los demás solo consultan la cola. */
   const canAuthorize = can('requisitions:authorize')
@@ -54,9 +58,16 @@ export function RequisitionAuthorizationPage(): ReactNode {
     )
   }
 
+  const visibleItems = queue.items.filter((item) =>
+    matchesSearch(search, item.number, item.hotelName),
+  )
+  const isFilteredOut = queue.items.length > 0 && visibleItems.length === 0
+
   // Al firmar, la requisición sale de la cola y la selección cae sola en la
-  // siguiente: quien autoriza no tiene que volver a apuntar con el ratón.
-  const selected = queue.items.find((item) => item.id === selectedId) ?? queue.items[0]
+  // siguiente: quien autoriza no tiene que volver a apuntar con el ratón. Y
+  // sale de lo VISIBLE: si la búsqueda deja fuera a la elegida, el panel pasa
+  // a la primera que sí se ve.
+  const selected = visibleItems.find((item) => item.id === selectedId) ?? visibleItems[0]
 
   const fromLabel = REQUISITION_STATUS_LABEL[AUTHORIZATION_TRANSITION.from]
   const toLabel = REQUISITION_STATUS_LABEL[AUTHORIZATION_TRANSITION.to]
@@ -82,11 +93,26 @@ export function RequisitionAuthorizationPage(): ReactNode {
       </header>
 
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-3">
-        <AuthorizationQueueList
-          items={queue.items}
-          selectedId={selected?.id ?? ''}
-          onSelect={setSelectedId}
-        />
+        <div className="flex flex-col gap-4">
+          {queue.items.length > 0 && (
+            <SearchField
+              value={search}
+              onChange={setSearch}
+              label="Buscar pendiente"
+              placeholder="Folio o hotel, p. ej. Puerto Real…"
+            />
+          )}
+          <AuthorizationQueueList
+            items={visibleItems}
+            selectedId={selected?.id ?? ''}
+            onSelect={setSelectedId}
+            {...(isFilteredOut
+              ? {
+                  emptyMessage: `Ninguna pendiente coincide con «${search.trim()}». Cambia la búsqueda o límpiala para ver toda la cola.`,
+                }
+              : {})}
+          />
+        </div>
 
         {selected ? (
           <div className="flex flex-col gap-6 xl:col-span-2">
@@ -125,7 +151,9 @@ export function RequisitionAuthorizationPage(): ReactNode {
           </div>
         ) : (
           <p className="rounded-lg border border-line bg-surface p-8 text-center text-sm text-ink-3 xl:col-span-2">
-            No hay requisiciones por autorizar. Cuando un Supervisor cree una, aparecerá aquí.
+            {isFilteredOut
+              ? 'Ninguna pendiente coincide con la búsqueda: cambia el folio o el hotel, o límpiala.'
+              : 'No hay requisiciones por autorizar. Cuando un Supervisor cree una, aparecerá aquí.'}
           </p>
         )}
       </div>

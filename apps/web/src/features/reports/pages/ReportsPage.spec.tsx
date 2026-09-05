@@ -61,10 +61,17 @@ describe('ReportsPage', () => {
     expect(scoped.getByText(/reactivables a Azul claro \(RR-V-07\)/)).toBeInTheDocument()
   })
 
-  it('lo que no existe está deshabilitado y lo dice', async () => {
+  it('lo que no existe está deshabilitado y lo dice; Ventas es la pestaña elegida', async () => {
     renderReports()
 
     expect(await screen.findByRole('button', { name: 'Programar envío recurrente' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Ejecutivo' })).toBeDisabled()
+
+    expect(screen.getByRole('tab', { name: 'Ventas' })).toHaveAttribute('aria-selected', 'true')
+    for (const name of ['Pipeline', 'Desempeño', 'Calidad', 'Ejecutivo']) {
+      const tab = screen.getByRole('tab', { name })
+      expect(tab).toBeDisabled()
+      expect(tab).toHaveAttribute('aria-selected', 'false')
+      expect(tab).toHaveAttribute('title', 'Este reporte aún no se define')
+    }
   })
 })

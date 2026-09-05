@@ -250,7 +250,7 @@ export function WorkerWeekSummary({
                 onClick={() => {
                   void runAction('submit')
                 }}
-                className="cursor-pointer rounded-md bg-o-500 px-2 py-1 text-[11px] font-semibold text-ink transition-colors hover:bg-o-500/85 disabled:cursor-wait disabled:opacity-60"
+                className="cursor-pointer rounded-md bg-o-200 px-2 py-1 text-[11px] font-semibold text-o-900 transition-colors hover:bg-o-200/85 disabled:cursor-wait disabled:opacity-60"
               >
                 {isSubmitting ? 'Enviando…' : 'Enviar a revisión'}
               </button>

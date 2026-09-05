@@ -36,6 +36,8 @@ export interface PoolOptions {
 export const ANY_VALUE = 'ALL'
 
 export interface PoolFilters {
+  /** Por nombre; va al back como `?search=` cuando no está vacío. */
+  search: string
   catalogPositionId: string
   zoneId: string
   englishLevelId: string
@@ -44,6 +46,7 @@ export interface PoolFilters {
 }
 
 export const EMPTY_POOL_FILTERS: PoolFilters = {
+  search: '',
   catalogPositionId: ANY_VALUE,
   zoneId: ANY_VALUE,
   englishLevelId: ANY_VALUE,

@@ -46,10 +46,13 @@ async function fetchPool(
   fetchWithBQ: FetchWithBQ,
   filters: PoolFilters,
 ): Promise<{ data: WorkerPool } | { error: unknown }> {
+  const search = filters.search.trim()
   const listRes = await fetchWithBQ({
     url: '/workers',
     params: {
       limit: 100,
+      /** El back busca por nombre con `?search=`; vacío no viaja. */
+      ...(search !== '' ? { search } : {}),
       ...(filters.status !== ANY_VALUE ? { state: filters.status } : {}),
       ...(filters.zoneId !== ANY_VALUE ? { zoneId: filters.zoneId } : {}),
       ...(filters.catalogPositionId !== ANY_VALUE

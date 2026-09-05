@@ -64,24 +64,35 @@ describe('ContractListPage', { timeout: 20_000 }, () => {
     ).toBeInTheDocument()
   })
 
-  it('«Vence en» no filtra: cambia a cuáles se les grita', async () => {
+  it('«Vencimiento» sí filtra, y el pie cuenta en días con ese mismo plazo', async () => {
     const user = userEvent.setup()
     renderList()
 
     expect(await screen.findByText('3 meses restantes')).toBeInTheDocument()
 
-    await user.click(screen.getByLabelText('Avisar cuando venza en'))
-    await user.click(await screen.findByRole('option', { name: 'Vence en: 180 días' }))
+    await user.click(screen.getByLabelText('Vencimiento'))
+    await user.click(await screen.findByRole('option', { name: 'Vencimiento: en 180 días' }))
 
+    // Fuera el que vence en 310 días, el vencido y el borrador sin vigencia.
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /CT-2026-0184/ })).not.toBeInTheDocument()
+    }, SLOW)
+    expect(screen.queryByText('vencido')).not.toBeInTheDocument()
+    expect(screen.queryByText('sin vigencia')).not.toBeInTheDocument()
+
+    // Quedan los dos que vencen dentro del plazo, y a ambos se les cuenta en días.
     expect(screen.getByText('vence en 94 días')).toBeInTheDocument()
+    expect(screen.getByText('vence en 45 días')).toBeInTheDocument()
     expect(screen.queryByText('3 meses restantes')).not.toBeInTheDocument()
-    expect(screen.getByText('10 meses restantes')).toBeInTheDocument()
-    // Un renglón por contrato (los 5 de la fixture; antes contaba 6 con la cabecera de la tabla): el
-    // filtro de aviso no quita ninguno.
     expect(
       screen.getAllByRole('button', { pressed: true }).length +
         screen.getAllByRole('button', { pressed: false }).length,
-    ).toBe(5)
+    ).toBe(2)
+
+    // «Quitar filtros» devuelve la lista completa y el umbral por omisión.
+    await user.click(screen.getByRole('button', { name: /Quitar filtros/ }))
+    expect(await screen.findByRole('button', { name: /CT-2026-0184/ }, SLOW)).toBeInTheDocument()
+    expect(screen.getByText('3 meses restantes')).toBeInTheDocument()
   })
 
   it('el estado sí filtra, y lo hace en el servidor', async () => {
@@ -103,7 +114,7 @@ describe('ContractListPage', { timeout: 20_000 }, () => {
     renderList()
 
     await screen.findAllByText('CT-2026-0184')
-    await user.type(screen.getByLabelText('Buscar por hotel o número'), 'Mirador')
+    await user.type(screen.getByLabelText('Buscar contrato'), 'Mirador')
 
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: /CT-2026-0184/ })).not.toBeInTheDocument()

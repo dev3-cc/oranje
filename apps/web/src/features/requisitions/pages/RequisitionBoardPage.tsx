@@ -5,11 +5,23 @@ import { NewRequisitionDialog } from '../components/NewRequisitionDialog'
 import { RequisitionCardList } from '../components/RequisitionCardList'
 
 import { Button } from '@/shared/components/Button'
+import { EmptyState } from '@/shared/components/EmptyState'
+import { FilterReset } from '@/shared/components/FilterReset'
+import { FilterSelect } from '@/shared/components/FilterSelect'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { MetricCard } from '@/shared/components/MetricCard'
+import { SearchField } from '@/shared/components/SearchField'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
+import {
+  REQUISITION_STATUS_LABEL,
+  REQUISITION_STATUSES,
+} from '@/shared/constants/requisitionStatus'
 import { useCan } from '@/shared/hooks/useCan'
+import { matchesSearch } from '@/shared/lib/text'
+
+/** El valor «todos» del select de estado (el que `FilterSelect` trae por omisión). */
+const ANY = 'ALL'
 
 /**
  * Tablero de Requisiciones del supervisor.
@@ -17,9 +29,14 @@ import { useCan } from '@/shared/hooks/useCan'
  * Las cifras del encabezado vienen del backend y NO se derivan de las filas: el
  * tablero muestra una página, pero «8 abiertas en 4 hoteles» habla de todo el
  * territorio. Calcularlas aquí daría números que cambian al paginar.
+ *
+ * El buscador y el filtro de estado recortan EN MEMORIA lo que la lista ya
+ * trajo: `GET /requisitions` no acepta esos parámetros todavía.
  */
 export function RequisitionBoardPage(): ReactNode {
   const [isNewOpen, setIsNewOpen] = useState(false)
+  const [search, setSearch] = useState('')
+  const [status, setStatus] = useState<string>(ANY)
   const can = useCan()
   /** Crear es del hotel (requisitions:create): Reclutamiento consulta el tablero sin el botón. */
   const canCreate = can('requisitions:create')
@@ -27,6 +44,31 @@ export function RequisitionBoardPage(): ReactNode {
   const { data: board, isLoading, isError, refetch } = useGetRequisitionBoardQuery()
 
   const metrics = board?.metrics
+  const items = board?.items ?? []
+
+  /** Solo los estados que la lista trae, en el orden del semáforo, dichos en palabras. */
+  const statusOptions = REQUISITION_STATUSES.filter((code) =>
+    items.some((item) => item.status === code),
+  ).map((code) => ({ value: code, label: REQUISITION_STATUS_LABEL[code] }))
+
+  const visibleItems = items.filter(
+    (item) =>
+      (status === ANY || item.status === status) &&
+      matchesSearch(search, item.number, item.hotelName),
+  )
+  const activeCount = [search.trim() !== '', status !== ANY].filter(Boolean).length
+
+  /** Los filtros puestos, en palabras: el vacío los nombra para que se entienda por qué. */
+  const activeFilterLabels = [
+    status !== ANY &&
+      `Estado: ${REQUISITION_STATUS_LABEL[status as keyof typeof REQUISITION_STATUS_LABEL]}`,
+    search.trim() !== '' && `búsqueda «${search.trim()}»`,
+  ].filter((label): label is string => typeof label === 'string')
+
+  function resetFilters(): void {
+    setSearch('')
+    setStatus(ANY)
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -108,7 +150,36 @@ export function RequisitionBoardPage(): ReactNode {
         </div>
       )}
 
-      {board && <RequisitionCardList items={board.items} />}
+      {board && items.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3">
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            label="Buscar requisición"
+            placeholder="Folio o hotel, p. ej. Xcaret…"
+            className="w-full max-w-md"
+          />
+          <FilterSelect
+            icon="traffic"
+            label="Estado"
+            anyLabel="todos"
+            value={status}
+            options={statusOptions}
+            onChange={setStatus}
+          />
+          <FilterReset activeCount={activeCount} onReset={resetFilters} />
+        </div>
+      )}
+
+      {board &&
+        (items.length > 0 && visibleItems.length === 0 ? (
+          <EmptyState
+            title={`Ninguna requisición coincide con ${activeFilterLabels.join(' y ')}`}
+            text="Cambia el estado o la búsqueda, o quítalos con «Quitar filtros» para volver a ver el tablero completo."
+          />
+        ) : (
+          <RequisitionCardList items={visibleItems} />
+        ))}
 
       <NewRequisitionDialog
         isOpen={isNewOpen}

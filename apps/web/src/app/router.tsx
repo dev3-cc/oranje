@@ -3,7 +3,7 @@ import { createBrowserRouter } from 'react-router'
 import { RequireSession } from './RequireSession'
 import { RoleHome } from './RoleHome'
 
-import { AppShell } from '@/layouts/AppShell'
+import { AppShell, type RouteHandle } from '@/layouts/AppShell'
 import { ModulePlaceholder } from '@/shared/components/ModulePlaceholder'
 
 /**
@@ -22,6 +22,9 @@ const PENDING_MODULES = [{ path: 'accidentes', title: 'Accidentes' }]
  * Cada ruta de primer nivel corresponde a un módulo del sidebar del rol
  * (ver `Estructura General App`), no a un módulo del backend.
  */
+/** Vistas que trabajan a lo ancho: el shell no les acota el `max-w`. */
+const FULL_WIDTH: RouteHandle = { fullWidth: true }
+
 export const router = createBrowserRouter([
   {
     /** La única ruta pública. Lazy: three.js no viaja en el bundle inicial. */
@@ -119,6 +122,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'pipeline',
+            handle: FULL_WIDTH,
             lazy: async () => {
               const m = await import('@/features/onboarding')
               return { Component: m.PipelinePage }
@@ -211,6 +215,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'timesheet',
+            handle: FULL_WIDTH,
             lazy: async () => {
               const m = await import('@/features/timesheet')
               return { Component: m.TimesheetPage }
@@ -218,6 +223,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'timesheet-global',
+            handle: FULL_WIDTH,
             lazy: async () => {
               const m = await import('@/features/timesheet')
               return { Component: m.TimesheetGlobalPage }

@@ -1,13 +1,15 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@oranje/ui'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import { useGetTimesheetWeekQuery } from '../api/timesheetApi'
-import { EMPTY_TIMESHEET_FILTERS } from '../types/timesheet.types'
+import { TimesheetToolbar } from '../components/TimesheetToolbar'
+import { ANY_VALUE, EMPTY_TIMESHEET_FILTERS, type TimesheetFilters } from '../types/timesheet.types'
 
 import { LoadError } from '@/shared/components/LoadError'
 import { MetricCard } from '@/shared/components/MetricCard'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import {
+  DEFAULT_COLUMN_WIDTH,
   TIMESHEET_WEEK_STATUS_LABEL,
   type TimesheetWeekStatus,
 } from '@/shared/constants/timesheetStatus'
@@ -25,18 +27,26 @@ const HEADERS = [
 ]
 
 export function TimesheetGlobalPage(): ReactNode {
-  const {
-    data: week,
-    isLoading,
-    isError,
-    refetch,
-  } = useGetTimesheetWeekQuery(EMPTY_TIMESHEET_FILTERS)
+  /** Los mismos cuatro filtros de `/timesheet`: colaborador, requisición, estado y hotel. */
+  const [filters, setFilters] = useState<TimesheetFilters>(EMPTY_TIMESHEET_FILTERS)
+  /**
+   * El zoom es de la rejilla de Días y aquí no hay rejilla: no se enseña
+   * (`showZoom={false}`). El estado existe solo porque el toolbar hoy lo pide.
+   */
+  const [columnWidth, setColumnWidth] = useState<number>(DEFAULT_COLUMN_WIDTH)
+
+  const { data: week, isLoading, isError, refetch } = useGetTimesheetWeekQuery(filters)
 
   const rows = week?.rows ?? []
   const rangeLabel =
     week && week.days.length > 0
       ? formatWeekRange(week.days[0] ?? '', week.days[week.days.length - 1] ?? '')
       : ''
+  const hasFilters =
+    filters.search.trim() !== '' ||
+    filters.requisitionNumber !== ANY_VALUE ||
+    filters.status !== ANY_VALUE ||
+    filters.hotelName !== ANY_VALUE
 
   return (
     <div className="flex flex-col gap-6">
@@ -68,6 +78,16 @@ export function TimesheetGlobalPage(): ReactNode {
         />
         <MetricCard value="—" label="Rojo · anomalía" foot="pendiente de horas contractuales" />
       </div>
+
+      <TimesheetToolbar
+        filters={filters}
+        requisitionNumbers={week?.requisitionNumbers ?? []}
+        hotelNames={week?.hotelNames ?? []}
+        columnWidth={columnWidth}
+        showZoom={false}
+        onChange={setFilters}
+        onColumnWidthChange={setColumnWidth}
+      />
 
       {isError && (
         <LoadError
@@ -103,8 +123,9 @@ export function TimesheetGlobalPage(): ReactNode {
                     colSpan={HEADERS.length}
                     className="px-4 py-8 text-center text-sm text-ink-3"
                   >
-                    Nadie tiene Timesheet esta semana. Las filas aparecen cuando los Supervisores
-                    registran horas.
+                    {hasFilters
+                      ? 'Nadie coincide con esos filtros. Cambia el nombre, la requisición, el estado o el hotel.'
+                      : 'Nadie tiene Timesheet esta semana. Las filas aparecen cuando los Supervisores registran horas.'}
                   </TableCell>
                 </TableRow>
               )}

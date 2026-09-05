@@ -1,30 +1,42 @@
-import { MaterialIcon } from '@oranje/ui'
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 
 import { useGetPoolOptionsQuery, useGetWorkerPoolQuery } from '../api/poolApi'
 import { CreateWorkerDialog } from '../components/CreateWorkerDialog'
-import { PoolCardBoard } from '../components/PoolCardBoard'
 import { PoolFilters } from '../components/PoolFilters'
-import { PoolTable } from '../components/PoolTable'
-import { EMPTY_POOL_FILTERS, type PoolFilters as Filters } from '../types/pool.types'
+import { PoolRoster } from '../components/PoolRoster'
+import { ANY_VALUE, EMPTY_POOL_FILTERS, type PoolFilters as Filters } from '../types/pool.types'
 
 import { Button } from '@/shared/components/Button'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { useCan } from '@/shared/hooks/useCan'
+import { useDebounce } from '@/shared/hooks/useDebounce'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 export function PoolPage(): ReactNode {
   const [filters, setFilters] = useState<Filters>(EMPTY_POOL_FILTERS)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editWorkerId, setEditWorkerId] = useState<string | null>(null)
-  const [view, setView] = useState<'table' | 'cards'>('table')
   const can = useCan()
   /** El alta es de Reclutamiento (recruitment:create_worker); Hotel solo consulta. */
   const canCreate = can('recruitment:create_worker')
 
-  const { data: pool, isLoading, isError, refetch } = useGetWorkerPoolQuery(filters)
+  /** El nombre va al servidor: se espera a que se deje de teclear; las píldoras aplican al instante. */
+  const search = useDebounce(filters.search)
+  const appliedFilters = useMemo(() => ({ ...filters, search }), [filters, search])
+
+  const {
+    data: pool,
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useGetWorkerPoolQuery(appliedFilters)
+  /** Cualquier filtro o texto fuera de su valor «todos». */
+  const isFiltered =
+    filters.search.trim() !== '' ||
+    Object.entries(filters).some(([key, value]) => key !== 'search' && value !== ANY_VALUE)
   const { data: options } = useGetPoolOptionsQuery()
 
   return (
@@ -44,45 +56,15 @@ export function PoolPage(): ReactNode {
             {IS_DEV_UI
               ? 'personal.worker · vw_worker deriva edad y perfil completo'
               : 'Colaboradores con su estado en el Semáforo; los Disponibles se pueden asignar a una requisición'}
-            {pool && ` · ${String(pool.total)} en el pool`}
+            {/* Con filtros, el total es el de la CONSULTA: «0 en el pool» mentiría. */}
+            {pool &&
+              (isFiltered
+                ? ` · ${String(pool.total)} ${pool.total === 1 ? 'coincide' : 'coinciden'}`
+                : ` · ${String(pool.total)} en el pool`)}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div
-            role="group"
-            aria-label="Vista"
-            className="flex rounded-md border border-line bg-surface p-0.5"
-          >
-            <button
-              type="button"
-              onClick={() => {
-                setView('table')
-              }}
-              aria-pressed={view === 'table'}
-              title="Vista de tabla"
-              className={`flex cursor-pointer items-center gap-1.5 rounded px-3 py-1.5 text-sm ${
-                view === 'table' ? 'bg-o-50 font-semibold text-o-700' : 'text-ink-3 hover:text-ink'
-              }`}
-            >
-              <MaterialIcon name="table_rows" className="text-base" aria-hidden />
-              Tabla
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setView('cards')
-              }}
-              aria-pressed={view === 'cards'}
-              title="Tarjetas agrupadas por estado del Semáforo"
-              className={`flex cursor-pointer items-center gap-1.5 rounded px-3 py-1.5 text-sm ${
-                view === 'cards' ? 'bg-o-50 font-semibold text-o-700' : 'text-ink-3 hover:text-ink'
-              }`}
-            >
-              <MaterialIcon name="view_kanban" className="text-base" aria-hidden />
-              Tarjetas
-            </button>
-          </div>
           {canCreate ? (
             <Button
               variant="primary"
@@ -100,7 +82,12 @@ export function PoolPage(): ReactNode {
         </div>
       </header>
 
-      <PoolFilters filters={filters} options={options} onChange={setFilters} />
+      <PoolFilters
+        isSearching={isFetching && filters.search.trim() !== ''}
+        filters={filters}
+        options={options}
+        onChange={setFilters}
+      />
 
       {isError && (
         <LoadError
@@ -114,22 +101,17 @@ export function PoolPage(): ReactNode {
       {isLoading && !pool ? (
         <TableSkeleton rows={6} columns={6} />
       ) : (
-        pool &&
-        (view === 'table' ? (
-          <PoolTable
+        pool && (
+          /* Lista-detalle (como el BDC ve a sus BDs): la fila resume con el
+             estado en palabras, el panel profundiza. Tabla y Tarjetas se
+             retiraron — un solo patrón de plantel en toda la app. */
+          <PoolRoster
             items={pool.items}
             onEdit={(worker) => {
               setEditWorkerId(worker.id)
             }}
           />
-        ) : (
-          <PoolCardBoard
-            items={pool.items}
-            onEdit={(worker) => {
-              setEditWorkerId(worker.id)
-            }}
-          />
-        ))
+        )
       )}
 
       {editWorkerId && (

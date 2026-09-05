@@ -19,8 +19,9 @@ export interface ValidityDescription {
  * Cómo se lee la vigencia de un contrato.
  *
  * Los días los manda el backend; aquí solo se decide cómo se dicen. El corte
- * entre «meses restantes» y «vence en N días» es `warningDays`, que el usuario
- * elige en el filtro: cambiarlo no esconde filas, cambia a cuáles se les grita.
+ * entre «meses restantes» y «vence en N días» es `warningDays`: la ventana por
+ * omisión, o el plazo del filtro «Vencimiento» cuando hay uno puesto (quien
+ * pide los que vencen en 180 días quiere verlos contados en días).
  */
 export function describeValidity(row: ContractRow, warningDays: number): ValidityDescription {
   const percent = row.elapsed === null ? 0 : Math.min(100, Math.max(0, row.elapsed * 100))

@@ -14,6 +14,7 @@ import type { SelfPickRow } from '../types/selfPick.types'
 
 import personajeComencemos from '@/assets/ilustrations/personaje-comencemos.svg'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { FilterReset } from '@/shared/components/FilterReset'
 import { FilterSelect } from '@/shared/components/FilterSelect'
 import { LoadError } from '@/shared/components/LoadError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
@@ -149,6 +150,14 @@ export function SelfPickPage(): ReactNode {
             row.englishId ? { id: row.englishId, name: row.englishName ?? '' } : null,
           ).map((option) => ({ value: option.id, label: option.name }))}
           onChange={setEnglishId}
+        />
+        <FilterReset
+          activeCount={[positionId, modalityId, englishId].filter((value) => value !== ANY).length}
+          onReset={() => {
+            setPositionId(ANY)
+            setModalityId(ANY)
+            setEnglishId(ANY)
+          }}
         />
       </div>
 
