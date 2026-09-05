@@ -3,7 +3,7 @@ import { Skeleton, cn } from '@oranje/ui'
 import { lazy, Suspense, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 
-import { useGetPipelineBoardQuery } from '../api/onboardingApi'
+import { useGetPipelineBoardQuery, useGetZonesQuery } from '../api/onboardingApi'
 import { ChangeStatusDialog } from '../components/ChangeStatusDialog'
 import { PipelineColumn } from '../components/PipelineColumn'
 import { ProspectFormDialog } from '../components/ProspectFormDialog'
@@ -14,6 +14,8 @@ import type { ProspectSummary } from '../types/prospect.types'
 import { useGetSessionQuery } from '@/app/sessionApi'
 import pipelineIllustration from '@/assets/ilustrations/pipeline.svg'
 import { Button } from '@/shared/components/Button'
+import { FilterReset } from '@/shared/components/FilterReset'
+import { FilterSelect } from '@/shared/components/FilterSelect'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import {
@@ -31,12 +33,37 @@ const HotelGlobeCard = lazy(() =>
 const FILTER_CHIP_CLASS =
   'rounded-full bg-surface px-4 py-2 text-sm text-ink-2 whitespace-nowrap shadow-sm'
 
+/** El valor «todos» de los selects de filtro (el que `FilterSelect` trae por omisión). */
+const ANY = 'ALL'
+
+/**
+ * El BD ve solo lo suyo (la API acota por permiso): para él el dueño es fijo
+ * y el filtro no se enseña. El BDC —y quien pueda ver a otros— sí elige.
+ */
+const BD_ROLE = 'ROL-V-01'
+
 export function PipelinePage(): ReactNode {
   const navigate = useNavigate()
   const [isFormOpen, setIsFormOpen] = useState(false)
-  const { filters, isStaleOnly, toggleStaleOnly } = usePipelineFilters()
+  const { filters, isStaleOnly, activeCount, toggleStaleOnly, setZone, setOwnerId, reset } =
+    usePipelineFilters()
   const { data: session } = useGetSessionQuery()
+  const { data: zones = [] } = useGetZonesQuery()
   const { data: board, isLoading, isError, refetch } = useGetPipelineBoardQuery(filters)
+
+  const canFilterOwner = session !== undefined && session.roleId !== BD_ROLE
+  const zoneOptions = zones.map((zone) => ({
+    value: zone.id,
+    label: zone.label.replace(/^Zona\s+/i, ''),
+  }))
+
+  /** Los filtros puestos, en palabras: el vacío los nombra para que se entienda por qué. */
+  const activeFilterLabels = [
+    filters.zone !== null &&
+      `Zona: ${zoneOptions.find((zone) => zone.value === filters.zone)?.label ?? filters.zone}`,
+    filters.ownerId !== null && 'Dueño: yo',
+    isStaleOnly && 'Sin actividad 7+ días',
+  ].filter((label): label is string => typeof label === 'string')
 
   /**
    * Drag-and-drop del semáforo: soltar la tarjeta en otra columna NO cambia
@@ -102,16 +129,32 @@ export function PipelinePage(): ReactNode {
       </header>
 
       <div className="flex flex-wrap items-center gap-3">
-        {/*
-          Zona y Dueño se pintan como en el diseño pero no son interactivos: su
-          selector (dropdown) no está diseñado. El filtro SÍ viaja al endpoint,
-          así que conectarlos es solo ponerles el picker encima.
-        */}
-        {/* Informativos, no botones: sin sombra ni fondo de control — su
-            selector no está diseñado y un chip que parece clicable y no
-            responde se lee como pantalla rota. */}
-        <span className="px-1 text-sm text-ink-3">Zona: {filters.zone ?? 'todas'}</span>
-        <span className="px-1 text-sm text-ink-3">Dueño: {session?.name ?? 'yo'}</span>
+        {/* Zona y Dueño viajan al endpoint (`zoneId`, `ownerUserId`): son
+            filtros de verdad, con el select-píldora de la casa. */}
+        <FilterSelect
+          icon="place"
+          label="Zona"
+          anyLabel="todas"
+          value={filters.zone ?? ANY}
+          anyValue={ANY}
+          options={zoneOptions}
+          onChange={(value) => {
+            setZone(value === ANY ? null : value)
+          }}
+        />
+        {canFilterOwner && (
+          <FilterSelect
+            icon="person"
+            label="Dueño"
+            anyLabel="todos"
+            value={filters.ownerId ?? ANY}
+            anyValue={ANY}
+            options={[{ value: session.id, label: 'yo' }]}
+            onChange={(value) => {
+              setOwnerId(value === ANY ? null : value)
+            }}
+          />
+        )}
         <button
           type="button"
           onClick={toggleStaleOnly}
@@ -124,6 +167,7 @@ export function PipelinePage(): ReactNode {
         >
           Sin actividad 7+ días
         </button>
+        <FilterReset activeCount={activeCount} onReset={reset} />
       </div>
 
       {isError && (
@@ -167,10 +211,26 @@ export function PipelinePage(): ReactNode {
       {board && board.items.length === 0 && (
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-line px-6 py-12 text-center">
           <img src={pipelineIllustration} alt="" aria-hidden className="h-32 w-auto" />
-          <p className="text-base font-semibold text-ink">Aún no hay prospectos abiertos</p>
-          <p className="max-w-md text-sm text-ink-3">
-            Da de alta el primero con «Nuevo prospecto»: el ciclo arranca en Gris.
-          </p>
+          {activeFilterLabels.length > 0 ? (
+            /* El vacío nombra el filtro que lo causa: sin eso se lee como
+               «no hay prospectos» cuando solo están fuera del recorte. */
+            <>
+              <p className="text-base font-semibold text-ink">
+                Ningún prospecto coincide con {activeFilterLabels.join(' · ')}
+              </p>
+              <p className="max-w-md text-sm text-ink-3">
+                Cambia ese filtro o quítalo con «Quitar filtros» para volver a ver el tablero
+                completo.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-base font-semibold text-ink">Aún no hay prospectos abiertos</p>
+              <p className="max-w-md text-sm text-ink-3">
+                Da de alta el primero con «Nuevo prospecto»: el ciclo arranca en Gris.
+              </p>
+            </>
+          )}
         </div>
       )}
 

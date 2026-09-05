@@ -50,6 +50,12 @@ export interface ContractListFilters {
   status: ContractStatus | typeof ANY_VALUE
   /** El nombre de la zona, o `ALL`. Es `string` porque las zonas se cargan del backend. */
   zoneName: string
+  /**
+   * Solo los que vencen dentro de N días; `null` = todos. Un contrato
+   * indefinido, sin vigencia o ya vencido no «vence en» ningún plazo, así que
+   * con el filtro puesto queda fuera.
+   */
+  expiresInDays: number | null
 }
 
 /** Lo que se paga y lo que se factura para un mismo concepto. */

@@ -44,22 +44,30 @@ export function ReportsPage(): ReactNode {
         </Button>
       </header>
 
-      <div className="flex flex-wrap gap-2">
-        {REPORT_TABS.map((tab, index) => (
-          <button
-            key={tab}
-            type="button"
-            disabled={index > 0}
-            title={index > 0 ? 'Este reporte aún no se define' : undefined}
-            className={
-              index === 0
-                ? 'cursor-default rounded-full bg-o-500 px-4 py-2 text-sm font-semibold text-ink'
-                : 'rounded-full border border-line px-4 py-2 text-sm text-ink-3 disabled:opacity-50'
-            }
-          >
-            {tab}
-          </button>
-        ))}
+      {/* Solo Ventas existe: el tablist lo dice con `aria-selected`, y los otros
+          cuatro están deshabilitados de verdad — ni cursor ni hover que prometan
+          un reporte que aún no se define. */}
+      <div role="tablist" aria-label="Reporte" className="flex flex-wrap gap-2">
+        {REPORT_TABS.map((tab, index) => {
+          const isCurrent = index === 0
+          return (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={isCurrent}
+              disabled={!isCurrent}
+              title={isCurrent ? undefined : 'Este reporte aún no se define'}
+              className={
+                isCurrent
+                  ? 'rounded-full bg-o-500 px-4 py-2 text-sm font-semibold text-ink'
+                  : 'rounded-full border border-line px-4 py-2 text-sm text-ink-3 disabled:cursor-not-allowed disabled:opacity-50'
+              }
+            >
+              {tab}
+            </button>
+          )
+        })}
       </div>
 
       {isError && (

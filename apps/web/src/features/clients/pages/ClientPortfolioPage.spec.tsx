@@ -93,4 +93,24 @@ describe('ClientPortfolioPage', () => {
     expect(screen.getByText('Villas Coral')).toBeInTheDocument()
     expect(screen.queryByText('Hotel Puerto Real')).not.toBeInTheDocument()
   })
+
+  it('buscar espera a que dejes de teclear; «Quitar filtros» regresa la cartera completa', async () => {
+    const user = userEvent.setup()
+    renderPortfolio()
+    await screen.findByText('Hotel Puerto Real')
+
+    const search = screen.getByLabelText('Buscar hotel')
+    await user.type(search, 'mirador')
+    expect(search).toHaveValue('mirador')
+
+    await waitFor(() => {
+      expect(screen.queryByText('Hotel Puerto Real')).not.toBeInTheDocument()
+    }, SLOW)
+    expect(screen.getByText('Hotel Mirador')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Quitar filtros/ }))
+    expect(search).toHaveValue('')
+    expect(await screen.findByText('Hotel Puerto Real', undefined, SLOW)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Quitar filtros/ })).not.toBeInTheDocument()
+  })
 })

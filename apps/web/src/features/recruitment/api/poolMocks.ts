@@ -6,6 +6,7 @@
 // eslint-disable-next-line no-restricted-imports
 import { registerRequisitionsMocks } from '@/features/requisitions/api/requisitionsMocks'
 import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
+import { matchesSearch } from '@/shared/lib/text'
 import type {
   ApiEnvelope,
   CatalogItemApi,
@@ -177,11 +178,14 @@ const routes: readonly MockRoute[] = [
     method: 'GET',
     path: '/workers',
     resolve: ({ search }): PaginatedEnvelope<WorkerApi> => {
+      /** Como el back: por nombre, sin distinguir acentos ni mayúsculas. */
+      const term = search.get('search')
       const state = search.get('state')
       const zoneId = search.get('zoneId')
       const positionId = search.get('catalogPositionId')
       const englishId = search.get('englishLevelId')
       const items = workers.filter((worker) => {
+        if (term && !matchesSearch(term, worker.fullName)) return false
         if (state && worker.state.code !== state) return false
         if (zoneId && worker.zone.id !== zoneId) return false
         if (positionId && worker.position?.id !== positionId) return false

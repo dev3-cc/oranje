@@ -1,5 +1,5 @@
 import { statusLight } from '@oranje/ui'
-import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react'
 
 import { useGetClientsQuery } from '../api/clientsApi'
 import { ClientCardItem } from '../components/ClientCardItem'
@@ -13,6 +13,7 @@ import { FoldText } from '@/shared/components/FoldText'
 import { HotelPointsMap, type HotelMapPoint } from '@/shared/components/HotelPointsMap'
 import { LoadError } from '@/shared/components/LoadError'
 import { CONTRACT_STATUS_TOKEN } from '@/shared/constants/contractStatus'
+import { useDebounce } from '@/shared/hooks/useDebounce'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { supportsWebGl } from '@/shared/lib/webgl'
 
@@ -22,9 +23,6 @@ const CircularGallery = lazy(() =>
     default: module.CircularGallery,
   })),
 )
-
-/** Cuánto se espera a que alguien deje de teclear antes de preguntar al servidor. */
-const SEARCH_DEBOUNCE_MS = 300
 
 const EMPTY_FILTERS: Filters = {
   search: '',
@@ -46,18 +44,14 @@ const NO_CONTRACT_COLOR = statusLight['st-gris']
  */
 export function ClientPortfolioPage(): ReactNode {
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS)
-  const [appliedFilters, setAppliedFilters] = useState<Filters>(EMPTY_FILTERS)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setAppliedFilters(filters)
-    }, SEARCH_DEBOUNCE_MS)
-
-    return () => {
-      clearTimeout(timer)
-    }
-  }, [filters])
+  /* El texto espera a que la persona deje de teclear; los selects van al instante. */
+  const settledSearch = useDebounce(filters.search)
+  const appliedFilters = useMemo(
+    () => ({ ...filters, search: settledSearch }),
+    [filters, settledSearch],
+  )
 
   const { data: portfolio, isLoading, isError, refetch } = useGetClientsQuery(appliedFilters)
 

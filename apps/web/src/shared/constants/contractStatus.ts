@@ -30,12 +30,16 @@ export const CONTRACT_STATUS_TOKEN: Record<ContractStatus, StatusLightToken> = {
  *
  * Es cuánto antes se empieza a advertir que un contrato vence: dentro de la
  * ventana el pie de la vigencia pasa de «10 meses restantes» a «vence en 45
- * días» y se destaca. NO filtra la tabla —los contratos lejanos siguen a la
- * vista—, solo decide a cuáles hay que hacerles caso.
+ * días» y se destaca. Sin filtro de vencimiento puesto, los contratos lejanos
+ * siguen a la vista y esta ventana solo decide a cuáles hay que hacerles caso.
  */
 export const EXPIRY_WARNING_DAYS = 90
 
-/** Las ventanas que ofrece el filtro. */
+/**
+ * Los plazos del filtro «Vencimiento». Elegir uno SÍ recorta la lista a los
+ * que vencen dentro de esos días, y ese mismo plazo pasa a ser la ventana de
+ * aviso de los renglones que quedan.
+ */
 export const EXPIRY_WINDOWS = [30, 60, 90, 180] as const
 
 /**

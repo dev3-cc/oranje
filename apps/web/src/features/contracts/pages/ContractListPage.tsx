@@ -1,10 +1,10 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 
 import { useGetContractsQuery } from '../api/contractsApi'
 import { ContractFilters } from '../components/ContractFilters'
 import { ContractRowList } from '../components/ContractRowList'
 import { NewContractDialog } from '../components/NewContractDialog'
-import type { ContractListFilters } from '../types/contract.types'
+import { ANY_VALUE, type ContractListFilters } from '../types/contract.types'
 
 import { ContractDetailPage } from './ContractDetailPage'
 
@@ -14,28 +14,30 @@ import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { EXPIRY_WARNING_DAYS } from '@/shared/constants/contractStatus'
+import { useDebounce } from '@/shared/hooks/useDebounce'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
-const SEARCH_DEBOUNCE_MS = 300
-
-const EMPTY_FILTERS: ContractListFilters = { search: '', status: 'ALL', zoneName: 'ALL' }
+const EMPTY_FILTERS: ContractListFilters = {
+  search: '',
+  status: ANY_VALUE,
+  zoneName: ANY_VALUE,
+  expiresInDays: null,
+}
 
 export function ContractListPage(): ReactNode {
   const [filters, setFilters] = useState<ContractListFilters>(EMPTY_FILTERS)
   const [isCreating, setIsCreating] = useState(false)
-  const [appliedFilters, setAppliedFilters] = useState<ContractListFilters>(EMPTY_FILTERS)
-  const [warningDays, setWarningDays] = useState(EXPIRY_WARNING_DAYS)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setAppliedFilters(filters)
-    }, SEARCH_DEBOUNCE_MS)
-
-    return () => {
-      clearTimeout(timer)
-    }
-  }, [filters])
+  /** La búsqueda espera a que se deje de teclear; los selects aplican al instante. */
+  const search = useDebounce(filters.search)
+  const appliedFilters = useMemo(() => ({ ...filters, search }), [filters, search])
+  /**
+   * El plazo del filtro es también el umbral desde el que el pie de cada
+   * renglón grita «vence en N días»: si se piden los que vencen en 180, a
+   * todos los que quedan se les cuenta en días.
+   */
+  const warningDays = filters.expiresInDays ?? EXPIRY_WARNING_DAYS
 
   const { data: list, isLoading, isError, refetch } = useGetContractsQuery(appliedFilters)
   /** Siempre hay un contrato elegido: el marcado o el primero de la lista filtrada. */
@@ -75,9 +77,10 @@ export function ContractListPage(): ReactNode {
       <ContractFilters
         filters={filters}
         zoneNames={list?.zoneNames ?? []}
-        warningDays={warningDays}
         onChange={setFilters}
-        onWarningDaysChange={setWarningDays}
+        onReset={() => {
+          setFilters(EMPTY_FILTERS)
+        }}
       />
 
       {isError && (

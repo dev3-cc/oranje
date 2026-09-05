@@ -1,13 +1,15 @@
-import { Input } from '@oranje/ui'
-import type { ChangeEvent, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 
 import {
+  ANY_VALUE,
   CLIENT_SORT_LABEL,
   CLIENT_SORTS,
   type ClientFilters as Filters,
 } from '../types/client.types'
 
+import { FilterReset } from '@/shared/components/FilterReset'
 import { FilterSelect } from '@/shared/components/FilterSelect'
+import { SearchField } from '@/shared/components/SearchField'
 import { CONTRACT_STATUSES } from '@/shared/constants/contractStatus'
 
 export function ClientFilters({
@@ -27,17 +29,21 @@ export function ClientFilters({
       onChange({ ...filters, [key]: value as Filters[K] })
     }
 
+  /* «Ordenar» no es un filtro: ni cuenta ni se toca al quitarlos. */
+  const activeFilters =
+    (filters.search.trim() !== '' ? 1 : 0) +
+    [filters.zoneName, filters.contractStatus, filters.activationYear].filter(
+      (value) => value !== ANY_VALUE,
+    ).length
+
   return (
     <div className="flex flex-wrap items-center gap-4">
-      <Input
-        type="search"
+      <SearchField
         value={filters.search}
-        onChange={(event: ChangeEvent<HTMLInputElement>) => {
-          update('search')(event.target.value)
-        }}
-        placeholder="Nombre del hotel, p. ej. Puerto Real"
-        aria-label="Buscar hotel"
-        className="h-auto w-full max-w-md min-w-64 rounded-full px-5 py-2.5 hover:bg-surface-2"
+        onChange={update('search')}
+        label="Buscar hotel"
+        placeholder="Nombre del hotel, p. ej. Puerto Real…"
+        className="w-full max-w-md"
       />
 
       <FilterSelect
@@ -64,7 +70,19 @@ export function ClientFilters({
         onChange={update('activationYear')}
       />
 
-      {}
+      <FilterReset
+        activeCount={activeFilters}
+        onReset={() => {
+          onChange({
+            ...filters,
+            search: '',
+            zoneName: ANY_VALUE,
+            contractStatus: ANY_VALUE,
+            activationYear: ANY_VALUE,
+          })
+        }}
+      />
+
       <span className="ml-auto">
         <FilterSelect
           label="Ordenar"

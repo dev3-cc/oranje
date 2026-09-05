@@ -10,6 +10,7 @@ import { registerTerritoryMocks } from './territoryMocks'
 import { baseApi } from '@/app/baseApi'
 import '@/app/sessionApi'
 import type { OnboardingStatus } from '@/shared/constants/onboardingStatus'
+import { normalizeText as normalize } from '@/shared/lib/text'
 import type {
   ApiEnvelope,
   HotelApi,
@@ -31,10 +32,6 @@ interface ZonesEnvelope {
 function daysSince(iso: string): number {
   const ms = Date.now() - new Date(iso).getTime()
   return Math.max(0, Math.floor(ms / 86_400_000))
-}
-
-function normalize(value: string): string {
-  return value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 }
 
 function zoneLabel(name: string): string {

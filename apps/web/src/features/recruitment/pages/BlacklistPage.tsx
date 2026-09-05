@@ -1,10 +1,11 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@oranje/ui'
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 
 import { useGetBlacklistQuery } from '../api/blacklistApi'
 import { CreateBlacklistDialog } from '../components/CreateBlacklistDialog'
 import { LiftBlacklistDialog } from '../components/LiftBlacklistDialog'
 import {
+  ANY_VALUE,
   BLACKLIST_SOURCES,
   BLACKLIST_SOURCE_LABEL,
   EMPTY_BLACKLIST_FILTERS,
@@ -13,13 +14,16 @@ import {
 } from '../types/blacklist.types'
 
 import { Button } from '@/shared/components/Button'
+import { FilterReset } from '@/shared/components/FilterReset'
 import { FilterSelect } from '@/shared/components/FilterSelect'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
+import { SearchField } from '@/shared/components/SearchField'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { useCan } from '@/shared/hooks/useCan'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayMonth } from '@/shared/lib/formatters'
+import { matchesSearch } from '@/shared/lib/text'
 
 const HEADERS = IS_DEV_UI
   ? [
@@ -36,11 +40,27 @@ const HEADERS = IS_DEV_UI
 
 export function BlacklistPage(): ReactNode {
   const [filters, setFilters] = useState<BlacklistFilters>(EMPTY_BLACKLIST_FILTERS)
+  const [search, setSearch] = useState('')
   const [liftTarget, setLiftTarget] = useState<BlacklistRow | null>(null)
   const can = useCan()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
 
   const { data: rows = [], isLoading, isError, refetch } = useGetBlacklistQuery(filters)
+
+  /* El nombre se filtra aquí, sobre lo que ya llegó: la API no acepta texto. */
+  const visibleRows = useMemo(
+    () => rows.filter((row) => matchesSearch(search, row.workerName)),
+    [rows, search],
+  )
+
+  /* Lo que cuenta como filtro es lo que se APARTA del arranque: la Blacklist
+     nace en «vigentes» (es lo que se consulta), así que abrir el historial
+     sí es un filtro y volver a vigentes es quitarlo. Una página recién
+     abierta nunca ofrece «Quitar filtros». */
+  const activeFilters =
+    (search.trim() !== '' ? 1 : 0) +
+    (filters.source !== ANY_VALUE ? 1 : 0) +
+    (filters.onlyActive !== EMPTY_BLACKLIST_FILTERS.onlyActive ? 1 : 0)
 
   return (
     <div className="flex flex-col gap-6">
@@ -75,6 +95,14 @@ export function BlacklistPage(): ReactNode {
       </header>
 
       <div className="flex flex-wrap items-center gap-4">
+        <SearchField
+          value={search}
+          onChange={setSearch}
+          label="Buscar colaborador"
+          placeholder="Nombre del colaborador, p. ej. Ana Rivera…"
+          className="w-72"
+        />
+
         <FilterSelect
           label="Origen"
           anyLabel="todos"
@@ -96,6 +124,14 @@ export function BlacklistPage(): ReactNode {
           options={[{ value: 'ACTIVE', label: 'vigentes' }]}
           onChange={(value) => {
             setFilters((previous) => ({ ...previous, onlyActive: value === 'ACTIVE' }))
+          }}
+        />
+
+        <FilterReset
+          activeCount={activeFilters}
+          onReset={() => {
+            setSearch('')
+            setFilters(EMPTY_BLACKLIST_FILTERS)
           }}
         />
       </div>
@@ -128,18 +164,19 @@ export function BlacklistPage(): ReactNode {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.length === 0 && (
+              {visibleRows.length === 0 && (
                 <TableRow>
                   <TableCell
                     colSpan={HEADERS.length}
                     className="px-4 py-8 text-center text-sm text-ink-3"
                   >
-                    No hay vetos con estos filtros. Prueba con otro origen o con el historial
-                    completo.
+                    {rows.length > 0 && search.trim() !== ''
+                      ? `Ningún veto es de alguien llamado «${search.trim()}». Prueba otro nombre o quita la búsqueda.`
+                      : 'No hay vetos con estos filtros. Prueba con otro origen o con el historial completo.'}
                   </TableCell>
                 </TableRow>
               )}
-              {rows.map((row) => (
+              {visibleRows.map((row) => (
                 <TableRow key={row.id} className="border-line">
                   <TableCell className="px-4 py-3 text-sm font-semibold whitespace-nowrap text-ink">
                     {row.workerName}

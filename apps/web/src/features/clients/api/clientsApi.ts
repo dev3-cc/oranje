@@ -5,6 +5,7 @@ import { registerClientsMocks } from './clientsMocks'
 
 import { baseApi } from '@/app/baseApi'
 import type { ContractStatus } from '@/shared/constants/contractStatus'
+import { normalizeText as normalize } from '@/shared/lib/text'
 import type {
   ApiEnvelope,
   ContractApi,
@@ -35,11 +36,6 @@ function pickContract(contracts: ContractApi[]): ContractApi | undefined {
       (CONTRACT_PRIORITY[a.status] ?? 9) - (CONTRACT_PRIORITY[b.status] ?? 9) ||
       b.validFrom.localeCompare(a.validFrom),
   )[0]
-}
-
-/** Minúsculas y sin acentos, para que «bahia» encuentre «Bahía». */
-function normalize(value: string): string {
-  return value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 }
 
 async function fetchPortfolio(

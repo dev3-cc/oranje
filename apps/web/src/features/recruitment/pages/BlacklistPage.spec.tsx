@@ -33,6 +33,31 @@ describe('BlacklistPage', () => {
     expect(screen.getByText('Levantada')).toBeInTheDocument()
   })
 
+  it('buscar por nombre filtra lo que ya llegó, sin acentos; «Quitar filtros» vuelve al arranque', async () => {
+    const user = userEvent.setup()
+    renderBlacklist()
+    await screen.findByText('Carlos Beltrán')
+
+    const search = screen.getByLabelText('Buscar colaborador')
+    await user.type(search, 'beltran')
+    expect(screen.getByText('Carlos Beltrán')).toBeInTheDocument()
+    expect(screen.queryByText('Norma Estrada')).not.toBeInTheDocument()
+
+    await user.type(search, 'x')
+    expect(screen.getByText(/Ningún veto es de alguien llamado «beltranx»/)).toBeInTheDocument()
+
+    // «Vigentes» es el arranque, no un filtro: solo cuenta la búsqueda, y
+    // quitar filtros regresa a vigentes (el historial sigue pidiéndose a propósito).
+    const reset = screen.getByRole('button', { name: /Quitar filtros/ })
+    expect(reset).toHaveTextContent('1')
+    await user.click(reset)
+    expect(search).toHaveValue('')
+    expect(await screen.findByText('Norma Estrada', undefined, SLOW)).toBeInTheDocument()
+    expect(screen.getByText('Carlos Beltrán')).toBeInTheDocument()
+    expect(screen.queryByText('Pedro Quiroz')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Quitar filtros/ })).not.toBeInTheDocument()
+  })
+
   it('un veto no manual no exige evidencia: raya, no hueco', async () => {
     const user = userEvent.setup()
     renderBlacklist()

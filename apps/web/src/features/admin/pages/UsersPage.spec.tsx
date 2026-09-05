@@ -41,6 +41,26 @@ describe('UsersPage', () => {
     expect(screen.queryByText('Hugo Curtidor')).not.toBeInTheDocument()
   })
 
+  it('buscar espera a que dejes de teclear, y «Quitar filtros» regresa a todos', async () => {
+    const user = userEvent.setup()
+    renderUsers()
+    await screen.findByText('Hugo Curtidor')
+
+    const search = screen.getByLabelText('Buscar usuario')
+    await user.type(search, 'Marta')
+    expect(search).toHaveValue('Marta')
+
+    await waitFor(() => {
+      expect(screen.queryByText('Hugo Curtidor')).not.toBeInTheDocument()
+    })
+    expect(screen.getByText('Marta Solís')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Quitar filtros/ }))
+    expect(search).toHaveValue('')
+    expect(await screen.findByText('Hugo Curtidor')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Quitar filtros/ })).not.toBeInTheDocument()
+  })
+
   it('el alta por invitación no pide contraseña; definirla la exige de 8+', async () => {
     const user = userEvent.setup()
     renderUsers()

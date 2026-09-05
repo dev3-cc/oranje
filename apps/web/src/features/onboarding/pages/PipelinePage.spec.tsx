@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { createMemoryRouter, RouterProvider } from 'react-router'
@@ -60,6 +60,27 @@ describe('PipelinePage', () => {
     expect(within(dialog).getByRole('heading', { name: 'Nuevo prospecto' })).toBeInTheDocument()
     // El modal estilo Estates no pinta descripción: sus chips de origen bastan.
     expect(within(dialog).getByRole('button', { name: 'Hotel ya registrado' })).toBeInTheDocument()
+  })
+
+  it('«Zona» filtra en el servidor y «Quitar filtros» devuelve el tablero', async () => {
+    const user = userEvent.setup()
+    renderPipeline()
+
+    expect(await screen.findByText('Hotel Bahía Serena')).toBeInTheDocument()
+    expect(screen.getByText('Hotel Riviera Maya')).toBeInTheDocument()
+    // El BD ve solo lo suyo: el filtro de dueño no se le enseña.
+    expect(screen.queryByLabelText('Dueño')).not.toBeInTheDocument()
+
+    await user.click(screen.getByLabelText('Zona'))
+    await user.click(await screen.findByRole('option', { name: 'Zona: Poniente' }))
+
+    await waitFor(() => {
+      expect(screen.queryByText('Hotel Riviera Maya')).not.toBeInTheDocument()
+    })
+    expect(screen.getByText('Hotel Bahía Serena')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Quitar filtros/ }))
+    expect(await screen.findByText('Hotel Riviera Maya')).toBeInTheDocument()
   })
 
   it('la tarjeta lleva al detalle del prospecto', async () => {

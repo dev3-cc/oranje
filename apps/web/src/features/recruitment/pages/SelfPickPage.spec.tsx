@@ -38,16 +38,21 @@ describe('la Bolsa Self-Pick', () => {
     expect(screen.getByLabelText('Zona')).toBeDisabled()
   })
 
-  it('el filtro de posición deja solo sus renglones', async () => {
+  it('el filtro de posición deja solo sus renglones, y «Quitar filtros» los devuelve', async () => {
     renderSelfPick()
     const user = userEvent.setup()
 
     await screen.findByText('13 slots libres en 5 requisiciones autorizadas', undefined, SLOW)
+    expect(screen.queryByRole('button', { name: /Quitar filtros/ })).not.toBeInTheDocument()
     await user.click(screen.getByLabelText('Posición'))
     await user.click(await screen.findByRole('option', { name: 'Posición: Cocinero' }))
 
     expect(screen.getByRole('heading', { name: 'Cocinero' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Housekeeper' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Quitar filtros/ }))
+    expect(screen.getAllByRole('heading', { name: 'Housekeeper' }).length).toBeGreaterThan(0)
+    expect(screen.queryByRole('button', { name: /Quitar filtros/ })).not.toBeInTheDocument()
   })
 
   it('tomar un slot: los ocupados se ven, el libre se asigna y RR-15 avanza el formulario', async () => {
