@@ -179,7 +179,15 @@ export class WorkersRepository {
     if (filter.zoneId) add('w.zone_id = $n::uuid', filter.zoneId)
     if (filter.catalogPositionId) add('w.catalog_position_id = $n::uuid', filter.catalogPositionId)
     if (filter.englishLevelId) add('w.english_level_id = $n::uuid', filter.englishLevelId)
-    if (filter.search) add('w.full_name ILIKE $n', `%${filter.search}%`)
+    /* Sin acentos ni mayúsculas en los dos lados: «jose» encuentra a «José».
+       `ILIKE` solo ignora mayúsculas. `unaccent` no está en bootstrap.sql
+       (sería migración + bootstrap); `translate` cubre el español hoy. */
+    if (filter.search) {
+      add(
+        "translate(lower(w.full_name), 'áéíóúüñ', 'aeiouun') LIKE translate(lower($n), 'áéíóúüñ', 'aeiouun')",
+        `%${filter.search}%`,
+      )
+    }
 
     if (filter.onlyAvailable) {
       where.push(`s.code IN ('STRONG_GREEN', 'YELLOW')`)
