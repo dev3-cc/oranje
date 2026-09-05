@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common'
+import { Prisma } from '@prisma/client'
 import { v7 as uuidv7 } from 'uuid'
 
 import { PrismaService } from '../../../infra/prisma/index.js'
@@ -46,6 +47,18 @@ export interface TimesheetRow {
   approvedAt: Date | null
   worker: { id: string; fullName: string }
   requisitionId: string
+}
+
+// Lo que hace falta para crear el timesheet/día si todavía no existen — se
+// resuelve ANTES de validar (lectura), y solo se usa DENTRO de la transacción
+// que también inserta la marca, para que crear y ponchar sean un solo hecho.
+export interface EnsureDayParams {
+  scheduleId: string
+  workerId: string
+  requisitionId: string
+  weekStart: Date
+  weekEnd: Date
+  workDate: Date
 }
 
 @Injectable()
@@ -149,52 +162,76 @@ export class TimesheetsRepository {
     return rows[0] ?? null
   }
 
-  async ensureDay(params: {
-    scheduleId: string
+  // Read-only: si el timesheet no existe todavía, no hay nada que crear para
+  // saber su estado — uno nuevo nace OPEN, y eso lo decide el servicio.
+  async findTimesheet(params: {
     workerId: string
     requisitionId: string
     weekStart: Date
-    weekEnd: Date
-    workDate: Date
-  }): Promise<{ timesheetId: string; dayId: string; status: string }> {
-    return this.prisma.$transaction(async (tx) => {
-      let sheet = await tx.timesheet.findFirst({
-        where: {
+  }): Promise<{ id: string; status: string } | null> {
+    return this.prisma.timesheet.findFirst({
+      where: {
+        workerId: params.workerId,
+        requisitionId: params.requisitionId,
+        weekStart: params.weekStart,
+      },
+      select: { id: true, status: true },
+    })
+  }
+
+  // Read-only: si el día no existe todavía, no puede tener marcas — eso lo
+  // resuelve el servicio sin necesidad de esta llamada.
+  async findDay(timesheetId: string, workDate: Date): Promise<{ id: string } | null> {
+    return this.prisma.timesheetDay.findFirst({
+      where: { timesheetId, workDate },
+      select: { id: true },
+    })
+  }
+
+  // La misma lógica de find-or-create que antes vivía en `ensureDay`, pero
+  // corriendo DENTRO de la transacción del caller (addPunch/addManualPunch) en
+  // vez de en la suya propia — así crear el día y registrar la marca son un
+  // solo hecho: si algo después falla, Postgres deshace también la creación.
+  private async ensureDayTx(
+    tx: Prisma.TransactionClient,
+    params: EnsureDayParams,
+  ): Promise<{ timesheetId: string; dayId: string }> {
+    let sheet = await tx.timesheet.findFirst({
+      where: {
+        workerId: params.workerId,
+        requisitionId: params.requisitionId,
+        weekStart: params.weekStart,
+      },
+      select: { id: true },
+    })
+
+    if (!sheet) {
+      sheet = await tx.timesheet.create({
+        data: {
+          id: uuidv7(),
+          scheduleId: params.scheduleId,
           workerId: params.workerId,
           requisitionId: params.requisitionId,
           weekStart: params.weekStart,
+          weekEnd: params.weekEnd,
         },
-        select: { id: true, status: true },
-      })
-
-      if (!sheet) {
-        sheet = await tx.timesheet.create({
-          data: {
-            id: uuidv7(),
-            scheduleId: params.scheduleId,
-            workerId: params.workerId,
-            requisitionId: params.requisitionId,
-            weekStart: params.weekStart,
-            weekEnd: params.weekEnd,
-          },
-          select: { id: true, status: true },
-        })
-      }
-
-      let day = await tx.timesheetDay.findFirst({
-        where: { timesheetId: sheet.id, workDate: params.workDate },
         select: { id: true },
       })
+    }
 
-      if (!day) {
-        day = await tx.timesheetDay.create({
-          data: { id: uuidv7(), timesheetId: sheet.id, workDate: params.workDate, grossMinutes: 0 },
-          select: { id: true },
-        })
-      }
-
-      return { timesheetId: sheet.id, dayId: day.id, status: sheet.status }
+    let day = await tx.timesheetDay.findFirst({
+      where: { timesheetId: sheet.id, workDate: params.workDate },
+      select: { id: true },
     })
+
+    if (!day) {
+      day = await tx.timesheetDay.create({
+        data: { id: uuidv7(), timesheetId: sheet.id, workDate: params.workDate, grossMinutes: 0 },
+        select: { id: true },
+      })
+    }
+
+    return { timesheetId: sheet.id, dayId: day.id }
   }
 
   async punchExists(dayId: string, type: string): Promise<boolean> {
@@ -217,8 +254,10 @@ export class TimesheetsRepository {
     })
   }
 
+  // Crea el timesheet/día si hacen falta E inserta la marca en la MISMA
+  // transacción: si la marca no se puede insertar, la creación tampoco queda.
   async addPunch(params: {
-    dayId: string
+    ensure: EnsureDayParams
     type: string
     latitude: number
     longitude: number
@@ -227,16 +266,18 @@ export class TimesheetsRepository {
     deviceAt: Date | null
     userId: string
     roleCode: string
-  }): Promise<string> {
+  }): Promise<{ id: string; dayId: string }> {
     const id = uuidv7()
 
-    await this.prisma.$transaction(async (tx) => {
+    const dayId = await this.prisma.$transaction(async (tx) => {
+      const { dayId } = await this.ensureDayTx(tx, params.ensure)
+
       await tx.$executeRaw`
         INSERT INTO operations.punch_mark
           (id, timesheet_day_id, type, device_at, coordinates, inside_geofence, photo_path)
         VALUES (
           ${id}::uuid,
-          ${params.dayId}::uuid,
+          ${dayId}::uuid,
           ${params.type},
           ${params.deviceAt}::timestamptz,
           ST_SetSRID(ST_MakePoint(${params.longitude}::float8, ${params.latitude}::float8), 4326)::geography,
@@ -255,28 +296,34 @@ export class TimesheetsRepository {
           payload: { type: params.type, insideGeofence: params.insideGeofence },
         },
       })
+
+      return dayId
     })
 
-    return id
+    return { id, dayId }
   }
 
+  // Mismo principio que addPunch: crear el día y registrar el manual son un
+  // solo hecho.
   async addManualPunch(params: {
-    dayId: string
+    ensure: EnsureDayParams
     type: string
     occurredAt: Date
     reason: string
     userId: string
     roleCode: string
-  }): Promise<string> {
+  }): Promise<{ id: string; dayId: string }> {
     const id = uuidv7()
 
-    await this.prisma.$transaction(async (tx) => {
+    const dayId = await this.prisma.$transaction(async (tx) => {
+      const { dayId } = await this.ensureDayTx(tx, params.ensure)
+
       await tx.$executeRaw`
         INSERT INTO operations.punch_mark
           (id, timesheet_day_id, type, server_at, is_manual, registered_by, manual_reason)
         VALUES (
           ${id}::uuid,
-          ${params.dayId}::uuid,
+          ${dayId}::uuid,
           ${params.type},
           ${params.occurredAt}::timestamptz,
           true,
@@ -295,9 +342,11 @@ export class TimesheetsRepository {
           payload: { type: params.type, reason: params.reason },
         },
       })
+
+      return dayId
     })
 
-    return id
+    return { id, dayId }
   }
 
   async recalcDay(dayId: string, grossMinutes: number, hasAnomaly: boolean): Promise<void> {
