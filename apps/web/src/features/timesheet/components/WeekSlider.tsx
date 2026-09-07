@@ -308,6 +308,37 @@ export function WeekSlider({
     setIsDragging(false)
   }
 
+  /*
+   * Entre el `pointerdown` y que el gesto cruce `DRAG_START_PX` no hay
+   * `setPointerCapture` todavía (se pide justo abajo, en `onPointerMove`,
+   * solo al activarse — necesario para que un click normal deje el `click`
+   * de compatibilidad en el elemento real bajo el dedo, ver el comentario de
+   * `onPointerEnd`). Si el botón se suelta ANTES de ese cruce y el soltar cae
+   * fuera de esta superficie (se sale de la ventana arrastrando, suelta sobre
+   * otro elemento…), ni `onPointerUp` ni `onPointerCancel` de este div
+   * disparan — nada limpia `gesture.current`, que se queda con el `startX`
+   * de ese down viejo. El siguiente simple *hover* (sin botón) sobre la
+   * superficie vuelve a entrar a `onPointerMove`, calcula `dx` contra ese
+   * punto viejo — casi siempre ya mayor a `DRAG_START_PX` — y arranca un
+   * arrastre fantasma que nadie pidió (reportado: "con el solo hover ya está
+   * arrastrando", y el desplazamiento se siente discontinuo porque parte de
+   * una referencia vieja, no de donde el mouse entró). Red de seguridad a
+   * nivel `window`: si el release real ocurrió sobre esta superficie, el
+   * handler local ya limpió `gesture.current` antes de que el evento
+   * burbujee hasta aquí, así que esto es no-op en el caso normal.
+   */
+  useEffect(() => {
+    function clearStaleGesture(): void {
+      gesture.current = null
+    }
+    window.addEventListener('pointerup', clearStaleGesture)
+    window.addEventListener('pointercancel', clearStaleGesture)
+    return () => {
+      window.removeEventListener('pointerup', clearStaleGesture)
+      window.removeEventListener('pointercancel', clearStaleGesture)
+    }
+  }, [])
+
   function onPointerDown(event: ReactPointerEvent<HTMLDivElement>): void {
     if (!canDrag) return
     if (event.pointerType === 'mouse' && event.button !== 0) return
