@@ -33,18 +33,23 @@ export interface ScheduleWorkerEntry {
   endTime: string
 }
 
-export interface ScheduleWeek {
+/**
+ * La CINTA completa: todas las semanas del hotel de una vez, como el
+ * `TimesheetTimeline` de la vista Días — navegar es mover la ventana sobre
+ * `days`, no volver a pedir datos. La demanda no varía por semana (es la
+ * cobertura viva del hotel, no un desglose por día), así que no se repite por
+ * semana aquí.
+ */
+export interface ScheduleTimeline {
   hotelName: string
-  /** Los siete días en ISO de la semana ENSEÑADA; vacío = sin schedule. */
+  /** Todos los días de TODAS las semanas cargadas, ascendente. */
   days: string[]
   demand: ScheduleDemandRow[]
-  /** Programados reales por día, del schedule de la semana enseñada. */
+  /** Programados de TODAS las semanas cargadas, sin filtrar por semana. */
   entries: ScheduleWorkerEntry[]
   totalSlots: number
   filledSlots: number
-  /** El lunes de la semana enseñada; `''` cuando el hotel no tiene ninguna. */
-  weekStart: string
-  /** Los lunes con datos, ascendentes: por ellos caminan ‹ › y el mini-calendario. */
+  /** Los lunes con schedule, ascendentes: por ellos caminan ‹ ›, Hoy y el mini-calendario. */
   availableWeeks: string[]
 }
 

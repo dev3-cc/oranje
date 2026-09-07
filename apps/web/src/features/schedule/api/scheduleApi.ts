@@ -1,10 +1,14 @@
-import type { ScheduleDemandRow, ScheduleWeek, ScheduleWorkerEntry } from '../types/schedule.types'
+import type {
+  ScheduleDemandRow,
+  ScheduleTimeline,
+  ScheduleWorkerEntry,
+} from '../types/schedule.types'
 
 import { registerScheduleMocks } from './scheduleMocks'
 
 import { baseApi } from '@/app/baseApi'
 /** Piezas genéricas de navegación semanal, expuestas por el índice de Timesheet (§4). */
-import { addDaysIso, resolveWeek } from '@/features/timesheet'
+import { addDaysIso } from '@/features/timesheet'
 import type {
   ApiEnvelope,
   PaginatedEnvelope,
@@ -35,10 +39,15 @@ function timeOf(iso: string): string {
   return iso.slice(11, 16)
 }
 
-async function fetchWeek(
+/**
+ * La CINTA completa, como `fetchTimeline` del Timesheet: TODAS las semanas
+ * del hotel de una vez —`/schedules` ya las trae todas— con las entradas de
+ * CADA una, para que el arrastre continuo revele fechas vecinas sin volver a
+ * pedir datos. La demanda no depende de qué semana esté a la vista.
+ */
+async function fetchTimeline(
   fetchWithBQ: FetchWithBQ,
-  requestedWeekStart: string,
-): Promise<{ data: ScheduleWeek } | { error: unknown }> {
+): Promise<{ data: ScheduleTimeline } | { error: unknown }> {
   const [schedulesRes, requisitionsRes] = await Promise.all([
     fetchWithBQ('/schedules'),
     fetchWithBQ({ url: '/requisitions', params: { limit: 100 } }),
@@ -49,35 +58,35 @@ async function fetchWeek(
   const schedules = (schedulesRes.data as ApiEnvelope<ScheduleApi[]>).data
   const requisitions = (requisitionsRes.data as PaginatedEnvelope<RequisitionApi>).data
 
-  /** Las semanas QUE EXISTEN; se enseña la pedida o, sin ella, la más reciente. */
+  /** Las semanas QUE EXISTEN, ascendentes: por ellas camina la cinta. */
   const availableWeeks = [...new Set(schedules.map((item) => item.weekStart))].sort()
-  const weekStart = resolveWeek(availableWeeks, requestedWeekStart)
-  const schedule = weekStart
-    ? (schedules.find((item) => item.weekStart === weekStart) ?? null)
-    : null
+  const days = availableWeeks.flatMap((weekStart) =>
+    Array.from({ length: 7 }, (_item, index) => addDaysIso(weekStart, index)),
+  )
 
-  let entries: ScheduleWorkerEntry[] = []
-  let days: string[] = []
-  if (schedule) {
-    days = Array.from({ length: 7 }, (_item, index) => addDaysIso(schedule.weekStart, index))
-    const entriesRes = await fetchWithBQ(`/schedules/${schedule.id}/entries`)
-    if (!entriesRes.error) {
-      entries = (entriesRes.data as ApiEnvelope<ScheduleEntryApi[]>).data.map((entry) => ({
-        id: entry.id,
-        workDate: entry.workDate,
-        workerId: entry.worker.id,
-        workerName: entry.worker.fullName,
-        startTime: timeOf(entry.startsAt),
-        endTime: timeOf(entry.endsAt),
-      }))
-    }
-  }
+  const entriesResults = await Promise.all(
+    schedules.map((schedule) => fetchWithBQ(`/schedules/${schedule.id}/entries`)),
+  )
+  const entriesError = entriesResults.find((result) => result.error)
+  if (entriesError) return { error: entriesError.error }
 
-  /** La demanda del hotel del schedule; sin schedule, la de todo el alcance. */
+  const entries: ScheduleWorkerEntry[] = entriesResults
+    .flatMap((result) => (result.data as ApiEnvelope<ScheduleEntryApi[]>).data)
+    .map((entry) => ({
+      id: entry.id,
+      workDate: entry.workDate,
+      workerId: entry.worker.id,
+      workerName: entry.worker.fullName,
+      startTime: timeOf(entry.startsAt),
+      endTime: timeOf(entry.endsAt),
+    }))
+
+  /** La demanda es del hotel del schedule (todas las filas son el mismo hotel). */
+  const hotelId = schedules[0]?.hotel.id ?? null
   const relevant = requisitions.filter(
     (requisition) =>
       DEMAND_STATES.has(requisition.state.code) &&
-      (!schedule || requisition.hotel.id === schedule.hotel.id),
+      (hotelId === null || requisition.hotel.id === hotelId),
   )
 
   const demand: ScheduleDemandRow[] = relevant.flatMap((requisition) =>
@@ -94,13 +103,12 @@ async function fetchWeek(
 
   return {
     data: {
-      hotelName: schedule?.hotel.name ?? relevant[0]?.hotel.name ?? '—',
+      hotelName: schedules[0]?.hotel.name ?? relevant[0]?.hotel.name ?? '—',
       days,
       demand,
       entries,
       totalSlots: demand.reduce((sum, row) => sum + row.quantity, 0),
       filledSlots: demand.reduce((sum, row) => sum + row.filled, 0),
-      weekStart: weekStart ?? '',
       availableWeeks,
     },
   }
@@ -108,9 +116,9 @@ async function fetchWeek(
 
 export const scheduleApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    getScheduleWeek: build.query<ScheduleWeek, { weekStart: string }>({
-      queryFn: async (arg, _api, _extra, fetchWithBQ) => {
-        const result = await fetchWeek(fetchWithBQ as FetchWithBQ, arg.weekStart)
+    getScheduleTimeline: build.query<ScheduleTimeline, void>({
+      queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
+        const result = await fetchTimeline(fetchWithBQ as FetchWithBQ)
         return 'error' in result ? { error: result.error as never } : { data: result.data }
       },
       /** Asignar un slot o autorizar demanda mueve esta vista. */
@@ -122,4 +130,4 @@ export const scheduleApi = baseApi.injectEndpoints({
   }),
 })
 
-export const { useGetScheduleWeekQuery } = scheduleApi
+export const { useGetScheduleTimelineQuery } = scheduleApi
