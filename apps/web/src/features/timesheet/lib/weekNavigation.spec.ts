@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { blockRect, minutesOf, nowOffset } from './hoursGeometry'
 import { addDaysIso, neighborWeek, resolveWeek, weekContaining } from './weekNavigation'
+
+import { blockRect, minutesOf, nowOffset } from '@/shared/lib/hoursGeometry'
 
 /** Los casos que muerden en fechas: cruces de mes y de año, y los bordes del lienzo. */
 

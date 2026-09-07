@@ -37,6 +37,7 @@ function summaryOf(
   return {
     timesheetId: summary.timesheetId,
     requisitionId: row.requisitionId,
+    assignment: row.assignment,
     workerId: row.workerId,
     workerName: row.workerName,
     jobTitle: row.jobTitle,
@@ -133,8 +134,14 @@ export function TimesheetGrid({
   const { isDragging } = useContext(WeekDragContext)
   const reduceMotion = useReducedMotion() ?? false
   const today = todayIso()
-  /** Fila cuyo badge de requisición está bajo el puntero: su tramo se enciende. */
-  const [litRowKey, setLitRowKey] = useState<string | null>(null)
+  /** Corrida bajo el puntero (fila + arranque del tramo): SU marco se enciende,
+      y solo el suyo — dos corridas separadas de la misma fila no se cruzan. */
+  const [litRunKey, setLitRunKey] = useState<string | null>(null)
+  /** El puntito de checadas de la PRIMERA tarjeta de una corrida tiene su
+      propio tooltip, preciso y ya funcionando solo. Mientras el mouse esté
+      encima de ÉL, el tooltip (de TEXTO) del marco cede — el elemento más
+      específico manda; el borde animado no se apaga por esto. */
+  const [isPunchDotHovered, setIsPunchDotHovered] = useState(false)
 
   const baseIndex = Math.max(timeline.days.indexOf(selectedWeek), 0)
   const weekDays = timeline.days.slice(baseIndex, baseIndex + 7)
@@ -281,12 +288,22 @@ export function TimesheetGrid({
           {timeline.rows.map((row) => {
             const byDate = new Map(row.entries.map((item) => [item.date, item]))
             const summary = summaryOf(row, selectedWeek, weekDays)
-            /* Dónde ARRANCA cada corrida de la requisición y cuántos días cruza. */
-            const runStartsByIndex = new Map(
-              runsOf(timeline.days, byDate).map((run) => [run.start, run.length]),
-            )
             const rowKey = `${row.workerId}|${row.requisitionId}`
-            const isLit = litRowKey === rowKey && !reduceMotion
+            /* Cada índice de día apunta a la corrida (arranque + largo) que lo
+               cubre — no solo el primer día del tramo — para que CUALQUIER
+               celda del grupo, no solo la primera, sepa a qué marco enciende. */
+            const runByDayIndex = new Map<number, { start: number; length: number }>()
+            runsOf(timeline.days, byDate).forEach((run) => {
+              for (let i = run.start; i < run.start + run.length; i += 1) {
+                runByDayIndex.set(i, run)
+              }
+            })
+            /** Corrida a la que apunta el badge de la ficha: la de la semana elegida. */
+            const summaryEntryDate = summary?.entries[0]?.date
+            const summaryDayIndex =
+              summaryEntryDate !== undefined ? timeline.days.indexOf(summaryEntryDate) : -1
+            const summaryRun = summaryDayIndex >= 0 ? runByDayIndex.get(summaryDayIndex) : undefined
+            const summaryRunKey = summaryRun ? `${rowKey}|${String(summaryRun.start)}` : null
 
             return (
               <div
@@ -311,7 +328,7 @@ export function TimesheetGrid({
                           hotelPhotoUrl={row.hotelPhotoUrl}
                           onManualPunch={onManualPunch}
                           onRequisitionHover={(hovering) => {
-                            setLitRowKey(hovering ? rowKey : null)
+                            setLitRunKey(hovering ? summaryRunKey : null)
                           }}
                         />
                       ) : (
@@ -328,8 +345,15 @@ export function TimesheetGrid({
                       /* El marco del carril nace en la PRIMERA celda de cada
                          corrida y hereda la ALTURA de la tarjeta (por eso no
                          se descuadra con el zoom); su ancho cruza las celdas
-                         siguientes del tramo. */
-                      const runLength = runStartsByIndex.get(dayIndex)
+                         siguientes del tramo. Pero el hover se detecta en
+                         TODAS las celdas del tramo — el marco no puede
+                         envolverlas (son hermanas en el árbol, no hijas del
+                         `<span>`), así que cada columna sabe su propia
+                         corrida y enciende la misma llave. */
+                      const run = runByDayIndex.get(dayIndex)
+                      const runKey = run ? `${rowKey}|${String(run.start)}` : null
+                      const isRunLit = runKey !== null && runKey === litRunKey && !reduceMotion
+                      const isRunStart = run !== undefined && run.start === dayIndex
 
                       return (
                         <div
@@ -338,6 +362,20 @@ export function TimesheetGrid({
                             'relative self-stretch border-l border-line px-2 py-4',
                             dayTint(day, today),
                           )}
+                          onMouseEnter={
+                            runKey !== null
+                              ? () => {
+                                  setLitRunKey(runKey)
+                                }
+                              : undefined
+                          }
+                          onMouseLeave={
+                            runKey !== null
+                              ? () => {
+                                  setLitRunKey(null)
+                                }
+                              : undefined
+                          }
                         >
                           {/* Un día sin registro se deja VACÍO, no con una tarjeta en
                             cero: nadie fichó, y dibujar algo sugiere lo contrario. */}
@@ -346,23 +384,33 @@ export function TimesheetGrid({
                               {/* En reposo, contorno quieto pero VISIBLE (punteado,
                                   no se pierde contra el fondo); el borde vivo
                                   anima con el hover del badge de la requisición
-                                  O el de la banda misma — las dos formas de
-                                  preguntar "esto de quién es" encienden lo mismo. */}
-                              {runLength !== undefined && (
+                                  O el de cualquier tarjeta del tramo — las dos
+                                  formas de preguntar "esto de quién es"
+                                  encienden lo mismo. `z-10` + `pointer-events-none`
+                                  en todo el `<span>`: el marco vive SIEMPRE
+                                  encima de las tarjetas (que pintan después en
+                                  el DOM y sin esto las tapaban) y NUNCA
+                                  bloquea su click de "Revisar el día". El
+                                  `Tooltip` va controlado por `open`, no por su
+                                  propio hover — el trigger ya no puede
+                                  recibirlo. */}
+                              {isRunStart && run && (
                                 <TooltipProvider>
-                                  <Tooltip>
+                                  {/* El puntito de checadas de ESTA MISMA tarjeta manda
+                                      cuando el mouse está sobre él: su tooltip es más
+                                      específico, y encimados los dos se vuelven
+                                      ilegibles. El marco sigue encendido (el borde no
+                                      se apaga), solo cede el globo de texto. */}
+                                  <Tooltip
+                                    open={isRunLit && !isPunchDotHovered}
+                                    onOpenChange={() => {}}
+                                  >
                                     <TooltipTrigger asChild>
                                       <span
-                                        className="absolute -inset-y-1.5 -left-1 z-0 cursor-help"
-                                        style={{ width: runLength * columnWidth - 8 }}
-                                        onMouseEnter={() => {
-                                          setLitRowKey(rowKey)
-                                        }}
-                                        onMouseLeave={() => {
-                                          setLitRowKey(null)
-                                        }}
+                                        className="pointer-events-none absolute -inset-y-1.5 -left-1 z-10"
+                                        style={{ width: run.length * columnWidth - 8 }}
                                       >
-                                        {isLit ? (
+                                        {isRunLit ? (
                                           <MovingBorderBox
                                             as="div"
                                             duration={3000}
@@ -381,8 +429,8 @@ export function TimesheetGrid({
                                     <TooltipContent side="top">
                                       <p className="text-xs font-semibold">{row.hotelName}</p>
                                       <p className="text-xs text-ink-3">
-                                        {row.entries[0]?.requisitionNumber ?? 'Sin folio'} · días de
-                                        esta requisición
+                                        {entry.requisitionNumber ?? 'Sin folio'} · días de esta
+                                        requisición
                                       </p>
                                     </TooltipContent>
                                   </Tooltip>
@@ -394,6 +442,7 @@ export function TimesheetGrid({
                                   isSelected={selectedIds.has(entry.id)}
                                   selectable={selectable}
                                   onToggle={onToggle}
+                                  onPunchHover={setIsPunchDotHovered}
                                   onReview={(item) => {
                                     onReview(
                                       item,

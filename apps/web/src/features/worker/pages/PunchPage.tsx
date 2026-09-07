@@ -11,8 +11,10 @@ import {
   usePunchMutation,
   type PunchType,
 } from '../api/punchApi'
+import { useGetMyProfileQuery } from '../api/workerApi'
 import { CameraCapture } from '../components/CameraCapture'
 import { WorkerSkeleton } from '../components/WorkerSkeleton'
+import { noShiftMessageOf } from '../lib/noShiftMessage'
 
 import { useUploadFileMutation } from '@/app/filesApi'
 import checkinLottie from '@/assets/check/oranje-checkin.lottie'
@@ -234,6 +236,8 @@ function punchErrorMessage(error: unknown): string {
 export function PunchPage(): ReactNode {
   const { isIntroOpen, dismissIntro, reopenIntro } = useIntroSeen('worker-punch')
   const { data, isLoading, isError, refetch } = useGetTodayPunchingQuery()
+  /** Solo para explicar el «sin turno»: la ficha ya está en caché por Inicio. */
+  const { data: profile } = useGetMyProfileQuery()
   const [uploadFile, { isLoading: isUploading }] = useUploadFileMutation()
   const [punch, { isLoading: isPunching }] = usePunchMutation()
   const now = useNow()
@@ -283,13 +287,10 @@ export function PunchPage(): ReactNode {
   const { shift, punches } = data
 
   if (!shift) {
-    return (
-      <EmptyState
-        image={mascotaPensando}
-        title="Hoy no tienes turno"
-        text="Cuando Reclutamiento te asigne a una requisición, tu turno del día aparece aquí y podrás ponchar."
-      />
-    )
+    /* «Sin turno» tiene causas distintas y el Semáforo del Colaborador las
+       separa: descanso, Stand-by, incapacidad, sin validar o sin asignar. */
+    const message = noShiftMessageOf(profile?.state.code)
+    return <EmptyState image={mascotaPensando} title={message.title} text={message.text} />
   }
 
   const marks: Partial<Record<PunchType, string>> = {}

@@ -20,7 +20,7 @@ import {
 } from '@/shared/constants/timesheetStatus'
 import { useCan } from '@/shared/hooks/useCan'
 import { apiErrorMessage } from '@/shared/lib/apiError'
-import { formatHours } from '@/shared/lib/formatters'
+import { formatDate, formatHours } from '@/shared/lib/formatters'
 
 /**
  * Pastilla del estado de la SEMANA (D-09): abierta (gris, nadie ha actuado),
@@ -112,6 +112,17 @@ export function WorkerWeekSummary({
   const can = useCan()
   /** Aprobar es de los Managers (timesheet:approve_hours); el Supervisor envía y captura. */
   const canApprove = can('timesheet:approve_hours')
+
+  /* Lo que el back rechazaría DESPUÉS se dice ANTES, en el botón (patrón
+     honesto: deshabilitado con título). Enviar exige cero anomalías; capturar
+     marcas exige una asignación ACTIVA — cerrada o cancelada, las horas son
+     historia: se aprueban y pagan, pero ya no se captura. */
+  const anomalies = row.entries.filter((entry) => entry.hasAnomaly).length
+  const submitBlock =
+    anomalies > 0
+      ? `${String(anomalies)} ${anomalies === 1 ? 'día con anomalía' : 'días con anomalía'} por revisar: resuélvelos antes de enviar la semana`
+      : null
+  const manualPunchBlock = manualPunchBlockOf(row.assignment)
 
   async function runAction(action: 'submit' | 'approve'): Promise<void> {
     setActionError(null)
@@ -246,22 +257,29 @@ export function WorkerWeekSummary({
             <>
               <button
                 type="button"
-                disabled={isSubmitting}
+                disabled={isSubmitting || submitBlock !== null}
+                title={submitBlock ?? 'Mandar la semana a aprobación del Manager'}
                 onClick={() => {
                   void runAction('submit')
                 }}
-                className="cursor-pointer rounded-md bg-o-200 px-2 py-1 text-[11px] font-semibold text-o-900 transition-colors hover:bg-o-200/85 disabled:cursor-wait disabled:opacity-60"
+                className={cn(
+                  'cursor-pointer rounded-md bg-o-200 px-2 py-1 text-[11px] font-semibold text-o-900 transition-colors hover:bg-o-300 disabled:opacity-60',
+                  isSubmitting ? 'disabled:cursor-wait' : 'disabled:cursor-not-allowed',
+                )}
               >
                 {isSubmitting ? 'Enviando…' : 'Enviar a revisión'}
               </button>
               {onManualPunch !== undefined && (
                 <button
                   type="button"
-                  title="Capturar una marca que el ponche no registró, con motivo"
+                  disabled={manualPunchBlock !== null}
+                  title={
+                    manualPunchBlock ?? 'Capturar una marca que el ponche no registró, con motivo'
+                  }
                   onClick={() => {
                     onManualPunch(row)
                   }}
-                  className="cursor-pointer rounded-md border border-white/40 px-2 py-1 text-[11px] font-medium text-white transition-colors hover:bg-white/10"
+                  className="cursor-pointer rounded-md border border-white/40 px-2 py-1 text-[11px] font-medium text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Marca manual
                 </button>
@@ -299,4 +317,18 @@ export function WorkerWeekSummary({
       </div>
     </div>
   )
+}
+
+/** Por qué no se pueden capturar marcas; `null` si sí se puede (o el API no lo dijo). */
+function manualPunchBlockOf(assignment: TimesheetRow['assignment']): string | null {
+  if (assignment === undefined || assignment?.status === 'ACTIVE') return null
+  if (assignment === null) {
+    return 'Sin asignación en esta requisición: no hay contra qué capturar marcas'
+  }
+  if (assignment.status === 'CANCELLED') {
+    return 'La asignación se canceló: las horas registradas se conservan, pero ya no se capturan marcas'
+  }
+  return assignment.endsOn
+    ? `La asignación terminó el ${formatDate(assignment.endsOn)}: las horas se aprueban y pagan, pero ya no se capturan marcas`
+    : 'La asignación terminó: las horas se aprueban y pagan, pero ya no se capturan marcas'
 }

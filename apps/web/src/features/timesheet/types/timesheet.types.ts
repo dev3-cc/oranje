@@ -45,11 +45,24 @@ export interface TimesheetEntry {
   punches: TimesheetPunch[]
 }
 
+/**
+ * La asignación que respalda las horas de una fila. `ACTIVE` admite marcas;
+ * `CLOSED`/`CANCELLED` son historia (se aprueban y pagan, pero ya no se
+ * captura). `null` = no hay ninguna; `undefined` = el API no lo dijo, y
+ * entonces no se bloquea nada.
+ */
+export interface TimesheetAssignment {
+  status: 'ACTIVE' | 'CLOSED' | 'CANCELLED'
+  /** Último día inclusivo de la vigencia; `null` en una asignación fija. */
+  endsOn: string | null
+}
+
 export interface TimesheetRow {
   /** El id del TIMESHEET (semana × persona × requisición): contra él se envía/aprueba. */
   timesheetId: string
   /** La requisición del timesheet: con ella se resuelve el assignment del ponche manual. */
   requisitionId: string
+  assignment?: TimesheetAssignment | null | undefined
   workerId: string
   workerName: string
   /** El contrato aún no expone el puesto: raya, no un dato inventado. */
@@ -120,6 +133,7 @@ export interface ReviewDayRequest {
 export interface TimelineRow {
   workerId: string
   requisitionId: string
+  assignment?: TimesheetAssignment | null | undefined
   workerName: string
   jobTitle: string
   hotelName: string

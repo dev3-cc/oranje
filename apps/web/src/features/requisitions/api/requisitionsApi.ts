@@ -148,6 +148,7 @@ function toDetail(requisition: RequisitionApi, assignments: AssignmentApi[]): Re
     authorizedByName: requisition.authorizedAt ? '—' : null,
     authorizedAt: requisition.authorizedAt,
     inspectorName: '—',
+    hotelPhotoUrl: requisition.hotel.photoUrl ?? null,
     totals: {
       positionCount: positions.length,
       slotCount: requisition.totalSlots,

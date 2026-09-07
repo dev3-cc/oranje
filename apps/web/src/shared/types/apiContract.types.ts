@@ -245,6 +245,16 @@ export interface RequisitionApi {
   updatedAt: string | null
 }
 
+/** Una fila de `journal.journal` (`GET /requisitions/:id/journal`). */
+export interface RequisitionJournalEntryApi {
+  id: string
+  eventType: string
+  actorName: string | null
+  actorRole: string | null
+  payload: unknown
+  occurredAt: string
+}
+
 /** `coverage.assignment` plana (`GET /requisitions/:id/assignments`). */
 export interface AssignmentApi {
   id: string
@@ -352,6 +362,12 @@ export interface TimesheetApi {
   weekEnd: string
   status: string
   approvedAt: string | null
+  /**
+   * La asignación que respalda las horas: `ACTIVE` admite marcas; `CLOSED` o
+   * `CANCELLED` son historia; `null` = ninguna (datos sembrados). Opcional
+   * porque un API anterior a este campo no lo manda: sin él no se bloquea nada.
+   */
+  assignment?: { status: 'ACTIVE' | 'CLOSED' | 'CANCELLED'; endsOn: string | null } | null
   days?: TimesheetDayApi[]
   totals?: { grossMinutes: number; netMinutes: number; overtimeMinutes: number }
 }

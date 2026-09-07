@@ -1,9 +1,10 @@
-import { toast } from '@oranje/ui'
+import { statusLight, toast } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 
 import { useDeleteRequisitionMutation, useGetRequisitionQuery } from '../api/requisitionsApi'
 import { PositionsTable } from '../components/PositionsTable'
+import { RequisitionJournalDialog } from '../components/RequisitionJournalDialog'
 import { RequisitionSummaryStrip } from '../components/RequisitionSummaryStrip'
 import { SlotList } from '../components/SlotList'
 import { StatusHistoryCard } from '../components/StatusHistoryCard'
@@ -11,7 +12,7 @@ import { StatusHistoryCard } from '../components/StatusHistoryCard'
 import { useGetSessionQuery } from '@/app/sessionApi'
 import { Button, buttonClass } from '@/shared/components/Button'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
-import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
+import { HotelPhotoBackdrop } from '@/shared/components/HotelPhotoBackdrop'
 import {
   REQUISITION_STATUS_LABEL,
   REQUISITION_STATUS_TOKEN,
@@ -37,6 +38,7 @@ export function RequisitionDetailPage(): ReactNode {
   const [deleteReason, setDeleteReason] = useState('')
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [selectedPositionId, setSelectedPositionId] = useState<string | null>(null)
+  const [isJournalOpen, setJournalOpen] = useState(false)
   const can = useCan()
 
   const {
@@ -77,24 +79,44 @@ export function RequisitionDetailPage(): ReactNode {
         <span className="font-semibold text-ink-2">Detalle de Requisición</span>
       </nav>
 
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight text-ink">{detail.number}</h1>
-            <StatusLightSoftBadge
-              token={REQUISITION_STATUS_TOKEN[detail.status]}
-              label={REQUISITION_STATUS_LABEL[detail.status]}
-            />
+      <header className="flex flex-col gap-4">
+        {/* Hero con la foto del hotel (D-34): el mismo cristal oscuro que ya
+            usan la tarjeta de la semana del Timesheet y la Revisión del día —
+            la identidad de la requisición (folio, estado, de qué hotel es)
+            ambienta, y los botones de acción se quedan abajo en la superficie
+            clara para no perder contraste sobre la foto. */}
+        <div className="relative overflow-hidden rounded-xl">
+          <HotelPhotoBackdrop photoUrl={detail.hotelPhotoUrl} />
+          <div
+            aria-hidden
+            className="absolute inset-0 bg-gradient-to-b from-ink/50 via-ink/65 to-ink/85"
+          />
+          <div className="relative flex flex-col gap-1.5 p-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-3xl font-bold tracking-tight text-white">{detail.number}</h1>
+              <span className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium whitespace-nowrap text-white">
+                <span
+                  className="size-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: statusLight[REQUISITION_STATUS_TOKEN[detail.status]] }}
+                  aria-hidden
+                />
+                {REQUISITION_STATUS_LABEL[detail.status]}
+              </span>
+            </div>
+            <p className="text-sm text-white/80">
+              {detail.hotelName} · {detail.department} · creada por {detail.createdByName} el{' '}
+              {formatDateTime(detail.createdAt)}
+            </p>
           </div>
-          <p className="mt-1.5 text-sm text-ink-3">
-            {detail.hotelName} · {detail.department} · creada por {detail.createdByName} el{' '}
-            {formatDateTime(detail.createdAt)}
-          </p>
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center gap-3">
-          {/* Espera maqueta; se deja visible para no mover el encabezado después. */}
-          <Button variant="secondary" disabled title="La bitácora estará disponible próximamente">
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setJournalOpen(true)
+            }}
+          >
             Ver bitácora
           </Button>
           {/*
@@ -214,6 +236,15 @@ export function RequisitionDetailPage(): ReactNode {
 
         <StatusHistoryCard history={detail.history} />
       </div>
+
+      {isJournalOpen && (
+        <RequisitionJournalDialog
+          requisitionId={requisitionId}
+          onClose={() => {
+            setJournalOpen(false)
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -51,6 +51,7 @@ export function TimesheetDayCell({
   selectable = true,
   onToggle,
   onReview,
+  onPunchHover,
 }: {
   entry: TimesheetEntry
   isSelected: boolean
@@ -60,6 +61,12 @@ export function TimesheetDayCell({
   onToggle: (entryId: string) => void
   /** Abre la Revisión del día (maqueta del Supervisor). */
   onReview: (entry: TimesheetEntry) => void
+  /** El puntito de checadas tiene su PROPIO tooltip (preciso, ya andando
+      solo). Cuando el mouse está exactamente encima, el marco de la
+      requisición —más general— debe ceder el suyo: el elemento más
+      específico manda. El marco puede seguir "encendido" (borde animado),
+      solo su tooltip de texto se apaga. */
+  onPunchHover?: (hovering: boolean) => void
 }): ReactNode {
   const color = statusLight[TIMESHEET_STATUS_TOKEN[entry.status]]
 
@@ -75,6 +82,12 @@ export function TimesheetDayCell({
                 aria-label={PUNCH_STATE_LABEL[entry.punch]}
                 role="img"
                 tabIndex={0}
+                onMouseEnter={() => {
+                  onPunchHover?.(true)
+                }}
+                onMouseLeave={() => {
+                  onPunchHover?.(false)
+                }}
                 className={cn(
                   'flex size-3.5 cursor-help items-center justify-center overflow-hidden rounded-full border-2',
                   PUNCH_CLASS[entry.punch],
@@ -146,7 +159,8 @@ export function TimesheetDayCell({
             <span className="truncate">{TIMESHEET_STATUS_LABEL[entry.status]}</span>
           </span>
           <span className="shrink-0 text-sm font-semibold text-ink-2">
-            {entry.hours === null ? NO_HOURS : formatHours(entry.hours)}
+            {/* La falta se dice: un «—» la disfrazaba de día sin calcular. */}
+            {entry.isAbsence ? 'Falta' : entry.hours === null ? NO_HOURS : formatHours(entry.hours)}
           </span>
         </p>
 

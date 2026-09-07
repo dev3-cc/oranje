@@ -1,16 +1,27 @@
 import { cn } from '@oranje/ui'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import { useGetScheduleWeekQuery } from '../api/scheduleApi'
-import type { ScheduleDemandRow } from '../types/schedule.types'
+import { ScheduleMiniCalendar } from '../components/ScheduleMiniCalendar'
+import {
+  PersonAvatar,
+  ScheduleWeekGrid,
+  type ScheduleShiftSelection,
+} from '../components/ScheduleWeekGrid'
+import { ANY_VALUE } from '../types/schedule.types'
 
+/** Piezas genéricas de navegación semanal, expuestas por el índice de Timesheet (§4). */
+import { WeekNavigator, WeekSlider, addDaysIso, weekContaining } from '@/features/timesheet'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayNumber, formatWeekRange, formatWeekday } from '@/shared/lib/formatters'
 
-/** Cómo se pinta la cobertura de una celda. */
+/** El ancho de una semana completa en el carrusel: la rejilla no tiene zoom. */
+const WEEK_STEP_WIDTH = 7 * 96
+
+/** Cómo se pinta la cobertura de una posición. */
 function coverageTone(filled: number, quantity: number): string {
   if (filled >= quantity) return 'bg-green/15 text-ink-2'
   if (filled === 0) return 'bg-red/10 text-red'
@@ -24,53 +35,37 @@ function coverageLabel(filled: number, quantity: number): string {
   return missing === 1 ? '1 hueco' : `${String(missing)} huecos`
 }
 
-function DemandRow({ row, days }: { row: ScheduleDemandRow; days: string[] }): ReactNode {
-  return (
-    <div
-      className="grid items-center border-b border-line last:border-b-0"
-      style={{ gridTemplateColumns: `240px repeat(${String(days.length)}, minmax(88px, 1fr))` }}
-    >
-      <div className="px-4 py-3">
-        <p className="text-sm font-semibold text-ink">{row.name}</p>
-        <p className="text-xs text-ink-3">
-          {row.startTime} · demanda {row.quantity}
-        </p>
-        <p className="text-xs text-ink-4">
-          renglón {row.lineNumber} · {row.requisitionNumber}
-        </p>
-      </div>
-      {days.map((day) => (
-        <div key={day} className="px-1.5 py-2">
-          <div
-            className={cn(
-              'rounded-md px-2 py-1.5 text-center text-xs font-medium',
-              coverageTone(row.filled, row.quantity),
-            )}
-          >
-            <span className="block text-sm font-semibold">
-              {row.filled}/{row.quantity}
-            </span>
-            {coverageLabel(row.filled, row.quantity)}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 /**
- * Schedule del hotel (maqueta del Manager de Área): la semana donde converge
- * la demanda (requisición) con la cobertura (asignaciones), y quién está
- * programado cada día. La cobertura es POR POSICIÓN — el contrato aún no liga
- * la entrada del schedule con la posición, así que el desglose por día espera
- * ese vínculo en vez de inventarse.
+ * Schedule del hotel (maqueta del Manager de Área): calendario semanal por
+ * hora — igual arquitectura que la vista Horas del Timesheet (grid + panel
+ * lateral + mini-calendario) — donde converge la demanda (requisición) con la
+ * cobertura (asignaciones). La cobertura es POR POSICIÓN — el contrato aún no
+ * liga la entrada del schedule con la posición, así que el bloque del turno no
+ * se tiñe por cobertura (sería inventar ese vínculo); el resumen de cobertura
+ * arriba y en el panel SÍ usa datos reales.
  */
 export function SchedulePage(): ReactNode {
-  const { data: week, isLoading, isError, refetch } = useGetScheduleWeekQuery()
+  const [weekStart, setWeekStart] = useState<string>(ANY_VALUE)
+  const [selection, setSelection] = useState<ScheduleShiftSelection | null>(null)
+
+  const { data: week, isLoading, isError, refetch } = useGetScheduleWeekQuery({ weekStart })
+
+  function selectWeek(target: string): void {
+    setWeekStart(target)
+    setSelection(null)
+  }
+
+  function pickDay(date: string): void {
+    if (!week) return
+    const target = weekContaining(week.availableWeeks, date)
+    if (target) selectWeek(target)
+  }
 
   const coverage =
     week && week.totalSlots > 0 ? Math.round((week.filledSlots / week.totalSlots) * 100) : 0
   const holes = week ? week.totalSlots - week.filledSlots : 0
+  /** El mes que enseña el mini-calendario: el del jueves de la semana (ISO 8601). */
+  const calendarMonth = week?.weekStart ? addDaysIso(week.weekStart, 3).slice(0, 7) : ''
 
   return (
     <div className="flex flex-col gap-6">
@@ -79,8 +74,8 @@ export function SchedulePage(): ReactNode {
           <FoldText text="Schedule del hotel" />
         </h1>
         <p className="mt-1.5 text-sm text-ink-3">
-          {week && week.days.length > 0
-            ? `${week.hotelName} · Semana ${formatWeekRange(week.days[0] ?? '', week.days[6] ?? '')}`
+          {week && week.weekStart !== ''
+            ? `${week.hotelName} · Semana ${formatWeekRange(week.weekStart, addDaysIso(week.weekStart, 6))}`
             : 'Demanda y cobertura de la semana'}
           {IS_DEV_UI && <code className="text-ink-4"> · operations.schedule</code>}
         </p>
@@ -98,90 +93,146 @@ export function SchedulePage(): ReactNode {
       {isLoading && !week ? (
         <TableSkeleton rows={5} columns={8} />
       ) : (
-        week && (
+        week &&
+        (week.weekStart === '' ? (
+          <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+            Este hotel todavía no tiene Schedule. En cuanto se programe una semana, aparece aquí.
+          </p>
+        ) : (
           <>
-            <div className="overflow-x-auto rounded-lg border border-line bg-surface">
-              <div className="min-w-max">
-                <div
-                  className="grid items-end border-b border-line"
-                  style={{
-                    gridTemplateColumns: `240px repeat(${String(week.days.length)}, minmax(88px, 1fr))`,
-                  }}
-                >
-                  <div className="px-4 py-3 text-xs font-semibold tracking-wide text-ink-3 uppercase">
-                    Posición
-                  </div>
-                  {week.days.map((day) => (
-                    <div key={day} className="px-2 py-2.5 text-center">
-                      <p className="text-xs text-ink-3">{formatWeekday(day)}</p>
-                      <p className="text-lg font-semibold text-ink">{formatDayNumber(day)}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {week.demand.length === 0 ? (
-                  <p className="px-4 py-8 text-center text-sm text-ink-3">
-                    No hay requisiciones autorizadas para esta semana. Cuando un Manager autorice
-                    una, sus posiciones aparecerán aquí.
-                  </p>
-                ) : (
-                  week.demand.map((row) => (
-                    <DemandRow key={row.positionId} row={row} days={week.days} />
-                  ))
-                )}
-              </div>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <WeekNavigator
+                weekStart={week.weekStart}
+                availableWeeks={week.availableWeeks}
+                onSelect={selectWeek}
+              />
+              <p className="rounded-md bg-surface-2 px-3 py-2 text-sm text-ink-2">
+                Semana: <span className="font-semibold">{coverage}% cubierto</span> ·{' '}
+                {holes === 1 ? '1 hueco' : `${String(holes)} huecos`} — se asignan desde la Bolsa de
+                la Reclutadora
+              </p>
             </div>
 
-            <p className="rounded-md bg-surface-2 p-3 text-sm text-ink-2">
-              Semana: <span className="font-semibold">{coverage}% cubierto</span> ·{' '}
-              {holes === 1 ? '1 hueco' : `${String(holes)} huecos`} — se asignan desde la Bolsa de
-              la Reclutadora
-              {IS_DEV_UI && (
-                <span className="text-xs text-ink-4">
-                  {' '}
-                  · la cobertura es por posición; el desglose por día espera el vínculo
-                  entry→posición en el contrato
-                </span>
-              )}
-            </p>
+            <WeekSlider
+              weekStart={week.weekStart}
+              availableWeeks={week.availableWeeks}
+              stepWidth={WEEK_STEP_WIDTH}
+              continuous={false}
+              /* La rejilla scrollea horizontal por sí misma (como Días del
+                 Timesheet): el dedo scrollea y la navegación táctil queda en ‹ ›. */
+              allowTouchDrag={false}
+              onNavigate={selectWeek}
+            >
+              <div className="flex flex-col gap-4 lg:flex-row">
+                <ScheduleWeekGrid
+                  week={week}
+                  selectedWeek={week.weekStart}
+                  selectedKey={selection?.key ?? null}
+                  onSelectBlock={setSelection}
+                />
 
-            <section>
-              <h2 className="text-base font-semibold text-ink">
-                Programados esta semana
-                {IS_DEV_UI && (
-                  <span className="font-normal text-ink-4"> · operations.schedule_entry</span>
-                )}
-              </h2>
-              {week.entries.length === 0 ? (
-                <p className="mt-2 text-sm text-ink-3">
-                  Nadie programado todavía: los turnos aparecen conforme se cubren los slots.
-                </p>
-              ) : (
-                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  {week.days.map((day) => {
-                    const ofDay = week.entries.filter((entry) => entry.workDate === day)
-                    if (ofDay.length === 0) return null
-                    return (
-                      <div key={day} className="rounded-lg border border-line bg-surface p-4">
-                        <p className="text-sm font-semibold text-ink">
-                          {formatWeekday(day)} {formatDayNumber(day)}
+                <aside className="flex shrink-0 flex-col gap-4 lg:w-80">
+                  {selection === null ? (
+                    <div className="flex flex-col gap-3 rounded-lg border border-dashed border-line bg-surface p-5">
+                      <p className="text-sm text-ink-3">
+                        Elige un turno para ver a sus colaboradores.
+                      </p>
+                      <div className="flex flex-col gap-2 border-t border-line pt-3">
+                        <p className="text-xs font-semibold tracking-wide text-ink-3 uppercase">
+                          Demanda de la semana
+                          {IS_DEV_UI && (
+                            <span className="font-normal text-ink-4"> · demand.position</span>
+                          )}
                         </p>
-                        <ul className="mt-2 flex flex-col gap-1.5">
-                          {ofDay.map((entry) => (
-                            <li key={entry.id} className="text-sm text-ink-2">
-                              {entry.workerName}{' '}
-                              <span className="text-xs text-ink-3">· {entry.shift}</span>
-                            </li>
-                          ))}
-                        </ul>
+                        {week.demand.length === 0 ? (
+                          <p className="text-sm text-ink-3">
+                            No hay requisiciones autorizadas para esta semana. Cuando un Manager
+                            autorice una, sus posiciones aparecerán aquí.
+                          </p>
+                        ) : (
+                          <ul className="flex flex-col gap-2">
+                            {week.demand.map((row) => (
+                              <li
+                                key={row.positionId}
+                                className="flex items-center justify-between gap-2"
+                              >
+                                <span className="min-w-0">
+                                  <span className="block truncate text-sm font-medium text-ink">
+                                    {row.name}
+                                  </span>
+                                  <span className="block truncate text-xs text-ink-3">
+                                    {row.startTime} · demanda {row.quantity}
+                                  </span>
+                                  <span className="block truncate text-xs text-ink-4">
+                                    {row.requisitionNumber}
+                                  </span>
+                                </span>
+                                <span
+                                  className={cn(
+                                    'shrink-0 rounded-md px-2 py-1.5 text-center text-xs font-medium',
+                                    coverageTone(row.filled, row.quantity),
+                                  )}
+                                >
+                                  <span className="block text-sm font-semibold">
+                                    {row.filled}/{row.quantity}
+                                  </span>
+                                  {coverageLabel(row.filled, row.quantity)}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </div>
-                    )
-                  })}
-                </div>
-              )}
-            </section>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-5">
+                      <div>
+                        <p className="text-xs font-semibold tracking-wide text-ink-3 uppercase">
+                          Turno elegido
+                        </p>
+                        <p className="mt-1 text-lg font-bold text-ink">
+                          {formatWeekday(selection.day)} {formatDayNumber(selection.day)} ·{' '}
+                          {selection.start} – {selection.end}
+                        </p>
+                        <p className="text-sm text-ink-3">
+                          {selection.people.length === 1
+                            ? '1 colaborador'
+                            : `${String(selection.people.length)} colaboradores`}
+                        </p>
+                      </div>
+
+                      <ul className="flex flex-col gap-3">
+                        {selection.people.map((person) => (
+                          <li key={person.id} className="flex items-center gap-3">
+                            <PersonAvatar
+                              name={person.workerName}
+                              className="size-8 shrink-0 text-[10px]"
+                            />
+                            <span className="text-sm font-semibold text-ink">
+                              {person.workerName}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+
+                      <p className="border-t border-line pt-3 text-xs text-ink-3">
+                        La posición y la requisición del turno se enseñan en la fila de Demanda: el
+                        contrato aún no liga el turno con una posición.
+                      </p>
+                    </div>
+                  )}
+
+                  <ScheduleMiniCalendar
+                    month={calendarMonth}
+                    availableWeeks={week.availableWeeks}
+                    selectedDay={selection?.day ?? null}
+                    onPickDay={pickDay}
+                  />
+                </aside>
+              </div>
+            </WeekSlider>
           </>
-        )
+        ))
       )}
     </div>
   )
