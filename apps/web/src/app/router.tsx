@@ -40,6 +40,14 @@ export const router = createBrowserRouter([
     Component: RequireSession,
     children: [
       {
+        /** La hoja del QR de ponche, para imprimir: en papel no hay sidebar. */
+        path: 'hoteles/:hotelId/qr-ponche',
+        lazy: async () => {
+          const m = await import('@/features/onboarding')
+          return { Component: m.HotelPunchQrPrintPage }
+        },
+      },
+      {
         /**
          * El apartado del Colaborador (ROL-C-01): web responsive que imita la
          * app móvil de la maqueta. Vive FUERA del AppShell — el Colaborador no

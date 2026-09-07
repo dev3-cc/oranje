@@ -133,6 +133,7 @@ const routes: readonly MockRoute[] = [
           hotel: 'Hotel Puerto Real',
           hotelPhotoUrl: 'https://picsum.photos/seed/oranje-hotel/900/600',
           hotelTimeZone: 'America/Cancun',
+          hotelPunchMethod: 'SELFIE',
           position: 'Housekeeper',
           assignmentId: 'asg-mock-1',
         },

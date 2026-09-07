@@ -36,6 +36,8 @@ export interface MyShiftApi {
   hotelPhotoUrl?: string | null
   /** IANA del hotel (`commercial.hotel.time_zone`): las horas del turno se leen ahí, no en el reloj del teléfono. */
   hotelTimeZone?: string
+  /** SELFIE | QR: si la evidencia de Entrada/Salida es la selfie o el QR impreso del hotel. Sin él, selfie. */
+  hotelPunchMethod?: 'SELFIE' | 'QR'
 }
 
 export interface TodayPunching {
@@ -50,8 +52,10 @@ export interface PunchRequest {
   type: PunchType
   latitude: number
   longitude: number
-  /** Ruta devuelta por `POST /files` (PUNCH_PHOTO), obligatoria en Entrada/Salida. */
+  /** Ruta devuelta por `POST /files` (PUNCH_PHOTO), obligatoria en Entrada/Salida con método Selfie. */
   photoPath?: string
+  /** Lo leído del QR impreso del hotel, obligatorio en Entrada/Salida con método QR. */
+  qrCode?: string
 }
 
 export interface PunchResultApi {

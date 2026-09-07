@@ -76,9 +76,22 @@ export interface HotelApi {
   zone: ZoneRefApi
   isClient: boolean
   activatedAt: string | null
+  /** SELFIE | QR: cómo se demuestra la presencia al ponchar (Reglas de Negocio, «Método de ponche por hotel»). */
+  punchMethod: 'SELFIE' | 'QR'
+  /** El QR vigente sin su secreto; `null` si nunca se ha generado. */
+  punchQr: { version: number; generatedAt: string } | null
   contactCount: number
   createdAt: string
   updatedAt: string | null
+}
+
+/** `GET /hotels/:id/punch-qr`: el QR de ponche listo para imprimir. El secreto viaja solo dentro de `payload`. */
+export interface PunchQrApi {
+  hotelId: string
+  hotelName: string
+  payload: string
+  version: number
+  generatedAt: string
 }
 
 export interface HotelContactApi {

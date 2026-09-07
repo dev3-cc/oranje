@@ -30,6 +30,7 @@ import type {
   ContactAttemptApi,
   HistoryEntryApi,
   HotelApi,
+  PunchQrApi,
   HotelContactApi,
   PaginatedEnvelope,
   ProspectApi,
@@ -308,6 +309,8 @@ const details = new Map<string, ProspectDetail>([
         location: { lat: 21.1619, lng: -86.8515 },
         photoUrl: null,
         activatedAsClientAt: null,
+        id: 'hotel-fixture-1',
+        punchMethod: 'SELFIE',
       },
       contacts: [
         {
@@ -501,6 +504,8 @@ function buildDetailFromSummary(summary: ProspectSummary): ProspectDetail {
       location: ZONE_ANCHOR[zoneIdFromLabel(summary.zone)] ?? ZONE_ANCHOR.centro!,
       photoUrl: null,
       activatedAsClientAt: summary.status === 'ORANGE' ? cycleStartedAt : null,
+      id: 'hotel-fixture-2',
+      punchMethod: 'SELFIE',
     },
     contacts: [],
     attempts: [],
@@ -595,6 +600,24 @@ function toProspectApi(summary: ProspectSummary): ProspectApi {
   }
 }
 
+/** El QR de ponche simulado: la versión sube al regenerar; el payload cambia con ella. */
+const punchQrVersions = new Map<string, number>()
+
+function punchQrOf(hotelId: string): ApiEnvelope<PunchQrApi> {
+  const version = punchQrVersions.get(hotelId) ?? 1
+  const prospectId = prospectIdOfHotel(hotelId)
+  const hotelName = prospectId ? readDetail(prospectId).hotelName : 'Hotel'
+  return {
+    data: {
+      hotelId,
+      hotelName,
+      payload: `oranje:punch:1:${hotelId}:secreto-simulado-v${String(version)}`,
+      version,
+      generatedAt: isoDaysAgo(2),
+    },
+  }
+}
+
 function toHotelApi(detail: ProspectDetail): HotelApi {
   return {
     id: hotelIdOf(detail.id),
@@ -610,6 +633,8 @@ function toHotelApi(detail: ProspectDetail): HotelApi {
     zone: zoneRef(detail.hotel.zoneId),
     isClient: detail.hotel.activatedAsClientAt !== null,
     activatedAt: detail.hotel.activatedAsClientAt,
+    punchMethod: detail.hotel.punchMethod,
+    punchQr: detail.hotel.punchQr ?? null,
     contactCount: detail.contacts.length,
     createdAt: detail.cycleStartedAt,
     updatedAt: null,
@@ -634,6 +659,8 @@ function registeredToHotelApi(hotel: RegisteredHotel): HotelApi {
     zone: zoneRef(hotel.zoneId),
     isClient,
     activatedAt: isClient ? isoDaysAgo(21) : null,
+    punchMethod: 'SELFIE',
+    punchQr: null,
     contactCount: 0,
     createdAt: isoDaysAgo(30),
     updatedAt: null,
@@ -964,6 +991,8 @@ function createProspect(body: unknown): ProspectApi {
       location: registered.location,
       photoUrl: registered.photoUrl ?? null,
       activatedAsClientAt: null,
+      id: 'hotel-fixture-3',
+      punchMethod: 'SELFIE',
     },
     needDescription: payload.needDescription ?? '',
     contacts: [],
@@ -1227,6 +1256,20 @@ const routes: readonly MockRoute[] = [
       const hotel = hotelsWithoutCycle.find((item) => item.id === hotelId)
       if (!hotel) throw new Error(`No existe el hotel ${hotelId}`)
       return { data: registeredToHotelApi(hotel) }
+    },
+  },
+  {
+    method: 'GET',
+    path: '/hotels/:hotelId/punch-qr',
+    resolve: ({ params }): ApiEnvelope<PunchQrApi> => punchQrOf(requireParam(params, 'hotelId')),
+  },
+  {
+    method: 'POST',
+    path: '/hotels/:hotelId/punch-qr/regenerate',
+    resolve: ({ params }): ApiEnvelope<PunchQrApi> => {
+      const hotelId = requireParam(params, 'hotelId')
+      punchQrVersions.set(hotelId, (punchQrVersions.get(hotelId) ?? 1) + 1)
+      return punchQrOf(hotelId)
     },
   },
   {

@@ -103,6 +103,7 @@ registerMockRoutes([
           'blacklist.lift',
           'conversion.approve',
           'conversion.create_hotel_user',
+          'hotel.punch_qr',
           'terms_and_conditions.update',
           'terms_and_conditions.approve',
           'requisitions.create',
