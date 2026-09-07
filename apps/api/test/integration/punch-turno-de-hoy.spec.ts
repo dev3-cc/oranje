@@ -246,6 +246,41 @@ describe('ponchar sin conocer la asignación', () => {
     expect(despues[0]?.assignment?.status).toBe('CANCELLED')
   })
 
+  it('en un hotel con QR, la marca exige el código vigente y guarda su versión', async () => {
+    const t = await turnoDeHoy(`punch-qr-${Date.now()}`)
+    await db.hotel.update({
+      where: { id: t.hotelId },
+      data: { punchMethod: 'QR', punchQrSecret: 'secreto-de-prueba', punchQrVersion: 3 },
+    })
+    const base = { type: 'CLOCK_IN', latitude: 21.16, longitude: -86.85 }
+
+    // Sin código: ni la foto lo sustituye.
+    await expect(
+      timesheets.punch({ ...base, photoPath: 'operations/punch/x.webp' } as never, t.user),
+    ).rejects.toMatchObject({ response: { code: 'QR_REQUIRED' } })
+
+    // Con el código de otro hotel o uno regenerado: inválido.
+    await expect(
+      timesheets.punch(
+        { ...base, qrCode: `oranje:punch:1:${t.hotelId}:secreto-viejo` } as never,
+        t.user,
+      ),
+    ).rejects.toMatchObject({ response: { code: 'QR_INVALID' } })
+
+    const result = await timesheets.punch(
+      { ...base, qrCode: `oranje:punch:1:${t.hotelId}:secreto-de-prueba` } as never,
+      t.user,
+    )
+    expect(result).toBeTruthy()
+
+    const mark = await db.punchMark.findFirstOrThrow({
+      where: { timesheetDay: { timesheet: { workerId: t.workerId } }, type: 'CLOCK_IN' },
+      select: { qrVersion: true, photoPath: true },
+    })
+    expect(mark.qrVersion).toBe(3)
+    expect(mark.photoPath).toBeNull()
+  })
+
   it('sin turno hoy responde NO_SHIFT_TODAY', async () => {
     const t = await turnoDeHoy(`punch-sin-${Date.now()}`)
 

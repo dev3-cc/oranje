@@ -14,6 +14,9 @@ export const createHotelSchema = z.object({
   placeId: z.string().trim().min(1).max(120).optional(),
   latitude: z.number().min(-90).max(90).optional(),
   longitude: z.number().min(-180).max(180).optional(),
+  // Cómo se poncha en este hotel. Por defecto Selfie; QR para los hoteles que
+  // no permiten tomar fotos. Al pasar a QR el servidor genera el código.
+  punchMethod: z.enum(['SELFIE', 'QR']).optional(),
 })
 
 export class CreateHotelDto extends createZodDto(createHotelSchema) {}

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { parsePunchQrPayload } from '../../commercial/hotels/punch-qr.js'
 
 import type { CreateManualPunchDto, CreatePunchDto } from './dto/create-punch.dto.js'
 import { LUNCH_TYPES } from './dto/create-punch.dto.js'
@@ -89,12 +90,10 @@ export class TimesheetsService {
     // de la asignación: el ponche ajeno es el manual, que es del Supervisor.
     await this.assertOwnAssignment(assignment, user)
 
-    if (!LUNCH_TYPES.includes(dto.type as (typeof LUNCH_TYPES)[number]) && !dto.photoPath) {
-      throw new UnprocessableEntityException({
-        code: 'PHOTO_REQUIRED',
-        message: `La marca ${dto.type} necesita foto`,
-      })
-    }
+    // La evidencia de presencia de Entrada y Salida la decide el HOTEL
+    // (Reglas de Negocio, «Método de ponche por hotel»): la foto tomada en el
+    // momento, o el QR impreso en el acceso. Las marcas de lunch no llevan.
+    const qrVersion = this.assertEvidence(dto, assignment)
 
     const now = new Date()
     const { dayId, status, ensure } = await this.openDay(assignment, now)
@@ -128,6 +127,7 @@ export class TimesheetsService {
       longitude: dto.longitude,
       insideGeofence: inside,
       photoPath: dto.photoPath ?? null,
+      qrVersion,
       deviceAt: dto.deviceAt ?? null,
       userId: user.id,
       roleCode: user.roleCode,
@@ -413,6 +413,48 @@ export class TimesheetsService {
     }
 
     return (shifts[0] as { assignmentId: string }).assignmentId
+  }
+
+  /**
+   * Devuelve la versión del QR escaneado (para guardarla en la marca) o `null`
+   * cuando la evidencia es la foto o la marca no la exige.
+   */
+  private assertEvidence(dto: CreatePunchDto, assignment: AssignmentContext): number | null {
+    if (LUNCH_TYPES.includes(dto.type as (typeof LUNCH_TYPES)[number])) return null
+
+    if (assignment.punchMethod !== 'QR') {
+      if (!dto.photoPath) {
+        throw new UnprocessableEntityException({
+          code: 'PHOTO_REQUIRED',
+          message: `La marca ${dto.type} necesita foto`,
+        })
+      }
+      return null
+    }
+
+    if (!dto.qrCode) {
+      throw new UnprocessableEntityException({
+        code: 'QR_REQUIRED',
+        message: `En este hotel la marca ${dto.type} se registra escaneando el QR del acceso`,
+      })
+    }
+
+    const parsed = parsePunchQrPayload(dto.qrCode)
+    const matches =
+      parsed !== null &&
+      parsed.hotelId === assignment.hotelId &&
+      assignment.punchQrSecret !== null &&
+      parsed.secret === assignment.punchQrSecret
+
+    if (!matches) {
+      throw new UnprocessableEntityException({
+        code: 'QR_INVALID',
+        message:
+          'Ese código no es el QR vigente de este hotel: pide el impreso actual, o al Supervisor un ponche manual',
+      })
+    }
+
+    return assignment.punchQrVersion
   }
 
   private async assertOwnAssignment(

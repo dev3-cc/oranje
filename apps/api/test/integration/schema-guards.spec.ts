@@ -30,6 +30,8 @@ const INDEXES = [
 const CONSTRAINTS = [
   ['operations', 'schedule_entry', 'no_shift_overlap'],
   ['coverage', 'assignment', 'ck_assignment_status'],
+  ['commercial', 'hotel', 'ck_hotel_punch_method'],
+  ['operations', 'punch_mark', 'ck_punch_evidence'],
   ['settlement', 'consolidation', 'ck_consolidation_amounts'],
   ['settlement', 'consolidation', 'ck_consolidation_signatures'],
   ['commercial', 'contract_rate', 'ck_contract_rate_margin'],

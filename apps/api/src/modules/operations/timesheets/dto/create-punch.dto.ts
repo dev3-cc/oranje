@@ -21,6 +21,9 @@ export const createPunchSchema = z.object({
     .max(500)
     .regex(/^operations\/punch\/[A-Za-z0-9._-]+$/, 'Debe ser una ruta devuelta por POST /files')
     .optional(),
+  // Con método QR: lo que la app leyó del código impreso del hotel. Sustituye
+  // a la foto como evidencia; el servidor lo compara con el secreto vigente.
+  qrCode: z.string().trim().min(1).max(200).optional(),
   deviceAt: z.coerce.date().optional(),
 })
 

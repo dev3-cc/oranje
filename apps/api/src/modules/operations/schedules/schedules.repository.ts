@@ -58,6 +58,7 @@ export class SchedulesRepository {
       hotelName: string
       hotelPhotoRef: string | null
       hotelTimeZone: string
+      hotelPunchMethod: string
       positionName: string
     }>
   > {
@@ -70,6 +71,7 @@ export class SchedulesRepository {
              h.name                    AS "hotelName",
              h.photo_ref               AS "hotelPhotoRef",
              h.time_zone               AS "hotelTimeZone",
+             h.punch_method            AS "hotelPunchMethod",
              cp.name                   AS "positionName"
         FROM operations.schedule_entry e
         JOIN coverage.assignment a  ON a.id = e.assignment_id
