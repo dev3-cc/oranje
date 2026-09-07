@@ -222,7 +222,9 @@ let board: ProspectSummary[] = [
     hotelName: 'Villas Coral',
     photoUrl: null,
     zone: 'Zona Poniente',
-    status: 'YELLOW',
+    /* Café: con la v1 enviada, abrir la v2 es RENEGOCIAR — en Amarillo el back
+       lo rechaza (PROPOSAL_STATE) y el fixture mentía. */
+    status: 'BROWN',
     daysInStatus: 15,
     lastAttempt: { channel: 'Correo', outcome: 'Sin respuesta' },
     latestProposalVersion: 1,

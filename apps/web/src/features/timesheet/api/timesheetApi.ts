@@ -179,6 +179,7 @@ async function fetchWeek(
     rows.push({
       timesheetId: sheet.id,
       requisitionId: detail.requisitionId,
+      assignment: detail.assignment,
       workerId: detail.worker.id,
       workerName: detail.worker.fullName,
       jobTitle: '—',
@@ -305,6 +306,7 @@ async function fetchTimeline(
     const row = rows.get(key) ?? {
       workerId: detail.worker.id,
       requisitionId: detail.requisitionId,
+      assignment: detail.assignment,
       workerName: detail.worker.fullName,
       jobTitle: workerInfo.get(detail.worker.id)?.jobTitle ?? '—',
       /* El hotel es el de LA REQUISICIÓN de la fila, no el de quien mira: con

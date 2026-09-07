@@ -37,6 +37,7 @@ function summaryOf(
   return {
     timesheetId: summary.timesheetId,
     requisitionId: row.requisitionId,
+    assignment: row.assignment,
     workerId: row.workerId,
     workerName: row.workerName,
     jobTitle: row.jobTitle,

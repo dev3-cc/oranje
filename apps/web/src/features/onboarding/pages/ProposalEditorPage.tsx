@@ -32,6 +32,9 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate } from '@/shared/lib/formatters'
 
+/** Donde la propuesta se elabora y envía: Verde (RR-V) y Café (renegociación). */
+const WORKABLE_STATUSES = new Set(['GREEN', 'BROWN'])
+
 const FORM_ID = 'proposal-draft'
 
 const CONTROL_CLASS =
@@ -87,6 +90,13 @@ export function ProposalEditorPage({
   const can = useCan()
   /** Elaborar, enviar y descartar son del BD dueño (proposals:create/:send); el resto consulta. */
   const canEdit = can('proposals:create')
+  /* El back rechaza abrir versión fuera de Verde/Café (PROPOSAL_STATE); el
+     botón lo dice ANTES, deshabilitado con título, en vez de fallar al clic. */
+  const isWorkable = workspace === undefined || WORKABLE_STATUSES.has(workspace.prospectStatus)
+  const workableBlock =
+    !isWorkable && workspace
+      ? `La propuesta se trabaja con el hotel en Verde o Café: este está en ${ONBOARDING_STATUS_LABEL[workspace.prospectStatus]}`
+      : null
 
   const { register, handleSubmit, reset, trigger, formState } = useForm<ProposalDraftForm>({
     resolver: zodResolver(proposalDraftSchema),
@@ -450,7 +460,8 @@ export function ProposalEditorPage({
                     <Button
                       variant="primary"
                       className="mt-5"
-                      disabled={isBusy}
+                      disabled={isBusy || !isWorkable}
+                      title={workableBlock ?? undefined}
                       onClick={() => {
                         void createDraft(prospectId)
                           .unwrap()
