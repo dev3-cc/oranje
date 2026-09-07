@@ -91,6 +91,8 @@ export interface RequisitionDetail {
   authorizedByName: string | null
   authorizedAt: string | null
   inspectorName: string
+  /** La foto del hotel (Places, D-34); `null` honesto si no hay. */
+  hotelPhotoUrl: string | null
   totals: RequisitionTotals
   positions: RequisitionPosition[]
   history: RequisitionStatusEvent[]

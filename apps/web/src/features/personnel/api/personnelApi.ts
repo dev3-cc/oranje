@@ -114,7 +114,12 @@ async function fetchBoard(
     if (res.error) return { error: res.error }
   }
 
-  const [schedule] = (schedulesRes.data as ApiEnvelope<ScheduleApi[]>).data
+  /**
+   * `/schedules` no garantiza orden (igual que en Schedule): con más de una
+   * semana en la lista, la más reciente es la que puede tener el turno de HOY.
+   */
+  const schedules = (schedulesRes.data as ApiEnvelope<ScheduleApi[]>).data
+  const schedule = [...schedules].sort((a, b) => b.weekStart.localeCompare(a.weekStart))[0]
   const workers = (workersRes.data as PaginatedEnvelope<WorkerApi>).data
   const timesheetList = (timesheetsRes.data as ApiEnvelope<TimesheetApi[]>).data
 

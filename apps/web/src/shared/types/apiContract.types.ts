@@ -245,6 +245,16 @@ export interface RequisitionApi {
   updatedAt: string | null
 }
 
+/** Una fila de `journal.journal` (`GET /requisitions/:id/journal`). */
+export interface RequisitionJournalEntryApi {
+  id: string
+  eventType: string
+  actorName: string | null
+  actorRole: string | null
+  payload: unknown
+  occurredAt: string
+}
+
 /** `coverage.assignment` plana (`GET /requisitions/:id/assignments`). */
 export interface AssignmentApi {
   id: string

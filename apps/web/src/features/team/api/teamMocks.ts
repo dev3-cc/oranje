@@ -74,6 +74,21 @@ const routes: readonly MockRoute[] = [
       return { data: null }
     },
   },
+  /**
+   * LEER las zonas de una persona (Mi Territorio la consume para acotar el
+   * mapa a quien se elija en el selector de dueño) — mismo recurso que el PUT
+   * de arriba, mismos `MEMBERS`, para que asignar y filtrar nunca se
+   * desincronicen entre dos copias de datos.
+   */
+  {
+    method: 'GET',
+    path: '/users/:userId/zones',
+    resolve: ({ params }): { data: { zones: TeamMemberApi['zones'] } } => {
+      const member = MEMBERS.find((item) => item.id === params.userId)
+      if (!member) throw new Error('USER_NOT_FOUND')
+      return { data: { zones: member.zones.map((zone) => ({ ...zone })) } }
+    },
+  },
 ]
 
 let areRoutesRegistered = false

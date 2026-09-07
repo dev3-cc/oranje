@@ -12,6 +12,7 @@ import type {
   CatalogItemApi,
   PaginatedEnvelope,
   RequisitionApi,
+  RequisitionJournalEntryApi,
   RequisitionPositionApi,
   StatusRefApi,
 } from '@/shared/types/apiContract.types'
@@ -531,6 +532,43 @@ const routes: readonly MockRoute[] = [
           (assignmentsByPosition.get(position.id) ?? []).map((item) => ({ ...item })),
         ),
       }
+    },
+  },
+  {
+    method: 'GET',
+    path: '/requisitions/:requisitionId/journal',
+    /**
+     * `journal.journal`, en juguete: creación siempre; autorización solo si
+     * `authorizedAt` ya existe. Del más reciente al más viejo, como la
+     * consulta real (`occurred_at desc`).
+     */
+    resolve: ({ params }): ApiEnvelope<RequisitionJournalEntryApi[]> => {
+      const found = requisitions.find((item) => item.id === params.requisitionId)
+      if (!found) throw new Error('REQUISITION_NOT_FOUND')
+
+      const entries: RequisitionJournalEntryApi[] = [
+        {
+          id: `jrn-${found.id}-created`,
+          eventType: 'REQUISITION_CREATED',
+          actorName: found.createdBy?.fullName ?? null,
+          actorRole: 'ROL-H-01',
+          payload: { number: found.number, positions: found.positions.length },
+          occurredAt: found.createdAt,
+        },
+      ]
+
+      if (found.authorizedAt) {
+        entries.push({
+          id: `jrn-${found.id}-authorized`,
+          eventType: 'REQUISITION_AUTHORIZED',
+          actorName: 'Gerardo Luna',
+          actorRole: 'ROL-H-03',
+          payload: { positions: found.positions.length },
+          occurredAt: found.authorizedAt,
+        })
+      }
+
+      return { data: entries.sort((a, b) => (a.occurredAt < b.occurredAt ? 1 : -1)) }
     },
   },
   {

@@ -2,15 +2,6 @@ import { cn, MaterialIcon, statusLight } from '@oranje/ui'
 import { useReducedMotion } from 'framer-motion'
 import { useContext, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
 
-import {
-  GRID_HEIGHT,
-  HOUR_PX,
-  HOURS_END,
-  HOURS_START,
-  blockRect,
-  minutesOf,
-  nowOffset,
-} from '../lib/hoursGeometry'
 import { addDaysIso, todayIso } from '../lib/weekNavigation'
 import type {
   ReviewContext,
@@ -25,6 +16,15 @@ import { WeekDragContext } from './WeekSlider'
 import { Button } from '@/shared/components/Button'
 import { TIMESHEET_STATUS_LABEL, TIMESHEET_STATUS_TOKEN } from '@/shared/constants/timesheetStatus'
 import { formatDayNumber, formatWeekday } from '@/shared/lib/formatters'
+import {
+  GRID_HEIGHT,
+  HOUR_PX,
+  HOURS_END,
+  HOURS_START,
+  blockRect,
+  minutesOf,
+  nowOffset,
+} from '@/shared/lib/hoursGeometry'
 import { MOTION } from '@/shared/lib/motion'
 
 /** Un bloque: las jornadas del día que comparten horario y requisición. */

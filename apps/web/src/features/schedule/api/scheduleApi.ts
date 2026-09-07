@@ -3,6 +3,8 @@ import type { ScheduleDemandRow, ScheduleWeek, ScheduleWorkerEntry } from '../ty
 import { registerScheduleMocks } from './scheduleMocks'
 
 import { baseApi } from '@/app/baseApi'
+/** Piezas genéricas de navegación semanal, expuestas por el índice de Timesheet (§4). */
+import { addDaysIso, resolveWeek } from '@/features/timesheet'
 import type {
   ApiEnvelope,
   PaginatedEnvelope,
@@ -13,11 +15,11 @@ import type {
 
 /**
  * El Schedule semanal del hotel COMPONE tres recursos reales: `/schedules`
- * (la semana del hotel), sus entradas (quién está programado cada día) y
- * `/requisitions` (la demanda por posición). La cobertura por posición viene
- * de la requisición; el desglose por DÍA necesita que el contrato ligue
- * `schedule_entry` con la posición — hasta entonces, cada celda enseña la
- * cobertura real de la posición, no una inventada por día.
+ * (TODAS las semanas del hotel), sus entradas (quién está programado cada
+ * día) y `/requisitions` (la demanda por posición). La cobertura por posición
+ * viene de la requisición; el desglose por DÍA necesita que el contrato ligue
+ * `schedule_entry` con la posición — hasta entonces, el resumen de cobertura
+ * enseña la cobertura real de la posición, no una inventada por día.
  */
 registerScheduleMocks()
 
@@ -25,8 +27,6 @@ registerScheduleMocks()
 type FetchWithBQ = (
   args: string | { url: string; params?: Record<string, unknown> },
 ) => Promise<{ data?: unknown; error?: unknown }>
-
-const MS_PER_DAY = 86_400_000
 
 /** Estados con demanda viva: autorizada en adelante, sin las terminales. */
 const DEMAND_STATES = new Set(['GREEN', 'YELLOW', 'RED'])
@@ -37,6 +37,7 @@ function timeOf(iso: string): string {
 
 async function fetchWeek(
   fetchWithBQ: FetchWithBQ,
+  requestedWeekStart: string,
 ): Promise<{ data: ScheduleWeek } | { error: unknown }> {
   const [schedulesRes, requisitionsRes] = await Promise.all([
     fetchWithBQ('/schedules'),
@@ -48,24 +49,26 @@ async function fetchWeek(
   const schedules = (schedulesRes.data as ApiEnvelope<ScheduleApi[]>).data
   const requisitions = (requisitionsRes.data as PaginatedEnvelope<RequisitionApi>).data
 
-  /** La semana visible: la más reciente del hotel de quien pregunta. */
-  const schedule = [...schedules].sort((a, b) => b.weekStart.localeCompare(a.weekStart))[0]
+  /** Las semanas QUE EXISTEN; se enseña la pedida o, sin ella, la más reciente. */
+  const availableWeeks = [...new Set(schedules.map((item) => item.weekStart))].sort()
+  const weekStart = resolveWeek(availableWeeks, requestedWeekStart)
+  const schedule = weekStart
+    ? (schedules.find((item) => item.weekStart === weekStart) ?? null)
+    : null
 
   let entries: ScheduleWorkerEntry[] = []
   let days: string[] = []
   if (schedule) {
-    days = Array.from({ length: 7 }, (_item, index) =>
-      new Date(new Date(schedule.weekStart).getTime() + index * MS_PER_DAY)
-        .toISOString()
-        .slice(0, 10),
-    )
+    days = Array.from({ length: 7 }, (_item, index) => addDaysIso(schedule.weekStart, index))
     const entriesRes = await fetchWithBQ(`/schedules/${schedule.id}/entries`)
     if (!entriesRes.error) {
       entries = (entriesRes.data as ApiEnvelope<ScheduleEntryApi[]>).data.map((entry) => ({
         id: entry.id,
         workDate: entry.workDate,
+        workerId: entry.worker.id,
         workerName: entry.worker.fullName,
-        shift: `${timeOf(entry.startsAt)} – ${timeOf(entry.endsAt)}`,
+        startTime: timeOf(entry.startsAt),
+        endTime: timeOf(entry.endsAt),
       }))
     }
   }
@@ -97,15 +100,17 @@ async function fetchWeek(
       entries,
       totalSlots: demand.reduce((sum, row) => sum + row.quantity, 0),
       filledSlots: demand.reduce((sum, row) => sum + row.filled, 0),
+      weekStart: weekStart ?? '',
+      availableWeeks,
     },
   }
 }
 
 export const scheduleApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    getScheduleWeek: build.query<ScheduleWeek, void>({
-      queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
-        const result = await fetchWeek(fetchWithBQ as FetchWithBQ)
+    getScheduleWeek: build.query<ScheduleWeek, { weekStart: string }>({
+      queryFn: async (arg, _api, _extra, fetchWithBQ) => {
+        const result = await fetchWeek(fetchWithBQ as FetchWithBQ, arg.weekStart)
         return 'error' in result ? { error: result.error as never } : { data: result.data }
       },
       /** Asignar un slot o autorizar demanda mueve esta vista. */

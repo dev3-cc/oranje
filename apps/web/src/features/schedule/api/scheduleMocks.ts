@@ -8,9 +8,12 @@ import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
 import type { ApiEnvelope, ScheduleApi, ScheduleEntryApi } from '@/shared/types/apiContract.types'
 
 /**
- * Fixtures de `operations.schedule` en la forma CRUDA del contrato real: la
- * semana ACTUAL de Villas Coral (el hotel de `req-0005`), con programados que
- * casan con su cobertura 3/6.
+ * Fixtures de `operations.schedule` en la forma CRUDA del contrato real:
+ * TRES semanas de Villas Coral (el hotel de `req-0005`) — la actual y las dos
+ * anteriores, como las 3 semanas reales verificadas en dev para Xcaret — para
+ * poder probar la navegación ‹ › y el mini-calendario contra datos de verdad,
+ * no una sola semana. Cada schedule cubre programados que casan con la
+ * cobertura 3/6 de la demanda.
  */
 
 const MS_PER_DAY = 86_400_000
@@ -21,70 +24,102 @@ function mondayOfThisWeek(): string {
   return new Date(now.getTime() - weekday * MS_PER_DAY).toISOString().slice(0, 10)
 }
 
-const WEEK_START = mondayOfThisWeek()
-
-function dayIso(offset: number): string {
-  return new Date(new Date(WEEK_START).getTime() + offset * MS_PER_DAY).toISOString().slice(0, 10)
+function addDays(iso: string, offset: number): string {
+  return new Date(new Date(`${iso}T00:00:00Z`).getTime() + offset * MS_PER_DAY)
+    .toISOString()
+    .slice(0, 10)
 }
 
-const SCHEDULE: ScheduleApi = {
-  id: 'sch-0001',
-  hotel: { id: 'htl-psp-0015', name: 'Villas Coral', timeZone: 'America/New_York' },
-  weekStart: WEEK_START,
-  weekEnd: dayIso(6),
-  entryCount: 6,
-  createdAt: `${WEEK_START}T08:00:00.000Z`,
-}
-
-let entrySequence = 0
-
-/** Los ids son los del Pool: Mi Personal cruza el turno con el semáforo. */
-function entry(
-  offset: number,
-  worker: { id: string; fullName: string },
-  start: string,
-  end: string,
-): ScheduleEntryApi {
-  entrySequence += 1
-  return {
-    id: `sce-${String(entrySequence).padStart(4, '0')}`,
-    workDate: dayIso(offset),
-    startsAt: `${dayIso(offset)}T${start}:00.000Z`,
-    endsAt: `${dayIso(offset)}T${end}:00.000Z`,
-    minutes: 480,
-    worker,
-    assignmentId: `asg-${String(entrySequence)}`,
-  }
-}
+const CURRENT_WEEK_START = mondayOfThisWeek()
+const HOTEL = { id: 'htl-psp-0015', name: 'Villas Coral', timeZone: 'America/New_York' }
 
 const ANA = { id: 'wrk-0001', fullName: 'Ana Rivera Gómez' }
 const LUIS = { id: 'wrk-0002', fullName: 'Luis Cabrera' }
 const MARIA = { id: 'wrk-0003', fullName: 'María Fernanda Ortiz' }
 const JULIA = { id: 'wrk-0005', fullName: 'Julia Mendoza' }
 
-/** El offset de HOY dentro de la semana, para que Mi Personal siempre tenga turnos. */
+let entrySequence = 0
+
+function entry(
+  weekStart: string,
+  offset: number,
+  worker: { id: string; fullName: string },
+  start: string,
+  end: string,
+): ScheduleEntryApi {
+  entrySequence += 1
+  const workDate = addDays(weekStart, offset)
+  return {
+    id: `sce-${String(entrySequence).padStart(4, '0')}`,
+    workDate,
+    startsAt: `${workDate}T${start}:00.000Z`,
+    endsAt: `${workDate}T${end}:00.000Z`,
+    minutes: 480,
+    worker,
+    assignmentId: `asg-${String(entrySequence)}`,
+  }
+}
+
+/** Tres semanas: la actual y las dos anteriores, más viejas primero. */
+const WEEK_STARTS = [
+  addDays(CURRENT_WEEK_START, -14),
+  addDays(CURRENT_WEEK_START, -7),
+  CURRENT_WEEK_START,
+]
+
+const SCHEDULES: ScheduleApi[] = WEEK_STARTS.map((weekStart, index) => ({
+  id: `sch-000${String(index + 1)}`,
+  hotel: HOTEL,
+  weekStart,
+  weekEnd: addDays(weekStart, 6),
+  entryCount: 6,
+  createdAt: `${weekStart}T08:00:00.000Z`,
+}))
+
+/** El offset de HOY dentro de la semana actual, para que Mi Personal siempre tenga turnos. */
 const TODAY_OFFSET = (new Date().getUTCDay() + 6) % 7
 const NEXT_OFFSET = (TODAY_OFFSET + 1) % 7
 
-const ENTRIES: ScheduleEntryApi[] = [
-  entry(TODAY_OFFSET, ANA, '07:00', '15:30'),
-  entry(TODAY_OFFSET, LUIS, '08:00', '16:00'),
-  entry(TODAY_OFFSET, JULIA, '08:00', '16:00'),
-  entry(NEXT_OFFSET, ANA, '07:00', '15:30'),
-  entry(NEXT_OFFSET, MARIA, '07:00', '15:30'),
-  entry(NEXT_OFFSET, LUIS, '08:00', '16:00'),
-]
+/** Entradas por schedule: cada semana repite el mismo patrón de cobertura (3/6). */
+const ENTRIES_BY_SCHEDULE: Record<string, ScheduleEntryApi[]> = {
+  [SCHEDULES[0]!.id]: [
+    entry(WEEK_STARTS[0]!, 1, ANA, '07:00', '15:30'),
+    entry(WEEK_STARTS[0]!, 1, LUIS, '08:00', '16:00'),
+    entry(WEEK_STARTS[0]!, 1, JULIA, '08:00', '16:00'),
+    entry(WEEK_STARTS[0]!, 2, ANA, '07:00', '15:30'),
+    entry(WEEK_STARTS[0]!, 2, MARIA, '07:00', '15:30'),
+    entry(WEEK_STARTS[0]!, 3, LUIS, '08:00', '16:00'),
+  ],
+  [SCHEDULES[1]!.id]: [
+    entry(WEEK_STARTS[1]!, 0, ANA, '07:00', '15:30'),
+    entry(WEEK_STARTS[1]!, 0, JULIA, '08:00', '16:00'),
+    entry(WEEK_STARTS[1]!, 2, LUIS, '08:00', '16:00'),
+    entry(WEEK_STARTS[1]!, 2, MARIA, '07:00', '15:30'),
+    entry(WEEK_STARTS[1]!, 4, ANA, '07:00', '15:30'),
+    entry(WEEK_STARTS[1]!, 5, LUIS, '08:00', '16:00'),
+  ],
+  [SCHEDULES[2]!.id]: [
+    entry(WEEK_STARTS[2]!, TODAY_OFFSET, ANA, '07:00', '15:30'),
+    entry(WEEK_STARTS[2]!, TODAY_OFFSET, LUIS, '08:00', '16:00'),
+    entry(WEEK_STARTS[2]!, TODAY_OFFSET, JULIA, '08:00', '16:00'),
+    entry(WEEK_STARTS[2]!, NEXT_OFFSET, ANA, '07:00', '15:30'),
+    entry(WEEK_STARTS[2]!, NEXT_OFFSET, MARIA, '07:00', '15:30'),
+    entry(WEEK_STARTS[2]!, NEXT_OFFSET, LUIS, '08:00', '16:00'),
+  ],
+}
 
 const routes: readonly MockRoute[] = [
   {
     method: 'GET',
     path: '/schedules',
-    resolve: (): ApiEnvelope<ScheduleApi[]> => ({ data: [SCHEDULE] }),
+    resolve: (): ApiEnvelope<ScheduleApi[]> => ({ data: SCHEDULES }),
   },
   {
     method: 'GET',
     path: '/schedules/:scheduleId/entries',
-    resolve: (): ApiEnvelope<ScheduleEntryApi[]> => ({ data: ENTRIES }),
+    resolve: ({ params }): ApiEnvelope<ScheduleEntryApi[]> => ({
+      data: ENTRIES_BY_SCHEDULE[params.scheduleId ?? ''] ?? [],
+    }),
   },
 ]
 
