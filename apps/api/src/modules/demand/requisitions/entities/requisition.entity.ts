@@ -39,3 +39,15 @@ export interface RequisitionEntity {
   createdAt: string
   updatedAt: string | null
 }
+
+/// Una fila de `journal.journal` para `entity_type = 'demand.requisition'`.
+/// `actorName` es null cuando `actor_user_id` es null (evento del sistema) o
+/// cuando el usuario que lo generó ya no existe.
+export interface RequisitionJournalEntry {
+  id: string
+  eventType: string
+  actorName: string | null
+  actorRole: string | null
+  payload: unknown
+  occurredAt: string
+}

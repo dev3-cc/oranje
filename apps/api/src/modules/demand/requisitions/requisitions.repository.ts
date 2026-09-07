@@ -46,6 +46,17 @@ const SELECT = {
 
 export type RequisitionRow = Prisma.RequisitionGetPayload<{ select: typeof SELECT }>
 
+const JOURNAL_SELECT = {
+  id: true,
+  eventType: true,
+  actorRole: true,
+  payload: true,
+  occurredAt: true,
+  actor: { select: { fullName: true } },
+} as const
+
+export type JournalRow = Prisma.JournalEntryGetPayload<{ select: typeof JOURNAL_SELECT }>
+
 export interface NewPosition {
   catalogPositionId: string
   hiringModalityId: string
@@ -382,5 +393,16 @@ export class RequisitionsRepository {
 
   async numberTaken(number: string): Promise<boolean> {
     return (await this.prisma.requisition.count({ where: { number } })) > 0
+  }
+
+  // `journal.journal` está particionada por mes; el índice
+  // `ix_journal_entity` (entity_type, entity_id, occurred_at desc) es justo
+  // para esta consulta.
+  async journal(requisitionId: string): Promise<JournalRow[]> {
+    return this.prisma.journalEntry.findMany({
+      where: { entityType: 'demand.requisition', entityId: requisitionId },
+      select: JOURNAL_SELECT,
+      orderBy: { occurredAt: 'desc' },
+    })
   }
 }

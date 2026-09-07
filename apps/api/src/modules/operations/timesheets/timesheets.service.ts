@@ -53,6 +53,12 @@ export interface TimesheetEntity {
   weekEnd: string
   status: string
   approvedAt: string | null
+  /**
+   * La asignación que respalda estas horas. `ACTIVE` admite marcas; `CLOSED`
+   * o `CANCELLED` son historia (se aprueban y pagan, pero ya no se captura);
+   * `null` cuando no hay ninguna — solo pasa con datos sembrados a mano.
+   */
+  assignment: { status: 'ACTIVE' | 'CLOSED' | 'CANCELLED'; endsOn: string | null } | null
   days?: DayEntity[]
   totals?: { grossMinutes: number; netMinutes: number; overtimeMinutes: number }
 }
@@ -509,5 +515,11 @@ function toTimesheet(row: TimesheetRow): TimesheetEntity {
     weekEnd: new Date(row.weekEnd).toISOString().slice(0, 10),
     status: row.status,
     approvedAt: row.approvedAt ? new Date(row.approvedAt).toISOString() : null,
+    assignment: row.assignment
+      ? {
+          status: row.assignment.status as 'ACTIVE' | 'CLOSED' | 'CANCELLED',
+          endsOn: row.assignment.endsOn,
+        }
+      : null,
   }
 }

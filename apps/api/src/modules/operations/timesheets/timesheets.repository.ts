@@ -47,7 +47,27 @@ export interface TimesheetRow {
   approvedAt: Date | null
   worker: { id: string; fullName: string }
   requisitionId: string
+  /** La asignación que respalda al timesheet (ver `ASSIGNMENT_OF_TIMESHEET`). */
+  assignment: { status: string; endsOn: string | null } | null
 }
+
+// La asignación de ESTA persona en ESTA requisición. El timesheet no la guarda
+// (apunta a colaborador y requisición), así que se resuelve al leer: la ACTIVA
+// si la hay; si no, la más reciente (cerrada o cancelada), para que la pantalla
+// sepa que las horas son historia y no ofrezca capturar marcas. `endsOn` es el
+// último día INCLUSIVO de la vigencia; `null` en una asignación fija.
+const ASSIGNMENT_OF_TIMESHEET = Prisma.sql`
+  (SELECT jsonb_build_object(
+            'status', a.status,
+            'endsOn', CASE WHEN upper_inf(a.validity) THEN NULL
+                           ELSE (upper(a.validity) - 1)::text END)
+     FROM coverage.assignment a
+     JOIN demand.slot s         ON s.id = a.slot_id
+     JOIN demand."position" p   ON p.id = s.position_id
+    WHERE a.worker_id = t.worker_id
+      AND p.requisition_id = t.requisition_id
+    ORDER BY (a.status = 'ACTIVE') DESC, upper(a.validity) DESC NULLS FIRST
+    LIMIT 1) AS assignment`
 
 // Lo que hace falta para crear el timesheet/día si todavía no existen — se
 // resuelve ANTES de validar (lectura), y solo se usa DENTRO de la transacción
@@ -386,6 +406,7 @@ export class TimesheetsRepository {
              r.hotel_id       AS "hotelId",
              w.full_name      AS "workerName",
              jsonb_build_object('id', w.id, 'fullName', w.full_name) AS worker,
+             ${ASSIGNMENT_OF_TIMESHEET},
              (SELECT p.hotel_department_id
                 FROM demand."position" p
                WHERE p.requisition_id = t.requisition_id
@@ -406,7 +427,8 @@ export class TimesheetsRepository {
              t.status,
              t.approved_at AS "approvedAt",
              t.requisition_id AS "requisitionId",
-             jsonb_build_object('id', w.id, 'fullName', w.full_name) AS worker
+             jsonb_build_object('id', w.id, 'fullName', w.full_name) AS worker,
+             ${ASSIGNMENT_OF_TIMESHEET}
         FROM operations.timesheet t
         JOIN personal.worker w ON w.id = t.worker_id
        WHERE t.worker_id = ${workerId}::uuid
@@ -426,7 +448,8 @@ export class TimesheetsRepository {
              t.status,
              t.approved_at AS "approvedAt",
              t.requisition_id AS "requisitionId",
-             jsonb_build_object('id', w.id, 'fullName', w.full_name) AS worker
+             jsonb_build_object('id', w.id, 'fullName', w.full_name) AS worker,
+             ${ASSIGNMENT_OF_TIMESHEET}
         FROM operations.timesheet t
         JOIN personal.worker w    ON w.id = t.worker_id
         JOIN demand.requisition r ON r.id = t.requisition_id

@@ -234,6 +234,16 @@ describe('ponchar sin conocer la asignación', () => {
     )
 
     expect(result).toBeTruthy()
+
+    // El timesheet dice qué asignación lo respalda: la fija de hoy, ACTIVA y sin
+    // último día. Con eso el front sabe si aún se capturan marcas.
+    const mine = await timesheets.mine(t.user)
+    expect(mine[0]?.assignment).toEqual({ status: 'ACTIVE', endsOn: null })
+
+    // Cancelada, sigue viajando (las horas son historia) pero ya no ACTIVA.
+    await db.assignment.update({ where: { id: t.assignmentId }, data: { status: 'CANCELLED' } })
+    const despues = await timesheets.mine(t.user)
+    expect(despues[0]?.assignment?.status).toBe('CANCELLED')
   })
 
   it('sin turno hoy responde NO_SHIFT_TODAY', async () => {
