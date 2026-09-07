@@ -15,7 +15,7 @@ import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 
 import { CreateRequisitionDto, DeleteRequisitionDto } from './dto/create-requisition.dto.js'
 import { QueryRequisitionsDto } from './dto/query-requisitions.dto.js'
-import type { RequisitionEntity } from './entities/requisition.entity.js'
+import type { RequisitionEntity, RequisitionJournalEntry } from './entities/requisition.entity.js'
 import { RequisitionBoard, RequisitionsService } from './requisitions.service.js'
 
 @Controller('requisitions')
@@ -42,6 +42,19 @@ export class RequisitionsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: RequisitionEntity }> {
     return { data: await this.requisitions.get(id, user) }
+  }
+
+  /**
+   * Sin `@Requires`, igual que `get()`: el servicio reutiliza exactamente el
+   * mismo criterio de lectura — quien puede leer la requisición puede leer su
+   * bitácora.
+   */
+  @Get(':id/journal')
+  async journal(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: RequisitionJournalEntry[] }> {
+    return { data: await this.requisitions.journal(id, user) }
   }
 
   @Requires('requisitions', 'create')

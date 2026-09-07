@@ -13,9 +13,14 @@ import { PermissionsService } from '../../identity/index.js'
 
 import type { CreateRequisitionDto } from './dto/create-requisition.dto.js'
 import type { QueryRequisitionsDto } from './dto/query-requisitions.dto.js'
-import type { PositionEntity, RequisitionEntity } from './entities/requisition.entity.js'
+import type {
+  PositionEntity,
+  RequisitionEntity,
+  RequisitionJournalEntry,
+} from './entities/requisition.entity.js'
 import {
   COVERAGE_LIGHT,
+  JournalRow,
   REQUISITION_LIGHT,
   RequisitionRow,
   RequisitionsRepository,
@@ -175,6 +180,18 @@ export class RequisitionsService {
     }
 
     return this.decorateOne(row)
+  }
+
+  /**
+   * Sin permiso propio: reutiliza EXACTAMENTE el criterio de `get()` —
+   * `Requisitions:read_own/read_all/read_authorized_queue`, alcance de hotel y
+   * el borrador oculto para la cola — llamándolo directo. Quien puede leer la
+   * requisición puede leer su bitácora; no hay una segunda regla que inventar.
+   */
+  async journal(id: string, user: AuthenticatedUser): Promise<RequisitionJournalEntry[]> {
+    await this.get(id, user)
+
+    return (await this.repo.journal(id)).map(toJournalEntry)
   }
 
   // Se firman las rutas DISTINTAS, no una por fila: el mismo Supervisor pide
@@ -465,6 +482,17 @@ function urgencyFor(startDate: Date, from: Date): string {
   }
 
   return hours <= MEDIUM_HOURS ? 'YELLOW' : 'STRONG_GREEN'
+}
+
+function toJournalEntry(row: JournalRow): RequisitionJournalEntry {
+  return {
+    id: row.id,
+    eventType: row.eventType,
+    actorName: row.actor?.fullName ?? null,
+    actorRole: row.actorRole,
+    payload: row.payload,
+    occurredAt: row.occurredAt.toISOString(),
+  }
 }
 
 function toPosition(p: RequisitionRow['positions'][number]): PositionEntity {
