@@ -20,6 +20,17 @@ const SELECT = {
 
 export type StaffUserRow = Prisma.UserGetPayload<{ select: typeof SELECT }>
 
+/**
+ * Mismo criterio que `RolesService.internal()` (el picker de alta ya los
+ * excluye, y `resolveRole()` rechaza crearlos aquí): ROL-H-* nace en la
+ * Conversión y ROL-C-01 en el alta de colaboradores — ninguno de los dos es
+ * "personal interno". Sin este filtro, filas de Colaborador u Hotel con
+ * `hotel_id` nulo (huecos de datos: el Colaborador nunca lleva hotel propio;
+ * cuentas de Hotel de pruebas de integración sin limpiar) se colaban en esta
+ * lista aunque el propio formulario nunca dejara crearlas desde aquí.
+ */
+const NON_STAFF_ROLE_CODES = ['ROL-C-01', 'ROL-H-01', 'ROL-H-02', 'ROL-H-03']
+
 @Injectable()
 export class StaffUsersRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -28,8 +39,13 @@ export class StaffUsersRepository {
     const where: Prisma.UserWhereInput = {
       /** Personal del sistema = sin hotel. Los del hotel viven en su endpoint. */
       hotelId: null,
+      role: {
+        code: {
+          notIn: NON_STAFF_ROLE_CODES,
+          ...(query.roleCode ? { equals: query.roleCode } : {}),
+        },
+      },
       ...(query.includeInactive ? {} : { isActive: true }),
-      ...(query.roleCode ? { role: { code: query.roleCode } } : {}),
       ...(query.search
         ? {
             OR: [
