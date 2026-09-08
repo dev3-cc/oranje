@@ -86,6 +86,15 @@ const SALES: Permission[] = [
     roles: [BD, BDC],
   },
   {
+    // El QR de ponche del hotel (Reglas de Negocio, «Método de ponche por
+    // hotel»): lo descargan y regeneran quien vende el hotel y quien lo
+    // opera. Los roles del hotel solo alcanzan el suyo (el controlador acota).
+    module: 'hotel',
+    action: 'punch_qr',
+    label: 'Descargar y regenerar el QR de ponche del hotel',
+    roles: [BD, BDC, SUPERVISOR, GA, GG],
+  },
+  {
     module: 'pipeline',
     action: 'create_cold_visit',
     label: 'Registrar visita en frío',

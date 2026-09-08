@@ -1,12 +1,26 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import { v7 as uuidv7 } from 'uuid'
 
+import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { PlacesService } from '../../../infra/places/index.js'
+import { PrismaService } from '../../../infra/prisma/index.js'
 
 import type { CreateHotelDto } from './dto/create-hotel.dto.js'
 import type { QueryHotelsDto } from './dto/query-hotels.dto.js'
 import type { UpdateHotelDto } from './dto/update-hotel.dto.js'
 import type { HotelEntity } from './entities/hotel.entity.js'
 import { HotelRow, HotelsRepository } from './hotels.repository.js'
+import { buildPunchQrPayload, newPunchQrSecret } from './punch-qr.js'
+
+/** El QR de ponche del hotel, listo para imprimir. El secreto viaja SOLO aquí, dentro del payload. */
+export interface PunchQrEntity {
+  hotelId: string
+  hotelName: string
+  /** Lo que se codifica en el QR. */
+  payload: string
+  version: number
+  generatedAt: string
+}
 
 export interface Paginated<T> {
   data: T[]
@@ -18,6 +32,7 @@ export class HotelsService {
   constructor(
     private readonly repo: HotelsRepository,
     private readonly places: PlacesService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async list(query: QueryHotelsDto): Promise<Paginated<HotelEntity>> {
@@ -84,7 +99,109 @@ export class HotelsService {
       await this.resolvePhoto(id, dto.placeId, null)
     }
 
+    // Pasar a QR sin código sería un hotel donde nadie puede ponchar: el
+    // primer código nace con el cambio de método.
+    if (dto.punchMethod === 'QR' && current.punchQrVersion === 0) {
+      await this.repo.rotatePunchQr(id, newPunchQrSecret(), userId)
+    }
+
+    if (dto.punchMethod !== undefined && dto.punchMethod !== current.punchMethod) {
+      await this.journal(id, 'HOTEL_PUNCH_METHOD_CHANGED', userId, {
+        from: current.punchMethod,
+        to: dto.punchMethod,
+      })
+    }
+
     return this.get(id)
+  }
+
+  /**
+   * El QR vigente para imprimir. Solo tiene sentido en un hotel con método QR:
+   * en Selfie no hay nada que pegar en la pared.
+   */
+  async punchQr(id: string): Promise<PunchQrEntity> {
+    const row = await this.repo.punchQrOf(id)
+
+    if (!row) {
+      throw new NotFoundException({ code: 'HOTEL_NOT_FOUND', message: 'El hotel no existe' })
+    }
+
+    if (row.punchMethod !== 'QR') {
+      throw new ConflictException({
+        code: 'PUNCH_METHOD_NOT_QR',
+        message: 'Este hotel poncha con selfie: no tiene QR que imprimir',
+      })
+    }
+
+    if (row.secret === null || row.generatedAt === null) {
+      throw new ConflictException({
+        code: 'PUNCH_QR_MISSING',
+        message: 'El hotel no tiene QR generado: regenéralo',
+      })
+    }
+
+    return {
+      hotelId: id,
+      hotelName: row.name,
+      payload: buildPunchQrPayload(id, row.secret),
+      version: row.version,
+      generatedAt: row.generatedAt.toISOString(),
+    }
+  }
+
+  /**
+   * Un QR impreso acaba fotografiado. Regenerar invalida el anterior al
+   * instante —las marcas ya registradas conservan su versión— y entrega el
+   * nuevo para imprimirlo.
+   */
+  async regeneratePunchQr(id: string, actor: AuthenticatedUser): Promise<PunchQrEntity> {
+    const row = await this.repo.punchQrOf(id)
+
+    if (!row) {
+      throw new NotFoundException({ code: 'HOTEL_NOT_FOUND', message: 'El hotel no existe' })
+    }
+
+    if (row.punchMethod !== 'QR') {
+      throw new ConflictException({
+        code: 'PUNCH_METHOD_NOT_QR',
+        message: 'Este hotel poncha con selfie: cambia el método antes de generar un QR',
+      })
+    }
+
+    const rotated = await this.repo.rotatePunchQr(id, newPunchQrSecret(), actor.id)
+
+    await this.journal(
+      id,
+      'HOTEL_PUNCH_QR_REGENERATED',
+      actor.id,
+      {
+        version: rotated.version,
+        previousVersion: row.version,
+      },
+      actor.roleCode,
+    )
+
+    return this.punchQr(id)
+  }
+
+  private async journal(
+    hotelId: string,
+    eventType: string,
+    actorUserId: string,
+    payload: Record<string, string | number | null>,
+    actorRole: string | null = null,
+  ): Promise<void> {
+    await this.prisma.journalEntry.create({
+      data: {
+        id: uuidv7(),
+        entityType: 'commercial.hotel',
+        entityId: hotelId,
+        eventType,
+        actorUserId,
+        actorRole,
+        payload,
+      },
+    })
   }
 
   // Se resuelve al ESCRIBIR, no en cada lectura: una lista de veinte hoteles
@@ -139,6 +256,11 @@ function toEntity(row: HotelRow): HotelEntity {
     zone: row.zone,
     isClient: row.activatedAt !== null,
     activatedAt: row.activatedAt?.toISOString() ?? null,
+    punchMethod: row.punchMethod === 'QR' ? 'QR' : 'SELFIE',
+    punchQr:
+      row.punchQrVersion > 0 && row.punchQrGeneratedAt
+        ? { version: row.punchQrVersion, generatedAt: row.punchQrGeneratedAt.toISOString() }
+        : null,
     contactCount: row._count.contacts,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt?.toISOString() ?? null,

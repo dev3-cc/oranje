@@ -14,6 +14,11 @@ export interface HotelEntity {
   zone: { id: string; code: string; name: string }
   isClient: boolean
   activatedAt: string | null
+  /// SELFIE | QR: cómo se demuestra la presencia al ponchar en este hotel.
+  punchMethod: 'SELFIE' | 'QR'
+  /// El QR vigente, SIN su secreto: versión y cuándo se generó. `null` si
+  /// nunca se ha generado (hotel en Selfie que no ha pasado por QR).
+  punchQr: { version: number; generatedAt: string } | null
   contactCount: number
   createdAt: string
   updatedAt: string | null

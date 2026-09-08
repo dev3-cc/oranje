@@ -50,6 +50,9 @@ export interface MyShift {
   /// URL de media de Places compuesta al leer (D-34). Null si el hotel no
   /// tiene foto o si no hay llave: nunca rompe la respuesta.
   hotelPhotoUrl: string | null
+  /// SELFIE | QR: la app sabe si abrir la cámara para la selfie o el lector del
+  /// QR impreso en el acceso (Reglas de Negocio, «Método de ponche por hotel»).
+  hotelPunchMethod: 'SELFIE' | 'QR'
   position: string
 }
 
@@ -84,6 +87,7 @@ export class SchedulesService {
       hotel: e.hotelName,
       hotelTimeZone: e.hotelTimeZone,
       hotelPhotoUrl: this.places.mediaUrl(e.hotelPhotoRef),
+      hotelPunchMethod: e.hotelPunchMethod === 'QR' ? 'QR' : 'SELFIE',
       position: e.positionName,
     }))
   }

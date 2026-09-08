@@ -20,7 +20,7 @@ import { CreateHotelDto } from './dto/create-hotel.dto.js'
 import { QueryHotelsDto } from './dto/query-hotels.dto.js'
 import { UpdateHotelDto } from './dto/update-hotel.dto.js'
 import type { HotelEntity } from './entities/hotel.entity.js'
-import { HotelsService, Paginated } from './hotels.service.js'
+import { HotelsService, Paginated, PunchQrEntity } from './hotels.service.js'
 
 @Controller('hotels')
 export class HotelsController {
@@ -65,6 +65,40 @@ export class HotelsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: HotelEntity }> {
     return { data: await this.hotels.create(dto, user.id) }
+  }
+
+  /**
+   * El QR de ponche del hotel, para imprimir. Lo alcanzan quien vende el hotel
+   * (BD, BDC) y quien lo opera (Supervisor, Managers) — pero los roles del
+   * hotel solo el SUYO: el permiso dice qué, el hotelId del token dice cuál.
+   */
+  @Requires('hotel', 'punch_qr')
+  @Get(':id/punch-qr')
+  async punchQr(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: PunchQrEntity }> {
+    this.assertHotelScope(id, user)
+    return { data: await this.hotels.punchQr(id) }
+  }
+
+  @Requires('hotel', 'punch_qr')
+  @Post(':id/punch-qr/regenerate')
+  async regeneratePunchQr(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: PunchQrEntity }> {
+    this.assertHotelScope(id, user)
+    return { data: await this.hotels.regeneratePunchQr(id, user) }
+  }
+
+  private assertHotelScope(id: string, user: AuthenticatedUser): void {
+    if (user.hotelId !== null && user.hotelId !== undefined && user.hotelId !== id) {
+      throw new ForbiddenException({
+        code: 'FORBIDDEN',
+        message: 'El QR de ponche de otro hotel no te corresponde',
+      })
+    }
   }
 
   @Requires('pipeline', 'update_hotel_profile')

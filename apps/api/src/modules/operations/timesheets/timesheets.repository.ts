@@ -14,6 +14,10 @@ export interface AssignmentContext {
   departmentId: string
   geofenceRadiusM: number | null
   hasCoordinates: boolean
+  /** SELFIE | QR: qué evidencia exige el hotel de esta asignación. */
+  punchMethod: string
+  punchQrSecret: string | null
+  punchQrVersion: number
 }
 
 export interface DayRow {
@@ -127,6 +131,9 @@ export class TimesheetsRepository {
         departmentId: string
         geofenceRadiusM: number | null
         hasCoordinates: boolean
+        punchMethod: string
+        punchQrSecret: string | null
+        punchQrVersion: number
       }>
     >`
       SELECT a.id,
@@ -137,7 +144,10 @@ export class TimesheetsRepository {
              r.id                   AS "requisitionId",
              p.hotel_department_id  AS "departmentId",
              h.geofence_radius_m    AS "geofenceRadiusM",
-             (h.coordinates IS NOT NULL) AS "hasCoordinates"
+             (h.coordinates IS NOT NULL) AS "hasCoordinates",
+             h.punch_method         AS "punchMethod",
+             h.punch_qr_secret      AS "punchQrSecret",
+             h.punch_qr_version     AS "punchQrVersion"
         FROM coverage.assignment a
         JOIN personal.worker w    ON w.id = a.worker_id
         JOIN demand.slot s        ON s.id = a.slot_id
@@ -283,6 +293,7 @@ export class TimesheetsRepository {
     longitude: number
     insideGeofence: boolean | null
     photoPath: string | null
+    qrVersion: number | null
     deviceAt: Date | null
     userId: string
     roleCode: string
@@ -294,7 +305,7 @@ export class TimesheetsRepository {
 
       await tx.$executeRaw`
         INSERT INTO operations.punch_mark
-          (id, timesheet_day_id, type, device_at, coordinates, inside_geofence, photo_path)
+          (id, timesheet_day_id, type, device_at, coordinates, inside_geofence, photo_path, qr_version)
         VALUES (
           ${id}::uuid,
           ${dayId}::uuid,
@@ -302,7 +313,8 @@ export class TimesheetsRepository {
           ${params.deviceAt}::timestamptz,
           ST_SetSRID(ST_MakePoint(${params.longitude}::float8, ${params.latitude}::float8), 4326)::geography,
           ${params.insideGeofence},
-          ${params.photoPath}
+          ${params.photoPath},
+          ${params.qrVersion}
         )`
 
       await tx.journalEntry.create({

@@ -19,6 +19,9 @@ const SELECT = {
   timeZone: true,
   geofenceRadiusM: true,
   activatedAt: true,
+  punchMethod: true,
+  punchQrVersion: true,
+  punchQrGeneratedAt: true,
   createdAt: true,
   updatedAt: true,
   zone: { select: { id: true, code: true, name: true } },
@@ -140,9 +143,60 @@ export class HotelsRepository {
         ...(data.address !== undefined ? { address: data.address } : {}),
         ...(data.placeId !== undefined ? { placeId: data.placeId } : {}),
         ...(data.geofenceRadiusM !== undefined ? { geofenceRadiusM: data.geofenceRadiusM } : {}),
+        ...(data.punchMethod !== undefined ? { punchMethod: data.punchMethod } : {}),
         updatedBy: userId,
       },
       select: SELECT,
     })
+  }
+
+  // El secreto se lee SOLO aquí: para imprimir el QR y para validarlo. Nunca
+  // entra al SELECT general ni a la entidad.
+  async punchQrOf(id: string): Promise<{
+    name: string
+    punchMethod: string
+    secret: string | null
+    version: number
+    generatedAt: Date | null
+  } | null> {
+    const row = await this.prisma.hotel.findUnique({
+      where: { id },
+      select: {
+        name: true,
+        punchMethod: true,
+        punchQrSecret: true,
+        punchQrVersion: true,
+        punchQrGeneratedAt: true,
+      },
+    })
+    return row
+      ? {
+          name: row.name,
+          punchMethod: row.punchMethod,
+          secret: row.punchQrSecret,
+          version: row.punchQrVersion,
+          generatedAt: row.punchQrGeneratedAt,
+        }
+      : null
+  }
+
+  // Regenerar es un solo hecho: secreto nuevo, versión +1 y fecha. El anterior
+  // deja de valer en cuanto esto confirma.
+  async rotatePunchQr(
+    id: string,
+    secret: string,
+    userId: string,
+  ): Promise<{ version: number; generatedAt: Date }> {
+    const row = await this.prisma.hotel.update({
+      where: { id },
+      data: {
+        punchQrSecret: secret,
+        punchQrVersion: { increment: 1 },
+        punchQrGeneratedAt: new Date(),
+        updatedBy: userId,
+      },
+      select: { punchQrVersion: true, punchQrGeneratedAt: true },
+    })
+    return { version: row.punchQrVersion, generatedAt: row.punchQrGeneratedAt ?? new Date() }
   }
 }
