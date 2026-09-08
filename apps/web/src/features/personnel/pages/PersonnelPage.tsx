@@ -260,7 +260,7 @@ function WorkerDetail({
                   onClick={() => {
                     onStandBy(row)
                   }}
-                  className="cursor-pointer rounded-md bg-o-200 px-3 py-1.5 text-sm font-semibold text-o-900 transition-colors hover:bg-o-200/85"
+                  className="cursor-pointer rounded-md bg-o-300 shadow-xs px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-o-300 shadow-xs/85"
                 >
                   Mandar a Stand-by
                 </button>
