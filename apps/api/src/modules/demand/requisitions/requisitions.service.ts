@@ -242,8 +242,10 @@ export class RequisitionsService {
    *
    * Quién puede es MÁS ESTRECHO que el rol, como el `inspector_id` de la
    * tarjeta de accidente: el borrador solo lo quita SU CREADOR o el Manager
-   * General; de la autorización en adelante, solo el Manager General, porque a
-   * esa altura ya movió al equipo de Reclutamiento.
+   * General; de la autorización en adelante, el Manager de Área —solo si
+   * TODAS las posiciones son de su departamento— o el Manager General, porque
+   * a esa altura ya movió al equipo de Reclutamiento (Reglas del Hotel,
+   * 2026-09-01).
    */
   async remove(
     id: string,
@@ -287,11 +289,26 @@ export class RequisitionsService {
           message: 'Este borrador lo creó alguien más',
         })
       }
-    } else if (!reason) {
-      throw new UnprocessableEntityException({
-        code: 'REASON_REQUIRED',
-        message: `Eliminar una requisición en ${from} exige un motivo`,
-      })
+    } else {
+      if (!reason) {
+        throw new UnprocessableEntityException({
+          code: 'REASON_REQUIRED',
+          message: `Eliminar una requisición en ${from} exige un motivo`,
+        })
+      }
+
+      // El Manager de Área responde por SU departamento: una requisición con
+      // una posición ajena no es suya para eliminarla (mismo alcance que al
+      // autorizar). El Manager General no trae departamento y pasa.
+      if (
+        user.departmentId &&
+        row.positions.some((p) => p.hotelDepartment.id !== user.departmentId)
+      ) {
+        throw new ForbiddenException({
+          code: 'DEPARTMENT_OUT_OF_SCOPE',
+          message: 'Solo puedes eliminar requisiciones de tu departamento',
+        })
+      }
     }
 
     // Eliminar no desasigna gente en silencio.

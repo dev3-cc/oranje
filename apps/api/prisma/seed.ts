@@ -462,8 +462,9 @@ const OTHER_TRANSITIONS: Array<{
   // requisición cubierta al 100% ya no se elimina, se archivó sola.
   //
   // El borrador lo puede quitar quien opera el hotel; lo AUTORIZADO en
-  // adelante, solo el Manager General — a esa altura ya movió al equipo de
-  // Reclutamiento. Quién exactamente dentro del rol lo decide el servicio.
+  // adelante, el Manager de Área (solo su departamento) o el Manager General
+  // — a esa altura ya movió al equipo de Reclutamiento (Reglas del Hotel,
+  // 2026-09-01). Quién exactamente dentro del rol lo decide el servicio.
   {
     light: 'REQUISITION',
     from: 'APPLE_GREEN',
@@ -476,7 +477,7 @@ const OTHER_TRANSITIONS: Array<{
     light: 'REQUISITION',
     from: 'GREEN',
     to: 'PURPLE',
-    roles: ['ROL-H-03'],
+    roles: ['ROL-H-02', 'ROL-H-03'],
     reason: true,
     note: 'ya autorizada: exige motivo',
   },
@@ -484,7 +485,7 @@ const OTHER_TRANSITIONS: Array<{
     light: 'REQUISITION',
     from: 'YELLOW',
     to: 'PURPLE',
-    roles: ['ROL-H-03'],
+    roles: ['ROL-H-02', 'ROL-H-03'],
     reason: true,
     note: 'con reclutadoras trabajandola: exige motivo',
   },
@@ -492,7 +493,7 @@ const OTHER_TRANSITIONS: Array<{
     light: 'REQUISITION',
     from: 'RED',
     to: 'PURPLE',
-    roles: ['ROL-H-03'],
+    roles: ['ROL-H-02', 'ROL-H-03'],
     reason: true,
     note: 'cerrada a medias: exige motivo',
   },

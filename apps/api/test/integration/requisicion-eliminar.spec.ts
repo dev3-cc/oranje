@@ -230,6 +230,36 @@ describe('de la autorización en adelante', () => {
     })
   })
 
+  it('el Manager de Área la elimina con motivo si es de su departamento', async () => {
+    const supervisor = await usuario('ROL-H-01', 'sup-ga')
+    const gm = await usuario('ROL-H-03', 'gm-ga')
+    const ga = { ...(await usuario('ROL-H-02', 'ga-propio')), departmentId }
+    const id = await requisicion(supervisor)
+
+    await requisitions.authorize(id, gm)
+    await requisitions.remove(id, 'Se creó por error', ga)
+
+    expect(await estado(id)).toBe('PURPLE')
+  })
+
+  it('el Manager de Área de OTRO departamento no la elimina', async () => {
+    const supervisor = await usuario('ROL-H-01', 'sup-ga-ajeno')
+    const gm = await usuario('ROL-H-03', 'gm-ga-ajeno')
+    const otro = await db.hotelDepartment.findFirstOrThrow({
+      where: { id: { not: departmentId } },
+      select: { id: true },
+    })
+    const ga = { ...(await usuario('ROL-H-02', 'ga-ajeno')), departmentId: otro.id }
+    const id = await requisicion(supervisor)
+
+    await requisitions.authorize(id, gm)
+
+    await expect(requisitions.remove(id, 'No es mía', ga)).rejects.toMatchObject({
+      response: { code: 'DEPARTMENT_OUT_OF_SCOPE' },
+    })
+    expect(await estado(id)).toBe('GREEN')
+  })
+
   it('sin motivo no se elimina', async () => {
     const supervisor = await usuario('ROL-H-01', 'sup-nomotivo')
     const gm = await usuario('ROL-H-03', 'gm-nomotivo')
