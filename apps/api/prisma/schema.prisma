@@ -312,6 +312,12 @@ model User {
   accidentsCreated   WorkAccident[] @relation("accidentCreatedBy")
   accidentsUpdated   WorkAccident[] @relation("accidentUpdatedBy")
 
+  auditsAsSupervisor          Audit[]                @relation("auditSupervisor")
+  auditsCreated               Audit[]                @relation("auditCreatedBy")
+  auditsUpdated               Audit[]                @relation("auditUpdatedBy")
+  auditResponsesUpdated       AuditResponse[]        @relation("auditResponseUpdatedBy")
+  auditResponseHistoryChanges AuditResponseHistory[] @relation("auditResponseHistoryChangedBy")
+
   contractsSigned Contract[] @relation("contractSignedBy")
 
   workerRatesAuthorized    WorkerRate[]    @relation("workerRateAuthorizedBy")
@@ -426,6 +432,7 @@ model Hotel {
 
   schedules Schedule[]
   accidents WorkAccident[]
+  audits    Audit[]
 
   contracts Contract[]
 
@@ -1001,6 +1008,7 @@ model Worker {
 
   documents        WorkerDocument[]
   accidents        WorkAccident[]
+  audits           Audit[]
   stateHistory     WorkerStateHistory[]
   assignments      Assignment[]
   blacklistEntries BlacklistEntry[]
@@ -1926,5 +1934,132 @@ model WorkAccident {
   @@index([onSiteCapturedBy], map: "ix_work_accident_on_site_captured_by")
   @@index([closedBy], map: "ix_work_accident_closed_by")
   @@map("work_accident")
+  @@schema("supervision")
+}
+
+// ============================================================================
+// catalogs — el reactivo de las auditorías del Supervisor.
+// ============================================================================
+
+/// Los reactivos de las auditorias del Supervisor (Presentacion Personal y
+/// Ambiente y Recursos). Administrado por el Administrador via
+/// POST/PATCH/DELETE /catalogs/:catalog, igual que Position o Zone.
+model AuditChecklistItem {
+  id String @db.Uuid
+
+  /// PERSONAL_PRESENTATION | ENVIRONMENT.
+  auditType String  @map("audit_type") @db.Text
+  /// Texto libre: el Administrador agrega categorias sin migrar.
+  category  String  @db.Text
+  code      String  @db.Text
+  label     String  @db.Text
+  /// Confirmado por Hugo: los reactivos NO pesan igual. DEFAULT 1.
+  weight    Decimal @default(1) @db.Decimal(5, 2)
+  ordinal   Int
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  responses AuditResponse[]
+
+  @@id([id])
+  @@unique([id, auditType], map: "ux_checklist_item_id_type")
+  @@unique([auditType, code], map: "ux_checklist_item_code")
+  @@index([auditType, category, ordinal], map: "ix_checklist_item_render")
+  @@map("audit_checklist_item")
+  @@schema("catalogs")
+}
+
+// ============================================================================
+// supervision — las dos auditorias del Supervisor (Presentacion Personal y
+// Ambiente y Recursos). Cabecera unica discriminada por audit_type.
+// ============================================================================
+
+/// La cabecera - UNA auditoria realizada. Discriminada por auditType; una
+/// sola tabla para las dos auditorias (ver diagrama pag. 2 para el porque).
+/// SI se puede corregir (confirmado por Hugo) - updatedAt/updatedBy normales.
+model Audit {
+  id String @db.Uuid
+
+  auditType        String  @map("audit_type") @db.Text
+  hotelId          String  @map("hotel_id") @db.Uuid
+  /// Nulable: solo PERSONAL_PRESENTATION lo exige (CHECK en la migracion).
+  workerId         String? @map("worker_id") @db.Uuid
+  supervisorUserId String  @map("supervisor_user_id") @db.Uuid
+  /// % ya calculado (promedio ponderado por weight). Se recalcula en cada
+  /// correccion, en la misma transaccion que el UPDATE de audit_response.
+  score            Decimal @db.Decimal(5, 2)
+  observations     String? @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+  createdBy String    @map("created_by") @db.Uuid
+  updatedBy String?   @map("updated_by") @db.Uuid
+
+  hotel          Hotel   @relation(fields: [hotelId], references: [id], onDelete: Restrict)
+  worker         Worker? @relation(fields: [workerId], references: [id], onDelete: Restrict)
+  supervisorUser User    @relation("auditSupervisor", fields: [supervisorUserId], references: [id], onDelete: Restrict)
+  createdByUser  User    @relation("auditCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  updatedByUser  User?   @relation("auditUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
+
+  responses AuditResponse[]
+
+  @@id([id])
+  @@unique([id, auditType], map: "ux_audit_id_type")
+  @@index([hotelId, createdAt(sort: Desc)], map: "ix_audit_hotel")
+  @@index([supervisorUserId], map: "ix_audit_supervisor")
+  @@index([createdBy], map: "ix_audit_created_by")
+  @@index([updatedBy], map: "ix_audit_updated_by")
+  @@map("audit")
+  @@schema("supervision")
+}
+
+/// Una fila por reactivo contestado. audit_type esta DUPLICADO a proposito
+/// (denormalizacion deliberada) para sostener las dos FK compuestas que
+/// impiden mezclar tipos - ver migracion.
+model AuditResponse {
+  id              String @db.Uuid
+  auditId         String @map("audit_id") @db.Uuid
+  checklistItemId String @map("checklist_item_id") @db.Uuid
+  auditType       String @map("audit_type") @db.Text
+  /// CUMPLE | NO | N/A.
+  value           String @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+  updatedBy String?   @map("updated_by") @db.Uuid
+
+  audit         Audit              @relation(fields: [auditId, auditType], references: [id, auditType], onDelete: Restrict)
+  checklistItem AuditChecklistItem @relation(fields: [checklistItemId, auditType], references: [id, auditType], onDelete: Restrict)
+  updatedByUser User?              @relation("auditResponseUpdatedBy", fields: [updatedBy], references: [id], onDelete: Restrict)
+
+  history AuditResponseHistory[]
+
+  @@id([id])
+  @@unique([auditId, checklistItemId], map: "ux_audit_response_item")
+  @@index([checklistItemId], map: "ix_audit_response_item")
+  @@index([updatedBy], map: "ix_audit_response_updated_by")
+  @@map("audit_response")
+  @@schema("supervision")
+}
+
+/// Que decia una respuesta ANTES de corregirse (confirmado por Hugo tras
+/// primero decir que no hacia falta). Patron D-14, como worker_state_history:
+/// append-only, una fila por CADA correccion, sin updatedAt.
+model AuditResponseHistory {
+  id              String   @db.Uuid
+  auditResponseId String   @map("audit_response_id") @db.Uuid
+  previousValue   String   @map("previous_value") @db.Text
+  newValue        String   @map("new_value") @db.Text
+  changedBy       String   @map("changed_by") @db.Uuid
+  changedAt       DateTime @default(now()) @map("changed_at") @db.Timestamptz(6)
+
+  auditResponse AuditResponse @relation(fields: [auditResponseId], references: [id], onDelete: Restrict)
+  changedByUser User          @relation("auditResponseHistoryChangedBy", fields: [changedBy], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@index([auditResponseId, changedAt(sort: Desc)], map: "ix_audit_response_history_response")
+  @@index([changedBy], map: "ix_audit_response_history_changed_by")
+  @@map("audit_response_history")
   @@schema("supervision")
 }

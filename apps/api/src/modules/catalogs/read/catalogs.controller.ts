@@ -1,6 +1,12 @@
 import { Controller, Get, Query } from '@nestjs/common'
 
-import { CatalogItem, CatalogsService, ReasonItem, StatusLightItem } from './catalogs.service.js'
+import {
+  AuditChecklistItemView,
+  CatalogItem,
+  CatalogsService,
+  ReasonItem,
+  StatusLightItem,
+} from './catalogs.service.js'
 
 @Controller('catalogs')
 export class CatalogsController {
@@ -41,5 +47,12 @@ export class CatalogsController {
   @Get('reasons')
   async reasons(@Query('statusLight') statusLight?: string): Promise<{ data: ReasonItem[] }> {
     return { data: await this.catalogs.reasons(statusLight) }
+  }
+
+  @Get('audit-checklist-items')
+  async auditChecklistItems(
+    @Query('auditType') auditType?: string,
+  ): Promise<{ data: AuditChecklistItemView[] }> {
+    return { data: await this.catalogs.auditChecklistItems(auditType) }
   }
 }

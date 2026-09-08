@@ -392,6 +392,26 @@ const HOTEL: Permission[] = [
   },
   { module: 'schedule', action: 'export', label: 'Exportar Schedule', roles: [SUPERVISOR, GA, GG] },
 
+  // AUDITORIAS
+  {
+    module: 'audits',
+    action: 'create',
+    label: 'Auditar presentacion o ambiente de mi hotel',
+    roles: [SUPERVISOR],
+  },
+  {
+    module: 'audits',
+    action: 'read',
+    label: 'Ver auditorias de mi hotel',
+    roles: [SUPERVISOR, GA, GG, SYS],
+  },
+  {
+    module: 'audits',
+    action: 'update',
+    label: 'Corregir una auditoria',
+    roles: [SUPERVISOR],
+  },
+
   // TIMESHEET
   {
     module: 'timesheet',
