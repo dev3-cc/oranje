@@ -13,6 +13,7 @@ import {
 } from '../api/punchApi'
 import { useGetMyProfileQuery } from '../api/workerApi'
 import { CameraCapture } from '../components/CameraCapture'
+import { QrScanner } from '../components/QrScanner'
 import { WorkerSkeleton } from '../components/WorkerSkeleton'
 import { noShiftMessageOf } from '../lib/noShiftMessage'
 
@@ -214,6 +215,9 @@ function punchErrorMessage(error: unknown): string {
       OUTSIDE_GEOFENCE:
         'Estás fuera del hotel: la marca no se guarda. Pídele al Supervisor un ponche manual.',
       PHOTO_REQUIRED: 'Entrada y Salida necesitan tu foto: tómala y vuelve a intentar.',
+      QR_REQUIRED: 'En este hotel Entrada y Salida se registran escaneando el QR del acceso.',
+      QR_INVALID:
+        'Ese código no es el QR vigente del hotel: busca la hoja actual, o pídele al Supervisor un ponche manual.',
       PUNCH_ALREADY_REGISTERED: 'Esa marca ya quedó registrada hoy.',
       TIMESHEET_NOT_EDITABLE: 'La semana ya se cerró: esta marca la captura el Supervisor.',
       WORKER_NOT_LINKED: 'Tu cuenta no está ligada a un colaborador: avisa a Reclutamiento.',
@@ -251,6 +255,7 @@ export function PunchPage(): ReactNode {
   /** La foto recién tomada, en el encuadre del botón mientras la marca se guarda. */
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [isCameraOpen, setCameraOpen] = useState(false)
+  const [isScannerOpen, setScannerOpen] = useState(false)
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
 
   useEffect(() => {
@@ -297,13 +302,17 @@ export function PunchPage(): ReactNode {
   for (const item of punches ?? []) marks[item.type as PunchType] = item.serverAt
   const next = PUNCH_ORDER.find((type) => marks[type] === undefined) ?? null
   const isDayComplete = next === null
-  const needsPhoto = next !== null && NEEDS_PHOTO.has(next)
+  /* Entrada y Salida exigen evidencia; CUÁL la decide el hotel (Reglas de
+     Negocio, «Método de ponche por hotel»): la selfie, o el QR impreso. */
+  const usesQr = shift.hotelPunchMethod === 'QR'
+  const needsPhoto = next !== null && NEEDS_PHOTO.has(next) && !usesQr
+  const needsQr = next !== null && NEEDS_PHOTO.has(next) && usesQr
   const isBusy = phase !== 'idle' || isUploading || isPunching
   const canPunch = next !== null && isOnline && !isBusy
   /** Entrar y volver del lunch «entran»; salir al lunch y salir «salen». */
   const isEntering = next === 'CLOCK_IN' || next === 'LUNCH_IN'
 
-  async function submit(photo: File | null): Promise<void> {
+  async function submit(photo: File | null, qrCode: string | null = null): Promise<void> {
     if (!canPunch || next === null) return
     setFailure(null)
     setDirection(isEntering ? 'in' : 'out')
@@ -328,6 +337,7 @@ export function PunchPage(): ReactNode {
         latitude,
         longitude,
         ...(photoPath !== undefined ? { photoPath } : {}),
+        ...(qrCode !== null ? { qrCode } : {}),
       }).unwrap()
       confirmPunch()
       setPhase('success')
@@ -341,6 +351,10 @@ export function PunchPage(): ReactNode {
 
   function onTap(): void {
     if (!canPunch) return
+    if (needsQr) {
+      setScannerOpen(true)
+      return
+    }
     if (needsPhoto) {
       setCameraOpen(true)
       return
@@ -350,6 +364,17 @@ export function PunchPage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
+      {isScannerOpen && (
+        <QrScanner
+          onScan={(code) => {
+            setScannerOpen(false)
+            void submit(null, code)
+          }}
+          onCancel={() => {
+            setScannerOpen(false)
+          }}
+        />
+      )}
       {isCameraOpen && (
         <CameraCapture
           onCapture={(file) => {
@@ -492,6 +517,9 @@ export function PunchPage(): ReactNode {
                 </span>
                 {needsPhoto && !isBusy && (
                   <span className="text-[11px] text-ink-3">con tu foto</span>
+                )}
+                {needsQr && !isBusy && (
+                  <span className="text-[11px] text-ink-3">escaneando el QR del acceso</span>
                 )}
               </>
             )}

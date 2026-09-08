@@ -159,6 +159,9 @@ export function adaptProspectDetail(
       shortName: toShortName(prospect.owner.fullName),
     },
     hotel: {
+      id: hotel.id,
+      punchMethod: hotel.punchMethod,
+      punchQr: hotel.punchQr,
       address: hotel.address ?? '',
       generalPhone: hotel.generalPhone ?? '',
       zoneId: hotel.zone.id,

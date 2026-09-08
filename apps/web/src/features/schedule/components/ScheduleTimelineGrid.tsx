@@ -1,11 +1,10 @@
 import { brand, cn } from '@oranje/ui'
-import { useReducedMotion } from 'framer-motion'
 import { useContext, useMemo, type CSSProperties, type ReactNode } from 'react'
 
-import type { ScheduleWeek, ScheduleWorkerEntry } from '../types/schedule.types'
+import type { ScheduleTimeline, ScheduleWorkerEntry } from '../types/schedule.types'
 
 /** Piezas genéricas de navegación semanal, expuestas por el índice de Timesheet (§4). */
-import { WeekDragContext, addDaysIso, todayIso } from '@/features/timesheet'
+import { WeekDragContext, todayIso } from '@/features/timesheet'
 import { formatDayNumber, formatWeekday } from '@/shared/lib/formatters'
 import { GRID_HEIGHT, HOUR_PX, HOURS_END, HOURS_START, blockRect } from '@/shared/lib/hoursGeometry'
 import { MOTION } from '@/shared/lib/motion'
@@ -81,44 +80,49 @@ function dayTint(day: string, today: string): string {
 }
 
 /**
- * La rejilla semanal por hora (06:00–22:00) de los turnos PLANEADOS: cada
- * bloque es un tono naranja consistente, no un color por persona ni por
+ * La rejilla del Schedule como CINTA continua: el riel de horas es un marco
+ * fijo, y los días de TODAS las semanas cargadas viven en una sola hoja que
+ * corre debajo — la ventana enseña 7 días y `--week-drag-x` (del WeekSlider,
+ * en modo `continuous`) la desliza en vivo hacia las vecinas, igual que la
+ * vista Días del Timesheet (`TimesheetGrid`). La transición se apaga mientras
+ * el dedo manda y se enciende para asentarse.
+ *
+ * Cada bloque es un tono naranja consistente, no un color por persona ni por
  * cobertura — el contrato aún no liga `schedule_entry` con la posición de la
  * requisición, así que un tinte "por cobertura" en el bloque sería inventar
  * un vínculo que no existe (ver el resumen de cobertura, que sí es real).
  */
-export function ScheduleWeekGrid({
-  week,
+export function ScheduleTimelineGrid({
+  timeline,
   selectedWeek,
+  columnWidth,
   selectedKey,
   onSelectBlock,
 }: {
-  week: ScheduleWeek
-  /** Lunes ISO de la semana a dibujar. */
+  timeline: ScheduleTimeline
+  /** Lunes ISO de la semana en la ventana. */
   selectedWeek: string
+  columnWidth: number
   selectedKey: string | null
   onSelectBlock: (block: ScheduleShiftSelection | null) => void
 }): ReactNode {
   const today = todayIso()
   const { isDragging } = useContext(WeekDragContext)
-  const reduceMotion = useReducedMotion() ?? false
 
-  const dateTransform: CSSProperties = {
-    transform: 'translateX(var(--week-drag-x, 0px))',
-    transition:
-      isDragging || reduceMotion
-        ? 'none'
-        : `transform ${String(MOTION.enter * 1000)}ms cubic-bezier(0, 0, 0.2, 1)`,
+  const baseIndex = Math.max(timeline.days.indexOf(selectedWeek), 0)
+  const weekDays = timeline.days.slice(baseIndex, baseIndex + 7)
+  const viewportWidth = 7 * columnWidth
+  const sheetStyle: CSSProperties = {
+    gridTemplateColumns: `repeat(${String(timeline.days.length)}, ${String(columnWidth)}px)`,
+    transform: `translateX(calc(${String(-baseIndex * columnWidth)}px + var(--week-drag-x, 0px)))`,
+    transition: isDragging
+      ? 'none'
+      : `transform ${String(MOTION.enter * 1000)}ms cubic-bezier(0, 0, 0.2, 1)`,
   }
-
-  const weekDays = useMemo(
-    () => Array.from({ length: 7 }, (_item, index) => addDaysIso(selectedWeek, index)),
-    [selectedWeek],
-  )
 
   const blocksByDay = useMemo(() => {
     const groups = new Map<string, ShiftBlock>()
-    for (const entry of week.entries) {
+    for (const entry of timeline.entries) {
       const rect = blockRect(entry.startTime, entry.endTime)
       if (!rect) continue
       const key = `${entry.workDate}|${entry.startTime}|${entry.endTime}`
@@ -141,9 +145,9 @@ export function ScheduleWeekGrid({
       byDay.set(block.day, list)
     }
     return byDay
-  }, [week.entries])
+  }, [timeline.entries])
 
-  const hasBlocks = blocksByDay.size > 0
+  const hasVisibleBlocks = weekDays.some((day) => (blocksByDay.get(day)?.length ?? 0) > 0)
   const hours = Array.from(
     { length: HOURS_END - HOURS_START },
     (_item, index) => HOURS_START + index,
@@ -152,14 +156,14 @@ export function ScheduleWeekGrid({
 
   return (
     <div className="min-w-0 flex-1 overflow-x-auto rounded-lg border border-line bg-surface">
-      <div className="min-w-[640px]">
-        {/* Cabecera de días: el hueco del riel es fijo; las fechas son la
-            hoja que corre con `--week-drag-x` (la publica el WeekSlider). */}
+      <div className="min-w-max">
+        {/* Cabecera de días: el hueco del riel es fijo; la CINTA de fechas de
+            todas las semanas corre debajo, igual que TimesheetGrid. */}
         <div className="flex border-b border-line">
           <div className="w-12 shrink-0" />
-          <div className="flex-1 overflow-hidden">
-            <div className="grid grid-cols-7" style={dateTransform}>
-              {weekDays.map((day) => (
+          <div className="overflow-hidden" style={{ width: viewportWidth }}>
+            <div className="grid" style={sheetStyle}>
+              {timeline.days.map((day) => (
                 <div
                   key={day}
                   className={cn('border-l border-line px-2 py-3 text-center', dayTint(day, today))}
@@ -179,7 +183,7 @@ export function ScheduleWeekGrid({
           </div>
         </div>
 
-        {/* Rejilla de horas: el riel de horas es fijo; los días se deslizan. */}
+        {/* Rejilla de horas: el riel de horas es fijo; la cinta de días corre. */}
         <div className="flex">
           <div className="relative w-12 shrink-0" style={{ height: GRID_HEIGHT }}>
             {hours.map((hour) => (
@@ -195,9 +199,9 @@ export function ScheduleWeekGrid({
             ))}
           </div>
 
-          <div className="relative flex-1 overflow-hidden">
-            <div className="grid grid-cols-7" style={dateTransform}>
-              {weekDays.map((day) => (
+          <div className="relative overflow-hidden" style={{ width: viewportWidth }}>
+            <div className="grid" style={sheetStyle}>
+              {timeline.days.map((day) => (
                 <div
                   key={day}
                   className={cn('relative border-l border-line', dayTint(day, today))}
@@ -284,7 +288,7 @@ export function ScheduleWeekGrid({
 
             {/* Semana sin programados: el calendario SE QUEDA (no se evapora
                 al deslizar); el aviso flota encima y nada más. */}
-            {!hasBlocks && (
+            {!hasVisibleBlocks && (
               <div className="pointer-events-none absolute inset-0 z-10 flex items-start justify-center pt-16">
                 <p className="rounded-full border border-dashed border-line bg-surface/95 px-4 py-2 text-sm text-ink-3 shadow-sm">
                   Nadie programado todavía: los turnos aparecen conforme se cubren los slots.

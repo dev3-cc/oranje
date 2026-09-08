@@ -25,8 +25,10 @@ describe('SchedulePage', () => {
     renderSchedule()
 
     expect(await screen.findByText(/Villas Coral · Semana /)).toBeInTheDocument()
-    expect(screen.getByText('Lun')).toBeInTheDocument()
-    expect(screen.getByText('Dom')).toBeInTheDocument()
+    /* La cinta es continua: TODAS las semanas cargadas repiten los
+       encabezados de día, no solo la que está a la vista. */
+    expect(screen.getAllByText('Lun').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Dom').length).toBeGreaterThan(0)
   })
 
   it('el resumen dice cuánto está cubierto y manda los huecos a la Bolsa', async () => {

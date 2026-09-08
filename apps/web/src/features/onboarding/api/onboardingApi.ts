@@ -37,6 +37,7 @@ import type {
   PaginatedEnvelope,
   ProspectApi,
   ProspectBoardMeta,
+  PunchQrApi,
   ReasonItemApi,
   TransitionOptionApi,
   TransitionResultApi,
@@ -172,6 +173,7 @@ export const onboardingApi = baseApi.injectEndpoints({
                 : {}),
               ...(request.hotel.address ? { address: request.hotel.address } : {}),
               ...(request.hotel.placeId ? { placeId: request.hotel.placeId } : {}),
+              ...(request.hotel.punchMethod ? { punchMethod: request.hotel.punchMethod } : {}),
               ...(request.hotel.location
                 ? {
                     latitude: request.hotel.location.lat,
@@ -200,6 +202,7 @@ export const onboardingApi = baseApi.injectEndpoints({
               : {}),
             ...(request.hotel.address ? { address: request.hotel.address } : {}),
             ...(request.hotel.placeId ? { placeId: request.hotel.placeId } : {}),
+            ...(request.hotel.punchMethod ? { punchMethod: request.hotel.punchMethod } : {}),
             ...(request.hotel.location
               ? {
                   latitude: request.hotel.location.lat,
@@ -391,6 +394,35 @@ export const onboardingApi = baseApi.injectEndpoints({
      * dueño + la necesidad por `PATCH /prospects/:id`. El contacto se edita en
      * su propio diálogo, no aquí.
      */
+    /**
+     * El hotel tal cual (`GET /hotels/:id`), para quien no llega por la ficha
+     * del prospecto: el Supervisor y los Managers leen SU hotel desde el
+     * dashboard. Mismo endpoint que la ficha, sin permisos de Ventas.
+     */
+    getHotel: build.query<HotelApi, string>({
+      query: (hotelId) => `/hotels/${hotelId}`,
+      transformResponse: (raw: ApiEnvelope<HotelApi>) => raw.data,
+      providesTags: (_result, _error, hotelId) => [{ type: 'Hotel', id: hotelId }],
+    }),
+
+    /** El QR de ponche del hotel listo para imprimir (Reglas de Negocio, «Método de ponche por hotel»). */
+    getHotelPunchQr: build.query<PunchQrApi, string>({
+      query: (hotelId) => `/hotels/${hotelId}/punch-qr`,
+      transformResponse: (raw: ApiEnvelope<PunchQrApi>) => raw.data,
+      providesTags: (_result, _error, hotelId) => [{ type: 'Hotel', id: `${hotelId}-punch-qr` }],
+    }),
+
+    /** Regenerar invalida el QR anterior al instante: quien lo tenía impreso debe cambiar la hoja. */
+    regenerateHotelPunchQr: build.mutation<PunchQrApi, string>({
+      query: (hotelId) => ({ url: `/hotels/${hotelId}/punch-qr/regenerate`, method: 'POST' }),
+      transformResponse: (raw: ApiEnvelope<PunchQrApi>) => raw.data,
+      invalidatesTags: (_result, _error, hotelId) => [
+        { type: 'Hotel', id: hotelId },
+        { type: 'Hotel', id: `${hotelId}-punch-qr` },
+        { type: 'Prospect', id: 'LIST' },
+      ],
+    }),
+
     updateProspect: build.mutation<ProspectDetail, UpdateProspectRequest>({
       queryFn: async (request, _api, _extra, fetchWithBQ) => {
         const bq = fetchWithBQ as FetchWithBQ
@@ -412,6 +444,7 @@ export const onboardingApi = baseApi.injectEndpoints({
               : {}),
             ...(request.hotel.address ? { address: request.hotel.address } : {}),
             ...(request.hotel.placeId ? { placeId: request.hotel.placeId } : {}),
+            ...(request.hotel.punchMethod ? { punchMethod: request.hotel.punchMethod } : {}),
             ...(request.hotel.location
               ? {
                   latitude: request.hotel.location.lat,
@@ -573,6 +606,9 @@ export const {
   useGetRegisteredHotelsQuery,
   useGetHotelMapPointsQuery,
   useUpdateProspectMutation,
+  useGetHotelQuery,
+  useGetHotelPunchQrQuery,
+  useRegenerateHotelPunchQrMutation,
   useGetStatusChangeReasonsQuery,
   useRegisterContactAttemptMutation,
   useUpdateContactAttemptMutation,

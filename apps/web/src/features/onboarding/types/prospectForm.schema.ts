@@ -34,6 +34,8 @@ export const prospectFormSchema = z
     hotelName: z.string().trim().min(1, 'Escribe el nombre del hotel'),
     zoneId: z.string().min(1, 'Elige la zona'),
     timeZone: z.string().min(1, 'Elige la zona horaria'),
+    /** Cómo se poncha en este hotel; es del hotel, no de la requisición. */
+    punchMethod: z.enum(['SELFIE', 'QR']),
     /** Lo autollena Places; se puede corregir a mano. */
     address: z.string(),
     generalPhone: z.string(),

@@ -10,6 +10,7 @@ const DashboardGlobe = lazy(() =>
   import('./DashboardGlobe').then((module) => ({ default: module.DashboardGlobe })),
 )
 
+import { HotelPunchQrPanel } from '@/features/onboarding'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { LoadError } from '@/shared/components/LoadError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
@@ -74,6 +75,10 @@ export function HotelDashboard({ session }: { session: SessionUser }): ReactNode
           delay={0.24}
         />
       </div>
+
+      {/* Cómo se poncha en SU hotel y, con QR, la hoja para imprimir: el
+          Supervisor y los Managers no pasan por el Pipeline. */}
+      {session.hotel && <HotelPunchQrPanel hotelId={session.hotel.id} />}
 
       <RequisitionMiniList
         title="Requisiciones del hotel"

@@ -10,6 +10,8 @@ export { ProspectDetailPage } from './pages/ProspectDetailPage'
 export { ProposalEditorPage } from './pages/ProposalEditorPage'
 export { ProposalListPage } from './pages/ProposalListPage'
 export { ProposalVersionPage } from './pages/ProposalVersionPage'
+export { HotelPunchQrPrintPage } from './pages/HotelPunchQrPrintPage'
+export { HotelPunchQrPanel } from './components/HotelPunchQrCard'
 
 /** La conversión reusa el catálogo de motivos del semáforo. */
 export { useGetStatusChangeReasonsQuery } from './api/onboardingApi'

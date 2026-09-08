@@ -26,6 +26,8 @@ const PROSPECT: ProspectDetail = {
     location: { lat: 21.1619, lng: -86.8515 },
     photoUrl: null,
     activatedAsClientAt: null,
+    id: 'hotel-spec',
+    punchMethod: 'SELFIE',
   },
   needDescription: '2 camaristas y 1 houseman',
   contacts: [

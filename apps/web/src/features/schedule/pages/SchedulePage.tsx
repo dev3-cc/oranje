@@ -1,25 +1,31 @@
 import { cn } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
-import { useGetScheduleWeekQuery } from '../api/scheduleApi'
+import { useGetScheduleTimelineQuery } from '../api/scheduleApi'
 import { ScheduleMiniCalendar } from '../components/ScheduleMiniCalendar'
 import {
   PersonAvatar,
-  ScheduleWeekGrid,
+  ScheduleTimelineGrid,
   type ScheduleShiftSelection,
-} from '../components/ScheduleWeekGrid'
+} from '../components/ScheduleTimelineGrid'
 import { ANY_VALUE } from '../types/schedule.types'
 
 /** Piezas genéricas de navegación semanal, expuestas por el índice de Timesheet (§4). */
-import { WeekNavigator, WeekSlider, addDaysIso, weekContaining } from '@/features/timesheet'
+import {
+  WeekNavigator,
+  WeekSlider,
+  addDaysIso,
+  resolveWeek,
+  weekContaining,
+} from '@/features/timesheet'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayNumber, formatWeekRange, formatWeekday } from '@/shared/lib/formatters'
 
-/** El ancho de una semana completa en el carrusel: la rejilla no tiene zoom. */
-const WEEK_STEP_WIDTH = 7 * 96
+/** El ancho de un día en el carrusel: la unidad de la cinta continua. */
+const COLUMN_WIDTH = 132
 
 /** Cómo se pinta la cobertura de una posición. */
 function coverageTone(filled: number, quantity: number): string {
@@ -37,35 +43,43 @@ function coverageLabel(filled: number, quantity: number): string {
 
 /**
  * Schedule del hotel (maqueta del Manager de Área): calendario semanal por
- * hora — igual arquitectura que la vista Horas del Timesheet (grid + panel
- * lateral + mini-calendario) — donde converge la demanda (requisición) con la
- * cobertura (asignaciones). La cobertura es POR POSICIÓN — el contrato aún no
- * liga la entrada del schedule con la posición, así que el bloque del turno no
- * se tiñe por cobertura (sería inventar ese vínculo); el resumen de cobertura
- * arriba y en el panel SÍ usa datos reales.
+ * hora — grid + panel lateral + mini-calendario — donde converge la demanda
+ * (requisición) con la cobertura (asignaciones). La cinta de fechas es
+ * CONTINUA: todas las semanas del hotel cargan de una vez (§ `scheduleApi`) y
+ * arrastrar revela las vecinas en vivo, igual que la vista Días del
+ * Timesheet — decisión de Hugo tras notar que el paginado (heredado de la
+ * vista Horas) no se sentía como el resto del sistema. La cobertura es POR
+ * POSICIÓN — el contrato aún no liga la entrada del schedule con la posición,
+ * así que el bloque del turno no se tiñe por cobertura (sería inventar ese
+ * vínculo); el resumen de cobertura arriba y en el panel SÍ usa datos reales.
  */
 export function SchedulePage(): ReactNode {
-  const [weekStart, setWeekStart] = useState<string>(ANY_VALUE)
+  const [requestedWeek, setRequestedWeek] = useState<string>(ANY_VALUE)
   const [selection, setSelection] = useState<ScheduleShiftSelection | null>(null)
 
-  const { data: week, isLoading, isError, refetch } = useGetScheduleWeekQuery({ weekStart })
+  const { data: timeline, isLoading, isError, refetch } = useGetScheduleTimelineQuery()
+
+  /** La semana en la ventana: la pedida si existe; si no, la más reciente. */
+  const selectedWeek = timeline ? resolveWeek(timeline.availableWeeks, requestedWeek) : null
 
   function selectWeek(target: string): void {
-    setWeekStart(target)
+    setRequestedWeek(target)
     setSelection(null)
   }
 
   function pickDay(date: string): void {
-    if (!week) return
-    const target = weekContaining(week.availableWeeks, date)
+    if (!timeline) return
+    const target = weekContaining(timeline.availableWeeks, date)
     if (target) selectWeek(target)
   }
 
   const coverage =
-    week && week.totalSlots > 0 ? Math.round((week.filledSlots / week.totalSlots) * 100) : 0
-  const holes = week ? week.totalSlots - week.filledSlots : 0
+    timeline && timeline.totalSlots > 0
+      ? Math.round((timeline.filledSlots / timeline.totalSlots) * 100)
+      : 0
+  const holes = timeline ? timeline.totalSlots - timeline.filledSlots : 0
   /** El mes que enseña el mini-calendario: el del jueves de la semana (ISO 8601). */
-  const calendarMonth = week?.weekStart ? addDaysIso(week.weekStart, 3).slice(0, 7) : ''
+  const calendarMonth = selectedWeek ? addDaysIso(selectedWeek, 3).slice(0, 7) : ''
 
   return (
     <div className="flex flex-col gap-6">
@@ -74,8 +88,8 @@ export function SchedulePage(): ReactNode {
           <FoldText text="Schedule del hotel" />
         </h1>
         <p className="mt-1.5 text-sm text-ink-3">
-          {week && week.weekStart !== ''
-            ? `${week.hotelName} · Semana ${formatWeekRange(week.weekStart, addDaysIso(week.weekStart, 6))}`
+          {timeline && selectedWeek !== null
+            ? `${timeline.hotelName} · Semana ${formatWeekRange(selectedWeek, addDaysIso(selectedWeek, 6))}`
             : 'Demanda y cobertura de la semana'}
           {IS_DEV_UI && <code className="text-ink-4"> · operations.schedule</code>}
         </p>
@@ -90,11 +104,11 @@ export function SchedulePage(): ReactNode {
         />
       )}
 
-      {isLoading && !week ? (
+      {isLoading && !timeline ? (
         <TableSkeleton rows={5} columns={8} />
       ) : (
-        week &&
-        (week.weekStart === '' ? (
+        timeline &&
+        (selectedWeek === null ? (
           <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
             Este hotel todavía no tiene Schedule. En cuanto se programe una semana, aparece aquí.
           </p>
@@ -102,8 +116,8 @@ export function SchedulePage(): ReactNode {
           <>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <WeekNavigator
-                weekStart={week.weekStart}
-                availableWeeks={week.availableWeeks}
+                weekStart={selectedWeek}
+                availableWeeks={timeline.availableWeeks}
                 onSelect={selectWeek}
               />
               <p className="rounded-md bg-surface-2 px-3 py-2 text-sm text-ink-2">
@@ -114,19 +128,23 @@ export function SchedulePage(): ReactNode {
             </div>
 
             <WeekSlider
-              weekStart={week.weekStart}
-              availableWeeks={week.availableWeeks}
-              stepWidth={WEEK_STEP_WIDTH}
-              continuous={false}
-              /* La rejilla scrollea horizontal por sí misma (como Días del
-                 Timesheet): el dedo scrollea y la navegación táctil queda en ‹ ›. */
+              weekStart={selectedWeek}
+              availableWeeks={timeline.availableWeeks}
+              stepWidth={7 * COLUMN_WIDTH}
+              totalDays={timeline.days.length}
+              /* Cinta continua, como Días del Timesheet: arrastrar revela
+                 fechas vecinas en vivo, sin remontar el grid por semana. */
+              continuous
+              /* La rejilla scrollea horizontal por sí misma en táctil: el
+                 dedo scrollea y la navegación queda en ‹ ›, igual que Días. */
               allowTouchDrag={false}
               onNavigate={selectWeek}
             >
               <div className="flex flex-col gap-4 lg:flex-row">
-                <ScheduleWeekGrid
-                  week={week}
-                  selectedWeek={week.weekStart}
+                <ScheduleTimelineGrid
+                  timeline={timeline}
+                  selectedWeek={selectedWeek}
+                  columnWidth={COLUMN_WIDTH}
                   selectedKey={selection?.key ?? null}
                   onSelectBlock={setSelection}
                 />
@@ -144,14 +162,14 @@ export function SchedulePage(): ReactNode {
                             <span className="font-normal text-ink-4"> · demand.position</span>
                           )}
                         </p>
-                        {week.demand.length === 0 ? (
+                        {timeline.demand.length === 0 ? (
                           <p className="text-sm text-ink-3">
                             No hay requisiciones autorizadas para esta semana. Cuando un Manager
                             autorice una, sus posiciones aparecerán aquí.
                           </p>
                         ) : (
                           <ul className="flex flex-col gap-2">
-                            {week.demand.map((row) => (
+                            {timeline.demand.map((row) => (
                               <li
                                 key={row.positionId}
                                 className="flex items-center justify-between gap-2"
@@ -224,7 +242,7 @@ export function SchedulePage(): ReactNode {
 
                   <ScheduleMiniCalendar
                     month={calendarMonth}
-                    availableWeeks={week.availableWeeks}
+                    availableWeeks={timeline.availableWeeks}
                     selectedDay={selection?.day ?? null}
                     onPickDay={pickDay}
                   />

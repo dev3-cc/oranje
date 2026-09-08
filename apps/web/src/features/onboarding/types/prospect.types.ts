@@ -97,6 +97,12 @@ export interface PipelineBoard {
 }
 
 export interface HotelData {
+  /** `commercial.hotel.id`: lo que las acciones del hotel (QR de ponche) necesitan. */
+  id: string
+  /** Cómo se poncha en este hotel: selfie o QR impreso (Reglas de Negocio, «Método de ponche por hotel»). */
+  punchMethod: 'SELFIE' | 'QR'
+  /** El QR vigente sin su secreto; `null` si nunca se ha generado. */
+  punchQr?: { version: number; generatedAt: string } | null
   /** Dirección postal; la autollena Places al elegir el sitio. */
   address: string
   generalPhone: string
@@ -140,6 +146,8 @@ export interface HotelPayload {
   generalPhone: string
   location: GeoPoint
   geofenceMeters: number
+  /** Selfie por defecto; QR para los hoteles que no permiten tomar fotos. */
+  punchMethod?: 'SELFIE' | 'QR'
 }
 
 /** El primer contacto del hotel, `commercial.hotel_contact`. */

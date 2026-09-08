@@ -4,6 +4,7 @@ import {
   AlertDescription,
   Checkbox,
   Input,
+  MaterialIcon,
   Select,
   SelectContent,
   SelectItem,
@@ -157,6 +158,22 @@ function SectionTitle({ children, schema }: { children: ReactNode; schema?: stri
 
 type WizardStep = 1 | 2 | 3 | 4
 
+/** Las dos evidencias de presencia que el vault admite; el resto es del back. */
+const PUNCH_METHOD_OPTIONS = [
+  {
+    value: 'SELFIE',
+    label: 'Selfie',
+    icon: 'photo_camera',
+    hint: 'La app toma la foto en el momento. Es el método por defecto.',
+  },
+  {
+    value: 'QR',
+    label: 'QR del hotel',
+    icon: 'qr_code_2',
+    hint: 'El hotel imprime un código en el acceso y la app lo escanea, con la ubicación.',
+  },
+] as const
+
 const WIZARD_STEPS: Array<{ step: WizardStep; label: string }> = [
   { step: 1, label: 'El edificio' },
   { step: 2, label: 'Ubicación' },
@@ -165,7 +182,7 @@ const WIZARD_STEPS: Array<{ step: WizardStep; label: string }> = [
 ]
 
 const STEP_FIELDS: Record<WizardStep, Array<keyof ProspectFormValues>> = {
-  1: ['hotelSource', 'existingHotelId', 'hotelName', 'zoneId', 'timeZone'],
+  1: ['hotelSource', 'existingHotelId', 'hotelName', 'zoneId', 'timeZone', 'punchMethod'],
   2: ['location', 'geofenceMeters'],
   3: ['contactFullName', 'contactEmail'],
   4: ['ownerUserId'],
@@ -210,6 +227,7 @@ export function ProspectFormDialog({
     hotelName: prospect?.hotelName ?? '',
     zoneId: prospect?.hotel.zoneId ?? '',
     timeZone: prospect?.hotel.timeZone ?? 'America/New_York',
+    punchMethod: prospect?.hotel.punchMethod ?? 'SELFIE',
     address: prospect?.hotel.address ?? '',
     generalPhone: prospect?.hotel.generalPhone ?? '',
     location: prospect?.hotel.location ?? null,
@@ -307,6 +325,7 @@ export function ProspectFormDialog({
       location: form.location,
       geofenceMeters: form.geofenceMeters,
       placeId,
+      punchMethod: form.punchMethod,
     }
     const contact = {
       fullName: form.contactFullName,
@@ -587,6 +606,44 @@ export function ProspectFormDialog({
                             />
                           </Field>
                         </div>
+
+                        {/* Es del HOTEL, no de la requisición: la política «aquí no se
+                            toman fotos» es del edificio (Reglas de Negocio, «Método de
+                            ponche por hotel»). Al pasar a QR el servidor genera el código. */}
+                        <Field
+                          label="Cómo ponchan aquí"
+                          isRequired
+                          column="punch_method"
+                          note="Selfie es lo normal. QR es para los hoteles que no permiten tomar fotos: Oranje genera un código que el hotel imprime en el acceso."
+                          error={formState.errors.punchMethod?.message}
+                        >
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            {PUNCH_METHOD_OPTIONS.map((option) => (
+                              <label
+                                key={option.value}
+                                className="flex cursor-pointer items-start gap-3 rounded-lg border border-line bg-surface p-3 transition-colors has-[:checked]:border-o-500 has-[:checked]:bg-o-50 hover:bg-surface-2"
+                              >
+                                <input
+                                  type="radio"
+                                  value={option.value}
+                                  {...register('punchMethod')}
+                                  className="mt-1 accent-o-500"
+                                />
+                                <span className="min-w-0">
+                                  <span className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+                                    <MaterialIcon
+                                      name={option.icon}
+                                      className="text-base"
+                                      aria-hidden
+                                    />
+                                    {option.label}
+                                  </span>
+                                  <span className="block text-xs text-ink-3">{option.hint}</span>
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        </Field>
                       </>
                     )}
 

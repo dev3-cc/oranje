@@ -10,6 +10,7 @@ import { ContactAttemptLog } from '../components/ContactAttemptLog'
 import { HotelContactList } from '../components/HotelContactList'
 import { HotelContactsDialog } from '../components/HotelContactsDialog'
 import { HotelDataCard } from '../components/HotelDataCard'
+import { HotelPunchQrCard } from '../components/HotelPunchQrCard'
 import { ProposalVersionList } from '../components/ProposalVersionList'
 import { ProspectFormDialog } from '../components/ProspectFormDialog'
 import { RegisterAttemptDialog } from '../components/RegisterAttemptDialog'
@@ -256,6 +257,11 @@ export function ProspectDetailPage(): ReactNode {
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-5">
           <HotelDataCard hotel={prospect.hotel} needDescription={prospect.needDescription} />
+          <HotelPunchQrCard
+            hotelId={prospect.hotel.id}
+            punchMethod={prospect.hotel.punchMethod}
+            punchQr={prospect.hotel.punchQr}
+          />
           <ContactAttemptLog
             attempts={prospect.attempts}
             sessionUserId={session?.id}
