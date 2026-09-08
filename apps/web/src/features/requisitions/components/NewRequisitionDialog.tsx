@@ -453,6 +453,19 @@ export function NewRequisitionDialog({
                       : 'Cada unidad de Cantidad es un lugar por cubrir'}
                   </p>
 
+                  {departmentPositions !== undefined && departmentPositions.length === 0 && (
+                    <p className="mt-3 rounded-md bg-yellow/15 px-3 py-2.5 text-sm text-ink-2">
+                      Este departamento todavía no tiene posiciones en el catálogo — por eso el
+                      selector de abajo no muestra nada. Pídele al Administrador que las agregue en
+                      Catálogos antes de pedir personal aquí.
+                      {IS_DEV_UI && (
+                        <code className="block text-xs text-ink-4">
+                          catalogs.position sin filas para este hotel_department_id
+                        </code>
+                      )}
+                    </p>
+                  )}
+
                   <div className="mt-4 flex flex-col gap-4">
                     {fields.map((field, index) => {
                       const quantity = Number(positions[index]?.quantity ?? 0) || 0
@@ -510,12 +523,19 @@ export function NewRequisitionDialog({
                                   <Select
                                     {...(f.value ? { value: f.value } : {})}
                                     onValueChange={f.onChange}
+                                    disabled={departmentPositions?.length === 0}
                                   >
                                     <SelectTrigger
                                       aria-label={`Posición ${String(index + 1)}`}
                                       className="w-full font-semibold"
                                     >
-                                      <SelectValue placeholder="Elige la posición" />
+                                      <SelectValue
+                                        placeholder={
+                                          departmentPositions?.length === 0
+                                            ? 'Sin posiciones para este departamento'
+                                            : 'Elige la posición'
+                                        }
+                                      />
                                     </SelectTrigger>
                                     <SelectContent>
                                       {(departmentPositions ?? []).map((item) => (

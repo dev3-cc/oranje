@@ -9,6 +9,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSkeleton,
   cn,
   useSidebar,
 } from '@oranje/ui'
@@ -80,6 +81,7 @@ const MODULES: NavModule[] = [
   { label: 'Timesheet Global', to: '/timesheet-global', icon: 'fact_check', roles: [MGR_GENERAL] },
   { label: 'Mi Personal', to: '/mi-personal', icon: 'badge', roles: HOTEL },
   { label: 'Accidentes', to: '/accidentes', icon: 'report', roles: HOTEL },
+  { label: 'Auditorías', to: '/auditorias', icon: 'fact_check', roles: HOTEL },
 ]
 
 function modulesForRole(roleId: string | undefined): NavModule[] {
@@ -87,8 +89,11 @@ function modulesForRole(roleId: string | undefined): NavModule[] {
   return MODULES.filter((module) => !module.roles || module.roles.includes(roleId))
 }
 
+/** Filas fijas mientras la sesión resuelve — ni todas las secciones ni ninguna, solo "cargando". */
+const SKELETON_ROWS = 7
+
 export function Sidebar(): ReactNode {
-  const { data: session } = useGetSessionQuery()
+  const { data: session, isLoading: isSessionLoading } = useGetSessionQuery()
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation()
   const { setOpenMobile } = useSidebar()
 
@@ -104,31 +109,44 @@ export function Sidebar(): ReactNode {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {modulesForRole(session?.roleId).map((module) => (
-                <SidebarMenuItem key={module.label}>
-                  <SidebarMenuButton asChild className="h-auto">
-                    <NavLink
-                      to={module.to}
-                      onClick={() => {
-                        setOpenMobile(false)
-                      }}
-                      className={({ isActive }) =>
-                        cn(
-                          'flex items-center gap-3 px-3 py-2.5 text-sm',
-                          isActive
-                            ? 'bg-sidebar-accent font-semibold text-sidebar-accent-foreground'
-                            : 'text-ink-2',
-                        )
-                      }
-                    >
-                      <span className="material-icons-outlined text-xl leading-none" aria-hidden>
-                        {module.icon}
-                      </span>
-                      {module.label}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {isSessionLoading ? (
+                Array.from({ length: SKELETON_ROWS }, (_, row) => (
+                  <SidebarMenuItem key={row}>
+                    <SidebarMenuSkeleton showIcon />
+                  </SidebarMenuItem>
+                ))
+              ) : (
+                <>
+                  {modulesForRole(session?.roleId).map((module) => (
+                    <SidebarMenuItem key={module.label}>
+                      <SidebarMenuButton asChild className="h-auto">
+                        <NavLink
+                          to={module.to}
+                          onClick={() => {
+                            setOpenMobile(false)
+                          }}
+                          className={({ isActive }) =>
+                            cn(
+                              'flex items-center gap-3 px-3 py-2.5 text-sm',
+                              isActive
+                                ? 'bg-sidebar-accent font-semibold text-sidebar-accent-foreground'
+                                : 'text-ink-2',
+                            )
+                          }
+                        >
+                          <span
+                            className="material-icons-outlined text-xl leading-none"
+                            aria-hidden
+                          >
+                            {module.icon}
+                          </span>
+                          {module.label}
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

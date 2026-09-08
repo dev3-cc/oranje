@@ -92,7 +92,7 @@ const userFormSchema = z
     email: z
       .string()
       .trim()
-      .email('Escribe un correo válido, como ana@casacurtidor.com')
+      .email('Escribe un correo válido, como ana@oranjepeople.com')
       .max(255, 'Máximo 255 caracteres'),
     roleCode: z.string().min(1, 'Elige un rol'),
     reportsToUserId: z.string(),
@@ -475,7 +475,7 @@ export function UserFormDialog({
                     aria-label="Correo"
                     type="email"
                     {...register('email')}
-                    placeholder="ana@casacurtidor.com"
+                    placeholder="ana@oranjepeople.com"
                     disabled={isEditing}
                     className={cn(isEditing && 'cursor-not-allowed bg-surface-2')}
                   />

@@ -60,30 +60,56 @@ export function UsersPage(): ReactNode {
   const hasFilters = search.trim() !== '' || roleFilter !== 'ALL'
 
   const { data: roles = [] } = useGetStaffRolesQuery()
-  const {
-    data: users = [],
-    isLoading,
-    isFetching,
-    isError,
-    error,
-    refetch,
-  } = useGetStaffUsersQuery({
+
+  const commonParams = {
     ...(settledSearch ? { search: settledSearch } : {}),
     ...(roleFilter !== 'ALL' ? { roleCode: roleFilter } : {}),
-    /*
-     * A propósito, no un olvido. `includeInactive` es «también los inactivos»,
-     * no «solo»: la pestaña Inactivos necesitaría la lista completa de todos
-     * modos, y de esta misma respuesta salen el contador de la OTRA pestaña y
-     * el «Reporta a» del formulario (solo activos). Una consulta con todo es
-     * más barata que dos, y el personal interno cabe en una página.
-     */
-    includeInactive: true,
-  })
+  }
 
-  const active = useMemo(() => users.filter((user) => user.isActive), [users])
-  const inactive = useMemo(() => users.filter((user) => !user.isActive), [users])
+  /**
+   * Dos consultas, no una: el personal interno de Oranje YA pasó el tope de
+   * 100 filas del back entre activos e inactivos acumulados (meses de altas
+   * de prueba). Una sola consulta con `includeInactive` mezclaba ambos en la
+   * misma página paginada — con los inactivos dominando por volumen, un
+   * activo recién creado podía quedar fuera de esa ventana. Pedir los
+   * activos APARTE (sin `includeInactive`, el back ya filtra `isActive` del
+   * lado del servidor) garantiza que los ~50 activos reales siempre entren
+   * completos, sin importar cuántos inactivos haya.
+   */
+  const activeQuery = useGetStaffUsersQuery(commonParams)
+  const allQuery = useGetStaffUsersQuery({ ...commonParams, includeInactive: true })
+
+  const active = activeQuery.data?.rows ?? []
+  /* Capado a lo que trae `allQuery` (100 filas): con cientos de inactivos
+     acumulados, esa pestaña no ve el historial completo todavía — pendiente
+     de paginación real si hace falta navegarlo entero. */
+  const inactive = useMemo(
+    () => (allQuery.data?.rows ?? []).filter((u) => !u.isActive),
+    [allQuery.data],
+  )
   const visible = tab === 'active' ? active : inactive
-  const nameById = useMemo(() => new Map(users.map((user) => [user.id, user.fullName])), [users])
+  const activeTotal = activeQuery.data?.total ?? active.length
+  /* Inactivos = el total SIN filtrar menos el total de activos — ambos vienen
+     del `meta.total` del back, así que el contador es exacto aunque la lista
+     visible de arriba esté recortada a 100 filas. */
+  const inactiveTotal = allQuery.data
+    ? Math.max(0, allQuery.data.total - activeTotal)
+    : inactive.length
+
+  const isLoading = tab === 'active' ? activeQuery.isLoading : allQuery.isLoading
+  const isFetching = activeQuery.isFetching || allQuery.isFetching
+  const isError = activeQuery.isError || allQuery.isError
+  const error = activeQuery.error ?? allQuery.error
+  function refetch(): void {
+    void activeQuery.refetch()
+    void allQuery.refetch()
+  }
+
+  const nameById = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const user of [...active, ...(allQuery.data?.rows ?? [])]) map.set(user.id, user.fullName)
+    return map
+  }, [active, allQuery.data])
 
   /* El módulo entero es del Administrador (users:manage): el 403 dice quién sigue. */
   if ((error as { status?: number } | undefined)?.status === 403) {
@@ -113,8 +139,8 @@ export function UsersPage(): ReactNode {
       <div className="flex flex-wrap items-center gap-2.5">
         {(
           [
-            ['active', 'Activos', active.length],
-            ['inactive', 'Inactivos', inactive.length],
+            ['active', 'Activos', activeTotal],
+            ['inactive', 'Inactivos', inactiveTotal],
           ] as Array<['active' | 'inactive', string, number]>
         ).map(([key, label, count]) => (
           <button

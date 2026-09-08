@@ -13,6 +13,18 @@ export interface StaffUsersQuery {
   includeInactive?: boolean
 }
 
+/**
+ * `total` viene del `meta` del back, NO de `rows.length`: con `includeInactive`
+ * el back pagina a lo más 100 filas (tope real de `queryStaffUsersSchema`),
+ * y el personal interno de Oranje ya pasó ese número entre activos e
+ * inactivos acumulados — mostrar `rows.length` como "cuántos hay" mentiría
+ * apenas hubiera más de una página.
+ */
+export interface StaffUsersPage {
+  rows: StaffUser[]
+  total: number
+}
+
 export interface CreateStaffUserBody {
   email: string
   fullName: string
@@ -38,16 +50,21 @@ export const adminApi = baseApi.injectEndpoints({
       transformResponse: (response: ApiEnvelope<RoleOption[]>) =>
         response.data.filter((role) => role.code !== 'ROL-SYS-01'),
     }),
-    getStaffUsers: build.query<StaffUser[], StaffUsersQuery>({
+    getStaffUsers: build.query<StaffUsersPage, StaffUsersQuery>({
       query: (params) => ({
         url: '/users',
         params: {
           ...(params.search ? { search: params.search } : {}),
           ...(params.roleCode ? { roleCode: params.roleCode } : {}),
           ...(params.includeInactive ? { includeInactive: 'true' } : {}),
+          // Tope real del back (`max(100)` en `queryStaffUsersSchema`).
+          limit: 100,
         },
       }),
-      transformResponse: (response: PaginatedEnvelope<StaffUser>) => response.data,
+      transformResponse: (response: PaginatedEnvelope<StaffUser>) => ({
+        rows: response.data,
+        total: response.meta.total,
+      }),
       providesTags: ['StaffUser'],
     }),
     createStaffUser: build.mutation<StaffUser, CreateStaffUserBody>({
@@ -67,7 +84,9 @@ export const adminApi = baseApi.injectEndpoints({
           if (args.roleCode && args.roleCode !== created.role.code) continue
           api.dispatch(
             adminApi.util.updateQueryData('getStaffUsers', args, (draft) => {
-              if (!draft.some((user) => user.id === created.id)) draft.unshift(created)
+              if (draft.rows.some((user) => user.id === created.id)) return
+              draft.rows.unshift(created)
+              draft.total += 1
             }),
           )
         }
