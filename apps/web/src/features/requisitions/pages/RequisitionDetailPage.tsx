@@ -10,9 +10,12 @@ import { SlotList } from '../components/SlotList'
 import { StatusHistoryCard } from '../components/StatusHistoryCard'
 
 import { useGetSessionQuery } from '@/app/sessionApi'
+import personajeManager from '@/assets/ilustrations/personaje-manager.svg'
+import personajeTalento from '@/assets/ilustrations/personaje-talento.svg'
 import { Button, buttonClass } from '@/shared/components/Button'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { HotelPhotoBackdrop } from '@/shared/components/HotelPhotoBackdrop'
+import { NoticeCard } from '@/shared/components/NoticeCard'
 import {
   REQUISITION_STATUS_LABEL,
   REQUISITION_STATUS_TOKEN,
@@ -120,15 +123,19 @@ export function RequisitionDetailPage(): ReactNode {
             Ver bitácora
           </Button>
           {/*
-            Eliminar = Morado (encargo 10). El permiso de borrador lo tienen los
-            tres roles del hotel; de autorizada en adelante HOY solo entra el
-            Manager General (cuando el back sume al de Área —opción 3—, se
-            agrega ROL-H-02 aquí). Cubierta o ya Morada, no se elimina.
+            Eliminar = Morado (encargo 10). El borrador lo quita quien lo
+            escribió (los tres roles del hotel tienen el permiso); de
+            autorizada en adelante, el Manager de Área (su departamento) o el
+            Manager General. Cubierta o ya Morada, no se elimina. Quien no
+            tiene la atribución NO ve el botón: no es una condición que pueda
+            resolver, es su rol.
           */}
           {detail.status !== 'PURPLE' &&
             detail.status !== 'LIGHT_BLUE' &&
             can('requisitions:delete_empty') &&
-            (detail.status === 'APPLE_GREEN' || session?.roleId === 'ROL-H-03') && (
+            (detail.status === 'APPLE_GREEN' ||
+              session?.roleId === 'ROL-H-03' ||
+              session?.roleId === 'ROL-H-02') && (
               <Button
                 disabled={
                   isDeleting ||
@@ -160,6 +167,8 @@ export function RequisitionDetailPage(): ReactNode {
                               'Este borrador no es tuyo: lo elimina quien lo creó o el Manager General.',
                             REQUISITION_HAS_ASSIGNMENTS:
                               'Tiene colaboradores asignados: libera las asignaciones antes de eliminarla.',
+                            DEPARTMENT_OUT_OF_SCOPE:
+                              'Esta requisición tiene posiciones de otro departamento: la elimina el Manager General.',
                             FORBIDDEN:
                               'Una requisición autorizada la elimina el Manager de Área de su departamento o el Manager General.',
                           },
@@ -197,6 +206,21 @@ export function RequisitionDetailPage(): ReactNode {
           ) : null}
         </div>
       </header>
+
+      {/* Quién sigue: el patrón de Autorización. El borrador espera la firma
+          del Manager; la autorizada ya está en manos de Reclutamiento. */}
+      {detail.status === 'APPLE_GREEN' && !can('requisitions:authorize') && (
+        <NoticeCard image={personajeManager} title="La firma es del Manager" role="status">
+          Autorizar es del Manager de Área o del Manager General: cuando firmen, la requisición pasa
+          a Autorizada y Reclutamiento la ve en la Bolsa del Self-Pick.
+        </NoticeCard>
+      )}
+      {(detail.status === 'GREEN' || detail.status === 'YELLOW') && !can('requisitions:take') && (
+        <NoticeCard image={personajeTalento} title="Ahora sigue Reclutamiento" role="status">
+          La requisición ya está en la Bolsa del Self-Pick: las Reclutadoras van cubriendo los slots
+          y aquí verás la cobertura al día.
+        </NoticeCard>
+      )}
 
       {isDeleteArmed && detail.status !== 'APPLE_GREEN' && (
         <div className="flex flex-col gap-2 rounded-lg border border-yellow bg-yellow/10 p-4">

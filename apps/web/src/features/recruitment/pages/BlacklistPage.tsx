@@ -13,11 +13,13 @@ import {
   type BlacklistRow,
 } from '../types/blacklist.types'
 
+import personajeAccesoProtegido from '@/assets/ilustrations/personaje-acceso-protegido.svg'
 import { Button } from '@/shared/components/Button'
 import { FilterReset } from '@/shared/components/FilterReset'
 import { FilterSelect } from '@/shared/components/FilterSelect'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
+import { NoticeCard } from '@/shared/components/NoticeCard'
 import { SearchField } from '@/shared/components/SearchField'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { useCan } from '@/shared/hooks/useCan'
@@ -69,6 +71,18 @@ export function BlacklistPage(): ReactNode {
         <span aria-hidden>/</span>
         <span className="font-semibold text-ink-2">Blacklist</span>
       </nav>
+
+      {/* Quién sigue: el veto vigente lo levanta el Administrador, no este departamento. */}
+      {!can('blacklist.lift') && visibleRows.some((row) => row.isActive) && (
+        <NoticeCard
+          image={personajeAccesoProtegido}
+          title="Levantar un veto es del Administrador"
+          role="status"
+        >
+          Un veto vigente solo lo levanta el Administrador. Al levantarlo, el colaborador vuelve a
+          Blanco y pasa otra vez por la validación de la Reclutadora antes de ser asignable.
+        </NoticeCard>
+      )}
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>

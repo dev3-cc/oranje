@@ -14,12 +14,14 @@ import {
 import { ProposalVersionHistory } from '../components/ProposalVersionHistory'
 import { proposalDraftSchema, type ProposalDraftForm } from '../types/proposalDraft.schema'
 
+import personajeEstrategia from '@/assets/ilustrations/personaje-estrategia.svg'
 import personajePago from '@/assets/ilustrations/personaje-pago-procesado.svg'
 import personajePresentacion from '@/assets/ilustrations/personaje-presentacion.svg'
 import personajeRetro from '@/assets/ilustrations/personaje-retroalimentacion.svg'
 import { Button } from '@/shared/components/Button'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { FormField } from '@/shared/components/FormField'
+import { NoticeCard } from '@/shared/components/NoticeCard'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { SectionCard } from '@/shared/components/SectionCard'
 import {
@@ -481,10 +483,16 @@ export function ProposalEditorPage({
                     )}
                   </>
                 ) : (
-                  <p className="mt-5 rounded-md bg-o-50 px-4 py-3 text-sm text-o-700">
-                    Solo el BD dueño del ciclo abre versiones nuevas. Desde tu rol puedes consultar
-                    la propuesta, no editarla.
-                  </p>
+                  <div className="mt-5">
+                    <NoticeCard
+                      image={personajeEstrategia}
+                      title="Elaborar la propuesta es del BD"
+                      role="status"
+                    >
+                      Solo el BD dueño del ciclo abre y envía versiones. Desde tu rol puedes
+                      consultarla, no editarla.
+                    </NoticeCard>
+                  </div>
                 )}
               </SectionCard>
             )}
