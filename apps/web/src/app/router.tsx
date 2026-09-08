@@ -318,6 +318,13 @@ export const router = createBrowserRouter([
             },
           },
           {
+            path: 'auditorias',
+            lazy: async () => {
+              const m = await import('@/features/audits')
+              return { Component: m.AuditsPage }
+            },
+          },
+          {
             path: 'mi-territorio',
             lazy: async () => {
               const m = await import('@/features/territory')

@@ -36,6 +36,8 @@ export interface PersonnelRow {
   canStandBy: boolean
   /** La semana medida en hechos; `null` = sin datos suficientes todavía. */
   performance: PersonnelPerformance | null
+  /** Su última Auditoría de Presentación Personal (Supervisor); `null` = nunca auditado. */
+  presentationAudit: { score: number; auditedAt: string } | null
   /** Su ficha personal, tal cual la sirve /workers (alcance staff:read). */
   personal: {
     age: number

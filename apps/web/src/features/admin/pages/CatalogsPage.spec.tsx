@@ -1,24 +1,29 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
+import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
 import { CatalogsPage } from './CatalogsPage'
 
 import { store } from '@/app/store'
 
-function renderPage(): void {
+async function renderPage(): Promise<void> {
   render(
     <Provider store={store}>
-      <CatalogsPage />
+      <MemoryRouter>
+        <CatalogsPage />
+      </MemoryRouter>
     </Provider>,
   )
+  /* Sin storage en jsdom el intro es fail-open: sale siempre y se salta. */
+  await userEvent.click(await screen.findByRole('button', { name: 'Saltar' }))
 }
 
 describe('CatalogsPage', () => {
   it('lista los departamentos y cada posición dice el suyo', async () => {
     const user = userEvent.setup()
-    renderPage()
+    await renderPage()
 
     // Pestaña inicial: departamentos del seed de mocks.
     expect(await screen.findByText('Housekeeping')).toBeInTheDocument()
@@ -31,7 +36,7 @@ describe('CatalogsPage', () => {
 
   it('el buscador filtra la pestaña en memoria y el vacío dice cómo salir', async () => {
     const user = userEvent.setup()
-    renderPage()
+    await renderPage()
 
     expect(await screen.findByText('Housekeeping')).toBeInTheDocument()
     const field = screen.getByLabelText('Buscar en Departamentos')
@@ -55,7 +60,7 @@ describe('CatalogsPage', () => {
 
   it('agrega una modalidad nueva desde el diálogo', async () => {
     const user = userEvent.setup()
-    renderPage()
+    await renderPage()
 
     await user.click(await screen.findByRole('tab', { name: 'Modalidades' }))
     await user.click(screen.getByRole('button', { name: 'Agregar modalidad' }))
@@ -73,7 +78,7 @@ describe('CatalogsPage', () => {
 
   it('eliminar un departamento en uso explica el freno, no truena', async () => {
     const user = userEvent.setup()
-    renderPage()
+    await renderPage()
 
     const row = (await screen.findByText('Housekeeping')).closest('li') as HTMLElement
     await user.click(within(row).getByRole('button', { name: 'Eliminar Housekeeping' }))

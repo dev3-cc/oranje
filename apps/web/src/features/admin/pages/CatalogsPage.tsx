@@ -9,6 +9,7 @@ import {
   toast,
 } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router'
 
 import {
   useCreateCatalogItemMutation,
@@ -20,17 +21,41 @@ import {
   type AdminCatalogs,
   type ManagedCatalog,
 } from '../api/catalogsAdminApi'
+import { AuditChecklistItemsPanel } from '../components/AuditChecklistItemsPanel'
 
+import personajeComencemos from '@/assets/ilustrations/personaje-comencemos.svg'
+import personajeConfiguracion from '@/assets/ilustrations/personaje-configuracion.svg'
+import personajeEstrategia from '@/assets/ilustrations/personaje-estrategia.svg'
 import { Button } from '@/shared/components/Button'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { Modal } from '@/shared/components/Modal'
+import { OnboardingIntro, type OnboardingSlide } from '@/shared/components/OnboardingIntro'
 import { SearchField } from '@/shared/components/SearchField'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { useCan } from '@/shared/hooks/useCan'
+import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { matchesSearch } from '@/shared/lib/text'
+
+const INTRO_SLIDES: readonly OnboardingSlide[] = [
+  {
+    image: personajeConfiguracion,
+    title: 'Los catálogos alimentan toda la plataforma',
+    text: 'Departamentos, posiciones, modalidades e inglés viven aquí — de acá beben las requisiciones y las altas.',
+  },
+  {
+    image: personajeEstrategia,
+    title: 'Reactivos de Auditoría es distinto',
+    text: 'Su propio peso por reactivo y arrastre para reordenar — por eso vive separado, con una línea divisoria antes de su pestaña.',
+  },
+  {
+    image: personajeComencemos,
+    title: 'Eliminar es de verdad',
+    text: 'No se archiva: si algo del sistema lo está usando, la propia base lo protege y te lo dice.',
+  },
+]
 
 /** Cada pestaña: cómo se llama, su singular y de qué lista bebe. */
 interface TabConfig {
@@ -88,8 +113,35 @@ export function CatalogsPage(): ReactNode {
   const can = useCan()
   const canManage = can('catalogs:manage')
   const { data, isLoading, isError, refetch } = useGetAdminCatalogsQuery()
+  /** El intro de página se ve UNA vez; «¿Cómo funciona?» lo reabre. */
+  const { isIntroOpen, dismissIntro, reopenIntro } = useIntroSeen('catalogs')
 
-  const [active, setActive] = useState<ManagedCatalog>('hotel-departments')
+  /** Los reactivos de auditoría son un catálogo propio (más campos, dueño distinto): pestaña aparte. */
+  const REACTIVOS_TAB = 'audit-checklist-items' as const
+  type TabKey = ManagedCatalog | typeof REACTIVOS_TAB
+  const ALL_TAB_KEYS: readonly TabKey[] = [...MANAGED_CATALOGS, REACTIVOS_TAB]
+  /* La pestaña vive en la URL (regla WIG «la URL refleja el estado», mismo
+     patrón que `?q=` en Mi Territorio): recargar o compartir el enlace deja
+     a la persona en la misma pestaña, no siempre en la primera. */
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedTab = searchParams.get('tab')
+  const active: TabKey =
+    requestedTab !== null && (ALL_TAB_KEYS as readonly string[]).includes(requestedTab)
+      ? (requestedTab as TabKey)
+      : 'hotel-departments'
+
+  function selectTab(next: TabKey): void {
+    setSearchParams(
+      (previous) => {
+        const params = new URLSearchParams(previous)
+        params.set('tab', next)
+        return params
+      },
+      { replace: true },
+    )
+    setSearch('')
+  }
+
   /** Filtra EN MEMORIA la pestaña activa por nombre; se vacía al cambiar de pestaña. */
   const [search, setSearch] = useState('')
   const [editor, setEditor] = useState<EditorState | null>(null)
@@ -99,8 +151,9 @@ export function CatalogsPage(): ReactNode {
     item: AdminCatalogItem
   } | null>(null)
 
-  const tab = { catalog: active, ...TAB_CONFIG[active] }
-  const rows = data ? tab.pick(data) : []
+  const isReactivosTab = active === REACTIVOS_TAB
+  const tab = active === REACTIVOS_TAB ? null : { catalog: active, ...TAB_CONFIG[active] }
+  const rows = tab && data ? tab.pick(data) : []
   const visibleRows = rows.filter((row) => matchesSearch(search, row.name))
   const departmentName = (id: string | undefined): string =>
     data?.departments.find((department) => department.id === id)?.name ?? '—'
@@ -123,111 +176,140 @@ export function CatalogsPage(): ReactNode {
           <p className="mt-1.5 text-sm text-ink-3">
             Las listas de las que bebe todo el sistema: requisiciones, altas y contratos.
             {IS_DEV_UI && <code className="ml-1.5 text-xs text-ink-4">catalogs.*</code>}
+            {' · '}
+            <button
+              type="button"
+              onClick={reopenIntro}
+              className="cursor-pointer font-medium text-o-700 hover:underline"
+            >
+              ¿Cómo funciona?
+            </button>
           </p>
         </div>
-        <Button
-          variant="primary"
-          className="ml-auto"
-          onClick={() => {
-            setEditor({ catalog: tab.catalog, noun: tab.noun, item: null })
-          }}
-        >
-          Agregar {tab.noun}
-        </Button>
+        {tab && (
+          <Button
+            variant="primary"
+            className="ml-auto"
+            onClick={() => {
+              setEditor({ catalog: tab.catalog, noun: tab.noun, item: null })
+            }}
+          >
+            Agregar {tab.noun}
+          </Button>
+        )}
       </header>
 
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Catálogo">
+      <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Catálogo">
         {TABS.map((item) => (
-          <button
+          <TabButton
             key={item.catalog}
-            type="button"
-            role="tab"
-            aria-selected={item.catalog === active}
-            onClick={() => {
-              setActive(item.catalog)
-              setSearch('')
+            label={item.label}
+            isActive={item.catalog === active}
+            onSelect={() => {
+              selectTab(item.catalog)
             }}
-            className={cn(
-              'cursor-pointer rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors',
-              item.catalog === active
-                ? 'border-o-500 bg-o-500 text-ink'
-                : 'border-line bg-surface text-ink-2 hover:bg-surface-2',
-            )}
-          >
-            {item.label}
-          </button>
+          />
         ))}
-      </div>
-
-      <SearchField
-        value={search}
-        onChange={setSearch}
-        label={`Buscar en ${tab.label}`}
-        placeholder={tab.searchPlaceholder}
-        className="w-full max-w-md"
-      />
-
-      {isError && (
-        <LoadError
-          message="No se pudieron cargar los catálogos. Reintenta en unos segundos."
-          onRetry={() => {
-            void refetch()
+        {/* Los reactivos de auditoría son un catálogo de OTRA naturaleza (más
+            campos, dueño conceptual distinto — la auditoría del Supervisor,
+            no el alta de personal): el separador dice «esto no es un
+            catálogo operativo más», que es justo lo que se perdía cuando
+            era el quinto botón idéntico al final de la fila. */}
+        <span aria-hidden className="mx-1 h-6 w-px shrink-0 bg-line" />
+        <TabButton
+          label="Reactivos de Auditoría"
+          isActive={isReactivosTab}
+          onSelect={() => {
+            selectTab(REACTIVOS_TAB)
           }}
         />
+      </div>
+
+      {isReactivosTab ? (
+        <AuditChecklistItemsPanel />
+      ) : (
+        <>
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            label={`Buscar en ${tab?.label ?? ''}`}
+            placeholder={tab?.searchPlaceholder ?? ''}
+            className="w-full max-w-md"
+          />
+
+          {isError && (
+            <LoadError
+              message="No se pudieron cargar los catálogos. Reintenta en unos segundos."
+              onRetry={() => {
+                void refetch()
+              }}
+            />
+          )}
+
+          {isLoading || !data ? (
+            <TableSkeleton rows={5} columns={3} />
+          ) : rows.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+              Este catálogo está vacío. Agrega su primera fila con el botón de arriba.
+            </p>
+          ) : visibleRows.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+              Ninguna fila coincide con «{search.trim()}». Cambia la búsqueda o agrégala.
+            </p>
+          ) : (
+            <ul className="overflow-hidden rounded-lg border border-line bg-surface">
+              {visibleRows.map((row) => (
+                <li
+                  key={row.id}
+                  className="flex items-center gap-3 border-b border-line px-5 py-3 last:border-b-0"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-ink">{row.name}</p>
+                    <p className="text-xs text-ink-3">
+                      {active === 'positions' && (
+                        <span className="mr-2 inline-flex items-center gap-1">
+                          <MaterialIcon name="apartment" className="text-sm" aria-hidden />
+                          {departmentName(row.hotelDepartmentId)}
+                        </span>
+                      )}
+                      {IS_DEV_UI && <code className="text-ink-4">{row.code}</code>}
+                    </p>
+                  </div>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      if (tab) setEditor({ catalog: tab.catalog, noun: tab.noun, item: row })
+                    }}
+                  >
+                    Renombrar
+                  </Button>
+                  <button
+                    type="button"
+                    aria-label={`Eliminar ${row.name}`}
+                    title={`Eliminar ${tab?.noun ?? ''}`}
+                    onClick={() => {
+                      if (tab) setPendingDelete({ catalog: tab.catalog, noun: tab.noun, item: row })
+                    }}
+                    className="cursor-pointer rounded-md p-1.5 text-ink-3 transition-colors hover:bg-surface-2 hover:text-red"
+                  >
+                    <MaterialIcon name="delete" className="text-lg" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
 
-      {isLoading || !data ? (
-        <TableSkeleton rows={5} columns={3} />
-      ) : rows.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-          Este catálogo está vacío. Agrega su primera fila con el botón de arriba.
-        </p>
-      ) : visibleRows.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-          Ninguna fila coincide con «{search.trim()}». Cambia la búsqueda o agrégala.
-        </p>
-      ) : (
-        <ul className="overflow-hidden rounded-lg border border-line bg-surface">
-          {visibleRows.map((row) => (
-            <li
-              key={row.id}
-              className="flex items-center gap-3 border-b border-line px-5 py-3 last:border-b-0"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-ink">{row.name}</p>
-                <p className="text-xs text-ink-3">
-                  {active === 'positions' && (
-                    <span className="mr-2 inline-flex items-center gap-1">
-                      <MaterialIcon name="apartment" className="text-sm" aria-hidden />
-                      {departmentName(row.hotelDepartmentId)}
-                    </span>
-                  )}
-                  {IS_DEV_UI && <code className="text-ink-4">{row.code}</code>}
-                </p>
-              </div>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setEditor({ catalog: tab.catalog, noun: tab.noun, item: row })
-                }}
-              >
-                Renombrar
-              </Button>
-              <button
-                type="button"
-                aria-label={`Eliminar ${row.name}`}
-                title={`Eliminar ${tab.noun}`}
-                onClick={() => {
-                  setPendingDelete({ catalog: tab.catalog, noun: tab.noun, item: row })
-                }}
-                className="cursor-pointer rounded-md p-1.5 text-ink-3 transition-colors hover:bg-surface-2 hover:text-red"
-              >
-                <MaterialIcon name="delete" className="text-lg" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+      <Modal
+        isOpen={isIntroOpen}
+        onClose={dismissIntro}
+        title="Cómo funcionan los Catálogos"
+        chromeless
+        className="max-w-2xl"
+      >
+        <OnboardingIntro slides={INTRO_SLIDES} startLabel="Ir a Catálogos" onDone={dismissIntro} />
+      </Modal>
 
       {editor !== null && data && (
         <CatalogItemDialog
@@ -248,6 +330,34 @@ export function CatalogsPage(): ReactNode {
         />
       )}
     </div>
+  )
+}
+
+/** Una pestaña de la fila; comparte estilo entre los catálogos operativos y Reactivos. */
+function TabButton({
+  label,
+  isActive,
+  onSelect,
+}: {
+  label: string
+  isActive: boolean
+  onSelect: () => void
+}): ReactNode {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={isActive}
+      onClick={onSelect}
+      className={cn(
+        'cursor-pointer rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors',
+        isActive
+          ? 'border-o-500 bg-o-500 text-ink'
+          : 'border-line bg-surface text-ink-2 hover:bg-surface-2',
+      )}
+    >
+      {label}
+    </button>
   )
 }
 
