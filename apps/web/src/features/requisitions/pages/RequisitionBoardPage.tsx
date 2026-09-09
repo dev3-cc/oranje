@@ -28,9 +28,12 @@ const ANY = 'ALL'
 /**
  * Tablero de Requisiciones del supervisor.
  *
- * Las cifras del encabezado vienen del backend y NO se derivan de las filas: el
- * tablero muestra una página, pero «8 abiertas en 4 hoteles» habla de todo el
- * territorio. Calcularlas aquí daría números que cambian al paginar.
+ * Las cifras del encabezado se derivan de las filas (`fetchBoard` en
+ * `requisitionsApi.ts`), no de un agregado del backend — pero `fetchBoard`
+ * trae TODAS las requisiciones con `fetchAllPages` (no una sola página de
+ * 100), así que las cifras son exactas aunque el back siga sin un endpoint
+ * de agregados. Sin eso, con más de 100 requisiciones el encabezado habría
+ * mentido, igual que le pasó a Usuarios del sistema (corregido 2026-09-09).
  *
  * El buscador y el filtro de estado recortan EN MEMORIA lo que la lista ya
  * trajo: `GET /requisitions` no acepta esos parámetros todavía.

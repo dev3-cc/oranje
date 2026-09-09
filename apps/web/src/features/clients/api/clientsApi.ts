@@ -5,12 +5,12 @@ import { registerClientsMocks } from './clientsMocks'
 
 import { baseApi } from '@/app/baseApi'
 import type { ContractStatus } from '@/shared/constants/contractStatus'
+import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import { normalizeText as normalize } from '@/shared/lib/text'
 import type {
   ApiEnvelope,
   ContractApi,
   HotelApi,
-  PaginatedEnvelope,
   ProspectApi,
 } from '@/shared/types/apiContract.types'
 
@@ -43,22 +43,18 @@ async function fetchPortfolio(
   filters: ClientFilters,
 ): Promise<{ data: ClientPortfolio } | { error: unknown }> {
   const [hotelsRes, prospectsRes, contractsRes] = await Promise.all([
-    fetchWithBQ({ url: '/hotels', params: { limit: 100 } }),
-    fetchWithBQ({ url: '/prospects', params: { limit: 100, includeClosed: true } }),
+    /** `onlyClients` filtra del lado del back (activatedAt IS NOT NULL, lo mismo que `hotel.isClient`). */
+    fetchAllPages<HotelApi>(fetchWithBQ, '/hotels', { onlyClients: true }),
+    fetchAllPages<ProspectApi>(fetchWithBQ, '/prospects', { includeClosed: true }),
     fetchWithBQ('/contracts'),
   ])
-  if (hotelsRes.error) return { error: hotelsRes.error }
-  if (prospectsRes.error) return { error: prospectsRes.error }
+  if ('error' in hotelsRes) return { error: hotelsRes.error }
+  if ('error' in prospectsRes) return { error: prospectsRes.error }
   if (contractsRes.error) return { error: contractsRes.error }
 
-  const clients = (hotelsRes.data as PaginatedEnvelope<HotelApi>).data.filter(
-    (hotel) => hotel.isClient && hotel.activatedAt !== null,
-  )
+  const clients = hotelsRes.data.filter((hotel) => hotel.isClient && hotel.activatedAt !== null)
   const prospectByHotel = new Map(
-    (prospectsRes.data as PaginatedEnvelope<ProspectApi>).data.map((prospect) => [
-      prospect.hotel.id,
-      prospect,
-    ]),
+    prospectsRes.data.map((prospect) => [prospect.hotel.id, prospect]),
   )
   const contractsByHotel = new Map<string, ContractApi[]>()
   for (const contract of (contractsRes.data as ApiEnvelope<ContractApi[]>).data) {

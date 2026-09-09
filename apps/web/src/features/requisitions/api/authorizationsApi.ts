@@ -10,11 +10,8 @@ import { registerAuthorizationsMocks } from './authorizationsMocks'
 import { baseApi } from '@/app/baseApi'
 import type { UrgencyLevel } from '@/shared/constants/requisitionStatus'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
-import type {
-  ApiEnvelope,
-  PaginatedEnvelope,
-  RequisitionApi,
-} from '@/shared/types/apiContract.types'
+import { fetchAllPages } from '@/shared/lib/fetchAllPages'
+import type { ApiEnvelope, RequisitionApi } from '@/shared/types/apiContract.types'
 
 registerAuthorizationsMocks()
 
@@ -81,13 +78,13 @@ async function fetchQueue(
   fetchWithBQ: FetchWithBQ,
 ): Promise<{ data: AuthorizationQueue } | { error: unknown }> {
   const [listRes, meRes] = await Promise.all([
-    fetchWithBQ({ url: '/requisitions', params: { state: 'APPLE_GREEN', limit: 100 } }),
+    fetchAllPages<RequisitionApi>(fetchWithBQ, '/requisitions', { state: 'APPLE_GREEN' }),
     fetchWithBQ('/me'),
   ])
-  if (listRes.error) return { error: listRes.error }
+  if ('error' in listRes) return { error: listRes.error }
   if (meRes.error) return { error: meRes.error }
 
-  const requisitions = (listRes.data as PaginatedEnvelope<RequisitionApi>).data
+  const requisitions = listRes.data
   const me = (meRes.data as ApiEnvelope<{ role: { code: string; name: string } }>).data
 
   const scope =
@@ -98,6 +95,8 @@ async function fetchQueue(
   return {
     data: {
       items: requisitions.map(toRequest).sort((a, b) => a.startsInDays - b.startsInDays),
+      /** `fetchAllPages` ya trajo el dataset completo: el total es exacto. */
+      total: requisitions.length,
       authorizerRole: me.role.name,
       authorizerScope: scope,
     },

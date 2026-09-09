@@ -11,12 +11,8 @@ import { registerProposalsMocks } from './proposalsMocks'
 
 import { baseApi } from '@/app/baseApi'
 import type { OnboardingStatus } from '@/shared/constants/onboardingStatus'
-import type {
-  ApiEnvelope,
-  PaginatedEnvelope,
-  ProposalApi,
-  ProspectApi,
-} from '@/shared/types/apiContract.types'
+import { fetchAllPages } from '@/shared/lib/fetchAllPages'
+import type { ApiEnvelope, ProposalApi, ProspectApi } from '@/shared/types/apiContract.types'
 
 registerProposalsMocks()
 
@@ -48,7 +44,7 @@ function adaptDraft(proposal: ProposalApi): ProposalDraft {
 }
 
 type FetchWithBQ = (
-  args: string | { url: string; method?: string; body?: unknown },
+  args: string | { url: string; method?: string; body?: unknown; params?: Record<string, unknown> },
 ) => Promise<{ data?: unknown; error?: unknown }>
 
 async function fetchWorkspace(
@@ -97,11 +93,13 @@ export const proposalsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     getProposalCandidates: build.query<ProposalCandidate[], void>({
       queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
-        const bq = fetchWithBQ as FetchWithBQ
-        const res = await bq('/prospects?limit=100&includeClosed=true')
-        if (res.error) return { error: res.error as never }
+        /** `/prospects` no filtra por "tiene propuesta": hay que traer TODOS para filtrar aquí. */
+        const res = await fetchAllPages<ProspectApi>(fetchWithBQ as FetchWithBQ, '/prospects', {
+          includeClosed: true,
+        })
+        if ('error' in res) return { error: res.error as never }
 
-        const prospects = (res.data as PaginatedEnvelope<ProspectApi>).data
+        const prospects = res.data
         const candidates: ProposalCandidate[] = []
         for (const prospect of prospects) {
           const last = prospect.lastProposal
@@ -128,11 +126,10 @@ export const proposalsApi = baseApi.injectEndpoints({
      */
     getProposalTargets: build.query<ProposalTarget[], void>({
       queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
-        const bq = fetchWithBQ as FetchWithBQ
-        const res = await bq('/prospects?limit=100')
-        if (res.error) return { error: res.error as never }
+        const res = await fetchAllPages<ProspectApi>(fetchWithBQ as FetchWithBQ, '/prospects')
+        if ('error' in res) return { error: res.error as never }
 
-        const prospects = (res.data as PaginatedEnvelope<ProspectApi>).data
+        const prospects = res.data
         return {
           data: prospects
             .filter(

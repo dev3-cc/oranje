@@ -121,6 +121,8 @@ export interface AuthorizationRequest {
 
 export interface AuthorizationQueue {
   items: AuthorizationRequest[]
+  /** El total real del back — puede ser mayor a `items.length` si pasa del tope de paginación. */
+  total: number
   authorizerRole: string
   authorizerScope: string
 }
