@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common'
 
+import { AuthModule } from '../auth/auth.module.js'
+
 import { FirebaseAccountsService } from './firebase-accounts.service.js'
-import { HotelUsersController } from './hotel-users.controller.js'
+import { HotelUsersController, HotelUsersDirectoryController } from './hotel-users.controller.js'
 import { HotelUsersRepository } from './hotel-users.repository.js'
 import { HotelUsersService } from './hotel-users.service.js'
 import { MeController } from './me.controller.js'
@@ -11,7 +13,13 @@ import { StaffUsersRepository } from './staff-users.repository.js'
 import { StaffUsersService } from './staff-users.service.js'
 
 @Module({
-  controllers: [HotelUsersController, MeController, StaffUsersController],
+  imports: [AuthModule],
+  controllers: [
+    HotelUsersController,
+    HotelUsersDirectoryController,
+    MeController,
+    StaffUsersController,
+  ],
   providers: [
     HotelUsersService,
     HotelUsersRepository,

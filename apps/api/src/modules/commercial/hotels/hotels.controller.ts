@@ -29,9 +29,18 @@ export class HotelsController {
     private readonly permissions: PermissionsService,
   ) {}
 
-  @Requires('pipeline', 'read')
+  /**
+   * Sin `@Requires`: la lista es de Ventas (`pipeline:read`), pero el
+   * Administrador la necesita para dar de alta cuentas del hotel
+   * (`users:manage_hotel`, Reglas de Negocio · Cuentas del hotel).
+   */
   @Get()
-  list(@Query() query: QueryHotelsDto): Promise<Paginated<HotelEntity>> {
+  async list(
+    @Query() query: QueryHotelsDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<Paginated<HotelEntity>> {
+    await this.assertCanSeeHotels(user)
+
     return this.hotels.list(query)
   }
 
@@ -46,15 +55,25 @@ export class HotelsController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: HotelEntity }> {
-    const isOwnHotel = user.hotelId === id
-    if (!isOwnHotel && !(await this.permissions.can(user.roleCode, 'pipeline', 'read'))) {
-      throw new ForbiddenException({
-        code: 'FORBIDDEN',
-        message: 'Ver la ficha de otro hotel requiere permisos de Ventas',
-      })
+    if (user.hotelId !== id) {
+      await this.assertCanSeeHotels(user)
     }
 
     return { data: await this.hotels.get(id) }
+  }
+
+  private async assertCanSeeHotels(user: AuthenticatedUser): Promise<void> {
+    const [sales, admin] = await Promise.all([
+      this.permissions.can(user.roleCode, 'pipeline', 'read'),
+      this.permissions.can(user.roleCode, 'users', 'manage_hotel'),
+    ])
+
+    if (!sales && !admin) {
+      throw new ForbiddenException({
+        code: 'FORBIDDEN',
+        message: 'Ver los hoteles requiere permisos de Ventas o del Administrador',
+      })
+    }
   }
 
   @Requires('pipeline', 'update_hotel_profile')
