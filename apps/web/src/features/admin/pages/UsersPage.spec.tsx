@@ -1,16 +1,19 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
+import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
 import { UsersPage } from './UsersPage'
 
 import { store } from '@/app/store'
 
-function renderUsers(): void {
+function renderUsers(initialPath = '/usuarios'): void {
   render(
     <Provider store={store}>
-      <UsersPage />
+      <MemoryRouter initialEntries={[initialPath]}>
+        <UsersPage />
+      </MemoryRouter>
     </Provider>,
   )
 }
@@ -97,6 +100,99 @@ describe('UsersPage', () => {
     await waitFor(() => {
       expect(email).toHaveValue('reclutadora@casacurtidor.com')
     })
+    expect(screen.getByRole('switch', { name: 'Activo' })).toBeInTheDocument()
+  })
+
+  it('«Personal de hoteles» lista las cuentas con su hotel y su departamento', async () => {
+    const user = userEvent.setup()
+    renderUsers()
+    await screen.findByText('Hugo Curtidor')
+
+    await user.click(screen.getByRole('tab', { name: 'Personal de hoteles' }))
+
+    expect((await screen.findAllByText('Diego Ramírez'))[0]).toBeInTheDocument()
+    expect(screen.getAllByText('Paola Herrera').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Hotel Xcaret').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Housekeeping').length).toBeGreaterThan(0)
+    expect(screen.getByText('Todo el hotel')).toBeInTheDocument()
+    // René está de baja: solo en Inactivos.
+    expect(screen.queryByText('René Ochoa')).not.toBeInTheDocument()
+    expect(screen.queryByText('Hugo Curtidor')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Inactivos/ }))
+    expect(await screen.findByText('René Ochoa')).toBeInTheDocument()
+  })
+
+  it('el ámbito vive en la URL: ?ambito=hoteles abre directo la pestaña de hoteles', async () => {
+    renderUsers('/usuarios?ambito=hoteles')
+    expect((await screen.findAllByText('Diego Ramírez'))[0]).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Personal de hoteles' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+  })
+
+  it('el alta de una cuenta del hotel pide departamento a un Supervisor y no al Manager General', async () => {
+    const user = userEvent.setup()
+    renderUsers('/usuarios?ambito=hoteles')
+    await screen.findAllByText('Diego Ramírez')
+
+    await user.click(screen.getByRole('button', { name: 'Agregar cuenta del hotel' }))
+    expect((await screen.findAllByText('Nueva cuenta del hotel'))[0]).toBeInTheDocument()
+    expect(screen.queryByLabelText('Departamento')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('combobox', { name: 'Rol' }))
+    await user.click(await screen.findByRole('option', { name: 'Supervisor' }))
+    expect(await screen.findByLabelText('Departamento')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('combobox', { name: 'Rol' }))
+    await user.click(await screen.findByRole('option', { name: 'Manager General' }))
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Departamento')).not.toBeInTheDocument()
+    })
+    expect(screen.getByText('El Manager General no reporta a nadie.')).toBeInTheDocument()
+  })
+
+  it('crear un Supervisor: los jefes salen del hotel elegido y la invitación se confirma', async () => {
+    const user = userEvent.setup()
+    renderUsers('/usuarios?ambito=hoteles')
+    await screen.findAllByText('Diego Ramírez')
+
+    await user.click(screen.getByRole('button', { name: 'Agregar cuenta del hotel' }))
+    await screen.findAllByText('Nueva cuenta del hotel')
+
+    await user.click(screen.getByRole('combobox', { name: 'Hotel' }))
+    await user.click(await screen.findByRole('option', { name: 'Hotel Xcaret' }))
+    await user.click(screen.getByRole('combobox', { name: 'Rol' }))
+    await user.click(await screen.findByRole('option', { name: 'Supervisor' }))
+    await user.click(await screen.findByLabelText('Departamento'))
+    await user.click(await screen.findByRole('option', { name: 'Housekeeping' }))
+
+    // Paola (Manager de Área de Housekeeping) y Diego (Manager General) son los jefes válidos.
+    await user.click(screen.getByRole('combobox', { name: 'Reporta a' }))
+    expect(await screen.findByRole('option', { name: /Paola Herrera/ })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: /Diego Ramírez/ })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: /Aldo Castillo/ })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('option', { name: /Paola Herrera/ }))
+
+    await user.type(screen.getByLabelText('Nombre completo'), 'Nueva Supervisora')
+    await user.type(screen.getByLabelText('Correo'), 'nueva@xcaret.local')
+    await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
+
+    expect(await screen.findByText('Invitación enviada a:')).toBeInTheDocument()
+    expect(screen.getByText('nueva@xcaret.local')).toBeInTheDocument()
+  })
+
+  it('editar una cuenta del hotel bloquea hotel, rol y correo', async () => {
+    const user = userEvent.setup()
+    renderUsers('/usuarios?ambito=hoteles')
+
+    await user.click(await screen.findByText('Aldo Castillo'))
+    expect((await screen.findAllByText('Editar cuenta del hotel'))[0]).toBeInTheDocument()
+    expect(screen.getByLabelText('Correo')).toBeDisabled()
+    expect(screen.getByRole('combobox', { name: 'Hotel' })).toBeDisabled()
+    expect(screen.getByRole('combobox', { name: 'Rol' })).toBeDisabled()
+    // Aldo no ha entrado: se puede reenviar la invitación.
+    expect(screen.getByRole('button', { name: 'Reenviar invitación' })).toBeInTheDocument()
     expect(screen.getByRole('switch', { name: 'Activo' })).toBeInTheDocument()
   })
 })
