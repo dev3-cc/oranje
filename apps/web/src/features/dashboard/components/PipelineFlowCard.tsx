@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { statusLight, statusLightForeground } from '@oranje/ui'
 import { gsap } from 'gsap'
 import { useEffect, useRef, type ReactNode } from 'react'
@@ -59,6 +60,7 @@ export function PipelineFlowCard({
 }: {
   countByStatus: Partial<Record<OnboardingStatus, number>>
 }): ReactNode {
+  const { t } = useLingui()
   const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -119,11 +121,11 @@ export function PipelineFlowCard({
 
   return (
     <SectionCard
-      title="El flujo del semáforo"
+      title={t`El flujo del semáforo`}
       subtitle={
         IS_DEV_UI
           ? 'catalogs.status_light_transition — el camino principal; los desvíos abajo'
-          : 'El camino principal del ciclo; los desvíos abajo'
+          : t`El camino principal del ciclo; los desvíos abajo`
       }
     >
       <div ref={rootRef} className="overflow-x-auto pb-2">
@@ -151,7 +153,7 @@ export function PipelineFlowCard({
           <p className="max-w-56 self-center pl-2 text-xs leading-relaxed text-ink-3">
             {IS_DEV_UI
               ? 'Rojo, Café y Negro reactivan siempre hacia Azul claro (RR-V-07).'
-              : 'Rojo, Café y Negro pueden reactivarse: vuelven a Azul claro.'}
+              : t`Rojo, Café y Negro pueden reactivarse: vuelven a Azul claro.`}
           </p>
         </div>
       </div>

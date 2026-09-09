@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn, MaterialIcon } from '@oranje/ui'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
@@ -13,10 +16,10 @@ const KIND_ICON: Record<SearchHit['kind'], string> = {
   worker: 'person',
 }
 
-const GROUP_LABEL: Record<SearchHit['kind'], string> = {
-  prospect: 'Hoteles y prospectos',
-  requisition: 'Requisiciones',
-  worker: 'Colaboradores',
+const GROUP_LABEL: Record<SearchHit['kind'], MessageDescriptor> = {
+  prospect: msg`Hoteles y prospectos`,
+  requisition: msg`Requisiciones`,
+  worker: msg`Colaboradores`,
 }
 
 /**
@@ -32,6 +35,7 @@ export function GlobalSearch({
   isOpen: boolean
   onClose: () => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const navigate = useNavigate()
   const [term, setTerm] = useState('')
   const debouncedTerm = useDebounce(term.trim(), 250)
@@ -91,29 +95,33 @@ export function GlobalSearch({
         <SearchField
           value={term}
           onChange={setTerm}
-          label="Buscar hoteles, requisiciones o colaboradores"
-          placeholder="Hotel, folio de requisición o colaborador, p. ej. Xcaret…"
+          label={t`Buscar hoteles, requisiciones o colaboradores`}
+          placeholder={t`Hotel, folio de requisición o colaborador, p. ej. Xcaret…`}
           className="w-full"
           isSearching={isSearching}
         />
 
         {debouncedTerm.length < 2 && term.trim().length < 2 ? (
           <p className="px-1 text-xs text-ink-3">
-            Escribe al menos 2 letras. Navega con ↑ ↓ y abre con Enter.
+            <Trans>Escribe al menos 2 letras. Navega con ↑ ↓ y abre con Enter.</Trans>
           </p>
         ) : isSearching && hits.length === 0 ? (
-          <p className="px-1 text-sm text-ink-3">Buscando «{term.trim()}»…</p>
+          <p className="px-1 text-sm text-ink-3">
+            <Trans>Buscando «{term.trim()}»…</Trans>
+          </p>
         ) : hits.length === 0 ? (
           <p className="rounded-lg border border-dashed border-line px-4 py-6 text-center text-sm text-ink-3">
-            Nada coincide con «{term.trim()}». Prueba con el nombre del hotel, el folio de la
-            requisición o el nombre del colaborador.
+            <Trans>
+              Nada coincide con «{term.trim()}». Prueba con el nombre del hotel, el folio de la
+              requisición o el nombre del colaborador.
+            </Trans>
           </p>
         ) : (
-          <ul role="listbox" aria-label="Resultados" className="flex flex-col gap-3">
+          <ul role="listbox" aria-label={t`Resultados`} className="flex flex-col gap-3">
             {groups.map((group) => (
               <li key={group.kind}>
                 <p className="mb-1 px-1 text-xs font-semibold tracking-wide text-ink-3 uppercase">
-                  {GROUP_LABEL[group.kind]}
+                  {i18n._(GROUP_LABEL[group.kind])}
                 </p>
                 <ul className="flex flex-col gap-1">
                   {group.items.map((hit) => {

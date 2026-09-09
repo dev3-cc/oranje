@@ -1,6 +1,7 @@
 import type {
   AuthorizationQueue,
   AuthorizationRequest,
+  AuthorizerScope,
   ResolveAuthorizationPayload,
   StatusChangeReason,
 } from '../types/requisition.types'
@@ -9,7 +10,6 @@ import { registerAuthorizationsMocks } from './authorizationsMocks'
 
 import { baseApi } from '@/app/baseApi'
 import type { UrgencyLevel } from '@/shared/constants/requisitionStatus'
-import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import type { ApiEnvelope, RequisitionApi } from '@/shared/types/apiContract.types'
 
@@ -87,10 +87,8 @@ async function fetchQueue(
   const requisitions = listRes.data
   const me = (meRes.data as ApiEnvelope<{ role: { code: string; name: string } }>).data
 
-  const scope =
-    me.role.code === 'ROL-H-03'
-      ? 'todos los departamentos de tu hotel'
-      : `solo tu departamento${IS_DEV_UI ? ' (D-09)' : ''}`
+  /* El Manager General firma por todo el hotel; los demás solo por su departamento (D-09). */
+  const scope: AuthorizerScope = me.role.code === 'ROL-H-03' ? 'HOTEL' : 'DEPARTMENT'
 
   return {
     data: {

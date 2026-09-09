@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import type { ReactNode } from 'react'
 
 import { AuditFormDialog } from './AuditFormDialog'
@@ -20,15 +21,16 @@ export function EnvironmentAuditDialog({
   onClose: () => void
   onSaved?: () => void
 }): ReactNode {
+  const { t } = useLingui()
   return (
     <AuditFormDialog
       auditType="ENVIRONMENT"
       hotelId={hotelId}
-      title="Percepción de Ambiente y Recursos"
+      title={t`Percepción de Ambiente y Recursos`}
       description={
         auditId
-          ? `Corrige lo que haga falta de ${hotelName}: se guarda con PATCH, sobre la misma auditoría.`
-          : `Insumos, relaciones, carga laboral y entorno de ${hotelName}.`
+          ? t`Corrige lo que haga falta de ${hotelName}: se guarda con PATCH, sobre la misma auditoría.`
+          : t`Insumos, relaciones, carga laboral y entorno de ${hotelName}.`
       }
       {...(auditId ? { auditId } : {})}
       onClose={onClose}

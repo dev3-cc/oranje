@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { toDataURL } from 'qrcode'
 import { useEffect, useState, type ReactNode } from 'react'
 
@@ -7,6 +8,7 @@ import { useEffect, useState, type ReactNode } from 'react'
  * botón «Llamar» en una computadora no marcaba nada.
  */
 export function ContactQr({ name, phone }: { name: string; phone: string }): ReactNode {
+  const { t } = useLingui()
   const [dataUrl, setDataUrl] = useState<string | null>(null)
 
   useEffect(() => {
@@ -22,9 +24,9 @@ export function ContactQr({ name, phone }: { name: string; phone: string }): Rea
 
   return (
     <figure className="flex flex-col items-center gap-2 rounded-lg border border-line bg-surface p-4">
-      <img src={dataUrl} alt={`Contacto de ${name} en QR`} className="size-28 rounded-md" />
+      <img src={dataUrl} alt={t`Contacto de ${name} en QR`} className="size-28 rounded-md" />
       <figcaption className="max-w-40 text-center text-xs leading-relaxed text-ink-3">
-        Escanéalo con tu celular para llamarle o guardar su contacto
+        <Trans>Escanéalo con tu celular para llamarle o guardar su contacto</Trans>
       </figcaption>
     </figure>
   )

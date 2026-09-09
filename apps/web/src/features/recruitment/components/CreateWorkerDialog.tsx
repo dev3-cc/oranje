@@ -68,7 +68,7 @@ const AFTERMATH = IS_DEV_UI
       'Nace en Blanco: el expediente se completa por fases.',
       'El colaborador completa la Fase 2 (transporte y SSN/ITIN, con 3 días de plazo) y la Fase 3 (contacto de emergencia y salud) desde su app.',
       'Cuando la Reclutadora valida el alta, pasa a Verde fuerte y entra al Pool de Colaboradores.',
-      'Sin SSN/ITIN verificado se le aplica la retención del 16% de forma automática.',
+      'Por ahora la retención del 16% aplica a todos los colaboradores, suban o verifiquen o no su SSN/ITIN — es temporal, mientras se conecta ese proceso.',
     ]
 
 interface Draft {

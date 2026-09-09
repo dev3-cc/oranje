@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn } from '@oranje/ui'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useState, type ReactNode } from 'react'
@@ -20,6 +21,7 @@ export function OnboardingIntro({
   onDone: () => void
   startLabel: string
 }): ReactNode {
+  const { t } = useLingui()
   const [slide, setSlide] = useState(0)
   const reduceMotion = useReducedMotion() ?? false
   const isLast = slide >= slides.length - 1
@@ -69,11 +71,11 @@ export function OnboardingIntro({
             onDone()
           }}
         >
-          {isLast ? startLabel : 'Continuar'}
+          {isLast ? startLabel : t`Continuar`}
         </Button>
         {!isLast && (
           <Button className="w-full" onClick={onDone}>
-            Saltar
+            <Trans>Saltar</Trans>
           </Button>
         )}
       </div>

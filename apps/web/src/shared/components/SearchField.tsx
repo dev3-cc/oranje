@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { cn, Input, MaterialIcon, Spinner } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
@@ -35,13 +36,14 @@ export function SearchField({
   /** `true` mientras la consulta al servidor está en vuelo. */
   isSearching?: boolean
 }): ReactNode {
+  const { t } = useLingui()
   const showSpinner = useDelayedFlag(isSearching, 300)
 
   return (
     <div className={cn('relative min-w-60', className)}>
       {showSpinner ? (
         <Spinner
-          aria-label="Buscando"
+          aria-label={t`Buscando`}
           className="absolute top-1/2 left-3 -translate-y-1/2 text-o-500"
         />
       ) : (
@@ -66,8 +68,8 @@ export function SearchField({
       {value !== '' && (
         <button
           type="button"
-          aria-label="Limpiar la búsqueda"
-          title="Limpiar"
+          aria-label={t`Limpiar la búsqueda`}
+          title={t`Limpiar`}
           onClick={() => {
             onChange('')
           }}

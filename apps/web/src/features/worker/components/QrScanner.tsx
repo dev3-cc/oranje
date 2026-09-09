@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { MaterialIcon } from '@oranje/ui'
 import jsQR from 'jsqr'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
@@ -15,6 +16,7 @@ export function QrScanner({
   onScan: (code: string) => void
   onCancel: () => void
 }): ReactNode {
+  const { t } = useLingui()
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const doneRef = useRef(false)
@@ -25,7 +27,7 @@ export function QrScanner({
     let cancelled = false
     async function start(): Promise<void> {
       if (!navigator.mediaDevices?.getUserMedia) {
-        setError('Este navegador no puede abrir la cámara.')
+        setError(t`Este navegador no puede abrir la cámara.`)
         return
       }
       try {
@@ -49,8 +51,8 @@ export function QrScanner({
         const name = cause instanceof DOMException ? cause.name : ''
         setError(
           name === 'NotAllowedError'
-            ? 'Sin permiso de cámara no se puede leer el QR. Permítelo para este sitio y vuelve a intentar.'
-            : 'No se pudo abrir la cámara. Cierra otras apps que la usen e inténtalo de nuevo.',
+            ? t`Sin permiso de cámara no se puede leer el QR. Permítelo para este sitio y vuelve a intentar.`
+            : t`No se pudo abrir la cámara. Cierra otras apps que la usen e inténtalo de nuevo.`,
         )
       }
     }
@@ -119,11 +121,13 @@ export function QrScanner({
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-ink text-white">
       <div className="flex items-center justify-between px-4 py-3">
-        <p className="text-sm font-semibold">Escanea el QR del acceso</p>
+        <p className="text-sm font-semibold">
+          <Trans>Escanea el QR del acceso</Trans>
+        </p>
         <button
           type="button"
           onClick={onCancel}
-          aria-label="Cerrar el lector"
+          aria-label={t`Cerrar el lector`}
           className="flex size-10 cursor-pointer items-center justify-center rounded-full bg-white/10"
         >
           <MaterialIcon name="close" aria-hidden />
@@ -153,7 +157,9 @@ export function QrScanner({
       </div>
 
       <p className="px-6 py-4 text-center text-sm text-white/80">
-        Apunta al código impreso en el acceso del hotel. La app también toma tu ubicación.
+        <Trans>
+          Apunta al código impreso en el acceso del hotel. La app también toma tu ubicación.
+        </Trans>
       </p>
     </div>
   )

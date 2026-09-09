@@ -1,3 +1,6 @@
+import type { I18n } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { MaterialIcon, toast } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
@@ -8,6 +11,17 @@ import { SectionCard } from '@/shared/components/SectionCard'
 import { useCan } from '@/shared/hooks/useCan'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { formatDateTime } from '@/shared/lib/formatters'
+
+/** El `i18n` viene del componente (`useLingui`): así el mensaje habla el idioma activo (D-36). */
+function regenerateQrErrorMessage(error: unknown, i18n: I18n): string {
+  return apiErrorMessage(error, {
+    byCode: {
+      PUNCH_METHOD_NOT_QR: i18n._(msg`Este hotel poncha con selfie: cambia el método antes.`),
+    },
+    byStatus: { 403: i18n._(msg`Solo el BD, el BDC o el hotel pueden regenerar su QR.`) },
+    fallback: i18n._(msg`No se pudo regenerar el QR. Inténtalo de nuevo.`),
+  })
+}
 
 /**
  * Cómo se poncha en este hotel, y el QR cuando aplica (Reglas de Negocio,
@@ -24,6 +38,7 @@ export function HotelPunchQrCard({
   punchMethod: 'SELFIE' | 'QR'
   punchQr: { version: number; generatedAt: string } | null | undefined
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const can = useCan()
   const canManage = can('hotel:punch_qr')
   const [regenerate, { isLoading }] = useRegenerateHotelPunchQrMutation()
@@ -38,24 +53,17 @@ export function HotelPunchQrCard({
     setError(null)
     try {
       const next = await regenerate(hotelId).unwrap()
-      toast.success(`QR regenerado: versión ${String(next.version)}. Imprime la hoja nueva.`)
+      const version = String(next.version)
+      toast.success(t`QR regenerado: versión ${version}. Imprime la hoja nueva.`)
       setArmed(false)
     } catch (cause) {
-      setError(
-        apiErrorMessage(cause, {
-          byCode: {
-            PUNCH_METHOD_NOT_QR: 'Este hotel poncha con selfie: cambia el método antes.',
-          },
-          byStatus: { 403: 'Solo el BD, el BDC o el hotel pueden regenerar su QR.' },
-          fallback: 'No se pudo regenerar el QR. Inténtalo de nuevo.',
-        }),
-      )
+      setError(regenerateQrErrorMessage(cause, i18n))
       setArmed(false)
     }
   }
 
   return (
-    <SectionCard title="Ponche">
+    <SectionCard title={t`Ponche`}>
       <div className="flex items-start gap-3">
         <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-o-50 text-o-700">
           <MaterialIcon
@@ -66,20 +74,20 @@ export function HotelPunchQrCard({
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-ink">
-            {punchMethod === 'QR' ? 'QR del hotel' : 'Selfie'}
+            {punchMethod === 'QR' ? t`QR del hotel` : t`Selfie`}
           </p>
           <p className="text-sm text-ink-3">
             {punchMethod === 'QR'
-              ? 'El hotel imprime el código en el acceso; la app lo escanea junto con la ubicación.'
-              : 'La app toma la foto en el momento de ponchar. Para cambiarlo, edita el hotel.'}
+              ? t`El hotel imprime el código en el acceso; la app lo escanea junto con la ubicación.`
+              : t`La app toma la foto en el momento de ponchar. Para cambiarlo, edita el hotel.`}
           </p>
 
           {punchMethod === 'QR' && (
             <div className="mt-3 flex flex-col gap-2">
               <p className="text-xs text-ink-3">
                 {punchQr
-                  ? `Versión ${String(punchQr.version)} · generado el ${formatDateTime(punchQr.generatedAt)}`
-                  : 'Aún no hay QR generado.'}
+                  ? t`Versión ${String(punchQr.version)} · generado el ${formatDateTime(punchQr.generatedAt)}`
+                  : t`Aún no hay QR generado.`}
               </p>
               {canManage ? (
                 <div className="flex flex-wrap gap-2">
@@ -87,25 +95,25 @@ export function HotelPunchQrCard({
                     href={`/hoteles/${hotelId}/qr-ponche`}
                     target="_blank"
                     rel="noreferrer"
-                    title="Abre la hoja lista para imprimir o guardar como PDF"
+                    title={t`Abre la hoja lista para imprimir o guardar como PDF`}
                     className="inline-flex items-center gap-1.5 rounded-md bg-o-300 shadow-xs px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-o-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
                   >
                     <MaterialIcon name="print" className="text-base" aria-hidden />
-                    Imprimir QR
+                    <Trans>Imprimir QR</Trans>
                   </a>
                   <Button
                     variant="secondary"
                     disabled={isLoading}
-                    title="El QR anterior deja de servir al instante: hay que cambiar la hoja del acceso"
+                    title={t`El QR anterior deja de servir al instante: hay que cambiar la hoja del acceso`}
                     onClick={() => {
                       void onRegenerate()
                     }}
                   >
                     {isLoading
-                      ? 'Regenerando…'
+                      ? t`Regenerando…`
                       : isArmed
-                        ? 'Confirmar: el anterior deja de servir'
-                        : 'Regenerar QR'}
+                        ? t`Confirmar: el anterior deja de servir`
+                        : t`Regenerar QR`}
                   </Button>
                   {isArmed && !isLoading && (
                     <Button
@@ -114,13 +122,13 @@ export function HotelPunchQrCard({
                         setArmed(false)
                       }}
                     >
-                      Cancelar
+                      <Trans>Cancelar</Trans>
                     </Button>
                   )}
                 </div>
               ) : (
                 <p className="text-xs text-ink-3">
-                  El QR lo imprime y regenera el BD, el BDC o el personal del hotel.
+                  <Trans>El QR lo imprime y regenera el BD, el BDC o el personal del hotel.</Trans>
                 </p>
               )}
               {error && (

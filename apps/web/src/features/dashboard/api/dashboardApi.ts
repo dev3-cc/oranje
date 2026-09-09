@@ -1,3 +1,6 @@
+import { i18n } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+
 import type {
   DashboardOverview,
   FunnelBucket,
@@ -125,8 +128,8 @@ async function fetchOverview(
     data: {
       owner: { name: me.fullName, roleLabel: me.role.name },
       scope: {
-        zones: me.zones.length ? me.zones.map((zone) => zone.name) : ['todas'],
-        periodLabel: 'histórico',
+        zones: me.zones.length ? me.zones.map((zone) => zone.name) : [i18n._(msg`todas`)],
+        periodLabel: i18n._(msg`histórico`),
       },
       metrics: {
         openProspects: open.length,

@@ -1,3 +1,6 @@
+import { i18n } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+
 import { addDaysIso, resolveWeek } from '../lib/weekNavigation'
 import {
   ANY_VALUE,
@@ -504,7 +507,8 @@ export const timesheetApi = baseApi.injectEndpoints({
               data: {
                 error: {
                   code: 'ASSIGNMENT_NOT_FOUND',
-                  message: 'El colaborador no tiene asignación en esta requisición',
+                  /* Se traduce AL LLAMAR, no al cargar: sigue al idioma en caliente (D-36). */
+                  message: i18n._(msg`El colaborador no tiene asignación en esta requisición`),
                 },
               },
             } as never,

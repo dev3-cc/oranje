@@ -1,3 +1,4 @@
+import { Plural, Trans, useLingui } from '@lingui/react/macro'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, statusLight } from '@oranje/ui'
 import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
@@ -126,60 +127,66 @@ export interface ActivityStats {
  * móvil una rejilla de tarjetas planas no cabía sin volverse una torre.
  */
 export function MyActivityCard({ stats }: { stats: ActivityStats }): ReactNode {
+  const { t } = useLingui()
   const { data: session } = useGetSessionQuery()
   const { data: activity } = useGetMyActivityQuery()
 
   if (!session || !activity) return null
 
+  const staleCount = String(stats.staleProspects)
+  const averageDays = String(stats.averageConversionDays)
+
   return (
     <section className="rounded-2xl border border-line bg-surface p-5 sm:p-6">
       <h2 className="text-lg font-bold text-ink">
-        <FoldText text="Tu actividad" />
+        <FoldText text={t`Tu actividad`} />
       </h2>
-      <p className="mt-0.5 text-sm text-ink-3">Últimas 8 semanas</p>
+      <p className="mt-0.5 text-sm text-ink-3">
+        <Trans>Últimas 8 semanas</Trans>
+      </p>
 
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <SparkCard
-          title="Prospectos abiertos"
+          title={t`Prospectos abiertos`}
           value={String(stats.openProspects)}
           series={activity.openedPerWeek}
           labels={activity.weekLabels}
           color={statusLight['st-azul-claro']}
           tintClass="bg-st-azul-claro/10"
           delay={0.05}
-          foot={`${String(stats.staleProspects)} sin actividad 7+ días`}
+          foot={t`${staleCount} sin actividad 7+ días`}
         />
         <SparkCard
-          title="Conversiones"
+          title={t`Conversiones`}
           value={String(activity.totalConverted)}
           series={activity.convertedPerWeek}
           labels={activity.weekLabels}
           color={statusLight['st-naranja']}
           tintClass="bg-st-naranja/10"
           delay={0.12}
-          foot="Rosa → Naranja, por semana"
+          foot={t`Rosa → Naranja, por semana`}
         />
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <StatTile
           value={formatPercent(stats.conversionRate)}
-          label="Tasa de conversión"
-          foot="Naranja / ciclos cerrados"
+          label={t`Tasa de conversión`}
+          foot={t`Naranja / ciclos cerrados`}
           tintClass="bg-o-500/10"
           delay={0.18}
         />
         <StatTile
-          value={`${String(stats.averageConversionDays)} d`}
-          label="Tiempo promedio"
-          foot="Gris → Naranja"
+          value={t`${averageDays} d`}
+          label={t`Tiempo promedio`}
+          foot={t`Gris → Naranja`}
           tintClass="bg-surface-2"
           delay={0.24}
         />
         <StatTile
           value={String(stats.activeClients)}
-          label="Clientes activos"
-          foot="Habilitados para requisiciones"
+          label={t`Clientes activos`}
+          foot={t`Habilitados para requisiciones`}
           tintClass="bg-st-verde/10"
           delay={0.3}
         />
@@ -196,6 +203,7 @@ export function MyActivityCard({ stats }: { stats: ActivityStats }): ReactNode {
 const TILE_TILT = [-6, 4, -3, 5, -4, 3]
 
 export function TeamProgressCard(): ReactNode {
+  const { t } = useLingui()
   const { data: members = [] } = useGetTeamProgressQuery()
 
   if (members.length === 0) return null
@@ -210,24 +218,29 @@ export function TeamProgressCard(): ReactNode {
   )
   const teamRate = finished === 0 ? 0 : totalConversions / finished
   const topPerformer = [...members].sort((a, b) => b.conversions - a.conversions)[0]
+  const memberCount = members.length
+  const teamRateLabel = formatPercent(teamRate)
 
   return (
     <section className="rounded-2xl border border-line bg-surface p-6 sm:p-8">
       <div className="flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-center">
         <div className="max-w-md">
           <h2 className="text-2xl font-bold text-ink sm:text-3xl">
-            <FoldText text="Tu equipo avanza contigo" />
+            <FoldText text={t`Tu equipo avanza contigo`} />
           </h2>
           <p className="mt-2 text-sm leading-relaxed text-ink-3">
-            {members.length} {members.length === 1 ? 'BD te reporta' : 'BDs te reportan'} ·{' '}
-            {totalOpen} prospectos abiertos y {totalConversions}{' '}
-            {totalConversions === 1 ? 'conversión' : 'conversiones'} entre todos.
+            <Trans>
+              <Plural value={memberCount} one="# BD te reporta" other="# BDs te reportan" /> ·{' '}
+              {totalOpen} prospectos abiertos y{' '}
+              <Plural value={totalConversions} one="# conversión" other="# conversiones" /> entre
+              todos.
+            </Trans>
           </p>
           <Link
             to="/mi-equipo"
             className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-o-300 shadow-xs px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-o-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
           >
-            Ver Mi Equipo <span aria-hidden>→</span>
+            <Trans>Ver Mi Equipo</Trans> <span aria-hidden>→</span>
           </Link>
         </div>
 
@@ -242,8 +255,11 @@ export function TeamProgressCard(): ReactNode {
             >
               <span className="text-sm font-bold text-white">{topPerformer.fullName}</span>
               <span className="rounded-md bg-white/15 px-2 py-0.5 text-xs font-medium text-white/85">
-                {topPerformer.conversions}{' '}
-                {topPerformer.conversions === 1 ? 'conversión' : 'conversiones'}
+                <Plural
+                  value={topPerformer.conversions}
+                  one="# conversión"
+                  other="# conversiones"
+                />
               </span>
             </motion.div>
           )}
@@ -258,7 +274,7 @@ export function TeamProgressCard(): ReactNode {
                   initial={{ opacity: 0, y: 12, rotate: 0 }}
                   animate={{ opacity: 1, y: 0, rotate: TILE_TILT[index % TILE_TILT.length] ?? 0 }}
                   transition={{ duration: 0.4, delay: index * 0.08 }}
-                  title={`${member.fullName} · ${String(member.openProspects)} abiertos · ${formatPercent(member.conversionRate)}`}
+                  title={t`${member.fullName} · ${String(member.openProspects)} abiertos · ${formatPercent(member.conversionRate)}`}
                   className="-ml-3 flex size-16 items-center justify-center overflow-hidden rounded-2xl border-4 border-surface bg-o-500/15 text-lg font-bold text-o-700 shadow-md"
                 >
                   {member.photoUrl ? (
@@ -282,8 +298,14 @@ export function TeamProgressCard(): ReactNode {
           </div>
 
           <p className="mt-2 pl-3 text-sm text-ink-3">
-            {totalConversions} {totalConversions === 1 ? 'hotel convertido' : 'hoteles convertidos'}{' '}
-            por tu equipo · tasa {formatPercent(teamRate)}
+            <Trans>
+              <Plural
+                value={totalConversions}
+                one="# hotel convertido"
+                other="# hoteles convertidos"
+              />{' '}
+              por tu equipo · tasa {teamRateLabel}
+            </Trans>
           </p>
         </div>
       </div>

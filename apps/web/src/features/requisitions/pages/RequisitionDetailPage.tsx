@@ -1,3 +1,6 @@
+import type { I18n } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { statusLight, toast } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
@@ -24,6 +27,32 @@ import { useCan } from '@/shared/hooks/useCan'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { formatDateTime } from '@/shared/lib/formatters'
 
+/** El `i18n` viene del componente (`useLingui`): así el mensaje habla el idioma activo (D-36). */
+function deleteErrorMessage(error: unknown, i18n: I18n): string {
+  return apiErrorMessage(error, {
+    byCode: {
+      NOT_YOUR_DRAFT: i18n._(
+        msg`Este borrador no es tuyo: lo elimina quien lo creó o el Manager General.`,
+      ),
+      TRANSITION_NOT_ALLOWED: i18n._(
+        msg`Una requisición en este estado no se elimina: las cubiertas se conservan como historia.`,
+      ),
+      REASON_REQUIRED: i18n._(msg`Escribe el motivo: queda en el journal.`),
+      REQUISITION_ALREADY_DELETED: i18n._(msg`Esta requisición ya estaba eliminada.`),
+      REQUISITION_HAS_ASSIGNMENTS: i18n._(
+        msg`Tiene colaboradores asignados: libera las asignaciones antes de eliminarla.`,
+      ),
+      DEPARTMENT_OUT_OF_SCOPE: i18n._(
+        msg`Esta requisición tiene posiciones de otro departamento: la elimina el Manager General.`,
+      ),
+      FORBIDDEN: i18n._(
+        msg`Una requisición autorizada la elimina el Manager de Área de su departamento o el Manager General.`,
+      ),
+    },
+    fallback: i18n._(msg`No se pudo eliminar la requisición. Inténtalo de nuevo.`),
+  })
+}
+
 /**
  * Detalle de una requisición: qué se pidió, cómo va la cobertura slot por slot
  * y quién la movió de estado.
@@ -33,6 +62,7 @@ import { formatDateTime } from '@/shared/lib/formatters'
  * enlazar.
  */
 export function RequisitionDetailPage(): ReactNode {
+  const { t, i18n } = useLingui()
   const { requisitionId = '' } = useParams()
   const navigate = useNavigate()
   const { data: session } = useGetSessionQuery()
@@ -58,10 +88,12 @@ export function RequisitionDetailPage(): ReactNode {
     return (
       <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-surface p-6">
         <p className="text-sm text-red">
-          No se encontró la requisición: puede que se haya eliminado o que el enlace sea viejo.
+          <Trans>
+            No se encontró la requisición: puede que se haya eliminado o que el enlace sea viejo.
+          </Trans>
         </p>
         <Link to="/requisiciones" className="text-sm font-semibold text-o-700 hover:underline">
-          Volver al Tablero de Requisiciones
+          <Trans>Volver al Tablero de Requisiciones</Trans>
         </Link>
       </div>
     )
@@ -83,40 +115,24 @@ export function RequisitionDetailPage(): ReactNode {
         requisitionId,
         ...(needsReason ? { reason: deleteReason.trim() } : {}),
       }).unwrap()
-      toast.success(`Requisición ${requisitionNumber} eliminada`)
+      toast.success(t`Requisición ${requisitionNumber} eliminada`)
       void navigate('/requisiciones')
     } catch (error) {
       setDeleteArmed(false)
-      setDeleteError(
-        apiErrorMessage(error, {
-          byCode: {
-            NOT_YOUR_DRAFT:
-              'Este borrador no es tuyo: lo elimina quien lo creó o el Manager General.',
-            TRANSITION_NOT_ALLOWED:
-              'Una requisición en este estado no se elimina: las cubiertas se conservan como historia.',
-            REASON_REQUIRED: 'Escribe el motivo: queda en el journal.',
-            REQUISITION_ALREADY_DELETED: 'Esta requisición ya estaba eliminada.',
-            REQUISITION_HAS_ASSIGNMENTS:
-              'Tiene colaboradores asignados: libera las asignaciones antes de eliminarla.',
-            DEPARTMENT_OUT_OF_SCOPE:
-              'Esta requisición tiene posiciones de otro departamento: la elimina el Manager General.',
-            FORBIDDEN:
-              'Una requisición autorizada la elimina el Manager de Área de su departamento o el Manager General.',
-          },
-          fallback: 'No se pudo eliminar la requisición. Inténtalo de nuevo.',
-        }),
-      )
+      setDeleteError(deleteErrorMessage(error, i18n))
     }
   }
 
   return (
     <div className="flex flex-col gap-6">
-      <nav aria-label="Ruta" className="flex items-center gap-2 text-sm text-ink-3">
+      <nav aria-label={t`Ruta`} className="flex items-center gap-2 text-sm text-ink-3">
         <Link to="/requisiciones" className="hover:text-o-700">
-          Demanda
+          <Trans>Demanda</Trans>
         </Link>
         <span aria-hidden>/</span>
-        <span className="font-semibold text-ink-2">Detalle de Requisición</span>
+        <span className="font-semibold text-ink-2">
+          <Trans>Detalle de Requisición</Trans>
+        </span>
       </nav>
 
       <header className="flex flex-col gap-4">
@@ -144,8 +160,10 @@ export function RequisitionDetailPage(): ReactNode {
               </span>
             </div>
             <p className="text-sm text-white/80">
-              {detail.hotelName} · {detail.department} · creada por {detail.createdByName} el{' '}
-              {formatDateTime(detail.createdAt)}
+              <Trans>
+                {detail.hotelName} · {detail.department} · creada por {detail.createdByName} el{' '}
+                {formatDateTime(detail.createdAt)}
+              </Trans>
             </p>
           </div>
         </div>
@@ -157,7 +175,7 @@ export function RequisitionDetailPage(): ReactNode {
               setJournalOpen(true)
             }}
           >
-            Ver bitácora
+            <Trans>Ver bitácora</Trans>
           </Button>
           {/*
             Eliminar = Morado (encargo 10). El borrador lo quita quien lo
@@ -186,10 +204,10 @@ export function RequisitionDetailPage(): ReactNode {
                 }}
               >
                 {isDeleting
-                  ? 'Eliminando…'
+                  ? t`Eliminando…`
                   : isDeleteArmed
-                    ? 'Sí, eliminar requisición'
-                    : 'Eliminar requisición'}
+                    ? t`Sí, eliminar requisición`
+                    : t`Eliminar requisición`}
               </Button>
             )}
           {/*
@@ -200,14 +218,14 @@ export function RequisitionDetailPage(): ReactNode {
           {detail.status === 'APPLE_GREEN' ? (
             can('requisitions:authorize') ? (
               <Link to="/requisiciones/autorizacion" className={buttonClass('primary')}>
-                Ir a Autorización
+                <Trans>Ir a Autorización</Trans>
               </Link>
             ) : null
           ) : detail.totals.occupiedCount < detail.totals.slotCount &&
             detail.status !== 'PURPLE' &&
             can('requisitions:take') ? (
             <Link to="/self-pick" className={buttonClass('primary')}>
-              Cubrir slots en Self-Pick
+              <Trans>Cubrir slots en Self-Pick</Trans>
             </Link>
           ) : null}
         </div>
@@ -216,15 +234,19 @@ export function RequisitionDetailPage(): ReactNode {
       {/* Quién sigue: el patrón de Autorización. El borrador espera la firma
           del Manager; la autorizada ya está en manos de Reclutamiento. */}
       {detail.status === 'APPLE_GREEN' && !can('requisitions:authorize') && (
-        <NoticeCard image={personajeManager} title="La firma es del Manager" role="status">
-          Autorizar es del Manager de Área o del Manager General: cuando firmen, la requisición pasa
-          a Autorizada y Reclutamiento la ve en la Bolsa del Self-Pick.
+        <NoticeCard image={personajeManager} title={t`La firma es del Manager`} role="status">
+          <Trans>
+            Autorizar es del Manager de Área o del Manager General: cuando firmen, la requisición
+            pasa a Autorizada y Reclutamiento la ve en la Bolsa del Self-Pick.
+          </Trans>
         </NoticeCard>
       )}
       {(detail.status === 'GREEN' || detail.status === 'YELLOW') && !can('requisitions:take') && (
-        <NoticeCard image={personajeTalento} title="Ahora sigue Reclutamiento" role="status">
-          La requisición ya está en la Bolsa del Self-Pick: las Reclutadoras van cubriendo los slots
-          y aquí verás la cobertura al día.
+        <NoticeCard image={personajeTalento} title={t`Ahora sigue Reclutamiento`} role="status">
+          <Trans>
+            La requisición ya está en la Bolsa del Self-Pick: las Reclutadoras van cubriendo los
+            slots y aquí verás la cobertura al día.
+          </Trans>
         </NoticeCard>
       )}
 
@@ -242,7 +264,7 @@ export function RequisitionDetailPage(): ReactNode {
             htmlFor="delete-reason"
             className="text-sm font-semibold text-ink"
           >
-            ¿Por qué se elimina? El motivo queda en el journal.
+            <Trans>¿Por qué se elimina? El motivo queda en el journal.</Trans>
           </label>
           <input
             id="delete-reason"
@@ -271,13 +293,13 @@ export function RequisitionDetailPage(): ReactNode {
                 setDeleteError(null)
               }}
             >
-              Cancelar
+              <Trans>Cancelar</Trans>
             </Button>
             <Button
               disabled={isDeleting || deleteReason.trim().length < 4}
               title={
                 deleteReason.trim().length < 4
-                  ? 'Escribe el motivo (al menos 4 letras) para poder eliminarla'
+                  ? t`Escribe el motivo (al menos 4 letras) para poder eliminarla`
                   : undefined
               }
               className="text-red"
@@ -285,7 +307,7 @@ export function RequisitionDetailPage(): ReactNode {
                 void confirmDelete()
               }}
             >
-              {isDeleting ? 'Eliminando…' : 'Sí, eliminar requisición'}
+              {isDeleting ? t`Eliminando…` : t`Sí, eliminar requisición`}
             </Button>
           </div>
         </div>

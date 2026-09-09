@@ -1,3 +1,6 @@
+import type { I18n, MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import { MaterialIcon } from '@oranje/ui'
 import { motion, useReducedMotion } from 'framer-motion'
@@ -36,7 +39,7 @@ import errorLottie from '@/assets/selfie/oranje-error.lottie'
 import fueraDelHotelLottie from '@/assets/selfie/oranje-fuera-del-hotel.lottie'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { LoadError } from '@/shared/components/LoadError'
-import { OnboardingIntro, type OnboardingSlide } from '@/shared/components/OnboardingIntro'
+import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage, readApiError } from '@/shared/lib/apiError'
 import { formatTimeIn } from '@/shared/lib/formatters'
@@ -143,21 +146,26 @@ const PHASE_LOTTIE: Record<Exclude<PunchPhase, 'idle'>, Record<'in' | 'out', str
 /** Cuánto se queda el desenlace —éxito o error— antes de devolverle su lugar al reloj. */
 const OUTCOME_VISIBLE_MS = 2500
 
-const INTRO_SLIDES: readonly OnboardingSlide[] = [
+/** Las diapositivas del intro; el texto se traduce al pintar con `i18n._()` (D-36). */
+const INTRO_SLIDES: readonly {
+  image: string
+  title: MessageDescriptor
+  text: MessageDescriptor
+}[] = [
   {
     image: personajeCronograma,
-    title: 'Cuatro marcas al día',
-    text: 'Entrada, salida al lunch, regreso y salida. El botón siempre sabe cuál toca: solo tócalo cuando llegue el momento.',
+    title: msg`Cuatro marcas al día`,
+    text: msg`Entrada, salida al lunch, regreso y salida. El botón siempre sabe cuál toca: solo tócalo cuando llegue el momento.`,
   },
   {
     image: personajeFoto,
-    title: 'Entrada y Salida llevan tu foto',
-    text: 'Al tocar el botón se abre la cámara. La foto confirma que eres tú; no se comparte con el hotel.',
+    title: msg`Entrada y Salida llevan tu foto`,
+    text: msg`Al tocar el botón se abre la cámara. La foto confirma que eres tú; no se comparte con el hotel.`,
   },
   {
     image: personajeAcceso,
-    title: 'Solo dentro del hotel',
-    text: 'Tu teléfono manda la ubicación y el sistema verifica que estés en el hotel. Si estás fuera, pídele al Supervisor un ponche manual.',
+    title: msg`Solo dentro del hotel`,
+    text: msg`Tu teléfono manda la ubicación y el sistema verifica que estés en el hotel. Si estás fuera, pídele al Supervisor un ponche manual.`,
   },
 ]
 
@@ -197,38 +205,54 @@ function locate(): Promise<{ latitude: number; longitude: number }> {
   })
 }
 
-function punchErrorMessage(error: unknown): string {
+/** El `i18n` viene del componente (`useLingui`): así el mensaje habla el idioma activo (D-36). */
+function punchErrorMessage(error: unknown, i18n: I18n): string {
   if (error instanceof Error) {
     switch (error.message) {
       case 'GEOLOCATION_DENIED':
-        return 'Sin permiso de ubicación no se puede ponchar: actívalo para este sitio en tu teléfono.'
+        return i18n._(
+          msg`Sin permiso de ubicación no se puede ponchar: actívalo para este sitio en tu teléfono.`,
+        )
       case 'GEOLOCATION_UNSUPPORTED':
-        return 'Este navegador no da la ubicación: usa el navegador del teléfono.'
+        return i18n._(msg`Este navegador no da la ubicación: usa el navegador del teléfono.`)
       case 'GEOLOCATION_FAILED':
-        return 'No se pudo leer tu ubicación. Sal a cielo abierto e inténtalo de nuevo.'
+        return i18n._(msg`No se pudo leer tu ubicación. Sal a cielo abierto e inténtalo de nuevo.`)
       default:
         break
     }
   }
   return apiErrorMessage(error, {
     byCode: {
-      NO_SHIFT_TODAY: 'Hoy no tienes turno: no hay nada que ponchar.',
-      MULTIPLE_SHIFTS_TODAY:
-        'Hoy tienes más de un turno: pídele al Supervisor que registre la marca.',
-      NOT_YOUR_ASSIGNMENT: 'Ese turno no es tuyo. Recarga la pantalla e inténtalo de nuevo.',
-      FORBIDDEN: 'Tu cuenta aún no tiene permiso para subir la foto: Oranje lo está habilitando.',
-      OUTSIDE_GEOFENCE:
-        'Estás fuera del hotel: la marca no se guarda. Pídele al Supervisor un ponche manual.',
-      PHOTO_REQUIRED: 'Entrada y Salida necesitan tu foto: tómala y vuelve a intentar.',
-      QR_REQUIRED: 'En este hotel Entrada y Salida se registran escaneando el QR del acceso.',
-      QR_INVALID:
-        'Ese código no es el QR vigente del hotel: busca la hoja actual, o pídele al Supervisor un ponche manual.',
-      PUNCH_ALREADY_REGISTERED: 'Esa marca ya quedó registrada hoy.',
-      TIMESHEET_NOT_EDITABLE: 'La semana ya se cerró: esta marca la captura el Supervisor.',
-      WORKER_NOT_LINKED: 'Tu cuenta no está ligada a un colaborador: avisa a Reclutamiento.',
-      UNSUPPORTED_FILE_TYPE: 'Esa foto no se pudo procesar: toma otra desde la cámara.',
+      NO_SHIFT_TODAY: i18n._(msg`Hoy no tienes turno: no hay nada que ponchar.`),
+      MULTIPLE_SHIFTS_TODAY: i18n._(
+        msg`Hoy tienes más de un turno: pídele al Supervisor que registre la marca.`,
+      ),
+      NOT_YOUR_ASSIGNMENT: i18n._(
+        msg`Ese turno no es tuyo. Recarga la pantalla e inténtalo de nuevo.`,
+      ),
+      FORBIDDEN: i18n._(
+        msg`Tu cuenta aún no tiene permiso para subir la foto: Oranje lo está habilitando.`,
+      ),
+      OUTSIDE_GEOFENCE: i18n._(
+        msg`Estás fuera del hotel: la marca no se guarda. Pídele al Supervisor un ponche manual.`,
+      ),
+      PHOTO_REQUIRED: i18n._(msg`Entrada y Salida necesitan tu foto: tómala y vuelve a intentar.`),
+      QR_REQUIRED: i18n._(
+        msg`En este hotel Entrada y Salida se registran escaneando el QR del acceso.`,
+      ),
+      QR_INVALID: i18n._(
+        msg`Ese código no es el QR vigente del hotel: busca la hoja actual, o pídele al Supervisor un ponche manual.`,
+      ),
+      PUNCH_ALREADY_REGISTERED: i18n._(msg`Esa marca ya quedó registrada hoy.`),
+      TIMESHEET_NOT_EDITABLE: i18n._(
+        msg`La semana ya se cerró: esta marca la captura el Supervisor.`,
+      ),
+      WORKER_NOT_LINKED: i18n._(
+        msg`Tu cuenta no está ligada a un colaborador: avisa a Reclutamiento.`,
+      ),
+      UNSUPPORTED_FILE_TYPE: i18n._(msg`Esa foto no se pudo procesar: toma otra desde la cámara.`),
     },
-    fallback: 'No se pudo guardar la marca. Inténtalo de nuevo.',
+    fallback: i18n._(msg`No se pudo guardar la marca. Inténtalo de nuevo.`),
   })
 }
 
@@ -243,6 +267,7 @@ function punchErrorMessage(error: unknown): string {
  * como actualización.
  */
 export function PunchPage(): ReactNode {
+  const { t, i18n } = useLingui()
   const { isIntroOpen, dismissIntro, reopenIntro } = useIntroSeen('worker-punch')
   const { data, isLoading, isError, refetch } = useGetTodayPunchingQuery()
   /** Solo para explicar el «sin turno»: la ficha ya está en caché por Inicio. */
@@ -279,14 +304,24 @@ export function PunchPage(): ReactNode {
   }, [])
 
   if (isIntroOpen) {
-    return <OnboardingIntro slides={INTRO_SLIDES} startLabel="Ir a ponchar" onDone={dismissIntro} />
+    return (
+      <OnboardingIntro
+        slides={INTRO_SLIDES.map((slide) => ({
+          image: slide.image,
+          title: i18n._(slide.title),
+          text: i18n._(slide.text),
+        }))}
+        startLabel={t`Ir a ponchar`}
+        onDone={dismissIntro}
+      />
+    )
   }
 
   if (isLoading) return <WorkerSkeleton variant="punch" />
   if (isError || !data) {
     return (
       <LoadError
-        message="No se pudo cargar tu turno."
+        message={t`No se pudo cargar tu turno.`}
         onRetry={() => {
           void refetch()
         }}
@@ -348,7 +383,7 @@ export function PunchPage(): ReactNode {
       setPhase('success')
       window.setTimeout(backToIdle, OUTCOME_VISIBLE_MS)
     } catch (error) {
-      setFailure(punchErrorMessage(error))
+      setFailure(punchErrorMessage(error, i18n))
       setPhase(readApiError(error).code === 'OUTSIDE_GEOFENCE' ? 'outside' : 'error')
       window.setTimeout(backToIdle, OUTCOME_VISIBLE_MS)
     }
@@ -399,8 +434,10 @@ export function PunchPage(): ReactNode {
       <section>
         <p className="text-lg font-bold text-ink">{shift.hotel}</p>
         <p className="text-sm text-ink-3">
-          {shift.position} · turno {formatTimeIn(shift.startsAt, shift.hotelTimeZone)} –{' '}
-          {formatTimeIn(shift.endsAt, shift.hotelTimeZone)}
+          <Trans>
+            {shift.position} · turno {formatTimeIn(shift.startsAt, shift.hotelTimeZone)} –{' '}
+            {formatTimeIn(shift.endsAt, shift.hotelTimeZone)}
+          </Trans>
         </p>
       </section>
 
@@ -411,25 +448,25 @@ export function PunchPage(): ReactNode {
           <>
             <p className="text-4xl font-bold tracking-tight text-ink">
               {phase === 'success'
-                ? '¡Listo!'
+                ? t`¡Listo!`
                 : phase === 'outside'
-                  ? 'Fuera del hotel'
+                  ? t`Fuera del hotel`
                   : phase === 'error'
-                    ? 'No se guardó'
+                    ? t`No se guardó`
                     : phase === 'verifying'
-                      ? 'Verificando…'
-                      : 'Registrando…'}
+                      ? t`Verificando…`
+                      : t`Registrando…`}
             </p>
             <p className="mt-1 text-sm text-ink-3">
               {phase === 'success'
-                ? 'Tu marca quedó registrada'
+                ? t`Tu marca quedó registrada`
                 : phase === 'outside' || phase === 'error'
-                  ? 'La marca no quedó registrada'
+                  ? t`La marca no quedó registrada`
                   : phase === 'verifying'
-                    ? 'Confirmando que estás en el hotel'
+                    ? t`Confirmando que estás en el hotel`
                     : photoPreview !== null
-                      ? 'Guardando tu ubicación y tu foto'
-                      : 'Guardando tu ubicación'}
+                      ? t`Guardando tu ubicación y tu foto`
+                      : t`Guardando tu ubicación`}
             </p>
           </>
         ) : (
@@ -444,8 +481,10 @@ export function PunchPage(): ReactNode {
 
       {!isOnline && (
         <p role="alert" className="rounded-md bg-yellow/20 p-3 text-sm text-ink">
-          Sin conexión: la marca no se puede guardar todavía. Vuelve a intentarlo cuando tengas
-          señal.
+          <Trans>
+            Sin conexión: la marca no se puede guardar todavía. Vuelve a intentarlo cuando tengas
+            señal.
+          </Trans>
         </p>
       )}
 
@@ -477,7 +516,9 @@ export function PunchPage(): ReactNode {
         {isDayComplete ? (
           <div className="relative z-10 flex size-36 flex-col items-center justify-center rounded-full bg-surface shadow-lg">
             <img src={mascotaCelebrando} alt="" aria-hidden className="h-16 w-auto" />
-            <span className="mt-1 text-xs font-semibold text-ink">Jornada completa</span>
+            <span className="mt-1 text-xs font-semibold text-ink">
+              <Trans>Jornada completa</Trans>
+            </span>
           </div>
         ) : (
           <motion.button
@@ -485,7 +526,7 @@ export function PunchPage(): ReactNode {
             onClick={onTap}
             disabled={!canPunch}
             {...tapFeedback(reduceMotion)}
-            aria-label={`Ponchar ${PUNCH_LABEL[next].toLowerCase()}`}
+            aria-label={t`Ponchar ${i18n._(PUNCH_LABEL[next]).toLowerCase()}`}
             className={`relative z-10 flex size-36 cursor-pointer touch-manipulation flex-col items-center justify-center overflow-hidden bg-surface shadow-lg transition-[border-radius,box-shadow] duration-300 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-o-500 disabled:cursor-not-allowed ${
               /* Con la foto en el encuadre, el círculo se vuelve cuadro: es el
                  recuadro que los corchetes del lottie están enmarcando. */
@@ -509,22 +550,26 @@ export function PunchPage(): ReactNode {
                 />
                 <span className="mt-1 text-base font-bold text-ink">
                   {phase === 'success'
-                    ? '¡Listo!'
+                    ? t`¡Listo!`
                     : phase === 'outside'
-                      ? 'Fuera del hotel'
+                      ? t`Fuera del hotel`
                       : phase === 'error'
-                        ? 'No se guardó'
+                        ? t`No se guardó`
                         : phase === 'verifying'
-                          ? 'Verificando…'
+                          ? t`Verificando…`
                           : isBusy
-                            ? 'Registrando…'
-                            : PUNCH_LABEL[next]}
+                            ? t`Registrando…`
+                            : i18n._(PUNCH_LABEL[next])}
                 </span>
                 {needsPhoto && !isBusy && (
-                  <span className="text-[11px] text-ink-3">con tu foto</span>
+                  <span className="text-[11px] text-ink-3">
+                    <Trans>con tu foto</Trans>
+                  </span>
                 )}
                 {needsQr && !isBusy && (
-                  <span className="text-[11px] text-ink-3">escaneando el QR del acceso</span>
+                  <span className="text-[11px] text-ink-3">
+                    <Trans>escaneando el QR del acceso</Trans>
+                  </span>
                 )}
               </>
             )}
@@ -538,7 +583,7 @@ export function PunchPage(): ReactNode {
         accept="image/jpeg,image/png,image/webp"
         capture="user"
         className="hidden"
-        aria-label="Foto del ponche"
+        aria-label={t`Foto del ponche`}
         onChange={(event) => {
           const file = event.target.files?.[0]
           event.target.value = ''
@@ -556,19 +601,21 @@ export function PunchPage(): ReactNode {
         <Stat
           icon="login"
           value={marks.CLOCK_IN ? timeOf(marks.CLOCK_IN) : '--:--'}
-          label="Entrada"
+          label={t`Entrada`}
         />
         <Stat
           icon="logout"
           value={marks.CLOCK_OUT ? timeOf(marks.CLOCK_OUT) : '--:--'}
-          label="Salida"
+          label={t`Salida`}
         />
-        <Stat icon="schedule" value={hoursOf(marks)} label="Horas" />
+        <Stat icon="schedule" value={hoursOf(marks)} label={t`Horas`} />
       </section>
 
       {marks.LUNCH_OUT && (
         <p className="text-center text-xs text-ink-3">
-          Lunch {timeOf(marks.LUNCH_OUT)} – {marks.LUNCH_IN ? timeOf(marks.LUNCH_IN) : '--:--'}
+          <Trans>
+            Lunch {timeOf(marks.LUNCH_OUT)} – {marks.LUNCH_IN ? timeOf(marks.LUNCH_IN) : '--:--'}
+          </Trans>
         </p>
       )}
 
@@ -577,7 +624,7 @@ export function PunchPage(): ReactNode {
         onClick={reopenIntro}
         className="mx-auto min-h-11 cursor-pointer touch-manipulation px-3 text-sm font-semibold text-o-700 underline-offset-4 hover:underline"
       >
-        ¿Cómo funciona el ponche?
+        <Trans>¿Cómo funciona el ponche?</Trans>
       </button>
     </div>
   )

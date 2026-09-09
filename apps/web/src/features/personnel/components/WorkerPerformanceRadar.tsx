@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import type { ReactNode } from 'react'
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer } from 'recharts'
 
@@ -5,13 +8,13 @@ import type { PersonnelPerformance } from '../types/personnel.types'
 
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
-/** Eje → etiqueta humana. El orden dibuja el polígono. */
-const AXES: Array<{ key: keyof PersonnelPerformance; label: string }> = [
-  { key: 'attendance', label: 'Asistencia' },
-  { key: 'punctuality', label: 'Puntualidad' },
-  { key: 'completeness', label: 'Jornadas completas' },
-  { key: 'geofence', label: 'En la geocerca' },
-  { key: 'cleanDays', label: 'Días sin anomalía' },
+/** Eje → etiqueta humana (se traduce al pintar con `i18n._()`, D-36). El orden dibuja el polígono. */
+const AXES: Array<{ key: keyof PersonnelPerformance; label: MessageDescriptor }> = [
+  { key: 'attendance', label: msg`Asistencia` },
+  { key: 'punctuality', label: msg`Puntualidad` },
+  { key: 'completeness', label: msg`Jornadas completas` },
+  { key: 'geofence', label: msg`En la geocerca` },
+  { key: 'cleanDays', label: msg`Días sin anomalía` },
 ]
 
 /**
@@ -25,21 +28,26 @@ export function WorkerPerformanceRadar({
 }: {
   performance: PersonnelPerformance | null
 }): ReactNode {
+  const { i18n } = useLingui()
   const axes =
     performance === null
       ? []
       : AXES.flatMap(({ key, label }) => {
           const value = performance[key]
-          return value === null ? [] : [{ label, value }]
+          return value === null ? [] : [{ label: i18n._(label), value }]
         })
 
   if (axes.length < 3) {
     return (
       <div className="flex h-full flex-col justify-center rounded-lg border border-dashed border-line p-5 text-center">
-        <p className="text-sm font-semibold text-ink-2">Su semana aún no da para medir</p>
+        <p className="text-sm font-semibold text-ink-2">
+          <Trans>Su semana aún no da para medir</Trans>
+        </p>
         <p className="mt-1 text-xs text-ink-3">
-          El desempeño se calcula con turnos y marcas reales: cuando acumule días trabajados, aquí
-          aparece su radar.
+          <Trans>
+            El desempeño se calcula con turnos y marcas reales: cuando acumule días trabajados, aquí
+            aparece su radar.
+          </Trans>
         </p>
       </div>
     )
@@ -47,9 +55,11 @@ export function WorkerPerformanceRadar({
 
   return (
     <div className="rounded-lg border border-line bg-surface p-4">
-      <p className="text-sm font-semibold text-ink">La semana en cinco medidas</p>
+      <p className="text-sm font-semibold text-ink">
+        <Trans>La semana en cinco medidas</Trans>
+      </p>
       <p className="text-xs text-ink-3">
-        100 = todos sus días salieron bien en esa medida
+        <Trans>100 = todos sus días salieron bien en esa medida</Trans>
         {IS_DEV_UI && <code className="text-ink-4"> · derivado de schedule + punch_mark</code>}
       </p>
       <div className="mt-1 h-52">

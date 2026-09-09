@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import type { ReactNode } from 'react'
 
 import type { TaxDeadlineApi } from '../types/worker.types'
@@ -17,11 +18,21 @@ import { formatDate } from '@/shared/lib/formatters'
  * el shell bloquea el apartado entero.
  */
 export function TaxDeadlineBanner({ deadline }: { deadline: TaxDeadlineApi }): ReactNode {
+  const { t } = useLingui()
+
   if (deadline.hasDocument) {
     return (
-      <NoticeCard image={personajePagoProcesado} title="SSN/ITIN recibido" role="status">
-        Tu SSN/ITIN está {deadline.isDocumentVerified ? 'verificado' : 'cargado, en verificación'}.
-        {!deadline.isDocumentVerified && ' Cuando Oranje lo verifique, tu pago queda habilitado.'}
+      <NoticeCard image={personajePagoProcesado} title={t`SSN/ITIN recibido`} role="status">
+        <Trans>
+          Tu SSN/ITIN está{' '}
+          {deadline.isDocumentVerified ? t`verificado` : t`cargado, en verificación`}.
+        </Trans>
+        {!deadline.isDocumentVerified && (
+          <>
+            {' '}
+            <Trans>Cuando Oranje lo verifique, tu pago queda habilitado.</Trans>
+          </>
+        )}
       </NoticeCard>
     )
   }
@@ -30,20 +41,24 @@ export function TaxDeadlineBanner({ deadline }: { deadline: TaxDeadlineApi }): R
     return (
       <NoticeCard
         image={personajeUrgente}
-        title="Ya debiste cargar tu SSN o ITIN"
+        title={t`Ya debiste cargar tu SSN o ITIN`}
         tone="warning"
         role="alert"
       >
-        El plazo venció el {formatDate(deadline.dueAt)} (vas en el día {deadline.day}). Mañana se
-        suspende tu acceso, y sin tu SSN o ITIN no se te puede pagar.
+        <Trans>
+          El plazo venció el {formatDate(deadline.dueAt)} (vas en el día {deadline.day}). Mañana se
+          suspende tu acceso, y sin tu SSN o ITIN no se te puede pagar.
+        </Trans>
       </NoticeCard>
     )
   }
 
   return (
-    <NoticeCard image={personajeCronograma} title="Carga tu SSN o ITIN" role="status">
-      Tienes hasta el <span className="font-semibold">{formatDate(deadline.dueAt)}</span> (día{' '}
-      {deadline.day} de 3). Sin él no se te puede pagar.
+    <NoticeCard image={personajeCronograma} title={t`Carga tu SSN o ITIN`} role="status">
+      <Trans>
+        Tienes hasta el <span className="font-semibold">{formatDate(deadline.dueAt)}</span> (día{' '}
+        {deadline.day} de 3). Sin él no se te puede pagar.
+      </Trans>
     </NoticeCard>
   )
 }
@@ -57,11 +72,15 @@ export function SuspendedScreen(): ReactNode {
   return (
     <div className="flex flex-col items-center gap-4 px-6 py-10 text-center">
       <img src={personajeHastaPronto} alt="" aria-hidden className="h-36 w-auto" />
-      <h1 className="text-xl font-bold text-ink">Tu acceso está suspendido</h1>
+      <h1 className="text-xl font-bold text-ink">
+        <Trans>Tu acceso está suspendido</Trans>
+      </h1>
       <p className="max-w-sm text-sm leading-relaxed text-ink-3">
-        Pasaron 5 días sin cargar tu SSN o ITIN. Súbelo aquí y tu acceso vuelve al instante — tus
-        datos y tu historial no se pierden. Si no puedes subirlo, contacta a Oranje (Customer
-        Service).
+        <Trans>
+          Pasaron 5 días sin cargar tu SSN o ITIN. Súbelo aquí y tu acceso vuelve al instante — tus
+          datos y tu historial no se pierden. Si no puedes subirlo, contacta a Oranje (Customer
+          Service).
+        </Trans>
       </p>
       <TaxDocumentUploader hasDocument={false} />
     </div>

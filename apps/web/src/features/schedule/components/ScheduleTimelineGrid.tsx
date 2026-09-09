@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { brand, cn } from '@oranje/ui'
 import { useContext, useMemo, type CSSProperties, type ReactNode } from 'react'
 
@@ -106,6 +107,7 @@ export function ScheduleTimelineGrid({
   selectedKey: string | null
   onSelectBlock: (block: ScheduleShiftSelection | null) => void
 }): ReactNode {
+  const { t } = useLingui()
   const today = todayIso()
   const { isDragging } = useContext(WeekDragContext)
 
@@ -230,7 +232,7 @@ export function ScheduleTimelineGrid({
                                 },
                           )
                         }}
-                        title={`${block.start} – ${block.end} · ${String(block.people.length)} en el turno`}
+                        title={t`${block.start} – ${block.end} · ${block.people.length} en el turno`}
                         className={cn(
                           'absolute flex cursor-pointer flex-col items-stretch justify-start overflow-hidden rounded-xl bg-surface p-2 text-left shadow-sm transition-shadow hover:shadow-md',
                           'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500',
@@ -269,9 +271,7 @@ export function ScheduleTimelineGrid({
                           {block.start} – {block.end}
                         </span>
                         <span className="block truncate text-[10px] text-ink-2">
-                          {single
-                            ? single.workerName
-                            : `${String(block.people.length)} colaboradores`}
+                          {single ? single.workerName : t`${block.people.length} colaboradores`}
                         </span>
 
                         <span
@@ -291,7 +291,9 @@ export function ScheduleTimelineGrid({
             {!hasVisibleBlocks && (
               <div className="pointer-events-none absolute inset-0 z-10 flex items-start justify-center pt-16">
                 <p className="rounded-full border border-dashed border-line bg-surface/95 px-4 py-2 text-sm text-ink-3 shadow-sm">
-                  Nadie programado todavía: los turnos aparecen conforme se cubren los slots.
+                  <Trans>
+                    Nadie programado todavía: los turnos aparecen conforme se cubren los slots.
+                  </Trans>
                 </p>
               </div>
             )}

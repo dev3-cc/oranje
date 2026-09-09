@@ -1,4 +1,7 @@
+import { msg } from '@lingui/core/macro'
 import type { StatusLightToken } from '@oranje/ui'
+
+import { labelMap } from '@/shared/lib/i18nLabels'
 
 /**
  * Semáforo de Onboarding: estados, transiciones válidas y cómo se pintan.
@@ -51,17 +54,20 @@ export const ONBOARDING_STATUS_TOKEN: Record<OnboardingStatus, StatusLightToken>
 } as const
 
 /** Texto del chip. Es el nombre del color, tal como aparece en el diseño. */
-export const ONBOARDING_STATUS_LABEL: Record<OnboardingStatus, string> = {
-  GRAY: 'Gris',
-  LIGHT_BLUE: 'Azul claro',
-  GREEN: 'Verde',
-  YELLOW: 'Amarillo',
-  PINK: 'Rosa',
-  BROWN: 'Cafe',
-  ORANGE: 'Naranja',
-  RED: 'Rojo',
-  BLACK: 'Negro',
+const ONBOARDING_STATUS_MESSAGE = {
+  GRAY: msg`Gris`,
+  LIGHT_BLUE: msg`Azul claro`,
+  GREEN: msg`Verde`,
+  YELLOW: msg`Amarillo`,
+  PINK: msg`Rosa`,
+  BROWN: msg`Cafe`,
+  ORANGE: msg`Naranja`,
+  RED: msg`Rojo`,
+  BLACK: msg`Negro`,
 }
+
+export const ONBOARDING_STATUS_LABEL: Record<OnboardingStatus, string> =
+  labelMap(ONBOARDING_STATUS_MESSAGE)
 
 /** Qué significa el color en ESTE semáforo. El mismo color dice otra cosa en los otros. */
 export const ONBOARDING_STATUS_DESCRIPTION: Record<OnboardingStatus, string> = {

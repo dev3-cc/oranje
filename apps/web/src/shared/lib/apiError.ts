@@ -5,6 +5,7 @@
  * «inténtalo de nuevo» a ciegas fue dos veces bug (el HEIC y la fecha futura).
  */
 
+import { i18n } from '@/app/i18n'
 import { CONTRACT_STATUS_LABEL } from '@/shared/constants/contractStatus'
 import { ONBOARDING_STATUS_LABEL } from '@/shared/constants/onboardingStatus'
 import { REQUISITION_STATUS_LABEL } from '@/shared/constants/requisitionStatus'
@@ -40,7 +41,12 @@ const HUMAN_ACRONYMS = new Set([
  * proceso» en Requisición y «Disp. voluntario» en el Colaborador), así que
  * solo se traducen los que no chocan; los ambiguos se tratan como fuga.
  */
-const CODE_LABEL: Record<string, string> = (() => {
+/** Se arma por idioma y al usarse (D-36): los mapas traducen al leer. */
+const CODE_LABEL_BY_LOCALE = new Map<string, Record<string, string>>()
+
+function codeLabels(): Record<string, string> {
+  const cached = CODE_LABEL_BY_LOCALE.get(i18n.locale)
+  if (cached) return cached
   const merged: Record<string, string> = {}
   const clashes = new Set<string>()
   for (const map of [
@@ -56,8 +62,9 @@ const CODE_LABEL: Record<string, string> = (() => {
     }
   }
   for (const code of clashes) delete merged[code]
+  CODE_LABEL_BY_LOCALE.set(i18n.locale, merged)
   return merged
-})()
+}
 
 /**
  * Un mensaje del backend solo llega a la pantalla si habla como una persona:
@@ -66,7 +73,10 @@ const CODE_LABEL: Record<string, string> = (() => {
  * Es la puerta que garantiza la regla «ningún código en texto humano».
  */
 export function humanizeApiMessage(message: string): string | null {
-  const translated = message.replace(/\b[A-Z][A-Z_]{2,}\b/g, (token) => CODE_LABEL[token] ?? token)
+  const translated = message.replace(
+    /\b[A-Z][A-Z_]{2,}\b/g,
+    (token) => codeLabels()[token] ?? token,
+  )
   const leak = translated.match(/\b[A-Z][A-Z_]{2,}\b/g)?.find((token) => !HUMAN_ACRONYMS.has(token))
   return leak ? null : translated
 }

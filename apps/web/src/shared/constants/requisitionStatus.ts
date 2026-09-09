@@ -1,4 +1,7 @@
+import { msg } from '@lingui/core/macro'
 import type { StatusLightToken } from '@oranje/ui'
+
+import { labelMap } from '@/shared/lib/i18nLabels'
 
 /**
  * Semáforo de Requisición: estados, transiciones válidas y cómo se pintan.
@@ -22,14 +25,18 @@ export const REQUISITION_STATUSES = [
 export type RequisitionStatus = (typeof REQUISITION_STATUSES)[number]
 
 /** Qué significa cada color EN ESTE semáforo. En otro dice otra cosa. */
-export const REQUISITION_STATUS_LABEL: Record<RequisitionStatus, string> = {
-  APPLE_GREEN: 'En elaboración',
-  GREEN: 'Autorizada',
-  YELLOW: 'En proceso',
-  LIGHT_BLUE: 'Cubierta totalmente',
-  RED: 'Cubierta parcialmente',
-  PURPLE: 'Eliminada',
+const REQUISITION_STATUS_MESSAGE = {
+  APPLE_GREEN: msg`En elaboración`,
+  GREEN: msg`Autorizada`,
+  YELLOW: msg`En proceso`,
+  LIGHT_BLUE: msg`Cubierta totalmente`,
+  RED: msg`Cubierta parcialmente`,
+  PURPLE: msg`Eliminada`,
 }
+
+export const REQUISITION_STATUS_LABEL: Record<RequisitionStatus, string> = labelMap(
+  REQUISITION_STATUS_MESSAGE,
+)
 
 export const REQUISITION_STATUS_TOKEN: Record<RequisitionStatus, StatusLightToken> = {
   APPLE_GREEN: 'st-verde-manzana',
@@ -64,11 +71,13 @@ export const URGENCY_LEVELS = ['RED', 'YELLOW', 'STRONG_GREEN'] as const
 
 export type UrgencyLevel = (typeof URGENCY_LEVELS)[number]
 
-export const URGENCY_LABEL: Record<UrgencyLevel, string> = {
-  RED: '< 72 h',
-  YELLOW: '72 – 120 h',
-  STRONG_GREEN: '> 120 h',
+const URGENCY_MESSAGE = {
+  RED: msg`< 72 h`,
+  YELLOW: msg`72 – 120 h`,
+  STRONG_GREEN: msg`> 120 h`,
 }
+
+export const URGENCY_LABEL: Record<UrgencyLevel, string> = labelMap(URGENCY_MESSAGE)
 
 export const URGENCY_TOKEN: Record<UrgencyLevel, StatusLightToken> = {
   RED: 'st-rojo',

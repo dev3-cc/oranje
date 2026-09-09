@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro'
 import type { ReactNode } from 'react'
 
 import personajeAccidente from '@/assets/ilustrations/personaje-accidente-laboral.svg'
@@ -32,10 +33,14 @@ export function ModulePlaceholder({ title }: { title: string }): ReactNode {
           aria-hidden
           className="mx-auto mb-4 h-36 w-auto"
         />
-        <p className="text-base font-semibold text-ink">Pantalla pendiente de diseño</p>
+        <p className="text-base font-semibold text-ink">
+          <Trans>Pantalla pendiente de diseño</Trans>
+        </p>
         <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-ink-3">
-          El módulo «{title}» ya está en el menú, pero todavía no tiene diseño ni datos que mostrar.
-          Se construye aquí en cuanto llegue la maqueta.
+          <Trans>
+            El módulo «{title}» ya está en el menú, pero todavía no tiene diseño ni datos que
+            mostrar. Se construye aquí en cuanto llegue la maqueta.
+          </Trans>
         </p>
       </div>
     </div>

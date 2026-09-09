@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { MaterialIcon } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -22,12 +25,13 @@ const EVENT_ICON: Record<string, string> = {
   RECRUITER_LEFT: 'person_remove',
 }
 
-const EVENT_LABEL: Record<string, string> = {
-  REQUISITION_CREATED: 'Requisición creada',
-  REQUISITION_AUTHORIZED: 'Requisición autorizada',
-  REQUISITION_DELETED: 'Requisición eliminada',
-  RECRUITER_JOINED: 'Reclutadora se unió',
-  RECRUITER_LEFT: 'Reclutadora salió',
+/** La etiqueta de cada evento; se traduce al pintar con `i18n._()` (D-36). */
+const EVENT_LABEL: Record<string, MessageDescriptor> = {
+  REQUISITION_CREATED: msg`Requisición creada`,
+  REQUISITION_AUTHORIZED: msg`Requisición autorizada`,
+  REQUISITION_DELETED: msg`Requisición eliminada`,
+  RECRUITER_JOINED: msg`Reclutadora se unió`,
+  RECRUITER_LEFT: msg`Reclutadora salió`,
 }
 
 /**
@@ -42,22 +46,27 @@ export function RequisitionJournalDialog({
   requisitionId: string
   onClose: () => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const { data: entries, isLoading, isError } = useGetRequisitionJournalQuery(requisitionId)
 
   return (
     <Modal
       isOpen
       onClose={onClose}
-      title="Bitácora de la requisición"
+      title={t`Bitácora de la requisición`}
       {...(IS_DEV_UI ? { description: 'journal.journal · entity_type = demand.requisition' } : {})}
       className="max-w-lg"
       footer={
         <Button variant="secondary" onClick={onClose}>
-          Cerrar
+          <Trans>Cerrar</Trans>
         </Button>
       }
     >
-      {isLoading && <p className="text-sm text-ink-3">Cargando bitácora…</p>}
+      {isLoading && (
+        <p className="text-sm text-ink-3">
+          <Trans>Cargando bitácora…</Trans>
+        </p>
+      )}
 
       {/*
         Mensaje fijo, no lo que traiga el error: el 404 real y el del mock no
@@ -66,43 +75,48 @@ export function RequisitionJournalDialog({
       */}
       {isError && (
         <p role="alert" className="text-sm text-red">
-          No se pudo cargar la bitácora. Inténtalo de nuevo.
+          <Trans>No se pudo cargar la bitácora. Inténtalo de nuevo.</Trans>
         </p>
       )}
 
       {!isLoading && !isError && entries && entries.length === 0 && (
-        <p className="text-sm text-ink-3">Sin eventos registrados todavía.</p>
+        <p className="text-sm text-ink-3">
+          <Trans>Sin eventos registrados todavía.</Trans>
+        </p>
       )}
 
       {!isLoading && !isError && entries && entries.length > 0 && (
         <ol className="flex flex-col">
-          {entries.map((entry, index) => (
-            <li key={entry.id} className={index === 0 ? '' : 'mt-4 border-t border-line pt-4'}>
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-o-50 text-o-700">
-                  <MaterialIcon
-                    name={EVENT_ICON[entry.eventType] ?? 'history'}
-                    className="text-lg"
-                  />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-ink">
-                    {EVENT_LABEL[entry.eventType] ?? entry.eventType}
-                  </p>
-                  <p className="mt-0.5 text-sm text-ink-3">
-                    {entry.actorName ?? 'Sistema'}
-                    {entry.actorRole ? ` · ${entry.actorRole}` : ''} ·{' '}
-                    {formatDayMonthTime(entry.occurredAt)}
-                  </p>
-                  {IS_DEV_UI && entry.payload != null && (
-                    <pre className="mt-2 overflow-x-auto rounded-md bg-surface-2 p-2 text-xs text-ink-3">
-                      {JSON.stringify(entry.payload, null, 2)}
-                    </pre>
-                  )}
+          {entries.map((entry, index) => {
+            const label = EVENT_LABEL[entry.eventType]
+            return (
+              <li key={entry.id} className={index === 0 ? '' : 'mt-4 border-t border-line pt-4'}>
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-o-50 text-o-700">
+                    <MaterialIcon
+                      name={EVENT_ICON[entry.eventType] ?? 'history'}
+                      className="text-lg"
+                    />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-ink">
+                      {label ? i18n._(label) : entry.eventType}
+                    </p>
+                    <p className="mt-0.5 text-sm text-ink-3">
+                      {entry.actorName ?? t`Sistema`}
+                      {entry.actorRole ? ` · ${entry.actorRole}` : ''} ·{' '}
+                      {formatDayMonthTime(entry.occurredAt)}
+                    </p>
+                    {IS_DEV_UI && entry.payload != null && (
+                      <pre className="mt-2 overflow-x-auto rounded-md bg-surface-2 p-2 text-xs text-ink-3">
+                        {JSON.stringify(entry.payload, null, 2)}
+                      </pre>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </li>
-          ))}
+              </li>
+            )
+          })}
         </ol>
       )}
     </Modal>

@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react/macro'
 import { cn } from '@oranje/ui'
 import { useMemo, type ReactNode } from 'react'
 
@@ -5,7 +8,16 @@ import { useMemo, type ReactNode } from 'react'
 import { localeTag } from '@/app/i18n'
 import { addDaysIso, todayIso } from '@/features/timesheet'
 
-const WEEKDAY_HEADERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
+/** Las iniciales de lunes a domingo; se traducen al pintar con `i18n._()` (D-36). */
+const WEEKDAY_HEADERS: readonly MessageDescriptor[] = [
+  msg`L`,
+  msg`M`,
+  msg`X`,
+  msg`J`,
+  msg`V`,
+  msg`S`,
+  msg`D`,
+]
 
 /** `2026-09` → `Septiembre 2026`. */
 function monthLabel(month: string): string {
@@ -36,6 +48,7 @@ export function ScheduleMiniCalendar({
   selectedDay: string | null
   onPickDay: (date: string) => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const today = todayIso()
 
   const cells = useMemo(() => {
@@ -61,10 +74,10 @@ export function ScheduleMiniCalendar({
       <div className="grid grid-cols-7 gap-y-1">
         {WEEKDAY_HEADERS.map((weekday, index) => (
           <p
-            key={`${weekday}-${String(index)}`}
+            key={`${weekday.id}-${String(index)}`}
             className="text-center text-[10px] font-semibold text-ink-3"
           >
-            {weekday}
+            {i18n._(weekday)}
           </p>
         ))}
         {cells.map((date, index) => {
@@ -81,7 +94,9 @@ export function ScheduleMiniCalendar({
                 onPickDay(date)
               }}
               title={
-                withSchedule ? 'Ir a la semana de este día' : 'Este hotel no tiene schedule ese día'
+                withSchedule
+                  ? t`Ir a la semana de este día`
+                  : t`Este hotel no tiene schedule ese día`
               }
               className={cn(
                 'mx-auto flex size-7 cursor-pointer items-center justify-center rounded-full text-xs font-medium transition-colors',

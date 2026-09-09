@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import type { ReactNode } from 'react'
 
 import type { RequisitionStatusEvent } from '../types/requisition.types'
@@ -19,13 +20,15 @@ import { formatDayMonthTime } from '@/shared/lib/formatters'
  * movió. Nada de lo que aparece aquí se edita ni se borra después.
  */
 export function StatusHistoryCard({ history }: { history: RequisitionStatusEvent[] }): ReactNode {
+  const { t, i18n } = useLingui()
+
   return (
     <SectionCard
-      title="Historia de estado"
+      title={t`Historia de estado`}
       subtitle={
         IS_DEV_UI
           ? 'Append-only: sin updated_at ni deleted_at'
-          : 'Cada cambio queda registrado; nada se edita ni se borra'
+          : t`Cada cambio queda registrado; nada se edita ni se borra`
       }
     >
       <ol className="flex flex-col">
@@ -33,14 +36,16 @@ export function StatusHistoryCard({ history }: { history: RequisitionStatusEvent
           <li key={event.id} className={index === 0 ? '' : 'mt-5 border-t border-line pt-5'}>
             <div className="flex flex-wrap items-center gap-2">
               {event.fromStatus === null ? (
-                <span className="text-sm text-ink-3">nace en</span>
+                <span className="text-sm text-ink-3">
+                  <Trans>nace en</Trans>
+                </span>
               ) : (
                 <>
                   <StatusLightSoftBadge
                     token={REQUISITION_STATUS_TOKEN[event.fromStatus]}
                     label={REQUISITION_STATUS_LABEL[event.fromStatus]}
                   />
-                  <span className="text-ink-3" aria-label="cambia a">
+                  <span className="text-ink-3" aria-label={t`cambia a`}>
                     →
                   </span>
                 </>
@@ -51,7 +56,7 @@ export function StatusHistoryCard({ history }: { history: RequisitionStatusEvent
               />
             </div>
 
-            <p className="mt-3 text-base font-semibold text-ink">{event.action}</p>
+            <p className="mt-3 text-base font-semibold text-ink">{i18n._(event.action)}</p>
             <p className="mt-0.5 text-sm text-ink-3">
               {event.byName} · {formatDayMonthTime(event.at)}
             </p>

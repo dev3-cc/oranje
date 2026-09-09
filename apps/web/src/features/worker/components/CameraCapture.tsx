@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import { MaterialIcon } from '@oranje/ui'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
@@ -24,6 +25,7 @@ export function CameraCapture({
   onFallback: () => void
   onCancel: () => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -36,7 +38,7 @@ export function CameraCapture({
     let cancelled = false
     async function start(): Promise<void> {
       if (!navigator.mediaDevices?.getUserMedia) {
-        setError('Este navegador no puede abrir la cámara.')
+        setError(t`Este navegador no puede abrir la cámara.`)
         return
       }
       try {
@@ -60,8 +62,8 @@ export function CameraCapture({
         const name = cause instanceof DOMException ? cause.name : ''
         setError(
           name === 'NotAllowedError'
-            ? 'Sin permiso de cámara no se puede tomar la foto. Permítelo para este sitio y vuelve a intentar.'
-            : 'No se pudo abrir la cámara. Cierra otras apps que la usen e inténtalo de nuevo.',
+            ? t`Sin permiso de cámara no se puede tomar la foto. Permítelo para este sitio y vuelve a intentar.`
+            : t`No se pudo abrir la cámara. Cierra otras apps que la usen e inténtalo de nuevo.`,
         )
       }
     }
@@ -97,7 +99,7 @@ export function CameraCapture({
     <div
       role="dialog"
       aria-modal
-      aria-label="Tomar foto"
+      aria-label={t`Tomar foto`}
       className="fixed inset-0 z-50 flex flex-col bg-ink"
     >
       <div className="relative flex flex-1 items-center justify-center overflow-hidden">
@@ -136,20 +138,22 @@ export function CameraCapture({
                 role="status"
                 className={`inline-block rounded-full px-4 py-1.5 text-sm font-semibold text-white ${guide === 'ok' ? 'bg-green' : 'bg-ink/60'}`}
               >
-                {FACE_GUIDE_HINT[guide]}
+                {i18n._(FACE_GUIDE_HINT[guide])}
               </p>
             </div>
           </div>
         )}
         {!isReady && error === null && (
-          <p className="absolute text-sm text-white/80">Abriendo la cámara…</p>
+          <p className="absolute text-sm text-white/80">
+            <Trans>Abriendo la cámara…</Trans>
+          </p>
         )}
         {error !== null && (
           <div className="absolute inset-x-6 flex flex-col items-center gap-3 rounded-xl bg-surface p-5 text-center">
             <MaterialIcon name="no_photography" className="text-4xl text-ink-3" aria-hidden />
             <p className="text-sm text-ink-2">{error}</p>
             <Button variant="primary" onClick={onFallback}>
-              Elegir una foto
+              <Trans>Elegir una foto</Trans>
             </Button>
           </div>
         )}
@@ -161,13 +165,13 @@ export function CameraCapture({
           onClick={onCancel}
           className="min-h-11 cursor-pointer touch-manipulation px-3 text-sm font-semibold text-white/85"
         >
-          Cancelar
+          <Trans>Cancelar</Trans>
         </button>
         <button
           type="button"
           onClick={capture}
           disabled={!canShoot}
-          aria-label="Tomar foto"
+          aria-label={t`Tomar foto`}
           className="flex size-18 cursor-pointer touch-manipulation items-center justify-center rounded-full border-4 border-white bg-o-500 shadow-lg disabled:opacity-40"
         >
           <MaterialIcon name="photo_camera" className="text-3xl text-ink" aria-hidden />

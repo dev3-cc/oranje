@@ -1,7 +1,10 @@
 import '@testing-library/jest-dom/vitest'
-import { beforeEach } from 'vitest'
+import { I18nProvider } from '@lingui/react'
+import type { ReactNode } from 'react'
+import { createElement } from 'react'
+import { beforeEach, vi } from 'vitest'
 
-import { activateLocale } from '@/app/i18n'
+import { activateLocale, i18n } from '@/app/i18n'
 
 /**
  * Los intros «una sola vez» (useIntroSeen) persisten su visto en
@@ -52,3 +55,23 @@ if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
     dispatchEvent: () => false,
   })
 }
+
+/**
+ * D-36: toda pantalla lee el idioma del `I18nProvider`. En vez de envolver
+ * cada uno de los specs, `render` lo monta solo — y respeta el `wrapper` que
+ * un spec ya traiga, anidándolo dentro.
+ */
+vi.mock('@testing-library/react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@testing-library/react')>()
+  type RenderOptions = NonNullable<Parameters<typeof actual.render>[1]>
+  const withI18n = (Inner?: RenderOptions['wrapper']) =>
+    function I18nWrapper({ children }: { children: ReactNode }): ReactNode {
+      const content = Inner ? createElement(Inner, null, children) : children
+      return createElement(I18nProvider, { i18n }, content)
+    }
+  return {
+    ...actual,
+    render: (ui: Parameters<typeof actual.render>[0], options?: RenderOptions) =>
+      actual.render(ui, { ...options, wrapper: withI18n(options?.wrapper) }),
+  }
+})

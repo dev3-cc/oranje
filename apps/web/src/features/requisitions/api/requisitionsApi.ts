@@ -1,3 +1,5 @@
+import { msg } from '@lingui/core/macro'
+
 import type {
   CreateRequisitionRequest,
   RequisitionBoard,
@@ -13,7 +15,6 @@ import { registerRequisitionsMocks } from './requisitionsMocks'
 
 import { baseApi } from '@/app/baseApi'
 import type { RequisitionStatus, UrgencyLevel } from '@/shared/constants/requisitionStatus'
-import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import type {
   ApiEnvelope,
@@ -89,7 +90,7 @@ function buildSlots(position: RequisitionPositionApi, pool: AssignmentApi[]): Re
       status: isOccupied ? 'occupied' : 'free',
       assigneeName: assignment?.worker.fullName ?? null,
       assignedAt: assignment?.createdAt ?? null,
-      offerChannel: isOccupied ? null : 'Visible en la Bolsa · Self-Pick',
+      offerChannel: isOccupied ? null : msg`Visible en la Bolsa · Self-Pick`,
     }
   })
 }
@@ -121,7 +122,7 @@ function toDetail(requisition: RequisitionApi, assignments: AssignmentApi[]): Re
             id: `${requisition.id}-authorized`,
             fromStatus: 'APPLE_GREEN' as RequisitionStatus,
             toStatus: 'GREEN' as RequisitionStatus,
-            action: 'Autorizada',
+            action: msg`Autorizada`,
             byName: '—',
             at: requisition.authorizedAt,
           },
@@ -131,7 +132,7 @@ function toDetail(requisition: RequisitionApi, assignments: AssignmentApi[]): Re
       id: `${requisition.id}-created`,
       fromStatus: null,
       toStatus: 'APPLE_GREEN' as RequisitionStatus,
-      action: 'Creada',
+      action: msg`Creada`,
       /* Quien la creó ES el autor de este evento; el dato ya venía (D-30). */
       byName: requisition.createdBy?.fullName ?? '—',
       at: requisition.createdAt,
@@ -190,7 +191,7 @@ async function fetchBoard(
           0,
         ),
         urgentCount: open.filter((row) => row.urgency === 'RED').length,
-        urgentRuleId: IS_DEV_UI ? 'RR-H-05' : 'menos de 72 h para el inicio',
+        urgentRuleId: 'RR-H-05',
       },
       items: rows,
     },

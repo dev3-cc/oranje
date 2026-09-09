@@ -1,3 +1,5 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
 import { useEffect, useState, type RefObject } from 'react'
 
 /**
@@ -97,11 +99,12 @@ export function useFaceGuide(
   return guide
 }
 
-export const FACE_GUIDE_HINT: Record<FaceGuide, string> = {
-  loading: 'Preparando la cámara…',
-  unavailable: 'Centra tu cara en el óvalo',
-  'no-face': 'No vemos tu cara: mira a la cámara',
-  'too-far': 'Acércate un poco',
-  'off-center': 'Centra tu cara en el óvalo',
-  ok: 'Perfecto, toma la foto',
+/** Lo que se le dice a la persona en cada encuadre; se traduce al pintar con `i18n._()`. */
+export const FACE_GUIDE_HINT: Record<FaceGuide, MessageDescriptor> = {
+  loading: msg`Preparando la cámara…`,
+  unavailable: msg`Centra tu cara en el óvalo`,
+  'no-face': msg`No vemos tu cara: mira a la cámara`,
+  'too-far': msg`Acércate un poco`,
+  'off-center': msg`Centra tu cara en el óvalo`,
+  ok: msg`Perfecto, toma la foto`,
 }

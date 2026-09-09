@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router'
 
@@ -16,6 +17,7 @@ import { LoadingOranje } from '@/shared/components/LoadingOranje'
  * expulsa a nadie). Solo cuando el refresh falla se navega a `/login`.
  */
 export function RequireSession(): ReactNode {
+  const { t } = useLingui()
   const status = useAppSelector(selectSessionStatus)
   const location = useLocation()
   const [refreshSession] = useRefreshSessionMutation()
@@ -35,5 +37,5 @@ export function RequireSession(): ReactNode {
   }
 
   /** `unknown` o `authenticating`: la naranja girando mientras el refresh decide. */
-  return <LoadingOranje label="Abriendo tu sesión…" />
+  return <LoadingOranje label={t`Abriendo tu sesión…`} />
 }

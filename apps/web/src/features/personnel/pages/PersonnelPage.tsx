@@ -1,3 +1,6 @@
+import type { I18n, MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn, MaterialIcon, statusLight, toast } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
@@ -31,18 +34,23 @@ import {
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { matchesSearch } from '@/shared/lib/text'
 
-const NO_SHIFT_LABEL: Record<string, string> = {
-  PINK: 'Pausado (Stand-by)',
-  GRAY: 'Protegido (Gris)',
+/** Se traduce al pintar con `i18n._()` (D-36). */
+const NO_SHIFT_LABEL: Record<string, MessageDescriptor> = {
+  PINK: msg`Pausado (Stand-by)`,
+  GRAY: msg`Protegido (Gris)`,
 }
 
 const MS_PER_DAY = 86_400_000
 
-/** "92% · hace 3 días" — el score y cuándo, en una sola línea (mismo criterio que la pastilla de Auditorías). */
-function presentationLabel(audit: { score: number; auditedAt: string } | null): string {
-  if (audit === null) return 'Sin auditar'
+/**
+ * "92% · hace 3 días" — el score y cuándo, en una sola línea (mismo criterio
+ * que la pastilla de Auditorías). El `i18n` viene del componente (D-36).
+ */
+function presentationLabel(audit: { score: number; auditedAt: string } | null, i18n: I18n): string {
+  if (audit === null) return i18n._(msg`Sin auditar`)
   const days = Math.floor((Date.now() - new Date(audit.auditedAt).getTime()) / MS_PER_DAY)
-  const when = days <= 0 ? 'hoy' : days === 1 ? 'ayer' : `hace ${String(days)} días`
+  const when =
+    days <= 0 ? i18n._(msg`hoy`) : days === 1 ? i18n._(msg`ayer`) : i18n._(msg`hace ${days} días`)
   return `${String(Math.round(audit.score))}% · ${when}`
 }
 
@@ -99,15 +107,16 @@ function WorkerAvatar({ row, className }: { row: PersonnelRow; className: string
   )
 }
 
-/** Qué dice la fila de la izquierda debajo del nombre: turno y marca, en corto. */
-function rowSubtitle(row: PersonnelRow): string {
+/** Qué dice la fila de la izquierda debajo del nombre: turno y marca, en corto. El `i18n` viene del componente (D-36). */
+function rowSubtitle(row: PersonnelRow, i18n: I18n): string {
   /* Rosa/Gris mandan sobre el turno: un pausado o protegido no debe leerse
      como si fuera a trabajar. */
   const paused = NO_SHIFT_LABEL[row.stateCode]
-  if (paused !== undefined) return paused
-  if (!row.shift) return 'Descansa hoy'
+  if (paused !== undefined) return i18n._(paused)
+  if (!row.shift) return i18n._(msg`Descansa hoy`)
   const shift = `${timeOf(row.shift.startsAt)}–${timeOf(row.shift.endsAt)}`
-  return row.clockInAt ? `${shift} · entró ${timeOf(row.clockInAt)}` : shift
+  const clockIn = row.clockInAt ? timeOf(row.clockInAt) : null
+  return clockIn !== null ? i18n._(msg`${shift} · entró ${clockIn}`) : shift
 }
 
 /** La fila de la lista izquierda: quién es y cómo viene su día, de un vistazo. */
@@ -120,6 +129,7 @@ function WorkerRow({
   isSelected: boolean
   onSelect: (workerId: string) => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const missingEntry = hasMissingEntry(row)
   return (
     <li>
@@ -144,8 +154,8 @@ function WorkerRow({
                 missingEntry ? 'font-semibold text-red' : 'text-ink-3',
               )}
             >
-              {rowSubtitle(row)}
-              {missingEntry && ' · sin entrada'}
+              {rowSubtitle(row, i18n)}
+              {missingEntry && ` · ${t`sin entrada`}`}
             </span>
           </span>
           {/* El punto del semáforo también aquí: el anillo nunca habla solo. */}
@@ -216,7 +226,9 @@ function WorkerDetail({
   hotel: { name: string; photoUrl: string | null } | null
   onStandBy: (row: PersonnelRow) => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const missingEntry = hasMissingEntry(row)
+  const paused = NO_SHIFT_LABEL[row.stateCode]
   return (
     <article className="overflow-hidden rounded-xl border border-line bg-surface">
       <div className="relative">
@@ -244,7 +256,7 @@ function WorkerDetail({
                   </Pill>
                   {row.positionName === '—' ? (
                     <Pill className="border border-dashed border-white/40 bg-ink/25 text-white/80">
-                      Sin posición asignada
+                      <Trans>Sin posición asignada</Trans>
                     </Pill>
                   ) : (
                     <Pill>
@@ -266,20 +278,20 @@ function WorkerDetail({
               {row.canStandBy && (
                 <button
                   type="button"
-                  title="Pausa temporal (Rosa); lo compartes con el Manager de Área"
+                  title={t`Pausa temporal (Rosa); lo compartes con el Manager de Área`}
                   onClick={() => {
                     onStandBy(row)
                   }}
                   className="cursor-pointer rounded-md bg-o-300 shadow-xs px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-o-300 shadow-xs/85"
                 >
-                  Mandar a Stand-by
+                  <Trans>Mandar a Stand-by</Trans>
                 </button>
               )}
               <Link
                 to={`/pool-colaboradores/${row.workerId}`}
                 className="rounded-md border border-white/40 bg-ink/35 px-3 py-1.5 text-sm font-medium text-white backdrop-blur-md transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
               >
-                Ver Expediente
+                <Trans>Ver Expediente</Trans>
               </Link>
             </div>
           </div>
@@ -291,38 +303,43 @@ function WorkerDetail({
             pastilla junto al nombre. */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-lg bg-surface-2 p-4 sm:grid-cols-3">
           <Metric
-            label="Turno de hoy"
+            label={t`Turno de hoy`}
             value={
-              NO_SHIFT_LABEL[row.stateCode] ??
-              (row.shift ? `${timeOf(row.shift.startsAt)}–${timeOf(row.shift.endsAt)}` : 'Descansa')
+              paused !== undefined
+                ? i18n._(paused)
+                : row.shift
+                  ? `${timeOf(row.shift.startsAt)}–${timeOf(row.shift.endsAt)}`
+                  : t`Descansa`
             }
           />
           <Metric
-            label="Entrada de hoy"
-            value={row.clockInAt ? timeOf(row.clockInAt) : row.shift ? 'Sin entrada' : '—'}
+            label={t`Entrada de hoy`}
+            value={row.clockInAt ? timeOf(row.clockInAt) : row.shift ? t`Sin entrada` : '—'}
             {...(missingEntry ? { tone: 'alert' as const } : {})}
           />
           <Metric
-            label="Presentación Personal"
-            value={presentationLabel(row.presentationAudit)}
+            label={t`Presentación Personal`}
+            value={presentationLabel(row.presentationAudit, i18n)}
             {...(row.presentationAudit === null || row.presentationAudit.score < 60
               ? { tone: 'alert' as const }
               : {})}
           />
           <div>
-            <p className="text-xs text-ink-3">Teléfono</p>
+            <p className="text-xs text-ink-3">
+              <Trans>Teléfono</Trans>
+            </p>
             <p className="flex items-center gap-1.5 text-xl font-bold text-ink">
               {row.phone === '' ? '—' : row.phone}
               {row.phone !== '' && (
                 <button
                   type="button"
-                  title="Copiar el teléfono"
-                  aria-label="Copiar el teléfono"
+                  title={t`Copiar el teléfono`}
+                  aria-label={t`Copiar el teléfono`}
                   onClick={() => {
                     void navigator.clipboard
                       .writeText(row.phone)
-                      .then(() => toast.success('Teléfono copiado: márcalo desde tu celular'))
-                      .catch(() => toast.error('No se pudo copiar. Anótalo a mano.'))
+                      .then(() => toast.success(t`Teléfono copiado: márcalo desde tu celular`))
+                      .catch(() => toast.error(t`No se pudo copiar. Anótalo a mano.`))
                   }}
                   className="cursor-pointer rounded-md p-1 text-ink-3 transition-colors hover:bg-surface-3 hover:text-ink"
                 >
@@ -335,9 +352,11 @@ function WorkerDetail({
 
         {missingEntry && (
           <p className="rounded-md bg-red/10 px-4 py-3 text-sm text-ink-2">
-            Tiene turno hoy y no ha marcado entrada. Contáctalo — su teléfono está aquí arriba — y
-            si el ponche falló, captura la
-            <span className="font-semibold"> marca manual</span> desde el Timesheet.
+            <Trans>
+              Tiene turno hoy y no ha marcado entrada. Contáctalo — su teléfono está aquí arriba — y
+              si el ponche falló, captura la
+              <span className="font-semibold"> marca manual</span> desde el Timesheet.
+            </Trans>
           </p>
         )}
 
@@ -352,18 +371,20 @@ function WorkerDetail({
         {/* Su ficha personal, del mismo /workers que ya compone el plantel.
             Lo hondo (documentos, historial) sigue en Ver Expediente. */}
         <section className="rounded-lg border border-line bg-surface p-4">
-          <p className="text-sm font-semibold text-ink">Sus datos</p>
+          <p className="text-sm font-semibold text-ink">
+            <Trans>Sus datos</Trans>
+          </p>
           <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
-            <PersonalField label="Edad" value={`${String(row.personal.age)} años`} />
+            <PersonalField label={t`Edad`} value={t`${row.personal.age} años`} />
             <PersonalField
-              label="Género"
+              label={t`Género`}
               value={GENDER_LABEL[row.personal.gender] ?? row.personal.gender}
             />
-            <PersonalField label="Zona" value={row.personal.zoneName} />
-            <PersonalField label="Inglés" value={row.personal.englishLevel ?? '—'} />
-            <PersonalField label="Modalidad" value={row.personal.hiringModality ?? '—'} />
+            <PersonalField label={t`Zona`} value={row.personal.zoneName} />
+            <PersonalField label={t`Inglés`} value={row.personal.englishLevel ?? '—'} />
+            <PersonalField label={t`Modalidad`} value={row.personal.hiringModality ?? '—'} />
             <PersonalField
-              label="Transporte"
+              label={t`Transporte`}
               value={
                 row.personal.transportType === null
                   ? '—'
@@ -371,7 +392,7 @@ function WorkerDetail({
               }
             />
             <PersonalField
-              label="Tipo de sangre"
+              label={t`Tipo de sangre`}
               value={
                 row.personal.bloodType === null
                   ? '—'
@@ -379,7 +400,7 @@ function WorkerDetail({
               }
             />
             <PersonalField
-              label="Contacto de emergencia"
+              label={t`Contacto de emergencia`}
               value={
                 row.personal.emergencyContact === null
                   ? '—'
@@ -402,6 +423,7 @@ function WorkerDetail({
  * fondo a la derecha — la misma forma en que el BDC ve a sus BDs.
  */
 export function PersonnelPage(): ReactNode {
+  const { t } = useLingui()
   const { data: board, isLoading, isError, refetch } = useGetPersonnelBoardQuery()
   /** El hotel del Supervisor: nombre de /me, foto compuesta de /hotels/:id. */
   const { data: session } = useGetSessionQuery()
@@ -417,7 +439,7 @@ export function PersonnelPage(): ReactNode {
   if (isError || !board) {
     return (
       <LoadError
-        message="No se pudo cargar Mi Personal. Revisa tu conexión e inténtalo de nuevo."
+        message={t`No se pudo cargar Mi Personal. Revisa tu conexión e inténtalo de nuevo.`}
         onRetry={() => {
           void refetch()
         }}
@@ -434,37 +456,39 @@ export function PersonnelPage(): ReactNode {
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-3xl font-bold tracking-tight text-ink">
-          <FoldText text="Mi Personal" />
+          <FoldText text={t`Mi Personal`} />
         </h1>
         <p className="mt-1.5 text-sm text-ink-3">
-          Los colaboradores asignados a tus requisiciones, con su estado en el Semáforo. El Stand-by
-          (Rosa) lo compartes con el Manager de Área.
+          <Trans>
+            Los colaboradores asignados a tus requisiciones, con su estado en el Semáforo. El
+            Stand-by (Rosa) lo compartes con el Manager de Área.
+          </Trans>
         </p>
       </header>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <MetricCard
           value={String(board.assignedToday)}
-          label="Asignados hoy"
-          foot="con turno del Schedule"
+          label={t`Asignados hoy`}
+          foot={t`con turno del Schedule`}
           icon="groups"
         />
         <MetricCard
           value={String(board.clockedInToday)}
-          label="Con entrada registrada"
-          foot="ya marcaron hoy"
+          label={t`Con entrada registrada`}
+          foot={t`ya marcaron hoy`}
           icon="login"
         />
         <MetricCard
           value={String(board.inStandBy)}
-          label="En Stand-by"
-          foot="pausa temporal (Rosa)"
+          label={t`En Stand-by`}
+          foot={t`pausa temporal (Rosa)`}
           icon="pause_circle"
         />
         <MetricCard
           value={String(board.inAccident)}
-          label="En accidente"
-          foot={IS_DEV_UI ? 'protegido (Gris) · D-27' : 'protegido (Gris)'}
+          label={t`En accidente`}
+          foot={IS_DEV_UI ? 'protegido (Gris) · D-27' : t`protegido (Gris)`}
           icon="medical_services"
           tone={board.inAccident > 0 ? 'danger' : 'brand'}
         />
@@ -473,10 +497,14 @@ export function PersonnelPage(): ReactNode {
       {board.rows.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-line px-6 py-12 text-center">
           <img src={mascotaSaludando} alt="" aria-hidden className="h-32 w-auto" />
-          <p className="text-base font-semibold text-ink">Aún no tienes colaboradores asignados</p>
+          <p className="text-base font-semibold text-ink">
+            <Trans>Aún no tienes colaboradores asignados</Trans>
+          </p>
           <p className="max-w-md text-sm text-ink-3">
-            Cuando el Schedule programe turnos de tus requisiciones, aparecerán aquí con su estado y
-            sus marcas del día.
+            <Trans>
+              Cuando el Schedule programe turnos de tus requisiciones, aparecerán aquí con su estado
+              y sus marcas del día.
+            </Trans>
           </p>
         </div>
       ) : (
@@ -486,13 +514,15 @@ export function PersonnelPage(): ReactNode {
             <SearchField
               value={search}
               onChange={setSearch}
-              label="Buscar en tu plantel"
-              placeholder="Nombre del colaborador, p. ej. Ana Rivera…"
+              label={t`Buscar en tu plantel`}
+              placeholder={t`Nombre del colaborador, p. ej. Ana Rivera…`}
             />
             {visibleRows.length === 0 ? (
               <p className="rounded-xl border border-dashed border-line bg-surface p-6 text-center text-sm text-ink-3">
-                Nadie en tu plantel se llama «{search.trim()}». Cambia la búsqueda o límpiala para
-                ver a todos.
+                <Trans>
+                  Nadie en tu plantel se llama «{search.trim()}». Cambia la búsqueda o límpiala para
+                  ver a todos.
+                </Trans>
               </p>
             ) : (
               <ul className="flex flex-col gap-2">
@@ -516,9 +546,11 @@ export function PersonnelPage(): ReactNode {
 
       <p className="flex items-start gap-2 text-xs leading-relaxed text-ink-4">
         <MaterialIcon name="info" aria-hidden className="mt-0.5 text-sm" />
-        El Stand-by (Rosa) lo compartes con el Manager de Área. Un colaborador en Gris (accidente)
-        está protegido: no se manda a Stand-by, no se veta y sus faltas no cuentan
-        {IS_DEV_UI ? ' (D-27)' : ''}.
+        <Trans>
+          El Stand-by (Rosa) lo compartes con el Manager de Área. Un colaborador en Gris (accidente)
+          está protegido: no se manda a Stand-by, no se veta y sus faltas no cuentan
+          {IS_DEV_UI ? ' (D-27)' : ''}.
+        </Trans>
         {IS_DEV_UI && (
           <code className="block">
             compuesto: /schedules + /timesheets + /workers · Stand-by = transición PINK

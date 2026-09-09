@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+
 import { workerApi } from './workerApi'
 
 import type { ApiEnvelope, TimesheetApi, TimesheetPunchApi } from '@/shared/types/apiContract.types'
@@ -13,11 +16,12 @@ export type PunchType = 'CLOCK_IN' | 'LUNCH_OUT' | 'LUNCH_IN' | 'CLOCK_OUT'
 
 export const PUNCH_ORDER: PunchType[] = ['CLOCK_IN', 'LUNCH_OUT', 'LUNCH_IN', 'CLOCK_OUT']
 
-export const PUNCH_LABEL: Record<PunchType, string> = {
-  CLOCK_IN: 'Entrada',
-  LUNCH_OUT: 'Salida a lunch',
-  LUNCH_IN: 'Regreso de lunch',
-  CLOCK_OUT: 'Salida',
+/** El nombre de cada marca; quien lo pinta lo pasa por `i18n._()` (D-36). */
+export const PUNCH_LABEL: Record<PunchType, MessageDescriptor> = {
+  CLOCK_IN: msg`Entrada`,
+  LUNCH_OUT: msg`Salida a lunch`,
+  LUNCH_IN: msg`Regreso de lunch`,
+  CLOCK_OUT: msg`Salida`,
 }
 
 /** Entrada y Salida exigen foto (D-08); las de lunch no. */

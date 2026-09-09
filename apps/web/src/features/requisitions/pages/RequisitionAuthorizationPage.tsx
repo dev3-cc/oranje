@@ -1,3 +1,5 @@
+import { plural } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
@@ -29,6 +31,7 @@ import { matchesSearch } from '@/shared/lib/text'
  * aclara, la pantalla dice lo que digan las constantes y se corrige sola.
  */
 export function RequisitionAuthorizationPage(): ReactNode {
+  const { t } = useLingui()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   /** Por folio u hotel, EN MEMORIA: la cola ya está cargada entera. */
   const [search, setSearch] = useState('')
@@ -46,13 +49,13 @@ export function RequisitionAuthorizationPage(): ReactNode {
     return (
       <div className="flex flex-col gap-4">
         <LoadError
-          message="No se pudo cargar la cola de autorización. Revisa tu conexión e inténtalo de nuevo."
+          message={t`No se pudo cargar la cola de autorización. Revisa tu conexión e inténtalo de nuevo.`}
           onRetry={() => {
             void refetch()
           }}
         />
         <Link to="/requisiciones" className="text-sm font-semibold text-o-700 hover:underline">
-          Volver al Tablero de Requisiciones
+          <Trans>Volver al Tablero de Requisiciones</Trans>
         </Link>
       </div>
     )
@@ -71,24 +74,28 @@ export function RequisitionAuthorizationPage(): ReactNode {
 
   const fromLabel = REQUISITION_STATUS_LABEL[AUTHORIZATION_TRANSITION.from]
   const toLabel = REQUISITION_STATUS_LABEL[AUTHORIZATION_TRANSITION.to]
+  const { total } = queue
+  const whoseSignature = canAuthorize ? t`tu firma` : t`la firma del Manager`
+  const searchTerm = search.trim()
 
   return (
     <div className="flex flex-col gap-6">
-      <nav aria-label="Ruta" className="flex items-center gap-2 text-sm text-ink-3">
+      <nav aria-label={t`Ruta`} className="flex items-center gap-2 text-sm text-ink-3">
         <Link to="/requisiciones" className="hover:text-o-700">
-          Demanda
+          <Trans>Demanda</Trans>
         </Link>
         <span aria-hidden>/</span>
-        <span className="font-semibold text-ink-2">Autorización de Requisición</span>
+        <span className="font-semibold text-ink-2">
+          <Trans>Autorización de Requisición</Trans>
+        </span>
       </nav>
 
       <header>
-        <h1 className="text-3xl font-bold tracking-tight text-ink">Requisiciones por autorizar</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-ink">
+          <Trans>Requisiciones por autorizar</Trans>
+        </h1>
         <p className="mt-1.5 text-sm text-ink-3">
-          {queue.total === 1
-            ? `1 espera ${canAuthorize ? 'tu firma' : 'la firma del Manager'}`
-            : `${String(queue.total)} esperan ${canAuthorize ? 'tu firma' : 'la firma del Manager'}`}
-          . Autorizar mueve {fromLabel} → {toLabel} y arranca el reloj de la urgencia
+          {t`${plural(total, { one: `# espera ${whoseSignature}`, other: `# esperan ${whoseSignature}` })}. Autorizar mueve ${fromLabel} → ${toLabel} y arranca el reloj de la urgencia`}
         </p>
       </header>
 
@@ -98,8 +105,8 @@ export function RequisitionAuthorizationPage(): ReactNode {
             <SearchField
               value={search}
               onChange={setSearch}
-              label="Buscar pendiente"
-              placeholder="Folio o hotel, p. ej. Puerto Real…"
+              label={t`Buscar pendiente`}
+              placeholder={t`Folio o hotel, p. ej. Puerto Real…`}
             />
           )}
           <AuthorizationQueueList
@@ -108,7 +115,7 @@ export function RequisitionAuthorizationPage(): ReactNode {
             onSelect={setSelectedId}
             {...(isFilteredOut
               ? {
-                  emptyMessage: `Ninguna pendiente coincide con «${search.trim()}». Cambia la búsqueda o límpiala para ver toda la cola.`,
+                  emptyMessage: t`Ninguna pendiente coincide con «${searchTerm}». Cambia la búsqueda o límpiala para ver toda la cola.`,
                 }
               : {})}
           />
@@ -121,8 +128,10 @@ export function RequisitionAuthorizationPage(): ReactNode {
                 <div className="min-w-0">
                   <h2 className="text-2xl font-bold tracking-tight text-ink">{selected.number}</h2>
                   <p className="mt-1 text-sm text-ink-3">
-                    {selected.hotelName} · {selected.department} · solicitada por{' '}
-                    {selected.requestedByName}
+                    <Trans>
+                      {selected.hotelName} · {selected.department} · solicitada por{' '}
+                      {selected.requestedByName}
+                    </Trans>
                   </p>
                 </div>
                 <StatusLightSoftBadge
@@ -143,17 +152,19 @@ export function RequisitionAuthorizationPage(): ReactNode {
                 authorizerScope={queue.authorizerScope}
               />
             ) : (
-              <NoticeCard image={personajeManager} title="La firma es del Manager" role="status">
-                Autorizar es del Manager de Área o del Manager General: cuando firmen, la
-                requisición pasa a Autorizada y Reclutamiento la ve en la Bolsa del Self-Pick.
+              <NoticeCard image={personajeManager} title={t`La firma es del Manager`} role="status">
+                <Trans>
+                  Autorizar es del Manager de Área o del Manager General: cuando firmen, la
+                  requisición pasa a Autorizada y Reclutamiento la ve en la Bolsa del Self-Pick.
+                </Trans>
               </NoticeCard>
             )}
           </div>
         ) : (
           <p className="rounded-lg border border-line bg-surface p-8 text-center text-sm text-ink-3 xl:col-span-2">
             {isFilteredOut
-              ? 'Ninguna pendiente coincide con la búsqueda: cambia el folio o el hotel, o límpiala.'
-              : 'No hay requisiciones por autorizar. Cuando un Supervisor cree una, aparecerá aquí.'}
+              ? t`Ninguna pendiente coincide con la búsqueda: cambia el folio o el hotel, o límpiala.`
+              : t`No hay requisiciones por autorizar. Cuando un Supervisor cree una, aparecerá aquí.`}
           </p>
         )}
       </div>

@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { MaterialIcon } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -18,27 +19,29 @@ const NOT_AUTHORIZED = '—'
  * seis números sueltos no se lean como una tabla de formulario.
  */
 export function RequisitionSummaryStrip({ detail }: { detail: RequisitionDetail }): ReactNode {
+  const { t } = useLingui()
   const { totals } = detail
+  const { slotCount, occupiedCount } = totals
 
   const fields = [
     {
-      label: 'Autorizada por',
+      label: t`Autorizada por`,
       value: detail.authorizedByName ?? NOT_AUTHORIZED,
       icon: 'how_to_reg',
     },
     {
-      label: 'Autorizada el',
+      label: t`Autorizada el`,
       value: detail.authorizedAt ? formatDateTime(detail.authorizedAt) : NOT_AUTHORIZED,
       icon: 'event_available',
     },
-    { label: 'Inspector de zona', value: detail.inspectorName, icon: 'verified_user' },
-    { label: 'Posiciones', value: String(totals.positionCount), icon: 'work' },
+    { label: t`Inspector de zona`, value: detail.inspectorName, icon: 'verified_user' },
+    { label: t`Posiciones`, value: String(totals.positionCount), icon: 'work' },
     {
-      label: 'Slots',
-      value: `${String(totals.slotCount)} · ${String(totals.occupiedCount)} ocupados`,
+      label: t`Slots`,
+      value: t`${slotCount} · ${occupiedCount} ocupados`,
       icon: 'groups',
     },
-    { label: 'Cobertura', value: formatPercent(totals.coverage), icon: 'donut_large' },
+    { label: t`Cobertura`, value: formatPercent(totals.coverage), icon: 'donut_large' },
   ]
 
   return (

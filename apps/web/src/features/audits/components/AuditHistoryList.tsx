@@ -1,8 +1,11 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn, MaterialIcon } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
 import { useGetAuditsQuery } from '../api/auditsApi'
-import type { AuditHeader } from '../types/audit.types'
+import type { AuditHeader, AuditType } from '../types/audit.types'
 
 import { EnvironmentAuditDialog } from './EnvironmentAuditDialog'
 import { PersonalPresentationAuditDialog } from './PersonalPresentationAuditDialog'
@@ -12,9 +15,9 @@ import { LoadError } from '@/shared/components/LoadError'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { formatDayMonthTime } from '@/shared/lib/formatters'
 
-const AUDIT_TYPE_LABEL: Record<string, string> = {
-  PERSONAL_PRESENTATION: 'Presentación Personal',
-  ENVIRONMENT: 'Ambiente y Recursos',
+const AUDIT_TYPE_LABEL: Record<AuditType, MessageDescriptor> = {
+  PERSONAL_PRESENTATION: msg`Presentación Personal`,
+  ENVIRONMENT: msg`Ambiente y Recursos`,
 }
 
 function scoreTone(score: string): string {
@@ -39,6 +42,7 @@ export function AuditHistoryList({
   hotelName: string
   canUpdate: boolean
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const { data: audits, isLoading, isError, refetch } = useGetAuditsQuery({ hotelId })
   const [editing, setEditing] = useState<AuditHeader | null>(null)
 
@@ -46,7 +50,7 @@ export function AuditHistoryList({
   if (isError) {
     return (
       <LoadError
-        message="No se pudo cargar el historial de auditorías. Inténtalo de nuevo."
+        message={t`No se pudo cargar el historial de auditorías. Inténtalo de nuevo.`}
         onRetry={() => {
           void refetch()
         }}
@@ -56,8 +60,8 @@ export function AuditHistoryList({
   if (!audits || audits.length === 0) {
     return (
       <EmptyState
-        title="Todavía no hay auditorías"
-        text="Cuando se guarde la primera de Presentación Personal o de Ambiente y Recursos, aparecerá aquí."
+        title={t`Todavía no hay auditorías`}
+        text={t`Cuando se guarde la primera de Presentación Personal o de Ambiente y Recursos, aparecerá aquí.`}
       />
     )
   }
@@ -95,11 +99,11 @@ export function AuditHistoryList({
             )}
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-ink">
-                {audit.worker?.fullName ?? AUDIT_TYPE_LABEL[audit.auditType]}
+                {audit.worker?.fullName ?? i18n._(AUDIT_TYPE_LABEL[audit.auditType])}
               </p>
               <p className="text-xs text-ink-3">
-                {AUDIT_TYPE_LABEL[audit.auditType] ?? audit.auditType} ·{' '}
-                {formatDayMonthTime(audit.createdAt)} · {audit.supervisor.fullName}
+                {i18n._(AUDIT_TYPE_LABEL[audit.auditType])} · {formatDayMonthTime(audit.createdAt)}{' '}
+                · {audit.supervisor.fullName}
               </p>
             </div>
             <span
@@ -118,7 +122,7 @@ export function AuditHistoryList({
                 }}
                 className="shrink-0 cursor-pointer rounded-md border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-ink-2 transition-colors hover:bg-surface-2"
               >
-                Corregir
+                <Trans>Corregir</Trans>
               </button>
             )}
           </li>

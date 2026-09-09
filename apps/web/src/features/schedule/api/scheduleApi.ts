@@ -9,9 +9,9 @@ import { registerScheduleMocks } from './scheduleMocks'
 import { baseApi } from '@/app/baseApi'
 /** Piezas genéricas de navegación semanal, expuestas por el índice de Timesheet (§4). */
 import { addDaysIso } from '@/features/timesheet'
+import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import type {
   ApiEnvelope,
-  PaginatedEnvelope,
   RequisitionApi,
   ScheduleApi,
   ScheduleEntryApi,
@@ -50,13 +50,16 @@ async function fetchTimeline(
 ): Promise<{ data: ScheduleTimeline } | { error: unknown }> {
   const [schedulesRes, requisitionsRes] = await Promise.all([
     fetchWithBQ('/schedules'),
-    fetchWithBQ({ url: '/requisitions', params: { limit: 100 } }),
+    /* Antes `limit: 100` y nada más: un hotel con más de 100 requisiciones en
+       demanda viva perdía las de más allá, y `totalSlots`/`filledSlots`
+       mentían en silencio — el mismo patrón que ya se corrigió en 8 pantallas. */
+    fetchAllPages<RequisitionApi>(fetchWithBQ, '/requisitions'),
   ])
   if (schedulesRes.error) return { error: schedulesRes.error }
-  if (requisitionsRes.error) return { error: requisitionsRes.error }
+  if ('error' in requisitionsRes) return { error: requisitionsRes.error }
 
   const schedules = (schedulesRes.data as ApiEnvelope<ScheduleApi[]>).data
-  const requisitions = (requisitionsRes.data as PaginatedEnvelope<RequisitionApi>).data
+  const requisitions = requisitionsRes.data
 
   /** Las semanas QUE EXISTEN, ascendentes: por ellas camina la cinta. */
   const availableWeeks = [...new Set(schedules.map((item) => item.weekStart))].sort()

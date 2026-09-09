@@ -22,6 +22,7 @@ import { NavLink } from 'react-router'
 import { useGetSessionQuery, useLogoutMutation, useUpdateMyLocaleMutation } from '@/app/sessionApi'
 import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
 import { LanguageSwitch } from '@/shared/components/LanguageSwitch'
+import { roleLabelOf } from '@/shared/constants/roles'
 
 interface NavModule {
   label: MessageDescriptor
@@ -197,19 +198,12 @@ export function Sidebar(): ReactNode {
                 )}
               </div>
             </div>
-            <div className="flex items-end justify-between gap-2 px-3 pt-6 pb-3">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-ink">{session.shortName}</p>
-                <p className="truncate text-xs text-ink-3">{session.roleTitle}</p>
-              </div>
-              <div className="flex shrink-0 items-center gap-1">
-                {/* Idioma junto a la cuenta (D-36): el cambio es inmediato y se guarda en la persona. */}
-                <LanguageSwitch
-                  size="sm"
-                  onChange={(locale) => {
-                    void updateMyLocale(locale)
-                  }}
-                />
+            <div className="flex flex-col gap-2 px-3 pt-6 pb-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-ink">{session.shortName}</p>
+                  <p className="truncate text-xs text-ink-3">{roleLabelOf(session.roleId).title}</p>
+                </div>
                 <button
                   type="button"
                   onClick={() => {
@@ -218,13 +212,23 @@ export function Sidebar(): ReactNode {
                   disabled={isLoggingOut}
                   title={i18n._(msg`Cerrar sesión`)}
                   aria-label={i18n._(msg`Cerrar sesión`)}
-                  className="cursor-pointer rounded-md p-2 text-ink-3 transition-colors hover:bg-surface-2 hover:text-red disabled:opacity-50"
+                  className="shrink-0 cursor-pointer rounded-md p-2 text-ink-3 transition-colors hover:bg-surface-2 hover:text-red disabled:opacity-50"
                 >
                   <span className="material-icons-outlined text-xl leading-none" aria-hidden>
                     logout
                   </span>
                 </button>
               </div>
+              {/* Idioma junto a la cuenta (D-36), en su propio renglón: al lado del
+                  nombre se topaba con él en tarjetas angostas — un control de
+                  Español/English con etiquetas completas no cabe ahí. */}
+              <LanguageSwitch
+                size="sm"
+                className="w-full"
+                onChange={(locale) => {
+                  void updateMyLocale(locale)
+                }}
+              />
             </div>
           </div>
         </SidebarFooter>

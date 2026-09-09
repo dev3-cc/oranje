@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { cn, SidebarInset, SidebarProvider, Toaster } from '@oranje/ui'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useEffect, type CSSProperties, type ReactNode } from 'react'
@@ -26,6 +27,7 @@ import { MOTION } from '@/shared/lib/motion'
 export type RouteHandle = { fullWidth?: boolean }
 
 export function AppShell(): ReactNode {
+  const { t } = useLingui()
   /** Cada navegación se recuerda: si la sesión muere, el login reanuda aquí. */
   const location = useLocation()
   const matches = useMatches()
@@ -102,8 +104,8 @@ export function AppShell(): ReactNode {
             {isSubView && (
               <button
                 type="button"
-                aria-label="Volver a la página anterior"
-                title="Volver"
+                aria-label={t`Volver a la página anterior`}
+                title={t`Volver`}
                 onClick={goBack}
                 className="-mt-1 -ml-2 shrink-0 cursor-pointer rounded-md p-1.5 text-ink-2 transition-colors hover:bg-surface-2 hover:text-ink"
               >

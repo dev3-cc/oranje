@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { MaterialIcon, toast } from '@oranje/ui'
 import { useRef, useState, type ReactNode } from 'react'
 
@@ -14,6 +15,7 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
  * (D-33), así que nunca puede quedar detrás de la suspensión.
  */
 export function TaxDocumentUploader({ hasDocument }: { hasDocument: boolean }): ReactNode {
+  const { t } = useLingui()
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploadFile, { isLoading: isUploadingFile }] = useUploadFileMutation()
   const [uploadDocument, { isLoading: isSavingDocument }] = useUploadMyDocumentMutation()
@@ -25,16 +27,15 @@ export function TaxDocumentUploader({ hasDocument }: { hasDocument: boolean }): 
     try {
       const { path } = await uploadFile({ file, purpose: 'WORKER_DOCUMENT' }).unwrap()
       await uploadDocument({ documentType: 'SSN_ITIN', filePath: path }).unwrap()
-      toast.success('SSN o ITIN subido')
+      toast.success(t`SSN o ITIN subido`)
     } catch (cause) {
       setError(
         apiErrorMessage(cause, {
           byCode: {
-            UNSUPPORTED_FILE_TYPE: 'Ese archivo no se pudo leer: sube una foto clara o un PDF.',
-            FORBIDDEN:
-              'Tu cuenta aún no tiene permiso para subir archivos: Oranje lo está habilitando.',
+            UNSUPPORTED_FILE_TYPE: t`Ese archivo no se pudo leer: sube una foto clara o un PDF.`,
+            FORBIDDEN: t`Tu cuenta aún no tiene permiso para subir archivos: Oranje lo está habilitando.`,
           },
-          fallback: 'No se pudo subir tu documento. Inténtalo de nuevo.',
+          fallback: t`No se pudo subir tu documento. Inténtalo de nuevo.`,
         }),
       )
     }
@@ -46,8 +47,10 @@ export function TaxDocumentUploader({ hasDocument }: { hasDocument: boolean }): 
         <div className="flex items-center gap-3 rounded-md bg-green/10 px-4 py-3 text-left">
           <MaterialIcon name="task_alt" className="text-xl text-green" aria-hidden />
           <span className="text-sm text-ink-2">
-            Documento recibido. Si te equivocaste de archivo, súbelo de nuevo y reemplaza el
-            anterior.
+            <Trans>
+              Documento recibido. Si te equivocaste de archivo, súbelo de nuevo y reemplaza el
+              anterior.
+            </Trans>
           </span>
         </div>
       )}
@@ -56,7 +59,7 @@ export function TaxDocumentUploader({ hasDocument }: { hasDocument: boolean }): 
         type="file"
         accept="image/jpeg,image/png,image/webp,application/pdf"
         className="hidden"
-        aria-label="Archivo del SSN o ITIN"
+        aria-label={t`Archivo del SSN o ITIN`}
         onChange={(event) => {
           const file = event.target.files?.[0]
           event.target.value = ''
@@ -71,10 +74,10 @@ export function TaxDocumentUploader({ hasDocument }: { hasDocument: boolean }): 
         }}
         className="w-full"
       >
-        {isBusy ? 'Subiendo…' : hasDocument ? 'Subir otro archivo' : 'Subir mi SSN o ITIN'}
+        {isBusy ? t`Subiendo…` : hasDocument ? t`Subir otro archivo` : t`Subir mi SSN o ITIN`}
       </Button>
       <p className="text-xs text-ink-3">
-        Una foto clara o un PDF. Oranje lo revisa y te avisa cuando quede verificado.
+        <Trans>Una foto clara o un PDF. Oranje lo revisa y te avisa cuando quede verificado.</Trans>
       </p>
       {error !== null && (
         <p role="alert" className="text-sm text-red">

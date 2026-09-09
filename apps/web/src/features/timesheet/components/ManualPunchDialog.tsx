@@ -1,3 +1,6 @@
+import type { I18n, MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import {
   Input,
   Select,
@@ -22,35 +25,50 @@ import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 
-const PUNCH_TYPE_LABEL: Record<string, string> = {
-  CLOCK_IN: 'Entrada',
-  LUNCH_OUT: 'Salida a lunch',
-  LUNCH_IN: 'Regreso de lunch',
-  CLOCK_OUT: 'Salida',
+const PUNCH_TYPE_LABEL: Record<string, MessageDescriptor> = {
+  CLOCK_IN: msg`Entrada`,
+  LUNCH_OUT: msg`Salida a lunch`,
+  LUNCH_IN: msg`Regreso de lunch`,
+  CLOCK_OUT: msg`Salida`,
 }
 
 /**
  * La marca manual del Supervisor: cuando el ponche de la persona no ocurrió
  * (rechazo de geocerca, teléfono muerto), se captura a mano CON MOTIVO — la
  * marca queda señalada como manual para siempre, no se disfraza de ponche.
+ * El texto se traduce al pintar con `i18n._()` (D-36).
  */
-const INTRO_SLIDES = [
+const INTRO_SLIDES: readonly {
+  image: string
+  title: MessageDescriptor
+  text: MessageDescriptor
+}[] = [
   {
     image: personajeErrorTecnico,
-    title: 'Cuando el ponche normal no pudo',
-    text: 'La geocerca rechazó la marca, se acabó la pila o no hubo señal: para eso existe la marca manual.',
+    title: msg`Cuando el ponche normal no pudo`,
+    text: msg`La geocerca rechazó la marca, se acabó la pila o no hubo señal: para eso existe la marca manual.`,
   },
   {
     image: personajeEncuesta,
-    title: 'Queda señalada como manual',
-    text: 'La marca carga tu motivo y se distingue de las normales en la revisión del día — nada se disfraza.',
+    title: msg`Queda señalada como manual`,
+    text: msg`La marca carga tu motivo y se distingue de las normales en la revisión del día — nada se disfraza.`,
   },
   {
     image: personajeDashboard,
-    title: 'La hora que pongas manda',
-    text: 'Registras la hora real del hecho, no la de ahora: esa es la que cuenta horas para la nómina.',
+    title: msg`La hora que pongas manda`,
+    text: msg`Registras la hora real del hecho, no la de ahora: esa es la que cuenta horas para la nómina.`,
   },
-] as const
+]
+
+/** El `i18n` viene del componente (`useLingui`): así el mensaje habla el idioma activo (D-36). */
+function manualPunchErrorMessage(error: unknown, i18n: I18n): string {
+  return apiErrorMessage(error, {
+    byCode: {
+      ASSIGNMENT_NOT_FOUND: i18n._(msg`El colaborador ya no tiene asignación en esta requisición.`),
+    },
+    fallback: i18n._(msg`No se pudo registrar la marca. Inténtalo de nuevo.`),
+  })
+}
 
 export function ManualPunchDialog({
   row,
@@ -62,6 +80,7 @@ export function ManualPunchDialog({
   initialDate?: string | null
   onClose: () => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const isOpen = row !== null
   const [createPunch, { isLoading, isError, error }] = useCreateManualPunchMutation()
 
@@ -93,7 +112,7 @@ export function ManualPunchDialog({
         occurredAt: new Date(`${workDate}T${time}:00`).toISOString(),
         reason: reason.trim(),
       }).unwrap()
-      toast.success('Marca manual registrada')
+      toast.success(t`Marca manual registrada`)
       onClose()
     } catch {
       return
@@ -104,15 +123,19 @@ export function ManualPunchDialog({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Marca manual"
+      title={t`Marca manual`}
       description={
-        row ? `Para ${row.workerName} — la marca quedará señalada como manual, con tu motivo.` : ''
+        row ? t`Para ${row.workerName} — la marca quedará señalada como manual, con tu motivo.` : ''
       }
     >
       {showIntro ? (
         <OnboardingIntro
-          slides={INTRO_SLIDES}
-          startLabel="Registrar la marca"
+          slides={INTRO_SLIDES.map((slide) => ({
+            image: slide.image,
+            title: i18n._(slide.title),
+            text: i18n._(slide.text),
+          }))}
+          startLabel={t`Registrar la marca`}
           onDone={() => {
             dismissIntro()
           }}
@@ -121,51 +144,51 @@ export function ManualPunchDialog({
         <div className="flex flex-col gap-4">
           {isError && (
             <p role="alert" className="text-sm text-red">
-              {apiErrorMessage(error, {
-                byCode: {
-                  ASSIGNMENT_NOT_FOUND:
-                    'El colaborador ya no tiene asignación en esta requisición.',
-                },
-                fallback: 'No se pudo registrar la marca. Inténtalo de nuevo.',
-              })}
+              {manualPunchErrorMessage(error, i18n)}
             </p>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-ink-2">Día</span>
+              <span className="text-sm font-medium text-ink-2">
+                <Trans>Día</Trans>
+              </span>
               <Input
                 type="date"
                 value={workDate}
                 onChange={(event) => {
                   setWorkDate(event.target.value)
                 }}
-                aria-label="Día de la marca"
+                aria-label={t`Día de la marca`}
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm font-medium text-ink-2">Hora</span>
+              <span className="text-sm font-medium text-ink-2">
+                <Trans>Hora</Trans>
+              </span>
               <Input
                 type="time"
                 value={time}
                 onChange={(event) => {
                   setTime(event.target.value)
                 }}
-                aria-label="Hora de la marca"
+                aria-label={t`Hora de la marca`}
               />
             </label>
           </div>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-ink-2">Tipo de marca</span>
+            <span className="text-sm font-medium text-ink-2">
+              <Trans>Tipo de marca</Trans>
+            </span>
             <Select value={type} onValueChange={setType}>
-              <SelectTrigger aria-label="Tipo de marca" className="w-full">
+              <SelectTrigger aria-label={t`Tipo de marca`} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(PUNCH_TYPE_LABEL).map(([value, label]) => (
                   <SelectItem key={value} value={value}>
-                    {label}
+                    {i18n._(label)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -173,21 +196,23 @@ export function ManualPunchDialog({
           </label>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-ink-2">Motivo (obligatorio)</span>
+            <span className="text-sm font-medium text-ink-2">
+              <Trans>Motivo (obligatorio)</Trans>
+            </span>
             <Textarea
               value={reason}
               onChange={(event) => {
                 setReason(event.target.value)
               }}
               rows={2}
-              placeholder="Por qué no existe el ponche: rechazo de ubicación, teléfono sin batería…"
-              aria-label="Motivo de la marca manual"
+              placeholder={t`Por qué no existe el ponche: rechazo de ubicación, teléfono sin batería…`}
+              aria-label={t`Motivo de la marca manual`}
             />
           </label>
 
           <div className="flex justify-end gap-3 border-t border-line pt-4">
             <Button variant="secondary" onClick={onClose}>
-              Cancelar
+              <Trans>Cancelar</Trans>
             </Button>
             <Button
               variant="primary"
@@ -196,7 +221,7 @@ export function ManualPunchDialog({
                 void submit()
               }}
             >
-              {isLoading ? 'Registrando…' : 'Registrar marca'}
+              {isLoading ? t`Registrando…` : t`Registrar marca`}
             </Button>
           </div>
         </div>

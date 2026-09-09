@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { Skeleton } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -11,9 +12,10 @@ export function WorkerSkeleton({
 }: {
   variant: 'home' | 'punch' | 'profile' | 'list'
 }): ReactNode {
+  const { t } = useLingui()
   if (variant === 'home') {
     return (
-      <div className="flex flex-col gap-5" aria-busy aria-label="Cargando">
+      <div className="flex flex-col gap-5" aria-busy aria-label={t`Cargando`}>
         <Skeleton className="-mx-5 -mt-5 h-80 rounded-none rounded-b-[28px]" />
         <Skeleton className="h-24 rounded-xl" />
         <Skeleton className="h-32 rounded-xl" />
@@ -22,7 +24,7 @@ export function WorkerSkeleton({
   }
   if (variant === 'punch') {
     return (
-      <div className="flex flex-col items-center gap-6" aria-busy aria-label="Cargando">
+      <div className="flex flex-col items-center gap-6" aria-busy aria-label={t`Cargando`}>
         <div className="flex w-full flex-col gap-2">
           <Skeleton className="h-6 w-40" />
           <Skeleton className="h-4 w-56" />
@@ -35,7 +37,7 @@ export function WorkerSkeleton({
   }
   if (variant === 'profile') {
     return (
-      <div className="flex flex-col gap-5" aria-busy aria-label="Cargando">
+      <div className="flex flex-col gap-5" aria-busy aria-label={t`Cargando`}>
         <div className="flex flex-col items-center gap-3">
           <Skeleton className="size-24 rounded-full" />
           <Skeleton className="h-6 w-40" />
@@ -47,7 +49,7 @@ export function WorkerSkeleton({
     )
   }
   return (
-    <div className="flex flex-col gap-2" aria-busy aria-label="Cargando">
+    <div className="flex flex-col gap-2" aria-busy aria-label={t`Cargando`}>
       {[0, 1, 2, 3].map((row) => (
         <Skeleton key={row} className="h-16 rounded-lg" />
       ))}

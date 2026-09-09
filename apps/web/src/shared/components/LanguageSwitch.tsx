@@ -42,10 +42,13 @@ export function LanguageSwitch({
             onChange?.(locale)
           }}
           className={cn(
-            'cursor-pointer rounded-md transition-colors',
+            'flex-1 cursor-pointer rounded-md text-center transition-colors',
             size === 'sm' ? 'px-2 py-1 text-[11px]' : 'px-3 py-1.5 text-xs',
+            /* Mismo tinte activo que FilterSelect (o-50/o-700): `bg-surface`
+               sobre `bg-surface-2` casi no se distinguía (#fff vs #fbfaf8,
+               solo una sombra sutil los separaba). */
             active === locale
-              ? 'bg-surface font-semibold text-ink shadow-sm'
+              ? 'bg-o-50 font-semibold text-o-700 shadow-sm'
               : 'text-ink-3 hover:text-ink',
           )}
         >

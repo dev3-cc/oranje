@@ -1,3 +1,5 @@
+import { plural } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn, MaterialIcon, statusLight } from '@oranje/ui'
 import { useReducedMotion } from 'framer-motion'
 import { useContext, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react'
@@ -183,6 +185,7 @@ export function TimesheetHoursView({
     manualPunchTarget: Pick<TimesheetRow, 'requisitionId' | 'workerId' | 'workerName'>,
   ) => void
 }): ReactNode {
+  const { t } = useLingui()
   const today = todayIso()
   const nowMinutes = useNowMinutes()
   const { isDragging } = useContext(WeekDragContext)
@@ -315,7 +318,9 @@ export function TimesheetHoursView({
         <div className="overflow-hidden rounded-lg border border-line bg-surface">
           {agendaBlocks.length === 0 ? (
             <p className="p-8 text-center text-sm text-ink-3">
-              Este día no tiene jornadas con horas. El punto naranja marca los días que sí.
+              <Trans>
+                Este día no tiene jornadas con horas. El punto naranja marca los días que sí.
+              </Trans>
             </p>
           ) : (
             <div className="flex">
@@ -373,7 +378,7 @@ export function TimesheetHoursView({
                           <span className="block truncate text-xs text-ink-2">
                             {single
                               ? single.row.workerName
-                              : `${String(block.people.length)} colaboradores`}
+                              : t`${block.people.length} colaboradores`}
                           </span>
                         </span>
                         <span className="flex shrink-0 items-center">
@@ -499,7 +504,7 @@ export function TimesheetHoursView({
                           onClick={() => {
                             setSelectedKey(block.key === selectedKey ? null : block.key)
                           }}
-                          title={`${block.start} – ${block.end} · ${String(block.people.length)} en el turno`}
+                          title={t`${block.start} – ${block.end} · ${block.people.length} en el turno`}
                           className={cn(
                             'absolute flex cursor-pointer flex-col items-stretch justify-start overflow-hidden rounded-xl bg-surface p-2 text-left shadow-sm transition-shadow hover:shadow-md',
                             'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500',
@@ -541,7 +546,7 @@ export function TimesheetHoursView({
                           <span className="block truncate text-[10px] text-ink-2">
                             {single
                               ? single.row.workerName
-                              : `${String(block.people.length)} colaboradores`}
+                              : t`${block.people.length} colaboradores`}
                           </span>
 
                           {/* La banda del estado, abajo — color + leyenda arriba. */}
@@ -562,8 +567,10 @@ export function TimesheetHoursView({
               {!hasBlocks && (
                 <div className="pointer-events-none absolute inset-0 z-10 flex items-start justify-center pt-16">
                   <p className="rounded-full border border-dashed border-line bg-surface/95 px-4 py-2 text-sm text-ink-3 shadow-sm">
-                    Esta semana no hay jornadas con horas. La vista Días también enseña ausencias y
-                    pendientes.
+                    <Trans>
+                      Esta semana no hay jornadas con horas. La vista Días también enseña ausencias
+                      y pendientes.
+                    </Trans>
                   </p>
                 </div>
               )}
@@ -592,26 +599,24 @@ export function TimesheetHoursView({
       <aside className="shrink-0 lg:w-80">
         {selected === null ? (
           <p className="rounded-lg border border-dashed border-line bg-surface p-6 text-center text-sm text-ink-3">
-            Elige un bloque para ver a sus colaboradores y revisar sus días.
+            <Trans>Elige un bloque para ver a sus colaboradores y revisar sus días.</Trans>
           </p>
         ) : (
           <div className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-5">
             <div>
               <p className="text-xs font-semibold tracking-wide text-ink-3 uppercase">
-                Turno elegido
+                <Trans>Turno elegido</Trans>
               </p>
               <p className="mt-1 text-lg font-bold text-ink">
                 {formatWeekday(selected.day)} {formatDayNumber(selected.day)} · {selected.start} –{' '}
                 {selected.end}
               </p>
               <p className="text-sm text-ink-3">
-                {selected.people.length === 1
-                  ? '1 colaborador'
-                  : `${String(selected.people.length)} colaboradores`}
+                {t`${plural(selected.people.length, { one: '# colaborador', other: '# colaboradores' })}`}
               </p>
               {selected.requisition !== null && (
                 <span
-                  title="Todos los días de este grupo pertenecen a esta requisición"
+                  title={t`Todos los días de este grupo pertenecen a esta requisición`}
                   className="mt-2 inline-flex items-center gap-1 rounded-md bg-o-50 px-2.5 py-1 text-xs font-semibold text-o-700"
                 >
                   <MaterialIcon name="assignment" className="text-sm" />
@@ -637,7 +642,7 @@ export function TimesheetHoursView({
                           aria-hidden
                         />
                         {TIMESHEET_STATUS_LABEL[entry.status]}
-                        {entry.punch === 'INCOMPLETE' && ' · sin salida'}
+                        {entry.punch === 'INCOMPLETE' && ` · ${t`sin salida`}`}
                       </span>
                     </span>
                     <Button
@@ -653,7 +658,7 @@ export function TimesheetHoursView({
                       {/* "Revisar" en un día ya Revisado prometía una acción que
                           no iba a pasar — el botón abre lo mismo, pero lo que
                           hay del otro lado ya no es una revisión pendiente. */}
-                      {entry.status === 'REVIEWED' ? 'Ver revisión' : 'Revisar'}
+                      {entry.status === 'REVIEWED' ? t`Ver revisión` : t`Revisar`}
                     </Button>
                   </li>
                 )
@@ -661,8 +666,10 @@ export function TimesheetHoursView({
             </ul>
 
             <p className="border-t border-line pt-3 text-xs text-ink-3">
-              El Supervisor revisa; la aprobación de horas es del Manager de Área o del Manager
-              General.
+              <Trans>
+                El Supervisor revisa; la aprobación de horas es del Manager de Área o del Manager
+                General.
+              </Trans>
             </p>
           </div>
         )}

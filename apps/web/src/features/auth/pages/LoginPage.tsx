@@ -9,7 +9,7 @@ import { useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { Navigate, useLocation, useNavigate } from 'react-router'
 
-import { LoginScene } from '../components/LoginScene'
+import { LoginCollage } from '../components/LoginCollage'
 import { loginSchema, type LoginFormValues } from '../types/login.schema'
 
 import { useAppSelector } from '@/app/hooks'
@@ -397,9 +397,9 @@ export function LoginPage(): ReactNode {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="relative m-3 hidden flex-1 overflow-hidden rounded-xl bg-gradient-to-br from-o-500 to-o-700 md:block"
+          className="relative m-3 hidden min-h-[560px] flex-1 overflow-hidden rounded-xl bg-gradient-to-br from-o-500 to-o-700 md:block"
         >
-          <LoginScene />
+          <LoginCollage />
           <div className="absolute inset-x-4 bottom-4 rounded-lg bg-surface/90 p-4 backdrop-blur">
             <div className="flex items-start justify-between gap-3">
               <p className="text-sm font-semibold text-ink">
