@@ -114,6 +114,8 @@ export interface CatalogItemApi {
   id: string
   code: string
   name: string
+  /** Solo `/catalogs/positions`: cada puesto pertenece a un departamento. */
+  hotelDepartmentId?: string
 }
 
 export interface ReasonItemApi {

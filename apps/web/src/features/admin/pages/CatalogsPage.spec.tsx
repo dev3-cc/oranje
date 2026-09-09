@@ -21,17 +21,17 @@ async function renderPage(): Promise<void> {
 }
 
 describe('CatalogsPage', () => {
-  it('lista los departamentos y cada posición dice el suyo', async () => {
-    const user = userEvent.setup()
+  it('cada posición vive dentro de la sección de su departamento', async () => {
     await renderPage()
 
-    // Pestaña inicial: departamentos del seed de mocks.
+    // Pestaña inicial: departamentos del seed de mocks, cada uno como sección.
     expect(await screen.findByText('Housekeeping')).toBeInTheDocument()
     expect(screen.getByText('Alimentos')).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Posiciones' })).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('tab', { name: 'Posiciones' }))
-    const housekeeper = (await screen.findByText('Housekeeper')).closest('li') as HTMLElement
-    expect(within(housekeeper).getByText('Housekeeping')).toBeInTheDocument()
+    const section = (await screen.findByText('Housekeeper')).closest('section') as HTMLElement
+    expect(within(section).getByRole('heading', { name: 'Housekeeping' })).toBeInTheDocument()
+    expect(within(section).getByRole('button', { name: 'Agregar posición' })).toBeInTheDocument()
   })
 
   it('el buscador filtra la pestaña en memoria y el vacío dice cómo salir', async () => {
@@ -39,7 +39,7 @@ describe('CatalogsPage', () => {
     await renderPage()
 
     expect(await screen.findByText('Housekeeping')).toBeInTheDocument()
-    const field = screen.getByLabelText('Buscar en Departamentos')
+    const field = screen.getByLabelText('Buscar en Departamentos y posiciones')
 
     // Sin acentos ni mayúsculas: «alim» encuentra «Alimentos».
     await user.type(field, 'ALIM')
@@ -49,13 +49,17 @@ describe('CatalogsPage', () => {
     await user.clear(field)
     await user.type(field, 'zzz')
     expect(
-      screen.getByText('Ninguna fila coincide con «zzz». Cambia la búsqueda o agrégala.'),
+      screen.getByText(/Ningún departamento ni posición coincide con «zzz»/),
     ).toBeInTheDocument()
 
+    // La búsqueda también entra por la posición: «house» trae Housekeeper dentro de su sección.
+    await user.clear(field)
+    await user.type(field, 'housekeeper')
+    expect(screen.getByText('Housekeeper')).toBeInTheDocument()
+
     // Cambiar de pestaña limpia la búsqueda: la pestaña nueva se abre completa.
-    await user.click(screen.getByRole('tab', { name: 'Posiciones' }))
-    expect(await screen.findByText('Housekeeper')).toBeInTheDocument()
-    expect(screen.getByLabelText('Buscar en Posiciones')).toHaveValue('')
+    await user.click(screen.getByRole('tab', { name: 'Modalidades' }))
+    expect(screen.getByLabelText('Buscar en Modalidades')).toHaveValue('')
   })
 
   it('agrega una modalidad nueva desde el diálogo', async () => {
@@ -80,8 +84,8 @@ describe('CatalogsPage', () => {
     const user = userEvent.setup()
     await renderPage()
 
-    const row = (await screen.findByText('Housekeeping')).closest('li') as HTMLElement
-    await user.click(within(row).getByRole('button', { name: 'Eliminar Housekeeping' }))
+    const section = (await screen.findByText('Housekeeping')).closest('section') as HTMLElement
+    await user.click(within(section).getByRole('button', { name: 'Eliminar Housekeeping' }))
     await user.click(await screen.findByRole('button', { name: 'Sí, eliminar' }))
 
     // El mock simula la FK del back: el departamento tiene posiciones.

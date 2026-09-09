@@ -69,10 +69,10 @@ interface TabConfig {
 
 const TAB_CONFIG: Record<ManagedCatalog, TabConfig> = {
   'hotel-departments': {
-    label: 'Departamentos',
+    label: 'Departamentos y posiciones',
     pick: (data) => data.departments,
     noun: 'departamento',
-    searchPlaceholder: 'Nombre del departamento, p. ej. Housekeeping…',
+    searchPlaceholder: 'Departamento o posición, p. ej. Steward…',
   },
   positions: {
     label: 'Posiciones',
@@ -94,13 +94,23 @@ const TAB_CONFIG: Record<ManagedCatalog, TabConfig> = {
   },
 }
 
-const TABS = MANAGED_CATALOGS.map((catalog) => ({ catalog, ...TAB_CONFIG[catalog] }))
+/**
+ * Posiciones ya no es pestaña: cada posición pertenece a un departamento y
+ * verlas separadas no decía cuál (Hugo, 2026-09-09). Viven seccionadas
+ * dentro de «Departamentos y posiciones», como los reactivos por categoría.
+ */
+const TABS = MANAGED_CATALOGS.filter((catalog) => catalog !== 'positions').map((catalog) => ({
+  catalog,
+  ...TAB_CONFIG[catalog],
+}))
 
 interface EditorState {
   catalog: ManagedCatalog
   noun: string
   /** `null` = alta nueva; con fila = renombrar. */
   item: AdminCatalogItem | null
+  /** Alta de posición desde su sección: el departamento ya viene elegido. */
+  presetDepartmentId?: string
 }
 
 /**
@@ -127,7 +137,9 @@ export function CatalogsPage(): ReactNode {
   const requestedTab = searchParams.get('tab')
   const active: TabKey =
     requestedTab !== null && (ALL_TAB_KEYS as readonly string[]).includes(requestedTab)
-      ? (requestedTab as TabKey)
+      ? requestedTab === 'positions'
+        ? 'hotel-departments' // enlaces viejos a la pestaña que se fusionó
+        : (requestedTab as TabKey)
       : 'hotel-departments'
 
   function selectTab(next: TabKey): void {
@@ -152,11 +164,27 @@ export function CatalogsPage(): ReactNode {
   } | null>(null)
 
   const isReactivosTab = active === REACTIVOS_TAB
+  const isDepartmentsTab = active === 'hotel-departments'
   const tab = active === REACTIVOS_TAB ? null : { catalog: active, ...TAB_CONFIG[active] }
   const rows = tab && data ? tab.pick(data) : []
   const visibleRows = rows.filter((row) => matchesSearch(search, row.name))
-  const departmentName = (id: string | undefined): string =>
-    data?.departments.find((department) => department.id === id)?.name ?? '—'
+  /**
+   * Departamentos con sus posiciones. La búsqueda entra por los dos lados:
+   * un departamento aparece si coincide su nombre (con todas sus posiciones)
+   * o si coincide alguna posición (solo esas).
+   */
+  const sections = (data?.departments ?? [])
+    .map((department) => {
+      const positions = (data?.positions ?? []).filter(
+        (position) => position.hotelDepartmentId === department.id,
+      )
+      const departmentMatches = matchesSearch(search, department.name)
+      const visiblePositions = departmentMatches
+        ? positions
+        : positions.filter((position) => matchesSearch(search, position.name))
+      return { department, positions, visiblePositions, departmentMatches }
+    })
+    .filter((section) => section.departmentMatches || section.visiblePositions.length > 0)
 
   if (!canManage) {
     return (
@@ -248,6 +276,141 @@ export function CatalogsPage(): ReactNode {
 
           {isLoading || !data ? (
             <TableSkeleton rows={5} columns={3} />
+          ) : isDepartmentsTab ? (
+            data.departments.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+                Todavía no hay departamentos. Agrega el primero con el botón de arriba; las
+                posiciones se cuelgan de cada uno.
+              </p>
+            ) : sections.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+                Ningún departamento ni posición coincide con «{search.trim()}». Cambia la búsqueda o
+                agrégala.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-5">
+                {sections.map(({ department, positions, visiblePositions }) => (
+                  <section key={department.id} aria-labelledby={`dept-${department.id}`}>
+                    {/* El departamento es la sección; sus posiciones, las filas. La
+                        cabecera lleva las acciones del departamento y el alta de
+                        posición ya con el departamento elegido. */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2
+                        id={`dept-${department.id}`}
+                        className="text-xs font-bold tracking-wide text-ink-3 uppercase"
+                      >
+                        {department.name}
+                      </h2>
+                      <span className="text-xs text-ink-4">
+                        {positions.length === 0
+                          ? 'sin posiciones'
+                          : `${String(positions.length)} ${positions.length === 1 ? 'posición' : 'posiciones'}`}
+                      </span>
+                      <div className="ml-auto flex items-center gap-1">
+                        <Button
+                          variant="secondary"
+                          className="px-3 py-1 text-xs"
+                          onClick={() => {
+                            setEditor({
+                              catalog: 'positions',
+                              noun: 'posición',
+                              item: null,
+                              presetDepartmentId: department.id,
+                            })
+                          }}
+                        >
+                          Agregar posición
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          className="px-3 py-1 text-xs"
+                          onClick={() => {
+                            setEditor({
+                              catalog: 'hotel-departments',
+                              noun: 'departamento',
+                              item: department,
+                            })
+                          }}
+                        >
+                          Renombrar
+                        </Button>
+                        <button
+                          type="button"
+                          aria-label={`Eliminar ${department.name}`}
+                          title="Eliminar departamento"
+                          onClick={() => {
+                            setPendingDelete({
+                              catalog: 'hotel-departments',
+                              noun: 'departamento',
+                              item: department,
+                            })
+                          }}
+                          className="cursor-pointer rounded-md p-1.5 text-ink-3 transition-colors hover:bg-surface-2 hover:text-red"
+                        >
+                          <MaterialIcon name="delete" className="text-lg" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {visiblePositions.length === 0 ? (
+                      <p className="mt-2 rounded-lg border border-dashed border-line bg-surface px-5 py-4 text-sm text-ink-3">
+                        {positions.length === 0
+                          ? 'Sin posiciones: mientras no tenga, nadie puede pedir personal de este departamento.'
+                          : `Ninguna posición de ${department.name} coincide con «${search.trim()}».`}
+                      </p>
+                    ) : (
+                      <ul className="mt-2 overflow-hidden rounded-lg border border-line bg-surface">
+                        {visiblePositions.map((position) => (
+                          <li
+                            key={position.id}
+                            className="flex items-center gap-3 border-b border-line px-5 py-3 last:border-b-0"
+                          >
+                            <MaterialIcon name="badge" className="text-lg text-ink-4" aria-hidden />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold text-ink">
+                                {position.name}
+                              </p>
+                              {IS_DEV_UI && (
+                                <p className="text-xs">
+                                  <code className="text-ink-4">{position.code}</code>
+                                </p>
+                              )}
+                            </div>
+                            <Button
+                              variant="secondary"
+                              onClick={() => {
+                                setEditor({
+                                  catalog: 'positions',
+                                  noun: 'posición',
+                                  item: position,
+                                })
+                              }}
+                            >
+                              Renombrar
+                            </Button>
+                            <button
+                              type="button"
+                              aria-label={`Eliminar ${position.name}`}
+                              title="Eliminar posición"
+                              onClick={() => {
+                                setPendingDelete({
+                                  catalog: 'positions',
+                                  noun: 'posición',
+                                  item: position,
+                                })
+                              }}
+                              className="cursor-pointer rounded-md p-1.5 text-ink-3 transition-colors hover:bg-surface-2 hover:text-red"
+                            >
+                              <MaterialIcon name="delete" className="text-lg" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                ))}
+              </div>
+            )
           ) : rows.length === 0 ? (
             <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
               Este catálogo está vacío. Agrega su primera fila con el botón de arriba.
@@ -265,15 +428,11 @@ export function CatalogsPage(): ReactNode {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-ink">{row.name}</p>
-                    <p className="text-xs text-ink-3">
-                      {active === 'positions' && (
-                        <span className="mr-2 inline-flex items-center gap-1">
-                          <MaterialIcon name="apartment" className="text-sm" aria-hidden />
-                          {departmentName(row.hotelDepartmentId)}
-                        </span>
-                      )}
-                      {IS_DEV_UI && <code className="text-ink-4">{row.code}</code>}
-                    </p>
+                    {IS_DEV_UI && (
+                      <p className="text-xs">
+                        <code className="text-ink-4">{row.code}</code>
+                      </p>
+                    )}
                   </div>
                   <Button
                     variant="secondary"
@@ -372,7 +531,9 @@ function CatalogItemDialog({
   onClose: () => void
 }): ReactNode {
   const [name, setName] = useState(editor.item?.name ?? '')
-  const [departmentId, setDepartmentId] = useState(editor.item?.hotelDepartmentId ?? '')
+  const [departmentId, setDepartmentId] = useState(
+    editor.item?.hotelDepartmentId ?? editor.presetDepartmentId ?? '',
+  )
   const [error, setError] = useState<string | null>(null)
   const [createItem, { isLoading: isCreating }] = useCreateCatalogItemMutation()
   const [updateItem, { isLoading: isUpdating }] = useUpdateCatalogItemMutation()

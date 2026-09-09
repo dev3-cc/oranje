@@ -140,6 +140,8 @@ export interface CatalogOption {
   id: string
   code: string
   name: string
+  /** Solo posiciones: el departamento al que pertenece (`catalogs.position.hotel_department_id`). */
+  hotelDepartmentId?: string
 }
 
 export interface RequisitionHotelOption {
