@@ -99,7 +99,7 @@ export class ParticipationService {
     if (!state) {
       throw new ConflictException({
         code: 'STATE_NOT_FOUND',
-        message: `El estado ${code} no existe en el Semáforo de Requisición`,
+        message: 'Ese estado no existe en el Semáforo de Requisición',
       })
     }
 

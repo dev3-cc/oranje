@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { workerStateLabel } from '../../../common/utils/status-labels.js'
 import { StorageService } from '../../../infra/storage/index.js'
 import { PermissionsService } from '../../identity/index.js'
 
@@ -240,7 +241,7 @@ export class WorkersService {
     if (candidates.length === 0) {
       throw new ConflictException({
         code: 'TRANSITION_NOT_ALLOWED',
-        message: `No se puede pasar de ${current.code} a ${dto.toState}`,
+        message: `No se puede pasar de ${workerStateLabel(current.code)} a ${workerStateLabel(dto.toState)}`,
         details: [...new Set(steps.map((s) => s.code).filter(Boolean))].map((code) => ({
           field: 'toState',
           value: code as string,
@@ -334,7 +335,7 @@ export class WorkersService {
     if (!state) {
       throw new ConflictException({
         code: 'STATE_NOT_FOUND',
-        message: `El estado ${code} no existe en el Semáforo del Colaborador`,
+        message: 'Ese estado no existe en el Semáforo del Colaborador',
       })
     }
 

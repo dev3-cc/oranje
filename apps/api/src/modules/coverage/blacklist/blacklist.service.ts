@@ -118,7 +118,7 @@ export class BlacklistService {
     if (!state) {
       throw new ConflictException({
         code: 'STATE_NOT_FOUND',
-        message: `El estado ${code} no existe en el Semáforo del Colaborador`,
+        message: 'Ese estado no existe en el Semáforo del Colaborador',
       })
     }
 

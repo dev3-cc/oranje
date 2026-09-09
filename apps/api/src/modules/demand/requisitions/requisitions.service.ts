@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { requisitionStateLabel } from '../../../common/utils/status-labels.js'
 import { PlacesService } from '../../../infra/places/index.js'
 import { StorageService } from '../../../infra/storage/index.js'
 import { PermissionsService } from '../../identity/index.js'
@@ -276,7 +277,7 @@ export class RequisitionsService {
     if (!(await this.repo.transitionAllowed(fromState.id, toState.id, user.roleCode))) {
       throw new ConflictException({
         code: 'TRANSITION_NOT_ALLOWED',
-        message: `Una requisición en ${from} no se elimina`,
+        message: `Una requisición ${requisitionStateLabel(from).toLowerCase()} no se elimina`,
       })
     }
 
@@ -293,7 +294,7 @@ export class RequisitionsService {
       if (!reason) {
         throw new UnprocessableEntityException({
           code: 'REASON_REQUIRED',
-          message: `Eliminar una requisición en ${from} exige un motivo`,
+          message: `Eliminar una requisición ${requisitionStateLabel(from).toLowerCase()} exige un motivo`,
         })
       }
 
@@ -347,7 +348,7 @@ export class RequisitionsService {
     if (row.statusState.code !== DRAFT) {
       throw new ConflictException({
         code: 'REQUISITION_NOT_DRAFT',
-        message: `Solo se autoriza una requisición en elaboración, y esta está en ${row.statusState.code}`,
+        message: `Solo se autoriza una requisición en elaboración, y esta está ${row.statusState.name.toLowerCase()}`,
       })
     }
 
@@ -450,7 +451,7 @@ export class RequisitionsService {
     if (!state) {
       throw new ConflictException({
         code: 'STATE_NOT_FOUND',
-        message: `El estado ${code} no existe en el semáforo ${light}`,
+        message: 'Ese estado no existe en el semáforo',
       })
     }
 

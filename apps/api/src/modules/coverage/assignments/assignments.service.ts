@@ -16,6 +16,7 @@ import {
   REQUISITION_LIGHT,
 } from './assignments.repository.js'
 import type { CreateAssignmentDto } from './dto/create-assignment.dto.js'
+import { assignmentStatusLabel } from '../../../common/utils/status-labels.js'
 
 const IN_PROGRESS = 'YELLOW'
 const FULLY_COVERED = 'LIGHT_BLUE'
@@ -154,7 +155,7 @@ export class AssignmentsService {
     if (row.status !== 'ACTIVE') {
       throw new ConflictException({
         code: 'ASSIGNMENT_NOT_ACTIVE',
-        message: `Esta asignación está en ${row.status}`,
+        message: `Esta asignación ya está ${assignmentStatusLabel(row.status)}`,
       })
     }
 
@@ -216,7 +217,7 @@ export class AssignmentsService {
     if (!state) {
       throw new ConflictException({
         code: 'STATE_NOT_FOUND',
-        message: `El estado ${code} no existe en el semáforo ${light}`,
+        message: 'Ese estado no existe en el semáforo',
       })
     }
 

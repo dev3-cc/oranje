@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { invoiceStatusLabel } from '../../../common/utils/status-labels.js'
 
 import type { CreditDto, GenerateInvoiceDto } from './dto/invoice.dto.js'
 import { InvoiceDetailRow, InvoiceRow, InvoicesRepository } from './invoices.repository.js'
@@ -96,7 +97,7 @@ export class InvoicesService {
     if (row.status !== DRAFT) {
       throw new ConflictException({
         code: 'INVOICE_NOT_DRAFT',
-        message: `Una nota de crédito solo entra en borrador, y esta factura está en ${row.status}`,
+        message: `Una nota de crédito solo entra en borrador, y esta factura está ${invoiceStatusLabel(row.status)}`,
       })
     }
 
@@ -169,7 +170,7 @@ export class InvoicesService {
     if (row.status !== expected) {
       throw new ConflictException({
         code: 'INVOICE_WRONG_STATUS',
-        message: `Para ${action} la factura debe estar en ${expected}, y está en ${row.status}`,
+        message: `Para ${action} la factura debe estar ${invoiceStatusLabel(expected)}, y está ${invoiceStatusLabel(row.status)}`,
       })
     }
   }

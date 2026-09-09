@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { assignmentStatusLabel, timesheetStatusLabel } from '../../../common/utils/status-labels.js'
 import { parsePunchQrPayload } from '../../commercial/hotels/punch-qr.js'
 
 import type { CreateManualPunchDto, CreatePunchDto } from './dto/create-punch.dto.js'
@@ -232,7 +233,7 @@ export class TimesheetsService {
     if (sheet.status !== OPEN) {
       throw new ConflictException({
         code: 'TIMESHEET_NOT_OPEN',
-        message: `Este Timesheet está en ${sheet.status}`,
+        message: `Esta semana ya está ${timesheetStatusLabel(sheet.status)}: no admite cambios`,
       })
     }
 
@@ -267,7 +268,7 @@ export class TimesheetsService {
     if (sheet.status !== PENDING) {
       throw new ConflictException({
         code: 'TIMESHEET_NOT_PENDING',
-        message: `Solo se aprueba un Timesheet en revisión, y este está en ${sheet.status}`,
+        message: `Solo se aprueba una semana enviada a aprobación, y esta está ${timesheetStatusLabel(sheet.status)}`,
       })
     }
 
@@ -484,7 +485,7 @@ export class TimesheetsService {
     if (row.status !== 'ACTIVE') {
       throw new UnprocessableEntityException({
         code: 'ASSIGNMENT_NOT_ACTIVE',
-        message: `No se poncha sobre una asignación en ${row.status}`,
+        message: `No se poncha sobre una asignación ${assignmentStatusLabel(row.status)}`,
       })
     }
 

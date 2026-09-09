@@ -384,7 +384,7 @@ export class AccidentsService {
     if (!row) {
       throw new UnprocessableEntityException({
         code: 'STATE_NOT_FOUND',
-        message: `El estado ${code} no está sembrado en el semáforo del Colaborador`,
+        message: 'Ese estado no está sembrado en el Semáforo del Colaborador',
       })
     }
 

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { contractStatusLabel } from '../../../common/utils/status-labels.js'
 
 import { ContractRow, ContractsRepository, RateRow } from './contracts.repository.js'
 import type { CreateContractDto, UpsertRateDto } from './dto/contract.dto.js'
@@ -100,7 +101,7 @@ export class ContractsService {
     if (row.status !== DRAFT) {
       throw new ConflictException({
         code: 'CONTRACT_NOT_DRAFT',
-        message: `Las tarifas solo se tocan en borrador, y este contrato está en ${row.status}`,
+        message: `Las tarifas solo se tocan en borrador, y este contrato está ${contractStatusLabel(row.status)}`,
       })
     }
 
@@ -129,7 +130,7 @@ export class ContractsService {
     if (row.status !== DRAFT) {
       throw new ConflictException({
         code: 'CONTRACT_NOT_DRAFT',
-        message: `Solo se activa un contrato en borrador, y este está en ${row.status}`,
+        message: `Solo se activa un contrato en borrador, y este está ${contractStatusLabel(row.status)}`,
       })
     }
 
@@ -169,14 +170,14 @@ export class ContractsService {
     if (expired && row.status !== ACTIVE) {
       throw new ConflictException({
         code: 'CONTRACT_NOT_ACTIVE',
-        message: `Solo expira un contrato vigente, y este está en ${row.status}`,
+        message: `Solo expira un contrato vigente, y este está ${contractStatusLabel(row.status)}`,
       })
     }
 
     if (!expired && ![DRAFT, ACTIVE].includes(row.status)) {
       throw new ConflictException({
         code: 'CONTRACT_ALREADY_CLOSED',
-        message: `Este contrato está en ${row.status}`,
+        message: `Este contrato ya está ${contractStatusLabel(row.status)}`,
       })
     }
 

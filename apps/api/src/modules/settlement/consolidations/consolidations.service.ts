@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { consolidationStatusLabel } from '../../../common/utils/status-labels.js'
 
 import {
   ConsolidationRow,
@@ -114,7 +115,7 @@ export class ConsolidationsService {
     if (row.status !== DRAFT) {
       throw new ConflictException({
         code: 'CONSOLIDATION_NOT_DRAFT',
-        message: `Ya no se tocan las deducciones: el consolidado está en ${row.status}`,
+        message: `Ya no se tocan las deducciones: el consolidado está ${consolidationStatusLabel(row.status)}`,
       })
     }
 
@@ -181,7 +182,7 @@ export class ConsolidationsService {
     if (row.status !== expected) {
       throw new ConflictException({
         code: 'CONSOLIDATION_WRONG_STATUS',
-        message: `Para ${action} el consolidado debe estar en ${expected}, y está en ${row.status}`,
+        message: `Para ${action} el consolidado debe estar ${consolidationStatusLabel(expected)}, y está ${consolidationStatusLabel(row.status)}`,
       })
     }
   }
