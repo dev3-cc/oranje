@@ -4,12 +4,8 @@ import { registerTeamMocks } from './teamMocks'
 
 import { baseApi } from '@/app/baseApi'
 import { PIPELINE_COLUMNS } from '@/shared/constants/onboardingStatus'
-import type {
-  ApiEnvelope,
-  PaginatedEnvelope,
-  ProspectApi,
-  TeamMemberApi,
-} from '@/shared/types/apiContract.types'
+import { fetchAllPages } from '@/shared/lib/fetchAllPages'
+import type { ApiEnvelope, ProspectApi, TeamMemberApi } from '@/shared/types/apiContract.types'
 
 /**
  * Mi Equipo (BDC) se COMPONE de `/team` (los BDs a cargo, con sus zonas) y
@@ -60,9 +56,10 @@ function buildMemberCard(member: TeamMemberApi, prospects: ProspectApi[]): TeamM
     photoUrl: member.photoUrl,
     zoneNames: member.zones.map((zone) => zone.name.replace(/^Zona\s+/i, '')),
     zones: member.zones.map((zone) => ({ id: zone.id, name: zone.name })),
-    /* El backend lo cuenta SIN el tope de paginación de esta página de
-       prospectos: usar `open.length` discrepaba de Mi Territorio en cuanto
-       hubiera más de 100. */
+    /* El backend ya lo cuenta aparte (mismo criterio, distinta fuente); sus
+       hermanos de abajo se calculan sobre `prospects`, que desde
+       `fetchAllPages` trae el dataset completo, no una sola página — ya no
+       hay dos cifras que puedan discrepar entre sí. */
     openProspects: member.openProspects,
     quarterConversions,
     conversionRate:
@@ -103,13 +100,13 @@ async function fetchOverview(
 ): Promise<{ data: TeamOverview } | { error: unknown }> {
   const [teamRes, prospectsRes] = await Promise.all([
     fetchWithBQ('/team'),
-    fetchWithBQ({ url: '/prospects', params: { limit: 100, includeClosed: true } }),
+    fetchAllPages<ProspectApi>(fetchWithBQ, '/prospects', { includeClosed: true }),
   ])
   if (teamRes.error) return { error: teamRes.error }
-  if (prospectsRes.error) return { error: prospectsRes.error }
+  if ('error' in prospectsRes) return { error: prospectsRes.error }
 
   const members = (teamRes.data as ApiEnvelope<TeamMemberApi[]>).data
-  const prospects = (prospectsRes.data as PaginatedEnvelope<ProspectApi>).data
+  const prospects = prospectsRes.data
 
   const cards = members.map((member) => buildMemberCard(member, prospects))
   const allDays = cards

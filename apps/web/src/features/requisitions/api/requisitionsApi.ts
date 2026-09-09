@@ -14,6 +14,7 @@ import { registerRequisitionsMocks } from './requisitionsMocks'
 import { baseApi } from '@/app/baseApi'
 import type { RequisitionStatus, UrgencyLevel } from '@/shared/constants/requisitionStatus'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
+import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import type {
   ApiEnvelope,
   AssignmentApi,
@@ -163,9 +164,9 @@ function toDetail(requisition: RequisitionApi, assignments: AssignmentApi[]): Re
 async function fetchBoard(
   fetchWithBQ: FetchWithBQ,
 ): Promise<{ data: RequisitionBoard } | { error: unknown }> {
-  const listRes = await fetchWithBQ({ url: '/requisitions', params: { limit: 100 } })
-  if (listRes.error) return { error: listRes.error }
-  const requisitions = (listRes.data as PaginatedEnvelope<RequisitionApi>).data
+  const listRes = await fetchAllPages<RequisitionApi>(fetchWithBQ, '/requisitions')
+  if ('error' in listRes) return { error: listRes.error }
+  const requisitions = listRes.data
 
   const rows = requisitions.map(toRow)
   const open = rows.filter((row) => row.status !== 'PURPLE' && row.status !== 'LIGHT_BLUE')

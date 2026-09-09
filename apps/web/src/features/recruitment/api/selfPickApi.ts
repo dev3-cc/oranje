@@ -16,6 +16,7 @@ import { baseApi } from '@/app/baseApi'
  */
 // eslint-disable-next-line no-restricted-imports
 import { registerRequisitionsMocks } from '@/features/requisitions/api/requisitionsMocks'
+import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import type {
   ApiEnvelope,
   AssignmentApi,
@@ -68,14 +69,15 @@ function toRows(requisition: RequisitionApi): SelfPickRow[] {
 async function fetchBoard(
   fetchWithBQ: FetchWithBQ,
 ): Promise<{ data: SelfPickBoard } | { error: unknown }> {
-  const result = await fetchWithBQ({ url: '/requisitions', params: { limit: 100 } })
-  if (result.error) return { error: result.error }
+  const result = await fetchAllPages<RequisitionApi>(fetchWithBQ, '/requisitions')
+  if ('error' in result) return { error: result.error }
 
-  const requisitions = (result.data as PaginatedEnvelope<RequisitionApi>).data.filter(
-    (requisition) => TAKEABLE_STATES.has(requisition.state.code),
+  const requisitions = result.data.filter((requisition) =>
+    TAKEABLE_STATES.has(requisition.state.code),
   )
   const rows = requisitions.flatMap(toRows).sort((a, b) => a.startDate.localeCompare(b.startDate))
 
+  /** `fetchAllPages` ya trajo el dataset completo: la suma y el conteo son exactos. */
   return {
     data: {
       rows,

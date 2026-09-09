@@ -24,6 +24,7 @@ function adaptSessionUser(session: SessionApi): SessionUser {
     roleCode: role.short,
     roleTitle: role.title,
     hotel: null,
+    department: null,
     permissions: [],
   }
 }
@@ -143,6 +144,9 @@ export const sessionApi = baseApi.injectEndpoints({
         roleCode: roleLabelOf(raw.data.role.code).short,
         roleTitle: raw.data.role.name,
         hotel: raw.data.hotel,
+        department: raw.data.department
+          ? { id: raw.data.department.id, name: raw.data.department.name }
+          : null,
         permissions: raw.data.permissions,
       }),
     }),

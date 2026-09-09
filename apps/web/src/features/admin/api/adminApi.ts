@@ -1,9 +1,20 @@
-import type { RoleOption, StaffUser } from '../types/admin.types'
+import type {
+  DepartmentOption,
+  HotelOption,
+  HotelUser,
+  RoleOption,
+  StaffUser,
+} from '../types/admin.types'
 
 import { registerAdminMocks } from './adminMocks'
 
 import { baseApi } from '@/app/baseApi'
-import type { ApiEnvelope, PaginatedEnvelope } from '@/shared/types/apiContract.types'
+import type {
+  ApiEnvelope,
+  CatalogItemApi,
+  HotelApi,
+  PaginatedEnvelope,
+} from '@/shared/types/apiContract.types'
 
 registerAdminMocks()
 
@@ -41,6 +52,33 @@ export interface UpdateStaffUserBody {
   reportsToUserId?: string | null
   isActive?: boolean
   photoPath?: string | null
+}
+
+export interface HotelUsersQuery {
+  search?: string
+  roleCode?: string
+  hotelId?: string
+  includeInactive?: boolean
+}
+
+export interface HotelUsersPage {
+  rows: HotelUser[]
+  total: number
+}
+
+export interface CreateHotelUserBody {
+  email: string
+  fullName: string
+  roleCode: string
+  departmentId?: string
+  reportsToUserId?: string
+}
+
+export interface UpdateHotelUserBody {
+  fullName?: string
+  departmentId?: string | null
+  reportsToUserId?: string | null
+  isActive?: boolean
 }
 
 export const adminApi = baseApi.injectEndpoints({
@@ -102,6 +140,62 @@ export const adminApi = baseApi.injectEndpoints({
       transformResponse: (response: ApiEnvelope<StaffUser>) => response.data,
       invalidatesTags: ['StaffUser'],
     }),
+
+    /* ── Cuentas del hotel (users:manage_hotel) ─────────────────────────── */
+    getHotelOptions: build.query<HotelOption[], void>({
+      query: () => ({ url: '/hotels', params: { limit: 100 } }),
+      transformResponse: (response: PaginatedEnvelope<HotelApi>) =>
+        response.data
+          .map((hotel) => ({ id: hotel.id, name: hotel.name }))
+          .sort((a, b) => a.name.localeCompare(b.name, 'es')),
+    }),
+    getHotelDepartmentOptions: build.query<DepartmentOption[], void>({
+      query: () => ({ url: '/catalogs/hotel-departments' }),
+      transformResponse: (response: ApiEnvelope<CatalogItemApi[]>) =>
+        response.data.map((item) => ({ id: item.id, name: item.name })),
+    }),
+    getHotelUsers: build.query<HotelUsersPage, HotelUsersQuery>({
+      query: (params) => ({
+        url: '/hotel-users',
+        params: {
+          ...(params.search ? { search: params.search } : {}),
+          ...(params.roleCode ? { roleCode: params.roleCode } : {}),
+          ...(params.hotelId ? { hotelId: params.hotelId } : {}),
+          ...(params.includeInactive ? { includeInactive: 'true' } : {}),
+          limit: 100,
+        },
+      }),
+      transformResponse: (response: PaginatedEnvelope<HotelUser>) => ({
+        rows: response.data,
+        total: response.meta.total,
+      }),
+      providesTags: ['HotelUser'],
+    }),
+    createHotelUser: build.mutation<HotelUser, { hotelId: string; body: CreateHotelUserBody }>({
+      query: ({ hotelId, body }) => ({ url: `/hotels/${hotelId}/users`, method: 'POST', body }),
+      transformResponse: (response: ApiEnvelope<HotelUser>) => response.data,
+      invalidatesTags: ['HotelUser'],
+    }),
+    updateHotelUser: build.mutation<
+      HotelUser,
+      { hotelId: string; id: string; body: UpdateHotelUserBody }
+    >({
+      query: ({ hotelId, id, body }) => ({
+        url: `/hotels/${hotelId}/users/${id}`,
+        method: 'PATCH',
+        body,
+      }),
+      transformResponse: (response: ApiEnvelope<HotelUser>) => response.data,
+      invalidatesTags: ['HotelUser'],
+    }),
+    resendHotelInvitation: build.mutation<HotelUser, { hotelId: string; id: string }>({
+      query: ({ hotelId, id }) => ({
+        url: `/hotels/${hotelId}/users/${id}/resend-invitation`,
+        method: 'POST',
+      }),
+      transformResponse: (response: ApiEnvelope<HotelUser>) => response.data,
+      invalidatesTags: ['HotelUser'],
+    }),
   }),
 })
 
@@ -111,4 +205,10 @@ export const {
   useCreateStaffUserMutation,
   useUpdateStaffUserMutation,
   useResendInvitationMutation,
+  useGetHotelOptionsQuery,
+  useGetHotelDepartmentOptionsQuery,
+  useGetHotelUsersQuery,
+  useCreateHotelUserMutation,
+  useUpdateHotelUserMutation,
+  useResendHotelInvitationMutation,
 } = adminApi

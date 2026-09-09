@@ -121,6 +121,8 @@ export interface AuthorizationRequest {
 
 export interface AuthorizationQueue {
   items: AuthorizationRequest[]
+  /** El total real del back — puede ser mayor a `items.length` si pasa del tope de paginación. */
+  total: number
   authorizerRole: string
   authorizerScope: string
 }
@@ -138,6 +140,8 @@ export interface CatalogOption {
   id: string
   code: string
   name: string
+  /** Solo posiciones: el departamento al que pertenece (`catalogs.position.hotel_department_id`). */
+  hotelDepartmentId?: string
 }
 
 export interface RequisitionHotelOption {

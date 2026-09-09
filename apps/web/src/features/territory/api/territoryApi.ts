@@ -10,11 +10,11 @@ import { registerTerritoryMocks } from './territoryMocks'
 import { baseApi } from '@/app/baseApi'
 import '@/app/sessionApi'
 import type { OnboardingStatus } from '@/shared/constants/onboardingStatus'
+import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import { normalizeText as normalize } from '@/shared/lib/text'
 import type {
   ApiEnvelope,
   HotelApi,
-  PaginatedEnvelope,
   ProspectApi,
   TeamMemberApi,
 } from '@/shared/types/apiContract.types'
@@ -95,12 +95,12 @@ async function fetchTerritory(
 
   const [zonesRes, hotelsRes, prospectsRes] = await Promise.all([
     hasOwnTerritory ? fetchWithBQ(`/users/${ownerId}/zones`) : Promise.resolve({ data: null }),
-    fetchWithBQ({ url: '/hotels', params: { limit: 100 } }),
-    fetchWithBQ({ url: '/prospects', params: { limit: 100 } }),
+    fetchAllPages<HotelApi>(fetchWithBQ, '/hotels'),
+    fetchAllPages<ProspectApi>(fetchWithBQ, '/prospects'),
   ])
   if ('error' in zonesRes && zonesRes.error) return { error: zonesRes.error }
-  if (hotelsRes.error) return { error: hotelsRes.error }
-  if (prospectsRes.error) return { error: prospectsRes.error }
+  if ('error' in hotelsRes) return { error: hotelsRes.error }
+  if ('error' in prospectsRes) return { error: prospectsRes.error }
 
   const myZoneIds = hasOwnTerritory
     ? new Set((zonesRes.data as ZonesEnvelope).data.zones.map((zone) => zone.id))
@@ -108,12 +108,13 @@ async function fetchTerritory(
   const inScope = (hotel: HotelApi): boolean => myZoneIds.size === 0 || myZoneIds.has(hotel.zone.id)
 
   const prospectByHotel = new Map(
-    (prospectsRes.data as PaginatedEnvelope<ProspectApi>).data
+    prospectsRes.data
       .filter((prospect) => !filters.userId || prospect.owner.id === filters.userId)
       .map((prospect) => [prospect.hotel.id, prospect]),
   )
 
-  const allHotels = (hotelsRes.data as PaginatedEnvelope<HotelApi>).data
+  /** `total` y `zoneCount` ya salen del dataset COMPLETO (`fetchAllPages`), no de una sola página. */
+  const allHotels = hotelsRes.data
     .filter(inScope)
     .map((hotel) => toTerritoryHotel(hotel, prospectByHotel.get(hotel.id)))
     .filter((hotel): hotel is TerritoryHotel => hotel !== null)

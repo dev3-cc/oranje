@@ -13,6 +13,7 @@ import { registerPoolMocks } from '@/features/recruitment/api/poolMocks'
 import { registerScheduleMocks } from '@/features/schedule/api/scheduleMocks'
 // eslint-disable-next-line no-restricted-imports
 import { registerTimesheetMocks } from '@/features/timesheet/api/timesheetMocks'
+import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import type {
   ApiEnvelope,
   PaginatedEnvelope,
@@ -122,12 +123,13 @@ async function fetchBoard(
   const [schedulesRes, timesheetsRes, workersRes, auditsRes] = await Promise.all([
     fetchWithBQ('/schedules'),
     fetchWithBQ('/timesheets'),
-    fetchWithBQ({ url: '/workers', params: { limit: 100 } }),
+    fetchAllPages<WorkerApi>(fetchWithBQ, '/workers'),
     fetchWithBQ({ url: '/audits', params: { auditType: 'PERSONAL_PRESENTATION' } }),
   ])
-  for (const res of [schedulesRes, timesheetsRes, workersRes, auditsRes]) {
-    if (res.error) return { error: res.error }
-  }
+  if (schedulesRes.error) return { error: schedulesRes.error }
+  if (timesheetsRes.error) return { error: timesheetsRes.error }
+  if ('error' in workersRes) return { error: workersRes.error }
+  if (auditsRes.error) return { error: auditsRes.error }
 
   /**
    * `/schedules` no garantiza orden (igual que en Schedule): con más de una
@@ -135,7 +137,7 @@ async function fetchBoard(
    */
   const schedules = (schedulesRes.data as ApiEnvelope<ScheduleApi[]>).data
   const schedule = [...schedules].sort((a, b) => b.weekStart.localeCompare(a.weekStart))[0]
-  const workers = (workersRes.data as PaginatedEnvelope<WorkerApi>).data
+  const workers = workersRes.data
   const timesheetList = (timesheetsRes.data as ApiEnvelope<TimesheetApi[]>).data
   const audits = (auditsRes.data as PaginatedEnvelope<AuditHeaderApi>).data
 

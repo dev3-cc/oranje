@@ -127,6 +127,11 @@ export function NewRequisitionDialog({
 
   const { data: session } = useGetSessionQuery()
   const sessionHotel = session?.hotel ?? null
+  /* El Supervisor y el Manager de Área solo piden posiciones de SU departamento
+     (D-09): se fija y no se ofrece otro. Antes se ofrecían los cinco, el API
+     respondía «solo tu departamento» y el diálogo lo traducía como «tu rol no
+     puede crear». El Manager General no tiene departamento: elige. */
+  const sessionDepartment = session?.department ?? null
 
   const { isIntroOpen: showIntro, dismissIntro } = useIntroSeen('new-requisition')
   const [step, setStep] = useState(1)
@@ -155,10 +160,10 @@ export function NewRequisitionDialog({
     setStep(1)
     reset({
       hotelId: sessionHotel?.id ?? '',
-      department: '',
+      department: sessionDepartment?.id ?? '',
       positions: [emptyPositionDraft('')],
     })
-  }, [isOpen, reset, sessionHotel])
+  }, [isOpen, reset, sessionHotel, sessionDepartment])
 
   const hotelId = watch('hotelId')
   const department = watch('department')
@@ -244,8 +249,12 @@ export function NewRequisitionDialog({
     } catch (error) {
       setError('root', {
         message: apiErrorMessage(error, {
-          byStatus: {
-            403: 'Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área o el Manager General del hotel.',
+          byCode: {
+            DEPARTMENT_OUT_OF_SCOPE:
+              'Solo puedes pedir posiciones de tu departamento. Las de otro departamento las crea su Manager de Área o el Manager General.',
+            HOTEL_OUT_OF_SCOPE: 'Solo puedes crear requisiciones de tu hotel.',
+            FORBIDDEN:
+              'Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área o el Manager General del hotel.',
           },
           fallback:
             'No se pudo guardar la requisición. Revisa las posiciones e inténtalo de nuevo.',
@@ -408,31 +417,61 @@ export function NewRequisitionDialog({
                     <label htmlFor="req-department" className="text-sm font-medium text-ink-2">
                       Departamento del hotel
                     </label>
-                    <Controller
-                      control={control}
-                      name="department"
-                      render={({ field }) => (
-                        <Select
-                          {...(field.value ? { value: field.value } : {})}
-                          onValueChange={field.onChange}
-                        >
-                          <SelectTrigger
-                            id="req-department"
-                            aria-label="Departamento del hotel"
-                            className="w-full"
+                    {sessionDepartment ? (
+                      <Input
+                        id="req-department"
+                        value={sessionDepartment.name}
+                        readOnly
+                        aria-label="Departamento del hotel"
+                        title="Solo puedes pedir posiciones de tu departamento"
+                        className="cursor-not-allowed bg-surface-2"
+                      />
+                    ) : (
+                      <Controller
+                        control={control}
+                        name="department"
+                        render={({ field }) => (
+                          <Select
+                            {...(field.value ? { value: field.value } : {})}
+                            onValueChange={field.onChange}
                           >
-                            <SelectValue placeholder="Elige el departamento" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(options?.departments ?? []).map((item) => (
-                              <SelectItem key={item.id} value={item.id}>
-                                {item.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
+                            <SelectTrigger
+                              id="req-department"
+                              aria-label="Departamento del hotel"
+                              className="w-full"
+                            >
+                              <SelectValue placeholder="Elige el departamento" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {/* Un departamento sin posiciones en el catálogo no puede pedir
+                                personal: se ve, con el porqué, pero no se elige — así nadie
+                                descubre el hueco un paso después. */}
+                              {(options?.departments ?? []).map((item) => {
+                                const hasPositions = (options?.positions ?? []).some(
+                                  (position) => position.hotelDepartmentId === item.id,
+                                )
+                                return (
+                                  <SelectItem
+                                    key={item.id}
+                                    value={item.id}
+                                    disabled={!hasPositions}
+                                  >
+                                    {item.name}
+                                    {!hasPositions && ' · sin posiciones en el catálogo'}
+                                  </SelectItem>
+                                )
+                              })}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    )}
+                    {sessionDepartment && (
+                      <span className="text-xs text-ink-3">
+                        Las requisiciones de otro departamento las crea su Manager de Área o el
+                        Manager General.
+                      </span>
+                    )}
                     {/* Sin esto el paso «no avanzaba» en silencio: la
                         validación corría pero su queja no se pintaba. */}
                     {errors.department && (

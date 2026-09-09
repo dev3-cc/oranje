@@ -8,5 +8,7 @@ export interface SessionUser {
   roleCode: string
   roleTitle: string
   hotel: { id: string; name: string } | null
+  /** Alcance dentro del hotel (D-09): el Supervisor y el Manager de Área lo tienen; el Manager General no. */
+  department: { id: string; name: string } | null
   permissions: string[]
 }

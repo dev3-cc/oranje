@@ -48,7 +48,7 @@ const INTRO_SLIDES = [
   {
     image: personajePresentacion,
     title: 'Su rol define su app',
-    text: 'El rol que elijas decide qué módulos verá la persona al entrar. Los roles de Hotel nacen en la Conversión.',
+    text: 'El rol que elijas decide qué módulos verá la persona al entrar. Las cuentas de los hoteles se dan de alta en su propia pestaña.',
   },
 ] as const
 
@@ -129,7 +129,7 @@ function apiErrorMessage(error: unknown): string {
     case 'FIREBASE_EMAIL_EXISTS':
       return 'Ese correo ya tiene cuenta de acceso. Da el alta sin contraseña (invitación) o que la persona use «¿Olvidaste tu contraseña?».'
     case 'USE_HOTEL_USERS':
-      return 'Ese rol no se da de alta aquí: los usuarios del Hotel nacen en la Conversión.'
+      return 'Ese rol no se da de alta aquí: las cuentas de los hoteles van en «Personal de hoteles».'
     case 'ROLE_NOT_FOUND':
       return 'Ese rol ya no existe. Recarga la página y vuelve a elegirlo.'
     case 'SUPERVISOR_NOT_FOUND':
@@ -153,7 +153,7 @@ function initialsOf(fullName: string): string {
     .toUpperCase()
 }
 
-function FormRow({
+export function FormRow({
   label,
   column,
   children,
@@ -516,7 +516,8 @@ export function UserFormDialog({
                     )}
                   />
                   <p className="text-xs text-ink-3">
-                    Solo roles internos de Oranje — los de Hotel nacen en la Conversión.
+                    Solo roles internos de Oranje — las cuentas de los hoteles van en «Personal de
+                    hoteles».
                   </p>
                   {errors.roleCode && <p className="text-xs text-red">{errors.roleCode.message}</p>}
                 </FormRow>

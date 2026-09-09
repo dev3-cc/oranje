@@ -85,9 +85,9 @@ export function RequisitionAuthorizationPage(): ReactNode {
       <header>
         <h1 className="text-3xl font-bold tracking-tight text-ink">Requisiciones por autorizar</h1>
         <p className="mt-1.5 text-sm text-ink-3">
-          {queue.items.length === 1
+          {queue.total === 1
             ? `1 espera ${canAuthorize ? 'tu firma' : 'la firma del Manager'}`
-            : `${String(queue.items.length)} esperan ${canAuthorize ? 'tu firma' : 'la firma del Manager'}`}
+            : `${String(queue.total)} esperan ${canAuthorize ? 'tu firma' : 'la firma del Manager'}`}
           . Autorizar mueve {fromLabel} → {toLabel} y arranca el reloj de la urgencia
         </p>
       </header>
