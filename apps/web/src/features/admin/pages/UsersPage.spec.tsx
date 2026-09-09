@@ -179,7 +179,8 @@ describe('UsersPage', () => {
     await user.click(screen.getByRole('button', { name: 'Crear cuenta' }))
 
     expect(await screen.findByText('Invitación enviada a:')).toBeInTheDocument()
-    expect(screen.getByText('nueva@xcaret.local')).toBeInTheDocument()
+    // La lista se refresca con la cuenta nueva: el correo también aparece en su fila.
+    expect(screen.getByText('nueva@xcaret.local', { selector: 'p' })).toBeInTheDocument()
   })
 
   it('editar una cuenta del hotel bloquea hotel, rol y correo', async () => {
