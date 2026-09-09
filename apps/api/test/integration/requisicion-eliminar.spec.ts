@@ -333,3 +333,34 @@ describe('las Moradas salen de las listas', () => {
     await expect(requisitions.get(id, gm)).resolves.toMatchObject({ state: { code: 'PURPLE' } })
   })
 })
+
+describe('la firma del Manager de Área vale para su departamento (D-09)', () => {
+  it('autoriza la de su departamento y rechaza la de otro; el Manager General firma cualquiera', async () => {
+    const supervisor = await usuario('ROL-H-01', 'sup-firma')
+    const gm = await usuario('ROL-H-03', 'gm-firma')
+    const otro = await db.hotelDepartment.findFirstOrThrow({
+      where: { id: { not: departmentId } },
+      select: { id: true },
+    })
+    const gaPropio = { ...(await usuario('ROL-H-02', 'ga-firma-propio')), departmentId }
+    const gaAjeno = { ...(await usuario('ROL-H-02', 'ga-firma-ajeno')), departmentId: otro.id }
+
+    const deAjeno = await requisicion(supervisor)
+    await expect(requisitions.authorize(deAjeno, gaAjeno)).rejects.toMatchObject({
+      response: { code: 'DEPARTMENT_OUT_OF_SCOPE' },
+    })
+    expect(await estado(deAjeno)).toBe('APPLE_GREEN')
+
+    // Tampoco la ve: el enlace directo respeta el mismo alcance que la lista.
+    await expect(requisitions.get(deAjeno, gaAjeno)).rejects.toMatchObject({
+      response: { code: 'DEPARTMENT_OUT_OF_SCOPE' },
+    })
+
+    await requisitions.authorize(deAjeno, gaPropio)
+    expect(await estado(deAjeno)).toBe('GREEN')
+
+    const paraGm = await requisicion(supervisor)
+    await requisitions.authorize(paraGm, gm)
+    expect(await estado(paraGm)).toBe('GREEN')
+  })
+})

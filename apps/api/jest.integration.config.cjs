@@ -7,7 +7,10 @@ module.exports = {
   rootDir: '.',
   testRegex: 'test/integration/.*\\.spec\\.ts$',
   setupFiles: ['dotenv/config'],
-  testTimeout: 30_000,
+  // Contra Cloud SQL por el proxy un caso con una docena de viajes pasa de
+  // 30 s en un mal momento y falla por tiempo, no por lógica; en CI (base
+  // local) el tope ni se acerca.
+  testTimeout: 90_000,
   maxWorkers: 1,
   moduleNameMapper: { '^(\\.{1,2}/.*)\\.js$': '$1' },
   transform: {

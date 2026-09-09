@@ -172,6 +172,11 @@ export class RequisitionsService {
       })
     }
 
+    /** Mismo criterio que el listado: el Manager de Área solo ve su departamento (D-09). */
+    if (await this.permissions.can(user.roleCode, 'requisitions', 'read_department')) {
+      this.assertDepartmentOwnership(row, user, 'Esta requisición es de otro departamento')
+    }
+
     /** Mismo criterio que el listado: la cola no incluye borradores. */
     if (!readOwn && !seesAll && row.statusState.code === DRAFT) {
       throw new ForbiddenException({
@@ -301,15 +306,11 @@ export class RequisitionsService {
       // El Manager de Área responde por SU departamento: una requisición con
       // una posición ajena no es suya para eliminarla (mismo alcance que al
       // autorizar). El Manager General no trae departamento y pasa.
-      if (
-        user.departmentId &&
-        row.positions.some((p) => p.hotelDepartment.id !== user.departmentId)
-      ) {
-        throw new ForbiddenException({
-          code: 'DEPARTMENT_OUT_OF_SCOPE',
-          message: 'Solo puedes eliminar requisiciones de tu departamento',
-        })
-      }
+      this.assertDepartmentOwnership(
+        row,
+        user,
+        'Solo puedes eliminar requisiciones de tu departamento',
+      )
     }
 
     // Eliminar no desasigna gente en silencio.
@@ -345,6 +346,15 @@ export class RequisitionsService {
       })
     }
 
+    // La firma del Manager de Área vale para SU departamento (D-09); la del
+    // Manager General, para todo el hotel. La cola ya filtra, pero el guard
+    // vive aquí: un enlace directo no puede saltárselo.
+    this.assertDepartmentOwnership(
+      row,
+      user,
+      'Solo puedes autorizar requisiciones de tu departamento',
+    )
+
     if (row.statusState.code !== DRAFT) {
       throw new ConflictException({
         code: 'REQUISITION_NOT_DRAFT',
@@ -374,6 +384,20 @@ export class RequisitionsService {
         roleCode: user.roleCode,
       }),
     )
+  }
+
+  /** Quien trae departamento (Supervisor, Manager de Área) solo toca requisiciones cuyas posiciones son de él. */
+  private assertDepartmentOwnership(
+    row: { positions: Array<{ hotelDepartment: { id: string } }> },
+    user: AuthenticatedUser,
+    message: string,
+  ): void {
+    if (
+      user.departmentId &&
+      row.positions.some((p) => p.hotelDepartment.id !== user.departmentId)
+    ) {
+      throw new ForbiddenException({ code: 'DEPARTMENT_OUT_OF_SCOPE', message })
+    }
   }
 
   private assertDepartmentScope(dto: CreateRequisitionDto, user: AuthenticatedUser): void {
