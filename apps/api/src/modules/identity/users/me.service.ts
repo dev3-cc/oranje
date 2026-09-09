@@ -14,6 +14,8 @@ export interface MeEntity {
   hotel: { id: string; name: string } | null
   department: { id: string; code: string; name: string } | null
   zones: Array<{ id: string; code: string; name: string }>
+  /** Idioma de la interfaz (D-36): la preferencia vive en la persona. */
+  locale: 'es' | 'en'
   permissions: string[]
 }
 
@@ -32,6 +34,7 @@ export class MeService {
         email: true,
         fullName: true,
         photoPath: true,
+        locale: true,
         role: { select: { id: true, code: true, name: true, department: true } },
         hotel: { select: { id: true, name: true } },
         department: { select: { id: true, code: true, name: true } },
@@ -57,11 +60,19 @@ export class MeService {
       email: row.email,
       fullName: row.fullName,
       photoUrl: row.photoPath ? await this.storage.signedUrl(row.photoPath) : null,
+      locale: row.locale === 'en' ? 'en' : 'es',
       role: { code: row.role.code, name: row.role.name, department: row.role.department },
       hotel: row.hotel,
       department: row.department,
       zones: row.zones.map((z) => z.zone),
       permissions: permissions.map((p) => `${p.module}.${p.action}`),
     }
+  }
+
+  /** La preferencia de idioma vive en la persona (D-36): la sigue entre dispositivos. */
+  async updateLocale(user: AuthenticatedUser, locale: 'es' | 'en'): Promise<MeEntity> {
+    await this.prisma.user.update({ where: { id: user.id }, data: { locale } })
+
+    return this.get(user)
   }
 }
