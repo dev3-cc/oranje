@@ -40,6 +40,12 @@ const baseSchema = z.object({
   JWT_REFRESH_TTL_S: z.coerce.number().int().positive().default(604_800),
 
   COOKIE_SECURE: booleanFromEnv(true),
+  // `strict` cuando el front y el API comparten sitio (local, con el proxy de
+  // Vite). En los desplegados el front vive en Firebase Hosting (web.app) y el
+  // API en Cloud Run (run.app): son sitios distintos, y una cookie Strict o Lax
+  // NUNCA viaja en el POST /auth/refresh — la sesión "no persiste" al recargar.
+  // Ahí va `none`, que exige `secure`.
+  COOKIE_SAME_SITE: z.enum(['strict', 'lax', 'none']).default('strict'),
 
   CORS_ORIGINS: z
     .string()
@@ -98,6 +104,10 @@ const envSchema = baseSchema.superRefine((env, ctx) => {
     ctx.addIssue({ code: 'custom', path: [path], message })
   }
 
+  if (env.COOKIE_SAME_SITE === 'none' && !env.COOKIE_SECURE) {
+    missing('COOKIE_SECURE', 'una cookie SameSite=None solo la acepta el navegador con Secure')
+  }
+
   if (isDeployed) {
     if (!env.JWT_PRIVATE_KEY) missing('JWT_PRIVATE_KEY', `obligatoria en ${env.APP_ENV} (RS256)`)
     if (!env.JWT_PUBLIC_KEY) missing('JWT_PUBLIC_KEY', `obligatoria en ${env.APP_ENV} (RS256)`)
@@ -108,6 +118,13 @@ const envSchema = baseSchema.superRefine((env, ctx) => {
 
     if (!env.COOKIE_SECURE) {
       missing('COOKIE_SECURE', `debe ser true en ${env.APP_ENV}: la cookie viaja por HTTPS`)
+    }
+
+    if (env.COOKIE_SAME_SITE !== 'none') {
+      missing(
+        'COOKIE_SAME_SITE',
+        `debe ser none en ${env.APP_ENV}: el front (Hosting) y el API (Cloud Run) son sitios distintos y la cookie de refresh no viajaría`,
+      )
     }
 
     // El emulador no verifica firmas: en la nube, cualquiera sería cualquiera.
