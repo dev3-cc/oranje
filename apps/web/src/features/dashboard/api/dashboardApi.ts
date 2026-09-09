@@ -9,6 +9,7 @@ import type {
 import { registerDashboardMocks } from './dashboardMocks'
 
 import { baseApi } from '@/app/baseApi'
+import { localeTag } from '@/app/i18n'
 import type { OnboardingStatus } from '@/shared/constants/onboardingStatus'
 import type {
   ApiEnvelope,
@@ -151,7 +152,7 @@ function weeklyBuckets(): Array<{ start: Date; label: string }> {
     start.setDate(start.getDate() - (7 - index - 1) * 7)
     return {
       start,
-      label: start.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }),
+      label: start.toLocaleDateString(localeTag(), { day: 'numeric', month: 'short' }),
     }
   })
 }

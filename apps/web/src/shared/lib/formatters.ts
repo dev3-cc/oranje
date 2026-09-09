@@ -1,3 +1,5 @@
+import { localeTag } from '@/app/i18n'
+
 /**
  * Formato de fechas y montos para la UI.
  *
@@ -121,7 +123,7 @@ export function formatWeekRange(fromIso: string, toIso: string): string {
  * 07:00 aunque la persona mire el teléfono desde otra ciudad.
  */
 export function formatTimeIn(iso: string, timeZone?: string): string {
-  return new Date(iso).toLocaleTimeString('es-MX', {
+  return new Date(iso).toLocaleTimeString(localeTag(), {
     hour: '2-digit',
     minute: '2-digit',
     ...(timeZone ? { timeZone } : {}),

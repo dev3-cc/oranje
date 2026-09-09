@@ -7,6 +7,7 @@ import type { TimesheetMonth, TimesheetMonthDay } from '../types/timesheet.types
 
 import { WeekDragContext } from './WeekSlider'
 
+import { localeTag } from '@/app/i18n'
 import { formatHours } from '@/shared/lib/formatters'
 import { MOTION } from '@/shared/lib/motion'
 
@@ -14,7 +15,7 @@ const WEEKDAY_HEADERS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
 /** `2026-09` → `septiembre 2026`, con mayúscula inicial. */
 function monthLabel(month: string): string {
-  const label = new Date(`${month}-01T00:00:00Z`).toLocaleDateString('es', {
+  const label = new Date(`${month}-01T00:00:00Z`).toLocaleDateString(localeTag(), {
     month: 'long',
     year: 'numeric',
     timeZone: 'UTC',

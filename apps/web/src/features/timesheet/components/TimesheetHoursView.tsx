@@ -13,6 +13,7 @@ import type {
 
 import { WeekDragContext } from './WeekSlider'
 
+import { localeTag } from '@/app/i18n'
 import { Button } from '@/shared/components/Button'
 import { TIMESHEET_STATUS_LABEL, TIMESHEET_STATUS_TOKEN } from '@/shared/constants/timesheetStatus'
 import { formatDayNumber, formatWeekday } from '@/shared/lib/formatters'
@@ -123,7 +124,7 @@ function dayTint(day: string, today: string): string {
 
 /** `2026-09-03` → `Jueves 3 de septiembre`, para el encabezado de la agenda. */
 function agendaDayLabel(iso: string): string {
-  const label = new Date(`${iso}T00:00:00Z`).toLocaleDateString('es', {
+  const label = new Date(`${iso}T00:00:00Z`).toLocaleDateString(localeTag(), {
     weekday: 'long',
     day: 'numeric',
     month: 'long',

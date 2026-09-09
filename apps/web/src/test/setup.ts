@@ -1,6 +1,8 @@
 import '@testing-library/jest-dom/vitest'
 import { beforeEach } from 'vitest'
 
+import { activateLocale } from '@/app/i18n'
+
 /**
  * Los intros «una sola vez» (useIntroSeen) persisten su visto en
  * localStorage: sin limpiarlo, el primer test que pasa un intro se lo
@@ -12,6 +14,15 @@ beforeEach(() => {
   } catch {
     /* Este jsdom no trae storage: los intros son fail-open y no lo necesitan. */
   }
+})
+
+/**
+ * jsdom se presenta como navegador en inglés y D-36 detecta el idioma del
+ * navegador: sin esto los specs verían la app en inglés. Los textos de los
+ * specs son la fuente en español; un spec de inglés activa 'en' a mano.
+ */
+beforeEach(() => {
+  activateLocale('es')
 })
 
 class ResizeObserverStub {

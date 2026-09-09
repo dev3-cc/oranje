@@ -16,6 +16,9 @@ allowBuilds:
   # que es lo único que el web consume del SDK (D-05).
   '@firebase/util': false
   protobufjs: false
+  # plugin-react-swc + la macro de Lingui para SWC (D-36): el postinstall es el
+  # fallback del binario nativo.
+  '@swc/core': true
 
 minimumReleaseAgeExclude:
   - '@testing-library/jest-dom@7.0.1'

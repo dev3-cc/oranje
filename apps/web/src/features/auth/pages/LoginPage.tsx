@@ -1,4 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import { Input } from '@oranje/ui'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -13,6 +16,7 @@ import { useAppSelector } from '@/app/hooks'
 import { useCreateSessionMutation } from '@/app/sessionApi'
 import { selectSessionStatus } from '@/app/sessionSlice'
 import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
+import { LanguageSwitch } from '@/shared/components/LanguageSwitch'
 import { requestPasswordReset, signInWithEmail } from '@/shared/lib/firebase'
 import { readLastRoute } from '@/shared/lib/lastRoute'
 
@@ -90,7 +94,7 @@ function HotelBackdrop(): ReactNode {
 }
 
 /** Un solo mensaje para credenciales malas: no se revela cuál mitad falló. */
-function loginErrorMessage(error: unknown): string {
+function loginErrorMessage(error: unknown): MessageDescriptor {
   const failure = (error ?? {}) as {
     status?: number | string
     data?: { error?: { code?: string } }
@@ -102,20 +106,21 @@ function loginErrorMessage(error: unknown): string {
     failure.status === 'TIMEOUT_ERROR' ||
     (typeof failure.status === 'number' && failure.status >= 500)
   ) {
-    return 'No pudimos conectar con Oranje. Revisa tu conexión e inténtalo en un momento.'
+    return msg`No pudimos conectar con Oranje. Revisa tu conexión e inténtalo en un momento.`
   }
   if (code === 'LOGIN_NOT_CONFIGURED') {
-    return 'El acceso no está configurado en este ambiente. Avisa al Administrador.'
+    return msg`El acceso no está configurado en este ambiente. Avisa al Administrador.`
   }
   if (code === 'USER_NOT_REGISTERED' || code === 'USER_INACTIVE') {
-    return 'Tu cuenta no está activa en Oranje. Pide al Administrador que la active.'
+    return msg`Tu cuenta no está activa en Oranje. Pide al Administrador que la active.`
   }
-  return 'El correo o la contraseña no coinciden. Revísalos e inténtalo de nuevo.'
+  return msg`El correo o la contraseña no coinciden. Revísalos e inténtalo de nuevo.`
 }
 
 type AuthMode = 'login' | 'reset'
 
 export function LoginPage(): ReactNode {
+  const { t, i18n } = useLingui()
   const status = useAppSelector(selectSessionStatus)
   const navigate = useNavigate()
   const location = useLocation()
@@ -152,7 +157,7 @@ export function LoginPage(): ReactNode {
       const last = readLastRoute()
       void navigate(last !== null && last.userId === user.id ? last.path : '/', { replace: true })
     } catch (error) {
-      setSubmitError(loginErrorMessage(error))
+      setSubmitError(i18n._(loginErrorMessage(error)))
     }
   }
 
@@ -209,8 +214,12 @@ export function LoginPage(): ReactNode {
                 className="flex flex-col gap-8"
               >
                 <div className="flex flex-col gap-2">
-                  <h1 className="text-2xl font-bold text-ink">Inicia sesión</h1>
-                  <p className="text-sm text-ink-3">La operación de tu hotel, en un solo lugar.</p>
+                  <h1 className="text-2xl font-bold text-ink">
+                    <Trans>Inicia sesión</Trans>
+                  </h1>
+                  <p className="text-sm text-ink-3">
+                    <Trans>La operación de tu hotel, en un solo lugar.</Trans>
+                  </p>
                 </div>
 
                 <form
@@ -222,7 +231,7 @@ export function LoginPage(): ReactNode {
                 >
                   <div className="flex flex-col gap-1.5">
                     <label htmlFor="email" className="text-sm font-medium text-ink-2">
-                      Correo
+                      <Trans>Correo</Trans>
                     </label>
                     <Input
                       id="email"
@@ -238,7 +247,7 @@ export function LoginPage(): ReactNode {
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center justify-between">
                       <label htmlFor="password" className="text-sm font-medium text-ink-2">
-                        Contraseña
+                        <Trans>Contraseña</Trans>
                       </label>
                       <button
                         type="button"
@@ -249,7 +258,7 @@ export function LoginPage(): ReactNode {
                         }}
                         className="text-xs font-semibold text-o-700 hover:underline"
                       >
-                        ¿La olvidaste?
+                        <Trans>¿La olvidaste?</Trans>
                       </button>
                     </div>
                     <div className="relative">
@@ -267,7 +276,9 @@ export function LoginPage(): ReactNode {
                           setIsPasswordVisible((visible) => !visible)
                         }}
                         className="absolute inset-y-0 right-0 flex items-center px-3 text-ink-3 hover:text-ink"
-                        aria-label={isPasswordVisible ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                        aria-label={
+                          isPasswordVisible ? t`Ocultar contraseña` : t`Mostrar contraseña`
+                        }
                       >
                         <span className="material-icons-outlined text-xl leading-none" aria-hidden>
                           {isPasswordVisible ? 'visibility_off' : 'visibility'}
@@ -297,12 +308,12 @@ export function LoginPage(): ReactNode {
                     whileTap={{ scale: isSubmitting ? 1 : 0.985 }}
                     className="rounded-md bg-o-300 shadow-xs px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-o-400 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {isSubmitting ? 'Iniciando sesión…' : 'Iniciar sesión'}
+                    {isSubmitting ? t`Iniciando sesión…` : t`Iniciar sesión`}
                   </motion.button>
                 </form>
 
                 <p className="text-xs text-ink-4">
-                  ¿Sin acceso? Pídele el alta al Administrador de tu departamento.
+                  <Trans>¿Sin acceso? Pídele el alta al Administrador de tu departamento.</Trans>
                 </p>
               </motion.div>
             ) : (
@@ -315,22 +326,26 @@ export function LoginPage(): ReactNode {
                 className="flex flex-col gap-8"
               >
                 <div className="flex flex-col gap-2">
-                  <h1 className="text-2xl font-bold text-ink">Recupera tu contraseña</h1>
+                  <h1 className="text-2xl font-bold text-ink">
+                    <Trans>Recupera tu contraseña</Trans>
+                  </h1>
                   <p className="text-sm text-ink-3">
-                    Te mandamos un enlace al correo para crear una nueva.
+                    <Trans>Te mandamos un enlace al correo para crear una nueva.</Trans>
                   </p>
                 </div>
 
                 {resetSentTo ? (
                   <p className="rounded-md bg-surface-2 p-4 text-sm text-ink-2">
-                    Si <span className="font-semibold">{resetSentTo}</span> está registrado en
-                    Oranje, el enlace ya va en camino. Revisa también la carpeta de spam.
+                    <Trans>
+                      Si <span className="font-semibold">{resetSentTo}</span> está registrado en
+                      Oranje, el enlace ya va en camino. Revisa también la carpeta de spam.
+                    </Trans>
                   </p>
                 ) : (
                   <div className="flex flex-col gap-5">
                     <div className="flex flex-col gap-1.5">
                       <label htmlFor="email" className="text-sm font-medium text-ink-2">
-                        Correo
+                        <Trans>Correo</Trans>
                       </label>
                       <Input
                         id="email"
@@ -357,7 +372,7 @@ export function LoginPage(): ReactNode {
                       }}
                       className="rounded-md bg-o-300 shadow-xs px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-o-400"
                     >
-                      Enviar enlace
+                      <Trans>Enviar enlace</Trans>
                     </motion.button>
                   </div>
                 )}
@@ -370,7 +385,7 @@ export function LoginPage(): ReactNode {
                   }}
                   className="self-start text-sm font-semibold text-o-700 hover:underline"
                 >
-                  ← Volver a iniciar sesión
+                  <Trans>← Volver a iniciar sesión</Trans>
                 </button>
               </motion.div>
             )}
@@ -386,11 +401,16 @@ export function LoginPage(): ReactNode {
         >
           <LoginScene />
           <div className="absolute inset-x-4 bottom-4 rounded-lg bg-surface/90 p-4 backdrop-blur">
-            <p className="text-sm font-semibold text-ink">
-              Nuevo Oranje <span className="font-normal text-ink-3">· v{__APP_VERSION__}</span>
-            </p>
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-sm font-semibold text-ink">
+                Nuevo Oranje <span className="font-normal text-ink-3">· v{__APP_VERSION__}</span>
+              </p>
+              <LanguageSwitch size="sm" />
+            </div>
             <p className="text-xs text-ink-3">
-              Staffing de hoteles: del reclutamiento al pago, con un semáforo en cada paso.
+              <Trans>
+                Staffing de hoteles: del reclutamiento al pago, con un semáforo en cada paso.
+              </Trans>
             </p>
           </div>
         </motion.aside>

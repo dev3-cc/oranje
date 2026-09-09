@@ -1,4 +1,5 @@
 import { baseApi } from './baseApi'
+import { activateLocale, currentLocale, type Locale } from './i18n'
 import { sessionCleared, sessionEstablished } from './sessionSlice'
 
 import { roleLabelOf } from '@/shared/constants/roles'
@@ -25,6 +26,7 @@ function adaptSessionUser(session: SessionApi): SessionUser {
     roleTitle: role.title,
     hotel: null,
     department: null,
+    locale: currentLocale(),
     permissions: [],
   }
 }
@@ -85,6 +87,7 @@ registerMockRoutes([
         },
         hotel: null,
         department: null,
+        locale: 'es',
         zones: [],
         /**
          * La UNIÓN de todo lo que la UI consulta con `useCan`: en modo mock
@@ -147,8 +150,23 @@ export const sessionApi = baseApi.injectEndpoints({
         department: raw.data.department
           ? { id: raw.data.department.id, name: raw.data.department.name }
           : null,
+        locale: raw.data.locale === 'en' ? 'en' : 'es',
         permissions: raw.data.permissions,
       }),
+      /** Al entrar gana el idioma guardado en la persona (D-36). */
+      onQueryStarted: async (_arg, { queryFulfilled }) => {
+        try {
+          const { data } = await queryFulfilled
+          if (data.locale !== currentLocale()) activateLocale(data.locale)
+        } catch {
+          /* Sin sesión no hay preferencia que aplicar. */
+        }
+      },
+    }),
+
+    /** Guarda el idioma en la persona, para que la siga entre dispositivos. */
+    updateMyLocale: build.mutation<void, Locale>({
+      query: (locale) => ({ url: '/me', method: 'PATCH', body: { locale } }),
     }),
 
     createSession: build.mutation<SessionUser, { idToken: string }>({
@@ -202,4 +220,5 @@ export const {
   useCreateSessionMutation,
   useRefreshSessionMutation,
   useLogoutMutation,
+  useUpdateMyLocaleMutation,
 } = sessionApi

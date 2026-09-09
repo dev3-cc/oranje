@@ -18,6 +18,7 @@ import { WorkerSkeleton } from '../components/WorkerSkeleton'
 import { noShiftMessageOf } from '../lib/noShiftMessage'
 
 import { useUploadFileMutation } from '@/app/filesApi'
+import { localeTag } from '@/app/i18n'
 import checkinLottie from '@/assets/check/oranje-checkin.lottie'
 import checkoutLottie from '@/assets/check/oranje-checkout.lottie'
 import exitoEntradaLottie from '@/assets/check/oranje-exito-entrada.lottie'
@@ -42,15 +43,19 @@ import { formatTimeIn } from '@/shared/lib/formatters'
 import { tapFeedback } from '@/shared/lib/motion'
 
 function timeOf(iso: string): string {
-  return new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+  return new Date(iso).toLocaleTimeString(localeTag(), { hour: '2-digit', minute: '2-digit' })
 }
 
 function clockOf(date: Date): string {
-  return date.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+  return date.toLocaleTimeString(localeTag(), { hour: '2-digit', minute: '2-digit' })
 }
 
 function longDateOf(date: Date): string {
-  const text = date.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' })
+  const text = date.toLocaleDateString(localeTag(), {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
   return text.charAt(0).toUpperCase() + text.slice(1)
 }
 

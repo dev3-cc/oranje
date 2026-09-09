@@ -1,0 +1,219 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-09 12:00-0500\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: es\n"
+"Project-Id-Version: oranje-web\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "¿La olvidaste?"
+msgstr "¿La olvidaste?"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "¿Sin acceso? Pídele el alta al Administrador de tu departamento."
+msgstr "¿Sin acceso? Pídele el alta al Administrador de tu departamento."
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "← Volver a iniciar sesión"
+msgstr "← Volver a iniciar sesión"
+
+#: src/layouts/Sidebar.tsx
+msgid "Accidentes"
+msgstr "Accidentes"
+
+#: src/layouts/Sidebar.tsx
+msgid "Auditorías"
+msgstr "Auditorías"
+
+#: src/features/worker/components/MobileShell.tsx
+msgid "Avisos"
+msgstr "Avisos"
+
+#: src/features/worker/components/MobileShell.tsx
+msgid "Avisos · {unread}"
+msgstr "Avisos · {unread}"
+
+#: src/layouts/Sidebar.tsx
+msgid "Blacklist"
+msgstr "Blacklist"
+
+#: src/layouts/Sidebar.tsx
+msgid "Catálogos"
+msgstr "Catálogos"
+
+#: src/features/worker/components/MobileShell.tsx
+#: src/layouts/Sidebar.tsx
+msgid "Cerrar sesión"
+msgstr "Cerrar sesión"
+
+#: src/layouts/Sidebar.tsx
+msgid "Clientes Activos"
+msgstr "Clientes Activos"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Contraseña"
+msgstr "Contraseña"
+
+#: src/layouts/Sidebar.tsx
+msgid "Conversión"
+msgstr "Conversión"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Correo"
+msgstr "Correo"
+
+#: src/features/worker/components/MobileShell.tsx
+msgid "Cuenta de {shortName}"
+msgstr "Cuenta de {shortName}"
+
+#: src/layouts/Sidebar.tsx
+msgid "Dashboard"
+msgstr "Dashboard"
+
+#: src/layouts/Sidebar.tsx
+msgid "Documentos T&C"
+msgstr "Documentos T&C"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "El acceso no está configurado en este ambiente. Avisa al Administrador."
+msgstr "El acceso no está configurado en este ambiente. Avisa al Administrador."
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "El correo o la contraseña no coinciden. Revísalos e inténtalo de nuevo."
+msgstr "El correo o la contraseña no coinciden. Revísalos e inténtalo de nuevo."
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Enviar enlace"
+msgstr "Enviar enlace"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Inicia sesión"
+msgstr "Inicia sesión"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Iniciando sesión…"
+msgstr "Iniciando sesión…"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Iniciar sesión"
+msgstr "Iniciar sesión"
+
+#: src/features/worker/components/MobileShell.tsx
+msgid "Inicio"
+msgstr "Inicio"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "La operación de tu hotel, en un solo lugar."
+msgstr "La operación de tu hotel, en un solo lugar."
+
+#: src/layouts/Sidebar.tsx
+msgid "Mi Equipo"
+msgstr "Mi Equipo"
+
+#: src/features/worker/components/MobileShell.tsx
+msgid "Mi Perfil"
+msgstr "Mi Perfil"
+
+#: src/layouts/Sidebar.tsx
+msgid "Mi Personal"
+msgstr "Mi Personal"
+
+#: src/layouts/Sidebar.tsx
+msgid "Mi Territorio"
+msgstr "Mi Territorio"
+
+#: src/features/worker/components/MobileShell.tsx
+msgid "Mis datos"
+msgstr "Mis datos"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Mostrar contraseña"
+msgstr "Mostrar contraseña"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "No pudimos conectar con Oranje. Revisa tu conexión e inténtalo en un momento."
+msgstr "No pudimos conectar con Oranje. Revisa tu conexión e inténtalo en un momento."
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Ocultar contraseña"
+msgstr "Ocultar contraseña"
+
+#: src/features/worker/components/MobileShell.tsx
+msgid "Perfil"
+msgstr "Perfil"
+
+#: src/layouts/Sidebar.tsx
+msgid "Pipeline"
+msgstr "Pipeline"
+
+#: src/features/worker/components/MobileShell.tsx
+msgid "Ponchar"
+msgstr "Ponchar"
+
+#: src/layouts/Sidebar.tsx
+msgid "Pool de Colaboradores"
+msgstr "Pool de Colaboradores"
+
+#: src/layouts/Sidebar.tsx
+msgid "Propuestas"
+msgstr "Propuestas"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Recupera tu contraseña"
+msgstr "Recupera tu contraseña"
+
+#: src/layouts/Sidebar.tsx
+msgid "Reportes"
+msgstr "Reportes"
+
+#: src/layouts/Sidebar.tsx
+msgid "Requisiciones"
+msgstr "Requisiciones"
+
+#: src/layouts/Sidebar.tsx
+msgid "Schedule"
+msgstr "Schedule"
+
+#: src/features/worker/components/MobileShell.tsx
+msgid "Secciones"
+msgstr "Secciones"
+
+#: src/layouts/Sidebar.tsx
+msgid "Self-Pick"
+msgstr "Self-Pick"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Si <0>{resetSentTo}</0> está registrado en Oranje, el enlace ya va en camino. Revisa también la carpeta de spam."
+msgstr "Si <0>{resetSentTo}</0> está registrado en Oranje, el enlace ya va en camino. Revisa también la carpeta de spam."
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Staffing de hoteles: del reclutamiento al pago, con un semáforo en cada paso."
+msgstr "Staffing de hoteles: del reclutamiento al pago, con un semáforo en cada paso."
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Te mandamos un enlace al correo para crear una nueva."
+msgstr "Te mandamos un enlace al correo para crear una nueva."
+
+#: src/layouts/Sidebar.tsx
+msgid "Timesheet"
+msgstr "Timesheet"
+
+#: src/layouts/Sidebar.tsx
+msgid "Timesheet Global"
+msgstr "Timesheet Global"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Tu cuenta no está activa en Oranje. Pide al Administrador que la active."
+msgstr "Tu cuenta no está activa en Oranje. Pide al Administrador que la active."
+
+#: src/layouts/Sidebar.tsx
+msgid "Usuarios"
+msgstr "Usuarios"

@@ -11,12 +11,16 @@
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
-    "test:cov": "vitest run --coverage --passWithNoTests"
+    "test:cov": "vitest run --coverage --passWithNoTests",
+    "i18n:extract": "lingui extract --clean",
+    "i18n:check": "lingui extract --clean && git diff --exit-code src/locales"
   },
   "dependencies": {
     "@fontsource-variable/montserrat": "^5.3.0",
     "@hello-pangea/dnd": "^18.0.1",
     "@hookform/resolvers": "^5.7.1",
+    "@lingui/core": "^6.6.0",
+    "@lingui/react": "^6.6.0",
     "@lottiefiles/dotlottie-react": "^0.19.15",
     "@mediapipe/tasks-vision": "^1.0.1",
     "@oranje/contracts": "workspace:*",
@@ -46,6 +50,10 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@lingui/cli": "^6.6.0",
+    "@lingui/format-po": "^6.6.0",
+    "@lingui/swc-plugin": "^6.7.0",
+    "@lingui/vite-plugin": "^6.6.0",
     "@oranje/config": "workspace:*",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/vite": "^4.3.3",
@@ -59,7 +67,7 @@
     "@types/react-dom": "^19.2.4",
     "@types/three": "^0.185.4",
     "@types/topojson-client": "^3.1.5",
-    "@vitejs/plugin-react": "^6.0.5",
+    "@vitejs/plugin-react-swc": "^4.3.3",
     "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^10.8.0",
     "jsdom": "^30.0.1",

@@ -1,10 +1,11 @@
 import { fileURLToPath, URL } from 'node:url'
 
-import react from '@vitejs/plugin-react'
+import { lingui } from '@lingui/vite-plugin'
+import react from '@vitejs/plugin-react-swc'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react({ plugins: [['@lingui/swc-plugin', {}]] }), lingui()],
   assetsInclude: ['**/*.lottie'],
   resolve: {
     alias: {

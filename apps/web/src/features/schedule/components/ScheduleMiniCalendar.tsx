@@ -2,13 +2,14 @@ import { cn } from '@oranje/ui'
 import { useMemo, type ReactNode } from 'react'
 
 /** Piezas genéricas de navegación semanal, expuestas por el índice de Timesheet (§4). */
+import { localeTag } from '@/app/i18n'
 import { addDaysIso, todayIso } from '@/features/timesheet'
 
 const WEEKDAY_HEADERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D']
 
 /** `2026-09` → `Septiembre 2026`. */
 function monthLabel(month: string): string {
-  const label = new Date(`${month}-01T00:00:00Z`).toLocaleDateString('es', {
+  const label = new Date(`${month}-01T00:00:00Z`).toLocaleDateString(localeTag(), {
     month: 'long',
     year: 'numeric',
     timeZone: 'UTC',
