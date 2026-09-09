@@ -1,0 +1,3950 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-09-09 12:00-0500\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: en\n"
+"Project-Id-Version: oranje-web\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "¡Listo!"
+msgstr "Done!"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "¿Cómo funciona el ponche?"
+msgstr "How does clocking in work?"
+
+#: src/features/audits/pages/AuditsPage.tsx
+msgid "¿Cómo funciona?"
+msgstr "How does it work?"
+
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "¿Cómo te trasladas?"
+msgstr "How do you get around?"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "¿La olvidaste?"
+msgstr "Forgot it?"
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "¿Por qué se elimina? El motivo queda en el journal."
+msgstr "Why is it being deleted? The reason stays in the log."
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "¿Qué es de ti?"
+msgstr "Anything we should know?"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "¿Sin acceso? Pídele el alta al Administrador de tu departamento."
+msgstr "No access yet? Ask your department's Administrator to set you up."
+
+#. placeholder {0}: aggregate.people
+#: src/features/timesheet/components/TimesheetMonthView.tsx
+msgid "· {0} pers."
+msgstr "· {0} people"
+
+#. placeholder {0}: selected.people.length
+#. placeholder {0}: selection.people.length
+#: src/features/schedule/pages/SchedulePage.tsx
+#: src/features/timesheet/components/TimesheetHoursView.tsx
+msgid "{0, plural, one {# colaborador} other {# colaboradores}}"
+msgstr "{0, plural, one {# collaborator} other {# collaborators}}"
+
+#. placeholder {0}: topPerformer.conversions
+#: src/features/dashboard/components/ActivityCards.tsx
+msgid "{0, plural, one {# conversión} other {# conversiones}}"
+msgstr "{0, plural, one {# conversion} other {# conversions}}"
+
+#. placeholder {0}: selection.total
+#: src/features/timesheet/pages/TimesheetPage.tsx
+msgid "{0, plural, one {# día elegido} other {# días elegidos}}"
+msgstr "{0, plural, one {# day selected} other {# days selected}}"
+
+#. placeholder {0}: block.start
+#. placeholder {1}: block.end
+#. placeholder {2}: block.people.length
+#: src/features/schedule/components/ScheduleTimelineGrid.tsx
+#: src/features/timesheet/components/TimesheetHoursView.tsx
+msgid "{0} – {1} · {2} en el turno"
+msgstr "{0} – {1} · {2} on the shift"
+
+#. placeholder {0}: detail.hotelName
+#. placeholder {1}: detail.department
+#. placeholder {2}: detail.createdByName
+#. placeholder {3}: formatDateTime(detail.createdAt)
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "{0} · {1} · creada por {2} el {3}"
+msgstr "{0} · {1} · created by {2} on {3}"
+
+#. placeholder {0}: selected.hotelName
+#. placeholder {1}: selected.department
+#. placeholder {2}: selected.requestedByName
+#: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
+msgid "{0} · {1} · solicitada por {2}"
+msgstr "{0} · {1} · requested by {2}"
+
+#. placeholder {0}: member.fullName
+#. placeholder {1}: String(member.openProspects)
+#. placeholder {2}: formatPercent(member.conversionRate)
+#: src/features/dashboard/components/ActivityCards.tsx
+msgid "{0} · {1} abiertos · {2}"
+msgstr "{0} · {1} open · {2}"
+
+#. placeholder {0}: row.startTime
+#. placeholder {1}: row.quantity
+#: src/features/schedule/pages/SchedulePage.tsx
+msgid "{0} · demanda {1}"
+msgstr "{0} · demand {1}"
+
+#. placeholder {0}: entry.requisitionNumber ?? t`Sin folio`
+#: src/features/timesheet/components/TimesheetGrid.tsx
+msgid "{0} · días de esta requisición"
+msgstr "{0} · days of this requisition"
+
+#. placeholder {0}: timeline.hotelName
+#. placeholder {1}: formatWeekRange(selectedWeek, addDaysIso(selectedWeek, 6))
+#: src/features/schedule/pages/SchedulePage.tsx
+msgid "{0} · Semana {1}"
+msgstr "{0} · Week {1}"
+
+#. placeholder {0}: shift.position
+#. placeholder {1}: formatTimeIn(shift.startsAt, shift.hotelTimeZone)
+#. placeholder {2}: formatTimeIn(shift.endsAt, shift.hotelTimeZone)
+#: src/features/worker/pages/PunchPage.tsx
+msgid "{0} · turno {1} – {2}"
+msgstr "{0} · shift {1} – {2}"
+
+#. placeholder {0}: owner.roleLabel
+#. placeholder {1}: scope.periodLabel
+#: src/features/dashboard/components/SalesDashboard.tsx
+msgid "{0} · zonas {zones} · {1}"
+msgstr "{0} · zones {zones} · {1}"
+
+#. placeholder {0}: metrics.openCount
+#. placeholder {1}: metrics.awaitingAuthorization
+#. placeholder {2}: metrics.urgentCount
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "{0} abiertas · {1} esperan autorización · {2} urgentes"
+msgstr "{0} open · {1} awaiting authorization · {2} urgent"
+
+#. placeholder {0}: row.personal.age
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "{0} años"
+msgstr "{0} years old"
+
+#. placeholder {0}: block.people.length
+#: src/features/schedule/components/ScheduleTimelineGrid.tsx
+#: src/features/timesheet/components/TimesheetHoursView.tsx
+msgid "{0} colaboradores"
+msgstr "{0} collaborators"
+
+#. placeholder {0}: metrics.awaitingOver48h
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "{0} con más de 48 h"
+msgstr "{0} over 48 h"
+
+#. placeholder {0}: prospect.daysWithoutAttempt
+#: src/features/dashboard/components/StaleProspectList.tsx
+msgid "{0} d sin intento"
+msgstr "{0} d without an attempt"
+
+#. placeholder {0}: formatHours(row.totalHours)
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "{0} de la meta"
+msgstr "{0} of the target"
+
+#. placeholder {0}: selection.withoutRequisition
+#: src/features/timesheet/pages/TimesheetPage.tsx
+msgid "{0} sin requisición"
+msgstr "{0} without a requisition"
+
+#. placeholder {0}: metrics.freeSlots
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "{0} slots libres"
+msgstr "{0} free slots"
+
+#. placeholder {0}: requisition.filledSlots
+#. placeholder {1}: requisition.totalSlots
+#: src/features/dashboard/components/RequisitionMiniList.tsx
+msgid "{0}/{1} cubiertos"
+msgstr "{0}/{1} covered"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "{anomalies, plural, one {# día con anomalía} other {# días con anomalía}} por revisar: resuélvelos antes de enviar la semana"
+msgstr "{anomalies, plural, one {# day with an anomaly} other {# days with anomalies}} to review: resolve them before sending the week"
+
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "{answeredCount} de {totalCount} contestados"
+msgstr "{answeredCount} of {totalCount} answered"
+
+#: src/features/dashboard/components/ActivityCards.tsx
+msgid "{averageDays} d"
+msgstr "{averageDays} d"
+
+#: src/features/requisitions/components/AuthorizationQueueList.tsx
+msgid "{days, plural, =0 {Inicia hoy} one {Inicia en # día} other {Inicia en # días}}"
+msgstr "{days, plural, =0 {Starts today} one {Starts in # day} other {Starts in # days}}"
+
+#: src/shared/lib/formatters.ts
+msgid "{days} d en estado"
+msgstr "{days} d in status"
+
+#: src/features/requisitions/components/AuthorizationQueueList.tsx
+msgid "{department} · {positionCount} pos · {slotCount, plural, one {# slot} other {# slots}}"
+msgstr "{department} · {positionCount} pos · {slotCount, plural, one {# slot} other {# slots}}"
+
+#: src/features/requisitions/components/CoverageBar.tsx
+msgid "{filled} de {total} posiciones · {label}"
+msgstr "{filled} of {total} positions · {label}"
+
+#: src/features/dashboard/components/ActivityCards.tsx
+msgid "{memberCount, plural, one {# BD te reporta} other {# BDs te reportan}} · {totalOpen} prospectos abiertos y {totalConversions, plural, one {# conversión} other {# conversiones}} entre todos."
+msgstr "{memberCount, plural, one {# BD reports to you} other {# BDs report to you}} · {totalOpen} open prospects and {totalConversions, plural, one {# conversion} other {# conversions}} between them."
+
+#: src/features/schedule/pages/SchedulePage.tsx
+msgid "{missing, plural, one {# hueco} other {# huecos}}"
+msgstr "{missing, plural, one {# gap} other {# gaps}}"
+
+#: src/features/requisitions/components/RequisitionCardList.tsx
+msgid "{number} · {department} · {positions, plural, one {# posición} other {# posiciones}}"
+msgstr "{number} · {department} · {positions, plural, one {# position} other {# positions}}"
+
+#: src/features/dashboard/components/RecruitmentDashboard.tsx
+msgid "{pendingValidation} en Blanco, por validar"
+msgstr "{pendingValidation} in White, pending validation"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "{positionCount, plural, one {# posición} other {# posiciones}} · {totalSlots, plural, one {# slot} other {# slots}}"
+msgstr "{positionCount, plural, one {# position} other {# positions}} · {totalSlots, plural, one {# slot} other {# slots}}"
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "{punched} de 4"
+msgstr "{punched} of 4"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "{quantity, plural, one {# slot libre} other {# slots libres}}"
+msgstr "{quantity, plural, one {# free slot} other {# free slots}}"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "{shift} · entró {clockIn}"
+msgstr "{shift} · clocked in {clockIn}"
+
+#: src/features/requisitions/components/RequisitionSummaryStrip.tsx
+msgid "{slotCount} · {occupiedCount} ocupados"
+msgstr "{slotCount} · {occupiedCount} taken"
+
+#. placeholder {0}: position.startTime
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "{slots, plural, one {# slot} other {# slots}} · desde {startDate} · {0}"
+msgstr "{slots, plural, one {# slot} other {# slots}} · from {startDate} · {0}"
+
+#: src/features/dashboard/components/ActivityCards.tsx
+msgid "{staleCount} sin actividad 7+ días"
+msgstr "{staleCount} with no activity for 7+ days"
+
+#: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
+msgid "{total, plural, one {# espera {whoseSignature}} other {# esperan {whoseSignature}}}. Autorizar mueve {fromLabel} → {toLabel} y arranca el reloj de la urgencia"
+msgstr "{total, plural, one {# is waiting for {whoseSignature}} other {# are waiting for {whoseSignature}}}. Authorizing moves {fromLabel} → {toLabel} and starts the urgency clock"
+
+#: src/features/dashboard/components/ActivityCards.tsx
+msgid "{totalConversions, plural, one {# hotel convertido} other {# hoteles convertidos}} por tu equipo · tasa {teamRateLabel}"
+msgstr "{totalConversions, plural, one {# hotel converted} other {# hotels converted}} by your team · rate {teamRateLabel}"
+
+#: src/features/personnel/components/StandByDialog.tsx
+msgid "{workerName} quedó en Stand-by"
+msgstr "{workerName} is now on Stand-by"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "← Volver a iniciar sesión"
+msgstr "← Back to sign in"
+
+#: src/shared/constants/requisitionStatus.ts
+msgid "< 72 h"
+msgstr "< 72 h"
+
+#: src/shared/constants/requisitionStatus.ts
+msgid "> 120 h"
+msgstr "> 120 h"
+
+#: src/shared/constants/workerEnums.ts
+msgid "1–2 años"
+msgstr "1–2 years"
+
+#: src/features/personnel/components/WorkerPerformanceRadar.tsx
+msgid "100 = todos sus días salieron bien en esa medida"
+msgstr "100 = every day went well on that measure"
+
+#: src/features/auth/components/LoginCollage.tsx
+msgid "3 de 4 slots cubiertos"
+msgstr "3 of 4 slots covered"
+
+#: src/shared/constants/workerEnums.ts
+msgid "3–5 años"
+msgstr "3–5 years"
+
+#: src/shared/constants/requisitionStatus.ts
+msgid "72 – 120 h"
+msgstr "72 – 120 h"
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "A quién llamamos y qué debemos saber"
+msgstr "Who we call and what we should know"
+
+#: src/shared/constants/workerEnums.ts
+msgid "A+"
+msgstr "A+"
+
+#: src/shared/constants/workerEnums.ts
+msgid "A−"
+msgstr "A−"
+
+#: src/shared/constants/workerEnums.ts
+msgid "AB+"
+msgstr "AB+"
+
+#: src/shared/constants/workerEnums.ts
+msgid "AB−"
+msgstr "AB−"
+
+#: src/shared/constants/timesheetStatus.ts
+msgid "Abierta"
+msgstr "Open"
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "Abiertas"
+msgstr "Open"
+
+#: src/features/dashboard/components/StatusFunnel.tsx
+msgid "abiertos"
+msgstr "open"
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "Abre la hoja lista para imprimir o guardar como PDF"
+msgstr "Opens the sheet ready to print or save as a PDF"
+
+#: src/features/worker/components/CameraCapture.tsx
+msgid "Abriendo la cámara…"
+msgstr "Opening the camera…"
+
+#: src/app/RequireSession.tsx
+msgid "Abriendo tu sesión…"
+msgstr "Opening your session…"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Abrir la requisición"
+msgstr "Open the requisition"
+
+#: src/features/timesheet/components/TimesheetMonthView.tsx
+msgid "Abrir la semana de este día en la vista Días"
+msgstr "Open this day's week in the Days view"
+
+#: src/shared/constants/workerStatus.ts
+msgid "Accidentado"
+msgstr "Injured"
+
+#: src/layouts/Sidebar.tsx
+msgid "Accidentes"
+msgstr "Work Accidents"
+
+#: src/features/worker/components/useFaceGuide.ts
+msgid "Acércate un poco"
+msgstr "Move a little closer"
+
+#: src/shared/constants/contractStatus.ts
+msgid "Activo"
+msgstr "Active"
+
+#: src/shared/constants/roles.ts
+msgid "Administrador"
+msgstr "Administrator"
+
+#: src/features/requisitions/types/requisitionForm.schema.ts
+msgid "Agrega al menos una posición"
+msgstr "Add at least one position"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Agregar la marca que falta"
+msgstr "Add the missing punch"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Agregar marca manual"
+msgstr "Add manual punch"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Agregar otra posición"
+msgstr "Add another position"
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Ahora sigue Reclutamiento"
+msgstr "Recruitment is up next"
+
+#: src/features/dashboard/components/HotelDashboard.tsx
+msgid "Al 100% (Azul claro)"
+msgstr "At 100% (Light blue)"
+
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
+msgid "Al autorizar se fija la urgencia según la fecha de inicio"
+msgstr "Authorizing sets the urgency based on the start date"
+
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
+msgid "Al autorizar, la urgencia se calcula contra la fecha de inicio: {start} {daysAhead, plural, one {está a # día} other {está a # días}}, así que {positionCount, plural, one {la posición nace} other {las # posiciones nacen}} en {color} ({label})"
+msgstr "When you authorize, urgency is measured against the start date: {start} {daysAhead, plural, one {is # day away} other {is # days away}}, so {positionCount, plural, one {the position starts} other {the # positions start}} in {color} ({label})"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Al tocar el botón se abre la cámara. La foto confirma que eres tú; no se comparte con el hotel."
+msgstr "Tapping the button opens the camera. The photo confirms it's you; it isn't shared with the hotel."
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Alergias o condiciones médicas"
+msgstr "Allergies or medical conditions"
+
+#: src/features/worker/pages/ProfilePage.tsx
+msgid "Alta en Oranje"
+msgstr "Joined Oranje"
+
+#: src/shared/constants/onboardingStatus.ts
+msgid "Amarillo"
+msgstr "Yellow"
+
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+msgid "Amarillo · desviación"
+msgstr "Yellow · deviation"
+
+#: src/features/audits/components/AuditHistoryList.tsx
+msgid "Ambiente y Recursos"
+msgstr "Environment & Resources"
+
+#: src/shared/constants/workerEnums.ts
+msgid "Amistad"
+msgstr "Friend"
+
+#: src/features/timesheet/components/TimesheetToolbar.tsx
+msgid "Ancho de columna"
+msgstr "Column width"
+
+#: src/shared/constants/timesheetStatus.ts
+msgid "Aprobada"
+msgstr "Approved"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Aprobando…"
+msgstr "Approving…"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Aprobar semana"
+msgstr "Approve week"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Aprueban la semana:"
+msgstr "Who approves the week:"
+
+#: src/features/worker/components/QrScanner.tsx
+msgid "Apunta al código impreso en el acceso del hotel. La app también toma tu ubicación."
+msgstr "Point at the code printed at the hotel entrance. The app also records your location."
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Aquí ves tu estado, ponchas tus turnos y recibes los avisos de Reclutamiento y del hotel."
+msgstr "Here you see your status, clock your shifts and get notices from Recruitment and the hotel."
+
+#: src/features/worker/components/TaxDocumentUploader.tsx
+msgid "Archivo del SSN o ITIN"
+msgstr "SSN or ITIN file"
+
+#: src/shared/constants/workerStatus.ts
+msgid "Asig. temporal"
+msgstr "Temp. assignment"
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Asignaciones, cambios de turno y recordatorios llegan a Avisos. Revísalos cada día."
+msgstr "Assignments, shift changes and reminders arrive in Notices. Check them every day."
+
+#. placeholder {0}: formatDayMonthTime(slot.assignedAt)
+#: src/features/requisitions/components/SlotList.tsx
+msgid "Asignado {0}"
+msgstr "Assigned {0}"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Asignados hoy"
+msgstr "Assigned today"
+
+#: src/features/personnel/components/WorkerPerformanceRadar.tsx
+msgid "Asistencia"
+msgstr "Attendance"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Atrás"
+msgstr "Back"
+
+#: src/features/audits/components/AuditWorkerList.tsx
+msgid "Auditado ayer"
+msgstr "Audited yesterday"
+
+#: src/features/audits/components/AuditWorkerList.tsx
+msgid "Auditado hace {days} días"
+msgstr "Audited {days} days ago"
+
+#: src/features/audits/components/AuditWorkerList.tsx
+msgid "Auditado hoy"
+msgstr "Audited today"
+
+#. placeholder {0}: worker.fullName
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "Auditando a <0>{0}</0>"
+msgstr "Auditing <0>{0}</0>"
+
+#: src/features/audits/components/AuditHotelCard.tsx
+msgid "Auditar"
+msgstr "Audit"
+
+#: src/features/audits/components/AuditHotelCard.tsx
+msgid "Auditar por ambiente"
+msgstr "Audit the environment"
+
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "Auditoría corregida"
+msgstr "Audit corrected"
+
+#: src/features/audits/components/AuditHotelCard.tsx
+#: src/features/audits/components/AuditWorkerList.tsx
+msgid "Auditoría de personal"
+msgstr "Staff audit"
+
+#: src/features/audits/components/PersonalPresentationAuditDialog.tsx
+msgid "Auditoría de Presentación Personal"
+msgstr "Personal Presentation Audit"
+
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "Auditoría guardada"
+msgstr "Audit saved"
+
+#: src/features/audits/pages/AuditsPage.tsx
+#: src/layouts/Sidebar.tsx
+msgid "Auditorías"
+msgstr "Audits"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Aún no hay clientes activos"
+msgstr "No active clients yet"
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "Aún no hay QR generado."
+msgstr "No QR generated yet."
+
+#: src/features/requisitions/components/RequisitionCardList.tsx
+#: src/features/requisitions/components/RequisitionTable.tsx
+msgid "Aún no hay requisiciones"
+msgstr "No requisitions yet"
+
+#: src/features/worker/lib/noShiftMessage.ts
+msgid "Aún no te validan"
+msgstr "You haven't been validated yet"
+
+#: src/features/worker/lib/noShiftMessage.ts
+msgid "Aún no tienes asignación"
+msgstr "You don't have an assignment yet"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Aún no tienes colaboradores asignados"
+msgstr "You don't have any collaborators assigned yet"
+
+#: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
+msgid "Autorización de Requisición"
+msgstr "Requisition Authorization"
+
+#: src/features/requisitions/api/requisitionsApi.ts
+#: src/features/requisitions/components/RequisitionTable.tsx
+#: src/shared/constants/requisitionStatus.ts
+msgid "Autorizada"
+msgstr "Authorized"
+
+#. placeholder {0}: formatDayMonthTime(item.authorizedAt)
+#: src/features/requisitions/components/RequisitionCardList.tsx
+msgid "Autorizada {0}"
+msgstr "Authorized {0}"
+
+#: src/features/requisitions/components/RequisitionSummaryStrip.tsx
+msgid "Autorizada el"
+msgstr "Authorized on"
+
+#: src/features/requisitions/components/RequisitionSummaryStrip.tsx
+msgid "Autorizada por"
+msgstr "Authorized by"
+
+#: src/features/dashboard/components/HotelDashboard.tsx
+msgid "Autorizadas y en proceso"
+msgstr "Authorized and in progress"
+
+#: src/features/dashboard/components/RecruitmentDashboard.tsx
+msgid "Autorizadas y en proceso; los borradores no se muestran a Reclutamiento"
+msgstr "Authorized and in progress; drafts aren't shown to Recruitment"
+
+#: src/features/dashboard/components/RecruitmentDashboard.tsx
+msgid "Autorizadas, sin tomar (Self-Pick)"
+msgstr "Authorized, not yet taken (Self-Pick)"
+
+#: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Autorizar es del Manager de Área o del Manager General: cuando firmen, la requisición pasa a Autorizada y Reclutamiento la ve en la Bolsa del Self-Pick."
+msgstr "Authorizing is up to the Area Manager or the General Manager: once they sign, the requisition becomes Authorized and Recruitment sees it in the Self-Pick pool."
+
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
+msgid "Autorizar requisición"
+msgstr "Authorize requisition"
+
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
+msgid "Autorizas como {authorizerRole} — alcance: {scopeLabel}"
+msgstr "You're authorizing as {authorizerRole} — scope: {scopeLabel}"
+
+#: src/shared/constants/catalogs.ts
+msgid "Avanzado"
+msgstr "Advanced"
+
+#: src/features/worker/components/MobileShell.tsx
+#: src/features/worker/pages/NotificationsPage.tsx
+msgid "Avisos"
+msgstr "Notices"
+
+#: src/features/worker/components/MobileShell.tsx
+msgid "Avisos · {unread}"
+msgstr "Notices · {unread}"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "ayer"
+msgstr "yesterday"
+
+#: src/shared/constants/onboardingStatus.ts
+msgid "Azul claro"
+msgstr "Light blue"
+
+#: src/shared/constants/workerEnums.ts
+msgid "B+"
+msgstr "B+"
+
+#: src/shared/constants/workerEnums.ts
+msgid "B−"
+msgstr "B−"
+
+#: src/features/personnel/components/StandByDialog.tsx
+msgid "Bajó el ritmo de ocupación esta semana…"
+msgstr "Occupancy slowed down this week…"
+
+#: src/shared/constants/catalogs.ts
+msgid "Básico"
+msgstr "Basic"
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Bienvenido a Oranje"
+msgstr "Welcome to Oranje"
+
+#: src/features/requisitions/components/RequisitionJournalDialog.tsx
+msgid "Bitácora de la requisición"
+msgstr "Requisition log"
+
+#: src/layouts/Sidebar.tsx
+#: src/shared/constants/workerStatus.ts
+msgid "Blacklist"
+msgstr "Blacklist"
+
+#: src/features/requisitions/components/RequisitionCardList.tsx
+#: src/shared/constants/contractStatus.ts
+msgid "Borrador"
+msgstr "Draft"
+
+#: src/shared/components/SearchField.tsx
+msgid "Buscando"
+msgstr "Searching"
+
+#. placeholder {0}: term.trim()
+#: src/layouts/GlobalSearch.tsx
+msgid "Buscando «{0}»…"
+msgstr "Searching \"{0}\"…"
+
+#: src/features/timesheet/components/TimesheetToolbar.tsx
+msgid "Buscar colaborador"
+msgstr "Search collaborator"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Buscar en tu plantel"
+msgstr "Search your staff"
+
+#: src/layouts/GlobalSearch.tsx
+#: src/layouts/Header.tsx
+msgid "Buscar hoteles, requisiciones o colaboradores"
+msgstr "Search hotels, requisitions or collaborators"
+
+#: src/layouts/Header.tsx
+msgid "Buscar hoteles, requisiciones, colaboradores…"
+msgstr "Search hotels, requisitions, collaborators…"
+
+#: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
+msgid "Buscar pendiente"
+msgstr "Search pending requisitions"
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "Buscar requisición"
+msgstr "Search requisitions"
+
+#: src/shared/constants/roles.ts
+msgid "Business Developer"
+msgstr "Business Developer"
+
+#: src/shared/constants/roles.ts
+msgid "Business Developer Coordinator"
+msgstr "Business Developer Coordinator"
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "búsqueda «{searchTerm}»"
+msgstr "search \"{searchTerm}\""
+
+#: src/features/requisitions/components/StatusHistoryCard.tsx
+msgid "Cada cambio queda registrado; nada se edita ni se borra"
+msgstr "Every change is recorded; nothing gets edited or deleted"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Cada posición con fecha y hora"
+msgstr "Each position with a date and time"
+
+#: src/features/requisitions/components/PositionsTable.tsx
+msgid "Cada posición lleva dos semáforos: Cobertura (cuántos slots están ocupados) y Urgencia (cuánto falta para su inicio)"
+msgstr "Each position carries two status lights: Coverage (how many slots are taken) and Urgency (how long until it starts)"
+
+#: src/features/audits/pages/AuditsPage.tsx
+msgid "Cada reactivo pesa lo suyo"
+msgstr "Each checklist item has its own weight"
+
+#: src/features/requisitions/components/SlotList.tsx
+msgid "Cada slot es un lugar por cubrir. Un slot libre se puede borrar; uno ocupado no."
+msgstr "Each slot is a spot to fill. A free slot can be deleted; a taken one can't."
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Cada unidad de Cantidad es un lugar por cubrir"
+msgstr "Each unit of Quantity is a spot to fill"
+
+#: src/shared/constants/onboardingStatus.ts
+msgid "Cafe"
+msgstr "Brown"
+
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "Calificación preliminar"
+msgstr "Preliminary score"
+
+#: src/features/requisitions/components/StatusHistoryCard.tsx
+msgid "cambia a"
+msgstr "changes to"
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "Cambia el estado o la búsqueda, o quítalos con «Quitar filtros» para volver a ver el tablero completo."
+msgstr "Change the status or the search, or clear them with \"Clear filters\" to see the full board again."
+
+#: src/shared/constants/contractStatus.ts
+msgid "Cancelado"
+msgstr "Cancelled"
+
+#: src/features/audits/components/AuditFormDialog.tsx
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+#: src/features/personnel/components/StandByDialog.tsx
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+#: src/features/worker/components/CameraCapture.tsx
+msgid "Cancelar"
+msgstr "Cancel"
+
+#: src/features/requisitions/components/AuthorizationPositionsTable.tsx
+#: src/features/requisitions/components/PositionsTable.tsx
+msgid "Cant."
+msgstr "Qty"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Cantidad"
+msgstr "Quantity"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Cantidad {ordinal}"
+msgstr "Quantity {ordinal}"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Capturar una marca que el ponche no registró, con motivo"
+msgstr "Record a punch the clock-in didn't capture, with a reason"
+
+#: src/features/worker/components/TaxDeadlineBanner.tsx
+msgid "Carga tu SSN o ITIN"
+msgstr "Upload your SSN or ITIN"
+
+#: src/features/worker/components/TaxDeadlineBanner.tsx
+msgid "cargado, en verificación"
+msgstr "uploaded, pending verification"
+
+#: src/features/worker/pages/ProfilePage.tsx
+msgid "Cargado, sin verificar"
+msgstr "Uploaded, not verified"
+
+#: src/features/worker/components/WorkerSkeleton.tsx
+msgid "Cargando"
+msgstr "Loading"
+
+#: src/features/requisitions/components/RequisitionJournalDialog.tsx
+msgid "Cargando bitácora…"
+msgstr "Loading log…"
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "Cargando requisiciones…"
+msgstr "Loading requisitions…"
+
+#: src/layouts/Sidebar.tsx
+msgid "Catálogos"
+msgstr "Catalogs"
+
+#: src/features/worker/components/useFaceGuide.ts
+msgid "Centra tu cara en el óvalo"
+msgstr "Center your face in the oval"
+
+#: src/features/requisitions/components/RequisitionJournalDialog.tsx
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Cerrar"
+msgstr "Close"
+
+#: src/features/worker/components/QrScanner.tsx
+msgid "Cerrar el lector"
+msgstr "Close the scanner"
+
+#: src/features/worker/components/MobileShell.tsx
+#: src/layouts/Sidebar.tsx
+msgid "Cerrar sesión"
+msgstr "Sign out"
+
+#: src/shared/constants/timesheetStatus.ts
+msgid "Checadas completas"
+msgstr "All punches in"
+
+#: src/shared/constants/contactAttempt.ts
+msgid "Cita agendada"
+msgstr "Meeting scheduled"
+
+#: src/features/dashboard/components/ActivityCards.tsx
+msgid "Clientes activos"
+msgstr "Active clients"
+
+#: src/layouts/Sidebar.tsx
+msgid "Clientes Activos"
+msgstr "Active Clients"
+
+#: src/features/requisitions/components/PositionsTable.tsx
+#: src/features/requisitions/components/RequisitionSummaryStrip.tsx
+#: src/features/requisitions/components/RequisitionTable.tsx
+msgid "Cobertura"
+msgstr "Coverage"
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "Cobertura parcial"
+msgstr "Partial coverage"
+
+#: src/features/dashboard/components/RecruitmentDashboard.tsx
+msgid "Cola del Self-Pick"
+msgstr "Self-Pick queue"
+
+#: src/features/timesheet/components/TimesheetGrid.tsx
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+#: src/shared/constants/roles.ts
+msgid "Colaborador"
+msgstr "Collaborator"
+
+#: src/layouts/GlobalSearch.tsx
+msgid "Colaboradores"
+msgstr "Collaborators"
+
+#: src/features/dashboard/components/RecruitmentDashboard.tsx
+msgid "Colaboradores en el Pool"
+msgstr "Collaborators in the Pool"
+
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+msgid "Colaboradores evaluados"
+msgstr "Collaborators measured"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Comenzar la requisición"
+msgstr "Start the requisition"
+
+#: src/features/audits/pages/AuditsPage.tsx
+msgid "Cómo funciona Auditorías"
+msgstr "How Audits works"
+
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "Cómo llegas al trabajo"
+msgstr "How you get to work"
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Completar mis datos"
+msgstr "Complete my info"
+
+#: src/features/timesheet/components/TimesheetDayCell.tsx
+msgid "Completo"
+msgstr "Complete"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Con entrada registrada"
+msgstr "Clocked in"
+
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+msgid "con timesheet esta semana"
+msgstr "with a timesheet this week"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "con tu foto"
+msgstr "with your photo"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "con turno del Schedule"
+msgstr "with a shift on the Schedule"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Confirmando que estás en el hotel"
+msgstr "Confirming you're at the hotel"
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "Confirmar: el anterior deja de servir"
+msgstr "Confirm: the old one stops working"
+
+#: src/features/personnel/components/ContactQr.tsx
+msgid "Contacto de {name} en QR"
+msgstr "{name}'s contact as a QR"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Contacto de emergencia"
+msgstr "Emergency contact"
+
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "Contesta todos los reactivos para poder guardar"
+msgstr "Answer every checklist item to save"
+
+#: src/features/personnel/components/StandByDialog.tsx
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+#: src/shared/components/OnboardingIntro.tsx
+msgid "Continuar"
+msgstr "Continue"
+
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+msgid "Contractuales"
+msgstr "Contract"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Contraseña"
+msgstr "Password"
+
+#: src/shared/constants/catalogs.ts
+msgid "Conversacional"
+msgstr "Conversational"
+
+#: src/layouts/Sidebar.tsx
+msgid "Conversión"
+msgstr "Conversion"
+
+#: src/features/dashboard/components/ActivityCards.tsx
+msgid "Conversiones"
+msgstr "Conversions"
+
+#: src/shared/constants/workerEnums.ts
+msgid "Cónyuge"
+msgstr "Spouse"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Copiar el teléfono"
+msgstr "Copy the phone number"
+
+#: src/features/audits/components/AuditHistoryList.tsx
+msgid "Corregir"
+msgstr "Correct"
+
+#: src/features/auth/pages/LoginPage.tsx
+#: src/shared/constants/contactAttempt.ts
+msgid "Correo"
+msgstr "Email"
+
+#: src/features/audits/components/EnvironmentAuditDialog.tsx
+msgid "Corrige lo que haga falta de {hotelName}: se guarda con PATCH, sobre la misma auditoría."
+msgstr "Fix whatever needs it for {hotelName}: it's saved on the same audit, not as a new one."
+
+#: src/features/audits/components/PersonalPresentationAuditDialog.tsx
+msgid "Corrige lo que haga falta: se guarda con PATCH, sobre la misma auditoría."
+msgstr "Fix whatever needs it: it's saved on the same audit, not as a new one."
+
+#: src/features/requisitions/api/requisitionsApi.ts
+msgid "Creada"
+msgstr "Created"
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "Crear requisición"
+msgstr "Create requisition"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "Cuando el ponche normal no pudo"
+msgstr "When the regular punch couldn't"
+
+#: src/features/audits/components/AuditWorkerList.tsx
+msgid "Cuando el Schedule programe a alguien en este hotel, aparecerá aquí para auditarlo."
+msgstr "Once the Schedule has someone working at this hotel, they'll show up here to audit."
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Cuando el Schedule programe turnos de tus requisiciones, aparecerán aquí con su estado y sus marcas del día."
+msgstr "When the Schedule programs shifts for your requisitions, they'll show up here with their status and the day's punches."
+
+#: src/features/worker/lib/noShiftMessage.ts
+msgid "Cuando la Reclutadora valide tus datos quedarás Disponible para asignación. Con tu primera requisición, tu turno aparece aquí."
+msgstr "Once the Recruiter validates your info you'll be Available for assignment. With your first requisition, your shift shows up here."
+
+#: src/features/worker/components/TaxDeadlineBanner.tsx
+msgid "Cuando Oranje lo verifique, tu pago queda habilitado."
+msgstr "Once Oranje verifies it, your pay is enabled."
+
+#: src/features/worker/lib/noShiftMessage.ts
+msgid "Cuando Reclutamiento te asigne a una requisición, tu turno del día aparece aquí y podrás ponchar."
+msgstr "When Recruitment assigns you to a requisition, today's shift shows up here and you'll be able to clock in."
+
+#: src/features/audits/components/AuditHistoryList.tsx
+msgid "Cuando se guarde la primera de Presentación Personal o de Ambiente y Recursos, aparecerá aquí."
+msgstr "Once the first Personal Presentation or Environment & Resources audit is saved, it'll show up here."
+
+#: src/features/requisitions/components/RequisitionCardList.tsx
+#: src/features/requisitions/components/RequisitionTable.tsx
+msgid "Cuando un hotel pida personal, su requisición aparecerá aquí con su semáforo. Los borradores solo los ve quien los crea."
+msgstr "When a hotel requests staff, its requisition shows up here with its status light. Drafts are only visible to whoever created them."
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Cuatro marcas al día"
+msgstr "Four punches a day"
+
+#: src/features/requisitions/utils/coverage.ts
+msgid "cubierta"
+msgstr "covered"
+
+#: src/shared/constants/requisitionStatus.ts
+msgid "Cubierta parcialmente"
+msgstr "Partially covered"
+
+#: src/shared/constants/requisitionStatus.ts
+msgid "Cubierta totalmente"
+msgstr "Fully covered"
+
+#: src/features/dashboard/components/HotelDashboard.tsx
+msgid "Cubiertas"
+msgstr "Covered"
+
+#: src/features/schedule/pages/SchedulePage.tsx
+msgid "cubierto"
+msgstr "covered"
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Cubrir slots en Self-Pick"
+msgstr "Fill slots in Self-Pick"
+
+#: src/features/worker/components/MobileShell.tsx
+msgid "Cuenta de {shortName}"
+msgstr "{shortName}'s account"
+
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "Cumple"
+msgstr "Meets"
+
+#: src/features/audits/pages/AuditsPage.tsx
+msgid "Cumple, No o N/A por reactivo. El score es un promedio ponderado — N/A no cuenta ni pesa, y el peso lo define el Administrador."
+msgstr "Meets, Doesn't or N/A per checklist item. The score is a weighted average — N/A doesn't count or weigh, and the Administrator sets the weights."
+
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+msgid "Cumplimiento"
+msgstr "Compliance"
+
+#: src/features/schedule/components/ScheduleMiniCalendar.tsx
+msgid "D"
+msgstr "S"
+
+#: src/layouts/Sidebar.tsx
+msgid "Dashboard"
+msgstr "Dashboard"
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Datos de emergencia guardados"
+msgstr "Emergency info saved"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Define cuántos, desde cuándo y en qué horario. Cada unidad de cantidad es un lugar que Reclutamiento va a cubrir."
+msgstr "Set how many, from when and at what time. Each unit of quantity is a spot Recruitment will fill."
+
+#: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Demanda"
+msgstr "Demand"
+
+#: src/features/schedule/pages/SchedulePage.tsx
+msgid "Demanda de la semana"
+msgstr "This week's demand"
+
+#: src/features/schedule/pages/SchedulePage.tsx
+msgid "Demanda y cobertura de la semana"
+msgstr "This week's demand and coverage"
+
+#: src/features/requisitions/components/RequisitionTable.tsx
+msgid "Departamento"
+msgstr "Department"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Departamento del hotel"
+msgstr "Hotel department"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Descansa"
+msgstr "Day off"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Descansa hoy"
+msgstr "Day off today"
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Detalle de Requisición"
+msgstr "Requisition Details"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "Día"
+msgstr "Day"
+
+#: src/shared/constants/workerStatus.ts
+msgid "Día 1-2"
+msgstr "Day 1-2"
+
+#: src/shared/constants/workerStatus.ts
+msgid "Día 3+"
+msgstr "Day 3+"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "Día de la marca"
+msgstr "Day of the punch"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Día revisado"
+msgstr "Day reviewed"
+
+#: src/features/timesheet/components/TimesheetViewControls.tsx
+msgid "Días"
+msgstr "Days"
+
+#: src/features/timesheet/pages/TimesheetPage.tsx
+msgid "Días de una misma requisición"
+msgstr "Days of the same requisition"
+
+#: src/features/personnel/components/WorkerPerformanceRadar.tsx
+msgid "Días sin anomalía"
+msgstr "Days without anomalies"
+
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+msgid "Diferencia"
+msgstr "Difference"
+
+#: src/shared/constants/workerStatus.ts
+msgid "Disp. voluntario"
+msgstr "Voluntary avail."
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Disponibilidad"
+msgstr "Availability"
+
+#: src/features/auth/components/LoginCollage.tsx
+#: src/shared/constants/workerStatus.ts
+msgid "Disponible"
+msgstr "Available"
+
+#: src/features/dashboard/components/RecruitmentDashboard.tsx
+msgid "Disponibles"
+msgstr "Available"
+
+#: src/features/worker/components/TaxDocumentUploader.tsx
+msgid "Documento recibido. Si te equivocaste de archivo, súbelo de nuevo y reemplaza el anterior."
+msgstr "Document received. If you picked the wrong file, upload it again to replace the previous one."
+
+#: src/layouts/Sidebar.tsx
+msgid "Documentos T&C"
+msgstr "T&C Documents"
+
+#: src/features/timesheet/components/TimesheetMonthView.tsx
+msgid "Dom"
+msgstr "Sun"
+
+#: src/features/worker/pages/ProfilePage.tsx
+msgid "Domicilio"
+msgstr "Address"
+
+#: src/features/audits/pages/AuditsPage.tsx
+msgid "Dos auditorías, un mismo registro"
+msgstr "Two audits, one record"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Edad"
+msgstr "Age"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "El acceso no está configurado en este ambiente. Avisa al Administrador."
+msgstr "Sign-in isn't set up in this environment. Let the Administrator know."
+
+#: src/features/dashboard/components/PipelineFlowCard.tsx
+msgid "El camino principal del ciclo; los desvíos abajo"
+msgstr "The cycle's main path; detours below"
+
+#: src/features/timesheet/api/timesheetApi.ts
+msgid "El colaborador no tiene asignación en esta requisición"
+msgstr "The collaborator has no assignment on this requisition"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "El colaborador ya no tiene asignación en esta requisición."
+msgstr "The collaborator no longer has an assignment on this requisition."
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "El color de arriba dice en qué punto estás: desde el alta hasta asignado. Lo mueve Oranje; tú solo enciendes tu disponibilidad."
+msgstr "The color above says where you are: from sign-up to assigned. Oranje moves it; you only turn on your availability."
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "El correo o la contraseña no coinciden. Revísalos e inténtalo de nuevo."
+msgstr "The email or password doesn't match. Check them and try again."
+
+#: src/features/personnel/components/WorkerPerformanceRadar.tsx
+msgid "El desempeño se calcula con turnos y marcas reales: cuando acumule días trabajados, aquí aparece su radar."
+msgstr "Performance is calculated from real shifts and punches: once they build up worked days, their radar shows up here."
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "El día completo, marca por marca"
+msgstr "The whole day, punch by punch"
+
+#. placeholder {0}: IS_DEV_UI && <code className="text-xs text-ink-4"> · has_anomaly = true</code>
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "El día tiene una anomalía sin resolver{0}: revisa las marcas y explica la resolución en la nota."
+msgstr "This day has an unresolved anomaly{0}: check the punches and explain the resolution in the note."
+
+#: src/features/dashboard/components/PipelineFlowCard.tsx
+msgid "El flujo del semáforo"
+msgstr "The status light flow"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "El folio se asigna al guardar y la urgencia corre desde que un Manager la autoriza — no la dejes en borrador."
+msgstr "The number is assigned on save and urgency runs from the moment a Manager authorizes it — don't leave it as a draft."
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "El folio se asigna automáticamente al guardar"
+msgstr "The number is assigned automatically on save"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "El hotel"
+msgstr "The hotel"
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "El hotel imprime el código en el acceso; la app lo escanea junto con la ubicación."
+msgstr "The hotel prints the code at the entrance; the app scans it along with the location."
+
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "El hotel no tiene QR generado todavía: regenéralo desde su ficha."
+msgstr "This hotel doesn't have a QR yet: regenerate it from its profile."
+
+#: src/features/worker/lib/noShiftMessage.ts
+msgid "El hotel te mandó a descansar. Cuando te reactive, tus turnos vuelven a aparecer aquí."
+msgstr "The hotel put you on rest. When it reactivates you, your shifts show up here again."
+
+#. placeholder {0}: IS_DEV_UI && ( <code className="text-ink-4"> · pendiente 13 del ADR (duración del turno)</code> )
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+msgid "El Indicador de Cumplimiento del Timesheet lo calcula el sistema comparando el Contrato con el Timesheet, sin intervención humana. Las horas contractuales por colaborador <0>todavía no están disponibles</0>: hasta que lo estén, esas columnas muestran una raya en vez de un dato inventado{0}. Un Colaborador en Gris (accidente) tampoco se evalúa: queda fuera de la medición semanal."
+msgstr "The system calculates the Timesheet Compliance Indicator by comparing the Contract with the Timesheet, with no human input. Contract hours per collaborator <0>aren't available yet</0>: until they are, those columns show a dash instead of a made-up number{0}. A Collaborator in Gray (work accident) isn't measured either: they're left out of the weekly measurement."
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "El Inspector se asigna solo por la zona del hotel"
+msgstr "The Inspector is assigned automatically by the hotel's zone"
+
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+msgid "El Manager General ve todos los departamentos"
+msgstr "The General Manager sees every department"
+
+#: src/shared/components/ModulePlaceholder.tsx
+msgid "El módulo «{title}» ya está en el menú, pero todavía no tiene diseño ni datos que mostrar. Se construye aquí en cuanto llegue la maqueta."
+msgstr "The \"{title}\" module is already in the menu, but it has no design or data to show yet. It gets built here as soon as the mockup arrives."
+
+#: src/features/personnel/components/StandByDialog.tsx
+msgid "El motivo queda en su historia"
+msgstr "The reason stays in their history"
+
+#: src/features/timesheet/pages/TimesheetPage.tsx
+msgid "El pago en bloque aún no está disponible"
+msgstr "Bulk payment isn't available yet"
+
+#: src/features/timesheet/pages/TimesheetPage.tsx
+msgid "El pago lo hace Contabilidad cuando la semana está aprobada"
+msgstr "Accounting pays once the week is approved"
+
+#. placeholder {0}: formatDate(deadline.dueAt)
+#. placeholder {1}: deadline.day
+#: src/features/worker/components/TaxDeadlineBanner.tsx
+msgid "El plazo venció el {0} (vas en el día {1}). Mañana se suspende tu acceso, y sin tu SSN o ITIN no se te puede pagar."
+msgstr "The deadline was {0} (you're on day {1}). Tomorrow your access is suspended, and without your SSN or ITIN you can't be paid."
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "El QR anterior deja de servir al instante: hay que cambiar la hoja del acceso"
+msgstr "The old QR stops working instantly: the sheet at the entrance has to be replaced"
+
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "El QR de otro hotel no te corresponde."
+msgstr "This QR belongs to another hotel."
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "El QR lo imprime y regenera el BD, el BDC o el personal del hotel."
+msgstr "The QR is printed and regenerated by the BD, the BDC or the hotel's staff."
+
+#. placeholder {0}: IS_DEV_UI ? ' (D-27)' : ''
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "El Stand-by (Rosa) lo compartes con el Manager de Área. Un colaborador en Gris (accidente) está protegido: no se manda a Stand-by, no se veta y sus faltas no cuentan{0}."
+msgstr "You share Stand-by (Pink) with the Area Manager. A collaborator in Gray (work accident) is protected: they can't be sent to Stand-by or blacklisted, and their absences don't count{0}."
+
+#: src/features/personnel/components/StandByDialog.tsx
+msgid "El Stand-by manda al colaborador a Rosa: sigue siendo tuyo, pero no recibe turnos nuevos hasta reactivarlo."
+msgstr "Stand-by sends the collaborator to Pink: they're still yours, but they get no new shifts until you reactivate them."
+
+#: src/features/timesheet/components/TimesheetHoursView.tsx
+msgid "El Supervisor revisa; la aprobación de horas es del Manager de Área o del Manager General."
+msgstr "The Supervisor reviews; approving hours is up to the Area Manager or the General Manager."
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "El Supervisor ya la envió; ya no se puede editar. Falta que un Manager la apruebe."
+msgstr "The Supervisor already sent it; it can't be edited anymore. It's waiting for a Manager to approve it."
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "El Supervisor, el Manager de Área o el Manager General las abren desde su zona. Aquí ves las que llegan, su urgencia y cómo va la cobertura."
+msgstr "The Supervisor, the Area Manager or the General Manager open them from their side. Here you see the ones coming in, their urgency and how coverage is going."
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "El teléfono de emergencia necesita al menos 7 dígitos (sin la lada)"
+msgstr "The emergency phone needs at least 7 digits (no area code)"
+
+#: src/features/worker/components/CameraCapture.tsx
+msgid "Elegir una foto"
+msgstr "Choose a photo"
+
+#: src/features/audits/components/AuditWorkerList.tsx
+msgid "Elige a quién auditar. El tiempo sin auditar te dice por dónde empezar."
+msgstr "Choose who to audit. Time since the last audit tells you where to start."
+
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "Elige a quién se audita antes de guardar."
+msgstr "Choose who's being audited before saving."
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Elige el departamento"
+msgstr "Choose the department"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Elige el hotel"
+msgstr "Choose the hotel"
+
+#: src/features/personnel/components/StandByDialog.tsx
+msgid "Elige el motivo…"
+msgstr "Choose the reason…"
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Elige el parentesco"
+msgstr "Choose the relationship"
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Elige el tipo de sangre"
+msgstr "Choose the blood type"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Elige la modalidad"
+msgstr "Choose the hiring modality"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Elige la posición"
+msgstr "Choose the position"
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Elige tu tipo…"
+msgstr "Choose your type…"
+
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "Elige tu transporte para poder enviar"
+msgstr "Choose your transportation to send"
+
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "Elige tu transporte…"
+msgstr "Choose your transportation…"
+
+#: src/features/timesheet/components/TimesheetHoursView.tsx
+msgid "Elige un bloque para ver a sus colaboradores y revisar sus días."
+msgstr "Choose a block to see its collaborators and review their days."
+
+#: src/features/schedule/pages/SchedulePage.tsx
+msgid "Elige un turno para ver a sus colaboradores."
+msgstr "Choose a shift to see its collaborators."
+
+#: src/shared/constants/requisitionStatus.ts
+msgid "Eliminada"
+msgstr "Deleted"
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Eliminando…"
+msgstr "Deleting…"
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Eliminar requisición"
+msgstr "Delete requisition"
+
+#: src/features/worker/pages/ProfilePage.tsx
+msgid "Emergencia"
+msgstr "Emergency"
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Empezar"
+msgstr "Get started"
+
+#. placeholder {0}: metrics.openHotels
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "en {0} hoteles"
+msgstr "across {0} hotels"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "En accidente"
+msgstr "On work accident"
+
+#: src/shared/constants/requisitionStatus.ts
+msgid "En elaboración"
+msgstr "In preparation"
+
+#: src/features/dashboard/components/HotelDashboard.tsx
+msgid "En elaboración (Verde manzana)"
+msgstr "In preparation (Apple green)"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "En este hotel Entrada y Salida se registran escaneando el QR del acceso."
+msgstr "At this hotel, Clock in and Clock out are recorded by scanning the QR at the entrance."
+
+#: src/features/personnel/components/WorkerPerformanceRadar.tsx
+msgid "En la geocerca"
+msgstr "Inside the geofence"
+
+#: src/features/dashboard/components/RecruitmentDashboard.tsx
+#: src/shared/constants/requisitionStatus.ts
+msgid "En proceso"
+msgstr "In progress"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "En Stand-by"
+msgstr "On Stand-by"
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Enciende Amarillo cuando quieras que te consideren para más turnos."
+msgstr "Turn on Yellow when you want to be considered for more shifts."
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+#: src/features/worker/api/punchApi.ts
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Entrada"
+msgstr "Clock in"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Entrada – Salida"
+msgstr "Clock in – Clock out"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Entrada de hoy"
+msgstr "Today's clock-in"
+
+#: src/features/auth/components/LoginCollage.tsx
+msgid "Entrada registrada"
+msgstr "Clock-in recorded"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Entrada y Salida llevan tu foto"
+msgstr "Clock in and Clock out take your photo"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Entrada y Salida necesitan tu foto: tómala y vuelve a intentar."
+msgstr "Clock in and Clock out need your photo: take it and try again."
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Entrada, lunch y salida con su geocerca y sus dos relojes. Un día sin salida no puede irse a revisión."
+msgstr "Clock in, lunch and clock out, each with its geofence and its two clocks. A day without a clock-out can't go to review."
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Entrada, salida al lunch, regreso y salida. El botón siempre sabe cuál toca: solo tócalo cuando llegue el momento."
+msgstr "Clock in, out to lunch, back from lunch and clock out. The button always knows which one is next: just tap it when the time comes."
+
+#: src/shared/constants/timesheetStatus.ts
+msgid "Enviada a aprobación"
+msgstr "Sent for approval"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "Enviando…"
+msgstr "Sending…"
+
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "Enviar"
+msgstr "Send"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Enviar a revisión"
+msgstr "Send for review"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Enviar enlace"
+msgstr "Send link"
+
+#: src/features/personnel/components/StandByDialog.tsx
+msgid "Es obligatorio decir por qué: el motivo acompaña la transición en el historial del colaborador."
+msgstr "You have to say why: the reason goes with the transition in the collaborator's history."
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Esa foto no se pudo procesar: toma otra desde la cámara."
+msgstr "That photo couldn't be processed: take another one with the camera."
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Esa marca ya quedó registrada hoy."
+msgstr "That punch was already recorded today."
+
+#: src/features/worker/components/QrScanner.tsx
+msgid "Escanea el QR del acceso"
+msgstr "Scan the QR at the entrance"
+
+#: src/features/personnel/components/ContactQr.tsx
+msgid "Escanéalo con tu celular para llamarle o guardar su contacto"
+msgstr "Scan it with your phone to call them or save their contact"
+
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "Escanéalo desde la app Oranje al llegar y al salir. La app también toma tu ubicación."
+msgstr "Scan it from the Oranje app when you arrive and when you leave. The app also records your location."
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "escaneando el QR del acceso"
+msgstr "by scanning the QR at the entrance"
+
+#: src/layouts/GlobalSearch.tsx
+msgid "Escribe al menos 2 letras. Navega con ↑ ↓ y abre con Enter."
+msgstr "Type at least 2 letters. Move with ↑ ↓ and open with Enter."
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Escribe el motivo (al menos 4 letras) para poder eliminarla"
+msgstr "Write the reason (at least 4 characters) to delete it"
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Escribe el motivo: queda en el journal."
+msgstr "Write the reason: it stays in the log."
+
+#: src/features/worker/components/TaxDocumentUploader.tsx
+msgid "Ese archivo no se pudo leer: sube una foto clara o un PDF."
+msgstr "That file couldn't be read: upload a clear photo or a PDF."
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Ese código no es el QR vigente del hotel: busca la hoja actual, o pídele al Supervisor un ponche manual."
+msgstr "That code isn't the hotel's current QR: find the current sheet, or ask the Supervisor for a manual punch."
+
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "Ese colaborador ya no tiene asignación activa en este hotel."
+msgstr "That collaborator no longer has an active assignment at this hotel."
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Ese turno no es tuyo. Recarga la pantalla e inténtalo de nuevo."
+msgstr "That shift isn't yours. Reload the screen and try again."
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Esperando aprobación"
+msgstr "Awaiting approval"
+
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "Esta auditoría no es de tu hotel."
+msgstr "This audit isn't from your hotel."
+
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
+msgid "Esta requisición es de otro departamento: la autoriza su Manager de Área o el Manager General."
+msgstr "This requisition belongs to another department: its Area Manager or the General Manager authorizes it."
+
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
+msgid "Esta requisición no es de tu hotel."
+msgstr "This requisition isn't from your hotel."
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Esta requisición tiene posiciones de otro departamento: la elimina el Manager General."
+msgstr "This requisition has positions from another department: only the General Manager can delete it."
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Esta requisición ya estaba eliminada."
+msgstr "This requisition was already deleted."
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Esta semana es de otro departamento: no te toca aprobarla."
+msgstr "This week belongs to another department: it isn't yours to approve."
+
+#: src/features/timesheet/components/TimesheetHoursView.tsx
+msgid "Esta semana no hay jornadas con horas. La vista Días también enseña ausencias y pendientes."
+msgstr "There are no workdays with hours this week. The Days view also shows absences and pending days."
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Esta semana ya se envió a aprobación: no admite más cambios."
+msgstr "This week was already sent for approval: no more changes allowed."
+
+#: src/features/requisitions/components/RequisitionTable.tsx
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+#: src/features/timesheet/components/TimesheetToolbar.tsx
+msgid "Estado"
+msgstr "Status"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Estado de la semana."
+msgstr "Week status."
+
+#. placeholder {0}: WORKER_STATUS_LABEL[status]
+#: src/features/worker/pages/HomePage.tsx
+msgid "Estado: {0}"
+msgstr "Status: {0}"
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "Estado: {statusLabel}"
+msgstr "Status: {statusLabel}"
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Estás <0>disponible por voluntad propia</0>: Reclutamiento puede asignarte en cuanto haya una requisición."
+msgstr "You're <0>available by choice</0>: Recruitment can assign you as soon as there's a requisition."
+
+#: src/features/worker/lib/noShiftMessage.ts
+msgid "Estás en incapacidad"
+msgstr "You're on medical leave"
+
+#: src/features/worker/lib/noShiftMessage.ts
+msgid "Estás en Stand-by"
+msgstr "You're on Stand-by"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Estás fuera del hotel: la marca no se guarda. Pídele al Supervisor un ponche manual."
+msgstr "You're outside the hotel: the punch isn't saved. Ask the Supervisor for a manual punch."
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Este borrador no es tuyo: lo elimina quien lo creó o el Manager General."
+msgstr "This draft isn't yours: whoever created it or the General Manager can delete it."
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Este departamento todavía no tiene posiciones en el catálogo — por eso el selector de abajo no muestra nada. Pídele al Administrador que las agregue en Catálogos antes de pedir personal aquí."
+msgstr "This department has no positions in the catalog yet — that's why the selector below is empty. Ask the Administrator to add them in Catalogs before requesting staff here."
+
+#: src/features/timesheet/components/TimesheetHoursView.tsx
+msgid "Este día no tiene jornadas con horas. El punto naranja marca los días que sí."
+msgstr "This day has no workdays with hours. The orange dot marks the days that do."
+
+#: src/features/audits/components/AuditWorkerList.tsx
+msgid "Este hotel no tiene colaboradores asignados"
+msgstr "This hotel has no collaborators assigned"
+
+#: src/features/dashboard/components/HotelDashboard.tsx
+msgid "Este hotel no tiene requisiciones todavía."
+msgstr "This hotel has no requisitions yet."
+
+#: src/features/schedule/components/ScheduleMiniCalendar.tsx
+msgid "Este hotel no tiene schedule ese día"
+msgstr "This hotel has no schedule that day"
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "Este hotel poncha con selfie: cambia el método antes."
+msgstr "This hotel clocks in with a selfie: change the punch method first."
+
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "Este hotel poncha con selfie: no tiene QR que imprimir."
+msgstr "This hotel clocks in with a selfie: there's no QR to print."
+
+#: src/features/schedule/pages/SchedulePage.tsx
+msgid "Este hotel todavía no tiene Schedule. En cuanto se programe una semana, aparece aquí."
+msgstr "This hotel doesn't have a Schedule yet. As soon as a week is programmed, it shows up here."
+
+#: src/features/timesheet/components/TimesheetMonthView.tsx
+msgid "Este mes no tiene jornadas registradas. Navega con ‹ › a una semana con datos."
+msgstr "This month has no recorded workdays. Use ‹ › to move to a week with data."
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Este navegador no da la ubicación: usa el navegador del teléfono."
+msgstr "This browser doesn't share location: use your phone's browser."
+
+#: src/features/worker/components/CameraCapture.tsx
+#: src/features/worker/components/QrScanner.tsx
+msgid "Este navegador no puede abrir la cámara."
+msgstr "This browser can't open the camera."
+
+#: src/features/worker/pages/ProfilePage.tsx
+msgid "Experiencia"
+msgstr "Experience"
+
+#: src/shared/constants/contractStatus.ts
+msgid "Expirado"
+msgstr "Expired"
+
+#: src/features/requisitions/types/requisitionForm.schema.ts
+msgid "Falta el departamento"
+msgstr "The department is missing"
+
+#: src/features/requisitions/types/requisitionForm.schema.ts
+msgid "Falta el departamento del hotel"
+msgstr "The hotel department is missing"
+
+#: src/features/requisitions/types/requisitionForm.schema.ts
+msgid "Falta el hotel"
+msgstr "The hotel is missing"
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Falta el nombre del contacto de emergencia"
+msgstr "The emergency contact's name is missing"
+
+#: src/features/requisitions/types/requisitionForm.schema.ts
+msgid "Falta la fecha de inicio"
+msgstr "The start date is missing"
+
+#: src/features/requisitions/types/requisitionForm.schema.ts
+msgid "Falta la hora"
+msgstr "The time is missing"
+
+#: src/features/requisitions/types/requisitionForm.schema.ts
+msgid "Falta la modalidad"
+msgstr "The hiring modality is missing"
+
+#: src/features/requisitions/types/requisitionForm.schema.ts
+msgid "Falta la posición"
+msgstr "The position is missing"
+
+#: src/shared/constants/timesheetStatus.ts
+msgid "Faltan checadas"
+msgstr "Missing punches"
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Faltan datos tuyos"
+msgstr "Some of your info is missing"
+
+#: src/shared/constants/workerEnums.ts
+msgid "Femenino"
+msgstr "Female"
+
+#: src/shared/constants/workerStatus.ts
+msgid "Fijo"
+msgstr "Fixed"
+
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "Finalizar auditoría"
+msgstr "Finish audit"
+
+#: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
+msgid "Folio o hotel, p. ej. Puerto Real…"
+msgstr "Number or hotel, e.g. Puerto Real…"
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "Folio o hotel, p. ej. Xcaret…"
+msgstr "Number or hotel, e.g. Xcaret…"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Foto del ponche"
+msgstr "Punch photo"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Fuera de la geocerca"
+msgstr "Outside the geofence"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Fuera del hotel"
+msgstr "Outside the hotel"
+
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "Generando el código…"
+msgstr "Generating the code…"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Género"
+msgstr "Gender"
+
+#: src/shared/constants/onboardingStatus.ts
+msgid "Gris"
+msgstr "Gray"
+
+#: src/features/dashboard/components/ActivityCards.tsx
+msgid "Gris → Naranja"
+msgstr "Gray → Orange"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Guardando tu ubicación"
+msgstr "Saving your location"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Guardando tu ubicación y tu foto"
+msgstr "Saving your location and your photo"
+
+#: src/features/audits/components/AuditFormDialog.tsx
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Guardando…"
+msgstr "Saving…"
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Guardar"
+msgstr "Save"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Guardar cambios"
+msgstr "Save changes"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Guardar requisición"
+msgstr "Save requisition"
+
+#: src/features/dashboard/components/ActivityCards.tsx
+msgid "Habilitados para requisiciones"
+msgstr "Enabled for requisitions"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "hace {days} días"
+msgstr "{days} days ago"
+
+#: src/features/timesheet/components/TimesheetDayCell.tsx
+msgid "Hay entrada sin salida (o al revés). Así la semana no puede irse a aprobación."
+msgstr "There's a clock-in without a clock-out (or the other way around). The week can't go for approval like this."
+
+#: src/shared/constants/workerEnums.ts
+msgid "Hermano/a"
+msgstr "Sibling"
+
+#: src/shared/constants/workerEnums.ts
+msgid "Hijo/a"
+msgstr "Child"
+
+#: src/features/requisitions/components/StatusHistoryCard.tsx
+msgid "Historia de estado"
+msgstr "Status history"
+
+#: src/features/audits/pages/AuditsPage.tsx
+msgid "Historial"
+msgstr "History"
+
+#: src/features/dashboard/api/dashboardApi.ts
+msgid "histórico"
+msgstr "all time"
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Hola, {firstName}"
+msgstr "Hi, {firstName}"
+
+#: src/features/requisitions/components/AuthorizationPositionsTable.tsx
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "Hora"
+msgstr "Time"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Hora {ordinal}"
+msgstr "Time {ordinal}"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "Hora de la marca"
+msgstr "Time of the punch"
+
+#: src/features/timesheet/components/TimesheetViewControls.tsx
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Horas"
+msgstr "Hours"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Horas netas"
+msgstr "Net hours"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+#: src/features/requisitions/components/RequisitionTable.tsx
+#: src/features/timesheet/components/TimesheetToolbar.tsx
+msgid "Hotel"
+msgstr "Hotel"
+
+#: src/layouts/GlobalSearch.tsx
+msgid "Hotel, folio de requisición o colaborador, p. ej. Xcaret…"
+msgstr "Hotel, requisition number or collaborator, e.g. Xcaret…"
+
+#: src/layouts/GlobalSearch.tsx
+msgid "Hoteles y prospectos"
+msgstr "Hotels and prospects"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "hoy"
+msgstr "today"
+
+#: src/features/timesheet/components/TimesheetViewControls.tsx
+msgid "Hoy"
+msgstr "Today"
+
+#: src/features/worker/lib/noShiftMessage.ts
+msgid "Hoy descansas"
+msgstr "Today is your day off"
+
+#: src/features/worker/lib/noShiftMessage.ts
+msgid "Hoy no tienes turno"
+msgstr "No shift today"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Hoy no tienes turno: no hay nada que ponchar."
+msgstr "You have no shift today: there's nothing to clock."
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Hoy no tienes turno. Cuando te asignen, aquí aparece el hotel y el horario."
+msgstr "No shift today. When you're assigned, the hotel and schedule show up here."
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Hoy tienes más de un turno: pídele al Supervisor que registre la marca."
+msgstr "You have more than one shift today: ask the Supervisor to record the punch."
+
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "Imprime esta hoja o guárdala como PDF y pégala en el acceso."
+msgstr "Print this sheet or save it as a PDF and post it at the entrance."
+
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "Imprimir"
+msgstr "Print"
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "Imprimir QR"
+msgstr "Print QR"
+
+#: src/features/timesheet/components/TimesheetDayCell.tsx
+msgid "Incompleto"
+msgstr "Incomplete"
+
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+msgid "Indicador"
+msgstr "Indicator"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+#: src/features/requisitions/components/AuthorizationPositionsTable.tsx
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+#: src/features/worker/pages/ProfilePage.tsx
+msgid "Inglés"
+msgstr "English"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Inglés {ordinal}"
+msgstr "English {ordinal}"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Inicia sesión"
+msgstr "Sign in"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Iniciando sesión…"
+msgstr "Signing in…"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Iniciar sesión"
+msgstr "Sign in"
+
+#: src/features/requisitions/components/AuthorizationPositionsTable.tsx
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+#: src/features/requisitions/components/PositionsTable.tsx
+#: src/features/worker/components/MobileShell.tsx
+msgid "Inicio"
+msgstr "Home"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Inicio {ordinal}"
+msgstr "Start {ordinal}"
+
+#: src/features/requisitions/components/RequisitionTable.tsx
+msgid "Inspector"
+msgstr "Inspector"
+
+#: src/features/requisitions/components/RequisitionSummaryStrip.tsx
+msgid "Inspector de zona"
+msgstr "Zone Inspector"
+
+#: src/features/audits/components/EnvironmentAuditDialog.tsx
+msgid "Insumos, relaciones, carga laboral y entorno de {hotelName}."
+msgstr "Supplies, relationships, workload and surroundings at {hotelName}."
+
+#: src/shared/constants/contactAttempt.ts
+msgid "Interesado"
+msgstr "Interested"
+
+#: src/shared/constants/catalogs.ts
+msgid "Intermedio"
+msgstr "Intermediate"
+
+#: src/features/audits/pages/AuditsPage.tsx
+msgid "Ir a Auditorías"
+msgstr "Go to Audits"
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Ir a Autorización"
+msgstr "Go to Authorization"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Ir a autorizar"
+msgstr "Go authorize"
+
+#: src/features/timesheet/components/TimesheetViewControls.tsx
+msgid "Ir a la semana actual"
+msgstr "Go to the current week"
+
+#: src/features/schedule/components/ScheduleMiniCalendar.tsx
+msgid "Ir a la semana de este día"
+msgstr "Go to this day's week"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Ir a ponchar"
+msgstr "Go clock in"
+
+#: src/features/schedule/components/ScheduleMiniCalendar.tsx
+msgid "J"
+msgstr "T"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Jornada completa"
+msgstr "Full day done"
+
+#: src/features/personnel/components/WorkerPerformanceRadar.tsx
+msgid "Jornadas completas"
+msgstr "Complete workdays"
+
+#: src/features/timesheet/components/TimesheetMonthView.tsx
+msgid "Jue"
+msgstr "Thu"
+
+#: src/features/schedule/components/ScheduleMiniCalendar.tsx
+msgid "L"
+msgstr "M"
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "La app toma la foto en el momento de ponchar. Para cambiarlo, edita el hotel."
+msgstr "The app takes the photo at the moment of punching. To change this, edit the hotel."
+
+#: src/features/timesheet/pages/TimesheetPage.tsx
+msgid "La aprobación es del Manager"
+msgstr "Approval is up to the Manager"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "La asignación se canceló: las horas registradas se conservan, pero ya no se capturan marcas"
+msgstr "The assignment was cancelled: recorded hours are kept, but no more punches can be recorded"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "La asignación terminó el {endsOn}: las horas se aprueban y pagan, pero ya no se capturan marcas"
+msgstr "The assignment ended on {endsOn}: hours get approved and paid, but no more punches can be recorded"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "La asignación terminó: las horas se aprueban y pagan, pero ya no se capturan marcas"
+msgstr "The assignment ended: hours get approved and paid, but no more punches can be recorded"
+
+#: src/features/requisitions/types/requisitionForm.schema.ts
+msgid "La fecha debe ser un día real (AAAA-MM-DD)"
+msgstr "The date must be a real day (YYYY-MM-DD)"
+
+#: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
+msgid "la firma del Manager"
+msgstr "the Manager's signature"
+
+#: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "La firma es del Manager"
+msgstr "The signature is the Manager's"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "La geocerca rechazó la marca, se acabó la pila o no hubo señal: para eso existe la marca manual."
+msgstr "The geofence rejected the punch, the battery died or there was no signal: that's what the manual punch is for."
+
+#: src/features/requisitions/types/requisitionForm.schema.ts
+msgid "La hora debe ser HH:MM (00:00–23:59)"
+msgstr "The time must be HH:MM (00:00–23:59)"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "La hora que pongas manda"
+msgstr "The time you enter is what counts"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "La marca carga tu motivo y se distingue de las normales en la revisión del día — nada se disfraza."
+msgstr "The punch carries your reason and stands apart from regular ones in the day's review — nothing is disguised."
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "La marca no quedó registrada"
+msgstr "The punch wasn't recorded"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "La operación de tu hotel, en un solo lugar."
+msgstr "Your hotel's operation, all in one place."
+
+#: src/features/timesheet/components/TimesheetDayCell.tsx
+msgid "La persona marcó su entrada y su salida. Revisar el día es aparte: lo dice el chip."
+msgstr "They clocked in and clocked out. Reviewing the day is separate: the chip says so."
+
+#: src/features/schedule/pages/SchedulePage.tsx
+msgid "La posición y la requisición del turno se enseñan en la fila de Demanda: el contrato aún no liga el turno con una posición."
+msgstr "The shift's position and requisition are shown in the Demand row: the contract doesn't link the shift to a position yet."
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "La requisición es el pedido formal de colaboradores: qué posiciones necesitas y cuántas personas en cada una."
+msgstr "A requisition is the formal request for collaborators: which positions you need and how many people in each."
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "La requisición ya está en la Bolsa del Self-Pick: las Reclutadoras van cubriendo los slots y aquí verás la cobertura al día."
+msgstr "The requisition is already in the Self-Pick pool: Recruiters are filling the slots and you'll see up-to-date coverage here."
+
+#: src/features/personnel/components/WorkerPerformanceRadar.tsx
+msgid "La semana en cinco medidas"
+msgstr "The week in five measures"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "La semana ya se cerró: esta marca la captura el Supervisor."
+msgstr "The week is already closed: the Supervisor records this punch."
+
+#: src/features/audits/components/AuditHotelCard.tsx
+msgid "Las auditorías las hace el Supervisor del hotel; tú puedes ver el historial."
+msgstr "Audits are done by the hotel's Supervisor; you can view the history."
+
+#: src/features/audits/pages/AuditsPage.tsx
+msgid "Las auditorías las ve el equipo del hotel. Si crees que deberías tener acceso, pídeselo a tu Manager General."
+msgstr "Audits are visible to the hotel team. If you think you should have access, ask your General Manager."
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Las marcas del día"
+msgstr "The day's punches"
+
+#: src/features/dashboard/components/HotelDashboard.tsx
+msgid "Las más recientes, con su cobertura"
+msgstr "The most recent, with their coverage"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Las posiciones"
+msgstr "The positions"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Las requisiciones de otro departamento las crea su Manager de Área o el Manager General."
+msgstr "Requisitions for another department are created by its Area Manager or the General Manager."
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "Las requisiciones las crea el hotel"
+msgstr "Requisitions are created by the hotel"
+
+#: src/features/timesheet/pages/TimesheetPage.tsx
+msgid "Las semanas enviadas las aprueba el Manager de Área de su departamento o el Manager General. Hasta entonces las horas no se pagan ni se facturan."
+msgstr "Sent weeks are approved by the Area Manager of their department or by the General Manager. Until then, hours aren't paid or billed."
+
+#: src/features/requisitions/components/SlotList.tsx
+msgid "Libre"
+msgstr "Free"
+
+#: src/shared/components/SearchField.tsx
+msgid "Limpiar"
+msgstr "Clear"
+
+#: src/shared/components/SearchField.tsx
+msgid "Limpiar la búsqueda"
+msgstr "Clear the search"
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Listo: tu expediente quedó completo. La Reclutadora lo validará"
+msgstr "Done: your file is complete. The Recruiter will validate it"
+
+#: src/shared/constants/contactAttempt.ts
+msgid "Llamada"
+msgstr "Call"
+
+#: src/features/worker/pages/ProfilePage.tsx
+msgid "Lo que decide Oranje"
+msgstr "What Oranje decides"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Lo que no llegue aprobado al cierre semanal queda en espera: sin pago y sin factura hasta que alguien apruebe."
+msgstr "Whatever isn't approved by the weekly close stays on hold: no pay and no invoice until someone approves it."
+
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "Lo que viste y que vale la pena dejar por escrito…"
+msgstr "What you saw that's worth putting in writing…"
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Los avisos importan"
+msgstr "Notices matter"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Los colaboradores asignados a tus requisiciones, con su estado en el Semáforo. El Stand-by (Rosa) lo compartes con el Manager de Área."
+msgstr "The collaborators assigned to your requisitions, with their status light. You share Stand-by (Pink) with the Area Manager."
+
+#: src/features/timesheet/components/TimesheetMonthView.tsx
+msgid "Lun"
+msgstr "Mon"
+
+#. placeholder {0}: timeOf(marks.LUNCH_OUT)
+#. placeholder {1}: marks.LUNCH_IN ? timeOf(marks.LUNCH_IN) : '--:--'
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Lunch {0} – {1}"
+msgstr "Lunch {0} – {1}"
+
+#: src/features/schedule/components/ScheduleMiniCalendar.tsx
+msgid "M"
+msgstr "T"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "MA"
+msgstr "AM"
+
+#: src/shared/constants/workerEnums.ts
+msgid "Madre"
+msgstr "Mother"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Manager de Área (su departamento)"
+msgstr "Area Manager (their department)"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Manager General (cualquier departamento)"
+msgstr "General Manager (any department)"
+
+#: src/features/personnel/components/StandByDialog.tsx
+msgid "Mandando…"
+msgstr "Sending…"
+
+#: src/features/personnel/components/StandByDialog.tsx
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Mandar a Stand-by"
+msgstr "Send to Stand-by"
+
+#: src/features/personnel/components/StandByDialog.tsx
+msgid "Mandar a Stand-by a {workerName}"
+msgstr "Send {workerName} to Stand-by"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Mandar la semana a aprobación del Manager"
+msgstr "Send the week to the Manager for approval"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Manual · {manualReason}"
+msgstr "Manual · {manualReason}"
+
+#: src/features/timesheet/components/TimesheetMonthView.tsx
+msgid "Mar"
+msgstr "Tue"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Marca manual"
+msgstr "Manual punch"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "Marca manual registrada"
+msgstr "Manual punch recorded"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Marcar revisado"
+msgstr "Mark as reviewed"
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Marcarme disponible"
+msgstr "Mark me available"
+
+#: src/shared/constants/workerEnums.ts
+msgid "Más de 5 años"
+msgstr "More than 5 years"
+
+#: src/shared/constants/workerEnums.ts
+msgid "Masculino"
+msgstr "Male"
+
+#: src/features/requisitions/types/requisitionForm.schema.ts
+msgid "Máximo 999 personas por posición"
+msgstr "Up to 999 people per position"
+
+#: src/shared/constants/catalogs.ts
+msgid "Medio tiempo"
+msgstr "Part-time"
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "menos de 72 h para el inicio"
+msgstr "less than 72 h to start"
+
+#: src/features/timesheet/components/TimesheetViewControls.tsx
+msgid "Mes"
+msgstr "Month"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "MG"
+msgstr "GM"
+
+#: src/layouts/Sidebar.tsx
+msgid "Mi Equipo"
+msgstr "My Team"
+
+#: src/features/worker/components/MobileShell.tsx
+msgid "Mi Perfil"
+msgstr "My Profile"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+#: src/layouts/Sidebar.tsx
+msgid "Mi Personal"
+msgstr "My Staff"
+
+#: src/layouts/Sidebar.tsx
+msgid "Mi Territorio"
+msgstr "My Territory"
+
+#: src/features/timesheet/components/TimesheetMonthView.tsx
+msgid "Mié"
+msgstr "Wed"
+
+#: src/features/worker/lib/noShiftMessage.ts
+msgid "Mientras dure tu incapacidad no hay turnos que ponchar. Tu Inspector lleva el seguimiento."
+msgstr "While you're on medical leave there are no shifts to clock. Your Inspector is following up."
+
+#: src/features/worker/components/MobileShell.tsx
+msgid "Mis datos"
+msgstr "My info"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+#: src/features/requisitions/components/AuthorizationPositionsTable.tsx
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+#: src/features/requisitions/components/PositionsTable.tsx
+#: src/features/worker/pages/ProfilePage.tsx
+msgid "Modalidad"
+msgstr "Hiring modality"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Modalidad {ordinal}"
+msgstr "Hiring modality {ordinal}"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Mostrar contraseña"
+msgstr "Show password"
+
+#: src/layouts/Header.tsx
+msgid "Mostrar u ocultar el menú"
+msgstr "Show or hide the menu"
+
+#: src/features/personnel/components/StandByDialog.tsx
+msgid "Motivo"
+msgstr "Reason"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "Motivo (obligatorio)"
+msgstr "Reason (required)"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "Motivo de la marca manual"
+msgstr "Reason for the manual punch"
+
+#: src/features/personnel/components/StandByDialog.tsx
+msgid "Motivo del Stand-by"
+msgstr "Reason for Stand-by"
+
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "N/A"
+msgstr "N/A"
+
+#: src/features/requisitions/components/StatusHistoryCard.tsx
+msgid "nace en"
+msgstr "starts in"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Nace en Borrador: para que Reclutamiento la vea, un Manager debe autorizarla — la urgencia corre desde ese momento."
+msgstr "It starts as a Draft: for Recruitment to see it, a Manager has to authorize it — urgency runs from that moment."
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Nace por autorizar"
+msgstr "Starts pending authorization"
+
+#. placeholder {0}: term.trim()
+#: src/layouts/GlobalSearch.tsx
+msgid "Nada coincide con «{0}». Prueba con el nombre del hotel, el folio de la requisición o el nombre del colaborador."
+msgstr "Nothing matches \"{0}\". Try the hotel name, the requisition number or the collaborator's name."
+
+#: src/features/timesheet/components/TimesheetGrid.tsx
+msgid "Nadie coincide con esos filtros esta semana. Cambia la requisición, el estado o el hotel."
+msgstr "No one matches those filters this week. Change the requisition, the status or the hotel."
+
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+msgid "Nadie coincide con esos filtros. Cambia el nombre, la requisición, el estado o el hotel."
+msgstr "No one matches those filters. Change the name, the requisition, the status or the hotel."
+
+#. placeholder {0}: search.trim()
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Nadie en tu plantel se llama «{0}». Cambia la búsqueda o límpiala para ver a todos."
+msgstr "No one on your staff is named \"{0}\". Change the search or clear it to see everyone."
+
+#: src/features/schedule/components/ScheduleTimelineGrid.tsx
+msgid "Nadie programado todavía: los turnos aparecen conforme se cubren los slots."
+msgstr "No one scheduled yet: shifts show up as slots get covered."
+
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+msgid "Nadie tiene Timesheet esta semana. Las filas aparecen cuando los Supervisores registran horas."
+msgstr "No one has a Timesheet this week. Rows show up once Supervisors record hours."
+
+#: src/shared/constants/onboardingStatus.ts
+msgid "Naranja"
+msgstr "Orange"
+
+#: src/features/dashboard/components/ActivityCards.tsx
+msgid "Naranja / ciclos cerrados"
+msgstr "Orange / closed cycles"
+
+#: src/shared/constants/onboardingStatus.ts
+msgid "Negro"
+msgstr "Black"
+
+#: src/features/dashboard/components/StaleProspectList.tsx
+msgid "Ningún prospecto lleva más de 7 días sin un intento de contacto."
+msgstr "No prospect has gone more than 7 days without a contact attempt."
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Ninguna"
+msgstr "None"
+
+#: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
+msgid "Ninguna pendiente coincide con «{searchTerm}». Cambia la búsqueda o límpiala para ver toda la cola."
+msgstr "No pending requisition matches \"{searchTerm}\". Change the search or clear it to see the whole queue."
+
+#: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
+msgid "Ninguna pendiente coincide con la búsqueda: cambia el folio o el hotel, o límpiala."
+msgstr "No pending requisition matches your search: change the number or the hotel, or clear it."
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "Ninguna requisición coincide con {activeFiltersText}"
+msgstr "No requisition matches {activeFiltersText}"
+
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "No"
+msgstr "Doesn't"
+
+#: src/shared/constants/contactAttempt.ts
+msgid "No contestó"
+msgstr "No answer"
+
+#: src/features/schedule/pages/SchedulePage.tsx
+msgid "No hay requisiciones autorizadas para esta semana. Cuando un Manager autorice una, sus posiciones aparecerán aquí."
+msgstr "There are no authorized requisitions for this week. When a Manager authorizes one, its positions will show up here."
+
+#: src/features/dashboard/components/RecruitmentDashboard.tsx
+msgid "No hay requisiciones autorizadas por ahora."
+msgstr "No authorized requisitions right now."
+
+#: src/features/requisitions/components/AuthorizationQueueList.tsx
+msgid "No hay requisiciones esperando tu firma."
+msgstr "No requisitions are waiting for your signature."
+
+#: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
+msgid "No hay requisiciones por autorizar. Cuando un Supervisor cree una, aparecerá aquí."
+msgstr "No requisitions to authorize. When a Supervisor creates one, it'll show up here."
+
+#: src/features/timesheet/components/TimesheetViewControls.tsx
+#: src/features/timesheet/components/WeekSlider.tsx
+msgid "No hay semanas anteriores con datos"
+msgstr "No earlier weeks with data"
+
+#: src/features/timesheet/components/TimesheetViewControls.tsx
+msgid "No hay semanas más recientes con datos"
+msgstr "No later weeks with data"
+
+#: src/shared/constants/contactAttempt.ts
+msgid "No interesado"
+msgstr "Not interested"
+
+#: src/features/worker/pages/NotificationsPage.tsx
+msgid "No leído"
+msgstr "Unread"
+
+#: src/features/audits/pages/AuditsPage.tsx
+msgid "No mueve ningún semáforo. Audita cuando quieras antes del corte semanal — el sistema te avisa conforme se acerca."
+msgstr "It doesn't move any status light. Audit whenever you like before the weekly cutoff — the system reminds you as it gets closer."
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "No pudimos conectar con Oranje. Revisa tu conexión e inténtalo en un momento."
+msgstr "We couldn't reach Oranje. Check your connection and try again in a moment."
+
+#: src/shared/constants/workerStatus.ts
+msgid "No regresó"
+msgstr "Didn't return"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+#: src/shared/constants/catalogs.ts
+msgid "No requerido"
+msgstr "Not required"
+
+#: src/shared/constants/workerEnums.ts
+msgid "No sé"
+msgstr "Don't know"
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "No se encontró la requisición: puede que se haya eliminado o que el enlace sea viejo."
+msgstr "The requisition wasn't found: it may have been deleted or the link may be old."
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "No se guardó"
+msgstr "Not saved"
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "No se pudieron guardar tus datos. Inténtalo de nuevo."
+msgstr "Your info couldn't be saved. Try again."
+
+#: src/features/worker/components/CameraCapture.tsx
+#: src/features/worker/components/QrScanner.tsx
+msgid "No se pudo abrir la cámara. Cierra otras apps que la usen e inténtalo de nuevo."
+msgstr "The camera couldn't be opened. Close other apps using it and try again."
+
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
+msgid "No se pudo autorizar la requisición. Inténtalo de nuevo."
+msgstr "The requisition couldn't be authorized. Try again."
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "No se pudo cambiar la semana. Inténtalo de nuevo."
+msgstr "The week couldn't be changed. Try again."
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "No se pudo cambiar tu disponibilidad. Inténtalo de nuevo."
+msgstr "Your availability couldn't be changed. Try again."
+
+#: src/features/dashboard/components/HotelDashboard.tsx
+#: src/features/dashboard/components/RecruitmentDashboard.tsx
+#: src/features/dashboard/components/SalesDashboard.tsx
+msgid "No se pudo cargar el dashboard. Reintenta en unos segundos."
+msgstr "The dashboard couldn't be loaded. Try again in a few seconds."
+
+#: src/features/audits/components/AuditHistoryList.tsx
+msgid "No se pudo cargar el historial de auditorías. Inténtalo de nuevo."
+msgstr "The audit history couldn't be loaded. Try again."
+
+#: src/features/audits/components/AuditWorkerList.tsx
+msgid "No se pudo cargar el plantel del hotel. Inténtalo de nuevo."
+msgstr "The hotel's staff couldn't be loaded. Try again."
+
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "No se pudo cargar el QR. Inténtalo de nuevo."
+msgstr "The QR couldn't be loaded. Try again."
+
+#: src/features/schedule/pages/SchedulePage.tsx
+msgid "No se pudo cargar el Schedule. Revisa tu conexión e inténtalo de nuevo."
+msgstr "The Schedule couldn't be loaded. Check your connection and try again."
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "No se pudo cargar el Tablero de Requisiciones. Revisa tu conexión e inténtalo de nuevo."
+msgstr "The Requisition Board couldn't be loaded. Check your connection and try again."
+
+#: src/features/requisitions/components/RequisitionJournalDialog.tsx
+msgid "No se pudo cargar la bitácora. Inténtalo de nuevo."
+msgstr "The log couldn't be loaded. Try again."
+
+#: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
+msgid "No se pudo cargar la cola de autorización. Revisa tu conexión e inténtalo de nuevo."
+msgstr "The authorization queue couldn't be loaded. Check your connection and try again."
+
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+msgid "No se pudo cargar la semana del Timesheet Global. Reintenta en unos segundos."
+msgstr "The Global Timesheet week couldn't be loaded. Try again in a few seconds."
+
+#: src/features/timesheet/pages/TimesheetPage.tsx
+msgid "No se pudo cargar la semana del Timesheet. Reintenta en unos segundos."
+msgstr "The Timesheet week couldn't be loaded. Try again in a few seconds."
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "No se pudo cargar Mi Personal. Revisa tu conexión e inténtalo de nuevo."
+msgstr "My Staff couldn't be loaded. Check your connection and try again."
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "No se pudo cargar tu turno."
+msgstr "Your shift couldn't be loaded."
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "No se pudo copiar. Anótalo a mano."
+msgstr "It couldn't be copied. Write it down by hand."
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "No se pudo eliminar la requisición. Inténtalo de nuevo."
+msgstr "The requisition couldn't be deleted. Try again."
+
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "No se pudo guardar el transporte."
+msgstr "Your transportation couldn't be saved."
+
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "No se pudo guardar la auditoría. Inténtalo de nuevo."
+msgstr "The audit couldn't be saved. Try again."
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "No se pudo guardar la marca. Inténtalo de nuevo."
+msgstr "The punch couldn't be saved. Try again."
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "No se pudo guardar la requisición. Revisa las posiciones e inténtalo de nuevo."
+msgstr "The requisition couldn't be saved. Check the positions and try again."
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "No se pudo guardar la revisión. Inténtalo de nuevo."
+msgstr "The review couldn't be saved. Try again."
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "No se pudo leer tu ubicación. Sal a cielo abierto e inténtalo de nuevo."
+msgstr "Your location couldn't be read. Step outside under open sky and try again."
+
+#: src/features/personnel/components/StandByDialog.tsx
+msgid "No se pudo mandar a Stand-by. Inténtalo de nuevo."
+msgstr "They couldn't be sent to Stand-by. Try again."
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "No se pudo regenerar el QR. Inténtalo de nuevo."
+msgstr "The QR couldn't be regenerated. Try again."
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "No se pudo registrar la marca. Inténtalo de nuevo."
+msgstr "The punch couldn't be recorded. Try again."
+
+#: src/features/worker/components/TaxDocumentUploader.tsx
+msgid "No se pudo subir tu documento. Inténtalo de nuevo."
+msgstr "Your document couldn't be uploaded. Try again."
+
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "No se puede calificar una auditoría donde todo quedó en N/A."
+msgstr "An audit can't be scored when everything is N/A."
+
+#: src/features/timesheet/components/TimesheetDayCell.tsx
+msgid "No se registró entrada ni salida. Puede ser que no tuviera turno ese día, o que el ponche no llegara a guardarse (por ejemplo, fuera de la geocerca). Revisa el Schedule para saber cuál de las dos fue."
+msgstr "No clock-in or clock-out was recorded. Either there was no shift that day, or the punch never got saved (outside the geofence, for example). Check the Schedule to find out which."
+
+#: src/features/worker/lib/noShiftMessage.ts
+msgid "No tienes turno programado hoy. Si sí te tocaba, avísale a tu Supervisor para que revise el Schedule."
+msgstr "You have no shift scheduled today. If you were supposed to, let your Supervisor know so they check the Schedule."
+
+#: src/features/worker/components/useFaceGuide.ts
+msgid "No vemos tu cara: mira a la cámara"
+msgstr "We can't see your face: look at the camera"
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Nombre"
+msgstr "Name"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+#: src/features/timesheet/components/TimesheetToolbar.tsx
+msgid "Nombre del colaborador, p. ej. Ana Rivera…"
+msgstr "Collaborator's name, e.g. Ana Rivera…"
+
+#: src/features/personnel/components/StandByDialog.tsx
+msgid "Nota (opcional)"
+msgstr "Note (optional)"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Nota de revisión <0>(obligatoria)</0>"
+msgstr "Review note <0>(required)</0>"
+
+#: src/layouts/Header.tsx
+msgid "Notificaciones"
+msgstr "Notifications"
+
+#. placeholder {0}: String(unread)
+#: src/layouts/Header.tsx
+msgid "Notificaciones: {0} sin leer"
+msgstr "Notifications: {0} unread"
+
+#: src/layouts/Header.tsx
+msgid "Notificaciones: nada nuevo"
+msgstr "Notifications: nothing new"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Nueva requisición"
+msgstr "New requisition"
+
+#: src/features/requisitions/components/RequisitionTable.tsx
+msgid "Número"
+msgstr "Number"
+
+#: src/shared/constants/workerEnums.ts
+msgid "O+"
+msgstr "O+"
+
+#: src/shared/constants/workerEnums.ts
+msgid "O−"
+msgstr "O−"
+
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "Observaciones generales <0>(opcional)</0>"
+msgstr "General remarks <0>(optional)</0>"
+
+#: src/shared/constants/timesheetStatus.ts
+msgid "Observado"
+msgstr "Flagged"
+
+#: src/features/timesheet/components/TimesheetMonthView.tsx
+msgid "observados"
+msgstr "flagged"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Ocultar contraseña"
+msgstr "Hide password"
+
+#: src/features/requisitions/components/SlotList.tsx
+msgid "Ocupado"
+msgstr "Taken"
+
+#: src/features/requisitions/components/AuthorizationQueueList.tsx
+msgid "Ordenadas por fecha de inicio más próxima"
+msgstr "Sorted by nearest start date"
+
+#: src/shared/constants/workerEnums.ts
+msgid "Otro"
+msgstr "Other"
+
+#: src/shared/constants/workerEnums.ts
+msgid "Padre"
+msgstr "Father"
+
+#: src/features/timesheet/pages/TimesheetPage.tsx
+msgid "Pagar seleccionados"
+msgstr "Pay selected"
+
+#: src/shared/components/ModulePlaceholder.tsx
+msgid "Pantalla pendiente de diseño"
+msgstr "Screen awaiting design"
+
+#. placeholder {0}: row.workerName
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "Para {0} — la marca quedará señalada como manual, con tu motivo."
+msgstr "For {0} — the punch will be flagged as manual, with your reason."
+
+#: src/features/requisitions/utils/coverage.ts
+msgid "parcial"
+msgstr "partial"
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Parentesco"
+msgstr "Relationship"
+
+#: src/features/personnel/components/StandByDialog.tsx
+msgid "Pasa a Rosa: queda en pausa, sin turnos nuevos, hasta que el Hotel lo reactive."
+msgstr "They move to Pink: paused, with no new shifts, until the Hotel reactivates them."
+
+#: src/features/worker/components/TaxDeadlineBanner.tsx
+msgid "Pasaron 5 días sin cargar tu SSN o ITIN. Súbelo aquí y tu acceso vuelve al instante — tus datos y tu historial no se pierden. Si no puedes subirlo, contacta a Oranje (Customer Service)."
+msgstr "5 days went by without your SSN or ITIN. Upload it here and your access comes back instantly — your info and history aren't lost. If you can't upload it, contact Oranje (Customer Service)."
+
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "Paso 1 de 2"
+msgstr "Step 1 of 2"
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Paso 2 de 2"
+msgstr "Step 2 of 2"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "pausa temporal (Rosa)"
+msgstr "temporary pause (Pink)"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Pausa temporal (Rosa); lo compartes con el Manager de Área"
+msgstr "Temporary pause (Pink); you share it with the Area Manager"
+
+#: src/features/personnel/components/StandByDialog.tsx
+msgid "Pausa, no baja"
+msgstr "A pause, not a removal"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Pausado (Stand-by)"
+msgstr "Paused (Stand-by)"
+
+#: src/features/worker/pages/ProfilePage.tsx
+#: src/shared/constants/timesheetStatus.ts
+msgid "Pendiente"
+msgstr "Pending"
+
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+msgid "pendiente de horas contractuales"
+msgstr "waiting for contract hours"
+
+#: src/features/timesheet/components/TimesheetMonthView.tsx
+msgid "pendientes"
+msgstr "pending"
+
+#: src/features/requisitions/components/AuthorizationQueueList.tsx
+msgid "Pendientes"
+msgstr "Pending"
+
+#: src/features/audits/components/EnvironmentAuditDialog.tsx
+msgid "Percepción de Ambiente y Recursos"
+msgstr "Environment & Resources Perception"
+
+#: src/features/worker/components/useFaceGuide.ts
+msgid "Perfecto, toma la foto"
+msgstr "Perfect, take the photo"
+
+#: src/features/worker/components/MobileShell.tsx
+msgid "Perfil"
+msgstr "Profile"
+
+#: src/features/requisitions/types/requisitionForm.schema.ts
+msgid "Pide al menos 1 persona"
+msgstr "Request at least 1 person"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Pide personal para tu hotel"
+msgstr "Request staff for your hotel"
+
+#: src/layouts/Sidebar.tsx
+msgid "Pipeline"
+msgstr "Pipeline"
+
+#: src/features/dashboard/components/StatusFunnel.tsx
+msgid "Pipeline por estado"
+msgstr "Pipeline by status"
+
+#: src/features/worker/components/MobileShell.tsx
+#: src/features/worker/pages/HomePage.tsx
+msgid "Ponchar"
+msgstr "Clock in"
+
+#. placeholder {0}: i18n._(PUNCH_LABEL[next]).toLowerCase()
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Ponchar {0}"
+msgstr "Punch: {0}"
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "Ponche"
+msgstr "Punch"
+
+#: src/layouts/Sidebar.tsx
+msgid "Pool de Colaboradores"
+msgstr "Collaborator Pool"
+
+#: src/features/dashboard/components/RecruitmentDashboard.tsx
+msgid "Pool por estado"
+msgstr "Pool by status"
+
+#: src/features/dashboard/components/HotelDashboard.tsx
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "Por autorizar"
+msgstr "Pending authorization"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "Por qué no existe el ponche: rechazo de ubicación, teléfono sin batería…"
+msgstr "Why there's no punch: location rejected, phone out of battery…"
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Por si algo pasa"
+msgstr "In case something happens"
+
+#: src/features/requisitions/components/RequisitionTable.tsx
+msgid "Pos."
+msgstr "Pos."
+
+#: src/features/requisitions/components/AuthorizationPositionsTable.tsx
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+#: src/features/requisitions/components/PositionsTable.tsx
+#: src/features/worker/pages/ProfilePage.tsx
+msgid "Posición"
+msgstr "Position"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Posición {ordinal}"
+msgstr "Position {ordinal}"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+#: src/features/requisitions/components/PositionsTable.tsx
+#: src/features/requisitions/components/RequisitionSummaryStrip.tsx
+msgid "Posiciones"
+msgstr "Positions"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Posiciones solicitadas"
+msgstr "Requested positions"
+
+#: src/shared/constants/workerStatus.ts
+msgid "Pre-asignación"
+msgstr "Pre-assignment"
+
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "Preparando el QR…"
+msgstr "Preparing the QR…"
+
+#: src/features/worker/components/useFaceGuide.ts
+msgid "Preparando la cámara…"
+msgstr "Getting the camera ready…"
+
+#: src/features/audits/components/AuditHistoryList.tsx
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Presentación Personal"
+msgstr "Personal Presentation"
+
+#: src/features/audits/pages/AuditsPage.tsx
+msgid "Presentación Personal por colaborador y Percepción de Ambiente y Recursos de tu hotel — misma mecánica, categorías distintas."
+msgstr "Personal Presentation per collaborator and Environment & Resources Perception for your hotel — same mechanics, different categories."
+
+#: src/features/audits/pages/AuditsPage.tsx
+msgid "Presentación Personal por colaborador y Percepción de Ambiente y Recursos del hotel — un registro semanal que no toca ningún semáforo."
+msgstr "Personal Presentation per collaborator and Environment & Resources Perception for the hotel — a weekly record that doesn't touch any status light."
+
+#: src/shared/constants/workerEnums.ts
+msgid "Propio"
+msgstr "Own"
+
+#: src/layouts/Sidebar.tsx
+msgid "Propuestas"
+msgstr "Proposals"
+
+#: src/features/dashboard/components/StatusFunnel.tsx
+msgid "Prospectos"
+msgstr "Prospects"
+
+#: src/features/dashboard/components/ActivityCards.tsx
+msgid "Prospectos abiertos"
+msgstr "Open prospects"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "protegido (Gris)"
+msgstr "protected (Gray)"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Protegido (Gris)"
+msgstr "Protected (Gray)"
+
+#: src/shared/constants/workerEnums.ts
+msgid "Público"
+msgstr "Public"
+
+#: src/features/personnel/components/WorkerPerformanceRadar.tsx
+msgid "Puntualidad"
+msgstr "Punctuality"
+
+#. placeholder {0}: data.hotelName
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "QR de ponche de {0}"
+msgstr "Punch QR for {0}"
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "QR del hotel"
+msgstr "Hotel QR"
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "QR regenerado: versión {version}. Imprime la hoja nueva."
+msgstr "QR regenerated: version {version}. Print the new sheet."
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Qué viste y cómo se resuelve — p. ej. «Salió por el acceso de servicio; el GPS tomó la calle.»"
+msgstr "What you saw and how it's resolved — e.g. \"Left through the service entrance; the GPS picked up the street.\""
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "Queda señalada como manual"
+msgstr "It's flagged as manual"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Quedan días con anomalía sin resolver: revísalos antes de enviar la semana."
+msgstr "There are still days with unresolved anomalies: review them before sending the week."
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Quitar esta posición del pedido"
+msgstr "Remove this position from the request"
+
+#: src/shared/components/FilterReset.tsx
+msgid "Quitar filtros"
+msgstr "Clear filters"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Quitar posición {ordinal}"
+msgstr "Remove position {ordinal}"
+
+#: src/features/timesheet/pages/TimesheetPage.tsx
+msgid "Quitar selección"
+msgstr "Clear selection"
+
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+msgid "Reales"
+msgstr "Actual"
+
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
+msgid "Rechazar"
+msgstr "Reject"
+
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
+msgid "Rechazar estará disponible próximamente"
+msgstr "Reject will be available soon"
+
+#: src/features/requisitions/components/RequisitionJournalDialog.tsx
+msgid "Reclutadora salió"
+msgstr "Recruiter left"
+
+#: src/features/requisitions/components/RequisitionJournalDialog.tsx
+msgid "Reclutadora se unió"
+msgstr "Recruiter joined"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Reclutamiento la verá cuando un Manager la autorice. Sin la firma, para ellos no existe."
+msgstr "Recruitment will see it once a Manager authorizes it. Without the signature, it doesn't exist for them."
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Recupera tu contraseña"
+msgstr "Reset your password"
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "Regenerando…"
+msgstr "Regenerating…"
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "Regenerar QR"
+msgstr "Regenerate QR"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Registrando…"
+msgstr "Recording…"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "Registrar la marca"
+msgstr "Record the punch"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "Registrar marca"
+msgstr "Record punch"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "Registras la hora real del hecho, no la de ahora: esa es la que cuenta horas para la nómina."
+msgstr "You record the actual time it happened, not the current time: that's what counts hours for payroll."
+
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "Registro de entrada y salida"
+msgstr "Clock in and clock out"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+#: src/features/worker/api/punchApi.ts
+msgid "Regreso de lunch"
+msgstr "Back from lunch"
+
+#: src/shared/constants/workerStatus.ts
+msgid "Reportado"
+msgstr "Reported"
+
+#: src/layouts/Sidebar.tsx
+msgid "Reportes"
+msgstr "Reports"
+
+#: src/features/timesheet/components/TimesheetToolbar.tsx
+msgid "Requisición"
+msgstr "Requisition"
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Requisición {requisitionNumber} eliminada"
+msgstr "Requisition {requisitionNumber} deleted"
+
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
+#: src/features/requisitions/components/RequisitionJournalDialog.tsx
+msgid "Requisición autorizada"
+msgstr "Requisition authorized"
+
+#: src/features/requisitions/components/RequisitionJournalDialog.tsx
+msgid "Requisición creada"
+msgstr "Requisition created"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Requisición creada — quedó en Borrador"
+msgstr "Requisition created — it's in Draft"
+
+#: src/features/requisitions/components/RequisitionJournalDialog.tsx
+msgid "Requisición eliminada"
+msgstr "Requisition deleted"
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+#: src/layouts/GlobalSearch.tsx
+#: src/layouts/Sidebar.tsx
+msgid "Requisiciones"
+msgstr "Requisitions"
+
+#: src/features/dashboard/components/HotelDashboard.tsx
+msgid "Requisiciones abiertas"
+msgstr "Open requisitions"
+
+#: src/features/dashboard/components/HotelDashboard.tsx
+msgid "Requisiciones del hotel"
+msgstr "Hotel requisitions"
+
+#: src/features/dashboard/components/RecruitmentDashboard.tsx
+msgid "Requisiciones en cola"
+msgstr "Requisitions in queue"
+
+#: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
+msgid "Requisiciones por autorizar"
+msgstr "Requisitions pending authorization"
+
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
+msgid "Resolución"
+msgstr "Resolution"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Resolver y marcar revisado"
+msgstr "Resolve and mark as reviewed"
+
+#. placeholder {0}: item.label
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "Respuesta para {0}"
+msgstr "Answer for {0}"
+
+#: src/layouts/GlobalSearch.tsx
+msgid "Resultados"
+msgstr "Results"
+
+#: src/shared/constants/timesheetStatus.ts
+msgid "Revisado"
+msgstr "Reviewed"
+
+#: src/features/timesheet/components/TimesheetMonthView.tsx
+msgid "revisados"
+msgstr "reviewed"
+
+#: src/features/timesheet/components/TimesheetHoursView.tsx
+msgid "Revisar"
+msgstr "Review"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+#: src/features/timesheet/components/TimesheetDayCell.tsx
+msgid "Revisar el día"
+msgstr "Review the day"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Revisar no es aprobar"
+msgstr "Reviewing isn't approving"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Revisión"
+msgstr "Review"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Revisión del día"
+msgstr "Day review"
+
+#: src/shared/constants/onboardingStatus.ts
+msgid "Rojo"
+msgstr "Red"
+
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+msgid "Rojo · anomalía"
+msgstr "Red · anomaly"
+
+#: src/features/dashboard/components/PipelineFlowCard.tsx
+msgid "Rojo, Café y Negro pueden reactivarse: vuelven a Azul claro."
+msgstr "Red, Brown and Black can be reactivated: they go back to Light blue."
+
+#: src/shared/constants/onboardingStatus.ts
+msgid "Rosa"
+msgstr "Pink"
+
+#: src/features/dashboard/components/ActivityCards.tsx
+msgid "Rosa → Naranja, por semana"
+msgstr "Pink → Orange, per week"
+
+#: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Ruta"
+msgstr "Breadcrumb"
+
+#: src/features/schedule/components/ScheduleMiniCalendar.tsx
+msgid "S"
+msgstr "S"
+
+#: src/features/timesheet/components/TimesheetMonthView.tsx
+msgid "Sáb"
+msgstr "Sat"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+#: src/features/worker/api/punchApi.ts
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Salida"
+msgstr "Clock out"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+#: src/features/worker/api/punchApi.ts
+msgid "Salida a lunch"
+msgstr "Out to lunch"
+
+#: src/shared/components/OnboardingIntro.tsx
+msgid "Saltar"
+msgstr "Skip"
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Salud"
+msgstr "Health"
+
+#: src/layouts/Sidebar.tsx
+msgid "Schedule"
+msgstr "Schedule"
+
+#: src/features/schedule/pages/SchedulePage.tsx
+msgid "Schedule del hotel"
+msgstr "Hotel Schedule"
+
+#: src/features/worker/components/MobileShell.tsx
+msgid "Secciones"
+msgstr "Sections"
+
+#: src/shared/constants/catalogs.ts
+msgid "Según solicitud"
+msgstr "On request"
+
+#. placeholder {0}: entry.date
+#: src/features/timesheet/components/TimesheetDayCell.tsx
+msgid "Seleccionar {0}"
+msgstr "Select {0}"
+
+#: src/layouts/Sidebar.tsx
+msgid "Self-Pick"
+msgstr "Self-Pick"
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "Selfie"
+msgstr "Selfie"
+
+#: src/features/dashboard/components/RecruitmentDashboard.tsx
+msgid "Semáforo del Colaborador · hoy"
+msgstr "Collaborator status light · today"
+
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+msgid "Semana"
+msgstr "Week"
+
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+#: src/features/timesheet/pages/TimesheetPage.tsx
+msgid "Semana {rangeLabel}"
+msgstr "Week {rangeLabel}"
+
+#: src/features/timesheet/components/TimesheetViewControls.tsx
+msgid "Semana anterior"
+msgstr "Previous week"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Semana aprobada"
+msgstr "Week approved"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Semana enviada a revisión"
+msgstr "Week sent for review"
+
+#: src/features/timesheet/components/TimesheetViewControls.tsx
+msgid "Semana siguiente"
+msgstr "Next week"
+
+#: src/features/schedule/pages/SchedulePage.tsx
+msgid "Semana: <0>{coverage}% cubierto</0> · {holes, plural, one {# hueco} other {# huecos}} — se asignan desde la Bolsa de la Reclutadora"
+msgstr "Week: <0>{coverage}% covered</0> · {holes, plural, one {# gap} other {# gaps}} — assigned from the Recruiter's Pool"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Si <0>{resetSentTo}</0> está registrado en Oranje, el enlace ya va en camino. Revisa también la carpeta de spam."
+msgstr "If <0>{resetSentTo}</0> is registered with Oranje, the link is on its way. Check your spam folder too."
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Sí, eliminar requisición"
+msgstr "Yes, delete requisition"
+
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "Sigue con tu contacto de emergencia →"
+msgstr "Continue with your emergency contact →"
+
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "Sigues en Blanco hasta que la Reclutadora valide el alta"
+msgstr "You stay in White until the Recruiter validates your sign-up"
+
+#: src/features/dashboard/components/StaleProspectList.tsx
+msgid "Sin actividad reciente"
+msgstr "No recent activity"
+
+#: src/features/dashboard/components/HotelDashboard.tsx
+msgid "Sin aprobación no se paga"
+msgstr "No approval, no pay"
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Sin asignación en esta requisición: no hay contra qué capturar marcas"
+msgstr "No assignment on this requisition: there's nothing to record punches against"
+
+#: src/features/requisitions/components/SlotList.tsx
+msgid "Sin asignar"
+msgstr "Unassigned"
+
+#: src/features/audits/components/AuditWorkerList.tsx
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Sin auditar"
+msgstr "Not audited"
+
+#: src/features/worker/pages/NotificationsPage.tsx
+#: src/layouts/Header.tsx
+msgid "Sin avisos por ahora."
+msgstr "No notices for now."
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Sin conexión: la marca no se puede guardar todavía. Vuelve a intentarlo cuando tengas señal."
+msgstr "No connection: the punch can't be saved yet. Try again when you have signal."
+
+#: src/features/requisitions/utils/coverage.ts
+#: src/features/schedule/pages/SchedulePage.tsx
+msgid "sin cubrir"
+msgstr "uncovered"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "sin entrada"
+msgstr "not clocked in"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Sin entrada"
+msgstr "Not clocked in"
+
+#: src/features/requisitions/components/RequisitionJournalDialog.tsx
+msgid "Sin eventos registrados todavía."
+msgstr "No events recorded yet."
+
+#: src/shared/constants/workerEnums.ts
+msgid "Sin experiencia"
+msgstr "No experience"
+
+#: src/features/timesheet/components/TimesheetGrid.tsx
+msgid "Sin folio"
+msgstr "No number"
+
+#: src/features/dashboard/components/StaleProspectList.tsx
+msgid "Sin intento de contacto en 7 días o más"
+msgstr "No contact attempt in 7 days or more"
+
+#: src/features/timesheet/components/TimesheetMonthView.tsx
+msgid "Sin jornadas este día"
+msgstr "No workdays this day"
+
+#: src/features/timesheet/components/TimesheetDayCell.tsx
+msgid "Sin marcas"
+msgstr "No punches"
+
+#: src/shared/constants/timesheetStatus.ts
+msgid "Sin marcas ese día"
+msgstr "No punches that day"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Sin marcas registradas todavía."
+msgstr "No punches recorded yet."
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "sin motivo"
+msgstr "no reason"
+
+#: src/features/worker/components/QrScanner.tsx
+msgid "Sin permiso de cámara no se puede leer el QR. Permítelo para este sitio y vuelve a intentar."
+msgstr "Without camera permission the QR can't be read. Allow it for this site and try again."
+
+#: src/features/worker/components/CameraCapture.tsx
+msgid "Sin permiso de cámara no se puede tomar la foto. Permítelo para este sitio y vuelve a intentar."
+msgstr "Without camera permission the photo can't be taken. Allow it for this site and try again."
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Sin permiso de ubicación no se puede ponchar: actívalo para este sitio en tu teléfono."
+msgstr "Without location permission you can't clock in: turn it on for this site on your phone."
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+#: src/features/worker/pages/ProfilePage.tsx
+msgid "Sin posición asignada"
+msgstr "No position assigned"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "sin posiciones en el catálogo"
+msgstr "no positions in the catalog"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Sin posiciones para este departamento"
+msgstr "No positions for this department"
+
+#: src/features/dashboard/components/StatusFunnel.tsx
+msgid "Sin prospectos abiertos en el periodo."
+msgstr "No open prospects in this period."
+
+#: src/features/timesheet/components/TimesheetGrid.tsx
+msgid "Sin registro este día"
+msgstr "No record this day"
+
+#: src/features/timesheet/pages/TimesheetPage.tsx
+msgid "sin requisición"
+msgstr "without a requisition"
+
+#: src/features/timesheet/components/TimesheetHoursView.tsx
+msgid "sin salida"
+msgstr "no clock-out"
+
+#: src/features/timesheet/components/TimesheetGrid.tsx
+msgid "Sin timesheet esta semana"
+msgstr "No timesheet this week"
+
+#: src/features/worker/lib/noShiftMessage.ts
+msgid "Sin turnos por ahora"
+msgstr "No shifts for now"
+
+#: src/features/requisitions/components/RequisitionJournalDialog.tsx
+msgid "Sistema"
+msgstr "System"
+
+#: src/features/requisitions/components/RequisitionSummaryStrip.tsx
+msgid "Slots"
+msgstr "Slots"
+
+#: src/features/requisitions/components/SlotList.tsx
+msgid "Slots de la posición {index} · {name}"
+msgstr "Slots for position {index} · {name}"
+
+#: src/features/dashboard/components/StatusFunnel.tsx
+msgid "Solo ciclos abiertos"
+msgstr "Open cycles only"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Solo dentro del hotel"
+msgstr "Only inside the hotel"
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "Solo el BD, el BDC o el hotel pueden regenerar su QR."
+msgstr "Only the BD, the BDC or the hotel can regenerate its QR."
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Solo el Manager de Área o el Manager General pueden aprobar la semana."
+msgstr "Only the Area Manager or the General Manager can approve the week."
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Solo lo aprobado paga"
+msgstr "Only what's approved gets paid"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Solo puedes crear requisiciones de tu hotel"
+msgstr "You can only create requisitions for your hotel"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Solo puedes crear requisiciones de tu hotel."
+msgstr "You can only create requisitions for your hotel."
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Solo puedes pedir posiciones de tu departamento"
+msgstr "You can only request positions from your department"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Solo puedes pedir posiciones de tu departamento. Las de otro departamento las crea su Manager de Área o el Manager General."
+msgstr "You can only request positions from your department. Those for another department are created by its Area Manager or the General Manager."
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Solo se aprueba una semana enviada a aprobación."
+msgstr "Only a week sent for approval can be approved."
+
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
+msgid "solo tu departamento"
+msgstr "your department only"
+
+#. placeholder {0}: formatWeekRange(target, addDaysIso(target, 6))
+#: src/features/timesheet/components/WeekSlider.tsx
+msgid "Soltar en: {0}"
+msgstr "Drop on: {0}"
+
+#: src/features/worker/pages/Phase2Page.tsx
+#: src/features/worker/pages/ProfilePage.tsx
+msgid "SSN / ITIN"
+msgstr "SSN / ITIN"
+
+#: src/features/worker/components/TaxDocumentUploader.tsx
+msgid "SSN o ITIN subido"
+msgstr "SSN or ITIN uploaded"
+
+#: src/features/worker/components/TaxDeadlineBanner.tsx
+msgid "SSN/ITIN recibido"
+msgstr "SSN/ITIN received"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Staffing de hoteles: del reclutamiento al pago, con un semáforo en cada paso."
+msgstr "Hotel staffing: from recruiting to payroll, with a status light at every step."
+
+#: src/shared/constants/workerStatus.ts
+msgid "Stand-by"
+msgstr "Stand-by"
+
+#: src/features/personnel/components/WorkerPerformanceRadar.tsx
+msgid "Su semana aún no da para medir"
+msgstr "Their week isn't enough to measure yet"
+
+#: src/features/worker/components/TaxDocumentUploader.tsx
+msgid "Subiendo…"
+msgstr "Uploading…"
+
+#: src/features/worker/components/TaxDocumentUploader.tsx
+msgid "Subir mi SSN o ITIN"
+msgstr "Upload my SSN or ITIN"
+
+#: src/features/worker/components/TaxDocumentUploader.tsx
+msgid "Subir otro archivo"
+msgstr "Upload another file"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Sus datos"
+msgstr "Their info"
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "Tablero de Requisiciones"
+msgstr "Requisition Board"
+
+#: src/features/dashboard/components/ActivityCards.tsx
+msgid "Tasa de conversión"
+msgstr "Conversion rate"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Te mandamos un enlace al correo para crear una nueva."
+msgstr "We'll email you a link to create a new one."
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+#: src/features/worker/pages/Phase3Page.tsx
+#: src/features/worker/pages/ProfilePage.tsx
+#: src/shared/components/PhoneInput.tsx
+msgid "Teléfono"
+msgstr "Phone"
+
+#. placeholder {0}: punch.deviceTime
+#. placeholder {1}: punch.serverTime
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "teléfono {0} · <0>servidor {1}</0>"
+msgstr "phone {0} · <0>server {1}</0>"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Teléfono copiado: márcalo desde tu celular"
+msgstr "Phone number copied: dial it from your phone"
+
+#: src/features/personnel/components/StandByDialog.tsx
+msgid "Temporada baja"
+msgstr "Low season"
+
+#: src/shared/constants/catalogs.ts
+msgid "Temporal"
+msgstr "Temporary"
+
+#: src/shared/constants/catalogs.ts
+msgid "Tiempo completo"
+msgstr "Full-time"
+
+#: src/features/dashboard/components/ActivityCards.tsx
+msgid "Tiempo promedio"
+msgstr "Average time"
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Tiene colaboradores asignados: libera las asignaciones antes de eliminarla."
+msgstr "It has collaborators assigned: release the assignments before deleting it."
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Tiene turno hoy y no ha marcado entrada. Contáctalo — su teléfono está aquí arriba — y si el ponche falló, captura la<0> marca manual</0> desde el Timesheet."
+msgstr "They have a shift today and haven't clocked in. Reach out — their phone number is right above — and if the punch failed, record the<0> manual punch</0> from the Timesheet."
+
+#. placeholder {0}: formatDate(deadline.dueAt)
+#. placeholder {1}: deadline.day
+#: src/features/worker/components/TaxDeadlineBanner.tsx
+msgid "Tienes hasta el <0>{0}</0> (día {1} de 3). Sin él no se te puede pagar."
+msgstr "You have until <0>{0}</0> (day {1} of 3). Without it you can't be paid."
+
+#: src/features/timesheet/pages/TimesheetPage.tsx
+#: src/layouts/Sidebar.tsx
+msgid "Timesheet"
+msgstr "Timesheet"
+
+#: src/layouts/Sidebar.tsx
+msgid "Timesheet Global"
+msgstr "Global Timesheet"
+
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+msgid "Timesheet Global · Cumplimiento"
+msgstr "Global Timesheet · Compliance"
+
+#: src/features/dashboard/components/HotelDashboard.tsx
+msgid "Timesheets sin aprobar"
+msgstr "Unapproved Timesheets"
+
+#: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "Tipo de marca"
+msgstr "Punch type"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+#: src/features/worker/pages/Phase3Page.tsx
+#: src/features/worker/pages/ProfilePage.tsx
+msgid "Tipo de sangre"
+msgstr "Blood type"
+
+#: src/features/worker/pages/NotificationsPage.tsx
+msgid "Tocar un aviso lo marca como leído; los leídos se limpian a los 30 días"
+msgstr "Tapping a notice marks it as read; read notices clear after 30 days"
+
+#: src/features/dashboard/api/dashboardApi.ts
+msgid "todas"
+msgstr "all"
+
+#: src/features/timesheet/components/TimesheetToolbar.tsx
+msgid "Todas"
+msgstr "All"
+
+#: src/features/audits/components/AuditHistoryList.tsx
+msgid "Todavía no hay auditorías"
+msgstr "No audits yet"
+
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "Todavía no hay reactivos para esta auditoría. Pídele al Administrador que los agregue en Catálogos."
+msgstr "There are no checklist items for this audit yet. Ask the Administrator to add them in Catalogs."
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Todavía se puede corregir y capturar marcas. El Supervisor la envía cuando esté lista."
+msgstr "It can still be corrected and punches can still be recorded. The Supervisor sends it when it's ready."
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "todos"
+msgstr "all"
+
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
+msgid "todos los departamentos de tu hotel"
+msgstr "every department in your hotel"
+
+#: src/features/timesheet/components/TimesheetHoursView.tsx
+msgid "Todos los días de este grupo pertenecen a esta requisición"
+msgstr "Every day in this group belongs to this requisition"
+
+#: src/features/timesheet/components/TimesheetToolbar.tsx
+msgid "Todos los estados"
+msgstr "All statuses"
+
+#: src/features/timesheet/components/TimesheetToolbar.tsx
+msgid "Todos los hoteles"
+msgstr "All hotels"
+
+#: src/features/dashboard/components/RecruitmentDashboard.tsx
+msgid "Tomadas por una Reclutadora"
+msgstr "Taken by a Recruiter"
+
+#: src/features/worker/components/CameraCapture.tsx
+msgid "Tomar foto"
+msgstr "Take photo"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Total: {positionCount, plural, one {# posición} other {# posiciones}} · {totalSlots, plural, one {# slot} other {# slots}}"
+msgstr "Total: {positionCount, plural, one {# position} other {# positions}} · {totalSlots, plural, one {# slot} other {# slots}}"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+#: src/features/worker/pages/Phase2Page.tsx
+#: src/features/worker/pages/ProfilePage.tsx
+msgid "Transporte"
+msgstr "Transportation"
+
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "Transporte guardado"
+msgstr "Transportation saved"
+
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "Transporte guardado."
+msgstr "Transportation saved."
+
+#: src/features/worker/components/TaxDeadlineBanner.tsx
+msgid "Tu acceso está suspendido"
+msgstr "Your access is suspended"
+
+#: src/features/dashboard/components/ActivityCards.tsx
+msgid "Tu actividad"
+msgstr "Your activity"
+
+#: src/features/worker/components/TaxDocumentUploader.tsx
+msgid "Tu cuenta aún no tiene permiso para subir archivos: Oranje lo está habilitando."
+msgstr "Your account can't upload files yet: Oranje is enabling it."
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Tu cuenta aún no tiene permiso para subir la foto: Oranje lo está habilitando."
+msgstr "Your account can't upload the photo yet: Oranje is enabling it."
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Tu cuenta no está activa en Oranje. Pide al Administrador que la active."
+msgstr "Your Oranje account isn't active. Ask the Administrator to activate it."
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Tu cuenta no está ligada a un colaborador: avisa a Reclutamiento."
+msgstr "Your account isn't linked to a collaborator: let Recruitment know."
+
+#: src/features/dashboard/components/ActivityCards.tsx
+msgid "Tu equipo avanza contigo"
+msgstr "Your team moves forward with you"
+
+#: src/features/worker/pages/ProfilePage.tsx
+msgid "Tu estado hoy"
+msgstr "Your status today"
+
+#: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
+msgid "tu firma"
+msgstr "your signature"
+
+#: src/features/audits/components/AuditHotelCard.tsx
+msgid "Tu hotel"
+msgstr "Your hotel"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Tu marca quedó registrada"
+msgstr "Your punch was recorded"
+
+#. placeholder {0}: profile.position.name
+#. placeholder {1}: profile.hiringModality?.name ?? '—'
+#. placeholder {2}: profile.englishLevel?.name ?? '—'
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "Tu posición ({0}), modalidad ({1}) y nivel de inglés ({2}) los definió Oranje en tu entrevista. Si algo no cuadra, coméntalo con tu Reclutadora."
+msgstr "Your position ({0}), hiring modality ({1}) and English level ({2}) were set by Oranje at your interview. If something doesn't add up, talk to your Recruiter."
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Tú resuelves anomalías y dejas la nota; aprobar las horas es del Manager de Área o del General."
+msgstr "You resolve anomalies and leave the note; approving hours is up to the Area Manager or the General Manager."
+
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
+msgid "Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel."
+msgstr "Your role doesn't authorize requisitions: the hotel's Area Manager or General Manager does."
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área o el Manager General del hotel."
+msgstr "Your role can't create requisitions: the hotel's Supervisor, Area Manager or General Manager does."
+
+#: src/features/worker/pages/ProfilePage.tsx
+msgid "Tu semáforo"
+msgstr "Your status light"
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Tu semáforo no permite encender Amarillo desde aquí."
+msgstr "Your status light doesn't allow turning on Yellow from here."
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Tu semáforo, en palabras"
+msgstr "Your status light, in words"
+
+#: src/features/worker/lib/noShiftMessage.ts
+msgid "Tu situación está en revisión y no hay turnos que ponchar. Customer Service te puede orientar."
+msgstr "Your situation is under review and there are no shifts to clock. Customer Service can guide you."
+
+#. placeholder {0}: deadline.isDocumentVerified ? t`verificado` : t`cargado, en verificación`
+#: src/features/worker/components/TaxDeadlineBanner.tsx
+msgid "Tu SSN/ITIN está {0}."
+msgstr "Your SSN/ITIN is {0}."
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Tu teléfono manda la ubicación y el sistema verifica que estés en el hotel. Si estás fuera, pídele al Supervisor un ponche manual."
+msgstr "Your phone sends your location and the system checks that you're at the hotel. If you're outside, ask the Supervisor for a manual punch."
+
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "Tu transporte y tu SSN o ITIN"
+msgstr "Your transportation and your SSN or ITIN"
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Tu transporte, tu SSN o ITIN y un contacto de emergencia. Con eso Reclutamiento puede validarte y empiezas a recibir turnos."
+msgstr "Your transportation, your SSN or ITIN and an emergency contact. With that, Recruitment can validate you and you start getting shifts."
+
+#: src/features/audits/pages/AuditsPage.tsx
+msgid "Tu usuario no tiene un hotel asignado todavía. Sin hotel no hay a quién auditar — pídele al Administrador que revise tu alta."
+msgstr "Your account doesn't have a hotel assigned yet. Without a hotel there's no one to audit — ask the Administrator to check your account setup."
+
+#: src/features/auth/components/LoginCollage.tsx
+msgid "Turno 07:00 – 15:00"
+msgstr "Shift 07:00 – 15:00"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Turno de hoy"
+msgstr "Today's shift"
+
+#: src/features/schedule/pages/SchedulePage.tsx
+#: src/features/timesheet/components/TimesheetHoursView.tsx
+msgid "Turno elegido"
+msgstr "Selected shift"
+
+#: src/features/worker/pages/NotificationsPage.tsx
+msgid "Tus avisos llegarán aquí en cuanto el servicio de notificaciones esté activo."
+msgstr "Your notices will show up here as soon as the notification service is active."
+
+#: src/features/worker/pages/ProfilePage.tsx
+msgid "Tus datos"
+msgstr "Your info"
+
+#: src/features/dashboard/components/ActivityCards.tsx
+msgid "Últimas 8 semanas"
+msgstr "Last 8 weeks"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Un hotel puede pedir personal cuando llega a Naranja, es decir, cuando ya es cliente activo."
+msgstr "A hotel can request staff once it reaches Orange, that is, once it's an active client."
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "Un Manager ya la aprobó. Sigue el pago y la factura del hotel."
+msgstr "A Manager already approved it. Next come the payment and the hotel's invoice."
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Un momento…"
+msgstr "One moment…"
+
+#: src/features/audits/pages/AuditsPage.tsx
+msgid "Un registro sin consecuencia"
+msgstr "A record with no consequences"
+
+#: src/features/worker/components/TaxDocumentUploader.tsx
+msgid "Una foto clara o un PDF. Oranje lo revisa y te avisa cuando quede verificado."
+msgstr "A clear photo or a PDF. Oranje reviews it and lets you know when it's verified."
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Una requisición autorizada la elimina el Manager de Área de su departamento o el Manager General."
+msgstr "An authorized requisition can be deleted by its department's Area Manager or the General Manager."
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Una requisición en este estado no se elimina: las cubiertas se conservan como historia."
+msgstr "A requisition in this state can't be deleted: covered ones are kept as history."
+
+#: src/features/audits/components/PersonalPresentationAuditDialog.tsx
+msgid "Uniformidad, higiene, seguridad y actitud del colaborador, reactivo por reactivo."
+msgstr "The collaborator's uniform, hygiene, safety and attitude, item by item."
+
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "Uno de los reactivos ya no es parte de esta auditoría. Recarga e inténtalo de nuevo."
+msgstr "One of the checklist items is no longer part of this audit. Reload and try again."
+
+#: src/features/audits/components/AuditFormDialog.tsx
+msgid "Uno de los reactivos ya no existe. Recarga e inténtalo de nuevo."
+msgstr "One of the checklist items no longer exists. Reload and try again."
+
+#: src/features/requisitions/components/PositionsTable.tsx
+#: src/features/requisitions/components/RequisitionTable.tsx
+msgid "Urgencia"
+msgstr "Urgency"
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "Urgentes < 72 h"
+msgstr "Urgent < 72 h"
+
+#: src/layouts/Sidebar.tsx
+msgid "Usuarios"
+msgstr "Users"
+
+#: src/features/schedule/components/ScheduleMiniCalendar.tsx
+msgid "V"
+msgstr "F"
+
+#: src/features/personnel/components/StandByDialog.tsx
+msgid "Vacaciones"
+msgstr "Vacation"
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Ver bitácora"
+msgstr "View log"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Ver Expediente"
+msgstr "View File"
+
+#: src/features/dashboard/components/ActivityCards.tsx
+msgid "Ver Mi Equipo"
+msgstr "View My Team"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+#: src/features/timesheet/components/TimesheetHoursView.tsx
+msgid "Ver revisión"
+msgstr "View review"
+
+#: src/features/timesheet/components/TimesheetDayCell.tsx
+msgid "Ver revisión del día"
+msgstr "View the day's review"
+
+#: src/shared/constants/onboardingStatus.ts
+msgid "Verde"
+msgstr "Green"
+
+#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
+msgid "Verde · cumplimiento"
+msgstr "Green · compliance"
+
+#: src/features/dashboard/components/RecruitmentDashboard.tsx
+msgid "Verde fuerte, sin veto vigente"
+msgstr "Strong green, no active veto"
+
+#: src/features/worker/components/TaxDeadlineBanner.tsx
+msgid "verificado"
+msgstr "verified"
+
+#: src/features/worker/pages/ProfilePage.tsx
+msgid "Verificado"
+msgstr "Verified"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Verificando…"
+msgstr "Verifying…"
+
+#. placeholder {0}: String(punchQr.version)
+#. placeholder {1}: formatDateTime(punchQr.generatedAt)
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "Versión {0} · generado el {1}"
+msgstr "Version {0} · generated on {1}"
+
+#. placeholder {0}: data.version
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "Versión {0} · generado el {generatedOn}. Si el hotel regenera su QR, esta hoja deja de servir."
+msgstr "Version {0} · generated on {generatedOn}. If the hotel regenerates its QR, this sheet stops working."
+
+#: src/features/timesheet/components/TimesheetMonthView.tsx
+msgid "Vie"
+msgstr "Fri"
+
+#. placeholder {0}: formatWeekRange(visibleWeek, addDaysIso(visibleWeek, 6))
+#: src/features/timesheet/components/WeekSlider.tsx
+msgid "Viendo: {0}"
+msgstr "Viewing: {0}"
+
+#: src/features/requisitions/api/requisitionsApi.ts
+msgid "Visible en la Bolsa · Self-Pick"
+msgstr "Visible in the pool · Self-Pick"
+
+#: src/shared/constants/contactAttempt.ts
+msgid "Visita en frío"
+msgstr "Cold visit"
+
+#: src/features/timesheet/components/TimesheetViewControls.tsx
+msgid "Vista"
+msgstr "View"
+
+#: src/layouts/AppShell.tsx
+msgid "Volver"
+msgstr "Back"
+
+#: src/shared/components/LoadError.tsx
+msgid "Volver a cargar"
+msgstr "Reload"
+
+#: src/layouts/AppShell.tsx
+msgid "Volver a la página anterior"
+msgstr "Go back to the previous page"
+
+#: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Volver al Tablero de Requisiciones"
+msgstr "Back to the Requisition Board"
+
+#: src/features/schedule/components/ScheduleMiniCalendar.tsx
+msgid "X"
+msgstr "W"
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "y"
+msgstr "and"
+
+#: src/features/worker/components/TaxDeadlineBanner.tsx
+msgid "Ya debiste cargar tu SSN o ITIN"
+msgstr "Your SSN or ITIN should already be uploaded"
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Ya estás disponible"
+msgstr "You're now available"
+
+#: src/features/timesheet/components/WeekSlider.tsx
+msgid "Ya estás en la semana más reciente"
+msgstr "You're already on the latest week"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "ya marcaron hoy"
+msgstr "already clocked in today"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+#: src/features/worker/pages/ProfilePage.tsx
+msgid "Zona"
+msgstr "Zone"
+
+#. placeholder {0}: hotel.zoneName
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Zona {0} · el Inspector se congela al guardar"
+msgstr "Zone {0} · the Inspector is locked in on save"
+
+#: src/features/timesheet/components/TimesheetToolbar.tsx
+msgid "Zoom · ancho de columna"
+msgstr "Zoom · column width"

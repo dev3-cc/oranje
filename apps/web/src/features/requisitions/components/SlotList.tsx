@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react/macro'
 import { cn } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -12,14 +15,15 @@ import { formatDayMonthTime } from '@/shared/lib/formatters'
  *
  * En dev el estado se escribe con el valor del enum —`occupied`, `free`— como
  * en la maqueta (documentación viva del contrato); en build, la persona lee
- * «Ocupado» y «Libre».
+ * «Ocupado» y «Libre», traducidos al pintar con `i18n._()` (D-36).
  */
-const SLOT_STATUS_LABEL: Record<RequisitionSlot['status'], string> = {
-  occupied: IS_DEV_UI ? 'occupied' : 'Ocupado',
-  free: IS_DEV_UI ? 'free' : 'Libre',
+const SLOT_STATUS_LABEL: Record<RequisitionSlot['status'], MessageDescriptor> = {
+  occupied: msg`Ocupado`,
+  free: msg`Libre`,
 }
 
 function SlotRow({ slot }: { slot: RequisitionSlot }): ReactNode {
+  const { t, i18n } = useLingui()
   const isOccupied = slot.status === 'occupied'
 
   return (
@@ -41,7 +45,7 @@ function SlotRow({ slot }: { slot: RequisitionSlot }): ReactNode {
 
       <div className="min-w-0 flex-1">
         <p className={cn('truncate text-sm font-medium', isOccupied ? 'text-ink' : 'text-ink-3')}>
-          {slot.assigneeName ?? 'Sin asignar'}
+          {slot.assigneeName ?? t`Sin asignar`}
         </p>
         <p className="mt-0.5 truncate text-sm text-ink-3">
           {/*
@@ -49,7 +53,9 @@ function SlotRow({ slot }: { slot: RequisitionSlot }): ReactNode {
             dice «Asignada» porque las tres personas del ejemplo son mujeres, y
             deducir el género del nombre acaba mal.
           */}
-          {slot.assignedAt ? `Asignado ${formatDayMonthTime(slot.assignedAt)}` : slot.offerChannel}
+          {slot.assignedAt
+            ? t`Asignado ${formatDayMonthTime(slot.assignedAt)}`
+            : slot.offerChannel && i18n._(slot.offerChannel)}
         </p>
       </div>
 
@@ -63,20 +69,23 @@ function SlotRow({ slot }: { slot: RequisitionSlot }): ReactNode {
           className={cn('size-2 shrink-0 rounded-full', isOccupied ? 'bg-green' : 'bg-ink-3')}
           aria-hidden
         />
-        {SLOT_STATUS_LABEL[slot.status]}
+        {IS_DEV_UI ? slot.status : i18n._(SLOT_STATUS_LABEL[slot.status])}
       </span>
     </li>
   )
 }
 
 export function SlotList({ position }: { position: RequisitionPosition }): ReactNode {
+  const { t } = useLingui()
+  const { index, name } = position
+
   return (
     <SectionCard
-      title={`Slots de la posición ${String(position.index)} · ${position.name}`}
+      title={t`Slots de la posición ${index} · ${name}`}
       subtitle={
         IS_DEV_UI
           ? 'La unidad de bloqueo. Un slot libre se puede borrar; uno ocupado no (FK de coverage.assignment)'
-          : 'Cada slot es un lugar por cubrir. Un slot libre se puede borrar; uno ocupado no.'
+          : t`Cada slot es un lugar por cubrir. Un slot libre se puede borrar; uno ocupado no.`
       }
     >
       <ul className="flex flex-col gap-3">

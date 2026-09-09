@@ -431,7 +431,10 @@ export function WorkerDetailPage(): ReactNode {
                 : 'Sube y verifica los documentos del Expediente'
             }
           >
-            {/* Alta: tipo + archivo. Verificar el SSN/ITIN es lo que levanta la retención. */}
+            {/* Alta: tipo + archivo. Verificar el SSN/ITIN NO levanta la retención del
+                16% — ese cálculo lee `has_tax_id` (columna cifrada que hoy nadie
+                escribe, D-27/D-33), no `worker_document.verified_at`. Verificar aquí
+                solo marca el documento como revisado. */}
             {canEditDocuments && (
               <div className="mb-4 flex flex-wrap items-center gap-3 rounded-md bg-surface-2 p-3">
                 <Select value={uploadType} onValueChange={setUploadType}>
@@ -517,7 +520,7 @@ export function WorkerDetailPage(): ReactNode {
                       <Button
                         variant="secondary"
                         className="px-3 py-1 text-xs"
-                        title="Verificar el documento (si es el SSN/ITIN, levanta la retención)"
+                        title="Marca el documento como revisado. No afecta la retención del 16% del SSN/ITIN."
                         onClick={() => {
                           void verifyDocument({ workerId, documentId: doc.id })
                             .unwrap()

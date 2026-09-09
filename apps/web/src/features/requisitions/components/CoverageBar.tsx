@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { statusLight } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -12,7 +13,10 @@ import { describeCoverage } from '../utils/coverage'
  * leerlo igual.
  */
 export function CoverageBar({ coverage }: { coverage: RequisitionCoverage }): ReactNode {
-  const { label, token, percent } = describeCoverage(coverage)
+  const { t, i18n } = useLingui()
+  const { label: labelDescriptor, token, percent } = describeCoverage(coverage)
+  const label = i18n._(labelDescriptor)
+  const { filled, total } = coverage
 
   return (
     <div className="min-w-32">
@@ -26,7 +30,7 @@ export function CoverageBar({ coverage }: { coverage: RequisitionCoverage }): Re
       <div
         className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-3"
         role="img"
-        aria-label={`${coverage.filled} de ${coverage.total} posiciones · ${label}`}
+        aria-label={t`${filled} de ${total} posiciones · ${label}`}
       >
         {percent > 0 && (
           <div

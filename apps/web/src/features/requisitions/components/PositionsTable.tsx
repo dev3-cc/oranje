@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react/macro'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, cn } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -10,7 +13,16 @@ import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { URGENCY_LABEL, URGENCY_TOKEN } from '@/shared/constants/requisitionStatus'
 import { formatDayMonth } from '@/shared/lib/formatters'
 
-const HEADERS = ['#', 'Posición', 'Cant.', 'Inicio', 'Cobertura', 'Urgencia', 'Modalidad']
+/** `#` no es texto: se pinta tal cual; el resto se traduce al pintar con `i18n._()` (D-36). */
+const HEADERS: readonly (MessageDescriptor | '#')[] = [
+  '#',
+  msg`Posición`,
+  msg`Cant.`,
+  msg`Inicio`,
+  msg`Cobertura`,
+  msg`Urgencia`,
+  msg`Modalidad`,
+]
 
 export function PositionsTable({
   positions,
@@ -21,23 +33,28 @@ export function PositionsTable({
   selectedId: string
   onSelect: (positionId: string) => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
+
   return (
     <SectionCard
-      title="Posiciones"
-      subtitle="Cada posición lleva dos semáforos: Cobertura (cuántos slots están ocupados) y Urgencia (cuánto falta para su inicio)"
+      title={t`Posiciones`}
+      subtitle={t`Cada posición lleva dos semáforos: Cobertura (cuántos slots están ocupados) y Urgencia (cuánto falta para su inicio)`}
     >
       <Table className="min-w-[46rem] text-left">
         <TableHeader>
           <TableRow className="border-line">
-            {HEADERS.map((header) => (
-              <TableHead
-                key={header}
-                scope="col"
-                className="px-3 py-3 text-xs font-semibold tracking-wide text-ink-3 uppercase"
-              >
-                {header}
-              </TableHead>
-            ))}
+            {HEADERS.map((header) => {
+              const label = header === '#' ? header : i18n._(header)
+              return (
+                <TableHead
+                  key={label}
+                  scope="col"
+                  className="px-3 py-3 text-xs font-semibold tracking-wide text-ink-3 uppercase"
+                >
+                  {label}
+                </TableHead>
+              )
+            })}
           </TableRow>
         </TableHeader>
 

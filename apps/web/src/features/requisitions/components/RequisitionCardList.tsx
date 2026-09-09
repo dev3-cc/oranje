@@ -1,3 +1,4 @@
+import { Plural, Trans, useLingui } from '@lingui/react/macro'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
@@ -35,6 +36,8 @@ function initialsOf(fullName: string): string {
  * foto queda el edificio, como en el Pipeline.
  */
 function RequisitionCard({ item }: { item: RequisitionRow }): ReactNode {
+  const { t } = useLingui()
+  const { number, department, positions } = item
   /* Magic Bento (reactbits): la tarjeta avisa al pasar; se apaga sola en táctil y reduced motion. */
   return (
     <MagicCard className="rounded-2xl">
@@ -65,8 +68,10 @@ function RequisitionCard({ item }: { item: RequisitionRow }): ReactNode {
             />
           </div>
           <p className="mt-0.5 text-sm text-ink-3">
-            {item.number} · {item.department} · {item.positions}{' '}
-            {item.positions === 1 ? 'posición' : 'posiciones'}
+            <Trans>
+              {number} · {department} ·{' '}
+              <Plural value={positions} one="# posición" other="# posiciones" />
+            </Trans>
           </p>
 
           <div className="mt-3">
@@ -98,8 +103,8 @@ function RequisitionCard({ item }: { item: RequisitionRow }): ReactNode {
             )}
             <span className="shrink-0 text-xs text-ink-3">
               {item.authorizedAt
-                ? `Autorizada ${formatDayMonthTime(item.authorizedAt)}`
-                : 'Borrador'}
+                ? t`Autorizada ${formatDayMonthTime(item.authorizedAt)}`
+                : t`Borrador`}
             </span>
           </div>
         </div>
@@ -109,11 +114,13 @@ function RequisitionCard({ item }: { item: RequisitionRow }): ReactNode {
 }
 
 export function RequisitionCardList({ items }: { items: RequisitionRow[] }): ReactNode {
+  const { t } = useLingui()
+
   if (items.length === 0) {
     return (
       <EmptyState
-        title="Aún no hay requisiciones"
-        text="Cuando un hotel pida personal, su requisición aparecerá aquí con su semáforo. Los borradores solo los ve quien los crea."
+        title={t`Aún no hay requisiciones`}
+        text={t`Cuando un hotel pida personal, su requisición aparecerá aquí con su semáforo. Los borradores solo los ve quien los crea.`}
       />
     )
   }

@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
@@ -12,18 +13,19 @@ import {
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 export function StaleProspectList({ prospects }: { prospects: StaleProspect[] }): ReactNode {
+  const { t } = useLingui()
   return (
     <SectionCard
-      title="Sin actividad reciente"
+      title={t`Sin actividad reciente`}
       subtitle={
         IS_DEV_UI
           ? 'Último contact_attempt hace 7+ días'
-          : 'Sin intento de contacto en 7 días o más'
+          : t`Sin intento de contacto en 7 días o más`
       }
     >
       {prospects.length === 0 ? (
         <p className="py-2 text-sm text-ink-3">
-          Ningún prospecto lleva más de 7 días sin un intento de contacto.
+          <Trans>Ningún prospecto lleva más de 7 días sin un intento de contacto.</Trans>
         </p>
       ) : (
         <ul className="flex flex-col gap-5">
@@ -37,7 +39,7 @@ export function StaleProspectList({ prospects }: { prospects: StaleProspect[] })
                   {prospect.hotelName}
                 </Link>
                 <p className="mt-1 text-sm text-ink-3">
-                  {prospect.daysWithoutAttempt} d sin intento
+                  <Trans>{prospect.daysWithoutAttempt} d sin intento</Trans>
                 </p>
               </div>
 

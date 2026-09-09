@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@oranje/ui'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
@@ -40,6 +41,7 @@ export function TimesheetToolbar({
   onChange: (filters: Filters) => void
   onColumnWidthChange: (width: number) => void
 }): ReactNode {
+  const { t } = useLingui()
   const update =
     <K extends keyof Filters>(key: K) =>
     (value: string): void => {
@@ -101,18 +103,20 @@ export function TimesheetToolbar({
           isSearching={isSearching}
           value={draft}
           onChange={setDraft}
-          label="Buscar colaborador"
-          placeholder="Nombre del colaborador, p. ej. Ana Rivera…"
+          label={t`Buscar colaborador`}
+          placeholder={t`Nombre del colaborador, p. ej. Ana Rivera…`}
           className="flex-1"
         />
 
-        <LabeledControl label="Requisición">
+        <LabeledControl label={t`Requisición`}>
           <Select value={filters.requisitionNumber} onValueChange={update('requisitionNumber')}>
-            <SelectTrigger aria-label="Requisición" className="w-full">
+            <SelectTrigger aria-label={t`Requisición`} className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">Todas</SelectItem>
+              <SelectItem value="ALL">
+                <Trans>Todas</Trans>
+              </SelectItem>
               {requisitionNumbers.map((number) => (
                 <SelectItem key={number} value={number}>
                   {number}
@@ -122,13 +126,15 @@ export function TimesheetToolbar({
           </Select>
         </LabeledControl>
 
-        <LabeledControl label="Estado">
+        <LabeledControl label={t`Estado`}>
           <Select value={filters.status} onValueChange={update('status')}>
-            <SelectTrigger aria-label="Estado" className="w-full">
+            <SelectTrigger aria-label={t`Estado`} className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">Todos los estados</SelectItem>
+              <SelectItem value="ALL">
+                <Trans>Todos los estados</Trans>
+              </SelectItem>
               {TIMESHEET_WEEK_STATUSES.map((status) => (
                 <SelectItem key={status} value={status}>
                   {TIMESHEET_WEEK_STATUS_LABEL[status]}
@@ -138,13 +144,15 @@ export function TimesheetToolbar({
           </Select>
         </LabeledControl>
 
-        <LabeledControl label="Hotel">
+        <LabeledControl label={t`Hotel`}>
           <Select value={filters.hotelName} onValueChange={update('hotelName')}>
-            <SelectTrigger aria-label="Hotel" className="w-full">
+            <SelectTrigger aria-label={t`Hotel`} className="w-full">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">Todos los hoteles</SelectItem>
+              <SelectItem value="ALL">
+                <Trans>Todos los hoteles</Trans>
+              </SelectItem>
               {hotelNames.map((hotel) => (
                 <SelectItem key={hotel} value={hotel}>
                   {hotel}
@@ -159,10 +167,12 @@ export function TimesheetToolbar({
 
       {showZoom && (
         <div className="flex flex-col items-end gap-1.5">
-          <span className="text-xs text-ink-3">Zoom · ancho de columna</span>
+          <span className="text-xs text-ink-3">
+            <Trans>Zoom · ancho de columna</Trans>
+          </span>
           <div
             role="group"
-            aria-label="Ancho de columna"
+            aria-label={t`Ancho de columna`}
             className="flex items-center gap-1 rounded-lg border border-line bg-surface p-1"
           >
             {COLUMN_WIDTHS.map((width) => (

@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@oranje/ui'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useContext, useState, type ReactNode } from 'react'
@@ -88,7 +89,9 @@ function QuietRow({ row }: { row: TimelineRow }): ReactNode {
       )}
       <div className="min-w-0">
         <p className="truncate text-base font-bold text-ink-3">{row.workerName}</p>
-        <p className="text-xs text-ink-4">Sin timesheet esta semana</p>
+        <p className="text-xs text-ink-4">
+          <Trans>Sin timesheet esta semana</Trans>
+        </p>
       </div>
     </div>
   )
@@ -131,6 +134,7 @@ export function TimesheetGrid({
   ) => void
   onManualPunch: (row: TimesheetRow) => void
 }): ReactNode {
+  const { t } = useLingui()
   const { isDragging } = useContext(WeekDragContext)
   const reduceMotion = useReducedMotion() ?? false
   const today = todayIso()
@@ -157,7 +161,9 @@ export function TimesheetGrid({
   if (timeline.rows.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-        Nadie coincide con esos filtros esta semana. Cambia la requisición, el estado o el hotel.
+        <Trans>
+          Nadie coincide con esos filtros esta semana. Cambia la requisición, el estado o el hotel.
+        </Trans>
       </p>
     )
   }
@@ -178,7 +184,6 @@ export function TimesheetGrid({
                 <WorkerWeekSummary
                   row={summary}
                   photoUrl={row.photoUrl}
-                  hotelPhotoUrl={row.hotelPhotoUrl}
                   onManualPunch={onManualPunch}
                 />
               ) : (
@@ -201,7 +206,7 @@ export function TimesheetGrid({
                           <p className="text-[11px] font-semibold text-ink-4">
                             {formatWeekday(day)} {formatDayNumber(day)}
                           </p>
-                          <p className="text-xs text-ink-4" title="Sin registro este día">
+                          <p className="text-xs text-ink-4" title={t`Sin registro este día`}>
                             —
                           </p>
                         </li>
@@ -258,7 +263,7 @@ export function TimesheetGrid({
               horizontal del contenedor (zoom/trackpad), no solo contra la
               cinta. En pantallas chicas se angosta: los días primero. */}
             <div className="sticky left-0 z-20 flex w-52 shrink-0 items-end border-r border-line bg-surface px-4 py-4 text-xs font-semibold tracking-wide text-ink-3 uppercase lg:w-[260px]">
-              Colaborador
+              <Trans>Colaborador</Trans>
             </div>
             <div className="overflow-hidden" style={{ width: viewportWidth }}>
               <div className="grid h-full items-end" style={sheetStyle}>
@@ -325,7 +330,6 @@ export function TimesheetGrid({
                         <WorkerWeekSummary
                           row={summary}
                           photoUrl={row.photoUrl}
-                          hotelPhotoUrl={row.hotelPhotoUrl}
                           onManualPunch={onManualPunch}
                           onRequisitionHover={(hovering) => {
                             setLitRunKey(hovering ? summaryRunKey : null)
@@ -429,8 +433,10 @@ export function TimesheetGrid({
                                     <TooltipContent side="top">
                                       <p className="text-xs font-semibold">{row.hotelName}</p>
                                       <p className="text-xs text-ink-3">
-                                        {entry.requisitionNumber ?? 'Sin folio'} · días de esta
-                                        requisición
+                                        <Trans>
+                                          {entry.requisitionNumber ?? t`Sin folio`} · días de esta
+                                          requisición
+                                        </Trans>
                                       </p>
                                     </TooltipContent>
                                   </Tooltip>

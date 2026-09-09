@@ -1,3 +1,7 @@
+import { msg } from '@lingui/core/macro'
+
+import { labelMap } from '@/shared/lib/i18nLabels'
+
 /**
  * Catálogos compartidos del dominio.
  *
@@ -24,13 +28,15 @@ export const ENGLISH_LEVELS = [
 
 export type EnglishLevel = (typeof ENGLISH_LEVELS)[number]
 
-export const ENGLISH_LEVEL_LABEL: Record<EnglishLevel, string> = {
-  NO_REQUERIDO: 'No requerido',
-  BASICO: 'Básico',
-  CONVERSACIONAL: 'Conversacional',
-  INTERMEDIO: 'Intermedio',
-  AVANZADO: 'Avanzado',
+const ENGLISH_LEVEL_MESSAGE = {
+  NO_REQUERIDO: msg`No requerido`,
+  BASICO: msg`Básico`,
+  CONVERSACIONAL: msg`Conversacional`,
+  INTERMEDIO: msg`Intermedio`,
+  AVANZADO: msg`Avanzado`,
 }
+
+export const ENGLISH_LEVEL_LABEL: Record<EnglishLevel, string> = labelMap(ENGLISH_LEVEL_MESSAGE)
 
 /** Los que puede tener una persona: lo demás es lo que pide una posición. */
 export const WORKER_ENGLISH_LEVELS: readonly EnglishLevel[] = [
@@ -54,12 +60,15 @@ export const HIRING_MODALITIES = [
 
 export type HiringModality = (typeof HIRING_MODALITIES)[number]
 
-export const HIRING_MODALITY_LABEL: Record<HiringModality, string> = {
-  TIEMPO_COMPLETO: 'Tiempo completo',
-  MEDIO_TIEMPO: 'Medio tiempo',
-  TEMPORAL: 'Temporal',
-  SEGUN_SOLICITUD: 'Según solicitud',
+const HIRING_MODALITY_MESSAGE = {
+  TIEMPO_COMPLETO: msg`Tiempo completo`,
+  MEDIO_TIEMPO: msg`Medio tiempo`,
+  TEMPORAL: msg`Temporal`,
+  SEGUN_SOLICITUD: msg`Según solicitud`,
 }
+
+export const HIRING_MODALITY_LABEL: Record<HiringModality, string> =
+  labelMap(HIRING_MODALITY_MESSAGE)
 
 /** Posiciones del catálogo, las mismas que cotiza un contrato. */
 export const CATALOG_POSITIONS = ['Housekeeper', 'Houseman', 'Laundry', 'Chef'] as const

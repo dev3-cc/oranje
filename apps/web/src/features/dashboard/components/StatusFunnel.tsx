@@ -1,3 +1,5 @@
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import {
   ChartContainer,
   ChartTooltip,
@@ -18,9 +20,8 @@ import {
 } from '@/shared/constants/onboardingStatus'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
-const chartConfig = {
-  count: { label: 'Prospectos' },
-} satisfies ChartConfig
+/** La etiqueta de la serie; se traduce al pintar con `i18n._()` (D-36). */
+const COUNT_LABEL = msg`Prospectos`
 
 /**
  * La distribución del pipeline como la DONA de shadcn (su bloque «Donut with
@@ -29,6 +30,8 @@ const chartConfig = {
  * las barras se veían rotas; la dona siempre se ve entera.
  */
 export function StatusFunnel({ buckets }: { buckets: FunnelBucket[] }): ReactNode {
+  const { t, i18n } = useLingui()
+  const chartConfig = { count: { label: i18n._(COUNT_LABEL) } } satisfies ChartConfig
   const data = buckets
     .filter((bucket) => bucket.count > 0)
     .map((bucket) => ({
@@ -41,9 +44,9 @@ export function StatusFunnel({ buckets }: { buckets: FunnelBucket[] }): ReactNod
 
   return (
     <SectionCard
-      title="Pipeline por estado"
+      title={t`Pipeline por estado`}
       subtitle={
-        IS_DEV_UI ? 'prospect.onboarding_state_id — solo ciclos abiertos' : 'Solo ciclos abiertos'
+        IS_DEV_UI ? 'prospect.onboarding_state_id — solo ciclos abiertos' : t`Solo ciclos abiertos`
       }
     >
       <div className="relative">
@@ -55,7 +58,9 @@ export function StatusFunnel({ buckets }: { buckets: FunnelBucket[] }): ReactNod
         />
 
         {total === 0 ? (
-          <p className="py-2 text-sm text-ink-3">Sin prospectos abiertos en el periodo.</p>
+          <p className="py-2 text-sm text-ink-3">
+            <Trans>Sin prospectos abiertos en el periodo.</Trans>
+          </p>
         ) : (
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-8">
             <ChartContainer config={chartConfig} className="aspect-square h-56 shrink-0">
@@ -93,7 +98,7 @@ export function StatusFunnel({ buckets }: { buckets: FunnelBucket[] }): ReactNod
                             y={(viewBox.cy ?? 0) + 22}
                             className="fill-ink-3 text-xs"
                           >
-                            abiertos
+                            <Trans>abiertos</Trans>
                           </tspan>
                         </text>
                       )

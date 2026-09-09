@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import type { ReactNode } from 'react'
 
 import { AuditFormDialog } from './AuditFormDialog'
@@ -20,16 +21,17 @@ export function PersonalPresentationAuditDialog({
   onClose: () => void
   onSaved?: () => void
 }): ReactNode {
+  const { t } = useLingui()
   return (
     <AuditFormDialog
       auditType="PERSONAL_PRESENTATION"
       hotelId={hotelId}
       worker={worker}
-      title="Auditoría de Presentación Personal"
+      title={t`Auditoría de Presentación Personal`}
       description={
         auditId
-          ? 'Corrige lo que haga falta: se guarda con PATCH, sobre la misma auditoría.'
-          : 'Uniformidad, higiene, seguridad y actitud del colaborador, reactivo por reactivo.'
+          ? t`Corrige lo que haga falta: se guarda con PATCH, sobre la misma auditoría.`
+          : t`Uniformidad, higiene, seguridad y actitud del colaborador, reactivo por reactivo.`
       }
       {...(auditId ? { auditId } : {})}
       onClose={onClose}

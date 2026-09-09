@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg, plural } from '@lingui/core/macro'
+import { Plural, Trans, useLingui } from '@lingui/react/macro'
 import { cn } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
@@ -34,11 +37,12 @@ function coverageTone(filled: number, quantity: number): string {
   return 'bg-yellow/15 text-ink-2'
 }
 
-function coverageLabel(filled: number, quantity: number): string {
-  if (filled >= quantity) return 'cubierto'
-  if (filled === 0) return 'sin cubrir'
+/** Devuelve el descriptor: quien pinta lo traduce con `i18n._()` (D-36). */
+function coverageLabel(filled: number, quantity: number): MessageDescriptor {
+  if (filled >= quantity) return msg`cubierto`
+  if (filled === 0) return msg`sin cubrir`
   const missing = quantity - filled
-  return missing === 1 ? '1 hueco' : `${String(missing)} huecos`
+  return msg`${plural(missing, { one: '# hueco', other: '# huecos' })}`
 }
 
 /**
@@ -54,6 +58,7 @@ function coverageLabel(filled: number, quantity: number): string {
  * vínculo); el resumen de cobertura arriba y en el panel SÍ usa datos reales.
  */
 export function SchedulePage(): ReactNode {
+  const { t, i18n } = useLingui()
   const [requestedWeek, setRequestedWeek] = useState<string>(ANY_VALUE)
   const [selection, setSelection] = useState<ScheduleShiftSelection | null>(null)
 
@@ -85,19 +90,19 @@ export function SchedulePage(): ReactNode {
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-3xl font-bold tracking-tight text-ink">
-          <FoldText text="Schedule del hotel" />
+          <FoldText text={t`Schedule del hotel`} />
         </h1>
         <p className="mt-1.5 text-sm text-ink-3">
           {timeline && selectedWeek !== null
-            ? `${timeline.hotelName} · Semana ${formatWeekRange(selectedWeek, addDaysIso(selectedWeek, 6))}`
-            : 'Demanda y cobertura de la semana'}
+            ? t`${timeline.hotelName} · Semana ${formatWeekRange(selectedWeek, addDaysIso(selectedWeek, 6))}`
+            : t`Demanda y cobertura de la semana`}
           {IS_DEV_UI && <code className="text-ink-4"> · operations.schedule</code>}
         </p>
       </header>
 
       {isError && (
         <LoadError
-          message="No se pudo cargar el Schedule. Revisa tu conexión e inténtalo de nuevo."
+          message={t`No se pudo cargar el Schedule. Revisa tu conexión e inténtalo de nuevo.`}
           onRetry={() => {
             void refetch()
           }}
@@ -110,7 +115,9 @@ export function SchedulePage(): ReactNode {
         timeline &&
         (selectedWeek === null ? (
           <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-            Este hotel todavía no tiene Schedule. En cuanto se programe una semana, aparece aquí.
+            <Trans>
+              Este hotel todavía no tiene Schedule. En cuanto se programe una semana, aparece aquí.
+            </Trans>
           </p>
         ) : (
           <>
@@ -121,9 +128,11 @@ export function SchedulePage(): ReactNode {
                 onSelect={selectWeek}
               />
               <p className="rounded-md bg-surface-2 px-3 py-2 text-sm text-ink-2">
-                Semana: <span className="font-semibold">{coverage}% cubierto</span> ·{' '}
-                {holes === 1 ? '1 hueco' : `${String(holes)} huecos`} — se asignan desde la Bolsa de
-                la Reclutadora
+                <Trans>
+                  Semana: <span className="font-semibold">{coverage}% cubierto</span> ·{' '}
+                  <Plural value={holes} one="# hueco" other="# huecos" /> — se asignan desde la
+                  Bolsa de la Reclutadora
+                </Trans>
               </p>
             </div>
 
@@ -153,19 +162,21 @@ export function SchedulePage(): ReactNode {
                   {selection === null ? (
                     <div className="flex flex-col gap-3 rounded-lg border border-dashed border-line bg-surface p-5">
                       <p className="text-sm text-ink-3">
-                        Elige un turno para ver a sus colaboradores.
+                        <Trans>Elige un turno para ver a sus colaboradores.</Trans>
                       </p>
                       <div className="flex flex-col gap-2 border-t border-line pt-3">
                         <p className="text-xs font-semibold tracking-wide text-ink-3 uppercase">
-                          Demanda de la semana
+                          <Trans>Demanda de la semana</Trans>
                           {IS_DEV_UI && (
                             <span className="font-normal text-ink-4"> · demand.position</span>
                           )}
                         </p>
                         {timeline.demand.length === 0 ? (
                           <p className="text-sm text-ink-3">
-                            No hay requisiciones autorizadas para esta semana. Cuando un Manager
-                            autorice una, sus posiciones aparecerán aquí.
+                            <Trans>
+                              No hay requisiciones autorizadas para esta semana. Cuando un Manager
+                              autorice una, sus posiciones aparecerán aquí.
+                            </Trans>
                           </p>
                         ) : (
                           <ul className="flex flex-col gap-2">
@@ -179,7 +190,9 @@ export function SchedulePage(): ReactNode {
                                     {row.name}
                                   </span>
                                   <span className="block truncate text-xs text-ink-3">
-                                    {row.startTime} · demanda {row.quantity}
+                                    <Trans>
+                                      {row.startTime} · demanda {row.quantity}
+                                    </Trans>
                                   </span>
                                   <span className="block truncate text-xs text-ink-4">
                                     {row.requisitionNumber}
@@ -194,7 +207,7 @@ export function SchedulePage(): ReactNode {
                                   <span className="block text-sm font-semibold">
                                     {row.filled}/{row.quantity}
                                   </span>
-                                  {coverageLabel(row.filled, row.quantity)}
+                                  {i18n._(coverageLabel(row.filled, row.quantity))}
                                 </span>
                               </li>
                             ))}
@@ -206,16 +219,18 @@ export function SchedulePage(): ReactNode {
                     <div className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-5">
                       <div>
                         <p className="text-xs font-semibold tracking-wide text-ink-3 uppercase">
-                          Turno elegido
+                          <Trans>Turno elegido</Trans>
                         </p>
                         <p className="mt-1 text-lg font-bold text-ink">
                           {formatWeekday(selection.day)} {formatDayNumber(selection.day)} ·{' '}
                           {selection.start} – {selection.end}
                         </p>
                         <p className="text-sm text-ink-3">
-                          {selection.people.length === 1
-                            ? '1 colaborador'
-                            : `${String(selection.people.length)} colaboradores`}
+                          <Plural
+                            value={selection.people.length}
+                            one="# colaborador"
+                            other="# colaboradores"
+                          />
                         </p>
                       </div>
 
@@ -234,8 +249,10 @@ export function SchedulePage(): ReactNode {
                       </ul>
 
                       <p className="border-t border-line pt-3 text-xs text-ink-3">
-                        La posición y la requisición del turno se enseñan en la fila de Demanda: el
-                        contrato aún no liga el turno con una posición.
+                        <Trans>
+                          La posición y la requisición del turno se enseñan en la fila de Demanda:
+                          el contrato aún no liga el turno con una posición.
+                        </Trans>
                       </p>
                     </div>
                   )}

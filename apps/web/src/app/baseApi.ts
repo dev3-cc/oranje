@@ -86,6 +86,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
               roleTitle: role.title,
               hotel: null,
               department: null,
+              locale: 'es',
               permissions: [],
             },
             accessToken: session.accessToken,

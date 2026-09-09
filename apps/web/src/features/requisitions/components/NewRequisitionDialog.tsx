@@ -1,4 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import type { I18n, MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Plural, Trans, useLingui } from '@lingui/react/macro'
 import {
   Input,
   Select,
@@ -9,7 +12,7 @@ import {
   cn,
   toast,
 } from '@oranje/ui'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Controller, useFieldArray, useForm, type FieldErrors } from 'react-hook-form'
 
 import {
@@ -19,8 +22,8 @@ import {
   useGetRequisitionFormOptionsQuery,
 } from '../api/requisitionsApi'
 import {
+  buildRequisitionFormSchema,
   emptyPositionDraft,
-  requisitionFormSchema,
   type RequisitionForm,
   type RequisitionPositionDraft,
 } from '../types/requisitionForm.schema'
@@ -39,29 +42,34 @@ import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'new-requisition'
 
-const INTRO_SLIDES = [
+/** Las diapositivas del intro; el texto se traduce al pintar con `i18n._()` (D-36). */
+const INTRO_SLIDES: readonly {
+  image: string
+  title: MessageDescriptor
+  text: MessageDescriptor
+}[] = [
   {
     image: personajeContratacion,
-    title: 'Pide personal para tu hotel',
-    text: 'La requisición es el pedido formal de colaboradores: qué posiciones necesitas y cuántas personas en cada una.',
+    title: msg`Pide personal para tu hotel`,
+    text: msg`La requisición es el pedido formal de colaboradores: qué posiciones necesitas y cuántas personas en cada una.`,
   },
   {
     image: personajeCronograma,
-    title: 'Cada posición con fecha y hora',
-    text: 'Define cuántos, desde cuándo y en qué horario. Cada unidad de cantidad es un lugar que Reclutamiento va a cubrir.',
+    title: msg`Cada posición con fecha y hora`,
+    text: msg`Define cuántos, desde cuándo y en qué horario. Cada unidad de cantidad es un lugar que Reclutamiento va a cubrir.`,
   },
   {
     image: personajeUrgente,
-    title: 'Nace por autorizar',
-    text: 'El folio se asigna al guardar y la urgencia corre desde que un Manager la autoriza — no la dejes en borrador.',
+    title: msg`Nace por autorizar`,
+    text: msg`El folio se asigna al guardar y la urgencia corre desde que un Manager la autoriza — no la dejes en borrador.`,
   },
-] as const
+]
 
-const WIZARD_STEPS = [
-  { step: 1, label: 'El hotel' },
-  { step: 2, label: 'Las posiciones' },
-  { step: 3, label: 'Revisión' },
-] as const
+const WIZARD_STEPS: readonly { step: number; label: MessageDescriptor }[] = [
+  { step: 1, label: msg`El hotel` },
+  { step: 2, label: msg`Las posiciones` },
+  { step: 3, label: msg`Revisión` },
+]
 
 const NO_ENGLISH = 'NONE'
 
@@ -93,6 +101,24 @@ function firstRowError(errors: FieldErrors<RequisitionForm>, index: number): str
   return undefined
 }
 
+/** El `i18n` viene del componente (`useLingui`): así el mensaje habla el idioma activo (D-36). */
+function createRequisitionErrorMessage(error: unknown, i18n: I18n): string {
+  return apiErrorMessage(error, {
+    byCode: {
+      DEPARTMENT_OUT_OF_SCOPE: i18n._(
+        msg`Solo puedes pedir posiciones de tu departamento. Las de otro departamento las crea su Manager de Área o el Manager General.`,
+      ),
+      HOTEL_OUT_OF_SCOPE: i18n._(msg`Solo puedes crear requisiciones de tu hotel.`),
+      FORBIDDEN: i18n._(
+        msg`Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área o el Manager General del hotel.`,
+      ),
+    },
+    fallback: i18n._(
+      msg`No se pudo guardar la requisición. Revisa las posiciones e inténtalo de nuevo.`,
+    ),
+  })
+}
+
 export function NewRequisitionDialog({
   isOpen,
   onClose,
@@ -100,8 +126,13 @@ export function NewRequisitionDialog({
   isOpen: boolean
   onClose: () => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const { data: options } = useGetRequisitionFormOptionsQuery(undefined, { skip: !isOpen })
   const [createRequisition, { isLoading }] = useCreateRequisitionMutation()
+
+  /* Los mensajes del esquema se resuelven al armarlo, así que se rearma al
+     cambiar de idioma: `i18n` no cambia de identidad al activar otro (D-36). */
+  const schema = useMemo(() => buildRequisitionFormSchema(i18n), [i18n, i18n.locale])
 
   const {
     register,
@@ -115,7 +146,7 @@ export function NewRequisitionDialog({
     trigger,
     formState: { errors },
   } = useForm<RequisitionForm>({
-    resolver: zodResolver(requisitionFormSchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       hotelId: '',
       department: '',
@@ -213,6 +244,7 @@ export function NewRequisitionDialog({
     (total, position) => total + (Number(position.quantity) || 0),
     0,
   )
+  const positionCount = fields.length
 
   const onSubmit = handleSubmit(async (values) => {
     try {
@@ -235,12 +267,11 @@ export function NewRequisitionDialog({
        * Manager la autoriza — se dice aquí, cuando acaba de pasar, no solo
        * en el onboarding que se ve una vez.
        */
-      toast.success('Requisición creada — quedó en Borrador', {
-        description:
-          'Reclutamiento la verá cuando un Manager la autorice. Sin la firma, para ellos no existe.',
+      toast.success(t`Requisición creada — quedó en Borrador`, {
+        description: t`Reclutamiento la verá cuando un Manager la autorice. Sin la firma, para ellos no existe.`,
         duration: 8000,
         action: {
-          label: 'Ir a autorizar',
+          label: t`Ir a autorizar`,
           onClick: () => {
             window.location.assign('/requisiciones/autorizacion')
           },
@@ -248,17 +279,7 @@ export function NewRequisitionDialog({
       })
     } catch (error) {
       setError('root', {
-        message: apiErrorMessage(error, {
-          byCode: {
-            DEPARTMENT_OUT_OF_SCOPE:
-              'Solo puedes pedir posiciones de tu departamento. Las de otro departamento las crea su Manager de Área o el Manager General.',
-            HOTEL_OUT_OF_SCOPE: 'Solo puedes crear requisiciones de tu hotel.',
-            FORBIDDEN:
-              'Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área o el Manager General del hotel.',
-          },
-          fallback:
-            'No se pudo guardar la requisición. Revisa las posiciones e inténtalo de nuevo.',
-        }),
+        message: createRequisitionErrorMessage(error, i18n),
       })
     }
   })
@@ -267,14 +288,18 @@ export function NewRequisitionDialog({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Nueva requisición"
+      title={t`Nueva requisición`}
       chromeless
       className="max-w-5xl"
     >
       {showIntro ? (
         <OnboardingIntro
-          slides={INTRO_SLIDES}
-          startLabel="Comenzar la requisición"
+          slides={INTRO_SLIDES.map((slide) => ({
+            image: slide.image,
+            title: i18n._(slide.title),
+            text: i18n._(slide.text),
+          }))}
+          startLabel={t`Comenzar la requisición`}
           onDone={() => {
             dismissIntro()
           }}
@@ -316,16 +341,18 @@ export function NewRequisitionDialog({
                 heroPhoto ? 'text-surface' : 'text-ink',
               )}
             >
-              <p className="text-2xl leading-tight font-bold">{hotel?.name ?? 'Elige el hotel'}</p>
+              <p className="text-2xl leading-tight font-bold">{hotel?.name ?? t`Elige el hotel`}</p>
               <p className={cn('text-sm', heroPhoto ? 'text-surface/85' : 'text-ink-2')}>
                 {hotel
-                  ? `Zona ${hotel.zoneName} · el Inspector se congela al guardar`
-                  : 'El Inspector se asigna solo por la zona del hotel'}
+                  ? t`Zona ${hotel.zoneName} · el Inspector se congela al guardar`
+                  : t`El Inspector se asigna solo por la zona del hotel`}
                 {IS_DEV_UI && <code className="ml-1.5 text-[11px] opacity-60">RR-13</code>}
               </p>
               <p className="text-sm font-semibold">
-                {fields.length} {fields.length === 1 ? 'posición' : 'posiciones'} · {totalSlots}{' '}
-                {totalSlots === 1 ? 'slot' : 'slots'}
+                <Trans>
+                  <Plural value={positionCount} one="# posición" other="# posiciones" /> ·{' '}
+                  <Plural value={totalSlots} one="# slot" other="# slots" />
+                </Trans>
               </p>
             </div>
           </aside>
@@ -333,16 +360,25 @@ export function NewRequisitionDialog({
           {}
           <section className="flex max-h-[calc(100vh-3rem)] min-w-0 flex-col">
             <header className="border-b border-line px-6 py-5">
-              <h2 className="text-xl font-bold text-ink">Nueva requisición</h2>
+              <h2 className="text-xl font-bold text-ink">
+                <Trans>Nueva requisición</Trans>
+              </h2>
               {}
               <p className="mt-1 text-sm text-ink-3">
-                El folio se asigna automáticamente al guardar
+                <Trans>El folio se asigna automáticamente al guardar</Trans>
                 {IS_DEV_UI && (
                   <code className="ml-1.5 text-[11px] text-ink-4">AAAAMMDDHHMM + homoclave</code>
                 )}
               </p>
               <div className="mt-3">
-                <StepIndicator steps={WIZARD_STEPS} current={step} onStepClick={setStep} />
+                <StepIndicator
+                  steps={WIZARD_STEPS.map((item) => ({
+                    step: item.step,
+                    label: i18n._(item.label),
+                  }))}
+                  current={step}
+                  onStepClick={setStep}
+                />
               </div>
             </header>
 
@@ -362,14 +398,14 @@ export function NewRequisitionDialog({
                 <div className="flex max-w-md flex-col gap-4">
                   <div className="flex flex-col gap-1.5">
                     <label htmlFor="req-hotel" className="text-sm font-medium text-ink-2">
-                      Hotel
+                      <Trans>Hotel</Trans>
                     </label>
                     {sessionHotel ? (
                       <Input
                         value={sessionHotel.name}
                         readOnly
-                        aria-label="Hotel"
-                        title="Solo puedes crear requisiciones de tu hotel"
+                        aria-label={t`Hotel`}
+                        title={t`Solo puedes crear requisiciones de tu hotel`}
                         className="cursor-not-allowed bg-surface-2"
                       />
                     ) : (
@@ -382,12 +418,12 @@ export function NewRequisitionDialog({
                             onValueChange={field.onChange}
                             disabled={options !== undefined && options.hotels.length === 0}
                           >
-                            <SelectTrigger id="req-hotel" aria-label="Hotel" className="w-full">
+                            <SelectTrigger id="req-hotel" aria-label={t`Hotel`} className="w-full">
                               <SelectValue
                                 placeholder={
                                   options !== undefined && options.hotels.length === 0
-                                    ? 'Aún no hay clientes activos'
-                                    : 'Elige el hotel'
+                                    ? t`Aún no hay clientes activos`
+                                    : t`Elige el hotel`
                                 }
                               />
                             </SelectTrigger>
@@ -404,8 +440,10 @@ export function NewRequisitionDialog({
                     )}
                     {!sessionHotel && options !== undefined && options.hotels.length === 0 && (
                       <span className="text-xs text-ink-3">
-                        Un hotel puede pedir personal cuando llega a Naranja, es decir, cuando ya es
-                        cliente activo.
+                        <Trans>
+                          Un hotel puede pedir personal cuando llega a Naranja, es decir, cuando ya
+                          es cliente activo.
+                        </Trans>
                       </span>
                     )}
                     {errors.hotelId && (
@@ -415,15 +453,15 @@ export function NewRequisitionDialog({
 
                   <div className="flex flex-col gap-1.5">
                     <label htmlFor="req-department" className="text-sm font-medium text-ink-2">
-                      Departamento del hotel
+                      <Trans>Departamento del hotel</Trans>
                     </label>
                     {sessionDepartment ? (
                       <Input
                         id="req-department"
                         value={sessionDepartment.name}
                         readOnly
-                        aria-label="Departamento del hotel"
-                        title="Solo puedes pedir posiciones de tu departamento"
+                        aria-label={t`Departamento del hotel`}
+                        title={t`Solo puedes pedir posiciones de tu departamento`}
                         className="cursor-not-allowed bg-surface-2"
                       />
                     ) : (
@@ -437,10 +475,10 @@ export function NewRequisitionDialog({
                           >
                             <SelectTrigger
                               id="req-department"
-                              aria-label="Departamento del hotel"
+                              aria-label={t`Departamento del hotel`}
                               className="w-full"
                             >
-                              <SelectValue placeholder="Elige el departamento" />
+                              <SelectValue placeholder={t`Elige el departamento`} />
                             </SelectTrigger>
                             <SelectContent>
                               {/* Un departamento sin posiciones en el catálogo no puede pedir
@@ -457,7 +495,7 @@ export function NewRequisitionDialog({
                                     disabled={!hasPositions}
                                   >
                                     {item.name}
-                                    {!hasPositions && ' · sin posiciones en el catálogo'}
+                                    {!hasPositions && ` · ${t`sin posiciones en el catálogo`}`}
                                   </SelectItem>
                                 )
                               })}
@@ -468,8 +506,10 @@ export function NewRequisitionDialog({
                     )}
                     {sessionDepartment && (
                       <span className="text-xs text-ink-3">
-                        Las requisiciones de otro departamento las crea su Manager de Área o el
-                        Manager General.
+                        <Trans>
+                          Las requisiciones de otro departamento las crea su Manager de Área o el
+                          Manager General.
+                        </Trans>
                       </span>
                     )}
                     {/* Sin esto el paso «no avanzaba» en silencio: la
@@ -484,19 +524,21 @@ export function NewRequisitionDialog({
               {step === 2 && (
                 <fieldset>
                   <legend className="text-base font-semibold text-ink">
-                    Posiciones solicitadas
+                    <Trans>Posiciones solicitadas</Trans>
                   </legend>
                   <p className="mt-1 text-sm text-ink-3">
                     {IS_DEV_UI
                       ? 'Cada unidad de Cantidad genera un slot: la fila que se bloquea al ocupar (D-02, RR-15)'
-                      : 'Cada unidad de Cantidad es un lugar por cubrir'}
+                      : t`Cada unidad de Cantidad es un lugar por cubrir`}
                   </p>
 
                   {departmentPositions !== undefined && departmentPositions.length === 0 && (
                     <p className="mt-3 rounded-md bg-yellow/15 px-3 py-2.5 text-sm text-ink-2">
-                      Este departamento todavía no tiene posiciones en el catálogo — por eso el
-                      selector de abajo no muestra nada. Pídele al Administrador que las agregue en
-                      Catálogos antes de pedir personal aquí.
+                      <Trans>
+                        Este departamento todavía no tiene posiciones en el catálogo — por eso el
+                        selector de abajo no muestra nada. Pídele al Administrador que las agregue
+                        en Catálogos antes de pedir personal aquí.
+                      </Trans>
                       {IS_DEV_UI && (
                         <code className="block text-xs text-ink-4">
                           catalogs.position sin filas para este hotel_department_id
@@ -509,6 +551,7 @@ export function NewRequisitionDialog({
                     {fields.map((field, index) => {
                       const quantity = Number(positions[index]?.quantity ?? 0) || 0
                       const rowError = firstRowError(errors, index)
+                      const ordinal = index + 1
 
                       return (
                         <div
@@ -519,7 +562,9 @@ export function NewRequisitionDialog({
                           )}
                         >
                           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                            <p className="text-sm font-semibold text-ink">Posición {index + 1}</p>
+                            <p className="text-sm font-semibold text-ink">
+                              <Trans>Posición {ordinal}</Trans>
+                            </p>
                             <div className="flex items-center gap-2">
                               <span className="inline-flex items-center gap-1.5 rounded-md bg-o-50 px-2.5 py-1 text-sm font-medium whitespace-nowrap text-o-700">
                                 <span
@@ -528,7 +573,11 @@ export function NewRequisitionDialog({
                                 >
                                   layers
                                 </span>
-                                {quantity} {quantity === 1 ? 'slot libre' : 'slots libres'}
+                                <Plural
+                                  value={quantity}
+                                  one="# slot libre"
+                                  other="# slots libres"
+                                />
                               </span>
                               <button
                                 type="button"
@@ -536,8 +585,8 @@ export function NewRequisitionDialog({
                                 onClick={() => {
                                   remove(index)
                                 }}
-                                aria-label={`Quitar posición ${String(index + 1)}`}
-                                title="Quitar esta posición del pedido"
+                                aria-label={t`Quitar posición ${ordinal}`}
+                                title={t`Quitar esta posición del pedido`}
                                 className="cursor-pointer rounded-md px-2 py-1 text-ink-3 transition-colors hover:text-red disabled:cursor-not-allowed disabled:opacity-40"
                               >
                                 {/* Basurero y no ✕: esto ELIMINA la posición,
@@ -554,7 +603,9 @@ export function NewRequisitionDialog({
 
                           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                             <label className="flex flex-col gap-1.5">
-                              <span className="text-xs font-medium text-ink-3">Posición</span>
+                              <span className="text-xs font-medium text-ink-3">
+                                <Trans>Posición</Trans>
+                              </span>
                               <Controller
                                 control={control}
                                 name={positionPath(index, 'catalogPositionId')}
@@ -565,14 +616,14 @@ export function NewRequisitionDialog({
                                     disabled={departmentPositions?.length === 0}
                                   >
                                     <SelectTrigger
-                                      aria-label={`Posición ${String(index + 1)}`}
+                                      aria-label={t`Posición ${ordinal}`}
                                       className="w-full font-semibold"
                                     >
                                       <SelectValue
                                         placeholder={
                                           departmentPositions?.length === 0
-                                            ? 'Sin posiciones para este departamento'
-                                            : 'Elige la posición'
+                                            ? t`Sin posiciones para este departamento`
+                                            : t`Elige la posición`
                                         }
                                       />
                                     </SelectTrigger>
@@ -589,7 +640,9 @@ export function NewRequisitionDialog({
                             </label>
 
                             <label className="flex flex-col gap-1.5">
-                              <span className="text-xs font-medium text-ink-3">Modalidad</span>
+                              <span className="text-xs font-medium text-ink-3">
+                                <Trans>Modalidad</Trans>
+                              </span>
                               <Controller
                                 control={control}
                                 name={positionPath(index, 'hiringModalityId')}
@@ -599,10 +652,10 @@ export function NewRequisitionDialog({
                                     onValueChange={f.onChange}
                                   >
                                     <SelectTrigger
-                                      aria-label={`Modalidad ${String(index + 1)}`}
+                                      aria-label={t`Modalidad ${ordinal}`}
                                       className="w-full"
                                     >
-                                      <SelectValue placeholder="Elige la modalidad" />
+                                      <SelectValue placeholder={t`Elige la modalidad`} />
                                     </SelectTrigger>
                                     <SelectContent>
                                       {(options?.modalities ?? []).map((item) => (
@@ -617,7 +670,9 @@ export function NewRequisitionDialog({
                             </label>
 
                             <label className="flex flex-col gap-1.5">
-                              <span className="text-xs font-medium text-ink-3">Inglés</span>
+                              <span className="text-xs font-medium text-ink-3">
+                                <Trans>Inglés</Trans>
+                              </span>
                               <Controller
                                 control={control}
                                 name={positionPath(index, 'englishLevelId')}
@@ -629,13 +684,15 @@ export function NewRequisitionDialog({
                                     }}
                                   >
                                     <SelectTrigger
-                                      aria-label={`Inglés ${String(index + 1)}`}
+                                      aria-label={t`Inglés ${ordinal}`}
                                       className="w-full"
                                     >
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value={NO_ENGLISH}>No requerido</SelectItem>
+                                      <SelectItem value={NO_ENGLISH}>
+                                        <Trans>No requerido</Trans>
+                                      </SelectItem>
                                       {(options?.englishLevels ?? []).map((item) => (
                                         <SelectItem key={item.id} value={item.id}>
                                           {item.name}
@@ -650,11 +707,13 @@ export function NewRequisitionDialog({
                             {/* El Departamento NO se repite aquí: se eligió en
                                 el paso 1 y baja solo a cada posición. */}
                             <label className="flex flex-col gap-1.5">
-                              <span className="text-xs font-medium text-ink-3">Cantidad</span>
+                              <span className="text-xs font-medium text-ink-3">
+                                <Trans>Cantidad</Trans>
+                              </span>
                               <Input
                                 {...register(positionPath(index, 'quantity'))}
                                 inputMode="numeric"
-                                aria-label={`Cantidad ${String(index + 1)}`}
+                                aria-label={t`Cantidad ${ordinal}`}
                               />
                             </label>
 
@@ -662,23 +721,27 @@ export function NewRequisitionDialog({
                                 partidos en media celda la fecha se truncaba
                                 («17/09/20…») con el icono encimado. */}
                             <label className="flex flex-col gap-1.5">
-                              <span className="text-xs font-medium text-ink-3">Inicio</span>
+                              <span className="text-xs font-medium text-ink-3">
+                                <Trans>Inicio</Trans>
+                              </span>
                               {/* `[color-scheme:light]` + tinta plena: sin esto
                                   el date/time nativo sale desvaído y casi no
                                   se lee sobre el fondo crema. */}
                               <Input
                                 type="date"
                                 {...register(positionPath(index, 'startDate'))}
-                                aria-label={`Inicio ${String(index + 1)}`}
+                                aria-label={t`Inicio ${ordinal}`}
                                 className="w-full min-w-0 text-ink [color-scheme:light]"
                               />
                             </label>
                             <label className="flex flex-col gap-1.5">
-                              <span className="text-xs font-medium text-ink-3">Hora</span>
+                              <span className="text-xs font-medium text-ink-3">
+                                <Trans>Hora</Trans>
+                              </span>
                               <Input
                                 type="time"
                                 {...register(positionPath(index, 'startTime'))}
-                                aria-label={`Hora ${String(index + 1)}`}
+                                aria-label={t`Hora ${ordinal}`}
                                 className="w-full min-w-0 text-ink [color-scheme:light]"
                               />
                             </label>
@@ -702,7 +765,7 @@ export function NewRequisitionDialog({
                         append(emptyPositionDraft(department))
                       }}
                     >
-                      Agregar otra posición
+                      <Trans>Agregar otra posición</Trans>
                     </Button>
                   </div>
                 </fieldset>
@@ -711,7 +774,9 @@ export function NewRequisitionDialog({
               {step === 3 && (
                 <div className="flex max-w-xl flex-col gap-4">
                   <div className="rounded-lg border border-line p-4">
-                    <p className="text-xs font-semibold text-ink-3 uppercase">Hotel</p>
+                    <p className="text-xs font-semibold text-ink-3 uppercase">
+                      <Trans>Hotel</Trans>
+                    </p>
                     <p className="mt-1 text-base font-bold text-ink">
                       {hotel?.name ?? sessionHotel?.name ?? '—'}
                     </p>
@@ -723,37 +788,48 @@ export function NewRequisitionDialog({
                     )}
                   </div>
                   <div className="rounded-lg border border-line p-4">
-                    <p className="text-xs font-semibold text-ink-3 uppercase">Posiciones</p>
+                    <p className="text-xs font-semibold text-ink-3 uppercase">
+                      <Trans>Posiciones</Trans>
+                    </p>
                     <ul className="mt-2 flex flex-col gap-2">
                       {positions.map((position, index) => {
                         const label = (departmentPositions ?? options?.positions ?? []).find(
                           (item) => item.id === position.catalogPositionId,
                         )?.name
+                        const ordinal = index + 1
+                        const slots = Number(position.quantity) || 0
+                        const startDate = position.startDate || '—'
                         return (
                           <li
                             key={fields[index]?.id ?? index}
                             className="flex items-center justify-between gap-3 text-sm"
                           >
                             <span className="font-semibold text-ink">
-                              {label ?? `Posición ${String(index + 1)}`}
+                              {label ?? t`Posición ${ordinal}`}
                             </span>
                             <span className="text-ink-2">
-                              {Number(position.quantity) || 0}{' '}
-                              {Number(position.quantity) === 1 ? 'slot' : 'slots'} · desde{' '}
-                              {position.startDate || '—'} · {position.startTime}
+                              <Trans>
+                                <Plural value={slots} one="# slot" other="# slots" /> · desde{' '}
+                                {startDate} · {position.startTime}
+                              </Trans>
                             </span>
                           </li>
                         )
                       })}
                     </ul>
                     <p className="mt-3 border-t border-line pt-3 text-sm font-semibold text-ink">
-                      Total: {fields.length} {fields.length === 1 ? 'posición' : 'posiciones'} ·{' '}
-                      {totalSlots} {totalSlots === 1 ? 'slot' : 'slots'}
+                      <Trans>
+                        Total:{' '}
+                        <Plural value={positionCount} one="# posición" other="# posiciones" /> ·{' '}
+                        <Plural value={totalSlots} one="# slot" other="# slots" />
+                      </Trans>
                     </p>
                   </div>
                   <p className="rounded-xl bg-o-50 px-4 py-3 text-xs leading-relaxed text-o-700">
-                    Nace en Borrador: para que Reclutamiento la vea, un Manager debe autorizarla —
-                    la urgencia corre desde ese momento.
+                    <Trans>
+                      Nace en Borrador: para que Reclutamiento la vea, un Manager debe autorizarla —
+                      la urgencia corre desde ese momento.
+                    </Trans>
                   </p>
                 </div>
               )}
@@ -766,12 +842,14 @@ export function NewRequisitionDialog({
             {}
             <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-6 py-4">
               <p className="text-sm font-semibold text-ink">
-                Total: {fields.length} {fields.length === 1 ? 'posición' : 'posiciones'} ·{' '}
-                {totalSlots} {totalSlots === 1 ? 'slot' : 'slots'}
+                <Trans>
+                  Total: <Plural value={positionCount} one="# posición" other="# posiciones" /> ·{' '}
+                  <Plural value={totalSlots} one="# slot" other="# slots" />
+                </Trans>
               </p>
               <div className="flex gap-3">
                 <Button variant="secondary" type="button" onClick={onClose}>
-                  Cancelar
+                  <Trans>Cancelar</Trans>
                 </Button>
                 {step > 1 && (
                   <Button
@@ -780,7 +858,7 @@ export function NewRequisitionDialog({
                       setStep(step - 1)
                     }}
                   >
-                    Atrás
+                    <Trans>Atrás</Trans>
                   </Button>
                 )}
                 {step < 3 ? (
@@ -791,7 +869,7 @@ export function NewRequisitionDialog({
                       void goNext()
                     }}
                   >
-                    Continuar
+                    <Trans>Continuar</Trans>
                   </Button>
                 ) : (
                   <Button
@@ -800,7 +878,7 @@ export function NewRequisitionDialog({
                     form={FORM_ID}
                     disabled={isLoading || !isReviewArmed}
                   >
-                    {isLoading ? 'Guardando…' : 'Guardar requisición'}
+                    {isLoading ? t`Guardando…` : t`Guardar requisición`}
                   </Button>
                 )}
               </div>

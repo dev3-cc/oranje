@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import {
   Input,
   Select,
@@ -47,6 +48,7 @@ function Field({
 }
 
 export function Phase3Page(): ReactNode {
+  const { t } = useLingui()
   const { data: profile } = useGetMyProfileQuery()
   const [save, { isLoading, isError, isSuccess, error: saveError }] = useCompleteSignupMutation()
 
@@ -84,13 +86,13 @@ export function Phase3Page(): ReactNode {
 
   const missingHint =
     draft.emergencyContactName.trim() === ''
-      ? 'Falta el nombre del contacto de emergencia'
+      ? t`Falta el nombre del contacto de emergencia`
       : !isCompletePhone(draft.emergencyContactPhone)
-        ? 'El teléfono de emergencia necesita al menos 7 dígitos (sin la lada)'
+        ? t`El teléfono de emergencia necesita al menos 7 dígitos (sin la lada)`
         : draft.emergencyContactRelationship === ''
-          ? 'Elige el parentesco'
+          ? t`Elige el parentesco`
           : draft.bloodType === ''
-            ? 'Elige el tipo de sangre'
+            ? t`Elige el tipo de sangre`
             : null
 
   async function submit(): Promise<void> {
@@ -103,7 +105,7 @@ export function Phase3Page(): ReactNode {
         bloodType: draft.bloodType,
         ...(draft.medicalNotes.trim() !== '' ? { medicalNotes: draft.medicalNotes.trim() } : {}),
       }).unwrap()
-      toast.success('Datos de emergencia guardados')
+      toast.success(t`Datos de emergencia guardados`)
     } catch {
       return
     }
@@ -112,19 +114,23 @@ export function Phase3Page(): ReactNode {
   return (
     <div className="flex flex-col gap-5">
       <header>
-        <h1 className="text-xl font-bold text-ink">Por si algo pasa</h1>
+        <h1 className="text-xl font-bold text-ink">
+          <Trans>Por si algo pasa</Trans>
+        </h1>
         <p className="mt-1 text-xs text-ink-3">
-          {IS_DEV_UI ? 'RF-C-02 · emergencia y salud' : 'A quién llamamos y qué debemos saber'}{' '}
+          {IS_DEV_UI ? 'RF-C-02 · emergencia y salud' : t`A quién llamamos y qué debemos saber`}{' '}
           <span className="rounded-full bg-o-50 px-2 py-0.5 font-semibold text-o-700">
-            Paso 2 de 2
+            <Trans>Paso 2 de 2</Trans>
           </span>
         </p>
       </header>
 
       <section className="flex flex-col gap-4">
-        <h2 className="text-sm font-semibold text-ink">Contacto de emergencia</h2>
+        <h2 className="text-sm font-semibold text-ink">
+          <Trans>Contacto de emergencia</Trans>
+        </h2>
 
-        <Field label="Nombre" htmlFor="emergencyContactName" column="emergency_contact_name">
+        <Field label={t`Nombre`} htmlFor="emergencyContactName" column="emergency_contact_name">
           <Input
             id="emergencyContactName"
             value={draft.emergencyContactName}
@@ -135,19 +141,19 @@ export function Phase3Page(): ReactNode {
           />
         </Field>
 
-        <Field label="Teléfono" column="emergency_contact_phone">
+        <Field label={t`Teléfono`} column="emergency_contact_phone">
           <PhoneInput
             value={draft.emergencyContactPhone}
             onChange={(value) => {
               update('emergencyContactPhone')(value)
             }}
-            ariaLabel="Teléfono"
+            ariaLabel={t`Teléfono`}
             placeholder="404 512 8890"
           />
         </Field>
 
         <Field
-          label="Parentesco"
+          label={t`Parentesco`}
           htmlFor="emergencyContactRelationship"
           column="emergency_contact_relationship"
         >
@@ -158,7 +164,7 @@ export function Phase3Page(): ReactNode {
             onValueChange={update('emergencyContactRelationship')}
           >
             <SelectTrigger id="emergencyContactRelationship" className="w-full">
-              <SelectValue placeholder="¿Qué es de ti?" />
+              <SelectValue placeholder={t`¿Qué es de ti?`} />
             </SelectTrigger>
             <SelectContent>
               {RELATIONSHIPS.map((relationship) => (
@@ -172,10 +178,12 @@ export function Phase3Page(): ReactNode {
       </section>
 
       <section className="flex flex-col gap-4 border-t border-line pt-4">
-        <h2 className="text-sm font-semibold text-ink">Salud</h2>
+        <h2 className="text-sm font-semibold text-ink">
+          <Trans>Salud</Trans>
+        </h2>
 
         <Field
-          label="Tipo de sangre"
+          label={t`Tipo de sangre`}
           htmlFor="bloodType"
           column="blood_type · valores del CHECK (D-26)"
         >
@@ -184,7 +192,7 @@ export function Phase3Page(): ReactNode {
             onValueChange={update('bloodType')}
           >
             <SelectTrigger id="bloodType" className="w-full">
-              <SelectValue placeholder="Elige tu tipo…" />
+              <SelectValue placeholder={t`Elige tu tipo…`} />
             </SelectTrigger>
             <SelectContent>
               {BLOOD_TYPES.map((type) => (
@@ -196,7 +204,11 @@ export function Phase3Page(): ReactNode {
           </Select>
         </Field>
 
-        <Field label="Alergias o condiciones médicas" htmlFor="medicalNotes" column="medical_notes">
+        <Field
+          label={t`Alergias o condiciones médicas`}
+          htmlFor="medicalNotes"
+          column="medical_notes"
+        >
           <Textarea
             id="medicalNotes"
             value={draft.medicalNotes}
@@ -204,7 +216,7 @@ export function Phase3Page(): ReactNode {
               update('medicalNotes')(event.target.value)
             }}
             rows={3}
-            placeholder="Ninguna"
+            placeholder={t`Ninguna`}
           />
         </Field>
       </section>
@@ -217,14 +229,14 @@ export function Phase3Page(): ReactNode {
           void submit()
         }}
       >
-        {isLoading ? 'Guardando…' : 'Guardar'}
+        {isLoading ? t`Guardando…` : t`Guardar`}
       </Button>
 
       {isSuccess && (
         <div className="flex items-center gap-3 rounded-md bg-green/10 px-4 py-3">
           <img src={mascotaFeliz} alt="" aria-hidden className="h-16 w-auto" />
           <p className="text-sm text-ink-2">
-            Listo: tu expediente quedó completo. La Reclutadora lo validará
+            <Trans>Listo: tu expediente quedó completo. La Reclutadora lo validará</Trans>
             {IS_DEV_UI ? ' (RF-08)' : ''}.
           </p>
         </div>
@@ -232,7 +244,7 @@ export function Phase3Page(): ReactNode {
       {isError && (
         <p role="alert" className="text-sm text-red">
           {apiErrorMessage(saveError, {
-            fallback: 'No se pudieron guardar tus datos. Inténtalo de nuevo.',
+            fallback: t`No se pudieron guardar tus datos. Inténtalo de nuevo.`,
           })}
         </p>
       )}

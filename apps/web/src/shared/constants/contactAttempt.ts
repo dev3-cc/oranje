@@ -1,3 +1,7 @@
+import { msg } from '@lingui/core/macro'
+
+import { labelMap } from '@/shared/lib/i18nLabels'
+
 /**
  * Listas cerradas del intento de contacto.
  *
@@ -18,11 +22,15 @@ export const CONTACT_ATTEMPT_TYPES = ['COLD_VISIT', 'CALL', 'EMAIL'] as const
 
 export type ContactAttemptType = (typeof CONTACT_ATTEMPT_TYPES)[number]
 
-export const CONTACT_ATTEMPT_TYPE_LABEL: Record<ContactAttemptType, string> = {
-  COLD_VISIT: 'Visita en frío',
-  CALL: 'Llamada',
-  EMAIL: 'Correo',
+const CONTACT_ATTEMPT_TYPE_MESSAGE = {
+  COLD_VISIT: msg`Visita en frío`,
+  CALL: msg`Llamada`,
+  EMAIL: msg`Correo`,
 }
+
+export const CONTACT_ATTEMPT_TYPE_LABEL: Record<ContactAttemptType, string> = labelMap(
+  CONTACT_ATTEMPT_TYPE_MESSAGE,
+)
 
 export const CONTACT_ATTEMPT_OUTCOMES = [
   'NO_ANSWER',
@@ -33,9 +41,13 @@ export const CONTACT_ATTEMPT_OUTCOMES = [
 
 export type ContactAttemptOutcome = (typeof CONTACT_ATTEMPT_OUTCOMES)[number]
 
-export const CONTACT_ATTEMPT_OUTCOME_LABEL: Record<ContactAttemptOutcome, string> = {
-  NO_ANSWER: 'No contestó',
-  INTERESTED: 'Interesado',
-  NOT_INTERESTED: 'No interesado',
-  MEETING_SET: 'Cita agendada',
+const CONTACT_ATTEMPT_OUTCOME_MESSAGE = {
+  NO_ANSWER: msg`No contestó`,
+  INTERESTED: msg`Interesado`,
+  NOT_INTERESTED: msg`No interesado`,
+  MEETING_SET: msg`Cita agendada`,
 }
+
+export const CONTACT_ATTEMPT_OUTCOME_LABEL: Record<ContactAttemptOutcome, string> = labelMap(
+  CONTACT_ATTEMPT_OUTCOME_MESSAGE,
+)

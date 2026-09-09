@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { cn } from '@oranje/ui'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
@@ -76,6 +77,7 @@ export function WeekSlider({
   onNavigate: (week: string) => void
   children: ReactNode
 }): ReactNode {
+  const { t } = useLingui()
   const reduceMotion = useReducedMotion() ?? false
   const rootRef = useRef<HTMLDivElement | null>(null)
   const offsetRef = useRef(0)
@@ -368,13 +370,13 @@ export function WeekSlider({
       /* La etiqueta narra el paseo: qué semana quedó a la vista, o el tope. */
       const ribbon = -basePx + offset
       if (ribbon > 12) {
-        setHint({ text: 'No hay semanas anteriores con datos', isEnd: true })
+        setHint({ text: t`No hay semanas anteriores con datos`, isEnd: true })
       } else if (ribbon < minRibbonX - 12) {
-        setHint({ text: 'Ya estás en la semana más reciente', isEnd: true })
+        setHint({ text: t`Ya estás en la semana más reciente`, isEnd: true })
       } else {
         const visibleWeek = weekAtRibbon(ribbon)
         setHint({
-          text: `Viendo: ${formatWeekRange(visibleWeek, addDaysIso(visibleWeek, 6))}`,
+          text: t`Viendo: ${formatWeekRange(visibleWeek, addDaysIso(visibleWeek, 6))}`,
           isEnd: false,
         })
       }
@@ -389,13 +391,13 @@ export function WeekSlider({
     if (shift !== 0) {
       const target = availableWeeks[index + shift] as string
       setHint({
-        text: `Soltar en: ${formatWeekRange(target, addDaysIso(target, 6))}`,
+        text: t`Soltar en: ${formatWeekRange(target, addDaysIso(target, 6))}`,
         isEnd: false,
       })
     } else if (offset < -24 && weeksAfter === 0) {
-      setHint({ text: 'Ya estás en la semana más reciente', isEnd: true })
+      setHint({ text: t`Ya estás en la semana más reciente`, isEnd: true })
     } else if (offset > 24 && index === 0) {
-      setHint({ text: 'No hay semanas anteriores con datos', isEnd: true })
+      setHint({ text: t`No hay semanas anteriores con datos`, isEnd: true })
     } else {
       setHint(null)
     }

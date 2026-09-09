@@ -1,8 +1,15 @@
+import type { I18n } from '@lingui/core'
+import { msg, plural } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { Alert, AlertDescription, toast } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
 import { useAuthorizeRequisitionMutation } from '../api/authorizationsApi'
-import type { AuthorizationRequest, AuthorizationUrgencyPreview } from '../types/requisition.types'
+import type {
+  AuthorizationRequest,
+  AuthorizationUrgencyPreview,
+  AuthorizerScope,
+} from '../types/requisition.types'
 
 import { Button } from '@/shared/components/Button'
 import { SectionCard } from '@/shared/components/SectionCard'
@@ -11,17 +18,22 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayMonth } from '@/shared/lib/formatters'
 
-function describeUrgencyPreview(preview: AuthorizationUrgencyPreview): string {
-  const when = preview.daysAhead === 1 ? 'está a 1 día' : `está a ${String(preview.daysAhead)} días`
-
-  const born =
-    preview.positionCount === 1
-      ? 'la posición nace'
-      : `las ${String(preview.positionCount)} posiciones nacen`
-
-  return `Al autorizar, la urgencia se calcula contra la fecha de inicio: ${formatDayMonth(
-    preview.startDate,
-  )} ${when}, así que ${born} en ${URGENCY_COLOR_NAME[preview.urgency]} (${URGENCY_LABEL[preview.urgency]})`
+/** El `i18n` viene del componente (`useLingui`): así el mensaje habla el idioma activo (D-36). */
+function authorizeErrorMessage(error: unknown, i18n: I18n): string {
+  return apiErrorMessage(error, {
+    byCode: {
+      FORBIDDEN: IS_DEV_UI
+        ? 'Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel (D-09).'
+        : i18n._(
+            msg`Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel.`,
+          ),
+      DEPARTMENT_OUT_OF_SCOPE: i18n._(
+        msg`Esta requisición es de otro departamento: la autoriza su Manager de Área o el Manager General.`,
+      ),
+      HOTEL_OUT_OF_SCOPE: i18n._(msg`Esta requisición no es de tu hotel.`),
+    },
+    fallback: i18n._(msg`No se pudo autorizar la requisición. Inténtalo de nuevo.`),
+  })
 }
 
 export function AuthorizationResolutionForm({
@@ -31,38 +43,46 @@ export function AuthorizationResolutionForm({
 }: {
   request: AuthorizationRequest
   authorizerRole: string
-  authorizerScope: string
+  authorizerScope: AuthorizerScope
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const [authorize, { isLoading: isSubmitting }] = useAuthorizeRequisitionMutation()
   const [rootError, setRootError] = useState<string | null>(null)
+
+  function describeUrgencyPreview(preview: AuthorizationUrgencyPreview): string {
+    const { daysAhead, positionCount } = preview
+    const start = formatDayMonth(preview.startDate)
+    const color = URGENCY_COLOR_NAME[preview.urgency]
+    const label = URGENCY_LABEL[preview.urgency]
+
+    return t`Al autorizar, la urgencia se calcula contra la fecha de inicio: ${start} ${plural(daysAhead, { one: 'está a # día', other: 'está a # días' })}, así que ${plural(positionCount, { one: 'la posición nace', other: 'las # posiciones nacen' })} en ${color} (${label})`
+  }
+
+  /** Hasta dónde llega la firma, en palabras (D-09). */
+  const scopeLabel =
+    authorizerScope === 'HOTEL'
+      ? t`todos los departamentos de tu hotel`
+      : IS_DEV_UI
+        ? 'solo tu departamento (D-09)'
+        : t`solo tu departamento`
 
   async function submitAuthorize(): Promise<void> {
     setRootError(null)
     try {
       await authorize({ requisitionId: request.id }).unwrap()
-      toast.success('Requisición autorizada')
+      toast.success(t`Requisición autorizada`)
     } catch (error) {
-      setRootError(
-        apiErrorMessage(error, {
-          byCode: {
-            FORBIDDEN: `Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel${IS_DEV_UI ? ' (D-09)' : ''}.`,
-            DEPARTMENT_OUT_OF_SCOPE:
-              'Esta requisición es de otro departamento: la autoriza su Manager de Área o el Manager General.',
-            HOTEL_OUT_OF_SCOPE: 'Esta requisición no es de tu hotel.',
-          },
-          fallback: 'No se pudo autorizar la requisición. Inténtalo de nuevo.',
-        }),
-      )
+      setRootError(authorizeErrorMessage(error, i18n))
     }
   }
 
   return (
     <SectionCard
-      title="Resolución"
+      title={t`Resolución`}
       subtitle={
         IS_DEV_UI
           ? 'Autorizar congela la urgencia contra la fecha de inicio (RR-H-05)'
-          : 'Al autorizar se fija la urgencia según la fecha de inicio'
+          : t`Al autorizar se fija la urgencia según la fecha de inicio`
       }
     >
       {}
@@ -88,7 +108,9 @@ export function AuthorizationResolutionForm({
 
         <div className="flex flex-wrap items-center justify-between gap-4">
           <p className="text-sm text-ink-3">
-            Autorizas como {authorizerRole} — alcance: {authorizerScope}
+            <Trans>
+              Autorizas como {authorizerRole} — alcance: {scopeLabel}
+            </Trans>
           </p>
 
           <div className="flex gap-3">
@@ -99,13 +121,13 @@ export function AuthorizationResolutionForm({
               title={
                 IS_DEV_UI
                   ? 'El rechazo aún no existe en el backend (pendiente 21 del ADR)'
-                  : 'Rechazar estará disponible próximamente'
+                  : t`Rechazar estará disponible próximamente`
               }
             >
-              Rechazar
+              <Trans>Rechazar</Trans>
             </Button>
             <Button variant="primary" type="submit" disabled={isSubmitting}>
-              Autorizar requisición
+              <Trans>Autorizar requisición</Trans>
             </Button>
           </div>
         </div>

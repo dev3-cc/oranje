@@ -1,4 +1,7 @@
+import { msg } from '@lingui/core/macro'
 import type { StatusLightToken } from '@oranje/ui'
+
+import { labelMap } from '@/shared/lib/i18nLabels'
 
 /**
  * Estado de `commercial.contract`.
@@ -11,12 +14,15 @@ export const CONTRACT_STATUSES = ['DRAFT', 'ACTIVE', 'EXPIRED', 'CANCELLED'] as 
 
 export type ContractStatus = (typeof CONTRACT_STATUSES)[number]
 
-export const CONTRACT_STATUS_LABEL: Record<ContractStatus, string> = {
-  DRAFT: 'Borrador',
-  ACTIVE: 'Activo',
-  EXPIRED: 'Expirado',
-  CANCELLED: 'Cancelado',
+const CONTRACT_STATUS_MESSAGE = {
+  DRAFT: msg`Borrador`,
+  ACTIVE: msg`Activo`,
+  EXPIRED: msg`Expirado`,
+  CANCELLED: msg`Cancelado`,
 }
+
+export const CONTRACT_STATUS_LABEL: Record<ContractStatus, string> =
+  labelMap(CONTRACT_STATUS_MESSAGE)
 
 export const CONTRACT_STATUS_TOKEN: Record<ContractStatus, StatusLightToken> = {
   DRAFT: 'st-gris',

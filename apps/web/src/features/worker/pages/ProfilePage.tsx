@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { StatusLightBadge } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -45,6 +46,7 @@ function HistoryStep({
   entry: WorkerHistoryEntryApi
   isCurrent: boolean
 }): ReactNode {
+  const { t } = useLingui()
   const toState = entry.toState as WorkerStatus
   const detail = [formatDate(entry.occurredAt), entry.userName].join(' · ')
 
@@ -56,7 +58,7 @@ function HistoryStep({
       />
       <div className="min-w-0">
         <p className="text-sm font-medium text-white">
-          {entry.fromState === null ? 'Alta en Oranje' : WORKER_STATUS_LABEL[toState]}
+          {entry.fromState === null ? t`Alta en Oranje` : WORKER_STATUS_LABEL[toState]}
         </p>
         <p className="text-xs text-white/70">{detail}</p>
         {entry.reason !== null && <p className="mt-0.5 text-xs text-white/80">{entry.reason}</p>}
@@ -65,6 +67,7 @@ function HistoryStep({
   )
 }
 export function ProfilePage(): ReactNode {
+  const { t } = useLingui()
   const { data: profile, isLoading } = useGetMyProfileQuery()
   const { data: history = [] } = useGetMyHistoryQuery()
   const { data: today } = useGetTodayPunchingQuery()
@@ -107,14 +110,16 @@ export function ProfilePage(): ReactNode {
         <div>
           <h1 className="text-2xl font-bold text-white drop-shadow-sm">{profile.fullName}</h1>
           <p className="text-sm text-white/80">
-            {profile.position?.name ?? 'Sin posición asignada'} · {profile.zone.name}
+            {profile.position?.name ?? t`Sin posición asignada`} · {profile.zone.name}
           </p>
         </div>
         <StatusLightBadge token={WORKER_STATUS_TOKEN[status]} label={WORKER_STATUS_LABEL[status]} />
       </section>
 
       <section className="rounded-2xl bg-white/15 p-4 text-white backdrop-blur-sm">
-        <h2 className="text-sm font-semibold text-white">Tu semáforo</h2>
+        <h2 className="text-sm font-semibold text-white">
+          <Trans>Tu semáforo</Trans>
+        </h2>
         <ol className="mt-2 flex flex-col gap-2">
           {history.length === 0 ? (
             <>
@@ -122,13 +127,17 @@ export function ProfilePage(): ReactNode {
                 <span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-o-500" aria-hidden />
                 <div>
                   <p className="text-sm font-medium text-white">{WORKER_STATUS_LABEL[status]}</p>
-                  <p className="text-xs text-white/70">Tu estado hoy</p>
+                  <p className="text-xs text-white/70">
+                    <Trans>Tu estado hoy</Trans>
+                  </p>
                 </div>
               </li>
               <li className="flex gap-3">
                 <span className="mt-1.5 size-2.5 shrink-0 rounded-full bg-white/40" aria-hidden />
                 <div>
-                  <p className="text-sm font-medium text-white">Alta en Oranje</p>
+                  <p className="text-sm font-medium text-white">
+                    <Trans>Alta en Oranje</Trans>
+                  </p>
                   <p className="text-xs text-white/70">{formatDate(profile.createdAt)}</p>
                 </div>
               </li>
@@ -142,30 +151,34 @@ export function ProfilePage(): ReactNode {
       </section>
 
       <section className="rounded-2xl bg-white/15 p-4 text-white backdrop-blur-sm">
-        <h2 className="text-sm font-semibold text-white">Lo que decide Oranje</h2>
+        <h2 className="text-sm font-semibold text-white">
+          <Trans>Lo que decide Oranje</Trans>
+        </h2>
         <dl className="mt-1 divide-y divide-white/15">
-          <Row label="Posición" value={profile.position?.name ?? '—'} />
-          <Row label="Modalidad" value={profile.hiringModality?.name ?? '—'} />
-          <Row label="Inglés" value={profile.englishLevel?.name ?? '—'} />
+          <Row label={t`Posición`} value={profile.position?.name ?? '—'} />
+          <Row label={t`Modalidad`} value={profile.hiringModality?.name ?? '—'} />
+          <Row label={t`Inglés`} value={profile.englishLevel?.name ?? '—'} />
           <Row
-            label="Experiencia"
+            label={t`Experiencia`}
             value={
               profile.experienceLevel === null
                 ? '—'
                 : (EXPERIENCE_LABEL[profile.experienceLevel] ?? profile.experienceLevel)
             }
           />
-          <Row label="Zona" value={profile.zone.name} />
+          <Row label={t`Zona`} value={profile.zone.name} />
         </dl>
       </section>
 
       <section className="rounded-2xl bg-white/15 p-4 text-white backdrop-blur-sm">
-        <h2 className="text-sm font-semibold text-white">Tus datos</h2>
+        <h2 className="text-sm font-semibold text-white">
+          <Trans>Tus datos</Trans>
+        </h2>
         <dl className="mt-1 divide-y divide-white/15">
-          <Row label="Teléfono" value={profile.phone} />
-          <Row label="Domicilio" value={profile.address} />
+          <Row label={t`Teléfono`} value={profile.phone} />
+          <Row label={t`Domicilio`} value={profile.address} />
           <Row
-            label="Transporte"
+            label={t`Transporte`}
             value={
               profile.transportType === null
                 ? '—'
@@ -173,7 +186,7 @@ export function ProfilePage(): ReactNode {
             }
           />
           <Row
-            label="Tipo de sangre"
+            label={t`Tipo de sangre`}
             value={
               profile.bloodType === null
                 ? '—'
@@ -181,14 +194,28 @@ export function ProfilePage(): ReactNode {
             }
           />
           <Row
-            label="Emergencia"
+            label={t`Emergencia`}
             value={
               profile.emergencyContact
                 ? `${profile.emergencyContact.name} · ${RELATIONSHIP_LABEL[profile.emergencyContact.relationship] ?? profile.emergencyContact.relationship}`
                 : '—'
             }
           />
-          <Row label="SSN / ITIN" value={profile.hasTaxId ? 'Verificado' : 'Pendiente'} />
+          {/* `hasTaxId` lee una columna cifrada que hoy nunca se escribe
+              (siempre false) — mostrarla como "Verificado" afirmaría algo
+              que nadie confirmó. Lo que SÍ escribe una persona real es
+              `taxDeadline.isDocumentVerified` (al verificar el documento
+              subido), así que es lo que se muestra aquí. */}
+          <Row
+            label={t`SSN / ITIN`}
+            value={
+              profile.taxDeadline.isDocumentVerified
+                ? t`Verificado`
+                : profile.taxDeadline.hasDocument
+                  ? t`Cargado, sin verificar`
+                  : t`Pendiente`
+            }
+          />
         </dl>
       </section>
     </div>

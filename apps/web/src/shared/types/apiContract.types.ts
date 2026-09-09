@@ -138,6 +138,8 @@ export interface MeApi {
   department: { id: string; code: string; name: string } | null
   zones: ZoneRefApi[]
   /** Permisos aplanados `modulo.accion`: el sidebar decide qué pinta sin adivinar. */
+  /** Idioma de la interfaz guardado en la persona (D-36). */
+  locale: 'es' | 'en'
   permissions: string[]
 }
 

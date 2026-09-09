@@ -1,13 +1,19 @@
 import { cn } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
+import { localeTag } from '@/app/i18n'
+
 /** Piezas que comparten las dos listas de Usuarios (personal Oranje y cuentas del hotel). */
 
-export const DATE_FORMAT = new Intl.DateTimeFormat('es-MX', {
-  day: 'numeric',
-  month: 'short',
-  year: 'numeric',
-})
+/** Perezoso a propósito: el locale puede cambiar en caliente (D-36). */
+export const DATE_FORMAT = {
+  format: (date: Date): string =>
+    new Intl.DateTimeFormat(localeTag(), {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }).format(date),
+}
 
 export function initialsOf(fullName: string): string {
   return fullName

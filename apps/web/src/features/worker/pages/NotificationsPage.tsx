@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -15,6 +16,7 @@ import { formatDayMonthTime } from '@/shared/lib/formatters'
  * historial.
  */
 export function NotificationsPage(): ReactNode {
+  const { t } = useLingui()
   const { data: board, isLoading, isError } = useGetMyNotificationsQuery()
   const [markRead] = useMarkNotificationReadMutation()
   const notifications = board?.items ?? []
@@ -22,9 +24,11 @@ export function NotificationsPage(): ReactNode {
   return (
     <div className="flex flex-col gap-4">
       <header>
-        <h1 className="text-xl font-bold text-ink">Avisos</h1>
+        <h1 className="text-xl font-bold text-ink">
+          <Trans>Avisos</Trans>
+        </h1>
         <p className="mt-1 text-xs text-ink-3">
-          Tocar un aviso lo marca como leído; los leídos se limpian a los 30 días
+          <Trans>Tocar un aviso lo marca como leído; los leídos se limpian a los 30 días</Trans>
         </p>
       </header>
 
@@ -32,7 +36,9 @@ export function NotificationsPage(): ReactNode {
         <div className="flex flex-col items-center gap-2 rounded-md bg-surface-2 px-4 py-6 text-center">
           <img src={personajeErrorTecnico} alt="" aria-hidden className="h-28 w-auto" />
           <p className="text-sm text-ink-2">
-            Tus avisos llegarán aquí en cuanto el servicio de notificaciones esté activo.
+            <Trans>
+              Tus avisos llegarán aquí en cuanto el servicio de notificaciones esté activo.
+            </Trans>
           </p>
         </div>
       )}
@@ -42,7 +48,9 @@ export function NotificationsPage(): ReactNode {
       {!isLoading && !isError && notifications.length === 0 && (
         <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-line px-4 py-8 text-center">
           <img src={personajeNotificaciones} alt="" aria-hidden className="h-28 w-auto" />
-          <p className="text-sm text-ink-3">Sin avisos por ahora.</p>
+          <p className="text-sm text-ink-3">
+            <Trans>Sin avisos por ahora.</Trans>
+          </p>
         </div>
       )}
 
@@ -72,7 +80,7 @@ export function NotificationsPage(): ReactNode {
                   >
                     {isUnread && (
                       <span
-                        aria-label="No leído"
+                        aria-label={t`No leído`}
                         className="mr-1.5 inline-block size-2 rounded-full bg-o-500"
                       />
                     )}

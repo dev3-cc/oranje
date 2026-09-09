@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import { MaterialIcon, statusLight, toast } from '@oranje/ui'
 import { useReducedMotion } from 'framer-motion'
@@ -17,7 +20,7 @@ import personajeSubiendo from '@/assets/ilustrations/personaje-subiendo.svg'
 import { Button } from '@/shared/components/Button'
 import { HotelPhotoBackdrop } from '@/shared/components/HotelPhotoBackdrop'
 import { NoticeCard } from '@/shared/components/NoticeCard'
-import { OnboardingIntro, type OnboardingSlide } from '@/shared/components/OnboardingIntro'
+import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import {
   WORKER_STATUS_LABEL,
   WORKER_STATUS_TOKEN,
@@ -27,21 +30,26 @@ import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { formatTimeIn } from '@/shared/lib/formatters'
 
-const INTRO_SLIDES: readonly OnboardingSlide[] = [
+/** Las diapositivas del intro; el texto se traduce al pintar con `i18n._()` (D-36). */
+const INTRO_SLIDES: readonly {
+  image: string
+  title: MessageDescriptor
+  text: MessageDescriptor
+}[] = [
   {
     image: personajeBienvenida,
-    title: 'Bienvenido a Oranje',
-    text: 'Aquí ves tu estado, ponchas tus turnos y recibes los avisos de Reclutamiento y del hotel.',
+    title: msg`Bienvenido a Oranje`,
+    text: msg`Aquí ves tu estado, ponchas tus turnos y recibes los avisos de Reclutamiento y del hotel.`,
   },
   {
     image: personajePerfil,
-    title: 'Tu semáforo, en palabras',
-    text: 'El color de arriba dice en qué punto estás: desde el alta hasta asignado. Lo mueve Oranje; tú solo enciendes tu disponibilidad.',
+    title: msg`Tu semáforo, en palabras`,
+    text: msg`El color de arriba dice en qué punto estás: desde el alta hasta asignado. Lo mueve Oranje; tú solo enciendes tu disponibilidad.`,
   },
   {
     image: personajeNotificaciones,
-    title: 'Los avisos importan',
-    text: 'Asignaciones, cambios de turno y recordatorios llegan a Avisos. Revísalos cada día.',
+    title: msg`Los avisos importan`,
+    text: msg`Asignaciones, cambios de turno y recordatorios llegan a Avisos. Revísalos cada día.`,
   },
 ]
 
@@ -103,11 +111,15 @@ function Hero({
               {firstName.charAt(0)}
             </span>
           )}
-          <span className="sr-only">Estado: {WORKER_STATUS_LABEL[status]}</span>
+          <span className="sr-only">
+            <Trans>Estado: {WORKER_STATUS_LABEL[status]}</Trans>
+          </span>
         </span>
       </div>
       <div className="min-w-0">
-        <h1 className="truncate text-2xl font-bold text-white">Hola, {firstName}</h1>
+        <h1 className="truncate text-2xl font-bold text-white">
+          <Trans>Hola, {firstName}</Trans>
+        </h1>
         <span className="mt-1 inline-block rounded-full bg-white/15 px-3 py-0.5 text-xs font-semibold text-white backdrop-blur-sm">
           {WORKER_STATUS_LABEL[status]}
         </span>
@@ -132,7 +144,7 @@ function Hero({
         {background}
         {identity}
         <p className="rounded-xl bg-white/15 px-4 py-3 text-sm text-white backdrop-blur-sm">
-          Hoy no tienes turno. Cuando te asignen, aquí aparece el hotel y el horario.
+          <Trans>Hoy no tienes turno. Cuando te asignen, aquí aparece el hotel y el horario.</Trans>
         </p>
       </section>
     )
@@ -159,11 +171,13 @@ function Hero({
                 style={{ width: `${String((punched / 4) * 100)}%` }}
               />
             </span>
-            <span className="text-xs font-semibold">{punched} de 4</span>
+            <span className="text-xs font-semibold">
+              <Trans>{punched} de 4</Trans>
+            </span>
           </span>
         </span>
         <span className="flex min-h-11 shrink-0 items-center gap-1 rounded-full bg-o-500 px-4 text-sm font-bold text-ink shadow-sm">
-          Ponchar
+          <Trans>Ponchar</Trans>
           <MaterialIcon name="chevron_right" className="text-lg" aria-hidden />
         </span>
       </Link>
@@ -178,6 +192,7 @@ function Hero({
  * Perfil; los avisos, en su pestaña con el contador.
  */
 export function HomePage(): ReactNode {
+  const { t, i18n } = useLingui()
   const { isIntroOpen, dismissIntro } = useIntroSeen('worker-home')
   const reduceMotion = useReducedMotion() ?? false
   const { data: profile, isLoading } = useGetMyProfileQuery()
@@ -185,7 +200,17 @@ export function HomePage(): ReactNode {
   const [setAvailable, { isLoading: isSwitching, isError, error }] = useSetAvailableMutation()
 
   if (isIntroOpen) {
-    return <OnboardingIntro slides={INTRO_SLIDES} startLabel="Empezar" onDone={dismissIntro} />
+    return (
+      <OnboardingIntro
+        slides={INTRO_SLIDES.map((slide) => ({
+          image: slide.image,
+          title: i18n._(slide.title),
+          text: i18n._(slide.text),
+        }))}
+        startLabel={t`Empezar`}
+        onDone={dismissIntro}
+      />
+    )
   }
 
   if (isLoading || !profile) return <WorkerSkeleton variant="home" />
@@ -213,34 +238,40 @@ export function HomePage(): ReactNode {
       {!profile.isProfileComplete && (
         <NoticeCard
           image={personajeSubiendo}
-          title="Faltan datos tuyos"
+          title={t`Faltan datos tuyos`}
           tone="action"
           action={
             <Link
               to="/colaborador/alta-2"
               className="inline-flex min-h-11 touch-manipulation items-center rounded-md bg-o-300 shadow-xs px-4 text-sm font-semibold text-ink transition-colors hover:bg-o-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-700"
             >
-              Completar mis datos
+              <Trans>Completar mis datos</Trans>
             </Link>
           }
         >
-          Tu transporte, tu SSN o ITIN y un contacto de emergencia. Con eso Reclutamiento puede
-          validarte y empiezas a recibir turnos.
+          <Trans>
+            Tu transporte, tu SSN o ITIN y un contacto de emergencia. Con eso Reclutamiento puede
+            validarte y empiezas a recibir turnos.
+          </Trans>
         </NoticeCard>
       )}
 
       {showAvailability && (
         <section className="rounded-xl border border-line bg-surface p-4">
-          <p className="text-sm font-semibold text-ink">Disponibilidad</p>
+          <p className="text-sm font-semibold text-ink">
+            <Trans>Disponibilidad</Trans>
+          </p>
           {isAvailable ? (
             <p className="mt-1 text-sm text-ink-2">
-              Estás <strong>disponible por voluntad propia</strong>: Reclutamiento puede asignarte
-              en cuanto haya una requisición.
+              <Trans>
+                Estás <strong>disponible por voluntad propia</strong>: Reclutamiento puede asignarte
+                en cuanto haya una requisición.
+              </Trans>
             </p>
           ) : (
             <>
               <p className="mt-1 text-sm text-ink-2">
-                Enciende Amarillo cuando quieras que te consideren para más turnos.
+                <Trans>Enciende Amarillo cuando quieras que te consideren para más turnos.</Trans>
               </p>
               <Button
                 variant="primary"
@@ -250,12 +281,12 @@ export function HomePage(): ReactNode {
                   void setAvailable()
                     .unwrap()
                     .then(() => {
-                      toast.success('Ya estás disponible')
+                      toast.success(t`Ya estás disponible`)
                     })
                     .catch(() => {})
                 }}
               >
-                {isSwitching ? 'Un momento…' : 'Marcarme disponible'}
+                {isSwitching ? t`Un momento…` : t`Marcarme disponible`}
               </Button>
             </>
           )}
@@ -263,9 +294,9 @@ export function HomePage(): ReactNode {
             <p role="alert" className="mt-2 text-sm text-red">
               {apiErrorMessage(error, {
                 byCode: {
-                  TRANSITION_NOT_ALLOWED: 'Tu semáforo no permite encender Amarillo desde aquí.',
+                  TRANSITION_NOT_ALLOWED: t`Tu semáforo no permite encender Amarillo desde aquí.`,
                 },
-                fallback: 'No se pudo cambiar tu disponibilidad. Inténtalo de nuevo.',
+                fallback: t`No se pudo cambiar tu disponibilidad. Inténtalo de nuevo.`,
               })}
             </p>
           )}

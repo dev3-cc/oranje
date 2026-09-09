@@ -1,4 +1,7 @@
+import { msg } from '@lingui/core/macro'
 import type { StatusLightToken } from '@oranje/ui'
+
+import { labelMap } from '@/shared/lib/i18nLabels'
 
 /**
  * Estado de revisión del DÍA. Se DERIVA de `operations.timesheet_day`:
@@ -9,11 +12,14 @@ export const TIMESHEET_STATUSES = ['PENDING', 'OBSERVED', 'REVIEWED'] as const
 
 export type TimesheetStatus = (typeof TIMESHEET_STATUSES)[number]
 
-export const TIMESHEET_STATUS_LABEL: Record<TimesheetStatus, string> = {
-  PENDING: 'Pendiente',
-  OBSERVED: 'Observado',
-  REVIEWED: 'Revisado',
+const TIMESHEET_STATUS_MESSAGE = {
+  PENDING: msg`Pendiente`,
+  OBSERVED: msg`Observado`,
+  REVIEWED: msg`Revisado`,
 }
+
+export const TIMESHEET_STATUS_LABEL: Record<TimesheetStatus, string> =
+  labelMap(TIMESHEET_STATUS_MESSAGE)
 
 export const TIMESHEET_STATUS_TOKEN: Record<TimesheetStatus, StatusLightToken> = {
   PENDING: 'st-azul-claro',
@@ -35,11 +41,15 @@ export const TIMESHEET_WEEK_STATUSES = ['OPEN', 'PENDING_APPROVAL', 'APPROVED'] 
 
 export type TimesheetWeekStatus = (typeof TIMESHEET_WEEK_STATUSES)[number]
 
-export const TIMESHEET_WEEK_STATUS_LABEL: Record<TimesheetWeekStatus, string> = {
-  OPEN: 'Abierta',
-  PENDING_APPROVAL: 'Enviada a aprobación',
-  APPROVED: 'Aprobada',
+const TIMESHEET_WEEK_STATUS_MESSAGE = {
+  OPEN: msg`Abierta`,
+  PENDING_APPROVAL: msg`Enviada a aprobación`,
+  APPROVED: msg`Aprobada`,
 }
+
+export const TIMESHEET_WEEK_STATUS_LABEL: Record<TimesheetWeekStatus, string> = labelMap(
+  TIMESHEET_WEEK_STATUS_MESSAGE,
+)
 
 /**
  * Set propio, sin pisar los colores que ya usa el estado del DÍA (azul
@@ -55,11 +65,17 @@ export const PUNCH_STATES = ['COMPLETE', 'INCOMPLETE', 'NO_SHIFT'] as const
 
 export type PunchState = (typeof PUNCH_STATES)[number]
 
-export const PUNCH_STATE_LABEL: Record<PunchState, string> = {
-  COMPLETE: 'Checadas completas',
-  INCOMPLETE: 'Faltan checadas',
-  NO_SHIFT: 'Sin turno ese día',
+const PUNCH_STATE_MESSAGE = {
+  COMPLETE: msg`Checadas completas`,
+  INCOMPLETE: msg`Faltan checadas`,
+  /* NO "Sin turno": el front solo sabe que no hay marcas ese día (0 punches),
+     no si había turno programado — eso vive en el Schedule y hoy no se
+     cruza contra el Timesheet. Afirmar "sin turno" sería el mismo error que
+     ya se corrigió con `isAbsence`: nombrar una causa que nunca se verificó. */
+  NO_SHIFT: msg`Sin marcas ese día`,
 }
+
+export const PUNCH_STATE_LABEL: Record<PunchState, string> = labelMap(PUNCH_STATE_MESSAGE)
 
 /** Anchos de columna del control de zoom, en píxeles. */
 export const COLUMN_WIDTHS = [90, 134, 180] as const

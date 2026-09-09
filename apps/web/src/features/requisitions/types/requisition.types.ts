@@ -1,3 +1,5 @@
+import type { MessageDescriptor } from '@lingui/core'
+
 import type { RequisitionStatus, UrgencyLevel } from '@/shared/constants/requisitionStatus'
 
 export interface RequisitionCoverage {
@@ -29,6 +31,7 @@ export interface RequisitionBoardMetrics {
   partialCoverage: number
   freeSlots: number
   urgentCount: number
+  /** La regla que define «urgente» (RR-H-05); en qué palabras se dice es cosa de la pantalla. */
   urgentRuleId: string
 }
 
@@ -47,7 +50,8 @@ export interface RequisitionSlot {
   status: SlotStatus
   assigneeName: string | null
   assignedAt: string | null
-  offerChannel: string | null
+  /** Por dónde se ofrece un slot libre; se traduce al pintar con `i18n._()` (D-36). */
+  offerChannel: MessageDescriptor | null
 }
 
 export interface RequisitionPosition {
@@ -75,7 +79,8 @@ export interface RequisitionStatusEvent {
   id: string
   fromStatus: RequisitionStatus | null
   toStatus: RequisitionStatus
-  action: string
+  /** Qué pasó, en palabras; se traduce al pintar con `i18n._()` (D-36). */
+  action: MessageDescriptor
   byName: string
   at: string
 }
@@ -119,12 +124,15 @@ export interface AuthorizationRequest {
   urgencyPreview: AuthorizationUrgencyPreview
 }
 
+/** Hasta dónde llega la firma (D-09): todo el hotel (Manager General) o solo su departamento. */
+export type AuthorizerScope = 'HOTEL' | 'DEPARTMENT'
+
 export interface AuthorizationQueue {
   items: AuthorizationRequest[]
   /** El total real del back — puede ser mayor a `items.length` si pasa del tope de paginación. */
   total: number
   authorizerRole: string
-  authorizerScope: string
+  authorizerScope: AuthorizerScope
 }
 
 export interface StatusChangeReason {

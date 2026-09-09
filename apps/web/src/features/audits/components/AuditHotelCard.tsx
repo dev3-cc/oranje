@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -59,7 +60,7 @@ export function AuditHotelCard({
             <div>
               <p className="text-2xl font-bold text-white">{hotelName}</p>
               <p className="text-xs text-white/80">
-                Tu hotel
+                <Trans>Tu hotel</Trans>
                 {IS_DEV_UI && <span> · supervision.audit</span>}
               </p>
             </div>
@@ -68,7 +69,7 @@ export function AuditHotelCard({
                 <DropdownMenuTrigger asChild>
                   <Button variant="primary">
                     <MaterialIcon name="fact_check" className="text-base" aria-hidden />
-                    Auditar
+                    <Trans>Auditar</Trans>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -78,7 +79,7 @@ export function AuditHotelCard({
                     }}
                   >
                     <MaterialIcon name="badge" className="text-base" aria-hidden />
-                    Auditoría de personal
+                    <Trans>Auditoría de personal</Trans>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={() => {
@@ -86,13 +87,15 @@ export function AuditHotelCard({
                     }}
                   >
                     <MaterialIcon name="apartment" className="text-base" aria-hidden />
-                    Auditar por ambiente
+                    <Trans>Auditar por ambiente</Trans>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <p className="max-w-xs text-right text-xs text-white/80">
-                Las auditorías las hace el Supervisor del hotel; tú puedes ver el historial.
+                <Trans>
+                  Las auditorías las hace el Supervisor del hotel; tú puedes ver el historial.
+                </Trans>
               </p>
             )}
           </div>

@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn, MaterialIcon } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -6,10 +9,10 @@ import { neighborWeek, todayIso, weekContaining } from '../lib/weekNavigation'
 /** Densidades de los mismos datos, no pantallas distintas. */
 export type TimesheetView = 'HOURS' | 'DAYS' | 'MONTH'
 
-const VIEWS: ReadonlyArray<{ id: TimesheetView; label: string }> = [
-  { id: 'HOURS', label: 'Horas' },
-  { id: 'DAYS', label: 'Días' },
-  { id: 'MONTH', label: 'Mes' },
+const VIEWS: ReadonlyArray<{ id: TimesheetView; label: MessageDescriptor }> = [
+  { id: 'HOURS', label: msg`Horas` },
+  { id: 'DAYS', label: msg`Días` },
+  { id: 'MONTH', label: msg`Mes` },
 ]
 
 const PILL_CLASS =
@@ -23,10 +26,11 @@ export function TimesheetViewToggle({
   view: TimesheetView
   onChange: (view: TimesheetView) => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
   return (
     <div
       role="group"
-      aria-label="Vista"
+      aria-label={t`Vista`}
       className="flex items-center gap-1 rounded-lg border border-line bg-surface p-1"
     >
       {VIEWS.map((item) => (
@@ -42,7 +46,7 @@ export function TimesheetViewToggle({
             item.id === view ? 'bg-surface-3 text-ink' : 'text-ink-3 hover:text-ink',
           )}
         >
-          {item.label}
+          {i18n._(item.label)}
         </button>
       ))}
     </div>
@@ -63,6 +67,7 @@ export function WeekNavigator({
   availableWeeks: string[]
   onSelect: (week: string) => void
 }): ReactNode {
+  const { t } = useLingui()
   const previous = neighborWeek(availableWeeks, weekStart, -1)
   const next = neighborWeek(availableWeeks, weekStart, 1)
   const currentWeek = weekContaining(availableWeeks, todayIso())
@@ -74,8 +79,8 @@ export function WeekNavigator({
     <div className="flex items-center gap-2">
       <button
         type="button"
-        aria-label="Semana anterior"
-        title={previous ? 'Semana anterior' : 'No hay semanas anteriores con datos'}
+        aria-label={t`Semana anterior`}
+        title={previous ? t`Semana anterior` : t`No hay semanas anteriores con datos`}
         disabled={previous === null}
         onClick={() => {
           if (previous) onSelect(previous)
@@ -87,20 +92,20 @@ export function WeekNavigator({
 
       <button
         type="button"
-        title="Ir a la semana actual"
+        title={t`Ir a la semana actual`}
         disabled={currentWeek === null || currentWeek === weekStart}
         onClick={() => {
           if (currentWeek) onSelect(currentWeek)
         }}
         className="cursor-pointer rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink hover:bg-surface-2 disabled:cursor-not-allowed disabled:text-ink-4 disabled:hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
       >
-        Hoy
+        <Trans>Hoy</Trans>
       </button>
 
       <button
         type="button"
-        aria-label="Semana siguiente"
-        title={next ? 'Semana siguiente' : 'No hay semanas más recientes con datos'}
+        aria-label={t`Semana siguiente`}
+        title={next ? t`Semana siguiente` : t`No hay semanas más recientes con datos`}
         disabled={next === null}
         onClick={() => {
           if (next) onSelect(next)

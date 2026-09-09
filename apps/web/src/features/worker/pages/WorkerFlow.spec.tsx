@@ -1,3 +1,4 @@
+import { I18nProvider } from '@lingui/react'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactElement } from 'react'
@@ -13,6 +14,7 @@ import { NotificationsPage } from './NotificationsPage'
 import { Phase2Page } from './Phase2Page'
 import { Phase3Page } from './Phase3Page'
 
+import { i18n } from '@/app/i18n'
 import { store } from '@/app/store'
 
 const SLOW = { timeout: 4000 }
@@ -21,9 +23,11 @@ const SLOW = { timeout: 4000 }
 function renderPage(page: ReactElement): void {
   const router = createMemoryRouter([{ path: '/', element: page }], { initialEntries: ['/'] })
   render(
-    <Provider store={store}>
-      <RouterProvider router={router} />
-    </Provider>,
+    <I18nProvider i18n={i18n}>
+      <Provider store={store}>
+        <RouterProvider router={router} />
+      </Provider>
+    </I18nProvider>,
   )
 }
 
@@ -124,9 +128,11 @@ describe('el apartado del Colaborador', () => {
       { initialEntries: ['/colaborador/avisos'] },
     )
     render(
-      <Provider store={store}>
-        <RouterProvider router={router} />
-      </Provider>,
+      <I18nProvider i18n={i18n}>
+        <Provider store={store}>
+          <RouterProvider router={router} />
+        </Provider>
+      </I18nProvider>,
     )
 
     expect(await screen.findByRole('img', { name: 'Oranje' })).toBeInTheDocument()
@@ -157,9 +163,11 @@ describe('TaxDeadlineBanner', () => {
 
   it('día 5: la suspensión ofrece subir el documento aquí mismo, y CS como salida', () => {
     render(
-      <Provider store={store}>
-        <SuspendedScreen />
-      </Provider>,
+      <I18nProvider i18n={i18n}>
+        <Provider store={store}>
+          <SuspendedScreen />
+        </Provider>
+      </I18nProvider>,
     )
     expect(screen.getByText('Tu acceso está suspendido')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Subir mi SSN o ITIN' })).toBeInTheDocument()

@@ -1,25 +1,42 @@
+import { t } from '@lingui/core/macro'
+
+import { currentLocale, localeTag, type Locale } from '@/app/i18n'
+
 /**
  * Formato de fechas y montos para la UI.
  *
  * Escrito a mano en vez de `Intl.DateTimeFormat`: la abreviatura de mes varía
  * entre versiones de ICU («jun» vs «jun.»), y el diseño fija «12 may 2026».
  * Con una tabla el resultado es el mismo en cualquier navegador y en Node.
+ * Una tabla POR IDIOMA (D-36): en inglés el orden también cambia,
+ * «May 12, 2026».
  */
 
-const MONTHS_SHORT = [
-  'ene',
-  'feb',
-  'mar',
-  'abr',
-  'may',
-  'jun',
-  'jul',
-  'ago',
-  'sep',
-  'oct',
-  'nov',
-  'dic',
-] as const
+const MONTHS_SHORT: Record<Locale, readonly string[]> = {
+  es: ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'],
+  en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+}
+
+const WEEKDAYS_SHORT: Record<Locale, readonly string[]> = {
+  es: ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'],
+  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+}
+
+function monthShort(month: number): string {
+  return MONTHS_SHORT[currentLocale()][month - 1] ?? ''
+}
+
+/** `12 may 2026` en español, `May 12, 2026` en inglés. */
+function dayMonthYear(day: number, month: number, year: number): string {
+  return currentLocale() === 'en'
+    ? `${monthShort(month)} ${day}, ${year}`
+    : `${day} ${monthShort(month)} ${year}`
+}
+
+/** `12 may` en español, `May 12` en inglés. */
+function dayMonth(day: string | number, month: number): string {
+  return currentLocale() === 'en' ? `${monthShort(month)} ${day}` : `${day} ${monthShort(month)}`
+}
 
 interface DateParts {
   day: number
@@ -44,14 +61,14 @@ function parseIsoDate(iso: string): DateParts | null {
 export function formatDate(iso: string): string {
   const parts = parseIsoDate(iso)
   if (!parts) return iso
-  return `${parts.day} ${MONTHS_SHORT[parts.month - 1]} ${parts.year}`
+  return dayMonthYear(parts.day, parts.month, parts.year)
 }
 
 /** `2026-05-12` -> `12 may`. Para listas donde el año se repite en cada fila. */
 export function formatDayMonth(iso: string): string {
   const parts = parseIsoDate(iso)
   if (!parts) return iso
-  return `${String(parts.day).padStart(2, '0')} ${MONTHS_SHORT[parts.month - 1]}`
+  return dayMonth(String(parts.day).padStart(2, '0'), parts.month)
 }
 
 /** `185` -> `$185.00`. Las tarifas se muestran siempre con dos decimales. */
@@ -61,7 +78,7 @@ export function formatMoney(amount: number): string {
 
 /** `4` -> `4 d en estado`. */
 export function formatDaysInStatus(days: number): string {
-  return `${days} d en estado`
+  return t`${days} d en estado`
 }
 
 /** `2026-08-12T09:41:00` -> `12 ago 09:41`. */
@@ -76,8 +93,6 @@ export function formatDateTime(iso: string): string {
   return time ? `${formatDate(iso)} ${time[1] ?? ''}` : formatDate(iso)
 }
 
-const WEEKDAYS_SHORT = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] as const
-
 /**
  * `2026-07-31` -> `Vie`.
  *
@@ -89,7 +104,7 @@ export function formatWeekday(iso: string): string {
   if (!parts) return iso
 
   const index = new Date(`${iso}T00:00:00Z`).getUTCDay()
-  return WEEKDAYS_SHORT[index] ?? iso
+  return WEEKDAYS_SHORT[currentLocale()][index] ?? iso
 }
 
 /** `2026-07-31` -> `31`. El número grande de la columna. */
@@ -108,10 +123,14 @@ export function formatWeekRange(fromIso: string, toIso: string): string {
   const to = parseIsoDate(toIso)
   if (!from || !to) return `${fromIso} – ${toIso}`
 
-  const toLabel = `${to.day} ${MONTHS_SHORT[to.month - 1]} ${to.year}`
-  if (from.month === to.month && from.year === to.year) return `${from.day} – ${toLabel}`
+  const toLabel = dayMonthYear(to.day, to.month, to.year)
+  if (from.month === to.month && from.year === to.year) {
+    return currentLocale() === 'en'
+      ? `${monthShort(from.month)} ${from.day} – ${to.day}, ${to.year}`
+      : `${from.day} – ${toLabel}`
+  }
 
-  return `${from.day} ${MONTHS_SHORT[from.month - 1]} – ${toLabel}`
+  return `${dayMonth(from.day, from.month)} – ${toLabel}`
 }
 
 /** `7.1` -> `7.1h`; `8` -> `8h`. Las horas no arrastran decimales de más. */
@@ -121,7 +140,7 @@ export function formatWeekRange(fromIso: string, toIso: string): string {
  * 07:00 aunque la persona mire el teléfono desde otra ciudad.
  */
 export function formatTimeIn(iso: string, timeZone?: string): string {
-  return new Date(iso).toLocaleTimeString('es-MX', {
+  return new Date(iso).toLocaleTimeString(localeTag(), {
     hour: '2-digit',
     minute: '2-digit',
     ...(timeZone ? { timeZone } : {}),
@@ -141,6 +160,5 @@ export function formatPercent(fraction: number): string {
 export function formatList(items: string[]): string {
   if (items.length <= 1) return items[0] ?? ''
 
-  const last = items[items.length - 1] ?? ''
-  return `${items.slice(0, -1).join(', ')} y ${last}`
+  return new Intl.ListFormat(localeTag(), { style: 'long', type: 'conjunction' }).format(items)
 }

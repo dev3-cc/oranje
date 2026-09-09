@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { Input } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -8,7 +9,7 @@ export function isCompletePhone(value: string): boolean {
 export function PhoneInput({
   value,
   onChange,
-  ariaLabel = 'Teléfono',
+  ariaLabel,
   placeholder = '998 123 4567',
 }: {
   value: string
@@ -16,6 +17,8 @@ export function PhoneInput({
   ariaLabel?: string
   placeholder?: string
 }): ReactNode {
+  const { t } = useLingui()
+  const label = ariaLabel ?? t`Teléfono`
   return (
     <Input
       value={value}
@@ -23,7 +26,7 @@ export function PhoneInput({
         onChange(event.target.value.replace(/[^\d\s+-]/g, ''))
       }}
       inputMode="tel"
-      aria-label={ariaLabel}
+      aria-label={label}
       placeholder={placeholder}
     />
   )

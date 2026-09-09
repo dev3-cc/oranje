@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { useState, type ReactNode } from 'react'
 
 import { useGetRequisitionBoardQuery } from '../api/requisitionsApi'
@@ -20,6 +21,7 @@ import {
   REQUISITION_STATUSES,
 } from '@/shared/constants/requisitionStatus'
 import { useCan } from '@/shared/hooks/useCan'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { matchesSearch } from '@/shared/lib/text'
 
 /** El valor «todos» del select de estado (el que `FilterSelect` trae por omisión). */
@@ -39,6 +41,7 @@ const ANY = 'ALL'
  * trajo: `GET /requisitions` no acepta esos parámetros todavía.
  */
 export function RequisitionBoardPage(): ReactNode {
+  const { t } = useLingui()
   const [isNewOpen, setIsNewOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<string>(ANY)
@@ -62,13 +65,15 @@ export function RequisitionBoardPage(): ReactNode {
       matchesSearch(search, item.number, item.hotelName),
   )
   const activeCount = [search.trim() !== '', status !== ANY].filter(Boolean).length
+  const searchTerm = search.trim()
 
   /** Los filtros puestos, en palabras: el vacío los nombra para que se entienda por qué. */
+  const statusLabel = REQUISITION_STATUS_LABEL[status as keyof typeof REQUISITION_STATUS_LABEL]
   const activeFilterLabels = [
-    status !== ANY &&
-      `Estado: ${REQUISITION_STATUS_LABEL[status as keyof typeof REQUISITION_STATUS_LABEL]}`,
-    search.trim() !== '' && `búsqueda «${search.trim()}»`,
+    status !== ANY && t`Estado: ${statusLabel}`,
+    searchTerm !== '' && t`búsqueda «${searchTerm}»`,
   ].filter((label): label is string => typeof label === 'string')
+  const activeFiltersText = activeFilterLabels.join(` ${t`y`} `)
 
   function resetFilters(): void {
     setSearch('')
@@ -77,21 +82,25 @@ export function RequisitionBoardPage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
-      <nav aria-label="Ruta" className="flex items-center gap-2 text-sm text-ink-3">
-        <span>Demanda</span>
+      <nav aria-label={t`Ruta`} className="flex items-center gap-2 text-sm text-ink-3">
+        <span>
+          <Trans>Demanda</Trans>
+        </span>
         <span aria-hidden>/</span>
-        <span className="font-semibold text-ink-2">Tablero de Requisiciones</span>
+        <span className="font-semibold text-ink-2">
+          <Trans>Tablero de Requisiciones</Trans>
+        </span>
       </nav>
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-ink">
-            <FoldText text="Requisiciones" />
+            <FoldText text={t`Requisiciones`} />
           </h1>
           <p className="mt-1.5 text-sm text-ink-3">
             {isLoading || !metrics
-              ? 'Cargando requisiciones…'
-              : `${metrics.openCount} abiertas · ${metrics.awaitingAuthorization} esperan autorización · ${metrics.urgentCount} urgentes`}
+              ? t`Cargando requisiciones…`
+              : t`${metrics.openCount} abiertas · ${metrics.awaitingAuthorization} esperan autorización · ${metrics.urgentCount} urgentes`}
           </p>
         </div>
 
@@ -102,7 +111,7 @@ export function RequisitionBoardPage(): ReactNode {
               setIsNewOpen(true)
             }}
           >
-            Crear requisición
+            <Trans>Crear requisición</Trans>
           </Button>
         )}
       </header>
@@ -112,11 +121,13 @@ export function RequisitionBoardPage(): ReactNode {
       {!canCreate && (
         <NoticeCard
           image={personajeContratacion}
-          title="Las requisiciones las crea el hotel"
+          title={t`Las requisiciones las crea el hotel`}
           role="status"
         >
-          El Supervisor, el Manager de Área o el Manager General las abren desde su zona. Aquí ves
-          las que llegan, su urgencia y cómo va la cobertura.
+          <Trans>
+            El Supervisor, el Manager de Área o el Manager General las abren desde su zona. Aquí ves
+            las que llegan, su urgencia y cómo va la cobertura.
+          </Trans>
         </NoticeCard>
       )}
 
@@ -124,7 +135,7 @@ export function RequisitionBoardPage(): ReactNode {
 
       {isError && (
         <LoadError
-          message="No se pudo cargar el Tablero de Requisiciones. Revisa tu conexión e inténtalo de nuevo."
+          message={t`No se pudo cargar el Tablero de Requisiciones. Revisa tu conexión e inténtalo de nuevo.`}
           onRetry={() => {
             void refetch()
           }}
@@ -136,29 +147,29 @@ export function RequisitionBoardPage(): ReactNode {
           <MetricCard
             icon="assignment"
             value={String(metrics.openCount)}
-            label="Abiertas"
-            foot={`en ${String(metrics.openHotels)} hoteles`}
+            label={t`Abiertas`}
+            foot={t`en ${metrics.openHotels} hoteles`}
           />
           {/* La única métrica que lleva a algún lado: es la que se resuelve firmando. */}
           <MetricCard
             icon="pending_actions"
             value={String(metrics.awaitingAuthorization)}
-            label="Por autorizar"
-            foot={`${String(metrics.awaitingOver48h)} con más de 48 h`}
+            label={t`Por autorizar`}
+            foot={t`${metrics.awaitingOver48h} con más de 48 h`}
             to="/requisiciones/autorizacion"
           />
           <MetricCard
             icon="donut_small"
             value={String(metrics.partialCoverage)}
-            label="Cobertura parcial"
-            foot={`${String(metrics.freeSlots)} slots libres`}
+            label={t`Cobertura parcial`}
+            foot={t`${metrics.freeSlots} slots libres`}
           />
           <MetricCard
             icon="bolt"
             tone="danger"
             value={String(metrics.urgentCount)}
-            label="Urgentes < 72 h"
-            foot={metrics.urgentRuleId}
+            label={t`Urgentes < 72 h`}
+            foot={IS_DEV_UI ? metrics.urgentRuleId : t`menos de 72 h para el inicio`}
           />
         </div>
       )}
@@ -168,14 +179,14 @@ export function RequisitionBoardPage(): ReactNode {
           <SearchField
             value={search}
             onChange={setSearch}
-            label="Buscar requisición"
-            placeholder="Folio o hotel, p. ej. Xcaret…"
+            label={t`Buscar requisición`}
+            placeholder={t`Folio o hotel, p. ej. Xcaret…`}
             className="w-full max-w-md"
           />
           <FilterSelect
             icon="traffic"
-            label="Estado"
-            anyLabel="todos"
+            label={t`Estado`}
+            anyLabel={t`todos`}
             value={status}
             options={statusOptions}
             onChange={setStatus}
@@ -187,8 +198,8 @@ export function RequisitionBoardPage(): ReactNode {
       {board &&
         (items.length > 0 && visibleItems.length === 0 ? (
           <EmptyState
-            title={`Ninguna requisición coincide con ${activeFilterLabels.join(' y ')}`}
-            text="Cambia el estado o la búsqueda, o quítalos con «Quitar filtros» para volver a ver el tablero completo."
+            title={t`Ninguna requisición coincide con ${activeFiltersText}`}
+            text={t`Cambia el estado o la búsqueda, o quítalos con «Quitar filtros» para volver a ver el tablero completo.`}
           />
         ) : (
           <RequisitionCardList items={visibleItems} />

@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn, statusLight } from '@oranje/ui'
 import { useReducedMotion } from 'framer-motion'
 import { useContext, useMemo, type ReactNode } from 'react'
@@ -7,14 +10,23 @@ import type { TimesheetMonth, TimesheetMonthDay } from '../types/timesheet.types
 
 import { WeekDragContext } from './WeekSlider'
 
+import { localeTag } from '@/app/i18n'
 import { formatHours } from '@/shared/lib/formatters'
 import { MOTION } from '@/shared/lib/motion'
 
-const WEEKDAY_HEADERS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+const WEEKDAY_HEADERS: readonly MessageDescriptor[] = [
+  msg`Lun`,
+  msg`Mar`,
+  msg`Mié`,
+  msg`Jue`,
+  msg`Vie`,
+  msg`Sáb`,
+  msg`Dom`,
+]
 
 /** `2026-09` → `septiembre 2026`, con mayúscula inicial. */
 function monthLabel(month: string): string {
-  const label = new Date(`${month}-01T00:00:00Z`).toLocaleDateString('es', {
+  const label = new Date(`${month}-01T00:00:00Z`).toLocaleDateString(localeTag(), {
     month: 'long',
     year: 'numeric',
     timeZone: 'UTC',
@@ -57,6 +69,7 @@ export function TimesheetMonthView({
   month: TimesheetMonth
   onPickDay: (date: string) => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const today = todayIso()
   const { isDragging } = useContext(WeekDragContext)
   const reduceMotion = useReducedMotion() ?? false
@@ -79,7 +92,9 @@ export function TimesheetMonthView({
   if (month.month === '' || month.days.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-        Este mes no tiene jornadas registradas. Navega con ‹ › a una semana con datos.
+        <Trans>
+          Este mes no tiene jornadas registradas. Navega con ‹ › a una semana con datos.
+        </Trans>
       </p>
     )
   }
@@ -110,10 +125,10 @@ export function TimesheetMonthView({
         <div className="grid grid-cols-7 border-b border-line">
           {WEEKDAY_HEADERS.map((weekday) => (
             <p
-              key={weekday}
+              key={weekday.id}
               className="border-l border-line px-2 py-2 text-center text-xs text-ink-3 first:border-l-0"
             >
-              {weekday}
+              {i18n._(weekday)}
             </p>
           ))}
         </div>
@@ -149,8 +164,8 @@ export function TimesheetMonthView({
                 }}
                 title={
                   aggregate === undefined
-                    ? 'Sin jornadas este día'
-                    : 'Abrir la semana de este día en la vista Días'
+                    ? t`Sin jornadas este día`
+                    : t`Abrir la semana de este día en la vista Días`
                 }
                 className={cn(
                   'flex min-h-12 flex-col items-start gap-1 border-t border-l border-line p-1 text-left sm:min-h-16 sm:p-2',
@@ -182,26 +197,25 @@ export function TimesheetMonthView({
                       {/* El detalle fino solo donde cabe: en xs el mes localiza,
                           la semana opera (mini-calendario, no scroll lateral). */}
                       <span className="ml-1 hidden font-normal text-ink-3 sm:inline">
-                        · {aggregate.people} pers.
+                        <Trans>· {aggregate.people} pers.</Trans>
                       </span>
                     </span>
                     <span className="hidden flex-wrap items-center gap-2 sm:flex">
                       <StatusCount
                         token="st-azul-claro"
                         count={aggregate.pending}
-                        label="pendientes"
+                        label={t`pendientes`}
                       />
                       <StatusCount
                         token="st-amarillo"
                         count={aggregate.observed}
-                        label="observados"
+                        label={t`observados`}
                       />
-                      <StatusCount token="st-morado" count={aggregate.reviewed} label="revisados" />
-                      {aggregate.absences > 0 && (
-                        <span className="text-[10px] text-ink-3" title="Ausencias">
-                          {aggregate.absences} aus.
-                        </span>
-                      )}
+                      <StatusCount
+                        token="st-morado"
+                        count={aggregate.reviewed}
+                        label={t`revisados`}
+                      />
                     </span>
                   </>
                 )}

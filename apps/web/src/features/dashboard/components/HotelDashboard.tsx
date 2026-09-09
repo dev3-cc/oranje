@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { Suspense, lazy, type ReactNode } from 'react'
 
 import { useGetHotelOverviewQuery } from '../api/roleDashboardsApi'
@@ -17,6 +18,7 @@ import { IS_DEV_UI } from '@/shared/lib/devMode'
 import type { SessionUser } from '@/shared/types/session.types'
 
 export function HotelDashboard({ session }: { session: SessionUser }): ReactNode {
+  const { t } = useLingui()
   const { data: overview, isLoading, isError, refetch } = useGetHotelOverviewQuery()
 
   if (isLoading) {
@@ -26,7 +28,7 @@ export function HotelDashboard({ session }: { session: SessionUser }): ReactNode
   if (isError || !overview) {
     return (
       <LoadError
-        message="No se pudo cargar el dashboard. Reintenta en unos segundos."
+        message={t`No se pudo cargar el dashboard. Reintenta en unos segundos.`}
         onRetry={() => {
           void refetch()
         }}
@@ -48,29 +50,29 @@ export function HotelDashboard({ session }: { session: SessionUser }): ReactNode
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatTile
           value={String(overview.openRequisitions)}
-          label="Requisiciones abiertas"
-          foot="Autorizadas y en proceso"
+          label={t`Requisiciones abiertas`}
+          foot={t`Autorizadas y en proceso`}
           tintClass="bg-o-500/10"
           delay={0.05}
         />
         <StatTile
           value={String(overview.draftRequisitions)}
-          label="Por autorizar"
-          foot="En elaboración (Verde manzana)"
+          label={t`Por autorizar`}
+          foot={t`En elaboración (Verde manzana)`}
           tintClass="bg-st-verde-manzana/10"
           delay={0.12}
         />
         <StatTile
           value={String(overview.coveredRequisitions)}
-          label="Cubiertas"
-          foot="Al 100% (Azul claro)"
+          label={t`Cubiertas`}
+          foot={t`Al 100% (Azul claro)`}
           tintClass="bg-st-azul-claro/10"
           delay={0.18}
         />
         <StatTile
           value={String(overview.pendingTimesheets)}
-          label="Timesheets sin aprobar"
-          foot={IS_DEV_UI ? 'Sin aprobación no se paga (D-09)' : 'Sin aprobación no se paga'}
+          label={t`Timesheets sin aprobar`}
+          foot={IS_DEV_UI ? 'Sin aprobación no se paga (D-09)' : t`Sin aprobación no se paga`}
           tintClass="bg-yellow/15"
           delay={0.24}
         />
@@ -81,10 +83,10 @@ export function HotelDashboard({ session }: { session: SessionUser }): ReactNode
       {session.hotel && <HotelPunchQrPanel hotelId={session.hotel.id} />}
 
       <RequisitionMiniList
-        title="Requisiciones del hotel"
-        subtitle="Las más recientes, con su cobertura"
+        title={t`Requisiciones del hotel`}
+        subtitle={t`Las más recientes, con su cobertura`}
         requisitions={overview.requisitions}
-        emptyLabel="Este hotel no tiene requisiciones todavía."
+        emptyLabel={t`Este hotel no tiene requisiciones todavía.`}
       />
     </div>
   )

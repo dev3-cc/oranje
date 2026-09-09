@@ -1,3 +1,4 @@
+import { I18nProvider } from '@lingui/react'
 import { SidebarProvider } from '@oranje/ui'
 import { render, screen } from '@testing-library/react'
 import { Provider } from 'react-redux'
@@ -6,6 +7,7 @@ import { describe, expect, it } from 'vitest'
 
 import { Sidebar } from './Sidebar'
 
+import { i18n } from '@/app/i18n'
 import { store } from '@/app/store'
 
 /**
@@ -53,11 +55,13 @@ function renderSidebar(): void {
   })
 
   render(
-    <Provider store={store}>
-      <SidebarProvider>
-        <RouterProvider router={router} />
-      </SidebarProvider>
-    </Provider>,
+    <I18nProvider i18n={i18n}>
+      <Provider store={store}>
+        <SidebarProvider>
+          <RouterProvider router={router} />
+        </SidebarProvider>
+      </Provider>
+    </I18nProvider>,
   )
 }
 

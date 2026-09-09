@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { Suspense, lazy, type ReactNode } from 'react'
 
 import { useGetDashboardOverviewQuery } from '../api/dashboardApi'
@@ -17,6 +18,7 @@ const DashboardGlobe = lazy(() =>
 )
 
 export function SalesDashboard(): ReactNode {
+  const { t } = useLingui()
   const { data: overview, isLoading, isError, refetch } = useGetDashboardOverviewQuery()
 
   if (isLoading) {
@@ -26,7 +28,7 @@ export function SalesDashboard(): ReactNode {
   if (isError || !overview) {
     return (
       <LoadError
-        message="No se pudo cargar el dashboard. Reintenta en unos segundos."
+        message={t`No se pudo cargar el dashboard. Reintenta en unos segundos.`}
         onRetry={() => {
           void refetch()
         }}
@@ -35,6 +37,7 @@ export function SalesDashboard(): ReactNode {
   }
 
   const { owner, scope, metrics } = overview
+  const zones = formatList(scope.zones)
 
   const countByStatus = Object.fromEntries(
     overview.funnel.map((bucket) => [bucket.status, bucket.count]),
@@ -44,7 +47,7 @@ export function SalesDashboard(): ReactNode {
     <div className="flex flex-col gap-6">
       <IdentityHeader
         name={owner.name}
-        subtitle={`${owner.roleLabel} · zonas ${formatList(scope.zones)} · ${scope.periodLabel}`}
+        subtitle={t`${owner.roleLabel} · zonas ${zones} · ${scope.periodLabel}`}
       >
         <Suspense fallback={null}>
           <DashboardGlobe />

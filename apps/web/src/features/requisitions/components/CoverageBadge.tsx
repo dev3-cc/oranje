@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react'
 import type { ReactNode } from 'react'
 
 import type { RequisitionCoverage } from '../types/requisition.types'
@@ -13,7 +14,9 @@ import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
  * proporción, así que se escribe.
  */
 export function CoverageBadge({ coverage }: { coverage: RequisitionCoverage }): ReactNode {
-  const { label, token } = describeCoverage(coverage)
+  const { i18n } = useLingui()
+  const { label: labelDescriptor, token } = describeCoverage(coverage)
+  const label = i18n._(labelDescriptor)
   const capitalized = label.charAt(0).toUpperCase() + label.slice(1)
 
   return (

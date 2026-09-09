@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import {
   cn,
@@ -17,7 +18,8 @@ import { useGetMyNotificationsQuery, useGetMyProfileQuery } from '../api/workerA
 import { SuspendedScreen } from './TaxDeadlineBanner'
 
 import { useAppSelector } from '@/app/hooks'
-import { useLogoutMutation } from '@/app/sessionApi'
+import { activateLocale, LOCALE_LABEL, LOCALES } from '@/app/i18n'
+import { useLogoutMutation, useUpdateMyLocaleMutation } from '@/app/sessionApi'
 import { selectSessionUser } from '@/app/sessionSlice'
 import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
 import { WORKER_ROLE } from '@/shared/constants/roles'
@@ -64,6 +66,8 @@ export function MobileShell(): ReactNode {
   const location = useLocation()
   const navigate = useNavigate()
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation()
+  const [updateMyLocale] = useUpdateMyLocaleMutation()
+  const { t, i18n } = useLingui()
 
   /*
    * La dirección se decide UNA vez por cambio de ruta y se recuerda: los
@@ -138,7 +142,7 @@ export function MobileShell(): ReactNode {
           {/* Solo el avatar: el nombre ya vive en Inicio y en Perfil. Tocar abre el menú. */}
           <DropdownMenu>
             <DropdownMenuTrigger
-              aria-label={`Cuenta de ${shortName}`}
+              aria-label={t`Cuenta de ${shortName}`}
               className="relative flex size-11 cursor-pointer touch-manipulation items-center justify-center rounded-full transition-colors hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500 data-[state=open]:bg-surface-2"
             >
               {profile?.photoUrl ? (
@@ -166,8 +170,31 @@ export function MobileShell(): ReactNode {
                 }}
               >
                 <MaterialIcon name="person" className="text-lg" aria-hidden />
-                Mi Perfil
+                <Trans>Mi Perfil</Trans>
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {/* Idioma junto a la cuenta (D-36): cada idioma en su propio idioma, sin banderas. */}
+              {LOCALES.map((locale) => (
+                <DropdownMenuItem
+                  key={locale}
+                  lang={locale}
+                  aria-current={i18n.locale === locale ? 'true' : undefined}
+                  onSelect={() => {
+                    if (i18n.locale === locale) return
+                    activateLocale(locale)
+                    void updateMyLocale(locale)
+                  }}
+                >
+                  <MaterialIcon
+                    name={
+                      i18n.locale === locale ? 'radio_button_checked' : 'radio_button_unchecked'
+                    }
+                    className="text-lg"
+                    aria-hidden
+                  />
+                  {LOCALE_LABEL[locale]}
+                </DropdownMenuItem>
+              ))}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 disabled={isLoggingOut}
@@ -176,27 +203,30 @@ export function MobileShell(): ReactNode {
                 }}
               >
                 <MaterialIcon name="logout" className="text-lg" aria-hidden />
-                Cerrar sesión
+                <Trans>Cerrar sesión</Trans>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
 
-        <nav aria-label="Secciones" className="isolate flex gap-1 border-b border-line px-4 py-2.5">
+        <nav
+          aria-label={t`Secciones`}
+          className="isolate flex gap-1 border-b border-line px-4 py-2.5"
+        >
           <NavLink to="/colaborador" end className={tabClass}>
-            {tab('Inicio')}
+            {tab(t`Inicio`)}
           </NavLink>
           <NavLink to="/colaborador/ponchar" className={tabClass}>
-            {tab('Ponchar')}
+            {tab(t`Ponchar`)}
           </NavLink>
           <NavLink to="/colaborador/alta-2" className={tabClass}>
-            {tab('Mis datos')}
+            {tab(t`Mis datos`)}
           </NavLink>
           <NavLink to="/colaborador/avisos" className={tabClass}>
-            {tab(unread > 0 ? `Avisos · ${String(unread)}` : 'Avisos')}
+            {tab(unread > 0 ? t`Avisos · ${unread}` : t`Avisos`)}
           </NavLink>
           <NavLink to="/colaborador/perfil" className={tabClass}>
-            {tab('Perfil')}
+            {tab(t`Perfil`)}
           </NavLink>
         </nav>
 

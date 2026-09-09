@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react/macro'
 import { cn } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -16,13 +19,14 @@ const MS_PER_DAY = 86_400_000
  * "Hoy" solo, sin verbo, se leía como "audítalo hoy" — lo contrario de lo que
  * dice (ya se hizo). Todo lo que NO es "Sin auditar" empieza con "Auditado"
  * para que la pastilla se lea siempre como estado, nunca como instrucción.
+ * Devuelve el descriptor; quien pinta lo traduce con `i18n._()` (D-36).
  */
-function sinceLabel(lastAuditedAt: string | null): string {
-  if (lastAuditedAt === null) return 'Sin auditar'
+function sinceLabel(lastAuditedAt: string | null): MessageDescriptor {
+  if (lastAuditedAt === null) return msg`Sin auditar`
   const days = Math.floor((Date.now() - new Date(lastAuditedAt).getTime()) / MS_PER_DAY)
-  if (days <= 0) return 'Auditado hoy'
-  if (days === 1) return 'Auditado ayer'
-  return `Auditado hace ${String(days)} días`
+  if (days <= 0) return msg`Auditado hoy`
+  if (days === 1) return msg`Auditado ayer`
+  return msg`Auditado hace ${days} días`
 }
 
 /** Los que más lo necesitan primero: nunca auditados, luego el más antiguo. */
@@ -58,6 +62,7 @@ export function AuditWorkerList({
   onSelect: (worker: { id: string; fullName: string; photoUrl: string | null }) => void
   onClose: () => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const { data, isLoading, isError, refetch } = useGetLastAuditPerWorkerQuery(hotelId)
   const rows = data ? sortByUrgency(data) : []
 
@@ -65,23 +70,23 @@ export function AuditWorkerList({
     <Modal
       isOpen
       onClose={onClose}
-      title="Auditoría de personal"
-      description="Elige a quién auditar. El tiempo sin auditar te dice por dónde empezar."
+      title={t`Auditoría de personal`}
+      description={t`Elige a quién auditar. El tiempo sin auditar te dice por dónde empezar.`}
       className="max-w-lg"
     >
       {isLoading ? (
         <TableSkeleton rows={4} columns={2} />
       ) : isError ? (
         <LoadError
-          message="No se pudo cargar el plantel del hotel. Inténtalo de nuevo."
+          message={t`No se pudo cargar el plantel del hotel. Inténtalo de nuevo.`}
           onRetry={() => {
             void refetch()
           }}
         />
       ) : rows.length === 0 ? (
         <EmptyState
-          title="Este hotel no tiene colaboradores asignados"
-          text="Cuando el Schedule programe a alguien en este hotel, aparecerá aquí para auditarlo."
+          title={t`Este hotel no tiene colaboradores asignados`}
+          text={t`Cuando el Schedule programe a alguien en este hotel, aparecerá aquí para auditarlo.`}
         />
       ) : (
         <ul className="flex flex-col gap-2">
@@ -123,7 +128,7 @@ export function AuditWorkerList({
                       toneOf(row.lastAuditedAt),
                     )}
                   >
-                    {sinceLabel(row.lastAuditedAt)}
+                    {i18n._(sinceLabel(row.lastAuditedAt))}
                   </span>
                 </button>
               </MagicCard>

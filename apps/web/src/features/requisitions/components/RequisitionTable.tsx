@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react/macro'
 import {
   Table,
   TableBody,
@@ -24,28 +27,30 @@ import {
 } from '@/shared/constants/requisitionStatus'
 import { formatDayMonthTime } from '@/shared/lib/formatters'
 
-const HEADERS = [
-  'Número',
-  'Hotel',
-  'Departamento',
-  'Pos.',
-  'Cobertura',
-  'Urgencia',
-  'Estado',
-  'Autorizada',
-  'Inspector',
+/** Los encabezados se traducen al pintar con `i18n._()` (D-36). */
+const HEADERS: readonly MessageDescriptor[] = [
+  msg`Número`,
+  msg`Hotel`,
+  msg`Departamento`,
+  msg`Pos.`,
+  msg`Cobertura`,
+  msg`Urgencia`,
+  msg`Estado`,
+  msg`Autorizada`,
+  msg`Inspector`,
 ]
 
 const NOT_AUTHORIZED = '—'
 
 export function RequisitionTable({ items }: { items: RequisitionRow[] }): ReactNode {
+  const { t, i18n } = useLingui()
   const navigate = useNavigate()
 
   if (items.length === 0) {
     return (
       <EmptyState
-        title="Aún no hay requisiciones"
-        text="Cuando un hotel pida personal, su requisición aparecerá aquí con su semáforo. Los borradores solo los ve quien los crea."
+        title={t`Aún no hay requisiciones`}
+        text={t`Cuando un hotel pida personal, su requisición aparecerá aquí con su semáforo. Los borradores solo los ve quien los crea.`}
       />
     )
   }
@@ -57,11 +62,11 @@ export function RequisitionTable({ items }: { items: RequisitionRow[] }): ReactN
           <TableRow className="border-line">
             {HEADERS.map((header) => (
               <TableHead
-                key={header}
+                key={header.id}
                 scope="col"
                 className="px-4 py-3.5 text-xs font-semibold tracking-wide text-ink-3 uppercase"
               >
-                {header}
+                {i18n._(header)}
               </TableHead>
             ))}
           </TableRow>

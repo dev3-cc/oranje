@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro'
 import { MaterialIcon } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -23,7 +24,7 @@ export function FilterReset({
       className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-dashed border-o-500/60 px-3 py-1.5 text-sm font-medium text-o-700 transition-colors hover:bg-o-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
     >
       <MaterialIcon name="filter_alt_off" className="text-base" aria-hidden />
-      Quitar filtros
+      <Trans>Quitar filtros</Trans>
       <span className="rounded-full bg-o-500 px-1.5 text-[11px] font-bold text-ink">
         {activeCount}
       </span>

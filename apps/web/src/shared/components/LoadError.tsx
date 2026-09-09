@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro'
 import { Alert, AlertDescription } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -20,7 +21,7 @@ export function LoadError({
       <img src={personajeErrorTecnico} alt="" aria-hidden className="h-32 w-auto" />
       <AlertDescription className="justify-items-center">{message}</AlertDescription>
       <Button variant="secondary" onClick={onRetry}>
-        Volver a cargar
+        <Trans>Volver a cargar</Trans>
       </Button>
     </Alert>
   )

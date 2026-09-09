@@ -1,3 +1,5 @@
+import { plural } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react/macro'
 import { cn } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -5,17 +7,6 @@ import type { AuthorizationRequest } from '../types/requisition.types'
 
 import { MagicCard } from '@/shared/components/MagicCard'
 import { SectionCard } from '@/shared/components/SectionCard'
-
-/** `2 pos · 2 slots`, con el singular donde toca. */
-function describeSize(request: AuthorizationRequest): string {
-  const slots = request.slotCount === 1 ? '1 slot' : `${String(request.slotCount)} slots`
-  return `${request.department} · ${String(request.positionCount)} pos · ${slots}`
-}
-
-function describeStart(days: number): string {
-  if (days === 0) return 'Inicia hoy'
-  return days === 1 ? 'Inicia en 1 día' : `Inicia en ${String(days)} días`
-}
 
 /**
  * La cola de lo que espera firma.
@@ -27,7 +18,7 @@ export function AuthorizationQueueList({
   items,
   selectedId,
   onSelect,
-  emptyMessage = 'No hay requisiciones esperando tu firma.',
+  emptyMessage,
 }: {
   items: AuthorizationRequest[]
   selectedId: string
@@ -35,11 +26,23 @@ export function AuthorizationQueueList({
   /** Qué decir sin renglones: la cola vacía y un filtro que no deja nada no son lo mismo. */
   emptyMessage?: string
 }): ReactNode {
+  const { t } = useLingui()
+
+  /** `2 pos · 2 slots`, con el singular donde toca. */
+  function describeSize(request: AuthorizationRequest): string {
+    const { department, positionCount, slotCount } = request
+    return t`${department} · ${positionCount} pos · ${plural(slotCount, { one: '# slot', other: '# slots' })}`
+  }
+
+  function describeStart(days: number): string {
+    return t`${plural(days, { 0: 'Inicia hoy', one: 'Inicia en # día', other: 'Inicia en # días' })}`
+  }
+
   return (
-    <SectionCard title="Pendientes" subtitle="Ordenadas por fecha de inicio más próxima">
+    <SectionCard title={t`Pendientes`} subtitle={t`Ordenadas por fecha de inicio más próxima`}>
       {items.length === 0 ? (
         <p className="rounded-lg border border-dashed border-line p-6 text-center text-sm text-ink-3">
-          {emptyMessage}
+          {emptyMessage ?? t`No hay requisiciones esperando tu firma.`}
         </p>
       ) : (
         <ul className="flex flex-col gap-3">

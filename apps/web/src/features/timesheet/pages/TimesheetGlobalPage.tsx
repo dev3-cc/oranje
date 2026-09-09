@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
@@ -16,17 +19,18 @@ import {
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatHours, formatWeekRange } from '@/shared/lib/formatters'
 
-const HEADERS = [
-  'Colaborador',
-  'Semana',
-  'Reales',
-  'Contractuales',
-  'Diferencia',
-  'Cumplimiento',
-  'Indicador',
+const HEADERS: readonly MessageDescriptor[] = [
+  msg`Colaborador`,
+  msg`Semana`,
+  msg`Reales`,
+  msg`Contractuales`,
+  msg`Diferencia`,
+  msg`Cumplimiento`,
+  msg`Indicador`,
 ]
 
 export function TimesheetGlobalPage(): ReactNode {
+  const { t, i18n } = useLingui()
   /** Los mismos cuatro filtros de `/timesheet`: colaborador, requisición, estado y hotel. */
   const [filters, setFilters] = useState<TimesheetFilters>(EMPTY_TIMESHEET_FILTERS)
   /**
@@ -52,31 +56,36 @@ export function TimesheetGlobalPage(): ReactNode {
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-3xl font-bold tracking-tight text-ink">
-          Timesheet Global · Cumplimiento
+          <Trans>Timesheet Global · Cumplimiento</Trans>
         </h1>
         <p className="mt-1.5 text-sm text-ink-3">
-          {rangeLabel !== '' && `Semana ${rangeLabel} · `}
-          El Manager General ve todos los departamentos{IS_DEV_UI ? ' (D-09)' : ''}
+          {rangeLabel !== '' && `${t`Semana ${rangeLabel}`} · `}
+          <Trans>El Manager General ve todos los departamentos</Trans>
+          {IS_DEV_UI ? ' (D-09)' : ''}
         </p>
       </header>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           value={String(rows.length)}
-          label="Colaboradores evaluados"
-          foot="con timesheet esta semana"
+          label={t`Colaboradores evaluados`}
+          foot={t`con timesheet esta semana`}
         />
         <MetricCard
           value="—"
-          label="Verde · cumplimiento"
-          foot="pendiente de horas contractuales"
+          label={t`Verde · cumplimiento`}
+          foot={t`pendiente de horas contractuales`}
         />
         <MetricCard
           value="—"
-          label="Amarillo · desviación"
-          foot="pendiente de horas contractuales"
+          label={t`Amarillo · desviación`}
+          foot={t`pendiente de horas contractuales`}
         />
-        <MetricCard value="—" label="Rojo · anomalía" foot="pendiente de horas contractuales" />
+        <MetricCard
+          value="—"
+          label={t`Rojo · anomalía`}
+          foot={t`pendiente de horas contractuales`}
+        />
       </div>
 
       <TimesheetToolbar
@@ -91,7 +100,7 @@ export function TimesheetGlobalPage(): ReactNode {
 
       {isError && (
         <LoadError
-          message="No se pudo cargar la semana del Timesheet Global. Reintenta en unos segundos."
+          message={t`No se pudo cargar la semana del Timesheet Global. Reintenta en unos segundos.`}
           onRetry={() => {
             void refetch()
           }}
@@ -107,11 +116,11 @@ export function TimesheetGlobalPage(): ReactNode {
               <TableRow className="border-line">
                 {HEADERS.map((header) => (
                   <TableHead
-                    key={header}
+                    key={header.id}
                     scope="col"
                     className="px-4 py-3 text-xs font-semibold tracking-wide text-ink-3 uppercase"
                   >
-                    {header}
+                    {i18n._(header)}
                   </TableHead>
                 ))}
               </TableRow>
@@ -124,8 +133,8 @@ export function TimesheetGlobalPage(): ReactNode {
                     className="px-4 py-8 text-center text-sm text-ink-3"
                   >
                     {hasFilters
-                      ? 'Nadie coincide con esos filtros. Cambia el nombre, la requisición, el estado o el hotel.'
-                      : 'Nadie tiene Timesheet esta semana. Las filas aparecen cuando los Supervisores registran horas.'}
+                      ? t`Nadie coincide con esos filtros. Cambia el nombre, la requisición, el estado o el hotel.`
+                      : t`Nadie tiene Timesheet esta semana. Las filas aparecen cuando los Supervisores registran horas.`}
                   </TableCell>
                 </TableRow>
               )}
@@ -154,14 +163,17 @@ export function TimesheetGlobalPage(): ReactNode {
       )}
 
       <p className="rounded-md bg-surface-2 p-3 text-xs leading-relaxed text-ink-3">
-        El Indicador de Cumplimiento del Timesheet lo calcula el sistema comparando el Contrato con
-        el Timesheet, sin intervención humana. Las horas contractuales por colaborador{' '}
-        <span className="font-semibold">todavía no están disponibles</span>: hasta que lo estén,
-        esas columnas muestran una raya en vez de un dato inventado
-        {IS_DEV_UI && (
-          <code className="text-ink-4"> · pendiente 13 del ADR (duración del turno)</code>
-        )}
-        . Un Colaborador en Gris (accidente) tampoco se evalúa: queda fuera de la medición semanal.
+        <Trans>
+          El Indicador de Cumplimiento del Timesheet lo calcula el sistema comparando el Contrato
+          con el Timesheet, sin intervención humana. Las horas contractuales por colaborador{' '}
+          <span className="font-semibold">todavía no están disponibles</span>: hasta que lo estén,
+          esas columnas muestran una raya en vez de un dato inventado
+          {IS_DEV_UI && (
+            <code className="text-ink-4"> · pendiente 13 del ADR (duración del turno)</code>
+          )}
+          . Un Colaborador en Gris (accidente) tampoco se evalúa: queda fuera de la medición
+          semanal.
+        </Trans>
       </p>
     </div>
   )

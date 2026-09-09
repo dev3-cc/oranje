@@ -1,4 +1,5 @@
-import { MaterialIcon, statusLight } from '@oranje/ui'
+import { Plural, Trans, useLingui } from '@lingui/react/macro'
+import { statusLight } from '@oranje/ui'
 import { useMemo, useState, type ReactNode } from 'react'
 
 import {
@@ -51,6 +52,7 @@ import { formatWeekRange } from '@/shared/lib/formatters'
  * el chip «Pagar N» de cada renglón.
  */
 export function TimesheetPage(): ReactNode {
+  const { t } = useLingui()
   const [filters, setFilters] = useState<TimesheetFilters>(EMPTY_TIMESHEET_FILTERS)
   const [columnWidth, setColumnWidth] = useState<number>(DEFAULT_COLUMN_WIDTH)
   /** Densidad de la semana: la rejilla de chips o el lienzo de horas. */
@@ -137,11 +139,15 @@ export function TimesheetPage(): ReactNode {
       <header className="flex flex-wrap items-center gap-3">
         <div className="flex flex-wrap items-baseline gap-3">
           <h1 className="text-3xl font-bold tracking-tight text-ink">
-            <FoldText text="Timesheet" />
+            <FoldText text={t`Timesheet`} />
           </h1>
           {/* El rango sale de los días que llegaron, no de un texto aparte: así el
               título no puede decir una semana distinta de la que se ve. */}
-          {rangeLabel !== '' && <p className="text-base text-ink-3">Semana {rangeLabel}</p>}
+          {rangeLabel !== '' && (
+            <p className="text-base text-ink-3">
+              <Trans>Semana {rangeLabel}</Trans>
+            </p>
+          )}
         </div>
 
         {selectedWeek !== null && (
@@ -170,9 +176,15 @@ export function TimesheetPage(): ReactNode {
       {week &&
         !can('timesheet:approve_hours') &&
         week.rows.some((row) => row.weekStatus === 'PENDING_APPROVAL') && (
-          <NoticeCard image={personajeManager} title="La aprobación es del Manager" role="status">
-            Las semanas enviadas las aprueba el Manager de Área de su departamento o el Manager
-            General. Hasta entonces las horas no se pagan ni se facturan.
+          <NoticeCard
+            image={personajeManager}
+            title={t`La aprobación es del Manager`}
+            role="status"
+          >
+            <Trans>
+              Las semanas enviadas las aprueba el Manager de Área de su departamento o el Manager
+              General. Hasta entonces las horas no se pagan ni se facturan.
+            </Trans>
           </NoticeCard>
         )}
 
@@ -189,17 +201,11 @@ export function TimesheetPage(): ReactNode {
               {TIMESHEET_STATUS_LABEL[status]}
             </span>
           ))}
-          {/* La falta no es un estado del semáforo del día: es un hecho, y se
-              marca con forma (ícono), nunca con un cuarto color. */}
-          <span className="inline-flex items-center gap-1.5 text-xs text-ink-3">
-            <MaterialIcon name="event_busy" className="text-sm" aria-hidden />
-            Falta
-          </span>
           {/* El contorno del carril también se explica en la leyenda. */}
           {view === 'DAYS' && (
             <span className="inline-flex items-center gap-1.5 text-xs text-ink-3">
               <span className="h-3.5 w-6 rounded-md border border-o-500/50" aria-hidden />
-              Días de una misma requisición
+              <Trans>Días de una misma requisición</Trans>
             </span>
           )}
         </div>
@@ -208,13 +214,13 @@ export function TimesheetPage(): ReactNode {
       {selection.total > 0 && (
         <div className="flex flex-wrap items-center gap-4 rounded-lg border border-purple bg-purple/10 px-5 py-3">
           <p className="text-sm font-semibold text-ink">
-            {selection.total} {selection.total === 1 ? 'día elegido' : 'días elegidos'}
+            <Plural value={selection.total} one="# día elegido" other="# días elegidos" />
           </p>
           <p className="text-sm text-ink-2">
-            {selection.numbers.length > 0 ? selection.numbers.join(' · ') : 'sin requisición'}
+            {selection.numbers.length > 0 ? selection.numbers.join(' · ') : t`sin requisición`}
             {selection.withoutRequisition > 0 &&
               selection.numbers.length > 0 &&
-              ` · ${String(selection.withoutRequisition)} sin requisición`}
+              ` · ${t`${selection.withoutRequisition} sin requisición`}`}
           </p>
 
           <div className="ml-auto flex flex-wrap items-center gap-3">
@@ -224,18 +230,22 @@ export function TimesheetPage(): ReactNode {
                 setSelectedIds(new Set())
               }}
             >
-              Quitar selección
+              <Trans>Quitar selección</Trans>
             </Button>
             {/* Pagar NO es del Hotel: doble firma de Contabilidad (Flujo de
                 Nómina). Quien no puede no ve un botón muerto — ve quién sí,
                 que es el patrón acordado del barrido de permisos. */}
             {canPay ? (
-              <Button variant="primary" disabled title="El pago en bloque aún no está disponible">
-                Pagar seleccionados
+              <Button
+                variant="primary"
+                disabled
+                title={t`El pago en bloque aún no está disponible`}
+              >
+                <Trans>Pagar seleccionados</Trans>
               </Button>
             ) : (
               <span className="rounded-md border border-dashed border-line px-2.5 py-1 text-xs text-ink-3">
-                El pago lo hace Contabilidad cuando la semana está aprobada
+                <Trans>El pago lo hace Contabilidad cuando la semana está aprobada</Trans>
               </span>
             )}
           </div>
@@ -244,7 +254,7 @@ export function TimesheetPage(): ReactNode {
 
       {isError && (
         <LoadError
-          message="No se pudo cargar la semana del Timesheet. Reintenta en unos segundos."
+          message={t`No se pudo cargar la semana del Timesheet. Reintenta en unos segundos.`}
           onRetry={() => {
             void refetch()
           }}

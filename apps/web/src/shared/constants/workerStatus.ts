@@ -1,4 +1,7 @@
+import { msg } from '@lingui/core/macro'
 import type { StatusLightToken } from '@oranje/ui'
+
+import { labelMap } from '@/shared/lib/i18nLabels'
 
 /**
  * Semáforo del Colaborador: los 12 estados del seed real
@@ -26,20 +29,23 @@ export const WORKER_STATUSES = [
 export type WorkerStatus = (typeof WORKER_STATUSES)[number]
 
 /** Qué significa el color EN ESTE semáforo. En otro dice otra cosa. */
-export const WORKER_STATUS_LABEL: Record<WorkerStatus, string> = {
-  WHITE: 'Pre-asignación',
-  APPLE_GREEN: 'Día 1-2',
-  LIGHT_BLUE: 'Día 3+',
-  ORANGE: 'Fijo',
-  STRONG_GREEN: 'Disponible',
-  YELLOW: 'Disp. voluntario',
-  BROWN: 'Asig. temporal',
-  PINK: 'Stand-by',
-  PURPLE: 'No regresó',
-  RED: 'Reportado',
-  GRAY: 'Accidentado',
-  BLACK: 'Blacklist',
+/** Lo que dice el chip por cada estado del [[Semáforo del Colaborador]] — nunca el color. */
+const WORKER_STATUS_MESSAGE = {
+  WHITE: msg`Pre-asignación`,
+  APPLE_GREEN: msg`Día 1-2`,
+  LIGHT_BLUE: msg`Día 3+`,
+  ORANGE: msg`Fijo`,
+  STRONG_GREEN: msg`Disponible`,
+  YELLOW: msg`Disp. voluntario`,
+  BROWN: msg`Asig. temporal`,
+  PINK: msg`Stand-by`,
+  PURPLE: msg`No regresó`,
+  RED: msg`Reportado`,
+  GRAY: msg`Accidentado`,
+  BLACK: msg`Blacklist`,
 }
+
+export const WORKER_STATUS_LABEL: Record<WorkerStatus, string> = labelMap(WORKER_STATUS_MESSAGE)
 
 export const WORKER_STATUS_TOKEN: Record<WorkerStatus, StatusLightToken> = {
   WHITE: 'st-blanco',
