@@ -37,7 +37,7 @@ export class AuthController {
     this.cookieOptions = {
       httpOnly: true,
       secure: config.get('COOKIE_SECURE', { infer: true }),
-      sameSite: 'strict',
+      sameSite: config.get('COOKIE_SAME_SITE', { infer: true }),
       path: '/api/v1/auth',
       maxAge: config.get('JWT_REFRESH_TTL_S', { infer: true }) * 1000,
     }

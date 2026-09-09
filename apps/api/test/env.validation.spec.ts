@@ -13,6 +13,7 @@ const DESPLEGADO = {
   JWT_PRIVATE_KEY: '-----BEGIN PRIVATE KEY-----\nx\n-----END PRIVATE KEY-----',
   JWT_PUBLIC_KEY: '-----BEGIN PUBLIC KEY-----\nx\n-----END PUBLIC KEY-----',
   COOKIE_SECURE: 'true',
+  COOKIE_SAME_SITE: 'none',
   CORS_ORIGINS: 'https://app.oranje.mx',
 }
 
@@ -66,6 +67,27 @@ describe('validateEnv', () => {
 
     it('exige la cookie por HTTPS', () => {
       expect(() => validateEnv({ ...DESPLEGADO, COOKIE_SECURE: 'false' })).toThrow(/COOKIE_SECURE/)
+    })
+
+    // El front (Hosting) y el API (Cloud Run) son sitios distintos: con Strict
+    // la cookie de refresh no viajaba y la sesión se perdía al recargar.
+    it('exige SameSite=None: el front y el API no comparten sitio', () => {
+      expect(() => validateEnv({ ...DESPLEGADO, COOKIE_SAME_SITE: 'strict' })).toThrow(
+        /COOKIE_SAME_SITE/,
+      )
+      expect(validateEnv(DESPLEGADO).COOKIE_SAME_SITE).toBe('none')
+    })
+
+    it('None sin Secure no existe para el navegador', () => {
+      expect(() =>
+        validateEnv({
+          ...BASE,
+          APP_ENV: 'local',
+          JWT_SECRET: 'a'.repeat(32),
+          COOKIE_SAME_SITE: 'none',
+          COOKIE_SECURE: 'false',
+        }),
+      ).toThrow(/COOKIE_SECURE/)
     })
   })
 
