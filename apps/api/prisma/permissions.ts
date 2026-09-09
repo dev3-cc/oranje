@@ -948,6 +948,15 @@ const SYSTEM_ADMINISTRATION: Permission[] = [
     roles: [ADMIN],
   },
   {
+    // Decisión de Hugo (2026-09-09): el primer Manager General nace con la
+    // conversión (BDC); el resto de las cuentas del hotel las administra el
+    // Administrador desde Usuarios (Reglas de Negocio · Cuentas del hotel).
+    module: 'users',
+    action: 'manage_hotel',
+    label: 'Alta y gestión de las cuentas del hotel',
+    roles: [ADMIN],
+  },
+  {
     // Decisión de Hugo (2026-09-04): los catálogos dejan de vivir solo en el
     // seed — el Administrador los gestiona desde la app (CRUD completo; el
     // DELETE lo frena la FK cuando la fila está en uso).

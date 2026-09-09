@@ -57,8 +57,11 @@ export class SchedulesController {
 
   @Requires('schedule', 'read_department')
   @Get(':id/entries')
-  async entries(@Param('id', ParseUUIDPipe) id: string): Promise<{ data: EntryEntity[] }> {
-    return { data: await this.schedules.entries(id) }
+  async entries(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: EntryEntity[] }> {
+    return { data: await this.schedules.entries(id, user) }
   }
 
   @Requires('schedule', 'update')

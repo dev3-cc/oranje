@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   UnprocessableEntityException,
@@ -136,10 +137,21 @@ export class SchedulesService {
     )
   }
 
-  async entries(scheduleId: string): Promise<EntryEntity[]> {
+  /**
+   * El Supervisor y el Manager de Área ven el Schedule de SU departamento; el
+   * Manager General, el del hotel completo (Reglas del Hotel · resumen por rol).
+   * El departamento viene de la persona (D-09): sin él, no se acota.
+   */
+  async entries(scheduleId: string, user: AuthenticatedUser): Promise<EntryEntity[]> {
     await this.schedule(scheduleId)
 
-    return (await this.repo.entries(scheduleId)).map(toEntry)
+    return (await this.repo.entries(scheduleId, user.departmentId ?? null)).map(toEntry)
+  }
+
+  private assertDepartment(departmentId: string, user: AuthenticatedUser, message: string): void {
+    if (user.departmentId && departmentId !== user.departmentId) {
+      throw new ForbiddenException({ code: 'DEPARTMENT_OUT_OF_SCOPE', message })
+    }
   }
 
   async addEntry(
@@ -170,6 +182,8 @@ export class SchedulesService {
         message: 'Esa asignación es de otro hotel',
       })
     }
+
+    this.assertDepartment(assignment.departmentId, user, 'Solo planeas turnos de tu departamento')
 
     this.assertInsideWeek(dto.workDate, schedule)
 
@@ -217,6 +231,8 @@ export class SchedulesService {
         message: 'El turno no existe en este Schedule',
       })
     }
+
+    this.assertDepartment(entry.departmentId, user, 'Solo quitas turnos de tu departamento')
 
     await this.repo.removeEntry({
       entryId,

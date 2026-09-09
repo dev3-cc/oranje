@@ -147,6 +147,7 @@ export class SchedulesRepository {
     workerId: string
     status: string
     hotelId: string
+    departmentId: string
     workerName: string
   } | null> {
     const row = await this.prisma.assignment.findUnique({
@@ -156,7 +157,13 @@ export class SchedulesRepository {
         workerId: true,
         status: true,
         worker: { select: { fullName: true } },
-        slot: { select: { position: { select: { requisition: { select: { hotelId: true } } } } } },
+        slot: {
+          select: {
+            position: {
+              select: { hotelDepartmentId: true, requisition: { select: { hotelId: true } } },
+            },
+          },
+        },
       },
     })
 
@@ -166,12 +173,14 @@ export class SchedulesRepository {
           workerId: row.workerId,
           status: row.status,
           hotelId: row.slot.position.requisition.hotelId,
+          departmentId: row.slot.position.hotelDepartmentId,
           workerName: row.worker.fullName,
         }
       : null
   }
 
-  async entries(scheduleId: string): Promise<EntryRow[]> {
+  /** `departmentId` acota a un departamento (Supervisor, Manager de Área); `null` = todo el hotel. */
+  async entries(scheduleId: string, departmentId: string | null = null): Promise<EntryRow[]> {
     return this.prisma.$queryRaw<EntryRow[]>`
       SELECT e.id,
              e.work_date        AS "workDate",
@@ -180,8 +189,12 @@ export class SchedulesRepository {
              e.assignment_id    AS "assignmentId",
              jsonb_build_object('id', w.id, 'fullName', w.full_name) AS worker
         FROM operations.schedule_entry e
-        JOIN personal.worker w ON w.id = e.worker_id
+        JOIN personal.worker w      ON w.id = e.worker_id
+        JOIN coverage.assignment a  ON a.id = e.assignment_id
+        JOIN demand.slot s          ON s.id = a.slot_id
+        JOIN demand.position p      ON p.id = s.position_id
        WHERE e.schedule_id = ${scheduleId}::uuid
+         AND (${departmentId}::uuid IS NULL OR p.hotel_department_id = ${departmentId}::uuid)
        ORDER BY e.work_date, lower(e.shift_range)`
   }
 
@@ -264,10 +277,28 @@ export class SchedulesRepository {
     })
   }
 
-  async entryById(id: string): Promise<{ id: string; scheduleId: string; workDate: Date } | null> {
-    return this.prisma.scheduleEntry.findUnique({
+  async entryById(
+    id: string,
+  ): Promise<{ id: string; scheduleId: string; workDate: Date; departmentId: string } | null> {
+    const row = await this.prisma.scheduleEntry.findUnique({
       where: { id },
-      select: { id: true, scheduleId: true, workDate: true },
+      select: {
+        id: true,
+        scheduleId: true,
+        workDate: true,
+        assignment: {
+          select: { slot: { select: { position: { select: { hotelDepartmentId: true } } } } },
+        },
+      },
     })
+
+    return row
+      ? {
+          id: row.id,
+          scheduleId: row.scheduleId,
+          workDate: row.workDate,
+          departmentId: row.assignment.slot.position.hotelDepartmentId,
+        }
+      : null
   }
 }
