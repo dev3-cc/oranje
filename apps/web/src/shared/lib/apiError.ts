@@ -5,6 +5,72 @@
  * «inténtalo de nuevo» a ciegas fue dos veces bug (el HEIC y la fecha futura).
  */
 
+import { CONTRACT_STATUS_LABEL } from '@/shared/constants/contractStatus'
+import { ONBOARDING_STATUS_LABEL } from '@/shared/constants/onboardingStatus'
+import { REQUISITION_STATUS_LABEL } from '@/shared/constants/requisitionStatus'
+import { TIMESHEET_WEEK_STATUS_LABEL } from '@/shared/constants/timesheetStatus'
+import { WORKER_STATUS_LABEL } from '@/shared/constants/workerStatus'
+
+/**
+ * Siglas que SÍ son lenguaje de la persona: no son códigos y no se tocan.
+ * Todo lo demás en mayúsculas sostenidas (`YELLOW`, `PENDING_APPROVAL`) es un
+ * identificador que se coló al texto, y el texto entero se descarta.
+ */
+const HUMAN_ACRONYMS = new Set([
+  'SSN',
+  'ITIN',
+  'QR',
+  'GPS',
+  'PDF',
+  'API',
+  'URL',
+  'IANA',
+  'ROL',
+  'RFC',
+  'CURP',
+  'IMSS',
+  'USD',
+  'MXN',
+  'IVA',
+])
+
+/**
+ * Los códigos que el backend puede dejar caer en un mensaje y su palabra.
+ * El mismo código significa cosas distintas por semáforo (YELLOW es «En
+ * proceso» en Requisición y «Disp. voluntario» en el Colaborador), así que
+ * solo se traducen los que no chocan; los ambiguos se tratan como fuga.
+ */
+const CODE_LABEL: Record<string, string> = (() => {
+  const merged: Record<string, string> = {}
+  const clashes = new Set<string>()
+  for (const map of [
+    TIMESHEET_WEEK_STATUS_LABEL,
+    CONTRACT_STATUS_LABEL,
+    REQUISITION_STATUS_LABEL,
+    WORKER_STATUS_LABEL,
+    ONBOARDING_STATUS_LABEL,
+  ] as Array<Record<string, string>>) {
+    for (const [code, label] of Object.entries(map)) {
+      if (code in merged && merged[code] !== label) clashes.add(code)
+      merged[code] ??= label
+    }
+  }
+  for (const code of clashes) delete merged[code]
+  return merged
+})()
+
+/**
+ * Un mensaje del backend solo llega a la pantalla si habla como una persona:
+ * los códigos conocidos y sin ambigüedad se traducen; si queda uno en
+ * mayúsculas sostenidas, el mensaje se descarta y manda el `fallback`.
+ * Es la puerta que garantiza la regla «ningún código en texto humano».
+ */
+export function humanizeApiMessage(message: string): string | null {
+  const translated = message.replace(/\b[A-Z][A-Z_]{2,}\b/g, (token) => CODE_LABEL[token] ?? token)
+  const leak = translated.match(/\b[A-Z][A-Z_]{2,}\b/g)?.find((token) => !HUMAN_ACRONYMS.has(token))
+  return leak ? null : translated
+}
+
 export interface ApiErrorInfo {
   /** HTTP, o el literal de RTK (`FETCH_ERROR`, `PARSING_ERROR`) si no hubo respuesta. */
   status: number | string | undefined
@@ -41,7 +107,7 @@ export function readApiError(error: unknown): ApiErrorInfo {
  * El mensaje para el usuario, por prioridad:
  * 1. el override por código (`byCode`) — para decir además QUÉ hacer;
  * 2. el override por status (`byStatus`) — p. ej. el 409 de RR-15;
- * 3. lo que el backend redactó (su `message` ya viene en español);
+ * 3. lo que el backend redactó, si no trae códigos (ver `humanizeApiMessage`);
  * 4. los estatus comunes, con su causa;
  * 5. el `fallback`, que es lo único que puede ser genérico.
  */
@@ -73,7 +139,10 @@ export function apiErrorMessage(
     return 'Esta acción no está en tu rol. Si la necesitas, pídesela a quien sí la tiene.'
   }
 
-  if (info.message) return info.message
+  if (info.message) {
+    const human = humanizeApiMessage(info.message)
+    if (human) return human
+  }
 
   if (info.status === 403) return 'Esta acción no está en tu rol.'
   if (info.status === 404) return 'Eso ya no existe: alguien lo movió o lo borró.'
