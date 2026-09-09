@@ -88,6 +88,141 @@ const ENGLISH_LEVELS = [
   { code: 'CONVERSATIONAL', name: 'Conversacional', order: 4 },
 ]
 
+/// Contenido inicial de las dos auditorías del Supervisor. `weight = 1` para
+/// todos (el DEFAULT de la columna): el Administrador los diferencia después
+/// desde `/catalogs/audit-checklist-items`. `ordinal` empieza en 1 DENTRO de
+/// cada categoría, no global.
+const AUDIT_CHECKLIST_ITEMS: Array<{
+  auditType: 'PERSONAL_PRESENTATION' | 'ENVIRONMENT'
+  category: string
+  code: string
+  label: string
+  ordinal: number
+}> = [
+  // Presentación Personal
+  {
+    auditType: 'PERSONAL_PRESENTATION',
+    category: 'Uniformidad',
+    code: 'PP_UNIFORME_COMPLETO_LIMPIO_PLANCHADO',
+    label: 'Uniforme completo, limpio y planchado',
+    ordinal: 1,
+  },
+  {
+    auditType: 'PERSONAL_PRESENTATION',
+    category: 'Uniformidad',
+    code: 'PP_ZAPATOS_SEGURIDAD_REGLAMENTARIOS',
+    label: 'Zapatos de seguridad reglamentarios',
+    ordinal: 2,
+  },
+  {
+    auditType: 'PERSONAL_PRESENTATION',
+    category: 'Uniformidad',
+    code: 'PP_GAFETE_ID_VISIBLE',
+    label: 'Gafete/ID visible',
+    ordinal: 3,
+  },
+  {
+    auditType: 'PERSONAL_PRESENTATION',
+    category: 'Higiene',
+    code: 'PP_UNAS',
+    label: 'Uñas',
+    ordinal: 1,
+  },
+  {
+    auditType: 'PERSONAL_PRESENTATION',
+    category: 'Higiene',
+    code: 'PP_CABELLO',
+    label: 'Cabello',
+    ordinal: 2,
+  },
+  {
+    auditType: 'PERSONAL_PRESENTATION',
+    category: 'Higiene',
+    code: 'PP_HIGIENE_PERSONAL_GENERAL',
+    label: 'Higiene personal general',
+    ordinal: 3,
+  },
+  {
+    auditType: 'PERSONAL_PRESENTATION',
+    category: 'Seguridad',
+    code: 'PP_SIN_JOYERIA_EXCESIVA',
+    label: 'Sin joyería excesiva',
+    ordinal: 1,
+  },
+  {
+    auditType: 'PERSONAL_PRESENTATION',
+    category: 'Seguridad',
+    code: 'PP_USO_GUANTES_PROTECCION_SI_APLICA',
+    label: 'Uso de guantes/protección si aplica',
+    ordinal: 2,
+  },
+  {
+    auditType: 'PERSONAL_PRESENTATION',
+    category: 'Actitud',
+    code: 'PP_PUNTUALIDAD_AL_INICIAR_JORNADA',
+    label: 'Puntualidad al iniciar jornada',
+    ordinal: 1,
+  },
+  {
+    auditType: 'PERSONAL_PRESENTATION',
+    category: 'Actitud',
+    code: 'PP_DISPOSICION_Y_CORTESIA',
+    label: 'Disposición y cortesía',
+    ordinal: 2,
+  },
+
+  // Percepción de Ambiente y Recursos
+  {
+    auditType: 'ENVIRONMENT',
+    category: 'Insumos',
+    code: 'AM_QUIMICOS_Y_MATERIALES_SUFICIENTES',
+    label: 'Químicos y materiales suficientes',
+    ordinal: 1,
+  },
+  {
+    auditType: 'ENVIRONMENT',
+    category: 'Insumos',
+    code: 'AM_ASPIRADORAS_CARRITOS_EN_BUEN_ESTADO',
+    label: 'Aspiradoras/carritos en buen estado',
+    ordinal: 2,
+  },
+  {
+    auditType: 'ENVIRONMENT',
+    category: 'Insumos',
+    code: 'AM_LENCERIA_SABANAS_TOALLAS_SUFICIENTE',
+    label: 'Lencería (sábanas/toallas) suficiente',
+    ordinal: 3,
+  },
+  {
+    auditType: 'ENVIRONMENT',
+    category: 'Relaciones',
+    code: 'AM_TRATO_DIGNO_Y_CORDIAL_DEL_PERSONAL_DEL_HOTEL',
+    label: 'Trato digno y cordial del personal del hotel',
+    ordinal: 1,
+  },
+  {
+    auditType: 'ENVIRONMENT',
+    category: 'Relaciones',
+    code: 'AM_COMUNICACION_EFECTIVA_CON_EL_AMA_DE_LLAVES',
+    label: 'Comunicación efectiva con el Ama de Llaves',
+    ordinal: 2,
+  },
+  {
+    auditType: 'ENVIRONMENT',
+    category: 'Carga laboral',
+    code: 'AM_NUMERO_DE_HABITACIONES_ASIGNADAS_ES_JUSTO',
+    label: 'Número de habitaciones asignadas es justo',
+    ordinal: 1,
+  },
+  {
+    auditType: 'ENVIRONMENT',
+    category: 'Entorno',
+    code: 'AM_AREAS_DE_DESCANSO_ADECUADAS',
+    label: 'Áreas de descanso adecuadas',
+    ordinal: 1,
+  },
+]
+
 const ZONES = [
   { code: 'CENTRO', name: 'Centro' },
   { code: 'SUR', name: 'Sur' },
@@ -462,8 +597,9 @@ const OTHER_TRANSITIONS: Array<{
   // requisición cubierta al 100% ya no se elimina, se archivó sola.
   //
   // El borrador lo puede quitar quien opera el hotel; lo AUTORIZADO en
-  // adelante, solo el Manager General — a esa altura ya movió al equipo de
-  // Reclutamiento. Quién exactamente dentro del rol lo decide el servicio.
+  // adelante, el Manager de Área (solo su departamento) o el Manager General
+  // — a esa altura ya movió al equipo de Reclutamiento (Reglas del Hotel,
+  // 2026-09-01). Quién exactamente dentro del rol lo decide el servicio.
   {
     light: 'REQUISITION',
     from: 'APPLE_GREEN',
@@ -476,7 +612,7 @@ const OTHER_TRANSITIONS: Array<{
     light: 'REQUISITION',
     from: 'GREEN',
     to: 'PURPLE',
-    roles: ['ROL-H-03'],
+    roles: ['ROL-H-02', 'ROL-H-03'],
     reason: true,
     note: 'ya autorizada: exige motivo',
   },
@@ -484,7 +620,7 @@ const OTHER_TRANSITIONS: Array<{
     light: 'REQUISITION',
     from: 'YELLOW',
     to: 'PURPLE',
-    roles: ['ROL-H-03'],
+    roles: ['ROL-H-02', 'ROL-H-03'],
     reason: true,
     note: 'con reclutadoras trabajandola: exige motivo',
   },
@@ -492,7 +628,7 @@ const OTHER_TRANSITIONS: Array<{
     light: 'REQUISITION',
     from: 'RED',
     to: 'PURPLE',
-    roles: ['ROL-H-03'],
+    roles: ['ROL-H-02', 'ROL-H-03'],
     reason: true,
     note: 'cerrada a medias: exige motivo',
   },
@@ -1055,6 +1191,22 @@ async function main(): Promise<void> {
     })
   }
   log(`english_level: ${ENGLISH_LEVELS.length}`)
+
+  for (const item of AUDIT_CHECKLIST_ITEMS) {
+    await prisma.auditChecklistItem.upsert({
+      where: { auditType_code: { auditType: item.auditType, code: item.code } },
+      update: { category: item.category, label: item.label, ordinal: item.ordinal },
+      create: {
+        id: uuidv7(),
+        auditType: item.auditType,
+        category: item.category,
+        code: item.code,
+        label: item.label,
+        ordinal: item.ordinal,
+      },
+    })
+  }
+  log(`catalogs.audit_checklist_item: ${AUDIT_CHECKLIST_ITEMS.length}`)
 
   for (const z of ZONES) {
     await prisma.zone.upsert({

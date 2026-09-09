@@ -259,7 +259,7 @@ export class TransitionsService {
     if (!state) {
       throw new ConflictException({
         code: 'STATE_NOT_FOUND',
-        message: `El estado ${code} no existe`,
+        message: 'Ese estado no existe en el Semáforo Onboarding',
       })
     }
 

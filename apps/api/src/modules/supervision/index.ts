@@ -1,3 +1,6 @@
 export { SupervisionModule } from './supervision.module.js'
 export { AccidentsService } from './accidents/accidents.service.js'
 export type { AccidentEntity } from './accidents/accidents.service.js'
+export { AuditsService } from './audits/audits.service.js'
+export type { AuditBoard } from './audits/audits.service.js'
+export type { AuditEntity, LastAuditPerWorker } from './audits/entities/audit.entity.js'

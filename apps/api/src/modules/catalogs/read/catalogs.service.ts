@@ -23,6 +23,15 @@ export interface ReasonItem {
   statusLight: string
 }
 
+export interface AuditChecklistItemView {
+  id: string
+  auditType: string
+  category: string
+  label: string
+  weight: string
+  ordinal: number
+}
+
 @Injectable()
 export class CatalogsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -106,6 +115,32 @@ export class CatalogsService {
       code: r.code,
       name: r.name,
       statusLight: r.statusLight.code,
+    }))
+  }
+
+  // El formulario del Supervisor pinta los reactivos por categoría y en su
+  // `ordinal`: es justo lo que `ix_checklist_item_render` indexa.
+  async auditChecklistItems(auditType?: string): Promise<AuditChecklistItemView[]> {
+    const rows = await this.prisma.auditChecklistItem.findMany({
+      where: auditType ? { auditType } : {},
+      select: {
+        id: true,
+        auditType: true,
+        category: true,
+        label: true,
+        weight: true,
+        ordinal: true,
+      },
+      orderBy: [{ auditType: 'asc' }, { category: 'asc' }, { ordinal: 'asc' }],
+    })
+
+    return rows.map((r) => ({
+      id: r.id,
+      auditType: r.auditType,
+      category: r.category,
+      label: r.label,
+      weight: r.weight.toFixed(2),
+      ordinal: r.ordinal,
     }))
   }
 }
