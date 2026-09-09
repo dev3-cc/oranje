@@ -44,8 +44,11 @@ export function AuthorizationResolutionForm({
     } catch (error) {
       setRootError(
         apiErrorMessage(error, {
-          byStatus: {
-            403: `Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel${IS_DEV_UI ? ' (D-09)' : ''}.`,
+          byCode: {
+            FORBIDDEN: `Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel${IS_DEV_UI ? ' (D-09)' : ''}.`,
+            DEPARTMENT_OUT_OF_SCOPE:
+              'Esta requisición es de otro departamento: la autoriza su Manager de Área o el Manager General.',
+            HOTEL_OUT_OF_SCOPE: 'Esta requisición no es de tu hotel.',
           },
           fallback: 'No se pudo autorizar la requisición. Inténtalo de nuevo.',
         }),
