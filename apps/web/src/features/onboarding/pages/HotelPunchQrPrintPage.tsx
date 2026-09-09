@@ -69,7 +69,7 @@ export function HotelPunchQrPrintPage(): ReactNode {
           onClick={() => {
             window.print()
           }}
-          className="cursor-pointer rounded-md bg-o-200 px-4 py-2 text-sm font-semibold text-o-900 transition-colors hover:bg-o-300"
+          className="cursor-pointer rounded-md bg-o-300 shadow-xs px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-o-400"
         >
           Imprimir
         </button>

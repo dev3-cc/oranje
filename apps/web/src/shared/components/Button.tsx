@@ -19,7 +19,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
-  /** `default` de shadcn = bg-primary + text-primary-foreground (pastel --o-200 + café --o-900). */
+  /** `default` de shadcn = bg-primary + text-primary-foreground (mango --o-300 + --ink). */
   primary: buttonVariants({ variant: 'default' }),
   secondary: buttonVariants({ variant: 'outline' }),
   /** Amarillo con `--ink`: con blanco da 1.4:1, ilegible (regla del chip amarillo). */

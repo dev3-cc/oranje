@@ -10,9 +10,12 @@ import { SlotList } from '../components/SlotList'
 import { StatusHistoryCard } from '../components/StatusHistoryCard'
 
 import { useGetSessionQuery } from '@/app/sessionApi'
+import personajeManager from '@/assets/ilustrations/personaje-manager.svg'
+import personajeTalento from '@/assets/ilustrations/personaje-talento.svg'
 import { Button, buttonClass } from '@/shared/components/Button'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { HotelPhotoBackdrop } from '@/shared/components/HotelPhotoBackdrop'
+import { NoticeCard } from '@/shared/components/NoticeCard'
 import {
   REQUISITION_STATUS_LABEL,
   REQUISITION_STATUS_TOKEN,
@@ -69,6 +72,43 @@ export function RequisitionDetailPage(): ReactNode {
   const selectedPosition =
     detail.positions.find((position) => position.id === selectedPositionId) ?? detail.positions[0]
 
+  /** De autorizada en adelante el motivo es obligatorio (queda en el journal). */
+  const needsReason = detail.status !== 'APPLE_GREEN'
+  const requisitionNumber = detail.number
+
+  async function confirmDelete(): Promise<void> {
+    setDeleteError(null)
+    try {
+      await deleteRequisition({
+        requisitionId,
+        ...(needsReason ? { reason: deleteReason.trim() } : {}),
+      }).unwrap()
+      toast.success(`Requisición ${requisitionNumber} eliminada`)
+      void navigate('/requisiciones')
+    } catch (error) {
+      setDeleteArmed(false)
+      setDeleteError(
+        apiErrorMessage(error, {
+          byCode: {
+            NOT_YOUR_DRAFT:
+              'Este borrador no es tuyo: lo elimina quien lo creó o el Manager General.',
+            TRANSITION_NOT_ALLOWED:
+              'Una requisición en este estado no se elimina: las cubiertas se conservan como historia.',
+            REASON_REQUIRED: 'Escribe el motivo: queda en el journal.',
+            REQUISITION_ALREADY_DELETED: 'Esta requisición ya estaba eliminada.',
+            REQUISITION_HAS_ASSIGNMENTS:
+              'Tiene colaboradores asignados: libera las asignaciones antes de eliminarla.',
+            DEPARTMENT_OUT_OF_SCOPE:
+              'Esta requisición tiene posiciones de otro departamento: la elimina el Manager General.',
+            FORBIDDEN:
+              'Una requisición autorizada la elimina el Manager de Área de su departamento o el Manager General.',
+          },
+          fallback: 'No se pudo eliminar la requisición. Inténtalo de nuevo.',
+        }),
+      )
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <nav aria-label="Ruta" className="flex items-center gap-2 text-sm text-ink-3">
@@ -120,54 +160,29 @@ export function RequisitionDetailPage(): ReactNode {
             Ver bitácora
           </Button>
           {/*
-            Eliminar = Morado (encargo 10). El permiso de borrador lo tienen los
-            tres roles del hotel; de autorizada en adelante HOY solo entra el
-            Manager General (cuando el back sume al de Área —opción 3—, se
-            agrega ROL-H-02 aquí). Cubierta o ya Morada, no se elimina.
+            Eliminar = Morado (encargo 10). El borrador lo quita quien lo
+            escribió (los tres roles del hotel tienen el permiso); de
+            autorizada en adelante, el Manager de Área (su departamento) o el
+            Manager General. Cubierta o ya Morada, no se elimina. Quien no
+            tiene la atribución NO ve el botón: no es una condición que pueda
+            resolver, es su rol.
           */}
           {detail.status !== 'PURPLE' &&
             detail.status !== 'LIGHT_BLUE' &&
             can('requisitions:delete_empty') &&
-            (detail.status === 'APPLE_GREEN' || session?.roleId === 'ROL-H-03') && (
+            (detail.status === 'APPLE_GREEN' ||
+              session?.roleId === 'ROL-H-03' ||
+              session?.roleId === 'ROL-H-02') &&
+            (!isDeleteArmed || !needsReason) && (
               <Button
-                disabled={
-                  isDeleting ||
-                  (isDeleteArmed &&
-                    detail.status !== 'APPLE_GREEN' &&
-                    deleteReason.trim().length < 4)
-                }
+                disabled={isDeleting}
                 className="text-red"
                 onClick={() => {
                   if (!isDeleteArmed) {
                     setDeleteArmed(true)
                     return
                   }
-                  void (async () => {
-                    setDeleteError(null)
-                    try {
-                      await deleteRequisition({
-                        requisitionId,
-                        ...(detail.status === 'APPLE_GREEN' ? {} : { reason: deleteReason.trim() }),
-                      }).unwrap()
-                      toast.success(`Requisición ${detail.number} eliminada`)
-                      void navigate('/requisiciones')
-                    } catch (error) {
-                      setDeleteArmed(false)
-                      setDeleteError(
-                        apiErrorMessage(error, {
-                          byCode: {
-                            NOT_YOUR_DRAFT:
-                              'Este borrador no es tuyo: lo elimina quien lo creó o el Manager General.',
-                            REQUISITION_HAS_ASSIGNMENTS:
-                              'Tiene colaboradores asignados: libera las asignaciones antes de eliminarla.',
-                            FORBIDDEN:
-                              'Una requisición autorizada la elimina el Manager de Área de su departamento o el Manager General.',
-                          },
-                          fallback: 'No se pudo eliminar la requisición. Inténtalo de nuevo.',
-                        }),
-                      )
-                    }
-                  })()
+                  void confirmDelete()
                 }}
               >
                 {isDeleting
@@ -198,21 +213,81 @@ export function RequisitionDetailPage(): ReactNode {
         </div>
       </header>
 
-      {isDeleteArmed && detail.status !== 'APPLE_GREEN' && (
-        <div className="flex flex-col gap-2 rounded-lg border border-yellow bg-yellow/10 p-4">
-          <label htmlFor="delete-reason" className="text-sm font-semibold text-ink">
+      {/* Quién sigue: el patrón de Autorización. El borrador espera la firma
+          del Manager; la autorizada ya está en manos de Reclutamiento. */}
+      {detail.status === 'APPLE_GREEN' && !can('requisitions:authorize') && (
+        <NoticeCard image={personajeManager} title="La firma es del Manager" role="status">
+          Autorizar es del Manager de Área o del Manager General: cuando firmen, la requisición pasa
+          a Autorizada y Reclutamiento la ve en la Bolsa del Self-Pick.
+        </NoticeCard>
+      )}
+      {(detail.status === 'GREEN' || detail.status === 'YELLOW') && !can('requisitions:take') && (
+        <NoticeCard image={personajeTalento} title="Ahora sigue Reclutamiento" role="status">
+          La requisición ya está en la Bolsa del Self-Pick: las Reclutadoras van cubriendo los slots
+          y aquí verás la cobertura al día.
+        </NoticeCard>
+      )}
+
+      {/* La confirmación vive JUNTO al motivo, no arriba en el header: quien
+          escribe el porqué tiene el botón a la mano (proximidad de la acción
+          con su campo; la skill pide confirmar lo irreversible en el sitio). */}
+      {isDeleteArmed && needsReason && (
+        <div
+          role="group"
+          aria-labelledby="delete-reason-label"
+          className="flex flex-col gap-3 rounded-lg border border-yellow bg-yellow/10 p-4"
+        >
+          <label
+            id="delete-reason-label"
+            htmlFor="delete-reason"
+            className="text-sm font-semibold text-ink"
+          >
             ¿Por qué se elimina? El motivo queda en el journal.
           </label>
           <input
             id="delete-reason"
             type="text"
+            autoFocus
             value={deleteReason}
             onChange={(event) => {
               setDeleteReason(event.target.value)
             }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && deleteReason.trim().length >= 4 && !isDeleting) {
+                event.preventDefault()
+                void confirmDelete()
+              }
+            }}
             placeholder="El hotel canceló el evento de temporada"
             className="w-full rounded-md border border-line bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none"
           />
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button
+              variant="secondary"
+              disabled={isDeleting}
+              onClick={() => {
+                setDeleteArmed(false)
+                setDeleteReason('')
+                setDeleteError(null)
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              disabled={isDeleting || deleteReason.trim().length < 4}
+              title={
+                deleteReason.trim().length < 4
+                  ? 'Escribe el motivo (al menos 4 letras) para poder eliminarla'
+                  : undefined
+              }
+              className="text-red"
+              onClick={() => {
+                void confirmDelete()
+              }}
+            >
+              {isDeleting ? 'Eliminando…' : 'Sí, eliminar requisición'}
+            </Button>
+          </div>
         </div>
       )}
 

@@ -88,7 +88,7 @@ export function HotelPunchQrCard({
                     target="_blank"
                     rel="noreferrer"
                     title="Abre la hoja lista para imprimir o guardar como PDF"
-                    className="inline-flex items-center gap-1.5 rounded-md bg-o-200 px-3 py-1.5 text-sm font-semibold text-o-900 transition-colors hover:bg-o-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
+                    className="inline-flex items-center gap-1.5 rounded-md bg-o-300 shadow-xs px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-o-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
                   >
                     <MaterialIcon name="print" className="text-base" aria-hidden />
                     Imprimir QR

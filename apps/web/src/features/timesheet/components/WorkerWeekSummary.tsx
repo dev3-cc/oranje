@@ -263,7 +263,7 @@ export function WorkerWeekSummary({
                   void runAction('submit')
                 }}
                 className={cn(
-                  'cursor-pointer rounded-md bg-o-200 px-2 py-1 text-[11px] font-semibold text-o-900 transition-colors hover:bg-o-300 disabled:opacity-60',
+                  'cursor-pointer rounded-md bg-o-300 shadow-xs px-2 py-1 text-[11px] font-semibold text-ink transition-colors hover:bg-o-400 disabled:opacity-60',
                   isSubmitting ? 'disabled:cursor-wait' : 'disabled:cursor-not-allowed',
                 )}
               >

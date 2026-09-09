@@ -22,10 +22,12 @@ import {
 import { ChangeStateDialog } from '../components/ChangeStateDialog'
 
 import { useUploadFileMutation } from '@/app/filesApi'
+import personajeTalento from '@/assets/ilustrations/personaje-talento.svg'
 import mascotaTriste from '@/assets/mascota/mascota-triste.png'
 import { Button } from '@/shared/components/Button'
 import { CautionPill } from '@/shared/components/CautionPill'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
+import { NoticeCard } from '@/shared/components/NoticeCard'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
@@ -368,14 +370,22 @@ export function WorkerDetailPage(): ReactNode {
               >
                 Cambiar estado
               </Button>
-            ) : (
-              <p className="max-w-60 text-xs text-ink-3 sm:text-right">
-                El estado del semáforo lo mueven la Reclutadora o el Líder de Grupo.
-              </p>
-            )}
+            ) : null}
           </div>
         </div>
       </header>
+
+      {/* Quién sigue: mover el semáforo y verificar documentos es de quien valida. */}
+      {!canValidate && (
+        <NoticeCard
+          image={personajeTalento}
+          title="El semáforo lo mueve Reclutamiento"
+          role="status"
+        >
+          El estado del colaborador y la verificación de sus documentos los lleva la Reclutadora o
+          el Líder de Grupo. Aquí consultas su expediente y su historial.
+        </NoticeCard>
+      )}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex flex-col gap-6">

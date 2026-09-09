@@ -38,7 +38,7 @@ function Explosion({ x, y }: { x: number; y: number }): ReactNode {
             opacity: 0,
           }}
           transition={{ duration: Math.random() * 1 + 0.6, ease: 'easeOut' }}
-          className="absolute size-1 rounded-full bg-gradient-to-b from-o-500 to-o-300"
+          className="absolute size-1 rounded-full bg-gradient-to-b from-o-500 to-o-200"
         />
       ))}
     </div>
@@ -102,7 +102,7 @@ function Beam({
           delay: config.delay,
           ease: 'linear',
         }}
-        className={`absolute top-0 w-px rounded-full bg-gradient-to-t from-o-500 via-o-300 to-transparent ${config.heightClass}`}
+        className={`absolute top-0 w-px rounded-full bg-gradient-to-t from-o-500 via-o-200 to-transparent ${config.heightClass}`}
         style={{ left: config.left }}
       />
       <AnimatePresence>

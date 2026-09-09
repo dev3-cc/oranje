@@ -18,8 +18,10 @@ import { StatusTimeline } from '../components/StatusTimeline'
 import type { ContactAttempt } from '../types/prospect.types'
 
 import { useGetSessionQuery } from '@/app/sessionApi'
+import conversionNaranja from '@/assets/ilustrations/conversion_naranja.svg'
 import { Button } from '@/shared/components/Button'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
+import { NoticeCard } from '@/shared/components/NoticeCard'
 import {
   isTerminalStatus,
   ONBOARDING_STATUS_LABEL,
@@ -252,6 +254,14 @@ export function ProspectDetailPage(): ReactNode {
             )}
           </div>
         </header>
+      )}
+
+      {/* Quién sigue: en Rosa el ciclo pasa a manos del BDC (RR-V-01/02). */}
+      {prospect.status === 'PINK' && (
+        <NoticeCard image={conversionNaranja} title="Convertir es del BDC" role="status">
+          El Documento de T&C ya se negocia. El BDC aprueba la conversión desde Conversión y el
+          hotel pasa a Naranja, listo para pedir personal.
+        </NoticeCard>
       )}
 
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">

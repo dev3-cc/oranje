@@ -18,8 +18,9 @@
 :root {
   /* Marca */
   --o-50: #fff6e8;
-  --o-200: #ffd9b3; /* pastel: relleno del botón primario (5.6:1 con --o-900) */
-  --o-300: #ffc080; /* hover del botón primario (4.6:1 con --o-900) */
+  --o-200: #ffd9b3; /* tinte pastel: fondos suaves y colas de degradado, ya no el botón */
+  --o-300: #ffa64d; /* botón primario: mango vivo, sin el peso del --o-500 (9.6:1 con --ink) */
+  --o-400: #ff9933; /* hover del botón primario (8.7:1 con --ink) */
   --o-500: #ff8000;
   --o-700: #c85f00;
   --o-900: #8b4000; /* el café del Portfolio Oranje 2024: texto sobre el pastel */
@@ -90,6 +91,7 @@
   --color-o-50: var(--o-50);
   --color-o-200: var(--o-200);
   --color-o-300: var(--o-300);
+  --color-o-400: var(--o-400);
   --color-o-500: var(--o-500);
   --color-o-700: var(--o-700);
   --color-o-900: var(--o-900);

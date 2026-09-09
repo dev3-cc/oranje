@@ -1,5 +1,6 @@
 import {
   cn,
+  MaterialIcon,
   statusLight,
   Tooltip,
   TooltipContent,
@@ -159,8 +160,18 @@ export function TimesheetDayCell({
             <span className="truncate">{TIMESHEET_STATUS_LABEL[entry.status]}</span>
           </span>
           <span className="shrink-0 text-sm font-semibold text-ink-2">
-            {/* La falta se dice: un «—» la disfrazaba de día sin calcular. */}
-            {entry.isAbsence ? 'Falta' : entry.hours === null ? NO_HOURS : formatHours(entry.hours)}
+            {/* La falta se dice y se ve por FORMA: el color de la celda es el
+                semáforo del día (revisado o no), no un cuarto color para la falta. */}
+            {entry.isAbsence ? (
+              <span className="inline-flex items-center gap-1">
+                <MaterialIcon name="event_busy" className="text-sm" aria-hidden />
+                Falta
+              </span>
+            ) : entry.hours === null ? (
+              NO_HOURS
+            ) : (
+              formatHours(entry.hours)
+            )}
           </span>
         </p>
 

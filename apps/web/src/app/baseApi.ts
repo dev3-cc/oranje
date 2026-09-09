@@ -133,6 +133,8 @@ export const baseApi = createApi({
     'BlacklistEntry',
     'Catalog',
     'StaffUser',
+    'Audit',
+    'ChecklistItem',
   ],
   endpoints: () => ({}),
 })

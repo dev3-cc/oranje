@@ -36,6 +36,16 @@ const NO_SHIFT_LABEL: Record<string, string> = {
   GRAY: 'Protegido (Gris)',
 }
 
+const MS_PER_DAY = 86_400_000
+
+/** "92% · hace 3 días" — el score y cuándo, en una sola línea (mismo criterio que la pastilla de Auditorías). */
+function presentationLabel(audit: { score: number; auditedAt: string } | null): string {
+  if (audit === null) return 'Sin auditar'
+  const days = Math.floor((Date.now() - new Date(audit.auditedAt).getTime()) / MS_PER_DAY)
+  const when = days <= 0 ? 'hoy' : days === 1 ? 'ayer' : `hace ${String(days)} días`
+  return `${String(Math.round(audit.score))}% · ${when}`
+}
+
 function initialsOf(fullName: string): string {
   return fullName
     .split(/\s+/)
@@ -260,7 +270,7 @@ function WorkerDetail({
                   onClick={() => {
                     onStandBy(row)
                   }}
-                  className="cursor-pointer rounded-md bg-o-200 px-3 py-1.5 text-sm font-semibold text-o-900 transition-colors hover:bg-o-200/85"
+                  className="cursor-pointer rounded-md bg-o-300 shadow-xs px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-o-300 shadow-xs/85"
                 >
                   Mandar a Stand-by
                 </button>
@@ -291,6 +301,13 @@ function WorkerDetail({
             label="Entrada de hoy"
             value={row.clockInAt ? timeOf(row.clockInAt) : row.shift ? 'Sin entrada' : '—'}
             {...(missingEntry ? { tone: 'alert' as const } : {})}
+          />
+          <Metric
+            label="Presentación Personal"
+            value={presentationLabel(row.presentationAudit)}
+            {...(row.presentationAudit === null || row.presentationAudit.score < 60
+              ? { tone: 'alert' as const }
+              : {})}
           />
           <div>
             <p className="text-xs text-ink-3">Teléfono</p>

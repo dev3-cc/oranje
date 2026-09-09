@@ -1,4 +1,4 @@
-import { statusLight } from '@oranje/ui'
+import { MaterialIcon, statusLight } from '@oranje/ui'
 import { useMemo, useState, type ReactNode } from 'react'
 
 import {
@@ -28,9 +28,11 @@ import {
   type TimesheetRow,
 } from '../types/timesheet.types'
 
+import personajeManager from '@/assets/ilustrations/personaje-manager.svg'
 import { Button } from '@/shared/components/Button'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
+import { NoticeCard } from '@/shared/components/NoticeCard'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import {
   DEFAULT_COLUMN_WIDTH,
@@ -164,6 +166,16 @@ export function TimesheetPage(): ReactNode {
         onColumnWidthChange={setColumnWidth}
       />
 
+      {/* Quién sigue: el Supervisor envía, el Manager aprueba (D-09). */}
+      {week &&
+        !can('timesheet:approve_hours') &&
+        week.rows.some((row) => row.weekStatus === 'PENDING_APPROVAL') && (
+          <NoticeCard image={personajeManager} title="La aprobación es del Manager" role="status">
+            Las semanas enviadas las aprueba el Manager de Área de su departamento o el Manager
+            General. Hasta entonces las horas no se pagan ni se facturan.
+          </NoticeCard>
+        )}
+
       {/* La leyenda de los estados del día: el color nunca habla solo. */}
       {week && week.rows.length > 0 && view !== 'MONTH' && (
         <div className="-mt-2 flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
@@ -177,6 +189,12 @@ export function TimesheetPage(): ReactNode {
               {TIMESHEET_STATUS_LABEL[status]}
             </span>
           ))}
+          {/* La falta no es un estado del semáforo del día: es un hecho, y se
+              marca con forma (ícono), nunca con un cuarto color. */}
+          <span className="inline-flex items-center gap-1.5 text-xs text-ink-3">
+            <MaterialIcon name="event_busy" className="text-sm" aria-hidden />
+            Falta
+          </span>
           {/* El contorno del carril también se explica en la leyenda. */}
           {view === 'DAYS' && (
             <span className="inline-flex items-center gap-1.5 text-xs text-ink-3">

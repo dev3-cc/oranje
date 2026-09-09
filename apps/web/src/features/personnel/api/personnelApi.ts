@@ -6,6 +6,8 @@ import { baseApi } from '@/app/baseApi'
  * sirve Schedule, las marcas Timesheet y el semáforo el Pool. Apagados, no-op.
  */
 // eslint-disable-next-line no-restricted-imports
+import { registerAuditsMocks } from '@/features/audits/api/auditsMocks'
+// eslint-disable-next-line no-restricted-imports
 import { registerPoolMocks } from '@/features/recruitment/api/poolMocks'
 // eslint-disable-next-line no-restricted-imports
 import { registerScheduleMocks } from '@/features/schedule/api/scheduleMocks'
@@ -22,13 +24,25 @@ import type {
 
 /**
  * Mi Personal COMPONE el contrato real (D-28): `GET /schedules` +
- * `/schedules/:id/entries` para el turno, `GET /timesheets` para las marcas y
- * `GET /workers` para el semáforo. Stand-by es la MISMA transición del
- * semáforo (`POST /workers/:id/transitions` → PINK), no un endpoint aparte.
+ * `/schedules/:id/entries` para el turno, `GET /timesheets` para las marcas,
+ * `GET /workers` para el semáforo y `GET /audits` (PERSONAL_PRESENTATION,
+ * scope automático al hotel del Supervisor) para la última Auditoría de
+ * Presentación — el score vive en el perfil del colaborador (nota del
+ * módulo). Stand-by es la MISMA transición del semáforo
+ * (`POST /workers/:id/transitions` → PINK), no un endpoint aparte.
  */
 registerScheduleMocks()
 registerTimesheetMocks()
 registerPoolMocks()
+registerAuditsMocks()
+
+/** Solo lo que `fetchBoard` necesita de `GET /audits` — el contrato completo vive en `features/audits`. */
+interface AuditHeaderApi {
+  auditType: string
+  worker: { id: string; fullName: string } | null
+  score: string
+  createdAt: string
+}
 
 /** `fetchWithBQ` de un `queryFn`: el tipo exacto no está exportado por RTK. */
 type FetchWithBQ = (
@@ -105,12 +119,13 @@ function performanceOf(
 async function fetchBoard(
   fetchWithBQ: FetchWithBQ,
 ): Promise<{ data: PersonnelBoard } | { error: unknown }> {
-  const [schedulesRes, timesheetsRes, workersRes] = await Promise.all([
+  const [schedulesRes, timesheetsRes, workersRes, auditsRes] = await Promise.all([
     fetchWithBQ('/schedules'),
     fetchWithBQ('/timesheets'),
     fetchWithBQ({ url: '/workers', params: { limit: 100 } }),
+    fetchWithBQ({ url: '/audits', params: { auditType: 'PERSONAL_PRESENTATION' } }),
   ])
-  for (const res of [schedulesRes, timesheetsRes, workersRes]) {
+  for (const res of [schedulesRes, timesheetsRes, workersRes, auditsRes]) {
     if (res.error) return { error: res.error }
   }
 
@@ -122,6 +137,7 @@ async function fetchBoard(
   const schedule = [...schedules].sort((a, b) => b.weekStart.localeCompare(a.weekStart))[0]
   const workers = (workersRes.data as PaginatedEnvelope<WorkerApi>).data
   const timesheetList = (timesheetsRes.data as ApiEnvelope<TimesheetApi[]>).data
+  const audits = (auditsRes.data as PaginatedEnvelope<AuditHeaderApi>).data
 
   /** La lista viaja SIN días (como el backend): las marcas van por detalle. */
   const detailResults = await Promise.all(
@@ -147,6 +163,14 @@ async function fetchBoard(
     if (entry.workDate === today && !shiftByWorker.has(entry.worker.id)) {
       shiftByWorker.set(entry.worker.id, entry)
     }
+  }
+
+  /** La última Auditoría de Presentación Personal por colaborador (`GET /audits` ya llega ordenado por fecha, más reciente primero). */
+  const presentationByWorker = new Map<string, { score: number; auditedAt: string }>()
+  for (const audit of audits) {
+    const workerId = audit.worker?.id
+    if (!workerId || presentationByWorker.has(workerId)) continue
+    presentationByWorker.set(workerId, { score: Number(audit.score), auditedAt: audit.createdAt })
   }
 
   /** La entrada de hoy: la primera marca CLOCK_IN del día del timesheet. */
@@ -182,6 +206,7 @@ async function fetchBoard(
         clockInAt: clockInByWorker.get(workerId) ?? null,
         canStandBy: OPERATIONAL_STATES.has(worker.state.code),
         performance: performanceOf(workerId, entries, timesheets, today),
+        presentationAudit: presentationByWorker.get(workerId) ?? null,
         personal: {
           age: worker.age,
           gender: worker.gender,

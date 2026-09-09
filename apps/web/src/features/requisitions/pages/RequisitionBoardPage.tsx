@@ -4,6 +4,7 @@ import { useGetRequisitionBoardQuery } from '../api/requisitionsApi'
 import { NewRequisitionDialog } from '../components/NewRequisitionDialog'
 import { RequisitionCardList } from '../components/RequisitionCardList'
 
+import personajeContratacion from '@/assets/ilustrations/personaje-contratacion.svg'
 import { Button } from '@/shared/components/Button'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { FilterReset } from '@/shared/components/FilterReset'
@@ -11,6 +12,7 @@ import { FilterSelect } from '@/shared/components/FilterSelect'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { MetricCard } from '@/shared/components/MetricCard'
+import { NoticeCard } from '@/shared/components/NoticeCard'
 import { SearchField } from '@/shared/components/SearchField'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import {
@@ -90,7 +92,7 @@ export function RequisitionBoardPage(): ReactNode {
           </p>
         </div>
 
-        {canCreate ? (
+        {canCreate && (
           <Button
             variant="primary"
             onClick={() => {
@@ -99,13 +101,21 @@ export function RequisitionBoardPage(): ReactNode {
           >
             Crear requisición
           </Button>
-        ) : (
-          <p className="max-w-xs text-right text-xs text-ink-3">
-            Las requisiciones las crea el hotel: el Supervisor, el Manager de Área o el Manager
-            General.
-          </p>
         )}
       </header>
+
+      {/* Quien no crea (Reclutamiento) sabe de dónde salen: el patrón de
+          «quién sigue» con personaje, el mismo de Autorización. */}
+      {!canCreate && (
+        <NoticeCard
+          image={personajeContratacion}
+          title="Las requisiciones las crea el hotel"
+          role="status"
+        >
+          El Supervisor, el Manager de Área o el Manager General las abren desde su zona. Aquí ves
+          las que llegan, su urgencia y cómo va la cobertura.
+        </NoticeCard>
+      )}
 
       {isLoading && <TableSkeleton rows={6} columns={6} />}
 
