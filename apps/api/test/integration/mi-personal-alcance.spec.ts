@@ -229,7 +229,7 @@ describe('mandar a Stand-by', () => {
     expect(entity.state.code).toBe('PINK')
   })
 
-  it('no puede mandarlo a otro estado: solo Stand-by', async () => {
+  it('no puede mandarlo a otro estado: solo Stand-by o reportar a Rojo', async () => {
     const hotelId = await hotel()
     const supervisor = await usuario('ROL-H-01', hotelId)
     const workerId = await colaborador('ORANGE')
@@ -238,7 +238,25 @@ describe('mandar a Stand-by', () => {
 
     await expect(
       workers.changeState(workerId, { toState: 'STRONG_GREEN' }, supervisor),
-    ).rejects.toMatchObject({ response: { code: 'ONLY_STANDBY' } })
+    ).rejects.toMatchObject({ response: { code: 'ONLY_STANDBY_OR_REPORT' } })
+  })
+
+  it('el Supervisor reporta al que tiene asignado (Rojo)', async () => {
+    const hotelId = await hotel()
+    const supervisor = await usuario('ROL-H-01', hotelId)
+    const workerId = await colaborador('ORANGE')
+
+    await asignar(workerId, hotelId)
+
+    // `staff:report` existía sembrado y con transición real desde 2026-08 —
+    // el servicio nunca lo consultaba (ver `assertCanChangeState`).
+    const entity = await workers.changeState(
+      workerId,
+      { toState: 'RED', reasonCode: 'SERIOUS_MISCONDUCT' },
+      supervisor,
+    )
+
+    expect(entity.state.code).toBe('RED')
   })
 
   it('no puede mandar a Stand-by a uno que no es suyo', async () => {

@@ -23,6 +23,7 @@ import { WorkerRow, WorkersRepository } from './workers.repository.js'
 const PENDING_VALIDATION = 'WHITE'
 const AVAILABLE = 'STRONG_GREEN'
 const STANDBY = 'PINK'
+const REPORTED = 'RED'
 const MIN_AGE = 18
 
 export interface WorkerBoard {
@@ -126,6 +127,15 @@ export class WorkersService {
     return this.get(id)
   }
 
+  /**
+   * `staff:set_standby` abre PINK; `staff:report` abre RED («Reportar
+   * colaborador») — dos permisos, dos destinos. Antes solo se comprobaba
+   * `set_standby` y CUALQUIER `toState` que no fuera PINK caía en
+   * `ONLY_STANDBY`, así que `staff:report` estaba sembrado (Reglas de Negocio,
+   * D-18) y con transición real en el semáforo (`WORKER_OPERATIONAL → RED`,
+   * seed.ts) pero el servicio nunca lo consultaba: ni con el permiso hecho el
+   * botón habría funcionado.
+   */
   private async assertCanChangeState(
     id: string,
     toState: string,
@@ -135,17 +145,24 @@ export class WorkersService {
       return
     }
 
-    if (!(await this.permissions.can(user.roleCode, 'staff', 'set_standby'))) {
+    const [canStandby, canReport] = await Promise.all([
+      this.permissions.can(user.roleCode, 'staff', 'set_standby'),
+      this.permissions.can(user.roleCode, 'staff', 'report'),
+    ])
+
+    if (!canStandby && !canReport) {
       throw new ForbiddenException({
         code: 'FORBIDDEN',
         message: 'Tu rol no puede cambiar el estado de un colaborador',
       })
     }
 
-    if (toState !== STANDBY) {
+    const allowed = (toState === STANDBY && canStandby) || (toState === REPORTED && canReport)
+
+    if (!allowed) {
       throw new ForbiddenException({
-        code: 'ONLY_STANDBY',
-        message: 'Desde tu hotel solo puedes mandar a Stand-by',
+        code: 'ONLY_STANDBY_OR_REPORT',
+        message: 'Desde tu hotel solo puedes mandar a Stand-by o reportar a Rojo',
       })
     }
 
