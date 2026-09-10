@@ -184,165 +184,53 @@ export function LoginPage(): ReactNode {
     <main className="relative flex min-h-screen items-center justify-center bg-surface-2 p-4 sm:p-6">
       <HotelBackdrop />
 
-      <motion.div
-        initial={{ opacity: 0, y: 24, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="relative z-10 flex w-full max-w-4xl overflow-hidden rounded-2xl border border-line bg-surface shadow-xl"
-      >
-        {/* Columna del formulario: 340–400px, como la referencia. */}
-        <section className="flex w-full flex-col justify-center gap-8 p-8 sm:p-10 md:max-w-100">
-          <motion.div
-            role="img"
-            aria-label="Oranje"
-            className="h-6 aspect-[1024/120] self-start"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.4 }}
-          >
-            <DotLottieReact src={logoAnimado} loop autoplay />
-          </motion.div>
+      {/* La tarjeta blanca es SOLO el formulario; el collage flota al lado, sobre el mosaico. */}
+      <div className="relative z-10 flex w-full max-w-5xl items-center gap-8 lg:gap-12">
+        <motion.div
+          initial={{ opacity: 0, y: 24, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          className="relative z-10 flex w-full max-w-md shrink-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-xl"
+        >
+          {/* Columna del formulario: 340–400px, como la referencia. */}
+          <section className="flex w-full flex-col justify-center gap-8 p-8 sm:p-10">
+            <motion.div
+              role="img"
+              aria-label="Oranje"
+              className="h-6 aspect-[1024/120] self-start"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.4 }}
+            >
+              <DotLottieReact src={logoAnimado} loop autoplay />
+            </motion.div>
 
-          <AnimatePresence mode="wait" initial={false}>
-            {mode === 'login' ? (
-              <motion.div
-                key="login"
-                initial={{ opacity: 0, x: -16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 16 }}
-                transition={{ duration: 0.25 }}
-                className="flex flex-col gap-8"
-              >
-                <div className="flex flex-col gap-2">
-                  <h1 className="text-2xl font-bold text-ink">
-                    <Trans>Inicia sesión</Trans>
-                  </h1>
-                  <p className="text-sm text-ink-3">
-                    <Trans>La operación de tu hotel, en un solo lugar.</Trans>
-                  </p>
-                </div>
-
-                <form
-                  className="flex flex-col gap-5"
-                  onSubmit={(event) => {
-                    void handleSubmit(onSubmit)(event)
-                  }}
-                  noValidate
+            <AnimatePresence mode="wait" initial={false}>
+              {mode === 'login' ? (
+                <motion.div
+                  key="login"
+                  initial={{ opacity: 0, x: -16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 16 }}
+                  transition={{ duration: 0.25 }}
+                  className="flex flex-col gap-8"
                 >
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="email" className="text-sm font-medium text-ink-2">
-                      <Trans>Correo</Trans>
-                    </label>
-                    <Input
-                      id="email"
-                      type="email"
-                      autoComplete="email"
-                      placeholder="ana@oranje.mx"
-                      className="h-auto px-4 py-3"
-                      {...register('email')}
-                    />
-                    {errors.email && <p className="text-sm text-red">{errors.email.message}</p>}
+                  <div className="flex flex-col gap-2">
+                    <h1 className="text-2xl font-bold text-ink">
+                      <Trans>Inicia sesión</Trans>
+                    </h1>
+                    <p className="text-sm text-ink-3">
+                      <Trans>La operación de tu hotel, en un solo lugar.</Trans>
+                    </p>
                   </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between">
-                      <label htmlFor="password" className="text-sm font-medium text-ink-2">
-                        <Trans>Contraseña</Trans>
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSubmitError(null)
-                          setResetSentTo(null)
-                          setMode('reset')
-                        }}
-                        className="text-xs font-semibold text-o-700 hover:underline"
-                      >
-                        <Trans>¿La olvidaste?</Trans>
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        type={isPasswordVisible ? 'text' : 'password'}
-                        autoComplete="current-password"
-                        placeholder="••••••••"
-                        className="h-auto px-4 py-3 pr-12"
-                        {...register('password')}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsPasswordVisible((visible) => !visible)
-                        }}
-                        className="absolute inset-y-0 right-0 flex items-center px-3 text-ink-3 hover:text-ink"
-                        aria-label={
-                          isPasswordVisible ? t`Ocultar contraseña` : t`Mostrar contraseña`
-                        }
-                      >
-                        <span className="material-icons-outlined text-xl leading-none" aria-hidden>
-                          {isPasswordVisible ? 'visibility_off' : 'visibility'}
-                        </span>
-                      </button>
-                    </div>
-                    {errors.password && (
-                      <p className="text-sm text-red">{errors.password.message}</p>
-                    )}
-                  </div>
-
-                  {submitError && (
-                    <motion.p
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      role="alert"
-                      className="rounded-md bg-surface-2 p-3 text-sm text-red"
-                    >
-                      {submitError}
-                    </motion.p>
-                  )}
-
-                  <motion.button
-                    type="submit"
-                    disabled={isSubmitting}
-                    whileHover={{ scale: isSubmitting ? 1 : 1.015 }}
-                    whileTap={{ scale: isSubmitting ? 1 : 0.985 }}
-                    className="rounded-md bg-o-300 shadow-xs px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-o-400 disabled:cursor-not-allowed disabled:opacity-60"
+                  <form
+                    className="flex flex-col gap-5"
+                    onSubmit={(event) => {
+                      void handleSubmit(onSubmit)(event)
+                    }}
+                    noValidate
                   >
-                    {isSubmitting ? t`Iniciando sesión…` : t`Iniciar sesión`}
-                  </motion.button>
-                </form>
-
-                <p className="text-xs text-ink-4">
-                  <Trans>¿Sin acceso? Pídele el alta al Administrador de tu departamento.</Trans>
-                </p>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="reset"
-                initial={{ opacity: 0, x: 16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -16 }}
-                transition={{ duration: 0.25 }}
-                className="flex flex-col gap-8"
-              >
-                <div className="flex flex-col gap-2">
-                  <h1 className="text-2xl font-bold text-ink">
-                    <Trans>Recupera tu contraseña</Trans>
-                  </h1>
-                  <p className="text-sm text-ink-3">
-                    <Trans>Te mandamos un enlace al correo para crear una nueva.</Trans>
-                  </p>
-                </div>
-
-                {resetSentTo ? (
-                  <p className="rounded-md bg-surface-2 p-4 text-sm text-ink-2">
-                    <Trans>
-                      Si <span className="font-semibold">{resetSentTo}</span> está registrado en
-                      Oranje, el enlace ya va en camino. Revisa también la carpeta de spam.
-                    </Trans>
-                  </p>
-                ) : (
-                  <div className="flex flex-col gap-5">
                     <div className="flex flex-col gap-1.5">
                       <label htmlFor="email" className="text-sm font-medium text-ink-2">
                         <Trans>Correo</Trans>
@@ -355,66 +243,179 @@ export function LoginPage(): ReactNode {
                         className="h-auto px-4 py-3"
                         {...register('email')}
                       />
+                      {errors.email && <p className="text-sm text-red">{errors.email.message}</p>}
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between">
+                        <label htmlFor="password" className="text-sm font-medium text-ink-2">
+                          <Trans>Contraseña</Trans>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSubmitError(null)
+                            setResetSentTo(null)
+                            setMode('reset')
+                          }}
+                          className="text-xs font-semibold text-o-700 hover:underline"
+                        >
+                          <Trans>¿La olvidaste?</Trans>
+                        </button>
+                      </div>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={isPasswordVisible ? 'text' : 'password'}
+                          autoComplete="current-password"
+                          placeholder="••••••••"
+                          className="h-auto px-4 py-3 pr-12"
+                          {...register('password')}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsPasswordVisible((visible) => !visible)
+                          }}
+                          className="absolute inset-y-0 right-0 flex items-center px-3 text-ink-3 hover:text-ink"
+                          aria-label={
+                            isPasswordVisible ? t`Ocultar contraseña` : t`Mostrar contraseña`
+                          }
+                        >
+                          <span
+                            className="material-icons-outlined text-xl leading-none"
+                            aria-hidden
+                          >
+                            {isPasswordVisible ? 'visibility_off' : 'visibility'}
+                          </span>
+                        </button>
+                      </div>
+                      {errors.password && (
+                        <p className="text-sm text-red">{errors.password.message}</p>
+                      )}
                     </div>
 
                     {submitError && (
-                      <p role="alert" className="rounded-md bg-surface-2 p-3 text-sm text-red">
+                      <motion.p
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        role="alert"
+                        className="rounded-md bg-surface-2 p-3 text-sm text-red"
+                      >
                         {submitError}
-                      </p>
+                      </motion.p>
                     )}
 
                     <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.015 }}
-                      whileTap={{ scale: 0.985 }}
-                      onClick={() => {
-                        void onRequestReset()
-                      }}
-                      className="rounded-md bg-o-300 shadow-xs px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-o-400"
+                      type="submit"
+                      disabled={isSubmitting}
+                      whileHover={{ scale: isSubmitting ? 1 : 1.015 }}
+                      whileTap={{ scale: isSubmitting ? 1 : 0.985 }}
+                      className="rounded-md bg-o-300 shadow-xs px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-o-400 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      <Trans>Enviar enlace</Trans>
+                      {isSubmitting ? t`Iniciando sesión…` : t`Iniciar sesión`}
                     </motion.button>
-                  </div>
-                )}
+                  </form>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSubmitError(null)
-                    setMode('login')
-                  }}
-                  className="self-start text-sm font-semibold text-o-700 hover:underline"
+                  <p className="text-xs text-ink-4">
+                    <Trans>¿Sin acceso? Pídele el alta al Administrador de tu departamento.</Trans>
+                  </p>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="reset"
+                  initial={{ opacity: 0, x: 16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -16 }}
+                  transition={{ duration: 0.25 }}
+                  className="flex flex-col gap-8"
                 >
-                  <Trans>← Volver a iniciar sesión</Trans>
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </section>
+                  <div className="flex flex-col gap-2">
+                    <h1 className="text-2xl font-bold text-ink">
+                      <Trans>Recupera tu contraseña</Trans>
+                    </h1>
+                    <p className="text-sm text-ink-3">
+                      <Trans>Te mandamos un enlace al correo para crear una nueva.</Trans>
+                    </p>
+                  </div>
 
-        {/* Panel visual: las naranjas de la marca, en 3D. */}
+                  {resetSentTo ? (
+                    <p className="rounded-md bg-surface-2 p-4 text-sm text-ink-2">
+                      <Trans>
+                        Si <span className="font-semibold">{resetSentTo}</span> está registrado en
+                        Oranje, el enlace ya va en camino. Revisa también la carpeta de spam.
+                      </Trans>
+                    </p>
+                  ) : (
+                    <div className="flex flex-col gap-5">
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="email" className="text-sm font-medium text-ink-2">
+                          <Trans>Correo</Trans>
+                        </label>
+                        <Input
+                          id="email"
+                          type="email"
+                          autoComplete="email"
+                          placeholder="ana@oranje.mx"
+                          className="h-auto px-4 py-3"
+                          {...register('email')}
+                        />
+                      </div>
+
+                      {submitError && (
+                        <p role="alert" className="rounded-md bg-surface-2 p-3 text-sm text-red">
+                          {submitError}
+                        </p>
+                      )}
+
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: 1.015 }}
+                        whileTap={{ scale: 0.985 }}
+                        onClick={() => {
+                          void onRequestReset()
+                        }}
+                        className="rounded-md bg-o-300 shadow-xs px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-o-400"
+                      >
+                        <Trans>Enviar enlace</Trans>
+                      </motion.button>
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubmitError(null)
+                      setMode('login')
+                    }}
+                    className="self-start text-sm font-semibold text-o-700 hover:underline"
+                  >
+                    <Trans>← Volver a iniciar sesión</Trans>
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Versión e idioma: junto a la cuenta (D-36), al pie del formulario. */}
+            <div className="flex items-center justify-between gap-3 border-t border-line pt-4 text-xs text-ink-3">
+              <p>
+                <span className="font-semibold text-ink">Nuevo Oranje</span> · v{__APP_VERSION__}
+              </p>
+              <LanguageSwitch size="sm" />
+            </div>
+          </section>
+        </motion.div>
+
+        {/* El collage: las fotos del equipo flotando sobre el mosaico, sin tarjeta detrás. */}
         <motion.aside
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="relative m-3 hidden min-h-[560px] flex-1 overflow-hidden rounded-xl bg-gradient-to-br from-o-500 to-o-700 md:block"
+          className="relative hidden min-h-[600px] flex-1 md:block"
         >
           <LoginCollage />
-          <div className="absolute inset-x-4 bottom-4 rounded-lg bg-surface/90 p-4 backdrop-blur">
-            <div className="flex items-start justify-between gap-3">
-              <p className="text-sm font-semibold text-ink">
-                Nuevo Oranje <span className="font-normal text-ink-3">· v{__APP_VERSION__}</span>
-              </p>
-              <LanguageSwitch size="sm" />
-            </div>
-            <p className="text-xs text-ink-3">
-              <Trans>
-                Staffing de hoteles: del reclutamiento al pago, con un semáforo en cada paso.
-              </Trans>
-            </p>
-          </div>
         </motion.aside>
-      </motion.div>
+      </div>
     </main>
   )
 }
