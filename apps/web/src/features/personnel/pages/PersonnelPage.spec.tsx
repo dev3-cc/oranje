@@ -124,4 +124,41 @@ describe('PersonnelPage', () => {
       .find(Boolean) as HTMLElement
     expect(within(updatedRow).getByText(/Pausado \(Stand-by\)/)).toBeInTheDocument()
   })
+
+  it('reportar exige motivo y el semáforo cambia a RED — antes ni existía el botón', async () => {
+    renderPersonnel()
+    const user = userEvent.setup()
+
+    // Julia está BROWN (operativa): su DETALLE ofrece Reportar junto a Stand-by.
+    const juliaRow = (await screen.findAllByText('Julia Mendoza', undefined, SLOW))
+      .map((node) => node.closest('li'))
+      .find(Boolean) as HTMLElement
+    await user.click(within(juliaRow).getByRole('button'))
+    const detail = screen.getByRole('article')
+    await user.click(within(detail).getByRole('button', { name: 'Reportar' }))
+    await user.click(await screen.findByRole('button', { name: 'Continuar' }))
+    await user.click(await screen.findByRole('button', { name: 'Continuar' }))
+
+    const dialog = await screen.findByRole('dialog')
+    const sendButton = within(dialog).getByRole('button', { name: 'Reportar' })
+    // Sin motivo no pasa: la transición del seed lo marca con reason.
+    expect(sendButton).toBeDisabled()
+
+    await user.click(within(dialog).getByLabelText('Motivo del reporte'))
+    await user.click(await screen.findByRole('option', { name: 'Inasistencias' }))
+    expect(sendButton).toBeEnabled()
+    await user.click(sendButton)
+
+    // El detalle de Julia queda en Rojo y ya no re-ofrece ni Reportar ni Stand-by.
+    await waitFor(() => {
+      expect(screen.getAllByText('Reportado').length).toBeGreaterThan(0)
+    }, SLOW)
+    const updatedDetail = screen.getByRole('article')
+    expect(
+      within(updatedDetail).queryByRole('button', { name: 'Reportar' }),
+    ).not.toBeInTheDocument()
+    expect(
+      within(updatedDetail).queryByRole('button', { name: 'Mandar a Stand-by' }),
+    ).not.toBeInTheDocument()
+  })
 })

@@ -5,7 +5,13 @@ import { statusLight, toast } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 
-import { useDeleteRequisitionMutation, useGetRequisitionQuery } from '../api/requisitionsApi'
+import {
+  useDeleteRequisitionMutation,
+  useGetParticipantsQuery,
+  useGetRequisitionQuery,
+  useJoinRequisitionMutation,
+  useLeaveRequisitionMutation,
+} from '../api/requisitionsApi'
 import { PositionsTable } from '../components/PositionsTable'
 import { RequisitionJournalDialog } from '../components/RequisitionJournalDialog'
 import { RequisitionSummaryStrip } from '../components/RequisitionSummaryStrip'
@@ -79,6 +85,45 @@ export function RequisitionDetailPage(): ReactNode {
     isLoading,
     isError,
   } = useGetRequisitionQuery(requisitionId, { skip: requisitionId === '' })
+
+  /**
+   * Quién la trabaja (RR-15, modelo colaborativo): distinto de un slot
+   * ocupado. `requisitions:take`/`leave` estaban sembrados y con endpoint
+   * real, pero nada en el front los llamaba.
+   */
+  const canParticipate = can('requisitions:take')
+  const isOpenState = detail?.status === 'GREEN' || detail?.status === 'YELLOW'
+  const { data: participants = [] } = useGetParticipantsQuery(requisitionId, {
+    skip: requisitionId === '' || !canParticipate || !isOpenState,
+  })
+  const [join, { isLoading: isJoining }] = useJoinRequisitionMutation()
+  const [leave, { isLoading: isLeaving }] = useLeaveRequisitionMutation()
+  const [participationError, setParticipationError] = useState<string | null>(null)
+  const amParticipating = participants.some((item) => item.userId === session?.id)
+
+  async function toggleParticipation(): Promise<void> {
+    setParticipationError(null)
+    try {
+      if (amParticipating) {
+        await leave(requisitionId).unwrap()
+      } else {
+        await join(requisitionId).unwrap()
+      }
+    } catch (error) {
+      setParticipationError(
+        apiErrorMessage(error, {
+          byCode: {
+            REQUISITION_NOT_OPEN: i18n._(
+              msg`Esta requisición ya no está autorizada o en proceso: no se puede unir.`,
+            ),
+            ALREADY_PARTICIPATING: i18n._(msg`Ya estabas trabajando esta requisición.`),
+            NOT_PARTICIPATING: i18n._(msg`Ya no estabas trabajando esta requisición.`),
+          },
+          fallback: i18n._(msg`No se pudo actualizar. Inténtalo de nuevo.`),
+        }),
+      )
+    }
+  }
 
   if (isLoading) {
     return <DetailSkeleton />
@@ -248,6 +293,63 @@ export function RequisitionDetailPage(): ReactNode {
             slots y aquí verás la cobertura al día.
           </Trans>
         </NoticeCard>
+      )}
+
+      {/* Trabajarla en equipo (RR-15) es DISTINTO de tomar un slot: varias
+          Reclutadoras pueden estar aquí sin que eso llene nada. Antes ni
+          «unirse» ni «salir» tenían botón — solo API/Postman. */}
+      {isOpenState && canParticipate && (
+        <div className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-ink">
+                <Trans>Quién la está trabajando</Trans>
+              </h2>
+              <p className="text-xs text-ink-3">
+                <Trans>Varias Reclutadoras pueden trabajar la misma requisición a la vez.</Trans>
+              </p>
+            </div>
+            <Button
+              variant={amParticipating ? 'secondary' : 'primary'}
+              disabled={isJoining || isLeaving}
+              onClick={() => {
+                void toggleParticipation()
+              }}
+            >
+              {isJoining || isLeaving
+                ? t`Un momento…`
+                : amParticipating
+                  ? t`Salir de la requisición`
+                  : t`Unirme a la requisición`}
+            </Button>
+          </div>
+          {participants.length === 0 ? (
+            <p className="text-sm text-ink-3">
+              <Trans>Nadie la está trabajando todavía.</Trans>
+            </p>
+          ) : (
+            <ul className="flex flex-wrap gap-2">
+              {participants.map((participant) => (
+                <li
+                  key={participant.id}
+                  className="rounded-full bg-surface-2 px-3 py-1 text-xs font-medium text-ink-2"
+                >
+                  {participant.fullName}
+                  {participant.userId === session?.id && (
+                    <span className="ml-1 text-ink-4">
+                      (<Trans>tú</Trans>)
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          {participationError !== null && (
+            <p role="alert" className="text-xs text-red">
+              {participationError}
+            </p>
+          )}
+        </div>
       )}
 
       {/* La confirmación vive JUNTO al motivo, no arriba en el header: quien

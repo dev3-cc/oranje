@@ -30,6 +30,10 @@ msgid "¿Cómo te trasladas?"
 msgstr "¿Cómo te trasladas?"
 
 #: src/features/auth/pages/LoginPage.tsx
+msgid "¿Eres colaborador? <0>Entra por aquí</0>"
+msgstr "¿Eres colaborador? <0>Entra por aquí</0>"
+
+#: src/features/auth/pages/LoginPage.tsx
 msgid "¿La olvidaste?"
 msgstr "¿La olvidaste?"
 
@@ -44,6 +48,14 @@ msgstr "¿Qué es de ti?"
 #: src/features/auth/pages/LoginPage.tsx
 msgid "¿Sin acceso? Pídele el alta al Administrador de tu departamento."
 msgstr "¿Sin acceso? Pídele el alta al Administrador de tu departamento."
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "¿Sin acceso? Tu Reclutadora te da de alta y te llega un correo para crear tu contraseña."
+msgstr "¿Sin acceso? Tu Reclutadora te da de alta y te llega un correo para crear tu contraseña."
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "¿Trabajas en Oranje o en un hotel? <0>Entra por aquí</0>"
+msgstr "¿Trabajas en Oranje o en un hotel? <0>Entra por aquí</0>"
 
 #. placeholder {0}: aggregate.people
 #: src/features/timesheet/components/TimesheetMonthView.tsx
@@ -369,6 +381,10 @@ msgstr "Agente de Customer Service"
 msgid "Agrega al menos una posición"
 msgstr "Agrega al menos una posición"
 
+#: src/features/schedule/components/AddShiftDialog.tsx
+msgid "Agregando…"
+msgstr "Agregando…"
+
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 msgid "Agregar la marca que falta"
 msgstr "Agregar la marca que falta"
@@ -380,6 +396,11 @@ msgstr "Agregar marca manual"
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "Agregar otra posición"
 msgstr "Agregar otra posición"
+
+#: src/features/schedule/components/AddShiftDialog.tsx
+#: src/features/schedule/pages/SchedulePage.tsx
+msgid "Agregar turno"
+msgstr "Agregar turno"
 
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Ahora sigue Reclutamiento"
@@ -752,6 +773,7 @@ msgstr "Cancelado"
 #: src/features/personnel/components/StandByDialog.tsx
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
+#: src/features/schedule/components/AddShiftDialog.tsx
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/features/worker/components/CameraCapture.tsx
 msgid "Cancelar"
@@ -1123,6 +1145,7 @@ msgstr "Descansa hoy"
 msgid "Detalle de Requisición"
 msgstr "Detalle de Requisición"
 
+#: src/features/schedule/components/AddShiftDialog.tsx
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 msgid "Día"
 msgstr "Día"
@@ -1138,6 +1161,10 @@ msgstr "Día 3+"
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 msgid "Día de la marca"
 msgstr "Día de la marca"
+
+#: src/features/schedule/components/AddShiftDialog.tsx
+msgid "Día del turno"
+msgstr "Día del turno"
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 msgid "Día revisado"
@@ -1340,6 +1367,10 @@ msgstr "El teléfono de emergencia necesita al menos 7 dígitos (sin la lada)"
 msgid "Elegir una foto"
 msgstr "Elegir una foto"
 
+#: src/features/schedule/components/AddShiftDialog.tsx
+msgid "Elige a la persona"
+msgstr "Elige a la persona"
+
 #: src/features/audits/components/AuditWorkerList.tsx
 msgid "Elige a quién auditar. El tiempo sin auditar te dice por dónde empezar."
 msgstr "Elige a quién auditar. El tiempo sin auditar te dice por dónde empezar."
@@ -1351,6 +1382,10 @@ msgstr "Elige a quién se audita antes de guardar."
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "Elige el departamento"
 msgstr "Elige el departamento"
+
+#: src/shared/components/DateField.tsx
+msgid "Elige el día"
+msgstr "Elige el día"
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "Elige el hotel"
@@ -1454,6 +1489,11 @@ msgstr "En Stand-by"
 msgid "Enciende Amarillo cuando quieras que te consideren para más turnos."
 msgstr "Enciende Amarillo cuando quieras que te consideren para más turnos."
 
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Entra a Oranje"
+msgstr "Entra a Oranje"
+
+#: src/features/schedule/components/AddShiftDialog.tsx
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 #: src/features/worker/api/punchApi.ts
@@ -1510,6 +1550,10 @@ msgstr "Enviar enlace"
 msgid "Es obligatorio decir por qué: el motivo acompaña la transición en el historial del colaborador."
 msgstr "Es obligatorio decir por qué: el motivo acompaña la transición en el historial del colaborador."
 
+#: src/features/schedule/components/AddShiftDialog.tsx
+msgid "Esa asignación es de otro hotel."
+msgstr "Esa asignación es de otro hotel."
+
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Esa foto no se pudo procesar: toma otra desde la cámara."
 msgstr "Esa foto no se pudo procesar: toma otra desde la cámara."
@@ -1517,6 +1561,10 @@ msgstr "Esa foto no se pudo procesar: toma otra desde la cámara."
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Esa marca ya quedó registrada hoy."
 msgstr "Esa marca ya quedó registrada hoy."
+
+#: src/features/schedule/components/AddShiftDialog.tsx
+msgid "Esa persona ya no tiene una asignación activa aquí."
+msgstr "Esa persona ya no tiene una asignación activa aquí."
 
 #: src/features/worker/components/QrScanner.tsx
 msgid "Escanea el QR del acceso"
@@ -1851,9 +1899,17 @@ msgstr "Hora"
 msgid "Hora {ordinal}"
 msgstr "Hora {ordinal}"
 
+#: src/features/schedule/components/AddShiftDialog.tsx
+msgid "Hora de entrada"
+msgstr "Hora de entrada"
+
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 msgid "Hora de la marca"
 msgstr "Hora de la marca"
+
+#: src/features/schedule/components/AddShiftDialog.tsx
+msgid "Hora de salida"
+msgstr "Hora de salida"
 
 #: src/features/timesheet/components/TimesheetViewControls.tsx
 #: src/features/worker/pages/PunchPage.tsx
@@ -2405,9 +2461,17 @@ msgstr "Nadie en tu plantel se llama «{0}». Cambia la búsqueda o límpiala pa
 msgid "Nadie programado todavía: los turnos aparecen conforme se cubren los slots."
 msgstr "Nadie programado todavía: los turnos aparecen conforme se cubren los slots."
 
+#: src/features/schedule/components/AddShiftDialog.tsx
+msgid "Nadie tiene asignación activa en la demanda de este hotel todavía"
+msgstr "Nadie tiene asignación activa en la demanda de este hotel todavía"
+
 #: src/features/timesheet/pages/TimesheetGlobalPage.tsx
 msgid "Nadie tiene Timesheet esta semana. Las filas aparecen cuando los Supervisores registran horas."
 msgstr "Nadie tiene Timesheet esta semana. Las filas aparecen cuando los Supervisores registran horas."
+
+#: src/features/schedule/components/AddShiftDialog.tsx
+msgid "Nadie tiene una asignación activa en una requisición autorizada de este hotel."
+msgstr "Nadie tiene una asignación activa en una requisición autorizada de este hotel."
 
 #: src/shared/constants/onboardingStatus.ts
 msgid "Naranja"
@@ -2519,6 +2583,10 @@ msgstr "No se pudieron guardar tus datos. Inténtalo de nuevo."
 #: src/features/worker/components/QrScanner.tsx
 msgid "No se pudo abrir la cámara. Cierra otras apps que la usen e inténtalo de nuevo."
 msgstr "No se pudo abrir la cámara. Cierra otras apps que la usen e inténtalo de nuevo."
+
+#: src/features/schedule/components/AddShiftDialog.tsx
+msgid "No se pudo agregar el turno. Inténtalo de nuevo."
+msgstr "No se pudo agregar el turno. Inténtalo de nuevo."
 
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
 msgid "No se pudo autorizar la requisición. Inténtalo de nuevo."
@@ -2968,6 +3036,14 @@ msgstr "Queda señalada como manual"
 msgid "Quedan días con anomalía sin resolver: revísalos antes de enviar la semana."
 msgstr "Quedan días con anomalía sin resolver: revísalos antes de enviar la semana."
 
+#: src/features/schedule/components/AddShiftDialog.tsx
+msgid "Quién"
+msgstr "Quién"
+
+#: src/features/schedule/components/AddShiftDialog.tsx
+msgid "Quién trabaja el turno"
+msgstr "Quién trabaja el turno"
+
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "Quitar esta posición del pedido"
 msgstr "Quitar esta posición del pedido"
@@ -3186,6 +3262,7 @@ msgstr "S"
 msgid "Sáb"
 msgstr "Sáb"
 
+#: src/features/schedule/components/AddShiftDialog.tsx
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 #: src/features/worker/api/punchApi.ts
@@ -3445,6 +3522,10 @@ msgstr "Solo el Manager de Área o el Manager General pueden aprobar la semana."
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 msgid "Solo lo aprobado paga"
 msgstr "Solo lo aprobado paga"
+
+#: src/features/schedule/components/AddShiftDialog.tsx
+msgid "Solo planeas turnos de tu departamento."
+msgstr "Solo planeas turnos de tu departamento."
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "Solo puedes crear requisiciones de tu hotel"
@@ -3768,9 +3849,17 @@ msgstr "Tu transporte y tu SSN o ITIN"
 msgid "Tu transporte, tu SSN o ITIN y un contacto de emergencia. Con eso Reclutamiento puede validarte y empiezas a recibir turnos."
 msgstr "Tu transporte, tu SSN o ITIN y un contacto de emergencia. Con eso Reclutamiento puede validarte y empiezas a recibir turnos."
 
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Tu turno, tu ponche y tus datos, en tu celular."
+msgstr "Tu turno, tu ponche y tus datos, en tu celular."
+
 #: src/features/audits/pages/AuditsPage.tsx
 msgid "Tu usuario no tiene un hotel asignado todavía. Sin hotel no hay a quién auditar — pídele al Administrador que revise tu alta."
 msgstr "Tu usuario no tiene un hotel asignado todavía. Sin hotel no hay a quién auditar — pídele al Administrador que revise tu alta."
+
+#: src/features/schedule/components/AddShiftDialog.tsx
+msgid "Turno agregado"
+msgstr "Turno agregado"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "Turno de hoy"
@@ -3808,6 +3897,10 @@ msgstr "Un momento…"
 #: src/features/audits/pages/AuditsPage.tsx
 msgid "Un registro sin consecuencia"
 msgstr "Un registro sin consecuencia"
+
+#: src/features/schedule/components/AddShiftDialog.tsx
+msgid "Un turno no puede pasar de 16 horas."
+msgstr "Un turno no puede pasar de 16 horas."
 
 #: src/features/worker/components/TaxDocumentUploader.tsx
 msgid "Una foto clara o un PDF. Oranje lo revisa y te avisa cuando quede verificado."

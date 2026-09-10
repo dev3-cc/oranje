@@ -100,4 +100,24 @@ describe('RequisitionDetailPage', () => {
     expect(entries).toHaveLength(1)
     expect(within(entries[0] as HTMLElement).getByText('Creada')).toBeInTheDocument()
   })
+
+  it('unirse y salir de la requisición (RR-15) — antes ni el botón existía', async () => {
+    const user = userEvent.setup()
+    renderDetail()
+
+    expect(await screen.findByText('Quién la está trabajando')).toBeInTheDocument()
+    expect(screen.getByText('Nadie la está trabajando todavía.')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Unirme a la requisición' }))
+
+    expect(await screen.findByText('Ana Ruiz')).toBeInTheDocument()
+    expect(screen.getByText('(tú)')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Unirme a la requisición' }),
+    ).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Salir de la requisición' }))
+
+    expect(await screen.findByText('Nadie la está trabajando todavía.')).toBeInTheDocument()
+  })
 })

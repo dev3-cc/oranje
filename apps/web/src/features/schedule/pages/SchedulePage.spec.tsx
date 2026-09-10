@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { describe, expect, it } from 'vitest'
 
@@ -56,5 +57,33 @@ describe('SchedulePage', () => {
 
     expect(await screen.findByText('Turno elegido')).toBeInTheDocument()
     expect(screen.getAllByText('Ana Rivera Gómez').length).toBeGreaterThan(0)
+  })
+
+  it('Agregar turno abre el diálogo con a quién, día y horario — antes solo por API', async () => {
+    const user = userEvent.setup()
+    renderSchedule()
+
+    await user.click(await screen.findByRole('button', { name: 'Agregar turno' }))
+
+    expect(await screen.findByText('Día', { selector: 'span' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Quién trabaja el turno')).toBeInTheDocument()
+    expect(screen.getByLabelText('Día del turno')).toBeInTheDocument()
+    expect(screen.getByLabelText('Hora de entrada')).toBeInTheDocument()
+    expect(screen.getByLabelText('Hora de salida')).toBeInTheDocument()
+    /* El botón de guardar empieza deshabilitado: falta llenar el formulario. */
+    expect(screen.getByRole('button', { name: 'Agregar turno' })).toBeDisabled()
+  })
+
+  it('Agregar turno ofrece a quién elegir — gente con asignación activa en la demanda del hotel', async () => {
+    const user = userEvent.setup()
+    renderSchedule()
+
+    await user.click(await screen.findByRole('button', { name: 'Agregar turno' }))
+    await user.click(await screen.findByLabelText('Quién trabaja el turno'))
+
+    /* No se afirma un nombre puntual — la lista sale de las asignaciones
+       ACTIVAS sembradas en `requisitionsMocks`, no de un fixture propio. */
+    const options = await screen.findAllByRole('option')
+    expect(options.length).toBeGreaterThan(0)
   })
 })

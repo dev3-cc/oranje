@@ -15,6 +15,16 @@ async function toPositions(user: ReturnType<typeof userEvent.setup>): Promise<vo
   await screen.findByText('Posiciones solicitadas')
 }
 
+/** El calendario abre en el mes en curso (septiembre de 2026 en las pruebas). */
+async function pickDay(
+  user: ReturnType<typeof userEvent.setup>,
+  triggerLabel: string,
+  dayName: RegExp,
+): Promise<void> {
+  await user.click(screen.getByRole('button', { name: triggerLabel }))
+  await user.click(await screen.findByRole('button', { name: dayName }))
+}
+
 async function pick(
   user: ReturnType<typeof userEvent.setup>,
   triggerLabel: string,
@@ -114,7 +124,7 @@ describe('NewRequisitionDialog', () => {
     // El Departamento ya NO se pide por fila: bajó del paso 1.
     expect(screen.queryByLabelText('Departamento 1')).not.toBeInTheDocument()
 
-    await user.type(screen.getByLabelText('Inicio 1'), '2026-09-18')
+    await pickDay(user, 'Inicio 1', /18 de septiembre/)
 
     await user.click(screen.getByRole('button', { name: 'Continuar' }))
     expect(await screen.findByText(/Nace en Borrador/)).toBeInTheDocument()

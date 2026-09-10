@@ -5,6 +5,7 @@ import { cn } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
 import { useGetScheduleTimelineQuery } from '../api/scheduleApi'
+import { AddShiftDialog } from '../components/AddShiftDialog'
 import { ScheduleMiniCalendar } from '../components/ScheduleMiniCalendar'
 import {
   PersonAvatar,
@@ -21,9 +22,11 @@ import {
   resolveWeek,
   weekContaining,
 } from '@/features/timesheet'
+import { Button } from '@/shared/components/Button'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
+import { useCan } from '@/shared/hooks/useCan'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayNumber, formatWeekRange, formatWeekday } from '@/shared/lib/formatters'
 
@@ -59,8 +62,10 @@ function coverageLabel(filled: number, quantity: number): MessageDescriptor {
  */
 export function SchedulePage(): ReactNode {
   const { t, i18n } = useLingui()
+  const can = useCan()
   const [requestedWeek, setRequestedWeek] = useState<string>(ANY_VALUE)
   const [selection, setSelection] = useState<ScheduleShiftSelection | null>(null)
+  const [isAddShiftOpen, setIsAddShiftOpen] = useState(false)
 
   const { data: timeline, isLoading, isError, refetch } = useGetScheduleTimelineQuery()
 
@@ -88,17 +93,41 @@ export function SchedulePage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight text-ink">
-          <FoldText text={t`Schedule del hotel`} />
-        </h1>
-        <p className="mt-1.5 text-sm text-ink-3">
-          {timeline && selectedWeek !== null
-            ? t`${timeline.hotelName} · Semana ${formatWeekRange(selectedWeek, addDaysIso(selectedWeek, 6))}`
-            : t`Demanda y cobertura de la semana`}
-          {IS_DEV_UI && <code className="text-ink-4"> · operations.schedule</code>}
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
+            <FoldText text={t`Schedule del hotel`} />
+          </h1>
+          <p className="mt-1.5 text-sm text-ink-3">
+            {timeline && selectedWeek !== null
+              ? t`${timeline.hotelName} · Semana ${formatWeekRange(selectedWeek, addDaysIso(selectedWeek, 6))}`
+              : t`Demanda y cobertura de la semana`}
+            {IS_DEV_UI && <code className="text-ink-4"> · operations.schedule</code>}
+          </p>
+        </div>
+        {/* Antes esto solo se podía por API/Postman — ni un botón en el front. */}
+        {can('schedule:update') && timeline && (
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setIsAddShiftOpen(true)
+            }}
+          >
+            <Trans>Agregar turno</Trans>
+          </Button>
+        )}
       </header>
+
+      {timeline && (
+        <AddShiftDialog
+          isOpen={isAddShiftOpen}
+          hotelId={timeline.hotelId}
+          assignees={timeline.assignees}
+          onClose={() => {
+            setIsAddShiftOpen(false)
+          }}
+        />
+      )}
 
       {isError && (
         <LoadError

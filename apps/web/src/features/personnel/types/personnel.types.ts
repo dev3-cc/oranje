@@ -34,6 +34,8 @@ export interface PersonnelRow {
   clockInAt: string | null
   /** Stand-by solo aplica desde estados operativos (seed del semáforo). */
   canStandBy: boolean
+  /** Reportar (Rojo) igual: solo desde estados operativos (seed del semáforo). */
+  canReport: boolean
   /** La semana medida en hechos; `null` = sin datos suficientes todavía. */
   performance: PersonnelPerformance | null
   /** Su última Auditoría de Presentación Personal (Supervisor); `null` = nunca auditado. */

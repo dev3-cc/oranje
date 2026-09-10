@@ -27,11 +27,19 @@ const FULL_WIDTH: RouteHandle = { fullWidth: true }
 
 export const router = createBrowserRouter([
   {
-    /** La única ruta pública. Lazy: three.js no viaja en el bundle inicial. */
+    /** Ruta pública. Lazy: three.js no viaja en el bundle inicial. */
     path: '/login',
     lazy: async () => {
       const m = await import('@/features/auth')
       return { Component: m.LoginPage }
+    },
+  },
+  {
+    /** La misma puerta con los textos del Colaborador (ROL-C-01). */
+    path: '/colaborador/login',
+    lazy: async () => {
+      const m = await import('@/features/auth')
+      return { Component: m.ColaboradorLoginPage }
     },
   },
   {

@@ -54,6 +54,7 @@ const STATE: Record<string, StatusRefApi> = {
   ORANGE: { code: 'ORANGE', color: 'Naranja', name: 'Fijo' },
   BROWN: { code: 'BROWN', color: 'Café', name: 'Asignación temporal' },
   PINK: { code: 'PINK', color: 'Rosa', name: 'Stand-by' },
+  RED: { code: 'RED', color: 'Rojo', name: 'Reportado' },
   GRAY: { code: 'GRAY', color: 'Gris', name: 'Accidentado' },
   BLACK: { code: 'BLACK', color: 'Negro', name: 'Blacklist' },
 }
@@ -393,13 +394,17 @@ function transitionsFor(stateCode: string): WorkerTransitionApi[] {
     case 'BROWN':
       return [
         { toState: 'STRONG_GREEN', requiresReason: false },
-        /** Stand-by: solo desde estados operativos, y con motivo (seed). */
+        /** Stand-by y Reportar: solo desde estados operativos, y con motivo (seed). */
         { toState: 'PINK', requiresReason: true },
+        { toState: 'RED', requiresReason: true },
       ]
     case 'APPLE_GREEN':
     case 'LIGHT_BLUE':
     case 'ORANGE':
-      return [{ toState: 'PINK', requiresReason: true }]
+      return [
+        { toState: 'PINK', requiresReason: true },
+        { toState: 'RED', requiresReason: true },
+      ]
     case 'PINK':
       return [{ toState: 'STRONG_GREEN', requiresReason: false }]
     default:

@@ -112,4 +112,34 @@ describe('la Bolsa Self-Pick', () => {
     const board = screen.getByRole('list')
     expect(within(board).queryByText('202608120930·K7')).not.toBeInTheDocument()
   })
+
+  it('liberar un slot exige motivo — antes esto solo se podía por API', async () => {
+    renderSelfPick()
+    const user = userEvent.setup()
+
+    // Renglón aparte (D4/Houseman), que ningún otro test de este archivo toca.
+    const folio = await screen.findByText('202608130800·D4', undefined, SLOW)
+    await user.click(folio.closest('a') as HTMLElement)
+    expect(await screen.findByText('ocupado', undefined, SLOW)).toBeInTheDocument()
+    expect(screen.getAllByText('ocupado')).toHaveLength(1)
+    expect(screen.getAllByText('libre')).toHaveLength(3)
+
+    const liberar = screen.getByRole('button', { name: 'Liberar' })
+    await user.click(liberar)
+
+    const confirmButton = screen.getByRole('button', { name: 'Sí, liberar slot' })
+    // Sin motivo no pasa: el back lo exige (`ReleaseAssignmentDto`).
+    expect(confirmButton).toBeDisabled()
+    await user.type(
+      screen.getByLabelText('Motivo para liberar el slot'),
+      'Se equivocaron de persona',
+    )
+    expect(confirmButton).toBeEnabled()
+    await user.click(confirmButton)
+
+    await waitFor(() => {
+      expect(screen.getAllByText('libre')).toHaveLength(4)
+    }, SLOW)
+    expect(screen.queryByText('ocupado')).not.toBeInTheDocument()
+  })
 })

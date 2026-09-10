@@ -207,6 +207,7 @@ async function fetchBoard(
         shift: shift ? { startsAt: shift.startsAt, endsAt: shift.endsAt } : null,
         clockInAt: clockInByWorker.get(workerId) ?? null,
         canStandBy: OPERATIONAL_STATES.has(worker.state.code),
+        canReport: OPERATIONAL_STATES.has(worker.state.code),
         performance: performanceOf(workerId, entries, timesheets, today),
         presentationAudit: presentationByWorker.get(workerId) ?? null,
         personal: {
@@ -270,8 +271,26 @@ export const personnelApi = baseApi.injectEndpoints({
         invalidatesTags: [{ type: 'Worker' as const, id: 'LIST' }],
       },
     ),
+
+    /**
+     * Reportar (Rojo): `staff:report` estaba sembrado y con transición real
+     * desde hace semanas (`WORKER_OPERATIONAL → RED`, seed.ts), pero el
+     * servicio del back nunca lo consultaba — no había ni con qué llamarlo.
+     */
+    reportWorker: build.mutation<unknown, { workerId: string; reasonCode: string; note?: string }>({
+      query: ({ workerId, reasonCode, note }) => ({
+        url: `/workers/${workerId}/transitions`,
+        method: 'POST',
+        body: { toState: 'RED', reasonCode, ...(note ? { note } : {}) },
+      }),
+      invalidatesTags: [{ type: 'Worker' as const, id: 'LIST' }],
+    }),
   }),
 })
 
-export const { useGetPersonnelBoardQuery, useGetHotelCardQuery, useSendToStandByMutation } =
-  personnelApi
+export const {
+  useGetPersonnelBoardQuery,
+  useGetHotelCardQuery,
+  useSendToStandByMutation,
+  useReportWorkerMutation,
+} = personnelApi

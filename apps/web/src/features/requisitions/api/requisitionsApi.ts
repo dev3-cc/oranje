@@ -6,6 +6,7 @@ import type {
   RequisitionDetail,
   RequisitionFormOptions,
   RequisitionHotelOption,
+  RequisitionParticipant,
   RequisitionPosition,
   RequisitionRow,
   RequisitionSlot,
@@ -22,6 +23,8 @@ import type {
   CatalogItemApi,
   HotelApi,
   PaginatedEnvelope,
+  ParticipantApi,
+  ParticipationResultApi,
   RequisitionApi,
   RequisitionPositionApi,
 } from '@/shared/types/apiContract.types'
@@ -159,6 +162,16 @@ function toDetail(requisition: RequisitionApi, assignments: AssignmentApi[]): Re
     },
     positions,
     history,
+  }
+}
+
+function toParticipant(row: ParticipantApi): RequisitionParticipant {
+  return {
+    id: row.id,
+    userId: row.user.id,
+    fullName: row.user.fullName,
+    roleName: row.user.role.name,
+    joinedAt: row.joinedAt,
   }
 }
 
@@ -319,6 +332,59 @@ export const requisitionsApi = baseApi.injectEndpoints({
         { type: 'Requisition' as const, id: requisitionId },
       ],
     }),
+
+    /**
+     * Quién trabaja la requisición como equipo (RR-15): `requisitions:leave`
+     * y la mitad «unirse» de `requisitions:take` estaban sembrados y con
+     * endpoint real, pero nada en el front los llamaba — mismo hallazgo que
+     * «Agregar turno» del Schedule.
+     */
+    getParticipants: build.query<RequisitionParticipant[], string>({
+      queryFn: async (requisitionId, _api, _extra, fetchWithBQ) => {
+        const bq = fetchWithBQ as FetchWithBQ
+        const result = await bq(`/requisitions/${requisitionId}/participants`)
+        if (result.error) return { error: result.error as never }
+        const rows = (result.data as ApiEnvelope<ParticipantApi[]>).data
+        return { data: rows.map(toParticipant) }
+      },
+      providesTags: (_res, _err, requisitionId) => [
+        { type: 'Requisition' as const, id: `participants-${requisitionId}` },
+      ],
+    }),
+
+    joinRequisition: build.mutation<RequisitionParticipant[], string>({
+      queryFn: async (requisitionId, _api, _extra, fetchWithBQ) => {
+        const bq = fetchWithBQ as FetchWithBQ
+        const result = await bq({
+          url: `/requisitions/${requisitionId}/participants`,
+          method: 'POST',
+        })
+        if (result.error) return { error: result.error as never }
+        const body = (result.data as ApiEnvelope<ParticipationResultApi>).data
+        return { data: body.participants.map(toParticipant) }
+      },
+      invalidatesTags: (_res, _err, requisitionId) => [
+        { type: 'Requisition' as const, id: `participants-${requisitionId}` },
+        { type: 'Requisition' as const, id: requisitionId },
+      ],
+    }),
+
+    leaveRequisition: build.mutation<RequisitionParticipant[], string>({
+      queryFn: async (requisitionId, _api, _extra, fetchWithBQ) => {
+        const bq = fetchWithBQ as FetchWithBQ
+        const result = await bq({
+          url: `/requisitions/${requisitionId}/participants/me`,
+          method: 'DELETE',
+        })
+        if (result.error) return { error: result.error as never }
+        const body = (result.data as ApiEnvelope<ParticipationResultApi>).data
+        return { data: body.participants.map(toParticipant) }
+      },
+      invalidatesTags: (_res, _err, requisitionId) => [
+        { type: 'Requisition' as const, id: `participants-${requisitionId}` },
+        { type: 'Requisition' as const, id: requisitionId },
+      ],
+    }),
   }),
 })
 
@@ -330,4 +396,7 @@ export const {
   useGetPositionsForDepartmentQuery,
   useGetOwnHotelOptionQuery,
   useCreateRequisitionMutation,
+  useGetParticipantsQuery,
+  useJoinRequisitionMutation,
+  useLeaveRequisitionMutation,
 } = requisitionsApi
