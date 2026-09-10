@@ -281,10 +281,6 @@ msgstr "1–2 years"
 msgid "100 = todos sus días salieron bien en esa medida"
 msgstr "100 = every day went well on that measure"
 
-#: src/features/auth/components/LoginCollage.tsx
-msgid "3 de 4 slots cubiertos"
-msgstr "3 of 4 slots covered"
-
 #: src/shared/constants/workerEnums.ts
 msgid "3–5 años"
 msgstr "3–5 years"
@@ -364,6 +360,10 @@ msgstr "Active"
 #: src/shared/constants/roles.ts
 msgid "Administrador"
 msgstr "Administrator"
+
+#: src/shared/constants/roles.ts
+msgid "Agente de Customer Service"
+msgstr "Customer Service Agent"
 
 #: src/features/requisitions/types/requisitionForm.schema.ts
 msgid "Agrega al menos una posición"
@@ -921,6 +921,10 @@ msgstr "{name}'s contact as a QR"
 msgid "Contacto de emergencia"
 msgstr "Emergency contact"
 
+#: src/shared/constants/roles.ts
+msgid "Contadora"
+msgstr "Accountant"
+
 #: src/features/audits/components/AuditFormDialog.tsx
 msgid "Contesta todos los reactivos para poder guardar"
 msgstr "Answer every checklist item to save"
@@ -954,6 +958,10 @@ msgstr "Conversions"
 #: src/shared/constants/workerEnums.ts
 msgid "Cónyuge"
 msgstr "Spouse"
+
+#: src/shared/constants/roles.ts
+msgid "Coordinador de Inspección"
+msgstr "Inspection Coordinator"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "Copiar el teléfono"
@@ -1061,6 +1069,10 @@ msgstr "Meets, Doesn't or N/A per checklist item. The score is a weighted averag
 msgid "Cumplimiento"
 msgstr "Compliance"
 
+#: src/shared/constants/roles.ts
+msgid "Customer Service Manager"
+msgstr "Customer Service Manager"
+
 #: src/features/schedule/components/ScheduleMiniCalendar.tsx
 msgid "D"
 msgstr "S"
@@ -1155,7 +1167,6 @@ msgstr "Voluntary avail."
 msgid "Disponibilidad"
 msgstr "Availability"
 
-#: src/features/auth/components/LoginCollage.tsx
 #: src/shared/constants/workerStatus.ts
 msgid "Disponible"
 msgstr "Available"
@@ -1457,10 +1468,6 @@ msgstr "Clock in – Clock out"
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "Entrada de hoy"
 msgstr "Today's clock-in"
-
-#: src/features/auth/components/LoginCollage.tsx
-msgid "Entrada registrada"
-msgstr "Clock-in recorded"
 
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Entrada y Salida llevan tu foto"
@@ -1954,6 +1961,7 @@ msgid "Inicio {ordinal}"
 msgstr "Start {ordinal}"
 
 #: src/features/requisitions/components/RequisitionTable.tsx
+#: src/shared/constants/roles.ts
 msgid "Inspector"
 msgstr "Inspector"
 
@@ -2134,6 +2142,10 @@ msgstr "Sent weeks are approved by the Area Manager of their department or by th
 msgid "Libre"
 msgstr "Free"
 
+#: src/shared/constants/roles.ts
+msgid "Líder de Grupo de Reclutadoras"
+msgstr "Recruiters Group Leader"
+
 #: src/shared/components/SearchField.tsx
 msgid "Limpiar"
 msgstr "Clear"
@@ -2192,9 +2204,29 @@ msgstr "AM"
 msgid "Madre"
 msgstr "Mother"
 
+#: src/shared/constants/roles.ts
+msgid "Manager de Área"
+msgstr "Area Manager"
+
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
 msgid "Manager de Área (su departamento)"
 msgstr "Area Manager (their department)"
+
+#: src/shared/constants/roles.ts
+msgid "Manager de Contabilidad"
+msgstr "Accounting Manager"
+
+#: src/shared/constants/roles.ts
+msgid "Manager de QA"
+msgstr "QA Manager"
+
+#: src/shared/constants/roles.ts
+msgid "Manager de Reclutamiento"
+msgstr "Recruitment Manager"
+
+#: src/shared/constants/roles.ts
+msgid "Manager General"
+msgstr "General Manager"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
 msgid "Manager General (cualquier departamento)"
@@ -2680,6 +2712,10 @@ msgstr "Hide password"
 msgid "Ocupado"
 msgstr "Taken"
 
+#: src/shared/constants/roles.ts
+msgid "Operador de QA"
+msgstr "QA Operator"
+
 #: src/features/requisitions/components/AuthorizationQueueList.tsx
 msgid "Ordenadas por fecha de inicio más próxima"
 msgstr "Sorted by nearest start date"
@@ -2959,6 +2995,10 @@ msgstr "Reject"
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
 msgid "Rechazar estará disponible próximamente"
 msgstr "Reject will be available soon"
+
+#: src/shared/constants/roles.ts
+msgid "Reclutadora"
+msgstr "Recruiter"
 
 #: src/features/requisitions/components/RequisitionJournalDialog.tsx
 msgid "Reclutadora salió"
@@ -3374,6 +3414,7 @@ msgid "Sin turnos por ahora"
 msgstr "No shifts for now"
 
 #: src/features/requisitions/components/RequisitionJournalDialog.tsx
+#: src/shared/constants/roles.ts
 msgid "Sistema"
 msgstr "System"
 
@@ -3447,10 +3488,6 @@ msgstr "SSN or ITIN uploaded"
 msgid "SSN/ITIN recibido"
 msgstr "SSN/ITIN received"
 
-#: src/features/auth/pages/LoginPage.tsx
-msgid "Staffing de hoteles: del reclutamiento al pago, con un semáforo en cada paso."
-msgstr "Hotel staffing: from recruiting to payroll, with a status light at every step."
-
 #: src/shared/constants/workerStatus.ts
 msgid "Stand-by"
 msgstr "Stand-by"
@@ -3470,6 +3507,10 @@ msgstr "Upload my SSN or ITIN"
 #: src/features/worker/components/TaxDocumentUploader.tsx
 msgid "Subir otro archivo"
 msgstr "Upload another file"
+
+#: src/shared/constants/roles.ts
+msgid "Supervisor"
+msgstr "Supervisor"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "Sus datos"
@@ -3730,10 +3771,6 @@ msgstr "Your transportation, your SSN or ITIN and an emergency contact. With tha
 #: src/features/audits/pages/AuditsPage.tsx
 msgid "Tu usuario no tiene un hotel asignado todavía. Sin hotel no hay a quién auditar — pídele al Administrador que revise tu alta."
 msgstr "Your account doesn't have a hotel assigned yet. Without a hotel there's no one to audit — ask the Administrator to check your account setup."
-
-#: src/features/auth/components/LoginCollage.tsx
-msgid "Turno 07:00 – 15:00"
-msgstr "Shift 07:00 – 15:00"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "Turno de hoy"
