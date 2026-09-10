@@ -261,6 +261,8 @@ model User {
   photoPath String? @map("photo_path") @db.Text
 
   isActive Boolean @default(true) @map("is_active")
+  /// Idioma de la interfaz (D-36): es | en. CHECK ck_user_locale en la migracion.
+  locale String @default("es") @db.Text
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
