@@ -270,6 +270,16 @@ const routes: readonly MockRoute[] = [
         found.englishLevel = ENGLISH[payload.englishLevelId] ?? found.englishLevel
       }
       if (payload.experienceLevel !== undefined) found.experienceLevel = payload.experienceLevel
+      /** Espejo del `is_profile_complete` de `vw_worker`: sin esto, editar los
+          9 campos de un WHITE nunca lo dejaba listo para validar en las pruebas. */
+      found.isProfileComplete =
+        found.position !== null &&
+        found.englishLevel !== null &&
+        found.hiringModality !== null &&
+        found.experienceLevel !== null &&
+        found.transportType !== null &&
+        found.emergencyContact !== null &&
+        found.bloodType !== null
       return { data: { ...found } }
     },
   },

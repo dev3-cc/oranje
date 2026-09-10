@@ -20,6 +20,7 @@ import {
   useVerifyWorkerDocumentMutation,
 } from '../api/workerDetailApi'
 import { ChangeStateDialog } from '../components/ChangeStateDialog'
+import { CreateWorkerDialog } from '../components/CreateWorkerDialog'
 
 import { useUploadFileMutation } from '@/app/filesApi'
 import personajeTalento from '@/assets/ilustrations/personaje-talento.svg'
@@ -105,6 +106,7 @@ function Field({
 export function WorkerDetailPage(): ReactNode {
   const { workerId = '' } = useParams()
   const [isChangeOpen, setChangeOpen] = useState(false)
+  const [isEditOpen, setEditOpen] = useState(false)
   const can = useCan()
   /** Mover el semáforo y verificar documentos es de quien valida (recruitment:validate_signup). */
   const canValidate = can('recruitment:validate_signup')
@@ -231,6 +233,13 @@ export function WorkerDetailPage(): ReactNode {
         worker.emergencyContact === null && 'Contacto de emergencia',
         worker.bloodType === null && 'Tipo de sangre',
       ].filter(Boolean) as string[])
+
+  /** Solo la Fase 1 (Posición, Inglés, Modalidad, Experiencia) la edita
+      Reclutamiento con «Editar»; Transporte y Fase 3 los completa el
+      colaborador desde su app — «Editar» no puede tocarlos. */
+  const canFixMissingFromHere = missingProfileFields.every((field) =>
+    ['Posición', 'Inglés', 'Modalidad', 'Experiencia'].includes(field),
+  )
 
   const profileFields = [
     {
@@ -380,7 +389,16 @@ export function WorkerDetailPage(): ReactNode {
 
           {/* `ml-auto`: si envuelve a su propia línea, se pega a la derecha en
               vez de quedar descolgada en medio. */}
-          <div className="mt-4 ml-auto">
+          <div className="mt-4 ml-auto flex gap-2">
+            {canEditDocuments ? (
+              <Button
+                onClick={() => {
+                  setEditOpen(true)
+                }}
+              >
+                Editar
+              </Button>
+            ) : null}
             {canValidate ? (
               <Button
                 variant="primary"
@@ -631,6 +649,17 @@ export function WorkerDetailPage(): ReactNode {
           setChangeOpen(false)
         }}
         missingProfileFields={missingProfileFields}
+        canFixMissingFromHere={canFixMissingFromHere}
+      />
+
+      {/* Antes esto solo se podía desde el Pool: aquí, viendo justo qué falta
+          («Perfil incompleto» + la lista), es donde de verdad hace falta. */}
+      <CreateWorkerDialog
+        isOpen={isEditOpen}
+        workerId={worker.id}
+        onClose={() => {
+          setEditOpen(false)
+        }}
       />
     </div>
   )

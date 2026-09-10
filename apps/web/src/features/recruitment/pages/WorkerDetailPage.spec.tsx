@@ -94,4 +94,43 @@ describe('WorkerDetailPage', () => {
     // Y la historia ganó su fila: la verdad del semáforo es la tabla de historia.
     expect(await screen.findByText('STRONG_GREEN → BROWN', undefined, SLOW)).toBeInTheDocument()
   })
+
+  it('«Editar» completa la Fase 1 desde el expediente — antes solo se podía desde el Pool', async () => {
+    renderDetail('wrk-0004')
+    const user = userEvent.setup()
+
+    // Pedro nace sin Fase 1 (posición, inglés, modalidad) y sin contacto de
+    // emergencia (Fase 3, del colaborador): las dos causas del mismo pill.
+    await screen.findByRole('heading', { name: 'Pedro Alcántara' })
+    expect(screen.getByText(/Perfil incompleto/)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Editar' }))
+    expect(await screen.findByText('Editar colaborador')).toBeInTheDocument()
+
+    await user.click(screen.getByLabelText('Posición'))
+    await user.click(await screen.findByRole('option', { name: 'Housekeeper' }))
+    await user.click(screen.getByLabelText('Modalidad'))
+    await user.click(await screen.findByRole('option', { name: 'Tiempo completo' }))
+    await user.click(screen.getByLabelText('Nivel de inglés'))
+    await user.click(await screen.findByRole('option', { name: 'Básico' }))
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    // El expediente refleja la Fase 1 ya capturada por Reclutamiento.
+    await waitFor(() => {
+      expect(screen.getAllByText('Housekeeper').length).toBeGreaterThan(0)
+    }, SLOW)
+
+    // Pero sigue sin poder validarse: el contacto de emergencia no es Fase 1,
+    // «Editar» no lo toca — lo completa el colaborador desde su app.
+    expect(screen.getByText(/Perfil incompleto/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Cambiar estado' }))
+    const dialog = await screen.findByRole('dialog')
+    await user.click(within(dialog).getByRole('radio'))
+
+    expect(
+      await within(dialog).findByText(/falta Contacto de emergencia/, undefined, SLOW),
+    ).toBeInTheDocument()
+    expect(within(dialog).getByText(/lo completa el colaborador/)).toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: 'Cambiar estado' })).toBeDisabled()
+  })
 })

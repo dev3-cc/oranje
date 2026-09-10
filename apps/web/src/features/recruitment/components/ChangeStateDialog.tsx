@@ -19,6 +19,7 @@ export function ChangeStateDialog({
   isOpen,
   onClose,
   missingProfileFields = [],
+  canFixMissingFromHere = false,
 }: {
   workerId: string
   currentLabel: string
@@ -28,6 +29,9 @@ export function ChangeStateDialog({
       el rechazo del backend dice «a medias» y no dice de QUÉ, así que aquí se
       apaga la opción de antemano con la lista exacta. */
   missingProfileFields?: string[]
+  /** Si todo lo que falta es Fase 1, «Editar» aquí mismo lo arregla; si hay
+      Fase 2/3 (transporte, emergencia), eso lo completa el colaborador. */
+  canFixMissingFromHere?: boolean
 }): ReactNode {
   const { data: transitions = [], isLoading } = useGetWorkerTransitionsQuery(workerId, {
     skip: !isOpen,
@@ -130,7 +134,10 @@ export function ChangeStateDialog({
 
         {toState === 'STRONG_GREEN' && missingProfileFields.length > 0 && (
           <p className="rounded-md bg-surface-2 px-4 py-3 text-sm text-ink-2">
-            No se puede validar todavía: falta {missingProfileFields.join(', ')} en su expediente.
+            No se puede validar todavía: falta {missingProfileFields.join(', ')} en su expediente.{' '}
+            {canFixMissingFromHere
+              ? 'Ciérrame y usa «Editar» para completarlo.'
+              : 'Eso lo completa el colaborador desde su propia app.'}
           </p>
         )}
 
