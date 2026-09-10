@@ -43,6 +43,15 @@ import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'new-requisition'
 
+/** Nombre humano de cada campo que `CATALOG_NOT_FOUND` puede señalar — el
+    backend manda el nombre interno de la columna (`catalogPositionId`…). */
+const CATALOG_FIELD_LABEL: Record<string, MessageDescriptor> = {
+  catalogPositionId: msg`la posición`,
+  hiringModalityId: msg`la modalidad`,
+  hotelDepartmentId: msg`el departamento`,
+  englishLevelId: msg`el nivel de inglés`,
+}
+
 /** Las diapositivas del intro; el texto se traduce al pintar con `i18n._()` (D-36). */
 const INTRO_SLIDES: readonly {
   image: string
@@ -113,6 +122,22 @@ function createRequisitionErrorMessage(error: unknown, i18n: I18n): string {
       FORBIDDEN: i18n._(
         msg`Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área o el Manager General del hotel.`,
       ),
+      /* El mensaje crudo del backend dice «apunta a un catalogPositionId que no
+         existe» — el nombre de columna se coló porque nadie más lo traduce. */
+      CATALOG_NOT_FOUND: (info) => {
+        const detail = info.details[0]
+        const fieldLabel =
+          detail?.field !== undefined ? CATALOG_FIELD_LABEL[detail.field] : undefined
+        const line =
+          typeof detail?.value === 'string' || typeof detail?.value === 'number'
+            ? String(detail.value)
+            : '?'
+        return fieldLabel
+          ? i18n._(
+              msg`El renglón ${line} elige un valor que ya no existe en el catálogo (${i18n._(fieldLabel)}): vuelve a elegirlo.`,
+            )
+          : i18n._(msg`El renglón ${line} apunta a un valor que ya no existe en el catálogo.`)
+      },
     },
     fallback: i18n._(
       msg`No se pudo guardar la requisición. Revisa las posiciones e inténtalo de nuevo.`,

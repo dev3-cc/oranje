@@ -41,6 +41,16 @@ const COVERAGE_TOKEN: Record<string, StatusLightToken> = {
 
 function assignErrorMessage(error: unknown): string {
   return apiErrorMessage(error, {
+    byCode: {
+      /* El 409 de esta acción tiene dos causas reales, y las dos son honestas
+         de por sí — nunca es la carrera de RR-15, esa la resuelve `freeSlot`
+         antes de intentar el insert. Antes las dos caían en el mismo texto,
+         que solo es cierto para ninguna. */
+      WORKER_ALREADY_ASSIGNED: (info) =>
+        info.message ?? 'Ese colaborador ya tiene una asignación activa.',
+      REQUISITION_NOT_IN_PROGRESS:
+        'Esta requisición ya no está en proceso: revisa su estado antes de asignar.',
+    },
     byStatus: {
       409: `Otra Reclutadora tomó este slot antes${IS_DEV_UI ? ' (RR-15)' : ''}: el tablero ya se actualizó, revisa el siguiente libre.`,
     },
@@ -326,6 +336,13 @@ export function SlotAssignmentPage(): ReactNode {
                     ))}
                   </SelectContent>
                 </Select>
+                {/* Sin esto, una lista corta se lee como que el Pool está vacío
+                    o el sistema está roto — y casi siempre es que a alguien le
+                    falta su expediente o ya está en otra asignación. */}
+                <p className="text-xs text-ink-3">
+                  Solo aparece quien está en Verde fuerte: expediente completo, validado por
+                  Reclutamiento y sin otra asignación activa.
+                </p>
               </div>
 
               <div className="flex flex-col gap-1.5">

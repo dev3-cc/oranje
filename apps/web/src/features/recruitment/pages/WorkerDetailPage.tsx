@@ -142,6 +142,11 @@ export function WorkerDetailPage(): ReactNode {
           byCode: {
             UNSUPPORTED_FILE_TYPE:
               'Ese formato no se puede procesar (los HEIC del iPhone no entran): usa JPG, PNG, WebP o PDF.',
+            /* El mensaje del backend interpola el tipo en mayúsculas (`SSN_ITIN`),
+               que el filtro anti-fuga descarta entero por no ser una sigla
+               reconocida — caía al genérico justo en el caso más común: volver
+               a subir el SSN/ITIN sin borrar el anterior. */
+            DOCUMENT_ALREADY_EXISTS: `Ya hay un documento de ${DOCUMENT_TYPE_LABEL[uploadType] ?? uploadType}: bórralo antes de subir otro.`,
           },
           byStatus: {
             413: 'El archivo pasa de 15 MB: comprímelo o escanéalo con menos resolución.',
@@ -211,6 +216,21 @@ export function WorkerDetailPage(): ReactNode {
     },
     { label: 'Dirección', value: worker.address, foot: 'address', icon: 'home' },
   ]
+
+  /** Espejo exacto de `personal.vw_worker.is_profile_complete` (§4 de Estándares
+      de Desarrollo): lo que ahí es un booleano ciego, aquí es la lista de qué
+      falta — antes «el expediente está a medias» no decía de qué. */
+  const missingProfileFields = worker.isProfileComplete
+    ? []
+    : ([
+        worker.position === null && 'Posición',
+        worker.englishLevel === null && 'Inglés',
+        worker.hiringModality === null && 'Modalidad',
+        worker.experienceLevel === null && 'Experiencia',
+        worker.transportType === null && 'Transporte',
+        worker.emergencyContact === null && 'Contacto de emergencia',
+        worker.bloodType === null && 'Tipo de sangre',
+      ].filter(Boolean) as string[])
 
   const profileFields = [
     {
@@ -610,6 +630,7 @@ export function WorkerDetailPage(): ReactNode {
         onClose={() => {
           setChangeOpen(false)
         }}
+        missingProfileFields={missingProfileFields}
       />
     </div>
   )

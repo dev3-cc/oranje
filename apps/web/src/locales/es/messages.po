@@ -273,6 +273,10 @@ msgstr "{totalConversions, plural, one {# hotel convertido} other {# hoteles con
 msgid "{workerName} quedó en Stand-by"
 msgstr "{workerName} quedó en Stand-by"
 
+#: src/features/personnel/components/ReportWorkerDialog.tsx
+msgid "{workerName} quedó reportado"
+msgstr "{workerName} quedó reportado"
+
 #: src/features/auth/pages/LoginPage.tsx
 msgid "← Volver a iniciar sesión"
 msgstr "← Volver a iniciar sesión"
@@ -770,6 +774,7 @@ msgstr "Cancelado"
 
 #: src/features/audits/components/AuditFormDialog.tsx
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
+#: src/features/personnel/components/ReportWorkerDialog.tsx
 #: src/features/personnel/components/StandByDialog.tsx
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
@@ -951,6 +956,7 @@ msgstr "Contadora"
 msgid "Contesta todos los reactivos para poder guardar"
 msgstr "Contesta todos los reactivos para poder guardar"
 
+#: src/features/personnel/components/ReportWorkerDialog.tsx
 #: src/features/personnel/components/StandByDialog.tsx
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/shared/components/OnboardingIntro.tsx
@@ -1238,6 +1244,10 @@ msgstr "El camino principal del ciclo; los desvíos abajo"
 msgid "El colaborador no tiene asignación en esta requisición"
 msgstr "El colaborador no tiene asignación en esta requisición"
 
+#: src/features/personnel/components/ReportWorkerDialog.tsx
+msgid "El colaborador pasa a Rojo: es una incidencia, no una pausa — Inspección la revisa y decide si vuelve o queda fuera."
+msgstr "El colaborador pasa a Rojo: es una incidencia, no una pausa — Inspección la revisa y decide si vuelve o queda fuera."
+
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 msgid "El colaborador ya no tiene asignación en esta requisición."
 msgstr "El colaborador ya no tiene asignación en esta requisición."
@@ -1249,6 +1259,10 @@ msgstr "El color de arriba dice en qué punto estás: desde el alta hasta asigna
 #: src/features/auth/pages/LoginPage.tsx
 msgid "El correo o la contraseña no coinciden. Revísalos e inténtalo de nuevo."
 msgstr "El correo o la contraseña no coinciden. Revísalos e inténtalo de nuevo."
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "el departamento"
+msgstr "el departamento"
 
 #: src/features/personnel/components/WorkerPerformanceRadar.tsx
 msgid "El desempeño se calcula con turnos y marcas reales: cuando acumule días trabajados, aquí aparece su radar."
@@ -1308,9 +1322,14 @@ msgstr "El Manager General ve todos los departamentos"
 msgid "El módulo «{title}» ya está en el menú, pero todavía no tiene diseño ni datos que mostrar. Se construye aquí en cuanto llegue la maqueta."
 msgstr "El módulo «{title}» ya está en el menú, pero todavía no tiene diseño ni datos que mostrar. Se construye aquí en cuanto llegue la maqueta."
 
+#: src/features/personnel/components/ReportWorkerDialog.tsx
 #: src/features/personnel/components/StandByDialog.tsx
 msgid "El motivo queda en su historia"
 msgstr "El motivo queda en su historia"
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "el nivel de inglés"
+msgstr "el nivel de inglés"
 
 #: src/features/timesheet/pages/TimesheetPage.tsx
 msgid "El pago en bloque aún no está disponible"
@@ -1337,6 +1356,15 @@ msgstr "El QR de otro hotel no te corresponde."
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
 msgid "El QR lo imprime y regenera el BD, el BDC o el personal del hotel."
 msgstr "El QR lo imprime y regenera el BD, el BDC o el personal del hotel."
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "El renglón {line} apunta a un valor que ya no existe en el catálogo."
+msgstr "El renglón {line} apunta a un valor que ya no existe en el catálogo."
+
+#. placeholder {0}: i18n._(fieldLabel)
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "El renglón {line} elige un valor que ya no existe en el catálogo ({0}): vuelve a elegirlo."
+msgstr "El renglón {line} elige un valor que ya no existe en el catálogo ({0}): vuelve a elegirlo."
 
 #. placeholder {0}: IS_DEV_UI ? ' (D-27)' : ''
 #: src/features/personnel/pages/PersonnelPage.tsx
@@ -1391,6 +1419,7 @@ msgstr "Elige el día"
 msgid "Elige el hotel"
 msgstr "Elige el hotel"
 
+#: src/features/personnel/components/ReportWorkerDialog.tsx
 #: src/features/personnel/components/StandByDialog.tsx
 msgid "Elige el motivo…"
 msgstr "Elige el motivo…"
@@ -1546,6 +1575,7 @@ msgstr "Enviar a revisión"
 msgid "Enviar enlace"
 msgstr "Enviar enlace"
 
+#: src/features/personnel/components/ReportWorkerDialog.tsx
 #: src/features/personnel/components/StandByDialog.tsx
 msgid "Es obligatorio decir por qué: el motivo acompaña la transición en el historial del colaborador."
 msgstr "Es obligatorio decir por qué: el motivo acompaña la transición en el historial del colaborador."
@@ -1633,6 +1663,10 @@ msgstr "Esta requisición tiene posiciones de otro departamento: la elimina el M
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Esta requisición ya estaba eliminada."
 msgstr "Esta requisición ya estaba eliminada."
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Esta requisición ya no está autorizada o en proceso: no se puede unir."
+msgstr "Esta requisición ya no está autorizada o en proceso: no se puede unir."
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
 msgid "Esta semana es de otro departamento: no te toca aprobarla."
@@ -1753,6 +1787,10 @@ msgstr "Falta el hotel"
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "Falta el nombre del contacto de emergencia"
 msgstr "Falta el nombre del contacto de emergencia"
+
+#: src/features/personnel/components/ReportWorkerDialog.tsx
+msgid "Falta grave en el hotel"
+msgstr "Falta grave en el hotel"
 
 #: src/features/requisitions/types/requisitionForm.schema.ts
 msgid "Falta la fecha de inicio"
@@ -1974,6 +2012,14 @@ msgstr "Imprimir"
 msgid "Imprimir QR"
 msgstr "Imprimir QR"
 
+#: src/features/personnel/components/ReportWorkerDialog.tsx
+msgid "Inasistencias"
+msgstr "Inasistencias"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Incidencia (Rojo); Inspección la revisa"
+msgstr "Incidencia (Rojo); Inspección la revisa"
+
 #: src/features/timesheet/components/TimesheetDayCell.tsx
 msgid "Incompleto"
 msgstr "Incompleto"
@@ -2134,6 +2180,10 @@ msgstr "La marca carga tu motivo y se distingue de las normales en la revisión 
 msgid "La marca no quedó registrada"
 msgstr "La marca no quedó registrada"
 
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "la modalidad"
+msgstr "la modalidad"
+
 #: src/features/auth/pages/LoginPage.tsx
 msgid "La operación de tu hotel, en un solo lugar."
 msgstr "La operación de tu hotel, en un solo lugar."
@@ -2141,6 +2191,10 @@ msgstr "La operación de tu hotel, en un solo lugar."
 #: src/features/timesheet/components/TimesheetDayCell.tsx
 msgid "La persona marcó su entrada y su salida. Revisar el día es aparte: lo dice el chip."
 msgstr "La persona marcó su entrada y su salida. Revisar el día es aparte: lo dice el chip."
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "la posición"
+msgstr "la posición"
 
 #: src/features/schedule/pages/SchedulePage.tsx
 msgid "La posición y la requisición del turno se enseñan en la fila de Demanda: el contrato aún no liga el turno con una posición."
@@ -2407,6 +2461,7 @@ msgstr "Mostrar contraseña"
 msgid "Mostrar u ocultar el menú"
 msgstr "Mostrar u ocultar el menú"
 
+#: src/features/personnel/components/ReportWorkerDialog.tsx
 #: src/features/personnel/components/StandByDialog.tsx
 msgid "Motivo"
 msgstr "Motivo"
@@ -2418,6 +2473,10 @@ msgstr "Motivo (obligatorio)"
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 msgid "Motivo de la marca manual"
 msgstr "Motivo de la marca manual"
+
+#: src/features/personnel/components/ReportWorkerDialog.tsx
+msgid "Motivo del reporte"
+msgstr "Motivo del reporte"
 
 #: src/features/personnel/components/StandByDialog.tsx
 msgid "Motivo del Stand-by"
@@ -2456,6 +2515,10 @@ msgstr "Nadie coincide con esos filtros. Cambia el nombre, la requisición, el e
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "Nadie en tu plantel se llama «{0}». Cambia la búsqueda o límpiala para ver a todos."
 msgstr "Nadie en tu plantel se llama «{0}». Cambia la búsqueda o límpiala para ver a todos."
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Nadie la está trabajando todavía."
+msgstr "Nadie la está trabajando todavía."
 
 #: src/features/schedule/components/ScheduleTimelineGrid.tsx
 msgid "Nadie programado todavía: los turnos aparecen conforme se cubren los slots."
@@ -2584,6 +2647,10 @@ msgstr "No se pudieron guardar tus datos. Inténtalo de nuevo."
 msgid "No se pudo abrir la cámara. Cierra otras apps que la usen e inténtalo de nuevo."
 msgstr "No se pudo abrir la cámara. Cierra otras apps que la usen e inténtalo de nuevo."
 
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "No se pudo actualizar. Inténtalo de nuevo."
+msgstr "No se pudo actualizar. Inténtalo de nuevo."
+
 #: src/features/schedule/components/AddShiftDialog.tsx
 msgid "No se pudo agregar el turno. Inténtalo de nuevo."
 msgstr "No se pudo agregar el turno. Inténtalo de nuevo."
@@ -2694,6 +2761,10 @@ msgstr "No se pudo regenerar el QR. Inténtalo de nuevo."
 msgid "No se pudo registrar la marca. Inténtalo de nuevo."
 msgstr "No se pudo registrar la marca. Inténtalo de nuevo."
 
+#: src/features/personnel/components/ReportWorkerDialog.tsx
+msgid "No se pudo reportar al colaborador. Inténtalo de nuevo."
+msgstr "No se pudo reportar al colaborador. Inténtalo de nuevo."
+
 #: src/features/worker/components/TaxDocumentUploader.tsx
 msgid "No se pudo subir tu documento. Inténtalo de nuevo."
 msgstr "No se pudo subir tu documento. Inténtalo de nuevo."
@@ -2723,6 +2794,7 @@ msgstr "Nombre"
 msgid "Nombre del colaborador, p. ej. Ana Rivera…"
 msgstr "Nombre del colaborador, p. ej. Ana Rivera…"
 
+#: src/features/personnel/components/ReportWorkerDialog.tsx
 #: src/features/personnel/components/StandByDialog.tsx
 msgid "Nota (opcional)"
 msgstr "Nota (opcional)"
@@ -2816,6 +2888,10 @@ msgstr "parcial"
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "Parentesco"
 msgstr "Parentesco"
+
+#: src/features/personnel/components/ReportWorkerDialog.tsx
+msgid "Pasa a Rojo: es una incidencia, no una pausa. Inspección la revisa."
+msgstr "Pasa a Rojo: es una incidencia, no una pausa. Inspección la revisa."
 
 #: src/features/personnel/components/StandByDialog.tsx
 msgid "Pasa a Rosa: queda en pausa, sin turnos nuevos, hasta que el Hotel lo reactive."
@@ -3024,6 +3100,10 @@ msgstr "QR del hotel"
 msgid "QR regenerado: versión {version}. Imprime la hoja nueva."
 msgstr "QR regenerado: versión {version}. Imprime la hoja nueva."
 
+#: src/features/personnel/components/ReportWorkerDialog.tsx
+msgid "Qué pasó y cuándo…"
+msgstr "Qué pasó y cuándo…"
+
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 msgid "Qué viste y cómo se resuelve — p. ej. «Salió por el acceso de servicio; el GPS tomó la calle.»"
 msgstr "Qué viste y cómo se resuelve — p. ej. «Salió por el acceso de servicio; el GPS tomó la calle.»"
@@ -3039,6 +3119,10 @@ msgstr "Quedan días con anomalía sin resolver: revísalos antes de enviar la s
 #: src/features/schedule/components/AddShiftDialog.tsx
 msgid "Quién"
 msgstr "Quién"
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Quién la está trabajando"
+msgstr "Quién la está trabajando"
 
 #: src/features/schedule/components/AddShiftDialog.tsx
 msgid "Quién trabaja el turno"
@@ -3130,6 +3214,27 @@ msgstr "Regreso de lunch"
 #: src/shared/constants/workerStatus.ts
 msgid "Reportado"
 msgstr "Reportado"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Reportado (Rojo)"
+msgstr "Reportado (Rojo)"
+
+#: src/features/personnel/components/ReportWorkerDialog.tsx
+msgid "Reportando…"
+msgstr "Reportando…"
+
+#: src/features/personnel/components/ReportWorkerDialog.tsx
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Reportar"
+msgstr "Reportar"
+
+#: src/features/personnel/components/ReportWorkerDialog.tsx
+msgid "Reportar a {workerName}"
+msgstr "Reportar a {workerName}"
+
+#: src/features/personnel/components/ReportWorkerDialog.tsx
+msgid "Reportar es más serio que Stand-by"
+msgstr "Reportar es más serio que Stand-by"
 
 #: src/layouts/Sidebar.tsx
 msgid "Reportes"
@@ -3275,6 +3380,10 @@ msgstr "Salida"
 #: src/features/worker/api/punchApi.ts
 msgid "Salida a lunch"
 msgstr "Salida a lunch"
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Salir de la requisición"
+msgstr "Salir de la requisición"
 
 #: src/shared/components/OnboardingIntro.tsx
 msgid "Saltar"
@@ -3753,6 +3862,10 @@ msgstr "Transporte guardado"
 msgid "Transporte guardado."
 msgstr "Transporte guardado."
 
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "tú"
+msgstr "tú"
+
 #: src/features/worker/components/TaxDeadlineBanner.tsx
 msgid "Tu acceso está suspendido"
 msgstr "Tu acceso está suspendido"
@@ -3890,6 +4003,7 @@ msgstr "Un hotel puede pedir personal cuando llega a Naranja, es decir, cuando y
 msgid "Un Manager ya la aprobó. Sigue el pago y la factura del hotel."
 msgstr "Un Manager ya la aprobó. Sigue el pago y la factura del hotel."
 
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
 #: src/features/worker/pages/HomePage.tsx
 msgid "Un momento…"
 msgstr "Un momento…"
@@ -3917,6 +4031,10 @@ msgstr "Una requisición en este estado no se elimina: las cubiertas se conserva
 #: src/features/audits/components/PersonalPresentationAuditDialog.tsx
 msgid "Uniformidad, higiene, seguridad y actitud del colaborador, reactivo por reactivo."
 msgstr "Uniformidad, higiene, seguridad y actitud del colaborador, reactivo por reactivo."
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Unirme a la requisición"
+msgstr "Unirme a la requisición"
 
 #: src/features/audits/components/AuditFormDialog.tsx
 msgid "Uno de los reactivos ya no es parte de esta auditoría. Recarga e inténtalo de nuevo."
@@ -3946,6 +4064,10 @@ msgstr "V"
 #: src/features/personnel/components/StandByDialog.tsx
 msgid "Vacaciones"
 msgstr "Vacaciones"
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Varias Reclutadoras pueden trabajar la misma requisición a la vez."
+msgstr "Varias Reclutadoras pueden trabajar la misma requisición a la vez."
 
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Ver bitácora"
@@ -4053,6 +4175,10 @@ msgstr "y"
 msgid "Ya debiste cargar tu SSN o ITIN"
 msgstr "Ya debiste cargar tu SSN o ITIN"
 
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Ya estabas trabajando esta requisición."
+msgstr "Ya estabas trabajando esta requisición."
+
 #: src/features/worker/pages/HomePage.tsx
 msgid "Ya estás disponible"
 msgstr "Ya estás disponible"
@@ -4064,6 +4190,10 @@ msgstr "Ya estás en la semana más reciente"
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "ya marcaron hoy"
 msgstr "ya marcaron hoy"
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Ya no estabas trabajando esta requisición."
+msgstr "Ya no estabas trabajando esta requisición."
 
 #: src/features/personnel/pages/PersonnelPage.tsx
 #: src/features/worker/pages/ProfilePage.tsx

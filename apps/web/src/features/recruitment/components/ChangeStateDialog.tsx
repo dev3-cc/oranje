@@ -18,11 +18,16 @@ export function ChangeStateDialog({
   currentLabel,
   isOpen,
   onClose,
+  missingProfileFields = [],
 }: {
   workerId: string
   currentLabel: string
   isOpen: boolean
   onClose: () => void
+  /** El expediente a medias no deja validar (`PROFILE_INCOMPLETE`) — sin esto
+      el rechazo del backend dice «a medias» y no dice de QUÉ, así que aquí se
+      apaga la opción de antemano con la lista exacta. */
+  missingProfileFields?: string[]
 }): ReactNode {
   const { data: transitions = [], isLoading } = useGetWorkerTransitionsQuery(workerId, {
     skip: !isOpen,
@@ -34,7 +39,9 @@ export function ChangeStateDialog({
   const [note, setNote] = useState('')
 
   const selected = transitions.find((transition) => transition.toState === toState)
-  const canSubmit = selected !== undefined && (!selected.requiresReason || note.trim() !== '')
+  const isProfileBlocked = selected?.toState === 'STRONG_GREEN' && missingProfileFields.length > 0
+  const canSubmit =
+    selected !== undefined && !isProfileBlocked && (!selected.requiresReason || note.trim() !== '')
 
   async function submit(): Promise<void> {
     if (!canSubmit || !selected) return
@@ -64,7 +71,12 @@ export function ChangeStateDialog({
           {transitions.length > 0 && selected === undefined && (
             <span className="mr-auto text-xs text-ink-3">Elige el nuevo estado</span>
           )}
-          {selected?.requiresReason && note.trim() === '' && (
+          {isProfileBlocked && (
+            <span className="mr-auto text-xs text-ink-3">
+              Falta completar el expediente para validarlo
+            </span>
+          )}
+          {!isProfileBlocked && selected?.requiresReason && note.trim() === '' && (
             <span className="mr-auto text-xs text-ink-3">Este cambio necesita un motivo</span>
           )}
           <Button variant="secondary" onClick={onClose}>
@@ -115,6 +127,12 @@ export function ChangeStateDialog({
             )}
           </label>
         ))}
+
+        {toState === 'STRONG_GREEN' && missingProfileFields.length > 0 && (
+          <p className="rounded-md bg-surface-2 px-4 py-3 text-sm text-ink-2">
+            No se puede validar todavía: falta {missingProfileFields.join(', ')} en su expediente.
+          </p>
+        )}
 
         {transitions.length > 0 && (
           <label className="flex flex-col gap-1.5">

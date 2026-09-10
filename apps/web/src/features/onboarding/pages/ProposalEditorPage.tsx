@@ -148,7 +148,7 @@ export function ProposalEditorPage({
   function actionErrorMessage(error: unknown): string {
     return apiErrorMessage(error, {
       byCode: {
-        PROPOSAL_STATE: `La propuesta se trabaja con el hotel en Verde o Café — este está en ${workspace ? ONBOARDING_STATUS_LABEL[workspace.prospectStatus] : 'otro estado'}.`,
+        PROPOSAL_STATE_INVALID: `La propuesta se trabaja con el hotel en Verde o Café — este está en ${workspace ? ONBOARDING_STATUS_LABEL[workspace.prospectStatus] : 'otro estado'}.`,
         PROPOSAL_SENT: 'Esta versión ya se envió: lo enviado no se edita — abre una versión nueva.',
       },
       fallback: 'No se pudo guardar la propuesta. Revisa las tarifas e inténtalo de nuevo.',
