@@ -119,3 +119,13 @@ export {
 } from './components/ui/chart'
 export { Toaster } from './components/ui/sonner'
 export { toast } from 'sonner'
+export { Calendar, CalendarDayButton } from './components/ui/calendar'
+export {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from './components/ui/popover'

@@ -7,6 +7,7 @@ import { Link } from 'react-router'
 
 import { useGetHotelCardQuery, useGetPersonnelBoardQuery } from '../api/personnelApi'
 import { ContactQr } from '../components/ContactQr'
+import { ReportWorkerDialog } from '../components/ReportWorkerDialog'
 import { StandByDialog } from '../components/StandByDialog'
 import { WorkerPerformanceRadar } from '../components/WorkerPerformanceRadar'
 import type { PersonnelRow } from '../types/personnel.types'
@@ -38,6 +39,7 @@ import { matchesSearch } from '@/shared/lib/text'
 const NO_SHIFT_LABEL: Record<string, MessageDescriptor> = {
   PINK: msg`Pausado (Stand-by)`,
   GRAY: msg`Protegido (Gris)`,
+  RED: msg`Reportado (Rojo)`,
 }
 
 const MS_PER_DAY = 86_400_000
@@ -220,11 +222,13 @@ function WorkerDetail({
   row,
   hotel,
   onStandBy,
+  onReport,
 }: {
   row: PersonnelRow
   /** El hotel del Supervisor (nombre y foto); `null` degrada a la marca. */
   hotel: { name: string; photoUrl: string | null } | null
   onStandBy: (row: PersonnelRow) => void
+  onReport: (row: PersonnelRow) => void
 }): ReactNode {
   const { t, i18n } = useLingui()
   const missingEntry = hasMissingEntry(row)
@@ -285,6 +289,18 @@ function WorkerDetail({
                   className="cursor-pointer rounded-md bg-o-300 shadow-xs px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-o-300 shadow-xs/85"
                 >
                   <Trans>Mandar a Stand-by</Trans>
+                </button>
+              )}
+              {row.canReport && (
+                <button
+                  type="button"
+                  title={t`Incidencia (Rojo); Inspección la revisa`}
+                  onClick={() => {
+                    onReport(row)
+                  }}
+                  className="cursor-pointer rounded-md bg-red px-3 py-1.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-red/85"
+                >
+                  <Trans>Reportar</Trans>
                 </button>
               )}
               <Link
@@ -430,6 +446,7 @@ export function PersonnelPage(): ReactNode {
   const hotelId = session?.hotel?.id ?? ''
   const { data: hotel } = useGetHotelCardQuery(hotelId, { skip: hotelId === '' })
   const [standByTarget, setStandByTarget] = useState<PersonnelRow | null>(null)
+  const [reportTarget, setReportTarget] = useState<PersonnelRow | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   /** Por nombre, EN MEMORIA: el plantel ya está cargado entero. */
   const [search, setSearch] = useState('')
@@ -539,7 +556,12 @@ export function PersonnelPage(): ReactNode {
           </div>
 
           {selected && (
-            <WorkerDetail row={selected} hotel={hotel ?? null} onStandBy={setStandByTarget} />
+            <WorkerDetail
+              row={selected}
+              hotel={hotel ?? null}
+              onStandBy={setStandByTarget}
+              onReport={setReportTarget}
+            />
           )}
         </div>
       )}
@@ -565,6 +587,17 @@ export function PersonnelPage(): ReactNode {
           isOpen
           onClose={() => {
             setStandByTarget(null)
+          }}
+        />
+      )}
+
+      {reportTarget && (
+        <ReportWorkerDialog
+          workerId={reportTarget.workerId}
+          workerName={reportTarget.fullName}
+          isOpen
+          onClose={() => {
+            setReportTarget(null)
           }}
         />
       )}

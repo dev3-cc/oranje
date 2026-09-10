@@ -54,6 +54,7 @@ const STATE: Record<string, StatusRefApi> = {
   ORANGE: { code: 'ORANGE', color: 'Naranja', name: 'Fijo' },
   BROWN: { code: 'BROWN', color: 'Café', name: 'Asignación temporal' },
   PINK: { code: 'PINK', color: 'Rosa', name: 'Stand-by' },
+  RED: { code: 'RED', color: 'Rojo', name: 'Reportado' },
   GRAY: { code: 'GRAY', color: 'Gris', name: 'Accidentado' },
   BLACK: { code: 'BLACK', color: 'Negro', name: 'Blacklist' },
 }
@@ -269,6 +270,16 @@ const routes: readonly MockRoute[] = [
         found.englishLevel = ENGLISH[payload.englishLevelId] ?? found.englishLevel
       }
       if (payload.experienceLevel !== undefined) found.experienceLevel = payload.experienceLevel
+      /** Espejo del `is_profile_complete` de `vw_worker`: sin esto, editar los
+          9 campos de un WHITE nunca lo dejaba listo para validar en las pruebas. */
+      found.isProfileComplete =
+        found.position !== null &&
+        found.englishLevel !== null &&
+        found.hiringModality !== null &&
+        found.experienceLevel !== null &&
+        found.transportType !== null &&
+        found.emergencyContact !== null &&
+        found.bloodType !== null
       return { data: { ...found } }
     },
   },
@@ -393,13 +404,17 @@ function transitionsFor(stateCode: string): WorkerTransitionApi[] {
     case 'BROWN':
       return [
         { toState: 'STRONG_GREEN', requiresReason: false },
-        /** Stand-by: solo desde estados operativos, y con motivo (seed). */
+        /** Stand-by y Reportar: solo desde estados operativos, y con motivo (seed). */
         { toState: 'PINK', requiresReason: true },
+        { toState: 'RED', requiresReason: true },
       ]
     case 'APPLE_GREEN':
     case 'LIGHT_BLUE':
     case 'ORANGE':
-      return [{ toState: 'PINK', requiresReason: true }]
+      return [
+        { toState: 'PINK', requiresReason: true },
+        { toState: 'RED', requiresReason: true },
+      ]
     case 'PINK':
       return [{ toState: 'STRONG_GREEN', requiresReason: false }]
     default:

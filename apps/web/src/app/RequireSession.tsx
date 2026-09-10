@@ -33,7 +33,9 @@ export function RequireSession(): ReactNode {
 
   if (status === 'anonymous') {
     /** `from` permite volver a donde se iba después del login. */
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />
+    /* Quien venía a `/colaborador` vuelve por su propia puerta, con sus textos. */
+    const login = location.pathname.startsWith('/colaborador') ? '/colaborador/login' : '/login'
+    return <Navigate to={login} replace state={{ from: location.pathname }} />
   }
 
   /** `unknown` o `authenticating`: la naranja girando mientras el refresh decide. */

@@ -16,6 +16,7 @@ import {
   useCreateAssignmentMutation,
   useGetAssignableWorkersQuery,
   useGetSlotBoardQuery,
+  useReleaseAssignmentMutation,
 } from '../api/selfPickApi'
 import { ASSIGNMENT_TYPE_LABEL } from '../types/selfPick.types'
 
@@ -40,10 +41,29 @@ const COVERAGE_TOKEN: Record<string, StatusLightToken> = {
 
 function assignErrorMessage(error: unknown): string {
   return apiErrorMessage(error, {
+    byCode: {
+      /* El 409 de esta acción tiene dos causas reales, y las dos son honestas
+         de por sí — nunca es la carrera de RR-15, esa la resuelve `freeSlot`
+         antes de intentar el insert. Antes las dos caían en el mismo texto,
+         que solo es cierto para ninguna. */
+      WORKER_ALREADY_ASSIGNED: (info) =>
+        info.message ?? 'Ese colaborador ya tiene una asignación activa.',
+      REQUISITION_NOT_IN_PROGRESS:
+        'Esta requisición ya no está en proceso: revisa su estado antes de asignar.',
+    },
     byStatus: {
       409: `Otra Reclutadora tomó este slot antes${IS_DEV_UI ? ' (RR-15)' : ''}: el tablero ya se actualizó, revisa el siguiente libre.`,
     },
     fallback: 'No se pudo asignar al colaborador. Inténtalo de nuevo.',
+  })
+}
+
+function releaseErrorMessage(error: unknown): string {
+  return apiErrorMessage(error, {
+    byCode: {
+      REQUISITION_CLOSED: 'Esta requisición ya cerró: el slot no vuelve a abrirse.',
+    },
+    fallback: 'No se pudo liberar el slot. Inténtalo de nuevo.',
   })
 }
 
@@ -61,11 +81,32 @@ export function SlotAssignmentPage(): ReactNode {
   const { data: workers = [] } = useGetAssignableWorkersQuery()
   const [assign, { isLoading: isSaving, isError: hasFailed, error: saveError }] =
     useCreateAssignmentMutation()
+  const [release, { isLoading: isReleasing, error: releaseError }] = useReleaseAssignmentMutation()
 
   const [workerId, setWorkerId] = useState('')
   const [type, setType] = useState<'FIXED' | 'TEMPORARY'>('FIXED')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+
+  /** El slot cuya liberación se está confirmando (con motivo); `null` = ninguno. */
+  const [releaseTarget, setReleaseTarget] = useState<string | null>(null)
+  const [releaseReason, setReleaseReason] = useState('')
+
+  async function confirmRelease(): Promise<void> {
+    if (releaseTarget === null || releaseReason.trim() === '') return
+    try {
+      await release({
+        assignmentId: releaseTarget,
+        positionId,
+        reason: releaseReason.trim(),
+      }).unwrap()
+      toast.success('Slot liberado')
+      setReleaseTarget(null)
+      setReleaseReason('')
+    } catch {
+      return
+    }
+  }
 
   if (isLoading) return <DetailSkeleton />
   if (isError || !board) {
@@ -161,36 +202,97 @@ export function SlotAssignmentPage(): ReactNode {
         >
           <ul className="divide-y divide-line">
             {board.slots.map((slot) => (
-              <li key={slot.ordinal} className="flex items-center gap-4 py-3">
-                <span
-                  className={cn(
-                    'flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold',
-                    slot.workerName === null ? 'bg-o-50 text-o-700' : 'bg-surface-2 text-ink-3',
+              <li key={slot.ordinal} className="py-3">
+                <div className="flex items-center gap-4">
+                  <span
+                    className={cn(
+                      'flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold',
+                      slot.workerName === null ? 'bg-o-50 text-o-700' : 'bg-surface-2 text-ink-3',
+                    )}
+                  >
+                    {slot.ordinal}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-ink">
+                      {slot.workerName ?? '—'}
+                    </p>
+                    {IS_DEV_UI && (
+                      <code className="text-[11px] text-ink-4">ordinal {slot.ordinal}</code>
+                    )}
+                  </div>
+                  {slot.assignmentType !== null && (
+                    <span className="text-xs text-ink-3">
+                      {ASSIGNMENT_TYPE_LABEL[slot.assignmentType] ?? slot.assignmentType}
+                    </span>
                   )}
-                >
-                  {slot.ordinal}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-ink">{slot.workerName ?? '—'}</p>
-                  {IS_DEV_UI && (
-                    <code className="text-[11px] text-ink-4">ordinal {slot.ordinal}</code>
+                  <span
+                    className={cn(
+                      'rounded-full px-3 py-1 text-xs font-medium',
+                      slot.workerName === null
+                        ? 'border border-dashed border-o-500 text-o-700'
+                        : 'bg-surface-2 text-ink-2',
+                    )}
+                  >
+                    {slot.workerName === null ? 'libre' : 'ocupado'}
+                  </span>
+                  {/* Antes de esto no había forma de deshacer una asignación mal
+                      hecha desde la pantalla: solo por API. */}
+                  {slot.assignmentId !== null && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReleaseTarget(
+                          releaseTarget === slot.assignmentId ? null : slot.assignmentId,
+                        )
+                        setReleaseReason('')
+                      }}
+                      className="shrink-0 cursor-pointer rounded-md border border-line px-2.5 py-1 text-xs font-medium text-ink-2 transition-colors hover:bg-surface-2"
+                    >
+                      Liberar
+                    </button>
                   )}
                 </div>
-                {slot.assignmentType !== null && (
-                  <span className="text-xs text-ink-3">
-                    {ASSIGNMENT_TYPE_LABEL[slot.assignmentType] ?? slot.assignmentType}
-                  </span>
+
+                {releaseTarget !== null && releaseTarget === slot.assignmentId && (
+                  <div className="mt-2.5 ml-[52px] flex flex-col gap-2 rounded-md bg-surface-2 p-3">
+                    <label className="flex flex-col gap-1">
+                      <span className="text-xs text-ink-3">
+                        Motivo (queda en el journal, obligatorio)
+                      </span>
+                      <Input
+                        value={releaseReason}
+                        onChange={(event) => {
+                          setReleaseReason(event.target.value)
+                        }}
+                        placeholder="Por qué se libera este slot…"
+                        aria-label="Motivo para liberar el slot"
+                      />
+                    </label>
+                    {releaseError !== undefined && (
+                      <p role="alert" className="text-xs text-red">
+                        {releaseErrorMessage(releaseError)}
+                      </p>
+                    )}
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        onClick={() => {
+                          setReleaseTarget(null)
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        variant="primary"
+                        disabled={releaseReason.trim() === '' || isReleasing}
+                        onClick={() => {
+                          void confirmRelease()
+                        }}
+                      >
+                        {isReleasing ? 'Liberando…' : 'Sí, liberar slot'}
+                      </Button>
+                    </div>
+                  </div>
                 )}
-                <span
-                  className={cn(
-                    'rounded-full px-3 py-1 text-xs font-medium',
-                    slot.workerName === null
-                      ? 'border border-dashed border-o-500 text-o-700'
-                      : 'bg-surface-2 text-ink-2',
-                  )}
-                >
-                  {slot.workerName === null ? 'libre' : 'ocupado'}
-                </span>
               </li>
             ))}
           </ul>
@@ -234,6 +336,13 @@ export function SlotAssignmentPage(): ReactNode {
                     ))}
                   </SelectContent>
                 </Select>
+                {/* Sin esto, una lista corta se lee como que el Pool está vacío
+                    o el sistema está roto — y casi siempre es que a alguien le
+                    falta su expediente o ya está en otra asignación. */}
+                <p className="text-xs text-ink-3">
+                  Solo aparece quien está en Verde fuerte: expediente completo, validado por
+                  Reclutamiento y sin otra asignación activa.
+                </p>
               </div>
 
               <div className="flex flex-col gap-1.5">

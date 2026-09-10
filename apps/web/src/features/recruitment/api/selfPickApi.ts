@@ -134,6 +134,7 @@ async function fetchSlotBoard(
       ordinal: index + 1,
       workerName: assignment?.worker.fullName ?? null,
       assignmentType: assignment?.type ?? null,
+      assignmentId: assignment?.id ?? null,
     }
   })
   const firstFree = slots.find((slot) => slot.workerName === null)
@@ -205,6 +206,28 @@ export const selfPickApi = baseApi.injectEndpoints({
         { type: 'Worker' as const, id: 'LIST' },
       ],
     }),
+
+    /**
+     * Liberar un slot ya tomado (`DELETE /assignments/:id`, con motivo): el
+     * endpoint existía y no había ni un botón para llamarlo — mismo hallazgo
+     * que «Agregar turno» del Schedule.
+     */
+    releaseAssignment: build.mutation<
+      unknown,
+      { assignmentId: string; positionId: string; reason: string }
+    >({
+      query: ({ assignmentId, reason }) => ({
+        url: `/assignments/${assignmentId}`,
+        method: 'DELETE',
+        body: { reason },
+      }),
+      invalidatesTags: (_res, _err, { positionId }) => [
+        { type: 'Requisition' as const, id: 'SELF_PICK' },
+        { type: 'Requisition' as const, id: `slots-${positionId}` },
+        { type: 'Requisition' as const, id: 'LIST' },
+        { type: 'Worker' as const, id: 'LIST' },
+      ],
+    }),
   }),
 })
 
@@ -213,4 +236,5 @@ export const {
   useGetSlotBoardQuery,
   useGetAssignableWorkersQuery,
   useCreateAssignmentMutation,
+  useReleaseAssignmentMutation,
 } = selfPickApi

@@ -108,6 +108,8 @@ const ENTRIES_BY_SCHEDULE: Record<string, ScheduleEntryApi[]> = {
   ],
 }
 
+let addedEntrySequence = 0
+
 const routes: readonly MockRoute[] = [
   {
     method: 'GET',
@@ -120,6 +122,52 @@ const routes: readonly MockRoute[] = [
     resolve: ({ params }): ApiEnvelope<ScheduleEntryApi[]> => ({
       data: ENTRIES_BY_SCHEDULE[params.scheduleId ?? ''] ?? [],
     }),
+  },
+  /** «Agregar turno»: crea la semana si hace falta (el mock ya trae las 3 sembradas). */
+  {
+    method: 'POST',
+    path: '/schedules',
+    resolve: ({ body }): ApiEnvelope<ScheduleApi> => {
+      const weekStart = (body as { weekStart: string }).weekStart
+      const existing = SCHEDULES.find((schedule) => schedule.weekStart === weekStart)
+      if (existing) return { data: existing }
+      const created: ScheduleApi = {
+        id: `sch-mock-${String(SCHEDULES.length + 1)}`,
+        hotel: HOTEL,
+        weekStart,
+        weekEnd: addDays(weekStart, 6),
+        entryCount: 0,
+        createdAt: new Date().toISOString(),
+      }
+      SCHEDULES.push(created)
+      ENTRIES_BY_SCHEDULE[created.id] = []
+      return { data: created }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/schedules/:scheduleId/entries',
+    resolve: ({ params, body }): ApiEnvelope<ScheduleEntryApi> => {
+      const dto = body as {
+        assignmentId: string
+        workDate: string
+        startTime: string
+        endTime: string
+      }
+      addedEntrySequence += 1
+      const created: ScheduleEntryApi = {
+        id: `sce-added-${String(addedEntrySequence)}`,
+        workDate: dto.workDate,
+        startsAt: `${dto.workDate}T${dto.startTime}:00.000Z`,
+        endsAt: `${dto.workDate}T${dto.endTime}:00.000Z`,
+        minutes: 0,
+        worker: { id: 'wrk-mock', fullName: 'Turno agregado' },
+        assignmentId: dto.assignmentId,
+      }
+      const scheduleId = params.scheduleId ?? ''
+      ENTRIES_BY_SCHEDULE[scheduleId] = [...(ENTRIES_BY_SCHEDULE[scheduleId] ?? []), created]
+      return { data: created }
+    },
   },
 ]
 

@@ -103,6 +103,19 @@ export interface RequisitionDetail {
   history: RequisitionStatusEvent[]
 }
 
+/**
+ * Quién está trabajando la requisición como equipo (RR-15, modelo
+ * colaborativo): distinto de un slot ocupado — aquí puede haber varias
+ * Reclutadoras cubriendo la MISMA requisición sin que eso llene ningún slot.
+ */
+export interface RequisitionParticipant {
+  id: string
+  userId: string
+  fullName: string
+  roleName: string
+  joinedAt: string
+}
+
 export interface AuthorizationUrgencyPreview {
   startDate: string
   daysAhead: number

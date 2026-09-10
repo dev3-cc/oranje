@@ -20,6 +20,7 @@ import {
   useVerifyWorkerDocumentMutation,
 } from '../api/workerDetailApi'
 import { ChangeStateDialog } from '../components/ChangeStateDialog'
+import { CreateWorkerDialog } from '../components/CreateWorkerDialog'
 
 import { useUploadFileMutation } from '@/app/filesApi'
 import personajeTalento from '@/assets/ilustrations/personaje-talento.svg'
@@ -105,6 +106,7 @@ function Field({
 export function WorkerDetailPage(): ReactNode {
   const { workerId = '' } = useParams()
   const [isChangeOpen, setChangeOpen] = useState(false)
+  const [isEditOpen, setEditOpen] = useState(false)
   const can = useCan()
   /** Mover el semáforo y verificar documentos es de quien valida (recruitment:validate_signup). */
   const canValidate = can('recruitment:validate_signup')
@@ -142,6 +144,11 @@ export function WorkerDetailPage(): ReactNode {
           byCode: {
             UNSUPPORTED_FILE_TYPE:
               'Ese formato no se puede procesar (los HEIC del iPhone no entran): usa JPG, PNG, WebP o PDF.',
+            /* El mensaje del backend interpola el tipo en mayúsculas (`SSN_ITIN`),
+               que el filtro anti-fuga descarta entero por no ser una sigla
+               reconocida — caía al genérico justo en el caso más común: volver
+               a subir el SSN/ITIN sin borrar el anterior. */
+            DOCUMENT_ALREADY_EXISTS: `Ya hay un documento de ${DOCUMENT_TYPE_LABEL[uploadType] ?? uploadType}: bórralo antes de subir otro.`,
           },
           byStatus: {
             413: 'El archivo pasa de 15 MB: comprímelo o escanéalo con menos resolución.',
@@ -211,6 +218,28 @@ export function WorkerDetailPage(): ReactNode {
     },
     { label: 'Dirección', value: worker.address, foot: 'address', icon: 'home' },
   ]
+
+  /** Espejo exacto de `personal.vw_worker.is_profile_complete` (§4 de Estándares
+      de Desarrollo): lo que ahí es un booleano ciego, aquí es la lista de qué
+      falta — antes «el expediente está a medias» no decía de qué. */
+  const missingProfileFields = worker.isProfileComplete
+    ? []
+    : ([
+        worker.position === null && 'Posición',
+        worker.englishLevel === null && 'Inglés',
+        worker.hiringModality === null && 'Modalidad',
+        worker.experienceLevel === null && 'Experiencia',
+        worker.transportType === null && 'Transporte',
+        worker.emergencyContact === null && 'Contacto de emergencia',
+        worker.bloodType === null && 'Tipo de sangre',
+      ].filter(Boolean) as string[])
+
+  /** Solo la Fase 1 (Posición, Inglés, Modalidad, Experiencia) la edita
+      Reclutamiento con «Editar»; Transporte y Fase 3 los completa el
+      colaborador desde su app — «Editar» no puede tocarlos. */
+  const canFixMissingFromHere = missingProfileFields.every((field) =>
+    ['Posición', 'Inglés', 'Modalidad', 'Experiencia'].includes(field),
+  )
 
   const profileFields = [
     {
@@ -360,7 +389,16 @@ export function WorkerDetailPage(): ReactNode {
 
           {/* `ml-auto`: si envuelve a su propia línea, se pega a la derecha en
               vez de quedar descolgada en medio. */}
-          <div className="mt-4 ml-auto">
+          <div className="mt-4 ml-auto flex gap-2">
+            {canEditDocuments ? (
+              <Button
+                onClick={() => {
+                  setEditOpen(true)
+                }}
+              >
+                Editar
+              </Button>
+            ) : null}
             {canValidate ? (
               <Button
                 variant="primary"
@@ -609,6 +647,18 @@ export function WorkerDetailPage(): ReactNode {
         isOpen={isChangeOpen}
         onClose={() => {
           setChangeOpen(false)
+        }}
+        missingProfileFields={missingProfileFields}
+        canFixMissingFromHere={canFixMissingFromHere}
+      />
+
+      {/* Antes esto solo se podía desde el Pool: aquí, viendo justo qué falta
+          («Perfil incompleto» + la lista), es donde de verdad hace falta. */}
+      <CreateWorkerDialog
+        isOpen={isEditOpen}
+        workerId={worker.id}
+        onClose={() => {
+          setEditOpen(false)
         }}
       />
     </div>

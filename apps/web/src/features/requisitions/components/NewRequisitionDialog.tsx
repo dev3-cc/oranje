@@ -12,7 +12,7 @@ import {
   cn,
   toast,
 } from '@oranje/ui'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Controller, useFieldArray, useForm, type FieldErrors } from 'react-hook-form'
 
 import {
@@ -33,6 +33,7 @@ import personajeContratacion from '@/assets/ilustrations/personaje-contratacion.
 import personajeCronograma from '@/assets/ilustrations/personaje-cronograma.svg'
 import personajeUrgente from '@/assets/ilustrations/personaje-urgente.svg'
 import { Button } from '@/shared/components/Button'
+import { DateField } from '@/shared/components/DateField'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { StepIndicator } from '@/shared/components/StepIndicator'
@@ -41,6 +42,15 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'new-requisition'
+
+/** Nombre humano de cada campo que `CATALOG_NOT_FOUND` puede señalar — el
+    backend manda el nombre interno de la columna (`catalogPositionId`…). */
+const CATALOG_FIELD_LABEL: Record<string, MessageDescriptor> = {
+  catalogPositionId: msg`la posición`,
+  hiringModalityId: msg`la modalidad`,
+  hotelDepartmentId: msg`el departamento`,
+  englishLevelId: msg`el nivel de inglés`,
+}
 
 /** Las diapositivas del intro; el texto se traduce al pintar con `i18n._()` (D-36). */
 const INTRO_SLIDES: readonly {
@@ -112,6 +122,22 @@ function createRequisitionErrorMessage(error: unknown, i18n: I18n): string {
       FORBIDDEN: i18n._(
         msg`Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área o el Manager General del hotel.`,
       ),
+      /* El mensaje crudo del backend dice «apunta a un catalogPositionId que no
+         existe» — el nombre de columna se coló porque nadie más lo traduce. */
+      CATALOG_NOT_FOUND: (info) => {
+        const detail = info.details[0]
+        const fieldLabel =
+          detail?.field !== undefined ? CATALOG_FIELD_LABEL[detail.field] : undefined
+        const line =
+          typeof detail?.value === 'string' || typeof detail?.value === 'number'
+            ? String(detail.value)
+            : '?'
+        return fieldLabel
+          ? i18n._(
+              msg`El renglón ${line} elige un valor que ya no existe en el catálogo (${i18n._(fieldLabel)}): vuelve a elegirlo.`,
+            )
+          : i18n._(msg`El renglón ${line} apunta a un valor que ya no existe en el catálogo.`)
+      },
     },
     fallback: i18n._(
       msg`No se pudo guardar la requisición. Revisa las posiciones e inténtalo de nuevo.`,
@@ -182,6 +208,7 @@ export function NewRequisitionDialog({
   }, [step])
 
   async function goNext(): Promise<void> {
+    if (step === 2) syncDepartmentIntoPositions()
     const isStepValid = await trigger(step === 1 ? ['hotelId', 'department'] : ['positions'])
     if (isStepValid && step < 3) setStep(step + 1)
   }
@@ -189,10 +216,15 @@ export function NewRequisitionDialog({
   useEffect(() => {
     if (!isOpen) return
     setStep(1)
+    /* Las filas nacen ya con el departamento fijado por la sesión: al reabrir
+       el diálogo, `department` no cambia de valor y el efecto que lo baja a las
+       posiciones no vuelve a correr — el segundo pedido del día del Supervisor
+       llegaba al paso 2 con «Falta el departamento» sin campo que corregir. */
+    const department = sessionDepartment?.id ?? ''
     reset({
       hotelId: sessionHotel?.id ?? '',
-      department: sessionDepartment?.id ?? '',
-      positions: [emptyPositionDraft('')],
+      department,
+      positions: [emptyPositionDraft(department)],
     })
   }, [isOpen, reset, sessionHotel, sessionDepartment])
 
@@ -215,12 +247,18 @@ export function NewRequisitionDialog({
 
   /* El departamento se pregunta UNA vez (paso 1) y baja a todas las
      posiciones: preguntarlo de nuevo por fila era el mismo dato dos veces. */
-  useEffect(() => {
+  const syncDepartmentIntoPositions = useCallback((): void => {
     if (!department) return
-    getValues('positions').forEach((_position, index) => {
-      setValue(positionPath(index, 'hotelDepartmentId'), department)
+    getValues('positions').forEach((position, index) => {
+      if (position.hotelDepartmentId !== department) {
+        setValue(positionPath(index, 'hotelDepartmentId'), department)
+      }
     })
   }, [department, getValues, setValue])
+
+  useEffect(() => {
+    syncDepartmentIntoPositions()
+  }, [syncDepartmentIntoPositions])
 
   /* Las posiciones se acotan al departamento elegido (el catálogo del vault
      agrupa por departamento): Housekeeping ofrece Housekeeper, no Chef. */
@@ -253,7 +291,7 @@ export function NewRequisitionDialog({
         positions: values.positions.map((position) => ({
           catalogPositionId: position.catalogPositionId,
           hiringModalityId: position.hiringModalityId,
-          hotelDepartmentId: position.hotelDepartmentId,
+          hotelDepartmentId: values.department,
           ...(position.englishLevelId ? { englishLevelId: position.englishLevelId } : {}),
           quantity: Number(position.quantity),
           startDate: position.startDate,
@@ -727,11 +765,17 @@ export function NewRequisitionDialog({
                               {/* `[color-scheme:light]` + tinta plena: sin esto
                                   el date/time nativo sale desvaído y casi no
                                   se lee sobre el fondo crema. */}
-                              <Input
-                                type="date"
-                                {...register(positionPath(index, 'startDate'))}
-                                aria-label={t`Inicio ${ordinal}`}
-                                className="w-full min-w-0 text-ink [color-scheme:light]"
+                              <Controller
+                                control={control}
+                                name={positionPath(index, 'startDate')}
+                                render={({ field, fieldState }) => (
+                                  <DateField
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    aria-label={t`Inicio ${ordinal}`}
+                                    aria-invalid={fieldState.invalid}
+                                  />
+                                )}
                               />
                             </label>
                             <label className="flex flex-col gap-1.5">

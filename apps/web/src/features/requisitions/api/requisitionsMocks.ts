@@ -11,6 +11,8 @@ import type {
   AssignmentApi,
   CatalogItemApi,
   PaginatedEnvelope,
+  ParticipantApi,
+  ParticipationResultApi,
   RequisitionApi,
   RequisitionJournalEntryApi,
   RequisitionPositionApi,
@@ -362,6 +364,12 @@ const OCCUPANT_NAMES = [
   'Hilda Cortés',
 ]
 
+/** RR-15, modelo colaborativo: quién trabaja la requisición, aparte de sus slots. */
+const participantsByRequisition = new Map<string, ParticipantApi[]>()
+/** Mismo id que `MOCK_SESSION.user` en `sessionApi.ts` — no se exporta, se repite a propósito. */
+const MOCK_ME = { id: 'usr-ana-ruiz', fullName: 'Ana Ruiz', role: { code: 'ROL-V-01', name: 'BD' } }
+let participationSequence = 0
+
 const assignmentsByPosition = new Map<string, AssignmentApi[]>()
 {
   let occupantIndex = 0
@@ -623,6 +631,81 @@ const routes: readonly MockRoute[] = [
           requisitionState: requisition.state.code,
         },
       }
+    },
+  },
+  {
+    method: 'DELETE',
+    path: '/assignments/:assignmentId',
+    resolve: ({ params }): ApiEnvelope<AssignmentApi> => {
+      const assignmentId = params.assignmentId ?? ''
+      for (const [positionId, taken] of assignmentsByPosition) {
+        const found = taken.find((item) => item.id === assignmentId)
+        if (!found) continue
+        found.status = 'RELEASED'
+        assignmentsByPosition.set(
+          positionId,
+          taken.filter((item) => item.id !== assignmentId),
+        )
+        const position = requisitions
+          .flatMap((item) => item.positions)
+          .find((item) => item.id === positionId)
+        const requisition = requisitions.find((item) =>
+          item.positions.some((p) => p.id === positionId),
+        )
+        if (position) position.filled = Math.max(0, position.filled - 1)
+        if (requisition) requisition.filledSlots = Math.max(0, requisition.filledSlots - 1)
+        return { data: found }
+      }
+      throw new Error('ASSIGNMENT_NOT_FOUND')
+    },
+  },
+  {
+    method: 'GET',
+    path: '/requisitions/:requisitionId/participants',
+    resolve: ({ params }): ApiEnvelope<ParticipantApi[]> => ({
+      data: participantsByRequisition.get(params.requisitionId ?? '') ?? [],
+    }),
+  },
+  {
+    method: 'POST',
+    path: '/requisitions/:requisitionId/participants',
+    resolve: ({ params }): ApiEnvelope<ParticipationResultApi> => {
+      const requisitionId = params.requisitionId ?? ''
+      const requisition = requisitions.find((item) => item.id === requisitionId)
+      if (!requisition) throw new Error('REQUISITION_NOT_FOUND')
+      const current = participantsByRequisition.get(requisitionId) ?? []
+      if (current.some((item) => item.user.id === MOCK_ME.id)) {
+        throw new Error('ALREADY_PARTICIPATING')
+      }
+      participationSequence += 1
+      const created: ParticipantApi = {
+        id: `part-${String(participationSequence)}`,
+        user: MOCK_ME,
+        joinedAt: new Date().toISOString(),
+      }
+      const updated = [...current, created]
+      participantsByRequisition.set(requisitionId, updated)
+      if (requisition.state.code === 'GREEN') requisition.state.code = 'YELLOW'
+      return { data: { requisitionState: requisition.state.code, participants: updated } }
+    },
+  },
+  {
+    method: 'DELETE',
+    path: '/requisitions/:requisitionId/participants/me',
+    resolve: ({ params }): ApiEnvelope<ParticipationResultApi> => {
+      const requisitionId = params.requisitionId ?? ''
+      const requisition = requisitions.find((item) => item.id === requisitionId)
+      if (!requisition) throw new Error('REQUISITION_NOT_FOUND')
+      const current = participantsByRequisition.get(requisitionId) ?? []
+      if (!current.some((item) => item.user.id === MOCK_ME.id)) {
+        throw new Error('NOT_PARTICIPATING')
+      }
+      const updated = current.filter((item) => item.user.id !== MOCK_ME.id)
+      participantsByRequisition.set(requisitionId, updated)
+      if (updated.length === 0 && requisition.state.code === 'YELLOW') {
+        requisition.state.code = 'GREEN'
+      }
+      return { data: { requisitionState: requisition.state.code, participants: updated } }
     },
   },
   {

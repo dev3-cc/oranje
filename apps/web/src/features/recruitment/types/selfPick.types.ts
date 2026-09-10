@@ -38,6 +38,8 @@ export interface SlotRow {
   /** `null` = libre. */
   workerName: string | null
   assignmentType: string | null
+  /** `null` = libre; con ella se libera el slot (`DELETE /assignments/:id`). */
+  assignmentId: string | null
 }
 
 export interface SlotBoard {

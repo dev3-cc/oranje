@@ -7,7 +7,7 @@ import { Input } from '@oranje/ui'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
-import { Navigate, useLocation, useNavigate } from 'react-router'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 
 import { LoginCollage } from '../components/LoginCollage'
 import { loginSchema, type LoginFormValues } from '../types/login.schema'
@@ -119,8 +119,23 @@ function loginErrorMessage(error: unknown): MessageDescriptor {
 
 type AuthMode = 'login' | 'reset'
 
-export function LoginPage(): ReactNode {
+/**
+ * A quién le habla la pantalla. Es la MISMA pantalla y el mismo canje de
+ * sesión: solo cambian los textos, porque el Colaborador no tiene «hotel
+ * propio» ni «Administrador de departamento» — lo da de alta su Reclutadora
+ * y entra desde el celular. La ruta decide (`/login` · `/colaborador/login`);
+ * al entrar, `RoleHome` manda a cada quien a su inicio sin importar por cuál
+ * puerta pasó.
+ */
+export type LoginAudience = 'staff' | 'colaborador'
+
+interface LoginPageProps {
+  audience?: LoginAudience
+}
+
+export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
   const { t, i18n } = useLingui()
+  const isColaborador = audience === 'colaborador'
   const status = useAppSelector(selectSessionStatus)
   const navigate = useNavigate()
   const location = useLocation()
@@ -217,10 +232,14 @@ export function LoginPage(): ReactNode {
                 >
                   <div className="flex flex-col gap-2">
                     <h1 className="text-2xl font-bold text-ink">
-                      <Trans>Inicia sesión</Trans>
+                      {isColaborador ? <Trans>Entra a Oranje</Trans> : <Trans>Inicia sesión</Trans>}
                     </h1>
                     <p className="text-sm text-ink-3">
-                      <Trans>La operación de tu hotel, en un solo lugar.</Trans>
+                      {isColaborador ? (
+                        <Trans>Tu turno, tu ponche y tus datos, en tu celular.</Trans>
+                      ) : (
+                        <Trans>La operación de tu hotel, en un solo lugar.</Trans>
+                      )}
                     </p>
                   </div>
 
@@ -317,9 +336,41 @@ export function LoginPage(): ReactNode {
                     </motion.button>
                   </form>
 
-                  <p className="text-xs text-ink-4">
-                    <Trans>¿Sin acceso? Pídele el alta al Administrador de tu departamento.</Trans>
-                  </p>
+                  <div className="flex flex-col gap-2 text-xs text-ink-4">
+                    <p>
+                      {isColaborador ? (
+                        <Trans>
+                          ¿Sin acceso? Tu Reclutadora te da de alta y te llega un correo para crear
+                          tu contraseña.
+                        </Trans>
+                      ) : (
+                        <Trans>
+                          ¿Sin acceso? Pídele el alta al Administrador de tu departamento.
+                        </Trans>
+                      )}
+                    </p>
+                    {/* La otra puerta, a la vista: quien cae en la que no es no tiene que adivinar la URL. */}
+                    <p>
+                      {isColaborador ? (
+                        <Trans>
+                          ¿Trabajas en Oranje o en un hotel?{' '}
+                          <Link to="/login" className="font-medium text-o-700 hover:underline">
+                            Entra por aquí
+                          </Link>
+                        </Trans>
+                      ) : (
+                        <Trans>
+                          ¿Eres colaborador?{' '}
+                          <Link
+                            to="/colaborador/login"
+                            className="font-medium text-o-700 hover:underline"
+                          >
+                            Entra por aquí
+                          </Link>
+                        </Trans>
+                      )}
+                    </p>
+                  </div>
                 </motion.div>
               ) : (
                 <motion.div

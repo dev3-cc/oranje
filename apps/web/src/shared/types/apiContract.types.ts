@@ -282,6 +282,19 @@ export interface AssignmentApi {
   createdAt: string
 }
 
+/** `GET /requisitions/:id/participants` — el modelo colaborativo (RR-15). */
+export interface ParticipantApi {
+  id: string
+  user: { id: string; fullName: string; role: { code: string; name: string } }
+  joinedAt: string
+}
+
+/** `POST /requisitions/:id/participants` y `DELETE .../participants/me`. */
+export interface ParticipationResultApi {
+  requisitionState: string
+  participants: ParticipantApi[]
+}
+
 /** `personal.worker` + `vw_worker` como lo sirve la API (`GET /workers[/:id]`). */
 export interface WorkerApi {
   id: string
