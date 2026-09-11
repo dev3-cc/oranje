@@ -122,7 +122,9 @@ export function RequisitionAuthorizationPage(): ReactNode {
         </div>
 
         {selected ? (
-          <div className="flex flex-col gap-6 xl:col-span-2">
+          /* Detalle fijo mientras la cola baja (lista-detalle, como el Pool y la Cartera);
+             el tope es `xl` porque ahí es donde la cola y el detalle van lado a lado. */
+          <div className="flex flex-col gap-6 xl:col-span-2 xl:sticky xl:top-6 xl:max-h-[calc(100vh-var(--hd)-3rem)] xl:overflow-y-auto">
             <section className="rounded-lg border border-line bg-surface">
               <div className="flex flex-wrap items-start justify-between gap-3 p-6">
                 <div className="min-w-0">

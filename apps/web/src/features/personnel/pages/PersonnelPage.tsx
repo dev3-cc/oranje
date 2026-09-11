@@ -234,7 +234,8 @@ function WorkerDetail({
   const missingEntry = hasMissingEntry(row)
   const paused = NO_SHIFT_LABEL[row.stateCode]
   return (
-    <article className="overflow-hidden rounded-xl border border-line bg-surface">
+    /* Detalle fijo mientras la lista baja (lista-detalle, como la Cartera y el Pool). */
+    <article className="overflow-hidden rounded-xl border border-line bg-surface lg:sticky lg:top-6 lg:max-h-[calc(100vh-var(--hd)-3rem)] lg:overflow-y-auto">
       <div className="relative">
         <HotelPhotoBackdrop photoUrl={hotel?.photoUrl ?? null} />
         <div

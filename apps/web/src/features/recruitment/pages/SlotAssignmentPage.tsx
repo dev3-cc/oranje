@@ -305,7 +305,8 @@ export function SlotAssignmentPage(): ReactNode {
               : `Asignar al slot ${String(board.nextFreeOrdinal)}`
           }
           subtitle={IS_DEV_UI ? 'coverage.assignment' : 'Elige quién ocupa el siguiente slot libre'}
-          className="self-start"
+          /* El panel de asignar se queda a la vista mientras la lista de slots baja. */
+          className="self-start lg:sticky lg:top-6 lg:max-h-[calc(100vh-var(--hd)-3rem)] lg:overflow-y-auto"
         >
           {board.nextFreeOrdinal === null ? (
             <div className="flex flex-col items-center gap-3 text-center">
