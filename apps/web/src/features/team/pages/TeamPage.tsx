@@ -109,7 +109,8 @@ function MemberDetail({
   onAssignTerritory: (member: TeamMemberCard) => void
 }): ReactNode {
   return (
-    <article className="flex flex-col gap-6 rounded-xl border border-line bg-surface p-6">
+    /* Detalle fijo mientras la lista baja (lista-detalle, como la Cartera y el Pool). */
+    <article className="flex flex-col gap-6 rounded-xl border border-line bg-surface p-6 lg:sticky lg:top-6 lg:max-h-[calc(100vh-var(--hd)-3rem)] lg:overflow-y-auto">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           {member.photoUrl ? (

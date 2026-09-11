@@ -142,7 +142,12 @@ export function ProposalListPage(): ReactNode {
             })}
           </ul>
 
-          {selected && <ProposalEditorPage prospectId={selected.prospectId} embedded />}
+          {selected && (
+            /* Detalle fijo mientras la lista baja (lista-detalle, como el Pool y la Cartera). */
+            <div className="lg:sticky lg:top-6 lg:max-h-[calc(100vh-var(--hd)-3rem)] lg:overflow-y-auto">
+              <ProposalEditorPage prospectId={selected.prospectId} embedded />
+            </div>
+          )}
         </div>
       )}
     </div>

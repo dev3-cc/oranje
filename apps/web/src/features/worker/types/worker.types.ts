@@ -23,8 +23,20 @@ export interface TaxDeadlineApi {
   taxRetentionApplies: boolean
 }
 
+/**
+ * Migración de correo: si entré con la cuenta vieja (transición, D-XX),
+ * `legacyAccess` trae a cuál correo corporativo cambiar antes de que venza.
+ * `null` es el caso normal — la inmensa mayoría no tiene esta fila.
+ */
+export interface LegacyAccessApi {
+  corporateEmail: string
+}
+
 /** `GET /workers/me`: mi expediente completo (misma entidad que /workers/:id) + el plazo. */
-export type MyProfile = WorkerApi & { taxDeadline: TaxDeadlineApi }
+export type MyProfile = WorkerApi & {
+  taxDeadline: TaxDeadlineApi
+  legacyAccess: LegacyAccessApi | null
+}
 
 /**
  * `PATCH /workers/me/signup` — Fases 2 y 3 (cambio del 2026-08-22): de la

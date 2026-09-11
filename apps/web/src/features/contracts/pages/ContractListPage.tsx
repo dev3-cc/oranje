@@ -108,18 +108,21 @@ export function ContractListPage(): ReactNode {
               onSelect={setSelectedId}
             />
             {selected && (
-              <ContractDetailPage
-                contractId={selected.id}
-                embedded
-                activeContractNumber={
-                  list.items.find(
-                    (row) =>
-                      row.hotelName === selected.hotelName &&
-                      row.status === 'ACTIVE' &&
-                      row.id !== selected.id,
-                  )?.number ?? null
-                }
-              />
+              /* Detalle fijo mientras la lista baja (lista-detalle, como el Pool y la Cartera). */
+              <div className="lg:sticky lg:top-6 lg:max-h-[calc(100vh-var(--hd)-3rem)] lg:overflow-y-auto">
+                <ContractDetailPage
+                  contractId={selected.id}
+                  embedded
+                  activeContractNumber={
+                    list.items.find(
+                      (row) =>
+                        row.hotelName === selected.hotelName &&
+                        row.status === 'ACTIVE' &&
+                        row.id !== selected.id,
+                    )?.number ?? null
+                  }
+                />
+              </div>
             )}
           </div>
         )

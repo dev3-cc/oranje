@@ -16,6 +16,9 @@ export function DashboardPage(): ReactNode {
   }
 
   if (session?.roleId === 'ROL-ADM-01') return <Navigate to="/usuarios" replace />
+  /* Inspección no tiene dashboard propio: su único módulo hoy es Accidentes.
+     Caer en el de Ventas era ver puros 403. */
+  if (session?.roleId.startsWith('ROL-I-')) return <Navigate to="/accidentes" replace />
   if (session?.roleId.startsWith('ROL-R-')) return <RecruitmentDashboard session={session} />
   if (session?.roleId.startsWith('ROL-H-')) return <HotelDashboard session={session} />
   return <SalesDashboard />

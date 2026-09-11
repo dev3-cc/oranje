@@ -3874,6 +3874,11 @@ msgstr "Your access is suspended"
 msgid "Tu actividad"
 msgstr "Your activity"
 
+#. placeholder {0}: profile.legacyAccess.corporateEmail
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Tu correo para entrar cambia a <0>{0}</0>: úsalo la próxima vez."
+msgstr ""
+
 #: src/features/worker/components/TaxDocumentUploader.tsx
 msgid "Tu cuenta aún no tiene permiso para subir archivos: Oranje lo está habilitando."
 msgstr "Your account can't upload files yet: Oranje is enabling it."
