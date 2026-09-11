@@ -41,9 +41,11 @@ export interface DeductionRow {
 export class ConsolidationsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  // Mientras dure la migracion de correo, la cuenta vieja tambien resuelve al
+  // mismo colaborador (Worker.legacyUserId, D-XX).
   async workerOfUser(userId: string): Promise<string | null> {
     const row = await this.prisma.worker.findFirst({
-      where: { userId, deletedAt: null },
+      where: { OR: [{ userId }, { legacyUserId: userId }], deletedAt: null },
       select: { id: true },
     })
 

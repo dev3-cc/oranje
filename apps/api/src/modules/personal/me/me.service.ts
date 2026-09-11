@@ -28,12 +28,24 @@ export class MeService {
 
   // La ficha trae el plazo: el aviso interceptor del dia 4 lo pinta el front
   // con esto, sin una llamada aparte.
-  async get(user: AuthenticatedUser): Promise<WorkerEntity & { taxDeadline: TaxDeadline }> {
+  async get(
+    user: AuthenticatedUser,
+  ): Promise<
+    WorkerEntity & { taxDeadline: TaxDeadline; legacyAccess: { corporateEmail: string } | null }
+  > {
     const worker = await this.worker(user)
+    // Entró con la cuenta de transición (D-XX): avisa cuál es la buena antes
+    // de que `deprecates_at` la corte — no todos los que ponchan tienen esta
+    // fila, así que null es el caso normal.
+    const legacyAccess =
+      worker.legacyUserId === user.id && worker.account
+        ? { corporateEmail: worker.account.email }
+        : null
 
     return {
       ...(await this.workers.get(worker.id)),
       taxDeadline: await this.deadline.of(worker.id, worker.createdAt),
+      legacyAccess,
     }
   }
 
@@ -89,10 +101,20 @@ export class MeService {
     return (await this.worker(user)).id
   }
 
-  private async worker(user: AuthenticatedUser): Promise<{ id: string; createdAt: Date }> {
+  private async worker(user: AuthenticatedUser): Promise<{
+    id: string
+    createdAt: Date
+    legacyUserId: string | null
+    account: { email: string } | null
+  }> {
     const row = await this.prisma.worker.findFirst({
-      where: { userId: user.id, deletedAt: null },
-      select: { id: true, createdAt: true },
+      where: { OR: [{ userId: user.id }, { legacyUserId: user.id }], deletedAt: null },
+      select: {
+        id: true,
+        createdAt: true,
+        legacyUserId: true,
+        account: { select: { email: true } },
+      },
     })
 
     if (!row) {

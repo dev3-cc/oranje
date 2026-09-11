@@ -90,9 +90,11 @@ export class TimesheetsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   // La cuenta de un colaborador puede no existir: en Fase 1 todavia no la tiene.
+  // Mientras dure la migracion de correo, la cuenta vieja tambien resuelve
+  // (Worker.legacyUserId, D-XX).
   async workerOfUser(userId: string): Promise<string | null> {
     const row = await this.prisma.worker.findFirst({
-      where: { userId, deletedAt: null },
+      where: { OR: [{ userId }, { legacyUserId: userId }], deletedAt: null },
       select: { id: true },
     })
 

@@ -263,6 +263,10 @@ model User {
   isActive Boolean @default(true) @map("is_active")
   /// Idioma de la interfaz (D-36): es | en. CHECK ck_user_locale en la migracion.
   locale String @default("es") @db.Text
+  /// Cuenta de transición (correo viejo, mismo colaborador que `legacyAccount`
+  /// en Worker): a partir de esta fecha ya no puede iniciar sesión. Null =
+  /// cuenta normal, sin vencimiento.
+  deprecatesAt DateTime? @map("deprecates_at") @db.Timestamptz(6)
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
@@ -290,6 +294,7 @@ model User {
   journalEntries          JournalEntry[]
 
   worker             Worker?              @relation("workerAccount")
+  workerLegacyOf     Worker?              @relation("workerLegacyAccount")
   workersCreated     Worker[]             @relation("workerCreatedBy")
   documentsVerified  WorkerDocument[]
   workerStateChanges WorkerStateHistory[]
@@ -941,6 +946,10 @@ model Worker {
   /// La cuenta con la que entra a la app. Nulable: la Fase 1 puede capturarse
   /// antes de que exista la cuenta de Firebase.
   userId String? @unique(map: "ux_worker_user") @map("user_id") @db.Uuid
+  /// Migración del correo viejo (ej. el de otro sistema, antes de tener el
+  /// corporativo): mientras exista y no haya vencido (`User.deprecatesAt`),
+  /// también puede iniciar sesión con esta cuenta y llegar al mismo perfil.
+  legacyUserId String? @unique(map: "ux_worker_legacy_user") @map("legacy_user_id") @db.Uuid
 
   // --- Fase 1: la captura la Reclutadora en la entrevista ---
   fullName  String   @map("full_name") @db.Text
@@ -1001,6 +1010,7 @@ model Worker {
   createdBy String    @map("created_by") @db.Uuid
 
   account         User?            @relation("workerAccount", fields: [userId], references: [id], onDelete: Restrict)
+  legacyAccount   User?            @relation("workerLegacyAccount", fields: [legacyUserId], references: [id], onDelete: Restrict)
   createdByUser   User             @relation("workerCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
   zone            Zone             @relation(fields: [zoneId], references: [id], onDelete: Restrict)
   catalogPosition CatalogPosition? @relation(fields: [catalogPositionId], references: [id], onDelete: Restrict)

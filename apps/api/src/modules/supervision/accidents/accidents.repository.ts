@@ -61,9 +61,11 @@ export class AccidentsRepository {
     })
   }
 
+  // Mientras dure la migracion de correo, la cuenta vieja tambien resuelve al
+  // mismo colaborador (Worker.legacyUserId, D-XX).
   async workerOfUser(userId: string): Promise<{ id: string; statusLightStateId: string } | null> {
     return this.prisma.worker.findFirst({
-      where: { userId, deletedAt: null },
+      where: { OR: [{ userId }, { legacyUserId: userId }], deletedAt: null },
       select: { id: true, statusLightStateId: true },
     })
   }
