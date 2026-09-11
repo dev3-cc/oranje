@@ -47,6 +47,8 @@ const profile: MyProfile = {
     /** D-27: sin cifrado conectado, la retención aplica a todos. */
     taxRetentionApplies: true,
   },
+  /** El caso normal: entró con su única cuenta, no una de transición. */
+  legacyAccess: null,
 }
 
 /** Mi semáforo, del más reciente al más viejo: nacer en BLANCO no tiene `fromState`. */

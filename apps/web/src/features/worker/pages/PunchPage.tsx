@@ -479,6 +479,17 @@ export function PunchPage(): ReactNode {
         )}
       </section>
 
+      {/* Cuenta de transición (D-XX): entró con el correo viejo, y ese acceso
+          vence — el aviso vive aquí porque es la pantalla que abre cada día. */}
+      {profile?.legacyAccess && (
+        <p role="status" className="rounded-md bg-yellow/20 p-3 text-sm text-ink">
+          <Trans>
+            Tu correo para entrar cambia a <strong>{profile.legacyAccess.corporateEmail}</strong>:
+            úsalo la próxima vez.
+          </Trans>
+        </p>
+      )}
+
       {!isOnline && (
         <p role="alert" className="rounded-md bg-yellow/20 p-3 text-sm text-ink">
           <Trans>
