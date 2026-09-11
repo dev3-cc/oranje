@@ -283,6 +283,24 @@ export function ProspectFormDialog({
     const isStepValid = await trigger(STEP_FIELDS[step])
     if (isStepValid && step < 4) setStep((step + 1) as WizardStep)
   }
+
+  /* «Crear prospecto» se arma 350 ms después de llegar al último paso: un
+     doble clic en «Continuar» del paso 3 caía sobre el botón de guardar, que
+     ocupa el mismo lugar, y el prospecto se creaba y el diálogo se cerraba
+     sin que nadie lo pidiera. Un modal nunca se cierra solo. */
+  const [isSubmitArmed, setIsSubmitArmed] = useState(false)
+  useEffect(() => {
+    if (step !== 4) {
+      setIsSubmitArmed(false)
+      return
+    }
+    const timer = window.setTimeout(() => {
+      setIsSubmitArmed(true)
+    }, 350)
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [step])
   const isExistingHotel = values.hotelSource === 'EXISTING'
 
   function applyPlace(place: PlaceAutofill): void {
@@ -389,6 +407,10 @@ export function ProspectFormDialog({
             if (step < 4) {
               event.preventDefault()
               void goNext()
+              return
+            }
+            if (!isSubmitArmed) {
+              event.preventDefault()
               return
             }
             void handleSubmit(onSubmit)(event)
@@ -528,11 +550,30 @@ export function ProspectFormDialog({
                           </Field>
                         )}
 
+                        {/* El buscador va ANTES del nombre y en el mismo paso: si el
+                            hotel está en Google, nombre, dirección, teléfono, pin y foto
+                            llegan de un solo golpe y el nombre solo se corrige; pedirlo
+                            a mano aquí y buscarlo en el paso siguiente era escribir el
+                            mismo hotel dos veces. */}
+                        {!isExistingHotel && (
+                          <Field
+                            label="Busca el hotel en Google"
+                            note="Si aparece, el nombre, la dirección, el teléfono, el pin del mapa y la foto llegan solos. Si no está en Google, escribe el nombre abajo y en el siguiente paso marcas el punto en el mapa."
+                            column="place_id · photo_ref"
+                          >
+                            <PlacesSearchField defaultValue={values.address} onPick={applyPlace} />
+                          </Field>
+                        )}
                         <Field
                           label="Nombre del hotel"
                           htmlFor="hotelName"
                           isRequired
                           column="name"
+                          {...(isExistingHotel
+                            ? {}
+                            : {
+                                note: 'Como lo conoce el hotel. Si lo llenó Google, puedes corregirlo.',
+                              })}
                           error={formState.errors.hotelName?.message}
                         >
                           <Input
@@ -650,16 +691,19 @@ export function ProspectFormDialog({
                     {step === 2 && (
                       <>
                         <SectionTitle>Ubicación</SectionTitle>
-
-                        {}
-                        <Field
-                          label="Buscar en Google (opcional)"
-                          note="si el hotel aparece, pin, dirección y foto llegan solos; si no existe en Google, arrastra el mapa hasta la entrada"
-                          column="latitude + longitude"
-                          error={formState.errors.location?.message}
-                        >
-                          <PlacesSearchField defaultValue={values.address} onPick={applyPlace} />
-                        </Field>
+                        {/* Aquí ya no se busca nada: el hotel quedó elegido en el paso 1.
+                            Solo se acomodan el pin y la geocerca, y se dice con todas sus
+                            letras para que mover el mapa no se sienta como cambiar de hotel. */}
+                        <p className="-mt-2 text-sm leading-relaxed text-ink-3">
+                          {values.hotelName
+                            ? `Sigue siendo ${values.hotelName}. Arrastra el mapa para dejar el pin en la entrada por donde llegan los colaboradores: mover el pin no cambia el hotel, solo dónde se poncha.`
+                            : 'Arrastra el mapa para dejar el pin en la entrada por donde llegan los colaboradores.'}
+                        </p>
+                        {formState.errors.location?.message && (
+                          <p className="text-sm text-red" role="alert">
+                            {formState.errors.location.message}
+                          </p>
+                        )}
 
                         <Field
                           label="Radio de geocerca"
@@ -899,7 +943,7 @@ export function ProspectFormDialog({
                     variant="primary"
                     type="submit"
                     form={FORM_ID}
-                    disabled={!formState.isValid || isBusy}
+                    disabled={!formState.isValid || isBusy || !isSubmitArmed}
                   >
                     {isBusy ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear prospecto'}
                   </Button>

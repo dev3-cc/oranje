@@ -643,6 +643,7 @@ export function WorkerDetailPage(): ReactNode {
 
       <ChangeStateDialog
         workerId={worker.id}
+        currentStatus={status}
         currentLabel={statusLabel}
         isOpen={isChangeOpen}
         onClose={() => {

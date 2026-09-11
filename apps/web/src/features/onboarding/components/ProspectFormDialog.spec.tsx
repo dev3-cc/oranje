@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { describe, expect, it, vi } from 'vitest'
@@ -96,9 +96,10 @@ describe('ProspectFormDialog', () => {
     // Radix Select no es un <select>: el valor se lee del trigger.
     expect(screen.getByLabelText('Zona horaria')).toHaveTextContent('America/Cancun')
 
-    // Paso 2: la ubicación, con el buscador y la geocerca.
+    // Paso 2: la ubicación, solo pin y geocerca (el buscador de Google vive en el paso 1).
     await user.click(screen.getByRole('button', { name: 'Continuar' }))
     expect(await screen.findByRole('slider')).toHaveAttribute('aria-valuenow', '150')
+    expect(screen.queryByLabelText('Buscar la ubicación del hotel')).not.toBeInTheDocument()
 
     // Paso 3: el contacto principal, prellenado.
     await user.click(screen.getByRole('button', { name: 'Continuar' }))
@@ -108,7 +109,13 @@ describe('ProspectFormDialog', () => {
     // Paso 4: el ciclo, con el botón de guardar al final.
     await user.click(screen.getByRole('button', { name: 'Continuar' }))
     expect(await screen.findByLabelText('Qué necesita')).toHaveValue('2 camaristas y 1 houseman')
-    expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeInTheDocument()
+    // El botón de guardar llega apagado y se arma 350 ms después: un doble
+    // clic en «Continuar» no puede guardar ni cerrar el diálogo.
+    const save = screen.getByRole('button', { name: 'Guardar cambios' })
+    expect(save).toBeDisabled()
+    await waitFor(() => {
+      expect(save).toBeEnabled()
+    })
 
     // Atrás regresa sin perder lo escrito.
     await user.click(screen.getByRole('button', { name: 'Atrás' }))

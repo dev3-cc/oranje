@@ -27,6 +27,24 @@ import {
 } from '@/shared/constants/onboardingStatus'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
+/**
+ * Quién mueve el semáforo desde cada estado, según la tabla del Semáforo
+ * Onboarding del vault: los primeros pasos son del BD; Rosa la comparten; Café,
+ * Naranja y Negro son del BDC. Se muestra cuando el rol de quien mira no tiene
+ * ningún paso disponible, para que sepa a quién le toca.
+ */
+const STATUS_MOVER: Record<OnboardingStatus, string> = {
+  GRAY: 'lo mueve el BD (Business Developer).',
+  LIGHT_BLUE: 'lo mueve el BD (Business Developer).',
+  GREEN: 'lo mueve el BD; el BDC solo puede mandarlo a Café si la negociación se estanca.',
+  YELLOW: 'lo mueve el BD (Business Developer).',
+  PINK: 'la conversión a Naranja la aprueba el BDC desde Conversión.',
+  ORANGE: 'pausarlo o reactivarlo es del BDC.',
+  RED: 'reactivarlo es del BD (Business Developer).',
+  BROWN: 'desbloquearlo es del BDC.',
+  BLACK: 'reactivarlo es del BDC.',
+}
+
 export interface ChangeStatusDialogProps {
   isOpen: boolean
   onClose: () => void
@@ -170,8 +188,11 @@ export function ChangeStatusDialog({
       )}
 
       {!areTransitionsLoading && allowed?.transitions.length === 0 && (
+        /* Quién sigue, con nombre: «tu rol no puede» dejaba al BDC sin saber
+           que los primeros estados los mueve el BD (Semáforo Onboarding). */
         <p className="rounded-md bg-surface-2 p-4 text-sm text-ink-2">
-          Desde este estado tu rol no puede mover el prospecto a otro.
+          Desde {ONBOARDING_STATUS_LABEL[currentStatus]} tu rol no mueve el prospecto:{' '}
+          {STATUS_MOVER[currentStatus]}
         </p>
       )}
 

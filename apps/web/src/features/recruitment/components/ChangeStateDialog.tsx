@@ -13,8 +13,34 @@ import {
 } from '@/shared/constants/workerStatus'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 
+/**
+ * Quién mueve el Semáforo del Colaborador desde cada estado, según las
+ * transiciones sembradas (`seed.ts`) y la nota del vault. Se muestra cuando el
+ * rol de quien mira no tiene ningún cambio disponible: «tu rol no puede» a
+ * secas dejaba a la persona sin saber a quién le toca.
+ */
+const STATE_MOVER: Record<WorkerStatus, string> = {
+  WHITE: 'lo valida la Reclutadora cuando el expediente está completo.',
+  APPLE_GREEN: 'lo avanza el sistema con los ponches (el Inspector verifica su llegada).',
+  LIGHT_BLUE: 'lo avanza el sistema con los ponches; al completar la semana queda Fijo.',
+  ORANGE:
+    'el sistema lo libera al terminar la asignación; el hotel puede mandarlo a Stand-by y el propio colaborador ponerse Disponible voluntario.',
+  STRONG_GREEN:
+    'la Reclutadora o su Líder de Grupo lo asignan; el propio colaborador puede ponerse Disponible voluntario.',
+  YELLOW: 'la Reclutadora o su Líder de Grupo lo asignan temporalmente.',
+  BROWN:
+    'vuelve solo al vencer los días asignados; la Reclutadora o su Líder de Grupo pueden cancelarlo.',
+  PINK: 'lo regresa el hotel (Supervisor, Manager de Área o Manager General); el propio colaborador puede ponerse Disponible voluntario.',
+  PURPLE:
+    'vuelve solo cuando el colaborador poncha de nuevo; a la tercera falta el sistema lo manda a Blacklist.',
+  RED: 'lo resuelve el Inspector: a Disponible o a Blacklist.',
+  GRAY: 'lo cierra el Inspector con el alta médica.',
+  BLACK: 'solo el Administrador levanta un veto, desde Blacklist.',
+}
+
 export function ChangeStateDialog({
   workerId,
+  currentStatus,
   currentLabel,
   isOpen,
   onClose,
@@ -22,6 +48,7 @@ export function ChangeStateDialog({
   canFixMissingFromHere = false,
 }: {
   workerId: string
+  currentStatus: WorkerStatus
   currentLabel: string
   isOpen: boolean
   onClose: () => void
@@ -103,8 +130,7 @@ export function ChangeStateDialog({
 
         {!isLoading && transitions.length === 0 && (
           <p className="rounded-md bg-surface-2 px-4 py-3 text-sm text-ink-2">
-            Desde este estado tu rol no puede hacer ningún cambio: los siguientes los hace el
-            sistema, el Hotel o el Inspector.
+            Desde {currentLabel} tu rol no mueve al colaborador: {STATE_MOVER[currentStatus]}
           </p>
         )}
 
