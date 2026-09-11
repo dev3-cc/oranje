@@ -403,6 +403,16 @@ export function ProspectFormDialog({
         <form
           id={FORM_ID}
           noValidate
+          /* Enter en un campo nunca guarda: el prospecto se crea SOLO con el
+             botón. En «Qué necesita» la gente pulsa Enter esperando otra línea
+             y el navegador lo tomaba como «enviar»; en los pasos 1–3 avanza. */
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter') return
+            const target = event.target as HTMLElement
+            if (target.tagName === 'TEXTAREA' || target.tagName === 'BUTTON') return
+            event.preventDefault()
+            if (step < 4) void goNext()
+          }}
           onSubmit={(event) => {
             if (step < 4) {
               event.preventDefault()

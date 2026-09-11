@@ -40,14 +40,20 @@ const SUPERVISOR = 'ROL-H-01'
 const MGR_AREA = 'ROL-H-02'
 const MGR_GENERAL = 'ROL-H-03'
 const ADMIN = 'ROL-ADM-01'
+const INSPECTOR = 'ROL-I-01'
+const COORDINADOR_INSPECCION = 'ROL-I-02'
 
 const VENTAS = [BD, BDC] as const
 const RECLUTAMIENTO = [RECLUTADORA, LIDER_GRUPO, MGR_RECLUTAMIENTO] as const
 const HOTEL = [SUPERVISOR, MGR_AREA, MGR_GENERAL] as const
+/* Inspección no tiene arquitectura ni permisos más allá del accidente
+   (`accident:read|medical_follow_up|close` del Inspector): sin mapa veía
+   los 20 módulos y todos le respondían 403 menos Accidentes. */
+const INSPECCION = [INSPECTOR, COORDINADOR_INSPECCION] as const
 
 const STAFF = [...VENTAS, ...RECLUTAMIENTO, ...HOTEL] as const
 
-const MAPPED_ROLES: ReadonlySet<string> = new Set([...STAFF, ADMIN])
+const MAPPED_ROLES: ReadonlySet<string> = new Set([...STAFF, ...INSPECCION, ADMIN])
 
 const MODULES: NavModule[] = [
   { label: msg`Dashboard`, to: '/dashboard', icon: 'space_dashboard', roles: STAFF },
@@ -90,7 +96,7 @@ const MODULES: NavModule[] = [
     roles: [MGR_GENERAL],
   },
   { label: msg`Mi Personal`, to: '/mi-personal', icon: 'badge', roles: HOTEL },
-  { label: msg`Accidentes`, to: '/accidentes', icon: 'report', roles: HOTEL },
+  { label: msg`Accidentes`, to: '/accidentes', icon: 'report', roles: [...HOTEL, ...INSPECCION] },
   { label: msg`Auditorías`, to: '/auditorias', icon: 'fact_check', roles: HOTEL },
 ]
 
