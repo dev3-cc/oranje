@@ -74,6 +74,9 @@ function hoursOf(marks: Partial<Record<PunchType, string>>): string {
 }
 
 /** El reloj vivo de la pantalla: la hora que se ve es la que se va a ponchar. */
+/** Minutos mínimos entre una marca y la siguiente (Reglas de Negocio, «Mecanismo de ponchado»). */
+const MIN_GAP_MINUTES = 15
+
 function useNow(): Date {
   const [now, setNow] = useState(() => new Date())
   useEffect(() => {
@@ -244,6 +247,7 @@ function punchErrorMessage(error: unknown, i18n: I18n): string {
         msg`Ese código no es el QR vigente del hotel: busca la hoja actual, o pídele al Supervisor un ponche manual.`,
       ),
       PUNCH_ALREADY_REGISTERED: i18n._(msg`Esa marca ya quedó registrada hoy.`),
+      PUNCH_TOO_SOON: i18n._(msg`Aún no puedes registrar la siguiente marca.`),
       TIMESHEET_NOT_EDITABLE: i18n._(
         msg`La semana ya se cerró: esta marca la captura el Supervisor.`,
       ),
@@ -348,7 +352,20 @@ export function PunchPage(): ReactNode {
   const needsPhoto = next !== null && NEEDS_PHOTO.has(next) && !usesQr
   const needsQr = next !== null && NEEDS_PHOTO.has(next) && usesQr
   const isBusy = phase !== 'idle' || isUploading || isPunching
-  const canPunch = next !== null && isOnline && !isBusy
+  /* Entre una marca y la siguiente pasan al menos 15 minutos (Reglas de
+     Negocio, «Mecanismo de ponchado»): el botón espera en silencio — a
+     propósito no se dice desde qué hora, la espera no es un cronómetro para
+     el colaborador (decisión de Hugo) — en vez de dejar que el API rechace
+     después de la foto. */
+  const lastMarkAt = Object.values(marks).reduce<Date | null>((latest, iso) => {
+    const at = new Date(iso)
+    return latest === null || at > latest ? at : latest
+  }, null)
+  const nextAllowedAt =
+    lastMarkAt === null ? null : new Date(lastMarkAt.getTime() + MIN_GAP_MINUTES * 60_000)
+  const isTooSoon =
+    nextAllowedAt !== null && next !== null && now.getTime() < nextAllowedAt.getTime()
+  const canPunch = next !== null && isOnline && !isBusy && !isTooSoon
   /** Entrar y volver del lunch «entran»; salir al lunch y salir «salen». */
   const isEntering = next === 'CLOCK_IN' || next === 'LUNCH_IN'
 

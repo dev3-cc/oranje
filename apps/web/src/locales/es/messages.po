@@ -567,6 +567,10 @@ msgstr "Aún no hay QR generado."
 msgid "Aún no hay requisiciones"
 msgstr "Aún no hay requisiciones"
 
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Aún no puedes registrar la siguiente marca."
+msgstr "Aún no puedes registrar la siguiente marca."
+
 #: src/features/worker/lib/noShiftMessage.ts
 msgid "Aún no te validan"
 msgstr "Aún no te validan"
