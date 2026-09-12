@@ -169,8 +169,14 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
        * trabajo); otra persona arranca en el Dashboard — heredar la ruta del
        * usuario anterior era aterrizar en un 403 ajeno.
        */
+      const from = (location.state as { from?: string } | null)?.from
       const last = readLastRoute()
-      void navigate(last !== null && last.userId === user.id ? last.path : '/', { replace: true })
+      /* A dónde venía gana sobre dónde se quedó: quien abre una liga (el QR
+         del acceso, un enlace compartido) espera llegar ahí, no a su última
+         pantalla. Sin liga, la MISMA persona reanuda donde estaba. */
+      void navigate(from ?? (last !== null && last.userId === user.id ? last.path : '/'), {
+        replace: true,
+      })
     } catch (error) {
       setSubmitError(i18n._(loginErrorMessage(error)))
     }
