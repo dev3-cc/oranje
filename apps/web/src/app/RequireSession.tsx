@@ -35,7 +35,9 @@ export function RequireSession(): ReactNode {
     /** `from` permite volver a donde se iba después del login. */
     /* Quien venía a `/colaborador` vuelve por su propia puerta, con sus textos. */
     const login = location.pathname.startsWith('/colaborador') ? '/colaborador/login' : '/login'
-    return <Navigate to={login} replace state={{ from: location.pathname }} />
+    /* Con la búsqueda: la liga del QR del acceso trae el código en `?qr=` y
+       tiene que sobrevivir al login. */
+    return <Navigate to={login} replace state={{ from: location.pathname + location.search }} />
   }
 
   /** `unknown` o `authenticating`: la naranja girando mientras el refresh decide. */
