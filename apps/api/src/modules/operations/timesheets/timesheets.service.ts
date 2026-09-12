@@ -27,6 +27,8 @@ const APPROVED = 'APPROVED'
 
 const CLOCK_IN = 'CLOCK_IN'
 const CLOCK_OUT = 'CLOCK_OUT'
+/** Entre una marca y la siguiente pasan al menos 15 minutos (Reglas de Negocio, «Mecanismo de ponchado»). */
+const MIN_GAP_MINUTES = 15
 
 const GENERAL_MANAGER = 'ROL-H-03'
 
@@ -100,6 +102,7 @@ export class TimesheetsService {
     const { dayId, status, ensure } = await this.openDay(assignment, now)
 
     this.assertEditable(status)
+    await this.assertMinGap(dayId, now)
 
     if (dayId !== null && (await this.repo.punchExists(dayId, dto.type))) {
       throw new ConflictException({
@@ -456,6 +459,29 @@ export class TimesheetsService {
     }
 
     return assignment.punchQrVersion
+  }
+
+  /**
+   * Entre una marca y la siguiente pasan al menos 15 minutos: sin esto la
+   * Entrada, el lunch y su regreso se podían ponchar en el mismo minuto y el
+   * día quedaba «completo» sin haber trabajado. La primera marca del día no
+   * tiene con qué medirse. A propósito NO se dice desde qué hora: la espera
+   * no es un cronómetro para el colaborador (decisión de Hugo, 2026-09-12).
+   */
+  private async assertMinGap(dayId: string | null, now: Date): Promise<void> {
+    if (dayId === null) return
+    const marks = await this.repo.punches(dayId)
+    const last = marks.reduce<Date | null>(
+      (latest, mark) => (latest === null || mark.serverAt > latest ? mark.serverAt : latest),
+      null,
+    )
+    if (last === null) return
+    if (now.getTime() < last.getTime() + MIN_GAP_MINUTES * 60_000) {
+      throw new UnprocessableEntityException({
+        code: 'PUNCH_TOO_SOON',
+        message: 'Aún no puedes registrar la siguiente marca',
+      })
+    }
   }
 
   private async assertOwnAssignment(

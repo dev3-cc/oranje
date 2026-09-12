@@ -43,7 +43,15 @@ interface Turno {
 }
 
 // Un colaborador con su hotel, su requisición, su asignación y su turno de hoy.
-async function turnoDeHoy(etiqueta: string, photoRef: string | null = null): Promise<Turno> {
+/* Las horas del turno son del hotel (America/Cancun), como las guarda el
+   Schedule: sin el AT TIME ZONE el rango quedaba en UTC. Arranca a las 00:00
+   para que el turno de hoy exista corra CI a la hora que corra. */
+async function turnoDeHoy(
+  etiqueta: string,
+  photoRef: string | null = null,
+  startTime = '00:00',
+  endTime = '15:00',
+): Promise<Turno> {
   const role = await db.role.findFirstOrThrow({ where: { code: 'ROL-C-01' } })
   const user = await db.user.create({
     data: { id: uuidv7(), email: `${etiqueta}@oranje.local`, fullName: etiqueta, roleId: role.id },
@@ -178,7 +186,8 @@ async function turnoDeHoy(etiqueta: string, photoRef: string | null = null): Pro
     INSERT INTO operations.schedule_entry (id, schedule_id, assignment_id, worker_id, work_date, shift_range)
     VALUES (${uuidv7()}::uuid, ${schedule.id}::uuid, ${assignment.id}::uuid, ${worker.id}::uuid,
             ${workDate}::date,
-            tstzrange(${workDate}::date + time '07:00', ${workDate}::date + time '15:00'))`
+            tstzrange((${workDate}::date + ${startTime}::time) AT TIME ZONE 'America/Cancun',
+                      (${workDate}::date + ${endTime}::time) AT TIME ZONE 'America/Cancun'))`
 
   return {
     user: { id: user.id, roleCode: 'ROL-C-01' } as AuthenticatedUser,
@@ -279,6 +288,19 @@ describe('ponchar sin conocer la asignación', () => {
     })
     expect(mark.qrVersion).toBe(3)
     expect(mark.photoPath).toBeNull()
+  })
+
+  it('entre una marca y la siguiente pasan al menos 15 minutos', async () => {
+    const t = await turnoDeHoy(`punch-seguido-${Date.now()}`)
+    const marca = { latitude: 21.16, longitude: -86.85, photoPath: 'operations/punch/x.webp' }
+
+    await timesheets.punch({ type: 'CLOCK_IN', ...marca } as never, t.user)
+
+    // Salir a lunch en el mismo minuto de la Entrada: el día quedaría
+    // «trabajado» sin trabajo. Se rechaza y dice desde qué hora.
+    await expect(
+      timesheets.punch({ type: 'LUNCH_OUT', ...marca } as never, t.user),
+    ).rejects.toMatchObject({ response: { code: 'PUNCH_TOO_SOON' } })
   })
 
   it('sin turno hoy responde NO_SHIFT_TODAY', async () => {
