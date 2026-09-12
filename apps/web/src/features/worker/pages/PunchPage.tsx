@@ -5,6 +5,7 @@ import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import { MaterialIcon } from '@oranje/ui'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router'
 
 import {
   NEEDS_PHOTO,
@@ -44,6 +45,7 @@ import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage, readApiError } from '@/shared/lib/apiError'
 import { formatTimeIn } from '@/shared/lib/formatters'
 import { tapFeedback } from '@/shared/lib/motion'
+import { PUNCH_QR_PARAM, readPunchQrCode } from '@/shared/lib/punchQrLink'
 
 function timeOf(iso: string): string {
   return new Date(iso).toLocaleTimeString(localeTag(), { hour: '2-digit', minute: '2-digit' })
@@ -74,6 +76,9 @@ function hoursOf(marks: Partial<Record<PunchType, string>>): string {
 }
 
 /** El reloj vivo de la pantalla: la hora que se ve es la que se va a ponchar. */
+/** Minutos mínimos entre una marca y la siguiente (Reglas de Negocio, «Mecanismo de ponchado»). */
+const MIN_GAP_MINUTES = 15
+
 function useNow(): Date {
   const [now, setNow] = useState(() => new Date())
   useEffect(() => {
@@ -244,6 +249,7 @@ function punchErrorMessage(error: unknown, i18n: I18n): string {
         msg`Ese código no es el QR vigente del hotel: busca la hoja actual, o pídele al Supervisor un ponche manual.`,
       ),
       PUNCH_ALREADY_REGISTERED: i18n._(msg`Esa marca ya quedó registrada hoy.`),
+      PUNCH_TOO_SOON: i18n._(msg`Aún no puedes registrar la siguiente marca.`),
       TIMESHEET_NOT_EDITABLE: i18n._(
         msg`La semana ya se cerró: esta marca la captura el Supervisor.`,
       ),
@@ -286,6 +292,12 @@ export function PunchPage(): ReactNode {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [isCameraOpen, setCameraOpen] = useState(false)
   const [isScannerOpen, setScannerOpen] = useState(false)
+  /* El QR del acceso escaneado con la cámara del teléfono abre esta pantalla
+     con el código en la liga: se usa al tocar Ponchar sin abrir el lector.
+     Si el servidor lo rechaza (hoja vieja), se suelta y el siguiente toque
+     abre el lector. */
+  const [searchParams] = useSearchParams()
+  const [linkedQr, setLinkedQr] = useState<string | null>(() => searchParams.get(PUNCH_QR_PARAM))
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
 
   useEffect(() => {
@@ -348,7 +360,20 @@ export function PunchPage(): ReactNode {
   const needsPhoto = next !== null && NEEDS_PHOTO.has(next) && !usesQr
   const needsQr = next !== null && NEEDS_PHOTO.has(next) && usesQr
   const isBusy = phase !== 'idle' || isUploading || isPunching
-  const canPunch = next !== null && isOnline && !isBusy
+  /* Entre una marca y la siguiente pasan al menos 15 minutos (Reglas de
+     Negocio, «Mecanismo de ponchado»): el botón espera en silencio — a
+     propósito no se dice desde qué hora, la espera no es un cronómetro para
+     el colaborador (decisión de Hugo) — en vez de dejar que el API rechace
+     después de la foto. */
+  const lastMarkAt = Object.values(marks).reduce<Date | null>((latest, iso) => {
+    const at = new Date(iso)
+    return latest === null || at > latest ? at : latest
+  }, null)
+  const nextAllowedAt =
+    lastMarkAt === null ? null : new Date(lastMarkAt.getTime() + MIN_GAP_MINUTES * 60_000)
+  const isTooSoon =
+    nextAllowedAt !== null && next !== null && now.getTime() < nextAllowedAt.getTime()
+  const canPunch = next !== null && isOnline && !isBusy && !isTooSoon
   /** Entrar y volver del lunch «entran»; salir al lunch y salir «salen». */
   const isEntering = next === 'CLOCK_IN' || next === 'LUNCH_IN'
 
@@ -384,7 +409,9 @@ export function PunchPage(): ReactNode {
       window.setTimeout(backToIdle, OUTCOME_VISIBLE_MS)
     } catch (error) {
       setFailure(punchErrorMessage(error, i18n))
-      setPhase(readApiError(error).code === 'OUTSIDE_GEOFENCE' ? 'outside' : 'error')
+      const code = readApiError(error).code
+      if (code === 'QR_INVALID') setLinkedQr(null)
+      setPhase(code === 'OUTSIDE_GEOFENCE' ? 'outside' : 'error')
       window.setTimeout(backToIdle, OUTCOME_VISIBLE_MS)
     }
   }
@@ -392,6 +419,10 @@ export function PunchPage(): ReactNode {
   function onTap(): void {
     if (!canPunch) return
     if (needsQr) {
+      if (linkedQr !== null) {
+        void submit(null, linkedQr)
+        return
+      }
       setScannerOpen(true)
       return
     }
@@ -408,7 +439,7 @@ export function PunchPage(): ReactNode {
         <QrScanner
           onScan={(code) => {
             setScannerOpen(false)
-            void submit(null, code)
+            void submit(null, readPunchQrCode(code))
           }}
           onCancel={() => {
             setScannerOpen(false)
@@ -579,7 +610,11 @@ export function PunchPage(): ReactNode {
                 )}
                 {needsQr && !isBusy && (
                   <span className="text-[11px] text-ink-3">
-                    <Trans>escaneando el QR del acceso</Trans>
+                    {linkedQr !== null ? (
+                      <Trans>con el QR del acceso ya leído</Trans>
+                    ) : (
+                      <Trans>escaneando el QR del acceso</Trans>
+                    )}
                   </span>
                 )}
               </>

@@ -10,6 +10,7 @@ import { useGetHotelPunchQrQuery } from '../api/onboardingApi'
 import { LoadError } from '@/shared/components/LoadError'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { formatDate } from '@/shared/lib/formatters'
+import { buildPunchQrLink } from '@/shared/lib/punchQrLink'
 
 /** El `i18n` viene del componente (`useLingui`): así el mensaje habla el idioma activo (D-36). */
 function punchQrErrorMessage(error: unknown, i18n: I18n): string {
@@ -40,7 +41,8 @@ export function HotelPunchQrPrintPage(): ReactNode {
 
   useEffect(() => {
     if (!data) return
-    toDataURL(data.payload, {
+    /* La liga a Ponchar con el código adentro: la cámara del teléfono abre la app ahí. */
+    toDataURL(buildPunchQrLink(data.payload), {
       margin: 2,
       width: 560,
       errorCorrectionLevel: 'M',
