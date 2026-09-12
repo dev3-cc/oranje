@@ -5,6 +5,7 @@ import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import { MaterialIcon } from '@oranje/ui'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router'
 
 import {
   NEEDS_PHOTO,
@@ -44,6 +45,7 @@ import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage, readApiError } from '@/shared/lib/apiError'
 import { formatTimeIn } from '@/shared/lib/formatters'
 import { tapFeedback } from '@/shared/lib/motion'
+import { PUNCH_QR_PARAM, readPunchQrCode } from '@/shared/lib/punchQrLink'
 
 function timeOf(iso: string): string {
   return new Date(iso).toLocaleTimeString(localeTag(), { hour: '2-digit', minute: '2-digit' })
@@ -290,6 +292,12 @@ export function PunchPage(): ReactNode {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [isCameraOpen, setCameraOpen] = useState(false)
   const [isScannerOpen, setScannerOpen] = useState(false)
+  /* El QR del acceso escaneado con la cámara del teléfono abre esta pantalla
+     con el código en la liga: se usa al tocar Ponchar sin abrir el lector.
+     Si el servidor lo rechaza (hoja vieja), se suelta y el siguiente toque
+     abre el lector. */
+  const [searchParams] = useSearchParams()
+  const [linkedQr, setLinkedQr] = useState<string | null>(() => searchParams.get(PUNCH_QR_PARAM))
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
 
   useEffect(() => {
@@ -401,7 +409,9 @@ export function PunchPage(): ReactNode {
       window.setTimeout(backToIdle, OUTCOME_VISIBLE_MS)
     } catch (error) {
       setFailure(punchErrorMessage(error, i18n))
-      setPhase(readApiError(error).code === 'OUTSIDE_GEOFENCE' ? 'outside' : 'error')
+      const code = readApiError(error).code
+      if (code === 'QR_INVALID') setLinkedQr(null)
+      setPhase(code === 'OUTSIDE_GEOFENCE' ? 'outside' : 'error')
       window.setTimeout(backToIdle, OUTCOME_VISIBLE_MS)
     }
   }
@@ -409,6 +419,10 @@ export function PunchPage(): ReactNode {
   function onTap(): void {
     if (!canPunch) return
     if (needsQr) {
+      if (linkedQr !== null) {
+        void submit(null, linkedQr)
+        return
+      }
       setScannerOpen(true)
       return
     }
@@ -425,7 +439,7 @@ export function PunchPage(): ReactNode {
         <QrScanner
           onScan={(code) => {
             setScannerOpen(false)
-            void submit(null, code)
+            void submit(null, readPunchQrCode(code))
           }}
           onCancel={() => {
             setScannerOpen(false)
@@ -596,7 +610,11 @@ export function PunchPage(): ReactNode {
                 )}
                 {needsQr && !isBusy && (
                   <span className="text-[11px] text-ink-3">
-                    <Trans>escaneando el QR del acceso</Trans>
+                    {linkedQr !== null ? (
+                      <Trans>con el QR del acceso ya leído</Trans>
+                    ) : (
+                      <Trans>escaneando el QR del acceso</Trans>
+                    )}
                   </span>
                 )}
               </>

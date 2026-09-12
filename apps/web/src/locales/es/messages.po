@@ -919,6 +919,10 @@ msgstr "Completar mis datos"
 msgid "Completo"
 msgstr "Completo"
 
+#: src/features/worker/pages/PunchPage.tsx
+msgid "con el QR del acceso ya leído"
+msgstr "con el QR del acceso ya leído"
+
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "Con entrada registrada"
 msgstr "Con entrada registrada"
@@ -1004,6 +1008,7 @@ msgid "Corregir"
 msgstr "Corregir"
 
 #: src/features/auth/pages/LoginPage.tsx
+#: src/features/worker/pages/ProfilePage.tsx
 #: src/shared/constants/contactAttempt.ts
 msgid "Correo"
 msgstr "Correo"
