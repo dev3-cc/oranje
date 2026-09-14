@@ -975,6 +975,17 @@ const SYSTEM_ADMINISTRATION: Permission[] = [
     label: 'Gestionar los catálogos del sistema',
     roles: [ADMIN],
   },
+  {
+    // Decisión de Hugo (2026-09-14): el buzón real (@oranjepeople.com, cPanel
+    // de A2 Hosting) se crea/gestiona desde el Admin — antes era un CSV a
+    // mano para otro ingeniero. Este permiso NO crea la cuenta en Oranje
+    // (eso sigue siendo `users:manage`/el alta del colaborador): solo el
+    // buzón de correo real que respalda un `identity.user.email` existente.
+    module: 'users',
+    action: 'manage_corporate_email',
+    label: 'Crear y gestionar los buzones @oranjepeople.com',
+    roles: [ADMIN],
+  },
 ]
 
 const ACCOUNTING: Permission[] = [

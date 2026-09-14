@@ -65,6 +65,12 @@ const baseSchema = z.object({
   GOOGLE_PLACES_API_KEY: optionalVar(z.string().min(1)),
   GOOGLE_MAPS_BROWSER_KEY: optionalVar(z.string().min(1)),
 
+  // cPanel (A2 Hosting): CRUD de buzones @oranjepeople.com desde el Admin.
+  // CPANEL_API_TOKEN va como "usuario:token" (asi lo exige el header cPanel).
+  CPANEL_HOST: optionalVar(z.string().min(1)),
+  CPANEL_DOMAIN: optionalVar(z.string().min(1)),
+  CPANEL_API_TOKEN: optionalVar(z.string().min(1)),
+
   STORAGE_BUCKET: z.string().min(1),
   // El consumidor de eventos y el push. Sin ellas el modulo arranca pero
   // responde 401 en /notifications/events y no manda ningun push.

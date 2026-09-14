@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 
 import { ConfigModule } from './config/config.module.js'
+import { CPanelModule } from './infra/cpanel/index.js'
 import { HealthModule } from './infra/health/index.js'
 import { PlacesModule } from './infra/places/index.js'
 import { PrismaModule } from './infra/prisma/index.js'
@@ -23,6 +24,7 @@ import { SupervisionModule } from './modules/supervision/index.js'
     PrismaModule,
     StorageModule,
     PlacesModule,
+    CPanelModule,
     HealthModule,
     CatalogsModule,
     IdentityModule,

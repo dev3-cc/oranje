@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common'
 
 import { AuthModule } from '../auth/auth.module.js'
 
+import { CorporateEmailController } from './corporate-email.controller.js'
+import { CorporateEmailService } from './corporate-email.service.js'
 import { FirebaseAccountsService } from './firebase-accounts.service.js'
 import { HotelUsersController, HotelUsersDirectoryController } from './hotel-users.controller.js'
 import { HotelUsersRepository } from './hotel-users.repository.js'
@@ -19,6 +21,7 @@ import { StaffUsersService } from './staff-users.service.js'
     HotelUsersDirectoryController,
     MeController,
     StaffUsersController,
+    CorporateEmailController,
   ],
   providers: [
     HotelUsersService,
@@ -27,6 +30,7 @@ import { StaffUsersService } from './staff-users.service.js'
     StaffUsersService,
     StaffUsersRepository,
     FirebaseAccountsService,
+    CorporateEmailService,
   ],
   exports: [HotelUsersService, MeService, StaffUsersService],
 })
