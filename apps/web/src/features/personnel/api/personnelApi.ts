@@ -13,6 +13,7 @@ import { registerPoolMocks } from '@/features/recruitment/api/poolMocks'
 import { registerScheduleMocks } from '@/features/schedule/api/scheduleMocks'
 // eslint-disable-next-line no-restricted-imports
 import { registerTimesheetMocks } from '@/features/timesheet/api/timesheetMocks'
+import { readApiError } from '@/shared/lib/apiError'
 import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import type {
   ApiEnvelope,
@@ -117,6 +118,10 @@ function performanceOf(
   }
 }
 
+function isForbidden(error: unknown): boolean {
+  return readApiError(error).status === 403
+}
+
 async function fetchBoard(
   fetchWithBQ: FetchWithBQ,
 ): Promise<{ data: PersonnelBoard } | { error: unknown }> {
@@ -129,7 +134,9 @@ async function fetchBoard(
   if (schedulesRes.error) return { error: schedulesRes.error }
   if (timesheetsRes.error) return { error: timesheetsRes.error }
   if ('error' in workersRes) return { error: workersRes.error }
-  if (auditsRes.error) return { error: auditsRes.error }
+  /* Las auditorías son solo del Supervisor: a un Manager `/audits` le responde
+     403 y el tablero sigue sin ese dato (la ficha no pinta la columna). */
+  if (auditsRes.error && !isForbidden(auditsRes.error)) return { error: auditsRes.error }
 
   /**
    * `/schedules` no garantiza orden (igual que en Schedule): con más de una
@@ -139,7 +146,7 @@ async function fetchBoard(
   const schedule = [...schedules].sort((a, b) => b.weekStart.localeCompare(a.weekStart))[0]
   const workers = workersRes.data
   const timesheetList = (timesheetsRes.data as ApiEnvelope<TimesheetApi[]>).data
-  const audits = (auditsRes.data as PaginatedEnvelope<AuditHeaderApi>).data
+  const audits = auditsRes.error ? [] : (auditsRes.data as PaginatedEnvelope<AuditHeaderApi>).data
 
   /** La lista viaja SIN días (como el backend): las marcas van por detalle. */
   const detailResults = await Promise.all(

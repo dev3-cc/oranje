@@ -32,6 +32,7 @@ import {
   WORKER_STATUS_TOKEN,
   type WorkerStatus,
 } from '@/shared/constants/workerStatus'
+import { useCan } from '@/shared/hooks/useCan'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { matchesSearch } from '@/shared/lib/text'
 
@@ -231,6 +232,9 @@ function WorkerDetail({
   onReport: (row: PersonnelRow) => void
 }): ReactNode {
   const { t, i18n } = useLingui()
+  const can = useCan()
+  /* Auditar es solo del Supervisor: a sus Managers no se les enseña el score. */
+  const canReadAudits = can('audits:read')
   const missingEntry = hasMissingEntry(row)
   const paused = NO_SHIFT_LABEL[row.stateCode]
   return (
@@ -334,13 +338,15 @@ function WorkerDetail({
             value={row.clockInAt ? timeOf(row.clockInAt) : row.shift ? t`Sin entrada` : '—'}
             {...(missingEntry ? { tone: 'alert' as const } : {})}
           />
-          <Metric
-            label={t`Presentación Personal`}
-            value={presentationLabel(row.presentationAudit, i18n)}
-            {...(row.presentationAudit === null || row.presentationAudit.score < 60
-              ? { tone: 'alert' as const }
-              : {})}
-          />
+          {canReadAudits && (
+            <Metric
+              label={t`Presentación Personal`}
+              value={presentationLabel(row.presentationAudit, i18n)}
+              {...(row.presentationAudit === null || row.presentationAudit.score < 60
+                ? { tone: 'alert' as const }
+                : {})}
+            />
+          )}
           <div>
             <p className="text-xs text-ink-3">
               <Trans>Teléfono</Trans>
