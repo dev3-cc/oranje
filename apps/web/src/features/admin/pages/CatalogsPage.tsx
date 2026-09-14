@@ -19,6 +19,7 @@ import {
   MANAGED_CATALOGS,
   type AdminCatalogItem,
   type AdminCatalogs,
+  type AdminStatusLight,
   type ManagedCatalog,
 } from '../api/catalogsAdminApi'
 import { AuditChecklistItemsPanel } from '../components/AuditChecklistItemsPanel'
@@ -92,6 +93,18 @@ const TAB_CONFIG: Record<ManagedCatalog, TabConfig> = {
     noun: 'nivel de inglés',
     searchPlaceholder: 'Nombre del nivel, p. ej. Conversacional…',
   },
+  zones: {
+    label: 'Zonas',
+    pick: (data) => data.zones,
+    noun: 'zona',
+    searchPlaceholder: 'Nombre de la zona, p. ej. Riviera Maya…',
+  },
+  reasons: {
+    label: 'Motivos',
+    pick: (data) => data.reasons,
+    noun: 'motivo',
+    searchPlaceholder: 'Nombre del motivo, p. ej. Se mudó…',
+  },
 }
 
 /**
@@ -111,6 +124,8 @@ interface EditorState {
   item: AdminCatalogItem | null
   /** Alta de posición desde su sección: el departamento ya viene elegido. */
   presetDepartmentId?: string
+  /** Alta de motivo desde su sección: el semáforo ya viene elegido. */
+  presetStatusLightCode?: string
 }
 
 /**
@@ -165,6 +180,7 @@ export function CatalogsPage(): ReactNode {
 
   const isReactivosTab = active === REACTIVOS_TAB
   const isDepartmentsTab = active === 'hotel-departments'
+  const isReasonsTab = active === 'reasons'
   const tab = active === REACTIVOS_TAB ? null : { catalog: active, ...TAB_CONFIG[active] }
   const rows = tab && data ? tab.pick(data) : []
   const visibleRows = rows.filter((row) => matchesSearch(search, row.name))
@@ -185,6 +201,20 @@ export function CatalogsPage(): ReactNode {
       return { department, positions, visiblePositions, departmentMatches }
     })
     .filter((section) => section.departmentMatches || section.visiblePositions.length > 0)
+
+  /** Motivos, seccionados por semáforo: un motivo suelto no dice nada de cuándo aplica. */
+  const reasonSections = (data?.statusLights ?? [])
+    .map((statusLight) => {
+      const reasons = (data?.reasons ?? []).filter(
+        (reason) => reason.statusLightCode === statusLight.code,
+      )
+      const lightMatches = matchesSearch(search, statusLight.name)
+      const visibleReasons = lightMatches
+        ? reasons
+        : reasons.filter((reason) => matchesSearch(search, reason.name))
+      return { statusLight, reasons, visibleReasons, lightMatches }
+    })
+    .filter((section) => section.lightMatches || section.visibleReasons.length > 0)
 
   if (!canManage) {
     return (
@@ -214,7 +244,7 @@ export function CatalogsPage(): ReactNode {
             </button>
           </p>
         </div>
-        {tab && (
+        {tab && !isReasonsTab && (
           <Button
             variant="primary"
             className="ml-auto"
@@ -411,6 +441,111 @@ export function CatalogsPage(): ReactNode {
                 ))}
               </div>
             )
+          ) : isReasonsTab ? (
+            data.reasons.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+                Todavía no hay motivos. Agrega el primero desde el semáforo al que pertenece.
+              </p>
+            ) : reasonSections.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+                Ningún semáforo ni motivo coincide con «{search.trim()}». Cambia la búsqueda o
+                agrégalo.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-5">
+                {reasonSections.map(({ statusLight, reasons, visibleReasons }) => (
+                  <section key={statusLight.code} aria-labelledby={`light-${statusLight.code}`}>
+                    {/* El semáforo es la sección; sus motivos, las filas — un motivo
+                        suelto no dice cuándo aplica. */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2
+                        id={`light-${statusLight.code}`}
+                        className="text-xs font-bold tracking-wide text-ink-3 uppercase"
+                      >
+                        {statusLight.name}
+                      </h2>
+                      <span className="text-xs text-ink-4">
+                        {reasons.length === 0
+                          ? 'sin motivos'
+                          : `${String(reasons.length)} ${reasons.length === 1 ? 'motivo' : 'motivos'}`}
+                      </span>
+                      <div className="ml-auto flex items-center gap-1">
+                        <Button
+                          variant="secondary"
+                          className="px-3 py-1 text-xs"
+                          onClick={() => {
+                            setEditor({
+                              catalog: 'reasons',
+                              noun: 'motivo',
+                              item: null,
+                              presetStatusLightCode: statusLight.code,
+                            })
+                          }}
+                        >
+                          Agregar motivo
+                        </Button>
+                      </div>
+                    </div>
+
+                    {visibleReasons.length === 0 ? (
+                      <p className="mt-2 rounded-lg border border-dashed border-line bg-surface px-5 py-4 text-sm text-ink-3">
+                        {reasons.length === 0
+                          ? 'Sin motivos: quien cierre o rechace en este semáforo no tendrá de dónde elegir.'
+                          : `Ningún motivo de ${statusLight.name} coincide con «${search.trim()}».`}
+                      </p>
+                    ) : (
+                      <ul className="mt-2 overflow-hidden rounded-lg border border-line bg-surface">
+                        {visibleReasons.map((reason) => (
+                          <li
+                            key={reason.id}
+                            className="flex items-center gap-3 border-b border-line px-5 py-3 last:border-b-0"
+                          >
+                            <MaterialIcon
+                              name="unpublished"
+                              className="text-lg text-ink-4"
+                              aria-hidden
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold text-ink">
+                                {reason.name}
+                              </p>
+                              {IS_DEV_UI && (
+                                <p className="text-xs">
+                                  <code className="text-ink-4">{reason.code}</code>
+                                </p>
+                              )}
+                            </div>
+                            <Button
+                              variant="secondary"
+                              onClick={() => {
+                                setEditor({ catalog: 'reasons', noun: 'motivo', item: reason })
+                              }}
+                            >
+                              Renombrar
+                            </Button>
+                            <button
+                              type="button"
+                              aria-label={`Eliminar ${reason.name}`}
+                              title="Eliminar motivo"
+                              onClick={() => {
+                                setPendingDelete({
+                                  catalog: 'reasons',
+                                  noun: 'motivo',
+                                  item: reason,
+                                })
+                              }}
+                              className="cursor-pointer rounded-md p-1.5 text-ink-3 transition-colors hover:bg-surface-2 hover:text-red"
+                            >
+                              <MaterialIcon name="delete" className="text-lg" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                ))}
+              </div>
+            )
           ) : rows.length === 0 ? (
             <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
               Este catálogo está vacío. Agrega su primera fila con el botón de arriba.
@@ -474,6 +609,7 @@ export function CatalogsPage(): ReactNode {
         <CatalogItemDialog
           editor={editor}
           departments={data.departments}
+          statusLights={data.statusLights}
           onClose={() => {
             setEditor(null)
           }}
@@ -520,27 +656,36 @@ function TabButton({
   )
 }
 
-/** Alta o renombrado de una fila; las posiciones eligen además su departamento. */
+/** Alta o renombrado de una fila; las posiciones eligen además su departamento, los motivos su semáforo. */
 function CatalogItemDialog({
   editor,
   departments,
+  statusLights,
   onClose,
 }: {
   editor: EditorState
   departments: AdminCatalogItem[]
+  statusLights: AdminStatusLight[]
   onClose: () => void
 }): ReactNode {
   const [name, setName] = useState(editor.item?.name ?? '')
   const [departmentId, setDepartmentId] = useState(
     editor.item?.hotelDepartmentId ?? editor.presetDepartmentId ?? '',
   )
+  const [statusLightCode, setStatusLightCode] = useState(
+    editor.item?.statusLightCode ?? editor.presetStatusLightCode ?? '',
+  )
   const [error, setError] = useState<string | null>(null)
   const [createItem, { isLoading: isCreating }] = useCreateCatalogItemMutation()
   const [updateItem, { isLoading: isUpdating }] = useUpdateCatalogItemMutation()
 
   const isPosition = editor.catalog === 'positions'
+  const isReason = editor.catalog === 'reasons'
   const isBusy = isCreating || isUpdating
-  const canSave = name.trim() !== '' && (!isPosition || departmentId !== '')
+  const canSave =
+    name.trim() !== '' &&
+    (!isPosition || departmentId !== '') &&
+    (!isReason || statusLightCode !== '')
 
   async function save(): Promise<void> {
     setError(null)
@@ -550,6 +695,7 @@ function CatalogItemDialog({
           catalog: editor.catalog,
           name: name.trim(),
           ...(isPosition ? { hotelDepartmentId: departmentId } : {}),
+          ...(isReason ? { statusLightCode } : {}),
         }).unwrap()
         toast.success(`Se agregó «${name.trim()}»`)
       } else {
@@ -558,6 +704,7 @@ function CatalogItemDialog({
           id: editor.item.id,
           name: name.trim(),
           ...(isPosition && departmentId !== '' ? { hotelDepartmentId: departmentId } : {}),
+          ...(isReason && statusLightCode !== '' ? { statusLightCode } : {}),
         }).unwrap()
         toast.success('Catálogo actualizado')
       }
@@ -568,6 +715,8 @@ function CatalogItemDialog({
           byCode: {
             CATALOG_NAME_TAKEN: 'Ya existe una fila con ese nombre en este catálogo.',
             DEPARTMENT_REQUIRED: 'Una posición pertenece a un departamento: elige a cuál.',
+            STATUS_LIGHT_REQUIRED: 'Un motivo pertenece a un semáforo: elige a cuál.',
+            STATUS_LIGHT_UNKNOWN: 'Ese semáforo no existe.',
           },
           fallback: 'No se pudo guardar. Revisa el nombre e inténtalo de nuevo.',
         }),
@@ -624,6 +773,27 @@ function CatalogItemDialog({
               {departments.map((department) => (
                 <SelectItem key={department.id} value={department.id}>
                   {department.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </label>
+      )}
+
+      {isReason && (
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium text-ink-2">Semáforo</span>
+          <Select
+            {...(statusLightCode ? { value: statusLightCode } : {})}
+            onValueChange={setStatusLightCode}
+          >
+            <SelectTrigger aria-label="Semáforo del motivo" className="w-full">
+              <SelectValue placeholder="Elige el semáforo" />
+            </SelectTrigger>
+            <SelectContent>
+              {statusLights.map((statusLight) => (
+                <SelectItem key={statusLight.code} value={statusLight.code}>
+                  {statusLight.name}
                 </SelectItem>
               ))}
             </SelectContent>

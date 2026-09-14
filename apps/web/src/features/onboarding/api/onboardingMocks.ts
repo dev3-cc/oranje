@@ -1317,6 +1317,18 @@ const routes: readonly MockRoute[] = [
         })),
     }),
   },
+  {
+    method: 'GET',
+    path: '/catalogs/status-lights',
+    resolve: (): ApiEnvelope<Array<{ code: string; name: string }>> => ({
+      data: [
+        { code: 'WORKER', name: 'Semáforo del Colaborador' },
+        { code: 'REQUISITION', name: 'Semáforo de Requisición' },
+        { code: 'ONBOARDING', name: 'Semáforo Onboarding' },
+        { code: 'QUALITY', name: 'Indicador de Calidad' },
+      ],
+    }),
+  },
 ]
 
 let areRoutesRegistered = false
