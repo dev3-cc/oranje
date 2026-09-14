@@ -390,6 +390,12 @@ export function ProspectFormDialog({
       onClose={onClose}
       title={isEditing ? 'Editar prospecto' : 'Nuevo prospecto'}
       className={showIntro && !isEditing ? 'max-w-2xl' : 'h-[88vh] max-w-[95rem]'}
+      /* Google Places deja casos nuevos de "esto no era un clic afuera de
+         verdad" cada vez que se prueba (reportado varias veces por Hugo):
+         mejor que nada en este diálogo lo cierre solo — hay «Cancelar»
+         explícito en cada paso, y el paso 4 ya se arma con retraso para
+         evitar el doble clic. */
+      dismissOnOutsideInteraction={false}
     >
       {showIntro && !isEditing ? (
         <OnboardingIntro
