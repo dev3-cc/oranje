@@ -33,6 +33,8 @@ describe('WorkerDetailPage', () => {
     // excepción sí habla. D-27: se dice la consecuencia, no «ITIN registrado».
     expect(screen.queryByText(/Perfil incompleto/)).not.toBeInTheDocument()
     expect(screen.getByText(/Sin ITIN: aplica retención del 16%/)).toBeInTheDocument()
+    // El correo de la cuenta ya se ve en el expediente, no solo "Con cuenta".
+    expect(screen.getByText('arivera@oranjepeople.com')).toBeInTheDocument()
   })
 
   it('identidad y perfil hablan en palabras, y lo que el contrato no trae va en raya', async () => {

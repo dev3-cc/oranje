@@ -3,6 +3,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router'
 
 import { useGetStaffRolesQuery, useGetStaffUsersQuery } from '../api/adminApi'
+import { ColaboradorAccountsSection } from '../components/ColaboradorAccountsSection'
 import { HotelUsersSection } from '../components/HotelUsersSection'
 import { UserFormDialog } from '../components/UserFormDialog'
 import {
@@ -25,24 +26,27 @@ import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { useDebounce } from '@/shared/hooks/useDebounce'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
-type Scope = 'staff' | 'hotels'
+type Scope = 'staff' | 'hotels' | 'colaboradores'
 
-/** El ámbito vive en la URL (`?ambito=hoteles`): un enlace a la pestaña se puede compartir. */
+/** El ámbito vive en la URL (`?ambito=hoteles|colaboradores`): un enlace a la pestaña se puede compartir. */
 const SCOPES: ReadonlyArray<[Scope, string, string]> = [
   ['staff', 'Personal Oranje', 'badge'],
   ['hotels', 'Personal de hoteles', 'apartment'],
+  ['colaboradores', 'Colaboradores', 'diversity_3'],
 ]
 
 export function UsersPage(): ReactNode {
   const [searchParams, setSearchParams] = useSearchParams()
-  const scope: Scope = searchParams.get('ambito') === 'hoteles' ? 'hotels' : 'staff'
+  const ambito = searchParams.get('ambito')
+  const scope: Scope =
+    ambito === 'hoteles' ? 'hotels' : ambito === 'colaboradores' ? 'colaboradores' : 'staff'
 
   function setScope(next: Scope): void {
     setSearchParams(
       (current) => {
         const params = new URLSearchParams(current)
-        if (next === 'hotels') params.set('ambito', 'hoteles')
-        else params.delete('ambito')
+        if (next === 'staff') params.delete('ambito')
+        else params.set('ambito', next === 'hotels' ? 'hoteles' : 'colaboradores')
         return params
       },
       { replace: true },
@@ -58,10 +62,14 @@ export function UsersPage(): ReactNode {
             {IS_DEV_UI
               ? scope === 'staff'
                 ? 'identity.user · personal interno de Oranje · users:manage — solo el Administrador (ROL-ADM-01)'
-                : 'identity.user · hotel_id NOT NULL · users:manage_hotel — solo el Administrador (ROL-ADM-01)'
+                : scope === 'hotels'
+                  ? 'identity.user · hotel_id NOT NULL · users:manage_hotel — solo el Administrador (ROL-ADM-01)'
+                  : 'personal.worker + identity.user · users:manage_corporate_email — solo lectura'
               : scope === 'staff'
                 ? 'El personal interno de Oranje: quién es, qué rol tiene y si ya entró.'
-                : 'Las cuentas de cada hotel: Supervisores, Managers de Área y Managers Generales.'}
+                : scope === 'hotels'
+                  ? 'Las cuentas de cada hotel: Supervisores, Managers de Área y Managers Generales.'
+                  : 'Los colaboradores con correo corporativo, y si su buzón real ya existe.'}
           </p>
         </div>
         <div
@@ -92,7 +100,13 @@ export function UsersPage(): ReactNode {
         </div>
       </header>
 
-      {scope === 'staff' ? <StaffUsersSection /> : <HotelUsersSection />}
+      {scope === 'staff' ? (
+        <StaffUsersSection />
+      ) : scope === 'hotels' ? (
+        <HotelUsersSection />
+      ) : (
+        <ColaboradorAccountsSection />
+      )}
     </div>
   )
 }

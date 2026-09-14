@@ -318,6 +318,8 @@ export interface WorkerApi {
   isProfileComplete: boolean
   hasTaxId: boolean
   hasAccount: boolean
+  /** El correo con el que entra hoy; null sin cuenta todavía (Blanco recién nacido). */
+  email: string | null
   isBlacklisted: boolean
   createdAt: string
 }

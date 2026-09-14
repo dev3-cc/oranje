@@ -138,6 +138,7 @@ export const baseApi = createApi({
     'HotelUser',
     'Audit',
     'ChecklistItem',
+    'CorporateEmail',
   ],
   endpoints: () => ({}),
 })

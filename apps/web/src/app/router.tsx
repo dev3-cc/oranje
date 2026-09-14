@@ -137,6 +137,13 @@ export const router = createBrowserRouter([
             },
           },
           {
+            path: 'correos-corporativos',
+            lazy: async () => {
+              const m = await import('@/features/admin')
+              return { Component: m.CorporateEmailPage }
+            },
+          },
+          {
             path: 'pipeline',
             handle: FULL_WIDTH,
             lazy: async () => {
