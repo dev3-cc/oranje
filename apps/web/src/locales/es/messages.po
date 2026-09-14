@@ -881,6 +881,7 @@ msgstr "Cobertura parcial"
 msgid "Cola del Self-Pick"
 msgstr "Cola del Self-Pick"
 
+#: src/features/auth/pages/LoginPage.tsx
 #: src/features/timesheet/components/TimesheetGrid.tsx
 #: src/features/timesheet/pages/TimesheetGlobalPage.tsx
 #: src/shared/constants/roles.ts
