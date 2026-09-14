@@ -17,7 +17,7 @@ import {
   useSidebar,
 } from '@oranje/ui'
 import type { ReactNode } from 'react'
-import { NavLink, useLocation } from 'react-router'
+import { NavLink, useLocation, useNavigate } from 'react-router'
 
 import { useGetSessionQuery, useLogoutMutation, useUpdateMyLocaleMutation } from '@/app/sessionApi'
 import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
@@ -124,6 +124,7 @@ export function Sidebar(): ReactNode {
   const { i18n } = useLingui()
   const { setOpenMobile } = useSidebar()
   const location = useLocation()
+  const navigate = useNavigate()
 
   return (
     <SidebarRoot>
@@ -228,6 +229,15 @@ export function Sidebar(): ReactNode {
                 <button
                   type="button"
                   onClick={() => {
+                    /* Navegar ANTES de que la sesión se limpie: si se espera
+                       a que `logout` resuelva, `RequireSession` alcanza a
+                       redirigir con `state.from` = esta misma ruta (p. ej.
+                       `/usuarios`), y quien entre después con OTRO rol
+                       aterriza ahí en vez de en su inicio — el bug de
+                       "se queda pegado en la pantalla del rol anterior". Al
+                       salir a `/login` de inmediato, ese guard ya no está
+                       montado cuando el logout termina. */
+                    void navigate('/login', { replace: true })
                     void logout()
                   }}
                   disabled={isLoggingOut}

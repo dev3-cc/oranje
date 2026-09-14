@@ -122,6 +122,7 @@ registerMockRoutes([
           'audits.create',
           'audits.read',
           'audits.update',
+          'users.manage_corporate_email',
         ],
       },
     }),
@@ -207,6 +208,10 @@ export const sessionApi = baseApi.injectEndpoints({
       onQueryStarted: async (_arg, { dispatch, queryFulfilled }) => {
         try {
           await queryFulfilled
+        } catch {
+          /* La sesión local se limpia igual aunque falle la llamada: sin
+             `catch`, `queryFulfilled` rechazado se relanzaba solo tras el
+             `finally` y quedaba como una promesa sin atrapar. */
         } finally {
           dispatch(sessionCleared())
           dispatch(baseApi.util.resetApiState())

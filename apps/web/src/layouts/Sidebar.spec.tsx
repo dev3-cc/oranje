@@ -1,6 +1,7 @@
 import { I18nProvider } from '@lingui/react'
 import { SidebarProvider } from '@oranje/ui'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it } from 'vitest'
@@ -91,5 +92,59 @@ describe('Sidebar', () => {
 
     expect(await screen.findByText('A. Ruiz')).toBeInTheDocument()
     expect(screen.getByText('Business Developer')).toBeInTheDocument()
+  })
+
+  /**
+   * El `NavLink` recibía un `className` de función (su propio `isActive`),
+   * pero `asChild` de `SidebarMenuButton` lo fusiona vía Slot, que solo sabe
+   * unir strings — aplastaba la función a su código fuente y el fondo activo
+   * nunca se pintaba, en NINGÚN módulo, sin que ningún test lo notara.
+   */
+  it('resalta el módulo de la ruta activa, y solo ese', async () => {
+    renderSidebar()
+
+    const dashboardButton = (await screen.findByRole('link', { name: 'Dashboard' })).closest(
+      '[data-sidebar="menu-button"]',
+    )
+    const pipelineButton = screen
+      .getByRole('link', { name: 'Pipeline' })
+      .closest('[data-sidebar="menu-button"]')
+
+    expect(dashboardButton).toHaveAttribute('data-active', 'true')
+    expect(pipelineButton).toHaveAttribute('data-active', 'false')
+  })
+
+  /**
+   * Antes, `logout()` esperaba a que la mutación resolviera para limpiar la
+   * sesión — mientras tanto `RequireSession` seguía viendo `status:
+   * 'authenticated'` en `/usuarios` y no navegaba a ningún lado; al
+   * resolver, redirigía con `state.from = '/usuarios'`, y quien entraba
+   * DESPUÉS con otro rol aterrizaba en una pantalla que no era la suya (el
+   * reporte de Hugo: "se queda pegado en pantallas del rol anterior").
+   */
+  it('el logout navega a /login de inmediato, sin esperar a que la sesión se limpie', async () => {
+    const user = userEvent.setup()
+    const router = createMemoryRouter(
+      [
+        { path: '/usuarios', element: <Sidebar /> },
+        { path: '/login', element: <p>Pantalla de login</p> },
+      ],
+      { initialEntries: ['/usuarios'] },
+    )
+
+    render(
+      <I18nProvider i18n={i18n}>
+        <Provider store={store}>
+          <SidebarProvider>
+            <RouterProvider router={router} />
+          </SidebarProvider>
+        </Provider>
+      </I18nProvider>,
+    )
+
+    const logoutButton = await screen.findByRole('button', { name: 'Cerrar sesión' })
+    await user.click(logoutButton)
+
+    expect(await screen.findByText('Pantalla de login')).toBeInTheDocument()
   })
 })
