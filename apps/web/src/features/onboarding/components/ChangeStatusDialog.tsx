@@ -29,18 +29,19 @@ import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 /**
  * Quién mueve el semáforo desde cada estado, según la tabla del Semáforo
- * Onboarding del vault: los primeros pasos son del BD; Rosa la comparten; Café,
- * Naranja y Negro son del BDC. Se muestra cuando el rol de quien mira no tiene
+ * Onboarding del vault: los primeros pasos son del BD — y del BDC, que hereda
+ * lo del BD (Reglas de Negocio, «Herencia por jerarquía»); Rosa la comparten;
+ * Café, Naranja y Negro son del BDC. Se muestra cuando el rol de quien mira no tiene
  * ningún paso disponible, para que sepa a quién le toca.
  */
 const STATUS_MOVER: Record<OnboardingStatus, string> = {
-  GRAY: 'lo mueve el BD (Business Developer).',
-  LIGHT_BLUE: 'lo mueve el BD (Business Developer).',
-  GREEN: 'lo mueve el BD; el BDC solo puede mandarlo a Café si la negociación se estanca.',
-  YELLOW: 'lo mueve el BD (Business Developer).',
+  GRAY: 'lo mueve el BD o el BDC.',
+  LIGHT_BLUE: 'lo mueve el BD o el BDC.',
+  GREEN: 'lo mueve el BD o el BDC.',
+  YELLOW: 'lo mueve el BD o el BDC.',
   PINK: 'la conversión a Naranja la aprueba el BDC desde Conversión.',
   ORANGE: 'pausarlo o reactivarlo es del BDC.',
-  RED: 'reactivarlo es del BD (Business Developer).',
+  RED: 'reactivarlo es del BD o del BDC.',
   BROWN: 'desbloquearlo es del BDC.',
   BLACK: 'reactivarlo es del BDC.',
 }
@@ -189,7 +190,7 @@ export function ChangeStatusDialog({
 
       {!areTransitionsLoading && allowed?.transitions.length === 0 && (
         /* Quién sigue, con nombre: «tu rol no puede» dejaba al BDC sin saber
-           que los primeros estados los mueve el BD (Semáforo Onboarding). */
+           que los primeros estados los mueven el BD o el BDC (Semáforo Onboarding). */
         <p className="rounded-md bg-surface-2 p-4 text-sm text-ink-2">
           Desde {ONBOARDING_STATUS_LABEL[currentStatus]} tu rol no mueve el prospecto:{' '}
           {STATUS_MOVER[currentStatus]}
@@ -304,9 +305,9 @@ export function ChangeStatusDialog({
       <div className="flex items-start gap-2 rounded-md bg-surface-2 p-3">
         <p className="text-xs leading-relaxed text-ink-3">
           ¿Necesitas regresarlo? El semáforo no retrocede: se sale por una rama y se reactiva hacia
-          Azul claro. Desde <span className="font-semibold">Rojo</span> reactiva el BD; desde{' '}
-          <span className="font-semibold">Café</span> y <span className="font-semibold">Negro</span>
-          , solo el BDC.
+          Azul claro. Desde <span className="font-semibold">Rojo</span> reactivan el BD o el BDC;
+          desde <span className="font-semibold">Café</span> y{' '}
+          <span className="font-semibold">Negro</span>, solo el BDC.
         </p>
         <SemaforoHelpButton className="shrink-0" />
       </div>

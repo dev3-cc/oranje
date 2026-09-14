@@ -17,7 +17,7 @@ import {
   useSidebar,
 } from '@oranje/ui'
 import type { ReactNode } from 'react'
-import { NavLink } from 'react-router'
+import { NavLink, useLocation } from 'react-router'
 
 import { useGetSessionQuery, useLogoutMutation, useUpdateMyLocaleMutation } from '@/app/sessionApi'
 import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
@@ -59,6 +59,12 @@ const MODULES: NavModule[] = [
   { label: msg`Dashboard`, to: '/dashboard', icon: 'space_dashboard', roles: STAFF },
   { label: msg`Usuarios`, to: '/usuarios', icon: 'manage_accounts', roles: [ADMIN] },
   { label: msg`Catálogos`, to: '/catalogos', icon: 'category', roles: [ADMIN] },
+  {
+    label: msg`Correos corporativos`,
+    to: '/correos-corporativos',
+    icon: 'alternate_email',
+    roles: [ADMIN],
+  },
   { label: msg`Pipeline`, to: '/pipeline', icon: 'view_kanban', roles: VENTAS },
   { label: msg`Mi Territorio`, to: '/mi-territorio', icon: 'map', roles: VENTAS },
   { label: msg`Propuestas`, to: '/propuestas', icon: 'description', roles: VENTAS },
@@ -83,8 +89,9 @@ const MODULES: NavModule[] = [
     label: msg`Self-Pick`,
     to: '/self-pick',
     icon: 'flash_on',
-    // RF-05: el Manager de Reclutamiento supervisa; no toma requisiciones.
-    roles: [RECLUTADORA, LIDER_GRUPO],
+    /* Herencia por jerarquía (Reglas de Negocio, 2026-09-14): el Líder y el
+       Manager de Reclutamiento también toman requisiciones y asignan slots. */
+    roles: RECLUTAMIENTO,
   },
   { label: msg`Blacklist`, to: '/blacklist', icon: 'block', roles: RECLUTAMIENTO },
   { label: msg`Schedule`, to: '/schedule', icon: 'calendar_month', roles: HOTEL },
@@ -97,7 +104,9 @@ const MODULES: NavModule[] = [
   },
   { label: msg`Mi Personal`, to: '/mi-personal', icon: 'badge', roles: HOTEL },
   { label: msg`Accidentes`, to: '/accidentes', icon: 'report', roles: [...HOTEL, ...INSPECCION] },
-  { label: msg`Auditorías`, to: '/auditorias', icon: 'fact_check', roles: HOTEL },
+  /* Auditar es solo del Supervisor: sus Managers no lo ven (Matriz de Hotel
+     §AUDITORÍAS; fuera de la herencia por jerarquía). */
+  { label: msg`Auditorías`, to: '/auditorias', icon: 'fact_check', roles: [SUPERVISOR] },
 ]
 
 function modulesForRole(roleId: string | undefined): NavModule[] {
@@ -114,6 +123,7 @@ export function Sidebar(): ReactNode {
   const [updateMyLocale] = useUpdateMyLocaleMutation()
   const { i18n } = useLingui()
   const { setOpenMobile } = useSidebar()
+  const location = useLocation()
 
   return (
     <SidebarRoot>
@@ -135,34 +145,39 @@ export function Sidebar(): ReactNode {
                 ))
               ) : (
                 <>
-                  {modulesForRole(session?.roleId).map((module) => (
-                    <SidebarMenuItem key={module.to}>
-                      <SidebarMenuButton asChild className="h-auto">
-                        <NavLink
-                          to={module.to}
-                          onClick={() => {
-                            setOpenMobile(false)
-                          }}
-                          className={({ isActive }) =>
-                            cn(
+                  {modulesForRole(session?.roleId).map((module) => {
+                    /* NavLink recibe un className de FUNCIÓN (isActive de su
+                       propio render-prop); Slot de asChild solo sabe fusionar
+                       strings y lo aplastaba a su código fuente — el fondo
+                       naranja nunca se pintaba en ningún módulo. Se calcula
+                       aquí, como string, y se pasa también a SidebarMenuButton
+                       (su variante ya trae `data-[active=true]:bg-sidebar-accent`). */
+                    const isActive = location.pathname === module.to
+                    return (
+                      <SidebarMenuItem key={module.to}>
+                        <SidebarMenuButton asChild isActive={isActive} className="h-auto">
+                          <NavLink
+                            to={module.to}
+                            onClick={() => {
+                              setOpenMobile(false)
+                            }}
+                            className={cn(
                               'flex items-center gap-3 px-3 py-2.5 text-sm',
-                              isActive
-                                ? 'bg-sidebar-accent font-semibold text-sidebar-accent-foreground'
-                                : 'text-ink-2',
-                            )
-                          }
-                        >
-                          <span
-                            className="material-icons-outlined text-xl leading-none"
-                            aria-hidden
+                              !isActive && 'text-ink-2',
+                            )}
                           >
-                            {module.icon}
-                          </span>
-                          {i18n._(module.label)}
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
+                            <span
+                              className="material-icons-outlined text-xl leading-none"
+                              aria-hidden
+                            >
+                              {module.icon}
+                            </span>
+                            {i18n._(module.label)}
+                          </NavLink>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )
+                  })}
                 </>
               )}
             </SidebarMenu>

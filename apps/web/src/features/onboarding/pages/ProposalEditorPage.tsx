@@ -90,7 +90,8 @@ export function ProposalEditorPage({
   /** El intro de página se ve UNA vez; «¿Cómo funciona?» lo reabre. */
   const { isIntroOpen, dismissIntro, reopenIntro } = useIntroSeen('proposal-editor')
   const can = useCan()
-  /** Elaborar, enviar y descartar son del BD dueño (proposals:create/:send); el resto consulta. */
+  /** Elaborar, enviar y descartar son del BD dueño y del BDC, que hereda lo del BD
+     (proposals:create/:send); el resto consulta. */
   const canEdit = can('proposals:create')
   /* El back rechaza abrir versión fuera de Verde/Café (PROPOSAL_STATE); el
      botón lo dice ANTES, deshabilitado con título, en vez de fallar al clic. */
@@ -333,7 +334,7 @@ export function ProposalEditorPage({
                   )}
                   <p className="text-sm text-ink-2">
                     Lo elabora <span className="font-semibold">{workspace.owner.name}</span> — el BD
-                    dueño del ciclo.
+                    dueño del ciclo — o el BDC.
                   </p>
                 </div>
                 <dl className="flex flex-col divide-y divide-line rounded-lg border border-line">
@@ -353,8 +354,8 @@ export function ProposalEditorPage({
                   </div>
                 </dl>
                 <p className="mt-4 text-sm leading-relaxed text-ink-3">
-                  Es un borrador en elaboración: los valores pueden cambiar hasta que el BD la
-                  envíe. Cuando la envíe, aquí verás la versión final.
+                  Es un borrador en elaboración: los valores pueden cambiar hasta que el BD o el BDC
+                  la envíen. Cuando la envíen, aquí verás la versión final.
                 </p>
               </SectionCard>
             ) : draft ? (
@@ -477,8 +478,8 @@ export function ProposalEditorPage({
                     </Button>
                     {hasCreateFailed && (
                       <p role="alert" className="mt-3 text-sm text-red">
-                        No se pudo abrir la versión: solo el BD dueño del ciclo puede elaborar la
-                        propuesta.
+                        No se pudo abrir la versión: solo el BD dueño del ciclo o el BDC pueden
+                        elaborar la propuesta.
                       </p>
                     )}
                   </>
@@ -486,11 +487,11 @@ export function ProposalEditorPage({
                   <div className="mt-5">
                     <NoticeCard
                       image={personajeEstrategia}
-                      title="Elaborar la propuesta es del BD"
+                      title="Elaborar la propuesta es del BD o del BDC"
                       role="status"
                     >
-                      Solo el BD dueño del ciclo abre y envía versiones. Desde tu rol puedes
-                      consultarla, no editarla.
+                      Solo el BD dueño del ciclo o el BDC abren y envían versiones. Desde tu rol
+                      puedes consultarla, no editarla.
                     </NoticeCard>
                   </div>
                 )}
