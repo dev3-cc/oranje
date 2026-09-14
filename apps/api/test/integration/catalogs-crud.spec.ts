@@ -1,4 +1,5 @@
 import { ConflictException, NotFoundException, UnprocessableEntityException } from '@nestjs/common'
+import { v7 as uuidv7 } from 'uuid'
 
 import type { PrismaService } from '../../src/infra/prisma/index.js'
 import {
@@ -24,7 +25,13 @@ let auth: { id: string; roleCode: string; hotelId: null; departmentId: null }
 
 /** Filas creadas por el spec, para dejar la base como estaba. */
 const cleanup: Array<{
-  table: 'hiringModality' | 'catalogPosition' | 'hotelDepartment' | 'zone' | 'statusChangeReason'
+  table:
+    | 'hiringModality'
+    | 'catalogPosition'
+    | 'hotelDepartment'
+    | 'zone'
+    | 'statusChangeReason'
+    | 'hotel'
   id: string
 }> = []
 
@@ -134,8 +141,20 @@ test('crear zona, renombrarla y eliminarla', async () => {
 })
 
 test('una zona con un hotel colgando no se elimina: 409 CATALOG_IN_USE', async () => {
-  const inUse = await db.hotel.findFirstOrThrow({ select: { zoneId: true } })
-  await expect(service.remove('zones', inUse.zoneId, auth)).rejects.toThrow(ConflictException)
+  // Un hotel propio, no uno que ya exista: en CI la base nace sin ninguno.
+  const zone = await db.zone.findFirstOrThrow({ select: { id: true } })
+  const hotelId = uuidv7()
+  await db.hotel.create({
+    data: {
+      id: hotelId,
+      name: `Hotel Catálogos ${String(stamp)}`,
+      zoneId: zone.id,
+      timeZone: 'America/Cancun',
+    },
+  })
+  cleanup.push({ table: 'hotel', id: hotelId })
+
+  await expect(service.remove('zones', zone.id, auth)).rejects.toThrow(ConflictException)
 })
 
 test('un motivo sin semáforo no es un motivo', async () => {
