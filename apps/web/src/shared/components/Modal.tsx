@@ -33,15 +33,24 @@ export interface ModalProps {
 }
 
 /**
- * Elegir una sugerencia de Google Places no debe cerrar el diálogo: el
- * desplegable vive fuera del contenido y Radix lo trata como «clic afuera».
+ * Un Select/Popover/Dropdown de Radix dentro del diálogo se porta a
+ * `document.body`, FUERA del árbol de `DialogContent` — Radix lo trata como
+ * «clic afuera» y cierra el modal completo al elegir una opción (reportado
+ * con el selector de Zona del alta de prospecto). Mismo caso que Google
+ * Places, generalizado a los tres portales que ya usa la app.
  */
-function keepPlacesInteraction(event: {
+function keepPortaledInteraction(event: {
   target: EventTarget | null
   preventDefault: () => void
 }): void {
   const target = event.target as Element | null
-  if (target?.closest('.pac-container')) event.preventDefault()
+  if (
+    target?.closest(
+      '.pac-container, [data-slot="select-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"]',
+    )
+  ) {
+    event.preventDefault()
+  }
 }
 
 export function Modal({
@@ -82,8 +91,8 @@ export function Modal({
             widthOverrides,
           )}
           aria-describedby={undefined}
-          onInteractOutside={keepPlacesInteraction}
-          onPointerDownOutside={keepPlacesInteraction}
+          onInteractOutside={keepPortaledInteraction}
+          onPointerDownOutside={keepPortaledInteraction}
         >
           <DialogTitle className="sr-only">{title}</DialogTitle>
           {children}
@@ -106,8 +115,8 @@ export function Modal({
           className,
           widthOverrides,
         )}
-        onInteractOutside={keepPlacesInteraction}
-        onPointerDownOutside={keepPlacesInteraction}
+        onInteractOutside={keepPortaledInteraction}
+        onPointerDownOutside={keepPortaledInteraction}
         /* Sin descripción, Radix avisa en consola; se apaga el aria explícitamente. */
         {...(description === undefined ? { 'aria-describedby': undefined } : {})}
       >

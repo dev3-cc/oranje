@@ -211,7 +211,7 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
           initial={{ opacity: 0, y: 24, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="relative z-10 flex w-full max-w-md shrink-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-xl"
+          className="relative z-10 flex w-full max-w-md shrink-0 overflow-hidden rounded-2xl border border-white/50 bg-surface/62 shadow-xl backdrop-blur-2xl"
         >
           {/* Columna del formulario: 340–400px, como la referencia. */}
           <section className="flex w-full flex-col justify-center gap-8 p-8 sm:p-10">
