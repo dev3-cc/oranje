@@ -23,6 +23,8 @@ export interface WorkerRow {
   isProfileComplete: boolean
   hasTaxId: boolean
   hasAccount: boolean
+  /// El correo de la cuenta corporativa (worker.user_id); null sin cuenta.
+  email: string | null
   isBlacklisted: boolean
   createdAt: Date
   zone: { id: string; code: string; name: string }
@@ -61,6 +63,7 @@ const BASE = `
          w.is_profile_complete AS "isProfileComplete",
          w.has_tax_id          AS "hasTaxId",
          (w.user_id IS NOT NULL) AS "hasAccount",
+         u.email AS "email",
          EXISTS (SELECT 1 FROM coverage.blacklist_entry b
                   WHERE b.worker_id = w.id AND b.lifted_at IS NULL) AS "isBlacklisted",
          w.created_at AS "createdAt",
@@ -79,6 +82,7 @@ const BASE = `
     LEFT JOIN catalogs."position" p ON p.id = w.catalog_position_id
     LEFT JOIN catalogs.english_level e ON e.id = w.english_level_id
     LEFT JOIN catalogs.hiring_modality m ON m.id = w.hiring_modality_id
+    LEFT JOIN identity."user" u ON u.id = w.user_id
    WHERE w.deleted_at IS NULL`
 
 @Injectable()

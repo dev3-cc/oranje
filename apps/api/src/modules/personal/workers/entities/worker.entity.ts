@@ -20,6 +20,8 @@ export interface WorkerEntity {
   isProfileComplete: boolean
   hasTaxId: boolean
   hasAccount: boolean
+  /// El correo con el que entra hoy (worker.user_id); null sin cuenta todavía.
+  email: string | null
   isBlacklisted: boolean
   createdAt: string
 }

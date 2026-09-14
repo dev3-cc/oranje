@@ -427,6 +427,7 @@ function toEntity(row: WorkerRow, photos: Map<string, string>): WorkerEntity {
     isProfileComplete: row.isProfileComplete,
     hasTaxId: row.hasTaxId,
     hasAccount: row.hasAccount,
+    email: row.email,
     isBlacklisted: row.isBlacklisted,
     createdAt: new Date(row.createdAt).toISOString(),
   }
