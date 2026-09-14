@@ -1013,6 +1013,10 @@ msgstr "Correct"
 msgid "Correo"
 msgstr "Email"
 
+#: src/layouts/Sidebar.tsx
+msgid "Correos corporativos"
+msgstr "Corporate Email"
+
 #: src/features/audits/components/EnvironmentAuditDialog.tsx
 msgid "Corrige lo que haga falta de {hotelName}: se guarda con PATCH, sobre la misma auditoría."
 msgstr "Fix whatever needs it for {hotelName}: it's saved on the same audit, not as a new one."
