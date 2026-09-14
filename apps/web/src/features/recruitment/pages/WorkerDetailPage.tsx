@@ -212,7 +212,7 @@ export function WorkerDetailPage(): ReactNode {
     { label: 'Zona', value: worker.zone.name, foot: 'zone_id', icon: 'map' },
     {
       label: 'Usuario del sistema',
-      value: worker.hasAccount ? 'Con cuenta' : 'Sin cuenta todavía',
+      value: worker.email ?? 'Sin cuenta todavía',
       foot: 'user_id · nulable — sin cuenta hasta el primer login',
       icon: 'account_circle',
     },

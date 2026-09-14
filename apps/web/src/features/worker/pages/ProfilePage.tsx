@@ -175,6 +175,7 @@ export function ProfilePage(): ReactNode {
           <Trans>Tus datos</Trans>
         </h2>
         <dl className="mt-1 divide-y divide-white/15">
+          <Row label={t`Correo`} value={profile.email ?? '—'} />
           <Row label={t`Teléfono`} value={profile.phone} />
           <Row label={t`Domicilio`} value={profile.address} />
           <Row

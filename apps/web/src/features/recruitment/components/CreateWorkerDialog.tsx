@@ -383,6 +383,10 @@ export function CreateWorkerDialog({
                 {IS_DEV_UI && !isEditing && ' — personal.worker · nace en BLANCO'}
                 {IS_DEV_UI && <code className="text-[11px] text-ink-4"> · photo_path</code>}
               </p>
+              {/* De solo lectura: el correo es el vínculo con Firebase, no se edita aquí. */}
+              {isEditing && editing?.email && (
+                <p className="mt-0.5 text-xs text-ink-3">{editing.email}</p>
+              )}
               {isUploadError && (
                 <p role="alert" className="mt-1 text-xs text-red">
                   {uploadErrorMessage(uploadError)}

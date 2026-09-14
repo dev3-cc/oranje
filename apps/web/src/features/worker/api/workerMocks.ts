@@ -36,6 +36,7 @@ const profile: MyProfile = {
   isProfileComplete: false,
   hasTaxId: false,
   hasAccount: true,
+  email: 'rnavarro@oranjepeople.com',
   isBlacklisted: false,
   createdAt: isoDaysAgo(1),
   taxDeadline: {
