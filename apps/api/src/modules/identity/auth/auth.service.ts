@@ -20,6 +20,7 @@ interface UserForSession {
   hotelId: string | null
   departmentId: string | null
   isActive: boolean
+  deprecatesAt: Date | null
   role: { code: string }
 }
 
@@ -30,6 +31,7 @@ const USER_FIELDS = {
   hotelId: true,
   departmentId: true,
   isActive: true,
+  deprecatesAt: true,
   role: { select: { code: true } },
 } as const
 
@@ -156,6 +158,16 @@ export class AuthService {
       throw new UnauthorizedException({
         code: 'USER_INACTIVE',
         message: 'La cuenta está desactivada',
+      })
+    }
+
+    // Cuenta de transición (correo viejo, D-XX migración de correo): pasada
+    // la fecha, deja de poder autenticar — el aviso de cuál usar ya se le dio
+    // con tiempo en la pantalla de ponche.
+    if (user.deprecatesAt && user.deprecatesAt.getTime() <= Date.now()) {
+      throw new UnauthorizedException({
+        code: 'ACCOUNT_DEPRECATED',
+        message: 'Este acceso ya venció: entra con tu correo corporativo',
       })
     }
   }
