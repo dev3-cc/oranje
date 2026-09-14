@@ -14,15 +14,21 @@ import type { CatalogItem } from '../read/catalogs.service.js'
 import type { CreateCatalogItemDto, UpdateCatalogItemDto } from './dto/manage-catalog.dto.js'
 
 /**
- * Los catálogos administrables desde la app. Zonas y semáforos quedan FUERA a
- * propósito: las zonas amarran territorio e inspectores (RR-13) y los
- * semáforos son máquinas de estado del seed, no listas.
+ * Los catálogos administrables desde la app. Los semáforos quedan FUERA a
+ * propósito: son máquinas de estado del seed, no listas.
+ *
+ * Zonas amarra territorio e inspectores (RR-13), pero eso NO impide
+ * administrarla: `onDelete: Restrict` en `hotel.zone_id`, `user_zone.zone_id`
+ * y `worker.zone_id` ya protege cualquier fila en uso — el mismo 409
+ * `CATALOG_IN_USE` que ya usan Departamentos y Posiciones.
  */
 export const MANAGED_CATALOGS = [
   'hotel-departments',
   'positions',
   'hiring-modalities',
   'english-levels',
+  'zones',
+  'reasons',
 ] as const
 
 export type ManagedCatalog = (typeof MANAGED_CATALOGS)[number]
@@ -76,6 +82,10 @@ export class ManageCatalogsService {
         return this.prisma.hiringModality as unknown as CatalogDelegate
       case 'english-levels':
         return this.prisma.englishLevel as unknown as CatalogDelegate
+      case 'zones':
+        return this.prisma.zone as unknown as CatalogDelegate
+      case 'reasons':
+        return this.prisma.statusChangeReason as unknown as CatalogDelegate
     }
   }
 
@@ -107,6 +117,10 @@ export class ManageCatalogsService {
         })
       }
       data['hotelDepartmentId'] = dto.hotelDepartmentId
+    }
+
+    if (catalog === 'reasons') {
+      data['statusLightId'] = await this.resolveStatusLightId(dto.statusLightCode)
     }
 
     try {
@@ -144,6 +158,9 @@ export class ManageCatalogsService {
     }
     if (catalog === 'positions' && dto.hotelDepartmentId !== undefined) {
       data['hotelDepartmentId'] = dto.hotelDepartmentId
+    }
+    if (catalog === 'reasons' && dto.statusLightCode !== undefined) {
+      data['statusLightId'] = await this.resolveStatusLightId(dto.statusLightCode)
     }
 
     try {
@@ -187,6 +204,27 @@ export class ManageCatalogsService {
     })
   }
 
+  /** El motivo pertenece a un semáforo (`code`, estable entre ambientes) — el `id` es interno. */
+  private async resolveStatusLightId(statusLightCode: string | undefined): Promise<string> {
+    if (!statusLightCode) {
+      throw new UnprocessableEntityException({
+        code: 'STATUS_LIGHT_REQUIRED',
+        message: 'Un motivo pertenece a un semáforo: elige a cuál',
+      })
+    }
+    const light = await this.prisma.statusLight.findUnique({
+      where: { code: statusLightCode },
+      select: { id: true },
+    })
+    if (!light) {
+      throw new UnprocessableEntityException({
+        code: 'STATUS_LIGHT_UNKNOWN',
+        message: 'Ese semáforo no existe',
+      })
+    }
+    return light.id
+  }
+
   /** Los errores del motor con su significado de negocio, no un 500 mudo. */
   private translate(error: unknown, catalog: ManagedCatalog): unknown {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -202,7 +240,11 @@ export class ManageCatalogsService {
           message:
             catalog === 'hotel-departments'
               ? 'El departamento tiene posiciones u operación colgando de él: no se puede eliminar'
-              : 'Hay requisiciones o colaboradores usando esta fila: no se puede eliminar',
+              : catalog === 'zones'
+                ? 'Un hotel, un colaborador o una asignación de territorio usa esta zona: no se puede eliminar'
+                : catalog === 'reasons'
+                  ? 'Ese motivo ya quedó registrado en un cambio de estado: no se puede eliminar'
+                  : 'Hay requisiciones o colaboradores usando esta fila: no se puede eliminar',
         })
       }
     }

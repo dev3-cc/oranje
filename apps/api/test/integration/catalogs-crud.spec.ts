@@ -24,7 +24,7 @@ let auth: { id: string; roleCode: string; hotelId: null; departmentId: null }
 
 /** Filas creadas por el spec, para dejar la base como estaba. */
 const cleanup: Array<{
-  table: 'hiringModality' | 'catalogPosition' | 'hotelDepartment'
+  table: 'hiringModality' | 'catalogPosition' | 'hotelDepartment' | 'zone' | 'statusChangeReason'
   id: string
 }> = []
 
@@ -109,11 +109,65 @@ test('un departamento con posiciones colgando no se elimina: 409 CATALOG_IN_USE'
   )
 })
 
-test('un catálogo desconocido es 404, y zonas NO se administra desde aquí', () => {
-  expect(() => {
-    service.assertManaged('zones')
-  }).toThrow(NotFoundException)
+test('un catálogo desconocido es 404, y los semáforos NO se administran desde aquí', () => {
   expect(() => {
     service.assertManaged('status-lights')
   }).toThrow(NotFoundException)
+})
+
+test('crear zona, renombrarla y eliminarla', async () => {
+  const dto = createCatalogItemSchema.parse({ name: `Riviera Prueba ${String(stamp)}` })
+  const row = await service.create('zones', dto, auth)
+  cleanup.push({ table: 'zone', id: row.id })
+
+  const renamed = await service.update(
+    'zones',
+    row.id,
+    updateCatalogItemSchema.parse({ name: `Riviera Renombrada ${String(stamp)}` }),
+    auth,
+  )
+  expect(renamed.code).toBe(`RIVIERA_RENOMBRADA_${String(stamp)}`)
+
+  await service.remove('zones', row.id, auth)
+  const gone = await db.zone.findUnique({ where: { id: row.id } })
+  expect(gone).toBeNull()
+})
+
+test('una zona con un hotel colgando no se elimina: 409 CATALOG_IN_USE', async () => {
+  const inUse = await db.hotel.findFirstOrThrow({ select: { zoneId: true } })
+  await expect(service.remove('zones', inUse.zoneId, auth)).rejects.toThrow(ConflictException)
+})
+
+test('un motivo sin semáforo no es un motivo', async () => {
+  const dto = createCatalogItemSchema.parse({ name: `Motivo Suelto ${String(stamp)}` })
+  await expect(service.create('reasons', dto, auth)).rejects.toThrow(UnprocessableEntityException)
+})
+
+test('un semáforo que no existe: 422 STATUS_LIGHT_UNKNOWN', async () => {
+  const dto = createCatalogItemSchema.parse({
+    name: `Motivo Fantasma ${String(stamp)}`,
+    statusLightCode: 'NO_EXISTE',
+  })
+  await expect(service.create('reasons', dto, auth)).rejects.toThrow(UnprocessableEntityException)
+})
+
+test('crear motivo con semáforo, renombrarlo y eliminarlo', async () => {
+  const dto = createCatalogItemSchema.parse({
+    name: `Se mudó ${String(stamp)}`,
+    statusLightCode: 'WORKER',
+  })
+  const row = await service.create('reasons', dto, auth)
+  cleanup.push({ table: 'statusChangeReason', id: row.id })
+
+  const renamed = await service.update(
+    'reasons',
+    row.id,
+    updateCatalogItemSchema.parse({ name: `Cambió de ciudad ${String(stamp)}` }),
+    auth,
+  )
+  expect(renamed.code).toBe(`CAMBIO_DE_CIUDAD_${String(stamp)}`)
+
+  await service.remove('reasons', row.id, auth)
+  const gone = await db.statusChangeReason.findUnique({ where: { id: row.id } })
+  expect(gone).toBeNull()
 })
