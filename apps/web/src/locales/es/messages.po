@@ -2968,10 +2968,6 @@ msgstr "Perfecto, toma la foto"
 msgid "Perfil"
 msgstr "Perfil"
 
-#: src/features/auth/pages/LoginPage.tsx
-msgid "Personal Oranje"
-msgstr "Personal Oranje"
-
 #: src/features/requisitions/types/requisitionForm.schema.ts
 msgid "Pide al menos 1 persona"
 msgstr "Pide al menos 1 persona"

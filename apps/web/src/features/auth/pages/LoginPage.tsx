@@ -228,24 +228,15 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
               </motion.div>
 
               {/* Misma tarjeta para las dos puertas — el acento dice cuál es
-                  cuál a simple vista, sin duplicar el sistema de diseño: el
-                  naranja de marca para el personal interno, un tono oscuro
-                  para el Colaborador, siempre con ícono + texto (nunca solo
-                  color). */}
-              <span
-                className={
-                  isColaborador
-                    ? 'inline-flex w-fit items-center gap-1.5 rounded-full bg-ink px-2.5 py-1 text-xs font-semibold text-surface'
-                    : 'inline-flex w-fit items-center gap-1.5 rounded-full bg-o-50 px-2.5 py-1 text-xs font-semibold text-o-700'
-                }
-              >
-                <MaterialIcon
-                  name={isColaborador ? 'work' : 'apartment'}
-                  className="text-sm"
-                  aria-hidden
-                />
-                {isColaborador ? <Trans>Colaborador</Trans> : <Trans>Personal Oranje</Trans>}
-              </span>
+                  cuál a simple vista, sin duplicar el sistema de diseño. Solo
+                  en la puerta del Colaborador: la de personal interno es la
+                  puerta "normal", no necesita etiqueta propia. */}
+              {isColaborador && (
+                <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-ink px-2.5 py-1 text-xs font-semibold text-surface">
+                  <MaterialIcon name="work" className="text-sm" aria-hidden />
+                  <Trans>Colaborador</Trans>
+                </span>
+              )}
             </div>
 
             <AnimatePresence mode="wait" initial={false}>
