@@ -881,6 +881,7 @@ msgstr "Cobertura parcial"
 msgid "Cola del Self-Pick"
 msgstr "Cola del Self-Pick"
 
+#: src/features/auth/pages/LoginPage.tsx
 #: src/features/timesheet/components/TimesheetGrid.tsx
 #: src/features/timesheet/pages/TimesheetGlobalPage.tsx
 #: src/shared/constants/roles.ts
@@ -2966,6 +2967,10 @@ msgstr "Perfecto, toma la foto"
 #: src/features/worker/components/MobileShell.tsx
 msgid "Perfil"
 msgstr "Perfil"
+
+#: src/features/auth/pages/LoginPage.tsx
+msgid "Personal Oranje"
+msgstr "Personal Oranje"
 
 #: src/features/requisitions/types/requisitionForm.schema.ts
 msgid "Pide al menos 1 persona"

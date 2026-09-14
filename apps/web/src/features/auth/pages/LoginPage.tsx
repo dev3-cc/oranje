@@ -3,7 +3,7 @@ import type { MessageDescriptor } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
-import { Input } from '@oranje/ui'
+import { Input, MaterialIcon } from '@oranje/ui'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
@@ -215,16 +215,38 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
         >
           {/* Columna del formulario: 340–400px, como la referencia. */}
           <section className="flex w-full flex-col justify-center gap-8 p-8 sm:p-10">
-            <motion.div
-              role="img"
-              aria-label="Oranje"
-              className="h-6 aspect-[1024/120] self-start"
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15, duration: 0.4 }}
-            >
-              <DotLottieReact src={logoAnimado} loop autoplay />
-            </motion.div>
+            <div className="flex flex-col gap-3">
+              <motion.div
+                role="img"
+                aria-label="Oranje"
+                className="h-6 aspect-[1024/120] self-start"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15, duration: 0.4 }}
+              >
+                <DotLottieReact src={logoAnimado} loop autoplay />
+              </motion.div>
+
+              {/* Misma tarjeta para las dos puertas — el acento dice cuál es
+                  cuál a simple vista, sin duplicar el sistema de diseño: el
+                  naranja de marca para el personal interno, un tono oscuro
+                  para el Colaborador, siempre con ícono + texto (nunca solo
+                  color). */}
+              <span
+                className={
+                  isColaborador
+                    ? 'inline-flex w-fit items-center gap-1.5 rounded-full bg-ink px-2.5 py-1 text-xs font-semibold text-surface'
+                    : 'inline-flex w-fit items-center gap-1.5 rounded-full bg-o-50 px-2.5 py-1 text-xs font-semibold text-o-700'
+                }
+              >
+                <MaterialIcon
+                  name={isColaborador ? 'work' : 'apartment'}
+                  className="text-sm"
+                  aria-hidden
+                />
+                {isColaborador ? <Trans>Colaborador</Trans> : <Trans>Personal Oranje</Trans>}
+              </span>
+            </div>
 
             <AnimatePresence mode="wait" initial={false}>
               {mode === 'login' ? (
