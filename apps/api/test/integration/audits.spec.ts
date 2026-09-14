@@ -541,11 +541,15 @@ describe('leer auditorías', () => {
 })
 
 describe('la Matriz sostiene audits:update', () => {
-  it('solo el Supervisor corrige', async () => {
+  it('solo el Supervisor audita, corrige y ve: sus Managers no, ni por herencia', async () => {
+    // Auditorías queda fuera de la herencia por jerarquía (Reglas de Negocio,
+    // «Herencia por jerarquía», decisión de Hugo del 2026-09-14).
     const permissions = new PermissionsService(prisma)
 
-    expect(await permissions.can('ROL-H-01', 'audits', 'update')).toBe(true)
-    expect(await permissions.can('ROL-H-02', 'audits', 'update')).toBe(false)
-    expect(await permissions.can('ROL-H-03', 'audits', 'update')).toBe(false)
+    for (const action of ['create', 'read', 'update']) {
+      expect(await permissions.can('ROL-H-01', 'audits', action)).toBe(true)
+      expect(await permissions.can('ROL-H-02', 'audits', action)).toBe(false)
+      expect(await permissions.can('ROL-H-03', 'audits', action)).toBe(false)
+    }
   })
 })

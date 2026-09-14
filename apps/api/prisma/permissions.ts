@@ -39,6 +39,11 @@ export interface Permission {
   /** La fila del vault, tal cual. Para poder auditar. */
   label: string
   roles: string[]
+  /**
+   * `false` deja la fila fuera de la herencia por jerarquía: la tienen solo
+   * los roles listados (Reglas de Negocio, «Herencia por jerarquía»).
+   */
+  inherit?: false
 }
 
 const BD = 'ROL-V-01'
@@ -393,23 +398,28 @@ const HOTEL: Permission[] = [
   { module: 'schedule', action: 'export', label: 'Exportar Schedule', roles: [SUPERVISOR, GA, GG] },
 
   // AUDITORIAS
+  // Solo el Supervisor audita y ve auditorias: ni sus Managers por herencia
+  // (decision de Hugo, 2026-09-14).
   {
     module: 'audits',
     action: 'create',
     label: 'Auditar presentacion o ambiente de mi hotel',
     roles: [SUPERVISOR],
+    inherit: false,
   },
   {
     module: 'audits',
     action: 'read',
     label: 'Ver auditorias de mi hotel',
-    roles: [SUPERVISOR, GA, GG, SYS],
+    roles: [SUPERVISOR, SYS],
+    inherit: false,
   },
   {
     module: 'audits',
     action: 'update',
     label: 'Corregir una auditoria',
     roles: [SUPERVISOR],
+    inherit: false,
   },
 
   // TIMESHEET
@@ -1154,12 +1164,51 @@ export const PERMISSIONS: Permission[] = [
  * roles distintos. Sin esta pasada, el índice único de la tabla rechaza el seed
  * a media corrida.
  */
+/**
+ * Herencia por jerarquía (Reglas de Negocio, «Herencia por jerarquía»,
+ * 2026-09-14): quien tiene subordinados puede hacer todo lo que ellos, dentro
+ * de su mismo alcance. El semáforo del Onboarding era demasiado granular —
+ * el BDC no podía mover un hotel de Gris a Rosa sin un BD de por medio — y
+ * lo mismo pasaba con el Manager de Reclutamiento y los Managers del hotel.
+ *
+ * La herencia se resuelve AL SEMBRAR: cada permiso y cada transición de un
+ * subordinado se siembra también para su jefe, así que `role_permission` y
+ * `status_light_transition` quedan explícitas y el guard no sabe de jerarquía.
+ * Fuera a propósito: Contabilidad (el Flujo de Nómina exige dos firmas de
+ * personas distintas), el Colaborador (su ponche es evidencia de presencia,
+ * nadie lo da por él) y las filas marcadas `inherit: false` (Auditorías: solo
+ * el Supervisor).
+ */
+export const ROLE_INHERITANCE: Record<string, readonly string[]> = {
+  /** BDC ⊃ BD: los pasos del Onboarding del BD, propuestas, Rojo, territorio. */
+  'ROL-V-02': ['ROL-V-01'],
+  /** Líder de Grupo ⊃ Reclutadora. */
+  'ROL-R-02': ['ROL-R-01'],
+  /** Manager de Reclutamiento ⊃ Líder ⊃ Reclutadora: también toma requisiciones y asigna. */
+  'ROL-R-03': ['ROL-R-02', 'ROL-R-01'],
+  /** Manager de Área ⊃ Supervisor (accidente en sitio, marca manual); Auditorías queda fuera (`inherit: false`). */
+  'ROL-H-02': ['ROL-H-01'],
+  /** Manager General ⊃ Manager de Área ⊃ Supervisor; el alcance sigue siendo su hotel. */
+  'ROL-H-03': ['ROL-H-02', 'ROL-H-01'],
+  /** Coordinador ⊃ Inspector; cerrar sigue siendo del inspector asignado a la tarjeta (D-32). */
+  'ROL-I-02': ['ROL-I-01'],
+}
+
+/** Los roles de una fila más los jefes que los heredan, sin duplicados. */
+export function expandRoles(roles: readonly string[]): string[] {
+  const out = new Set(roles)
+  for (const [boss, subordinates] of Object.entries(ROLE_INHERITANCE)) {
+    if (subordinates.some((code) => roles.includes(code))) out.add(boss)
+  }
+  return [...out]
+}
+
 export function flattenPermissions(): Array<{ roleCode: string; module: string; action: string }> {
   const seen = new Set<string>()
   const rows: Array<{ roleCode: string; module: string; action: string }> = []
 
   for (const p of PERMISSIONS) {
-    for (const roleCode of p.roles) {
+    for (const roleCode of p.inherit === false ? p.roles : expandRoles(p.roles)) {
       const key = `${roleCode}|${p.module}|${p.action}`
 
       if (!seen.has(key)) {

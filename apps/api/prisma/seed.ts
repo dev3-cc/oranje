@@ -4,7 +4,7 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client'
 import { v7 as uuidv7 } from 'uuid'
 
-import { flattenPermissions } from './permissions.js'
+import { expandRoles, flattenPermissions } from './permissions.js'
 
 /**
  * Seed de catálogos. Las reglas del negocio son FILAS, no código: sin esto el
@@ -1274,7 +1274,7 @@ async function main(): Promise<void> {
   for (const t of ONBOARDING_TRANSITIONS) {
     const fromId = await stateId(t.from)
     const toId = await stateId(t.to)
-    for (const roleCode of t.roles) {
+    for (const roleCode of expandRoles(t.roles)) {
       const role = await prisma.role.findUniqueOrThrow({ where: { code: roleCode } })
       await prisma.statusLightTransition.upsert({
         where: {
@@ -1315,7 +1315,7 @@ async function main(): Promise<void> {
     const fromId = await workerStateId(t.from)
     const toId = t.to === null ? null : await workerStateId(t.to)
 
-    for (const roleCode of t.roles) {
+    for (const roleCode of expandRoles(t.roles)) {
       const role = await prisma.role.findUniqueOrThrow({ where: { code: roleCode } })
 
       if (toId === null) {
@@ -1380,7 +1380,7 @@ async function main(): Promise<void> {
     const to = await prisma.statusLightState.findUniqueOrThrow({
       where: { statusLightId_code: { statusLightId: light.id, code: t.to } },
     })
-    for (const roleCode of t.roles) {
+    for (const roleCode of expandRoles(t.roles)) {
       const role = await prisma.role.findUniqueOrThrow({ where: { code: roleCode } })
       await prisma.statusLightTransition.upsert({
         where: {
@@ -1412,7 +1412,7 @@ async function main(): Promise<void> {
   for (const t of BLACKLIST_TRANSITIONS) {
     const from = await workerStateId(t.from)
     const to = await workerStateId(t.to)
-    for (const roleCode of t.roles) {
+    for (const roleCode of expandRoles(t.roles)) {
       const role = await prisma.role.findUniqueOrThrow({ where: { code: roleCode } })
       await prisma.statusLightTransition.upsert({
         where: {
