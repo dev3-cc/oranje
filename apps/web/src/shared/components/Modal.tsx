@@ -30,6 +30,17 @@ export interface ModalProps {
    * que Radix lo exige y con razón.
    */
   chromeless?: boolean
+  /**
+   * `false` para diálogos con terceros que portan al `<body>` fuera del
+   * control de Radix (Google Places, y cualquier cosa parecida) — un Select
+   * normal ya se cubre con la lista de abajo, pero un widget de un tercero
+   * puede dejar nodos o eventos que Radix no sabe atribuir de vuelta al
+   * diálogo, y cada uno es un caso nuevo por perseguir. Mientras exista uno
+   * de esos en el contenido, el diálogo solo se cierra por Escape o por un
+   * botón explícito — nunca por clic o foco "afuera". Por defecto `true`
+   * (el comportamiento de Radix, con la excepción de portales conocidos).
+   */
+  dismissOnOutsideInteraction?: boolean
 }
 
 /**
@@ -39,17 +50,22 @@ export interface ModalProps {
  * con el selector de Zona del alta de prospecto). Mismo caso que Google
  * Places, generalizado a los tres portales que ya usa la app.
  */
-function keepPortaledInteraction(event: {
-  target: EventTarget | null
-  preventDefault: () => void
-}): void {
-  const target = event.target as Element | null
-  if (
-    target?.closest(
-      '.pac-container, [data-slot="select-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"]',
-    )
-  ) {
-    event.preventDefault()
+function keepPortaledInteraction(
+  dismissOnOutsideInteraction: boolean,
+): (event: { target: EventTarget | null; preventDefault: () => void }) => void {
+  return (event) => {
+    if (!dismissOnOutsideInteraction) {
+      event.preventDefault()
+      return
+    }
+    const target = event.target as Element | null
+    if (
+      target?.closest(
+        '.pac-container, [data-slot="select-content"], [data-slot="popover-content"], [data-slot="dropdown-menu-content"]',
+      )
+    ) {
+      event.preventDefault()
+    }
   }
 }
 
@@ -62,7 +78,9 @@ export function Modal({
   footer,
   className,
   chromeless = false,
+  dismissOnOutsideInteraction = true,
 }: ModalProps): ReactNode {
+  const onInteract = keepPortaledInteraction(dismissOnOutsideInteraction)
   /**
    * El DialogContent de shadcn se auto-limita a `sm:max-w-lg` (512px). Los
    * modales de la app declaran su ancho con `max-w-*` SIN breakpoint, que en
@@ -91,8 +109,8 @@ export function Modal({
             widthOverrides,
           )}
           aria-describedby={undefined}
-          onInteractOutside={keepPortaledInteraction}
-          onPointerDownOutside={keepPortaledInteraction}
+          onInteractOutside={onInteract}
+          onPointerDownOutside={onInteract}
         >
           <DialogTitle className="sr-only">{title}</DialogTitle>
           {children}
@@ -115,8 +133,8 @@ export function Modal({
           className,
           widthOverrides,
         )}
-        onInteractOutside={keepPortaledInteraction}
-        onPointerDownOutside={keepPortaledInteraction}
+        onInteractOutside={onInteract}
+        onPointerDownOutside={onInteract}
         /* Sin descripción, Radix avisa en consola; se apaga el aria explícitamente. */
         {...(description === undefined ? { 'aria-describedby': undefined } : {})}
       >

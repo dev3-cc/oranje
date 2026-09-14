@@ -104,6 +104,14 @@ function PlacesAutocompleteInput({
         photoUrl: place.photos?.[0]?.getUrl({ maxWidth: 640 }) ?? null,
         placeId: place.place_id ?? null,
       })
+
+      /* Google monta el desplegable en <body>, fuera de React, y solo lo
+         retiraba al desmontar — quedaba huérfano ahí el resto del paso 1.
+         Elegir Zona después chocaba con ese nodo suelto (fuera de cualquier
+         DismissableLayer de Radix) y cerraba el modal solo. Se limpia aquí,
+         en cuanto ya eligió, no cuando el campo se desmonte. */
+      for (const node of document.querySelectorAll('.pac-container')) node.remove()
+      inputRef.current?.blur()
     })
 
     return () => {
