@@ -607,10 +607,7 @@ export function ProspectFormDialog({
                               control={control}
                               name="zoneId"
                               render={({ field }) => (
-                                <Select
-                                  {...(field.value ? { value: field.value } : {})}
-                                  onValueChange={field.onChange}
-                                >
+                                <Select value={field.value} onValueChange={field.onChange}>
                                   <SelectTrigger id="zoneId" className="w-full">
                                     <SelectValue placeholder="Elige la zona" />
                                   </SelectTrigger>
