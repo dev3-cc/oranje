@@ -99,9 +99,9 @@ export function ClientCardItem({
               <div className="mt-3 flex flex-wrap gap-2">
                 {contract && (
                   <>
-                    {/* El folio abre su contrato, como en Documentos T&C. */}
+                    {/* El folio abre su contrato, como en Contratos. */}
                     <Link
-                      to={`/documentos-tc/${contract.id}`}
+                      to={`/contratos/${contract.id}`}
                       className="inline-flex items-center rounded-md border border-line bg-surface-2 px-3 py-1.5 text-sm whitespace-nowrap text-ink-2 hover:border-o-500 hover:text-o-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
                     >
                       {contract.number}

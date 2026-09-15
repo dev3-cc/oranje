@@ -32,6 +32,7 @@ export interface TeamMemberCard {
 export interface TeamMemberCycle {
   prospectId: string
   hotelName: string
+  hotelPhotoUrl: string | null
   status: OnboardingStatus
   /** Días desde el último intento de contacto (o desde la apertura si no hay). */
   daysSinceAttempt: number

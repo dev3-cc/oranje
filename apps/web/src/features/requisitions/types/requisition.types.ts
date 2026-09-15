@@ -127,6 +127,7 @@ export interface AuthorizationRequest {
   id: string
   number: string
   hotelName: string
+  hotelPhotoUrl: string | null
   department: string
   requestedByName: string
   status: RequisitionStatus

@@ -14,6 +14,21 @@ import type { OnboardingStatus } from '@/shared/constants/onboardingStatus'
  */
 export type ProposalStatus = 'DRAFT' | 'SENT'
 
+/**
+ * Un renglón del cuadro de tarifas: el puesto y sus dos precios por hora.
+ *
+ * El margen NO es un porcentaje fijo (en el contrato de Lithia Springs va de
+ * 26.75% a 30% según el puesto), así que el bill se captura, no se calcula.
+ */
+export interface ProposalRate {
+  /** Id del renglón guardado; `null` mientras es una fila nueva del formulario. */
+  id: string | null
+  positionId: string
+  positionName: string
+  payRate: number
+  billRate: number
+}
+
 export interface ProposalVersionSummary {
   id: string
   version: number
@@ -27,7 +42,11 @@ export interface ProposalVersionSummary {
    * front con los datos de la versión, sin pedir nada más.
    */
   servicesNote: string
+  /** El cuadro de tarifas por puesto. Vacío en las versiones anteriores al cuadro. */
+  rates: ProposalRate[]
+  /** @deprecated Tarifa global de las versiones anteriores al cuadro por puesto. */
   payRate: number
+  /** @deprecated Tarifa global de las versiones anteriores al cuadro por puesto. */
   billRate: number
 }
 
@@ -41,8 +60,11 @@ export interface ProposalDraft {
   version: number
   /** `services_note` — texto libre. */
   servicesNote: string
-  /** Tarifas GLOBALES, no por posición. Ver la nota de la pantalla. */
+  /** El cuadro de tarifas por puesto: lo que el hotel firma. */
+  rates: ProposalRate[]
+  /** @deprecated Tarifa global; solo llega en versiones anteriores al cuadro. */
   payRate: number
+  /** @deprecated Tarifa global; solo llega en versiones anteriores al cuadro. */
   billRate: number
 }
 
@@ -53,6 +75,8 @@ export interface ProposalWorkspace {
   owner: { id: string; name: string; photoUrl: string | null }
   /** Dirección del hotel (`commercial.hotel.address`), para el machote del contrato. */
   hotelAddress: string | null
+  /** Correo del contacto principal del hotel: a quién se le manda la propuesta. */
+  contactEmail: string | null
   /** Semáforo del prospecto, para el chip del encabezado. */
   prospectStatus: OnboardingStatus
   /**
@@ -62,6 +86,8 @@ export interface ProposalWorkspace {
   draft: ProposalDraft | null
   /** Todas las versiones, de la más nueva a la más vieja. Nunca se borran. */
   versions: ProposalVersionSummary[]
+  /** Los puestos del catálogo que el cuadro puede cotizar (los da de alta el Administrador). */
+  positions: Array<{ id: string; name: string }>
 }
 
 /**
@@ -71,6 +97,7 @@ export interface ProposalWorkspace {
 export interface ProposalCandidate {
   prospectId: string
   hotelName: string
+  hotelPhotoUrl: string | null
   zone: string
   prospectStatus: OnboardingStatus
   latestVersion: number
@@ -92,6 +119,5 @@ export interface SaveProposalDraftRequest {
   /** Solo para invalidar la caché del prospecto; no viaja en el cuerpo. */
   prospectId: string
   servicesNote: string
-  payRate: number
-  billRate: number
+  rates: Array<{ positionId: string; payRate: number; billRate: number }>
 }

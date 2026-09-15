@@ -70,6 +70,7 @@ function buildStaleList(open: ProspectApi[]): StaleProspect[] {
     .map((prospect) => ({
       prospectId: prospect.id,
       hotelName: prospect.hotel.name,
+      hotelPhotoUrl: prospect.hotel.photoUrl,
       /** Sin intentos aún, la inactividad corre desde que el ciclo abrió. */
       daysWithoutAttempt: daysSince(prospect.lastAttempt?.occurredAt ?? prospect.openedAt),
       status: prospect.state.code as OnboardingStatus,

@@ -68,7 +68,7 @@ const MODULES: NavModule[] = [
   { label: msg`Pipeline`, to: '/pipeline', icon: 'view_kanban', roles: VENTAS },
   { label: msg`Mi Territorio`, to: '/mi-territorio', icon: 'map', roles: VENTAS },
   { label: msg`Propuestas`, to: '/propuestas', icon: 'description', roles: VENTAS },
-  { label: msg`Documentos T&C`, to: '/documentos-tc', icon: 'gavel', roles: VENTAS },
+  { label: msg`Contratos`, to: '/contratos', icon: 'gavel', roles: VENTAS },
   { label: msg`Conversión`, to: '/conversion', icon: 'swap_horiz', roles: [BDC] },
   { label: msg`Clientes Activos`, to: '/clientes-activos', icon: 'apartment', roles: VENTAS },
   { label: msg`Mi Equipo`, to: '/mi-equipo', icon: 'groups', roles: [BDC] },
@@ -188,79 +188,66 @@ export function Sidebar(): ReactNode {
 
       {session && (
         <SidebarFooter>
-          {/* La tarjeta de perfil (referencia): portada difuminada con el logo, avatar encimado, nombre y rol. */}
-          <div className="overflow-hidden rounded-xl border border-line bg-surface">
-            <div className="relative h-14">
-              <div
-                aria-hidden
-                className="absolute inset-0 bg-gradient-to-br from-o-50 via-o-500/25 to-o-500/50 blur-[1px]"
-              />
-              <div
-                className="absolute top-2 right-2 w-16 opacity-70"
-                role="img"
-                aria-label="Oranje"
-              >
-                <DotLottieReact src={logoAnimado} loop autoplay />
-              </div>
-              <div className="absolute -bottom-5 left-3">
+          {/* Tarjeta de perfil simple (Hugo, 2026-09-15: "se ve feo" el
+              encabezado con portada y avatar encimado — una fila plana con
+              foto, nombre y rol, sin perder cerrar sesión ni el idioma). */}
+          <div className="flex flex-col gap-2 rounded-xl border border-line bg-surface px-3 py-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2.5">
                 {session.photoUrl ? (
                   <img
                     src={session.photoUrl}
                     alt=""
                     aria-hidden
-                    className="size-11 rounded-full border-2 border-surface object-cover shadow-sm"
+                    className="size-9 shrink-0 rounded-full object-cover"
                   />
                 ) : (
                   <span
                     aria-hidden
-                    className="flex size-11 items-center justify-center rounded-full border-2 border-surface bg-o-500 text-sm font-bold text-ink shadow-sm"
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full bg-o-500 text-sm font-bold text-ink"
                   >
                     {session.shortName.charAt(0)}
                   </span>
                 )}
-              </div>
-            </div>
-            <div className="flex flex-col gap-2 px-3 pt-6 pb-3">
-              <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-ink">{session.shortName}</p>
                   <p className="truncate text-xs text-ink-3">{roleLabelOf(session.roleId).title}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    /* Navegar ANTES de que la sesión se limpie: si se espera
-                       a que `logout` resuelva, `RequireSession` alcanza a
-                       redirigir con `state.from` = esta misma ruta (p. ej.
-                       `/usuarios`), y quien entre después con OTRO rol
-                       aterriza ahí en vez de en su inicio — el bug de
-                       "se queda pegado en la pantalla del rol anterior". Al
-                       salir a `/login` de inmediato, ese guard ya no está
-                       montado cuando el logout termina. */
-                    void navigate('/login', { replace: true })
-                    void logout()
-                  }}
-                  disabled={isLoggingOut}
-                  title={i18n._(msg`Cerrar sesión`)}
-                  aria-label={i18n._(msg`Cerrar sesión`)}
-                  className="shrink-0 cursor-pointer rounded-md p-2 text-ink-3 transition-colors hover:bg-surface-2 hover:text-red disabled:opacity-50"
-                >
-                  <span className="material-icons-outlined text-xl leading-none" aria-hidden>
-                    logout
-                  </span>
-                </button>
               </div>
-              {/* Idioma junto a la cuenta (D-36), en su propio renglón: al lado del
-                  nombre se topaba con él en tarjetas angostas — un control de
-                  Español/English con etiquetas completas no cabe ahí. */}
-              <LanguageSwitch
-                size="sm"
-                className="w-full"
-                onChange={(locale) => {
-                  void updateMyLocale(locale)
+              <button
+                type="button"
+                onClick={() => {
+                  /* Navegar ANTES de que la sesión se limpie: si se espera
+                     a que `logout` resuelva, `RequireSession` alcanza a
+                     redirigir con `state.from` = esta misma ruta (p. ej.
+                     `/usuarios`), y quien entre después con OTRO rol
+                     aterriza ahí en vez de en su inicio — el bug de
+                     "se queda pegado en la pantalla del rol anterior". Al
+                     salir a `/login` de inmediato, ese guard ya no está
+                     montado cuando el logout termina. */
+                  void navigate('/login', { replace: true })
+                  void logout()
                 }}
-              />
+                disabled={isLoggingOut}
+                title={i18n._(msg`Cerrar sesión`)}
+                aria-label={i18n._(msg`Cerrar sesión`)}
+                className="shrink-0 cursor-pointer rounded-md p-2 text-ink-3 transition-colors hover:bg-surface-2 hover:text-red disabled:opacity-50"
+              >
+                <span className="material-icons-outlined text-xl leading-none" aria-hidden>
+                  logout
+                </span>
+              </button>
             </div>
+            {/* Idioma junto a la cuenta (D-36), en su propio renglón: al lado del
+                nombre se topaba con él en tarjetas angostas — un control de
+                Español/English con etiquetas completas no cabe ahí. */}
+            <LanguageSwitch
+              size="sm"
+              className="w-full"
+              onChange={(locale) => {
+                void updateMyLocale(locale)
+              }}
+            />
           </div>
         </SidebarFooter>
       )}

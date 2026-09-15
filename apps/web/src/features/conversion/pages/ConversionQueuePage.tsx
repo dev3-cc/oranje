@@ -8,6 +8,7 @@ import { ProspectCard } from '@/features/onboarding'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { FoldText } from '@/shared/components/FoldText'
+import { HotelThumbnail } from '@/shared/components/HotelThumbnail'
 import { LoadError } from '@/shared/components/LoadError'
 import { MagicCard } from '@/shared/components/MagicCard'
 import { SearchField } from '@/shared/components/SearchField'
@@ -100,11 +101,14 @@ export function ConversionQueuePage(): ReactNode {
                   to={`/conversion/${candidate.prospectId}`}
                   className="flex items-center justify-between gap-4 rounded-md border border-line bg-surface p-4 transition-colors hover:bg-surface-2"
                 >
-                  <div className="min-w-0">
-                    <p className="text-base font-semibold text-ink">{candidate.hotelName}</p>
-                    <p className="mt-1 text-sm text-ink-3">
-                      {candidate.zone} · {formatDaysInStatus(candidate.daysInStatus)}
-                    </p>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <HotelThumbnail photoUrl={candidate.hotelPhotoUrl} />
+                    <div className="min-w-0">
+                      <p className="text-base font-semibold text-ink">{candidate.hotelName}</p>
+                      <p className="mt-1 text-sm text-ink-3">
+                        {candidate.zone} · {formatDaysInStatus(candidate.daysInStatus)}
+                      </p>
+                    </div>
                   </div>
 
                   <div className="flex shrink-0 items-center gap-4">

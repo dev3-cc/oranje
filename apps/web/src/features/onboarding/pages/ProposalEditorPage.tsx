@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { cn, StatusLightBadge, toast } from '@oranje/ui'
-import { useEffect, useState, type ComponentProps, type ReactNode } from 'react'
+import { StatusLightBadge, toast } from '@oranje/ui'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate, useParams } from 'react-router'
 
@@ -11,6 +11,7 @@ import {
   useSaveProposalDraftMutation,
   useSendProposalMutation,
 } from '../api/proposalsApi'
+import { ProposalRateFields } from '../components/ProposalRateFields'
 import { ProposalVersionHistory } from '../components/ProposalVersionHistory'
 import { proposalDraftSchema, type ProposalDraftForm } from '../types/proposalDraft.schema'
 
@@ -50,8 +51,8 @@ const INTRO_SLIDES = [
   },
   {
     image: personajePago,
-    title: 'Tarifas globales, por ahora',
-    text: 'Un pay rate y un bill rate para todo el hotel. Cotizar por posición llegará más adelante.',
+    title: 'Se cotiza por puesto',
+    text: 'Un renglón por puesto con su pay y su bill: es el mismo cuadro que el hotel firma en el contrato.',
   },
   {
     image: personajeRetro,
@@ -101,11 +102,13 @@ export function ProposalEditorPage({
       ? `La propuesta se trabaja con el hotel en Verde o Café: este está en ${ONBOARDING_STATUS_LABEL[workspace.prospectStatus]}`
       : null
 
-  const { register, handleSubmit, reset, trigger, formState } = useForm<ProposalDraftForm>({
-    resolver: zodResolver(proposalDraftSchema),
-    mode: 'onChange',
-    defaultValues: { servicesNote: '', payRate: 0, billRate: 0 },
-  })
+  const { register, control, handleSubmit, reset, trigger, formState } = useForm<ProposalDraftForm>(
+    {
+      resolver: zodResolver(proposalDraftSchema),
+      mode: 'onChange',
+      defaultValues: { servicesNote: '', rates: [] },
+    },
+  )
 
   const draft = workspace?.draft ?? null
   /** La última ENVIADA: lo que se enseña cuando no hay borrador abierto. */
@@ -119,8 +122,11 @@ export function ProposalEditorPage({
     if (!draft) return
     reset({
       servicesNote: draft.servicesNote,
-      payRate: draft.payRate,
-      billRate: draft.billRate,
+      rates: draft.rates.map((rate) => ({
+        positionId: rate.positionId,
+        payRate: rate.payRate,
+        billRate: rate.billRate,
+      })),
     })
     /*
      * `reset` NO valida: sin esto `isValid` se queda en false y los botones
@@ -151,6 +157,13 @@ export function ProposalEditorPage({
       byCode: {
         PROPOSAL_STATE_INVALID: `La propuesta se trabaja con el hotel en Verde o Café — este está en ${workspace ? ONBOARDING_STATUS_LABEL[workspace.prospectStatus] : 'otro estado'}.`,
         PROPOSAL_SENT: 'Esta versión ya se envió: lo enviado no se edita — abre una versión nueva.',
+        PROPOSAL_WITHOUT_RATES:
+          'Agrega al menos un puesto con su tarifa: el cuadro es lo que el hotel acepta.',
+        RATE_MARGIN_NEGATIVE:
+          'Hay un puesto donde el bill rate queda por debajo del pay rate: se pierde en cada hora.',
+        RATE_DUPLICATED: 'Hay dos renglones para el mismo puesto: deja uno solo.',
+        POSITION_NOT_FOUND:
+          'Uno de los puestos ya no está en el catálogo. Recarga la página y vuelve a elegirlo.',
       },
       fallback: 'No se pudo guardar la propuesta. Revisa las tarifas e inténtalo de nuevo.',
     })
@@ -344,14 +357,23 @@ export function ProposalEditorPage({
                       {draft.servicesNote || 'Aún sin describir'}
                     </dd>
                   </div>
-                  <div className="flex items-center justify-between gap-4 p-3">
-                    <dt className="text-sm text-ink-3">Pay rate</dt>
-                    <dd className="text-sm font-medium text-ink">${draft.payRate.toFixed(2)}</dd>
-                  </div>
-                  <div className="flex items-center justify-between gap-4 p-3">
-                    <dt className="text-sm text-ink-3">Bill rate</dt>
-                    <dd className="text-sm font-medium text-ink">${draft.billRate.toFixed(2)}</dd>
-                  </div>
+                  {draft.rates.map((rate) => (
+                    <div
+                      key={rate.positionId}
+                      className="flex items-center justify-between gap-4 p-3"
+                    >
+                      <dt className="text-sm text-ink-3">{rate.positionName}</dt>
+                      <dd className="text-sm font-medium text-ink">
+                        ${rate.payRate.toFixed(2)} pay · ${rate.billRate.toFixed(2)} bill
+                      </dd>
+                    </div>
+                  ))}
+                  {draft.rates.length === 0 && (
+                    <div className="flex items-center justify-between gap-4 p-3">
+                      <dt className="text-sm text-ink-3">Tarifas</dt>
+                      <dd className="text-sm text-ink-3">Aún sin cotizar ningún puesto</dd>
+                    </div>
+                  )}
                 </dl>
                 <p className="mt-4 text-sm leading-relaxed text-ink-3">
                   Es un borrador en elaboración: los valores pueden cambiar hasta que el BD o el BDC
@@ -390,32 +412,18 @@ export function ProposalEditorPage({
                   </FormField>
                 </SectionCard>
 
-                <SectionCard title="Tarifas tentativas">
-                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                    <FormField
-                      label="Pay rate"
-                      htmlFor="payRate"
-                      error={formState.errors.payRate?.message}
-                    >
-                      <MoneyInput id="payRate" {...register('payRate', { valueAsNumber: true })} />
-                    </FormField>
-
-                    <FormField
-                      label="Bill rate"
-                      htmlFor="billRate"
-                      error={formState.errors.billRate?.message}
-                    >
-                      <MoneyInput
-                        id="billRate"
-                        {...register('billRate', { valueAsNumber: true })}
-                      />
-                    </FormField>
-                  </div>
+                <SectionCard title="Tarifas por puesto">
+                  <ProposalRateFields
+                    control={control}
+                    register={register}
+                    positions={workspace.positions}
+                    errors={formState.errors}
+                  />
 
                   <p className="mt-5 rounded-md bg-o-50 p-4 text-sm leading-relaxed text-ink-2">
                     {IS_DEV_UI
-                      ? 'Tarifas globales, no por posición. Cuando el negocio cotice Chef y Housekeeper por separado se agrega proposal_rate — migración aditiva, sin tocar esta pantalla.'
-                      : 'Las tarifas aplican a todo el hotel, no por posición. Cotizar por posición llegará más adelante.'}
+                      ? 'commercial.proposal_rate — un renglón por puesto, espejo de contract_rate: al firmar se copia al Documento de T&C.'
+                      : 'Este cuadro es el que firma el hotel: al crear el Documento de T&C se copia tal cual, sin volver a capturarlo.'}
                   </p>
                 </SectionCard>
               </form>
@@ -501,34 +509,13 @@ export function ProposalEditorPage({
             <ProposalVersionHistory
               hotelName={workspace.hotelName}
               hotelAddress={workspace.hotelAddress}
+              contactEmail={workspace.contactEmail}
+              senderName={workspace.owner.name}
               versions={workspace.versions}
             />
           </div>
         </>
       )}
-    </div>
-  )
-}
-
-/**
- * Campo de tarifa con el `$` delante. Se separa el símbolo del control porque
- * `type="number"` no admite texto dentro, y con `type="text"` se perdería el
- * teclado numérico del móvil y la validación del navegador.
- */
-function MoneyInput({ id, ...props }: ComponentProps<'input'>): ReactNode {
-  return (
-    <div className="relative">
-      <span className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-sm text-ink-3">
-        $
-      </span>
-      <input
-        id={id}
-        type="number"
-        step="0.01"
-        min="0"
-        {...props}
-        className={cn(CONTROL_CLASS, 'pl-8')}
-      />
     </div>
   )
 }

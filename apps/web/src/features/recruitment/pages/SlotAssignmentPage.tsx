@@ -9,7 +9,7 @@ import {
   toast,
   type StatusLightToken,
 } from '@oranje/ui'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 
 import {
@@ -22,6 +22,7 @@ import { ASSIGNMENT_TYPE_LABEL } from '../types/selfPick.types'
 
 import mascotaCelebrando from '@/assets/mascota/mascota-celebrando.png'
 import { Button } from '@/shared/components/Button'
+import { DateField } from '@/shared/components/DateField'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
@@ -87,6 +88,13 @@ export function SlotAssignmentPage(): ReactNode {
   const [type, setType] = useState<'FIXED' | 'TEMPORARY'>('FIXED')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+
+  /* La posición ya dice desde cuándo la pidió el hotel: se propone esa fecha y
+     se puede cambiar. Antes arrancaba vacía y se tecleaba a mano, con el riesgo
+     de asignar desde un día distinto al solicitado. */
+  useEffect(() => {
+    if (board?.startDate) setStartDate((current) => current || board.startDate)
+  }, [board?.startDate])
 
   /** El slot cuya liberación se está confirmando (con motivo); `null` = ninguno. */
   const [releaseTarget, setReleaseTarget] = useState<string | null>(null)
@@ -367,30 +375,25 @@ export function SlotAssignmentPage(): ReactNode {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <label className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5">
                   <span className="text-sm text-ink-3">Inicio</span>
-                  <Input
-                    type="date"
+                  <DateField
                     value={startDate}
-                    onChange={(event) => {
-                      setStartDate(event.target.value)
-                    }}
+                    onChange={setStartDate}
                     aria-label="Fecha de inicio"
                   />
-                </label>
-                <label className="flex flex-col gap-1.5">
+                </div>
+                <div className="flex flex-col gap-1.5">
                   <span className="text-sm text-ink-3">
                     Fin{type === 'TEMPORARY' ? '' : ' (opcional)'}
                   </span>
-                  <Input
-                    type="date"
+                  <DateField
                     value={endDate}
-                    onChange={(event) => {
-                      setEndDate(event.target.value)
-                    }}
+                    onChange={setEndDate}
+                    min={startDate}
                     aria-label="Fecha de fin"
                   />
-                </label>
+                </div>
               </div>
               {IS_DEV_UI && (
                 <code className="-mt-2 text-[11px] text-ink-4">

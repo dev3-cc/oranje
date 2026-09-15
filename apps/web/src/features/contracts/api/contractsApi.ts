@@ -19,7 +19,7 @@ import type {
 } from '@/shared/types/apiContract.types'
 
 /**
- * Documentos T&C sobre el contrato real: `GET /contracts` da la lista y
+ * Contratos sobre el contrato real: `GET /contracts` da la lista y
  * `GET /contracts/:id` las tarifas. La zona no viaja en el contrato (solo
  * `hotel.id`/`name`): se resuelve con una pasada por `/hotels`. `elapsed` y
  * `daysRemaining` se calculan aquí al momento de la consulta — el backend
@@ -48,7 +48,13 @@ function progressOf(contract: ContractApi): {
   return { elapsed, daysRemaining: Math.ceil((to - now) / MS_PER_DAY) }
 }
 
-function toRow(contract: ContractApi, zoneName: string, positionCount: number): ContractRow {
+function toRow(
+  contract: ContractApi,
+  zoneName: string,
+  positionCount: number,
+  hotelPhotoUrl: string | null,
+  minBillRate: number | null,
+): ContractRow {
   return {
     id: contract.id,
     number: contract.number,
@@ -59,6 +65,8 @@ function toRow(contract: ContractApi, zoneName: string, positionCount: number): 
     validTo: contract.validTo,
     ...progressOf(contract),
     positionCount,
+    hotelPhotoUrl,
+    minBillRate,
     overtimeBillMultiplier:
       contract.status === 'DRAFT' ? null : Number(contract.multipliers.overtimeBill),
     holidayBillMultiplier:
@@ -70,7 +78,11 @@ export function toContractDetail(contract: ContractApi): ContractDetail {
   return {
     id: contract.id,
     number: contract.number,
+    hotelId: contract.hotel.id,
     hotelName: contract.hotel.name,
+    /* La dirección no viene en el contrato: la compone `getContract` leyendo el
+       hotel, porque el acuerdo imprimible la necesita en la cabecera. */
+    hotelAddress: null,
     status: contract.status as ContractStatus,
     /** El contrato real aún no guarda QUIÉN firmó, solo cuándo. */
     signedByName: '—',
@@ -91,6 +103,7 @@ export function toContractDetail(contract: ContractApi): ContractDetail {
     },
     rates: (contract.rates ?? []).map((rate) => ({
       id: rate.id,
+      catalogPositionId: rate.position.id,
       positionName: rate.position.name,
       payRate: Number(rate.payRate),
       billRate: Number(rate.billRate),
@@ -117,6 +130,9 @@ async function fetchContractList(
   const contracts = (contractsRes.data as ApiEnvelope<ContractApi[]>).data
   const hotels = (hotelsRes.data as PaginatedEnvelope<HotelApi>).data
   const zoneByHotel = new Map(hotels.map((hotel) => [hotel.id, hotel.zone.name]))
+  /* La foto ya viene en la misma pasada por `/hotels`: la tarjeta la necesita
+     para que un contrato se distinga de otro de un vistazo. */
+  const photoByHotel = new Map(hotels.map((hotel) => [hotel.id, hotel.photoUrl]))
 
   /** El conteo de posiciones vive en las tarifas: solo las trae el detalle. */
   const details = await Promise.all(
@@ -130,12 +146,24 @@ async function fetchContractList(
         return [detail.id, detail.rates?.length ?? 0] as const
       }),
   )
+  /** El bill más barato del cuadro: el «desde» que enseña la tarjeta. */
+  const minBillById = new Map(
+    details
+      .filter((res) => !res.error)
+      .map((res) => {
+        const detail = (res.data as ApiEnvelope<ContractApi>).data
+        const bills = (detail.rates ?? []).map((rate) => Number(rate.billRate))
+        return [detail.id, bills.length > 0 ? Math.min(...bills) : null] as const
+      }),
+  )
 
   const rows = contracts.map((contract) =>
     toRow(
       contract,
       zoneByHotel.get(contract.hotel.id)?.replace(/^Zona\s+/i, '') ?? '',
       countById.get(contract.id) ?? 0,
+      photoByHotel.get(contract.hotel.id) ?? null,
+      minBillById.get(contract.id) ?? null,
     ),
   )
 
@@ -168,8 +196,21 @@ export const contractsApi = baseApi.injectEndpoints({
     }),
 
     getContract: build.query<ContractDetail, string>({
-      query: (contractId) => `/contracts/${contractId}`,
-      transformResponse: (raw: ApiEnvelope<ContractApi>) => toContractDetail(raw.data),
+      queryFn: async (contractId, _api, _extra, fetchWithBQ) => {
+        const bq = fetchWithBQ as FetchWithBQ
+        const contractRes = await bq(`/contracts/${contractId}`)
+        if (contractRes.error) return { error: contractRes.error as never }
+
+        const detail = toContractDetail((contractRes.data as ApiEnvelope<ContractApi>).data)
+        /* La dirección vive en el hotel, no en el contrato. Si falla, el acuerdo
+           sale sin ella en vez de no salir. */
+        const hotelRes = await bq(`/hotels/${detail.hotelId}`)
+        const hotelAddress = hotelRes.error
+          ? null
+          : ((hotelRes.data as ApiEnvelope<{ address: string | null }>).data.address ?? null)
+
+        return { data: { ...detail, hotelAddress } }
+      },
       providesTags: (_detail, _error, contractId) => [
         { type: 'Contract' as const, id: contractId },
       ],

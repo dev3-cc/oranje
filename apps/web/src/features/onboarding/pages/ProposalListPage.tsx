@@ -10,6 +10,7 @@ import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { FoldText } from '@/shared/components/FoldText'
+import { HotelThumbnail } from '@/shared/components/HotelThumbnail'
 import { LoadError } from '@/shared/components/LoadError'
 import { MagicCard } from '@/shared/components/MagicCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
@@ -98,7 +99,7 @@ export function ProposalListPage(): ReactNode {
       )}
 
       {candidates.length > 0 && (
-        /* Lista a la izquierda, la propuesta del hotel elegido a la derecha (como Documentos T&C). */
+        /* Lista a la izquierda, la propuesta del hotel elegido a la derecha (como Contratos). */
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
           {/* En angosto: tira horizontal sobre la propuesta; en ancho, columna lateral. */}
           <ul className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0">
@@ -115,8 +116,9 @@ export function ProposalListPage(): ReactNode {
                       }}
                       className={`w-full cursor-pointer touch-manipulation rounded-xl border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500 ${isSelected ? 'border-o-500 bg-o-50' : 'border-line bg-surface hover:bg-surface-2'}`}
                     >
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="min-w-0">
+                      <div className="flex items-center gap-3">
+                        <HotelThumbnail photoUrl={candidate.hotelPhotoUrl} />
+                        <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm font-semibold text-ink">
                             {candidate.hotelName}
                           </span>

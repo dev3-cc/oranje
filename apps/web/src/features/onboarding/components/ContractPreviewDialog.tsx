@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
+import { buildProposalMailto } from '../lib/proposalMail'
 import type { ProposalVersionSummary } from '../types/proposal.types'
 
-import { ContractDocument } from './ContractDocument'
-
 import { Button } from '@/shared/components/Button'
+import { ContractDocument } from '@/shared/components/ContractDocument'
 import { Modal } from '@/shared/components/Modal'
 
 /**
@@ -26,15 +26,43 @@ export function ContractPreviewDialog({
   onClose,
   hotelName,
   hotelAddress = null,
+  contactEmail = null,
+  senderName = 'Oranje',
   version,
 }: {
   isOpen: boolean
   onClose: () => void
   hotelName: string
   hotelAddress?: string | null
+  /** Contacto principal del hotel; sin él, el correo se abre sin destinatario. */
+  contactEmail?: string | null
+  /** Quien firma el correo: el BD o el BDC que lo manda. */
+  senderName?: string
   version: ProposalVersionSummary
 }): ReactNode {
   const printRoot = document.getElementById('print-root')
+
+  /* El documento no sabe de propuestas: recibe el cuadro ya armado, para servir
+     igual a una versión de propuesta y a un contrato firmado. */
+  const documentProps = {
+    rates:
+      version.rates.length > 0
+        ? version.rates.map((rate) => ({
+            key: rate.positionId,
+            positionName: rate.positionName,
+            payRate: rate.payRate,
+            billRate: rate.billRate,
+          }))
+        : [
+            {
+              key: 'global',
+              positionName: 'All positions',
+              payRate: version.payRate,
+              billRate: version.billRate,
+            },
+          ],
+    servicesNote: version.servicesNote,
+  }
 
   return (
     <Modal
@@ -46,6 +74,20 @@ export function ContractPreviewDialog({
       footer={
         <>
           <Button onClick={onClose}>Cerrar</Button>
+          {/* El correo sale del cliente de quien envía, con el texto ya escrito;
+              el PDF lo adjunta esa persona (un mailto no lleva adjuntos). */}
+          <Button
+            onClick={() => {
+              window.location.href = buildProposalMailto({
+                to: contactEmail,
+                hotelName,
+                version,
+                senderName,
+              })
+            }}
+          >
+            Enviar por correo
+          </Button>
           <Button
             variant="primary"
             onClick={() => {
@@ -58,7 +100,7 @@ export function ContractPreviewDialog({
       }
     >
       <div className="rounded-md border border-line bg-surface px-8 py-7">
-        <ContractDocument hotelName={hotelName} hotelAddress={hotelAddress} version={version} />
+        <ContractDocument hotelName={hotelName} hotelAddress={hotelAddress} {...documentProps} />
       </div>
 
       {/*
@@ -68,7 +110,11 @@ export function ContractPreviewDialog({
       {printRoot !== null &&
         createPortal(
           <div aria-hidden="true">
-            <ContractDocument hotelName={hotelName} hotelAddress={hotelAddress} version={version} />
+            <ContractDocument
+              hotelName={hotelName}
+              hotelAddress={hotelAddress}
+              {...documentProps}
+            />
           </div>,
           printRoot,
         )}

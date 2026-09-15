@@ -174,6 +174,7 @@ async function fetchQueue(
       return {
         prospectId: prospect.id,
         hotelName: prospect.hotel.name,
+        hotelPhotoUrl: prospect.hotel.photoUrl,
         zone: prospect.hotel.zone.name,
         status: prospect.state.code as OnboardingStatus,
         daysInStatus: Math.max(

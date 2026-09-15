@@ -14,10 +14,14 @@ import { ContractPreviewDialog } from './ContractPreviewDialog'
 export function ContractPreviewButton({
   hotelName,
   hotelAddress = null,
+  contactEmail = null,
+  senderName = 'Oranje',
   version,
 }: {
   hotelName: string
   hotelAddress?: string | null
+  contactEmail?: string | null
+  senderName?: string
   version: ProposalVersionSummary
 }): ReactNode {
   const [isOpen, setIsOpen] = useState(false)
@@ -46,6 +50,8 @@ export function ContractPreviewButton({
         }}
         hotelName={hotelName}
         hotelAddress={hotelAddress}
+        contactEmail={contactEmail}
+        senderName={senderName}
         version={version}
       />
     </>

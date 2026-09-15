@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
+import { summarizeRates } from '../lib/summarizeRates'
 import type { ProposalVersionSummary } from '../types/proposal.types'
 
 import { ContractPreviewButton } from './ContractPreviewButton'
 
 import { buttonClass } from '@/shared/components/Button'
 import { SectionCard } from '@/shared/components/SectionCard'
-import { formatDate, formatMoney } from '@/shared/lib/formatters'
+import { formatDate } from '@/shared/lib/formatters'
 
 /**
  * Versiones de la propuesta dentro de la ficha del prospecto, de la más
@@ -57,10 +58,7 @@ export function ProposalVersionList({
               </div>
 
               <div className="flex shrink-0 items-center gap-3">
-                <p className="text-sm text-ink-2">
-                  {`pay ${formatMoney(version.payRate)}`} ·{' '}
-                  {`bill ${formatMoney(version.billRate)}`}
-                </p>
+                <p className="text-sm text-ink-2">{summarizeRates(version)}</p>
 
                 <ContractPreviewButton hotelName={hotelName} version={version} />
 
