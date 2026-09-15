@@ -17,6 +17,8 @@ interface NotificationApi {
   body: string
   createdAt: string
   readAt: string | null
+  /** Quien lo disparó con su acción; null en avisos sin actor humano. */
+  actor: { id: string; fullName: string; photoUrl: string | null } | null
 }
 
 interface NotificationBoardApi {
@@ -30,6 +32,7 @@ export interface HeaderNotification {
   body: string
   createdAt: string
   isRead: boolean
+  actor: { fullName: string; photoUrl: string | null } | null
 }
 
 export interface HeaderNotifications {
@@ -54,6 +57,9 @@ export const notificationsApi = baseApi.injectEndpoints({
           body: item.body,
           createdAt: item.createdAt,
           isRead: item.readAt !== null,
+          actor: item.actor
+            ? { fullName: item.actor.fullName, photoUrl: item.actor.photoUrl }
+            : null,
         })),
         unread: raw.meta.unread,
       }),

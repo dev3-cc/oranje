@@ -1,14 +1,19 @@
+import { plural } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn, MaterialIcon, statusLight } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
 import type { PoolWorker } from '../types/pool.types'
 
+import { DeleteWorkerDialog } from './DeleteWorkerDialog'
+
 import { Button, buttonClass } from '@/shared/components/Button'
 import { CautionPill } from '@/shared/components/CautionPill'
 import { MagicCard } from '@/shared/components/MagicCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { workerStatusChipLabel, WORKER_STATUS_TOKEN } from '@/shared/constants/workerStatus'
+import { useCan } from '@/shared/hooks/useCan'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate } from '@/shared/lib/formatters'
 
@@ -81,14 +86,20 @@ export function PoolRoster({
   items: PoolWorker[]
   onEdit: (worker: PoolWorker) => void
 }): ReactNode {
+  const { t } = useLingui()
+  const can = useCan()
+  const canDelete = can('recruitment:delete_worker')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<PoolWorker | null>(null)
   const selected = items.find((worker) => worker.id === selectedId) ?? items[0]
 
   if (items.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-        Nadie coincide con esa búsqueda o esos filtros. Cambia el nombre, la posición, la zona o el
-        estado, o quítalos con «Quitar filtros».
+        <Trans>
+          Nadie coincide con esa búsqueda o esos filtros. Cambia el nombre, la posición, la zona o
+          el estado, o quítalos con «Quitar filtros».
+        </Trans>
       </p>
     )
   }
@@ -151,27 +162,33 @@ export function PoolRoster({
                   />
                   {selected.isBlacklisted && (
                     <span className="rounded-full bg-ink px-3 py-1 text-xs font-medium text-surface">
-                      En Blacklist
+                      <Trans>En Blacklist</Trans>
                     </span>
                   )}
                 </div>
                 <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-3">
                   <span className="inline-flex items-center gap-1.5">
                     <MaterialIcon name="event" className="text-base" aria-hidden />
-                    En el Pool desde el {formatDate(selected.createdAt)}
+                    <Trans>En el Pool desde el {formatDate(selected.createdAt)}</Trans>
                   </span>
                   <span className="inline-flex items-center gap-1.5">
                     <MaterialIcon name="badge" className="text-base" aria-hidden />
-                    {selected.catalogPosition === '—' ? 'Sin posición' : selected.catalogPosition}
+                    {selected.catalogPosition === '—' ? t`Sin posición` : selected.catalogPosition}
                   </span>
                 </p>
                 {/* Las EXCEPCIONES hablan; lo que está bien no se anuncia. */}
                 {(!selected.isProfileComplete || !selected.hasTaxId) && (
                   <p className="mt-2.5 flex flex-wrap items-center gap-2">
-                    {!selected.isProfileComplete && <CautionPill>Perfil incompleto</CautionPill>}
+                    {!selected.isProfileComplete && (
+                      <CautionPill>
+                        <Trans>Perfil incompleto</Trans>
+                      </CautionPill>
+                    )}
                     {!selected.hasTaxId && (
                       <CautionPill>
-                        Sin ITIN: aplica retención del 16%{IS_DEV_UI ? ' (D-27)' : ''}
+                        <Trans>
+                          Sin ITIN: aplica retención del 16%{IS_DEV_UI ? ' (D-27)' : ''}
+                        </Trans>
                       </CautionPill>
                     )}
                   </p>
@@ -180,27 +197,58 @@ export function PoolRoster({
             </div>
 
             <div className="flex flex-wrap gap-3">
+              {canDelete && (
+                <button
+                  type="button"
+                  aria-label={t`Eliminar colaborador`}
+                  title={t`Eliminar del Pool`}
+                  onClick={() => {
+                    setDeleting(selected)
+                  }}
+                  className="cursor-pointer rounded-md p-2 text-ink-3 transition-colors hover:bg-red/10 hover:text-red"
+                >
+                  <MaterialIcon name="delete" className="text-xl" />
+                </button>
+              )}
               <Button
                 variant="secondary"
                 onClick={() => {
                   onEdit(selected)
                 }}
               >
-                Editar
+                <Trans>Editar</Trans>
               </Button>
               <Link to={`/pool-colaboradores/${selected.id}`} className={buttonClass('primary')}>
-                Ver Expediente
+                <Trans>Ver Expediente</Trans>
               </Link>
             </div>
           </header>
 
           <div className="grid grid-cols-2 gap-x-6 gap-y-4 rounded-lg bg-surface-2 p-4 sm:grid-cols-4">
-            <Field icon="cake" label="Edad" value={`${String(selected.age)} años`} />
-            <Field icon="map" label="Zona" value={selected.zoneName} />
-            <Field icon="translate" label="Inglés" value={selected.englishLevel} />
-            <Field icon="work" label="Modalidad" value={selected.hiringModality} />
+            <Field
+              icon="cake"
+              label={t`Edad`}
+              value={t`${plural(selected.age, { one: '# año', other: '# años' })}`}
+            />
+            <Field icon="map" label={t`Zona`} value={selected.zoneName} />
+            <Field icon="translate" label={t`Inglés`} value={selected.englishLevel} />
+            <Field icon="work" label={t`Modalidad`} value={selected.hiringModality} />
           </div>
         </article>
+      )}
+
+      {deleting && (
+        <DeleteWorkerDialog
+          isOpen
+          workerId={deleting.id}
+          fullName={deleting.fullName}
+          onClose={() => {
+            setDeleting(null)
+          }}
+          onDeleted={() => {
+            setSelectedId(null)
+          }}
+        />
       )}
     </div>
   )

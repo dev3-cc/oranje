@@ -71,26 +71,48 @@ export function NotificationsPage(): ReactNode {
                     : 'cursor-default border-line bg-surface',
                 )}
               >
-                <p className="flex items-start justify-between gap-3">
-                  <span
-                    className={cn(
-                      'text-sm',
-                      isUnread ? 'font-bold text-ink' : 'font-medium text-ink-2',
-                    )}
-                  >
-                    {isUnread && (
+                <div className="flex items-start gap-3">
+                  {/* Quien disparó el aviso con su acción, no de quien lo recibe. */}
+                  {notification.actor?.photoUrl ? (
+                    <img
+                      src={notification.actor.photoUrl}
+                      alt=""
+                      aria-hidden
+                      className="size-8 shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    notification.actor && (
                       <span
-                        aria-label={t`No leído`}
-                        className="mr-1.5 inline-block size-2 rounded-full bg-o-500"
-                      />
-                    )}
-                    {notification.title}
-                  </span>
-                  <span className="shrink-0 text-xs text-ink-4">
-                    {formatDayMonthTime(notification.createdAt)}
-                  </span>
-                </p>
-                <p className="mt-1 text-sm leading-relaxed text-ink-3">{notification.body}</p>
+                        aria-hidden
+                        className="flex size-8 shrink-0 items-center justify-center rounded-full bg-o-50 text-xs font-bold text-o-700"
+                      >
+                        {notification.actor.fullName.charAt(0).toUpperCase()}
+                      </span>
+                    )
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="flex items-start justify-between gap-3">
+                      <span
+                        className={cn(
+                          'text-sm',
+                          isUnread ? 'font-bold text-ink' : 'font-medium text-ink-2',
+                        )}
+                      >
+                        {isUnread && (
+                          <span
+                            aria-label={t`No leído`}
+                            className="mr-1.5 inline-block size-2 rounded-full bg-o-500"
+                          />
+                        )}
+                        {notification.title}
+                      </span>
+                      <span className="shrink-0 text-xs text-ink-4">
+                        {formatDayMonthTime(notification.createdAt)}
+                      </span>
+                    </p>
+                    <p className="mt-1 text-sm leading-relaxed text-ink-3">{notification.body}</p>
+                  </div>
+                </div>
               </button>
             </li>
           )

@@ -27,6 +27,7 @@ function toMyNotification(raw: NotificationApi): MyNotificationList['items'][num
     body: raw.body,
     entityType: raw.entity?.type ?? null,
     entityId: raw.entity?.id ?? null,
+    actor: raw.actor,
     createdAt: raw.createdAt,
     readAt: raw.readAt,
   }
