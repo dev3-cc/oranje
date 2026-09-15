@@ -85,7 +85,7 @@ describe('ClientPortfolioPage', () => {
 
     await screen.findByText('Posada Maya Real')
     await user.click(screen.getByLabelText('Contrato'))
-    await user.click(await screen.findByRole('option', { name: 'Contrato: EXPIRED' }))
+    await user.click(await screen.findByRole('option', { name: 'Contrato: Expirado' }))
 
     await waitFor(() => {
       expect(screen.queryByText('Posada Maya Real')).not.toBeInTheDocument()

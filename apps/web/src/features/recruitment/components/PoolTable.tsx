@@ -1,5 +1,8 @@
+import type { I18n, MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react/macro'
 import { DataTable, type ColumnDef } from '@oranje/ui'
-import type { ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
 import type { PoolWorker } from '../types/pool.types'
@@ -27,92 +30,96 @@ function initialsOf(fullName: string): string {
 }
 
 /** En dev el encabezado es la columna de `vw_pool` (documentación viva); en build, la etiqueta humana. */
-function col(dev: string, prod: string): string {
-  return IS_DEV_UI ? dev : prod
+function col(i18n: I18n, dev: string, prod: MessageDescriptor): string {
+  return IS_DEV_UI ? dev : i18n._(prod)
 }
 
-const COLUMNS: ColumnDef<PoolWorker, unknown>[] = [
-  {
-    accessorKey: 'fullName',
-    header: col('full_name', 'Nombre'),
-    cell: ({ row }) => (
-      <span className="flex items-center gap-3">
-        {/* La foto se captura en la app móvil (Fase 2): mientras no exista, iniciales. */}
-        {row.original.photoUrl ? (
-          <img
-            src={row.original.photoUrl}
-            alt=""
-            className="size-9 shrink-0 rounded-full object-cover"
-          />
-        ) : (
-          <span
-            aria-hidden
-            className="flex size-9 shrink-0 items-center justify-center rounded-full bg-o-50 text-xs font-bold text-o-700"
+/** Las columnas hablan el idioma activo, así que se arman con el `i18n` del componente (D-36). */
+function buildColumns(i18n: I18n): ColumnDef<PoolWorker, unknown>[] {
+  return [
+    {
+      accessorKey: 'fullName',
+      header: col(i18n, 'full_name', msg`Nombre`),
+      cell: ({ row }) => (
+        <span className="flex items-center gap-3">
+          {/* La foto se captura en la app móvil (Fase 2): mientras no exista, iniciales. */}
+          {row.original.photoUrl ? (
+            <img
+              src={row.original.photoUrl}
+              alt=""
+              className="size-9 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <span
+              aria-hidden
+              className="flex size-9 shrink-0 items-center justify-center rounded-full bg-o-50 text-xs font-bold text-o-700"
+            >
+              {initialsOf(row.original.fullName)}
+            </span>
+          )}
+          {/* El nombre abre el Expediente: el detalle cuelga de la lista. */}
+          <Link
+            to={`/collaborator-pool/${row.original.id}`}
+            onClick={(event) => {
+              /* El nombre va al Expediente; la fila, al modal de edición. */
+              event.stopPropagation()
+            }}
+            className="text-sm font-bold whitespace-nowrap text-ink hover:text-o-700 hover:underline"
           >
-            {initialsOf(row.original.fullName)}
-          </span>
-        )}
-        {/* El nombre abre el Expediente: el detalle cuelga de la lista. */}
-        <Link
-          to={`/collaborator-pool/${row.original.id}`}
-          onClick={(event) => {
-            /* El nombre va al Expediente; la fila, al modal de edición. */
-            event.stopPropagation()
-          }}
-          className="text-sm font-bold whitespace-nowrap text-ink hover:text-o-700 hover:underline"
-        >
-          {row.original.fullName}
-        </Link>
-      </span>
-    ),
-  },
-  { accessorKey: 'age', header: 'Edad' },
-  {
-    accessorKey: 'zoneName',
-    header: col('zone', 'Zona'),
-    cell: ({ row }) => <span>{row.original.zoneName}</span>,
-  },
-  {
-    accessorKey: 'catalogPosition',
-    header: col('catalog_position', 'Posición'),
-    cell: ({ row }) => <span>{row.original.catalogPosition}</span>,
-  },
-  {
-    accessorKey: 'englishLevel',
-    header: col('english_level', 'Inglés'),
-    cell: ({ row }) => <span>{row.original.englishLevel}</span>,
-  },
-  {
-    accessorKey: 'hiringModality',
-    header: col('hiring_modality', 'Modalidad'),
-    cell: ({ row }) => <span>{row.original.hiringModality}</span>,
-  },
-  {
-    accessorKey: 'status',
-    header: col('status_light_code', 'Estado'),
-    cell: ({ row }) => (
-      <StatusLightSoftBadge
-        token={WORKER_STATUS_TOKEN[row.original.status]}
-        label={workerStatusChipLabel(row.original.status)}
-      />
-    ),
-  },
-  /*
-   * Perfil e ITIN en palabras y no con un check: «no» tiene que leerse igual
-   * de rápido que «sí», y un hueco donde debería ir una palomita se confunde
-   * con un dato que no cargó.
-   */
-  {
-    accessorKey: 'isProfileComplete',
-    header: 'Perfil',
-    cell: ({ row }) => (row.original.isProfileComplete ? 'completo' : 'incompleto'),
-  },
-  {
-    accessorKey: 'hasTaxId',
-    header: 'ITIN',
-    cell: ({ row }) => (row.original.hasTaxId ? 'sí' : 'no'),
-  },
-]
+            {row.original.fullName}
+          </Link>
+        </span>
+      ),
+    },
+    { accessorKey: 'age', header: i18n._(msg`Edad`) },
+    {
+      accessorKey: 'zoneName',
+      header: col(i18n, 'zone', msg`Zona`),
+      cell: ({ row }) => <span>{row.original.zoneName}</span>,
+    },
+    {
+      accessorKey: 'catalogPosition',
+      header: col(i18n, 'catalog_position', msg`Posición`),
+      cell: ({ row }) => <span>{row.original.catalogPosition}</span>,
+    },
+    {
+      accessorKey: 'englishLevel',
+      header: col(i18n, 'english_level', msg`Inglés`),
+      cell: ({ row }) => <span>{row.original.englishLevel}</span>,
+    },
+    {
+      accessorKey: 'hiringModality',
+      header: col(i18n, 'hiring_modality', msg`Modalidad`),
+      cell: ({ row }) => <span>{row.original.hiringModality}</span>,
+    },
+    {
+      accessorKey: 'status',
+      header: col(i18n, 'status_light_code', msg`Estado`),
+      cell: ({ row }) => (
+        <StatusLightSoftBadge
+          token={WORKER_STATUS_TOKEN[row.original.status]}
+          label={workerStatusChipLabel(row.original.status)}
+        />
+      ),
+    },
+    /*
+     * Perfil e ITIN en palabras y no con un check: «no» tiene que leerse igual
+     * de rápido que «sí», y un hueco donde debería ir una palomita se confunde
+     * con un dato que no cargó.
+     */
+    {
+      accessorKey: 'isProfileComplete',
+      header: i18n._(msg`Perfil`),
+      cell: ({ row }) =>
+        row.original.isProfileComplete ? i18n._(msg`completo`) : i18n._(msg`incompleto`),
+    },
+    {
+      accessorKey: 'hasTaxId',
+      header: i18n._(msg`ITIN`),
+      cell: ({ row }) => (row.original.hasTaxId ? i18n._(msg`sí`) : i18n._(msg`no`)),
+    },
+  ]
+}
 
 export function PoolTable({
   items,
@@ -122,11 +129,13 @@ export function PoolTable({
   /** Picar la fila abre el MISMO modal del alta, en modo edición. */
   onEdit: (worker: PoolWorker) => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
+  const columns = useMemo(() => buildColumns(i18n), [i18n, i18n.locale])
   return (
     <DataTable
-      columns={COLUMNS}
+      columns={columns}
       data={items}
-      emptyMessage="Ningún colaborador coincide con estos filtros. Cambia o quita un filtro para ver más."
+      emptyMessage={t`Ningún colaborador coincide con estos filtros. Cambia o quita un filtro para ver más.`}
       dense
       onRowClick={onEdit}
     />

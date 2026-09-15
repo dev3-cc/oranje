@@ -1,3 +1,6 @@
+import type { I18n, MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import {
   Input,
   MaterialIcon,
@@ -32,44 +35,51 @@ import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const UNSET = 'UNSET'
 
-const INTRO_SLIDES = [
+/** Las diapositivas del intro; el texto se traduce al pintar con `i18n._()` (D-36). */
+const INTRO_SLIDES: readonly {
+  image: string
+  title: MessageDescriptor
+  text: MessageDescriptor
+}[] = [
   {
     image: personajeContratacion,
-    title: 'La entrevista es la Fase 1',
-    text: 'Posición, modalidad, inglés y experiencia se deciden aquí: son decisiones de Oranje, no del colaborador.',
+    title: msg`La entrevista es la Fase 1`,
+    text: msg`Posición, modalidad, inglés y experiencia se deciden aquí: son decisiones de Oranje, no del colaborador.`,
   },
   {
     image: personajeEncuesta,
-    title: 'El expediente se completa por fases',
-    text: 'Nace en Blanco: el colaborador termina las fases 2 y 3 en su app — transporte y SSN/ITIN con 3 días de plazo.',
+    title: msg`El expediente se completa por fases`,
+    text: msg`Nace en Blanco: el colaborador termina las fases 2 y 3 en su app — transporte y SSN/ITIN con 3 días de plazo.`,
   },
   {
     image: personajeGracias,
-    title: 'Validar lo hace entrar al Pool',
-    text: 'Cuando valides el alta, pasa a Verde fuerte y queda disponible para asignarse a un hotel.',
+    title: msg`Validar lo hace entrar al Pool`,
+    text: msg`Cuando valides el alta, pasa a Verde fuerte y queda disponible para asignarse a un hotel.`,
   },
-] as const
+]
 
 const GENDERS = [
-  { value: 'FEMALE', label: 'Femenino' },
-  { value: 'MALE', label: 'Masculino' },
-  { value: 'OTHER', label: 'Otro' },
+  { value: 'FEMALE', label: msg`Femenino` },
+  { value: 'MALE', label: msg`Masculino` },
+  { value: 'OTHER', label: msg`Otro` },
 ] as const
 
-const AFTERMATH = IS_DEV_UI
-  ? [
-      'Nace en BLANCO: la fila existe a medias, eso ES el estado (D-26).',
-      'El colaborador completa Fase 2 (transporte y SSN/ITIN, con 3 días de plazo) y Fase 3 (emergencia y salud) en la app.',
-      'is_profile_complete vive en vw_worker: los campos obligatorios los declara la vista, sin NOT NULL.',
-      'La Reclutadora valida el alta (RF-08) → pasa a VERDE FUERTE y entra al Pool.',
-      'Sin SSN/ITIN, la retención del 16% aplica automática (D-27).',
-    ]
-  : [
-      'Nace en Blanco: el expediente se completa por fases.',
-      'El colaborador completa la Fase 2 (transporte y SSN/ITIN, con 3 días de plazo) y la Fase 3 (contacto de emergencia y salud) desde su app.',
-      'Cuando la Reclutadora valida el alta, pasa a Verde fuerte y entra al Pool de Colaboradores.',
-      'Por ahora la retención del 16% aplica a todos los colaboradores, suban o verifiquen o no su SSN/ITIN — es temporal, mientras se conecta ese proceso.',
-    ]
+/** Documentación viva de dev: no se traduce (IS_DEV_UI). */
+const AFTERMATH_DEV = [
+  'Nace en BLANCO: la fila existe a medias, eso ES el estado (D-26).',
+  'El colaborador completa Fase 2 (transporte y SSN/ITIN, con 3 días de plazo) y Fase 3 (emergencia y salud) en la app.',
+  'is_profile_complete vive en vw_worker: los campos obligatorios los declara la vista, sin NOT NULL.',
+  'La Reclutadora valida el alta (RF-08) → pasa a VERDE FUERTE y entra al Pool.',
+  'Sin SSN/ITIN, la retención del 16% aplica automática (D-27).',
+]
+
+/** Lo que lee la persona; se traduce al pintar con `i18n._()` (D-36). */
+const AFTERMATH_MESSAGE: readonly MessageDescriptor[] = [
+  msg`Nace en Blanco: el expediente se completa por fases.`,
+  msg`El colaborador completa la Fase 2 (transporte y SSN/ITIN, con 3 días de plazo) y la Fase 3 (contacto de emergencia y salud) desde su app.`,
+  msg`Cuando la Reclutadora valida el alta, pasa a Verde fuerte y entra al Pool de Colaboradores.`,
+  msg`Por ahora la retención del 16% aplica a todos los colaboradores, suban o verifiquen o no su SSN/ITIN — es temporal, mientras se conecta ese proceso.`,
+]
 
 interface Draft {
   fullName: string
@@ -119,16 +129,18 @@ function FormRow({
   )
 }
 
-function uploadErrorMessage(error: unknown): string {
+/** El `i18n` viene del componente (D-36). */
+function uploadErrorMessage(error: unknown, i18n: I18n): string {
   return apiErrorMessage(error, {
     byCode: {
-      UNSUPPORTED_FILE_TYPE:
-        'Ese formato no se puede procesar (los HEIC del iPhone no entran): usa JPG, PNG o WebP.',
+      UNSUPPORTED_FILE_TYPE: i18n._(
+        msg`Ese formato no se puede procesar (los HEIC del iPhone no entran): usa JPG, PNG o WebP.`,
+      ),
     },
     byStatus: {
-      413: 'La imagen pasa de 15 MB: toma la foto con menos resolución o comprímela.',
+      413: i18n._(msg`La imagen pasa de 15 MB: toma la foto con menos resolución o comprímela.`),
     },
-    fallback: 'No se pudo subir la foto. Revisa tu conexión e inténtalo de nuevo.',
+    fallback: i18n._(msg`No se pudo subir la foto. Revisa tu conexión e inténtalo de nuevo.`),
   })
 }
 
@@ -138,13 +150,18 @@ function maxBirthDate(): string {
   return limit.toISOString().slice(0, 10)
 }
 
-function saveErrorMessage(error: unknown): string {
+/** El `i18n` viene del componente (D-36). */
+function saveErrorMessage(error: unknown, i18n: I18n): string {
   return apiErrorMessage(error, {
     byCode: {
-      WORKER_UNDERAGE: (info) =>
-        `${info.message ?? 'Es menor de edad'}: revisa la fecha de nacimiento.`,
+      WORKER_UNDERAGE: (info) => {
+        const reason = info.message ?? i18n._(msg`Es menor de edad`)
+        return i18n._(msg`${reason}: revisa la fecha de nacimiento.`)
+      },
     },
-    fallback: 'No se pudo guardar el colaborador. Revisa los datos e inténtalo de nuevo.',
+    fallback: i18n._(
+      msg`No se pudo guardar el colaborador. Revisa los datos e inténtalo de nuevo.`,
+    ),
   })
 }
 
@@ -167,6 +184,7 @@ export function CreateWorkerDialog({
   onClose: () => void
   workerId?: string
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const isEditing = workerId !== undefined
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT)
   const { data: options } = useGetPoolOptionsQuery(undefined, { skip: !isOpen })
@@ -217,7 +235,7 @@ export function CreateWorkerDialog({
     try {
       const stored = await uploadPhoto({ file, purpose: 'WORKER_PHOTO' }).unwrap()
       update('photoPath')(stored.path)
-      toast.success('Foto subida')
+      toast.success(t`Foto subida`)
     } catch {
       return
     }
@@ -229,13 +247,23 @@ export function CreateWorkerDialog({
       setDraft((previous) => ({ ...previous, [key]: value }))
     }
 
-  const canSubmit =
-    draft.fullName.trim() !== '' &&
-    draft.birthDate !== '' &&
-    isCompletePhone(draft.phone) &&
-    draft.address.trim() !== '' &&
-    draft.zoneId !== '' &&
-    !isLoading
+  /*
+   * Editar es un PATCH parcial (el back acepta `Partial<CreateWorkerRequest>`):
+   * un expediente migrado puede llegar con el domicilio u otro campo vacío, y
+   * eso no debe bloquear guardar un cambio que no lo toca — Hugo reportó el
+   * botón "sin detectar" el cambio de Posición cuando el domicilio real
+   * seguía en blanco. Solo el alta (Fase 1) exige el expediente completo.
+   */
+  const canSubmit = isEditing
+    ? draft.fullName.trim() !== '' &&
+      (draft.phone === '' || isCompletePhone(draft.phone)) &&
+      !isLoading
+    : draft.fullName.trim() !== '' &&
+      draft.birthDate !== '' &&
+      isCompletePhone(draft.phone) &&
+      draft.address.trim() !== '' &&
+      draft.zoneId !== '' &&
+      !isLoading
 
   async function submit(): Promise<void> {
     if (!canSubmit) return
@@ -253,7 +281,7 @@ export function CreateWorkerDialog({
           ...(draft.englishLevelId !== '' ? { englishLevelId: draft.englishLevelId } : {}),
           ...(draft.experienceLevel !== '' ? { experienceLevel: draft.experienceLevel } : {}),
         }).unwrap()
-        toast.success('Colaborador actualizado')
+        toast.success(t`Colaborador actualizado`)
       } else {
         await createWorker({
           fullName: draft.fullName.trim(),
@@ -268,7 +296,8 @@ export function CreateWorkerDialog({
           ...(draft.englishLevelId !== '' ? { englishLevelId: draft.englishLevelId } : {}),
           ...(draft.experienceLevel !== '' ? { experienceLevel: draft.experienceLevel } : {}),
         }).unwrap()
-        toast.success(`Colaborador creado — ${draft.fullName.trim()}`)
+        const created = draft.fullName.trim()
+        toast.success(t`Colaborador creado — ${created}`)
       }
       onClose()
     } catch {
@@ -278,32 +307,41 @@ export function CreateWorkerDialog({
 
   const initials = initialsOf(draft.fullName)
 
-  const missingHint =
-    draft.fullName.trim() === ''
-      ? 'Falta el nombre completo'
+  const missingHint = isEditing
+    ? draft.fullName.trim() === ''
+      ? t`Falta el nombre completo`
+      : draft.phone !== '' && !isCompletePhone(draft.phone)
+        ? t`El teléfono necesita al menos 7 dígitos (sin contar la lada)`
+        : null
+    : draft.fullName.trim() === ''
+      ? t`Falta el nombre completo`
       : draft.birthDate === ''
-        ? 'Falta la fecha de nacimiento'
+        ? t`Falta la fecha de nacimiento`
         : !isCompletePhone(draft.phone)
-          ? 'El teléfono necesita al menos 7 dígitos (sin contar la lada)'
+          ? t`El teléfono necesita al menos 7 dígitos (sin contar la lada)`
           : draft.address.trim() === ''
-            ? 'Falta el domicilio'
+            ? t`Falta el domicilio`
             : draft.zoneId === ''
-              ? 'Elige la zona'
+              ? t`Elige la zona`
               : null
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Editar colaborador' : 'Crear colaborador — Fase 1 · Entrevista'}
+      title={isEditing ? t`Editar colaborador` : t`Crear colaborador — Fase 1 · Entrevista`}
       chromeless
       className="max-w-2xl"
     >
       <div className="flex max-h-[calc(100vh-3rem)] flex-col overflow-y-auto">
         {showIntro && !isEditing ? (
           <OnboardingIntro
-            slides={INTRO_SLIDES}
-            startLabel="Comenzar el alta"
+            slides={INTRO_SLIDES.map((slide) => ({
+              image: slide.image,
+              title: i18n._(slide.title),
+              text: i18n._(slide.text),
+            }))}
+            startLabel={t`Comenzar el alta`}
             onDone={() => {
               dismissIntro()
             }}
@@ -322,8 +360,8 @@ export function CreateWorkerDialog({
               {}
               <button
                 type="button"
-                aria-label={photoPreview ? 'Reemplazar foto' : 'Subir foto'}
-                title={photoPreview ? 'Reemplazar foto' : 'Subir foto'}
+                aria-label={photoPreview ? t`Reemplazar foto` : t`Subir foto`}
+                title={photoPreview ? t`Reemplazar foto` : t`Subir foto`}
                 disabled={isUploading}
                 onClick={() => {
                   photoInputRef.current?.click()
@@ -349,7 +387,7 @@ export function CreateWorkerDialog({
                     aria-hidden
                     className="absolute inset-x-1 bottom-1 rounded-full bg-ink/60 py-0.5 text-center text-[10px] font-semibold text-surface opacity-0 transition-opacity group-hover:opacity-100"
                   >
-                    {isUploading ? 'Subiendo…' : photoPreview ? 'Cambiar' : 'Subir foto'}
+                    {isUploading ? t`Subiendo…` : photoPreview ? t`Cambiar` : t`Subir foto`}
                   </span>
                 </span>
                 {}
@@ -366,7 +404,7 @@ export function CreateWorkerDialog({
                 accept="image/jpeg,image/png,image/webp"
                 capture="user"
                 className="hidden"
-                aria-label="Foto del colaborador"
+                aria-label={t`Foto del colaborador`}
                 onChange={(event) => {
                   const file = event.target.files?.[0]
                   if (file) void handlePhoto(file)
@@ -376,10 +414,10 @@ export function CreateWorkerDialog({
 
             <header className="px-8 pt-16 pb-5">
               <h2 className="text-xl font-bold text-ink">
-                {draft.fullName.trim() === '' ? 'Nuevo colaborador' : draft.fullName}
+                {draft.fullName.trim() === '' ? t`Nuevo colaborador` : draft.fullName}
               </h2>
               <p className="mt-0.5 text-xs text-ink-3">
-                {isEditing ? 'Editar expediente' : 'Fase 1 · Entrevista'}
+                {isEditing ? t`Editar expediente` : t`Fase 1 · Entrevista`}
                 {IS_DEV_UI && !isEditing && ' — personal.worker · nace en BLANCO'}
                 {IS_DEV_UI && <code className="text-[11px] text-ink-4"> · photo_path</code>}
               </p>
@@ -389,34 +427,34 @@ export function CreateWorkerDialog({
               )}
               {isUploadError && (
                 <p role="alert" className="mt-1 text-xs text-red">
-                  {uploadErrorMessage(uploadError)}
+                  {uploadErrorMessage(uploadError, i18n)}
                 </p>
               )}
             </header>
 
-            <FormRow label="Nombre completo" column="full_name">
+            <FormRow label={t`Nombre completo`} column="full_name">
               <Input
                 value={draft.fullName}
                 onChange={(event) => {
                   update('fullName')(event.target.value)
                 }}
-                aria-label="Nombre completo"
-                placeholder="María Sandoval Ruiz"
+                aria-label={t`Nombre completo`}
+                placeholder={t`María Sandoval Ruiz`}
               />
             </FormRow>
 
-            <FormRow label="Nacimiento y género" column="birth_date · gender">
+            <FormRow label={t`Nacimiento y género`} column="birth_date · gender">
               <Input
                 type="date"
                 value={draft.birthDate}
                 onChange={(event) => {
                   update('birthDate')(event.target.value)
                 }}
-                aria-label="Fecha de nacimiento"
+                aria-label={t`Fecha de nacimiento`}
                 max={maxBirthDate()}
                 disabled={isEditing}
                 title={
-                  isEditing ? 'La fecha de nacimiento se fija en el alta y no se edita' : undefined
+                  isEditing ? t`La fecha de nacimiento se fija en el alta y no se edita` : undefined
                 }
               />
               <Select
@@ -427,8 +465,8 @@ export function CreateWorkerDialog({
                 disabled={isEditing}
               >
                 <SelectTrigger
-                  aria-label="Género"
-                  title={isEditing ? 'El género se fija en el alta y no se edita' : undefined}
+                  aria-label={t`Género`}
+                  title={isEditing ? t`El género se fija en el alta y no se edita` : undefined}
                   className="w-full"
                 >
                   <SelectValue />
@@ -436,28 +474,28 @@ export function CreateWorkerDialog({
                 <SelectContent>
                   {GENDERS.map((gender) => (
                     <SelectItem key={gender.value} value={gender.value}>
-                      {gender.label}
+                      {i18n._(gender.label)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </FormRow>
 
-            <FormRow label="Teléfono y zona" column="phone · zone_id">
+            <FormRow label={t`Teléfono y zona`} column="phone · zone_id">
               <PhoneInput
                 value={draft.phone}
                 onChange={(value) => {
                   update('phone')(value)
                 }}
-                ariaLabel="Teléfono"
+                ariaLabel={t`Teléfono`}
                 placeholder="404 790 2517"
               />
               <Select
                 {...(draft.zoneId ? { value: draft.zoneId } : {})}
                 onValueChange={update('zoneId')}
               >
-                <SelectTrigger aria-label="Zona" className="w-full">
-                  <SelectValue placeholder="Elige la zona…" />
+                <SelectTrigger aria-label={t`Zona`} className="w-full">
+                  <SelectValue placeholder={t`Elige la zona…`} />
                 </SelectTrigger>
                 <SelectContent>
                   {(options?.zones ?? []).map((zone) => (
@@ -469,38 +507,43 @@ export function CreateWorkerDialog({
               </Select>
             </FormRow>
 
-            <FormRow label="Domicilio" column="address">
+            <FormRow label={t`Domicilio`} column="address">
               <Input
                 value={draft.address}
                 onChange={(event) => {
                   update('address')(event.target.value)
                 }}
-                aria-label="Domicilio"
+                aria-label={t`Domicilio`}
                 placeholder="1280 Peachtree St NE, Atlanta"
               />
             </FormRow>
 
             <div className="border-t border-line bg-surface-2/60 px-6 py-3">
               <h3 className="text-sm font-semibold text-ink">
-                Decisiones de Oranje sobre su perfil
+                <Trans>Decisiones de Oranje sobre su perfil</Trans>
               </h3>
               <p className="text-xs text-ink-4">
-                Las defines tú en la entrevista; el candidato no las declara
+                <Trans>Las defines tú en la entrevista; el candidato no las declara</Trans>
               </p>
             </div>
 
-            <FormRow label="Posición y modalidad" column="catalog_position_id · hiring_modality_id">
+            <FormRow
+              label={t`Posición y modalidad`}
+              column="catalog_position_id · hiring_modality_id"
+            >
               <Select
                 value={draft.catalogPositionId === '' ? UNSET : draft.catalogPositionId}
                 onValueChange={(value) => {
                   update('catalogPositionId')(value === UNSET ? '' : value)
                 }}
               >
-                <SelectTrigger aria-label="Posición" className="w-full">
+                <SelectTrigger aria-label={t`Posición`} className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={UNSET}>Sin definir aún…</SelectItem>
+                  <SelectItem value={UNSET}>
+                    <Trans>Sin definir aún…</Trans>
+                  </SelectItem>
                   {(options?.positions ?? []).map((position) => (
                     <SelectItem key={position.id} value={position.id}>
                       {position.name}
@@ -514,11 +557,13 @@ export function CreateWorkerDialog({
                   update('hiringModalityId')(value === UNSET ? '' : value)
                 }}
               >
-                <SelectTrigger aria-label="Modalidad" className="w-full">
+                <SelectTrigger aria-label={t`Modalidad`} className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={UNSET}>Sin definir aún…</SelectItem>
+                  <SelectItem value={UNSET}>
+                    <Trans>Sin definir aún…</Trans>
+                  </SelectItem>
                   {(options?.modalities ?? []).map((modality) => (
                     <SelectItem key={modality.id} value={modality.id}>
                       {modality.name}
@@ -528,18 +573,20 @@ export function CreateWorkerDialog({
               </Select>
             </FormRow>
 
-            <FormRow label="Inglés y experiencia" column="english_level_id · experience_level">
+            <FormRow label={t`Inglés y experiencia`} column="english_level_id · experience_level">
               <Select
                 value={draft.englishLevelId === '' ? UNSET : draft.englishLevelId}
                 onValueChange={(value) => {
                   update('englishLevelId')(value === UNSET ? '' : value)
                 }}
               >
-                <SelectTrigger aria-label="Nivel de inglés" className="w-full">
+                <SelectTrigger aria-label={t`Nivel de inglés`} className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={UNSET}>Sin definir aún…</SelectItem>
+                  <SelectItem value={UNSET}>
+                    <Trans>Sin definir aún…</Trans>
+                  </SelectItem>
                   {(options?.englishLevels ?? []).map((level) => (
                     <SelectItem key={level.id} value={level.id}>
                       {level.name}
@@ -553,11 +600,13 @@ export function CreateWorkerDialog({
                   update('experienceLevel')(value === UNSET ? '' : value)
                 }}
               >
-                <SelectTrigger aria-label="Experiencia" className="w-full">
+                <SelectTrigger aria-label={t`Experiencia`} className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={UNSET}>Sin definir aún…</SelectItem>
+                  <SelectItem value={UNSET}>
+                    <Trans>Sin definir aún…</Trans>
+                  </SelectItem>
                   {EXPERIENCE_LEVELS.map((level) => (
                     <SelectItem key={level} value={level}>
                       {EXPERIENCE_LABEL[level]}
@@ -569,21 +618,23 @@ export function CreateWorkerDialog({
 
             <details className="border-t border-line px-6 py-3">
               <summary className="cursor-pointer text-xs font-semibold text-ink-3 select-none">
-                Qué pasa después del alta
+                <Trans>Qué pasa después del alta</Trans>
               </summary>
               <ul className="mt-2.5 flex flex-col gap-2">
-                {AFTERMATH.map((line) => (
-                  <li key={line} className="flex gap-2.5 text-xs leading-relaxed text-ink-2">
-                    <span className="mt-1 size-1.5 shrink-0 rounded-full bg-o-500" aria-hidden />
-                    {line}
-                  </li>
-                ))}
+                {(IS_DEV_UI ? AFTERMATH_DEV : AFTERMATH_MESSAGE.map((line) => i18n._(line))).map(
+                  (line) => (
+                    <li key={line} className="flex gap-2.5 text-xs leading-relaxed text-ink-2">
+                      <span className="mt-1 size-1.5 shrink-0 rounded-full bg-o-500" aria-hidden />
+                      {line}
+                    </li>
+                  ),
+                )}
               </ul>
             </details>
 
             {isError && (
               <p role="alert" className="px-6 pb-2 text-sm text-red">
-                {saveErrorMessage(saveError)}
+                {saveErrorMessage(saveError, i18n)}
               </p>
             )}
 
@@ -592,7 +643,7 @@ export function CreateWorkerDialog({
                 <span className="mr-auto text-xs text-ink-3">{missingHint}</span>
               )}
               <Button onClick={onClose} disabled={isLoading}>
-                Cancelar
+                <Trans>Cancelar</Trans>
               </Button>
               <Button
                 variant="primary"
@@ -601,7 +652,7 @@ export function CreateWorkerDialog({
                   void submit()
                 }}
               >
-                {isLoading ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear colaborador'}
+                {isLoading ? t`Guardando…` : isEditing ? t`Guardar cambios` : t`Crear colaborador`}
               </Button>
             </div>
           </>

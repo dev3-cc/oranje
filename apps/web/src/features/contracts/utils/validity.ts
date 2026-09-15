@@ -1,3 +1,5 @@
+import type { I18n } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
 import type { StatusLightToken } from '@oranje/ui'
 
 import type { ContractRow } from '../types/contract.types'
@@ -22,30 +24,40 @@ export interface ValidityDescription {
  * entre «meses restantes» y «vence en N días» es `warningDays`: la ventana por
  * omisión, o el plazo del filtro «Vencimiento» cuando hay uno puesto (quien
  * pide los que vencen en 180 días quiere verlos contados en días).
+ *
+ * El `i18n` viene del componente que la llama (D-36).
  */
-export function describeValidity(row: ContractRow, warningDays: number): ValidityDescription {
+export function describeValidity(
+  row: ContractRow,
+  warningDays: number,
+  i18n: I18n,
+): ValidityDescription {
   const percent = row.elapsed === null ? 0 : Math.min(100, Math.max(0, row.elapsed * 100))
 
   if (row.status === 'EXPIRED' || (row.daysRemaining !== null && row.daysRemaining < 0)) {
-    return { note: 'vencido', isUrgent: false, token: 'st-gris', percent: 100 }
+    return { note: i18n._(msg`vencido`), isUrgent: false, token: 'st-gris', percent: 100 }
   }
 
   if (row.validFrom === null) {
-    return { note: 'sin vigencia', isUrgent: false, token: 'st-gris', percent: 0 }
+    return { note: i18n._(msg`sin vigencia`), isUrgent: false, token: 'st-gris', percent: 0 }
   }
 
   // Vigencia indefinida: hay periodo, pero no hay cuenta regresiva que dar.
   if (row.daysRemaining === null) {
-    return { note: 'indefinido', isUrgent: false, token: 'st-verde', percent }
+    return { note: i18n._(msg`indefinido`), isUrgent: false, token: 'st-verde', percent }
   }
 
   if (row.daysRemaining <= warningDays) {
-    const days = row.daysRemaining === 1 ? '1 día' : `${String(row.daysRemaining)} días`
-    return { note: `vence en ${days}`, isUrgent: true, token: 'st-amarillo', percent }
+    const note =
+      row.daysRemaining === 1
+        ? i18n._(msg`vence en 1 día`)
+        : i18n._(msg`vence en ${String(row.daysRemaining)} días`)
+    return { note, isUrgent: true, token: 'st-amarillo', percent }
   }
 
   const months = Math.round(row.daysRemaining / DAYS_PER_MONTH)
-  const note = months === 1 ? '1 mes restante' : `${String(months)} meses restantes`
+  const note =
+    months === 1 ? i18n._(msg`1 mes restante`) : i18n._(msg`${String(months)} meses restantes`)
   return { note, isUrgent: false, token: 'st-verde', percent }
 }
 

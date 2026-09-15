@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { toast } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
@@ -23,24 +26,30 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
  * Abrir la primera propuesta de un hotel SIN pasar por su ficha: se elige el
  * prospecto (solo Verde o Café sin propuesta, la regla del back) y el borrador
  * v1 se crea al momento — el detalle se sigue trabajando en su workspace.
+ *
+ * El texto se traduce al pintar con `i18n._()` (D-36).
  */
-const INTRO_SLIDES = [
+const INTRO_SLIDES: readonly {
+  image: string
+  title: MessageDescriptor
+  text: MessageDescriptor
+}[] = [
   {
     image: personajePresentacion,
-    title: 'La propuesta vive en Verde',
-    text: 'Solo los hoteles en Verde (o Café, para renegociar) pueden abrir propuesta — y de Verde no se avanza sin enviarla.',
+    title: msg`La propuesta vive en Verde`,
+    text: msg`Solo los hoteles en Verde (o Café, para renegociar) pueden abrir propuesta — y de Verde no se avanza sin enviarla.`,
   },
   {
     image: personajePago,
-    title: 'Tarifas globales, por ahora',
-    text: 'Un pay rate y un bill rate para todo el hotel. Cotizar por posición llegará más adelante.',
+    title: msg`Tarifas globales, por ahora`,
+    text: msg`Un pay rate y un bill rate para todo el hotel. Cotizar por posición llegará más adelante.`,
   },
   {
     image: personajeRetro,
-    title: 'Lo enviado no se edita',
-    text: 'Cada envío congela una versión. Renegociar es abrir una nueva, que arranca con las tarifas de la anterior.',
+    title: msg`Lo enviado no se edita`,
+    text: msg`Cada envío congela una versión. Renegociar es abrir una nueva, que arranca con las tarifas de la anterior.`,
   },
-] as const
+]
 
 export function NewProposalDialog({
   isOpen,
@@ -49,6 +58,7 @@ export function NewProposalDialog({
   isOpen: boolean
   onClose: () => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const navigate = useNavigate()
   const { data: targets = [], isLoading } = useGetProposalTargetsQuery(undefined, {
     skip: !isOpen,
@@ -63,7 +73,7 @@ export function NewProposalDialog({
     setPendingId(prospectId)
     try {
       await createDraft(prospectId).unwrap()
-      toast.success('Borrador v1 abierto')
+      toast.success(t`Borrador v1 abierto`)
       onClose()
       void navigate(`/pipeline/${prospectId}/proposal`)
     } catch {
@@ -75,13 +85,17 @@ export function NewProposalDialog({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Nueva propuesta"
-      description="Elige el hotel: se abre su borrador v1 y pasas directo a cotizarlo."
+      title={t`Nueva propuesta`}
+      description={t`Elige el hotel: se abre su borrador v1 y pasas directo a cotizarlo.`}
     >
       {showIntro ? (
         <OnboardingIntro
-          slides={INTRO_SLIDES}
-          startLabel="Elegir el hotel"
+          slides={INTRO_SLIDES.map((slide) => ({
+            image: slide.image,
+            title: i18n._(slide.title),
+            text: i18n._(slide.text),
+          }))}
+          startLabel={t`Elegir el hotel`}
           onDone={() => {
             dismissIntro()
           }}
@@ -92,23 +106,30 @@ export function NewProposalDialog({
             <p role="alert" className="text-sm text-red">
               {apiErrorMessage(error, {
                 byStatus: {
-                  403: 'Las propuestas las elabora el BD dueño de cada prospecto: pídele que la abra.',
+                  403: i18n._(
+                    msg`Las propuestas las elabora el BD dueño de cada prospecto: pídele que la abra.`,
+                  ),
                 },
-                fallback:
-                  'No se pudo abrir el borrador. Revisa que el hotel siga en Verde e inténtalo de nuevo.',
+                fallback: i18n._(
+                  msg`No se pudo abrir el borrador. Revisa que el hotel siga en Verde e inténtalo de nuevo.`,
+                ),
               })}
             </p>
           )}
 
-          {isLoading && <p className="p-4 text-sm text-ink-3">Buscando hoteles en Verde…</p>}
+          {isLoading && (
+            <p className="p-4 text-sm text-ink-3">
+              <Trans>Buscando hoteles en Verde…</Trans>
+            </p>
+          )}
 
           {!isLoading && targets.length === 0 && (
             <EmptyState
-              title="Ningún hotel espera propuesta"
-              text="La propuesta se abre cuando un prospecto está en Verde (o vuelve en Café) y todavía no tiene una. Los hoteles que ya tienen propuesta se siguen desde su fila de la lista."
+              title={t`Ningún hotel espera propuesta`}
+              text={t`La propuesta se abre cuando un prospecto está en Verde (o vuelve en Café) y todavía no tiene una. Los hoteles que ya tienen propuesta se siguen desde su fila de la lista.`}
               action={
                 <Button variant="secondary" onClick={onClose}>
-                  Cerrar
+                  <Trans>Cerrar</Trans>
                 </Button>
               }
             />
@@ -135,7 +156,11 @@ export function NewProposalDialog({
                       label={ONBOARDING_STATUS_LABEL[target.prospectStatus]}
                     />
                     <span className="text-sm font-medium text-o-700">
-                      {isCreating && pendingId === target.prospectId ? 'Abriendo…' : 'Cotizar →'}
+                      {isCreating && pendingId === target.prospectId ? (
+                        <Trans>Abriendo…</Trans>
+                      ) : (
+                        <Trans>Cotizar →</Trans>
+                      )}
                     </span>
                   </div>
                 </button>

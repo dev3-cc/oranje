@@ -1,6 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { StatusLightBadge, toast } from '@oranje/ui'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, useNavigate, useParams } from 'react-router'
 
@@ -13,7 +16,7 @@ import {
 } from '../api/proposalsApi'
 import { ProposalRateFields } from '../components/ProposalRateFields'
 import { ProposalVersionHistory } from '../components/ProposalVersionHistory'
-import { proposalDraftSchema, type ProposalDraftForm } from '../types/proposalDraft.schema'
+import { buildProposalDraftSchema, type ProposalDraftForm } from '../types/proposalDraft.schema'
 
 import personajeEstrategia from '@/assets/ilustrations/personaje-estrategia.svg'
 import personajePago from '@/assets/ilustrations/personaje-pago-procesado.svg'
@@ -43,23 +46,28 @@ const FORM_ID = 'proposal-draft'
 const CONTROL_CLASS =
   'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none'
 
-const INTRO_SLIDES = [
+/** Las diapositivas del intro; el texto se traduce al pintar con `i18n._()` (D-36). */
+const INTRO_SLIDES: readonly {
+  image: string
+  title: MessageDescriptor
+  text: MessageDescriptor
+}[] = [
   {
     image: personajePresentacion,
-    title: 'La propuesta vive en Verde',
-    text: 'Se elabora y se envía con el hotel en Verde — y de ahí no se avanza sin propuesta enviada.',
+    title: msg`La propuesta vive en Verde`,
+    text: msg`Se elabora y se envía con el hotel en Verde — y de ahí no se avanza sin propuesta enviada.`,
   },
   {
     image: personajePago,
-    title: 'Se cotiza por puesto',
-    text: 'Un renglón por puesto con su pay y su bill: es el mismo cuadro que el hotel firma en el contrato.',
+    title: msg`Se cotiza por puesto`,
+    text: msg`Un renglón por puesto con su pay y su bill: es el mismo cuadro que el hotel firma en el contrato.`,
   },
   {
     image: personajeRetro,
-    title: 'Lo enviado no se edita',
-    text: 'Cada envío congela una versión. Renegociar es abrir una nueva, que arranca con las tarifas de la anterior.',
+    title: msg`Lo enviado no se edita`,
+    text: msg`Cada envío congela una versión. Renegociar es abrir una nueva, que arranca con las tarifas de la anterior.`,
   },
-] as const
+]
 
 export function ProposalEditorPage({
   prospectId: prospectIdProp,
@@ -69,6 +77,7 @@ export function ProposalEditorPage({
   prospectId?: string
   embedded?: boolean
 } = {}): ReactNode {
+  const { t, i18n } = useLingui()
   const params = useParams()
   const prospectId = prospectIdProp ?? params.prospectId ?? ''
   const navigate = useNavigate()
@@ -99,12 +108,16 @@ export function ProposalEditorPage({
   const isWorkable = workspace === undefined || WORKABLE_STATUSES.has(workspace.prospectStatus)
   const workableBlock =
     !isWorkable && workspace
-      ? `La propuesta se trabaja con el hotel en Verde o Café: este está en ${ONBOARDING_STATUS_LABEL[workspace.prospectStatus]}`
+      ? t`La propuesta se trabaja con el hotel en Verde o Café: este está en ${ONBOARDING_STATUS_LABEL[workspace.prospectStatus]}`
       : null
+
+  /* Los mensajes del esquema se resuelven al armarlo, así que se rearma al
+     cambiar de idioma: `i18n` no cambia de identidad al activar otro (D-36). */
+  const schema = useMemo(() => buildProposalDraftSchema(i18n), [i18n, i18n.locale])
 
   const { register, control, handleSubmit, reset, trigger, formState } = useForm<ProposalDraftForm>(
     {
-      resolver: zodResolver(proposalDraftSchema),
+      resolver: zodResolver(schema),
       mode: 'onChange',
       defaultValues: { servicesNote: '', rates: [] },
     },
@@ -142,30 +155,44 @@ export function ProposalEditorPage({
     return (
       <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-surface p-6">
         <p className="text-sm text-red">
-          Este hotel no tiene propuesta o el enlace ya no sirve. Vuelve al Pipeline y ábrela desde
-          su ficha.
+          <Trans>
+            Este hotel no tiene propuesta o el enlace ya no sirve. Vuelve al Pipeline y ábrela desde
+            su ficha.
+          </Trans>
         </p>
         <Link to="/pipeline" className="text-sm font-semibold text-o-700 hover:underline">
-          Volver al Pipeline
+          <Trans>Volver al Pipeline</Trans>
         </Link>
       </div>
     )
   }
 
   function actionErrorMessage(error: unknown): string {
+    const statusLabel = workspace
+      ? ONBOARDING_STATUS_LABEL[workspace.prospectStatus]
+      : t`otro estado`
     return apiErrorMessage(error, {
       byCode: {
-        PROPOSAL_STATE_INVALID: `La propuesta se trabaja con el hotel en Verde o Café — este está en ${workspace ? ONBOARDING_STATUS_LABEL[workspace.prospectStatus] : 'otro estado'}.`,
-        PROPOSAL_SENT: 'Esta versión ya se envió: lo enviado no se edita — abre una versión nueva.',
-        PROPOSAL_WITHOUT_RATES:
-          'Agrega al menos un puesto con su tarifa: el cuadro es lo que el hotel acepta.',
-        RATE_MARGIN_NEGATIVE:
-          'Hay un puesto donde el bill rate queda por debajo del pay rate: se pierde en cada hora.',
-        RATE_DUPLICATED: 'Hay dos renglones para el mismo puesto: deja uno solo.',
-        POSITION_NOT_FOUND:
-          'Uno de los puestos ya no está en el catálogo. Recarga la página y vuelve a elegirlo.',
+        PROPOSAL_STATE_INVALID: i18n._(
+          msg`La propuesta se trabaja con el hotel en Verde o Café — este está en ${statusLabel}.`,
+        ),
+        PROPOSAL_SENT: i18n._(
+          msg`Esta versión ya se envió: lo enviado no se edita — abre una versión nueva.`,
+        ),
+        PROPOSAL_WITHOUT_RATES: i18n._(
+          msg`Agrega al menos un puesto con su tarifa: el cuadro es lo que el hotel acepta.`,
+        ),
+        RATE_MARGIN_NEGATIVE: i18n._(
+          msg`Hay un puesto donde el bill rate queda por debajo del pay rate: se pierde en cada hora.`,
+        ),
+        RATE_DUPLICATED: i18n._(msg`Hay dos renglones para el mismo puesto: deja uno solo.`),
+        POSITION_NOT_FOUND: i18n._(
+          msg`Uno de los puestos ya no está en el catálogo. Recarga la página y vuelve a elegirlo.`,
+        ),
       },
-      fallback: 'No se pudo guardar la propuesta. Revisa las tarifas e inténtalo de nuevo.',
+      fallback: i18n._(
+        msg`No se pudo guardar la propuesta. Revisa las tarifas e inténtalo de nuevo.`,
+      ),
     })
   }
 
@@ -174,7 +201,7 @@ export function ProposalEditorPage({
     setActionError(null)
     try {
       await saveDraft({ proposalId: draft.id, prospectId, ...values }).unwrap()
-      toast.success('Borrador guardado')
+      toast.success(t`Borrador guardado`)
     } catch (error) {
       setActionError(actionErrorMessage(error))
       throw error
@@ -187,7 +214,7 @@ export function ProposalEditorPage({
     try {
       await persist(values)
       await sendProposal({ proposalId: draft.id, prospectId }).unwrap()
-      toast.success('Propuesta enviada al hotel')
+      toast.success(t`Propuesta enviada al hotel`)
     } catch (error) {
       setActionError(actionErrorMessage(error))
     }
@@ -200,16 +227,16 @@ export function ProposalEditorPage({
     setActionError(null)
     try {
       await discardDraft({ proposalId: draft.id, prospectId }).unwrap()
-      toast.success('Borrador descartado')
+      toast.success(t`Borrador descartado`)
       void navigate(`/pipeline/${prospectId}`)
     } catch (error) {
       setDiscardArmed(false)
       setActionError(
         apiErrorMessage(error, {
           byCode: {
-            PROPOSAL_NOT_DRAFT: 'Esta versión ya se envió: lo enviado no se descarta.',
+            PROPOSAL_NOT_DRAFT: i18n._(msg`Esta versión ya se envió: lo enviado no se descarta.`),
           },
-          fallback: 'No se pudo descartar el borrador. Inténtalo de nuevo.',
+          fallback: i18n._(msg`No se pudo descartar el borrador. Inténtalo de nuevo.`),
         }),
       )
     }
@@ -220,14 +247,16 @@ export function ProposalEditorPage({
       {!embedded && (
         <nav aria-label="Ruta" className="flex items-center gap-2 text-sm text-ink-3">
           <Link to="/pipeline" className="hover:text-o-700">
-            Pipeline
+            <Trans>Pipeline</Trans>
           </Link>
           <span aria-hidden>›</span>
           <Link to={`/pipeline/${prospectId}`} className="hover:text-o-700">
             {workspace.hotelName}
           </Link>
           <span aria-hidden>›</span>
-          <span className="text-ink-2">Propuesta</span>
+          <span className="text-ink-2">
+            <Trans>Propuesta</Trans>
+          </span>
         </nav>
       )}
 
@@ -235,7 +264,7 @@ export function ProposalEditorPage({
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight text-ink">
-              Propuesta · {workspace.hotelName}
+              <Trans>Propuesta · {workspace.hotelName}</Trans>
             </h1>
             <StatusLightBadge
               token={ONBOARDING_STATUS_TOKEN[workspace.prospectStatus]}
@@ -246,13 +275,15 @@ export function ProposalEditorPage({
             {draft
               ? IS_DEV_UI
                 ? `Versión ${draft.version} · borrador · sent_at es NULL hasta enviarla`
-                : `Versión ${draft.version} · borrador sin enviar`
-              : 'Sin versión abierta · la última ya se envió'}
+                : t`Versión ${draft.version} · borrador sin enviar`
+              : t`Sin versión abierta · la última ya se envió`}
             {draft && lastSent && (
               <span className="text-ink-2">
                 {' '}
-                · el hotel tiene la v{lastSent.version} (enviada{' '}
-                {lastSent.sentAt ? formatDate(lastSent.sentAt) : '—'})
+                <Trans>
+                  · el hotel tiene la v{lastSent.version} (enviada{' '}
+                  {lastSent.sentAt ? formatDate(lastSent.sentAt) : '—'})
+                </Trans>
               </span>
             )}
             {' · '}
@@ -261,7 +292,7 @@ export function ProposalEditorPage({
               onClick={reopenIntro}
               className="cursor-pointer font-medium text-o-700 hover:underline"
             >
-              ¿Cómo funciona?
+              <Trans>¿Cómo funciona?</Trans>
             </button>
           </p>
         </div>
@@ -274,20 +305,22 @@ export function ProposalEditorPage({
               onClick={() => {
                 if (!isDiscardArmed) {
                   setDiscardArmed(true)
-                  toast('¿Seguro? Toca «Sí, descartar borrador» para confirmar.')
+                  toast(t`¿Seguro? Toca «Sí, descartar borrador» para confirmar.`)
                   return
                 }
                 void discard()
               }}
             >
-              {isDiscarding
-                ? 'Descartando…'
-                : isDiscardArmed
-                  ? 'Sí, descartar borrador'
-                  : 'Descartar borrador'}
+              {isDiscarding ? (
+                <Trans>Descartando…</Trans>
+              ) : isDiscardArmed ? (
+                <Trans>Sí, descartar borrador</Trans>
+              ) : (
+                <Trans>Descartar borrador</Trans>
+              )}
             </Button>
             <Button type="submit" form={FORM_ID} disabled={!formState.isValid || isBusy}>
-              {isSaving ? 'Guardando…' : 'Guardar borrador'}
+              {isSaving ? <Trans>Guardando…</Trans> : <Trans>Guardar borrador</Trans>}
             </Button>
             <Button
               variant="primary"
@@ -296,7 +329,7 @@ export function ProposalEditorPage({
                 void handleSubmit(persistAndSend)()
               }}
             >
-              {isSending ? 'Enviando…' : 'Enviar propuesta'}
+              {isSending ? <Trans>Enviando…</Trans> : <Trans>Enviar propuesta</Trans>}
             </Button>
           </div>
         )}
@@ -311,8 +344,12 @@ export function ProposalEditorPage({
       {isIntroOpen ? (
         <div className="max-w-2xl rounded-lg border border-line bg-surface">
           <OnboardingIntro
-            slides={INTRO_SLIDES}
-            startLabel="Ir a la propuesta"
+            slides={INTRO_SLIDES.map((slide) => ({
+              image: slide.image,
+              title: i18n._(slide.title),
+              text: i18n._(slide.text),
+            }))}
+            startLabel={t`Ir a la propuesta`}
             onDone={dismissIntro}
           />
         </div>
@@ -321,7 +358,7 @@ export function ProposalEditorPage({
           <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             {draft && !canEdit ? (
               /* Quien consulta ve VALORES, no un formulario: inputs con errores de validación parecían una captura pendiente. */
-              <SectionCard title={`Borrador v${draft.version} · en elaboración`}>
+              <SectionCard title={t`Borrador v${draft.version} · en elaboración`}>
                 {/* Quién lo elabora, con cara: es a quien le pides el cambio. */}
                 <div className="mb-4 flex items-center gap-2.5">
                   {workspace.owner.photoUrl ? (
@@ -346,15 +383,19 @@ export function ProposalEditorPage({
                     </span>
                   )}
                   <p className="text-sm text-ink-2">
-                    Lo elabora <span className="font-semibold">{workspace.owner.name}</span> — el BD
-                    dueño del ciclo — o el BDC.
+                    <Trans>
+                      Lo elabora <span className="font-semibold">{workspace.owner.name}</span> — el
+                      BD dueño del ciclo — o el BDC.
+                    </Trans>
                   </p>
                 </div>
                 <dl className="flex flex-col divide-y divide-line rounded-lg border border-line">
                   <div className="flex items-start justify-between gap-4 p-3">
-                    <dt className="text-sm text-ink-3">Servicios ofrecidos</dt>
+                    <dt className="text-sm text-ink-3">
+                      <Trans>Servicios ofrecidos</Trans>
+                    </dt>
                     <dd className="text-right text-sm font-medium text-ink">
-                      {draft.servicesNote || 'Aún sin describir'}
+                      {draft.servicesNote || t`Aún sin describir`}
                     </dd>
                   </div>
                   {draft.rates.map((rate) => (
@@ -364,20 +405,28 @@ export function ProposalEditorPage({
                     >
                       <dt className="text-sm text-ink-3">{rate.positionName}</dt>
                       <dd className="text-sm font-medium text-ink">
-                        ${rate.payRate.toFixed(2)} pay · ${rate.billRate.toFixed(2)} bill
+                        <Trans>
+                          ${rate.payRate.toFixed(2)} pay · ${rate.billRate.toFixed(2)} bill
+                        </Trans>
                       </dd>
                     </div>
                   ))}
                   {draft.rates.length === 0 && (
                     <div className="flex items-center justify-between gap-4 p-3">
-                      <dt className="text-sm text-ink-3">Tarifas</dt>
-                      <dd className="text-sm text-ink-3">Aún sin cotizar ningún puesto</dd>
+                      <dt className="text-sm text-ink-3">
+                        <Trans>Tarifas</Trans>
+                      </dt>
+                      <dd className="text-sm text-ink-3">
+                        <Trans>Aún sin cotizar ningún puesto</Trans>
+                      </dd>
                     </div>
                   )}
                 </dl>
                 <p className="mt-4 text-sm leading-relaxed text-ink-3">
-                  Es un borrador en elaboración: los valores pueden cambiar hasta que el BD o el BDC
-                  la envíen. Cuando la envíen, aquí verás la versión final.
+                  <Trans>
+                    Es un borrador en elaboración: los valores pueden cambiar hasta que el BD o el
+                    BDC la envíen. Cuando la envíen, aquí verás la versión final.
+                  </Trans>
                 </p>
               </SectionCard>
             ) : draft ? (
@@ -391,28 +440,28 @@ export function ProposalEditorPage({
                 }}
                 className="flex flex-col gap-5"
               >
-                <SectionCard title="Servicios ofrecidos">
+                <SectionCard title={t`Servicios ofrecidos`}>
                   <FormField
-                    label="Descripción"
+                    label={t`Descripción`}
                     htmlFor="servicesNote"
                     hint={
                       IS_DEV_UI
                         ? 'services_note — texto libre'
-                        : 'Qué va a cubrir Oranje en este hotel'
+                        : t`Qué va a cubrir Oranje en este hotel`
                     }
                     error={formState.errors.servicesNote?.message}
                   >
                     <input
                       id="servicesNote"
                       type="text"
-                      placeholder="Housekeeping y Steward para temporada alta…"
+                      placeholder={t`Housekeeping y Steward para temporada alta…`}
                       {...register('servicesNote')}
                       className={CONTROL_CLASS}
                     />
                   </FormField>
                 </SectionCard>
 
-                <SectionCard title="Tarifas por puesto">
+                <SectionCard title={t`Tarifas por puesto`}>
                   <ProposalRateFields
                     control={control}
                     register={register}
@@ -421,50 +470,65 @@ export function ProposalEditorPage({
                   />
 
                   <p className="mt-5 rounded-md bg-o-50 p-4 text-sm leading-relaxed text-ink-2">
-                    {IS_DEV_UI
-                      ? 'commercial.proposal_rate — un renglón por puesto, espejo de contract_rate: al firmar se copia al Documento de T&C.'
-                      : 'Este cuadro es el que firma el hotel: al crear el Documento de T&C se copia tal cual, sin volver a capturarlo.'}
+                    {IS_DEV_UI ? (
+                      'commercial.proposal_rate — un renglón por puesto, espejo de contract_rate: al firmar se copia al Documento de T&C.'
+                    ) : (
+                      <Trans>
+                        Este cuadro es el que firma el hotel: al crear el Documento de T&C se copia
+                        tal cual, sin volver a capturarlo.
+                      </Trans>
+                    )}
                   </p>
                 </SectionCard>
               </form>
             ) : (
               <SectionCard
-                title={lastSent ? `Última enviada · v${lastSent.version}` : 'Sin versión abierta'}
+                title={lastSent ? t`Última enviada · v${lastSent.version}` : t`Sin versión abierta`}
               >
                 {/* Lo que la propuesta INCLUYE se ve aquí mismo, sea cual sea tu rol. */}
                 {lastSent && (
                   <dl className="mb-4 flex flex-col divide-y divide-line rounded-lg border border-line">
                     <div className="flex items-start justify-between gap-4 p-3">
-                      <dt className="text-sm text-ink-3">Servicios ofrecidos</dt>
+                      <dt className="text-sm text-ink-3">
+                        <Trans>Servicios ofrecidos</Trans>
+                      </dt>
                       <dd className="text-right text-sm font-medium text-ink">
                         {lastSent.servicesNote || '—'}
                       </dd>
                     </div>
                     <div className="flex items-center justify-between gap-4 p-3">
-                      <dt className="text-sm text-ink-3">Pay rate</dt>
+                      <dt className="text-sm text-ink-3">
+                        <Trans>Pay rate</Trans>
+                      </dt>
                       <dd className="text-sm font-medium text-ink">
                         ${lastSent.payRate.toFixed(2)}
                       </dd>
                     </div>
                     <div className="flex items-center justify-between gap-4 p-3">
-                      <dt className="text-sm text-ink-3">Bill rate</dt>
+                      <dt className="text-sm text-ink-3">
+                        <Trans>Bill rate</Trans>
+                      </dt>
                       <dd className="text-sm font-medium text-ink">
                         ${lastSent.billRate.toFixed(2)}
                       </dd>
                     </div>
                     <div className="flex items-center justify-between gap-4 p-3">
-                      <dt className="text-sm text-ink-3">Enviada</dt>
+                      <dt className="text-sm text-ink-3">
+                        <Trans>Enviada</Trans>
+                      </dt>
                       <dd className="text-sm font-medium text-ink">
                         {lastSent.sentAt ? formatDate(lastSent.sentAt) : '—'}
-                        {lastSent.byName ? ` · por ${lastSent.byName}` : ''}
+                        {lastSent.byName ? t` · por ${lastSent.byName}` : ''}
                       </dd>
                     </div>
                   </dl>
                 )}
                 <p className="text-sm leading-relaxed text-ink-3">
-                  Las enviadas no se editan: para renegociar se abre una versión nueva, que arranca
-                  con las tarifas de la anterior. El contrato de esta versión se abre desde el
-                  historial.
+                  <Trans>
+                    Las enviadas no se editan: para renegociar se abre una versión nueva, que
+                    arranca con las tarifas de la anterior. El contrato de esta versión se abre
+                    desde el historial.
+                  </Trans>
                 </p>
                 {canEdit ? (
                   <>
@@ -477,17 +541,19 @@ export function ProposalEditorPage({
                         void createDraft(prospectId)
                           .unwrap()
                           .then(() => {
-                            toast.success('Versión nueva abierta')
+                            toast.success(t`Versión nueva abierta`)
                           })
                           .catch(() => {})
                       }}
                     >
-                      {isCreating ? 'Abriendo…' : 'Abrir versión nueva'}
+                      {isCreating ? <Trans>Abriendo…</Trans> : <Trans>Abrir versión nueva</Trans>}
                     </Button>
                     {hasCreateFailed && (
                       <p role="alert" className="mt-3 text-sm text-red">
-                        No se pudo abrir la versión: solo el BD dueño del ciclo o el BDC pueden
-                        elaborar la propuesta.
+                        <Trans>
+                          No se pudo abrir la versión: solo el BD dueño del ciclo o el BDC pueden
+                          elaborar la propuesta.
+                        </Trans>
                       </p>
                     )}
                   </>
@@ -495,11 +561,13 @@ export function ProposalEditorPage({
                   <div className="mt-5">
                     <NoticeCard
                       image={personajeEstrategia}
-                      title="Elaborar la propuesta es del BD o del BDC"
+                      title={t`Elaborar la propuesta es del BD o del BDC`}
                       role="status"
                     >
-                      Solo el BD dueño del ciclo o el BDC abren y envían versiones. Desde tu rol
-                      puedes consultarla, no editarla.
+                      <Trans>
+                        Solo el BD dueño del ciclo o el BDC abren y envían versiones. Desde tu rol
+                        puedes consultarla, no editarla.
+                      </Trans>
                     </NoticeCard>
                   </div>
                 )}

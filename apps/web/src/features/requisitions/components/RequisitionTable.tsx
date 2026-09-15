@@ -18,6 +18,7 @@ import type { RequisitionRow } from '../types/requisition.types'
 import { CoverageBar } from './CoverageBar'
 
 import { EmptyState } from '@/shared/components/EmptyState'
+import { HotelThumbnail } from '@/shared/components/HotelThumbnail'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   REQUISITION_STATUS_LABEL,
@@ -77,21 +78,24 @@ export function RequisitionTable({ items }: { items: RequisitionRow[] }): ReactN
             <TableRow
               key={item.id}
               onClick={() => {
-                void navigate(`/requisiciones/${item.id}`)
+                void navigate(`/requisitions/${item.id}`)
               }}
               className="cursor-pointer border-line hover:bg-surface-2"
             >
               <TableCell className="px-4 py-4 text-sm font-medium whitespace-nowrap">
                 {}
                 <Link
-                  to={`/requisiciones/${item.id}`}
+                  to={`/requisitions/${item.id}`}
                   className="rounded-sm text-ink hover:text-o-700 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
                 >
                   {item.number}
                 </Link>
               </TableCell>
               <TableCell className="px-4 py-4 text-sm whitespace-nowrap text-ink-2">
-                {item.hotelName}
+                <span className="flex items-center gap-2.5">
+                  <HotelThumbnail photoUrl={item.hotelPhotoUrl} className="size-7" />
+                  {item.hotelName}
+                </span>
               </TableCell>
               <TableCell className="px-4 py-4 text-sm whitespace-nowrap text-ink-2">
                 {item.department}

@@ -1,3 +1,4 @@
+import { Plural, Trans, useLingui } from '@lingui/react/macro'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@oranje/ui'
 import { type ReactNode } from 'react'
 
@@ -17,6 +18,8 @@ const MINE = 'mine'
  * equipo: el BD no lo ve porque `/team` le responde vacío.
  */
 export function TerritoryOwnerPicker({ owners, selectedId, onSelect }: Props): ReactNode {
+  const { t } = useLingui()
+
   if (owners.length === 0) return null
 
   return (
@@ -26,17 +29,19 @@ export function TerritoryOwnerPicker({ owners, selectedId, onSelect }: Props): R
         onSelect(value === MINE ? null : value)
       }}
     >
-      <SelectTrigger aria-label="De quién es el territorio" className="mt-4 w-full">
+      <SelectTrigger aria-label={t`De quién es el territorio`} className="mt-4 w-full">
         <SelectValue />
       </SelectTrigger>
 
       <SelectContent>
-        <SelectItem value={MINE}>Mi territorio</SelectItem>
+        <SelectItem value={MINE}>
+          <Trans>Mi territorio</Trans>
+        </SelectItem>
 
         {owners.map((owner) => (
           <SelectItem key={owner.id} value={owner.id}>
-            {owner.fullName} · {owner.zoneCount} zona{owner.zoneCount === 1 ? '' : 's'} ·{' '}
-            {owner.openProspects} prospecto{owner.openProspects === 1 ? '' : 's'}
+            {owner.fullName} · <Plural value={owner.zoneCount} one="# zona" other="# zonas" /> ·{' '}
+            <Plural value={owner.openProspects} one="# prospecto" other="# prospectos" />
           </SelectItem>
         ))}
       </SelectContent>

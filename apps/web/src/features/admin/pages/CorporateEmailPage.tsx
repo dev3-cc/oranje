@@ -1,3 +1,6 @@
+import type { I18n } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import {
   MaterialIcon,
   Table,
@@ -41,17 +44,21 @@ function initialsOf(fullName: string): string {
     .toUpperCase()
 }
 
-function mailboxErrorMessage(error: unknown): string {
+/** El `i18n` viene del componente (`useLingui`): así el mensaje habla el idioma activo (D-36). */
+function mailboxErrorMessage(error: unknown, i18n: I18n): string {
   return apiErrorMessage(error, {
     byCode: {
-      NO_CORPORATE_EMAIL: 'Este colaborador no tiene un correo @oranjepeople.com asignado todavía.',
-      CPANEL_ERROR: (info) => info.message ?? 'cPanel rechazó la operación.',
+      NO_CORPORATE_EMAIL: i18n._(
+        msg`Este colaborador no tiene un correo @oranjepeople.com asignado todavía.`,
+      ),
+      CPANEL_ERROR: (info) => info.message ?? i18n._(msg`cPanel rechazó la operación.`),
     },
-    fallback: 'No se pudo completar la operación. Inténtalo de nuevo.',
+    fallback: i18n._(msg`No se pudo completar la operación. Inténtalo de nuevo.`),
   })
 }
 
 export function CorporateEmailPage(): ReactNode {
+  const { t, i18n } = useLingui()
   const can = useCan()
   const canManage = can('users:manage_corporate_email')
 
@@ -79,9 +86,9 @@ export function CorporateEmailPage(): ReactNode {
     try {
       const credential = await createMailbox(row.workerId).unwrap()
       setRevealed(credential)
-      toast.success(`Buzón creado: ${credential.email}`)
+      toast.success(t`Buzón creado: ${credential.email}`)
     } catch (error) {
-      setActionError(mailboxErrorMessage(error))
+      setActionError(mailboxErrorMessage(error, i18n))
     } finally {
       setBusyWorkerId(null)
     }
@@ -94,7 +101,7 @@ export function CorporateEmailPage(): ReactNode {
       const credential = await resetPassword(row.workerId).unwrap()
       setRevealed(credential)
     } catch (error) {
-      setActionError(mailboxErrorMessage(error))
+      setActionError(mailboxErrorMessage(error, i18n))
     } finally {
       setBusyWorkerId(null)
     }
@@ -105,10 +112,10 @@ export function CorporateEmailPage(): ReactNode {
     setActionError(null)
     try {
       await deleteMailbox(deleteTarget.workerId).unwrap()
-      toast.success('Buzón eliminado')
+      toast.success(t`Buzón eliminado`)
       setDeleteTarget(null)
     } catch (error) {
-      setActionError(mailboxErrorMessage(error))
+      setActionError(mailboxErrorMessage(error, i18n))
     }
   }
 
@@ -116,7 +123,7 @@ export function CorporateEmailPage(): ReactNode {
     if (!revealed) return
     try {
       await navigator.clipboard.writeText(revealed.password)
-      toast.success('Contraseña copiada')
+      toast.success(t`Contraseña copiada`)
     } catch {
       /* Sin permiso de portapapeles: la contraseña sigue visible en pantalla. */
     }
@@ -126,32 +133,49 @@ export function CorporateEmailPage(): ReactNode {
     <div className="flex flex-col gap-5">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[22px] font-bold text-ink">Correos corporativos</h1>
+          <h1 className="text-[22px] font-bold text-ink">
+            <Trans>Correos corporativos</Trans>
+          </h1>
           <p className="mt-1 text-sm text-ink-3">
-            {IS_DEV_UI
-              ? 'users:manage_corporate_email · cPanel UAPI (A2 Hosting) sobre identity.user.email'
-              : 'El buzón real detrás del correo @oranjepeople.com de cada colaborador'}
-            {rows && ` · ${String(withMailbox)} de ${String(rows.length)} con buzón`}
+            {IS_DEV_UI ? (
+              'users:manage_corporate_email · cPanel UAPI (A2 Hosting) sobre identity.user.email'
+            ) : (
+              <Trans>El buzón real detrás del correo @oranjepeople.com de cada colaborador</Trans>
+            )}
+            {rows && (
+              <>
+                {' · '}
+                <Trans>
+                  {String(withMailbox)} de {String(rows.length)} con buzón
+                </Trans>
+              </>
+            )}
           </p>
         </div>
         <SearchField
           value={search}
           onChange={setSearch}
-          label="Buscar colaborador"
-          placeholder="Nombre del colaborador, p. ej. Ana Rivera…"
+          label={t`Buscar colaborador`}
+          placeholder={t`Nombre del colaborador, p. ej. Ana Rivera…`}
         />
       </header>
 
       {!canManage && (
-        <NoticeCard image={personajeConfiguracion} title="Esto es del Administrador" role="status">
-          Crear y gestionar buzones corporativos es una acción del sistema, reservada al
-          Administrador.
+        <NoticeCard
+          image={personajeConfiguracion}
+          title={t`Esto es del Administrador`}
+          role="status"
+        >
+          <Trans>
+            Crear y gestionar buzones corporativos es una acción del sistema, reservada al
+            Administrador.
+          </Trans>
         </NoticeCard>
       )}
 
       {isError && (
         <LoadError
-          message="No se pudo cargar la lista de correos corporativos."
+          message={t`No se pudo cargar la lista de correos corporativos.`}
           onRetry={() => {
             void refetch()
           }}
@@ -173,16 +197,16 @@ export function CorporateEmailPage(): ReactNode {
               <TableHeader>
                 <TableRow className="border-line">
                   <TableHead className="px-4 py-3 text-xs font-semibold text-ink-3">
-                    Colaborador
+                    <Trans>Colaborador</Trans>
                   </TableHead>
                   <TableHead className="px-4 py-3 text-xs font-semibold text-ink-3">
-                    Correo
+                    <Trans>Correo</Trans>
                   </TableHead>
                   <TableHead className="px-4 py-3 text-xs font-semibold text-ink-3">
-                    Buzón
+                    <Trans>Buzón</Trans>
                   </TableHead>
                   <TableHead className="px-4 py-3 text-xs font-semibold text-ink-3">
-                    Acciones
+                    <Trans>Acciones</Trans>
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -190,9 +214,11 @@ export function CorporateEmailPage(): ReactNode {
                 {filtered.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={4} className="px-4 py-8 text-center text-sm text-ink-3">
-                      {search.trim() === ''
-                        ? 'Nadie tiene correo corporativo asignado todavía.'
-                        : `Nadie en la lista se llama «${search}».`}
+                      {search.trim() === '' ? (
+                        <Trans>Nadie tiene correo corporativo asignado todavía.</Trans>
+                      ) : (
+                        <Trans>Nadie en la lista se llama «{search}».</Trans>
+                      )}
                     </TableCell>
                   </TableRow>
                 )}
@@ -235,7 +261,7 @@ export function CorporateEmailPage(): ReactNode {
                             className="text-sm"
                             aria-hidden
                           />
-                          {row.mailboxExists ? 'Creado' : 'Sin crear'}
+                          {row.mailboxExists ? <Trans>Creado</Trans> : <Trans>Sin crear</Trans>}
                         </span>
                       </TableCell>
                       <TableCell className="px-4 py-3">
@@ -248,7 +274,7 @@ export function CorporateEmailPage(): ReactNode {
                                 void handleCreate(row)
                               }}
                             >
-                              {isBusy ? 'Creando…' : 'Crear buzón'}
+                              {isBusy ? <Trans>Creando…</Trans> : <Trans>Crear buzón</Trans>}
                             </Button>
                           )}
                           {row.mailboxExists && (
@@ -259,7 +285,11 @@ export function CorporateEmailPage(): ReactNode {
                                   void handleReset(row)
                                 }}
                               >
-                                {isBusy ? 'Reseteando…' : 'Resetear contraseña'}
+                                {isBusy ? (
+                                  <Trans>Reseteando…</Trans>
+                                ) : (
+                                  <Trans>Resetear contraseña</Trans>
+                                )}
                               </Button>
                               <Button
                                 variant="secondary"
@@ -268,7 +298,7 @@ export function CorporateEmailPage(): ReactNode {
                                   setDeleteTarget(row)
                                 }}
                               >
-                                Eliminar
+                                <Trans>Eliminar</Trans>
                               </Button>
                             </>
                           )}
@@ -288,8 +318,8 @@ export function CorporateEmailPage(): ReactNode {
         onClose={() => {
           setRevealed(null)
         }}
-        title="Contraseña del buzón"
-        description="Se muestra una sola vez: cPanel no la vuelve a enseñar. Cópiala antes de cerrar."
+        title={t`Contraseña del buzón`}
+        description={t`Se muestra una sola vez: cPanel no la vuelve a enseñar. Cópiala antes de cerrar.`}
       >
         {revealed && (
           <div className="flex flex-col gap-3">
@@ -301,7 +331,7 @@ export function CorporateEmailPage(): ReactNode {
                   void copyPassword()
                 }}
               >
-                Copiar
+                <Trans>Copiar</Trans>
               </Button>
             </div>
           </div>
@@ -313,8 +343,8 @@ export function CorporateEmailPage(): ReactNode {
         onClose={() => {
           setDeleteTarget(null)
         }}
-        title="Eliminar buzón"
-        description={`Esto borra de verdad el buzón de ${deleteTarget?.email ?? ''} en cPanel — no se puede deshacer.`}
+        title={t`Eliminar buzón`}
+        description={t`Esto borra de verdad el buzón de ${deleteTarget?.email ?? ''} en cPanel — no se puede deshacer.`}
         footer={
           <div className="flex items-center justify-end gap-3">
             <Button
@@ -323,7 +353,7 @@ export function CorporateEmailPage(): ReactNode {
                 setDeleteTarget(null)
               }}
             >
-              Cancelar
+              <Trans>Cancelar</Trans>
             </Button>
             <Button
               variant="primary"
@@ -332,7 +362,7 @@ export function CorporateEmailPage(): ReactNode {
                 void confirmDelete()
               }}
             >
-              {isDeleting ? 'Eliminando…' : 'Sí, eliminar buzón'}
+              {isDeleting ? <Trans>Eliminando…</Trans> : <Trans>Sí, eliminar buzón</Trans>}
             </Button>
           </div>
         }

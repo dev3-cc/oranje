@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { cn, statusLight } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -24,7 +25,8 @@ export function ValidityCell({
   row: ContractRow
   warningDays: number
 }): ReactNode {
-  const { note, isUrgent, token, percent } = describeValidity(row, warningDays)
+  const { t, i18n } = useLingui()
+  const { note, isUrgent, token, percent } = describeValidity(row, warningDays, i18n)
 
   return (
     <div className="min-w-56">
@@ -37,7 +39,7 @@ export function ValidityCell({
       <div
         className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-3"
         role="img"
-        aria-label={`Vigencia: ${note}`}
+        aria-label={t`Vigencia: ${note}`}
       >
         {percent > 0 && (
           <div

@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -13,22 +14,23 @@ export function HotelContactList({
   contacts: HotelContact[]
   onEdit: () => void
 }): ReactNode {
+  const { t } = useLingui()
   return (
     <SectionCard
-      title="Contactos del hotel"
+      title={t`Contactos del hotel`}
       action={
         <button
           type="button"
           onClick={onEdit}
           className="shrink-0 rounded-md px-2 py-1 text-sm font-semibold text-o-700 hover:bg-o-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
         >
-          Editar
+          <Trans>Editar</Trans>
         </button>
       }
     >
       {contacts.length === 0 ? (
         <p className="py-2 text-sm text-ink-3">
-          Todavía no hay contactos. Usa «Editar» para agregar el primero.
+          <Trans>Todavía no hay contactos. Usa «Editar» para agregar el primero.</Trans>
         </p>
       ) : (
         <ul className="flex flex-col gap-3">
@@ -43,7 +45,9 @@ export function HotelContactList({
               <div className="flex items-baseline justify-between gap-3">
                 <p className="text-sm font-semibold text-ink">{contact.name}</p>
                 {contact.isPrimary && (
-                  <span className="shrink-0 text-xs font-semibold text-ink-2">Principal</span>
+                  <span className="shrink-0 text-xs font-semibold text-ink-2">
+                    <Trans>Principal</Trans>
+                  </span>
                 )}
               </div>
               <p className="mt-1 text-sm text-ink-3">{contact.role}</p>

@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 
 import type { StaleProspect } from '../types/dashboard.types'
 
+import { HotelThumbnail } from '@/shared/components/HotelThumbnail'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
@@ -31,16 +32,19 @@ export function StaleProspectList({ prospects }: { prospects: StaleProspect[] })
         <ul className="flex flex-col gap-5">
           {prospects.map((prospect) => (
             <li key={prospect.prospectId} className="flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <Link
-                  to={`/pipeline/${prospect.prospectId}`}
-                  className="text-sm font-semibold text-ink hover:text-o-700"
-                >
-                  {prospect.hotelName}
-                </Link>
-                <p className="mt-1 text-sm text-ink-3">
-                  <Trans>{prospect.daysWithoutAttempt} d sin intento</Trans>
-                </p>
+              <div className="flex min-w-0 items-center gap-3">
+                <HotelThumbnail photoUrl={prospect.hotelPhotoUrl} className="size-9" />
+                <div className="min-w-0">
+                  <Link
+                    to={`/pipeline/${prospect.prospectId}`}
+                    className="text-sm font-semibold text-ink hover:text-o-700"
+                  >
+                    {prospect.hotelName}
+                  </Link>
+                  <p className="mt-1 text-sm text-ink-3">
+                    <Trans>{prospect.daysWithoutAttempt} d sin intento</Trans>
+                  </p>
+                </div>
               </div>
 
               <StatusLightSoftBadge

@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
 import { useCompleteSignupMutation, useGetMyProfileQuery } from '../api/workerApi'
+import { PhotoUploader } from '../components/PhotoUploader'
 import { TaxDeadlineBanner } from '../components/TaxDeadlineBanner'
 import { TaxDocumentUploader } from '../components/TaxDocumentUploader'
 
@@ -63,6 +64,13 @@ export function Phase2Page(): ReactNode {
         </p>
       )}
 
+      <section className="flex flex-col gap-3 border-b border-line pb-4">
+        <h2 className="text-sm font-semibold text-ink">
+          <Trans>Tu foto</Trans>
+        </h2>
+        <PhotoUploader photoUrl={profile?.photoUrl ?? null} />
+      </section>
+
       <section className="flex flex-col gap-4">
         <h2 className="text-sm font-semibold text-ink">
           <Trans>Transporte</Trans>
@@ -119,7 +127,7 @@ export function Phase2Page(): ReactNode {
       {isSuccess && (
         <p className="rounded-md bg-green/10 px-4 py-3 text-sm text-ink-2">
           <Trans>Transporte guardado.</Trans>{' '}
-          <Link to="/collaborator/signup-3" className="font-semibold text-o-700 underline">
+          <Link to="/colaborador/alta-3" className="font-semibold text-o-700 underline">
             <Trans>Sigue con tu contacto de emergencia →</Trans>
           </Link>
         </p>

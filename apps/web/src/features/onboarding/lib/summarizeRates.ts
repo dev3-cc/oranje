@@ -1,3 +1,6 @@
+import type { I18n } from '@lingui/core'
+import { msg, plural } from '@lingui/core/macro'
+
 import type { ProposalVersionSummary } from '../types/proposal.types'
 
 import { formatMoney } from '@/shared/lib/formatters'
@@ -9,15 +12,22 @@ import { formatMoney } from '@/shared/lib/formatters'
  *
  * Las versiones anteriores al cuadro solo tienen la tarifa global: se muestran
  * como estaban, sin fingir que tenían puestos.
+ *
+ * `i18n` viene de quien la llama (`useLingui`): así el texto habla el idioma
+ * activo (D-36).
  */
-export function summarizeRates(version: ProposalVersionSummary): string {
+export function summarizeRates(version: ProposalVersionSummary, i18n: I18n): string {
   if (version.rates.length === 0) {
-    return `pay ${formatMoney(version.payRate)} · bill ${formatMoney(version.billRate)}`
+    return i18n._(msg`pay ${formatMoney(version.payRate)} · bill ${formatMoney(version.billRate)}`)
   }
 
   const cheapest = Math.min(...version.rates.map((rate) => rate.billRate))
 
-  return version.rates.length === 1
-    ? `${version.rates[0]?.positionName ?? ''} · bill ${formatMoney(cheapest)}`
-    : `${String(version.rates.length)} puestos · desde ${formatMoney(cheapest)} el bill`
+  if (version.rates.length === 1) {
+    return i18n._(msg`${version.rates[0]?.positionName ?? ''} · bill ${formatMoney(cheapest)}`)
+  }
+
+  return i18n._(
+    msg`${plural(version.rates.length, { one: '# puesto', other: '# puestos' })} · desde ${formatMoney(cheapest)} el bill`,
+  )
 }

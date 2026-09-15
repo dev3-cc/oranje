@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -54,20 +55,20 @@ export function AccountStatusChip({
   if (!isActive) {
     return (
       <span className="rounded-full bg-surface-3/70 px-2.5 py-1 text-xs font-semibold text-ink-3">
-        Inactivo
+        <Trans>Inactivo</Trans>
       </span>
     )
   }
   if (hasAccount) {
     return (
       <span className="rounded-full bg-green/10 px-2.5 py-1 text-xs font-semibold text-green">
-        Ya entró
+        <Trans>Ya entró</Trans>
       </span>
     )
   }
   return (
     <span className="rounded-full bg-yellow/15 px-2.5 py-1 text-xs font-semibold text-o-700">
-      Invitación enviada
+      <Trans>Invitación enviada</Trans>
     </span>
   )
 }
@@ -84,12 +85,14 @@ export function StatusTabs({
   activeTotal: number
   inactiveTotal: number
 }): ReactNode {
+  const { t } = useLingui()
+
   return (
     <>
       {(
         [
-          ['active', 'Activos', activeTotal],
-          ['inactive', 'Inactivos', inactiveTotal],
+          ['active', t`Activos`, activeTotal],
+          ['inactive', t`Inactivos`, inactiveTotal],
         ] as Array<['active' | 'inactive', string, number]>
       ).map(([key, label, count]) => (
         <button

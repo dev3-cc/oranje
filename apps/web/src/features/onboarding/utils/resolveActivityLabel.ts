@@ -1,3 +1,6 @@
+import type { I18n } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+
 import type { ProspectSummary } from '../types/prospect.types'
 
 /**
@@ -7,15 +10,18 @@ import type { ProspectSummary } from '../types/prospect.types'
  * es lo que distingue esa columna. En el resto de estados manda el último
  * intento de contacto, y si no hay ninguno se dice explícitamente: una tarjeta
  * sin actividad es justo la que hay que atender.
+ *
+ * `i18n` viene de quien la llama (`useLingui`): así el texto habla el idioma
+ * activo (D-36).
  */
-export function resolveActivityLabel(prospect: ProspectSummary): string {
+export function resolveActivityLabel(prospect: ProspectSummary, i18n: I18n): string {
   if (prospect.status === 'GREEN' && prospect.latestProposalVersion !== null) {
-    return `Propuesta v${prospect.latestProposalVersion}`
+    return i18n._(msg`Propuesta v${prospect.latestProposalVersion}`)
   }
 
   if (prospect.lastAttempt) {
     return `${prospect.lastAttempt.channel} · ${prospect.lastAttempt.outcome}`
   }
 
-  return 'Sin intentos'
+  return i18n._(msg`Sin intentos`)
 }

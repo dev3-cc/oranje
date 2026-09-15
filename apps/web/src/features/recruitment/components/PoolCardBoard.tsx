@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { statusLight } from '@oranje/ui'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
@@ -33,6 +34,7 @@ export function PoolCardBoard({
   items: PoolWorker[]
   onEdit: (worker: PoolWorker) => void
 }): ReactNode {
+  const { t } = useLingui()
   const columns = WORKER_STATUSES.map((status) => ({
     status,
     workers: items.filter((worker) => worker.status === status),
@@ -41,7 +43,9 @@ export function PoolCardBoard({
   if (columns.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-        Ningún colaborador coincide con estos filtros. Cambia o quita un filtro para ver más.
+        <Trans>
+          Ningún colaborador coincide con estos filtros. Cambia o quita un filtro para ver más.
+        </Trans>
       </p>
     )
   }
@@ -109,18 +113,18 @@ export function PoolCardBoard({
                     </span>
                     {isNew(worker) && (
                       <span className="shrink-0 rounded-full bg-o-500 px-2 py-0.5 text-[10px] font-bold text-ink uppercase">
-                        Nuevo
+                        <Trans>Nuevo</Trans>
                       </span>
                     )}
                   </span>
 
                   <span className="mt-3 flex flex-wrap items-center gap-1.5">
                     <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-ink-2">
-                      {worker.englishLevel === '—' ? 'Sin inglés registrado' : worker.englishLevel}
+                      {worker.englishLevel === '—' ? t`Sin inglés registrado` : worker.englishLevel}
                     </span>
                     <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-ink-2">
                       {worker.hiringModality === '—'
-                        ? 'Sin modalidad definida'
+                        ? t`Sin modalidad definida`
                         : worker.hiringModality}
                     </span>
                     <span
@@ -130,7 +134,7 @@ export function PoolCardBoard({
                           : 'rounded-full border border-dashed border-ink-4 px-2 py-0.5 text-[11px] text-ink-3'
                       }
                     >
-                      {worker.isProfileComplete ? 'perfil completo' : 'perfil incompleto'}
+                      {worker.isProfileComplete ? t`perfil completo` : t`perfil incompleto`}
                     </span>
                   </span>
                 </button>

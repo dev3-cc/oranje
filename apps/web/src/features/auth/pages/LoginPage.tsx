@@ -5,12 +5,12 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import { Input, MaterialIcon } from '@oranje/ui'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 
 import { LoginCollage } from '../components/LoginCollage'
-import { loginSchema, type LoginFormValues } from '../types/login.schema'
+import { buildLoginSchema, type LoginFormValues } from '../types/login.schema'
 
 import { useAppSelector } from '@/app/hooks'
 import { useCreateSessionMutation } from '@/app/sessionApi'
@@ -145,12 +145,16 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [resetSentTo, setResetSentTo] = useState<string | null>(null)
 
+  /* Los mensajes del esquema se resuelven al armarlo, así que se rearma al
+     cambiar de idioma: `i18n` no cambia de identidad al activar otro (D-36). */
+  const schema = useMemo(() => buildLoginSchema(i18n), [i18n, i18n.locale])
+
   const {
     register,
     handleSubmit,
     getValues,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormValues>({ resolver: zodResolver(loginSchema) })
+  } = useForm<LoginFormValues>({ resolver: zodResolver(schema) })
 
   /** Con sesión viva no hay nada que hacer aquí. */
   if (status === 'authenticated') {
@@ -190,7 +194,7 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
   async function onRequestReset(): Promise<void> {
     const email = getValues('email').trim()
     if (!email) {
-      setSubmitError('Escribe tu correo y te mandamos el enlace.')
+      setSubmitError(t`Escribe tu correo y te mandamos el enlace.`)
       return
     }
     setSubmitError(null)
@@ -277,7 +281,7 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
                         id="email"
                         type="email"
                         autoComplete="email"
-                        placeholder="ana@oranje.mx"
+                        placeholder="ana@oranjepeople.com"
                         className="h-auto px-4 py-3"
                         {...register('email')}
                       />
@@ -426,7 +430,7 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
                           id="email"
                           type="email"
                           autoComplete="email"
-                          placeholder="ana@oranje.mx"
+                          placeholder="ana@oranjepeople.com"
                           className="h-auto px-4 py-3"
                           {...register('email')}
                         />

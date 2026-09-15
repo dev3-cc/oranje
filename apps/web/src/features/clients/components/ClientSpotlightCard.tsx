@@ -1,3 +1,6 @@
+import type { I18n } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { MaterialIcon } from '@oranje/ui'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
@@ -11,15 +14,23 @@ import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TOKEN } from '@/shared/constants/contractStatus'
 import { formatDate, formatMoney } from '@/shared/lib/formatters'
 
-/** Meses completos desde una fecha ISO; en años cuando ya pasó de 12. */
-function tenureLabel(iso: string): string {
+/**
+ * Meses completos desde una fecha ISO; en años cuando ya pasó de 12.
+ *
+ * Arma texto que se PINTA, así que recibe el `i18n` de quien la llama (D-36).
+ */
+function tenureLabel(iso: string, i18n: I18n): string {
   const months = Math.max(
     0,
     Math.floor((Date.now() - new Date(iso).getTime()) / (30.44 * 86_400_000)),
   )
-  if (months >= 12) return `${String(Math.floor(months / 12))} a`
-  if (months === 0) return 'Nuevo'
-  return `${String(months)} m`
+  if (months >= 12) {
+    const years = String(Math.floor(months / 12))
+    return i18n._(msg`${years} a`)
+  }
+  if (months === 0) return i18n._(msg`Nuevo`)
+  const value = String(months)
+  return i18n._(msg`${value} m`)
 }
 
 /** Un dato del trío: número grande y su etiqueta, como la referencia. */
@@ -48,7 +59,15 @@ function StatTile({
  * que llegó a Naranja.
  */
 export function ClientSpotlightCard({ client }: { client: ClientCard }): ReactNode {
+  const { t, i18n } = useLingui()
   const { contract } = client
+
+  /** El rango se arma aparte para que el mensaje sea una frase, no tres pedazos. */
+  const billRange = contract
+    ? contract.maxRate === contract.minRate
+      ? formatMoney(contract.minRate)
+      : `${formatMoney(contract.minRate)} – ${formatMoney(contract.maxRate)}`
+    : ''
 
   return (
     <article className="overflow-hidden rounded-2xl border border-line bg-surface shadow-md">
@@ -61,7 +80,9 @@ export function ClientSpotlightCard({ client }: { client: ClientCard }): ReactNo
           <div className="min-w-0">
             <h2 className="truncate text-lg font-bold text-ink">{client.hotelName}</h2>
             <p className="mt-0.5 text-sm text-ink-3">
-              Zona {client.zoneName} · {client.timezone}
+              <Trans>
+                Zona {client.zoneName} · {client.timezone}
+              </Trans>
             </p>
           </div>
           {contract ? (
@@ -71,7 +92,7 @@ export function ClientSpotlightCard({ client }: { client: ClientCard }): ReactNo
             />
           ) : (
             <span className="shrink-0 rounded-full bg-surface-3 px-3 py-1 text-xs font-medium text-ink-3">
-              sin contrato
+              <Trans>sin contrato</Trans>
             </span>
           )}
         </div>
@@ -79,18 +100,18 @@ export function ClientSpotlightCard({ client }: { client: ClientCard }): ReactNo
         <div className="grid grid-cols-3 gap-2">
           <StatTile
             icon="calendar_month"
-            value={tenureLabel(client.activatedAt)}
-            label="como cliente"
+            value={tenureLabel(client.activatedAt, i18n)}
+            label={t`como cliente`}
           />
           <StatTile
             icon="badge"
             value={contract ? String(contract.positionCount) : '—'}
-            label={contract?.positionCount === 1 ? 'posición' : 'posiciones'}
+            label={contract?.positionCount === 1 ? t`posición` : t`posiciones`}
           />
           <StatTile
             icon="share_location"
             value={`${String(client.geofenceRadiusM)} m`}
-            label="geocerca"
+            label={t`geocerca`}
           />
         </div>
 
@@ -102,22 +123,22 @@ export function ClientSpotlightCard({ client }: { client: ClientCard }): ReactNo
             <span className="min-w-0">
               <span className="block text-sm font-semibold text-ink">{contract.number}</span>
               <span className="block text-xs text-ink-3">
-                Se factura {formatMoney(contract.minRate)}
-                {contract.maxRate !== contract.minRate && ` – ${formatMoney(contract.maxRate)}`} por
-                hora
+                <Trans>Se factura {billRange} por hora</Trans>
               </span>
             </span>
             <MaterialIcon name="chevron_right" className="shrink-0 text-ink-3" aria-hidden />
           </Link>
         )}
 
-        <p className="text-xs text-ink-3">Cliente desde {formatDate(client.activatedAt)}</p>
+        <p className="text-xs text-ink-3">
+          <Trans>Cliente desde {formatDate(client.activatedAt)}</Trans>
+        </p>
 
         <Link
           to={`/pipeline/${client.prospectId}`}
           className={buttonClass('primary', 'w-full text-center')}
         >
-          Abrir ficha del hotel
+          <Trans>Abrir ficha del hotel</Trans>
         </Link>
       </div>
     </article>

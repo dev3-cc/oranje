@@ -44,6 +44,7 @@ function toDashboardRequisition(row: RequisitionApi): DashboardRequisition {
     id: row.id,
     number: row.number,
     hotelName: row.hotel.name,
+    hotelPhotoUrl: row.hotel.photoUrl ?? null,
     state: { code: row.state.code, name: row.state.name, color: row.state.color },
     totalSlots: row.totalSlots,
     filledSlots: row.filledSlots,

@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import {
   MaterialIcon,
   Select,
@@ -49,11 +52,12 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate } from '@/shared/lib/formatters'
 
-const DOCUMENT_TYPE_LABEL: Record<string, string> = {
-  SSN_ITIN: 'SSN / ITIN',
-  ID: 'Identificación oficial',
-  PROOF_OF_ADDRESS: 'Comprobante de domicilio',
-  OTHER: 'Otro',
+/** Se traduce al pintar con `i18n._()` (D-36). */
+const DOCUMENT_TYPE_LABEL: Record<string, MessageDescriptor> = {
+  SSN_ITIN: msg`SSN / ITIN`,
+  ID: msg`Identificación oficial`,
+  PROOF_OF_ADDRESS: msg`Comprobante de domicilio`,
+  OTHER: msg`Otro`,
 }
 
 /** En dev el historial habla en códigos (documentación viva); en build, en el nombre del estado. */
@@ -103,7 +107,23 @@ function Field({
   )
 }
 
+/**
+ * Los campos que integran `is_profile_complete`, con su clave estable: la
+ * clave decide qué se puede arreglar desde «Editar» (Fase 1) y la etiqueta es
+ * lo único que se traduce al pintar (D-36).
+ */
+const PROFILE_FIELDS = [
+  { key: 'position', label: msg`Posición`, isPhase1: true },
+  { key: 'english', label: msg`Inglés`, isPhase1: true },
+  { key: 'modality', label: msg`Modalidad`, isPhase1: true },
+  { key: 'experience', label: msg`Experiencia`, isPhase1: true },
+  { key: 'transport', label: msg`Transporte`, isPhase1: false },
+  { key: 'emergencyContact', label: msg`Contacto de emergencia`, isPhase1: false },
+  { key: 'bloodType', label: msg`Tipo de sangre`, isPhase1: false },
+] as const
+
 export function WorkerDetailPage(): ReactNode {
+  const { t, i18n } = useLingui()
   const { workerId = '' } = useParams()
   const [isChangeOpen, setChangeOpen] = useState(false)
   const [isEditOpen, setEditOpen] = useState(false)
@@ -132,28 +152,32 @@ export function WorkerDetailPage(): ReactNode {
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null)
   const isUploading = isUploadingFile || isSavingDocument
 
+  function documentTypeLabel(documentType: string): string {
+    const label = DOCUMENT_TYPE_LABEL[documentType]
+    return label === undefined ? documentType : i18n._(label)
+  }
+
   async function handleDocumentFile(file: File): Promise<void> {
     setDocumentError(null)
     try {
       const stored = await uploadFile({ file, purpose: 'WORKER_DOCUMENT' }).unwrap()
       await createDocument({ workerId, documentType: uploadType, filePath: stored.path }).unwrap()
-      toast.success('Documento subido')
+      toast.success(t`Documento subido`)
     } catch (error) {
       setDocumentError(
         apiErrorMessage(error, {
           byCode: {
-            UNSUPPORTED_FILE_TYPE:
-              'Ese formato no se puede procesar (los HEIC del iPhone no entran): usa JPG, PNG, WebP o PDF.',
+            UNSUPPORTED_FILE_TYPE: t`Ese formato no se puede procesar (los HEIC del iPhone no entran): usa JPG, PNG, WebP o PDF.`,
             /* El mensaje del backend interpola el tipo en mayúsculas (`SSN_ITIN`),
                que el filtro anti-fuga descarta entero por no ser una sigla
                reconocida — caía al genérico justo en el caso más común: volver
                a subir el SSN/ITIN sin borrar el anterior. */
-            DOCUMENT_ALREADY_EXISTS: `Ya hay un documento de ${DOCUMENT_TYPE_LABEL[uploadType] ?? uploadType}: bórralo antes de subir otro.`,
+            DOCUMENT_ALREADY_EXISTS: t`Ya hay un documento de ${documentTypeLabel(uploadType)}: bórralo antes de subir otro.`,
           },
           byStatus: {
-            413: 'El archivo pasa de 15 MB: comprímelo o escanéalo con menos resolución.',
+            413: t`El archivo pasa de 15 MB: comprímelo o escanéalo con menos resolución.`,
           },
-          fallback: 'No se pudo subir el documento. Inténtalo de nuevo.',
+          fallback: t`No se pudo subir el documento. Inténtalo de nuevo.`,
         }),
       )
     }
@@ -167,9 +191,9 @@ export function WorkerDetailPage(): ReactNode {
     setConfirmingDeleteId(null)
     try {
       await deleteDocument({ workerId, documentId }).unwrap()
-      toast.success('Documento borrado')
+      toast.success(t`Documento borrado`)
     } catch {
-      setDocumentError('No se pudo borrar el documento. Inténtalo de nuevo.')
+      setDocumentError(t`No se pudo borrar el documento. Inténtalo de nuevo.`)
     }
   }
 
@@ -182,10 +206,13 @@ export function WorkerDetailPage(): ReactNode {
       <div className="flex flex-col items-center gap-4 rounded-lg border border-line bg-surface p-8 text-center">
         <img src={mascotaTriste} alt="" aria-hidden className="h-32 w-auto" />
         <p className="text-sm text-red">
-          No se encontró al colaborador: puede que el enlace sea viejo o que ya no esté en el Pool.
+          <Trans>
+            No se encontró al colaborador: puede que el enlace sea viejo o que ya no esté en el
+            Pool.
+          </Trans>
         </p>
         <Link to="/collaborator-pool" className="text-sm font-semibold text-o-700 hover:underline">
-          Volver al Pool de Colaboradores
+          <Trans>Volver al Pool de Colaboradores</Trans>
         </Link>
       </div>
     )
@@ -195,73 +222,73 @@ export function WorkerDetailPage(): ReactNode {
   const statusLabel = workerStatusChipLabel(status)
 
   const identityFields = [
-    { label: 'Nombre completo', value: worker.fullName, foot: 'full_name', icon: 'person' },
+    { label: t`Nombre completo`, value: worker.fullName, foot: 'full_name', icon: 'person' },
     {
-      label: 'Nacimiento',
-      value: `${formatDate(worker.birthDate)} · ${String(worker.age)} años`,
+      label: t`Nacimiento`,
+      value: t`${formatDate(worker.birthDate)} · ${worker.age} años`,
       foot: 'birth_date · la edad se calcula en vw_worker',
       icon: 'cake',
     },
     {
-      label: 'Género',
+      label: t`Género`,
       value: GENDER_LABEL[worker.gender] ?? worker.gender,
       foot: 'gender',
       icon: 'face',
     },
-    { label: 'Teléfono', value: worker.phone, foot: 'phone', icon: 'call' },
-    { label: 'Zona', value: worker.zone.name, foot: 'zone_id', icon: 'map' },
+    { label: t`Teléfono`, value: worker.phone, foot: 'phone', icon: 'call' },
+    { label: t`Zona`, value: worker.zone.name, foot: 'zone_id', icon: 'map' },
     {
-      label: 'Usuario del sistema',
-      value: worker.email ?? 'Sin cuenta todavía',
+      label: t`Usuario del sistema`,
+      value: worker.email ?? t`Sin cuenta todavía`,
       foot: 'user_id · nulable — sin cuenta hasta el primer login',
       icon: 'account_circle',
     },
-    { label: 'Dirección', value: worker.address, foot: 'address', icon: 'home' },
+    { label: t`Dirección`, value: worker.address, foot: 'address', icon: 'home' },
   ]
 
   /** Espejo exacto de `personal.vw_worker.is_profile_complete` (§4 de Estándares
       de Desarrollo): lo que ahí es un booleano ciego, aquí es la lista de qué
       falta — antes «el expediente está a medias» no decía de qué. */
-  const missingProfileFields = worker.isProfileComplete
+  const missingKeys: Record<string, boolean> = {
+    position: worker.position === null,
+    english: worker.englishLevel === null,
+    modality: worker.hiringModality === null,
+    experience: worker.experienceLevel === null,
+    transport: worker.transportType === null,
+    emergencyContact: worker.emergencyContact === null,
+    bloodType: worker.bloodType === null,
+  }
+  const missing = worker.isProfileComplete
     ? []
-    : ([
-        worker.position === null && 'Posición',
-        worker.englishLevel === null && 'Inglés',
-        worker.hiringModality === null && 'Modalidad',
-        worker.experienceLevel === null && 'Experiencia',
-        worker.transportType === null && 'Transporte',
-        worker.emergencyContact === null && 'Contacto de emergencia',
-        worker.bloodType === null && 'Tipo de sangre',
-      ].filter(Boolean) as string[])
+    : PROFILE_FIELDS.filter((field) => missingKeys[field.key])
+  const missingProfileFields = missing.map((field) => i18n._(field.label))
 
   /** Solo la Fase 1 (Posición, Inglés, Modalidad, Experiencia) la edita
       Reclutamiento con «Editar»; Transporte y Fase 3 los completa el
       colaborador desde su app — «Editar» no puede tocarlos. */
-  const canFixMissingFromHere = missingProfileFields.every((field) =>
-    ['Posición', 'Inglés', 'Modalidad', 'Experiencia'].includes(field),
-  )
+  const canFixMissingFromHere = missing.every((field) => field.isPhase1)
 
   const profileFields = [
     {
-      label: 'Posición',
+      label: t`Posición`,
       value: worker.position?.name ?? '—',
       foot: 'catalog_position_id',
       icon: 'badge',
     },
     {
-      label: 'Inglés',
+      label: t`Inglés`,
       value: worker.englishLevel?.name ?? '—',
       foot: 'english_level_id',
       icon: 'translate',
     },
     {
-      label: 'Modalidad',
+      label: t`Modalidad`,
       value: worker.hiringModality?.name ?? '—',
       foot: 'hiring_modality_id',
       icon: 'work',
     },
     {
-      label: 'Experiencia',
+      label: t`Experiencia`,
       value:
         worker.experienceLevel === null
           ? '—'
@@ -270,7 +297,7 @@ export function WorkerDetailPage(): ReactNode {
       icon: 'trending_up',
     },
     {
-      label: 'Transporte',
+      label: t`Transporte`,
       value:
         worker.transportType === null
           ? '—'
@@ -279,25 +306,25 @@ export function WorkerDetailPage(): ReactNode {
       icon: 'commute',
     },
     {
-      label: 'Tipo de sangre',
+      label: t`Tipo de sangre`,
       value: worker.bloodType === null ? '—' : (BLOOD_LABEL[worker.bloodType] ?? worker.bloodType),
       foot: 'blood_type',
       icon: 'bloodtype',
     },
     {
-      label: 'Contacto de emergencia',
+      label: t`Contacto de emergencia`,
       value: worker.emergencyContact?.name ?? '—',
       foot: 'emergency_contact_name',
       icon: 'contact_phone',
     },
     {
-      label: 'Teléfono de emergencia',
+      label: t`Teléfono de emergencia`,
       value: worker.emergencyContact?.phone ?? '—',
       foot: 'emergency_contact_phone',
       icon: 'call',
     },
     {
-      label: 'Parentesco',
+      label: t`Parentesco`,
       value:
         worker.emergencyContact === null
           ? '—'
@@ -307,7 +334,7 @@ export function WorkerDetailPage(): ReactNode {
       icon: 'group',
     },
     {
-      label: 'Notas médicas',
+      label: t`Notas médicas`,
       value: '—',
       foot: 'medical_notes · el contrato de /workers/:id no la expone',
       icon: 'medical_services',
@@ -316,9 +343,9 @@ export function WorkerDetailPage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
-      <nav aria-label="Ruta" className="flex items-center gap-2 text-sm text-ink-3">
+      <nav aria-label={t`Ruta`} className="flex items-center gap-2 text-sm text-ink-3">
         <Link to="/collaborator-pool" className="hover:text-o-700">
-          Pool de Colaboradores
+          <Trans>Pool de Colaboradores</Trans>
         </Link>
         <span aria-hidden>/</span>
         <span className="font-semibold text-ink-2">{worker.fullName}</span>
@@ -354,7 +381,7 @@ export function WorkerDetailPage(): ReactNode {
               <StatusLightSoftBadge token={WORKER_STATUS_TOKEN[status]} label={statusLabel} />
               {worker.isBlacklisted && (
                 <span className="rounded-full bg-ink px-3 py-1 text-xs font-medium text-surface">
-                  En Blacklist
+                  <Trans>En Blacklist</Trans>
                 </span>
               )}
             </div>
@@ -362,7 +389,7 @@ export function WorkerDetailPage(): ReactNode {
             <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-3">
               <span className="inline-flex items-center gap-1.5">
                 <MaterialIcon name="event" className="text-base" aria-hidden />
-                En el Pool desde el {formatDate(worker.createdAt)}
+                <Trans>En el Pool desde el {formatDate(worker.createdAt)}</Trans>
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <MaterialIcon name="map" className="text-base" aria-hidden />
@@ -370,17 +397,21 @@ export function WorkerDetailPage(): ReactNode {
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <MaterialIcon name="badge" className="text-base" aria-hidden />
-                {worker.position?.name ?? 'Sin posición'}
+                {worker.position?.name ?? t`Sin posición`}
               </span>
             </p>
 
             {/* Las EXCEPCIONES hablan en voz baja, con icono + palabras. */}
             {(!worker.isProfileComplete || !worker.hasTaxId) && (
               <p className="mt-2.5 flex flex-wrap items-center gap-2">
-                {!worker.isProfileComplete && <CautionPill>Perfil incompleto</CautionPill>}
+                {!worker.isProfileComplete && (
+                  <CautionPill>
+                    <Trans>Perfil incompleto</Trans>
+                  </CautionPill>
+                )}
                 {!worker.hasTaxId && (
                   <CautionPill>
-                    Sin ITIN: aplica retención del 16%{IS_DEV_UI ? ' (D-27)' : ''}
+                    <Trans>Sin ITIN: aplica retención del 16%{IS_DEV_UI ? ' (D-27)' : ''}</Trans>
                   </CautionPill>
                 )}
               </p>
@@ -396,7 +427,7 @@ export function WorkerDetailPage(): ReactNode {
                   setEditOpen(true)
                 }}
               >
-                Editar
+                <Trans>Editar</Trans>
               </Button>
             ) : null}
             {canValidate ? (
@@ -406,7 +437,7 @@ export function WorkerDetailPage(): ReactNode {
                   setChangeOpen(true)
                 }}
               >
-                Cambiar estado
+                <Trans>Cambiar estado</Trans>
               </Button>
             ) : null}
           </div>
@@ -417,22 +448,24 @@ export function WorkerDetailPage(): ReactNode {
       {!canValidate && (
         <NoticeCard
           image={personajeTalento}
-          title="El semáforo lo mueve Reclutamiento"
+          title={t`El semáforo lo mueve Reclutamiento`}
           role="status"
         >
-          El estado del colaborador y la verificación de sus documentos los lleva la Reclutadora o
-          el Líder de Grupo. Aquí consultas su expediente y su historial.
+          <Trans>
+            El estado del colaborador y la verificación de sus documentos los lleva la Reclutadora o
+            el Líder de Grupo. Aquí consultas su expediente y su historial.
+          </Trans>
         </NoticeCard>
       )}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex flex-col gap-6">
           <SectionCard
-            title="Identidad"
+            title={t`Identidad`}
             subtitle={
               IS_DEV_UI
                 ? 'las seis son NOT NULL — sin ellas no hay Fase 1'
-                : 'Sin estos datos no hay Fase 1'
+                : t`Sin estos datos no hay Fase 1`
             }
           >
             <div className="@container">
@@ -445,11 +478,11 @@ export function WorkerDetailPage(): ReactNode {
           </SectionCard>
 
           <SectionCard
-            title="Perfil laboral y salud"
+            title={t`Perfil laboral y salud`}
             subtitle={
               IS_DEV_UI
                 ? 'todas nulables · 9 integran is_profile_complete (vw_worker) — la foto no cuenta'
-                : 'Con estos 9 datos el perfil queda completo; la foto no cuenta'
+                : t`Con estos 9 datos el perfil queda completo; la foto no cuenta`
             }
           >
             <div className="@container">
@@ -462,11 +495,11 @@ export function WorkerDetailPage(): ReactNode {
           </SectionCard>
 
           <SectionCard
-            title="Documentos"
+            title={t`Documentos`}
             subtitle={
               IS_DEV_UI
                 ? 'personal.worker_document'
-                : 'Sube y verifica los documentos del Expediente'
+                : t`Sube y verifica los documentos del Expediente`
             }
           >
             {/* Alta: tipo + archivo. Verificar el SSN/ITIN NO levanta la retención del
@@ -476,13 +509,13 @@ export function WorkerDetailPage(): ReactNode {
             {canEditDocuments && (
               <div className="mb-4 flex flex-wrap items-center gap-3 rounded-md bg-surface-2 p-3">
                 <Select value={uploadType} onValueChange={setUploadType}>
-                  <SelectTrigger aria-label="Tipo de documento" className="w-56">
+                  <SelectTrigger aria-label={t`Tipo de documento`} className="w-56">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(DOCUMENT_TYPE_LABEL).map(([value, label]) => (
+                    {Object.keys(DOCUMENT_TYPE_LABEL).map((value) => (
                       <SelectItem key={value} value={value}>
-                        {label}
+                        {documentTypeLabel(value)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -494,14 +527,14 @@ export function WorkerDetailPage(): ReactNode {
                     fileInputRef.current?.click()
                   }}
                 >
-                  {isUploading ? 'Subiendo…' : 'Subir documento'}
+                  {isUploading ? <Trans>Subiendo…</Trans> : <Trans>Subir documento</Trans>}
                 </Button>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept="image/jpeg,image/png,image/webp,application/pdf"
                   className="hidden"
-                  aria-label="Archivo del documento"
+                  aria-label={t`Archivo del documento`}
                   onChange={(event) => {
                     const file = event.target.files?.[0]
                     event.target.value = ''
@@ -518,14 +551,14 @@ export function WorkerDetailPage(): ReactNode {
 
             {(documents?.data ?? []).length === 0 ? (
               <p className="rounded-md border border-dashed border-line px-4 py-6 text-center text-sm text-ink-3">
-                Aún no hay documentos. Elige el tipo y súbelo desde aquí arriba.
+                <Trans>Aún no hay documentos. Elige el tipo y súbelo desde aquí arriba.</Trans>
               </p>
             ) : (
               <ul className="divide-y divide-line">
                 {(documents?.data ?? []).map((doc) => (
                   <li key={doc.id} className="flex flex-wrap items-center gap-3 py-3">
                     <span className="w-52 text-sm font-medium text-ink">
-                      {DOCUMENT_TYPE_LABEL[doc.documentType] ?? doc.documentType}
+                      {documentTypeLabel(doc.documentType)}
                     </span>
                     {doc.url ? (
                       <a
@@ -552,33 +585,33 @@ export function WorkerDetailPage(): ReactNode {
                           : 'rounded-full border border-dashed border-ink-4 px-3 py-1 text-xs text-ink-3'
                       }
                     >
-                      {doc.isVerified ? 'Verificado' : 'Pendiente'}
+                      {doc.isVerified ? <Trans>Verificado</Trans> : <Trans>Pendiente</Trans>}
                     </span>
                     {!doc.isVerified && canValidate && (
                       <Button
                         variant="secondary"
                         className="px-3 py-1 text-xs"
-                        title="Marca el documento como revisado. No afecta la retención del 16% del SSN/ITIN."
+                        title={t`Marca el documento como revisado. No afecta la retención del 16% del SSN/ITIN.`}
                         onClick={() => {
                           void verifyDocument({ workerId, documentId: doc.id })
                             .unwrap()
                             .then(() => {
-                              toast.success('Documento verificado')
+                              toast.success(t`Documento verificado`)
                             })
                             .catch(() => {})
                         }}
                       >
-                        Verificar documento
+                        <Trans>Verificar documento</Trans>
                       </Button>
                     )}
                     {canEditDocuments && (
                       <button
                         type="button"
-                        aria-label={`Borrar ${DOCUMENT_TYPE_LABEL[doc.documentType] ?? doc.documentType}`}
+                        aria-label={t`Borrar ${documentTypeLabel(doc.documentType)}`}
                         title={
                           confirmingDeleteId === doc.id
-                            ? 'Otro clic lo borra definitivamente'
-                            : 'Borrar el documento'
+                            ? t`Otro clic lo borra definitivamente`
+                            : t`Borrar el documento`
                         }
                         onClick={() => {
                           void handleDelete(doc.id)
@@ -606,16 +639,18 @@ export function WorkerDetailPage(): ReactNode {
         </div>
 
         <SectionCard
-          title="Historial del semáforo"
+          title={t`Historial del semáforo`}
           subtitle={
             IS_DEV_UI
               ? 'personal.worker_state_history — la verdad del semáforo'
-              : 'Cada cambio de estado, con quién lo hizo y cuándo'
+              : t`Cada cambio de estado, con quién lo hizo y cuándo`
           }
           className="self-start"
         >
           {history.length === 0 ? (
-            <p className="text-sm text-ink-3">Aún no hay cambios de estado.</p>
+            <p className="text-sm text-ink-3">
+              <Trans>Aún no hay cambios de estado.</Trans>
+            </p>
           ) : (
             <ol className="relative flex flex-col gap-5 border-l-2 border-line pl-5">
               {history.map((entry) => (

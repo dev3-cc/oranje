@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { brand, cn } from '@oranje/ui'
 import { Circle, Map, Marker, useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
 import { useEffect, type ReactNode } from 'react'
@@ -71,6 +72,7 @@ function MapFollower({ point }: { point: GeoPoint | null }): null {
  * después de arrastrar el mapa buscando la entrada del hotel.
  */
 function MapControls({ point }: { point: GeoPoint | null }): ReactNode {
+  const { t } = useLingui()
   const map = useMap() as MapViewport | null
 
   function changeZoom(delta: number): void {
@@ -91,13 +93,13 @@ function MapControls({ point }: { point: GeoPoint | null }): ReactNode {
         }}
         className="absolute bottom-24 left-3 z-10 rounded-md bg-surface px-3 py-1.5 text-xs font-semibold text-ink-2 shadow-md transition-colors hover:bg-surface-2 disabled:opacity-50"
       >
-        Recentrar
+        <Trans>Recentrar</Trans>
       </button>
 
       <div className="absolute bottom-3 left-3 z-10 flex flex-col gap-1.5">
         <button
           type="button"
-          aria-label="Acercar"
+          aria-label={t`Acercar`}
           onClick={() => {
             changeZoom(1)
           }}
@@ -107,7 +109,7 @@ function MapControls({ point }: { point: GeoPoint | null }): ReactNode {
         </button>
         <button
           type="button"
-          aria-label="Alejar"
+          aria-label={t`Alejar`}
           onClick={() => {
             changeZoom(-1)
           }}
@@ -120,6 +122,25 @@ function MapControls({ point }: { point: GeoPoint | null }): ReactNode {
   )
 }
 
+/** El mismo pin, quieto: para la ficha, donde la ubicación solo se consulta. */
+function StaticMarker({ point }: { point: GeoPoint }): ReactNode {
+  const core = useMapsLibrary('core') as CoreLibrary | null
+
+  if (!core) return null
+
+  return (
+    <Marker
+      position={point}
+      clickable={false}
+      icon={{
+        url: circleMarkerIcon(brand['o-500'], MARKER_SIZE_PX),
+        scaledSize: new core.Size(MARKER_SIZE_PX, MARKER_SIZE_PX),
+        anchor: new core.Point(MARKER_SIZE_PX / 2, MARKER_SIZE_PX / 2),
+      }}
+    />
+  )
+}
+
 function HotelMarker({
   point,
   onMovePin,
@@ -127,6 +148,7 @@ function HotelMarker({
   point: GeoPoint
   onMovePin: (point: GeoPoint) => void
 }): ReactNode {
+  const { t } = useLingui()
   const core = useMapsLibrary('core') as CoreLibrary | null
 
   if (!core) return null
@@ -135,7 +157,7 @@ function HotelMarker({
     <Marker
       position={point}
       draggable
-      title="Arrastra para ajustar la ubicación exacta"
+      title={t`Arrastra para ajustar la ubicación exacta`}
       onDragEnd={(event) => {
         const dragged = readDragPoint(event)
         if (dragged) onMovePin(dragged)
@@ -163,6 +185,12 @@ export interface HotelLocationMapProps {
   /** A dónde volar la vista (la elección de Places). En modo centerPin el
    * mapa NO persigue `value` — el valor ES el centro, perseguirlo ciclaría. */
   followPoint?: GeoPoint | null
+  /**
+   * Solo mirar: ni se arrastra el pin ni el clic mueve nada. Es como lo usa la
+   * ficha del hotel, donde la ubicación es un dato que se consulta, no se
+   * edita — para eso está el lápiz que abre el alta.
+   */
+  readOnly?: boolean
 }
 
 /**
@@ -183,6 +211,7 @@ export function HotelLocationMap({
   className,
   centerPin = false,
   followPoint = null,
+  readOnly = false,
 }: HotelLocationMapProps): ReactNode {
   if (!isMapsEnabled) {
     return (
@@ -203,7 +232,7 @@ export function HotelLocationMap({
         styles={HIDE_POI_MAP_STYLES}
         className="size-full"
         onClick={(event) => {
-          if (centerPin) return
+          if (centerPin || readOnly) return
           const clicked = readClickPoint(event)
           if (clicked) onMovePin(clicked)
         }}
@@ -237,7 +266,12 @@ export function HotelLocationMap({
               fillOpacity={0.15}
               clickable={false}
             />
-            {!centerPin && <HotelMarker point={value} onMovePin={onMovePin} />}
+            {!centerPin &&
+              (readOnly ? (
+                <StaticMarker point={value} />
+              ) : (
+                <HotelMarker point={value} onMovePin={onMovePin} />
+              ))}
           </>
         )}
       </Map>

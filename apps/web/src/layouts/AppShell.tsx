@@ -18,6 +18,7 @@ import { Sidebar } from './Sidebar'
 import { useAppSelector } from '@/app/hooks'
 import { selectSessionUser } from '@/app/sessionSlice'
 import { BackgroundBeams } from '@/shared/components/BackgroundBeams'
+import { MascotaPeek } from '@/shared/components/MascotaPeek'
 import { WORKER_ROLE } from '@/shared/constants/roles'
 import { useVersionWatcher } from '@/shared/hooks/useVersionWatcher'
 import { saveLastRoute } from '@/shared/lib/lastRoute'
@@ -87,6 +88,8 @@ export function AppShell(): ReactNode {
       className="h-screen overflow-hidden bg-bg"
     >
       <Sidebar />
+      {/* Detrás del panel (z menor): se asoma por su borde derecho. */}
+      <MascotaPeek />
       <SidebarInset className="relative flex h-screen min-w-0 flex-1 flex-col overflow-hidden bg-bg">
         <BackgroundBeams />
         <Header />

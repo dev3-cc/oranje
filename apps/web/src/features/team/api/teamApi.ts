@@ -84,6 +84,7 @@ function buildMemberCard(member: TeamMemberApi, prospects: ProspectApi[]): TeamM
       .map((prospect) => ({
         prospectId: prospect.id,
         hotelName: prospect.hotel.name,
+        hotelPhotoUrl: prospect.hotel.photoUrl,
         status: prospect.state.code as TeamMemberCycle['status'],
         daysSinceAttempt: daysBetween(
           prospect.lastAttempt?.occurredAt ?? prospect.openedAt,

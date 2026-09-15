@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { toast } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
@@ -18,24 +21,30 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
  * la Matriz el 2026-08-20: la hacen el BDC —manager directo— y el
  * Administrador. La lista completa reemplaza a la anterior; quitar todas las
  * zonas deja al BD sin territorio, que es un estado válido y visible.
+ *
+ * Las diapositivas del intro; el texto se traduce al pintar con `i18n._()` (D-36).
  */
-const INTRO_SLIDES = [
+const INTRO_SLIDES: readonly {
+  image: string
+  title: MessageDescriptor
+  text: MessageDescriptor
+}[] = [
   {
     image: ilustracionBdc,
-    title: 'El territorio lo reparte el BDC',
-    text: 'Las zonas del BD las asigna su coordinador (o el Administrador): son donde abre y trabaja sus prospectos.',
+    title: msg`El territorio lo reparte el BDC`,
+    text: msg`Las zonas del BD las asigna su coordinador (o el Administrador): son donde abre y trabaja sus prospectos.`,
   },
   {
     image: personajeEncuesta,
-    title: 'La lista reemplaza, no suma',
-    text: 'Lo que dejes marcado ES el territorio completo del BD — desmarcar una zona se la quita en el mismo guardado.',
+    title: msg`La lista reemplaza, no suma`,
+    text: msg`Lo que dejes marcado ES el territorio completo del BD — desmarcar una zona se la quita en el mismo guardado.`,
   },
   {
     image: personajeSinResultados,
-    title: 'Sin zonas también es válido',
-    text: 'Puedes dejar al BD sin territorio: queda visible así en Mi Equipo hasta el siguiente reparto.',
+    title: msg`Sin zonas también es válido`,
+    text: msg`Puedes dejar al BD sin territorio: queda visible así en Mi Equipo hasta el siguiente reparto.`,
   },
-] as const
+]
 
 export function AssignTerritoryDialog({
   member,
@@ -44,6 +53,7 @@ export function AssignTerritoryDialog({
   member: TeamMemberCard | null
   onClose: () => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const isOpen = member !== null
   const { data: zones = [] } = useGetTeamZonesQuery(undefined, { skip: !isOpen })
   const [setTerritory, { isLoading, isError, error }] = useSetTerritoryMutation()
@@ -70,7 +80,7 @@ export function AssignTerritoryDialog({
     if (!member || isLoading) return
     try {
       await setTerritory({ userId: member.id, zoneIds: [...selected] }).unwrap()
-      toast.success(`Territorio asignado a ${member.fullName}`)
+      toast.success(t`Territorio asignado a ${member.fullName}`)
       onClose()
     } catch {
       return
@@ -81,15 +91,19 @@ export function AssignTerritoryDialog({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Asignar territorio"
+      title={t`Asignar territorio`}
       description={
-        member ? `Las zonas donde ${member.fullName} abre y trabaja sus prospectos.` : ''
+        member ? t`Las zonas donde ${member.fullName} abre y trabaja sus prospectos.` : ''
       }
     >
       {showIntro ? (
         <OnboardingIntro
-          slides={INTRO_SLIDES}
-          startLabel="Repartir el territorio"
+          slides={INTRO_SLIDES.map((slide) => ({
+            image: slide.image,
+            title: i18n._(slide.title),
+            text: i18n._(slide.text),
+          }))}
+          startLabel={t`Repartir el territorio`}
           onDone={() => {
             dismissIntro()
           }}
@@ -100,9 +114,9 @@ export function AssignTerritoryDialog({
             <p role="alert" className="text-sm text-red">
               {apiErrorMessage(error, {
                 byStatus: {
-                  403: 'Solo el BDC o el Administrador pueden asignar territorio.',
+                  403: t`Solo el BDC o el Administrador pueden asignar territorio.`,
                 },
-                fallback: 'No se pudo guardar el territorio. Inténtalo de nuevo.',
+                fallback: t`No se pudo guardar el territorio. Inténtalo de nuevo.`,
               })}
             </p>
           )}
@@ -127,13 +141,13 @@ export function AssignTerritoryDialog({
 
           {selected.size === 0 && (
             <p className="text-xs text-ink-3">
-              Sin zonas elegidas el BD queda sin territorio asignado.
+              <Trans>Sin zonas elegidas el BD queda sin territorio asignado.</Trans>
             </p>
           )}
 
           <div className="flex justify-end gap-3 border-t border-line pt-4">
             <Button variant="secondary" onClick={onClose}>
-              Cancelar
+              <Trans>Cancelar</Trans>
             </Button>
             <Button
               variant="primary"
@@ -142,7 +156,7 @@ export function AssignTerritoryDialog({
                 void submit()
               }}
             >
-              {isLoading ? 'Guardando…' : 'Guardar territorio'}
+              {isLoading ? t`Guardando…` : t`Guardar territorio`}
             </Button>
           </div>
         </div>

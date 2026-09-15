@@ -136,6 +136,20 @@ export const poolApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: 'Worker' as const, id: 'LIST' }],
     }),
 
+    /**
+     * Nunca se borra la fila (queda `deleted_at`), y de paso borra su correo
+     * corporativo en cPanel si tenía (Hugo, 2026-09-15). Si sigue trabajando,
+     * el back libera cada asignación activa suya antes de eliminarlo — no
+     * bloquea.
+     */
+    deleteWorker: build.mutation<unknown, string>({
+      query: (workerId) => ({ url: `/workers/${workerId}`, method: 'DELETE' }),
+      invalidatesTags: (_res, _err, workerId) => [
+        { type: 'Worker' as const, id: 'LIST' },
+        { type: 'Worker' as const, id: workerId },
+      ],
+    }),
+
     getPoolOptions: build.query<PoolOptions, void>({
       queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
         const result = await fetchOptions(fetchWithBQ as FetchWithBQ)
@@ -151,4 +165,5 @@ export const {
   useGetPoolOptionsQuery,
   useCreateWorkerMutation,
   useUpdateWorkerMutation,
+  useDeleteWorkerMutation,
 } = poolApi

@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -20,6 +21,10 @@ import { Modal } from '@/shared/components/Modal'
  * No se genera el PDF con una librería: eso tocaría el `pnpm-lock.yaml` de la
  * raíz, fuera del alcance acordado. El diálogo de impresión del navegador ya
  * ofrece «Guardar como PDF» y produce el mismo archivo.
+ *
+ * Solo se traduce el marco del diálogo (título, descripción, botones): el
+ * documento (`ContractDocument`) es un contrato legal en inglés y no se toca
+ * (D-36).
  */
 export function ContractPreviewDialog({
   isOpen,
@@ -40,6 +45,7 @@ export function ContractPreviewDialog({
   senderName?: string
   version: ProposalVersionSummary
 }): ReactNode {
+  const { t } = useLingui()
   const printRoot = document.getElementById('print-root')
 
   /* El documento no sabe de propuestas: recibe el cuadro ya armado, para servir
@@ -68,12 +74,14 @@ export function ContractPreviewDialog({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Vista previa del contrato"
-      description={`${hotelName} · Propuesta v${version.version}. Las tarifas se toman de esta versión.`}
+      title={t`Vista previa del contrato`}
+      description={t`${hotelName} · Propuesta v${version.version}. Las tarifas se toman de esta versión.`}
       className="max-w-3xl"
       footer={
         <>
-          <Button onClick={onClose}>Cerrar</Button>
+          <Button onClick={onClose}>
+            <Trans>Cerrar</Trans>
+          </Button>
           {/* El correo sale del cliente de quien envía, con el texto ya escrito;
               el PDF lo adjunta esa persona (un mailto no lleva adjuntos). */}
           <Button
@@ -86,7 +94,7 @@ export function ContractPreviewDialog({
               })
             }}
           >
-            Enviar por correo
+            <Trans>Enviar por correo</Trans>
           </Button>
           <Button
             variant="primary"
@@ -94,7 +102,7 @@ export function ContractPreviewDialog({
               window.print()
             }}
           >
-            Imprimir o guardar como PDF
+            <Trans>Imprimir o guardar como PDF</Trans>
           </Button>
         </>
       }

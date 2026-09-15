@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { useLingui } from '@lingui/react/macro'
 import { statusLight } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -12,12 +15,12 @@ import { ONBOARDING_STATUS_TOKEN, type OnboardingStatus } from '@/shared/constan
  * Se replicó tal cual está en la captura; si se quiere que la leyenda cubra los
  * ocho, es agregar tres filas aquí.
  */
-const LEGEND_ITEMS: { status: OnboardingStatus; label: string }[] = [
-  { status: 'GRAY', label: 'Identificado' },
-  { status: 'LIGHT_BLUE', label: 'En contacto' },
-  { status: 'GREEN', label: 'Propuesta' },
-  { status: 'ORANGE', label: 'Cliente' },
-  { status: 'RED', label: 'Rechazo' },
+const LEGEND_ITEMS: { status: OnboardingStatus; label: MessageDescriptor }[] = [
+  { status: 'GRAY', label: msg`Identificado` },
+  { status: 'LIGHT_BLUE', label: msg`En contacto` },
+  { status: 'GREEN', label: msg`Propuesta` },
+  { status: 'ORANGE', label: msg`Cliente` },
+  { status: 'RED', label: msg`Rechazo` },
 ]
 
 export function TerritoryMapLegend({
@@ -25,6 +28,8 @@ export function TerritoryMapLegend({
 }: {
   isBehindCard?: boolean
 }): ReactNode {
+  const { i18n } = useLingui()
+
   return (
     /* En móvil la hoja del hotel ocupa el pie del mapa: la leyenda se cede. */
     <ul
@@ -42,7 +47,7 @@ export function TerritoryMapLegend({
             style={{ backgroundColor: statusLight[ONBOARDING_STATUS_TOKEN[item.status]] }}
             aria-hidden
           />
-          {item.label}
+          {i18n._(item.label)}
         </li>
       ))}
     </ul>

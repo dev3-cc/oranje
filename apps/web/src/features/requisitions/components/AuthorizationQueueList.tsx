@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 
 import type { AuthorizationRequest } from '../types/requisition.types'
 
+import { HotelThumbnail } from '@/shared/components/HotelThumbnail'
 import { MagicCard } from '@/shared/components/MagicCard'
 import { SectionCard } from '@/shared/components/SectionCard'
 
@@ -67,23 +68,31 @@ export function AuthorizationQueueList({
                         : 'border-line bg-surface hover:bg-surface-2',
                     )}
                   >
-                    <p
-                      className={cn(
-                        'text-sm font-semibold',
-                        isSelected ? 'text-o-700' : 'text-ink',
-                      )}
-                    >
-                      {item.number}
-                    </p>
-                    <p className="mt-1 text-sm text-ink-2">{item.hotelName}</p>
-                    <p className="mt-0.5 text-sm text-ink-3">{describeSize(item)}</p>
+                    <div className="flex items-start gap-3">
+                      <HotelThumbnail photoUrl={item.hotelPhotoUrl} />
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className={cn(
+                            'text-sm font-semibold',
+                            isSelected ? 'text-o-700' : 'text-ink',
+                          )}
+                        >
+                          {item.number}
+                        </p>
+                        <p className="mt-1 text-sm text-ink-2">{item.hotelName}</p>
+                        <p className="mt-0.5 text-sm text-ink-3">{describeSize(item)}</p>
 
-                    <p className="mt-2 flex items-center gap-1.5 text-sm text-red">
-                      <span className="material-icons-outlined text-base leading-none" aria-hidden>
-                        schedule
-                      </span>
-                      {describeStart(item.startsInDays)}
-                    </p>
+                        <p className="mt-2 flex items-center gap-1.5 text-sm text-red">
+                          <span
+                            className="material-icons-outlined text-base leading-none"
+                            aria-hidden
+                          >
+                            schedule
+                          </span>
+                          {describeStart(item.startsInDays)}
+                        </p>
+                      </div>
+                    </div>
                   </button>
                 </MagicCard>
               </li>

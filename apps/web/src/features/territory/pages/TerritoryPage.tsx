@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router'
 
@@ -19,6 +20,7 @@ function isWideScreen(): boolean {
 }
 
 export function TerritoryPage(): ReactNode {
+  const { t } = useLingui()
   const [searchParams, setSearchParams] = useSearchParams()
   const [zoneId, setZoneId] = useState<string | null>(null)
   const [searchInput, setSearchInput] = useState(searchParams.get('q') ?? '')
@@ -83,7 +85,7 @@ export function TerritoryPage(): ReactNode {
     <div className="grid grid-cols-1 gap-5 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
       <section className="flex flex-col rounded-lg border border-line bg-surface p-6 lg:min-h-0">
         <h1 className="text-2xl font-bold tracking-tight text-ink">
-          {ownerName ? `Territorio de ${ownerName}` : 'Mi Territorio'}
+          {ownerName ? <Trans>Territorio de {ownerName}</Trans> : <Trans>Mi Territorio</Trans>}
         </h1>
 
         <TerritoryOwnerPicker
@@ -99,8 +101,8 @@ export function TerritoryPage(): ReactNode {
           value={searchInput}
           onChange={setSearchInput}
           isSearching={isFetching && searchInput !== ''}
-          label="Buscar hotel en mi territorio"
-          placeholder="Nombre del hotel, p. ej. Puerto Real…"
+          label={t`Buscar hotel en mi territorio`}
+          placeholder={t`Nombre del hotel, p. ej. Puerto Real…`}
           className="mt-4 w-full"
         />
 
@@ -126,7 +128,7 @@ export function TerritoryPage(): ReactNode {
 
           {isError && (
             <LoadError
-              message="No se pudo cargar tu territorio. Reintenta."
+              message={t`No se pudo cargar tu territorio. Reintenta.`}
               onRetry={() => {
                 void refetch()
               }}
@@ -135,8 +137,10 @@ export function TerritoryPage(): ReactNode {
 
           {!isLoading && !isError && !isFetching && hotels.length === 0 && (
             <p className="rounded-md border border-dashed border-line px-4 py-8 text-center text-sm text-ink-3">
-              Ningún hotel de tu territorio coincide con estos filtros. Cambia la búsqueda o elige
-              otra zona.
+              <Trans>
+                Ningún hotel de tu territorio coincide con estos filtros. Cambia la búsqueda o elige
+                otra zona.
+              </Trans>
             </p>
           )}
 

@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@oranje/ui'
 import { useMemo, useState, type ReactNode } from 'react'
 
@@ -27,20 +30,31 @@ import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayMonth } from '@/shared/lib/formatters'
 import { matchesSearch } from '@/shared/lib/text'
 
-const HEADERS = IS_DEV_UI
-  ? [
-      'worker_id → full_name',
-      'source',
-      'reason',
-      'evidence_path',
-      'entered_by',
-      'occurred_at',
-      'estado',
-      '',
-    ]
-  : ['Colaborador', 'Origen', 'Motivo', 'Evidencia', 'Registró', 'Fecha', 'Estado', '']
+const DEV_HEADERS = [
+  'worker_id → full_name',
+  'source',
+  'reason',
+  'evidence_path',
+  'entered_by',
+  'occurred_at',
+  'estado',
+  '',
+]
+
+/** Se traducen al pintar con `i18n._()` (D-36); `null` = la columna de acciones, sin encabezado. */
+const HEADER_LABELS: readonly (MessageDescriptor | null)[] = [
+  msg`Colaborador`,
+  msg`Origen`,
+  msg`Motivo`,
+  msg`Evidencia`,
+  msg`Registró`,
+  msg`Fecha`,
+  msg`Estado`,
+  null,
+]
 
 export function BlacklistPage(): ReactNode {
+  const { t, i18n } = useLingui()
   const [filters, setFilters] = useState<BlacklistFilters>(EMPTY_BLACKLIST_FILTERS)
   const [search, setSearch] = useState('')
   const [liftTarget, setLiftTarget] = useState<BlacklistRow | null>(null)
@@ -48,6 +62,10 @@ export function BlacklistPage(): ReactNode {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
 
   const { data: rows = [], isLoading, isError, refetch } = useGetBlacklistQuery(filters)
+
+  const headers = IS_DEV_UI
+    ? DEV_HEADERS
+    : HEADER_LABELS.map((label) => (label === null ? '' : i18n._(label)))
 
   /* El nombre se filtra aquí, sobre lo que ya llegó: la API no acepta texto. */
   const visibleRows = useMemo(
@@ -66,33 +84,41 @@ export function BlacklistPage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
-      <nav aria-label="Ruta" className="flex items-center gap-2 text-sm text-ink-3">
-        <span>Reclutamiento</span>
+      <nav aria-label={t`Ruta`} className="flex items-center gap-2 text-sm text-ink-3">
+        <span>
+          <Trans>Reclutamiento</Trans>
+        </span>
         <span aria-hidden>/</span>
-        <span className="font-semibold text-ink-2">Blacklist</span>
+        <span className="font-semibold text-ink-2">
+          <Trans>Blacklist</Trans>
+        </span>
       </nav>
 
       {/* Quién sigue: el veto vigente lo levanta el Administrador, no este departamento. */}
       {!can('blacklist.lift') && visibleRows.some((row) => row.isActive) && (
         <NoticeCard
           image={personajeAccesoProtegido}
-          title="Levantar un veto es del Administrador"
+          title={t`Levantar un veto es del Administrador`}
           role="status"
         >
-          Un veto vigente solo lo levanta el Administrador. Al levantarlo, el colaborador vuelve a
-          Blanco y pasa otra vez por la validación de la Reclutadora antes de ser asignable.
+          <Trans>
+            Un veto vigente solo lo levanta el Administrador. Al levantarlo, el colaborador vuelve a
+            Blanco y pasa otra vez por la validación de la Reclutadora antes de ser asignable.
+          </Trans>
         </NoticeCard>
       )}
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-ink">
-            <FoldText text="Blacklist" />
+            <FoldText text={t`Blacklist`} />
           </h1>
           <p className="mt-1.5 text-sm text-ink-3">
-            {IS_DEV_UI
-              ? 'coverage.blacklist_entry · un colaborador activo a la vez (ux_blacklist_worker)'
-              : 'Un solo veto vigente por colaborador; el historial nunca se borra'}
+            {IS_DEV_UI ? (
+              'coverage.blacklist_entry · un colaborador activo a la vez (ux_blacklist_worker)'
+            ) : (
+              <Trans>Un solo veto vigente por colaborador; el historial nunca se borra</Trans>
+            )}
           </p>
         </div>
 
@@ -103,7 +129,7 @@ export function BlacklistPage(): ReactNode {
               setIsCreateOpen(true)
             }}
           >
-            Agregar a Blacklist
+            <Trans>Agregar a Blacklist</Trans>
           </Button>
         )}
       </header>
@@ -112,14 +138,14 @@ export function BlacklistPage(): ReactNode {
         <SearchField
           value={search}
           onChange={setSearch}
-          label="Buscar colaborador"
-          placeholder="Nombre del colaborador, p. ej. Ana Rivera…"
+          label={t`Buscar colaborador`}
+          placeholder={t`Nombre del colaborador, p. ej. Ana Rivera…`}
           className="w-72"
         />
 
         <FilterSelect
-          label="Origen"
-          anyLabel="todos"
+          label={t`Origen`}
+          anyLabel={t`todos`}
           value={filters.source}
           options={BLACKLIST_SOURCES.map((source) => ({
             value: source,
@@ -132,10 +158,10 @@ export function BlacklistPage(): ReactNode {
 
         {}
         <FilterSelect
-          label="Estado"
-          anyLabel="historial completo"
+          label={t`Estado`}
+          anyLabel={t`historial completo`}
           value={filters.onlyActive ? 'ACTIVE' : 'ALL'}
-          options={[{ value: 'ACTIVE', label: 'vigentes' }]}
+          options={[{ value: 'ACTIVE', label: t`vigentes` }]}
           onChange={(value) => {
             setFilters((previous) => ({ ...previous, onlyActive: value === 'ACTIVE' }))
           }}
@@ -152,7 +178,7 @@ export function BlacklistPage(): ReactNode {
 
       {isError && (
         <LoadError
-          message="No se pudo cargar la Blacklist. Revisa tu conexión e inténtalo de nuevo."
+          message={t`No se pudo cargar la Blacklist. Revisa tu conexión e inténtalo de nuevo.`}
           onRetry={() => {
             void refetch()
           }}
@@ -166,7 +192,7 @@ export function BlacklistPage(): ReactNode {
           <Table className="min-w-[72rem] text-left">
             <TableHeader>
               <TableRow className="border-line">
-                {HEADERS.map((header, index) => (
+                {headers.map((header, index) => (
                   <TableHead
                     key={header === '' ? `empty-${String(index)}` : header}
                     scope="col"
@@ -181,12 +207,12 @@ export function BlacklistPage(): ReactNode {
               {visibleRows.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={HEADERS.length}
+                    colSpan={headers.length}
                     className="px-4 py-8 text-center text-sm text-ink-3"
                   >
                     {rows.length > 0 && search.trim() !== ''
-                      ? `Ningún veto es de alguien llamado «${search.trim()}». Prueba otro nombre o quita la búsqueda.`
-                      : 'No hay vetos con estos filtros. Prueba con otro origen o con el historial completo.'}
+                      ? t`Ningún veto es de alguien llamado «${search.trim()}». Prueba otro nombre o quita la búsqueda.`
+                      : t`No hay vetos con estos filtros. Prueba con otro origen o con el historial completo.`}
                   </TableCell>
                 </TableRow>
               )}
@@ -213,14 +239,14 @@ export function BlacklistPage(): ReactNode {
                   <TableCell className="px-4 py-3">
                     {row.isActive ? (
                       <span className="inline-flex rounded-full bg-ink px-2.5 py-1 text-xs font-semibold text-surface">
-                        Vigente
+                        <Trans>Vigente</Trans>
                       </span>
                     ) : (
                       <span
                         className="inline-flex rounded-full border border-line px-2.5 py-1 text-xs font-medium text-ink-3"
                         title={row.liftReason ?? undefined}
                       >
-                        Levantada
+                        <Trans>Levantada</Trans>
                       </span>
                     )}
                   </TableCell>
@@ -233,7 +259,7 @@ export function BlacklistPage(): ReactNode {
                           setLiftTarget(row)
                         }}
                       >
-                        Levantar veto
+                        <Trans>Levantar veto</Trans>
                       </Button>
                     )}
                   </TableCell>
@@ -245,11 +271,13 @@ export function BlacklistPage(): ReactNode {
       )}
 
       <p className="rounded-md bg-surface-2 p-3 text-xs leading-relaxed text-ink-3">
-        Tres reglas que el sistema hace cumplir siempre: un colaborador en{' '}
-        <span className="font-semibold">Gris</span> (accidentado) no se puede vetar; solo hay un
-        veto vigente a la vez y el historial nunca se borra; y al levantarlo la persona vuelve a{' '}
-        <span className="font-semibold">Blanco</span>, reingresando por la validación de la
-        Reclutadora.
+        <Trans>
+          Tres reglas que el sistema hace cumplir siempre: un colaborador en{' '}
+          <span className="font-semibold">Gris</span> (accidentado) no se puede vetar; solo hay un
+          veto vigente a la vez y el historial nunca se borra; y al levantarlo la persona vuelve a{' '}
+          <span className="font-semibold">Blanco</span>, reingresando por la validación de la
+          Reclutadora.
+        </Trans>
       </p>
 
       <LiftBlacklistDialog

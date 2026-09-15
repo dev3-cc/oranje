@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Plural, Trans, useLingui } from '@lingui/react/macro'
 import {
   cn,
   MaterialIcon,
@@ -31,7 +34,7 @@ import { Button } from '@/shared/components/Button'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { Modal } from '@/shared/components/Modal'
-import { OnboardingIntro, type OnboardingSlide } from '@/shared/components/OnboardingIntro'
+import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { SearchField } from '@/shared/components/SearchField'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { useCan } from '@/shared/hooks/useCan'
@@ -40,70 +43,78 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { matchesSearch } from '@/shared/lib/text'
 
-const INTRO_SLIDES: readonly OnboardingSlide[] = [
+/** Las diapositivas del intro; el texto se traduce al pintar con `i18n._()` (D-36). */
+const INTRO_SLIDES: readonly {
+  image: string
+  title: MessageDescriptor
+  text: MessageDescriptor
+}[] = [
   {
     image: personajeConfiguracion,
-    title: 'Los catálogos alimentan toda la plataforma',
-    text: 'Departamentos, posiciones, modalidades e inglés viven aquí — de acá beben las requisiciones y las altas.',
+    title: msg`Los catálogos alimentan toda la plataforma`,
+    text: msg`Departamentos, posiciones, modalidades e inglés viven aquí — de acá beben las requisiciones y las altas.`,
   },
   {
     image: personajeEstrategia,
-    title: 'Reactivos de Auditoría es distinto',
-    text: 'Su propio peso por reactivo y arrastre para reordenar — por eso vive separado, con una línea divisoria antes de su pestaña.',
+    title: msg`Reactivos de Auditoría es distinto`,
+    text: msg`Su propio peso por reactivo y arrastre para reordenar — por eso vive separado, con una línea divisoria antes de su pestaña.`,
   },
   {
     image: personajeComencemos,
-    title: 'Eliminar es de verdad',
-    text: 'No se archiva: si algo del sistema lo está usando, la propia base lo protege y te lo dice.',
+    title: msg`Eliminar es de verdad`,
+    text: msg`No se archiva: si algo del sistema lo está usando, la propia base lo protege y te lo dice.`,
   },
 ]
 
-/** Cada pestaña: cómo se llama, su singular y de qué lista bebe. */
+/**
+ * Cada pestaña: cómo se llama, su singular y de qué lista bebe. Los textos se
+ * traducen al pintar con `i18n._()` (D-36).
+ */
 interface TabConfig {
-  label: string
+  label: MessageDescriptor
   pick: (data: AdminCatalogs) => AdminCatalogItem[]
   /** Singular para los textos de los diálogos. */
-  noun: string
+  noun: MessageDescriptor
   /** El buscador enseña el patrón con un ejemplo de ESA pestaña. */
-  searchPlaceholder: string
+  searchPlaceholder: MessageDescriptor
 }
 
 const TAB_CONFIG: Record<ManagedCatalog, TabConfig> = {
   'hotel-departments': {
-    label: 'Departamentos y posiciones',
+    label: msg`Departamentos y posiciones`,
     pick: (data) => data.departments,
-    noun: 'departamento',
-    searchPlaceholder: 'Departamento o posición, p. ej. Steward…',
+    noun: msg`departamento`,
+    searchPlaceholder: msg`Departamento o posición, p. ej. Steward…`,
   },
   positions: {
-    label: 'Posiciones',
+    label: msg`Posiciones`,
     pick: (data) => data.positions,
-    noun: 'posición',
-    searchPlaceholder: 'Nombre de la posición, p. ej. Steward…',
+    noun: msg`posición`,
+    searchPlaceholder: msg`Nombre de la posición, p. ej. Steward…`,
   },
   'hiring-modalities': {
-    label: 'Modalidades',
+    label: msg`Modalidades`,
     pick: (data) => data.modalities,
-    noun: 'modalidad',
-    searchPlaceholder: 'Nombre de la modalidad, p. ej. Tiempo completo…',
+    noun: msg`modalidad`,
+    searchPlaceholder: msg`Nombre de la modalidad, p. ej. Tiempo completo…`,
   },
   'english-levels': {
-    label: 'Niveles de inglés',
+    label: msg`Niveles de inglés`,
     pick: (data) => data.englishLevels,
-    noun: 'nivel de inglés',
-    searchPlaceholder: 'Nombre del nivel, p. ej. Conversacional…',
+    noun: msg`nivel de inglés`,
+    searchPlaceholder: msg`Nombre del nivel, p. ej. Conversacional…`,
   },
   zones: {
-    label: 'Zonas',
+    label: msg`Zonas`,
     pick: (data) => data.zones,
-    noun: 'zona',
-    searchPlaceholder: 'Nombre de la zona, p. ej. Riviera Maya…',
+    noun: msg`zona`,
+    searchPlaceholder: msg`Nombre de la zona, p. ej. Riviera Maya…`,
   },
   reasons: {
-    label: 'Motivos',
+    label: msg`Motivos`,
     pick: (data) => data.reasons,
-    noun: 'motivo',
-    searchPlaceholder: 'Nombre del motivo, p. ej. Se mudó…',
+    noun: msg`motivo`,
+    searchPlaceholder: msg`Nombre del motivo, p. ej. Se mudó…`,
   },
 }
 
@@ -119,7 +130,7 @@ const TABS = MANAGED_CATALOGS.filter((catalog) => catalog !== 'positions').map((
 
 interface EditorState {
   catalog: ManagedCatalog
-  noun: string
+  noun: MessageDescriptor
   /** `null` = alta nueva; con fila = renombrar. */
   item: AdminCatalogItem | null
   /** Alta de posición desde su sección: el departamento ya viene elegido. */
@@ -135,6 +146,7 @@ interface EditorState {
  * back y aquí solo se traduce el 409 a palabras.
  */
 export function CatalogsPage(): ReactNode {
+  const { t, i18n } = useLingui()
   const can = useCan()
   const canManage = can('catalogs:manage')
   const { data, isLoading, isError, refetch } = useGetAdminCatalogsQuery()
@@ -174,7 +186,7 @@ export function CatalogsPage(): ReactNode {
   const [editor, setEditor] = useState<EditorState | null>(null)
   const [pendingDelete, setPendingDelete] = useState<{
     catalog: ManagedCatalog
-    noun: string
+    noun: MessageDescriptor
     item: AdminCatalogItem
   } | null>(null)
 
@@ -219,7 +231,7 @@ export function CatalogsPage(): ReactNode {
   if (!canManage) {
     return (
       <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-        Los catálogos los administra el Administrador del sistema.
+        <Trans>Los catálogos los administra el Administrador del sistema.</Trans>
       </p>
     )
   }
@@ -229,10 +241,12 @@ export function CatalogsPage(): ReactNode {
       <header className="flex flex-wrap items-center gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-ink">
-            <FoldText text="Catálogos" />
+            <FoldText text={t`Catálogos`} />
           </h1>
           <p className="mt-1.5 text-sm text-ink-3">
-            Las listas de las que bebe todo el sistema: requisiciones, altas y contratos.
+            <Trans>
+              Las listas de las que bebe todo el sistema: requisiciones, altas y contratos.
+            </Trans>
             {IS_DEV_UI && <code className="ml-1.5 text-xs text-ink-4">catalogs.*</code>}
             {' · '}
             <button
@@ -240,7 +254,7 @@ export function CatalogsPage(): ReactNode {
               onClick={reopenIntro}
               className="cursor-pointer font-medium text-o-700 hover:underline"
             >
-              ¿Cómo funciona?
+              <Trans>¿Cómo funciona?</Trans>
             </button>
           </p>
         </div>
@@ -252,16 +266,16 @@ export function CatalogsPage(): ReactNode {
               setEditor({ catalog: tab.catalog, noun: tab.noun, item: null })
             }}
           >
-            Agregar {tab.noun}
+            {t`Agregar ${i18n._(tab.noun)}`}
           </Button>
         )}
       </header>
 
-      <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Catálogo">
+      <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label={t`Catálogo`}>
         {TABS.map((item) => (
           <TabButton
             key={item.catalog}
-            label={item.label}
+            label={i18n._(item.label)}
             isActive={item.catalog === active}
             onSelect={() => {
               selectTab(item.catalog)
@@ -275,7 +289,7 @@ export function CatalogsPage(): ReactNode {
             era el quinto botón idéntico al final de la fila. */}
         <span aria-hidden className="mx-1 h-6 w-px shrink-0 bg-line" />
         <TabButton
-          label="Reactivos de Auditoría"
+          label={t`Reactivos de Auditoría`}
           isActive={isReactivosTab}
           onSelect={() => {
             selectTab(REACTIVOS_TAB)
@@ -290,14 +304,14 @@ export function CatalogsPage(): ReactNode {
           <SearchField
             value={search}
             onChange={setSearch}
-            label={`Buscar en ${tab?.label ?? ''}`}
-            placeholder={tab?.searchPlaceholder ?? ''}
+            label={t`Buscar en ${tab ? i18n._(tab.label) : ''}`}
+            placeholder={tab ? i18n._(tab.searchPlaceholder) : ''}
             className="w-full max-w-md"
           />
 
           {isError && (
             <LoadError
-              message="No se pudieron cargar los catálogos. Reintenta en unos segundos."
+              message={t`No se pudieron cargar los catálogos. Reintenta en unos segundos.`}
               onRetry={() => {
                 void refetch()
               }}
@@ -309,13 +323,17 @@ export function CatalogsPage(): ReactNode {
           ) : isDepartmentsTab ? (
             data.departments.length === 0 ? (
               <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-                Todavía no hay departamentos. Agrega el primero con el botón de arriba; las
-                posiciones se cuelgan de cada uno.
+                <Trans>
+                  Todavía no hay departamentos. Agrega el primero con el botón de arriba; las
+                  posiciones se cuelgan de cada uno.
+                </Trans>
               </p>
             ) : sections.length === 0 ? (
               <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-                Ningún departamento ni posición coincide con «{search.trim()}». Cambia la búsqueda o
-                agrégala.
+                <Trans>
+                  Ningún departamento ni posición coincide con «{search.trim()}». Cambia la búsqueda
+                  o agrégala.
+                </Trans>
               </p>
             ) : (
               <div className="flex flex-col gap-5">
@@ -332,9 +350,12 @@ export function CatalogsPage(): ReactNode {
                         {department.name}
                       </h2>
                       <span className="text-xs text-ink-4">
-                        {positions.length === 0
-                          ? 'sin posiciones'
-                          : `${String(positions.length)} ${positions.length === 1 ? 'posición' : 'posiciones'}`}
+                        <Plural
+                          value={positions.length}
+                          _0="sin posiciones"
+                          one="# posición"
+                          other="# posiciones"
+                        />
                       </span>
                       <div className="ml-auto flex items-center gap-1">
                         <Button
@@ -343,13 +364,13 @@ export function CatalogsPage(): ReactNode {
                           onClick={() => {
                             setEditor({
                               catalog: 'positions',
-                              noun: 'posición',
+                              noun: msg`posición`,
                               item: null,
                               presetDepartmentId: department.id,
                             })
                           }}
                         >
-                          Agregar posición
+                          <Trans>Agregar posición</Trans>
                         </Button>
                         <Button
                           variant="secondary"
@@ -357,21 +378,21 @@ export function CatalogsPage(): ReactNode {
                           onClick={() => {
                             setEditor({
                               catalog: 'hotel-departments',
-                              noun: 'departamento',
+                              noun: msg`departamento`,
                               item: department,
                             })
                           }}
                         >
-                          Renombrar
+                          <Trans>Renombrar</Trans>
                         </Button>
                         <button
                           type="button"
-                          aria-label={`Eliminar ${department.name}`}
-                          title="Eliminar departamento"
+                          aria-label={t`Eliminar ${department.name}`}
+                          title={t`Eliminar departamento`}
                           onClick={() => {
                             setPendingDelete({
                               catalog: 'hotel-departments',
-                              noun: 'departamento',
+                              noun: msg`departamento`,
                               item: department,
                             })
                           }}
@@ -384,9 +405,16 @@ export function CatalogsPage(): ReactNode {
 
                     {visiblePositions.length === 0 ? (
                       <p className="mt-2 rounded-lg border border-dashed border-line bg-surface px-5 py-4 text-sm text-ink-3">
-                        {positions.length === 0
-                          ? 'Sin posiciones: mientras no tenga, nadie puede pedir personal de este departamento.'
-                          : `Ninguna posición de ${department.name} coincide con «${search.trim()}».`}
+                        {positions.length === 0 ? (
+                          <Trans>
+                            Sin posiciones: mientras no tenga, nadie puede pedir personal de este
+                            departamento.
+                          </Trans>
+                        ) : (
+                          <Trans>
+                            Ninguna posición de {department.name} coincide con «{search.trim()}».
+                          </Trans>
+                        )}
                       </p>
                     ) : (
                       <ul className="mt-2 overflow-hidden rounded-lg border border-line bg-surface">
@@ -411,21 +439,21 @@ export function CatalogsPage(): ReactNode {
                               onClick={() => {
                                 setEditor({
                                   catalog: 'positions',
-                                  noun: 'posición',
+                                  noun: msg`posición`,
                                   item: position,
                                 })
                               }}
                             >
-                              Renombrar
+                              <Trans>Renombrar</Trans>
                             </Button>
                             <button
                               type="button"
-                              aria-label={`Eliminar ${position.name}`}
-                              title="Eliminar posición"
+                              aria-label={t`Eliminar ${position.name}`}
+                              title={t`Eliminar posición`}
                               onClick={() => {
                                 setPendingDelete({
                                   catalog: 'positions',
-                                  noun: 'posición',
+                                  noun: msg`posición`,
                                   item: position,
                                 })
                               }}
@@ -444,12 +472,16 @@ export function CatalogsPage(): ReactNode {
           ) : isReasonsTab ? (
             data.reasons.length === 0 ? (
               <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-                Todavía no hay motivos. Agrega el primero desde el semáforo al que pertenece.
+                <Trans>
+                  Todavía no hay motivos. Agrega el primero desde el semáforo al que pertenece.
+                </Trans>
               </p>
             ) : reasonSections.length === 0 ? (
               <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-                Ningún semáforo ni motivo coincide con «{search.trim()}». Cambia la búsqueda o
-                agrégalo.
+                <Trans>
+                  Ningún semáforo ni motivo coincide con «{search.trim()}». Cambia la búsqueda o
+                  agrégalo.
+                </Trans>
               </p>
             ) : (
               <div className="flex flex-col gap-5">
@@ -465,9 +497,12 @@ export function CatalogsPage(): ReactNode {
                         {statusLight.name}
                       </h2>
                       <span className="text-xs text-ink-4">
-                        {reasons.length === 0
-                          ? 'sin motivos'
-                          : `${String(reasons.length)} ${reasons.length === 1 ? 'motivo' : 'motivos'}`}
+                        <Plural
+                          value={reasons.length}
+                          _0="sin motivos"
+                          one="# motivo"
+                          other="# motivos"
+                        />
                       </span>
                       <div className="ml-auto flex items-center gap-1">
                         <Button
@@ -476,22 +511,29 @@ export function CatalogsPage(): ReactNode {
                           onClick={() => {
                             setEditor({
                               catalog: 'reasons',
-                              noun: 'motivo',
+                              noun: msg`motivo`,
                               item: null,
                               presetStatusLightCode: statusLight.code,
                             })
                           }}
                         >
-                          Agregar motivo
+                          <Trans>Agregar motivo</Trans>
                         </Button>
                       </div>
                     </div>
 
                     {visibleReasons.length === 0 ? (
                       <p className="mt-2 rounded-lg border border-dashed border-line bg-surface px-5 py-4 text-sm text-ink-3">
-                        {reasons.length === 0
-                          ? 'Sin motivos: quien cierre o rechace en este semáforo no tendrá de dónde elegir.'
-                          : `Ningún motivo de ${statusLight.name} coincide con «${search.trim()}».`}
+                        {reasons.length === 0 ? (
+                          <Trans>
+                            Sin motivos: quien cierre o rechace en este semáforo no tendrá de dónde
+                            elegir.
+                          </Trans>
+                        ) : (
+                          <Trans>
+                            Ningún motivo de {statusLight.name} coincide con «{search.trim()}».
+                          </Trans>
+                        )}
                       </p>
                     ) : (
                       <ul className="mt-2 overflow-hidden rounded-lg border border-line bg-surface">
@@ -518,19 +560,19 @@ export function CatalogsPage(): ReactNode {
                             <Button
                               variant="secondary"
                               onClick={() => {
-                                setEditor({ catalog: 'reasons', noun: 'motivo', item: reason })
+                                setEditor({ catalog: 'reasons', noun: msg`motivo`, item: reason })
                               }}
                             >
-                              Renombrar
+                              <Trans>Renombrar</Trans>
                             </Button>
                             <button
                               type="button"
-                              aria-label={`Eliminar ${reason.name}`}
-                              title="Eliminar motivo"
+                              aria-label={t`Eliminar ${reason.name}`}
+                              title={t`Eliminar motivo`}
                               onClick={() => {
                                 setPendingDelete({
                                   catalog: 'reasons',
-                                  noun: 'motivo',
+                                  noun: msg`motivo`,
                                   item: reason,
                                 })
                               }}
@@ -548,11 +590,15 @@ export function CatalogsPage(): ReactNode {
             )
           ) : rows.length === 0 ? (
             <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-              Este catálogo está vacío. Agrega su primera fila con el botón de arriba.
+              <Trans>
+                Este catálogo está vacío. Agrega su primera fila con el botón de arriba.
+              </Trans>
             </p>
           ) : visibleRows.length === 0 ? (
             <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-              Ninguna fila coincide con «{search.trim()}». Cambia la búsqueda o agrégala.
+              <Trans>
+                Ninguna fila coincide con «{search.trim()}». Cambia la búsqueda o agrégala.
+              </Trans>
             </p>
           ) : (
             <ul className="overflow-hidden rounded-lg border border-line bg-surface">
@@ -575,12 +621,12 @@ export function CatalogsPage(): ReactNode {
                       if (tab) setEditor({ catalog: tab.catalog, noun: tab.noun, item: row })
                     }}
                   >
-                    Renombrar
+                    <Trans>Renombrar</Trans>
                   </Button>
                   <button
                     type="button"
-                    aria-label={`Eliminar ${row.name}`}
-                    title={`Eliminar ${tab?.noun ?? ''}`}
+                    aria-label={t`Eliminar ${row.name}`}
+                    title={t`Eliminar ${tab ? i18n._(tab.noun) : ''}`}
                     onClick={() => {
                       if (tab) setPendingDelete({ catalog: tab.catalog, noun: tab.noun, item: row })
                     }}
@@ -598,11 +644,19 @@ export function CatalogsPage(): ReactNode {
       <Modal
         isOpen={isIntroOpen}
         onClose={dismissIntro}
-        title="Cómo funcionan los Catálogos"
+        title={t`Cómo funcionan los Catálogos`}
         chromeless
         className="max-w-2xl"
       >
-        <OnboardingIntro slides={INTRO_SLIDES} startLabel="Ir a Catálogos" onDone={dismissIntro} />
+        <OnboardingIntro
+          slides={INTRO_SLIDES.map((slide) => ({
+            image: slide.image,
+            title: i18n._(slide.title),
+            text: i18n._(slide.text),
+          }))}
+          startLabel={t`Ir a Catálogos`}
+          onDone={dismissIntro}
+        />
       </Modal>
 
       {editor !== null && data && (
@@ -668,6 +722,7 @@ function CatalogItemDialog({
   statusLights: AdminStatusLight[]
   onClose: () => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const [name, setName] = useState(editor.item?.name ?? '')
   const [departmentId, setDepartmentId] = useState(
     editor.item?.hotelDepartmentId ?? editor.presetDepartmentId ?? '',
@@ -697,7 +752,7 @@ function CatalogItemDialog({
           ...(isPosition ? { hotelDepartmentId: departmentId } : {}),
           ...(isReason ? { statusLightCode } : {}),
         }).unwrap()
-        toast.success(`Se agregó «${name.trim()}»`)
+        toast.success(t`Se agregó «${name.trim()}»`)
       } else {
         await updateItem({
           catalog: editor.catalog,
@@ -706,19 +761,19 @@ function CatalogItemDialog({
           ...(isPosition && departmentId !== '' ? { hotelDepartmentId: departmentId } : {}),
           ...(isReason && statusLightCode !== '' ? { statusLightCode } : {}),
         }).unwrap()
-        toast.success('Catálogo actualizado')
+        toast.success(t`Catálogo actualizado`)
       }
       onClose()
     } catch (saveError) {
       setError(
         apiErrorMessage(saveError, {
           byCode: {
-            CATALOG_NAME_TAKEN: 'Ya existe una fila con ese nombre en este catálogo.',
-            DEPARTMENT_REQUIRED: 'Una posición pertenece a un departamento: elige a cuál.',
-            STATUS_LIGHT_REQUIRED: 'Un motivo pertenece a un semáforo: elige a cuál.',
-            STATUS_LIGHT_UNKNOWN: 'Ese semáforo no existe.',
+            CATALOG_NAME_TAKEN: t`Ya existe una fila con ese nombre en este catálogo.`,
+            DEPARTMENT_REQUIRED: t`Una posición pertenece a un departamento: elige a cuál.`,
+            STATUS_LIGHT_REQUIRED: t`Un motivo pertenece a un semáforo: elige a cuál.`,
+            STATUS_LIGHT_UNKNOWN: t`Ese semáforo no existe.`,
           },
-          fallback: 'No se pudo guardar. Revisa el nombre e inténtalo de nuevo.',
+          fallback: t`No se pudo guardar. Revisa el nombre e inténtalo de nuevo.`,
         }),
       )
     }
@@ -728,11 +783,15 @@ function CatalogItemDialog({
     <Modal
       isOpen
       onClose={onClose}
-      title={editor.item === null ? `Agregar ${editor.noun}` : `Renombrar ${editor.noun}`}
+      title={
+        editor.item === null
+          ? t`Agregar ${i18n._(editor.noun)}`
+          : t`Renombrar ${i18n._(editor.noun)}`
+      }
       footer={
         <>
           <Button onClick={onClose} disabled={isBusy}>
-            Cancelar
+            <Trans>Cancelar</Trans>
           </Button>
           <Button
             variant="primary"
@@ -741,33 +800,37 @@ function CatalogItemDialog({
               void save()
             }}
           >
-            {isBusy ? 'Guardando…' : 'Guardar'}
+            {isBusy ? <Trans>Guardando…</Trans> : <Trans>Guardar</Trans>}
           </Button>
         </>
       }
     >
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-ink-2">Nombre</span>
+        <span className="text-sm font-medium text-ink-2">
+          <Trans>Nombre</Trans>
+        </span>
         <input
           value={name}
           onChange={(event) => {
             setName(event.target.value)
           }}
           maxLength={80}
-          placeholder="P. ej. Steward"
+          placeholder={t`P. ej. Steward`}
           className="rounded-md border border-line bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none"
         />
       </label>
 
       {isPosition && (
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-ink-2">Departamento</span>
+          <span className="text-sm font-medium text-ink-2">
+            <Trans>Departamento</Trans>
+          </span>
           <Select
             {...(departmentId ? { value: departmentId } : {})}
             onValueChange={setDepartmentId}
           >
-            <SelectTrigger aria-label="Departamento de la posición" className="w-full">
-              <SelectValue placeholder="Elige el departamento" />
+            <SelectTrigger aria-label={t`Departamento de la posición`} className="w-full">
+              <SelectValue placeholder={t`Elige el departamento`} />
             </SelectTrigger>
             <SelectContent>
               {departments.map((department) => (
@@ -782,13 +845,15 @@ function CatalogItemDialog({
 
       {isReason && (
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-ink-2">Semáforo</span>
+          <span className="text-sm font-medium text-ink-2">
+            <Trans>Semáforo</Trans>
+          </span>
           <Select
             {...(statusLightCode ? { value: statusLightCode } : {})}
             onValueChange={setStatusLightCode}
           >
-            <SelectTrigger aria-label="Semáforo del motivo" className="w-full">
-              <SelectValue placeholder="Elige el semáforo" />
+            <SelectTrigger aria-label={t`Semáforo del motivo`} className="w-full">
+              <SelectValue placeholder={t`Elige el semáforo`} />
             </SelectTrigger>
             <SelectContent>
               {statusLights.map((statusLight) => (
@@ -815,9 +880,10 @@ function DeleteCatalogItemDialog({
   pending,
   onClose,
 }: {
-  pending: { catalog: ManagedCatalog; noun: string; item: AdminCatalogItem }
+  pending: { catalog: ManagedCatalog; noun: MessageDescriptor; item: AdminCatalogItem }
   onClose: () => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const [error, setError] = useState<string | null>(null)
   const [deleteItem, { isLoading }] = useDeleteCatalogItemMutation()
 
@@ -825,16 +891,15 @@ function DeleteCatalogItemDialog({
     setError(null)
     try {
       await deleteItem({ catalog: pending.catalog, id: pending.item.id }).unwrap()
-      toast.success(`Se eliminó «${pending.item.name}»`)
+      toast.success(t`Se eliminó «${pending.item.name}»`)
       onClose()
     } catch (deleteError) {
       setError(
         apiErrorMessage(deleteError, {
           byCode: {
-            CATALOG_IN_USE:
-              'Está en uso: hay requisiciones, posiciones o colaboradores colgando de esta fila. Elimina o reasigna eso primero.',
+            CATALOG_IN_USE: t`Está en uso: hay requisiciones, posiciones o colaboradores colgando de esta fila. Elimina o reasigna eso primero.`,
           },
-          fallback: 'No se pudo eliminar. Inténtalo de nuevo.',
+          fallback: t`No se pudo eliminar. Inténtalo de nuevo.`,
         }),
       )
     }
@@ -844,11 +909,11 @@ function DeleteCatalogItemDialog({
     <Modal
       isOpen
       onClose={onClose}
-      title={`Eliminar ${pending.noun}`}
+      title={t`Eliminar ${i18n._(pending.noun)}`}
       footer={
         <>
           <Button onClick={onClose} disabled={isLoading}>
-            Cancelar
+            <Trans>Cancelar</Trans>
           </Button>
           <Button
             variant="primary"
@@ -857,14 +922,16 @@ function DeleteCatalogItemDialog({
               void remove()
             }}
           >
-            {isLoading ? 'Eliminando…' : 'Sí, eliminar'}
+            {isLoading ? <Trans>Eliminando…</Trans> : <Trans>Sí, eliminar</Trans>}
           </Button>
         </>
       }
     >
       <p className="text-sm text-ink-2">
-        «{pending.item.name}» se elimina de verdad — no se archiva. Si algo del sistema lo está
-        usando, el propio sistema lo va a impedir y te lo dirá aquí.
+        <Trans>
+          «{pending.item.name}» se elimina de verdad — no se archiva. Si algo del sistema lo está
+          usando, el propio sistema lo va a impedir y te lo dirá aquí.
+        </Trans>
       </p>
       {error !== null && (
         <p role="alert" className="rounded-md bg-red/10 px-3 py-2 text-sm text-red">

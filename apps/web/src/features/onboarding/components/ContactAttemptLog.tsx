@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { MaterialIcon } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
@@ -23,13 +24,14 @@ export function ContactAttemptLog({
   onEdit?: (attempt: ContactAttempt) => void
   onDelete?: (attempt: ContactAttempt) => void
 }): ReactNode {
+  const { t } = useLingui()
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
   return (
-    <SectionCard title="Bitácora de intentos de contacto">
+    <SectionCard title={t`Bitácora de intentos de contacto`}>
       {attempts.length === 0 ? (
         <p className="py-2 text-sm text-ink-3">
-          Sin intentos registrados. Usa «Registrar intento» para anotar el primero.
+          <Trans>Sin intentos registrados. Usa «Registrar intento» para anotar el primero.</Trans>
         </p>
       ) : (
         <ul>
@@ -55,8 +57,8 @@ export function ContactAttemptLog({
                   {isOwn && onEdit && !isConfirming && (
                     <button
                       type="button"
-                      aria-label="Corregir este intento"
-                      title="Corregir este intento"
+                      aria-label={t`Corregir este intento`}
+                      title={t`Corregir este intento`}
                       onClick={() => {
                         onEdit(attempt)
                       }}
@@ -77,7 +79,7 @@ export function ContactAttemptLog({
                           }}
                           className="rounded bg-red/10 px-2 py-0.5 text-xs font-semibold text-red transition-colors hover:bg-red/20"
                         >
-                          Sí, borrar
+                          <Trans>Sí, borrar</Trans>
                         </button>
                         <button
                           type="button"
@@ -86,14 +88,14 @@ export function ContactAttemptLog({
                           }}
                           className="rounded px-2 py-0.5 text-xs text-ink-3 hover:bg-surface-2"
                         >
-                          Conservar
+                          <Trans>Conservar</Trans>
                         </button>
                       </span>
                     ) : (
                       <button
                         type="button"
-                        aria-label="Eliminar este intento"
-                        title="Eliminar este intento"
+                        aria-label={t`Eliminar este intento`}
+                        title={t`Eliminar este intento`}
                         onClick={() => {
                           setConfirmingId(attempt.id)
                         }}

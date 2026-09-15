@@ -1,3 +1,5 @@
+import type { I18n } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
 import { z } from 'zod'
 
 /** Correo suficientemente bien formado. El definitivo lo valida el backend. */
@@ -13,24 +15,40 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
  * El correo se valida con `refine` y no con `z.email()`: así el tipo de entrada
  * y el de salida siguen siendo el mismo `string`, que es lo que espera React
  * Hook Form para sus valores por defecto.
+ *
+ * Es una función y no una constante porque los mensajes se resuelven al
+ * armarlo con el `i18n` del componente (D-36): quien lo usa lo rearma cuando
+ * cambia el idioma. Las validaciones no dependen del idioma.
  */
-export const hotelContactDraftSchema = z.object({
-  fullName: z.string().trim().min(1, 'El nombre es obligatorio'),
-  jobTitle: z.string(),
-  phone: z.string(),
-  email: z
-    .string()
-    .trim()
-    .refine((value) => value === '' || EMAIL_PATTERN.test(value), 'Escribe un correo válido'),
-  isPrimary: z.boolean(),
-})
+export function buildHotelContactDraftSchema(i18n: I18n) {
+  return z.object({
+    fullName: z
+      .string()
+      .trim()
+      .min(1, i18n._(msg`El nombre es obligatorio`)),
+    jobTitle: z.string(),
+    phone: z.string(),
+    email: z
+      .string()
+      .trim()
+      .refine(
+        (value) => value === '' || EMAIL_PATTERN.test(value),
+        i18n._(msg`Escribe un correo válido`),
+      ),
+    isPrimary: z.boolean(),
+  })
+}
 
-export const hotelContactsFormSchema = z.object({
-  drafts: z.array(hotelContactDraftSchema).min(1, 'Agrega al menos un contacto'),
-})
+export function buildHotelContactsFormSchema(i18n: I18n) {
+  return z.object({
+    drafts: z
+      .array(buildHotelContactDraftSchema(i18n))
+      .min(1, i18n._(msg`Agrega al menos un contacto`)),
+  })
+}
 
-export type HotelContactDraft = z.infer<typeof hotelContactDraftSchema>
-export type HotelContactsForm = z.infer<typeof hotelContactsFormSchema>
+export type HotelContactDraft = z.infer<ReturnType<typeof buildHotelContactDraftSchema>>
+export type HotelContactsForm = z.infer<ReturnType<typeof buildHotelContactsFormSchema>>
 
 export const EMPTY_CONTACT_DRAFT: HotelContactDraft = {
   fullName: '',

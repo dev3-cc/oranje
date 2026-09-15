@@ -1,4 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import type { I18n, MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import {
   Alert,
   AlertDescription,
@@ -15,7 +18,7 @@ import {
   toast,
 } from '@oranje/ui'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
 import {
@@ -26,10 +29,10 @@ import {
 } from '../api/onboardingApi'
 import type { ProspectDetail } from '../types/prospect.types'
 import {
+  buildProspectFormSchema,
   GEOFENCE_MAX_M,
   GEOFENCE_MIN_M,
   GEOFENCE_STEP_M,
-  prospectFormSchema,
   type ProspectFormValues,
 } from '../types/prospectForm.schema'
 
@@ -57,30 +60,35 @@ import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'prospect-form'
 
-const INTRO_SLIDES = [
+/** El texto se traduce al pintar con `i18n._()` (D-36). */
+const INTRO_SLIDES: readonly {
+  image: string
+  title: MessageDescriptor
+  text: MessageDescriptor
+}[] = [
   {
     image: personajeComencemos,
-    title: 'Un hotel, un ciclo',
-    text: 'Dar de alta el hotel abre su ciclo comercial en Gris. Un hotel solo puede tener un ciclo abierto a la vez.',
+    title: msg`Un hotel, un ciclo`,
+    text: msg`Dar de alta el hotel abre su ciclo comercial en Gris. Un hotel solo puede tener un ciclo abierto a la vez.`,
   },
   {
     image: personajePresentacion,
-    title: 'La ubicación importa',
-    text: 'El pin exacto y la geocerca validarán los ponches cuando sea cliente: arrástralo a la entrada real del personal.',
+    title: msg`La ubicación importa`,
+    text: msg`El pin exacto y la geocerca validarán los ponches cuando sea cliente: arrástralo a la entrada real del personal.`,
   },
   {
     image: personajeTratoCerrado,
-    title: 'De Gris a Naranja',
-    text: 'El semáforo lo acompaña del primer contacto hasta cliente activo — cada paso queda en su historia.',
+    title: msg`De Gris a Naranja`,
+    text: msg`El semáforo lo acompaña del primer contacto hasta cliente activo — cada paso queda en su historia.`,
   },
 ] as const
 
-const TIME_ZONES = [
-  { value: 'America/New_York', label: 'Este — Atlanta, Miami, Nueva York' },
-  { value: 'America/Chicago', label: 'Central — Chicago, Houston, Dallas' },
-  { value: 'America/Denver', label: 'Montaña — Denver, Salt Lake City' },
-  { value: 'America/Phoenix', label: 'Arizona — Phoenix (sin horario de verano)' },
-  { value: 'America/Los_Angeles', label: 'Pacífico — Los Ángeles, Las Vegas' },
+const TIME_ZONES: readonly { value: string; label: MessageDescriptor }[] = [
+  { value: 'America/New_York', label: msg`Este — Atlanta, Miami, Nueva York` },
+  { value: 'America/Chicago', label: msg`Central — Chicago, Houston, Dallas` },
+  { value: 'America/Denver', label: msg`Montaña — Denver, Salt Lake City` },
+  { value: 'America/Phoenix', label: msg`Arizona — Phoenix (sin horario de verano)` },
+  { value: 'America/Los_Angeles', label: msg`Pacífico — Los Ángeles, Las Vegas` },
 ] as const
 
 function Field({
@@ -129,7 +137,8 @@ function Field({
   )
 }
 
-function saveErrorMessage(error: unknown): string {
+/** El `i18n` viene del componente (`useLingui`): así el mensaje habla el idioma activo (D-36). */
+function saveErrorMessage(error: unknown, i18n: I18n): string {
   const data = (
     error as
       { data?: { error?: { code?: string; message?: string }; message?: string } } | undefined
@@ -137,14 +146,16 @@ function saveErrorMessage(error: unknown): string {
   const code = data?.error?.code
 
   if (code === 'PROSPECT_ALREADY_OPEN') {
-    return 'Este hotel ya tiene un ciclo comercial abierto: ciérralo o elige otro hotel.'
+    return i18n._(msg`Este hotel ya tiene un ciclo comercial abierto: ciérralo o elige otro hotel.`)
   }
   if (code === 'HOTEL_NAME_TAKEN') {
-    return 'Ya existe un hotel con ese nombre: elige «Hotel ya registrado» o cambia el nombre.'
+    return i18n._(
+      msg`Ya existe un hotel con ese nombre: elige «Hotel ya registrado» o cambia el nombre.`,
+    )
   }
   if (data?.error?.message) return data.error.message
   if (typeof data?.message === 'string') return data.message
-  return 'No se pudo guardar el prospecto. Revisa los datos e inténtalo de nuevo.'
+  return i18n._(msg`No se pudo guardar el prospecto. Revisa los datos e inténtalo de nuevo.`)
 }
 
 function SectionTitle({ children, schema }: { children: ReactNode; schema?: string }): ReactNode {
@@ -159,26 +170,31 @@ function SectionTitle({ children, schema }: { children: ReactNode; schema?: stri
 type WizardStep = 1 | 2 | 3 | 4
 
 /** Las dos evidencias de presencia que el vault admite; el resto es del back. */
-const PUNCH_METHOD_OPTIONS = [
+const PUNCH_METHOD_OPTIONS: readonly {
+  value: 'SELFIE' | 'QR'
+  label: MessageDescriptor
+  icon: string
+  hint: MessageDescriptor
+}[] = [
   {
     value: 'SELFIE',
-    label: 'Selfie',
+    label: msg`Selfie`,
     icon: 'photo_camera',
-    hint: 'La app toma la foto en el momento. Es el método por defecto.',
+    hint: msg`La app toma la foto en el momento. Es el método por defecto.`,
   },
   {
     value: 'QR',
-    label: 'QR del hotel',
+    label: msg`QR del hotel`,
     icon: 'qr_code_2',
-    hint: 'El hotel imprime un código en el acceso y la app lo escanea, con la ubicación.',
+    hint: msg`El hotel imprime un código en el acceso y la app lo escanea, con la ubicación.`,
   },
 ] as const
 
-const WIZARD_STEPS: Array<{ step: WizardStep; label: string }> = [
-  { step: 1, label: 'El edificio' },
-  { step: 2, label: 'Ubicación' },
-  { step: 3, label: 'Primer contacto' },
-  { step: 4, label: 'El ciclo' },
+const WIZARD_STEPS: Array<{ step: WizardStep; label: MessageDescriptor }> = [
+  { step: 1, label: msg`El edificio` },
+  { step: 2, label: msg`Ubicación` },
+  { step: 3, label: msg`Primer contacto` },
+  { step: 4, label: msg`El ciclo` },
 ]
 
 const STEP_FIELDS: Record<WizardStep, Array<keyof ProspectFormValues>> = {
@@ -201,6 +217,7 @@ export function ProspectFormDialog({
   prospect,
   onCreated,
 }: ProspectFormDialogProps): ReactNode {
+  const { t, i18n } = useLingui()
   const isEditing = prospect !== undefined
 
   const { data: session } = useGetSessionQuery()
@@ -242,9 +259,13 @@ export function ProspectFormDialog({
     needDescription: prospect?.needDescription ?? '',
   }
 
+  /* Los mensajes del esquema se resuelven al armarlo, así que se rearma al
+     cambiar de idioma: `i18n` no cambia de identidad al activar otro (D-36). */
+  const schema = useMemo(() => buildProspectFormSchema(i18n), [i18n, i18n.locale])
+
   const { register, handleSubmit, reset, setValue, watch, trigger, control, formState } =
     useForm<ProspectFormValues>({
-      resolver: zodResolver(prospectFormSchema),
+      resolver: zodResolver(schema),
       mode: 'onChange',
       defaultValues: defaults,
     })
@@ -270,6 +291,7 @@ export function ProspectFormDialog({
   }, [isOpen, prospect, session?.id, reset])
 
   const values = watch()
+  const hotelDisplayName = values.hotelName || t`el hotel`
   const isBusy = isCreating || isUpdating
   const [placePhotoUrl, setPlacePhotoUrl] = useState<string | null>(null)
   const [placeId, setPlaceId] = useState<string | null>(null)
@@ -362,7 +384,7 @@ export function ProspectFormDialog({
           ownerUserId: form.ownerUserId,
           needDescription: form.needDescription,
         }).unwrap()
-        toast.success('Prospecto actualizado')
+        toast.success(t`Prospecto actualizado`)
       } else {
         const created = await createProspect({
           hotelSource: form.hotelSource,
@@ -372,7 +394,7 @@ export function ProspectFormDialog({
           ownerUserId: form.ownerUserId,
           needDescription: form.needDescription,
         }).unwrap()
-        toast.success(`Prospecto creado — ${form.hotelName}`)
+        toast.success(t`Prospecto creado — ${form.hotelName}`)
         onCreated?.(created)
       }
       onClose()
@@ -388,7 +410,7 @@ export function ProspectFormDialog({
       chromeless
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Editar prospecto' : 'Nuevo prospecto'}
+      title={isEditing ? t`Editar prospecto` : t`Nuevo prospecto`}
       className={showIntro && !isEditing ? 'max-w-2xl' : 'h-[88vh] max-w-[95rem]'}
       /* Google Places deja casos nuevos de "esto no era un clic afuera de
          verdad" cada vez que se prueba (reportado varias veces por Hugo):
@@ -399,8 +421,12 @@ export function ProspectFormDialog({
     >
       {showIntro && !isEditing ? (
         <OnboardingIntro
-          slides={INTRO_SLIDES}
-          startLabel="Comenzar el alta"
+          slides={INTRO_SLIDES.map((slide) => ({
+            image: slide.image,
+            title: i18n._(slide.title),
+            text: i18n._(slide.text),
+          }))}
+          startLabel={t`Comenzar el alta`}
           onDone={() => {
             dismissIntro()
           }}
@@ -447,14 +473,14 @@ export function ProspectFormDialog({
             <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-3">
               {}
               <p className="rounded-full bg-surface/95 px-4 py-2 text-sm font-bold text-ink shadow-md backdrop-blur">
-                {isEditing ? 'Editar prospecto' : 'Nuevo prospecto'}
+                {isEditing ? <Trans>Editar prospecto</Trans> : <Trans>Nuevo prospecto</Trans>}
               </p>
               {!isEditing && step === 1 && (
                 <div className="flex gap-1 rounded-full bg-surface/95 p-1 shadow-md backdrop-blur">
                   {(
                     [
-                      ['NEW', 'Hotel nuevo'],
-                      ['EXISTING', 'Hotel ya registrado'],
+                      ['NEW', t`Hotel nuevo`],
+                      ['EXISTING', t`Hotel ya registrado`],
                     ] as const
                   ).map(([source, label]) => (
                     <button
@@ -484,7 +510,7 @@ export function ProspectFormDialog({
                 <div className="relative shrink-0">
                   <img
                     src={placePhotoUrl}
-                    alt={`Foto de ${values.hotelName || 'el hotel'} según Google`}
+                    alt={t`Foto de ${hotelDisplayName} según Google`}
                     className="h-32 w-full object-cover"
                     onError={() => {
                       setPlacePhotoUrl(null)
@@ -503,7 +529,10 @@ export function ProspectFormDialog({
 
               <div className="shrink-0 px-4 pt-3">
                 <StepIndicator
-                  steps={WIZARD_STEPS}
+                  steps={WIZARD_STEPS.map((item) => ({
+                    step: item.step,
+                    label: i18n._(item.label),
+                  }))}
                   current={step}
                   onStepClick={(target) => {
                     setStep(target as WizardStep)
@@ -523,11 +552,13 @@ export function ProspectFormDialog({
                   >
                     {step === 1 && (
                       <>
-                        <SectionTitle schema="commercial.hotel">El edificio</SectionTitle>
+                        <SectionTitle schema="commercial.hotel">
+                          <Trans>El edificio</Trans>
+                        </SectionTitle>
 
                         {isExistingHotel && (
                           <Field
-                            label="Hotel registrado"
+                            label={t`Hotel registrado`}
                             htmlFor="existingHotelId"
                             isRequired
                             column="hotel_id · solo hoteles sin ciclo abierto"
@@ -548,8 +579,8 @@ export function ProspectFormDialog({
                                     <SelectValue
                                       placeholder={
                                         registeredHotels.length === 0
-                                          ? 'No hay hoteles libres: todos tienen ciclo abierto'
-                                          : 'Elige un hotel…'
+                                          ? t`No hay hoteles libres: todos tienen ciclo abierto`
+                                          : t`Elige un hotel…`
                                       }
                                     />
                                   </SelectTrigger>
@@ -573,29 +604,29 @@ export function ProspectFormDialog({
                             mismo hotel dos veces. */}
                         {!isExistingHotel && (
                           <Field
-                            label="Busca el hotel en Google"
-                            note="Si aparece, el nombre, la dirección, el teléfono, el pin del mapa y la foto llegan solos. Si no está en Google, escribe el nombre abajo y en el siguiente paso marcas el punto en el mapa."
+                            label={t`Busca el hotel en Google`}
+                            note={t`Si aparece, el nombre, la dirección, el teléfono, el pin del mapa y la foto llegan solos. Si no está en Google, escribe el nombre abajo y en el siguiente paso marcas el punto en el mapa.`}
                             column="place_id · photo_ref"
                           >
                             <PlacesSearchField defaultValue={values.address} onPick={applyPlace} />
                           </Field>
                         )}
                         <Field
-                          label="Nombre del hotel"
+                          label={t`Nombre del hotel`}
                           htmlFor="hotelName"
                           isRequired
                           column="name"
                           {...(isExistingHotel
                             ? {}
                             : {
-                                note: 'Como lo conoce el hotel. Si lo llenó Google, puedes corregirlo.',
+                                note: t`Como lo conoce el hotel. Si lo llenó Google, puedes corregirlo.`,
                               })}
                           error={formState.errors.hotelName?.message}
                         >
                           <Input
                             id="hotelName"
                             type="text"
-                            placeholder="Hotel Puerto Real"
+                            placeholder={t`Hotel Puerto Real`}
                             disabled={isExistingHotel}
                             {...register('hotelName')}
                           />
@@ -603,7 +634,7 @@ export function ProspectFormDialog({
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                           <Field
-                            label="Zona"
+                            label={t`Zona`}
                             htmlFor="zoneId"
                             isRequired
                             column="zone_id + catalogs.zone"
@@ -615,7 +646,7 @@ export function ProspectFormDialog({
                               render={({ field }) => (
                                 <Select value={field.value} onValueChange={field.onChange}>
                                   <SelectTrigger id="zoneId" className="w-full">
-                                    <SelectValue placeholder="Elige la zona" />
+                                    <SelectValue placeholder={t`Elige la zona`} />
                                   </SelectTrigger>
                                   <SelectContent>
                                     {zones.map((zone) => (
@@ -630,7 +661,7 @@ export function ProspectFormDialog({
                           </Field>
 
                           <Field
-                            label="Zona horaria"
+                            label={t`Zona horaria`}
                             htmlFor="timeZone"
                             isRequired
                             column="time_zone"
@@ -647,7 +678,7 @@ export function ProspectFormDialog({
                                   <SelectContent>
                                     {TIME_ZONES.map((zone) => (
                                       <SelectItem key={zone.value} value={zone.value}>
-                                        {zone.label}
+                                        {i18n._(zone.label)}
                                       </SelectItem>
                                     ))}
                                     {}
@@ -665,10 +696,10 @@ export function ProspectFormDialog({
                             toman fotos» es del edificio (Reglas de Negocio, «Método de
                             ponche por hotel»). Al pasar a QR el servidor genera el código. */}
                         <Field
-                          label="Cómo ponchan aquí"
+                          label={t`Cómo ponchan aquí`}
                           isRequired
                           column="punch_method"
-                          note="Selfie es lo normal. QR es para los hoteles que no permiten tomar fotos: Oranje genera un código que el hotel imprime en el acceso."
+                          note={t`Selfie es lo normal. QR es para los hoteles que no permiten tomar fotos: Oranje genera un código que el hotel imprime en el acceso.`}
                           error={formState.errors.punchMethod?.message}
                         >
                           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -690,9 +721,11 @@ export function ProspectFormDialog({
                                       className="text-base"
                                       aria-hidden
                                     />
-                                    {option.label}
+                                    {i18n._(option.label)}
                                   </span>
-                                  <span className="block text-xs text-ink-3">{option.hint}</span>
+                                  <span className="block text-xs text-ink-3">
+                                    {i18n._(option.hint)}
+                                  </span>
                                 </span>
                               </label>
                             ))}
@@ -703,14 +736,16 @@ export function ProspectFormDialog({
 
                     {step === 2 && (
                       <>
-                        <SectionTitle>Ubicación</SectionTitle>
+                        <SectionTitle>
+                          <Trans>Ubicación</Trans>
+                        </SectionTitle>
                         {/* Aquí ya no se busca nada: el hotel quedó elegido en el paso 1.
                             Solo se acomodan el pin y la geocerca, y se dice con todas sus
                             letras para que mover el mapa no se sienta como cambiar de hotel. */}
                         <p className="-mt-2 text-sm leading-relaxed text-ink-3">
                           {values.hotelName
-                            ? `Sigue siendo ${values.hotelName}. Arrastra el mapa para dejar el pin en la entrada por donde llegan los colaboradores: mover el pin no cambia el hotel, solo dónde se poncha.`
-                            : 'Arrastra el mapa para dejar el pin en la entrada por donde llegan los colaboradores.'}
+                            ? t`Sigue siendo ${values.hotelName}. Arrastra el mapa para dejar el pin en la entrada por donde llegan los colaboradores: mover el pin no cambia el hotel, solo dónde se poncha.`
+                            : t`Arrastra el mapa para dejar el pin en la entrada por donde llegan los colaboradores.`}
                         </p>
                         {formState.errors.location?.message && (
                           <p className="text-sm text-red" role="alert">
@@ -719,7 +754,7 @@ export function ProspectFormDialog({
                         )}
 
                         <Field
-                          label="Radio de geocerca"
+                          label={t`Radio de geocerca`}
                           htmlFor="geofenceMeters"
                           column="geofence_radius_m · lo evalúa ST_DWithin en el servidor (D-08)"
                           error={formState.errors.geofenceMeters?.message}
@@ -737,7 +772,7 @@ export function ProspectFormDialog({
                                   onValueChange={([meters]) => {
                                     field.onChange(meters)
                                   }}
-                                  aria-label="Radio de geocerca"
+                                  aria-label={t`Radio de geocerca`}
                                   className="min-w-0 flex-1"
                                 />
                               )}
@@ -750,19 +785,23 @@ export function ProspectFormDialog({
 
                         {!placePhotoUrl && (
                           <p className="rounded-lg border border-line bg-surface p-4 text-sm text-ink-3">
-                            Sin foto todavía. Al elegir el hotel en el buscador, la foto llega sola
-                            y se guarda con el prospecto.
+                            <Trans>
+                              Sin foto todavía. Al elegir el hotel en el buscador, la foto llega
+                              sola y se guarda con el prospecto.
+                            </Trans>
                           </p>
                         )}
 
                         <div className="rounded-md bg-o-50 p-4">
                           <p className="text-sm font-semibold text-o-700">
-                            El pin se arrastra a propósito.
+                            <Trans>El pin se arrastra a propósito.</Trans>
                           </p>
                           <p className="mt-1 text-sm leading-relaxed text-ink-2">
-                            Google devuelve el centro del lugar, que casi nunca es por donde entra
-                            el colaborador. Arrástralo en el mapa a la entrada real: unos metros de
-                            más rechazan ponches legítimos.
+                            <Trans>
+                              Google devuelve el centro del lugar, que casi nunca es por donde entra
+                              el colaborador. Arrástralo en el mapa a la entrada real: unos metros
+                              de más rechazan ponches legítimos.
+                            </Trans>
                           </p>
                         </div>
                       </>
@@ -771,17 +810,19 @@ export function ProspectFormDialog({
                     {step === 3 && (
                       <section className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4">
                         <SectionTitle schema="commercial.hotel_contact">
-                          Primer contacto
+                          <Trans>Primer contacto</Trans>
                         </SectionTitle>
                         {}
                         <p className="-mt-2 text-sm leading-relaxed text-ink-3">
-                          La persona del hotel con quien hablas: la gerente, el de compras, quien te
-                          atendió. No son tus datos: a esta persona le llegará la propuesta.
+                          <Trans>
+                            La persona del hotel con quien hablas: la gerente, el de compras, quien
+                            te atendió. No son tus datos: a esta persona le llegará la propuesta.
+                          </Trans>
                         </p>
 
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                           <Field
-                            label="Nombre"
+                            label={t`Nombre`}
                             htmlFor="contactFullName"
                             isRequired={!isEditing}
                             column="full_name"
@@ -790,31 +831,31 @@ export function ProspectFormDialog({
                             <Input
                               id="contactFullName"
                               type="text"
-                              placeholder="Marta Solís"
+                              placeholder={t`Marta Solís`}
                               {...register('contactFullName')}
                             />
                           </Field>
 
-                          <Field label="Puesto" htmlFor="contactJobTitle" column="job_title">
+                          <Field label={t`Puesto`} htmlFor="contactJobTitle" column="job_title">
                             <Input
                               id="contactJobTitle"
                               type="text"
-                              placeholder="Gerente de Compras"
+                              placeholder={t`Gerente de Compras`}
                               {...register('contactJobTitle')}
                             />
                           </Field>
 
-                          <Field label="Teléfono" htmlFor="contactPhone" column="phone">
+                          <Field label={t`Teléfono`} htmlFor="contactPhone" column="phone">
                             <Input
                               id="contactPhone"
                               type="tel"
-                              placeholder="+1 404 555 0134"
+                              placeholder={t`+1 404 555 0134`}
                               {...register('contactPhone')}
                             />
                           </Field>
 
                           <Field
-                            label="Correo"
+                            label={t`Correo`}
                             htmlFor="contactEmail"
                             column="email"
                             error={formState.errors.contactEmail?.message}
@@ -822,7 +863,7 @@ export function ProspectFormDialog({
                             <Input
                               id="contactEmail"
                               type="email"
-                              placeholder="marta.solis@puertoreal.mx"
+                              placeholder={t`marta.solis@puertoreal.mx`}
                               {...register('contactEmail')}
                             />
                           </Field>
@@ -837,7 +878,7 @@ export function ProspectFormDialog({
                             )}
                           />
                           <span className="text-sm font-semibold text-ink">
-                            Es el contacto principal
+                            <Trans>Es el contacto principal</Trans>
                           </span>
                           {IS_DEV_UI && <span className="text-xs text-ink-3">is_primary</span>}
                         </label>
@@ -848,12 +889,12 @@ export function ProspectFormDialog({
                       <>
                         <section className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4">
                           <SectionTitle schema="commercial.prospect">
-                            El ciclo comercial
+                            <Trans>El ciclo comercial</Trans>
                           </SectionTitle>
 
                           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <Field
-                              label="Dueño del prospecto"
+                              label={t`Dueño del prospecto`}
                               htmlFor="ownerUserId"
                               isRequired
                               column="owner_user_id"
@@ -869,7 +910,7 @@ export function ProspectFormDialog({
                                     onValueChange={field.onChange}
                                   >
                                     <SelectTrigger id="ownerUserId" className="w-full">
-                                      <SelectValue placeholder="Elige al dueño" />
+                                      <SelectValue placeholder={t`Elige al dueño`} />
                                     </SelectTrigger>
                                     <SelectContent>
                                       {session && (
@@ -884,21 +925,21 @@ export function ProspectFormDialog({
                             </Field>
 
                             <Field
-                              label="Qué necesita"
+                              label={t`Qué necesita`}
                               htmlFor="needDescription"
                               column="need_description"
                             >
                               <Input
                                 id="needDescription"
                                 type="text"
-                                placeholder="2 camaristas y 1 houseman"
+                                placeholder={t`2 camaristas y 1 houseman`}
                                 {...register('needDescription')}
                               />
                             </Field>
                           </div>
 
                           <Field
-                            label={isEditing ? 'Estado actual' : 'Estado inicial'}
+                            label={isEditing ? t`Estado actual` : t`Estado inicial`}
                             column="ck_prospect_light fija el semáforo a ONBOARDING · un solo ciclo abierto por hotel"
                           >
                             <div className="flex items-center gap-3">
@@ -921,14 +962,14 @@ export function ProspectFormDialog({
               {(hasCreateFailed || hasUpdateFailed) && (
                 <Alert variant="destructive" className="mx-4 mb-3 w-auto shrink-0">
                   <AlertDescription>
-                    {saveErrorMessage(hasCreateFailed ? createError : updateError)}
+                    {saveErrorMessage(hasCreateFailed ? createError : updateError, i18n)}
                   </AlertDescription>
                 </Alert>
               )}
 
               <footer className="flex shrink-0 items-center justify-end gap-3 border-t border-line px-4 py-3">
                 <Button type="button" onClick={onClose} disabled={isBusy}>
-                  Cancelar
+                  <Trans>Cancelar</Trans>
                 </Button>
                 {step > 1 && (
                   <Button
@@ -938,7 +979,7 @@ export function ProspectFormDialog({
                     }}
                     disabled={isBusy}
                   >
-                    Atrás
+                    <Trans>Atrás</Trans>
                   </Button>
                 )}
                 {step < 4 ? (
@@ -949,7 +990,7 @@ export function ProspectFormDialog({
                       void goNext()
                     }}
                   >
-                    Continuar
+                    <Trans>Continuar</Trans>
                   </Button>
                 ) : (
                   <Button
@@ -958,7 +999,7 @@ export function ProspectFormDialog({
                     form={FORM_ID}
                     disabled={!formState.isValid || isBusy || !isSubmitArmed}
                   >
-                    {isBusy ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear prospecto'}
+                    {isBusy ? t`Guardando…` : isEditing ? t`Guardar cambios` : t`Crear prospecto`}
                   </Button>
                 )}
               </footer>

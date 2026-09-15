@@ -1,6 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { plural } from '@lingui/core/macro'
+import { Plural, Trans, useLingui } from '@lingui/react/macro'
 import { cn, toast } from '@oranje/ui'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 
 import {
@@ -9,8 +11,8 @@ import {
   useUpdateHotelContactMutation,
 } from '../api/onboardingApi'
 import {
+  buildHotelContactsFormSchema,
   EMPTY_CONTACT_DRAFT,
-  hotelContactsFormSchema,
   type HotelContactDraft,
   type HotelContactsForm,
 } from '../types/hotelContactsForm.schema'
@@ -55,14 +57,14 @@ function Field({
         {label}
         {required === true && (
           <span className="text-xs font-bold text-red">
-            {IS_DEV_UI ? 'NOT NULL' : 'obligatorio'}
+            {IS_DEV_UI ? 'NOT NULL' : <Trans>obligatorio</Trans>}
           </span>
         )}
       </p>
       <div className="mt-2">{children}</div>
       {}
       <p className={cn('mt-1.5 text-xs', error === undefined ? 'text-ink-4' : 'text-red')}>
-        {error ?? (IS_DEV_UI ? column : ' ')}
+        {error ?? (IS_DEV_UI ? column : ' ')}
       </p>
     </div>
   )
@@ -89,6 +91,7 @@ export function HotelContactsDialog({
   hotelName: string
   contacts: HotelContact[]
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const [addContacts, { isLoading }] = useAddHotelContactsMutation()
   const [updateContact, updateState] = useUpdateHotelContactMutation()
   const [deleteContact, deleteState] = useDeleteHotelContactMutation()
@@ -97,6 +100,10 @@ export function HotelContactsDialog({
   const [editDraft, setEditDraft] = useState<EditDraft | null>(null)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const isBusy = isLoading || updateState.isLoading || deleteState.isLoading
+
+  /* Los mensajes del esquema se resuelven al armarlo, así que se rearma al
+     cambiar de idioma: `i18n` no cambia de identidad al activar otro (D-36). */
+  const schema = useMemo(() => buildHotelContactsFormSchema(i18n), [i18n, i18n.locale])
 
   const {
     register,
@@ -107,7 +114,7 @@ export function HotelContactsDialog({
     reset,
     formState: { errors },
   } = useForm<HotelContactsForm>({
-    resolver: zodResolver(hotelContactsFormSchema),
+    resolver: zodResolver(schema),
     defaultValues: { drafts: [EMPTY_CONTACT_DRAFT] },
   })
 
@@ -169,9 +176,7 @@ export function HotelContactsDialog({
         })),
       }).unwrap()
       toast.success(
-        values.drafts.length === 1
-          ? 'Contacto agregado'
-          : `${String(values.drafts.length)} contactos agregados`,
+        t`${plural(values.drafts.length, { one: 'Contacto agregado', other: '# contactos agregados' })}`,
       )
       onClose()
     } catch {
@@ -194,7 +199,7 @@ export function HotelContactsDialog({
           isPrimary: editDraft.isPrimary,
         },
       }).unwrap()
-      toast.success('Contacto actualizado')
+      toast.success(t`Contacto actualizado`)
       stopEditing()
     } catch {
       return
@@ -205,7 +210,7 @@ export function HotelContactsDialog({
     if (!editingContact) return
     try {
       await deleteContact({ prospectId, contactId: editingContact.id }).unwrap()
-      toast.success('Contacto eliminado')
+      toast.success(t`Contacto eliminado`)
       stopEditing()
     } catch {
       setConfirmingDelete(false)
@@ -220,7 +225,7 @@ export function HotelContactsDialog({
         contactId: editingContact.id,
         patch: { isActive: false },
       }).unwrap()
-      toast.success('Contacto desactivado')
+      toast.success(t`Contacto desactivado`)
       stopEditing()
     } catch {
       return
@@ -230,13 +235,13 @@ export function HotelContactsDialog({
   const hasAttempts = deleteErrorCode(deleteState.error) === 'CONTACT_HAS_ATTEMPTS'
 
   const pendingLabel =
-    fields.length === 1 ? '1 sin guardar' : `${String(fields.length)} sin guardar`
+    fields.length === 1 ? t`1 sin guardar` : t`${String(fields.length)} sin guardar`
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Editar contacto' : 'Agregar contacto'}
+      title={isEditing ? t`Editar contacto` : t`Agregar contacto`}
       description={IS_DEV_UI ? `commercial.hotel_contact · ${hotelName}` : hotelName}
       className="max-w-[64rem]"
       footer={
@@ -250,7 +255,7 @@ export function HotelContactsDialog({
                 }}
                 className="border border-red/40 bg-red/5 font-semibold text-red"
               >
-                Desactivar contacto
+                <Trans>Desactivar contacto</Trans>
               </Button>
             ) : (
               <Button
@@ -267,12 +272,16 @@ export function HotelContactsDialog({
                   confirmingDelete && 'border border-red/40 bg-red/5 font-semibold',
                 )}
               >
-                {confirmingDelete ? 'Sí, eliminar contacto' : 'Eliminar contacto'}
+                {confirmingDelete ? (
+                  <Trans>Sí, eliminar contacto</Trans>
+                ) : (
+                  <Trans>Eliminar contacto</Trans>
+                )}
               </Button>
             )}
             <span className="flex-1" />
             <Button variant="secondary" onClick={stopEditing} disabled={isBusy}>
-              Cancelar edición
+              <Trans>Cancelar edición</Trans>
             </Button>
             <Button
               variant="primary"
@@ -281,18 +290,16 @@ export function HotelContactsDialog({
                 void saveEdit()
               }}
             >
-              {updateState.isLoading ? 'Guardando…' : 'Guardar cambios'}
+              {updateState.isLoading ? <Trans>Guardando…</Trans> : <Trans>Guardar cambios</Trans>}
             </Button>
           </div>
         ) : (
           <div className="flex justify-end gap-3">
             <Button variant="secondary" onClick={onClose}>
-              Cancelar
+              <Trans>Cancelar</Trans>
             </Button>
             <Button variant="primary" type="submit" form={FORM_ID} disabled={isBusy}>
-              {fields.length === 1
-                ? 'Agregar contacto'
-                : `Agregar ${String(fields.length)} contactos`}
+              <Plural value={fields.length} one="Agregar contacto" other="Agregar # contactos" />
             </Button>
           </div>
         )
@@ -308,7 +315,9 @@ export function HotelContactsDialog({
         <div>
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm text-ink-3">
-              {contacts.length} registrados · {pendingLabel}
+              <Trans>
+                {contacts.length} registrados · {pendingLabel}
+              </Trans>
             </p>
             <button
               type="button"
@@ -319,7 +328,7 @@ export function HotelContactsDialog({
               }}
               className="rounded-md bg-o-50 px-3 py-1.5 text-sm font-medium text-o-700 hover:bg-o-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
             >
-              Agregar otro contacto
+              <Trans>Agregar otro contacto</Trans>
             </button>
           </div>
 
@@ -345,13 +354,15 @@ export function HotelContactsDialog({
                     {contact.isPrimary && (
                       <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-o-500 px-2.5 py-1 text-xs font-semibold text-o-700">
                         <span className="size-1.5 rounded-full bg-o-500" aria-hidden />
-                        Principal
+                        <Trans>Principal</Trans>
                       </span>
                     )}
                   </div>
                   <p className="mt-0.5 text-sm text-ink-3">{contact.role}</p>
                   <p className="mt-0.5 text-sm text-ink-3">{contact.phone}</p>
-                  <p className="mt-1 text-xs font-medium text-o-700">Editar</p>
+                  <p className="mt-1 text-xs font-medium text-o-700">
+                    <Trans>Editar</Trans>
+                  </p>
                 </button>
               </li>
             ))}
@@ -374,11 +385,15 @@ export function HotelContactsDialog({
                   )}
                 >
                   <p className="text-base font-semibold text-o-700">
-                    {drafts[index]?.fullName === '' || drafts[index] === undefined
-                      ? 'Contacto nuevo'
-                      : drafts[index].fullName}
+                    {drafts[index]?.fullName === '' || drafts[index] === undefined ? (
+                      <Trans>Contacto nuevo</Trans>
+                    ) : (
+                      drafts[index].fullName
+                    )}
                   </p>
-                  <p className="mt-0.5 text-sm text-ink-3">sin guardar</p>
+                  <p className="mt-0.5 text-sm text-ink-3">
+                    <Trans>sin guardar</Trans>
+                  </p>
                 </button>
               </li>
             ))}
@@ -389,56 +404,56 @@ export function HotelContactsDialog({
           {isEditing && editDraft ? (
             <fieldset className="rounded-xl border border-o-500/50 bg-surface-2/60 p-5">
               <legend className="px-1 text-base font-semibold text-ink">
-                Editar contacto · {editingContact.name}
+                <Trans>Editar contacto · {editingContact.name}</Trans>
               </legend>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field
-                  label="Nombre completo"
+                  label={t`Nombre completo`}
                   column="full_name"
                   required
-                  error={editDraft.fullName.trim() === '' ? 'Falta el nombre' : undefined}
+                  error={editDraft.fullName.trim() === '' ? t`Falta el nombre` : undefined}
                 >
                   <input
                     value={editDraft.fullName}
                     onChange={(event) => {
                       setEditDraft({ ...editDraft, fullName: event.target.value })
                     }}
-                    aria-label="Nombre completo del contacto"
-                    placeholder="Laura Méndez"
+                    aria-label={t`Nombre completo del contacto`}
+                    placeholder={t`Laura Méndez`}
                     className={CONTROL_CLASS}
                   />
                 </Field>
 
-                <Field label="Puesto" column="job_title">
+                <Field label={t`Puesto`} column="job_title">
                   <input
                     value={editDraft.jobTitle}
                     onChange={(event) => {
                       setEditDraft({ ...editDraft, jobTitle: event.target.value })
                     }}
-                    placeholder="Ama de llaves"
+                    placeholder={t`Ama de llaves`}
                     className={CONTROL_CLASS}
                   />
                 </Field>
 
-                <Field label="Teléfono" column="phone">
+                <Field label={t`Teléfono`} column="phone">
                   <input
                     value={editDraft.phone}
                     onChange={(event) => {
                       setEditDraft({ ...editDraft, phone: event.target.value })
                     }}
-                    placeholder="+52 998 123 4567"
+                    placeholder={t`+52 998 123 4567`}
                     className={CONTROL_CLASS}
                   />
                 </Field>
 
-                <Field label="Correo" column="email">
+                <Field label={t`Correo`} column="email">
                   <input
                     value={editDraft.email}
                     onChange={(event) => {
                       setEditDraft({ ...editDraft, email: event.target.value })
                     }}
-                    placeholder="nombre@hotel.mx"
+                    placeholder={t`nombre@hotel.mx`}
                     className={CONTROL_CLASS}
                   />
                 </Field>
@@ -455,15 +470,15 @@ export function HotelContactsDialog({
                 />
                 <span>
                   <span className="block text-sm font-semibold text-ink">
-                    Marcar como principal
+                    <Trans>Marcar como principal</Trans>
                   </span>
                   <span className="block text-sm text-ink-3">
                     {IS_DEV_UI && 'is_primary · '}
                     {currentPrimary && currentPrimary.id !== editingContact.id
-                      ? `al guardar, ${currentPrimary.name} deja de serlo`
+                      ? t`al guardar, ${currentPrimary.name} deja de serlo`
                       : editingContact.isPrimary
-                        ? 'es el principal de este hotel'
-                        : 'este hotel no tiene principal todavía'}
+                        ? t`es el principal de este hotel`
+                        : t`este hotel no tiene principal todavía`}
                   </span>
                 </span>
               </label>
@@ -471,7 +486,9 @@ export function HotelContactsDialog({
               {(updateState.error !== undefined ||
                 (deleteState.error !== undefined && !hasAttempts)) && (
                 <p role="alert" className="mt-3 text-sm text-red">
-                  No se pudo guardar el contacto. Revisa los datos e inténtalo de nuevo.
+                  <Trans>
+                    No se pudo guardar el contacto. Revisa los datos e inténtalo de nuevo.
+                  </Trans>
                 </p>
               )}
               {hasAttempts && (
@@ -479,27 +496,29 @@ export function HotelContactsDialog({
                   role="alert"
                   className="mt-3 rounded-lg bg-yellow/15 px-4 py-3 text-sm text-ink-2"
                 >
-                  Este contacto aparece en la bitácora de intentos, así que no se puede borrar.
-                  Desactívalo y dejará de mostrarse.
+                  <Trans>
+                    Este contacto aparece en la bitácora de intentos, así que no se puede borrar.
+                    Desactívalo y dejará de mostrarse.
+                  </Trans>
                 </p>
               )}
             </fieldset>
           ) : (
             <fieldset className="rounded-xl border border-line bg-surface-2/60 p-5">
               <legend className="px-1 text-base font-semibold text-ink">
-                Contacto nuevo · {hotelName}
+                <Trans>Contacto nuevo · {hotelName}</Trans>
               </legend>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field
-                  label="Nombre completo"
+                  label={t`Nombre completo`}
                   column="full_name"
                   required
                   error={draftError?.fullName?.message}
                 >
                   <input
                     {...register(draftPath(selectedIndex, 'fullName'))}
-                    placeholder="Laura Méndez"
+                    placeholder={t`Laura Méndez`}
                     className={cn(
                       CONTROL_CLASS,
                       draftError?.fullName ? 'border-red' : 'border-o-500',
@@ -507,26 +526,26 @@ export function HotelContactsDialog({
                   />
                 </Field>
 
-                <Field label="Puesto" column="job_title">
+                <Field label={t`Puesto`} column="job_title">
                   <input
                     {...register(draftPath(selectedIndex, 'jobTitle'))}
-                    placeholder="Ama de llaves"
+                    placeholder={t`Ama de llaves`}
                     className={CONTROL_CLASS}
                   />
                 </Field>
 
-                <Field label="Teléfono" column="phone">
+                <Field label={t`Teléfono`} column="phone">
                   <input
                     {...register(draftPath(selectedIndex, 'phone'))}
-                    placeholder="+52 998 123 4567"
+                    placeholder={t`+52 998 123 4567`}
                     className={CONTROL_CLASS}
                   />
                 </Field>
 
-                <Field label="Correo" column="email" error={draftError?.email?.message}>
+                <Field label={t`Correo`} column="email" error={draftError?.email?.message}>
                   <input
                     {...register(draftPath(selectedIndex, 'email'))}
-                    placeholder="nombre@hotel.mx"
+                    placeholder={t`nombre@hotel.mx`}
                     className={CONTROL_CLASS}
                   />
                 </Field>
@@ -543,13 +562,13 @@ export function HotelContactsDialog({
                 />
                 <span>
                   <span className="block text-sm font-semibold text-ink">
-                    Marcar como principal
+                    <Trans>Marcar como principal</Trans>
                   </span>
                   <span className="block text-sm text-ink-3">
                     {IS_DEV_UI && 'is_primary · '}
                     {currentPrimary
-                      ? `${currentPrimary.name} ya es el principal; si marcas este, lo reemplaza`
-                      : 'este hotel no tiene principal todavía'}
+                      ? t`${currentPrimary.name} ya es el principal; si marcas este, lo reemplaza`
+                      : t`este hotel no tiene principal todavía`}
                   </span>
                 </span>
               </label>
@@ -558,24 +577,33 @@ export function HotelContactsDialog({
 
           <p className="rounded-xl bg-green/15 p-5 text-sm text-ink-2">
             <span className="block font-semibold text-ink">
-              Un hotel puede tener los contactos que haga falta
+              <Trans>Un hotel puede tener los contactos que haga falta</Trans>
             </span>
             <span className="mt-1 block">
-              {IS_DEV_UI
-                ? 'hotel_contact solo exige full_name y hotel_id. Puesto, teléfono y correo son opcionales: se registra con lo que se tenga y se completa después.'
-                : 'Solo el nombre es obligatorio. Puesto, teléfono y correo se registran con lo que se tenga y se completan después.'}
+              {IS_DEV_UI ? (
+                'hotel_contact solo exige full_name y hotel_id. Puesto, teléfono y correo son opcionales: se registra con lo que se tenga y se completa después.'
+              ) : (
+                <Trans>
+                  Solo el nombre es obligatorio. Puesto, teléfono y correo se registran con lo que
+                  se tenga y se completan después.
+                </Trans>
+              )}
             </span>
           </p>
         </div>
 
         <p className="rounded-xl bg-yellow/15 p-5 text-sm text-ink-2 xl:col-span-2">
           <span className="block font-semibold text-o-700">
-            Solo puede haber un principal por hotel.
+            <Trans>Solo puede haber un principal por hotel.</Trans>
           </span>
           <span className="mt-1 block">
-            {IS_DEV_UI
-              ? 'Lo hace cumplir ux_hotel_contact_primary, un único parcial sobre hotel_id WHERE is_primary. Marcar a otro no es un simple UPDATE: hay que quitar el anterior en la misma transacción, o el motor rechaza el segundo.'
-              : 'Al marcar a otro como principal, el anterior deja de serlo en el mismo guardado.'}
+            {IS_DEV_UI ? (
+              'Lo hace cumplir ux_hotel_contact_primary, un único parcial sobre hotel_id WHERE is_primary. Marcar a otro no es un simple UPDATE: hay que quitar el anterior en la misma transacción, o el motor rechaza el segundo.'
+            ) : (
+              <Trans>
+                Al marcar a otro como principal, el anterior deja de serlo en el mismo guardado.
+              </Trans>
+            )}
           </span>
         </p>
       </form>

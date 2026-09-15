@@ -1,4 +1,5 @@
 import { Draggable, Droppable } from '@hello-pangea/dnd'
+import { Trans } from '@lingui/react/macro'
 import { statusLight } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -63,7 +64,7 @@ export function PipelineColumn({
           >
             {prospects.length === 0 && !snapshot.isDraggingOver && (
               <p className="rounded-2xl border border-dashed border-line px-3 py-6 text-center text-sm text-ink-4">
-                Sin prospectos en este estado
+                <Trans>Sin prospectos en este estado</Trans>
               </p>
             )}
             {prospects.map((prospect, index) => (

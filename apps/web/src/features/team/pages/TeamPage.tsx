@@ -1,3 +1,4 @@
+import { Plural, Trans, useLingui } from '@lingui/react/macro'
 import { cn } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
@@ -12,6 +13,7 @@ import { Button } from '@/shared/components/Button'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { FoldText } from '@/shared/components/FoldText'
+import { HotelThumbnail } from '@/shared/components/HotelThumbnail'
 import { LoadError } from '@/shared/components/LoadError'
 import { MagicCard } from '@/shared/components/MagicCard'
 import { MetricCard } from '@/shared/components/MetricCard'
@@ -55,6 +57,7 @@ function MemberRow({
   isSelected: boolean
   onSelect: (memberId: string) => void
 }): ReactNode {
+  const { t } = useLingui()
   return (
     <li>
       {/* Magic Bento (reactbits): la fila avisa al pasar; se apaga sola en táctil y reduced motion. */}
@@ -87,12 +90,12 @@ function MemberRow({
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-semibold text-ink">{member.fullName}</span>
             <span className="block text-xs text-ink-3">
-              {member.openProspects} {member.openProspects === 1 ? 'abierto' : 'abiertos'}
-              {member.staleCount > 0 && ` · ${String(member.staleCount)} sin actividad`}
+              <Plural value={member.openProspects} one="# abierto" other="# abiertos" />
+              {member.staleCount > 0 && ` · ${t`${member.staleCount} sin actividad`}`}
             </span>
           </span>
           <span className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-xs font-semibold text-ink-2">
-            {member.quarterConversions} conv.
+            <Trans>{member.quarterConversions} conv.</Trans>
           </span>
         </button>
       </MagicCard>
@@ -108,6 +111,7 @@ function MemberDetail({
   member: TeamMemberCard
   onAssignTerritory: (member: TeamMemberCard) => void
 }): ReactNode {
+  const { t } = useLingui()
   return (
     /* Detalle fijo mientras la lista baja (lista-detalle, como la Cartera y el Pool). */
     <article className="flex flex-col gap-6 rounded-xl border border-line bg-surface p-6 lg:sticky lg:top-6 lg:max-h-[calc(100vh-var(--hd)-3rem)] lg:overflow-y-auto">
@@ -131,10 +135,12 @@ function MemberDetail({
           <div>
             <h2 className="text-2xl font-bold text-ink">{member.fullName}</h2>
             <p className="text-sm text-ink-3">
-              BD ·{' '}
-              {member.zoneNames.length > 0
-                ? `Zonas ${formatList(member.zoneNames)}`
-                : 'sin territorio asignado todavía'}
+              <Trans>
+                BD ·{' '}
+                {member.zoneNames.length > 0
+                  ? t`Zonas ${formatList(member.zoneNames)}`
+                  : t`sin territorio asignado todavía`}
+              </Trans>
             </p>
           </div>
         </div>
@@ -142,45 +148,45 @@ function MemberDetail({
         <div className="flex flex-wrap gap-3">
           <Button
             variant="secondary"
-            title="Las zonas donde este BD trabaja sus prospectos"
+            title={t`Las zonas donde este BD trabaja sus prospectos`}
             onClick={() => {
               onAssignTerritory(member)
             }}
           >
-            Asignar territorio
+            <Trans>Asignar territorio</Trans>
           </Button>
           {}
-          <Button variant="secondary" disabled title="Las notas al BD llegan pronto">
-            Nota al BD
+          <Button variant="secondary" disabled title={t`Las notas al BD llegan pronto`}>
+            <Trans>Nota al BD</Trans>
           </Button>
           <Button
             variant="secondary"
             disabled
-            title="Los reportes por BD llegan con la pantalla de Reportes"
+            title={t`Los reportes por BD llegan con la pantalla de Reportes`}
           >
-            Solicitar reporte
+            <Trans>Solicitar reporte</Trans>
           </Button>
         </div>
       </header>
 
       <div className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-lg bg-surface-2 p-4 sm:grid-cols-5">
-        <Metric label="Prospectos abiertos" value={String(member.openProspects)} />
-        <Metric label="Conversiones (trim.)" value={String(member.quarterConversions)} />
-        <Metric label="Tasa de conversión" value={formatPercent(member.conversionRate)} />
+        <Metric label={t`Prospectos abiertos`} value={String(member.openProspects)} />
+        <Metric label={t`Conversiones (trim.)`} value={String(member.quarterConversions)} />
+        <Metric label={t`Tasa de conversión`} value={formatPercent(member.conversionRate)} />
         <Metric
-          label="Días prom. a Naranja"
+          label={t`Días prom. a Naranja`}
           value={
             member.averageConversionDays === null
               ? '—'
               : `${String(member.averageConversionDays)} d`
           }
         />
-        <Metric label="Sin actividad 7+ días" value={String(member.staleCount)} />
+        <Metric label={t`Sin actividad 7+ días`} value={String(member.staleCount)} />
       </div>
 
       <div>
         <p className="text-xs text-ink-3">
-          Ciclos abiertos por estado
+          <Trans>Ciclos abiertos por estado</Trans>
           {IS_DEV_UI && <code className="text-ink-4"> · prospect.onboarding_state_id</code>}
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
@@ -195,10 +201,12 @@ function MemberDetail({
       </div>
 
       <div>
-        <p className="text-sm font-semibold text-ink">Sus ciclos abiertos</p>
+        <p className="text-sm font-semibold text-ink">
+          <Trans>Sus ciclos abiertos</Trans>
+        </p>
         {member.openCycles.length === 0 ? (
           <p className="mt-2 text-sm text-ink-3">
-            Sin ciclos abiertos ahora mismo: todo lo suyo está convertido o cerrado.
+            <Trans>Sin ciclos abiertos ahora mismo: todo lo suyo está convertido o cerrado.</Trans>
           </p>
         ) : (
           <ul className="mt-2 flex flex-col divide-y divide-line rounded-lg border border-line">
@@ -208,8 +216,11 @@ function MemberDetail({
                   to={`/pipeline/${cycle.prospectId}`}
                   className="flex items-center justify-between gap-4 p-3 transition-colors hover:bg-surface-2"
                 >
-                  <span className="min-w-0 truncate text-sm font-medium text-ink">
-                    {cycle.hotelName}
+                  <span className="flex min-w-0 items-center gap-2.5">
+                    <HotelThumbnail photoUrl={cycle.hotelPhotoUrl} className="size-8" />
+                    <span className="min-w-0 truncate text-sm font-medium text-ink">
+                      {cycle.hotelName}
+                    </span>
                   </span>
                   <span className="flex shrink-0 items-center gap-3">
                     <span
@@ -219,8 +230,8 @@ function MemberDetail({
                       )}
                     >
                       {cycle.daysSinceAttempt === 0
-                        ? 'contactado hoy'
-                        : `hace ${String(cycle.daysSinceAttempt)} d`}
+                        ? t`contactado hoy`
+                        : t`hace ${String(cycle.daysSinceAttempt)} d`}
                     </span>
                     <StatusLightSoftBadge
                       token={ONBOARDING_STATUS_TOKEN[cycle.status]}
@@ -238,6 +249,7 @@ function MemberDetail({
 }
 
 export function TeamPage(): ReactNode {
+  const { t } = useLingui()
   const { data: overview, isLoading, isError, error, refetch } = useGetTeamOverviewQuery()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [territoryMember, setTerritoryMember] = useState<TeamMemberCard | null>(null)
@@ -253,14 +265,14 @@ export function TeamPage(): ReactNode {
   if (isError || !overview) {
     if (status === 403) {
       return (
-        <NoticeCard image={personajeAcceso} title="Mi Equipo solo la ve el BDC" role="status">
-          Tu rol no tiene BDs a cargo, así que aquí no hay nada que mostrar.
+        <NoticeCard image={personajeAcceso} title={t`Mi Equipo solo la ve el BDC`} role="status">
+          <Trans>Tu rol no tiene BDs a cargo, así que aquí no hay nada que mostrar.</Trans>
         </NoticeCard>
       )
     }
     return (
       <LoadError
-        message="No se pudo cargar Mi Equipo. Reintenta en unos segundos."
+        message={t`No se pudo cargar Mi Equipo. Reintenta en unos segundos.`}
         onRetry={() => {
           void refetch()
         }}
@@ -278,10 +290,10 @@ export function TeamPage(): ReactNode {
       <header className="flex items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-ink">
-            <FoldText text="Mi Equipo" />
+            <FoldText text={t`Mi Equipo`} />
           </h1>
           <p className="mt-1.5 text-sm text-ink-3">
-            Los BDs que te reportan y cómo va su ciclo comercial
+            <Trans>Los BDs que te reportan y cómo va su ciclo comercial</Trans>
           </p>
         </div>
         <img src={bdcIllustration} alt="" aria-hidden className="hidden h-20 w-auto sm:block" />
@@ -290,18 +302,18 @@ export function TeamPage(): ReactNode {
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           value={String(overview.memberCount)}
-          label="BDs a cargo"
-          foot={IS_DEV_UI ? 'identity.user · reports_to' : 'te reportan directo'}
+          label={t`BDs a cargo`}
+          foot={IS_DEV_UI ? 'identity.user · reports_to' : t`te reportan directo`}
         />
         <MetricCard
           value={String(overview.openProspects)}
-          label="Prospectos abiertos del equipo"
-          foot="solo ciclos abiertos"
+          label={t`Prospectos abiertos del equipo`}
+          foot={t`solo ciclos abiertos`}
         />
         <MetricCard
           value={String(overview.quarterConversions)}
-          label="Conversiones del trimestre"
-          foot={IS_DEV_UI ? 'Rosa → Naranja · RR-V-01' : 'Rosa → Naranja'}
+          label={t`Conversiones del trimestre`}
+          foot={IS_DEV_UI ? 'Rosa → Naranja · RR-V-01' : t`Rosa → Naranja`}
         />
         <MetricCard
           value={
@@ -309,15 +321,15 @@ export function TeamPage(): ReactNode {
               ? '—'
               : `${String(overview.averageConversionDays)} d`
           }
-          label="Días promedio a Naranja"
-          foot={IS_DEV_UI ? 'prospect_state_history' : 'de abrir el ciclo a convertir'}
+          label={t`Días promedio a Naranja`}
+          foot={IS_DEV_UI ? 'prospect_state_history' : t`de abrir el ciclo a convertir`}
         />
       </div>
 
       {overview.members.length === 0 ? (
         <EmptyState
-          title="Nadie te reporta todavía"
-          text="Los BDs de tu equipo se asignan en el alta de personal: cuando alguien tenga «Reporta a» con tu nombre, aparecerá aquí."
+          title={t`Nadie te reporta todavía`}
+          text={t`Los BDs de tu equipo se asignan en el alta de personal: cuando alguien tenga «Reporta a» con tu nombre, aparecerá aquí.`}
         />
       ) : (
         /* Lista a la izquierda, detalle a la derecha: un BD siempre elegido. */
@@ -326,13 +338,15 @@ export function TeamPage(): ReactNode {
             <SearchField
               value={search}
               onChange={setSearch}
-              label="Buscar BD"
-              placeholder="Nombre del BD, p. ej. Rocío Lima…"
+              label={t`Buscar BD`}
+              placeholder={t`Nombre del BD, p. ej. Rocío Lima…`}
             />
             {visibleMembers.length === 0 ? (
               <p className="rounded-xl border border-dashed border-line bg-surface p-6 text-center text-sm text-ink-3">
-                Ningún BD de tu equipo se llama «{search.trim()}». Cambia la búsqueda o límpiala
-                para ver a todos.
+                <Trans>
+                  Ningún BD de tu equipo se llama «{search.trim()}». Cambia la búsqueda o límpiala
+                  para ver a todos.
+                </Trans>
               </p>
             ) : (
               <ul className="flex flex-col gap-2">

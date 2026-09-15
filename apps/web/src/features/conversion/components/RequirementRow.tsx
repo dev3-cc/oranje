@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { cn } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -24,6 +25,8 @@ export function RequirementRow({
   onAct: () => void
   isActing: boolean
 }): ReactNode {
+  const { t } = useLingui()
+
   return (
     <li
       className={cn(
@@ -47,7 +50,7 @@ export function RequirementRow({
 
       {requirement.action && (
         <Button onClick={onAct} disabled={isActing}>
-          {isActing ? 'Creando…' : requirement.action.label}
+          {isActing ? t`Creando…` : requirement.action.label}
         </Button>
       )}
     </li>

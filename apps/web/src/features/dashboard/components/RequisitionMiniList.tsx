@@ -4,6 +4,8 @@ import { Link } from 'react-router'
 
 import type { DashboardRequisition } from '../types/dashboard.types'
 
+import { HotelThumbnail } from '@/shared/components/HotelThumbnail'
+
 export function RequisitionMiniList({
   title,
   subtitle,
@@ -29,12 +31,15 @@ export function RequisitionMiniList({
           {requisitions.map((requisition) => (
             <li key={requisition.id} className="border-b border-line last:border-b-0">
               <Link
-                to="/requisiciones"
+                to="/requisitions"
                 className="flex items-center justify-between gap-4 py-3 transition-colors hover:bg-surface-2"
               >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-ink">{requisition.number}</p>
-                  <p className="mt-0.5 truncate text-sm text-ink-3">{requisition.hotelName}</p>
+                <div className="flex min-w-0 items-center gap-3">
+                  <HotelThumbnail photoUrl={requisition.hotelPhotoUrl} className="size-9" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-ink">{requisition.number}</p>
+                    <p className="mt-0.5 truncate text-sm text-ink-3">{requisition.hotelName}</p>
+                  </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
                   <span className="text-sm text-ink-3">

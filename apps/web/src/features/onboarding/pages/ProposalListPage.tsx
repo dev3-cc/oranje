@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { useState, type ReactNode } from 'react'
 
 import { useGetProposalCandidatesQuery } from '../api/proposalsApi'
@@ -22,6 +23,7 @@ import { useCan } from '@/shared/hooks/useCan'
 import { formatDate } from '@/shared/lib/formatters'
 
 export function ProposalListPage(): ReactNode {
+  const { t } = useLingui()
   const { data: candidates = [], isLoading, isError, refetch } = useGetProposalCandidatesQuery()
   const [isCreating, setIsCreating] = useState(false)
   const can = useCan()
@@ -36,12 +38,12 @@ export function ProposalListPage(): ReactNode {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-ink">
-            <FoldText text="Propuestas" />
+            <FoldText text={t`Propuestas`} />
           </h1>
           <p className="mt-1.5 text-sm text-ink-3">
             {isLoading
-              ? 'Cargando propuestas…'
-              : `${candidates.length} hoteles con propuesta · cada una se edita desde la ficha del hotel`}
+              ? t`Cargando propuestas…`
+              : t`${candidates.length} hoteles con propuesta · cada una se edita desde la ficha del hotel`}
           </p>
         </div>
         {canCreate ? (
@@ -51,7 +53,7 @@ export function ProposalListPage(): ReactNode {
               setIsCreating(true)
             }}
           >
-            Nueva propuesta
+            <Trans>Nueva propuesta</Trans>
           </Button>
         ) : null}
       </header>
@@ -72,7 +74,7 @@ export function ProposalListPage(): ReactNode {
 
       {isError && (
         <LoadError
-          message="No se pudieron cargar las propuestas. Reintenta en unos segundos."
+          message={t`No se pudieron cargar las propuestas. Reintenta en unos segundos.`}
           onRetry={() => {
             void refetch()
           }}
@@ -81,8 +83,8 @@ export function ProposalListPage(): ReactNode {
 
       {!isLoading && !isError && candidates.length === 0 && (
         <EmptyState
-          title="Aún no hay propuestas"
-          text="La propuesta se abre cuando un prospecto llega a Verde. Crea la primera con «Nueva propuesta» o desde la ficha del prospecto."
+          title={t`Aún no hay propuestas`}
+          text={t`La propuesta se abre cuando un prospecto llega a Verde. Crea la primera con «Nueva propuesta» o desde la ficha del prospecto.`}
           action={
             canCreate ? (
               <Button
@@ -91,7 +93,7 @@ export function ProposalListPage(): ReactNode {
                   setIsCreating(true)
                 }}
               >
-                Nueva propuesta
+                <Trans>Nueva propuesta</Trans>
               </Button>
             ) : undefined
           }
@@ -132,10 +134,12 @@ export function ProposalListPage(): ReactNode {
                         />
                       </div>
                       <p className="mt-2 text-xs text-ink-3">
-                        v{candidate.latestVersion} ·{' '}
-                        {candidate.latestSentAt
-                          ? `Enviada ${formatDate(candidate.latestSentAt)}`
-                          : 'Borrador sin enviar'}
+                        <Trans>
+                          v{candidate.latestVersion} ·{' '}
+                          {candidate.latestSentAt
+                            ? t`Enviada ${formatDate(candidate.latestSentAt)}`
+                            : t`Borrador sin enviar`}
+                        </Trans>
                       </p>
                     </button>
                   </MagicCard>

@@ -1,4 +1,7 @@
 import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd'
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn, MaterialIcon, toast } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
@@ -24,9 +27,9 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { matchesSearch } from '@/shared/lib/text'
 
-const AUDIT_TYPE_LABEL: Record<AuditType, string> = {
-  PERSONAL_PRESENTATION: 'Presentación Personal',
-  ENVIRONMENT: 'Ambiente y Recursos',
+const AUDIT_TYPE_LABEL: Record<AuditType, MessageDescriptor> = {
+  PERSONAL_PRESENTATION: msg`Presentación Personal`,
+  ENVIRONMENT: msg`Ambiente y Recursos`,
 }
 const ANY_AUDIT_TYPE = 'ALL'
 
@@ -82,6 +85,7 @@ interface EditorState {
  * sistema de catálogos: aquí sí se edita, en ningún otro lado.
  */
 export function AuditChecklistItemsPanel(): ReactNode {
+  const { t, i18n } = useLingui()
   const [auditTypeFilter, setAuditTypeFilter] = useState<AuditType | typeof ANY_AUDIT_TYPE>(
     ANY_AUDIT_TYPE,
   )
@@ -129,7 +133,7 @@ export function AuditChecklistItemsPanel(): ReactNode {
       .map(({ item, newOrdinal }) => updateItem({ id: item.id, ordinal: newOrdinal }).unwrap())
 
     void Promise.all(saves).catch(() => {
-      toast.error('No se pudo guardar el nuevo orden: vuelve a intentarlo.')
+      toast.error(t`No se pudo guardar el nuevo orden: vuelve a intentarlo.`)
       setOrderOverride((previous) => {
         const next = { ...previous }
         delete next[key]
@@ -145,17 +149,20 @@ export function AuditChecklistItemsPanel(): ReactNode {
           <SearchField
             value={search}
             onChange={setSearch}
-            label="Buscar reactivo"
-            placeholder="Texto del reactivo, p. ej. Uniforme…"
+            label={t`Buscar reactivo`}
+            placeholder={t`Texto del reactivo, p. ej. Uniforme…`}
             className="w-full max-w-xs"
           />
           <FilterSelect
-            label="Auditoría"
-            anyLabel="Las dos"
+            label={t`Auditoría`}
+            anyLabel={t`Las dos`}
             anyValue={ANY_AUDIT_TYPE}
             value={auditTypeFilter}
             icon="fact_check"
-            options={AUDIT_TYPES.map((type) => ({ value: type, label: AUDIT_TYPE_LABEL[type] }))}
+            options={AUDIT_TYPES.map((type) => ({
+              value: type,
+              label: i18n._(AUDIT_TYPE_LABEL[type]),
+            }))}
             onChange={(value) => {
               setAuditTypeFilter(value as AuditType | typeof ANY_AUDIT_TYPE)
             }}
@@ -177,13 +184,13 @@ export function AuditChecklistItemsPanel(): ReactNode {
             })
           }}
         >
-          Agregar reactivo
+          <Trans>Agregar reactivo</Trans>
         </Button>
       </div>
 
       {isError && (
         <LoadError
-          message="No se pudieron cargar los reactivos. Reintenta en unos segundos."
+          message={t`No se pudieron cargar los reactivos. Reintenta en unos segundos.`}
           onRetry={() => {
             void refetch()
           }}
@@ -195,8 +202,8 @@ export function AuditChecklistItemsPanel(): ReactNode {
       ) : rows.length === 0 ? (
         <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
           {data.length === 0
-            ? 'Todavía no hay reactivos. Agrega el primero con el botón de arriba.'
-            : `Ningún reactivo coincide con lo que buscas. Cambia el filtro o la búsqueda.`}
+            ? t`Todavía no hay reactivos. Agrega el primero con el botón de arriba.`
+            : t`Ningún reactivo coincide con lo que buscas. Cambia el filtro o la búsqueda.`}
         </p>
       ) : (
         <DragDropContext onDragEnd={handleDragEnd}>
@@ -204,7 +211,7 @@ export function AuditChecklistItemsPanel(): ReactNode {
             {groupedRows.map(([key, items]) => (
               <section key={key}>
                 <h3 className="text-xs font-bold tracking-wide text-ink-3 uppercase">
-                  {AUDIT_TYPE_LABEL[items[0]!.auditType]} · {items[0]!.category}
+                  {i18n._(AUDIT_TYPE_LABEL[items[0]!.auditType])} · {items[0]!.category}
                 </h3>
                 <Droppable droppableId={key} isDropDisabled={!canReorder}>
                   {(provided) => (
@@ -235,8 +242,8 @@ export function AuditChecklistItemsPanel(): ReactNode {
                                 {...dragProvided.dragHandleProps}
                                 title={
                                   canReorder
-                                    ? 'Arrastra para cambiar el orden'
-                                    : 'Quita el filtro para reordenar'
+                                    ? t`Arrastra para cambiar el orden`
+                                    : t`Quita el filtro para reordenar`
                                 }
                                 className={cn(
                                   'shrink-0 text-ink-4',
@@ -258,10 +265,10 @@ export function AuditChecklistItemsPanel(): ReactNode {
                                 )}
                               </div>
                               <span
-                                title="Peso en el promedio ponderado del score"
+                                title={t`Peso en el promedio ponderado del score`}
                                 className="shrink-0 rounded-full border border-line bg-surface-2 px-2.5 py-1 text-xs font-semibold text-ink-2"
                               >
-                                Peso {item.weight}
+                                <Trans>Peso {item.weight}</Trans>
                               </span>
                               <Button
                                 variant="secondary"
@@ -269,12 +276,12 @@ export function AuditChecklistItemsPanel(): ReactNode {
                                   setEditor({ item, auditType: item.auditType })
                                 }}
                               >
-                                Editar
+                                <Trans>Editar</Trans>
                               </Button>
                               <button
                                 type="button"
-                                aria-label={`Eliminar ${item.label}`}
-                                title="Eliminar reactivo"
+                                aria-label={t`Eliminar ${item.label}`}
+                                title={t`Eliminar reactivo`}
                                 onClick={() => {
                                   setPendingDelete(item)
                                 }}
@@ -327,6 +334,7 @@ function ChecklistItemDialog({
   existingItems: ChecklistItem[]
   onClose: () => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const [category, setCategory] = useState(editor.item?.category ?? '')
   const [label, setLabel] = useState(editor.item?.label ?? '')
   const [weight, setWeight] = useState(editor.item?.weight ?? '1.00')
@@ -361,7 +369,7 @@ function ChecklistItemDialog({
           weight: weightNumber,
           ordinal: siblingCount + 1,
         }).unwrap()
-        toast.success(`Se agregó «${label.trim()}»`)
+        toast.success(t`Se agregó «${label.trim()}»`)
       } else {
         await updateItem({
           id: editor.item.id,
@@ -369,16 +377,18 @@ function ChecklistItemDialog({
           label: label.trim(),
           weight: weightNumber,
         }).unwrap()
-        toast.success('Reactivo actualizado')
+        toast.success(t`Reactivo actualizado`)
       }
       onClose()
     } catch (saveError) {
       setError(
         apiErrorMessage(saveError, {
           byCode: {
-            CHECKLIST_ITEM_NAME_TAKEN: 'Ya existe un reactivo con ese texto en esta auditoría.',
+            CHECKLIST_ITEM_NAME_TAKEN: i18n._(
+              msg`Ya existe un reactivo con ese texto en esta auditoría.`,
+            ),
           },
-          fallback: 'No se pudo guardar. Revisa los campos e inténtalo de nuevo.',
+          fallback: i18n._(msg`No se pudo guardar. Revisa los campos e inténtalo de nuevo.`),
         }),
       )
     }
@@ -388,12 +398,12 @@ function ChecklistItemDialog({
     <Modal
       isOpen
       onClose={onClose}
-      title={editor.item === null ? 'Agregar reactivo' : 'Editar reactivo'}
-      description={AUDIT_TYPE_LABEL[editor.auditType]}
+      title={editor.item === null ? t`Agregar reactivo` : t`Editar reactivo`}
+      description={i18n._(AUDIT_TYPE_LABEL[editor.auditType])}
       footer={
         <>
           <Button onClick={onClose} disabled={isBusy}>
-            Cancelar
+            <Trans>Cancelar</Trans>
           </Button>
           <Button
             variant="primary"
@@ -402,39 +412,45 @@ function ChecklistItemDialog({
               void save()
             }}
           >
-            {isBusy ? 'Guardando…' : 'Guardar'}
+            {isBusy ? t`Guardando…` : t`Guardar`}
           </Button>
         </>
       }
     >
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-ink-2">Categoría</span>
+        <span className="text-sm font-medium text-ink-2">
+          <Trans>Categoría</Trans>
+        </span>
         <input
           value={category}
           onChange={(event) => {
             setCategory(event.target.value)
           }}
           maxLength={80}
-          placeholder="P. ej. Uniformidad"
+          placeholder={t`P. ej. Uniformidad`}
           className="rounded-md border border-line bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none"
         />
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-ink-2">Texto del reactivo</span>
+        <span className="text-sm font-medium text-ink-2">
+          <Trans>Texto del reactivo</Trans>
+        </span>
         <input
           value={label}
           onChange={(event) => {
             setLabel(event.target.value)
           }}
           maxLength={300}
-          placeholder="P. ej. Uniforme completo, limpio y planchado"
+          placeholder={t`P. ej. Uniforme completo, limpio y planchado`}
           className="rounded-md border border-line bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none"
         />
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-ink-2">Peso</span>
+        <span className="text-sm font-medium text-ink-2">
+          <Trans>Peso</Trans>
+        </span>
         <input
           type="number"
           min={0.01}
@@ -448,8 +464,10 @@ function ChecklistItemDialog({
       </label>
       {editor.item === null && (
         <p className="text-xs text-ink-3">
-          El orden dentro de su categoría se define arrastrando la fila en la lista, después de
-          guardar.
+          <Trans>
+            El orden dentro de su categoría se define arrastrando la fila en la lista, después de
+            guardar.
+          </Trans>
         </p>
       )}
 
@@ -469,6 +487,7 @@ function DeleteChecklistItemDialog({
   item: ChecklistItem
   onClose: () => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const [error, setError] = useState<string | null>(null)
   const [deleteItem, { isLoading }] = useDeleteChecklistItemMutation()
 
@@ -476,15 +495,17 @@ function DeleteChecklistItemDialog({
     setError(null)
     try {
       await deleteItem(item.id).unwrap()
-      toast.success(`Se eliminó «${item.label}»`)
+      toast.success(t`Se eliminó «${item.label}»`)
       onClose()
     } catch (deleteError) {
       setError(
         apiErrorMessage(deleteError, {
           byCode: {
-            CATALOG_IN_USE: 'Hay auditorías con respuestas a este reactivo: no se puede eliminar.',
+            CATALOG_IN_USE: i18n._(
+              msg`Hay auditorías con respuestas a este reactivo: no se puede eliminar.`,
+            ),
           },
-          fallback: 'No se pudo eliminar. Inténtalo de nuevo.',
+          fallback: i18n._(msg`No se pudo eliminar. Inténtalo de nuevo.`),
         }),
       )
     }
@@ -494,11 +515,11 @@ function DeleteChecklistItemDialog({
     <Modal
       isOpen
       onClose={onClose}
-      title="Eliminar reactivo"
+      title={t`Eliminar reactivo`}
       footer={
         <>
           <Button onClick={onClose} disabled={isLoading}>
-            Cancelar
+            <Trans>Cancelar</Trans>
           </Button>
           <Button
             variant="primary"
@@ -507,14 +528,16 @@ function DeleteChecklistItemDialog({
               void remove()
             }}
           >
-            {isLoading ? 'Eliminando…' : 'Sí, eliminar'}
+            {isLoading ? t`Eliminando…` : t`Sí, eliminar`}
           </Button>
         </>
       }
     >
       <p className="text-sm text-ink-2">
-        «{item.label}» se elimina de verdad. Si alguna auditoría ya lo contestó, el sistema lo va a
-        impedir y te lo dice aquí.
+        <Trans>
+          «{item.label}» se elimina de verdad. Si alguna auditoría ya lo contestó, el sistema lo va
+          a impedir y te lo dice aquí.
+        </Trans>
       </p>
       {error !== null && (
         <p role="alert" className="rounded-md bg-red/10 px-3 py-2 text-sm text-red">

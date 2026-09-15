@@ -1,3 +1,5 @@
+import type { I18n } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
 import { z } from 'zod'
 
 /**
@@ -12,47 +14,62 @@ import { z } from 'zod'
  *
  * El margen SÍ puede ser cero: hay hoteles donde un puesto se cotiza al costo.
  * Lo que no puede es ser negativo.
+ *
+ * Son funciones y no constantes porque los mensajes se resuelven al armarlas
+ * con el `i18n` del componente (D-36): quien las usa las rearma cuando cambia
+ * el idioma. Las validaciones no dependen del idioma.
  */
-export const proposalRateSchema = z.object({
-  positionId: z.string().min(1, 'Elige el puesto'),
-  payRate: z.number().positive('El pay rate debe ser mayor que cero'),
-  billRate: z.number().positive('El bill rate debe ser mayor que cero'),
-})
-
-export const proposalDraftSchema = z
-  .object({
-    servicesNote: z.string().trim().min(1, 'Describe los servicios ofrecidos'),
-    rates: z.array(proposalRateSchema).min(1, 'Agrega al menos un puesto con su tarifa'),
+export function buildProposalRateSchema(i18n: I18n) {
+  return z.object({
+    positionId: z.string().min(1, i18n._(msg`Elige el puesto`)),
+    payRate: z.number().positive(i18n._(msg`El pay rate debe ser mayor que cero`)),
+    billRate: z.number().positive(i18n._(msg`El bill rate debe ser mayor que cero`)),
   })
-  .superRefine((values, ctx) => {
-    values.rates.forEach((rate, index) => {
-      if (rate.billRate < rate.payRate) {
+}
+
+export function buildProposalDraftSchema(i18n: I18n) {
+  return z
+    .object({
+      servicesNote: z
+        .string()
+        .trim()
+        .min(1, i18n._(msg`Describe los servicios ofrecidos`)),
+      rates: z
+        .array(buildProposalRateSchema(i18n))
+        .min(1, i18n._(msg`Agrega al menos un puesto con su tarifa`)),
+    })
+    .superRefine((values, ctx) => {
+      values.rates.forEach((rate, index) => {
+        if (rate.billRate < rate.payRate) {
+          ctx.addIssue({
+            code: 'custom',
+            path: ['rates', index, 'billRate'],
+            message: i18n._(
+              msg`El bill rate no puede quedar por debajo del pay rate: se pierde en cada hora.`,
+            ),
+          })
+        }
+      })
+
+      const seen = new Map<string, number>()
+
+      values.rates.forEach((rate, index) => {
+        if (rate.positionId === '') return
+
+        const first = seen.get(rate.positionId)
+
+        if (first === undefined) {
+          seen.set(rate.positionId, index)
+          return
+        }
+
         ctx.addIssue({
           code: 'custom',
-          path: ['rates', index, 'billRate'],
-          message: 'El bill rate no puede quedar por debajo del pay rate: se pierde en cada hora.',
+          path: ['rates', index, 'positionId'],
+          message: i18n._(msg`Este puesto ya tiene su tarifa más arriba`),
         })
-      }
-    })
-
-    const seen = new Map<string, number>()
-
-    values.rates.forEach((rate, index) => {
-      if (rate.positionId === '') return
-
-      const first = seen.get(rate.positionId)
-
-      if (first === undefined) {
-        seen.set(rate.positionId, index)
-        return
-      }
-
-      ctx.addIssue({
-        code: 'custom',
-        path: ['rates', index, 'positionId'],
-        message: 'Este puesto ya tiene su tarifa más arriba',
       })
     })
-  })
+}
 
-export type ProposalDraftForm = z.infer<typeof proposalDraftSchema>
+export type ProposalDraftForm = z.infer<ReturnType<typeof buildProposalDraftSchema>>

@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn, MaterialIcon } from '@oranje/ui'
 import { useMemo, useState, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router'
@@ -28,14 +31,18 @@ import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 type Scope = 'staff' | 'hotels' | 'colaboradores'
 
-/** El ámbito vive en la URL (`?ambito=hoteles|colaboradores`): un enlace a la pestaña se puede compartir. */
-const SCOPES: ReadonlyArray<[Scope, string, string]> = [
-  ['staff', 'Personal Oranje', 'badge'],
-  ['hotels', 'Personal de hoteles', 'apartment'],
-  ['colaboradores', 'Colaboradores', 'diversity_3'],
+/**
+ * El ámbito vive en la URL (`?ambito=hoteles|colaboradores`): un enlace a la pestaña se puede
+ * compartir. El texto se traduce al pintar con `i18n._()` (D-36).
+ */
+const SCOPES: ReadonlyArray<[Scope, MessageDescriptor, string]> = [
+  ['staff', msg`Personal Oranje`, 'badge'],
+  ['hotels', msg`Personal de hoteles`, 'apartment'],
+  ['colaboradores', msg`Colaboradores`, 'diversity_3'],
 ]
 
 export function UsersPage(): ReactNode {
+  const { t, i18n } = useLingui()
   const [searchParams, setSearchParams] = useSearchParams()
   const ambito = searchParams.get('ambito')
   const scope: Scope =
@@ -57,24 +64,32 @@ export function UsersPage(): ReactNode {
     <div className="flex flex-col gap-5">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-[22px] font-bold text-ink">Usuarios del sistema</h1>
+          <h1 className="text-[22px] font-bold text-ink">
+            <Trans>Usuarios del sistema</Trans>
+          </h1>
           <p className="mt-1 text-sm text-ink-3">
-            {IS_DEV_UI
-              ? scope === 'staff'
-                ? 'identity.user · personal interno de Oranje · users:manage — solo el Administrador (ROL-ADM-01)'
-                : scope === 'hotels'
-                  ? 'identity.user · hotel_id NOT NULL · users:manage_hotel — solo el Administrador (ROL-ADM-01)'
-                  : 'personal.worker + identity.user · users:manage_corporate_email — solo lectura'
-              : scope === 'staff'
-                ? 'El personal interno de Oranje: quién es, qué rol tiene y si ya entró.'
-                : scope === 'hotels'
-                  ? 'Las cuentas de cada hotel: Supervisores, Managers de Área y Managers Generales.'
-                  : 'Los colaboradores con correo corporativo, y si su buzón real ya existe.'}
+            {IS_DEV_UI ? (
+              scope === 'staff' ? (
+                'identity.user · personal interno de Oranje · users:manage — solo el Administrador (ROL-ADM-01)'
+              ) : scope === 'hotels' ? (
+                'identity.user · hotel_id NOT NULL · users:manage_hotel — solo el Administrador (ROL-ADM-01)'
+              ) : (
+                'personal.worker + identity.user · users:manage_corporate_email — solo lectura'
+              )
+            ) : scope === 'staff' ? (
+              <Trans>El personal interno de Oranje: quién es, qué rol tiene y si ya entró.</Trans>
+            ) : scope === 'hotels' ? (
+              <Trans>
+                Las cuentas de cada hotel: Supervisores, Managers de Área y Managers Generales.
+              </Trans>
+            ) : (
+              <Trans>Los colaboradores con correo corporativo, y si su buzón real ya existe.</Trans>
+            )}
           </p>
         </div>
         <div
           role="tablist"
-          aria-label="Ámbito"
+          aria-label={t`Ámbito`}
           className="flex w-fit gap-1 rounded-xl bg-surface-2 p-1"
         >
           {SCOPES.map(([key, label, icon]) => (
@@ -94,7 +109,7 @@ export function UsersPage(): ReactNode {
               )}
             >
               <MaterialIcon name={icon} className="text-base" aria-hidden />
-              {label}
+              {i18n._(label)}
             </button>
           ))}
         </div>
@@ -112,6 +127,7 @@ export function UsersPage(): ReactNode {
 }
 
 function StaffUsersSection(): ReactNode {
+  const { t } = useLingui()
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('ALL')
   const [tab, setTab] = useState<'active' | 'inactive'>('active')
@@ -179,11 +195,13 @@ function StaffUsersSection(): ReactNode {
     return (
       <NoticeCard
         image={personajeConfiguracion}
-        title="Usuarios del sistema es del Administrador"
+        title={t`Usuarios del sistema es del Administrador`}
         role="status"
       >
-        El alta, la edición y la baja del personal interno de Oranje las hace el Administrador; tu
-        rol no tiene este módulo.
+        <Trans>
+          El alta, la edición y la baja del personal interno de Oranje las hace el Administrador; tu
+          rol no tiene este módulo.
+        </Trans>
       </NoticeCard>
     )
   }
@@ -202,13 +220,13 @@ function StaffUsersSection(): ReactNode {
           isSearching={isFetching && settledSearch !== ''}
           value={search}
           onChange={setSearch}
-          label="Buscar usuario"
-          placeholder="Nombre o correo, p. ej. Ana López…"
+          label={t`Buscar usuario`}
+          placeholder={t`Nombre o correo, p. ej. Ana López…`}
           className="w-72"
         />
         <FilterSelect
-          label="Rol"
-          anyLabel="todos"
+          label={t`Rol`}
+          anyLabel={t`todos`}
           value={roleFilter}
           options={roles.map((role) => ({ value: role.code, label: role.name }))}
           onChange={setRoleFilter}
@@ -228,13 +246,13 @@ function StaffUsersSection(): ReactNode {
             setIsFormOpen(true)
           }}
         >
-          Agregar usuario
+          <Trans>Agregar usuario</Trans>
         </Button>
       </div>
 
       {isError ? (
         <LoadError
-          message="No se pudieron cargar los usuarios. Reintenta en unos segundos."
+          message={t`No se pudieron cargar los usuarios. Reintenta en unos segundos.`}
           onRetry={() => {
             void refetch()
           }}
@@ -243,11 +261,18 @@ function StaffUsersSection(): ReactNode {
         <TableSkeleton rows={6} columns={4} />
       ) : visible.length === 0 ? (
         <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-          {hasFilters
-            ? 'Nadie coincide con esa búsqueda. Prueba otro nombre, correo o rol, o quita los filtros.'
-            : tab === 'active'
-              ? 'Todavía no hay personal activo. Agrega al primer usuario con el botón de arriba.'
-              : 'Nadie está de baja. Las personas que des de baja aparecerán aquí.'}
+          {hasFilters ? (
+            <Trans>
+              Nadie coincide con esa búsqueda. Prueba otro nombre, correo o rol, o quita los
+              filtros.
+            </Trans>
+          ) : tab === 'active' ? (
+            <Trans>
+              Todavía no hay personal activo. Agrega al primer usuario con el botón de arriba.
+            </Trans>
+          ) : (
+            <Trans>Nadie está de baja. Las personas que des de baja aparecerán aquí.</Trans>
+          )}
         </p>
       ) : (
         <ul className="overflow-hidden rounded-2xl border border-line bg-surface">
@@ -290,7 +315,7 @@ function StaffUsersSection(): ReactNode {
                       {user.fullName}
                     </span>
                     {user.hasAccount && (
-                      <span title="Ya entró al sistema" aria-label="Ya entró al sistema">
+                      <span title={t`Ya entró al sistema`} aria-label={t`Ya entró al sistema`}>
                         <MaterialIcon name="verified" className="shrink-0 text-base text-o-500" />
                       </span>
                     )}
@@ -300,14 +325,14 @@ function StaffUsersSection(): ReactNode {
 
                 <CellStat
                   value={DATE_FORMAT.format(new Date(user.createdAt))}
-                  label="Fecha de alta"
+                  label={t`Fecha de alta`}
                 />
                 <CellStat
                   value={user.reportsToUserId ? (nameById.get(user.reportsToUserId) ?? '—') : '—'}
-                  label="Reporta a"
+                  label={t`Reporta a`}
                   {...(user.reportsToUserId ? {} : { tone: 'muted' as const })}
                 />
-                <CellStat value={user.role.name} label="Rol" />
+                <CellStat value={user.role.name} label={t`Rol`} />
 
                 <div className="hidden w-36 shrink-0 justify-end lg:flex">
                   <AccountStatusChip isActive={user.isActive} hasAccount={user.hasAccount} />
@@ -319,9 +344,11 @@ function StaffUsersSection(): ReactNode {
       )}
 
       <p className="text-xs leading-relaxed text-ink-3">
-        El correo no se edita: es con el que la persona entra. Para cambiar de persona, da de baja y
-        da de alta. La cuenta queda enlazada la primera vez que entra. Las cuentas de los hoteles
-        tienen su propia pestaña: «Personal de hoteles».
+        <Trans>
+          El correo no se edita: es con el que la persona entra. Para cambiar de persona, da de baja
+          y da de alta. La cuenta queda enlazada la primera vez que entra. Las cuentas de los
+          hoteles tienen su propia pestaña: «Personal de hoteles».
+        </Trans>
       </p>
 
       <UserFormDialog

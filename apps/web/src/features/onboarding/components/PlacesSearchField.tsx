@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { MaterialIcon } from '@oranje/ui'
 import { useMapsLibrary } from '@vis.gl/react-google-maps'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
@@ -60,6 +61,7 @@ function PlacesAutocompleteInput({
   defaultValue: string
   onPick: (place: PlaceAutofill) => void
 }): ReactNode {
+  const { t } = useLingui()
   const places = useMapsLibrary('places') as PlacesLibrary | null
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -139,14 +141,14 @@ function PlacesAutocompleteInput({
         onInput={(event) => {
           setHasText(event.currentTarget.value !== '')
         }}
-        placeholder={places ? 'Hotel Puerto Real, Cancún' : 'El buscador no está disponible'}
-        aria-label="Buscar la ubicación del hotel"
+        placeholder={places ? t`Hotel Puerto Real, Cancún` : t`El buscador no está disponible`}
+        aria-label={t`Buscar la ubicación del hotel`}
         className={`${CONTROL_CLASS} border-o-500 pr-11`}
       />
       {hasText && (
         <button
           type="button"
-          aria-label="Borrar la búsqueda"
+          aria-label={t`Borrar la búsqueda`}
           onClick={() => {
             const input = inputRef.current
             if (!input) return
@@ -178,13 +180,15 @@ export function PlacesSearchField({
   defaultValue: string
   onPick: (place: PlaceAutofill) => void
 }): ReactNode {
+  const { t } = useLingui()
+
   if (!isMapsEnabled) {
     return (
       <input
         type="text"
         disabled
-        placeholder="Buscador no disponible: marca la ubicación directo en el mapa"
-        aria-label="Buscar la ubicación del hotel"
+        placeholder={t`Buscador no disponible: marca la ubicación directo en el mapa`}
+        aria-label={t`Buscar la ubicación del hotel`}
         className={`${CONTROL_CLASS} border-line`}
       />
     )

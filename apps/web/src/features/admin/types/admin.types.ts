@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+
 export interface StaffUser {
   id: string
   email: string
@@ -48,10 +51,20 @@ export interface DepartmentOption {
   name: string
 }
 
-export const HOTEL_ROLE_OPTIONS: readonly RoleOption[] = [
-  { code: 'ROL-H-01', name: 'Supervisor' },
-  { code: 'ROL-H-02', name: 'Manager de Área' },
-  { code: 'ROL-H-03', name: 'Manager General' },
+/**
+ * Los tres roles del hotel los decide el front (no llegan de un catálogo del
+ * API), así que su nombre es texto de la interfaz: se guarda como mensaje y
+ * se lee con `i18n._` donde se pinta (D-36).
+ */
+export interface HotelRoleOption {
+  code: string
+  name: MessageDescriptor
+}
+
+export const HOTEL_ROLE_OPTIONS: readonly HotelRoleOption[] = [
+  { code: 'ROL-H-01', name: msg`Supervisor` },
+  { code: 'ROL-H-02', name: msg`Manager de Área` },
+  { code: 'ROL-H-03', name: msg`Manager General` },
 ]
 
 export const HOTEL_GENERAL_MANAGER = 'ROL-H-03'

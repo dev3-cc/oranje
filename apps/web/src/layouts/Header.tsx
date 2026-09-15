@@ -114,16 +114,37 @@ export function Header(): ReactNode {
                 onSelect={() => {
                   if (!item.isRead) void markRead(item.id)
                 }}
-                className={cn('flex flex-col items-start gap-0.5', !item.isRead && 'bg-o-50/60')}
+                className={cn('flex items-start gap-2.5', !item.isRead && 'bg-o-50/60')}
               >
-                <span className="flex w-full items-center gap-2">
-                  {!item.isRead && (
-                    <span aria-hidden className="size-2 shrink-0 rounded-full bg-o-500" />
-                  )}
-                  <span className="truncate text-sm font-semibold text-ink">{item.title}</span>
+                {/* Quien disparó el aviso con su acción, no de quien lo recibe. */}
+                {item.actor?.photoUrl ? (
+                  <img
+                    src={item.actor.photoUrl}
+                    alt=""
+                    aria-hidden
+                    className="mt-0.5 size-7 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <span
+                    aria-hidden
+                    className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-o-50 text-[11px] font-bold text-o-700"
+                  >
+                    {item.actor ? item.actor.fullName.charAt(0).toUpperCase() : ''}
+                  </span>
+                )}
+                <span className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+                  <span className="flex w-full items-center gap-2">
+                    {!item.isRead && (
+                      <span aria-hidden className="size-2 shrink-0 rounded-full bg-o-500" />
+                    )}
+                    <span className="truncate text-sm font-semibold text-ink">{item.title}</span>
+                  </span>
+                  <span className="line-clamp-2 text-xs text-ink-2">{item.body}</span>
+                  <span className="text-[11px] text-ink-4">
+                    {item.actor && `${item.actor.fullName} · `}
+                    {formatDayMonthTime(item.createdAt)}
+                  </span>
                 </span>
-                <span className="line-clamp-2 text-xs text-ink-2">{item.body}</span>
-                <span className="text-[11px] text-ink-4">{formatDayMonthTime(item.createdAt)}</span>
               </DropdownMenuItem>
             ))
           )}

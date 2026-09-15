@@ -1,3 +1,4 @@
+import { Plural, Trans, useLingui } from '@lingui/react/macro'
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
@@ -8,6 +9,7 @@ import { ProspectCard } from '@/features/onboarding'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { FoldText } from '@/shared/components/FoldText'
+import { HotelThumbnail } from '@/shared/components/HotelThumbnail'
 import { LoadError } from '@/shared/components/LoadError'
 import { MagicCard } from '@/shared/components/MagicCard'
 import { SearchField } from '@/shared/components/SearchField'
@@ -27,6 +29,7 @@ import { matchesSearch } from '@/shared/lib/text'
  * las formas que ya existen y se rehace cuando llegue su diseño.
  */
 export function ConversionQueuePage(): ReactNode {
+  const { t } = useLingui()
   const { data: candidates = [], isLoading, isError, refetch } = useGetConversionQueueQuery()
   const { data: recent = [] } = useGetRecentConversionsQuery()
   /** Por hotel, EN MEMORIA: la cola ya está cargada entera. */
@@ -39,12 +42,18 @@ export function ConversionQueuePage(): ReactNode {
       <header className="flex items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-ink">
-            <FoldText text="Conversión" />
+            <FoldText text={t`Conversión`} />
           </h1>
           <p className="mt-1.5 text-sm text-ink-3">
-            {isLoading
-              ? 'Cargando la cola…'
-              : `${candidates.length} prospectos en Rosa esperando aprobación`}
+            {isLoading ? (
+              <Trans>Cargando la cola…</Trans>
+            ) : (
+              <Plural
+                value={candidates.length}
+                one="# prospecto en Rosa esperando aprobación"
+                other="# prospectos en Rosa esperando aprobación"
+              />
+            )}
           </p>
         </div>
         <img
@@ -59,7 +68,7 @@ export function ConversionQueuePage(): ReactNode {
 
       {isError && (
         <LoadError
-          message="No se pudo cargar la cola de Conversión. Reintenta en unos segundos."
+          message={t`No se pudo cargar la cola de Conversión. Reintenta en unos segundos.`}
           onRetry={() => {
             void refetch()
           }}
@@ -68,8 +77,8 @@ export function ConversionQueuePage(): ReactNode {
 
       {!isLoading && !isError && candidates.length === 0 && (
         <EmptyState
-          title="Nada por convertir"
-          text="Ningún prospecto llegó a Rosa todavía. Un hotel entra aquí cuando su Documento de T&C se negocia y el BD lo mueve a Rosa en el Pipeline; entonces el BDC aprueba la conversión."
+          title={t`Nada por convertir`}
+          text={t`Ningún prospecto llegó a Rosa todavía. Un hotel entra aquí cuando su Documento de T&C se negocia y el BD lo mueve a Rosa en el Pipeline; entonces el BDC aprueba la conversión.`}
         />
       )}
 
@@ -77,16 +86,16 @@ export function ConversionQueuePage(): ReactNode {
         <SearchField
           value={search}
           onChange={setSearch}
-          label="Buscar hotel en la cola"
-          placeholder="Nombre del hotel, p. ej. Puerto Real…"
+          label={t`Buscar hotel en la cola`}
+          placeholder={t`Nombre del hotel, p. ej. Puerto Real…`}
           className="w-full max-w-md"
         />
       )}
 
       {candidates.length > 0 && visible.length === 0 && (
         <EmptyState
-          title={`Ningún hotel de la cola se llama «${search.trim()}»`}
-          text="Cambia la búsqueda o límpiala para volver a ver todos los prospectos en Rosa."
+          title={t`Ningún hotel de la cola se llama «${search.trim()}»`}
+          text={t`Cambia la búsqueda o límpiala para volver a ver todos los prospectos en Rosa.`}
         />
       )}
 
@@ -100,18 +109,27 @@ export function ConversionQueuePage(): ReactNode {
                   to={`/conversion/${candidate.prospectId}`}
                   className="flex items-center justify-between gap-4 rounded-md border border-line bg-surface p-4 transition-colors hover:bg-surface-2"
                 >
-                  <div className="min-w-0">
-                    <p className="text-base font-semibold text-ink">{candidate.hotelName}</p>
-                    <p className="mt-1 text-sm text-ink-3">
-                      {candidate.zone} · {formatDaysInStatus(candidate.daysInStatus)}
-                    </p>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <HotelThumbnail photoUrl={candidate.hotelPhotoUrl} />
+                    <div className="min-w-0">
+                      <p className="text-base font-semibold text-ink">{candidate.hotelName}</p>
+                      <p className="mt-1 text-sm text-ink-3">
+                        {candidate.zone} · {formatDaysInStatus(candidate.daysInStatus)}
+                      </p>
+                    </div>
                   </div>
 
                   <div className="flex shrink-0 items-center gap-4">
                     <p className="text-sm text-ink-2">
-                      {candidate.pendingRequirements === 0
-                        ? 'Listo para aprobar'
-                        : `${candidate.pendingRequirements} requisitos pendientes`}
+                      {candidate.pendingRequirements === 0 ? (
+                        <Trans>Listo para aprobar</Trans>
+                      ) : (
+                        <Plural
+                          value={candidate.pendingRequirements}
+                          one="# requisito pendiente"
+                          other="# requisitos pendientes"
+                        />
+                      )}
                     </p>
                     <StatusLightSoftBadge
                       token={ONBOARDING_STATUS_TOKEN[candidate.status]}
@@ -131,16 +149,18 @@ export function ConversionQueuePage(): ReactNode {
         <section className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="text-base font-semibold text-ink">Aprobados recientemente</h2>
+              <h2 className="text-base font-semibold text-ink">
+                <Trans>Aprobados recientemente</Trans>
+              </h2>
               <p className="mt-0.5 text-sm text-ink-3">
-                Ya son clientes: su ficha completa vive en Clientes Activos
+                <Trans>Ya son clientes: su ficha completa vive en Clientes Activos</Trans>
               </p>
             </div>
             <Link
               to="/active-clients"
               className="min-h-11 shrink-0 touch-manipulation content-center text-sm font-semibold text-o-700 underline-offset-4 hover:underline"
             >
-              Ver Clientes Activos
+              <Trans>Ver Clientes Activos</Trans>
             </Link>
           </div>
           <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(16rem,22rem))]">

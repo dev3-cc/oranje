@@ -51,6 +51,7 @@ export interface ConversionReadiness {
 export interface ConversionCandidate {
   prospectId: string
   hotelName: string
+  hotelPhotoUrl: string | null
   zone: string
   status: OnboardingStatus
   daysInStatus: number

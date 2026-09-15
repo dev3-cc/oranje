@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -79,9 +80,11 @@ export function PlacesAutofillSummary({
   /** Foto del lugar según Google. Solo se muestra; no se persiste (aún). */
   photoUrl?: string | null
 }): ReactNode {
+  const { t } = useLingui()
   const coordinates = location
     ? `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`
-    : 'aún sin pin'
+    : t`aún sin pin`
+  const hotelDisplayName = hotelName || t`el hotel`
 
   return (
     <div className={cn('p-4', className)}>
@@ -94,7 +97,7 @@ export function PlacesAutofillSummary({
         <div className="relative -mx-4 -mt-4 mb-3">
           <img
             src={photoUrl}
-            alt={`Foto de ${hotelName || 'el hotel'} según Google`}
+            alt={t`Foto de ${hotelDisplayName} según Google`}
             loading="lazy"
             className="h-36 w-full object-cover"
           />
@@ -106,13 +109,13 @@ export function PlacesAutofillSummary({
       )}
 
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-base font-semibold text-ink">{hotelName || 'Hotel sin nombre'}</h3>
+        <h3 className="text-base font-semibold text-ink">{hotelName || t`Hotel sin nombre`}</h3>
         <StatusLightSoftBadge
           token={ONBOARDING_STATUS_TOKEN[status]}
           label={ONBOARDING_STATUS_LABEL[status]}
         />
       </div>
-      <p className="mt-1 text-sm text-ink-3">{address || 'Sin dirección todavía'}</p>
+      <p className="mt-1 text-sm text-ink-3">{address || t`Sin dirección todavía`}</p>
 
       <div
         className={cn(
@@ -125,51 +128,59 @@ export function PlacesAutofillSummary({
             className={cn('size-2 shrink-0 rounded-full', isPinMoved ? 'bg-o-500' : 'bg-ink-4')}
             aria-hidden
           />
-          {location
-            ? isPinMoved
-              ? 'Pin ajustado a mano'
-              : 'Pin en el punto exacto de Google'
-            : 'Busca el hotel o marca el punto en el mapa'}
+          {location ? (
+            isPinMoved ? (
+              <Trans>Pin ajustado a mano</Trans>
+            ) : (
+              <Trans>Pin en el punto exacto de Google</Trans>
+            )
+          ) : (
+            <Trans>Busca el hotel o marca el punto en el mapa</Trans>
+          )}
         </span>
         <span className="text-sm text-ink-3">{coordinates}</span>
       </div>
 
-      <h4 className="mt-4 text-sm font-semibold text-ink">Lo que Google llenó por ti</h4>
+      <h4 className="mt-4 text-sm font-semibold text-ink">
+        <Trans>Lo que Google llenó por ti</Trans>
+      </h4>
       <ul className="mt-2.5 flex flex-col gap-2">
         <AutofillRow
-          label="Nombre"
+          label={t`Nombre`}
           column="name"
           value={hotelName || EMPTY}
           isFilled={hotelName !== ''}
         />
         <AutofillRow
-          label="Teléfono"
+          label={t`Teléfono`}
           column="general_phone"
           value={generalPhone || EMPTY}
           isFilled={generalPhone !== ''}
         />
         <AutofillRow
-          label="Ubicación"
+          label={t`Ubicación`}
           column="coordinates"
           value={coordinates}
           isFilled={location !== null}
         />
         <AutofillRow
-          label="Zona horaria"
+          label={t`Zona horaria`}
           column="time_zone"
           value={timeZone || EMPTY}
           isFilled={timeZone !== ''}
         />
         <AutofillRow
-          label="Zona comercial"
+          label={t`Zona comercial`}
           column="zone_id"
-          value="la eliges tú — Google no la conoce"
+          value={t`la eliges tú — Google no la conoce`}
           isFilled={false}
         />
       </ul>
 
       <div className="mt-3 flex items-center justify-between gap-3 rounded-md bg-o-50 px-3 py-2">
-        <span className="text-sm font-semibold text-o-700">Geocerca</span>
+        <span className="text-sm font-semibold text-o-700">
+          <Trans>Geocerca</Trans>
+        </span>
         <span className="text-sm font-semibold text-o-700">{geofenceMeters} m</span>
       </div>
     </div>

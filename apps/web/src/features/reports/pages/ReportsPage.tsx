@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -22,9 +25,17 @@ import {
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatPercent } from '@/shared/lib/formatters'
 
-const REPORT_TABS = ['Ventas', 'Pipeline', 'Desempeño', 'Calidad', 'Ejecutivo'] as const
+/** Las pestañas; el texto se traduce al pintar con `i18n._()` (D-36). */
+const REPORT_TABS: readonly MessageDescriptor[] = [
+  msg`Ventas`,
+  msg`Pipeline`,
+  msg`Desempeño`,
+  msg`Calidad`,
+  msg`Ejecutivo`,
+]
 
 export function ReportsPage(): ReactNode {
+  const { t, i18n } = useLingui()
   const { data: report, isLoading, isError, refetch } = useGetSalesReportQuery()
 
   return (
@@ -32,39 +43,40 @@ export function ReportsPage(): ReactNode {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-ink">
-            <FoldText text="Reportes" />
+            <FoldText text={t`Reportes`} />
           </h1>
           <p className="mt-1.5 text-sm text-ink-3">
-            Análisis con historia; el pulso de hoy vive en el Dashboard
+            <Trans>Análisis con historia; el pulso de hoy vive en el Dashboard</Trans>
           </p>
         </div>
         {}
-        <Button variant="secondary" disabled title="El envío recurrente llega pronto">
-          Programar envío recurrente
+        <Button variant="secondary" disabled title={t`El envío recurrente llega pronto`}>
+          <Trans>Programar envío recurrente</Trans>
         </Button>
       </header>
 
       {/* Solo Ventas existe: el tablist lo dice con `aria-selected`, y los otros
           cuatro están deshabilitados de verdad — ni cursor ni hover que prometan
           un reporte que aún no se define. */}
-      <div role="tablist" aria-label="Reporte" className="flex flex-wrap gap-2">
+      <div role="tablist" aria-label={t`Reporte`} className="flex flex-wrap gap-2">
         {REPORT_TABS.map((tab, index) => {
+          const label = i18n._(tab)
           const isCurrent = index === 0
           return (
             <button
-              key={tab}
+              key={label}
               type="button"
               role="tab"
               aria-selected={isCurrent}
               disabled={!isCurrent}
-              title={isCurrent ? undefined : 'Este reporte aún no se define'}
+              title={isCurrent ? undefined : t`Este reporte aún no se define`}
               className={
                 isCurrent
                   ? 'rounded-full bg-o-500 px-4 py-2 text-sm font-semibold text-ink'
                   : 'rounded-full border border-line px-4 py-2 text-sm text-ink-3 disabled:cursor-not-allowed disabled:opacity-50'
               }
             >
-              {tab}
+              {label}
             </button>
           )
         })}
@@ -72,7 +84,7 @@ export function ReportsPage(): ReactNode {
 
       {isError && (
         <LoadError
-          message="No se pudo armar el reporte. Reintenta en unos segundos."
+          message={t`No se pudo armar el reporte. Reintenta en unos segundos.`}
           onRetry={() => {
             void refetch()
           }}
@@ -85,22 +97,30 @@ export function ReportsPage(): ReactNode {
         report && (
           <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-2">
             <SectionCard
-              title="Conversión por BD"
+              title={t`Conversión por BD`}
               subtitle={
                 IS_DEV_UI
                   ? 'ciclos abiertos vs convertidos · prospect_state_history'
-                  : 'quién convierte y en cuánto tiempo'
+                  : t`quién convierte y en cuánto tiempo`
               }
             >
               <Table className="text-left">
                 <TableHeader>
                   <TableRow className="border-line text-xs tracking-wide text-ink-3 uppercase">
-                    <TableHead className="py-2 pr-2 pl-0 font-bold text-ink-3">BD</TableHead>
-                    <TableHead className="px-2 py-2 font-bold text-ink-3">Abiertos</TableHead>
-                    <TableHead className="px-2 py-2 font-bold text-ink-3">Convertidos</TableHead>
-                    <TableHead className="px-2 py-2 font-bold text-ink-3">Tasa</TableHead>
+                    <TableHead className="py-2 pr-2 pl-0 font-bold text-ink-3">
+                      <Trans>BD</Trans>
+                    </TableHead>
+                    <TableHead className="px-2 py-2 font-bold text-ink-3">
+                      <Trans>Abiertos</Trans>
+                    </TableHead>
+                    <TableHead className="px-2 py-2 font-bold text-ink-3">
+                      <Trans>Convertidos</Trans>
+                    </TableHead>
+                    <TableHead className="px-2 py-2 font-bold text-ink-3">
+                      <Trans>Tasa</Trans>
+                    </TableHead>
                     <TableHead className="py-2 pr-0 pl-2 font-bold text-ink-3">
-                      Días prom.
+                      <Trans>Días prom.</Trans>
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -125,16 +145,20 @@ export function ReportsPage(): ReactNode {
                 </TableBody>
               </Table>
               <p className="mt-3 text-sm text-ink-3">
-                Total del equipo: {report.teamTotals.open} abiertos · {report.teamTotals.converted}{' '}
-                convertidos · {formatPercent(report.teamTotals.rate)}
-                {report.teamTotals.averageDays !== null &&
-                  ` · ${String(report.teamTotals.averageDays)} d`}
+                <Trans>
+                  Total del equipo: {report.teamTotals.open} abiertos ·{' '}
+                  {report.teamTotals.converted} convertidos ·{' '}
+                  {formatPercent(report.teamTotals.rate)}
+                  {report.teamTotals.averageDays !== null
+                    ? ` · ${String(report.teamTotals.averageDays)} d`
+                    : ''}
+                </Trans>
               </p>
             </SectionCard>
 
             <SectionCard
-              title="Tiempo por color del semáforo"
-              subtitle="días promedio en cada estado · dónde se atora el pipeline"
+              title={t`Tiempo por color del semáforo`}
+              subtitle={t`días promedio en cada estado · dónde se atora el pipeline`}
             >
               <ul className="flex flex-col gap-2.5">
                 {report.timeInState.map((item) => (
@@ -151,28 +175,34 @@ export function ReportsPage(): ReactNode {
               </ul>
               {report.bottleneck && (
                 <p className="mt-3 rounded-md bg-yellow/15 px-3 py-2 text-sm text-ink-2">
-                  El cuello está en {ONBOARDING_STATUS_LABEL[report.bottleneck.status]}:{' '}
-                  {String(report.bottleneck.averageDays)} d promedio antes de salir
+                  <Trans>
+                    El cuello está en {ONBOARDING_STATUS_LABEL[report.bottleneck.status]}:{' '}
+                    {String(report.bottleneck.averageDays)} d promedio antes de salir
+                  </Trans>
                 </p>
               )}
             </SectionCard>
 
             <SectionCard
-              title="Intentos por canal × resultado"
+              title={t`Intentos por canal × resultado`}
               subtitle={
-                IS_DEV_UI ? 'contact_attempt.attempt_type × outcome' : 'qué canal sí logra contacto'
+                IS_DEV_UI
+                  ? 'contact_attempt.attempt_type × outcome'
+                  : t`qué canal sí logra contacto`
               }
             >
               {report.attempts.channels.length === 0 ? (
                 <p className="text-sm text-ink-3">
-                  Sin intentos registrados todavía. Se llenan desde la bitácora de cada prospecto.
+                  <Trans>
+                    Sin intentos registrados todavía. Se llenan desde la bitácora de cada prospecto.
+                  </Trans>
                 </p>
               ) : (
                 <Table className="text-left">
                   <TableHeader>
                     <TableRow className="border-line text-xs tracking-wide text-ink-3 uppercase">
                       <TableHead className="py-2 pr-2 pl-0 font-bold text-ink-3">
-                        Resultado
+                        <Trans>Resultado</Trans>
                       </TableHead>
                       {report.attempts.channels.map((channel) => (
                         <TableHead key={channel} className="px-2 py-2 font-bold text-ink-3">
@@ -204,16 +234,18 @@ export function ReportsPage(): ReactNode {
             </SectionCard>
 
             <SectionCard
-              title="Motivos de salida a Rojo · Café · Negro"
+              title={t`Motivos de salida a Rojo · Café · Negro`}
               subtitle={
                 IS_DEV_UI
                   ? 'prospect_state_history.reason_id'
-                  : 'por qué se van los ciclos, y que son reactivables'
+                  : t`por qué se van los ciclos, y que son reactivables`
               }
             >
               {report.exitReasons.length === 0 ? (
                 <p className="text-sm text-ink-3">
-                  Sin salidas registradas todavía. Ningún ciclo se ha ido a Rojo, Café o Negro.
+                  <Trans>
+                    Sin salidas registradas todavía. Ningún ciclo se ha ido a Rojo, Café o Negro.
+                  </Trans>
                 </p>
               ) : (
                 <ul className="flex flex-col gap-2.5">
@@ -226,9 +258,11 @@ export function ReportsPage(): ReactNode {
                 </ul>
               )}
               <p className="mt-3 text-sm text-ink-3">
-                {report.exits.total} salidas · Rojo {report.exits.red} · Café {report.exits.brown} ·
-                Negro {report.exits.black} — reactivables a Azul claro
-                {IS_DEV_UI ? ' (RR-V-07)' : ''}
+                <Trans>
+                  {report.exits.total} salidas · Rojo {report.exits.red} · Café {report.exits.brown}{' '}
+                  · Negro {report.exits.black} — reactivables a Azul claro
+                  {IS_DEV_UI ? ' (RR-V-07)' : ''}
+                </Trans>
               </p>
             </SectionCard>
           </div>

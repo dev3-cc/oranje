@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { statusLight } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -19,13 +20,14 @@ import { formatDate } from '@/shared/lib/formatters'
  * estado está un prospecto, esta lista es el árbitro.
  */
 export function StatusTimeline({ history }: { history: StatusHistoryEntry[] }): ReactNode {
+  const { t } = useLingui()
   return (
     <SectionCard
-      title="Timeline del semáforo"
+      title={t`Timeline del semáforo`}
       subtitle={
         IS_DEV_UI
           ? 'prospect_state_history — la verdad del semáforo'
-          : 'Cada cambio de estado, con quién lo hizo y por qué'
+          : t`Cada cambio de estado, con quién lo hizo y por qué`
       }
     >
       <ol className="flex flex-col gap-5">
@@ -38,8 +40,10 @@ export function StatusTimeline({ history }: { history: StatusHistoryEntry[] }): 
             />
             <div className="min-w-0">
               <p className="text-sm font-semibold text-ink">
-                {entry.fromStatus ? ONBOARDING_STATUS_LABEL[entry.fromStatus] : '—'} →{' '}
-                {ONBOARDING_STATUS_LABEL[entry.toStatus]}
+                <Trans>
+                  {entry.fromStatus ? ONBOARDING_STATUS_LABEL[entry.fromStatus] : '—'} →{' '}
+                  {ONBOARDING_STATUS_LABEL[entry.toStatus]}
+                </Trans>
               </p>
               <p className="mt-0.5 text-sm text-ink-3">
                 {formatDate(entry.changedAt)} · {entry.byName} · {entry.byRole}

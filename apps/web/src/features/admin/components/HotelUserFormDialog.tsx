@@ -1,4 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import type { I18n } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import {
   cn,
   Input,
@@ -10,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@oranje/ui'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -49,39 +52,47 @@ const NOBODY = 'NONE'
  */
 const NO_DEPARTMENT = 'ALL'
 
-const hotelUserFormSchema = z.object({
-  hotelId: z.string().min(1, 'Elige el hotel'),
-  roleCode: z.string().min(1, 'Elige el rol'),
-  departmentId: z.string(),
-  fullName: z
-    .string()
-    .trim()
-    .min(1, 'Escribe el nombre completo')
-    .max(160, 'Máximo 160 caracteres'),
-  email: z
-    .string()
-    .trim()
-    .email('Escribe un correo válido, como ana@hotel.com')
-    .max(255, 'Máximo 255 caracteres'),
-  reportsToUserId: z.string(),
-})
+/* Los mensajes se resuelven al armar el esquema con el `i18n` del componente
+   (D-36): quien lo usa lo rearma cuando cambia el idioma. */
+function buildHotelUserFormSchema(i18n: I18n) {
+  return z.object({
+    hotelId: z.string().min(1, i18n._(msg`Elige el hotel`)),
+    roleCode: z.string().min(1, i18n._(msg`Elige el rol`)),
+    departmentId: z.string(),
+    fullName: z
+      .string()
+      .trim()
+      .min(1, i18n._(msg`Escribe el nombre completo`))
+      .max(160, i18n._(msg`Máximo 160 caracteres`)),
+    email: z
+      .string()
+      .trim()
+      .email(i18n._(msg`Escribe un correo válido, como ana@hotel.com`))
+      .max(255, i18n._(msg`Máximo 255 caracteres`)),
+    reportsToUserId: z.string(),
+  })
+}
 
-type HotelUserFormValues = z.infer<typeof hotelUserFormSchema>
+type HotelUserFormValues = z.infer<ReturnType<typeof buildHotelUserFormSchema>>
 
-const ERROR_BY_CODE = {
-  EMAIL_TAKEN: 'Ese correo ya está dado de alta en Oranje.',
-  DEPARTMENT_NOT_ALLOWED: 'El Manager General no lleva departamento: cubre todo el hotel.',
-  SUPERVISOR_NOT_IN_HOTEL: 'La persona a la que reporta no es de ese hotel o está de baja.',
-  HOTEL_NOT_FOUND: 'Ese hotel ya no existe. Recarga la página y vuelve a elegirlo.',
-  USER_NOT_FOUND: 'Esa cuenta ya no existe en ese hotel. Recarga la página.',
-  INVITATION_FAILED:
-    'La cuenta quedó guardada, pero el correo de invitación no salió: reenvíala desde su ficha.',
-} as const
-
-function saveErrorMessage(error: unknown): string {
+/** El `i18n` viene del componente (`useLingui`): así el mensaje habla el idioma activo (D-36). */
+function saveErrorMessage(error: unknown, i18n: I18n): string {
   return apiErrorMessage(error, {
-    byCode: ERROR_BY_CODE,
-    fallback: 'No se pudo guardar la cuenta. Revisa los datos e inténtalo de nuevo.',
+    byCode: {
+      EMAIL_TAKEN: i18n._(msg`Ese correo ya está dado de alta en Oranje.`),
+      DEPARTMENT_NOT_ALLOWED: i18n._(
+        msg`El Manager General no lleva departamento: cubre todo el hotel.`,
+      ),
+      SUPERVISOR_NOT_IN_HOTEL: i18n._(
+        msg`La persona a la que reporta no es de ese hotel o está de baja.`,
+      ),
+      HOTEL_NOT_FOUND: i18n._(msg`Ese hotel ya no existe. Recarga la página y vuelve a elegirlo.`),
+      USER_NOT_FOUND: i18n._(msg`Esa cuenta ya no existe en ese hotel. Recarga la página.`),
+      INVITATION_FAILED: i18n._(
+        msg`La cuenta quedó guardada, pero el correo de invitación no salió: reenvíala desde su ficha.`,
+      ),
+    },
+    fallback: i18n._(msg`No se pudo guardar la cuenta. Revisa los datos e inténtalo de nuevo.`),
   })
 }
 
@@ -104,6 +115,7 @@ export function HotelUserFormDialog({
   hotels: HotelOption[]
   departments: DepartmentOption[]
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const isEditing = user !== null
   const [createUser, createState] = useCreateHotelUserMutation()
   const [updateUser, updateState] = useUpdateHotelUserMutation()
@@ -112,6 +124,10 @@ export function HotelUserFormDialog({
   const [isActive, setIsActive] = useState(true)
   const [created, setCreated] = useState<{ email: string; sent: boolean } | null>(null)
   const [confirmingBaja, setConfirmingBaja] = useState(false)
+
+  /* Los mensajes del esquema se resuelven al armarlo, así que se rearma al
+     cambiar de idioma: `i18n` no cambia de identidad al activar otro (D-36). */
+  const schema = useMemo(() => buildHotelUserFormSchema(i18n), [i18n, i18n.locale])
 
   const {
     register,
@@ -122,7 +138,7 @@ export function HotelUserFormDialog({
     setValue,
     formState: { errors },
   } = useForm<HotelUserFormValues>({
-    resolver: zodResolver(hotelUserFormSchema),
+    resolver: zodResolver(schema),
     mode: 'onChange',
     defaultValues: {
       hotelId: '',
@@ -230,7 +246,9 @@ export function HotelUserFormDialog({
           isActive,
         },
       }).unwrap()
-      toast.success(user.isActive === false && isActive ? 'Cuenta activada' : 'Cuenta actualizada')
+      toast.success(
+        user.isActive === false && isActive ? t`Cuenta activada` : t`Cuenta actualizada`,
+      )
       onClose()
       return
     }
@@ -246,27 +264,28 @@ export function HotelUserFormDialog({
       },
     }).unwrap()
     const sent = result.invitationSent !== false
-    toast.success(sent ? `Cuenta creada — invitación enviada a ${values.email}` : 'Cuenta creada')
+    toast.success(sent ? t`Cuenta creada — invitación enviada a ${values.email}` : t`Cuenta creada`)
     setCreated({ email: values.email, sent })
   }
 
   async function darDeBaja(): Promise<void> {
     if (!isEditing) return
     await updateUser({ hotelId: user.hotel.id, id: user.id, body: { isActive: false } }).unwrap()
-    toast.success('Cuenta dada de baja')
+    toast.success(t`Cuenta dada de baja`)
     onClose()
   }
 
   const saveError = createState.error ?? updateState.error
   const initials = initialsOf(fullName)
   const hotelName = hotels.find((hotel) => hotel.id === hotelId)?.name
-  const roleLabel = HOTEL_ROLE_OPTIONS.find((role) => role.code === roleCode)?.name
+  const roleEntry = HOTEL_ROLE_OPTIONS.find((role) => role.code === roleCode)
+  const roleLabel = roleEntry ? i18n._(roleEntry.name) : undefined
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Editar cuenta del hotel' : 'Nueva cuenta del hotel'}
+      title={isEditing ? t`Editar cuenta del hotel` : t`Nueva cuenta del hotel`}
       chromeless
       className="max-w-2xl"
     >
@@ -288,11 +307,11 @@ export function HotelUserFormDialog({
 
         <header className="px-8 pt-14 pb-5">
           <h2 className="text-xl font-bold text-ink">
-            {fullName.trim() === '' ? 'Nueva cuenta del hotel' : fullName}
+            {fullName.trim() === '' ? t`Nueva cuenta del hotel` : fullName}
           </h2>
           <p className="mt-0.5 text-xs text-ink-3">
             {[roleLabel, hotelName].filter(Boolean).join(' · ') ||
-              (isEditing ? 'Editar cuenta del hotel' : 'Alta de una cuenta del hotel')}
+              (isEditing ? t`Editar cuenta del hotel` : t`Alta de una cuenta del hotel`)}
             {IS_DEV_UI && (
               <code className="text-[11px] text-ink-4"> · identity.user · users:manage_hotel</code>
             )}
@@ -308,16 +327,16 @@ export function HotelUserFormDialog({
               />
             </span>
             <p className="text-lg font-bold text-ink">
-              {created.sent ? 'Invitación enviada a:' : 'Cuenta creada'}
+              {created.sent ? t`Invitación enviada a:` : t`Cuenta creada`}
             </p>
             <p className="text-sm font-semibold text-o-700">{created.email}</p>
             <p className="max-w-sm text-xs leading-relaxed text-ink-3">
               {created.sent
-                ? 'La persona recibirá un correo para establecer su contraseña. Hasta que entre por primera vez, su cuenta aparece como «Invitación enviada».'
-                : 'La cuenta quedó guardada, pero el correo de invitación no salió. Reenvíala desde su ficha en unos minutos.'}
+                ? t`La persona recibirá un correo para establecer su contraseña. Hasta que entre por primera vez, su cuenta aparece como «Invitación enviada».`
+                : t`La cuenta quedó guardada, pero el correo de invitación no salió. Reenvíala desde su ficha en unos minutos.`}
             </p>
             <Button variant="primary" className="mt-2" onClick={onClose}>
-              Cerrar
+              <Trans>Cerrar</Trans>
             </Button>
           </div>
         ) : (
@@ -328,7 +347,7 @@ export function HotelUserFormDialog({
               void handleSubmit(onSubmit)(event)
             }}
           >
-            <FormRow label="Hotel" column="hotel_id · inmutable">
+            <FormRow label={t`Hotel`} column="hotel_id · inmutable">
               <Controller
                 control={control}
                 name="hotelId"
@@ -338,8 +357,8 @@ export function HotelUserFormDialog({
                     onValueChange={field.onChange}
                     disabled={isEditing}
                   >
-                    <SelectTrigger aria-label="Hotel" className="w-full">
-                      <SelectValue placeholder="Elige el hotel" />
+                    <SelectTrigger aria-label={t`Hotel`} className="w-full">
+                      <SelectValue placeholder={t`Elige el hotel`} />
                     </SelectTrigger>
                     <SelectContent>
                       {hotels.map((hotel) => (
@@ -353,13 +372,15 @@ export function HotelUserFormDialog({
               />
               {!isEditing && hotels.length === 0 && (
                 <p className="text-xs text-ink-3">
-                  Todavía no hay hoteles dados de alta: los crea Ventas en el Pipeline.
+                  <Trans>
+                    Todavía no hay hoteles dados de alta: los crea Ventas en el Pipeline.
+                  </Trans>
                 </p>
               )}
               {errors.hotelId && <p className="text-xs text-red">{errors.hotelId.message}</p>}
             </FormRow>
 
-            <FormRow label="Rol" column="role_id · inmutable">
+            <FormRow label={t`Rol`} column="role_id · inmutable">
               <Controller
                 control={control}
                 name="roleCode"
@@ -369,13 +390,13 @@ export function HotelUserFormDialog({
                     onValueChange={field.onChange}
                     disabled={isEditing}
                   >
-                    <SelectTrigger aria-label="Rol" className="w-full">
-                      <SelectValue placeholder="Elige el rol" />
+                    <SelectTrigger aria-label={t`Rol`} className="w-full">
+                      <SelectValue placeholder={t`Elige el rol`} />
                     </SelectTrigger>
                     <SelectContent>
                       {HOTEL_ROLE_OPTIONS.map((role) => (
                         <SelectItem key={role.code} value={role.code}>
-                          {role.name}
+                          {i18n._(role.name)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -383,14 +404,16 @@ export function HotelUserFormDialog({
                 )}
               />
               <p className="text-xs text-ink-3">
-                El primer Manager General de cada hotel nace en la Conversión; aquí se dan de alta
-                los Supervisores, los Managers de Área y los Managers Generales adicionales.
+                <Trans>
+                  El primer Manager General de cada hotel nace en la Conversión; aquí se dan de alta
+                  los Supervisores, los Managers de Área y los Managers Generales adicionales.
+                </Trans>
               </p>
               {errors.roleCode && <p className="text-xs text-red">{errors.roleCode.message}</p>}
             </FormRow>
 
             {roleCode !== '' && !isGeneralManager && (
-              <FormRow label="Departamento" column="department_id">
+              <FormRow label={t`Departamento`} column="department_id">
                 <Controller
                   control={control}
                   name="departmentId"
@@ -399,11 +422,13 @@ export function HotelUserFormDialog({
                       {...(field.value ? { value: field.value } : {})}
                       onValueChange={field.onChange}
                     >
-                      <SelectTrigger aria-label="Departamento" className="w-full">
-                        <SelectValue placeholder="Elige el departamento" />
+                      <SelectTrigger aria-label={t`Departamento`} className="w-full">
+                        <SelectValue placeholder={t`Elige el departamento`} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value={NO_DEPARTMENT}>Ninguno — cubre todo el hotel</SelectItem>
+                        <SelectItem value={NO_DEPARTMENT}>
+                          <Trans>Ninguno — cubre todo el hotel</Trans>
+                        </SelectItem>
                         {departments.map((department) => (
                           <SelectItem key={department.id} value={department.id}>
                             {department.name}
@@ -415,26 +440,26 @@ export function HotelUserFormDialog({
                 />
                 <p className="text-xs text-ink-3">
                   {departmentId === NO_DEPARTMENT
-                    ? 'Sin departamento, esta cuenta ve y pide personal de TODOS los departamentos del hotel — la jerarquía simple de un hotel chico, con un solo Supervisor.'
+                    ? t`Sin departamento, esta cuenta ve y pide personal de TODOS los departamentos del hotel — la jerarquía simple de un hotel chico, con un solo Supervisor.`
                     : roleCode === 'ROL-H-01'
-                      ? 'El Supervisor revisa el timesheet de su departamento; no verá ni podrá pedir personal de los demás.'
-                      : 'El Manager de Área autoriza y aprueba lo de su departamento; no lo de los demás.'}
+                      ? t`El Supervisor revisa el timesheet de su departamento; no verá ni podrá pedir personal de los demás.`
+                      : t`El Manager de Área autoriza y aprueba lo de su departamento; no lo de los demás.`}
                 </p>
               </FormRow>
             )}
 
-            <FormRow label="Nombre completo" column="full_name">
+            <FormRow label={t`Nombre completo`} column="full_name">
               <Input
-                aria-label="Nombre completo"
+                aria-label={t`Nombre completo`}
                 {...register('fullName')}
                 placeholder="Ana López García"
               />
               {errors.fullName && <p className="text-xs text-red">{errors.fullName.message}</p>}
             </FormRow>
 
-            <FormRow label="Correo" column="email · inmutable">
+            <FormRow label={t`Correo`} column="email · inmutable">
               <Input
-                aria-label="Correo"
+                aria-label={t`Correo`}
                 type="email"
                 {...register('email')}
                 placeholder="ana@hotel.com"
@@ -443,14 +468,16 @@ export function HotelUserFormDialog({
               />
               {!isEditing && (
                 <p className="text-xs text-ink-3">
-                  Al crear la cuenta, la persona recibe un correo de invitación y establece su
-                  contraseña.
+                  <Trans>
+                    Al crear la cuenta, la persona recibe un correo de invitación y establece su
+                    contraseña.
+                  </Trans>
                 </p>
               )}
               {errors.email && <p className="text-xs text-red">{errors.email.message}</p>}
             </FormRow>
 
-            <FormRow label="Reporta a" column="reports_to_user_id">
+            <FormRow label={t`Reporta a`} column="reports_to_user_id">
               <Controller
                 control={control}
                 name="reportsToUserId"
@@ -460,14 +487,14 @@ export function HotelUserFormDialog({
                     onValueChange={field.onChange}
                     disabled={hotelId === '' || roleCode === '' || isGeneralManager}
                   >
-                    <SelectTrigger aria-label="Reporta a" className="w-full">
+                    <SelectTrigger aria-label={t`Reporta a`} className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={NOBODY}>
                         {isGeneralManager
-                          ? 'Nadie — la punta de la jerarquía del hotel'
-                          : 'Nadie (sin jefe por ahora)'}
+                          ? t`Nadie — la punta de la jerarquía del hotel`
+                          : t`Nadie (sin jefe por ahora)`}
                       </SelectItem>
                       {superiorOptions.map((option) => (
                         <SelectItem key={option.id} value={option.id}>
@@ -481,35 +508,37 @@ export function HotelUserFormDialog({
               />
               <p className="text-xs text-ink-3">
                 {isGeneralManager
-                  ? 'El Manager General no reporta a nadie.'
+                  ? t`El Manager General no reporta a nadie.`
                   : hotelId === '' || roleCode === ''
-                    ? 'Elige primero el hotel y el rol: los jefes posibles salen de ahí.'
+                    ? t`Elige primero el hotel y el rol: los jefes posibles salen de ahí.`
                     : superiorOptions.length === 0
                       ? roleCode === 'ROL-H-01'
-                        ? 'En ese hotel aún no hay un Manager de Área de ese departamento ni un Manager General activos.'
-                        : 'En ese hotel aún no hay un Manager General activo.'
+                        ? t`En ese hotel aún no hay un Manager de Área de ese departamento ni un Manager General activos.`
+                        : t`En ese hotel aún no hay un Manager General activo.`
                       : roleCode === 'ROL-H-01'
-                        ? 'El Supervisor reporta a un Manager de Área de su departamento o al Manager General.'
-                        : 'El Manager de Área reporta al Manager General.'}
+                        ? t`El Supervisor reporta a un Manager de Área de su departamento o al Manager General.`
+                        : t`El Manager de Área reporta al Manager General.`}
               </p>
               {!isGeneralManager &&
                 roleCode !== '' &&
                 reportsToUserId === NOBODY &&
                 superiorOptions.length > 0 && (
                   <p className="text-xs font-medium text-o-700">
-                    Este rol normalmente reporta a alguien: sin jefe no aparecerá en ningún «Mi
-                    Equipo».
+                    <Trans>
+                      Este rol normalmente reporta a alguien: sin jefe no aparecerá en ningún «Mi
+                      Equipo».
+                    </Trans>
                   </p>
                 )}
             </FormRow>
 
             {isEditing && !user.hasAccount && (
-              <FormRow label="Invitación" column="hasAccount:false">
+              <FormRow label={t`Invitación`} column="hasAccount:false">
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="text-xs text-ink-2">
                     {resendState.isSuccess
-                      ? 'Invitación reenviada: la persona tiene un correo nuevo para establecer su contraseña.'
-                      : 'Todavía no ha entrado por primera vez.'}
+                      ? t`Invitación reenviada: la persona tiene un correo nuevo para establecer su contraseña.`
+                      : t`Todavía no ha entrado por primera vez.`}
                   </span>
                   {!resendState.isSuccess && (
                     <Button
@@ -519,14 +548,14 @@ export function HotelUserFormDialog({
                         void resendInvitation({ hotelId: user.hotel.id, id: user.id })
                           .unwrap()
                           .then(() => {
-                            toast.success('Invitación enviada')
+                            toast.success(t`Invitación enviada`)
                           })
                           .catch((error: unknown) => {
-                            toast.error(saveErrorMessage(error))
+                            toast.error(saveErrorMessage(error, i18n))
                           })
                       }}
                     >
-                      {resendState.isLoading ? 'Enviando…' : 'Reenviar invitación'}
+                      {resendState.isLoading ? t`Enviando…` : t`Reenviar invitación`}
                     </Button>
                   )}
                 </div>
@@ -534,13 +563,13 @@ export function HotelUserFormDialog({
             )}
 
             {isEditing && (
-              <FormRow label="Estado" column="is_active">
+              <FormRow label={t`Estado`} column="is_active">
                 <label className="flex w-fit cursor-pointer items-center gap-3">
                   <button
                     type="button"
                     role="switch"
                     aria-checked={isActive}
-                    aria-label="Activo"
+                    aria-label={t`Activo`}
                     onClick={() => {
                       setIsActive((value) => !value)
                     }}
@@ -557,18 +586,22 @@ export function HotelUserFormDialog({
                     />
                   </button>
                   <span className="text-sm text-ink-2">
-                    {isActive ? 'Activo — puede entrar al sistema' : 'De baja — ya no puede entrar'}
+                    {isActive
+                      ? t`Activo — puede entrar al sistema`
+                      : t`De baja — ya no puede entrar`}
                   </span>
                 </label>
                 <p className="text-xs text-ink-3">
-                  Dar de baja no borra nada: la persona deja de entrar y su historial queda.
+                  <Trans>
+                    Dar de baja no borra nada: la persona deja de entrar y su historial queda.
+                  </Trans>
                 </p>
               </FormRow>
             )}
 
             {saveError !== undefined && (
               <p role="alert" className="px-6 pb-2 text-sm text-red">
-                {saveErrorMessage(saveError)}
+                {saveErrorMessage(saveError, i18n)}
               </p>
             )}
 
@@ -589,15 +622,15 @@ export function HotelUserFormDialog({
                     confirmingBaja && 'border border-red/40 bg-red/5 font-semibold',
                   )}
                 >
-                  {confirmingBaja ? 'Sí, dar de baja' : 'Dar de baja'}
+                  {confirmingBaja ? t`Sí, dar de baja` : t`Dar de baja`}
                 </Button>
               )}
               <span className="flex-1" />
               <Button type="button" onClick={onClose} disabled={isBusy}>
-                Cancelar
+                <Trans>Cancelar</Trans>
               </Button>
               <Button type="submit" form={FORM_ID} variant="primary" disabled={isBusy}>
-                {isBusy ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear cuenta'}
+                {isBusy ? t`Guardando…` : isEditing ? t`Guardar cambios` : t`Crear cuenta`}
               </Button>
             </div>
           </form>
