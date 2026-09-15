@@ -45,6 +45,7 @@ export type MyProfile = WorkerApi & {
  */
 export interface CompleteSignupRequest {
   transportType?: string
+  photoPath?: string
   emergencyContactName?: string
   emergencyContactPhone?: string
   emergencyContactRelationship?: string
@@ -62,6 +63,8 @@ export interface NotificationApi {
   title: string
   body: string
   entity: { type: string; id: string } | null
+  /** Quien lo disparó con su acción; null en avisos sin actor humano. */
+  actor: { id: string; fullName: string; photoUrl: string | null } | null
   createdAt: string
   readAt: string | null
 }
@@ -80,6 +83,8 @@ export interface MyNotification {
   body: string
   entityType: string | null
   entityId: string | null
+  /** Quien lo disparó con su acción; null en avisos sin actor humano. */
+  actor: { id: string; fullName: string; photoUrl: string | null } | null
   createdAt: string
   /** `null` = no leída. */
   readAt: string | null

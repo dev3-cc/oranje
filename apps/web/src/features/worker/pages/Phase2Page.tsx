@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
 import { useCompleteSignupMutation, useGetMyProfileQuery } from '../api/workerApi'
+import { PhotoUploader } from '../components/PhotoUploader'
 import { TaxDeadlineBanner } from '../components/TaxDeadlineBanner'
 import { TaxDocumentUploader } from '../components/TaxDocumentUploader'
 
@@ -62,6 +63,13 @@ export function Phase2Page(): ReactNode {
           </Trans>
         </p>
       )}
+
+      <section className="flex flex-col gap-3 border-b border-line pb-4">
+        <h2 className="text-sm font-semibold text-ink">
+          <Trans>Tu foto</Trans>
+        </h2>
+        <PhotoUploader photoUrl={profile?.photoUrl ?? null} />
+      </section>
 
       <section className="flex flex-col gap-4">
         <h2 className="text-sm font-semibold text-ink">
