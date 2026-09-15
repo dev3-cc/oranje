@@ -9,7 +9,7 @@ import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 
 import type { CreateProposalDto } from './dto/create-proposal.dto.js'
 import type { ProposalEntity } from './entities/proposal.entity.js'
-import { ProposalRow, ProposalsRepository } from './proposals.repository.js'
+import { ProposalRow, ProposalsRepository, type RateInput } from './proposals.repository.js'
 
 const WORKING_STATES = ['GREEN', 'BROWN']
 
@@ -49,10 +49,15 @@ export class ProposalsService {
       })
     }
 
+    const rates = dto.rates ?? []
+
+    await this.assertRates(rates)
+
     return toEntity(
       await this.repo.create({
         prospectId,
         servicesNote: dto.servicesNote ?? null,
+        rates,
         payRate: dto.payRate ?? null,
         billRate: dto.billRate ?? null,
         userId: user.id,
@@ -78,11 +83,18 @@ export class ProposalsService {
       })
     }
 
+    /* `undefined` = el PATCH no trae cuadro y se queda como está; un arreglo
+       vacío sí lo vacía, que es lo que pide quien borra todos los renglones. */
+    const rates = dto.rates ?? null
+
+    await this.assertRates(rates ?? [])
+
     return toEntity(
       await this.repo.update({
         prospectId,
         proposalId,
         servicesNote: dto.servicesNote ?? null,
+        rates,
         payRate: dto.payRate ?? null,
         billRate: dto.billRate ?? null,
         userId: user.id,
@@ -104,6 +116,16 @@ export class ProposalsService {
       throw new ConflictException({
         code: 'PROPOSAL_ALREADY_SENT',
         message: `La versión ${proposal.version} ya se envió`,
+      })
+    }
+
+    /* El cuadro de tarifas ES la propuesta: sin un solo puesto cotizado no hay
+       nada que el hotel pueda aceptar. Las versiones anteriores al cuadro
+       llevaban una tarifa global y siguen siendo válidas. */
+    if (proposal.rates.length === 0 && proposal.payRate === null) {
+      throw new UnprocessableEntityException({
+        code: 'PROPOSAL_WITHOUT_RATES',
+        message: 'Agrega al menos un puesto con su tarifa antes de enviar la propuesta',
       })
     }
 
@@ -142,6 +164,55 @@ export class ProposalsService {
 
   async hasSent(prospectId: string): Promise<boolean> {
     return (await this.repo.lastSent(prospectId)) !== null
+  }
+
+  /**
+   * Un renglón por puesto, el puesto tiene que existir en el catálogo, y el
+   * hotel nunca paga menos de lo que Oranje le paga al colaborador. Mismos
+   * códigos de error que el Documento de T&C, porque es el mismo cuadro.
+   */
+  private async assertRates(rates: RateInput[]): Promise<void> {
+    /* El CHECK de la tabla exige tarifas positivas; sin esto un "0" pasaba las
+       validaciones y reventaba como error crudo del motor en vez de 422. */
+    const zero = rates.find((r) => Number(r.payRate) <= 0 || Number(r.billRate) <= 0)
+
+    if (zero) {
+      throw new UnprocessableEntityException({
+        code: 'RATE_NOT_POSITIVE',
+        message: 'Las tarifas de un puesto tienen que ser mayores que cero',
+        details: [{ field: 'catalogPositionId', value: zero.catalogPositionId }],
+      })
+    }
+
+    const backwards = rates.find((r) => Number(r.billRate) < Number(r.payRate))
+
+    if (backwards) {
+      throw new UnprocessableEntityException({
+        code: 'RATE_MARGIN_NEGATIVE',
+        message: 'Hay un puesto donde el bill rate queda por debajo del pay rate',
+        details: [{ field: 'catalogPositionId', value: backwards.catalogPositionId }],
+      })
+    }
+
+    const ids = rates.map((r) => r.catalogPositionId)
+
+    if (new Set(ids).size !== ids.length) {
+      throw new UnprocessableEntityException({
+        code: 'RATE_DUPLICATED',
+        message: 'Hay dos tarifas para el mismo puesto',
+      })
+    }
+
+    const found = await this.repo.positionsExist(ids)
+    const missing = ids.find((id) => !found.has(id))
+
+    if (missing) {
+      throw new UnprocessableEntityException({
+        code: 'POSITION_NOT_FOUND',
+        message: 'Una de las tarifas apunta a un puesto que no existe en el catálogo',
+        details: [{ field: 'catalogPositionId', value: missing }],
+      })
+    }
   }
 
   private async assertOpen(prospectId: string): Promise<void> {
@@ -193,6 +264,12 @@ function toEntity(row: ProposalRow): ProposalEntity {
     id: row.id,
     version: row.version,
     servicesNote: row.servicesNote,
+    rates: row.rates.map((r) => ({
+      id: r.id,
+      position: r.catalogPosition,
+      payRate: r.payRate.toFixed(2),
+      billRate: r.billRate.toFixed(2),
+    })),
     payRate: row.payRate?.toFixed(4) ?? null,
     billRate: row.billRate?.toFixed(4) ?? null,
     isDraft: row.sentAt === null,

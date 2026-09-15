@@ -82,6 +82,22 @@ afterAll(async () => {
   await close()
 })
 
+/**
+ * Enviar exige el cuadro de tarifas (`PROPOSAL_WITHOUT_RATES`), así que las
+ * propuestas que se van a enviar nacen con un renglón. El puesto se busca por
+ * `code` para que la suite corra igual en una base recién sembrada.
+ */
+async function conTarifa(): Promise<{
+  rates: [{ catalogPositionId: string; payRate: string; billRate: string }]
+}> {
+  const position = await db.catalogPosition.findFirstOrThrow({
+    where: { code: 'HOUSEKEEPER' },
+    select: { id: true },
+  })
+
+  return { rates: [{ catalogPositionId: position.id, payRate: '15.00', billRate: '19.50' }] }
+}
+
 describe('descartar un borrador', () => {
   it('lo borra, devuelve nada y deja el hecho en el journal', async () => {
     const draft = await proposals.create(prospectId, {}, user)
@@ -101,7 +117,7 @@ describe('descartar un borrador', () => {
 
   it('lo enviado NO se borra, y la fila sigue ahí', async () => {
     const id = await nuevoProspecto()
-    const draft = await proposals.create(id, {}, user)
+    const draft = await proposals.create(id, await conTarifa(), user)
 
     await proposals.send(id, draft.id, user)
 
@@ -142,7 +158,7 @@ describe('descartar un borrador', () => {
   it('libera el número de versión: crear v2, borrarla y crear de nuevo da v2', async () => {
     const id = await nuevoProspecto()
 
-    const v1 = await proposals.create(id, {}, user)
+    const v1 = await proposals.create(id, await conTarifa(), user)
     await proposals.send(id, v1.id, user)
 
     const v2 = await proposals.create(id, {}, user)
