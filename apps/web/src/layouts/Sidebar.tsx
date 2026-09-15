@@ -127,7 +127,7 @@ export function Sidebar(): ReactNode {
   const navigate = useNavigate()
 
   return (
-    <SidebarRoot>
+    <SidebarRoot className="border-white/40 backdrop-blur-2xl">
       <SidebarHeader className="h-hd justify-center px-5">
         <div className="w-44 aspect-[1024/100] self-start" role="img" aria-label="Oranje">
           <DotLottieReact src={logoAnimado} loop autoplay />

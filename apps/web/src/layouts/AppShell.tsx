@@ -86,6 +86,25 @@ export function AppShell(): ReactNode {
       style={{ '--sidebar-width': 'var(--sb)' } as CSSProperties}
       className="h-screen overflow-hidden bg-bg"
     >
+      {/* El sidebar flota SOBRE esto, no a un lado (vidrio de verdad, Hugo
+          2026-09-15): sin figuras detrás el blur del panel no tiene nada que
+          difuminar más que el plano `--bg`. Tres manchas estáticas (sin
+          animación, a pedido de Hugo) en los tokens de marca — el blur del
+          panel hace el resto. */}
+      <div aria-hidden className="pointer-events-none fixed inset-y-0 left-0 z-0 w-(--sb)">
+        <div
+          className="absolute -top-24 -left-16 size-72 rounded-full opacity-60 blur-3xl"
+          style={{ backgroundColor: 'var(--o-200)' }}
+        />
+        <div
+          className="absolute top-1/2 -right-20 size-80 rounded-full opacity-50 blur-3xl"
+          style={{ backgroundColor: 'var(--o-500)' }}
+        />
+        <div
+          className="absolute -bottom-24 -left-10 size-64 rounded-full opacity-40 blur-3xl"
+          style={{ backgroundColor: 'var(--o-700)' }}
+        />
+      </div>
       <Sidebar />
       <SidebarInset className="relative flex h-screen min-w-0 flex-1 flex-col overflow-hidden bg-bg">
         <BackgroundBeams />

@@ -74,8 +74,11 @@
 
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* Sidebar (shadcn) — DERIVADAS de los tokens Oranje (D-16), nunca al revés */
-  --sidebar: var(--surface);
+  /* Sidebar (shadcn) — DERIVADAS de los tokens Oranje (D-16), nunca al revés.
+     Vidrio de verdad (Hugo, 2026-09-15): el panel flota SOBRE el contenido
+     (Sidebar.tsx le agrega backdrop-blur) en vez de ir a un lado, así que
+     necesita transparencia real, no un blanco sólido. */
+  --sidebar: color-mix(in srgb, var(--surface) 68%, transparent);
   --sidebar-foreground: var(--ink-2);
   --sidebar-primary: var(--o-500);
   --sidebar-primary-foreground: var(--ink);
