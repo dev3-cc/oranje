@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import type { ReactNode } from 'react'
 
 import {
@@ -10,7 +11,7 @@ import {
 import { FilterReset } from '@/shared/components/FilterReset'
 import { FilterSelect } from '@/shared/components/FilterSelect'
 import { SearchField } from '@/shared/components/SearchField'
-import { CONTRACT_STATUSES } from '@/shared/constants/contractStatus'
+import { CONTRACT_STATUS_LABEL, CONTRACT_STATUSES } from '@/shared/constants/contractStatus'
 
 export function ClientFilters({
   filters,
@@ -23,6 +24,8 @@ export function ClientFilters({
   activationYears: number[]
   onChange: (filters: Filters) => void
 }): ReactNode {
+  const { t } = useLingui()
+
   const update =
     <K extends keyof Filters>(key: K) =>
     (value: string): void => {
@@ -41,30 +44,35 @@ export function ClientFilters({
       <SearchField
         value={filters.search}
         onChange={update('search')}
-        label="Buscar hotel"
-        placeholder="Nombre del hotel, p. ej. Puerto Real…"
+        label={t`Buscar hotel`}
+        placeholder={t`Nombre del hotel, p. ej. Puerto Real…`}
         className="w-full max-w-md"
       />
 
       <FilterSelect
-        label="Zona"
-        anyLabel="todas"
+        label={t`Zona`}
+        anyLabel={t`todas`}
         value={filters.zoneName}
         options={zoneNames.map((zone) => ({ value: zone, label: zone }))}
         onChange={update('zoneName')}
       />
 
       <FilterSelect
-        label="Contrato"
-        anyLabel="todos"
+        label={t`Contrato`}
+        anyLabel={t`todos`}
         value={filters.contractStatus}
-        options={CONTRACT_STATUSES.map((status) => ({ value: status, label: status }))}
+        /* El código del enum no es texto humano: la etiqueta ya existe y
+           además habla el idioma activo. */
+        options={CONTRACT_STATUSES.map((status) => ({
+          value: status,
+          label: CONTRACT_STATUS_LABEL[status],
+        }))}
         onChange={update('contractStatus')}
       />
 
       <FilterSelect
-        label="Cliente desde"
-        anyLabel="siempre"
+        label={t`Cliente desde`}
+        anyLabel={t`siempre`}
         value={filters.activationYear}
         options={activationYears.map((year) => ({ value: String(year), label: String(year) }))}
         onChange={update('activationYear')}
@@ -85,7 +93,7 @@ export function ClientFilters({
 
       <span className="ml-auto">
         <FilterSelect
-          label="Ordenar"
+          label={t`Ordenar`}
           anyLabel={CLIENT_SORT_LABEL.RECENT}
           anyValue="RECENT"
           value={filters.sort}

@@ -27,20 +27,20 @@ import { MOTION, SPRING } from '@/shared/lib/motion'
 
 /** El orden de las pestañas: decide hacia dónde se desliza la pantalla al cambiar. */
 const TAB_ORDER = [
-  '/colaborador',
-  '/colaborador/ponchar',
-  '/colaborador/alta',
-  '/colaborador/avisos',
-  '/colaborador/perfil',
+  '/collaborator',
+  '/collaborator/punch',
+  '/collaborator/alta',
+  '/collaborator/notifications',
+  '/collaborator/profile',
 ]
 
 /** A dónde lleva cada pestaña al deslizar (Alta siempre a su Fase 2). */
 const TAB_PATH = [
-  '/colaborador',
-  '/colaborador/ponchar',
-  '/colaborador/alta-2',
-  '/colaborador/avisos',
-  '/colaborador/perfil',
+  '/collaborator',
+  '/collaborator/punch',
+  '/collaborator/signup-2',
+  '/collaborator/notifications',
+  '/collaborator/profile',
 ]
 
 /** Cuánto hay que arrastrar (px) o qué tan rápido (px/s) para cambiar de pestaña. */
@@ -166,7 +166,7 @@ export function MobileShell(): ReactNode {
             <DropdownMenuContent align="end" className="min-w-44">
               <DropdownMenuItem
                 onSelect={() => {
-                  void navigate('/colaborador/perfil')
+                  void navigate('/collaborator/profile')
                 }}
               >
                 <MaterialIcon name="person" className="text-lg" aria-hidden />
@@ -213,19 +213,19 @@ export function MobileShell(): ReactNode {
           aria-label={t`Secciones`}
           className="isolate flex gap-1 border-b border-line px-4 py-2.5"
         >
-          <NavLink to="/colaborador" end className={tabClass}>
+          <NavLink to="/collaborator" end className={tabClass}>
             {tab(t`Inicio`)}
           </NavLink>
-          <NavLink to="/colaborador/ponchar" className={tabClass}>
+          <NavLink to="/collaborator/punch" className={tabClass}>
             {tab(t`Ponchar`)}
           </NavLink>
-          <NavLink to="/colaborador/alta-2" className={tabClass}>
+          <NavLink to="/collaborator/signup-2" className={tabClass}>
             {tab(t`Mis datos`)}
           </NavLink>
-          <NavLink to="/colaborador/avisos" className={tabClass}>
+          <NavLink to="/collaborator/notifications" className={tabClass}>
             {tab(unread > 0 ? t`Avisos · ${unread}` : t`Avisos`)}
           </NavLink>
-          <NavLink to="/colaborador/perfil" className={tabClass}>
+          <NavLink to="/collaborator/profile" className={tabClass}>
             {tab(t`Perfil`)}
           </NavLink>
         </nav>

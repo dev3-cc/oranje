@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
@@ -17,6 +18,7 @@ import { formatDaysInStatus } from '@/shared/lib/formatters'
  * para que las columnas del kanban no bailen entre tarjetas.
  */
 export function ProspectCard({ prospect }: { prospect: ProspectSummary }): ReactNode {
+  const { i18n } = useLingui()
   return (
     <StarBorder>
       <Link
@@ -37,7 +39,7 @@ export function ProspectCard({ prospect }: { prospect: ProspectSummary }): React
         <div className="absolute inset-x-2 bottom-2 rounded-xl bg-white/15 p-3 text-white backdrop-blur-sm">
           <p className="truncate text-base font-semibold">{prospect.hotelName}</p>
           <p className="mt-0.5 truncate text-sm text-white/80">
-            {prospect.zone} · {resolveActivityLabel(prospect)}
+            {prospect.zone} · {resolveActivityLabel(prospect, i18n)}
           </p>
           <div className="mt-2 flex items-center gap-2">
             <span

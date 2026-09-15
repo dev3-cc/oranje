@@ -9,8 +9,8 @@ import { store } from '@/app/store'
 
 function renderDetail(contractId = 'ct-0184'): void {
   const router = createMemoryRouter(
-    [{ path: '/contratos/:contractId', element: <ContractDetailPage /> }],
-    { initialEntries: [`/contratos/${contractId}`] },
+    [{ path: '/contracts/:contractId', element: <ContractDetailPage /> }],
+    { initialEntries: [`/contracts/${contractId}`] },
   )
 
   render(

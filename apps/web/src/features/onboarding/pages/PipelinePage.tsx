@@ -1,4 +1,5 @@
 import { DragDropContext, type DragStart, type DropResult } from '@hello-pangea/dnd'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { Skeleton, cn } from '@oranje/ui'
 import { useReducedMotion } from 'framer-motion'
 import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
@@ -44,6 +45,7 @@ const ANY = 'ALL'
 const BD_ROLE = 'ROL-V-01'
 
 export function PipelinePage(): ReactNode {
+  const { t } = useLingui()
   const navigate = useNavigate()
   const [isFormOpen, setIsFormOpen] = useState(false)
   const { filters, isStaleOnly, activeCount, toggleStaleOnly, setZone, setOwnerId, reset } =
@@ -61,9 +63,9 @@ export function PipelinePage(): ReactNode {
   /** Los filtros puestos, en palabras: el vacío los nombra para que se entienda por qué. */
   const activeFilterLabels = [
     filters.zone !== null &&
-      `Zona: ${zoneOptions.find((zone) => zone.value === filters.zone)?.label ?? filters.zone}`,
-    filters.ownerId !== null && 'Dueño: yo',
-    isStaleOnly && 'Sin actividad 7+ días',
+      t`Zona: ${zoneOptions.find((zone) => zone.value === filters.zone)?.label ?? filters.zone}`,
+    filters.ownerId !== null && t`Dueño: yo`,
+    isStaleOnly && t`Sin actividad 7+ días`,
   ].filter((label): label is string => typeof label === 'string')
 
   /**
@@ -131,21 +133,21 @@ export function PipelinePage(): ReactNode {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-bold tracking-tight text-ink">
-              <FoldText text="Pipeline" />
+              <FoldText text={t`Pipeline`} />
             </h1>
             <SemaforoHelpButton />
           </div>
           <p className="mt-1 text-sm text-ink-3">
             {isLoading
-              ? 'Cargando prospectos…'
-              : `${board?.openCount ?? 0} prospectos abiertos · ${board?.zoneCount ?? 0} zonas`}
+              ? t`Cargando prospectos…`
+              : t`${board?.openCount ?? 0} prospectos abiertos · ${board?.zoneCount ?? 0} zonas`}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           {/* Pendiente: ninguna de las dos pantallas destino está diseñada todavía */}
-          <Button disabled title="La vista tabla llega pronto">
-            Vista tabla
+          <Button disabled title={t`La vista tabla llega pronto`}>
+            <Trans>Vista tabla</Trans>
           </Button>
           <Button
             variant="primary"
@@ -153,7 +155,7 @@ export function PipelinePage(): ReactNode {
               setIsFormOpen(true)
             }}
           >
-            Nuevo prospecto
+            <Trans>Nuevo prospecto</Trans>
           </Button>
         </div>
       </header>
@@ -163,8 +165,8 @@ export function PipelinePage(): ReactNode {
             filtros de verdad, con el select-píldora de la casa. */}
         <FilterSelect
           icon="place"
-          label="Zona"
-          anyLabel="todas"
+          label={t`Zona`}
+          anyLabel={t`todas`}
           value={filters.zone ?? ANY}
           anyValue={ANY}
           options={zoneOptions}
@@ -175,11 +177,11 @@ export function PipelinePage(): ReactNode {
         {canFilterOwner && (
           <FilterSelect
             icon="person"
-            label="Dueño"
-            anyLabel="todos"
+            label={t`Dueño`}
+            anyLabel={t`todos`}
             value={filters.ownerId ?? ANY}
             anyValue={ANY}
-            options={[{ value: session.id, label: 'yo' }]}
+            options={[{ value: session.id, label: t`yo` }]}
             onChange={(value) => {
               setOwnerId(value === ANY ? null : value)
             }}
@@ -195,14 +197,14 @@ export function PipelinePage(): ReactNode {
             isStaleOnly && 'bg-o-50 font-semibold text-o-700 ring-1 ring-o-500',
           )}
         >
-          Sin actividad 7+ días
+          <Trans>Sin actividad 7+ días</Trans>
         </button>
         <FilterReset activeCount={activeCount} onReset={reset} />
       </div>
 
       {isError && (
         <LoadError
-          message="No se pudo cargar el Pipeline. Reintenta en unos segundos."
+          message={t`No se pudo cargar el Pipeline. Reintenta en unos segundos.`}
           onRetry={() => {
             void refetch()
           }}
@@ -246,18 +248,24 @@ export function PipelinePage(): ReactNode {
                «no hay prospectos» cuando solo están fuera del recorte. */
             <>
               <p className="text-base font-semibold text-ink">
-                Ningún prospecto coincide con {activeFilterLabels.join(' · ')}
+                <Trans>Ningún prospecto coincide con {activeFilterLabels.join(' · ')}</Trans>
               </p>
               <p className="max-w-md text-sm text-ink-3">
-                Cambia ese filtro o quítalo con «Quitar filtros» para volver a ver el tablero
-                completo.
+                <Trans>
+                  Cambia ese filtro o quítalo con «Quitar filtros» para volver a ver el tablero
+                  completo.
+                </Trans>
               </p>
             </>
           ) : (
             <>
-              <p className="text-base font-semibold text-ink">Aún no hay prospectos abiertos</p>
+              <p className="text-base font-semibold text-ink">
+                <Trans>Aún no hay prospectos abiertos</Trans>
+              </p>
               <p className="max-w-md text-sm text-ink-3">
-                Da de alta el primero con «Nuevo prospecto»: el ciclo arranca en Gris.
+                <Trans>
+                  Da de alta el primero con «Nuevo prospecto»: el ciclo arranca en Gris.
+                </Trans>
               </p>
             </>
           )}

@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
@@ -31,13 +32,18 @@ export function ProposalVersionList({
   versions: ProposalVersionSummary[]
   isLoading?: boolean
 }): ReactNode {
+  const { t, i18n } = useLingui()
   return (
-    <SectionCard title="Versiones de la propuesta">
-      {isLoading && <p className="py-2 text-sm text-ink-3">Cargando propuestas…</p>}
+    <SectionCard title={t`Versiones de la propuesta`}>
+      {isLoading && (
+        <p className="py-2 text-sm text-ink-3">
+          <Trans>Cargando propuestas…</Trans>
+        </p>
+      )}
 
       {!isLoading && versions.length === 0 && (
         <p className="py-2 text-sm text-ink-3">
-          Todavía no hay propuesta para este hotel. Empieza con «Abrir propuesta».
+          <Trans>Todavía no hay propuesta para este hotel. Empieza con «Abrir propuesta».</Trans>
         </p>
       )}
 
@@ -49,24 +55,26 @@ export function ProposalVersionList({
               className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3"
             >
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-ink">Propuesta v{version.version}</p>
+                <p className="text-sm font-semibold text-ink">
+                  <Trans>Propuesta v{version.version}</Trans>
+                </p>
                 <p className="mt-1 text-sm text-ink-3">
                   {version.sentAt
-                    ? `Enviada ${formatDate(version.sentAt)} · ${version.byName}`
-                    : 'Borrador · sin enviar'}
+                    ? t`Enviada ${formatDate(version.sentAt)} · ${version.byName}`
+                    : t`Borrador · sin enviar`}
                 </p>
               </div>
 
               <div className="flex shrink-0 items-center gap-3">
-                <p className="text-sm text-ink-2">{summarizeRates(version)}</p>
+                <p className="text-sm text-ink-2">{summarizeRates(version, i18n)}</p>
 
                 <ContractPreviewButton hotelName={hotelName} version={version} />
 
                 <Link
-                  to={`/propuestas/${prospectId}/${String(version.version)}`}
+                  to={`/proposals/${prospectId}/${String(version.version)}`}
                   className={buttonClass('yellow', 'px-3 py-1.5 text-xs')}
                 >
-                  Ver propuesta
+                  <Trans>Ver propuesta</Trans>
                 </Link>
               </div>
             </li>
@@ -75,10 +83,10 @@ export function ProposalVersionList({
       )}
 
       <Link
-        to={`/pipeline/${prospectId}/propuesta`}
+        to={`/pipeline/${prospectId}/proposal`}
         className={buttonClass('secondary', 'mt-6 w-full')}
       >
-        Abrir propuesta
+        <Trans>Abrir propuesta</Trans>
       </Link>
     </SectionCard>
   )

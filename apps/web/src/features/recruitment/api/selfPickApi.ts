@@ -1,3 +1,6 @@
+import { i18n } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+
 import type {
   AssignableWorker,
   CreateAssignmentRequest,
@@ -104,7 +107,7 @@ async function fetchSlotBoard(
   const assignments = (assignmentsRes.data as ApiEnvelope<AssignmentApi[]>).data
   const position = requisition.positions.find((item) => item.id === positionId)
   if (!position) {
-    return { error: { status: 404, data: { message: 'El renglón no existe' } } }
+    return { error: { status: 404, data: { message: i18n._(msg`El renglón no existe`) } } }
   }
 
   /**

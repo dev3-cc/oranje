@@ -31,7 +31,7 @@ export function RequisitionMiniList({
           {requisitions.map((requisition) => (
             <li key={requisition.id} className="border-b border-line last:border-b-0">
               <Link
-                to="/requisiciones"
+                to="/requisitions"
                 className="flex items-center justify-between gap-4 py-3 transition-colors hover:bg-surface-2"
               >
                 <div className="flex min-w-0 items-center gap-3">

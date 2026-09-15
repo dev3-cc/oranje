@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@oranje/ui'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
@@ -10,7 +13,19 @@ import { HotelThumbnail } from '@/shared/components/HotelThumbnail'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TOKEN } from '@/shared/constants/contractStatus'
 
-const HEADERS = ['Número', 'Hotel', 'Estado', 'Vigencia', 'Posiciones', 'Overtime · Festivo', '']
+/**
+ * El último va en `null`: es la columna de acciones, que no lleva encabezado
+ * visible. Los demás se traducen al pintar con `i18n._()` (D-36).
+ */
+const HEADERS: readonly (MessageDescriptor | null)[] = [
+  msg`Número`,
+  msg`Hotel`,
+  msg`Estado`,
+  msg`Vigencia`,
+  msg`Posiciones`,
+  msg`Overtime · Festivo`,
+  null,
+]
 
 const NO_MULTIPLIER = '—'
 
@@ -25,10 +40,14 @@ export function ContractTable({
   items: ContractRow[]
   warningDays: number
 }): ReactNode {
+  const { i18n } = useLingui()
+
   if (items.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-        Ningún contrato coincide con esos filtros. Cambia el estado, la zona o la búsqueda.
+        <Trans>
+          Ningún contrato coincide con esos filtros. Cambia el estado, la zona o la búsqueda.
+        </Trans>
       </p>
     )
   }
@@ -40,11 +59,17 @@ export function ContractTable({
           <TableRow className="border-line">
             {HEADERS.map((header) => (
               <TableHead
-                key={header === '' ? 'acciones' : header}
+                key={header === null ? 'acciones' : header.id}
                 scope="col"
                 className="px-5 py-4 text-sm font-normal text-ink-3"
               >
-                {header === '' ? <span className="sr-only">Acciones</span> : header}
+                {header === null ? (
+                  <span className="sr-only">
+                    <Trans>Acciones</Trans>
+                  </span>
+                ) : (
+                  i18n._(header)
+                )}
               </TableHead>
             ))}
           </TableRow>
@@ -56,7 +81,7 @@ export function ContractTable({
               <TableCell className="px-5 py-5 text-base font-bold">
                 {}
                 <Link
-                  to={`/contratos/${row.id}`}
+                  to={`/contracts/${row.id}`}
                   className="rounded-sm text-ink hover:text-o-700 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
                 >
                   {row.number}
@@ -89,10 +114,10 @@ export function ContractTable({
 
               <TableCell className="px-5 py-5 text-right">
                 <Link
-                  to={`/contratos/${row.id}`}
+                  to={`/contracts/${row.id}`}
                   className="inline-flex items-center gap-1.5 rounded-md bg-o-50 px-4 py-2 text-sm font-medium text-o-700 hover:bg-o-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
                 >
-                  Abrir <span aria-hidden>→</span>
+                  <Trans>Abrir</Trans> <span aria-hidden>→</span>
                 </Link>
               </TableCell>
             </TableRow>

@@ -49,15 +49,8 @@ export const EXPIRY_WARNING_DAYS = 90
 export const EXPIRY_WINDOWS = [30, 60, 90, 180] as const
 
 /**
- * Los días de la semana como los numera `week_start_day` / `week_end_day`:
- * domingo es 0. Un contrato de lunes a domingo se guarda como 1 → 0.
+ * Cuántos días numera la semana: `week_start_day` / `week_end_day` van de 0
+ * (domingo) a 6. El NOMBRE de cada día lo da `weekdayName()` de `formatters`,
+ * que habla el idioma activo — aquí solo vive el rango.
  */
-export const WEEK_DAY_NAMES = [
-  'Domingo',
-  'Lunes',
-  'Martes',
-  'Miércoles',
-  'Jueves',
-  'Viernes',
-  'Sábado',
-] as const
+export const WEEK_DAY_COUNT = 7

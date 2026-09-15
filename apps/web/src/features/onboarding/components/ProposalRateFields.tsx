@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import {
   MaterialIcon,
   Select,
@@ -47,6 +48,7 @@ export function ProposalRateFields({
     }
   }
 }): ReactNode {
+  const { t } = useLingui()
   const { fields, append, remove } = useFieldArray({ control, name: 'rates' })
   /* Sin puestos en el catálogo no hay nada que cotizar: se dice quién los da de
      alta, en vez de dejar un selector vacío que parece roto. */
@@ -56,8 +58,10 @@ export function ProposalRateFields({
     <div className="flex flex-col gap-4">
       {!hasPositions && (
         <p role="status" className="rounded-md bg-yellow/25 p-4 text-sm leading-relaxed text-ink">
-          El catálogo no tiene puestos todavía. Pídele al Administrador que los agregue en Catálogos
-          · Departamentos y posiciones; sin ellos no se puede cotizar.
+          <Trans>
+            El catálogo no tiene puestos todavía. Pídele al Administrador que los agregue en
+            Catálogos · Departamentos y posiciones; sin ellos no se puede cotizar.
+          </Trans>
         </p>
       )}
 
@@ -73,7 +77,7 @@ export function ProposalRateFields({
                     htmlFor={`rate-position-${String(index)}`}
                     className="text-xs font-semibold text-ink-3"
                   >
-                    Puesto
+                    <Trans>Puesto</Trans>
                   </label>
                   {/* El puesto sale del catálogo. Radix y no `select` nativo:
                       la app no tiene ninguno desde la migración a shadcn. */}
@@ -88,10 +92,10 @@ export function ProposalRateFields({
                       >
                         <SelectTrigger
                           id={`rate-position-${String(index)}`}
-                          aria-label="Puesto"
+                          aria-label={t`Puesto`}
                           className="w-full"
                         >
-                          <SelectValue placeholder="Elige el puesto…" />
+                          <SelectValue placeholder={t`Elige el puesto…`} />
                         </SelectTrigger>
                         <SelectContent>
                           {positions.map((position) => (
@@ -110,7 +114,7 @@ export function ProposalRateFields({
                     htmlFor={`rate-pay-${String(index)}`}
                     className="text-xs font-semibold text-ink-3"
                   >
-                    Pay rate
+                    <Trans>Pay rate</Trans>
                   </label>
                   <MoneyInput
                     id={`rate-pay-${String(index)}`}
@@ -126,7 +130,7 @@ export function ProposalRateFields({
                     htmlFor={`rate-bill-${String(index)}`}
                     className="text-xs font-semibold text-ink-3"
                   >
-                    Bill rate
+                    <Trans>Bill rate</Trans>
                   </label>
                   <MoneyInput
                     id={`rate-bill-${String(index)}`}
@@ -142,7 +146,7 @@ export function ProposalRateFields({
                   onClick={() => {
                     remove(index)
                   }}
-                  aria-label={`Quitar el renglón ${String(index + 1)}`}
+                  aria-label={t`Quitar el renglón ${String(index + 1)}`}
                   className="flex size-10 items-center justify-center rounded-md text-ink-3 transition-colors hover:bg-surface hover:text-red focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
                 >
                   <MaterialIcon name="delete" aria-hidden className="text-lg" />
@@ -178,7 +182,7 @@ export function ProposalRateFields({
             append({ positionId: '', payRate: 0, billRate: 0 })
           }}
         >
-          Agregar puesto
+          <Trans>Agregar puesto</Trans>
         </Button>
       </div>
     </div>

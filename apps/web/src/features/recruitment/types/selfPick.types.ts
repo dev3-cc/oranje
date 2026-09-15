@@ -4,6 +4,11 @@
  * cumplir el motor (`FOR UPDATE SKIP LOCKED`, D-02).
  */
 
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+
+import { labelMap } from '@/shared/lib/i18nLabels'
+
 /** Un renglón con slots libres, ya aplanado para la tarjeta de la bolsa. */
 export interface SelfPickRow {
   requisitionId: string
@@ -69,10 +74,13 @@ export interface CreateAssignmentRequest {
   endDate?: string
 }
 
-export const ASSIGNMENT_TYPE_LABEL: Record<string, string> = {
-  FIXED: 'Fijo',
-  TEMPORARY: 'Temporal',
+const ASSIGNMENT_TYPE_MESSAGE: Record<string, MessageDescriptor> = {
+  FIXED: msg`Fijo`,
+  TEMPORARY: msg`Temporal`,
 }
+
+/** Traduce AL LEER (D-36): el mapa conserva su forma `Record<code, string>`. */
+export const ASSIGNMENT_TYPE_LABEL: Record<string, string> = labelMap(ASSIGNMENT_TYPE_MESSAGE)
 
 /** Un colaborador elegible para el slot, en la forma mínima del picker. */
 export interface AssignableWorker {

@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { MaterialIcon, cn } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
@@ -15,12 +18,16 @@ import {
  * Un paso del semáforo: el chip, qué significa y quién lo mueve al siguiente.
  * Los datos son los del seed (`catalogs.status_light_transition`): si aquella
  * tabla cambia, esta ayuda queda mintiendo — actualizarla junto con el seed.
+ *
+ * `movedBy`/`reactivatedBy` guardan el rol tal cual (BD/BDC), no prosa: se
+ * traducen solo las frases que los envuelven. El texto se traduce al pintar
+ * con `i18n._()` (D-36).
  */
 interface HelpStep {
   status: OnboardingStatus
-  /** Quién autoriza la SALIDA de este estado hacia el siguiente del camino. */
-  movedBy: string
-  detail?: string
+  /** Quién autoriza la SALIDA de este estado hacia el siguiente del camino; `null` = fin del camino. */
+  movedBy: 'BD' | 'BDC' | null
+  detail?: MessageDescriptor
 }
 
 /** El camino directo a cliente, en orden. */
@@ -30,30 +37,30 @@ const MAIN_PATH: HelpStep[] = [
   {
     status: 'GREEN',
     movedBy: 'BD',
-    detail: 'De Verde no se sale sin la Propuesta Personalizada enviada.',
+    detail: msg`De Verde no se sale sin la Propuesta Personalizada enviada.`,
   },
   { status: 'YELLOW', movedBy: 'BD' },
   {
     status: 'PINK',
     movedBy: 'BDC',
-    detail: 'La conversión a cliente es exclusiva del BDC y exige el Usuario del Hotel creado.',
+    detail: msg`La conversión a cliente es exclusiva del BDC y exige el Usuario del Hotel creado.`,
   },
-  { status: 'ORANGE', movedBy: '—', detail: 'Meta del ciclo: el hotel ya es cliente.' },
+  { status: 'ORANGE', movedBy: null, detail: msg`Meta del ciclo: el hotel ya es cliente.` },
 ]
 
 /** Las ramas: salidas del camino y su reactivación (siempre hacia Azul claro). */
 const BRANCHES: Array<{
   status: OnboardingStatus
-  enteredFrom: string
-  reactivatedBy: string
+  enteredFrom: MessageDescriptor
+  reactivatedBy: 'BD' | 'BDC'
 }> = [
-  { status: 'RED', enteredFrom: 'desde Verde, por el BD', reactivatedBy: 'BD' },
+  { status: 'RED', enteredFrom: msg`desde Verde, por el BD`, reactivatedBy: 'BD' },
   {
     status: 'BROWN',
-    enteredFrom: 'desde Verde (BD o BDC) o desde Rosa (BDC)',
+    enteredFrom: msg`desde Verde (BD o BDC) o desde Rosa (BDC)`,
     reactivatedBy: 'BDC',
   },
-  { status: 'BLACK', enteredFrom: 'desde Naranja, por el BDC', reactivatedBy: 'BDC' },
+  { status: 'BLACK', enteredFrom: msg`desde Naranja, por el BDC`, reactivatedBy: 'BDC' },
 ]
 
 function StatusRow({
@@ -99,28 +106,36 @@ export function SemaforoHelpDialog({
   isOpen: boolean
   onClose: () => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Cómo funciona el semáforo"
-      description="El ciclo comercial del hotel: de prospecto a cliente."
+      title={t`Cómo funciona el semáforo`}
+      description={t`El ciclo comercial del hotel: de prospecto a cliente.`}
       className="max-w-xl"
     >
       <div className="flex flex-col gap-5">
         <img src={personajeAyuda} alt="" aria-hidden className="mx-auto h-32 w-auto" />
         <section>
-          <h3 className="text-sm font-semibold text-ink">El camino a cliente</h3>
+          <h3 className="text-sm font-semibold text-ink">
+            <Trans>El camino a cliente</Trans>
+          </h3>
           <p className="mt-1 text-xs leading-relaxed text-ink-3">
-            Cada estado avanza solo hacia el siguiente; el semáforo nunca retrocede.
+            <Trans>Cada estado avanza solo hacia el siguiente; el semáforo nunca retrocede.</Trans>
           </p>
           <ol className="mt-3">
             {MAIN_PATH.map((step, index) => (
               <StatusRow
                 key={step.status}
                 status={step.status}
-                right={step.movedBy === '—' ? 'aquí termina el ciclo' : `avanza el ${step.movedBy}`}
-                detail={step.detail}
+                right={
+                  step.movedBy === null
+                    ? i18n._(msg`aquí termina el ciclo`)
+                    : i18n._(msg`avanza el ${step.movedBy}`)
+                }
+                detail={step.detail ? i18n._(step.detail) : undefined}
                 isLast={index === MAIN_PATH.length - 1}
               />
             ))}
@@ -128,28 +143,38 @@ export function SemaforoHelpDialog({
         </section>
 
         <section>
-          <h3 className="text-sm font-semibold text-ink">Las ramas: salir y volver</h3>
+          <h3 className="text-sm font-semibold text-ink">
+            <Trans>Las ramas: salir y volver</Trans>
+          </h3>
           <p className="mt-1 text-xs leading-relaxed text-ink-3">
-            «Regresar» un prospecto es salir por una rama y reactivarlo. La reentrada es siempre
-            hacia Azul claro, el único punto de retorno: se retoma el contacto, no la propuesta
-            vieja.
+            <Trans>
+              «Regresar» un prospecto es salir por una rama y reactivarlo. La reentrada es siempre
+              hacia Azul claro, el único punto de retorno: se retoma el contacto, no la propuesta
+              vieja.
+            </Trans>
           </p>
           <ul className="mt-3">
-            {BRANCHES.map((branch, index) => (
-              <StatusRow
-                key={branch.status}
-                status={branch.status}
-                right={`entra ${branch.enteredFrom}`}
-                detail={`Reactiva hacia Azul claro: ${branch.reactivatedBy === 'BD' ? 'el BD' : 'solo el BDC'}.`}
-                isLast={index === BRANCHES.length - 1}
-              />
-            ))}
+            {BRANCHES.map((branch, index) => {
+              const reactivatedLabel =
+                branch.reactivatedBy === 'BD' ? i18n._(msg`el BD`) : i18n._(msg`solo el BDC`)
+              return (
+                <StatusRow
+                  key={branch.status}
+                  status={branch.status}
+                  right={i18n._(msg`entra ${i18n._(branch.enteredFrom)}`)}
+                  detail={i18n._(msg`Reactiva hacia Azul claro: ${reactivatedLabel}.`)}
+                  isLast={index === BRANCHES.length - 1}
+                />
+              )
+            })}
           </ul>
         </section>
 
         <p className="rounded-md bg-surface-2 p-3 text-xs leading-relaxed text-ink-3">
-          Salir por una rama pide siempre el motivo, que queda en el historial del prospecto. Cerrar
-          el ciclo (archivarlo) es un acto aparte: libera al hotel para un ciclo nuevo.
+          <Trans>
+            Salir por una rama pide siempre el motivo, que queda en el historial del prospecto.
+            Cerrar el ciclo (archivarlo) es un acto aparte: libera al hotel para un ciclo nuevo.
+          </Trans>
         </p>
       </div>
     </Modal>
@@ -158,14 +183,15 @@ export function SemaforoHelpDialog({
 
 /** Icono de ayuda que abre el diálogo. Se ancla junto a lo que explica. */
 export function SemaforoHelpButton({ className }: { className?: string }): ReactNode {
+  const { t } = useLingui()
   const [isOpen, setIsOpen] = useState(false)
 
   return (
     <>
       <button
         type="button"
-        aria-label="Cómo funciona el semáforo"
-        title="Cómo funciona el semáforo"
+        aria-label={t`Cómo funciona el semáforo`}
+        title={t`Cómo funciona el semáforo`}
         onClick={() => {
           setIsOpen(true)
         }}

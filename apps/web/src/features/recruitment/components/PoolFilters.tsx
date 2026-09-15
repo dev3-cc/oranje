@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import type { ReactNode } from 'react'
 
 import {
@@ -10,7 +11,7 @@ import {
 import { FilterReset } from '@/shared/components/FilterReset'
 import { FilterSelect } from '@/shared/components/FilterSelect'
 import { SearchField } from '@/shared/components/SearchField'
-import { WORKER_STATUSES } from '@/shared/constants/workerStatus'
+import { WORKER_STATUS_LABEL, WORKER_STATUSES } from '@/shared/constants/workerStatus'
 
 export function PoolFilters({
   filters,
@@ -24,6 +25,7 @@ export function PoolFilters({
   /** La consulta al back en vuelo: el campo enseña el Spinner de shadcn. */
   isSearching?: boolean
 }): ReactNode {
+  const { t } = useLingui()
   const update =
     <K extends keyof Filters>(key: K) =>
     (value: string): void => {
@@ -46,16 +48,16 @@ export function PoolFilters({
         isSearching={isSearching}
         value={filters.search}
         onChange={update('search')}
-        label="Buscar colaborador"
-        placeholder="Nombre del colaborador, p. ej. Ana Rivera…"
+        label={t`Buscar colaborador`}
+        placeholder={t`Nombre del colaborador, p. ej. Ana Rivera…`}
         className="w-full max-w-md"
       />
 
       <div className="flex flex-wrap items-center gap-3">
         <FilterSelect
           icon="work"
-          label="Posición"
-          anyLabel="todas"
+          label={t`Posición`}
+          anyLabel={t`todas`}
           value={filters.catalogPositionId}
           onChange={update('catalogPositionId')}
           options={(options?.positions ?? []).map((item) => ({
@@ -66,8 +68,8 @@ export function PoolFilters({
 
         <FilterSelect
           icon="place"
-          label="Zona"
-          anyLabel="todas"
+          label={t`Zona`}
+          anyLabel={t`todas`}
           value={filters.zoneId}
           onChange={update('zoneId')}
           options={(options?.zones ?? []).map((item) => ({
@@ -78,8 +80,8 @@ export function PoolFilters({
 
         <FilterSelect
           icon="translate"
-          label="Inglés"
-          anyLabel="cualquiera"
+          label={t`Inglés`}
+          anyLabel={t`cualquiera`}
           value={filters.englishLevelId}
           onChange={update('englishLevelId')}
           options={(options?.englishLevels ?? []).map((item) => ({
@@ -90,8 +92,8 @@ export function PoolFilters({
 
         <FilterSelect
           icon="badge"
-          label="Modalidad"
-          anyLabel="todas"
+          label={t`Modalidad`}
+          anyLabel={t`todas`}
           value={filters.hiringModalityId}
           onChange={update('hiringModalityId')}
           options={(options?.modalities ?? []).map((item) => ({
@@ -102,11 +104,17 @@ export function PoolFilters({
 
         <FilterSelect
           icon="traffic"
-          label="Estado"
-          anyLabel="todos"
+          label={t`Estado`}
+          anyLabel={t`todos`}
           value={filters.status}
           onChange={update('status')}
-          options={WORKER_STATUSES.map((status) => ({ value: status, label: status }))}
+          /* El código del Semáforo del Colaborador no es texto humano, y el
+             mismo color significa cosas distintas en otros semáforos: la
+             etiqueta correcta es la de ESTE semáforo. */
+          options={WORKER_STATUSES.map((status) => ({
+            value: status,
+            label: WORKER_STATUS_LABEL[status],
+          }))}
         />
 
         <FilterReset

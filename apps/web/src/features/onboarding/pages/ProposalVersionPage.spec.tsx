@@ -9,8 +9,8 @@ import { store } from '@/app/store'
 
 function renderVersion(prospectId: string, version: string): void {
   const router = createMemoryRouter(
-    [{ path: '/propuestas/:prospectId/:version', element: <ProposalVersionPage /> }],
-    { initialEntries: [`/propuestas/${prospectId}/${version}`] },
+    [{ path: '/proposals/:prospectId/:version', element: <ProposalVersionPage /> }],
+    { initialEntries: [`/proposals/${prospectId}/${version}`] },
   )
 
   render(

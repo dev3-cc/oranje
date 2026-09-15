@@ -1,4 +1,7 @@
+import { msg } from '@lingui/core/macro'
+
 import type { ContractStatus } from '@/shared/constants/contractStatus'
+import { labelMap } from '@/shared/lib/i18nLabels'
 import type { GeoPoint } from '@/shared/types/geo.types'
 
 /**
@@ -62,11 +65,14 @@ export const CLIENT_SORTS = ['RECENT', 'OLDEST', 'NAME'] as const
 
 export type ClientSort = (typeof CLIENT_SORTS)[number]
 
-export const CLIENT_SORT_LABEL: Record<ClientSort, string> = {
-  RECENT: 'más reciente',
-  OLDEST: 'más antiguo',
-  NAME: 'nombre A–Z',
+const CLIENT_SORT_MESSAGE = {
+  RECENT: msg`más reciente`,
+  OLDEST: msg`más antiguo`,
+  NAME: msg`nombre A–Z`,
 }
+
+/** Se traduce al LEER (`labelMap`), así que sus consumidores siguen viendo texto. */
+export const CLIENT_SORT_LABEL: Record<ClientSort, string> = labelMap(CLIENT_SORT_MESSAGE)
 
 /** Ningún filtro puesto en esa columna. */
 export const ANY_VALUE = 'ALL'

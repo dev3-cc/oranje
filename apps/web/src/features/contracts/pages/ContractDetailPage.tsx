@@ -25,15 +25,11 @@ import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { NoticeCard } from '@/shared/components/NoticeCard'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
-import {
-  CONTRACT_STATUS_LABEL,
-  CONTRACT_STATUS_TOKEN,
-  WEEK_DAY_NAMES,
-} from '@/shared/constants/contractStatus'
+import { CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TOKEN } from '@/shared/constants/contractStatus'
 import { useCan } from '@/shared/hooks/useCan'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
-import { formatDate } from '@/shared/lib/formatters'
+import { formatDate, weekdayName } from '@/shared/lib/formatters'
 
 /**
  * La ficha del contrato, a ancho completo y con su propia ruta.
@@ -129,7 +125,7 @@ export function ContractDetailPage(): ReactNode {
         <p className="text-sm text-red">
           <Trans>Este contrato no existe o fue borrado. Vuelve a la lista y elige otro.</Trans>
         </p>
-        <Link to="/contratos" className="text-sm font-semibold text-o-700 hover:underline">
+        <Link to="/contracts" className="text-sm font-semibold text-o-700 hover:underline">
           <Trans>Volver a Contratos</Trans>
         </Link>
       </div>
@@ -145,7 +141,7 @@ export function ContractDetailPage(): ReactNode {
     },
     {
       label: t`Semana`,
-      value: `${WEEK_DAY_NAMES[contract.weekStartDay] ?? '—'} → ${WEEK_DAY_NAMES[contract.weekEndDay] ?? '—'}`,
+      value: `${weekdayName(contract.weekStartDay) || '—'} → ${weekdayName(contract.weekEndDay) || '—'}`,
       foot: `week_start_day ${String(contract.weekStartDay)} · week_end_day ${String(contract.weekEndDay)}`,
     },
     { label: t`Número`, value: contract.number, foot: 'number · único' },
@@ -159,7 +155,7 @@ export function ContractDetailPage(): ReactNode {
   return (
     <div className="flex flex-col gap-6">
       <nav aria-label={t`Ruta`} className="flex items-center gap-2 text-sm text-ink-3">
-        <Link to="/contratos" className="hover:text-o-700">
+        <Link to="/contracts" className="hover:text-o-700">
           <Trans>Contratos</Trans>
         </Link>
         <span aria-hidden>/</span>

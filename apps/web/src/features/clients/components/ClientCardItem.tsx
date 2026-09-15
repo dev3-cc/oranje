@@ -1,3 +1,4 @@
+import { Plural, Trans, useLingui } from '@lingui/react/macro'
 import { cn } from '@oranje/ui'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
@@ -37,6 +38,7 @@ export function ClientCardItem({
   isSelected: boolean
   onSelect: (clientId: string) => void
 }): ReactNode {
+  const { t } = useLingui()
   const { contract } = client
 
   return (
@@ -56,7 +58,7 @@ export function ClientCardItem({
           */}
             <button
               type="button"
-              aria-label={`Ver ${client.hotelName} en el mapa`}
+              aria-label={t`Ver ${client.hotelName} en el mapa`}
               onClick={() => {
                 onSelect(client.id)
               }}
@@ -80,7 +82,9 @@ export function ClientCardItem({
                     </button>
                   </h3>
                   <p className="mt-0.5 text-sm text-ink-3">
-                    Zona {client.zoneName} · cliente desde {formatDate(client.activatedAt)}
+                    <Trans>
+                      Zona {client.zoneName} · cliente desde {formatDate(client.activatedAt)}
+                    </Trans>
                   </p>
                 </div>
 
@@ -91,7 +95,7 @@ export function ClientCardItem({
                   />
                 ) : (
                   <span className="rounded-full bg-surface-3 px-3 py-1.5 text-sm font-medium text-ink-3">
-                    sin contrato
+                    <Trans>sin contrato</Trans>
                   </span>
                 )}
               </div>
@@ -101,21 +105,26 @@ export function ClientCardItem({
                   <>
                     {/* El folio abre su contrato, como en Contratos. */}
                     <Link
-                      to={`/contratos/${contract.id}`}
+                      to={`/contracts/${contract.id}`}
                       className="inline-flex items-center rounded-md border border-line bg-surface-2 px-3 py-1.5 text-sm whitespace-nowrap text-ink-2 hover:border-o-500 hover:text-o-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
                     >
                       {contract.number}
                     </Link>
                     <Fact>
-                      {contract.positionCount}{' '}
-                      {contract.positionCount === 1 ? 'posición' : 'posiciones'}
+                      <Plural
+                        value={contract.positionCount}
+                        one="# posición"
+                        other="# posiciones"
+                      />
                     </Fact>
                     <Fact>
                       {formatMoney(contract.minRate)} – {formatMoney(contract.maxRate)}
                     </Fact>
                   </>
                 )}
-                <Fact>geocerca {client.geofenceRadiusM} m</Fact>
+                <Fact>
+                  <Trans>geocerca {client.geofenceRadiusM} m</Trans>
+                </Fact>
               </div>
             </div>
           </div>
@@ -128,10 +137,10 @@ export function ClientCardItem({
               <Button
                 variant="secondary"
                 disabled
-                title="Por ahora, edita el hotel desde su ficha en el Pipeline"
+                title={t`Por ahora, edita el hotel desde su ficha en el Pipeline`}
                 className="border-transparent bg-transparent px-2"
               >
-                Editar hotel
+                <Trans>Editar hotel</Trans>
               </Button>
 
               {/*
@@ -144,7 +153,7 @@ export function ClientCardItem({
                 to={`/pipeline/${client.prospectId}`}
                 className="inline-flex items-center gap-1.5 rounded-md bg-o-50 px-4 py-2 text-sm font-medium text-o-700 hover:bg-o-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
               >
-                Ver detalle <span aria-hidden>→</span>
+                <Trans>Ver detalle</Trans> <span aria-hidden>→</span>
               </Link>
             </div>
           </div>

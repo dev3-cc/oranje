@@ -29,7 +29,7 @@ export function ContractCardGrid({ rows }: { rows: ContractRow[] }): ReactNode {
         <li key={row.id}>
           <MagicCard className="rounded-2xl">
             <Link
-              to={`/contratos/${row.id}`}
+              to={`/contracts/${row.id}`}
               className="block touch-manipulation overflow-hidden rounded-2xl bg-surface shadow-md transition-shadow hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
             >
               <div className="relative h-28">

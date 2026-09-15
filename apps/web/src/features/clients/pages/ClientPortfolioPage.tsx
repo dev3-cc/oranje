@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { statusLight } from '@oranje/ui'
 import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react'
 
@@ -43,6 +44,7 @@ const NO_CONTRACT_COLOR = statusLight['st-gris']
  * lo mismo, y que cada una llevara su propio foco obligaría a buscar dos veces.
  */
 export function ClientPortfolioPage(): ReactNode {
+  const { t } = useLingui()
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS)
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -86,8 +88,10 @@ export function ClientPortfolioPage(): ReactNode {
           Math.max(0, (Date.now() - new Date(client.activatedAt).getTime()) / (30.44 * 86_400_000)),
         0,
       ) / items.length
-    return months >= 12 ? `${String(Math.round(months / 12))} a` : `${String(Math.round(months))} m`
-  }, [items])
+    return months >= 12
+      ? t`${String(Math.round(months / 12))} a`
+      : t`${String(Math.round(months))} m`
+  }, [items, t])
   /** Solo clientes con foto: la vitrina es de imágenes reales, no de placeholders. */
   const galleryItems = useMemo(
     () =>
@@ -102,13 +106,15 @@ export function ClientPortfolioPage(): ReactNode {
       <header className="relative isolate flex items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-ink">
-            <FoldText text="Clientes activos" />
+            <FoldText text={t`Clientes activos`} />
           </h1>
           <p className="mt-1.5 text-sm text-ink-3">
-            {IS_DEV_UI
-              ? 'commercial.vw_client · hoteles con activated_at'
-              : 'Hoteles activados como clientes, listos para generar requisiciones'}
-            {portfolio && ` · ${String(portfolio.total)} en cartera`}
+            {IS_DEV_UI ? (
+              'commercial.vw_client · hoteles con activated_at'
+            ) : (
+              <Trans>Hoteles activados como clientes, listos para generar requisiciones</Trans>
+            )}
+            {portfolio && ` · ${t`${String(portfolio.total)} en cartera`}`}
           </p>
         </div>
         {/* Marca de agua: grande, opacada y disuelta con degradado hacia el contenido. */}
@@ -146,7 +152,7 @@ export function ClientPortfolioPage(): ReactNode {
 
       {isError && (
         <LoadError
-          message="No se pudo cargar Clientes Activos. Reintenta en unos segundos."
+          message={t`No se pudo cargar Clientes Activos. Reintenta en unos segundos.`}
           onRetry={() => {
             void refetch()
           }}
@@ -160,7 +166,9 @@ export function ClientPortfolioPage(): ReactNode {
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
           {items.length === 0 ? (
             <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-              Ningún hotel coincide con estos filtros. Cambia la búsqueda o quita un filtro.
+              <Trans>
+                Ningún hotel coincide con estos filtros. Cambia la búsqueda o quita un filtro.
+              </Trans>
             </p>
           ) : (
             <div className="flex flex-col gap-4">
@@ -192,15 +200,21 @@ export function ClientPortfolioPage(): ReactNode {
               <div className="pointer-events-none absolute top-4 left-1/2 z-10 flex -translate-x-1/2 items-stretch divide-x divide-white/20 rounded-2xl bg-ink/90 px-2 py-2.5 text-white shadow-lg backdrop-blur-sm">
                 <div className="px-4 text-center">
                   <p className="text-lg leading-tight font-bold">{portfolio.total}</p>
-                  <p className="text-[11px] text-white/70">clientes</p>
+                  <p className="text-[11px] text-white/70">
+                    <Trans>clientes</Trans>
+                  </p>
                 </div>
                 <div className="px-4 text-center">
                   <p className="text-lg leading-tight font-bold">{activeContracts}</p>
-                  <p className="text-[11px] text-white/70">con contrato vigente</p>
+                  <p className="text-[11px] text-white/70">
+                    <Trans>con contrato vigente</Trans>
+                  </p>
                 </div>
                 <div className="px-4 text-center">
                   <p className="text-lg leading-tight font-bold">{averageTenure}</p>
-                  <p className="text-[11px] text-white/70">promedio como cliente</p>
+                  <p className="text-[11px] text-white/70">
+                    <Trans>promedio como cliente</Trans>
+                  </p>
                 </div>
               </div>
             )}

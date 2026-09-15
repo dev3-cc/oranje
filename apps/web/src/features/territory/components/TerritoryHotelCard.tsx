@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { cn, StatusLightBadge } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -23,9 +24,10 @@ export function TerritoryHotelCard({
   isSelected: boolean
   onSelect: (hotelId: string) => void
 }): ReactNode {
+  const { t } = useLingui()
   /** Un cliente activo ya no cuenta días en estado: lo que importa es desde cuándo lo es. */
   const meta = hotel.clientSince
-    ? `Cliente desde ${formatDayMonth(hotel.clientSince)}`
+    ? t`Cliente desde ${formatDayMonth(hotel.clientSince)}`
     : formatDaysInStatus(hotel.daysInStatus)
 
   return (

@@ -11,8 +11,8 @@ import { store } from '@/app/store'
 const SLOW = { timeout: 4000 }
 
 function renderPool(): void {
-  const router = createMemoryRouter([{ path: '/pool-colaboradores', element: <PoolPage /> }], {
-    initialEntries: ['/pool-colaboradores'],
+  const router = createMemoryRouter([{ path: '/collaborator-pool', element: <PoolPage /> }], {
+    initialEntries: ['/collaborator-pool'],
   })
   render(
     <Provider store={store}>

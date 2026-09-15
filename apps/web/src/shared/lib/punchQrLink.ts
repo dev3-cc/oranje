@@ -6,7 +6,7 @@
  * siendo el código que valida el servidor. El API no cambia: recibe el
  * código, no la liga.
  */
-const PUNCH_PATH = '/colaborador/ponchar'
+const PUNCH_PATH = '/collaborator/punch'
 const QR_PARAM = 'qr'
 
 export function buildPunchQrLink(payload: string, origin = window.location.origin): string {

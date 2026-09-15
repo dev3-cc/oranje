@@ -1,3 +1,5 @@
+import { plural } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { useMemo, useState, type ReactNode } from 'react'
 
 import { useGetPoolOptionsQuery, useGetWorkerPoolQuery } from '../api/poolApi'
@@ -15,6 +17,7 @@ import { useDebounce } from '@/shared/hooks/useDebounce'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 export function PoolPage(): ReactNode {
+  const { t } = useLingui()
   const [filters, setFilters] = useState<Filters>(EMPTY_POOL_FILTERS)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [editWorkerId, setEditWorkerId] = useState<string | null>(null)
@@ -41,26 +44,35 @@ export function PoolPage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
-      <nav aria-label="Ruta" className="flex items-center gap-2 text-sm text-ink-3">
-        <span>Reclutamiento</span>
+      <nav aria-label={t`Ruta`} className="flex items-center gap-2 text-sm text-ink-3">
+        <span>
+          <Trans>Reclutamiento</Trans>
+        </span>
         <span aria-hidden>/</span>
-        <span className="font-semibold text-ink-2">Pool de Colaboradores</span>
+        <span className="font-semibold text-ink-2">
+          <Trans>Pool de Colaboradores</Trans>
+        </span>
       </nav>
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-ink">
-            <FoldText text="Pool de Colaboradores" />
+            <FoldText text={t`Pool de Colaboradores`} />
           </h1>
           <p className="mt-1.5 text-sm text-ink-3">
-            {IS_DEV_UI
-              ? 'personal.worker · vw_worker deriva edad y perfil completo'
-              : 'Colaboradores con su estado en el Semáforo; los Disponibles se pueden asignar a una requisición'}
+            {IS_DEV_UI ? (
+              'personal.worker · vw_worker deriva edad y perfil completo'
+            ) : (
+              <Trans>
+                Colaboradores con su estado en el Semáforo; los Disponibles se pueden asignar a una
+                requisición
+              </Trans>
+            )}
             {/* Con filtros, el total es el de la CONSULTA: «0 en el pool» mentiría. */}
             {pool &&
               (isFiltered
-                ? ` · ${String(pool.total)} ${pool.total === 1 ? 'coincide' : 'coinciden'}`
-                : ` · ${String(pool.total)} en el pool`)}
+                ? ` · ${t`${plural(pool.total, { one: '# coincide', other: '# coinciden' })}`}`
+                : ` · ${t`${pool.total} en el pool`}`)}
           </p>
         </div>
 
@@ -72,11 +84,13 @@ export function PoolPage(): ReactNode {
                 setIsCreateOpen(true)
               }}
             >
-              Crear colaborador
+              <Trans>Crear colaborador</Trans>
             </Button>
           ) : (
             <p className="max-w-56 text-right text-xs text-ink-3">
-              El alta es de Reclutamiento: la Reclutadora captura la Fase 1 en la entrevista.
+              <Trans>
+                El alta es de Reclutamiento: la Reclutadora captura la Fase 1 en la entrevista.
+              </Trans>
             </p>
           )}
         </div>
@@ -91,7 +105,7 @@ export function PoolPage(): ReactNode {
 
       {isError && (
         <LoadError
-          message="No se pudo cargar el Pool de Colaboradores. Revisa tu conexión e inténtalo de nuevo."
+          message={t`No se pudo cargar el Pool de Colaboradores. Revisa tu conexión e inténtalo de nuevo.`}
           onRetry={() => {
             void refetch()
           }}

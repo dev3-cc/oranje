@@ -16,8 +16,8 @@ import { store } from '@/app/store'
  */
 function renderDetail(requisitionId = 'req-0005'): void {
   const router = createMemoryRouter(
-    [{ path: '/requisiciones/:requisitionId', element: <RequisitionDetailPage /> }],
-    { initialEntries: [`/requisiciones/${requisitionId}`] },
+    [{ path: '/requisitions/:requisitionId', element: <RequisitionDetailPage /> }],
+    { initialEntries: [`/requisitions/${requisitionId}`] },
   )
 
   render(

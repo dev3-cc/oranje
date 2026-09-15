@@ -120,12 +120,12 @@ describe('el apartado del Colaborador', () => {
     const router = createMemoryRouter(
       [
         {
-          path: '/colaborador',
+          path: '/collaborator',
           Component: MobileShell,
-          children: [{ path: 'avisos', Component: NotificationsPage }],
+          children: [{ path: 'notifications', Component: NotificationsPage }],
         },
       ],
-      { initialEntries: ['/colaborador/avisos'] },
+      { initialEntries: ['/collaborator/notifications'] },
     )
     render(
       <I18nProvider i18n={i18n}>

@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { StatusLightBadge } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
@@ -42,6 +43,7 @@ const HERO_GHOST_BUTTON =
   'inline-flex cursor-pointer items-center justify-center rounded-md bg-white/15 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white'
 
 export function ProspectDetailPage(): ReactNode {
+  const { t } = useLingui()
   const { prospectId = '' } = useParams()
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false)
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
@@ -78,22 +80,29 @@ export function ProspectDetailPage(): ReactNode {
     return (
       <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-surface p-6">
         <p className="text-sm text-red">
-          Este prospecto no existe o ya no está disponible. Vuelve al Pipeline y elige otro.
+          <Trans>
+            Este prospecto no existe o ya no está disponible. Vuelve al Pipeline y elige otro.
+          </Trans>
         </p>
         <Link to="/pipeline" className="text-sm font-semibold text-o-700 hover:underline">
-          Volver al Pipeline
+          <Trans>Volver al Pipeline</Trans>
         </Link>
       </div>
     )
   }
 
   const statusLabel = ONBOARDING_STATUS_LABEL[prospect.status]
+  const terminalTitle = isTerminalStatus(prospect.status)
+    ? t`${statusLabel} es un estado final: el ciclo ya no cambia de estado`
+    : undefined
+  const editHotelDataLabel = t`Editar datos del hotel`
+  const archiveCycleTitle = t`Cierra el ciclo definitivamente y libera al hotel`
 
   return (
     <div className="flex flex-col gap-6">
       <nav aria-label="Ruta" className="flex items-center gap-2 text-sm text-ink-3">
         <Link to="/pipeline" className="hover:text-o-700">
-          Pipeline
+          <Trans>Pipeline</Trans>
         </Link>
         <span aria-hidden>›</span>
         <span className="text-ink-2">{prospect.hotelName}</span>
@@ -106,7 +115,7 @@ export function ProspectDetailPage(): ReactNode {
         <header className="relative overflow-hidden rounded-xl bg-ink">
           <img
             src={prospect.hotel.photoUrl}
-            alt={`Foto de ${prospect.hotelName} según Google`}
+            alt={t`Foto de ${prospect.hotelName} según Google`}
             className="absolute inset-0 size-full object-cover"
             onError={() => {
               setPhotoDead(true)
@@ -129,8 +138,10 @@ export function ProspectDetailPage(): ReactNode {
                 {prospect.hotelName}
               </h1>
               <p className="mt-1.5 text-sm text-white/85">
-                Ciclo abierto desde {formatDate(prospect.cycleStartedAt)} · {prospect.daysInStatus}{' '}
-                días en {statusLabel} · Dueño: {prospect.owner.name}
+                <Trans>
+                  Ciclo abierto desde {formatDate(prospect.cycleStartedAt)} ·{' '}
+                  {prospect.daysInStatus} días en {statusLabel} · Dueño: {prospect.owner.name}
+                </Trans>
               </p>
 
               {/*
@@ -143,16 +154,12 @@ export function ProspectDetailPage(): ReactNode {
                 <Button
                   variant="primary"
                   disabled={isTerminalStatus(prospect.status)}
-                  title={
-                    isTerminalStatus(prospect.status)
-                      ? `${statusLabel} es un estado final: el ciclo ya no cambia de estado`
-                      : undefined
-                  }
+                  title={terminalTitle}
                   onClick={() => {
                     setIsStatusDialogOpen(true)
                   }}
                 >
-                  Cambiar estado
+                  <Trans>Cambiar estado</Trans>
                 </Button>
                 <button
                   type="button"
@@ -161,25 +168,25 @@ export function ProspectDetailPage(): ReactNode {
                   }}
                   className={HERO_GHOST_BUTTON}
                 >
-                  Registrar intento
+                  <Trans>Registrar intento</Trans>
                 </button>
                 {prospect.status !== 'ORANGE' && (
                   <button
                     type="button"
-                    title="Cierra el ciclo definitivamente y libera al hotel"
+                    title={archiveCycleTitle}
                     onClick={() => {
                       setIsArchiveDialogOpen(true)
                     }}
                     className={HERO_GHOST_BUTTON}
                   >
-                    Archivar ciclo
+                    <Trans>Archivar ciclo</Trans>
                   </button>
                 )}
                 {/* Abre el MISMO modal del alta, en modo edición: un solo formulario. */}
                 <button
                   type="button"
-                  aria-label="Editar datos del hotel"
-                  title="Editar datos del hotel"
+                  aria-label={editHotelDataLabel}
+                  title={editHotelDataLabel}
                   onClick={() => {
                     setIsEditDialogOpen(true)
                   }}
@@ -204,16 +211,18 @@ export function ProspectDetailPage(): ReactNode {
               />
             </div>
             <p className="mt-1.5 text-sm text-ink-3">
-              Ciclo abierto desde {formatDate(prospect.cycleStartedAt)} · {prospect.daysInStatus}{' '}
-              días en {statusLabel} · Dueño: {prospect.owner.name}
+              <Trans>
+                Ciclo abierto desde {formatDate(prospect.cycleStartedAt)} · {prospect.daysInStatus}{' '}
+                días en {statusLabel} · Dueño: {prospect.owner.name}
+              </Trans>
             </p>
           </div>
           <div className="flex items-center gap-3">
             {/* Abre el MISMO modal del alta, en modo edición: un solo formulario. */}
             <button
               type="button"
-              aria-label="Editar datos del hotel"
-              title="Editar datos del hotel"
+              aria-label={editHotelDataLabel}
+              title={editHotelDataLabel}
               onClick={() => {
                 setIsEditDialogOpen(true)
               }}
@@ -228,7 +237,7 @@ export function ProspectDetailPage(): ReactNode {
                 setIsAttemptDialogOpen(true)
               }}
             >
-              Registrar intento
+              <Trans>Registrar intento</Trans>
             </Button>
             {/*
             Un estado terminal no tiene a dónde ir: `NARANJA` es un cliente
@@ -238,26 +247,22 @@ export function ProspectDetailPage(): ReactNode {
             <Button
               variant="primary"
               disabled={isTerminalStatus(prospect.status)}
-              title={
-                isTerminalStatus(prospect.status)
-                  ? `${statusLabel} es un estado final: el ciclo ya no cambia de estado`
-                  : undefined
-              }
+              title={terminalTitle}
               onClick={() => {
                 setIsStatusDialogOpen(true)
               }}
             >
-              Cambiar estado
+              <Trans>Cambiar estado</Trans>
             </Button>
             {prospect.status !== 'ORANGE' && (
               <Button
                 variant="secondary"
-                title="Cierra el ciclo definitivamente y libera al hotel"
+                title={archiveCycleTitle}
                 onClick={() => {
                   setIsArchiveDialogOpen(true)
                 }}
               >
-                Archivar ciclo
+                <Trans>Archivar ciclo</Trans>
               </Button>
             )}
           </div>
@@ -266,9 +271,11 @@ export function ProspectDetailPage(): ReactNode {
 
       {/* Quién sigue: en Rosa el ciclo pasa a manos del BDC (RR-V-01/02). */}
       {prospect.status === 'PINK' && (
-        <NoticeCard image={conversionNaranja} title="Convertir es del BDC" role="status">
-          El Documento de T&C ya se negocia. El BDC aprueba la conversión desde Conversión y el
-          hotel pasa a Naranja, listo para pedir personal.
+        <NoticeCard image={conversionNaranja} title={t`Convertir es del BDC`} role="status">
+          <Trans>
+            El Documento de T&C ya se negocia. El BDC aprueba la conversión desde Conversión y el
+            hotel pasa a Naranja, listo para pedir personal.
+          </Trans>
         </NoticeCard>
       )}
 

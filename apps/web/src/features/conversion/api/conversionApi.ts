@@ -1,3 +1,7 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { i18n } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+
 import type {
   ConversionCandidate,
   ConversionReadiness,
@@ -32,19 +36,23 @@ interface HotelUserApi {
   role: { code: string; name: string }
 }
 
-const APPROVAL_NOTE = IS_DEV_UI
-  ? 'solo el BDC aprueba esta transición (RR-V-01, RR-V-02)'
-  : 'solo el BDC aprueba esta transición'
+/** Se arma al pedir la ficha (no al importar): el idioma activo puede cambiar. */
+function approvalNote(): string {
+  const note = i18n._(msg`solo el BDC aprueba esta transición`)
+  return IS_DEV_UI ? `${note} (RR-V-01, RR-V-02)` : note
+}
 
 function buildEffects(): string[] {
-  const effects: Array<[string, string]> = [
-    ['El semáforo pasa a Naranja', 'prospect.onboarding_state_id → ORANGE'],
-    ['El cambio queda en el historial del prospecto', 'prospect_state_history'],
-    ['El hotel queda activado como cliente desde hoy', 'hotel.activated_at'],
-    ['El hotel ya puede generar requisiciones', 'entra en vw_client'],
-    ['Reclutamiento e Inspección toman la operación', ''],
+  const effects: Array<[MessageDescriptor, string]> = [
+    [msg`El semáforo pasa a Naranja`, 'prospect.onboarding_state_id → ORANGE'],
+    [msg`El cambio queda en el historial del prospecto`, 'prospect_state_history'],
+    [msg`El hotel queda activado como cliente desde hoy`, 'hotel.activated_at'],
+    [msg`El hotel ya puede generar requisiciones`, 'entra en vw_client'],
+    [msg`Reclutamiento e Inspección toman la operación`, ''],
   ]
-  return effects.map(([human, tech]) => (IS_DEV_UI && tech ? `${human} · ${tech}` : human))
+  return effects.map(([human, tech]) =>
+    IS_DEV_UI && tech ? `${i18n._(human)} · ${tech}` : i18n._(human),
+  )
 }
 
 async function fetchReadiness(
@@ -93,32 +101,36 @@ async function fetchReadiness(
   const requirements: ConversionRequirement[] = [
     {
       id: 'proposal-sent',
-      label: 'Propuesta enviada',
+      label: i18n._(msg`Propuesta enviada`),
       detail: sentProposal
-        ? `Propuesta v${String(sentProposal.version)} · ${formatDayMonth(sentProposal.sentAt as string)}`
-        : `Sin propuesta enviada — se elabora y envía en Verde${IS_DEV_UI ? ' (D-22)' : ''}`,
+        ? i18n._(
+            msg`Propuesta v${String(sentProposal.version)} · ${formatDayMonth(sentProposal.sentAt as string)}`,
+          )
+        : `${i18n._(msg`Sin propuesta enviada — se elabora y envía en Verde`)}${IS_DEV_UI ? ' (D-22)' : ''}`,
       isMet: sentProposal !== undefined,
       action: null,
     },
     {
       id: 'terms-negotiated',
-      label: 'Documento de T&C negociado',
-      detail: 'Se negocia en Rosa — el sistema aún no lo registra (pendiente de modelar)',
+      label: i18n._(msg`Documento de T&C negociado`),
+      detail: i18n._(
+        msg`Se negocia en Rosa — el sistema aún no lo registra (pendiente de modelar)`,
+      ),
       isMet: true,
       action: null,
     },
     {
       id: 'primary-contact',
-      label: 'Contacto principal registrado',
+      label: i18n._(msg`Contacto principal registrado`),
       detail: primaryContact
         ? `${primaryContact.fullName}${primaryContact.jobTitle ? ` · ${primaryContact.jobTitle}` : ''}`
-        : 'Sin contacto registrado — agrégalo en la ficha del prospecto',
+        : i18n._(msg`Sin contacto registrado — agrégalo en la ficha del prospecto`),
       isMet: primaryContact !== undefined,
       action: null,
     },
     {
       id: 'hotel-user',
-      label: 'Usuario del Hotel creado',
+      label: i18n._(msg`Usuario del Hotel creado`),
       /**
        * El QUÉ antes del clic: esta fila confundió a un usuario real que ya
        * sabía quién era el contacto — le faltaba saber qué es la cuenta, a
@@ -127,12 +139,14 @@ async function fetchReadiness(
       detail: hotelUser
         ? `${hotelUser.fullName} · ${hotelUser.role.name}`
         : primaryContact?.email
-          ? `La cuenta con la que el hotel opera Oranje: pedir requisiciones, administrar su Schedule y aprobar horas. Se crea para el contacto principal — ${primaryContact.fullName} · ${primaryContact.email} — y sin ella la conversión se bloquea${IS_DEV_UI ? ' (RR-V-02)' : ''}`
-          : 'No existe, y el contacto principal no tiene correo: agrégaselo para poder crearlo',
+          ? `${i18n._(msg`La cuenta con la que el hotel opera Oranje: pedir requisiciones, administrar su Schedule y aprobar horas. Se crea para el contacto principal — ${primaryContact.fullName} · ${primaryContact.email} — y sin ella la conversión se bloquea`)}${IS_DEV_UI ? ' (RR-V-02)' : ''}`
+          : i18n._(
+              msg`No existe, y el contacto principal no tiene correo: agrégaselo para poder crearlo`,
+            ),
       isMet: hotelUser !== undefined,
       action:
         !hotelUser && primaryContact?.email
-          ? { kind: 'CREATE_HOTEL_USER', label: 'Crear cuenta del hotel' }
+          ? { kind: 'CREATE_HOTEL_USER', label: i18n._(msg`Crear cuenta del hotel`) }
           : null,
     },
   ]
@@ -145,13 +159,13 @@ async function fetchReadiness(
       hotelName: prospect.hotel.name,
       currentStatus: 'PINK',
       targetStatus: 'ORANGE',
-      approvalNote: APPROVAL_NOTE,
+      approvalNote: approvalNote(),
       requirements,
       effects: buildEffects(),
       canApprove,
       blockedReason: canApprove
         ? null
-        : `Falta el Usuario del Hotel: sin él no se puede aprobar${IS_DEV_UI ? ' (HOTEL_USER_REQUIRED)' : ''}`,
+        : `${i18n._(msg`Falta el Usuario del Hotel: sin él no se puede aprobar`)}${IS_DEV_UI ? ' (HOTEL_USER_REQUIRED)' : ''}`,
       hotelUserDraft: primaryContact?.email
         ? { email: primaryContact.email, fullName: primaryContact.fullName }
         : null,

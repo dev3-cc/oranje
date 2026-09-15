@@ -1,4 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import type { I18n, MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import {
   cn,
   Input,
@@ -10,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@oranje/ui'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -34,23 +37,27 @@ import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'staff-user-form'
 const NOBODY = 'NONE'
-const INTRO_SLIDES = [
+const INTRO_SLIDES: readonly {
+  image: string
+  title: MessageDescriptor
+  text: MessageDescriptor
+}[] = [
   {
     image: personajeBienvenida,
-    title: 'Bienvenido al alta de personal',
-    text: 'Aquí nace la cuenta de cada persona del equipo Oranje: quién es, qué rol tiene y a quién reporta.',
+    title: msg`Bienvenido al alta de personal`,
+    text: msg`Aquí nace la cuenta de cada persona del equipo Oranje: quién es, qué rol tiene y a quién reporta.`,
   },
   {
     image: personajeComencemos,
-    title: 'Sin contraseñas de por medio',
-    text: 'Manda la invitación por correo y cada quien establece la suya. Si lo necesitas, también puedes definirla tú.',
+    title: msg`Sin contraseñas de por medio`,
+    text: msg`Manda la invitación por correo y cada quien establece la suya. Si lo necesitas, también puedes definirla tú.`,
   },
   {
     image: personajePresentacion,
-    title: 'Su rol define su app',
-    text: 'El rol que elijas decide qué módulos verá la persona al entrar. Las cuentas de los hoteles se dan de alta en su propia pestaña.',
+    title: msg`Su rol define su app`,
+    text: msg`El rol que elijas decide qué módulos verá la persona al entrar. Las cuentas de los hoteles se dan de alta en su propia pestaña.`,
   },
-] as const
+]
 
 /**
  * Quién puede ser el jefe de cada rol, por la jerarquía de cada departamento:
@@ -82,65 +89,78 @@ const PENDING_ROLES: ReadonlySet<string> = new Set([
   'ROL-CS-02',
 ])
 
-const userFormSchema = z
-  .object({
-    fullName: z
-      .string()
-      .trim()
-      .min(1, 'Escribe el nombre completo')
-      .max(160, 'Máximo 160 caracteres'),
-    email: z
-      .string()
-      .trim()
-      .email('Escribe un correo válido, como ana@oranjepeople.com')
-      .max(255, 'Máximo 255 caracteres'),
-    roleCode: z.string().min(1, 'Elige un rol'),
-    reportsToUserId: z.string(),
-    accessMode: z.enum(['INVITATION', 'PASSWORD']),
-    password: z.string(),
-  })
-  .superRefine((values, context) => {
-    if (values.accessMode === 'PASSWORD' && values.password.length < 8) {
-      context.addIssue({
-        code: 'custom',
-        path: ['password'],
-        message: 'La contraseña necesita al menos 8 caracteres',
-      })
-    }
-  })
+/* Los mensajes se resuelven al armar el esquema con el `i18n` del componente
+   (D-36): quien lo usa lo rearma cuando cambia el idioma. */
+function buildUserFormSchema(i18n: I18n) {
+  return z
+    .object({
+      fullName: z
+        .string()
+        .trim()
+        .min(1, i18n._(msg`Escribe el nombre completo`))
+        .max(160, i18n._(msg`Máximo 160 caracteres`)),
+      email: z
+        .string()
+        .trim()
+        .email(i18n._(msg`Escribe un correo válido, como ana@oranjepeople.com`))
+        .max(255, i18n._(msg`Máximo 255 caracteres`)),
+      roleCode: z.string().min(1, i18n._(msg`Elige un rol`)),
+      reportsToUserId: z.string(),
+      accessMode: z.enum(['INVITATION', 'PASSWORD']),
+      password: z.string(),
+    })
+    .superRefine((values, context) => {
+      if (values.accessMode === 'PASSWORD' && values.password.length < 8) {
+        context.addIssue({
+          code: 'custom',
+          path: ['password'],
+          message: i18n._(msg`La contraseña necesita al menos 8 caracteres`),
+        })
+      }
+    })
+}
 
-type UserFormValues = z.infer<typeof userFormSchema>
+type UserFormValues = z.infer<ReturnType<typeof buildUserFormSchema>>
 
-function uploadErrorMessage(error: unknown): string {
+/** El `i18n` viene del componente (`useLingui`): así el mensaje habla el idioma activo (D-36). */
+function uploadErrorMessage(error: unknown, i18n: I18n): string {
   const status = (error as { status?: number } | undefined)?.status
   const code = (error as { data?: { error?: { code?: string } } } | undefined)?.data?.error?.code
   if (code === 'UNSUPPORTED_FILE_TYPE') {
-    return 'Ese formato no se pudo abrir: usa una foto JPG, PNG o WebP.'
+    return i18n._(msg`Ese formato no se pudo abrir: usa una foto JPG, PNG o WebP.`)
   }
-  if (status === 413) return 'La foto pesa demasiado: el máximo es 15 MB.'
-  return 'No se pudo subir la foto. Intenta con otra imagen.'
+  if (status === 413) return i18n._(msg`La foto pesa demasiado: el máximo es 15 MB.`)
+  return i18n._(msg`No se pudo subir la foto. Intenta con otra imagen.`)
 }
 
-function apiErrorMessage(error: unknown): string {
+function apiErrorMessage(error: unknown, i18n: I18n): string {
   const code = (error as { data?: { error?: { code?: string } } } | undefined)?.data?.error?.code
   switch (code) {
     case 'EMAIL_TAKEN':
-      return 'Ese correo ya está dado de alta en Oranje.'
+      return i18n._(msg`Ese correo ya está dado de alta en Oranje.`)
     case 'FIREBASE_EMAIL_EXISTS':
-      return 'Ese correo ya tiene cuenta de acceso. Da el alta sin contraseña (invitación) o que la persona use «¿Olvidaste tu contraseña?».'
+      return i18n._(
+        msg`Ese correo ya tiene cuenta de acceso. Da el alta sin contraseña (invitación) o que la persona use «¿Olvidaste tu contraseña?».`,
+      )
     case 'USE_HOTEL_USERS':
-      return 'Ese rol no se da de alta aquí: las cuentas de los hoteles van en «Personal de hoteles».'
+      return i18n._(
+        msg`Ese rol no se da de alta aquí: las cuentas de los hoteles van en «Personal de hoteles».`,
+      )
     case 'ROLE_NOT_FOUND':
-      return 'Ese rol ya no existe. Recarga la página y vuelve a elegirlo.'
+      return i18n._(msg`Ese rol ya no existe. Recarga la página y vuelve a elegirlo.`)
     case 'SUPERVISOR_NOT_FOUND':
-      return 'La persona a la que reporta no existe o está de baja.'
+      return i18n._(msg`La persona a la que reporta no existe o está de baja.`)
     case 'FIREBASE_UNAVAILABLE':
       /* Con contraseña la cuenta va ANTES de la fila: si Firebase no responde, NO se guardó nada. */
-      return 'El servicio de acceso no respondió y el usuario no se creó. Inténtalo de nuevo en un momento.'
+      return i18n._(
+        msg`El servicio de acceso no respondió y el usuario no se creó. Inténtalo de nuevo en un momento.`,
+      )
     case 'INVITATION_FAILED':
-      return 'El usuario quedó guardado, pero el correo de invitación no salió: reenvíala desde su ficha.'
+      return i18n._(
+        msg`El usuario quedó guardado, pero el correo de invitación no salió: reenvíala desde su ficha.`,
+      )
     default:
-      return 'No se pudo guardar el usuario. Revisa los datos e inténtalo de nuevo.'
+      return i18n._(msg`No se pudo guardar el usuario. Revisa los datos e inténtalo de nuevo.`)
   }
 }
 
@@ -186,6 +206,7 @@ export function UserFormDialog({
   roles: RoleOption[]
   reportsToOptions: StaffUser[]
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const isEditing = user !== null
   const [createUser, createState] = useCreateStaffUserMutation()
   const [updateUser, updateState] = useUpdateStaffUserMutation()
@@ -201,6 +222,10 @@ export function UserFormDialog({
   const { isIntroOpen: showIntro, dismissIntro } = useIntroSeen('create-user')
   const photoInputRef = useRef<HTMLInputElement>(null)
 
+  /* Los mensajes del esquema se resuelven al armarlo, así que se rearma al
+     cambiar de idioma: `i18n` no cambia de identidad al activar otro (D-36). */
+  const schema = useMemo(() => buildUserFormSchema(i18n), [i18n, i18n.locale])
+
   const {
     register,
     handleSubmit,
@@ -210,7 +235,7 @@ export function UserFormDialog({
     setValue,
     formState: { errors },
   } = useForm<UserFormValues>({
-    resolver: zodResolver(userFormSchema),
+    resolver: zodResolver(schema),
     mode: 'onChange',
     defaultValues: {
       fullName: '',
@@ -286,7 +311,7 @@ export function UserFormDialog({
     const uploaded = await uploadFile({ file, purpose: 'USER_PHOTO' }).unwrap()
     setPhotoPath(uploaded.path)
     setPhotoPreview(uploaded.url ?? URL.createObjectURL(file))
-    toast.success('Foto subida')
+    toast.success(t`Foto subida`)
   }
 
   async function onSubmit(values: UserFormValues): Promise<void> {
@@ -314,20 +339,22 @@ export function UserFormDialog({
       }).unwrap()
       toast.success(
         values.accessMode === 'INVITATION'
-          ? `Usuario creado — invitación enviada a ${values.email}`
-          : 'Usuario creado',
+          ? t`Usuario creado — invitación enviada a ${values.email}`
+          : t`Usuario creado`,
       )
       setCreated({ email: values.email, mode: values.accessMode })
       return
     }
-    toast.success(user?.isActive === false && isActive ? 'Usuario activado' : 'Usuario actualizado')
+    toast.success(
+      user?.isActive === false && isActive ? t`Usuario activado` : t`Usuario actualizado`,
+    )
     onClose()
   }
 
   async function darDeBaja(): Promise<void> {
     if (!isEditing) return
     await updateUser({ id: user.id, body: { isActive: false } }).unwrap()
-    toast.success('Usuario dado de baja')
+    toast.success(t`Usuario dado de baja`)
     onClose()
   }
 
@@ -338,15 +365,19 @@ export function UserFormDialog({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Editar usuario' : 'Nuevo usuario'}
+      title={isEditing ? t`Editar usuario` : t`Nuevo usuario`}
       chromeless
       className="max-w-2xl"
     >
       <div className="flex max-h-[calc(100vh-3rem)] flex-col overflow-y-auto">
         {showIntro && !isEditing ? (
           <OnboardingIntro
-            slides={INTRO_SLIDES}
-            startLabel="Comenzar el alta"
+            slides={INTRO_SLIDES.map((slide) => ({
+              image: slide.image,
+              title: i18n._(slide.title),
+              text: i18n._(slide.text),
+            }))}
+            startLabel={t`Comenzar el alta`}
             onDone={() => {
               dismissIntro()
             }}
@@ -362,8 +393,8 @@ export function UserFormDialog({
               />
               <button
                 type="button"
-                aria-label={photoPreview ? 'Reemplazar foto' : 'Subir foto'}
-                title={photoPreview ? 'Reemplazar foto' : 'Subir foto'}
+                aria-label={photoPreview ? t`Reemplazar foto` : t`Subir foto`}
+                title={photoPreview ? t`Reemplazar foto` : t`Subir foto`}
                 disabled={isUploading}
                 onClick={() => {
                   photoInputRef.current?.click()
@@ -397,7 +428,7 @@ export function UserFormDialog({
                     aria-hidden
                     className="absolute inset-x-1 bottom-1 rounded-full bg-ink/60 py-0.5 text-center text-[10px] font-semibold text-surface opacity-0 transition-opacity group-hover:opacity-100"
                   >
-                    {isUploading ? 'Subiendo…' : photoPreview ? 'Cambiar' : 'Subir foto'}
+                    {isUploading ? t`Subiendo…` : photoPreview ? t`Cambiar` : t`Subir foto`}
                   </span>
                 </span>
                 <span
@@ -422,15 +453,15 @@ export function UserFormDialog({
 
             <header className="px-8 pt-14 pb-5">
               <h2 className="text-xl font-bold text-ink">
-                {fullName.trim() === '' ? 'Nuevo usuario' : fullName}
+                {fullName.trim() === '' ? t`Nuevo usuario` : fullName}
               </h2>
               <p className="mt-0.5 text-xs text-ink-3">
-                {isEditing ? 'Editar personal del sistema' : 'Alta de personal del sistema'}
+                {isEditing ? t`Editar personal del sistema` : t`Alta de personal del sistema`}
                 {IS_DEV_UI && <code className="text-[11px] text-ink-4"> · identity.user</code>}
               </p>
               {isUploadError && (
                 <p role="alert" className="mt-1 text-xs text-red">
-                  {uploadErrorMessage(uploadError)}
+                  {uploadErrorMessage(uploadError, i18n)}
                 </p>
               )}
             </header>
@@ -441,16 +472,16 @@ export function UserFormDialog({
                   <MaterialIcon name="mark_email_read" className="text-3xl text-green" />
                 </span>
                 <p className="text-lg font-bold text-ink">
-                  {created.mode === 'INVITATION' ? 'Invitación enviada a:' : 'Usuario creado'}
+                  {created.mode === 'INVITATION' ? t`Invitación enviada a:` : t`Usuario creado`}
                 </p>
                 <p className="text-sm font-semibold text-o-700">{created.email}</p>
                 <p className="max-w-sm text-xs leading-relaxed text-ink-3">
                   {created.mode === 'INVITATION'
-                    ? 'La persona recibirá un correo para establecer su contraseña. Hasta que entre por primera vez, su cuenta aparece como «Invitación enviada».'
-                    : 'Ya puede entrar con la contraseña que definiste. Compártesela por un canal seguro — no viaja por correo.'}
+                    ? t`La persona recibirá un correo para establecer su contraseña. Hasta que entre por primera vez, su cuenta aparece como «Invitación enviada».`
+                    : t`Ya puede entrar con la contraseña que definiste. Compártesela por un canal seguro — no viaja por correo.`}
                 </p>
                 <Button variant="primary" className="mt-2" onClick={onClose}>
-                  Cerrar
+                  <Trans>Cerrar</Trans>
                 </Button>
               </div>
             ) : (
@@ -461,18 +492,18 @@ export function UserFormDialog({
                   void handleSubmit(onSubmit)(event)
                 }}
               >
-                <FormRow label="Nombre completo" column="full_name">
+                <FormRow label={t`Nombre completo`} column="full_name">
                   <Input
-                    aria-label="Nombre completo"
+                    aria-label={t`Nombre completo`}
                     {...register('fullName')}
                     placeholder="Ana López García"
                   />
                   {errors.fullName && <p className="text-xs text-red">{errors.fullName.message}</p>}
                 </FormRow>
 
-                <FormRow label="Correo" column="email · inmutable">
+                <FormRow label={t`Correo`} column="email · inmutable">
                   <Input
-                    aria-label="Correo"
+                    aria-label={t`Correo`}
                     type="email"
                     {...register('email')}
                     placeholder="ana@oranjepeople.com"
@@ -481,13 +512,13 @@ export function UserFormDialog({
                   />
                   <p className="text-xs text-ink-3">
                     {isEditing
-                      ? 'Cambiar de persona es dar de baja este usuario y dar de alta al nuevo.'
-                      : 'No se podrá cambiar después del alta: es el correo con el que la persona entra.'}
+                      ? t`Cambiar de persona es dar de baja este usuario y dar de alta al nuevo.`
+                      : t`No se podrá cambiar después del alta: es el correo con el que la persona entra.`}
                   </p>
                   {errors.email && <p className="text-xs text-red">{errors.email.message}</p>}
                 </FormRow>
 
-                <FormRow label="Rol" column="role_id">
+                <FormRow label={t`Rol`} column="role_id">
                   <Controller
                     control={control}
                     name="roleCode"
@@ -496,14 +527,14 @@ export function UserFormDialog({
                         {...(field.value ? { value: field.value } : {})}
                         onValueChange={field.onChange}
                       >
-                        <SelectTrigger aria-label="Rol" className="w-full">
-                          <SelectValue placeholder="Elige el rol" />
+                        <SelectTrigger aria-label={t`Rol`} className="w-full">
+                          <SelectValue placeholder={t`Elige el rol`} />
                         </SelectTrigger>
                         <SelectContent>
                           {roles.map((role) =>
                             PENDING_ROLES.has(role.code) ? (
                               <SelectItem key={role.code} value={role.code} disabled>
-                                {role.name} — próximamente
+                                <Trans>{role.name} — próximamente</Trans>
                               </SelectItem>
                             ) : (
                               <SelectItem key={role.code} value={role.code}>
@@ -516,26 +547,28 @@ export function UserFormDialog({
                     )}
                   />
                   <p className="text-xs text-ink-3">
-                    Solo roles internos de Oranje — las cuentas de los hoteles van en «Personal de
-                    hoteles».
+                    <Trans>
+                      Solo roles internos de Oranje — las cuentas de los hoteles van en «Personal de
+                      hoteles».
+                    </Trans>
                   </p>
                   {errors.roleCode && <p className="text-xs text-red">{errors.roleCode.message}</p>}
                 </FormRow>
 
-                <FormRow label="Reporta a" column="reports_to_user_id">
+                <FormRow label={t`Reporta a`} column="reports_to_user_id">
                   <Controller
                     control={control}
                     name="reportsToUserId"
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger aria-label="Reporta a" className="w-full">
+                        <SelectTrigger aria-label={t`Reporta a`} className="w-full">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value={NOBODY}>
                             {allowedSuperiors !== undefined && allowedSuperiors.length === 0
-                              ? 'Nadie — la punta de la jerarquía'
-                              : 'Nadie (sin jefe por ahora)'}
+                              ? t`Nadie — la punta de la jerarquía`
+                              : t`Nadie (sin jefe por ahora)`}
                           </SelectItem>
                           {superiorOptions.map((option) => (
                             <SelectItem key={option.id} value={option.id}>
@@ -548,10 +581,10 @@ export function UserFormDialog({
                   />
                   <p className="text-xs text-ink-3">
                     {allowedSuperiors !== undefined && allowedSuperiors.length === 0
-                      ? 'El Administrador no reporta a nadie.'
+                      ? t`El Administrador no reporta a nadie.`
                       : roleCode && superiorOptions.length === 0
-                        ? 'Aún no hay nadie dado de alta con el rol al que reporta. Da de alta primero a esa persona.'
-                        : 'Solo se ofrecen los superiores del rol elegido: el BD apunta a su BDC, la Reclutadora a su Líder.'}
+                        ? t`Aún no hay nadie dado de alta con el rol al que reporta. Da de alta primero a esa persona.`
+                        : t`Solo se ofrecen los superiores del rol elegido: el BD apunta a su BDC, la Reclutadora a su Líder.`}
                   </p>
                   {roleCode &&
                     reportsToUserId === NOBODY &&
@@ -559,14 +592,16 @@ export function UserFormDialog({
                     allowedSuperiors.length > 0 &&
                     superiorOptions.length > 0 && (
                       <p className="text-xs font-medium text-o-700">
-                        Este rol normalmente reporta a alguien: sin jefe no aparecerá en ningún «Mi
-                        Equipo».
+                        <Trans>
+                          Este rol normalmente reporta a alguien: sin jefe no aparecerá en ningún
+                          «Mi Equipo».
+                        </Trans>
                       </p>
                     )}
                 </FormRow>
 
                 {!isEditing && (
-                  <FormRow label="Acceso" column="firebase_uid · primer login">
+                  <FormRow label={t`Acceso`} column="firebase_uid · primer login">
                     <Controller
                       control={control}
                       name="accessMode"
@@ -574,8 +609,8 @@ export function UserFormDialog({
                         <div className="flex w-fit gap-1 rounded-xl bg-surface-2 p-1">
                           {(
                             [
-                              ['INVITATION', 'Enviar invitación por correo'],
-                              ['PASSWORD', 'Definir contraseña'],
+                              ['INVITATION', t`Enviar invitación por correo`],
+                              ['PASSWORD', t`Definir contraseña`],
                             ] as Array<[AccessMode, string]>
                           ).map(([mode, label]) => (
                             <button
@@ -599,16 +634,20 @@ export function UserFormDialog({
                     />
                     {accessMode === 'INVITATION' ? (
                       <p className="rounded-xl bg-o-50 px-4 py-3 text-xs leading-relaxed text-o-700">
-                        Aquí no se captura contraseña: al crear, la persona recibe un correo de
-                        invitación y establece la suya. Hasta que entre por primera vez, la cuenta
-                        aparece como «Invitación enviada».
+                        <Trans>
+                          Aquí no se captura contraseña: al crear, la persona recibe un correo de
+                          invitación y establece la suya. Hasta que entre por primera vez, la cuenta
+                          aparece como «Invitación enviada».
+                        </Trans>
                       </p>
                     ) : (
                       <>
-                        <PasswordInput aria-label="Contraseña" {...register('password')} />
+                        <PasswordInput aria-label={t`Contraseña`} {...register('password')} />
                         <p className="text-xs text-ink-3">
-                          Es su contraseña de uso: puede cambiarla cuando quiera con «¿Olvidaste tu
-                          contraseña?». No se envía por correo.
+                          <Trans>
+                            Es su contraseña de uso: puede cambiarla cuando quiera con «¿Olvidaste
+                            tu contraseña?». No se envía por correo.
+                          </Trans>
                         </p>
                         {errors.password && (
                           <p className="text-xs text-red">{errors.password.message}</p>
@@ -619,12 +658,12 @@ export function UserFormDialog({
                 )}
 
                 {isEditing && !user.hasAccount && (
-                  <FormRow label="Invitación" column="hasAccount:false">
+                  <FormRow label={t`Invitación`} column="hasAccount:false">
                     <div className="flex flex-wrap items-center gap-3">
                       <span className="text-xs text-ink-2">
                         {resendState.isSuccess
-                          ? 'Invitación reenviada: la persona tiene un correo nuevo para establecer su contraseña.'
-                          : 'Todavía no ha entrado por primera vez.'}
+                          ? t`Invitación reenviada: la persona tiene un correo nuevo para establecer su contraseña.`
+                          : t`Todavía no ha entrado por primera vez.`}
                       </span>
                       {!resendState.isSuccess && (
                         <Button
@@ -632,11 +671,11 @@ export function UserFormDialog({
                           disabled={resendState.isLoading}
                           onClick={() => {
                             void resendInvitation(user.id).then(() => {
-                              toast.success('Invitación enviada')
+                              toast.success(t`Invitación enviada`)
                             })
                           }}
                         >
-                          {resendState.isLoading ? 'Enviando…' : 'Reenviar invitación'}
+                          {resendState.isLoading ? t`Enviando…` : t`Reenviar invitación`}
                         </Button>
                       )}
                     </div>
@@ -644,13 +683,13 @@ export function UserFormDialog({
                 )}
 
                 {isEditing && (
-                  <FormRow label="Estado" column="is_active">
+                  <FormRow label={t`Estado`} column="is_active">
                     <label className="flex w-fit cursor-pointer items-center gap-3">
                       <button
                         type="button"
                         role="switch"
                         aria-checked={isActive}
-                        aria-label="Activo"
+                        aria-label={t`Activo`}
                         onClick={() => {
                           setIsActive((value) => !value)
                         }}
@@ -668,19 +707,21 @@ export function UserFormDialog({
                       </button>
                       <span className="text-sm text-ink-2">
                         {isActive
-                          ? 'Activo — puede entrar al sistema'
-                          : 'De baja — ya no puede entrar'}
+                          ? t`Activo — puede entrar al sistema`
+                          : t`De baja — ya no puede entrar`}
                       </span>
                     </label>
                     <p className="text-xs text-ink-3">
-                      Dar de baja no borra nada: la persona deja de entrar y su historial queda.
+                      <Trans>
+                        Dar de baja no borra nada: la persona deja de entrar y su historial queda.
+                      </Trans>
                     </p>
                   </FormRow>
                 )}
 
                 {saveError !== undefined && (
                   <p role="alert" className="px-6 pb-2 text-sm text-red">
-                    {apiErrorMessage(saveError)}
+                    {apiErrorMessage(saveError, i18n)}
                   </p>
                 )}
 
@@ -701,15 +742,15 @@ export function UserFormDialog({
                         confirmingBaja && 'border border-red/40 bg-red/5 font-semibold',
                       )}
                     >
-                      {confirmingBaja ? 'Sí, dar de baja' : 'Dar de baja'}
+                      {confirmingBaja ? t`Sí, dar de baja` : t`Dar de baja`}
                     </Button>
                   )}
                   <span className="flex-1" />
                   <Button type="button" onClick={onClose} disabled={isBusy}>
-                    Cancelar
+                    <Trans>Cancelar</Trans>
                   </Button>
                   <Button type="submit" form={FORM_ID} variant="primary" disabled={isBusy}>
-                    {isBusy ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear usuario'}
+                    {isBusy ? t`Guardando…` : isEditing ? t`Guardar cambios` : t`Crear usuario`}
                   </Button>
                 </div>
               </form>

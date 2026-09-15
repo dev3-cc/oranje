@@ -1,3 +1,4 @@
+import { Trans } from '@lingui/react/macro'
 import type { ReactNode } from 'react'
 
 import type { ClientCard } from '../types/client.types'
@@ -38,7 +39,9 @@ export function ClientMapCard({ client }: { client: ClientCard }): ReactNode {
             <span className="text-sm text-ink-3">{client.contract.number}</span>
           </>
         ) : (
-          <span className="text-sm text-ink-3">sin contrato</span>
+          <span className="text-sm text-ink-3">
+            <Trans>sin contrato</Trans>
+          </span>
         )}
       </div>
     </div>

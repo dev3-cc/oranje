@@ -1,3 +1,6 @@
+import type { I18n } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { neutral, statusLight, type StatusLightToken } from '@oranje/ui'
 import { Html, OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame } from '@react-three/fiber'
@@ -55,9 +58,9 @@ function hotelStatusToken(hotel: HotelMapPoint): StatusLightToken {
   return hotel.status ? ONBOARDING_STATUS_TOKEN[hotel.status] : 'st-gris'
 }
 
-function hotelStatusLabel(hotel: HotelMapPoint): string {
-  if (hotel.isClient) return 'Cliente activo'
-  return hotel.status ? ONBOARDING_STATUS_LABEL[hotel.status] : 'Sin ciclo abierto'
+function hotelStatusLabel(hotel: HotelMapPoint, i18n: I18n): string {
+  if (hotel.isClient) return i18n._(msg`Cliente activo`)
+  return hotel.status ? ONBOARDING_STATUS_LABEL[hotel.status] : i18n._(msg`Sin ciclo abierto`)
 }
 
 function GlobeObject({ globe, spots }: { globe: ThreeGlobe; spots: GlobeSpot[] }): ReactNode {
@@ -98,6 +101,7 @@ function SpotPin({
   index: number
   onOpen: (spot: GlobeSpot) => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   const position = useMemo(() => {
@@ -118,7 +122,8 @@ function SpotPin({
   const [first] = spot.hotels
   if (!first) return null
 
-  const title = spot.hotels.length === 1 ? first.name : `${String(spot.hotels.length)} hoteles aquí`
+  const title =
+    spot.hotels.length === 1 ? first.name : t`${String(spot.hotels.length)} hoteles aquí`
 
   return (
     <Html position={position} zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
@@ -146,8 +151,8 @@ function SpotPin({
           onClick={() => {
             onOpen(spot)
           }}
-          title={`${title} — ${hotelStatusLabel(first)}`}
-          aria-label={`${title}. Abrir en Mi Territorio`}
+          title={`${title} — ${hotelStatusLabel(first, i18n)}`}
+          aria-label={t`${title}. Abrir en Mi Territorio`}
           className="group absolute size-12 -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-full transition-transform hover:scale-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
           style={{ left: dx, top: dy }}
         >
@@ -250,22 +255,28 @@ export function HotelGlobeCard(): ReactNode {
   function openTerritory(spot: GlobeSpot): void {
     const [first] = spot.hotels
     const search = spot.hotels.length === 1 && first ? `?q=${encodeURIComponent(first.name)}` : ''
-    void navigate(`/mi-territorio${search}`)
+    void navigate(`/my-territory${search}`)
   }
 
   return (
     <section className="relative overflow-hidden rounded-2xl border border-line bg-surface shadow-md">
       <div className="relative z-10 px-8 pt-8">
-        <h2 className="text-2xl font-bold text-ink">Por todo el territorio</h2>
+        <h2 className="text-2xl font-bold text-ink">
+          <Trans>Por todo el territorio</Trans>
+        </h2>
         <p className="mt-2 max-w-md text-sm text-ink-3">
-          Los hoteles de tus zonas, del prospecto al cliente activo.
-          {hotels && ` ${String(hotels.length)} con coordenada.`} Cada pin abre Mi Territorio.
+          <Trans>
+            Los hoteles de tus zonas, del prospecto al cliente activo.
+            {hotels && ` ${String(hotels.length)} con coordenada.`} Cada pin abre Mi Territorio.
+          </Trans>
         </p>
       </div>
 
       {isError ? (
         <p className="px-8 py-16 text-center text-sm text-ink-3">
-          No se pudieron cargar los hoteles del mapa. Recarga la página para reintentar.
+          <Trans>
+            No se pudieron cargar los hoteles del mapa. Recarga la página para reintentar.
+          </Trans>
         </p>
       ) : (
         <div className="pointer-events-none relative mt-2 h-96">

@@ -311,7 +311,7 @@ export function NewRequisitionDialog({
         action: {
           label: t`Ir a autorizar`,
           onClick: () => {
-            window.location.assign('/requisiciones/autorizacion')
+            window.location.assign('/requisitions/authorization')
           },
         },
       })

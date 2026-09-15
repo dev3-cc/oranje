@@ -18,6 +18,7 @@ import { Sidebar } from './Sidebar'
 import { useAppSelector } from '@/app/hooks'
 import { selectSessionUser } from '@/app/sessionSlice'
 import { BackgroundBeams } from '@/shared/components/BackgroundBeams'
+import { MascotaPeek } from '@/shared/components/MascotaPeek'
 import { WORKER_ROLE } from '@/shared/constants/roles'
 import { useVersionWatcher } from '@/shared/hooks/useVersionWatcher'
 import { saveLastRoute } from '@/shared/lib/lastRoute'
@@ -68,10 +69,10 @@ export function AppShell(): ReactNode {
 
   /**
    * El Colaborador no opera este shell: sin mapa en el sidebar vería TODO y
-   * cada pantalla le daría 403. Su apartado es `/colaborador`, aunque llegue
+   * cada pantalla le daría 403. Su apartado es `/collaborator`, aunque llegue
    * por un enlace o por la ruta reanudada de otra persona.
    */
-  if (user?.roleId === WORKER_ROLE) return <Navigate to="/colaborador" replace />
+  if (user?.roleId === WORKER_ROLE) return <Navigate to="/collaborator" replace />
 
   /**
    * Ancho acotado por defecto (regla de la skill: un solo max-width en toda la
@@ -87,6 +88,8 @@ export function AppShell(): ReactNode {
       className="h-screen overflow-hidden bg-bg"
     >
       <Sidebar />
+      {/* Detrás del panel (z menor): se asoma por su borde derecho. */}
+      <MascotaPeek />
       <SidebarInset className="relative flex h-screen min-w-0 flex-1 flex-col overflow-hidden bg-bg">
         <BackgroundBeams />
         <Header />

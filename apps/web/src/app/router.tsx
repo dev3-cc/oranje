@@ -1,4 +1,5 @@
-import { createBrowserRouter, Navigate, useParams } from 'react-router'
+import { type ReactElement } from 'react'
+import { createBrowserRouter, Navigate, useLocation, useParams } from 'react-router'
 
 import { RequireSession } from './RequireSession'
 import { RoleHome } from './RoleHome'
@@ -6,18 +7,77 @@ import { RoleHome } from './RoleHome'
 import { AppShell, type RouteHandle } from '@/layouts/AppShell'
 import { ModulePlaceholder } from '@/shared/components/ModulePlaceholder'
 
-/** El contrato guardado con la ruta vieja sigue abriendo, con su id. */
-function ContratoRedirect(): React.ReactElement {
-  const { contractId } = useParams()
+/**
+ * Las rutas pasaron de español a inglés el 2026-09-15 (D-11: los
+ * identificadores del sistema van en inglés). Las viejas siguen vivas y
+ * redirigen, porque hay enlaces guardados, correos con ellas y —lo que de
+ * verdad obliga— **códigos QR ya impresos y pegados en la puerta de un hotel**
+ * que apuntan a `/colaborador/ponchar?qr=…`.
+ *
+ * Por eso el redirector conserva el parámetro de ruta Y la cadena de consulta:
+ * perder el `?qr=` dejaría al colaborador en la pantalla de ponchar sin su
+ * código, que es justo lo que se corrigió en el PR #50.
+ */
+const LEGACY_PATHS: Array<{ from: string; to: string }> = [
+  { from: 'colaborador', to: '/collaborator' },
+  { from: 'colaborador/perfil', to: '/collaborator/profile' },
+  { from: 'colaborador/ponchar', to: '/collaborator/punch' },
+  { from: 'colaborador/avisos', to: '/collaborator/notifications' },
+  { from: 'colaborador/alta-2', to: '/collaborator/signup-2' },
+  { from: 'colaborador/alta-3', to: '/collaborator/signup-3' },
+  { from: 'usuarios', to: '/users' },
+  { from: 'catalogos', to: '/catalogs' },
+  { from: 'correos-corporativos', to: '/corporate-emails' },
+  { from: 'propuestas', to: '/proposals' },
+  { from: 'propuestas/:prospectId/:version', to: '/proposals/:prospectId/:version' },
+  { from: 'pipeline/:prospectId/propuesta', to: '/pipeline/:prospectId/proposal' },
+  { from: 'requisiciones', to: '/requisitions' },
+  { from: 'requisiciones/autorizacion', to: '/requisitions/authorization' },
+  { from: 'requisiciones/:requisitionId', to: '/requisitions/:requisitionId' },
+  { from: 'pool-colaboradores', to: '/collaborator-pool' },
+  { from: 'pool-colaboradores/:workerId', to: '/collaborator-pool/:workerId' },
+  { from: 'reportes', to: '/reports' },
+  { from: 'mi-equipo', to: '/my-team' },
+  { from: 'clientes-activos', to: '/active-clients' },
+  { from: 'documentos-tc', to: '/contracts' },
+  { from: 'documentos-tc/:contractId', to: '/contracts/:contractId' },
+  { from: 'contratos', to: '/contracts' },
+  { from: 'contratos/:contractId', to: '/contracts/:contractId' },
+  { from: 'mi-personal', to: '/my-staff' },
+  { from: 'auditorias', to: '/audits' },
+  { from: 'mi-territorio', to: '/my-territory' },
+  { from: 'accidentes', to: '/accidents' },
+  { from: 'hoteles/:hotelId/qr-ponche', to: '/hotels/:hotelId/punch-qr' },
+]
 
-  return <Navigate to={`/contratos/${contractId ?? ''}`} replace />
+/** Manda a la ruta nueva conservando los parámetros y la cadena de consulta. */
+function LegacyRedirect({ to }: { to: string }): ReactElement {
+  const params = useParams()
+  const { search, hash } = useLocation()
+  const target = to.replace(/:([A-Za-z]+)/g, (_match, name: string) => params[name] ?? '')
+
+  return <Navigate to={`${target}${search}${hash}`} replace />
 }
+
+function legacyRoutes(paths: typeof LEGACY_PATHS): Array<{ path: string; element: ReactElement }> {
+  return paths.map(({ from, to }) => ({ path: from, element: <LegacyRedirect to={to} /> }))
+}
+
+/* Las del Colaborador van FUERA del AppShell, al lado de su propia app: dentro
+   del shell del staff, el Colaborador es expulsado a su inicio antes de que el
+   redirector alcance a correr, y el QR impreso perdía su código. */
+const LEGACY_WORKER_ROUTES = legacyRoutes(
+  LEGACY_PATHS.filter((route) => route.from.startsWith('colaborador')),
+)
+const LEGACY_STAFF_ROUTES = legacyRoutes(
+  LEGACY_PATHS.filter((route) => !route.from.startsWith('colaborador')),
+)
 
 /**
  * Módulos del sidebar que ya navegan pero todavía no tienen diseño. Cada uno
  * sale de aquí y pasa a ser una feature propia cuando llegue su maqueta.
  */
-const PENDING_MODULES = [{ path: 'accidentes', title: 'Accidentes' }]
+const PENDING_MODULES = [{ path: 'accidents', title: 'Accidentes' }]
 
 /**
  * React Router 8 en *data mode* (D-17).
@@ -43,7 +103,7 @@ export const router = createBrowserRouter([
   },
   {
     /** La misma puerta con los textos del Colaborador (ROL-C-01). */
-    path: '/colaborador/login',
+    path: '/collaborator/login',
     lazy: async () => {
       const m = await import('@/features/auth')
       return { Component: m.ColaboradorLoginPage }
@@ -56,19 +116,20 @@ export const router = createBrowserRouter([
     children: [
       {
         /** La hoja del QR de ponche, para imprimir: en papel no hay sidebar. */
-        path: 'hoteles/:hotelId/qr-ponche',
+        path: 'hotels/:hotelId/punch-qr',
         lazy: async () => {
           const m = await import('@/features/onboarding')
           return { Component: m.HotelPunchQrPrintPage }
         },
       },
+      ...LEGACY_WORKER_ROUTES,
       {
         /**
          * El apartado del Colaborador (ROL-C-01): web responsive que imita la
          * app móvil de la maqueta. Vive FUERA del AppShell — el Colaborador no
          * usa el sidebar del staff.
          */
-        path: 'colaborador',
+        path: 'collaborator',
         lazy: async () => {
           const m = await import('@/features/worker')
           return { Component: m.MobileShell }
@@ -82,35 +143,35 @@ export const router = createBrowserRouter([
             },
           },
           {
-            path: 'perfil',
+            path: 'profile',
             lazy: async () => {
               const m = await import('@/features/worker')
               return { Component: m.ProfilePage }
             },
           },
           {
-            path: 'ponchar',
+            path: 'punch',
             lazy: async () => {
               const m = await import('@/features/worker')
               return { Component: m.PunchPage }
             },
           },
           {
-            path: 'alta-2',
+            path: 'signup-2',
             lazy: async () => {
               const m = await import('@/features/worker')
               return { Component: m.Phase2Page }
             },
           },
           {
-            path: 'alta-3',
+            path: 'signup-3',
             lazy: async () => {
               const m = await import('@/features/worker')
               return { Component: m.Phase3Page }
             },
           },
           {
-            path: 'avisos',
+            path: 'notifications',
             lazy: async () => {
               const m = await import('@/features/worker')
               return { Component: m.NotificationsPage }
@@ -130,21 +191,21 @@ export const router = createBrowserRouter([
             },
           },
           {
-            path: 'usuarios',
+            path: 'users',
             lazy: async () => {
               const m = await import('@/features/admin')
               return { Component: m.UsersPage }
             },
           },
           {
-            path: 'catalogos',
+            path: 'catalogs',
             lazy: async () => {
               const m = await import('@/features/admin')
               return { Component: m.CatalogsPage }
             },
           },
           {
-            path: 'correos-corporativos',
+            path: 'corporate-emails',
             lazy: async () => {
               const m = await import('@/features/admin')
               return { Component: m.CorporateEmailPage }
@@ -173,7 +234,7 @@ export const router = createBrowserRouter([
              * Activos son los mismos hoteles en otro estado del semáforo, así que
              * apuntarán a esta misma ruta.
              */
-            path: 'pipeline/:prospectId/propuesta',
+            path: 'pipeline/:prospectId/proposal',
             lazy: async () => {
               const m = await import('@/features/onboarding')
               return { Component: m.ProposalEditorPage }
@@ -181,7 +242,7 @@ export const router = createBrowserRouter([
           },
           {
             /* Vista transversal de solo lectura; el editor vive dentro del hotel. */
-            path: 'propuestas',
+            path: 'proposals',
             lazy: async () => {
               const m = await import('@/features/onboarding')
               return { Component: m.ProposalListPage }
@@ -189,7 +250,7 @@ export const router = createBrowserRouter([
           },
           {
             /* Una versión concreta, en solo lectura. A donde lleva «Ver propuesta». */
-            path: 'propuestas/:prospectId/:version',
+            path: 'proposals/:prospectId/:version',
             lazy: async () => {
               const m = await import('@/features/onboarding')
               return { Component: m.ProposalVersionPage }
@@ -211,7 +272,7 @@ export const router = createBrowserRouter([
             },
           },
           {
-            path: 'requisiciones',
+            path: 'requisitions',
             lazy: async () => {
               const m = await import('@/features/requisitions')
               return { Component: m.RequisitionBoardPage }
@@ -219,10 +280,10 @@ export const router = createBrowserRouter([
           },
           {
             /**
-             * Va ANTES que `:requisitionId`, que si no se tragaría «autorizacion»
+             * Va ANTES que `:requisitionId`, que si no se tragaría «authorization»
              * como si fuera el id de una requisición.
              */
-            path: 'requisiciones/autorizacion',
+            path: 'requisitions/authorization',
             lazy: async () => {
               const m = await import('@/features/requisitions')
               return { Component: m.RequisitionAuthorizationPage }
@@ -230,7 +291,7 @@ export const router = createBrowserRouter([
           },
           {
             /* El detalle cuelga del tablero: se llega desde el folio de una fila. */
-            path: 'requisiciones/:requisitionId',
+            path: 'requisitions/:requisitionId',
             lazy: async () => {
               const m = await import('@/features/requisitions')
               return { Component: m.RequisitionDetailPage }
@@ -260,7 +321,7 @@ export const router = createBrowserRouter([
             },
           },
           {
-            path: 'pool-colaboradores',
+            path: 'collaborator-pool',
             lazy: async () => {
               const m = await import('@/features/recruitment')
               return { Component: m.PoolPage }
@@ -268,7 +329,7 @@ export const router = createBrowserRouter([
           },
           {
             /* El Expediente cuelga del Pool: se llega desde el nombre de la fila. */
-            path: 'pool-colaboradores/:workerId',
+            path: 'collaborator-pool/:workerId',
             lazy: async () => {
               const m = await import('@/features/recruitment')
               return { Component: m.WorkerDetailPage }
@@ -290,14 +351,14 @@ export const router = createBrowserRouter([
             },
           },
           {
-            path: 'reportes',
+            path: 'reports',
             lazy: async () => {
               const m = await import('@/features/reports')
               return { Component: m.ReportsPage }
             },
           },
           {
-            path: 'mi-equipo',
+            path: 'my-team',
             lazy: async () => {
               const m = await import('@/features/team')
               return { Component: m.TeamPage }
@@ -311,14 +372,14 @@ export const router = createBrowserRouter([
             },
           },
           {
-            path: 'clientes-activos',
+            path: 'active-clients',
             lazy: async () => {
               const m = await import('@/features/clients')
               return { Component: m.ClientPortfolioPage }
             },
           },
           {
-            path: 'contratos',
+            path: 'contracts',
             lazy: async () => {
               const m = await import('@/features/contracts')
               return { Component: m.ContractListPage }
@@ -326,32 +387,29 @@ export const router = createBrowserRouter([
           },
           {
             /* El contrato cuelga de la lista: se llega desde el «Abrir» de su fila. */
-            path: 'contratos/:contractId',
+            path: 'contracts/:contractId',
             lazy: async () => {
               const m = await import('@/features/contracts')
               return { Component: m.ContractDetailPage }
             },
           },
-          /* La ruta vieja sigue viva: el módulo se llamó «Documentos T&C» hasta
-             el 2026-09-15 y hay enlaces guardados y correos con ella. */
-          { path: 'documentos-tc', element: <Navigate to="/contratos" replace /> },
-          { path: 'documentos-tc/:contractId', element: <ContratoRedirect /> },
+          ...LEGACY_STAFF_ROUTES,
           {
-            path: 'mi-personal',
+            path: 'my-staff',
             lazy: async () => {
               const m = await import('@/features/personnel')
               return { Component: m.PersonnelPage }
             },
           },
           {
-            path: 'auditorias',
+            path: 'audits',
             lazy: async () => {
               const m = await import('@/features/audits')
               return { Component: m.AuditsPage }
             },
           },
           {
-            path: 'mi-territorio',
+            path: 'my-territory',
             lazy: async () => {
               const m = await import('@/features/territory')
               return { Component: m.TerritoryPage }

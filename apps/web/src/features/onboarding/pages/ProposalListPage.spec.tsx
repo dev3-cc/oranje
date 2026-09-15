@@ -8,8 +8,8 @@ import { ProposalListPage } from './ProposalListPage'
 import { store } from '@/app/store'
 
 function renderList(): void {
-  const router = createMemoryRouter([{ path: '/propuestas', element: <ProposalListPage /> }], {
-    initialEntries: ['/propuestas'],
+  const router = createMemoryRouter([{ path: '/proposals', element: <ProposalListPage /> }], {
+    initialEntries: ['/proposals'],
   })
 
   render(

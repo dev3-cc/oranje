@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { MaterialIcon, StatusLightBadge, statusLight } from '@oranje/ui'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
@@ -28,6 +29,8 @@ export function HotelMapCard({
   hotel: TerritoryHotel
   onClose: () => void
 }): ReactNode {
+  const { t } = useLingui()
+
   return (
     <article className="absolute inset-x-3 bottom-3 z-10 isolate overflow-hidden rounded-2xl p-4 text-white shadow-lg sm:inset-x-auto sm:top-6 sm:bottom-auto sm:left-6 sm:w-[26rem] sm:max-w-[calc(100%-3rem)] sm:p-6">
       {/* La foto del hotel de fondo con el velo oscuro: el mismo vidrio del hero de Inicio. */}
@@ -44,7 +47,7 @@ export function HotelMapCard({
           />
           <button
             type="button"
-            aria-label="Cerrar la ficha del hotel"
+            aria-label={t`Cerrar la ficha del hotel`}
             onClick={onClose}
             className="flex size-8 cursor-pointer items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/15 hover:text-white"
           >
@@ -54,13 +57,17 @@ export function HotelMapCard({
       </div>
 
       <p className="mt-1.5 text-sm text-white/80">
-        {hotel.zone} · geocerca {hotel.geofenceMeters} m · {hotel.timeZone}
+        <Trans>
+          {hotel.zone} · geocerca {hotel.geofenceMeters} m · {hotel.timeZone}
+        </Trans>
       </p>
 
       {hotel.recentHistory.length > 0 && (
         <>
           <div className="mt-3 rounded-xl bg-white/15 p-3 backdrop-blur-sm sm:mt-4">
-            <h3 className="text-sm font-semibold text-white">Timeline del semáforo</h3>
+            <h3 className="text-sm font-semibold text-white">
+              <Trans>Timeline del semáforo</Trans>
+            </h3>
 
             <ol className="mt-2 flex flex-col gap-2 sm:mt-3 sm:gap-3">
               {hotel.recentHistory.map((entry, index) => (
@@ -88,7 +95,7 @@ export function HotelMapCard({
       )}
 
       <Link to={`/pipeline/${hotel.id}`} className={buttonClass('primary', 'mt-4 w-full sm:mt-5')}>
-        Abrir ficha del hotel
+        <Trans>Abrir ficha del hotel</Trans>
       </Link>
     </article>
   )

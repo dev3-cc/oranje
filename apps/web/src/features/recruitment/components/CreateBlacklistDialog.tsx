@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg, plural } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import {
   Input,
   Select,
@@ -38,23 +41,28 @@ function InfoField({ label, value }: { label: string; value: string }): ReactNod
   )
 }
 
-const INTRO_SLIDES = [
+/** Las diapositivas del intro; el texto se traduce al pintar con `i18n._()` (D-36). */
+const INTRO_SLIDES: readonly {
+  image: string
+  title: MessageDescriptor
+  text: MessageDescriptor
+}[] = [
   {
     image: personajeAcceso,
-    title: 'El Gris protege',
-    text: 'Una persona en accidente laboral no puede vetarse: primero se resuelve su caso, luego se decide.',
+    title: msg`El Gris protege`,
+    text: msg`Una persona en accidente laboral no puede vetarse: primero se resuelve su caso, luego se decide.`,
   },
   {
     image: personajeEncuesta,
-    title: 'Motivo y evidencia, obligatorios',
-    text: 'El veto siempre carga su porqué y su respaldo — sin evidencia no hay veto.',
+    title: msg`Motivo y evidencia, obligatorios`,
+    text: msg`El veto siempre carga su porqué y su respaldo — sin evidencia no hay veto.`,
   },
   {
     image: personajeHastaPronto,
-    title: 'Un solo veto vigente',
-    text: 'Sale del Pool mientras el veto viva; el historial completo queda y solo el Administrador lo levanta.',
+    title: msg`Un solo veto vigente`,
+    text: msg`Sale del Pool mientras el veto viva; el historial completo queda y solo el Administrador lo levanta.`,
   },
-] as const
+]
 
 export function CreateBlacklistDialog({
   isOpen,
@@ -63,6 +71,7 @@ export function CreateBlacklistDialog({
   isOpen: boolean
   onClose: () => void
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const [workerId, setWorkerId] = useState('')
   const [reason, setReason] = useState('')
   const [evidencePath, setEvidencePath] = useState('')
@@ -104,7 +113,7 @@ export function CreateBlacklistDialog({
         reason: reason.trim(),
         evidencePath: evidencePath.trim(),
       }).unwrap()
-      toast.success(`Veto registrado — ${worker.fullName}`)
+      toast.success(t`Veto registrado — ${worker.fullName}`)
       onClose()
     } catch {
       return
@@ -115,18 +124,18 @@ export function CreateBlacklistDialog({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Agregar a Blacklist"
+      title={t`Agregar a Blacklist`}
       description={
         IS_DEV_UI
           ? 'coverage.blacklist_entry · nueva fila con veto vigente — ux_blacklist_worker impide un segundo veto activo'
-          : 'El veto queda vigente desde ahora; el historial de la persona nunca se borra'
+          : t`El veto queda vigente desde ahora; el historial de la persona nunca se borra`
       }
       className="max-w-xl"
       footer={
         showIntro ? null : (
           <>
             <Button onClick={onClose} disabled={isLoading}>
-              Cancelar
+              <Trans>Cancelar</Trans>
             </Button>
             <Button
               variant="primary"
@@ -135,7 +144,7 @@ export function CreateBlacklistDialog({
                 void submit()
               }}
             >
-              {isLoading ? 'Vetando…' : 'Vetar colaborador'}
+              {isLoading ? t`Vetando…` : t`Vetar colaborador`}
             </Button>
           </>
         )
@@ -143,8 +152,12 @@ export function CreateBlacklistDialog({
     >
       {showIntro ? (
         <OnboardingIntro
-          slides={INTRO_SLIDES}
-          startLabel="Continuar"
+          slides={INTRO_SLIDES.map((slide) => ({
+            image: slide.image,
+            title: i18n._(slide.title),
+            text: i18n._(slide.text),
+          }))}
+          startLabel={t`Continuar`}
           onDone={() => {
             setShowIntro(false)
           }}
@@ -153,11 +166,11 @@ export function CreateBlacklistDialog({
         <>
           <div className="flex flex-col gap-2">
             <label htmlFor="blacklist-worker" className="text-sm font-semibold text-ink">
-              Colaborador
+              <Trans>Colaborador</Trans>
             </label>
             <Select {...(workerId ? { value: workerId } : {})} onValueChange={setWorkerId}>
-              <SelectTrigger id="blacklist-worker" aria-label="Colaborador" className="w-full">
-                <SelectValue placeholder="Elige a la persona…" />
+              <SelectTrigger id="blacklist-worker" aria-label={t`Colaborador`} className="w-full">
+                <SelectValue placeholder={t`Elige a la persona…`} />
               </SelectTrigger>
               <SelectContent>
                 {(pool?.items ?? []).map((item) => (
@@ -175,7 +188,9 @@ export function CreateBlacklistDialog({
                 <div>
                   <p className="text-base font-semibold text-ink">{worker.fullName}</p>
                   <p className="text-sm text-ink-3">
-                    {worker.catalogPosition} · Zona {worker.zoneName}
+                    <Trans>
+                      {worker.catalogPosition} · Zona {worker.zoneName}
+                    </Trans>
                   </p>
                 </div>
                 <StatusLightSoftBadge
@@ -186,31 +201,31 @@ export function CreateBlacklistDialog({
 
               <div className="flex flex-col gap-2 rounded-md bg-surface-2 p-4">
                 <InfoField
-                  label={IS_DEV_UI ? 'worker_state' : 'Estado'}
+                  label={IS_DEV_UI ? 'worker_state' : t`Estado`}
                   value={IS_DEV_UI ? worker.status : WORKER_STATUS_LABEL[worker.status]}
                 />
                 <InfoField
-                  label={IS_DEV_UI ? 'accidents_open' : 'Accidente abierto'}
+                  label={IS_DEV_UI ? 'accidents_open' : t`Accidente abierto`}
                   value={
                     IS_DEV_UI
                       ? isProtected
                         ? 'está en GRIS — protegido'
                         : '0 · no está en GRIS'
                       : isProtected
-                        ? 'Sí: está en Gris y protegido'
-                        : 'No'
+                        ? t`Sí: está en Gris y protegido`
+                        : t`No`
                   }
                 />
                 <InfoField
-                  label={IS_DEV_UI ? 'vetoes_previos' : 'Vetos anteriores'}
+                  label={IS_DEV_UI ? 'vetoes_previos' : t`Vetos anteriores`}
                   value={
                     hasActiveVeto
                       ? IS_DEV_UI
                         ? 'ya tiene un veto VIGENTE'
-                        : 'Uno vigente ahora mismo'
+                        : t`Uno vigente ahora mismo`
                       : previousLifted > 0
-                        ? `${String(previousLifted)} ${previousLifted === 1 ? 'levantado' : 'levantados'}`
-                        : 'Ninguno'
+                        ? t`${plural(previousLifted, { one: '# levantado', other: '# levantados' })}`
+                        : t`Ninguno`
                   }
                 />
               </div>
@@ -219,12 +234,14 @@ export function CreateBlacklistDialog({
                 <p className="rounded-md bg-yellow/15 px-4 py-3 text-sm text-ink-2">
                   {IS_DEV_UI
                     ? 'El GRIS protege: un colaborador accidentado no se puede vetar.'
-                    : 'Está en Gris por un accidente laboral: no se puede vetar hasta que su caso se resuelva.'}
+                    : t`Está en Gris por un accidente laboral: no se puede vetar hasta que su caso se resuelva.`}
                 </p>
               )}
               {hasActiveVeto && (
                 <p className="rounded-md bg-yellow/15 px-4 py-3 text-sm text-ink-2">
-                  Ya hay un veto vigente para esta persona: levántalo antes de registrar otro.
+                  <Trans>
+                    Ya hay un veto vigente para esta persona: levántalo antes de registrar otro.
+                  </Trans>
                 </p>
               )}
             </>
@@ -232,7 +249,9 @@ export function CreateBlacklistDialog({
 
           <label className="flex flex-col gap-2">
             <span className="text-sm font-semibold text-ink">
-              Motivo del veto <span className="font-normal text-ink-3">(obligatorio)</span>
+              <Trans>
+                Motivo del veto <span className="font-normal text-ink-3">(obligatorio)</span>
+              </Trans>
               {IS_DEV_UI && <code className="text-xs font-normal text-ink-4"> · reason</code>}
             </span>
             <Textarea
@@ -241,14 +260,16 @@ export function CreateBlacklistDialog({
                 setReason(event.target.value)
               }}
               rows={3}
-              placeholder="P. ej. «Abandonó el turno sin aviso en dos ocasiones.»"
+              placeholder={t`P. ej. «Abandonó el turno sin aviso en dos ocasiones.»`}
             />
           </label>
 
           <label className="flex flex-col gap-2">
             <span className="text-sm font-semibold text-ink">
-              Evidencia{' '}
-              <span className="font-normal text-ink-3">(obligatoria en un veto manual)</span>
+              <Trans>
+                Evidencia{' '}
+                <span className="font-normal text-ink-3">(obligatoria en un veto manual)</span>
+              </Trans>
               {IS_DEV_UI && (
                 <code className="text-xs font-normal text-ink-4"> · evidence_path</code>
               )}
@@ -260,21 +281,22 @@ export function CreateBlacklistDialog({
               onChange={(event) => {
                 setEvidencePath(event.target.value)
               }}
-              placeholder="evidencia-turnos.pdf"
+              placeholder={t`evidencia-turnos.pdf`}
             />
           </label>
 
           <p className="rounded-md bg-surface-2 p-3 text-xs leading-relaxed text-ink-3">
-            Este veto es <span className="font-semibold">manual</span>; los vetos por ausencias o
-            disputa los genera el sistema. Al vetar, la persona pasa a{' '}
-            <span className="font-semibold">Negro</span> y sale del Pool de Colaboradores.
+            <Trans>
+              Este veto es <span className="font-semibold">manual</span>; los vetos por ausencias o
+              disputa los genera el sistema. Al vetar, la persona pasa a{' '}
+              <span className="font-semibold">Negro</span> y sale del Pool de Colaboradores.
+            </Trans>
           </p>
 
           {error !== undefined && (
             <p role="alert" className="text-sm text-red">
               {apiErrorMessage(error, {
-                fallback:
-                  'No se pudo registrar el veto. Revisa que la persona no esté en Gris ni tenga ya un veto vigente, e inténtalo de nuevo.',
+                fallback: t`No se pudo registrar el veto. Revisa que la persona no esté en Gris ni tenga ya un veto vigente, e inténtalo de nuevo.`,
               })}
             </p>
           )}

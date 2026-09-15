@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn, MaterialIcon } from '@oranje/ui'
 import { useMemo, useState, type ReactNode } from 'react'
 
@@ -25,6 +26,7 @@ import { IS_DEV_UI } from '@/shared/lib/devMode'
  * que administra el Administrador — Reglas de Negocio · Cuentas del hotel.
  */
 export function HotelUsersSection(): ReactNode {
+  const { t, i18n } = useLingui()
   const [search, setSearch] = useState('')
   const [hotelFilter, setHotelFilter] = useState('ALL')
   const [roleFilter, setRoleFilter] = useState('ALL')
@@ -84,23 +86,26 @@ export function HotelUsersSection(): ReactNode {
           isSearching={isFetching && settledSearch !== ''}
           value={search}
           onChange={setSearch}
-          label="Buscar cuenta del hotel"
-          placeholder="Nombre, correo u hotel, p. ej. Xcaret…"
+          label={t`Buscar cuenta del hotel`}
+          placeholder={t`Nombre, correo u hotel, p. ej. Xcaret…`}
           className="w-72"
         />
         <FilterSelect
-          label="Hotel"
-          anyLabel="todos"
+          label={t`Hotel`}
+          anyLabel={t`todos`}
           value={hotelFilter}
           options={hotels.map((hotel) => ({ value: hotel.id, label: hotel.name }))}
           onChange={setHotelFilter}
           icon="apartment"
         />
         <FilterSelect
-          label="Rol"
-          anyLabel="todos"
+          label={t`Rol`}
+          anyLabel={t`todos`}
           value={roleFilter}
-          options={HOTEL_ROLE_OPTIONS.map((role) => ({ value: role.code, label: role.name }))}
+          options={HOTEL_ROLE_OPTIONS.map((role) => ({
+            value: role.code,
+            label: i18n._(role.name),
+          }))}
           onChange={setRoleFilter}
           icon="badge"
         />
@@ -119,13 +124,13 @@ export function HotelUsersSection(): ReactNode {
             setIsFormOpen(true)
           }}
         >
-          Agregar cuenta del hotel
+          <Trans>Agregar cuenta del hotel</Trans>
         </Button>
       </div>
 
       {isError ? (
         <LoadError
-          message="No se pudieron cargar las cuentas de los hoteles. Reintenta en unos segundos."
+          message={t`No se pudieron cargar las cuentas de los hoteles. Reintenta en unos segundos.`}
           onRetry={() => {
             void activeQuery.refetch()
             void allQuery.refetch()
@@ -136,10 +141,10 @@ export function HotelUsersSection(): ReactNode {
       ) : visible.length === 0 ? (
         <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
           {activeFilters > 0
-            ? 'Nadie coincide con esa búsqueda. Prueba otro nombre, correo, hotel o rol, o quita los filtros.'
+            ? t`Nadie coincide con esa búsqueda. Prueba otro nombre, correo, hotel o rol, o quita los filtros.`
             : tab === 'active'
-              ? 'Todavía no hay cuentas de hotel activas. Agrega la primera con el botón de arriba.'
-              : 'Ninguna cuenta de hotel está de baja. Las que des de baja aparecerán aquí.'}
+              ? t`Todavía no hay cuentas de hotel activas. Agrega la primera con el botón de arriba.`
+              : t`Ninguna cuenta de hotel está de baja. Las que des de baja aparecerán aquí.`}
         </p>
       ) : (
         <ul className="overflow-hidden rounded-2xl border border-line bg-surface">
@@ -174,7 +179,7 @@ export function HotelUsersSection(): ReactNode {
                       {user.fullName}
                     </span>
                     {user.hasAccount && (
-                      <span title="Ya entró al sistema" aria-label="Ya entró al sistema">
+                      <span title={t`Ya entró al sistema`} aria-label={t`Ya entró al sistema`}>
                         <MaterialIcon name="verified" className="shrink-0 text-base text-o-500" />
                       </span>
                     )}
@@ -182,19 +187,19 @@ export function HotelUsersSection(): ReactNode {
                   <span className="truncate text-xs text-ink-3">{user.email}</span>
                 </div>
 
-                <CellStat value={user.hotel.name} label="Hotel" />
+                <CellStat value={user.hotel.name} label={t`Hotel`} />
                 <CellStat
                   value={user.role.name}
-                  label={user.department ? user.department.name : 'Todo el hotel'}
+                  label={user.department ? user.department.name : t`Todo el hotel`}
                 />
                 <CellStat
                   value={user.reportsToUserId ? (nameById.get(user.reportsToUserId) ?? '—') : '—'}
-                  label="Reporta a"
+                  label={t`Reporta a`}
                   {...(user.reportsToUserId ? {} : { tone: 'muted' as const })}
                 />
                 <CellStat
                   value={DATE_FORMAT.format(new Date(user.createdAt))}
-                  label="Fecha de alta"
+                  label={t`Fecha de alta`}
                 />
 
                 <div className="hidden w-36 shrink-0 justify-end lg:flex">
@@ -207,10 +212,15 @@ export function HotelUsersSection(): ReactNode {
       )}
 
       <p className="text-xs leading-relaxed text-ink-3">
-        Cada cuenta pertenece a un solo hotel. El primer Manager General nace en la Conversión
-        {IS_DEV_UI ? ' (RR-V-02)' : ''}; los Supervisores, los Managers de Área y los Managers
-        Generales adicionales se dan de alta aquí. El correo, el hotel y el rol no se editan:
-        cambiar cualquiera es dar de baja y dar de alta.
+        <Trans>
+          Cada cuenta pertenece a un solo hotel. El primer Manager General nace en la Conversión
+        </Trans>
+        {IS_DEV_UI ? ' (RR-V-02)' : ''}
+        <Trans>
+          ; los Supervisores, los Managers de Área y los Managers Generales adicionales se dan de
+          alta aquí. El correo, el hotel y el rol no se editan: cambiar cualquiera es dar de baja y
+          dar de alta.
+        </Trans>
       </p>
 
       <HotelUserFormDialog

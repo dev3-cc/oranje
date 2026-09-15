@@ -5,12 +5,12 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import { Input, MaterialIcon } from '@oranje/ui'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 
 import { LoginCollage } from '../components/LoginCollage'
-import { loginSchema, type LoginFormValues } from '../types/login.schema'
+import { buildLoginSchema, type LoginFormValues } from '../types/login.schema'
 
 import { useAppSelector } from '@/app/hooks'
 import { useCreateSessionMutation } from '@/app/sessionApi'
@@ -123,7 +123,7 @@ type AuthMode = 'login' | 'reset'
  * A quién le habla la pantalla. Es la MISMA pantalla y el mismo canje de
  * sesión: solo cambian los textos, porque el Colaborador no tiene «hotel
  * propio» ni «Administrador de departamento» — lo da de alta su Reclutadora
- * y entra desde el celular. La ruta decide (`/login` · `/colaborador/login`);
+ * y entra desde el celular. La ruta decide (`/login` · `/collaborator/login`);
  * al entrar, `RoleHome` manda a cada quien a su inicio sin importar por cuál
  * puerta pasó.
  */
@@ -145,12 +145,16 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [resetSentTo, setResetSentTo] = useState<string | null>(null)
 
+  /* Los mensajes del esquema se resuelven al armarlo, así que se rearma al
+     cambiar de idioma: `i18n` no cambia de identidad al activar otro (D-36). */
+  const schema = useMemo(() => buildLoginSchema(i18n), [i18n, i18n.locale])
+
   const {
     register,
     handleSubmit,
     getValues,
     formState: { errors, isSubmitting },
-  } = useForm<LoginFormValues>({ resolver: zodResolver(loginSchema) })
+  } = useForm<LoginFormValues>({ resolver: zodResolver(schema) })
 
   /** Con sesión viva no hay nada que hacer aquí. */
   if (status === 'authenticated') {
@@ -190,7 +194,7 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
   async function onRequestReset(): Promise<void> {
     const email = getValues('email').trim()
     if (!email) {
-      setSubmitError('Escribe tu correo y te mandamos el enlace.')
+      setSubmitError(t`Escribe tu correo y te mandamos el enlace.`)
       return
     }
     setSubmitError(null)
@@ -381,7 +385,7 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
                         <Trans>
                           ¿Eres colaborador?{' '}
                           <Link
-                            to="/colaborador/login"
+                            to="/collaborator/login"
                             className="font-medium text-o-700 hover:underline"
                           >
                             Entra por aquí

@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { cn } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -18,8 +19,10 @@ export function TerritoryZoneChips({
   selectedZoneId: string | null
   onSelect: (zoneId: string | null) => void
 }): ReactNode {
+  const { t } = useLingui()
+
   const options: { id: string | null; label: string; count: number }[] = [
-    { id: null, label: 'Todas', count: total },
+    { id: null, label: t`Todas`, count: total },
     ...zones.map((zone) => ({ id: zone.id, label: zone.label, count: zone.count })),
   ]
 

@@ -78,14 +78,14 @@ export function RequisitionTable({ items }: { items: RequisitionRow[] }): ReactN
             <TableRow
               key={item.id}
               onClick={() => {
-                void navigate(`/requisiciones/${item.id}`)
+                void navigate(`/requisitions/${item.id}`)
               }}
               className="cursor-pointer border-line hover:bg-surface-2"
             >
               <TableCell className="px-4 py-4 text-sm font-medium whitespace-nowrap">
                 {}
                 <Link
-                  to={`/requisiciones/${item.id}`}
+                  to={`/requisitions/${item.id}`}
                   className="rounded-sm text-ink hover:text-o-700 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
                 >
                   {item.number}

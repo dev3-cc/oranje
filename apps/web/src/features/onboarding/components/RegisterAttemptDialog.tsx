@@ -1,4 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import {
   cn,
   Input,
@@ -9,7 +12,7 @@ import {
   SelectValue,
   toast,
 } from '@oranje/ui'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 
 import {
@@ -18,7 +21,7 @@ import {
 } from '../api/onboardingApi'
 import type { ContactAttempt, HotelContact } from '../types/prospect.types'
 import {
-  registerContactAttemptSchema,
+  buildRegisterContactAttemptSchema,
   type RegisterContactAttemptForm,
 } from '../types/registerContactAttempt.schema'
 
@@ -39,23 +42,28 @@ import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'register-contact-attempt'
 
-const INTRO_SLIDES = [
+/** Las diapositivas del intro; el texto se traduce al pintar con `i18n._()` (D-36). */
+const INTRO_SLIDES: readonly {
+  image: string
+  title: MessageDescriptor
+  text: MessageDescriptor
+}[] = [
   {
     image: personajeNotificaciones,
-    title: 'Cada intento cuenta la historia',
-    text: 'La bitácora del prospecto vive de estos registros: quién buscó al hotel, cuándo y por qué canal.',
+    title: msg`Cada intento cuenta la historia`,
+    text: msg`La bitácora del prospecto vive de estos registros: quién buscó al hotel, cuándo y por qué canal.`,
   },
   {
     image: personajeEncuesta,
-    title: 'Canal y resultado, de la lista',
-    text: 'Tipo y resultado salen de listas cerradas — así los reportes pueden agrupar sin adivinar.',
+    title: msg`Canal y resultado, de la lista`,
+    text: msg`Tipo y resultado salen de listas cerradas — así los reportes pueden agrupar sin adivinar.`,
   },
   {
     image: personajeRetro,
-    title: 'Solo su autor corrige',
-    text: 'Un intento puede corregirse o borrarse, pero únicamente por quien lo registró.',
+    title: msg`Solo su autor corrige`,
+    text: msg`Un intento puede corregirse o borrarse, pero únicamente por quien lo registró.`,
   },
-] as const
+]
 
 const NO_CONTACT = 'NONE'
 
@@ -86,6 +94,7 @@ export function RegisterAttemptDialog({
   contacts,
   attempt,
 }: RegisterAttemptDialogProps): ReactNode {
+  const { t, i18n } = useLingui()
   const isEditing = attempt !== undefined
   const [registerAttempt, { isLoading: isCreating, error: createError }] =
     useRegisterContactAttemptMutation()
@@ -94,9 +103,13 @@ export function RegisterAttemptDialog({
   const isLoading = isCreating || isUpdating
   const saveError = isEditing ? updateError : createError
 
+  /* Los mensajes del esquema se resuelven al armarlo, así que se rearma al
+     cambiar de idioma: `i18n` no cambia de identidad al activar otro (D-36). */
+  const schema = useMemo(() => buildRegisterContactAttemptSchema(i18n), [i18n, i18n.locale])
+
   const { register, control, handleSubmit, setValue, watch, reset, formState } =
     useForm<RegisterContactAttemptForm>({
-      resolver: zodResolver(registerContactAttemptSchema),
+      resolver: zodResolver(schema),
       mode: 'onChange',
       defaultValues: { hotelContactId: '', notes: '', occurredAt: nowForDateTimeInput() },
     })
@@ -133,7 +146,7 @@ export function RegisterAttemptDialog({
           hotelContactId: values.hotelContactId || null,
           notes: values.notes || null,
         }).unwrap()
-        toast.success('Intento corregido')
+        toast.success(t`Intento corregido`)
       } else {
         await registerAttempt({
           prospectId,
@@ -143,7 +156,7 @@ export function RegisterAttemptDialog({
           ...(values.hotelContactId ? { hotelContactId: values.hotelContactId } : {}),
           ...(values.notes ? { notes: values.notes } : {}),
         }).unwrap()
-        toast.success('Intento registrado')
+        toast.success(t`Intento registrado`)
       }
       onClose()
     } catch {
@@ -155,13 +168,13 @@ export function RegisterAttemptDialog({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isEditing ? 'Corregir intento de contacto' : 'Registrar intento de contacto'}
+      title={isEditing ? t`Corregir intento de contacto` : t`Registrar intento de contacto`}
       description={IS_DEV_UI ? `${hotelName} · commercial.contact_attempt` : hotelName}
       footer={
         showIntro ? null : (
           <>
             <Button onClick={onClose} disabled={isLoading}>
-              Cancelar
+              <Trans>Cancelar</Trans>
             </Button>
             <Button
               variant="primary"
@@ -169,7 +182,13 @@ export function RegisterAttemptDialog({
               form={FORM_ID}
               disabled={!formState.isValid || isLoading}
             >
-              {isLoading ? 'Guardando…' : isEditing ? 'Guardar corrección' : 'Registrar intento'}
+              {isLoading ? (
+                <Trans>Guardando…</Trans>
+              ) : isEditing ? (
+                <Trans>Guardar corrección</Trans>
+              ) : (
+                <Trans>Registrar intento</Trans>
+              )}
             </Button>
           </>
         )
@@ -177,8 +196,12 @@ export function RegisterAttemptDialog({
     >
       {showIntro ? (
         <OnboardingIntro
-          slides={INTRO_SLIDES}
-          startLabel="Registrar el intento"
+          slides={INTRO_SLIDES.map((slide) => ({
+            image: slide.image,
+            title: i18n._(slide.title),
+            text: i18n._(slide.text),
+          }))}
+          startLabel={t`Registrar el intento`}
           onDone={() => {
             setShowIntro(false)
           }}
@@ -193,13 +216,13 @@ export function RegisterAttemptDialog({
           className="flex flex-col gap-5"
         >
           <FormField
-            label="Tipo de intento"
+            label={t`Tipo de intento`}
             hint={
               IS_DEV_UI
                 ? 'attempt_type — lista cerrada con CHECK, no catálogo'
-                : 'Por dónde buscaste al hotel'
+                : t`Por dónde buscaste al hotel`
             }
-            error={formState.errors.attemptType && 'Elige el tipo de intento'}
+            error={formState.errors.attemptType && t`Elige el tipo de intento`}
           >
             <div className="grid grid-cols-3 gap-3">
               {CONTACT_ATTEMPT_TYPES.map((type) => {
@@ -228,12 +251,12 @@ export function RegisterAttemptDialog({
           </FormField>
 
           <FormField
-            label="Contacto del hotel"
+            label={t`Contacto del hotel`}
             htmlFor="hotelContactId"
             hint={
               IS_DEV_UI
                 ? 'hotel_contact_id es opcional: una visita en frío puede no encontrar a nadie'
-                : 'Opcional: en una visita en frío puedes no encontrar a nadie'
+                : t`Opcional: en una visita en frío puedes no encontrar a nadie`
             }
           >
             <Controller
@@ -250,7 +273,9 @@ export function RegisterAttemptDialog({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={NO_CONTACT}>Sin contacto identificado</SelectItem>
+                    <SelectItem value={NO_CONTACT}>
+                      <Trans>Sin contacto identificado</Trans>
+                    </SelectItem>
                     {contacts.map((contact) => (
                       <SelectItem key={contact.id} value={contact.id}>
                         {contact.name} · {contact.role}
@@ -263,14 +288,14 @@ export function RegisterAttemptDialog({
           </FormField>
 
           <FormField
-            label="Resultado"
+            label={t`Resultado`}
             htmlFor="outcome"
             hint={
               IS_DEV_UI
                 ? 'outcome — no contestó · interesado · no interesado · cita agendada'
-                : 'Qué pasó con este intento'
+                : t`Qué pasó con este intento`
             }
-            error={formState.errors.outcome && 'Elige el resultado del intento'}
+            error={formState.errors.outcome && t`Elige el resultado del intento`}
           >
             <Controller
               control={control}
@@ -281,7 +306,7 @@ export function RegisterAttemptDialog({
                   onValueChange={field.onChange}
                 >
                   <SelectTrigger id="outcome" className="w-full">
-                    <SelectValue placeholder="Elige el resultado…" />
+                    <SelectValue placeholder={t`Elige el resultado…`} />
                   </SelectTrigger>
                   <SelectContent>
                     {CONTACT_ATTEMPT_OUTCOMES.map((value) => (
@@ -296,27 +321,31 @@ export function RegisterAttemptDialog({
           </FormField>
 
           <FormField
-            label="Fecha y hora"
+            label={t`Fecha y hora`}
             htmlFor="occurredAt"
-            error={formState.errors.occurredAt && 'Indica cuándo ocurrió el intento'}
+            error={formState.errors.occurredAt && t`Indica cuándo ocurrió el intento`}
           >
             <Input id="occurredAt" type="datetime-local" {...register('occurredAt')} />
           </FormField>
 
-          <FormField label="Notas" htmlFor="notes">
+          <FormField label={t`Notas`} htmlFor="notes">
             <Input
               id="notes"
               type="text"
-              placeholder="Pidió que llamáramos la próxima semana"
+              placeholder={t`Pidió que llamáramos la próxima semana`}
               {...register('notes')}
             />
           </FormField>
 
           {saveError !== undefined && (
             <p className="rounded-md bg-red/10 p-4 text-sm text-red">
-              {isEditing
-                ? 'No se pudo corregir el intento. Solo su autor puede hacerlo.'
-                : 'No se pudo registrar el intento. Revisa los datos e inténtalo de nuevo.'}
+              {isEditing ? (
+                <Trans>No se pudo corregir el intento. Solo su autor puede hacerlo.</Trans>
+              ) : (
+                <Trans>
+                  No se pudo registrar el intento. Revisa los datos e inténtalo de nuevo.
+                </Trans>
+              )}
             </p>
           )}
         </form>

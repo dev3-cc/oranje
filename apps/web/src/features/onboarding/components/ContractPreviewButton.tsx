@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { useState, type ReactNode } from 'react'
 
 import type { ProposalVersionSummary } from '../types/proposal.types'
@@ -24,8 +25,9 @@ export function ContractPreviewButton({
   senderName?: string
   version: ProposalVersionSummary
 }): ReactNode {
+  const { t } = useLingui()
   const [isOpen, setIsOpen] = useState(false)
-  const label = `Vista previa del contrato de la Propuesta v${version.version}`
+  const label = t`Vista previa del contrato de la Propuesta v${version.version}`
 
   return (
     <>

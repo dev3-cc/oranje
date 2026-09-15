@@ -12,8 +12,8 @@ const SLOW = { timeout: 4000 }
 
 function renderPortfolio(): void {
   const router = createMemoryRouter(
-    [{ path: '/clientes-activos', element: <ClientPortfolioPage /> }],
-    { initialEntries: ['/clientes-activos'] },
+    [{ path: '/active-clients', element: <ClientPortfolioPage /> }],
+    { initialEntries: ['/active-clients'] },
   )
 
   render(
@@ -75,7 +75,7 @@ describe('ClientPortfolioPage', () => {
     )
     expect(scoped.getByRole('link', { name: 'CT-2026-0098' })).toHaveAttribute(
       'href',
-      '/contratos/ct-0098',
+      '/contracts/ct-0098',
     )
   })
 
@@ -85,7 +85,7 @@ describe('ClientPortfolioPage', () => {
 
     await screen.findByText('Posada Maya Real')
     await user.click(screen.getByLabelText('Contrato'))
-    await user.click(await screen.findByRole('option', { name: 'Contrato: EXPIRED' }))
+    await user.click(await screen.findByRole('option', { name: 'Contrato: Expirado' }))
 
     await waitFor(() => {
       expect(screen.queryByText('Posada Maya Real')).not.toBeInTheDocument()

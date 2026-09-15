@@ -1,3 +1,4 @@
+import { Plural, Trans, useLingui } from '@lingui/react/macro'
 import {
   MaterialIcon,
   Select,
@@ -40,6 +41,7 @@ function uniqueOptions(
 }
 
 export function SelfPickPage(): ReactNode {
+  const { t } = useLingui()
   const { data: board, isLoading, isError, refetch } = useGetSelfPickBoardQuery()
 
   const [positionId, setPositionId] = useState(ANY)
@@ -60,7 +62,7 @@ export function SelfPickPage(): ReactNode {
   if (isError || !board) {
     return (
       <LoadError
-        message="No se pudo cargar la Bolsa de Self-Pick. Revisa tu conexión e inténtalo de nuevo."
+        message={t`No se pudo cargar la Bolsa de Self-Pick. Revisa tu conexión e inténtalo de nuevo.`}
         onRetry={() => {
           void refetch()
         }}
@@ -71,9 +73,18 @@ export function SelfPickPage(): ReactNode {
   return (
     <div className="flex flex-col gap-5">
       <header>
-        <h1 className="text-2xl font-bold text-ink">Bolsa · Self-Pick</h1>
+        <h1 className="text-2xl font-bold text-ink">
+          <Trans>Bolsa · Self-Pick</Trans>
+        </h1>
         <p className="mt-1 text-sm text-ink-3">
-          {board.totalFreeSlots} slots libres en {board.totalRequisitions} requisiciones autorizadas
+          <Trans>
+            <Plural value={board.totalFreeSlots} one="# slot libre" other="# slots libres" /> en{' '}
+            <Plural
+              value={board.totalRequisitions}
+              one="# requisición autorizada"
+              other="# requisiciones autorizadas"
+            />
+          </Trans>
           {IS_DEV_UI && <code className="text-xs text-ink-4"> · demand.slot vía coverage</code>}
         </p>
       </header>
@@ -81,11 +92,13 @@ export function SelfPickPage(): ReactNode {
       <p className="flex items-start gap-2.5 rounded-lg bg-o-50 px-4 py-3 text-sm leading-relaxed text-ink-2">
         <MaterialIcon name="flash_on" aria-hidden className="mt-0.5 text-lg text-o-700" />
         <span>
-          <span className="font-semibold text-ink">
-            Gana el primero que confirma{IS_DEV_UI ? ' (RR-15)' : ''}.
-          </span>{' '}
-          Al tomar un slot se bloquea solo ese slot, no la requisición completa: otra Reclutadora
-          puede seguir tomando los demás de la misma posición.
+          <Trans>
+            <span className="font-semibold text-ink">
+              Gana el primero que confirma{IS_DEV_UI ? ' (RR-15)' : ''}.
+            </span>{' '}
+            Al tomar un slot se bloquea solo ese slot, no la requisición completa: otra Reclutadora
+            puede seguir tomando los demás de la misma posición.
+          </Trans>
         </span>
       </p>
 
@@ -95,7 +108,7 @@ export function SelfPickPage(): ReactNode {
           title={
             IS_DEV_UI
               ? 'GET /requisitions no expone la zona del hotel todavía'
-              : 'El filtro por zona estará disponible próximamente'
+              : t`El filtro por zona estará disponible próximamente`
           }
           className="relative inline-block"
         >
@@ -106,22 +119,22 @@ export function SelfPickPage(): ReactNode {
           />
           <Select disabled value="NA">
             <SelectTrigger
-              aria-label="Zona"
+              aria-label={t`Zona`}
               className={`${FILTER_CLASS} w-auto cursor-not-allowed opacity-60 shadow-none`}
             >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="NA">
-                {IS_DEV_UI ? 'Zona: el contrato no la expone' : 'Zona: próximamente'}
+                {IS_DEV_UI ? 'Zona: el contrato no la expone' : <Trans>Zona: próximamente</Trans>}
               </SelectItem>
             </SelectContent>
           </Select>
         </span>
         <FilterSelect
           icon="work"
-          label="Posición"
-          anyLabel="todas"
+          label={t`Posición`}
+          anyLabel={t`todas`}
           anyValue={ANY}
           value={positionId}
           options={uniqueOptions(board.rows, (row) => ({
@@ -132,8 +145,8 @@ export function SelfPickPage(): ReactNode {
         />
         <FilterSelect
           icon="badge"
-          label="Modalidad"
-          anyLabel="todas"
+          label={t`Modalidad`}
+          anyLabel={t`todas`}
           anyValue={ANY}
           value={modalityId}
           options={uniqueOptions(board.rows, (row) => ({
@@ -144,8 +157,8 @@ export function SelfPickPage(): ReactNode {
         />
         <FilterSelect
           icon="translate"
-          label="Inglés"
-          anyLabel="cualquiera"
+          label={t`Inglés`}
+          anyLabel={t`cualquiera`}
           anyValue={ANY}
           value={englishId}
           options={uniqueOptions(board.rows, (row) =>
@@ -167,8 +180,10 @@ export function SelfPickPage(): ReactNode {
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-line px-4 py-10 text-center">
           <img src={personajeComencemos} alt="" aria-hidden className="h-32 w-auto" />
           <p className="text-sm text-ink-3">
-            No hay slots libres con estos filtros. La Bolsa se llena cuando un Manager autoriza una
-            requisición; prueba a quitar un filtro.
+            <Trans>
+              No hay slots libres con estos filtros. La Bolsa se llena cuando un Manager autoriza
+              una requisición; prueba a quitar un filtro.
+            </Trans>
           </p>
         </div>
       ) : (
@@ -193,7 +208,7 @@ export function SelfPickPage(): ReactNode {
                     />
                     <span className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-o-700 backdrop-blur-sm">
                       <MaterialIcon name="layers" aria-hidden className="text-sm" />
-                      {row.freeSlots} {row.freeSlots === 1 ? 'slot libre' : 'slots libres'}
+                      <Plural value={row.freeSlots} one="# slot libre" other="# slots libres" />
                     </span>
                     <div className="absolute inset-x-3 bottom-2.5 text-white">
                       <p className="truncate text-lg font-bold" title={row.hotelName}>
@@ -227,7 +242,7 @@ export function SelfPickPage(): ReactNode {
                           aria-hidden
                           className="text-base text-ink-3"
                         />
-                        {row.englishName ?? 'No requerido'}
+                        {row.englishName ?? t`No requerido`}
                       </div>
                     </dl>
                     <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-4">

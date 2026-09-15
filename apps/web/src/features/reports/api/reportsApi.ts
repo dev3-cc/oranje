@@ -1,3 +1,6 @@
+import { i18n } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+
 import type {
   AttemptsMatrix,
   ConversionByBd,
@@ -119,7 +122,7 @@ function buildExits(histories: HistoryEntryApi[][]): {
 
   const reasonCount = new Map<string, number>()
   for (const entry of toBranch) {
-    const label = entry.reason?.name ?? 'Sin motivo registrado'
+    const label = entry.reason?.name ?? i18n._(msg`Sin motivo registrado`)
     reasonCount.set(label, (reasonCount.get(label) ?? 0) + 1)
   }
 

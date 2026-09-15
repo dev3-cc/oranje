@@ -25,10 +25,11 @@ import { Button } from '@/shared/components/Button'
 import { DateField } from '@/shared/components/DateField'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
-import { WEEK_DAY_NAMES } from '@/shared/constants/contractStatus'
+import { WEEK_DAY_COUNT } from '@/shared/constants/contractStatus'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
+import { weekdayName } from '@/shared/lib/formatters'
 
 /** Una fila de tarifa del borrador; los montos van como cadena (Estándares §3). */
 export interface RateDraft {
@@ -172,7 +173,7 @@ export function NewContractDialog({
       }).unwrap()
       toast.success(t`Contrato creado — en Borrador`)
       onClose()
-      void navigate(`/contratos/${created.id}`)
+      void navigate(`/contracts/${created.id}`)
     } catch {
       return
     }
@@ -333,9 +334,9 @@ export function NewContractDialog({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {WEEK_DAY_NAMES.map((name, index) => (
-                        <SelectItem key={name} value={String(index)}>
-                          {name}
+                      {Array.from({ length: WEEK_DAY_COUNT }, (_unused, index) => (
+                        <SelectItem key={index} value={String(index)}>
+                          {weekdayName(index)}
                         </SelectItem>
                       ))}
                     </SelectContent>

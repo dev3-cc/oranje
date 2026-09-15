@@ -17,8 +17,8 @@ import { store } from '@/app/store'
  * derecha (el primero queda elegido solo).
  */
 function renderTeam(): void {
-  const router = createMemoryRouter([{ path: '/mi-equipo', element: <TeamPage /> }], {
-    initialEntries: ['/mi-equipo'],
+  const router = createMemoryRouter([{ path: '/my-team', element: <TeamPage /> }], {
+    initialEntries: ['/my-team'],
   })
   render(
     <Provider store={store}>

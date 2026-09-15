@@ -33,8 +33,12 @@ export function RequireSession(): ReactNode {
 
   if (status === 'anonymous') {
     /** `from` permite volver a donde se iba después del login. */
-    /* Quien venía a `/colaborador` vuelve por su propia puerta, con sus textos. */
-    const login = location.pathname.startsWith('/colaborador') ? '/colaborador/login' : '/login'
+    /* Quien venía a `/collaborator` vuelve por su propia puerta, con sus textos.
+       También se reconoce la ruta vieja en español: los QR impresos y pegados
+       en la puerta de un hotel siguen apuntando a `/colaborador/ponchar`. */
+    const isWorkerRoute =
+      location.pathname.startsWith('/collaborator') || location.pathname.startsWith('/colaborador')
+    const login = isWorkerRoute ? '/collaborator/login' : '/login'
     /* Con la búsqueda: la liga del QR del acceso trae el código en `?qr=` y
        tiene que sobrevivir al login. */
     return <Navigate to={login} replace state={{ from: location.pathname + location.search }} />

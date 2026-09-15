@@ -13,8 +13,8 @@ import { store } from '@/app/store'
  * se muestra (fail-open del hook).
  */
 async function renderHome(): Promise<void> {
-  const router = createMemoryRouter([{ path: '/colaborador', element: <HomePage /> }], {
-    initialEntries: ['/colaborador'],
+  const router = createMemoryRouter([{ path: '/collaborator', element: <HomePage /> }], {
+    initialEntries: ['/collaborator'],
   })
   render(
     <Provider store={store}>

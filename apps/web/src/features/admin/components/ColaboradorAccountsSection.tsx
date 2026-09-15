@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { cn, MaterialIcon } from '@oranje/ui'
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
@@ -21,6 +22,7 @@ import { matchesSearch } from '@/shared/lib/text'
  * buzón real de cPanel.
  */
 export function ColaboradorAccountsSection(): ReactNode {
+  const { t } = useLingui()
   const [search, setSearch] = useState('')
   const settledSearch = useDebounce(search).trim()
   const canManageMailbox = useCan()('users:manage_corporate_email')
@@ -38,21 +40,21 @@ export function ColaboradorAccountsSection(): ReactNode {
         <p className="text-xs text-ink-3">
           {IS_DEV_UI
             ? 'personal.worker + identity.user.email · solo lectura · el alta es de Reclutamiento'
-            : 'Los colaboradores que ya tienen correo @oranjepeople.com. El alta es de Reclutamiento.'}
+            : t`Los colaboradores que ya tienen correo @oranjepeople.com. El alta es de Reclutamiento.`}
         </p>
         <span className="flex-1" />
         <SearchField
           value={search}
           onChange={setSearch}
-          label="Buscar colaborador"
-          placeholder="Nombre o correo, p. ej. Ana Rivera…"
+          label={t`Buscar colaborador`}
+          placeholder={t`Nombre o correo, p. ej. Ana Rivera…`}
           className="w-72"
         />
       </div>
 
       {isError ? (
         <LoadError
-          message="No se pudo cargar la lista de colaboradores."
+          message={t`No se pudo cargar la lista de colaboradores.`}
           onRetry={() => {
             void refetch()
           }}
@@ -62,8 +64,8 @@ export function ColaboradorAccountsSection(): ReactNode {
       ) : visible.length === 0 ? (
         <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
           {search.trim() === ''
-            ? 'Todavía nadie tiene correo corporativo asignado.'
-            : `Nadie coincide con «${search}».`}
+            ? t`Todavía nadie tiene correo corporativo asignado.`
+            : t`Nadie coincide con «${search}».`}
         </p>
       ) : (
         <ul className="overflow-hidden rounded-2xl border border-line bg-surface">
@@ -71,7 +73,7 @@ export function ColaboradorAccountsSection(): ReactNode {
             <li key={row.workerId} className="border-b border-line last:border-b-0">
               <div className="flex w-full items-center gap-4 px-5 py-4">
                 <Link
-                  to={`/pool-colaboradores/${row.workerId}`}
+                  to={`/collaborator-pool/${row.workerId}`}
                   className="flex min-w-0 flex-1 items-center gap-4"
                 >
                   {row.photoUrl ? (
@@ -110,7 +112,7 @@ export function ColaboradorAccountsSection(): ReactNode {
                     row.isActive ? 'bg-green/10 text-green' : 'bg-surface-3/70 text-ink-3',
                   )}
                 >
-                  {row.isActive ? 'Activo' : 'Inactivo'}
+                  {row.isActive ? t`Activo` : t`Inactivo`}
                 </span>
 
                 <span
@@ -124,15 +126,15 @@ export function ColaboradorAccountsSection(): ReactNode {
                     className="text-sm"
                     aria-hidden
                   />
-                  {row.mailboxExists ? 'Buzón creado' : 'Buzón sin crear'}
+                  {row.mailboxExists ? t`Buzón creado` : t`Buzón sin crear`}
                 </span>
 
                 {canManageMailbox && (
                   <Link
-                    to="/correos-corporativos"
+                    to="/corporate-emails"
                     className="shrink-0 text-xs font-semibold text-o-700 hover:underline"
                   >
-                    Gestionar buzón
+                    <Trans>Gestionar buzón</Trans>
                   </Link>
                 )}
               </div>

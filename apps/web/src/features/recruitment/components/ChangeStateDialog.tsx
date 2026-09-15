@@ -1,3 +1,6 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { Alert, AlertDescription, toast } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
@@ -19,23 +22,19 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
  * rol de quien mira no tiene ningún cambio disponible: «tu rol no puede» a
  * secas dejaba a la persona sin saber a quién le toca.
  */
-const STATE_MOVER: Record<WorkerStatus, string> = {
-  WHITE:
-    'lo valida Reclutamiento (la Reclutadora, su Líder de Grupo o el Manager) cuando el expediente está completo.',
-  APPLE_GREEN: 'lo avanza el sistema con los ponches (el Inspector verifica su llegada).',
-  LIGHT_BLUE: 'lo avanza el sistema con los ponches; al completar la semana queda Fijo.',
-  ORANGE:
-    'el sistema lo libera al terminar la asignación; el hotel puede mandarlo a Stand-by y el propio colaborador ponerse Disponible voluntario.',
-  STRONG_GREEN:
-    'lo asigna Reclutamiento (la Reclutadora, su Líder de Grupo o el Manager); el propio colaborador puede ponerse Disponible voluntario.',
-  YELLOW: 'lo asigna Reclutamiento temporalmente (la Reclutadora, su Líder de Grupo o el Manager).',
-  BROWN: 'vuelve solo al vencer los días asignados; Reclutamiento puede cancelarlo.',
-  PINK: 'lo regresa el hotel (Supervisor, Manager de Área o Manager General); el propio colaborador puede ponerse Disponible voluntario.',
-  PURPLE:
-    'vuelve solo cuando el colaborador poncha de nuevo; a la tercera falta el sistema lo manda a Blacklist.',
-  RED: 'lo resuelve el Inspector: a Disponible o a Blacklist.',
-  GRAY: 'lo cierra el Inspector con el alta médica.',
-  BLACK: 'solo el Administrador levanta un veto, desde Blacklist.',
+const STATE_MOVER: Record<WorkerStatus, MessageDescriptor> = {
+  WHITE: msg`lo valida Reclutamiento (la Reclutadora, su Líder de Grupo o el Manager) cuando el expediente está completo.`,
+  APPLE_GREEN: msg`lo avanza el sistema con los ponches (el Inspector verifica su llegada).`,
+  LIGHT_BLUE: msg`lo avanza el sistema con los ponches; al completar la semana queda Fijo.`,
+  ORANGE: msg`el sistema lo libera al terminar la asignación; el hotel puede mandarlo a Stand-by y el propio colaborador ponerse Disponible voluntario.`,
+  STRONG_GREEN: msg`lo asigna Reclutamiento (la Reclutadora, su Líder de Grupo o el Manager); el propio colaborador puede ponerse Disponible voluntario.`,
+  YELLOW: msg`lo asigna Reclutamiento temporalmente (la Reclutadora, su Líder de Grupo o el Manager).`,
+  BROWN: msg`vuelve solo al vencer los días asignados; Reclutamiento puede cancelarlo.`,
+  PINK: msg`lo regresa el hotel (Supervisor, Manager de Área o Manager General); el propio colaborador puede ponerse Disponible voluntario.`,
+  PURPLE: msg`vuelve solo cuando el colaborador poncha de nuevo; a la tercera falta el sistema lo manda a Blacklist.`,
+  RED: msg`lo resuelve el Inspector: a Disponible o a Blacklist.`,
+  GRAY: msg`lo cierra el Inspector con el alta médica.`,
+  BLACK: msg`solo el Administrador levanta un veto, desde Blacklist.`,
 }
 
 export function ChangeStateDialog({
@@ -60,6 +59,7 @@ export function ChangeStateDialog({
       Fase 2/3 (transporte, emergencia), eso lo completa el colaborador. */
   canFixMissingFromHere?: boolean
 }): ReactNode {
+  const { t, i18n } = useLingui()
   const { data: transitions = [], isLoading } = useGetWorkerTransitionsQuery(workerId, {
     skip: !isOpen,
   })
@@ -82,7 +82,8 @@ export function ChangeStateDialog({
         toState: selected.toState,
         ...(note.trim() !== '' ? { note: note.trim() } : {}),
       }).unwrap()
-      toast.success(`Estado cambiado a ${workerStatusChipLabel(selected.toState as WorkerStatus)}`)
+      const label = workerStatusChipLabel(selected.toState as WorkerStatus)
+      toast.success(t`Estado cambiado a ${label}`)
       setToState('')
       setNote('')
       onClose()
@@ -95,23 +96,27 @@ export function ChangeStateDialog({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Cambiar estado"
-      description={`Estado actual: ${currentLabel}. Solo puedes elegir los cambios permitidos para tu rol.`}
+      title={t`Cambiar estado`}
+      description={t`Estado actual: ${currentLabel}. Solo puedes elegir los cambios permitidos para tu rol.`}
       footer={
         <div className="flex items-center justify-end gap-3">
           {transitions.length > 0 && selected === undefined && (
-            <span className="mr-auto text-xs text-ink-3">Elige el nuevo estado</span>
+            <span className="mr-auto text-xs text-ink-3">
+              <Trans>Elige el nuevo estado</Trans>
+            </span>
           )}
           {isProfileBlocked && (
             <span className="mr-auto text-xs text-ink-3">
-              Falta completar el expediente para validarlo
+              <Trans>Falta completar el expediente para validarlo</Trans>
             </span>
           )}
           {!isProfileBlocked && selected?.requiresReason && note.trim() === '' && (
-            <span className="mr-auto text-xs text-ink-3">Este cambio necesita un motivo</span>
+            <span className="mr-auto text-xs text-ink-3">
+              <Trans>Este cambio necesita un motivo</Trans>
+            </span>
           )}
           <Button variant="secondary" onClick={onClose}>
-            Cancelar
+            <Trans>Cancelar</Trans>
           </Button>
           <Button
             variant="primary"
@@ -120,17 +125,24 @@ export function ChangeStateDialog({
               void submit()
             }}
           >
-            {isSaving ? 'Cambiando…' : 'Cambiar estado'}
+            {isSaving ? t`Cambiando…` : t`Cambiar estado`}
           </Button>
         </div>
       }
     >
       <div className="flex flex-col gap-3">
-        {isLoading && <p className="text-sm text-ink-3">Buscando los cambios disponibles…</p>}
+        {isLoading && (
+          <p className="text-sm text-ink-3">
+            <Trans>Buscando los cambios disponibles…</Trans>
+          </p>
+        )}
 
         {!isLoading && transitions.length === 0 && (
           <p className="rounded-md bg-surface-2 px-4 py-3 text-sm text-ink-2">
-            Desde {currentLabel} tu rol no mueve al colaborador: {STATE_MOVER[currentStatus]}
+            <Trans>
+              Desde {currentLabel} tu rol no mueve al colaborador:{' '}
+              {i18n._(STATE_MOVER[currentStatus])}
+            </Trans>
           </p>
         )}
 
@@ -153,24 +165,30 @@ export function ChangeStateDialog({
               label={workerStatusChipLabel(transition.toState as WorkerStatus)}
             />
             {transition.requiresReason && (
-              <span className="ml-auto text-xs text-ink-4">motivo obligatorio</span>
+              <span className="ml-auto text-xs text-ink-4">
+                <Trans>motivo obligatorio</Trans>
+              </span>
             )}
           </label>
         ))}
 
         {toState === 'STRONG_GREEN' && missingProfileFields.length > 0 && (
           <p className="rounded-md bg-surface-2 px-4 py-3 text-sm text-ink-2">
-            No se puede validar todavía: falta {missingProfileFields.join(', ')} en su expediente.{' '}
-            {canFixMissingFromHere
-              ? 'Ciérrame y usa «Editar» para completarlo.'
-              : 'Eso lo completa el colaborador desde su propia app.'}
+            <Trans>
+              No se puede validar todavía: falta {missingProfileFields.join(', ')} en su expediente.
+            </Trans>{' '}
+            {canFixMissingFromHere ? (
+              <Trans>Ciérrame y usa «Editar» para completarlo.</Trans>
+            ) : (
+              <Trans>Eso lo completa el colaborador desde su propia app.</Trans>
+            )}
           </p>
         )}
 
         {transitions.length > 0 && (
           <label className="flex flex-col gap-1.5">
             <span className="text-sm text-ink-3">
-              Motivo{selected?.requiresReason ? '' : ' (opcional)'}
+              {selected?.requiresReason ? <Trans>Motivo</Trans> : <Trans>Motivo (opcional)</Trans>}
             </span>
             <textarea
               value={note}
@@ -187,7 +205,7 @@ export function ChangeStateDialog({
           <Alert variant="destructive">
             <AlertDescription>
               {apiErrorMessage(saveError, {
-                fallback: 'No se pudo cambiar el estado. Inténtalo de nuevo.',
+                fallback: t`No se pudo cambiar el estado. Inténtalo de nuevo.`,
               })}
             </AlertDescription>
           </Alert>
