@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import type { ReactNode } from 'react'
 
 import { ANY_VALUE, type ContractListFilters } from '../types/contract.types'
@@ -5,7 +6,11 @@ import { ANY_VALUE, type ContractListFilters } from '../types/contract.types'
 import { FilterReset } from '@/shared/components/FilterReset'
 import { FilterSelect } from '@/shared/components/FilterSelect'
 import { SearchField } from '@/shared/components/SearchField'
-import { CONTRACT_STATUSES, EXPIRY_WINDOWS } from '@/shared/constants/contractStatus'
+import {
+  CONTRACT_STATUS_LABEL,
+  CONTRACT_STATUSES,
+  EXPIRY_WINDOWS,
+} from '@/shared/constants/contractStatus'
 
 export function ContractFilters({
   filters,
@@ -18,6 +23,8 @@ export function ContractFilters({
   onChange: (filters: ContractListFilters) => void
   onReset: () => void
 }): ReactNode {
+  const { t } = useLingui()
+
   const update =
     <K extends keyof ContractListFilters>(key: K) =>
     (value: ContractListFilters[K]): void => {
@@ -36,24 +43,27 @@ export function ContractFilters({
       <SearchField
         value={filters.search}
         onChange={update('search')}
-        label="Buscar contrato"
-        placeholder="Hotel o número de contrato, p. ej. Puerto Real…"
+        label={t`Buscar contrato`}
+        placeholder={t`Hotel o número de contrato, p. ej. Puerto Real…`}
         className="w-full max-w-md"
       />
 
       <FilterSelect
-        label="Estado"
-        anyLabel="todos"
+        label={t`Estado`}
+        anyLabel={t`todos`}
         value={filters.status}
-        options={CONTRACT_STATUSES.map((status) => ({ value: status, label: status }))}
+        options={CONTRACT_STATUSES.map((status) => ({
+          value: status,
+          label: CONTRACT_STATUS_LABEL[status],
+        }))}
         onChange={(value) => {
           update('status')(value as ContractListFilters['status'])
         }}
       />
 
       <FilterSelect
-        label="Zona"
-        anyLabel="todas"
+        label={t`Zona`}
+        anyLabel={t`todas`}
         value={filters.zoneName}
         options={zoneNames.map((zone) => ({ value: zone, label: zone }))}
         onChange={update('zoneName')}
@@ -63,12 +73,12 @@ export function ContractFilters({
           mismo plazo es el umbral de «vence en N días» de cada renglón. */}
       <FilterSelect
         icon="event"
-        label="Vencimiento"
-        anyLabel="todos"
+        label={t`Vencimiento`}
+        anyLabel={t`todos`}
         value={filters.expiresInDays === null ? ANY_VALUE : String(filters.expiresInDays)}
         options={EXPIRY_WINDOWS.map((days) => ({
           value: String(days),
-          label: `en ${String(days)} días`,
+          label: t`en ${String(days)} días`,
         }))}
         onChange={(value) => {
           update('expiresInDays')(value === ANY_VALUE ? null : Number(value))

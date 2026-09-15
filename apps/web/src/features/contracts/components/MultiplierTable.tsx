@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -52,35 +53,39 @@ export function MultiplierTable({
   overtime: ContractMultiplier
   holiday: ContractMultiplier
 }): ReactNode {
+  const { t } = useLingui()
+
   return (
     <SectionCard
-      title="Multiplicadores"
+      title={t`Multiplicadores`}
       subtitle={
         IS_DEV_UI
           ? 'los cuatro son NOT NULL y ninguno puede bajar de 1.00'
-          : 'Overtime y día festivo según el contrato (mínimo 1.00×)'
+          : t`Overtime y día festivo según el contrato (mínimo 1.00×)`
       }
     >
       <Table className="min-w-[34rem] text-left">
         <TableHeader>
           <TableRow className="border-line">
             <TableHead scope="col" className="py-3 pr-4 text-sm font-normal text-ink-3">
-              <span className="sr-only">Concepto</span>
+              <span className="sr-only">
+                <Trans>Concepto</Trans>
+              </span>
             </TableHead>
             <TableHead scope="col" className="px-4 py-3 text-sm font-normal text-ink-3">
-              Se le paga al colaborador
+              <Trans>Se le paga al colaborador</Trans>
             </TableHead>
             <TableHead scope="col" className="px-4 py-3 text-sm font-normal text-ink-3">
-              Se le factura al hotel
+              <Trans>Se le factura al hotel</Trans>
             </TableHead>
             <TableHead scope="col" className="px-4 py-3 text-sm font-normal text-ink-3">
-              Margen
+              <Trans>Margen</Trans>
             </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          <MultiplierRow label="Overtime" multiplier={overtime} />
-          <MultiplierRow label="Día festivo" multiplier={holiday} />
+          <MultiplierRow label={t`Overtime`} multiplier={overtime} />
+          <MultiplierRow label={t`Día festivo`} multiplier={holiday} />
         </TableBody>
       </Table>
     </SectionCard>

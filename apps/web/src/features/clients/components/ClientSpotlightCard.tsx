@@ -96,7 +96,7 @@ export function ClientSpotlightCard({ client }: { client: ClientCard }): ReactNo
 
         {contract && (
           <Link
-            to={`/documentos-tc/${contract.id}`}
+            to={`/contratos/${contract.id}`}
             className="flex items-center justify-between gap-3 rounded-xl border border-line bg-surface-2 px-4 py-3 transition-colors hover:border-o-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
           >
             <span className="min-w-0">

@@ -38,6 +38,20 @@ describe('la Bolsa Self-Pick', () => {
     expect(screen.getByLabelText('Zona')).toBeDisabled()
   })
 
+  it('cada tarjeta lleva la foto del hotel y su nombre grande sobre ella', async () => {
+    renderSelfPick()
+    await screen.findByText('13 slots libres en 5 requisiciones autorizadas', undefined, SLOW)
+
+    /* Con varias requisiciones del mismo puesto, el hotel es lo que distingue
+       una tarjeta de otra: va sobre su foto de Places (D-34), no en una línea chica. */
+    const title = screen.getAllByText('Hotel Puerto Real')[0]
+    expect(title).toHaveClass('text-lg', 'font-bold')
+    const card = title?.closest('a')
+    expect(card).not.toBeNull()
+    const photo = card?.querySelector('img[src*="picsum.photos"]')
+    expect(photo).not.toBeNull()
+  })
+
   it('el filtro de posición deja solo sus renglones, y «Quitar filtros» los devuelve', async () => {
     renderSelfPick()
     const user = userEvent.setup()

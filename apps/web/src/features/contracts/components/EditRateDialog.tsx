@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import {
   Input,
   Select,
@@ -31,6 +32,7 @@ export function EditRateDialog({
   isOpen: boolean
   onClose: () => void
 }): ReactNode {
+  const { t } = useLingui()
   const { data: options } = useGetContractFormOptionsQuery(undefined, { skip: !isOpen })
   const [upsertRate, { isLoading, isError, error }] = useUpsertContractRateMutation()
 
@@ -61,7 +63,7 @@ export function EditRateDialog({
     if (!canSubmit) return
     try {
       await upsertRate({ contractId, catalogPositionId: positionId, payRate, billRate }).unwrap()
-      toast.success('Tarifa guardada')
+      toast.success(t`Tarifa guardada`)
       onClose()
     } catch {
       return
@@ -72,29 +74,29 @@ export function EditRateDialog({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Definir tarifa por posición"
-      description="Si la posición ya tiene tarifa, esta la reemplaza."
+      title={t`Definir tarifa por posición`}
+      description={t`Si la posición ya tiene tarifa, esta la reemplaza.`}
     >
       <div className="flex flex-col gap-4">
         {isError && (
           <p role="alert" className="text-sm text-red">
             {apiErrorMessage(error, {
               byCode: {
-                CONTRACT_NOT_DRAFT:
-                  'Este contrato ya no es borrador: las tarifas quedaron congeladas al activarlo.',
-                RATE_MARGIN_NEGATIVE:
-                  'Lo que se factura no puede ser menor a lo que se paga a la persona.',
+                CONTRACT_NOT_DRAFT: t`Este contrato ya no es borrador: las tarifas quedaron congeladas al activarlo.`,
+                RATE_MARGIN_NEGATIVE: t`Lo que se factura no puede ser menor a lo que se paga a la persona.`,
               },
-              fallback: 'No se pudo guardar la tarifa. Inténtalo de nuevo.',
+              fallback: t`No se pudo guardar la tarifa. Inténtalo de nuevo.`,
             })}
           </p>
         )}
 
         <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-ink-2">Posición</span>
+          <span className="text-sm font-medium text-ink-2">
+            <Trans>Posición</Trans>
+          </span>
           <Select {...(positionId ? { value: positionId } : {})} onValueChange={setPositionId}>
-            <SelectTrigger aria-label="Posición" className="w-full">
-              <SelectValue placeholder="Elige la posición…" />
+            <SelectTrigger aria-label={t`Posición`} className="w-full">
+              <SelectValue placeholder={t`Elige la posición…`} />
             </SelectTrigger>
             <SelectContent>
               {(options?.positions ?? []).map((position) => (
@@ -108,7 +110,9 @@ export function EditRateDialog({
 
         <div className="grid grid-cols-2 gap-4">
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-ink-2">Se le paga al colaborador</span>
+            <span className="text-sm font-medium text-ink-2">
+              <Trans>Se le paga al colaborador</Trans>
+            </span>
             <Input
               inputMode="decimal"
               placeholder="20.00"
@@ -116,11 +120,13 @@ export function EditRateDialog({
               onChange={(event) => {
                 setPayRate(event.target.value)
               }}
-              aria-label="Tarifa de pago"
+              aria-label={t`Tarifa de pago`}
             />
           </label>
           <label className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium text-ink-2">Se le factura al hotel</span>
+            <span className="text-sm font-medium text-ink-2">
+              <Trans>Se le factura al hotel</Trans>
+            </span>
             <Input
               inputMode="decimal"
               placeholder="35.00"
@@ -128,18 +134,20 @@ export function EditRateDialog({
               onChange={(event) => {
                 setBillRate(event.target.value)
               }}
-              aria-label="Tarifa de facturación"
+              aria-label={t`Tarifa de facturación`}
             />
           </label>
         </div>
 
         {marginIsNegative && (
-          <p className="text-xs text-red">Lo que se factura no puede ser menor a lo que se paga.</p>
+          <p className="text-xs text-red">
+            <Trans>Lo que se factura no puede ser menor a lo que se paga.</Trans>
+          </p>
         )}
 
         <div className="flex justify-end gap-3 border-t border-line pt-4">
           <Button variant="secondary" onClick={onClose}>
-            Cancelar
+            <Trans>Cancelar</Trans>
           </Button>
           <Button
             variant="primary"
@@ -148,7 +156,7 @@ export function EditRateDialog({
               void submit()
             }}
           >
-            {isLoading ? 'Guardando…' : 'Guardar tarifa'}
+            {isLoading ? <Trans>Guardando…</Trans> : <Trans>Guardar tarifa</Trans>}
           </Button>
         </div>
       </div>

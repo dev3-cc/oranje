@@ -482,12 +482,24 @@ export interface TransitionResultApi {
   to: string
 }
 
+/** Un renglón del cuadro de tarifas de la propuesta (`commercial.proposal_rate`). */
+export interface ProposalRateApi {
+  id: string
+  position: { id: string; code: string; name: string }
+  /** Decimal serializado con dos decimales (`"19.50"`), igual que el contrato. */
+  payRate: string
+  billRate: string
+}
+
 export interface ProposalApi {
   id: string
   version: number
   servicesNote: string | null
-  /** Decimal serializado (`"1250.0000"`). En la petición TAMBIÉN va string. */
+  /** El cuadro por puesto. Opcional: las versiones anteriores no lo traen. */
+  rates?: ProposalRateApi[]
+  /** @deprecated Tarifa global en retirada. Decimal serializado (`"1250.0000"`). */
   payRate: string | null
+  /** @deprecated Tarifa global en retirada. */
   billRate: string | null
   isDraft: boolean
   sentBy: { id: string; fullName: string } | null

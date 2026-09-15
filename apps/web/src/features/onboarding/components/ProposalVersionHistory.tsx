@@ -8,13 +8,14 @@ import {
 } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
+import { summarizeRates } from '../lib/summarizeRates'
 import type { ProposalVersionSummary } from '../types/proposal.types'
 
 import { ContractPreviewButton } from './ContractPreviewButton'
 
 import { SectionCard } from '@/shared/components/SectionCard'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
-import { formatDate, formatMoney } from '@/shared/lib/formatters'
+import { formatDate } from '@/shared/lib/formatters'
 
 /** Sin fecha de envío: el borrador todavía no tiene `sent_at`. */
 const NOT_SENT = '—'
@@ -22,10 +23,14 @@ const NOT_SENT = '—'
 export function ProposalVersionHistory({
   hotelName,
   hotelAddress = null,
+  contactEmail = null,
+  senderName = 'Oranje',
   versions,
 }: {
   hotelName: string
   hotelAddress?: string | null
+  contactEmail?: string | null
+  senderName?: string
   versions: ProposalVersionSummary[]
 }): ReactNode {
   /** La enviada más reciente es la copia que el hotel tiene en la mano. */
@@ -74,8 +79,7 @@ export function ProposalVersionHistory({
                       {version.sentAt
                         ? `Enviada ${formatDate(version.sentAt)}${version.byName ? ` por ${version.byName}` : ''}`
                         : NOT_SENT}{' '}
-                      · {`pay ${formatMoney(version.payRate)}`} ·{' '}
-                      {`bill ${formatMoney(version.billRate)}`}
+                      · {summarizeRates(version)}
                     </p>
                   </div>
 
@@ -86,6 +90,8 @@ export function ProposalVersionHistory({
                     <ContractPreviewButton
                       hotelName={hotelName}
                       hotelAddress={hotelAddress}
+                      contactEmail={contactEmail}
+                      senderName={senderName}
                       version={version}
                     />
                   </div>

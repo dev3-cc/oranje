@@ -16,7 +16,9 @@ import personajeComencemos from '@/assets/ilustrations/personaje-comencemos.svg'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { FilterReset } from '@/shared/components/FilterReset'
 import { FilterSelect } from '@/shared/components/FilterSelect'
+import { HotelPhotoBackdrop } from '@/shared/components/HotelPhotoBackdrop'
 import { LoadError } from '@/shared/components/LoadError'
+import { MagicCard } from '@/shared/components/MagicCard'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate } from '@/shared/lib/formatters'
 
@@ -173,41 +175,68 @@ export function SelfPickPage(): ReactNode {
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {rows.map((row) => (
             <li key={row.positionId}>
-              <Link
-                to={`/self-pick/${row.requisitionId}/${row.positionId}`}
-                className="block rounded-lg border border-line bg-surface p-5 transition-shadow hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
-              >
-                <p className="flex items-center gap-1.5 text-xs font-semibold text-o-700">
-                  <MaterialIcon name="layers" aria-hidden className="text-base" />
-                  {row.freeSlots} {row.freeSlots === 1 ? 'slot libre' : 'slots libres'}
-                </p>
-                <h2 className="mt-1.5 text-lg font-bold text-ink">{row.positionName}</h2>
-                <p className="text-sm text-ink-3">
-                  {row.hotelName} · {row.departmentName}
-                </p>
-                <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm text-ink-2">
-                  <div className="flex items-center gap-1.5">
-                    <MaterialIcon name="event" aria-hidden className="text-base text-ink-3" />
-                    {formatDate(row.startDate)}
+              {/* Tarjeta con la foto del hotel de portada (patrón del Pipeline y del
+                  tablero de Requisiciones): con varias requisiciones del mismo
+                  puesto, el hotel es lo que distingue una de otra, así que va
+                  grande y sobre su foto, no en una línea chica bajo la posición. */}
+              <MagicCard className="rounded-2xl">
+                <Link
+                  to={`/self-pick/${row.requisitionId}/${row.positionId}`}
+                  className="block touch-manipulation overflow-hidden rounded-2xl bg-surface shadow-md transition-shadow hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
+                >
+                  <div className="relative h-36">
+                    <HotelPhotoBackdrop photoUrl={row.hotelPhotoUrl} />
+                    {/* El velo oscuro hacia abajo es lo que hace legible el nombre en blanco. */}
+                    <div
+                      aria-hidden
+                      className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/25 to-ink/5"
+                    />
+                    <span className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-o-700 backdrop-blur-sm">
+                      <MaterialIcon name="layers" aria-hidden className="text-sm" />
+                      {row.freeSlots} {row.freeSlots === 1 ? 'slot libre' : 'slots libres'}
+                    </span>
+                    <div className="absolute inset-x-3 bottom-2.5 text-white">
+                      <p className="truncate text-lg font-bold" title={row.hotelName}>
+                        {row.hotelName}
+                      </p>
+                      <p className="truncate text-xs text-white/80">{row.departmentName}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <MaterialIcon name="schedule" aria-hidden className="text-base text-ink-3" />
-                    {row.startTime ?? '—'}
+                  <div className="p-4">
+                    <h2 className="text-lg font-bold text-ink">{row.positionName}</h2>
+                    <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm text-ink-2">
+                      <div className="flex items-center gap-1.5">
+                        <MaterialIcon name="event" aria-hidden className="text-base text-ink-3" />
+                        {formatDate(row.startDate)}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <MaterialIcon
+                          name="schedule"
+                          aria-hidden
+                          className="text-base text-ink-3"
+                        />
+                        {row.startTime ?? '—'}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <MaterialIcon name="badge" aria-hidden className="text-base text-ink-3" />
+                        {row.modalityName}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <MaterialIcon
+                          name="translate"
+                          aria-hidden
+                          className="text-base text-ink-3"
+                        />
+                        {row.englishName ?? 'No requerido'}
+                      </div>
+                    </dl>
+                    <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-4">
+                      <MaterialIcon name="assignment" aria-hidden className="text-sm" />
+                      {row.requisitionNumber}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <MaterialIcon name="badge" aria-hidden className="text-base text-ink-3" />
-                    {row.modalityName}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <MaterialIcon name="translate" aria-hidden className="text-base text-ink-3" />
-                    {row.englishName ?? 'No requerido'}
-                  </div>
-                </dl>
-                <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-4">
-                  <MaterialIcon name="assignment" aria-hidden className="text-sm" />
-                  {row.requisitionNumber}
-                </p>
-              </Link>
+                </Link>
+              </MagicCard>
             </li>
           ))}
         </ul>

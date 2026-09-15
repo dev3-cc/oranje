@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -8,30 +9,31 @@ import { SectionCard } from '@/shared/components/SectionCard'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatMoney } from '@/shared/lib/formatters'
 
-const HEADERS = IS_DEV_UI
-  ? ['catalog_position', 'pay_rate', 'bill_rate', 'margen']
-  : ['Posición', 'Se le paga al colaborador', 'Se le factura al hotel', 'Margen']
-
 export function RateTable({ rates }: { rates: ContractRate[] }): ReactNode {
+  const { t } = useLingui()
+
+  const headers = IS_DEV_UI
+    ? ['catalog_position', 'pay_rate', 'bill_rate', 'margen']
+    : [t`Posición`, t`Se le paga al colaborador`, t`Se le factura al hotel`, t`Margen`]
+
   return (
     <SectionCard
-      title="Tarifas por posición"
+      title={t`Tarifas por posición`}
       subtitle={
         IS_DEV_UI
           ? 'commercial.contract_rate · una fila por posición del catálogo'
-          : 'Una tarifa por posición del catálogo'
+          : t`Una tarifa por posición del catálogo`
       }
     >
       {rates.length === 0 ? (
         <p className="rounded-lg border border-dashed border-line p-6 text-center text-sm text-ink-3">
-          Todavía no se cotiza ninguna posición. Agrégala con «Editar tarifas» mientras el contrato
-          sea borrador.
+          {t`Todavía no se cotiza ninguna posición. Agrégala con «Editar tarifas» mientras el contrato sea borrador.`}
         </p>
       ) : (
         <Table className="min-w-[34rem] text-left">
           <TableHeader>
             <TableRow className="border-line">
-              {HEADERS.map((header) => (
+              {headers.map((header) => (
                 <TableHead
                   key={header}
                   scope="col"

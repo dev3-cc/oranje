@@ -32,9 +32,11 @@ describe('ProposalEditorPage', () => {
       screen.getByText(/Versión 3 · borrador · sent_at es NULL hasta enviarla/),
     ).toBeInTheDocument()
 
-    // Las tarifas del borrador llegan al formulario.
-    expect(screen.getByLabelText('Pay rate')).toHaveValue(185)
-    expect(screen.getByLabelText('Bill rate')).toHaveValue(265)
+    /* El cuadro por puesto llega al formulario: un renglón por puesto, con su
+       pay y su bill. El fixture de Mirador trae Housekeeper y Cocinero. */
+    expect(screen.getAllByLabelText('Pay rate')[0]).toHaveValue(185)
+    expect(screen.getAllByLabelText('Bill rate')[0]).toHaveValue(265)
+    expect(screen.getAllByLabelText('Pay rate')).toHaveLength(2)
 
     // El historial conserva las tres versiones; las enviadas no se borran.
     expect(screen.getByText('Propuesta v3')).toBeInTheDocument()
@@ -56,11 +58,11 @@ describe('ProposalEditorPage', () => {
   it('no deja facturar por debajo de lo que se paga', async () => {
     await renderEditor('psp-0008')
 
-    const billRate = await screen.findByLabelText('Bill rate')
-    await userEvent.clear(billRate)
-    await userEvent.type(billRate, '100')
+    const billRate = (await screen.findAllByLabelText('Bill rate'))[0]
+    await userEvent.clear(billRate!)
+    await userEvent.type(billRate!, '100')
 
-    expect(await screen.findByText(/mayor que el pay rate/)).toBeInTheDocument()
+    expect(await screen.findByText(/por debajo del pay rate/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Enviar propuesta' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Guardar borrador' })).toBeDisabled()
   })
@@ -73,13 +75,13 @@ describe('ProposalEditorPage', () => {
     )
 
     const dialog = await screen.findByRole('dialog')
-    // v1 se envió con pay 170 / bill 250: margen de 80, el 32 % del bill.
+    // v1 se envió con Housekeeper a 170 / 250.
     expect(within(dialog).getByText('$170.00')).toBeInTheDocument()
     expect(within(dialog).getByText('$250.00')).toBeInTheDocument()
-    expect(within(dialog).getByText('$80.00 · 32.0%')).toBeInTheDocument()
 
-    // El aviso viaja dentro del documento, así que también se imprime.
-    expect(within(dialog).getByText(/SIN VALIDEZ LEGAL/)).toBeInTheDocument()
+    // El acuerdo completo, con su clausulado y su Exhibit «A».
+    expect(within(dialog).getByText('Service Agreement')).toBeInTheDocument()
+    expect(within(dialog).getByText('Exhibit “A”')).toBeInTheDocument()
   })
 
   it('la versión nueva arranca con las tarifas de la anterior', async () => {
@@ -87,9 +89,9 @@ describe('ProposalEditorPage', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'Abrir versión nueva' }))
 
-    // Villas Coral tenía v1 enviada con pay 172 / bill 250.
-    expect(await screen.findByLabelText('Pay rate')).toHaveValue(172)
-    expect(screen.getByLabelText('Bill rate')).toHaveValue(250)
+    // Villas Coral tenía v1 enviada con Housekeeper a 172 / 250.
+    expect((await screen.findAllByLabelText('Pay rate'))[0]).toHaveValue(172)
+    expect(screen.getAllByLabelText('Bill rate')[0]).toHaveValue(250)
     expect(
       screen.getByText(/Versión 2 · borrador · sent_at es NULL hasta enviarla/),
     ).toBeInTheDocument()

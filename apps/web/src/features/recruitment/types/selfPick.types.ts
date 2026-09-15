@@ -14,6 +14,8 @@ export interface SelfPickRow {
   positionName: string
   positionCatalogId: string
   hotelName: string
+  /** La foto de Places del hotel (D-34); `null` = placeholder de marca. */
+  hotelPhotoUrl: string | null
   departmentName: string
   startDate: string
   startTime: string | null
@@ -52,6 +54,8 @@ export interface SlotBoard {
   coverage: { code: string; name: string }
   slots: SlotRow[]
   freeSlots: number
+  /** Desde cuándo lo pidió el hotel: el valor inicial de la asignación. */
+  startDate: string
   /** El siguiente slot a llenar; `null` si el renglón está completo. */
   nextFreeOrdinal: number | null
 }

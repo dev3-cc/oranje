@@ -7,6 +7,7 @@ import { useGetProposalWorkspaceQuery } from '../api/proposalsApi'
 import { ArchiveCycleDialog } from '../components/ArchiveCycleDialog'
 import { ChangeStatusDialog } from '../components/ChangeStatusDialog'
 import { ContactAttemptLog } from '../components/ContactAttemptLog'
+import { ContractStepCard } from '../components/ContractStepCard'
 import { HotelContactList } from '../components/HotelContactList'
 import { HotelContactsDialog } from '../components/HotelContactsDialog'
 import { HotelDataCard } from '../components/HotelDataCard'
@@ -16,6 +17,13 @@ import { ProspectFormDialog } from '../components/ProspectFormDialog'
 import { RegisterAttemptDialog } from '../components/RegisterAttemptDialog'
 import { StatusTimeline } from '../components/StatusTimeline'
 import type { ContactAttempt } from '../types/prospect.types'
+
+/**
+ * Desde dónde tiene sentido armar el contrato: el vault lo crea en Amarillo
+ * (el hotel ya vio la propuesta) y se sigue trabajando en Rosa, mientras se
+ * negocian los términos.
+ */
+const CONTRACT_STATUSES = new Set(['YELLOW', 'PINK', 'BROWN'])
 
 import { useGetSessionQuery } from '@/app/sessionApi'
 import conversionNaranja from '@/assets/ilustrations/conversion_naranja.svg'
@@ -289,6 +297,19 @@ export function ProspectDetailPage(): ReactNode {
             versions={proposals?.versions ?? []}
             isLoading={areProposalsLoading}
           />
+
+          {/* De Amarillo en adelante el siguiente papel es el contrato, y se
+              arma con el cuadro de la propuesta que el hotel ya vio. */}
+          {CONTRACT_STATUSES.has(prospect.status) && (
+            <ContractStepCard
+              hotel={{
+                id: prospect.hotel.id,
+                name: prospect.hotelName,
+                photoUrl: prospect.hotel.photoUrl,
+              }}
+              versions={proposals?.versions ?? []}
+            />
+          )}
         </div>
 
         <div className="flex flex-col gap-5">

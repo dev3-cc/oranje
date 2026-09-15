@@ -22,6 +22,23 @@ const WEEKDAYS_SHORT: Record<Locale, readonly string[]> = {
   en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
 }
 
+/** Domingo es 0, como `week_start_day` en la base. */
+const WEEKDAYS_LONG: Record<Locale, readonly string[]> = {
+  es: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+  en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+}
+
+/**
+ * El nombre completo del día por su número (domingo = 0), en el idioma activo.
+ *
+ * Lo pide la semana de nómina del contrato, que guarda el día como número y lo
+ * enseña con nombre. Vivía como un arreglo fijo en español y era el único texto
+ * del módulo que no cambiaba de idioma.
+ */
+export function weekdayName(index: number): string {
+  return WEEKDAYS_LONG[currentLocale()][index] ?? ''
+}
+
 function monthShort(month: number): string {
   return MONTHS_SHORT[currentLocale()][month - 1] ?? ''
 }
