@@ -224,6 +224,23 @@ export class WorkersService {
     return this.get(id)
   }
 
+  // Eliminar del Pool (Hugo, 2026-09-15): nunca se borra la fila, `deleted_at`
+  // la saca de toda consulta. El controlador libera sus asignaciones ACTIVAS
+  // antes de llamar aquí (WorkersController.delete); este guard se queda como
+  // red de seguridad, no como el camino esperado.
+  async delete(id: string, user: AuthenticatedUser): Promise<void> {
+    await this.worker(id)
+
+    if (await this.repo.hasActiveAssignment(id)) {
+      throw new ConflictException({
+        code: 'WORKER_HAS_ACTIVE_ASSIGNMENT',
+        message: 'Tiene una asignación activa: primero hay que terminarla o reasignarla',
+      })
+    }
+
+    await this.repo.softDelete({ id, userId: user.id, roleCode: user.roleCode })
+  }
+
   async available(id: string, user: AuthenticatedUser): Promise<TransitionOption[]> {
     const current = await this.stateOfWorker(id)
     const steps = await this.repo.allowedFrom(current.stateId)

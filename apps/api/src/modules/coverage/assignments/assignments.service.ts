@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { assignmentStatusLabel } from '../../../common/utils/status-labels.js'
 import { PermissionsService } from '../../identity/index.js'
 
 import {
@@ -16,7 +17,6 @@ import {
   REQUISITION_LIGHT,
 } from './assignments.repository.js'
 import type { CreateAssignmentDto } from './dto/create-assignment.dto.js'
-import { assignmentStatusLabel } from '../../../common/utils/status-labels.js'
 
 const IN_PROGRESS = 'YELLOW'
 const FULLY_COVERED = 'LIGHT_BLUE'
@@ -139,6 +139,18 @@ export class AssignmentsService {
       assignment: toEntity(row),
       positionCoverage: coverage.positionCode,
       requisitionState: closes ? FULLY_COVERED : position.requisitionState,
+    }
+  }
+
+  // Eliminar a alguien del Pool (Hugo, 2026-09-15) ya no se bloquea porque
+  // siga trabajando: se libera cada asignación ACTIVA suya (puede tener más
+  // de una — RR-05 solo prohíbe horas que chocan) antes de eliminarlo, cada
+  // una con el mismo `release()` de siempre, así que la cobertura del slot se
+  // recalcula igual que si alguien la hubiera soltado a mano.
+  async releaseAllOf(workerId: string, reason: string, user: AuthenticatedUser): Promise<void> {
+    const ids = await this.repo.activeAssignmentIdsOf(workerId)
+    for (const id of ids) {
+      await this.release(id, reason, user)
     }
   }
 

@@ -76,6 +76,10 @@ const baseSchema = z.object({
   // responde 401 en /notifications/events y no manda ningun push.
   PUBSUB_AUDIENCE: optionalVar(z.string().min(1)),
   PUBSUB_SERVICE_ACCOUNT: optionalVar(z.string().email()),
+  // El PUBLICADOR (Hugo, 2026-09-15): a donde manda cada evento de negocio.
+  // Sin ella, publish() no revienta -- solo avisa en el log y no manda nada,
+  // el mismo criterio que CPanelService.enabled.
+  PUBSUB_TOPIC_NOTIFICATIONS: optionalVar(z.string().min(1)),
   FIREBASE_PROJECT_ID: optionalVar(z.string().min(1)),
   // Solo fuera de Cloud Run: ahi la cuenta va adjunta y firma sola.
   STORAGE_SIGNER_SERVICE_ACCOUNT: optionalVar(z.string().min(1)),

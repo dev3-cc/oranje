@@ -3,8 +3,10 @@ import { z } from 'zod'
 import { createZodDto } from '../../../../common/pipes/index.js'
 
 // La ruta sale de POST /files, y se valida el prefijo: sin esto se podria
-// apuntar la tarjeta del Pool a un documento fiscal de otra carpeta.
-const photoPath = z
+// apuntar la tarjeta del Pool a un documento fiscal de otra carpeta. Exportada
+// porque `me.dto.ts` la reusa: el propio colaborador tambien puede subir su
+// foto (PATCH /workers/me/signup).
+export const photoPath = z
   .string()
   .trim()
   .max(500)

@@ -33,6 +33,10 @@ export const notificationEventSchema = z.object({
   title: z.string().trim().min(1).max(160),
   body: z.string().trim().min(1).max(500),
   entity: z.object({ type: z.string().trim().min(1).max(60), id: z.uuid() }).optional(),
+  // Quien lo disparo con su accion (Hugo, 2026-09-15): ausente en avisos sin
+  // actor humano (un job, un vencimiento de plazo). El front lo usa para
+  // mostrar la foto de quien hizo la accion, no de quien lo recibe.
+  actorUserId: z.uuid().optional(),
   audience: z.array(audienceSchema).min(1).max(200),
 })
 

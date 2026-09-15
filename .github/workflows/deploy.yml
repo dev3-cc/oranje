@@ -127,8 +127,11 @@ jobs:
             echo "flag=--allow-unauthenticated" >> "$GITHUB_OUTPUT"
           fi
 
-      # Las variables van con delimitador ^@^ porque --set-env-vars separa por
-      # coma y CORS_ORIGINS es una lista separada por comas.
+      # Las variables van con delimitador ^|^: --set-env-vars separa por coma
+      # y CORS_ORIGINS es una lista separada por comas. ^@^ se descartó el
+      # 2026-09-15 porque PUBSUB_SERVICE_ACCOUNT es un correo de cuenta de
+      # servicio que trae un @ dentro del propio valor y rompía el parseo de
+      # gcloud ("Bad syntax for dict arg"); | no aparece en ningún valor hoy.
       - name: Desplegar en Cloud Run
         run: |
           gcloud run deploy "$SERVICIO" \
@@ -137,7 +140,7 @@ jobs:
             --project "${{ vars.GCP_PROJECT_ID }}" \
             --service-account "${{ vars.RUNTIME_SERVICE_ACCOUNT }}" \
             --set-cloudsql-instances "${{ vars.CLOUDSQL_INSTANCE }}" \
-            --set-env-vars "^@^APP_ENV=${{ vars.APP_ENV }}@NODE_ENV=production@AUTH_ISSUER_URL=${{ vars.AUTH_ISSUER_URL }}@AUTH_AUDIENCE=${{ vars.AUTH_AUDIENCE }}@CORS_ORIGINS=${{ vars.CORS_ORIGINS }}@COOKIE_SAME_SITE=${{ vars.COOKIE_SAME_SITE }}@STORAGE_BUCKET=${{ vars.STORAGE_BUCKET }}@COOKIE_SECURE=true@LOG_LEVEL=info@GOOGLE_MAPS_BROWSER_KEY=${{ vars.GOOGLE_MAPS_BROWSER_KEY }}@FIREBASE_PROJECT_ID=${{ vars.FIREBASE_PROJECT_ID }}@CPANEL_HOST=${{ vars.CPANEL_HOST }}@CPANEL_DOMAIN=${{ vars.CPANEL_DOMAIN }}" \
+            --set-env-vars "^|^APP_ENV=${{ vars.APP_ENV }}|NODE_ENV=production|AUTH_ISSUER_URL=${{ vars.AUTH_ISSUER_URL }}|AUTH_AUDIENCE=${{ vars.AUTH_AUDIENCE }}|CORS_ORIGINS=${{ vars.CORS_ORIGINS }}|COOKIE_SAME_SITE=${{ vars.COOKIE_SAME_SITE }}|STORAGE_BUCKET=${{ vars.STORAGE_BUCKET }}|COOKIE_SECURE=true|LOG_LEVEL=info|GOOGLE_MAPS_BROWSER_KEY=${{ vars.GOOGLE_MAPS_BROWSER_KEY }}|FIREBASE_PROJECT_ID=${{ vars.FIREBASE_PROJECT_ID }}|CPANEL_HOST=${{ vars.CPANEL_HOST }}|CPANEL_DOMAIN=${{ vars.CPANEL_DOMAIN }}|PUBSUB_TOPIC_NOTIFICATIONS=${{ vars.PUBSUB_TOPIC_NOTIFICATIONS }}|PUBSUB_AUDIENCE=${{ vars.PUBSUB_AUDIENCE }}|PUBSUB_SERVICE_ACCOUNT=${{ vars.PUBSUB_SERVICE_ACCOUNT }}" \
             --set-secrets "DATABASE_URL=oranje-database-url:latest,JWT_PRIVATE_KEY=oranje-jwt-private-key:latest,JWT_PUBLIC_KEY=oranje-jwt-public-key:latest,GOOGLE_PLACES_API_KEY=oranje-places-api-key:latest,CPANEL_API_TOKEN=oranje-cpanel-api-token:latest" \
             --min-instances "${{ vars.MIN_INSTANCES }}" \
             --max-instances "${{ vars.MAX_INSTANCES }}" \

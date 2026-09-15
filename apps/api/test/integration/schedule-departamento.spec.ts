@@ -25,6 +25,7 @@ const requisitions = new RequisitionsService(
   new PermissionsService(prisma),
   places,
   { signedUrl: (): Promise<null> => Promise.resolve(null) } as never,
+  { publish: (): Promise<void> => Promise.resolve() } as never,
 )
 const schedules = new SchedulesService(new SchedulesRepository(prisma), places)
 
