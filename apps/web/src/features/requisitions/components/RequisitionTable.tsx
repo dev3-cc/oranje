@@ -18,6 +18,7 @@ import type { RequisitionRow } from '../types/requisition.types'
 import { CoverageBar } from './CoverageBar'
 
 import { EmptyState } from '@/shared/components/EmptyState'
+import { HotelThumbnail } from '@/shared/components/HotelThumbnail'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   REQUISITION_STATUS_LABEL,
@@ -91,7 +92,10 @@ export function RequisitionTable({ items }: { items: RequisitionRow[] }): ReactN
                 </Link>
               </TableCell>
               <TableCell className="px-4 py-4 text-sm whitespace-nowrap text-ink-2">
-                {item.hotelName}
+                <span className="flex items-center gap-2.5">
+                  <HotelThumbnail photoUrl={item.hotelPhotoUrl} className="size-7" />
+                  {item.hotelName}
+                </span>
               </TableCell>
               <TableCell className="px-4 py-4 text-sm whitespace-nowrap text-ink-2">
                 {item.department}

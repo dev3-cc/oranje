@@ -1,6 +1,7 @@
 import { DragDropContext, type DragStart, type DropResult } from '@hello-pangea/dnd'
 import { Skeleton, cn } from '@oranje/ui'
-import { lazy, Suspense, useState, type ReactNode } from 'react'
+import { useReducedMotion } from 'framer-motion'
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 
 import { useGetPipelineBoardQuery, useGetZonesQuery } from '../api/onboardingApi'
@@ -94,6 +95,35 @@ export function PipelinePage(): ReactNode {
     if (draggingFrom === null || draggingFrom === status) return false
     return !ONBOARDING_TRANSITIONS[draggingFrom].includes(status)
   }
+
+  /**
+   * Guiño de «esto se desliza»: al cargar el tablero por primera vez, el
+   * kanban se mueve un poco a la derecha y regresa solo — sin flecha ni
+   * texto, nada más el gesto (Hugo, 2026-09-15: «que sepa que se puede
+   * mover»). Una sola vez por visita a la página, y nunca con reduced motion.
+   */
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const hasPlayedHintRef = useRef(false)
+  const reduceMotion = useReducedMotion() ?? false
+  useEffect(() => {
+    if (!board || board.items.length === 0 || hasPlayedHintRef.current || reduceMotion) return
+    hasPlayedHintRef.current = true
+    const el = scrollRef.current
+    // jsdom (specs) no implementa scrollTo — sin esto el timer revienta tarde,
+    // fuera del propio test, como un error suelto en la suite.
+    if (!el || typeof el.scrollTo !== 'function') return
+    const timers = [
+      setTimeout(() => {
+        el.scrollTo({ left: 96, behavior: 'smooth' })
+      }, 400),
+      setTimeout(() => {
+        el.scrollTo({ left: 0, behavior: 'smooth' })
+      }, 950),
+    ]
+    return () => {
+      timers.forEach(clearTimeout)
+    }
+  }, [board, reduceMotion])
 
   return (
     <div className="flex flex-col gap-6">
@@ -236,7 +266,7 @@ export function PipelinePage(): ReactNode {
 
       {board && board.items.length > 0 && (
         <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <div className="flex gap-4 overflow-x-auto pb-4">
+          <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-4">
             {PIPELINE_COLUMNS.map((status) => (
               <PipelineColumn
                 key={status}

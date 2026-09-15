@@ -1,3 +1,4 @@
+import { useLingui } from '@lingui/react/macro'
 import { cn } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -6,6 +7,7 @@ import type { ContractRow } from '../types/contract.types'
 import { ValidityCell } from './ValidityCell'
 
 import { EmptyState } from '@/shared/components/EmptyState'
+import { HotelThumbnail } from '@/shared/components/HotelThumbnail'
 import { MagicCard } from '@/shared/components/MagicCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TOKEN } from '@/shared/constants/contractStatus'
@@ -26,11 +28,13 @@ export function ContractRowList({
   selectedId: string | null
   onSelect: (contractId: string) => void
 }): ReactNode {
+  const { t } = useLingui()
+
   if (items.length === 0) {
     return (
       <EmptyState
-        title="Ningún contrato coincide"
-        text="Cambia el estado, la zona o la búsqueda. Un hotel gana su contrato al negociar los Documentos T&C."
+        title={t`Ningún contrato coincide`}
+        text={t`Cambia el estado, la zona o la búsqueda. Un hotel gana su contrato al cerrar la negociación.`}
       />
     )
   }
@@ -55,8 +59,9 @@ export function ContractRowList({
                   isSelected ? 'border-o-500 bg-o-50' : 'border-line bg-surface hover:bg-surface-2',
                 )}
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="min-w-0">
+                <div className="flex items-center gap-3">
+                  <HotelThumbnail photoUrl={row.hotelPhotoUrl} />
+                  <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-ink">
                       {row.number}
                     </span>

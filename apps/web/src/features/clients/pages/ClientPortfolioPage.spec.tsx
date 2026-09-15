@@ -75,7 +75,7 @@ describe('ClientPortfolioPage', () => {
     )
     expect(scoped.getByRole('link', { name: 'CT-2026-0098' })).toHaveAttribute(
       'href',
-      '/documentos-tc/ct-0098',
+      '/contratos/ct-0098',
     )
   })
 

@@ -1,7 +1,7 @@
 import type { ContractStatus } from '@/shared/constants/contractStatus'
 
 /**
- * Formas de respuesta de Documentos T&C (`commercial.contract`).
+ * Formas de respuesta de Contratos (`commercial.contract`).
  *
  * ⚠ Igual que las demás, su lugar es `packages/contracts` (§5), hoy fuera del
  * alcance acordado.
@@ -31,6 +31,10 @@ export interface ContractRow {
    */
   daysRemaining: number | null
   positionCount: number
+  /** La foto de Places del hotel (D-34): es lo que distingue una tarjeta de otra. */
+  hotelPhotoUrl: string | null
+  /** La tarifa de facturación más baja del cuadro, para el «desde» de la tarjeta. */
+  minBillRate: number | null
   /** Lo que se le FACTURA al hotel; el par que se paga vive en el detalle. */
   overtimeBillMultiplier: number | null
   holidayBillMultiplier: number | null
@@ -66,6 +70,8 @@ export interface ContractMultiplier {
 
 export interface ContractRate {
   id: string
+  /** El puesto del catálogo, para poder copiar el cuadro al renovar. */
+  catalogPositionId: string
   /** Posición del catálogo: `Housekeeper`, `Chef`… */
   positionName: string
   payRate: number
@@ -75,7 +81,10 @@ export interface ContractRate {
 export interface ContractDetail {
   id: string
   number: string
+  hotelId: string
   hotelName: string
+  /** Dirección del hotel para el acuerdo imprimible; `null` si no se pudo leer. */
+  hotelAddress: string | null
   status: ContractStatus
   signedByName: string
   /** ISO sin hora. */

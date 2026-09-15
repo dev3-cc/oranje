@@ -1,10 +1,17 @@
-import { createBrowserRouter } from 'react-router'
+import { createBrowserRouter, Navigate, useParams } from 'react-router'
 
 import { RequireSession } from './RequireSession'
 import { RoleHome } from './RoleHome'
 
 import { AppShell, type RouteHandle } from '@/layouts/AppShell'
 import { ModulePlaceholder } from '@/shared/components/ModulePlaceholder'
+
+/** El contrato guardado con la ruta vieja sigue abriendo, con su id. */
+function ContratoRedirect(): React.ReactElement {
+  const { contractId } = useParams()
+
+  return <Navigate to={`/contratos/${contractId ?? ''}`} replace />
+}
 
 /**
  * Módulos del sidebar que ya navegan pero todavía no tienen diseño. Cada uno
@@ -311,7 +318,7 @@ export const router = createBrowserRouter([
             },
           },
           {
-            path: 'documentos-tc',
+            path: 'contratos',
             lazy: async () => {
               const m = await import('@/features/contracts')
               return { Component: m.ContractListPage }
@@ -319,12 +326,16 @@ export const router = createBrowserRouter([
           },
           {
             /* El contrato cuelga de la lista: se llega desde el «Abrir» de su fila. */
-            path: 'documentos-tc/:contractId',
+            path: 'contratos/:contractId',
             lazy: async () => {
               const m = await import('@/features/contracts')
               return { Component: m.ContractDetailPage }
             },
           },
+          /* La ruta vieja sigue viva: el módulo se llamó «Documentos T&C» hasta
+             el 2026-09-15 y hay enlaces guardados y correos con ella. */
+          { path: 'documentos-tc', element: <Navigate to="/contratos" replace /> },
+          { path: 'documentos-tc/:contractId', element: <ContratoRedirect /> },
           {
             path: 'mi-personal',
             lazy: async () => {

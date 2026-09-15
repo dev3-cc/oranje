@@ -1,7 +1,7 @@
 /*
  * ⚠ Imports entre features, permitidos SOLO aquí: la cartera compone
  * `/hotels`, `/prospects` y `/contracts`, cuyos mocks viven en Onboarding y
- * Documentos T&C. Con mocks apagados este módulo es un no-op.
+ * Contratos. Con mocks apagados este módulo es un no-op.
  */
 // eslint-disable-next-line no-restricted-imports
 import { registerContractsMocks } from '@/features/contracts/api/contractsMocks'

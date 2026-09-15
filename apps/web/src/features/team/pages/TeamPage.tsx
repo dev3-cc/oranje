@@ -12,6 +12,7 @@ import { Button } from '@/shared/components/Button'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { FoldText } from '@/shared/components/FoldText'
+import { HotelThumbnail } from '@/shared/components/HotelThumbnail'
 import { LoadError } from '@/shared/components/LoadError'
 import { MagicCard } from '@/shared/components/MagicCard'
 import { MetricCard } from '@/shared/components/MetricCard'
@@ -208,8 +209,11 @@ function MemberDetail({
                   to={`/pipeline/${cycle.prospectId}`}
                   className="flex items-center justify-between gap-4 p-3 transition-colors hover:bg-surface-2"
                 >
-                  <span className="min-w-0 truncate text-sm font-medium text-ink">
-                    {cycle.hotelName}
+                  <span className="flex min-w-0 items-center gap-2.5">
+                    <HotelThumbnail photoUrl={cycle.hotelPhotoUrl} className="size-8" />
+                    <span className="min-w-0 truncate text-sm font-medium text-ink">
+                      {cycle.hotelName}
+                    </span>
                   </span>
                   <span className="flex shrink-0 items-center gap-3">
                     <span

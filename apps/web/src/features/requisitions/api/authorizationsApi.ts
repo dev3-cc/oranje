@@ -43,6 +43,7 @@ function toRequest(requisition: RequisitionApi): AuthorizationRequest {
     id: requisition.id,
     number: requisition.number,
     hotelName: requisition.hotel.name,
+    hotelPhotoUrl: requisition.hotel.photoUrl ?? null,
     department: [
       ...new Set(requisition.positions.map((position) => position.department.name)),
     ].join(', '),

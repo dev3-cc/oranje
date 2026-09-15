@@ -1,6 +1,7 @@
 import type {
   ProposalCandidate,
   ProposalDraft,
+  ProposalRate,
   ProposalTarget,
   ProposalVersionSummary,
   ProposalWorkspace,
@@ -20,6 +21,17 @@ function toRate(value: string | null): number {
   return value === null ? 0 : Number(value)
 }
 
+/** El cuadro por puesto, ya en números para pintarlo y sumarlo. */
+function adaptRates(proposal: ProposalApi): ProposalRate[] {
+  return (proposal.rates ?? []).map((rate) => ({
+    id: rate.id,
+    positionId: rate.position.id,
+    positionName: rate.position.name,
+    payRate: Number(rate.payRate),
+    billRate: Number(rate.billRate),
+  }))
+}
+
 function adaptVersion(proposal: ProposalApi): ProposalVersionSummary {
   return {
     id: proposal.id,
@@ -28,6 +40,7 @@ function adaptVersion(proposal: ProposalApi): ProposalVersionSummary {
     sentAt: proposal.sentAt,
     byName: proposal.sentBy?.fullName ?? '',
     servicesNote: proposal.servicesNote ?? '',
+    rates: adaptRates(proposal),
     payRate: toRate(proposal.payRate),
     billRate: toRate(proposal.billRate),
   }
@@ -38,6 +51,7 @@ function adaptDraft(proposal: ProposalApi): ProposalDraft {
     id: proposal.id,
     version: proposal.version,
     servicesNote: proposal.servicesNote ?? '',
+    rates: adaptRates(proposal),
     payRate: toRate(proposal.payRate),
     billRate: toRate(proposal.billRate),
   }
@@ -51,9 +65,12 @@ async function fetchWorkspace(
   fetchWithBQ: FetchWithBQ,
   prospectId: string,
 ): Promise<{ data: ProposalWorkspace } | { error: unknown }> {
-  const [prospectRes, proposalsRes] = await Promise.all([
+  const [prospectRes, proposalsRes, positionsRes] = await Promise.all([
     fetchWithBQ(`/prospects/${prospectId}`),
     fetchWithBQ(`/prospects/${prospectId}/proposals`),
+    /* Los puestos que el cuadro puede cotizar. Los da de alta el Administrador
+       en Catálogos; si la lista falla, el formulario lo dice y no inventa. */
+    fetchWithBQ('/catalogs/positions'),
   ])
   if (prospectRes.error) return { error: prospectRes.error }
   if (proposalsRes.error) return { error: proposalsRes.error }
@@ -76,15 +93,32 @@ async function fetchWorkspace(
     ? null
     : ((hotelRes.data as ApiEnvelope<{ address: string | null }>).data.address ?? null)
 
+  /* A quién se le manda la propuesta: el contacto principal del hotel. Si no
+     hay o no se puede leer, el correo se abre sin destinatario. */
+  const contactsRes = await fetchWithBQ(`/hotels/${prospect.hotel.id}/contacts`)
+  const contacts = contactsRes.error
+    ? []
+    : (contactsRes.data as ApiEnvelope<Array<{ email: string | null; isPrimary: boolean }>>).data
+  const contactEmail =
+    contacts.find((contact) => contact.isPrimary && contact.email)?.email ??
+    contacts.find((contact) => contact.email)?.email ??
+    null
+
   return {
     data: {
       prospectId,
       hotelName: prospect.hotel.name,
       owner: { id: prospect.owner.id, name: prospect.owner.fullName, photoUrl: ownerPhotoUrl },
       hotelAddress,
+      contactEmail,
       prospectStatus: prospect.state.code as OnboardingStatus,
       draft: draft ? adaptDraft(draft) : null,
       versions: proposals.map(adaptVersion),
+      positions: positionsRes.error
+        ? []
+        : (positionsRes.data as ApiEnvelope<Array<{ id: string; name: string }>>).data.map(
+            (item) => ({ id: item.id, name: item.name }),
+          ),
     },
   }
 }
@@ -107,6 +141,7 @@ export const proposalsApi = baseApi.injectEndpoints({
           candidates.push({
             prospectId: prospect.id,
             hotelName: prospect.hotel.name,
+            hotelPhotoUrl: prospect.hotel.photoUrl,
             zone: prospect.hotel.zone.name,
             prospectStatus: prospect.state.code as OnboardingStatus,
             latestVersion: last.version,
@@ -156,13 +191,36 @@ export const proposalsApi = baseApi.injectEndpoints({
       providesTags: (_result, _error, prospectId) => [{ type: 'Prospect', id: prospectId }],
     }),
 
+    /**
+     * La versión nueva arranca con el cuadro de la ÚLTIMA ENVIADA, no en blanco:
+     * renegociar en Café es ajustar lo que el hotel ya vio, no volver a
+     * capturarlo renglón por renglón. El diálogo lo prometía y el cuerpo iba
+     * vacío.
+     */
     createProposalDraft: build.mutation<ProposalWorkspace, string>({
       queryFn: async (prospectId, _api, _extra, fetchWithBQ) => {
         const bq = fetchWithBQ as FetchWithBQ
+        const previous = await fetchWorkspace(bq, prospectId)
+        const lastSent =
+          'data' in previous
+            ? ([...previous.data.versions]
+                .filter((version) => version.sentAt !== null)
+                .sort((a, b) => b.version - a.version)[0] ?? null)
+            : null
+
         const createRes = await bq({
           url: `/prospects/${prospectId}/proposals`,
           method: 'POST',
-          body: {},
+          body: lastSent
+            ? {
+                ...(lastSent.servicesNote ? { servicesNote: lastSent.servicesNote } : {}),
+                rates: lastSent.rates.map((rate) => ({
+                  catalogPositionId: rate.positionId,
+                  payRate: rate.payRate.toFixed(2),
+                  billRate: rate.billRate.toFixed(2),
+                })),
+              }
+            : {},
         })
         if (createRes.error) return { error: createRes.error as never }
         const result = await fetchWorkspace(bq, prospectId)
@@ -182,8 +240,12 @@ export const proposalsApi = baseApi.injectEndpoints({
           method: 'PATCH',
           body: {
             servicesNote: request.servicesNote,
-            payRate: request.payRate.toFixed(4),
-            billRate: request.billRate.toFixed(4),
+            /* Dos decimales, como el contrato: el cuadro se copia tal cual al firmar. */
+            rates: request.rates.map((rate) => ({
+              catalogPositionId: rate.positionId,
+              payRate: rate.payRate.toFixed(2),
+              billRate: rate.billRate.toFixed(2),
+            })),
           },
         })
         if (patchRes.error) return { error: patchRes.error as never }

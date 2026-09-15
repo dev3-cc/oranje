@@ -20,6 +20,7 @@ import personajeDashboard from '@/assets/ilustrations/personaje-dashboard.svg'
 import personajeEncuesta from '@/assets/ilustrations/personaje-encuesta.svg'
 import personajeErrorTecnico from '@/assets/ilustrations/personaje-error-tecnico.svg'
 import { Button } from '@/shared/components/Button'
+import { DateField } from '@/shared/components/DateField'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
@@ -149,19 +150,14 @@ export function ManualPunchDialog({
           )}
 
           <div className="grid grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1.5">
+            {/* Calendario de shadcn: el nativo se cierra solo dentro de un
+                Dialog de Radix (mismo fix que el alta de requisición). */}
+            <div className="flex flex-col gap-1.5">
               <span className="text-sm font-medium text-ink-2">
                 <Trans>Día</Trans>
               </span>
-              <Input
-                type="date"
-                value={workDate}
-                onChange={(event) => {
-                  setWorkDate(event.target.value)
-                }}
-                aria-label={t`Día de la marca`}
-              />
-            </label>
+              <DateField value={workDate} onChange={setWorkDate} aria-label={t`Día de la marca`} />
+            </div>
             <label className="flex flex-col gap-1.5">
               <span className="text-sm font-medium text-ink-2">
                 <Trans>Hora</Trans>

@@ -1,3 +1,4 @@
+import { Trans, useLingui } from '@lingui/react/macro'
 import { MaterialIcon } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
@@ -20,47 +21,48 @@ export function ContractNextStep({
   /** El contrato VIGENTE del mismo hotel, si existe otro: activar este exige expirarlo. */
   activeContractNumber?: string | null
 }): ReactNode {
-  const failing = buildContractChecks(contract).filter((check) => check.status === 'fail')
+  const { t, i18n } = useLingui()
+  const failing = buildContractChecks(contract, i18n).filter((check) => check.status === 'fail')
 
   const step =
     contract.status === 'DRAFT'
       ? {
           icon: 'edit_note',
-          title: 'Siguiente paso: activar el contrato',
-          who: 'Lo haces tú, desde este mismo lugar (Ventas).',
+          title: t`Siguiente paso: activar el contrato`,
+          who: t`Lo haces tú, desde este mismo lugar (Ventas).`,
           detail:
             failing.length > 0
-              ? `Antes hay que resolver: ${failing.map((check) => check.title.toLowerCase()).join(' · ')}.`
-              : 'Las tarifas ya están completas. Al activarlo, la nómina y la factura del hotel empiezan a usarlo y no se puede volver a editar.',
+              ? t`Antes hay que resolver: ${failing.map((check) => check.title.toLowerCase()).join(' · ')}.`
+              : t`Las tarifas ya están completas. Al activarlo, la nómina y la factura del hotel empiezan a usarlo y no se puede volver a editar.`,
           then: activeContractNumber
-            ? `Ojo: el ${activeContractNumber} sigue vigente para este hotel — solo puede haber uno activo, así que al activar este hay que expirar aquel.`
-            : 'Después: nadie más aprueba. El contrato queda vigente y el hotel puede pedir personal con estas tarifas.',
+            ? t`Ojo: el ${activeContractNumber} sigue vigente para este hotel — solo puede haber uno activo, así que al activar este hay que expirar aquel.`
+            : t`Después: nadie más aprueba. El contrato queda vigente y el hotel puede pedir personal con estas tarifas.`,
         }
       : contract.status === 'ACTIVE'
         ? {
             icon: 'verified',
-            title: 'Contrato vigente: no hay nada pendiente',
-            who: 'Lo usan Contabilidad y el hotel cada semana, sin que tengas que hacer nada.',
+            title: t`Contrato vigente: no hay nada pendiente`,
+            who: t`Lo usan Contabilidad y el hotel cada semana, sin que tengas que hacer nada.`,
             detail:
               contract.validTo === null
-                ? 'No tiene fecha de fin: rige hasta que alguien lo marque expirado.'
-                : `Vence el ${formatDate(contract.validTo)}. Para renovar, crea un contrato nuevo antes de esa fecha y marca este como expirado.`,
-            then: 'Si cambian las tarifas, no se edita este: se crea uno nuevo con vigencia propia, para que las semanas ya pagadas no se recalculen.',
+                ? t`No tiene fecha de fin: rige hasta que alguien lo marque expirado.`
+                : t`Vence el ${formatDate(contract.validTo)}. Para renovar, crea un contrato nuevo antes de esa fecha y marca este como expirado.`,
+            then: t`Si cambian las tarifas, no se edita este: se crea uno nuevo con vigencia propia, para que las semanas ya pagadas no se recalculen.`,
           }
         : contract.status === 'EXPIRED'
           ? {
               icon: 'history',
-              title: 'Contrato expirado: dejó de regir',
-              who: 'Nadie tiene que hacer nada con este documento.',
-              detail: 'Se conserva como historial: las semanas que rigió se calcularon con él.',
-              then: `Si ${contract.hotelName} sigue siendo cliente, lo que sigue es crear un contrato nuevo.`,
+              title: t`Contrato expirado: dejó de regir`,
+              who: t`Nadie tiene que hacer nada con este documento.`,
+              detail: t`Se conserva como historial: las semanas que rigió se calcularon con él.`,
+              then: t`Si ${contract.hotelName} sigue siendo cliente, lo que sigue es crear un contrato nuevo.`,
             }
           : {
               icon: 'block',
-              title: 'Borrador cancelado: nunca rigió',
-              who: 'Nadie tiene que hacer nada con este documento.',
-              detail: 'Se conserva como historial y no admite cambios.',
-              then: `Si ${contract.hotelName} necesita contrato, crea uno nuevo desde «Agregar contrato».`,
+              title: t`Borrador cancelado: nunca rigió`,
+              who: t`Nadie tiene que hacer nada con este documento.`,
+              detail: t`Se conserva como historial y no admite cambios.`,
+              then: t`Si ${contract.hotelName} necesita contrato, crea uno nuevo desde «Agregar contrato».`,
             }
 
   return (
@@ -76,11 +78,15 @@ export function ContractNextStep({
       </div>
       <dl className="mt-4 flex flex-col gap-3 border-t border-line pt-4 text-sm">
         <div className="flex gap-3">
-          <dt className="w-24 shrink-0 text-ink-3">Quién</dt>
+          <dt className="w-24 shrink-0 text-ink-3">
+            <Trans>Quién</Trans>
+          </dt>
           <dd className="text-ink-2">{step.who}</dd>
         </div>
         <div className="flex gap-3">
-          <dt className="w-24 shrink-0 text-ink-3">Después</dt>
+          <dt className="w-24 shrink-0 text-ink-3">
+            <Trans>Después</Trans>
+          </dt>
           <dd className="text-ink-2">{step.then}</dd>
         </div>
       </dl>

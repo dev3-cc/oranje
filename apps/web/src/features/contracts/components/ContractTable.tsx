@@ -6,6 +6,7 @@ import type { ContractRow } from '../types/contract.types'
 
 import { ValidityCell } from './ValidityCell'
 
+import { HotelThumbnail } from '@/shared/components/HotelThumbnail'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TOKEN } from '@/shared/constants/contractStatus'
 
@@ -55,13 +56,18 @@ export function ContractTable({
               <TableCell className="px-5 py-5 text-base font-bold">
                 {}
                 <Link
-                  to={`/documentos-tc/${row.id}`}
+                  to={`/contratos/${row.id}`}
                   className="rounded-sm text-ink hover:text-o-700 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
                 >
                   {row.number}
                 </Link>
               </TableCell>
-              <TableCell className="px-5 py-5 text-base text-ink-2">{row.hotelName}</TableCell>
+              <TableCell className="px-5 py-5 text-base text-ink-2">
+                <span className="flex items-center gap-2.5">
+                  <HotelThumbnail photoUrl={row.hotelPhotoUrl} className="size-8" />
+                  {row.hotelName}
+                </span>
+              </TableCell>
 
               <TableCell className="px-5 py-5">
                 <StatusLightSoftBadge
@@ -83,7 +89,7 @@ export function ContractTable({
 
               <TableCell className="px-5 py-5 text-right">
                 <Link
-                  to={`/documentos-tc/${row.id}`}
+                  to={`/contratos/${row.id}`}
                   className="inline-flex items-center gap-1.5 rounded-md bg-o-50 px-4 py-2 text-sm font-medium text-o-700 hover:bg-o-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
                 >
                   Abrir <span aria-hidden>→</span>

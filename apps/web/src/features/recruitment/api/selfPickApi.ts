@@ -54,6 +54,7 @@ function toRows(requisition: RequisitionApi): SelfPickRow[] {
       positionName: position.position.name,
       positionCatalogId: position.position.id,
       hotelName: requisition.hotel.name,
+      hotelPhotoUrl: requisition.hotel.photoUrl ?? null,
       departmentName: position.department.name,
       startDate: position.startDate,
       startTime: position.startTime,
@@ -150,6 +151,9 @@ async function fetchSlotBoard(
       coverage: { code: position.coverage.code, name: position.coverage.name },
       slots,
       freeSlots: position.quantity - position.filled,
+      /* La posición ya trae desde cuándo la pidió el hotel: asignar desde otro
+         día era un error de captura esperando a pasar. */
+      startDate: position.startDate,
       nextFreeOrdinal: firstFree?.ordinal ?? null,
     },
   }

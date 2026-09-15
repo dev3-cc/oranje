@@ -27,7 +27,7 @@ const EXPECTED_LINKS: [string, string][] = [
   ['Pipeline', '/pipeline'],
   ['Mi Territorio', '/mi-territorio'],
   ['Propuestas', '/propuestas'],
-  ['Documentos T&C', '/documentos-tc'],
+  ['Contratos', '/contratos'],
   ['Clientes Activos', '/clientes-activos'],
 ]
 

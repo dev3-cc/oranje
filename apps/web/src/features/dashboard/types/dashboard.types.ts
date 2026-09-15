@@ -16,6 +16,7 @@ export interface FunnelBucket {
 export interface StaleProspect {
   prospectId: string
   hotelName: string
+  hotelPhotoUrl: string | null
   daysWithoutAttempt: number
   status: OnboardingStatus
 }
@@ -39,6 +40,7 @@ export interface DashboardRequisition {
   id: string
   number: string
   hotelName: string
+  hotelPhotoUrl: string | null
   state: { code: string; name: string; color: string }
   totalSlots: number
   filledSlots: number
