@@ -25,10 +25,10 @@ import { store } from '@/app/store'
 const EXPECTED_LINKS: [string, string][] = [
   ['Dashboard', '/dashboard'],
   ['Pipeline', '/pipeline'],
-  ['Mi Territorio', '/mi-territorio'],
-  ['Propuestas', '/propuestas'],
-  ['Documentos T&C', '/documentos-tc'],
-  ['Clientes Activos', '/clientes-activos'],
+  ['Mi Territorio', '/my-territory'],
+  ['Propuestas', '/proposals'],
+  ['Contratos', '/contracts'],
+  ['Clientes Activos', '/active-clients'],
 ]
 
 /** Módulos de otros roles (Ventas-BDC, Reclutamiento, Hotel, Administrador): el BD de la sesión mock no debe verlos. */
@@ -117,8 +117,8 @@ describe('Sidebar', () => {
   /**
    * Antes, `logout()` esperaba a que la mutación resolviera para limpiar la
    * sesión — mientras tanto `RequireSession` seguía viendo `status:
-   * 'authenticated'` en `/usuarios` y no navegaba a ningún lado; al
-   * resolver, redirigía con `state.from = '/usuarios'`, y quien entraba
+   * 'authenticated'` en `/users` y no navegaba a ningún lado; al
+   * resolver, redirigía con `state.from = '/users'`, y quien entraba
    * DESPUÉS con otro rol aterrizaba en una pantalla que no era la suya (el
    * reporte de Hugo: "se queda pegado en pantallas del rol anterior").
    */
@@ -126,10 +126,10 @@ describe('Sidebar', () => {
     const user = userEvent.setup()
     const router = createMemoryRouter(
       [
-        { path: '/usuarios', element: <Sidebar /> },
+        { path: '/users', element: <Sidebar /> },
         { path: '/login', element: <p>Pantalla de login</p> },
       ],
-      { initialEntries: ['/usuarios'] },
+      { initialEntries: ['/users'] },
     )
 
     render(

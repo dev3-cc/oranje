@@ -173,7 +173,7 @@ export function NewContractDialog({
       }).unwrap()
       toast.success(t`Contrato creado — en Borrador`)
       onClose()
-      void navigate(`/contratos/${created.id}`)
+      void navigate(`/contracts/${created.id}`)
     } catch {
       return
     }

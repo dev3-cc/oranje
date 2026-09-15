@@ -63,7 +63,7 @@ export function ProposalVersionList({
                 <ContractPreviewButton hotelName={hotelName} version={version} />
 
                 <Link
-                  to={`/propuestas/${prospectId}/${String(version.version)}`}
+                  to={`/proposals/${prospectId}/${String(version.version)}`}
                   className={buttonClass('yellow', 'px-3 py-1.5 text-xs')}
                 >
                   Ver propuesta
@@ -75,7 +75,7 @@ export function ProposalVersionList({
       )}
 
       <Link
-        to={`/pipeline/${prospectId}/propuesta`}
+        to={`/pipeline/${prospectId}/proposal`}
         className={buttonClass('secondary', 'mt-6 w-full')}
       >
         Abrir propuesta

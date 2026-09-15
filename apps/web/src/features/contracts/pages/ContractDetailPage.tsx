@@ -125,7 +125,7 @@ export function ContractDetailPage(): ReactNode {
         <p className="text-sm text-red">
           <Trans>Este contrato no existe o fue borrado. Vuelve a la lista y elige otro.</Trans>
         </p>
-        <Link to="/contratos" className="text-sm font-semibold text-o-700 hover:underline">
+        <Link to="/contracts" className="text-sm font-semibold text-o-700 hover:underline">
           <Trans>Volver a Contratos</Trans>
         </Link>
       </div>
@@ -155,7 +155,7 @@ export function ContractDetailPage(): ReactNode {
   return (
     <div className="flex flex-col gap-6">
       <nav aria-label={t`Ruta`} className="flex items-center gap-2 text-sm text-ink-3">
-        <Link to="/contratos" className="hover:text-o-700">
+        <Link to="/contracts" className="hover:text-o-700">
           <Trans>Contratos</Trans>
         </Link>
         <span aria-hidden>/</span>

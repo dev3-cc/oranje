@@ -10,9 +10,9 @@ import { store } from '@/app/store'
 
 function renderBoard(): void {
   const router = createMemoryRouter(
-    [{ path: '/requisiciones', element: <RequisitionBoardPage /> }],
+    [{ path: '/requisitions', element: <RequisitionBoardPage /> }],
     {
-      initialEntries: ['/requisiciones'],
+      initialEntries: ['/requisitions'],
     },
   )
 
@@ -70,7 +70,7 @@ describe('RequisitionBoardPage', () => {
 
     expect(await screen.findByRole('link', { name: /Por autorizar/ })).toHaveAttribute(
       'href',
-      '/requisiciones/autorizacion',
+      '/requisitions/authorization',
     )
     expect(screen.queryByRole('link', { name: /Urgentes/ })).not.toBeInTheDocument()
   })
@@ -107,7 +107,7 @@ describe('RequisitionBoardPage', () => {
 
     expect((await screen.findByText(/202608120930·K7/)).closest('a')).toHaveAttribute(
       'href',
-      '/requisiciones/req-0004',
+      '/requisitions/req-0004',
     )
   })
 })

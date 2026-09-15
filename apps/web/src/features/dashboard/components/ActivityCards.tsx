@@ -237,7 +237,7 @@ export function TeamProgressCard(): ReactNode {
             </Trans>
           </p>
           <Link
-            to="/mi-equipo"
+            to="/my-team"
             className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-o-300 shadow-xs px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-o-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
           >
             <Trans>Ver Mi Equipo</Trans> <span aria-hidden>→</span>

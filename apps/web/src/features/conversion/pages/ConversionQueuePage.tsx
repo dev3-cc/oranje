@@ -137,7 +137,7 @@ export function ConversionQueuePage(): ReactNode {
               </p>
             </div>
             <Link
-              to="/clientes-activos"
+              to="/active-clients"
               className="min-h-11 shrink-0 touch-manipulation content-center text-sm font-semibold text-o-700 underline-offset-4 hover:underline"
             >
               Ver Clientes Activos

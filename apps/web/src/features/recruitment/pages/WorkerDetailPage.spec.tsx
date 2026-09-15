@@ -13,8 +13,8 @@ const SLOW = { timeout: 4000 }
 /** Ana Rivera (`wrk-0001`): STRONG_GREEN, perfil completo, 3 documentos. */
 function renderDetail(workerId = 'wrk-0001'): void {
   const router = createMemoryRouter(
-    [{ path: '/pool-colaboradores/:workerId', element: <WorkerDetailPage /> }],
-    { initialEntries: [`/pool-colaboradores/${workerId}`] },
+    [{ path: '/collaborator-pool/:workerId', element: <WorkerDetailPage /> }],
+    { initialEntries: [`/collaborator-pool/${workerId}`] },
   )
   render(
     <Provider store={store}>

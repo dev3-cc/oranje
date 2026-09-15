@@ -57,31 +57,31 @@ const MAPPED_ROLES: ReadonlySet<string> = new Set([...STAFF, ...INSPECCION, ADMI
 
 const MODULES: NavModule[] = [
   { label: msg`Dashboard`, to: '/dashboard', icon: 'space_dashboard', roles: STAFF },
-  { label: msg`Usuarios`, to: '/usuarios', icon: 'manage_accounts', roles: [ADMIN] },
-  { label: msg`Catálogos`, to: '/catalogos', icon: 'category', roles: [ADMIN] },
+  { label: msg`Usuarios`, to: '/users', icon: 'manage_accounts', roles: [ADMIN] },
+  { label: msg`Catálogos`, to: '/catalogs', icon: 'category', roles: [ADMIN] },
   {
     label: msg`Correos corporativos`,
-    to: '/correos-corporativos',
+    to: '/corporate-emails',
     icon: 'alternate_email',
     roles: [ADMIN],
   },
   { label: msg`Pipeline`, to: '/pipeline', icon: 'view_kanban', roles: VENTAS },
-  { label: msg`Mi Territorio`, to: '/mi-territorio', icon: 'map', roles: VENTAS },
-  { label: msg`Propuestas`, to: '/propuestas', icon: 'description', roles: VENTAS },
-  { label: msg`Contratos`, to: '/contratos', icon: 'gavel', roles: VENTAS },
+  { label: msg`Mi Territorio`, to: '/my-territory', icon: 'map', roles: VENTAS },
+  { label: msg`Propuestas`, to: '/proposals', icon: 'description', roles: VENTAS },
+  { label: msg`Contratos`, to: '/contracts', icon: 'gavel', roles: VENTAS },
   { label: msg`Conversión`, to: '/conversion', icon: 'swap_horiz', roles: [BDC] },
-  { label: msg`Clientes Activos`, to: '/clientes-activos', icon: 'apartment', roles: VENTAS },
-  { label: msg`Mi Equipo`, to: '/mi-equipo', icon: 'groups', roles: [BDC] },
-  { label: msg`Reportes`, to: '/reportes', icon: 'bar_chart', roles: [BDC] },
+  { label: msg`Clientes Activos`, to: '/active-clients', icon: 'apartment', roles: VENTAS },
+  { label: msg`Mi Equipo`, to: '/my-team', icon: 'groups', roles: [BDC] },
+  { label: msg`Reportes`, to: '/reports', icon: 'bar_chart', roles: [BDC] },
   {
     label: msg`Requisiciones`,
-    to: '/requisiciones',
+    to: '/requisitions',
     icon: 'assignment',
     roles: [...RECLUTAMIENTO, ...HOTEL],
   },
   {
     label: msg`Pool de Colaboradores`,
-    to: '/pool-colaboradores',
+    to: '/collaborator-pool',
     icon: 'badge',
     roles: RECLUTAMIENTO,
   },
@@ -102,11 +102,11 @@ const MODULES: NavModule[] = [
     icon: 'fact_check',
     roles: [MGR_GENERAL],
   },
-  { label: msg`Mi Personal`, to: '/mi-personal', icon: 'badge', roles: HOTEL },
-  { label: msg`Accidentes`, to: '/accidentes', icon: 'report', roles: [...HOTEL, ...INSPECCION] },
+  { label: msg`Mi Personal`, to: '/my-staff', icon: 'badge', roles: HOTEL },
+  { label: msg`Accidentes`, to: '/accidents', icon: 'report', roles: [...HOTEL, ...INSPECCION] },
   /* Auditar es solo del Supervisor: sus Managers no lo ven (Matriz de Hotel
      §AUDITORÍAS; fuera de la herencia por jerarquía). */
-  { label: msg`Auditorías`, to: '/auditorias', icon: 'fact_check', roles: [SUPERVISOR] },
+  { label: msg`Auditorías`, to: '/audits', icon: 'fact_check', roles: [SUPERVISOR] },
 ]
 
 function modulesForRole(roleId: string | undefined): NavModule[] {
@@ -220,7 +220,7 @@ export function Sidebar(): ReactNode {
                   /* Navegar ANTES de que la sesión se limpie: si se espera
                      a que `logout` resuelva, `RequireSession` alcanza a
                      redirigir con `state.from` = esta misma ruta (p. ej.
-                     `/usuarios`), y quien entre después con OTRO rol
+                     `/users`), y quien entre después con OTRO rol
                      aterriza ahí en vez de en su inicio — el bug de
                      "se queda pegado en la pantalla del rol anterior". Al
                      salir a `/login` de inmediato, ese guard ya no está

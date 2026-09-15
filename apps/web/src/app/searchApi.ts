@@ -97,7 +97,7 @@ export const searchApi = baseApi.injectEndpoints({
                 kind: 'requisition',
                 title: requisition.number,
                 subtitle: `${requisition.hotel.name} · ${requisition.state.name}`,
-                to: `/requisiciones/${requisition.id}`,
+                to: `/requisitions/${requisition.id}`,
               }))
 
         const workers = workersRes.error
@@ -109,7 +109,7 @@ export const searchApi = baseApi.injectEndpoints({
                 kind: 'worker',
                 title: worker.fullName,
                 subtitle: `Colaborador · ${worker.position?.name ?? 'Sin posición'} · ${worker.state.name}`,
-                to: `/pool-colaboradores/${worker.id}`,
+                to: `/collaborator-pool/${worker.id}`,
               }))
 
         return { data: { prospects, requisitions, workers } }

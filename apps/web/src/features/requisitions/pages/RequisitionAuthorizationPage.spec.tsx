@@ -10,8 +10,8 @@ import { store } from '@/app/store'
 
 function renderQueue(): void {
   const router = createMemoryRouter(
-    [{ path: '/requisiciones/autorizacion', element: <RequisitionAuthorizationPage /> }],
-    { initialEntries: ['/requisiciones/autorizacion'] },
+    [{ path: '/requisitions/authorization', element: <RequisitionAuthorizationPage /> }],
+    { initialEntries: ['/requisitions/authorization'] },
   )
 
   render(

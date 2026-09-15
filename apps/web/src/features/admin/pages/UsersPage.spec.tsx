@@ -8,7 +8,7 @@ import { UsersPage } from './UsersPage'
 
 import { store } from '@/app/store'
 
-function renderUsers(initialPath = '/usuarios'): void {
+function renderUsers(initialPath = '/users'): void {
   render(
     <Provider store={store}>
       <MemoryRouter initialEntries={[initialPath]}>
@@ -123,7 +123,7 @@ describe('UsersPage', () => {
   })
 
   it('el ámbito vive en la URL: ?ambito=hoteles abre directo la pestaña de hoteles', async () => {
-    renderUsers('/usuarios?ambito=hoteles')
+    renderUsers('/users?ambito=hoteles')
     expect((await screen.findAllByText('Diego Ramírez'))[0]).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Personal de hoteles' })).toHaveAttribute(
       'aria-selected',
@@ -133,7 +133,7 @@ describe('UsersPage', () => {
 
   it('el alta de una cuenta del hotel pide departamento a un Supervisor y no al Manager General', async () => {
     const user = userEvent.setup()
-    renderUsers('/usuarios?ambito=hoteles')
+    renderUsers('/users?ambito=hoteles')
     await screen.findAllByText('Diego Ramírez')
 
     await user.click(screen.getByRole('button', { name: 'Agregar cuenta del hotel' }))
@@ -154,7 +154,7 @@ describe('UsersPage', () => {
 
   it('crear un Supervisor: los jefes salen del hotel elegido y la invitación se confirma', async () => {
     const user = userEvent.setup()
-    renderUsers('/usuarios?ambito=hoteles')
+    renderUsers('/users?ambito=hoteles')
     await screen.findAllByText('Diego Ramírez')
 
     await user.click(screen.getByRole('button', { name: 'Agregar cuenta del hotel' }))
@@ -185,7 +185,7 @@ describe('UsersPage', () => {
 
   it('editar una cuenta del hotel bloquea hotel, rol y correo', async () => {
     const user = userEvent.setup()
-    renderUsers('/usuarios?ambito=hoteles')
+    renderUsers('/users?ambito=hoteles')
 
     await user.click(await screen.findByText('Aldo Castillo'))
     expect((await screen.findAllByText('Editar cuenta del hotel'))[0]).toBeInTheDocument()

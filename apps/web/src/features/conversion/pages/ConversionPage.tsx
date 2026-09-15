@@ -77,7 +77,7 @@ export function ConversionPage(): ReactNode {
           queda como su referente comercial.
         </p>
         <div className="flex gap-4">
-          <Link to="/clientes-activos" className="text-sm font-semibold text-o-700 hover:underline">
+          <Link to="/active-clients" className="text-sm font-semibold text-o-700 hover:underline">
             Ver en Clientes Activos
           </Link>
           <Link to="/conversion" className="text-sm font-semibold text-o-700 hover:underline">

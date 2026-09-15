@@ -137,7 +137,7 @@ export function RequisitionDetailPage(): ReactNode {
             No se encontró la requisición: puede que se haya eliminado o que el enlace sea viejo.
           </Trans>
         </p>
-        <Link to="/requisiciones" className="text-sm font-semibold text-o-700 hover:underline">
+        <Link to="/requisitions" className="text-sm font-semibold text-o-700 hover:underline">
           <Trans>Volver al Tablero de Requisiciones</Trans>
         </Link>
       </div>
@@ -161,7 +161,7 @@ export function RequisitionDetailPage(): ReactNode {
         ...(needsReason ? { reason: deleteReason.trim() } : {}),
       }).unwrap()
       toast.success(t`Requisición ${requisitionNumber} eliminada`)
-      void navigate('/requisiciones')
+      void navigate('/requisitions')
     } catch (error) {
       setDeleteArmed(false)
       setDeleteError(deleteErrorMessage(error, i18n))
@@ -171,7 +171,7 @@ export function RequisitionDetailPage(): ReactNode {
   return (
     <div className="flex flex-col gap-6">
       <nav aria-label={t`Ruta`} className="flex items-center gap-2 text-sm text-ink-3">
-        <Link to="/requisiciones" className="hover:text-o-700">
+        <Link to="/requisitions" className="hover:text-o-700">
           <Trans>Demanda</Trans>
         </Link>
         <span aria-hidden>/</span>
@@ -262,7 +262,7 @@ export function RequisitionDetailPage(): ReactNode {
           */}
           {detail.status === 'APPLE_GREEN' ? (
             can('requisitions:authorize') ? (
-              <Link to="/requisiciones/autorizacion" className={buttonClass('primary')}>
+              <Link to="/requisitions/authorization" className={buttonClass('primary')}>
                 <Trans>Ir a Autorización</Trans>
               </Link>
             ) : null

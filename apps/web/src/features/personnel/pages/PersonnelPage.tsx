@@ -309,7 +309,7 @@ function WorkerDetail({
                 </button>
               )}
               <Link
-                to={`/pool-colaboradores/${row.workerId}`}
+                to={`/collaborator-pool/${row.workerId}`}
                 className="rounded-md border border-white/40 bg-ink/35 px-3 py-1.5 text-sm font-medium text-white backdrop-blur-md transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
               >
                 <Trans>Ver Expediente</Trans>

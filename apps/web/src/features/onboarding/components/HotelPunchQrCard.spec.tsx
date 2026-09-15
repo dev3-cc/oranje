@@ -35,7 +35,7 @@ describe('HotelPunchQrCard', () => {
     expect(screen.getByText(/Versión 2/)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /imprimir qr/i })).toHaveAttribute(
       'href',
-      '/hoteles/hotel-1/qr-ponche',
+      '/hotels/hotel-1/punch-qr',
     )
     expect(screen.getByRole('button', { name: 'Regenerar QR' })).toBeInTheDocument()
   })

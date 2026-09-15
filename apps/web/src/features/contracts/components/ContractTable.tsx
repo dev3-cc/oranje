@@ -56,7 +56,7 @@ export function ContractTable({
               <TableCell className="px-5 py-5 text-base font-bold">
                 {}
                 <Link
-                  to={`/contratos/${row.id}`}
+                  to={`/contracts/${row.id}`}
                   className="rounded-sm text-ink hover:text-o-700 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
                 >
                   {row.number}
@@ -89,7 +89,7 @@ export function ContractTable({
 
               <TableCell className="px-5 py-5 text-right">
                 <Link
-                  to={`/contratos/${row.id}`}
+                  to={`/contracts/${row.id}`}
                   className="inline-flex items-center gap-1.5 rounded-md bg-o-50 px-4 py-2 text-sm font-medium text-o-700 hover:bg-o-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
                 >
                   Abrir <span aria-hidden>→</span>

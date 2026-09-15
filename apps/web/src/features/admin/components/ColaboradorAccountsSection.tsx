@@ -71,7 +71,7 @@ export function ColaboradorAccountsSection(): ReactNode {
             <li key={row.workerId} className="border-b border-line last:border-b-0">
               <div className="flex w-full items-center gap-4 px-5 py-4">
                 <Link
-                  to={`/pool-colaboradores/${row.workerId}`}
+                  to={`/collaborator-pool/${row.workerId}`}
                   className="flex min-w-0 flex-1 items-center gap-4"
                 >
                   {row.photoUrl ? (
@@ -129,7 +129,7 @@ export function ColaboradorAccountsSection(): ReactNode {
 
                 {canManageMailbox && (
                   <Link
-                    to="/correos-corporativos"
+                    to="/corporate-emails"
                     className="shrink-0 text-xs font-semibold text-o-700 hover:underline"
                   >
                     Gestionar buzón

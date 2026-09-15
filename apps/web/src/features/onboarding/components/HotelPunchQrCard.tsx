@@ -92,7 +92,7 @@ export function HotelPunchQrCard({
               {canManage ? (
                 <div className="flex flex-wrap gap-2">
                   <a
-                    href={`/hoteles/${hotelId}/qr-ponche`}
+                    href={`/hotels/${hotelId}/punch-qr`}
                     target="_blank"
                     rel="noreferrer"
                     title={t`Abre la hoja lista para imprimir o guardar como PDF`}

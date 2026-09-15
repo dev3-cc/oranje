@@ -42,7 +42,7 @@ function RequisitionCard({ item }: { item: RequisitionRow }): ReactNode {
   return (
     <MagicCard className="rounded-2xl">
       <Link
-        to={`/requisiciones/${item.id}`}
+        to={`/requisitions/${item.id}`}
         className="block touch-manipulation overflow-hidden rounded-2xl bg-surface shadow-md transition-shadow hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
       >
         <div className="relative h-24">

@@ -184,7 +184,7 @@ export function WorkerDetailPage(): ReactNode {
         <p className="text-sm text-red">
           No se encontró al colaborador: puede que el enlace sea viejo o que ya no esté en el Pool.
         </p>
-        <Link to="/pool-colaboradores" className="text-sm font-semibold text-o-700 hover:underline">
+        <Link to="/collaborator-pool" className="text-sm font-semibold text-o-700 hover:underline">
           Volver al Pool de Colaboradores
         </Link>
       </div>
@@ -317,7 +317,7 @@ export function WorkerDetailPage(): ReactNode {
   return (
     <div className="flex flex-col gap-6">
       <nav aria-label="Ruta" className="flex items-center gap-2 text-sm text-ink-3">
-        <Link to="/pool-colaboradores" className="hover:text-o-700">
+        <Link to="/collaborator-pool" className="hover:text-o-700">
           Pool de Colaboradores
         </Link>
         <span aria-hidden>/</span>

@@ -38,7 +38,7 @@ describe('ProspectDetailPage', () => {
     renderDetail('psp-0008')
 
     const link = await screen.findByRole('link', { name: 'Abrir propuesta' })
-    expect(link).toHaveAttribute('href', '/pipeline/psp-0008/propuesta')
+    expect(link).toHaveAttribute('href', '/pipeline/psp-0008/proposal')
   })
 
   it('el encabezado conserva solo las dos acciones del diseño', async () => {

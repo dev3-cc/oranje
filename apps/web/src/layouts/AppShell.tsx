@@ -68,10 +68,10 @@ export function AppShell(): ReactNode {
 
   /**
    * El Colaborador no opera este shell: sin mapa en el sidebar vería TODO y
-   * cada pantalla le daría 403. Su apartado es `/colaborador`, aunque llegue
+   * cada pantalla le daría 403. Su apartado es `/collaborator`, aunque llegue
    * por un enlace o por la ruta reanudada de otra persona.
    */
-  if (user?.roleId === WORKER_ROLE) return <Navigate to="/colaborador" replace />
+  if (user?.roleId === WORKER_ROLE) return <Navigate to="/collaborator" replace />
 
   /**
    * Ancho acotado por defecto (regla de la skill: un solo max-width en toda la

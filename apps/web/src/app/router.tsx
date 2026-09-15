@@ -43,7 +43,7 @@ export const router = createBrowserRouter([
   },
   {
     /** La misma puerta con los textos del Colaborador (ROL-C-01). */
-    path: '/colaborador/login',
+    path: '/collaborator/login',
     lazy: async () => {
       const m = await import('@/features/auth')
       return { Component: m.ColaboradorLoginPage }
@@ -130,21 +130,21 @@ export const router = createBrowserRouter([
             },
           },
           {
-            path: 'usuarios',
+            path: 'users',
             lazy: async () => {
               const m = await import('@/features/admin')
               return { Component: m.UsersPage }
             },
           },
           {
-            path: 'catalogos',
+            path: 'catalogs',
             lazy: async () => {
               const m = await import('@/features/admin')
               return { Component: m.CatalogsPage }
             },
           },
           {
-            path: 'correos-corporativos',
+            path: 'corporate-emails',
             lazy: async () => {
               const m = await import('@/features/admin')
               return { Component: m.CorporateEmailPage }
@@ -173,7 +173,7 @@ export const router = createBrowserRouter([
              * Activos son los mismos hoteles en otro estado del semáforo, así que
              * apuntarán a esta misma ruta.
              */
-            path: 'pipeline/:prospectId/propuesta',
+            path: 'pipeline/:prospectId/proposal',
             lazy: async () => {
               const m = await import('@/features/onboarding')
               return { Component: m.ProposalEditorPage }
@@ -181,7 +181,7 @@ export const router = createBrowserRouter([
           },
           {
             /* Vista transversal de solo lectura; el editor vive dentro del hotel. */
-            path: 'propuestas',
+            path: 'proposals',
             lazy: async () => {
               const m = await import('@/features/onboarding')
               return { Component: m.ProposalListPage }
@@ -189,7 +189,7 @@ export const router = createBrowserRouter([
           },
           {
             /* Una versión concreta, en solo lectura. A donde lleva «Ver propuesta». */
-            path: 'propuestas/:prospectId/:version',
+            path: 'proposals/:prospectId/:version',
             lazy: async () => {
               const m = await import('@/features/onboarding')
               return { Component: m.ProposalVersionPage }
@@ -211,7 +211,7 @@ export const router = createBrowserRouter([
             },
           },
           {
-            path: 'requisiciones',
+            path: 'requisitions',
             lazy: async () => {
               const m = await import('@/features/requisitions')
               return { Component: m.RequisitionBoardPage }
@@ -219,10 +219,10 @@ export const router = createBrowserRouter([
           },
           {
             /**
-             * Va ANTES que `:requisitionId`, que si no se tragaría «autorizacion»
+             * Va ANTES que `:requisitionId`, que si no se tragaría «authorization»
              * como si fuera el id de una requisición.
              */
-            path: 'requisiciones/autorizacion',
+            path: 'requisitions/authorization',
             lazy: async () => {
               const m = await import('@/features/requisitions')
               return { Component: m.RequisitionAuthorizationPage }
@@ -230,7 +230,7 @@ export const router = createBrowserRouter([
           },
           {
             /* El detalle cuelga del tablero: se llega desde el folio de una fila. */
-            path: 'requisiciones/:requisitionId',
+            path: 'requisitions/:requisitionId',
             lazy: async () => {
               const m = await import('@/features/requisitions')
               return { Component: m.RequisitionDetailPage }
@@ -260,7 +260,7 @@ export const router = createBrowserRouter([
             },
           },
           {
-            path: 'pool-colaboradores',
+            path: 'collaborator-pool',
             lazy: async () => {
               const m = await import('@/features/recruitment')
               return { Component: m.PoolPage }
@@ -268,7 +268,7 @@ export const router = createBrowserRouter([
           },
           {
             /* El Expediente cuelga del Pool: se llega desde el nombre de la fila. */
-            path: 'pool-colaboradores/:workerId',
+            path: 'collaborator-pool/:workerId',
             lazy: async () => {
               const m = await import('@/features/recruitment')
               return { Component: m.WorkerDetailPage }
@@ -290,14 +290,14 @@ export const router = createBrowserRouter([
             },
           },
           {
-            path: 'reportes',
+            path: 'reports',
             lazy: async () => {
               const m = await import('@/features/reports')
               return { Component: m.ReportsPage }
             },
           },
           {
-            path: 'mi-equipo',
+            path: 'my-team',
             lazy: async () => {
               const m = await import('@/features/team')
               return { Component: m.TeamPage }
@@ -311,14 +311,14 @@ export const router = createBrowserRouter([
             },
           },
           {
-            path: 'clientes-activos',
+            path: 'active-clients',
             lazy: async () => {
               const m = await import('@/features/clients')
               return { Component: m.ClientPortfolioPage }
             },
           },
           {
-            path: 'contratos',
+            path: 'contracts',
             lazy: async () => {
               const m = await import('@/features/contracts')
               return { Component: m.ContractListPage }

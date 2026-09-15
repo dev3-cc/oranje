@@ -243,7 +243,7 @@ export function WorkerWeekSummary({
               ABRE la requisición. */}
           {requisitionRef !== null && (
             <Link
-              to={`/requisiciones/${row.requisitionId}`}
+              to={`/requisitions/${row.requisitionId}`}
               title={t`Abrir la requisición`}
               onMouseEnter={() => onRequisitionHover?.(true)}
               onMouseLeave={() => onRequisitionHover?.(false)}

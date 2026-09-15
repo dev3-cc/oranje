@@ -123,7 +123,7 @@ type AuthMode = 'login' | 'reset'
  * A quién le habla la pantalla. Es la MISMA pantalla y el mismo canje de
  * sesión: solo cambian los textos, porque el Colaborador no tiene «hotel
  * propio» ni «Administrador de departamento» — lo da de alta su Reclutadora
- * y entra desde el celular. La ruta decide (`/login` · `/colaborador/login`);
+ * y entra desde el celular. La ruta decide (`/login` · `/collaborator/login`);
  * al entrar, `RoleHome` manda a cada quien a su inicio sin importar por cuál
  * puerta pasó.
  */
@@ -381,7 +381,7 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
                         <Trans>
                           ¿Eres colaborador?{' '}
                           <Link
-                            to="/colaborador/login"
+                            to="/collaborator/login"
                             className="font-medium text-o-700 hover:underline"
                           >
                             Entra por aquí

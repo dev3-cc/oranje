@@ -156,7 +156,7 @@ export function RequisitionBoardPage(): ReactNode {
             value={String(metrics.awaitingAuthorization)}
             label={t`Por autorizar`}
             foot={t`${metrics.awaitingOver48h} con más de 48 h`}
-            to="/requisiciones/autorizacion"
+            to="/requisitions/authorization"
           />
           <MetricCard
             icon="donut_small"

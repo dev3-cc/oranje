@@ -11,8 +11,8 @@ import { store } from '@/app/store'
 const SLOW = { timeout: 4000 }
 
 function renderPersonnel(): void {
-  const router = createMemoryRouter([{ path: '/mi-personal', element: <PersonnelPage /> }], {
-    initialEntries: ['/mi-personal'],
+  const router = createMemoryRouter([{ path: '/my-staff', element: <PersonnelPage /> }], {
+    initialEntries: ['/my-staff'],
   })
   render(
     <Provider store={store}>

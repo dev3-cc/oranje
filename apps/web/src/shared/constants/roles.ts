@@ -17,7 +17,7 @@ export interface RoleLabel {
   title: string
 }
 
-/** El único rol que NO usa el shell del staff: su apartado es `/colaborador`. */
+/** El único rol que NO usa el shell del staff: su apartado es `/collaborator`. */
 export const WORKER_ROLE = 'ROL-C-01'
 
 /**

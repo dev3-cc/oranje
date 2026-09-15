@@ -54,7 +54,7 @@ const COLUMNS: ColumnDef<PoolWorker, unknown>[] = [
         )}
         {/* El nombre abre el Expediente: el detalle cuelga de la lista. */}
         <Link
-          to={`/pool-colaboradores/${row.original.id}`}
+          to={`/collaborator-pool/${row.original.id}`}
           onClick={(event) => {
             /* El nombre va al Expediente; la fila, al modal de edición. */
             event.stopPropagation()

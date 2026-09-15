@@ -119,7 +119,7 @@ export function Phase2Page(): ReactNode {
       {isSuccess && (
         <p className="rounded-md bg-green/10 px-4 py-3 text-sm text-ink-2">
           <Trans>Transporte guardado.</Trans>{' '}
-          <Link to="/colaborador/alta-3" className="font-semibold text-o-700 underline">
+          <Link to="/collaborator/signup-3" className="font-semibold text-o-700 underline">
             <Trans>Sigue con tu contacto de emergencia →</Trans>
           </Link>
         </p>

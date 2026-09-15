@@ -65,7 +65,7 @@ export function NewProposalDialog({
       await createDraft(prospectId).unwrap()
       toast.success('Borrador v1 abierto')
       onClose()
-      void navigate(`/pipeline/${prospectId}/propuesta`)
+      void navigate(`/pipeline/${prospectId}/proposal`)
     } catch {
       setPendingId(null)
     }

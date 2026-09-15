@@ -155,7 +155,7 @@ function Hero({
       {background}
       {identity}
       <Link
-        to="/colaborador/ponchar"
+        to="/collaborator/punch"
         className="flex touch-manipulation items-center gap-3 rounded-2xl bg-white/15 p-3 text-white backdrop-blur-sm transition-colors hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
       >
         <span className="min-w-0 flex-1">
@@ -242,7 +242,7 @@ export function HomePage(): ReactNode {
           tone="action"
           action={
             <Link
-              to="/colaborador/alta-2"
+              to="/collaborator/signup-2"
               className="inline-flex min-h-11 touch-manipulation items-center rounded-md bg-o-300 shadow-xs px-4 text-sm font-semibold text-ink transition-colors hover:bg-o-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-700"
             >
               <Trans>Completar mis datos</Trans>

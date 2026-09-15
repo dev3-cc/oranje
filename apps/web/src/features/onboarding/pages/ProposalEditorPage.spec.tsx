@@ -10,8 +10,8 @@ import { store } from '@/app/store'
 
 async function renderEditor(prospectId: string): Promise<void> {
   const router = createMemoryRouter(
-    [{ path: '/pipeline/:prospectId/propuesta', element: <ProposalEditorPage /> }],
-    { initialEntries: [`/pipeline/${prospectId}/propuesta`] },
+    [{ path: '/pipeline/:prospectId/proposal', element: <ProposalEditorPage /> }],
+    { initialEntries: [`/pipeline/${prospectId}/proposal`] },
   )
 
   render(

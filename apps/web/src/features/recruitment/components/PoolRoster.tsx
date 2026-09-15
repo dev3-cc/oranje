@@ -188,7 +188,7 @@ export function PoolRoster({
               >
                 Editar
               </Button>
-              <Link to={`/pool-colaboradores/${selected.id}`} className={buttonClass('primary')}>
+              <Link to={`/collaborator-pool/${selected.id}`} className={buttonClass('primary')}>
                 Ver Expediente
               </Link>
             </div>

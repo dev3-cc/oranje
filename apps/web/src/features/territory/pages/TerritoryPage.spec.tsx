@@ -15,8 +15,8 @@ import { store } from '@/app/store'
  * propósito: los fixtures repiten cinco hoteles como prospecto abierto y como
  * cliente convertido (ver el aviso en `onboardingMocks.ts`).
  */
-function renderTerritory(initialEntry = '/mi-territorio'): ReturnType<typeof createMemoryRouter> {
-  const router = createMemoryRouter([{ path: '/mi-territorio', element: <TerritoryPage /> }], {
+function renderTerritory(initialEntry = '/my-territory'): ReturnType<typeof createMemoryRouter> {
+  const router = createMemoryRouter([{ path: '/my-territory', element: <TerritoryPage /> }], {
     initialEntries: [initialEntry],
   })
 
@@ -60,7 +60,7 @@ describe('TerritoryPage', () => {
   })
 
   it('la búsqueda entra por la URL, y la URL sigue a la búsqueda', async () => {
-    const router = renderTerritory('/mi-territorio?q=carmen')
+    const router = renderTerritory('/my-territory?q=carmen')
 
     expect(screen.getByLabelText(SEARCH_LABEL)).toHaveValue('carmen')
     expect((await screen.findAllByText('Suites del Carmen')).length).toBeGreaterThan(0)
@@ -77,7 +77,7 @@ describe('TerritoryPage', () => {
   })
 
   it('«Quitar filtros» limpia búsqueda y zona, y la búsqueda se va de la URL', async () => {
-    const router = renderTerritory('/mi-territorio?q=carmen')
+    const router = renderTerritory('/my-territory?q=carmen')
     await screen.findAllByText('Suites del Carmen')
 
     await userEvent.click(screen.getByRole('button', { name: /^Sur\s*\d+$/ }))

@@ -46,7 +46,7 @@ export function ProposalVersionPage(): ReactNode {
         <p className="text-sm text-red">
           Esa versión de la propuesta no existe. Vuelve a Propuestas y elige otra.
         </p>
-        <Link to="/propuestas" className="text-sm font-semibold text-o-700 hover:underline">
+        <Link to="/proposals" className="text-sm font-semibold text-o-700 hover:underline">
           Volver a Propuestas
         </Link>
       </div>
@@ -59,7 +59,7 @@ export function ProposalVersionPage(): ReactNode {
   return (
     <div className="flex flex-col gap-6">
       <nav aria-label="Ruta" className="flex items-center gap-2 text-sm text-ink-3">
-        <Link to="/propuestas" className="hover:text-o-700">
+        <Link to="/proposals" className="hover:text-o-700">
           Propuestas
         </Link>
         <span aria-hidden>›</span>
@@ -96,7 +96,7 @@ export function ProposalVersionPage(): ReactNode {
             hotelAddress={workspace.hotelAddress}
             version={selected}
           />
-          <Link to={`/pipeline/${prospectId}/propuesta`} className={buttonClass('secondary')}>
+          <Link to={`/pipeline/${prospectId}/proposal`} className={buttonClass('secondary')}>
             Abrir en el editor
           </Link>
         </div>

@@ -250,7 +250,7 @@ export function HotelGlobeCard(): ReactNode {
   function openTerritory(spot: GlobeSpot): void {
     const [first] = spot.hotels
     const search = spot.hotels.length === 1 && first ? `?q=${encodeURIComponent(first.name)}` : ''
-    void navigate(`/mi-territorio${search}`)
+    void navigate(`/my-territory${search}`)
   }
 
   return (

@@ -95,7 +95,7 @@ export function PoolCardBoard({
                     <span className="min-w-0 flex-1">
                       {}
                       <Link
-                        to={`/pool-colaboradores/${worker.id}`}
+                        to={`/collaborator-pool/${worker.id}`}
                         onClick={(event) => {
                           event.stopPropagation()
                         }}

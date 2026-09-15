@@ -11,8 +11,8 @@ import { store } from '@/app/store'
 const SLOW = { timeout: 4000 }
 
 async function renderList(): Promise<void> {
-  const router = createMemoryRouter([{ path: '/contratos', element: <ContractListPage /> }], {
-    initialEntries: ['/contratos'],
+  const router = createMemoryRouter([{ path: '/contracts', element: <ContractListPage /> }], {
+    initialEntries: ['/contracts'],
   })
 
   render(
@@ -34,8 +34,8 @@ async function renderList(): Promise<void> {
  */
 describe('ContractListPage', { timeout: 20_000 }, () => {
   it('el intro explica de qué va la pantalla antes de entrar', async () => {
-    const router = createMemoryRouter([{ path: '/contratos', element: <ContractListPage /> }], {
-      initialEntries: ['/contratos'],
+    const router = createMemoryRouter([{ path: '/contracts', element: <ContractListPage /> }], {
+      initialEntries: ['/contracts'],
     })
     render(
       <Provider store={store}>
@@ -67,7 +67,7 @@ describe('ContractListPage', { timeout: 20_000 }, () => {
        de otra es el hotel y su foto, no una miniatura del papel. */
     const card = (await screen.findAllByRole('link'))
       .map((link) => link)
-      .find((link) => link.getAttribute('href')?.startsWith('/contratos/'))
+      .find((link) => link.getAttribute('href')?.startsWith('/contracts/'))
     expect(card).toBeDefined()
     /* El fondo del hotel: su foto de Places o, sin ella, el placeholder de marca. */
     expect((card as HTMLElement).querySelector('img')).not.toBeNull()
@@ -80,7 +80,7 @@ describe('ContractListPage', { timeout: 20_000 }, () => {
     const links = await screen.findAllByRole('link')
     const hrefs = links
       .map((link) => link.getAttribute('href'))
-      .filter((href): href is string => href?.startsWith('/contratos/') ?? false)
+      .filter((href): href is string => href?.startsWith('/contracts/') ?? false)
 
     expect(hrefs.length).toBeGreaterThanOrEqual(5)
     expect(new Set(hrefs).size).toBe(hrefs.length)
@@ -124,7 +124,7 @@ describe('ContractListPage', { timeout: 20_000 }, () => {
 
     await waitFor(() => {
       expect(
-        screen.getAllByRole('link').filter((l) => l.getAttribute('href')?.startsWith('/contratos/'))
+        screen.getAllByRole('link').filter((l) => l.getAttribute('href')?.startsWith('/contracts/'))
           .length,
       ).toBe(1)
     }, SLOW)
