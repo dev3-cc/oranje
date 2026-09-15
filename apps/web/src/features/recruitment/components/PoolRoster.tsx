@@ -200,14 +200,14 @@ export function PoolRoster({
               {canDelete && (
                 <button
                   type="button"
-                  aria-label={t`Eliminar colaborador`}
-                  title={t`Eliminar del Pool`}
+                  title={t`${selected.fullName} deja de verse en el Pool`}
                   onClick={() => {
                     setDeleting(selected)
                   }}
-                  className="cursor-pointer rounded-md p-2 text-ink-3 transition-colors hover:bg-red/10 hover:text-red"
+                  className="flex h-9 cursor-pointer items-center gap-1.5 rounded-md px-4 text-sm font-semibold text-ink-3 transition-colors hover:bg-red/10 hover:text-red"
                 >
-                  <MaterialIcon name="delete" className="text-xl" />
+                  <MaterialIcon name="delete" className="text-lg" aria-hidden />
+                  <Trans>Eliminar</Trans>
                 </button>
               )}
               <Button
