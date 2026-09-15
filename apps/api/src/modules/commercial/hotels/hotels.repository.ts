@@ -95,9 +95,12 @@ export class HotelsRepository {
        WHERE id = ${id}::uuid`
   }
 
-  async findByName(name: string): Promise<{ id: string } | null> {
+  async findByName(name: string, excludeId?: string): Promise<{ id: string } | null> {
     return this.prisma.hotel.findFirst({
-      where: { name: { equals: name, mode: 'insensitive' } },
+      where: {
+        name: { equals: name, mode: 'insensitive' },
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+      },
       select: { id: true },
     })
   }
