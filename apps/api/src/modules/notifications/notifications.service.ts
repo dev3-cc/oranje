@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client'
 import { v7 as uuidv7 } from 'uuid'
 
 import { PrismaService } from '../../infra/prisma/index.js'
+import { StorageService } from '../../infra/storage/index.js'
 
 import type { NotificationEvent } from './dto/event.dto.js'
 import type { QueryNotificationsDto, RegisterDeviceDto } from './dto/notifications.dto.js'
@@ -15,6 +16,8 @@ export interface NotificationEntity {
   title: string
   body: string
   entity: { type: string; id: string } | null
+  /** Quien lo disparo con su accion; null en avisos sin actor humano. */
+  actor: { id: string; fullName: string; photoUrl: string | null } | null
   createdAt: string
   readAt: string | null
 }
@@ -41,6 +44,7 @@ const SELECT = {
   createdAt: true,
   readAt: true,
   type: { select: { code: true, name: true, module: true } },
+  actor: { select: { id: true, fullName: true, photoPath: true } },
 } as const
 
 @Injectable()
@@ -49,6 +53,7 @@ export class NotificationsService {
     private readonly prisma: PrismaService,
     private readonly recipients: RecipientsService,
     private readonly push: PushService,
+    private readonly storage: StorageService,
   ) {}
 
   // El fan-out: una fila POR DESTINATARIO. Un evento con dos personas son dos
@@ -120,8 +125,10 @@ export class NotificationsService {
       this.prisma.notification.count({ where: { userId, readAt: null } }),
     ])
 
+    const photos = await this.signActorPhotos(rows)
+
     return {
-      data: rows.map(toEntity),
+      data: rows.map((row) => toEntity(row, photos)),
       meta: {
         page: query.page,
         limit: query.limit,
@@ -130,6 +137,19 @@ export class NotificationsService {
         unread,
       },
     }
+  }
+
+  // Se firman las rutas distintas, no una por fila: la misma persona
+  // disparando varios avisos en la pagina firma su foto una sola vez.
+  private async signActorPhotos(
+    rows: Array<{ actor: { photoPath: string | null } | null }>,
+  ): Promise<Map<string, string>> {
+    const paths = [
+      ...new Set(rows.flatMap((row) => (row.actor?.photoPath ? [row.actor.photoPath] : []))),
+    ]
+    const urls = await Promise.all(paths.map((path) => this.storage.signedUrl(path)))
+
+    return new Map(paths.map((path, index) => [path, urls[index] as string]))
   }
 
   // El badge de RF-C-09. Se consulta en cada apertura de la app, y por eso el
@@ -148,9 +168,11 @@ export class NotificationsService {
       })
     }
 
+    const photos = await this.signActorPhotos([row])
+
     // Marcarla dos veces no mueve la fecha: la primera es la que cuenta.
     if (row.readAt !== null) {
-      return toEntity(row)
+      return toEntity(row, photos)
     }
 
     return toEntity(
@@ -159,6 +181,7 @@ export class NotificationsService {
         data: { readAt: new Date() },
         select: SELECT,
       }),
+      photos,
     )
   }
 
@@ -249,6 +272,7 @@ export class NotificationsService {
           body: event.body,
           entityType: event.entity?.type ?? null,
           entityId: event.entity?.id ?? null,
+          actorUserId: event.actorUserId ?? null,
         },
       })
 
@@ -263,22 +287,33 @@ export class NotificationsService {
   }
 }
 
-function toEntity(row: {
-  id: string
-  title: string
-  body: string
-  entityType: string | null
-  entityId: string | null
-  createdAt: Date
-  readAt: Date | null
-  type: { code: string; name: string; module: string }
-}): NotificationEntity {
+function toEntity(
+  row: {
+    id: string
+    title: string
+    body: string
+    entityType: string | null
+    entityId: string | null
+    createdAt: Date
+    readAt: Date | null
+    type: { code: string; name: string; module: string }
+    actor: { id: string; fullName: string; photoPath: string | null } | null
+  },
+  photos: Map<string, string> = new Map(),
+): NotificationEntity {
   return {
     id: row.id,
     type: row.type,
     title: row.title,
     body: row.body,
     entity: row.entityType && row.entityId ? { type: row.entityType, id: row.entityId } : null,
+    actor: row.actor
+      ? {
+          id: row.actor.id,
+          fullName: row.actor.fullName,
+          photoUrl: row.actor.photoPath ? (photos.get(row.actor.photoPath) ?? null) : null,
+        }
+      : null,
     createdAt: row.createdAt.toISOString(),
     readAt: row.readAt?.toISOString() ?? null,
   }

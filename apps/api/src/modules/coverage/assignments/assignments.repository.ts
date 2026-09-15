@@ -86,6 +86,16 @@ export class AssignmentsRepository {
     })
   }
 
+  // Un colaborador puede tener más de una ACTIVA a la vez (RR-05 solo prohíbe
+  // horas que chocan, no dos hoteles): eliminarlo del Pool libera TODAS.
+  async activeAssignmentIdsOf(workerId: string): Promise<string[]> {
+    const rows = await this.prisma.assignment.findMany({
+      where: { workerId, status: 'ACTIVE' },
+      select: { id: true },
+    })
+    return rows.map((row) => row.id)
+  }
+
   async byId(id: string): Promise<AssignmentRow | null> {
     return this.prisma.assignment.findUnique({ where: { id }, select: SELECT })
   }

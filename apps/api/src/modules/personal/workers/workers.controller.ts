@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -13,6 +14,8 @@ import {
 
 import { CurrentUser, Requires } from '../../../common/decorators/index.js'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { AssignmentsService } from '../../coverage/assignments/assignments.service.js'
+import { CorporateEmailService } from '../../identity/users/corporate-email.service.js'
 
 import {
   ChangeStateDto,
@@ -25,7 +28,11 @@ import { TransitionOption, WorkerBoard, WorkersService } from './workers.service
 
 @Controller('workers')
 export class WorkersController {
-  constructor(private readonly workers: WorkersService) {}
+  constructor(
+    private readonly workers: WorkersService,
+    private readonly corporateEmail: CorporateEmailService,
+    private readonly assignments: AssignmentsService,
+  ) {}
 
   /**
    * Sin `@Requires`: dos permisos válidos con alcances distintos —
@@ -72,6 +79,36 @@ export class WorkersController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: WorkerEntity }> {
     return { data: await this.workers.update(id, dto, user) }
+  }
+
+  /**
+   * Solo el rol que ve el Pool y sus jefes (Reclutamiento). Sí se puede
+   * eliminar aunque siga trabajando (Hugo, 2026-09-15): primero se libera
+   * cada asignación ACTIVA suya —la misma acción que soltarlo a mano, así que
+   * la cobertura del slot se recalcula igual— y si tiene correo corporativo,
+   * se borra también su buzón en cPanel. Los dos son mejor esfuerzo: si
+   * cPanel no responde, el colaborador igual queda eliminado.
+   */
+  @Requires('recruitment', 'delete_worker')
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async delete(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<void> {
+    await this.assignments.releaseAllOf(id, 'Colaborador eliminado del Pool', user)
+
+    // Antes de eliminar: una vez que `deleted_at` se escribe, el colaborador
+    // deja de existir para `corporateEmailOf` y ya no se le podría encontrar
+    // el correo que hay que borrar.
+    try {
+      await this.corporateEmail.deleteMailbox(id)
+    } catch {
+      // Sin correo corporativo (lo normal) o cPanel no respondió: no bloquea
+      // eliminar al colaborador.
+    }
+
+    await this.workers.delete(id, user)
   }
 
   @Requires('recruitment', 'search_candidates')

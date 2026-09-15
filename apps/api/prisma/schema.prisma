@@ -260,9 +260,9 @@ model User {
   /// guarda — sería una credencial vencida.
   photoPath String? @map("photo_path") @db.Text
 
-  isActive Boolean @default(true) @map("is_active")
+  isActive     Boolean   @default(true) @map("is_active")
   /// Idioma de la interfaz (D-36): es | en. CHECK ck_user_locale en la migracion.
-  locale String @default("es") @db.Text
+  locale       String    @default("es") @db.Text
   /// Cuenta de transición (correo viejo, mismo colaborador que `legacyAccount`
   /// en Worker): a partir de esta fecha ya no puede iniciar sesión. Null =
   /// cuenta normal, sin vencimiento.
@@ -309,8 +309,9 @@ model User {
   daysReviewed       TimesheetDay[] @relation("timesheetDayReviewedBy")
   punchesRegistered  PunchMark[]    @relation("punchRegisteredBy")
 
-  notifications Notification[]
-  devices       Device[]
+  notifications          Notification[]
+  notificationsTriggered Notification[] @relation("notificationActor")
+  devices                Device[]
 
   accidentsReported  WorkAccident[] @relation("accidentReportedBy")
   accidentsInspected WorkAccident[] @relation("accidentInspector")
@@ -606,7 +607,9 @@ model Proposal {
   version      Int
   servicesNote String? @map("services_note") @db.Text
 
-  /// Tentativas y globales: no pagan ni facturan nada, eso lo hace el Contrato.
+  /// Tentativas y globales. En retirada: la propuesta cotiza por puesto en
+  /// `ProposalRate`; estas dos se quedan por las versiones anteriores y se van
+  /// en la migración de contraer.
   payRate  Decimal? @map("pay_rate") @db.Decimal(10, 4)
   billRate Decimal? @map("bill_rate") @db.Decimal(10, 4)
 
@@ -617,12 +620,47 @@ model Proposal {
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
 
-  prospect Prospect @relation(fields: [prospectId], references: [id], onDelete: Restrict)
-  sentBy   User?    @relation(fields: [sentByUserId], references: [id], onDelete: Restrict)
+  prospect Prospect       @relation(fields: [prospectId], references: [id], onDelete: Restrict)
+  sentBy   User?          @relation(fields: [sentByUserId], references: [id], onDelete: Restrict)
+  rates    ProposalRate[]
 
   @@id([id])
   @@unique([prospectId, version], map: "ux_proposal_prospect_version")
   @@map("proposal")
+  @@schema("commercial")
+}
+
+/// Un renglón del cuadro de tarifas de la propuesta: qué puesto, a cuánto se
+/// paga y a cuánto se factura. Es el ESPEJO de `ContractRate` porque el cuadro
+/// de la propuesta se convierte en el Exhibit "A" del Documento de T&C: al
+/// firmar se copia renglón por renglón.
+///
+/// El margen no es un porcentaje fijo — en el contrato real de Lithia Springs
+/// va de 26.75% a 30% según el puesto — así que el bill se captura, no se
+/// calcula.
+model ProposalRate {
+  id                String @db.Uuid
+  proposalId        String @map("proposal_id") @db.Uuid
+  catalogPositionId String @map("catalog_position_id") @db.Uuid
+
+  /// Lo que Oranje le paga al colaborador en ese puesto.
+  payRate  Decimal @map("pay_rate") @db.Decimal(10, 2)
+  /// Lo que el hotel le pagaría a Oranje. Nunca por debajo del pay (CHECK).
+  billRate Decimal @map("bill_rate") @db.Decimal(10, 2)
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  /// En cascada y no Restrict como el contrato: un borrador se descarta entero
+  /// y sus renglones no son historia mientras no se envíe.
+  proposal        Proposal        @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  catalogPosition CatalogPosition @relation(fields: [catalogPositionId], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@unique([proposalId, catalogPositionId], map: "ux_proposal_rate_position")
+  @@index([proposalId], map: "ix_proposal_rate_proposal")
+  @@index([catalogPositionId], map: "ix_proposal_rate_position")
+  @@map("proposal_rate")
   @@schema("commercial")
 }
 
@@ -665,6 +703,7 @@ model CatalogPosition {
   workers            Worker[]
 
   contractRates ContractRate[]
+  proposalRates ProposalRate[]
 
   workerRates          WorkerRate[]
   consolidationDetails ConsolidationDetail[]
@@ -942,10 +981,10 @@ model JournalEntry {
 /// la app. Una fila a medias ES el estado Blanco. Lo "obligatorio" es regla del
 /// formulario; la del negocio es el guard de Blanco -> Verde fuerte.
 model Worker {
-  id     String  @db.Uuid
+  id           String  @db.Uuid
   /// La cuenta con la que entra a la app. Nulable: la Fase 1 puede capturarse
   /// antes de que exista la cuenta de Firebase.
-  userId String? @unique(map: "ux_worker_user") @map("user_id") @db.Uuid
+  userId       String? @unique(map: "ux_worker_user") @map("user_id") @db.Uuid
   /// Migración del correo viejo (ej. el de otro sistema, antes de tener el
   /// corporativo): mientras exista y no haya vencido (`User.deprecatesAt`),
   /// también puede iniciar sesión con esta cuenta y llegar al mismo perfil.
@@ -1837,6 +1876,12 @@ model Notification {
   entityType String? @map("entity_type") @db.Text
   entityId   String? @map("entity_id") @db.Uuid
 
+  /// Quien lo disparo con su accion (Hugo, 2026-09-15): nulo en avisos sin
+  /// actor humano (SYSTEM). SI lleva llave foranea, a diferencia de
+  /// entity/entityId, porque apunta a identity.user y ese nunca se borra de
+  /// verdad (solo se desactiva) — no hay journal que proteger aqui.
+  actorUserId String? @map("actor_user_id") @db.Uuid
+
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   /// Cuando salio a FCM. El push es el aviso; la lista es el registro.
   pushedAt  DateTime? @map("pushed_at") @db.Timestamptz(6)
@@ -1844,8 +1889,9 @@ model Notification {
   /// NULO = no leida. Las no leidas no se borran nunca.
   readAt    DateTime? @map("read_at") @db.Timestamptz(6)
 
-  user User             @relation(fields: [userId], references: [id], onDelete: Restrict)
-  type NotificationType @relation(fields: [notificationTypeId], references: [id], onDelete: Restrict)
+  user  User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+  actor User?            @relation("notificationActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  type  NotificationType @relation(fields: [notificationTypeId], references: [id], onDelete: Restrict)
 
   @@id([id])
   @@index([userId, createdAt], map: "ix_notification_user_created")

@@ -1,7 +1,12 @@
 import { z } from 'zod'
 
 import { createZodDto } from '../../../../common/pipes/index.js'
-import { BLOOD_TYPES, RELATIONSHIPS, TRANSPORT_TYPES } from '../../workers/dto/create-worker.dto.js'
+import {
+  BLOOD_TYPES,
+  RELATIONSHIPS,
+  TRANSPORT_TYPES,
+  photoPath,
+} from '../../workers/dto/create-worker.dto.js'
 
 // Fases 2 y 3 (cambio del 2026-08-22). De la Fase 2 solo queda el TRANSPORTE:
 // posicion, modalidad, ingles y experiencia las decide Oranje y las captura la
@@ -13,6 +18,10 @@ import { BLOOD_TYPES, RELATIONSHIPS, TRANSPORT_TYPES } from '../../workers/dto/c
 export const completeSignupSchema = z
   .object({
     transportType: z.enum(TRANSPORT_TYPES).optional(),
+    // La foto: un expediente migrado puede llegar sin ella y hoy solo la
+    // Reclutadora la sube desde el Pool — el colaborador también debe poder
+    // subir la suya (Hugo, 2026-09-15).
+    photoPath: photoPath.optional(),
 
     emergencyContactName: z.string().trim().min(1).max(160).optional(),
     emergencyContactPhone: z.string().trim().min(7).max(32).optional(),

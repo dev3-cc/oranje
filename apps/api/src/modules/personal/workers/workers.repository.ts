@@ -153,6 +153,43 @@ export class WorkersRepository {
     return rows[0]?.existe ?? false
   }
 
+  // ¿Tiene alguna asignación ACTIVA, en cualquier hotel? Eliminar a alguien
+  // que ahora mismo está trabajando dejaría el turno sin nadie — se elimina
+  // solo a quien no está colgado de ninguna.
+  async hasActiveAssignment(workerId: string): Promise<boolean> {
+    const rows = await this.prisma.$queryRaw<Array<{ existe: boolean }>>`
+      SELECT EXISTS (
+        SELECT 1 FROM coverage.assignment a
+         WHERE a.worker_id = ${workerId}::uuid
+           AND a.status = 'ACTIVE') AS existe`
+
+    return rows[0]?.existe ?? false
+  }
+
+  // Nunca se borra la fila (journal, historial del semáforo, auditorías...
+  // todo cuelga de `worker_id`): `deleted_at` la saca del Pool y de toda
+  // consulta que use BASE, sin romper esas referencias.
+  async softDelete(params: { id: string; userId: string; roleCode: string }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.worker.update({
+        where: { id: params.id },
+        data: { deletedAt: new Date(), updatedAt: new Date() },
+      })
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'personal.worker',
+          entityId: params.id,
+          eventType: 'WORKER_DELETED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: {},
+        },
+      })
+    })
+  }
+
   async findMany(
     filter: WorkerFilter,
     /** Mi Personal: solo colaboradores con asignación ACTIVA en este hotel. */

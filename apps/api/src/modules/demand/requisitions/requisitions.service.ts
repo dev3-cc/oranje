@@ -11,6 +11,7 @@ import { requisitionStateLabel } from '../../../common/utils/status-labels.js'
 import { PlacesService } from '../../../infra/places/index.js'
 import { StorageService } from '../../../infra/storage/index.js'
 import { PermissionsService } from '../../identity/index.js'
+import { NotificationPublisherService } from '../../notifications/index.js'
 
 import type { CreateRequisitionDto } from './dto/create-requisition.dto.js'
 import type { QueryRequisitionsDto } from './dto/query-requisitions.dto.js'
@@ -50,6 +51,7 @@ export class RequisitionsService {
     private readonly permissions: PermissionsService,
     private readonly places: PlacesService,
     private readonly storage: StorageService,
+    private readonly notifications: NotificationPublisherService,
   ) {}
 
   async create(dto: CreateRequisitionDto, user: AuthenticatedUser): Promise<RequisitionEntity> {
@@ -373,7 +375,7 @@ export class RequisitionsService {
       })),
     )
 
-    return this.decorateOne(
+    const result = this.decorateOne(
       await this.repo.authorize({
         id,
         fromStateId: (await this.stateOf(REQUISITION_LIGHT, DRAFT)).id,
@@ -384,6 +386,27 @@ export class RequisitionsService {
         roleCode: user.roleCode,
       }),
     )
+
+    // REQ_AUTHORIZED (catálogo de notificaciones): avisa a quien la creó —
+    // normalmente el Supervisor — que ya está firmada (RF-H-05). Primer
+    // evento de negocio que de verdad se publica; el resto del catálogo
+    // (56 tipos) se conecta progresivamente, no todo de una vez.
+    if (row.createdBy) {
+      try {
+        await this.notifications.publish({
+          type: 'REQ_AUTHORIZED',
+          title: 'Requisición autorizada',
+          body: `${row.number} ya está autorizada y lista para Reclutamiento.`,
+          entity: { type: 'demand.requisition', id },
+          actorUserId: user.id,
+          audience: [{ kind: 'USER', userId: row.createdBy }],
+        })
+      } catch {
+        // Mejor esfuerzo: que Pub/Sub no responda no revierte la firma.
+      }
+    }
+
+    return result
   }
 
   /** Quien trae departamento (Supervisor, Manager de Área) solo toca requisiciones cuyas posiciones son de él. */

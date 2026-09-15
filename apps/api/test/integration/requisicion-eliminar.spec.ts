@@ -27,6 +27,7 @@ const requisitions = new RequisitionsService(
   new PermissionsService(prisma),
   new PlacesService({ get: () => undefined } as never),
   { signedUrl: (): Promise<null> => Promise.resolve(null) } as never,
+  { publish: (): Promise<void> => Promise.resolve() } as never,
 )
 
 let hotelId: string
