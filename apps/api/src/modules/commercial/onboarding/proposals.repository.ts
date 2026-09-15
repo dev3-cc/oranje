@@ -14,7 +14,23 @@ const SELECT = {
   createdAt: true,
   updatedAt: true,
   sentBy: { select: { id: true, fullName: true } },
+  rates: {
+    orderBy: { catalogPosition: { name: 'asc' } },
+    select: {
+      id: true,
+      payRate: true,
+      billRate: true,
+      catalogPosition: { select: { id: true, code: true, name: true } },
+    },
+  },
 } as const
+
+export type RateRow = {
+  id: string
+  payRate: Prisma.Decimal
+  billRate: Prisma.Decimal
+  catalogPosition: { id: string; code: string; name: string }
+}
 
 export type ProposalRow = {
   id: string
@@ -26,11 +42,27 @@ export type ProposalRow = {
   createdAt: Date
   updatedAt: Date | null
   sentBy: { id: string; fullName: string } | null
+  rates: RateRow[]
 }
+
+/** Lo que se guarda de un renglón del cuadro. */
+export type RateInput = { catalogPositionId: string; payRate: string; billRate: string }
 
 @Injectable()
 export class ProposalsRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  /** Qué ids del catálogo existen de verdad, para no guardar un puesto fantasma. */
+  async positionsExist(ids: string[]): Promise<Set<string>> {
+    if (ids.length === 0) return new Set()
+
+    const rows = await this.prisma.catalogPosition.findMany({
+      where: { id: { in: ids } },
+      select: { id: true },
+    })
+
+    return new Set(rows.map((r) => r.id))
+  }
 
   async prospect(id: string): Promise<{
     id: string
@@ -106,6 +138,7 @@ export class ProposalsRepository {
   async create(params: {
     prospectId: string
     servicesNote: string | null
+    rates: RateInput[]
     payRate: string | null
     billRate: string | null
     userId: string
@@ -133,6 +166,8 @@ export class ProposalsRepository {
         },
       })
 
+      await insertRates(tx, id, params.rates)
+
       await tx.journalEntry.create({
         data: {
           id: uuidv7(),
@@ -141,7 +176,7 @@ export class ProposalsRepository {
           eventType: 'PROPOSAL_DRAFTED',
           actorUserId: params.userId,
           actorRole: params.roleCode,
-          payload: { proposalId: id, version },
+          payload: { proposalId: id, version, rates: params.rates.length },
         },
       })
     })
@@ -211,6 +246,8 @@ export class ProposalsRepository {
     prospectId: string
     proposalId: string
     servicesNote: string | null
+    /** `null` = el PATCH no trae cuadro, así que el guardado no lo toca. */
+    rates: RateInput[] | null
     payRate: string | null
     billRate: string | null
     userId: string
@@ -227,6 +264,15 @@ export class ProposalsRepository {
         },
       })
 
+      /* El cuadro se reemplaza entero: editar un renglón, quitar uno y agregar
+         otro son el mismo gesto, y así el guardado no depende del orden. Pero
+         solo si el PATCH lo trae: una edición que manda únicamente la nota de
+         servicios no puede dejar la propuesta sin tarifas. */
+      if (params.rates !== null) {
+        await tx.proposalRate.deleteMany({ where: { proposalId: params.proposalId } })
+        await insertRates(tx, params.proposalId, params.rates)
+      }
+
       await tx.journalEntry.create({
         data: {
           id: uuidv7(),
@@ -235,7 +281,7 @@ export class ProposalsRepository {
           eventType: 'PROPOSAL_UPDATED',
           actorUserId: params.userId,
           actorRole: params.roleCode,
-          payload: { proposalId: params.proposalId },
+          payload: { proposalId: params.proposalId, rates: params.rates?.length ?? null },
         },
       })
     })
@@ -244,5 +290,20 @@ export class ProposalsRepository {
       where: { id: params.proposalId },
       select: SELECT,
     })
+  }
+}
+
+/** Los renglones se insertan en la misma transacción que la propuesta. */
+async function insertRates(
+  tx: Prisma.TransactionClient,
+  proposalId: string,
+  rates: RateInput[],
+): Promise<void> {
+  for (const r of rates) {
+    await tx.$executeRaw`
+      INSERT INTO commercial.proposal_rate
+        (id, proposal_id, catalog_position_id, pay_rate, bill_rate)
+      VALUES (${uuidv7()}::uuid, ${proposalId}::uuid, ${r.catalogPositionId}::uuid,
+              ${r.payRate}::numeric, ${r.billRate}::numeric)`
   }
 }
