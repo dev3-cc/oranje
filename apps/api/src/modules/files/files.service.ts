@@ -23,8 +23,13 @@ interface PurposeConfig {
 const CONFIG: Record<Purpose, PurposeConfig> = {
   WORKER_PHOTO: {
     folder: 'workers/photo',
-    // La captura la Reclutadora en la entrevista (Fase 1), no el colaborador.
-    allow: [{ module: 'recruitment', action: 'update_worker' }],
+    allow: [
+      // La captura normalmente la Reclutadora en la entrevista (Fase 1)...
+      { module: 'recruitment', action: 'update_worker' },
+      // ...pero un expediente puede llegar sin foto (migrado, por ejemplo) y
+      // el colaborador también debe poder subir la suya desde /empleado.
+      { module: 'worker', action: 'complete_signup' },
+    ],
     maxSide: 512,
     quality: 80,
     allowsPdf: false,

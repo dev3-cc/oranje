@@ -9,7 +9,20 @@ import importX from 'eslint-plugin-import-x'
  *   sin console.log · orden de imports · sin dependencias circulares.
  */
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/build/**', '**/coverage/**', '**/*.config.*'] },
+  {
+    // `**/coverage/**` se comía apps/api/src/modules/coverage — uno de los
+    // diez módulos de D-01, no un reporte de Jest — y ese módulo nunca se
+    // había lintado. Anclado como ya está `.gitignore` (mismo bug, tercera
+    // vez que aparece): solo el reporte real, en la raíz de cada paquete.
+    ignores: [
+      '**/dist/**',
+      '**/build/**',
+      'coverage/**',
+      'apps/*/coverage/**',
+      'packages/*/coverage/**',
+      '**/*.config.*',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {

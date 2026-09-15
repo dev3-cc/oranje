@@ -727,6 +727,12 @@ const RECRUITMENT: Permission[] = [
   },
   {
     module: 'recruitment',
+    action: 'delete_worker',
+    label: 'Eliminar colaborador del Pool',
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER],
+  },
+  {
+    module: 'recruitment',
     action: 'validate_signup',
     label: 'Validar alta en app (Fase 2)',
     roles: [RECRUITER, GROUP_LEAD, SYS],

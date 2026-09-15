@@ -31,6 +31,7 @@ const requisitions = new RequisitionsService(
   new PermissionsService(prisma),
   places,
   storage,
+  { publish: (): Promise<void> => Promise.resolve() } as never,
 )
 
 let departmentId: string

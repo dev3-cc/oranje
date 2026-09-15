@@ -5,6 +5,7 @@ import { CPanelModule } from './infra/cpanel/index.js'
 import { HealthModule } from './infra/health/index.js'
 import { PlacesModule } from './infra/places/index.js'
 import { PrismaModule } from './infra/prisma/index.js'
+import { PubSubModule } from './infra/pubsub/index.js'
 import { StorageModule } from './infra/storage/index.js'
 import { CatalogsModule } from './modules/catalogs/index.js'
 import { CommercialModule } from './modules/commercial/index.js'
@@ -23,6 +24,7 @@ import { SupervisionModule } from './modules/supervision/index.js'
     ConfigModule,
     PrismaModule,
     StorageModule,
+    PubSubModule,
     PlacesModule,
     CPanelModule,
     HealthModule,
