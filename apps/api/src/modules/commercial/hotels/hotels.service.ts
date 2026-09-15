@@ -85,8 +85,8 @@ export class HotelsService {
       await this.assertZone(dto.zoneId)
     }
 
-    if (dto.name !== undefined && dto.name.toLowerCase() !== current.name.toLowerCase()) {
-      await this.assertNameAvailable(dto.name)
+    if (dto.name !== undefined) {
+      await this.assertNameAvailable(dto.name, id)
     }
 
     if (dto.latitude !== undefined && dto.longitude !== undefined) {
@@ -231,8 +231,11 @@ export class HotelsService {
     }
   }
 
-  private async assertNameAvailable(name: string): Promise<void> {
-    if (await this.repo.findByName(name)) {
+  // `excludeId` es el propio hotel al editar: sin esto, guardar sin tocar el
+  // nombre (o con un nombre que solo cambió en espacios/acentos al volver del
+  // formulario) choca contra sí mismo y HOTEL_NAME_TAKEN sale falso.
+  private async assertNameAvailable(name: string, excludeId?: string): Promise<void> {
+    if (await this.repo.findByName(name, excludeId)) {
       throw new ConflictException({
         code: 'HOTEL_NAME_TAKEN',
         message: `Ya existe un hotel llamado ${name}`,
