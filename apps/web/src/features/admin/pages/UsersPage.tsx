@@ -19,6 +19,7 @@ import {
 import type { StaffUser } from '../types/admin.types'
 
 import personajeConfiguracion from '@/assets/ilustrations/personaje-configuracion.svg'
+import fotoEquipo from '@/assets/ilustrations/usuarios-equipo.webp'
 import { Button } from '@/shared/components/Button'
 import { FilterReset } from '@/shared/components/FilterReset'
 import { FilterSelect } from '@/shared/components/FilterSelect'
@@ -62,12 +63,16 @@ export function UsersPage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-5">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-[22px] font-bold text-ink">
+      {/* Cabecera-tarjeta como las demás secciones. Esta foto va COMPLETA (es un
+          círculo visto desde abajo: recortada quedaría un anillo hueco), a la
+          derecha, a todo el alto y disuelta hacia la tarjeta por la izquierda.
+          Las pestañas de ámbito bajan al bloque de texto. */}
+      <header className="relative flex items-end justify-between gap-4 overflow-hidden rounded-2xl border border-line bg-gradient-to-r from-o-50 via-surface to-surface px-6 pt-5 pb-5 sm:min-h-52 sm:pr-96">
+        <div className="relative z-10">
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
             <Trans>Usuarios del sistema</Trans>
           </h1>
-          <p className="mt-1 text-sm text-ink-3">
+          <p className="mt-1.5 max-w-xl text-sm text-ink-3">
             {IS_DEV_UI ? (
               scope === 'staff' ? (
                 'identity.user · personal interno de Oranje · users:manage — solo el Administrador (ROL-ADM-01)'
@@ -86,33 +91,39 @@ export function UsersPage(): ReactNode {
               <Trans>Los colaboradores con correo corporativo, y si su buzón real ya existe.</Trans>
             )}
           </p>
+          <div
+            role="tablist"
+            aria-label={t`Ámbito`}
+            className="mt-4 flex w-fit gap-1 rounded-xl bg-surface-2 p-1"
+          >
+            {SCOPES.map(([key, label, icon]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={scope === key}
+                onClick={() => {
+                  setScope(key)
+                }}
+                className={cn(
+                  'flex cursor-pointer items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs transition-colors',
+                  scope === key
+                    ? 'border border-line bg-surface font-semibold text-ink'
+                    : 'text-ink-3 hover:text-ink',
+                )}
+              >
+                <MaterialIcon name={icon} className="text-base" aria-hidden />
+                {i18n._(label)}
+              </button>
+            ))}
+          </div>
         </div>
-        <div
-          role="tablist"
-          aria-label={t`Ámbito`}
-          className="flex w-fit gap-1 rounded-xl bg-surface-2 p-1"
-        >
-          {SCOPES.map(([key, label, icon]) => (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={scope === key}
-              onClick={() => {
-                setScope(key)
-              }}
-              className={cn(
-                'flex cursor-pointer items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs transition-colors',
-                scope === key
-                  ? 'border border-line bg-surface font-semibold text-ink'
-                  : 'text-ink-3 hover:text-ink',
-              )}
-            >
-              <MaterialIcon name={icon} className="text-base" aria-hidden />
-              {i18n._(label)}
-            </button>
-          ))}
-        </div>
+        <img
+          src={fotoEquipo}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-auto object-cover object-right sm:block"
+        />
       </header>
 
       {scope === 'staff' ? (

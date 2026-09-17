@@ -6022,10 +6022,6 @@ msgstr "Máximo 999 personas por posición"
 msgid "Medio tiempo"
 msgstr "Medio tiempo"
 
-#: src/features/requisitions/pages/RequisitionBoardPage.tsx
-msgid "menos de 72 h para el inicio"
-msgstr "menos de 72 h para el inicio"
-
 #: src/features/timesheet/components/TimesheetViewControls.tsx
 msgid "Mes"
 msgstr "Mes"
@@ -7319,6 +7315,10 @@ msgstr "Para convertir a Naranja primero debe existir el Usuario del Hotel: cré
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Para crear: {0}."
 msgstr "Para crear: {0}."
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "para el inicio"
+msgstr "para el inicio"
 
 #: src/features/requisitions/utils/coverage.ts
 msgid "parcial"

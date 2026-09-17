@@ -14,6 +14,7 @@ import { useGetSelfPickBoardQuery } from '../api/selfPickApi'
 import type { SelfPickRow } from '../types/selfPick.types'
 
 import personajeComencemos from '@/assets/ilustrations/personaje-comencemos.svg'
+import fotoEquipo from '@/assets/ilustrations/selfpick-equipo.webp'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { FilterReset } from '@/shared/components/FilterReset'
 import { FilterSelect } from '@/shared/components/FilterSelect'
@@ -72,21 +73,33 @@ export function SelfPickPage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-5">
-      <header>
-        <h1 className="text-2xl font-bold text-ink">
-          <Trans>Bolsa · Self-Pick</Trans>
-        </h1>
-        <p className="mt-1 text-sm text-ink-3">
-          <Trans>
-            <Plural value={board.totalFreeSlots} one="# slot libre" other="# slots libres" /> en{' '}
-            <Plural
-              value={board.totalRequisitions}
-              one="# requisición autorizada"
-              other="# requisiciones autorizadas"
-            />
-          </Trans>
-          {IS_DEV_UI && <code className="text-xs text-ink-4"> · demand.slot vía coverage</code>}
-        </p>
+      {/* Misma cabecera-tarjeta que Conversión, Contratos y Propuestas: título
+          a la izquierda, la foto (recortada, sin fondo) sentada en el borde
+          inferior y sobresaliendo por arriba; el `clip-path` de la tarjeta la
+          recorta con las esquinas redondeadas y deja 3rem arriba. */}
+      <header className="relative flex items-end justify-between gap-4 rounded-2xl border border-line bg-gradient-to-r from-o-50 via-surface to-surface px-6 pt-5 pb-5 [clip-path:inset(-3rem_0_0_0_round_1rem)] sm:mt-8 sm:min-h-44 sm:pr-72">
+        <div className="relative z-10">
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
+            <Trans>Bolsa · Self-Pick</Trans>
+          </h1>
+          <p className="mt-1.5 max-w-xl text-sm text-ink-3">
+            <Trans>
+              <Plural value={board.totalFreeSlots} one="# slot libre" other="# slots libres" /> en{' '}
+              <Plural
+                value={board.totalRequisitions}
+                one="# requisición autorizada"
+                other="# requisiciones autorizadas"
+              />
+            </Trans>
+            {IS_DEV_UI && <code className="text-xs text-ink-4"> · demand.slot vía coverage</code>}
+          </p>
+        </div>
+        <img
+          src={fotoEquipo}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute -right-2 -bottom-1 hidden h-[calc(100%+2.5rem)] w-auto object-contain object-bottom drop-shadow-[0_10px_18px_rgba(60,30,0,0.26)] sm:block"
+        />
       </header>
 
       <p className="flex items-start gap-2.5 rounded-lg bg-o-50 px-4 py-3 text-sm leading-relaxed text-ink-2">
