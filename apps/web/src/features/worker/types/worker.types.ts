@@ -54,7 +54,8 @@ export interface AccessDeadlinesApi {
 /** `GET /workers/me`: mi expediente completo (misma entidad que /workers/:id) + los plazos. */
 export type MyProfile = WorkerApi & {
   taxDeadline: TaxDeadlineApi
-  accessDeadlines: AccessDeadlinesApi
+  /** Opcional en el tipo a propósito: un API sin este campo no debe tumbar la app. */
+  accessDeadlines?: AccessDeadlinesApi
   legacyAccess: LegacyAccessApi | null
 }
 

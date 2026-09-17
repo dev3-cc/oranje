@@ -110,9 +110,12 @@ export function MobileShell(): ReactNode {
      bloquean todo menos lo que los levanta. Cambiar la contraseña va inline;
      completar los datos vive en Mis datos, así que esas dos rutas siguen
      abiertas y el resto ve el interceptor. */
-  const isPasswordOverdue = profile?.accessDeadlines.password.status === 'OVERDUE'
+  /* `accessDeadlines` con `?.`: un API anterior a este cambio (o el deploy del
+     front llegando antes que el del API) no lo manda, y sin él la app no
+     puede quedarse en blanco: simplemente no hay plazos que cobrar. */
+  const isPasswordOverdue = profile?.accessDeadlines?.password.status === 'OVERDUE'
   const isProfileOverdue =
-    profile?.accessDeadlines.profile.status === 'OVERDUE' &&
+    profile?.accessDeadlines?.profile.status === 'OVERDUE' &&
     !location.pathname.startsWith('/collaborator/signup-')
 
   /** El contador viene del `meta.unread` del board, no de contar la página. */
