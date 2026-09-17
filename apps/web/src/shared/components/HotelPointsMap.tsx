@@ -187,7 +187,15 @@ export function HotelPointsMap({
             <Map
               defaultCenter={DEFAULT_MAP_CENTER}
               defaultZoom={DEFAULT_MAP_ZOOM}
-              gestureHandling="greedy"
+              /*
+                `cooperative`, no `greedy`: este mapa vive dentro de una página
+                que hace scroll (Clientes Activos, Mi Territorio), no en un
+                paso de diálogo aislado. Con `greedy` un scroll normal del
+                mouse lo interpreta como "hacer zoom" y atrapa el gesto en vez
+                de dejarlo pasar a la página (mismo criterio que
+                `HotelLocationMap`: `greedy` solo cuando el mapa ES el paso).
+              */
+              gestureHandling="cooperative"
               disableDefaultUI
               clickableIcons={false}
               styles={HIDE_POI_MAP_STYLES}
