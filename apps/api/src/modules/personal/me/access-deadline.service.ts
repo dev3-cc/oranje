@@ -46,9 +46,14 @@ export class AccessDeadlineService {
       select: { tempPasswordIssuedAt: true },
     })
     const rows = await this.prisma.$queryRaw<
-      Array<{ profileDueAt: Date | null; isProfileComplete: boolean }>
+      Array<{ profileDueAt: Date | null; ownPartMissing: boolean }>
     >`
-      SELECT profile_due_at AS "profileDueAt", is_profile_complete AS "isProfileComplete"
+      SELECT profile_due_at AS "profileDueAt",
+             (transport_type IS NULL
+              OR emergency_contact_name IS NULL
+              OR emergency_contact_phone IS NULL
+              OR emergency_contact_relationship IS NULL
+              OR blood_type IS NULL) AS "ownPartMissing"
         FROM personal.vw_worker
        WHERE (user_id = ${userId}::uuid OR legacy_user_id = ${userId}::uuid)
          AND deleted_at IS NULL
@@ -57,12 +62,13 @@ export class AccessDeadlineService {
 
     return {
       password: deadlineFrom(user?.tempPasswordIssuedAt ?? null, GRACE_DAYS, now),
-      // El plazo se queda escrito aunque despues se complete: lo que decide si
-      // aplica es `is_profile_complete`, la unica fuente.
-      profile:
-        worker && !worker.isProfileComplete
-          ? deadlineFrom(worker.profileDueAt, 0, now)
-          : { status: 'NONE', day: null, dueAt: null },
+      // El plazo se queda escrito aunque despues se complete. Al colaborador
+      // se le cobra SOLO por su parte (Fases 2 y 3): lo de la Fase 1 lo
+      // completa Reclutamiento con «Editar» y no puede bloquearle el acceso
+      // por algo que no esta en su mano.
+      profile: worker?.ownPartMissing
+        ? deadlineFrom(worker.profileDueAt, 0, now)
+        : { status: 'NONE', day: null, dueAt: null },
     }
   }
 
