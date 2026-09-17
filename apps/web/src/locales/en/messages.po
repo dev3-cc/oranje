@@ -372,6 +372,11 @@ msgstr "{0} of {1} with a mailbox"
 msgid "{0} de la meta"
 msgstr "{0} of the target"
 
+#. placeholder {0}: selected.fullName
+#: src/features/recruitment/components/PoolRoster.tsx
+msgid "{0} deja de verse en el Pool"
+msgstr "{0} is no longer shown in the Pool"
+
 #. placeholder {0}: String(portfolio.total)
 #: src/features/clients/pages/ClientPortfolioPage.tsx
 msgid "{0} en cartera"
@@ -966,6 +971,10 @@ msgstr "Authorizing sets the urgency based on the start date"
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
 msgid "Al autorizar, la urgencia se calcula contra la fecha de inicio: {start} {daysAhead, plural, one {está a # día} other {está a # días}}, así que {positionCount, plural, one {la posición nace} other {las # posiciones nacen}} en {color} ({label})"
 msgstr "When you authorize, urgency is measured against the start date: {start} {daysAhead, plural, one {is # day away} other {is # days away}}, so {positionCount, plural, one {the position starts} other {the # positions start}} in {color} ({label})"
+
+#: src/features/conversion/components/ApproveConversionDialog.tsx
+msgid "Al convertirlo"
+msgstr "When you convert it"
 
 #: src/features/admin/components/HotelUserFormDialog.tsx
 msgid "Al crear la cuenta, la persona recibe un correo de invitación y establece su contraseña."
@@ -2342,9 +2351,17 @@ msgstr "Conversions this quarter"
 msgid "Convertidos"
 msgstr "Converted"
 
+#: src/features/conversion/components/ApproveConversionDialog.tsx
+msgid "Convertir en cliente"
+msgstr "Convert to client"
+
 #: src/features/onboarding/pages/ProspectDetailPage.tsx
 msgid "Convertir es del BDC"
 msgstr "Converting is the BDC's job"
+
+#: src/features/conversion/components/ApproveConversionDialog.tsx
+msgid "Convirtiendo…"
+msgstr "Converting…"
 
 #: src/shared/constants/workerEnums.ts
 msgid "Cónyuge"
@@ -3103,6 +3120,10 @@ msgstr "The commercial cycle"
 msgid "El ciclo comercial del hotel: de prospecto a cliente."
 msgstr "The hotel's commercial cycle: from Prospect to client."
 
+#: src/features/conversion/components/ApproveConversionDialog.tsx
+msgid "El ciclo comercial se cierra aquí: de Naranja no se regresa. Si más adelante el hotel se pausa, se le marca como inactivo, pero el ciclo no vuelve a abrirse."
+msgstr "The sales cycle ends here: there is no way back from Orange. If the hotel is paused later on, it gets marked inactive, but the cycle never reopens."
+
 #: src/features/onboarding/components/ArchiveCycleDialog.tsx
 msgid "El ciclo de {hotelName} se cierra definitivamente y el hotel queda libre para un ciclo nuevo."
 msgstr "{hotelName}'s cycle closes for good and the hotel is free for a new one."
@@ -3167,8 +3188,8 @@ msgid "El día tiene una anomalía sin resolver{0}: revisa las marcas y explica 
 msgstr "This day has an unresolved anomaly{0}: check the punches and explain the resolution in the note."
 
 #: src/features/onboarding/pages/ProspectDetailPage.tsx
-msgid "El Documento de T&C ya se negocia. El BDC aprueba la conversión desde Conversión y el hotel pasa a Naranja, listo para pedir personal."
-msgstr "The T&C document is already being negotiated. The BDC approves the conversion from Conversion and the hotel moves to Orange, ready to request staff."
+msgid "El Documento de T&C ya se negocia. El BDC aprueba la conversión desde <0>Conversión</0> y el hotel pasa a Naranja, listo para pedir personal."
+msgstr "The T&C document is already being negotiated. The BDC approves the conversion from <0>Conversion</0> and the hotel turns Orange, ready to request staff."
 
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "El edificio"
@@ -3679,6 +3700,7 @@ msgid "Eliminando…"
 msgstr "Deleting…"
 
 #: src/features/admin/pages/CorporateEmailPage.tsx
+#: src/features/recruitment/components/PoolRoster.tsx
 msgid "Eliminar"
 msgstr "Delete"
 
@@ -3695,17 +3717,12 @@ msgid "Eliminar buzón"
 msgstr "Delete mailbox"
 
 #: src/features/recruitment/components/DeleteWorkerDialog.tsx
-#: src/features/recruitment/components/PoolRoster.tsx
 msgid "Eliminar colaborador"
 msgstr "Delete Collaborator"
 
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 msgid "Eliminar contacto"
 msgstr "Delete contact"
-
-#: src/features/recruitment/components/PoolRoster.tsx
-msgid "Eliminar del Pool"
-msgstr "Remove from the Pool"
 
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Eliminar departamento"
@@ -6641,6 +6658,10 @@ msgstr "We couldn't correct the attempt. Only the person who logged it can."
 msgid "No se pudo crear el contrato. Revisa los datos e inténtalo de nuevo."
 msgstr "The contract could not be created. Check the details and try again."
 
+#: src/features/conversion/pages/ConversionPage.tsx
+msgid "No se pudo crear la cuenta del hotel. Inténtalo de nuevo."
+msgstr "The hotel account could not be created. Try again."
+
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "No se pudo descartar el borrador. Inténtalo de nuevo."
 msgstr "We couldn't discard the draft. Try again."
@@ -8051,6 +8072,7 @@ msgstr "Role"
 msgid "Rosa"
 msgstr "Pink"
 
+#: src/features/conversion/components/ApproveConversionDialog.tsx
 #: src/features/team/pages/TeamPage.tsx
 msgid "Rosa → Naranja"
 msgstr "Pink → Orange"
@@ -8296,6 +8318,10 @@ msgstr "Yes, delete"
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Sí, cancelar borrador"
 msgstr "Yes, cancel draft"
+
+#: src/features/conversion/components/ApproveConversionDialog.tsx
+msgid "Sí, convertir en cliente"
+msgstr "Yes, convert to client"
 
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/components/UserFormDialog.tsx
@@ -9104,6 +9130,7 @@ msgid "Todavía nadie tiene correo corporativo asignado."
 msgstr "No one has a company email yet."
 
 #: src/features/contracts/components/ActivateContractDialog.tsx
+#: src/features/conversion/components/ApproveConversionDialog.tsx
 msgid "Todavía no"
 msgstr "Not yet"
 
@@ -9923,6 +9950,10 @@ msgstr "A hotel with that name already exists: pick “Hotel already registered�
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
 msgid "Ya existe un reactivo con ese texto en esta auditoría."
 msgstr "A checklist item with that text already exists in this audit."
+
+#: src/features/conversion/pages/ConversionPage.tsx
+msgid "Ya existe un usuario con ese correo."
+msgstr "A user with that email already exists."
 
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Ya existe una fila con ese nombre en este catálogo."

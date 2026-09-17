@@ -4,7 +4,7 @@ import { Link } from 'react-router'
 
 import { useGetConversionQueueQuery, useGetRecentConversionsQuery } from '../api/conversionApi'
 
-import conversionIllustration from '@/assets/ilustrations/conversion_naranja.svg'
+import fotoEquipo from '@/assets/ilustrations/conversion-equipo.webp'
 import { ProspectCard } from '@/features/onboarding'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { EmptyState } from '@/shared/components/EmptyState'
@@ -39,8 +39,15 @@ export function ConversionQueuePage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex items-end justify-between gap-4">
-        <div>
+      {/* Cabecera en contenedor: título a la izquierda y la foto del equipo
+          (recortada, sin fondo, con la mesa) sentada en el borde inferior y
+          SOBRESALIENDO por arriba de la tarjeta, con sombra: efecto 3D. El
+          `mt` deja aire para lo que asoma. En vez de `overflow-hidden`, un
+          `clip-path` en la propia tarjeta: recorta la foto (y su sombra) con
+          las esquinas redondeadas de abajo y los lados —queda pegada al borde
+          por construcción— y deja 3rem libres arriba para lo que sobresale. */}
+      <header className="relative flex items-end justify-between gap-4 rounded-2xl border border-line bg-gradient-to-r from-o-50 via-surface to-surface px-6 pt-5 pb-5 [clip-path:inset(-3rem_0_0_0_round_1rem)] sm:mt-8 sm:min-h-44 sm:pr-96">
+        <div className="relative z-10">
           <h1 className="text-3xl font-bold tracking-tight text-ink">
             <FoldText text={t`Conversión`} />
           </h1>
@@ -57,10 +64,10 @@ export function ConversionQueuePage(): ReactNode {
           </p>
         </div>
         <img
-          src={conversionIllustration}
+          src={fotoEquipo}
           alt=""
           aria-hidden
-          className="hidden h-20 w-auto sm:block"
+          className="pointer-events-none absolute -right-4 -bottom-2 hidden h-[calc(100%+2.5rem)] w-auto object-contain object-bottom drop-shadow-[0_10px_18px_rgba(60,30,0,0.26)] sm:block"
         />
       </header>
 

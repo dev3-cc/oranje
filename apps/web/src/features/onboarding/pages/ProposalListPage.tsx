@@ -6,6 +6,7 @@ import { NewProposalDialog } from '../components/NewProposalDialog'
 
 import { ProposalEditorPage } from './ProposalEditorPage'
 
+import fotoEquipo from '@/assets/ilustrations/propuestas-equipo.webp'
 import { Button } from '@/shared/components/Button'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
@@ -35,27 +36,40 @@ export function ProposalListPage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+      {/* Misma cabecera-tarjeta que Conversión y Contratos: título a la
+          izquierda, la foto del equipo (recortada, sin fondo) sentada en el
+          borde inferior y sobresaliendo por arriba; el `clip-path` de la
+          tarjeta la recorta con las esquinas redondeadas y deja 3rem arriba.
+          El botón de crear baja al bloque de texto. */}
+      <header className="relative flex items-end justify-between gap-4 rounded-2xl border border-line bg-gradient-to-r from-o-50 via-surface to-surface px-6 pt-5 pb-5 [clip-path:inset(-3rem_0_0_0_round_1rem)] sm:mt-8 sm:min-h-44 sm:pr-80">
+        <div className="relative z-10">
           <h1 className="text-3xl font-bold tracking-tight text-ink">
             <FoldText text={t`Propuestas`} />
           </h1>
-          <p className="mt-1.5 text-sm text-ink-3">
+          <p className="mt-1.5 max-w-xl text-sm text-ink-3">
             {isLoading
               ? t`Cargando propuestas…`
               : t`${candidates.length} hoteles con propuesta · cada una se edita desde la ficha del hotel`}
           </p>
+          {canCreate ? (
+            <div className="mt-4">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setIsCreating(true)
+                }}
+              >
+                <Trans>Nueva propuesta</Trans>
+              </Button>
+            </div>
+          ) : null}
         </div>
-        {canCreate ? (
-          <Button
-            variant="primary"
-            onClick={() => {
-              setIsCreating(true)
-            }}
-          >
-            <Trans>Nueva propuesta</Trans>
-          </Button>
-        ) : null}
+        <img
+          src={fotoEquipo}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute -right-2 -bottom-1 hidden h-[calc(100%+2.5rem)] w-auto object-contain object-bottom drop-shadow-[0_10px_18px_rgba(60,30,0,0.26)] sm:block"
+        />
       </header>
 
       <NewProposalDialog

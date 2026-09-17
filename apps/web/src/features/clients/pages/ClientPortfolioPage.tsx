@@ -1,6 +1,6 @@
 import { Trans, useLingui } from '@lingui/react/macro'
 import { MaterialIcon, statusLight } from '@oranje/ui'
-import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 
 import { useGetClientsQuery } from '../api/clientsApi'
 import { ClientCardGrid } from '../components/ClientCardGrid'
@@ -8,7 +8,7 @@ import { ClientFilters } from '../components/ClientFilters'
 import { ClientSpotlightCard } from '../components/ClientSpotlightCard'
 import type { ClientFilters as Filters } from '../types/client.types'
 
-import tratoCerrado from '@/assets/ilustrations/personaje-trato-cerrado.svg'
+import fotoEquipo from '@/assets/ilustrations/clientes-equipo.webp'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { FoldText } from '@/shared/components/FoldText'
 import { HotelPointsMap, type HotelMapPoint } from '@/shared/components/HotelPointsMap'
@@ -16,14 +16,6 @@ import { LoadError } from '@/shared/components/LoadError'
 import { CONTRACT_STATUS_TOKEN } from '@/shared/constants/contractStatus'
 import { useDebounce } from '@/shared/hooks/useDebounce'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
-import { supportsWebGl } from '@/shared/lib/webgl'
-
-/* La vitrina trae ogl (WebGL): entra en perezoso, como el globo del dashboard. */
-const CircularGallery = lazy(() =>
-  import('@/shared/components/CircularGallery').then((module) => ({
-    default: module.CircularGallery,
-  })),
-)
 
 const EMPTY_FILTERS: Filters = {
   search: '',
@@ -100,23 +92,19 @@ export function ClientPortfolioPage(): ReactNode {
       ? t`${String(Math.round(months / 12))} a`
       : t`${String(Math.round(months))} m`
   }, [items, t])
-  /** Solo clientes con foto: la vitrina es de imágenes reales, no de placeholders. */
-  const galleryItems = useMemo(
-    () =>
-      items
-        .filter((client) => client.photoUrl !== null)
-        .map((client) => ({ image: client.photoUrl ?? '', text: client.hotelName })),
-    [items],
-  )
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="relative isolate flex items-end justify-between gap-4">
-        <div>
+      {/* Misma cabecera-tarjeta que Conversión, Contratos y Propuestas: título
+          a la izquierda, la foto (recortada, sin fondo) sentada en el borde
+          inferior y sobresaliendo por arriba; el `clip-path` de la tarjeta la
+          recorta con las esquinas redondeadas y deja 3rem arriba. */}
+      <header className="relative flex items-end justify-between gap-4 rounded-2xl border border-line bg-gradient-to-r from-o-50 via-surface to-surface px-6 pt-5 pb-5 [clip-path:inset(-3rem_0_0_0_round_1rem)] sm:mt-8 sm:min-h-44 sm:pr-80">
+        <div className="relative z-10">
           <h1 className="text-3xl font-bold tracking-tight text-ink">
             <FoldText text={t`Clientes activos`} />
           </h1>
-          <p className="mt-1.5 text-sm text-ink-3">
+          <p className="mt-1.5 max-w-xl text-sm text-ink-3">
             {IS_DEV_UI ? (
               'commercial.vw_client · hoteles con activated_at'
             ) : (
@@ -125,31 +113,13 @@ export function ClientPortfolioPage(): ReactNode {
             {portfolio && ` · ${t`${String(portfolio.total)} en cartera`}`}
           </p>
         </div>
-        {/* Marca de agua: grande, opacada y disuelta con degradado hacia el contenido. */}
         <img
-          src={tratoCerrado}
+          src={fotoEquipo}
           alt=""
           aria-hidden
-          className="pointer-events-none absolute -top-8 right-0 -z-10 hidden h-56 w-auto opacity-30 sm:block"
-          style={{
-            maskImage: 'linear-gradient(210deg, rgb(0 0 0) 25%, transparent 90%)',
-            WebkitMaskImage: 'linear-gradient(210deg, rgb(0 0 0) 25%, transparent 90%)',
-          }}
+          className="pointer-events-none absolute -right-2 -bottom-1 hidden h-[calc(100%+2.5rem)] w-auto object-contain object-bottom drop-shadow-[0_10px_18px_rgba(60,30,0,0.26)] sm:block"
         />
       </header>
-
-      {/*
-       * La vitrina (Circular Gallery de reactbits): los clientes con foto, en
-       * arco y arrastrables. Solo si hay al menos 3 con foto y WebGL responde;
-       * la rejilla de abajo sigue siendo la lista completa.
-       */}
-      {galleryItems.length >= 3 && supportsWebGl() && (
-        <div className="h-64 overflow-hidden rounded-2xl bg-ink">
-          <Suspense fallback={null}>
-            <CircularGallery items={galleryItems} bend={2.5} borderRadius={0.06} />
-          </Suspense>
-        </div>
-      )}
 
       <ClientFilters
         filters={filters}

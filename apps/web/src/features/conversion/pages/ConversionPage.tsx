@@ -9,6 +9,7 @@ import {
   useGetConversionReadinessQuery,
   useReturnToRenegotiationMutation,
 } from '../api/conversionApi'
+import { ApproveConversionDialog } from '../components/ApproveConversionDialog'
 import { RequirementRow } from '../components/RequirementRow'
 
 import personajeCronograma from '@/assets/ilustrations/personaje-cronograma.svg'
@@ -54,6 +55,8 @@ export function ConversionPage(): ReactNode {
     useReturnToRenegotiationMutation()
 
   const can = useCan()
+  const [isApproveOpen, setApproveOpen] = useState(false)
+
   /** Aprobar la conversión y crear el Usuario del Hotel son del BDC: a los demás no se les ofrecen. */
   const canApprove = can('conversion:approve')
   const canCreateHotelUser = can('conversion:create_hotel_user')
@@ -222,18 +225,14 @@ export function ConversionPage(): ReactNode {
                 <Trans>Devolver a Café</Trans>
               </Button>
 
+              {/* Convertir no se hace al primer clic: el diálogo enseña el
+                  hotel y lo que va a cambiar antes de que no haya vuelta. */}
               <Button
                 variant="primary"
                 disabled={!readiness.canApprove || isBusy}
                 title={readiness.blockedReason ?? undefined}
                 onClick={() => {
-                  setActedHotelName(readiness.hotelName)
-                  void approveConversion(prospectId)
-                    .unwrap()
-                    .then(() => {
-                      toast.success(t`Conversión aprobada`)
-                    })
-                    .catch(() => {})
+                  setApproveOpen(true)
                 }}
               >
                 {isApproving ? t`Aprobando…` : t`Aprobar conversión`}
@@ -309,6 +308,27 @@ export function ConversionPage(): ReactNode {
           </ul>
         </SectionCard>
       </div>
+
+      <ApproveConversionDialog
+        isOpen={isApproveOpen}
+        onClose={() => {
+          setApproveOpen(false)
+        }}
+        isApproving={isApproving}
+        readiness={readiness}
+        onConfirm={() => {
+          setActedHotelName(readiness.hotelName)
+          void approveConversion(prospectId)
+            .unwrap()
+            .then(() => {
+              setApproveOpen(false)
+              toast.success(t`Conversión aprobada`)
+            })
+            .catch(() => {
+              setApproveOpen(false)
+            })
+        }}
+      />
     </div>
   )
 }
