@@ -314,6 +314,14 @@ describe('REASSIGN_REQUESTED / UNASSIGN_REQUESTED', () => {
   }
 
   test('solicitar reasignación solo avisa al Manager de Reclutamiento', async () => {
+    // Garantiza al menos un ROL-R-03 activo (en CI la base nace sin ninguno);
+    // se consulta igual que el repo (el más antiguo activo) para no asumir cuál gana.
+    await usuario('ROL-R-03', `MgrReclutamiento ${String(Date.now())}`)
+    const expectedManager = await db.user.findFirstOrThrow({
+      where: { isActive: true, role: { code: 'ROL-R-03' } },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true },
+    })
     const id = await bareWorker(`Reasignar ${String(Date.now())}`)
     publishCalls.length = 0
 
@@ -325,6 +333,7 @@ describe('REASSIGN_REQUESTED / UNASSIGN_REQUESTED', () => {
     expect(entry).not.toBeNull()
     const sent = publishCalls.find((c) => c.type === 'REASSIGN_REQUESTED')
     expect(sent).toBeDefined()
+    expect(sent?.audience).toContainEqual({ kind: 'USER', userId: expectedManager.id })
   })
 
   test('solicitar desasignar sin asignación activa da 409', async () => {
