@@ -58,3 +58,11 @@ export const uploadOwnDocumentSchema = z.object({
 })
 
 export class UploadOwnDocumentDto extends createZodDto(uploadOwnDocumentSchema) {}
+
+// La contraseña nueva sustituye a la temporal entregada en mano (Reglas de
+// Negocio § Acceso del Colaborador). Mínimo el de Firebase (6) subido a 8.
+export const changeOwnPasswordSchema = z.object({
+  newPassword: z.string().min(8).max(128),
+})
+
+export class ChangeOwnPasswordDto extends createZodDto(changeOwnPasswordSchema) {}

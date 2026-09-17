@@ -5,7 +5,13 @@ import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import type { DocumentEntity } from '../documents/documents.service.js'
 import type { WorkerEntity } from '../workers/entities/worker.entity.js'
 
-import { CompleteSignupDto, UpdateOwnContactDto, UploadOwnDocumentDto } from './dto/me.dto.js'
+import type { AccessDeadlines } from './access-deadline.service.js'
+import {
+  ChangeOwnPasswordDto,
+  CompleteSignupDto,
+  UpdateOwnContactDto,
+  UploadOwnDocumentDto,
+} from './dto/me.dto.js'
 import { MeService } from './me.service.js'
 import type { TaxDeadline } from './tax-deadline.service.js'
 
@@ -18,10 +24,25 @@ export class MeController {
   @AllowWhenOverdue()
   @Requires('worker', 'read_own')
   @Get()
-  async get(
-    @CurrentUser() user: AuthenticatedUser,
-  ): Promise<{ data: WorkerEntity & { taxDeadline: TaxDeadline } }> {
+  async get(@CurrentUser() user: AuthenticatedUser): Promise<{
+    data: WorkerEntity & { taxDeadline: TaxDeadline; accessDeadlines: AccessDeadlines }
+  }> {
     return { data: await this.me.get(user) }
+  }
+
+  // Cambiar la contraseña temporal es lo que levanta su bloqueo: va abierto
+  // aun vencido, como subir el SSN.
+  @AllowWhenOverdue()
+  @Requires('worker', 'complete_signup')
+  @Post('password')
+  @HttpCode(HttpStatus.OK)
+  async changePassword(
+    @Body() dto: ChangeOwnPasswordDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: { changed: true } }> {
+    await this.me.changePassword(dto.newPassword, user)
+
+    return { data: { changed: true } }
   }
 
   @Requires('worker', 'read_own')
@@ -53,6 +74,8 @@ export class MeController {
     return { data: await this.me.uploadDocument(dto, user) }
   }
 
+  // Completar el alta es lo que levanta el bloqueo del expediente a medias.
+  @AllowWhenOverdue()
   @Requires('worker', 'complete_signup')
   @Patch('signup')
   async completeSignup(

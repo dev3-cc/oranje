@@ -1,7 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common'
+import { v7 as uuidv7 } from 'uuid'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { PrismaService } from '../../../infra/prisma/index.js'
+import { FirebaseAccountsService } from '../../identity/users/firebase-accounts.service.js'
 import { NotificationPublisherService } from '../../notifications/index.js'
 import { DocumentsService } from '../documents/documents.service.js'
 import type { DocumentEntity } from '../documents/documents.service.js'
@@ -9,6 +16,8 @@ import type { UpdateWorkerDto } from '../workers/dto/create-worker.dto.js'
 import type { WorkerEntity } from '../workers/entities/worker.entity.js'
 import { WorkersService } from '../workers/workers.service.js'
 
+import { AccessDeadlineService } from './access-deadline.service.js'
+import type { AccessDeadlines } from './access-deadline.service.js'
 import type { TaxDeadline } from './tax-deadline.service.js'
 import { TaxDeadlineService } from './tax-deadline.service.js'
 
@@ -26,14 +35,18 @@ export class MeService {
     private readonly deadline: TaxDeadlineService,
     private readonly documents: DocumentsService,
     private readonly notifications: NotificationPublisherService,
+    private readonly accessDeadline: AccessDeadlineService,
+    private readonly accounts: FirebaseAccountsService,
   ) {}
 
   // La ficha trae el plazo: el aviso interceptor del dia 4 lo pinta el front
   // con esto, sin una llamada aparte.
-  async get(
-    user: AuthenticatedUser,
-  ): Promise<
-    WorkerEntity & { taxDeadline: TaxDeadline; legacyAccess: { corporateEmail: string } | null }
+  async get(user: AuthenticatedUser): Promise<
+    WorkerEntity & {
+      taxDeadline: TaxDeadline
+      accessDeadlines: AccessDeadlines
+      legacyAccess: { corporateEmail: string } | null
+    }
   > {
     const worker = await this.worker(user)
     // Entró con la cuenta de transición (D-XX): avisa cuál es la buena antes
@@ -47,8 +60,58 @@ export class MeService {
     return {
       ...(await this.workers.get(worker.id)),
       taxDeadline: await this.deadline.of(worker.id, worker.createdAt),
+      accessDeadlines: await this.accessDeadline.of(user.id),
       legacyAccess,
     }
+  }
+
+  /**
+   * Sustituye la contraseña temporal entregada en mano por la propia. Se
+   * escribe en Firebase por uid (la cuenta quedó enlazada desde el alta) y se
+   * limpia `temp_password_issued_at`, que es lo que corría el plazo.
+   */
+  async changePassword(newPassword: string, user: AuthenticatedUser): Promise<void> {
+    const account = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      select: { firebaseUid: true },
+    })
+
+    if (!account?.firebaseUid) {
+      throw new ConflictException({
+        code: 'ACCOUNT_NOT_LINKED',
+        message: 'La cuenta no está enlazada con Firebase todavía',
+      })
+    }
+
+    try {
+      await this.accounts.setPassword(account.firebaseUid, newPassword)
+    } catch {
+      throw new ServiceUnavailableException({
+        code: 'FIREBASE_UNAVAILABLE',
+        message: 'Firebase no respondió; intenta de nuevo',
+      })
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: user.id },
+        data: { tempPasswordIssuedAt: null, updatedAt: new Date() },
+      })
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'identity.user',
+          entityId: user.id,
+          eventType: 'PASSWORD_CHANGED',
+          actorUserId: user.id,
+          actorRole: user.roleCode,
+          payload: {},
+        },
+      })
+    })
+
+    // Que el acceso vuelva ya, no cuando expire la cache del guard.
+    this.accessDeadline.invalidate(user.id)
   }
 
   // La misma forma que /workers/:id/history. Sin filas es [] y no 404: un
@@ -86,6 +149,9 @@ export class MeService {
   async completeSignup(dto: UpdateWorkerDto, user: AuthenticatedUser): Promise<WorkerEntity> {
     const worker = await this.worker(user)
     const result = await this.workers.update(worker.id, dto, user)
+
+    // Si con esto el expediente quedó completo, el bloqueo se levanta ya.
+    this.accessDeadline.invalidate(user.id)
 
     try {
       await this.notifications.publish({

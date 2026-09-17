@@ -18,6 +18,8 @@ export interface WorkerEntity {
   bloodType: string | null
   state: { code: string; color: string; name: string }
   isProfileComplete: boolean
+  /// Si se le validó con el expediente a medias, hasta cuándo puede completarlo (ISO); null si no aplica.
+  profileDueAt: string | null
   hasTaxId: boolean
   hasAccount: boolean
   /// El correo con el que entra hoy (worker.user_id); null sin cuenta todavía.

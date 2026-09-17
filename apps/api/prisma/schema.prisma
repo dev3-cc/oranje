@@ -267,6 +267,10 @@ model User {
   /// en Worker): a partir de esta fecha ya no puede iniciar sesión. Null =
   /// cuenta normal, sin vencimiento.
   deprecatesAt DateTime? @map("deprecates_at") @db.Timestamptz(6)
+  /// El acceso nació con una contraseña temporal entregada en mano (alta del
+  /// Colaborador): desde esta fecha corren los 3 días para cambiarla. Null =
+  /// contraseña propia.
+  tempPasswordIssuedAt DateTime? @map("temp_password_issued_at") @db.Timestamptz(6)
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
@@ -989,6 +993,9 @@ model Worker {
   /// corporativo): mientras exista y no haya vencido (`User.deprecatesAt`),
   /// también puede iniciar sesión con esta cuenta y llegar al mismo perfil.
   legacyUserId String? @unique(map: "ux_worker_legacy_user") @map("legacy_user_id") @db.Uuid
+  /// Validado con el expediente a medias: hasta cuándo puede completarlo. Solo
+  /// cuenta mientras `is_profile_complete` sea falso.
+  profileDueAt DateTime? @map("profile_due_at") @db.Timestamptz(6)
 
   // --- Fase 1: la captura la Reclutadora en la entrevista ---
   fullName  String   @map("full_name") @db.Text

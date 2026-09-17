@@ -23,6 +23,8 @@ import type { WorkerEntity } from './entities/worker.entity.js'
 import { WorkerRow, WorkersRepository } from './workers.repository.js'
 
 const PENDING_VALIDATION = 'WHITE'
+/** Días que gana el colaborador para completar el expediente si se le validó a medias. */
+export const PROFILE_GRACE_DAYS = 3
 const AVAILABLE = 'STRONG_GREEN'
 const STANDBY = 'PINK'
 const REPORTED = 'RED'
@@ -71,6 +73,11 @@ export class WorkersService {
       hiringModalityId: dto.hiringModalityId ?? null,
       englishLevelId: dto.englishLevelId ?? null,
       experienceLevel: dto.experienceLevel ?? null,
+      transportType: dto.transportType ?? null,
+      emergencyContactName: dto.emergencyContactName ?? null,
+      emergencyContactPhone: dto.emergencyContactPhone ?? null,
+      emergencyContactRelationship: dto.emergencyContactRelationship ?? null,
+      bloodType: dto.bloodType ?? null,
       stateId: state.id,
       userId: user.id,
       roleCode: user.roleCode,
@@ -298,10 +305,33 @@ export class WorkersService {
       })
     }
 
-    if (dto.toState === AVAILABLE && !worker.isProfileComplete) {
+    // Reglas de Negocio § Validación con expediente incompleto: se puede
+    // validar a medias solo a sabiendas, y con eso corren 3 dias para que el
+    // colaborador lo complete desde su app (el plazo se calcula al leer, como
+    // el del SSN/ITIN).
+    const validatesIncomplete = dto.toState === AVAILABLE && !worker.isProfileComplete
+
+    if (validatesIncomplete && !dto.acceptIncompleteProfile) {
       throw new UnprocessableEntityException({
         code: 'PROFILE_INCOMPLETE',
         message: 'El expediente está a medias: no se puede validar al colaborador',
+      })
+    }
+
+    // Lo que falte de la Fase 1 (posicion, modalidad, ingles, experiencia) lo
+    // decide Oranje y el colaborador NO puede llenarlo desde su app: validarlo
+    // asi lo dejaria con un plazo que no esta en su mano cumplir.
+    if (
+      validatesIncomplete &&
+      (worker.position === null ||
+        worker.hiringModality === null ||
+        worker.englishLevel === null ||
+        worker.experienceLevel === null)
+    ) {
+      throw new UnprocessableEntityException({
+        code: 'PROFILE_PHASE1_INCOMPLETE',
+        message:
+          'Posición, modalidad, inglés y experiencia los define Reclutamiento: complétalos antes de validar',
       })
     }
 
@@ -341,6 +371,9 @@ export class WorkersService {
       toStateCode: dto.toState,
       reasonId,
       note: dto.note ?? null,
+      profileDueAt: validatesIncomplete
+        ? new Date(Date.now() + PROFILE_GRACE_DAYS * 86_400_000)
+        : null,
       userId: user.id,
       roleCode: user.roleCode,
     })
@@ -544,6 +577,7 @@ function toEntity(row: WorkerRow, photos: Map<string, string>): WorkerEntity {
     bloodType: row.bloodType,
     state: row.state,
     isProfileComplete: row.isProfileComplete,
+    profileDueAt: row.profileDueAt?.toISOString() ?? null,
     hasTaxId: row.hasTaxId,
     hasAccount: row.hasAccount,
     email: row.email,

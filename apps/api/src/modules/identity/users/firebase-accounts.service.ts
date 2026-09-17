@@ -75,6 +75,28 @@ export class FirebaseAccountsService {
     })
   }
 
+  /**
+   * Crea la cuenta con contraseña y devuelve su `localId` (el uid), para poder
+   * enlazarla en la fila de Oranje desde el alta y no esperar al primer
+   * login. `EMAIL_EXISTS` aquí SÍ es error: sobreescribir esa contraseña
+   * sería peligroso.
+   */
+  async createAccountWithPassword(email: string, password: string): Promise<string> {
+    const body = await this.call(`projects/${this.project()}/accounts`, { email, password })
+    const uid = body['localId']
+
+    if (typeof uid !== 'string') {
+      throw new FirebaseAccountsError('NO_LOCAL_ID', 'Identity Toolkit no devolvió el uid')
+    }
+
+    return uid
+  }
+
+  /** Cambia la contraseña de una cuenta ya enlazada (por uid), sin correo de por medio. */
+  async setPassword(uid: string, password: string): Promise<void> {
+    await this.call(`projects/${this.project()}/accounts:update`, { localId: uid, password })
+  }
+
   private project(): string {
     if (!this.projectId) {
       throw new FirebaseAccountsError(
@@ -93,7 +115,10 @@ export class FirebaseAccountsService {
   //
   // Sale del env y no de `auth.getClient()` porque esa llamada resuelve las
   // credenciales, y en CI no hay ninguna.
-  private async call(path: string, body: Record<string, unknown>): Promise<void> {
+  private async call(
+    path: string,
+    body: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
     const token = await this.auth.getAccessToken()
 
     const response = await fetch(`${BASE}/${path}`, {
@@ -107,7 +132,11 @@ export class FirebaseAccountsService {
     })
 
     if (response.ok) {
-      return
+      try {
+        return (await response.json()) as Record<string, unknown>
+      } catch {
+        return {}
+      }
     }
 
     const { code, detail } = await errorOf(response)

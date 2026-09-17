@@ -23,6 +23,8 @@ export interface WorkerRow {
   isProfileComplete: boolean
   hasTaxId: boolean
   hasAccount: boolean
+  /// Hasta cuándo puede completar el expediente si se le validó a medias.
+  profileDueAt: Date | null
   /// El correo de la cuenta corporativa (worker.user_id); null sin cuenta.
   email: string | null
   isBlacklisted: boolean
@@ -61,6 +63,7 @@ const BASE = `
          w.emergency_contact_relationship AS "emergencyContactRelationship",
          w.blood_type          AS "bloodType",
          w.is_profile_complete AS "isProfileComplete",
+         w.profile_due_at      AS "profileDueAt",
          w.has_tax_id          AS "hasTaxId",
          (w.user_id IS NOT NULL) AS "hasAccount",
          u.email AS "email",
@@ -321,6 +324,11 @@ export class WorkersRepository {
     hiringModalityId: string | null
     englishLevelId: string | null
     experienceLevel: string | null
+    transportType: string | null
+    emergencyContactName: string | null
+    emergencyContactPhone: string | null
+    emergencyContactRelationship: string | null
+    bloodType: string | null
     stateId: string
     userId: string
     roleCode: string
@@ -342,6 +350,11 @@ export class WorkersRepository {
           hiringModalityId: params.hiringModalityId,
           englishLevelId: params.englishLevelId,
           experienceLevel: params.experienceLevel,
+          transportType: params.transportType,
+          emergencyContactName: params.emergencyContactName,
+          emergencyContactPhone: params.emergencyContactPhone,
+          emergencyContactRelationship: params.emergencyContactRelationship,
+          bloodType: params.bloodType,
           statusLightStateId: params.stateId,
           statusLightCode: WORKER_LIGHT,
           createdBy: params.userId,
@@ -408,6 +421,8 @@ export class WorkersRepository {
     toStateCode: string
     reasonId: string | null
     note: string | null
+    /** Validado a medias: hasta cuándo puede completar el expediente. */
+    profileDueAt: Date | null
     userId: string
     roleCode: string
   }): Promise<void> {
@@ -417,6 +432,7 @@ export class WorkersRepository {
         data: {
           statusLightStateId: params.toStateId,
           statusLightCode: WORKER_LIGHT,
+          ...(params.profileDueAt ? { profileDueAt: params.profileDueAt } : {}),
           updatedAt: new Date(),
         },
       })
@@ -441,7 +457,11 @@ export class WorkersRepository {
           eventType: 'WORKER_STATE_CHANGED',
           actorUserId: params.userId,
           actorRole: params.roleCode,
-          payload: { toState: params.toStateCode, note: params.note },
+          payload: {
+            toState: params.toStateCode,
+            note: params.note,
+            ...(params.profileDueAt ? { profileDueAt: params.profileDueAt.toISOString() } : {}),
+          },
         },
       })
     })

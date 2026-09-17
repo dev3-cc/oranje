@@ -19,17 +19,21 @@ import { CorporateEmailService } from '../../identity/users/corporate-email.serv
 
 import {
   ChangeStateDto,
+  CreateWorkerAccessDto,
   CreateWorkerDto,
   QueryWorkersDto,
   UpdateWorkerDto,
 } from './dto/create-worker.dto.js'
 import type { WorkerEntity } from './entities/worker.entity.js'
+import { WorkerAccessService } from './worker-access.service.js'
+import type { WorkerAccessCredential } from './worker-access.service.js'
 import { TransitionOption, WorkerBoard, WorkersService } from './workers.service.js'
 
 @Controller('workers')
 export class WorkersController {
   constructor(
     private readonly workers: WorkersService,
+    private readonly access: WorkerAccessService,
     private readonly corporateEmail: CorporateEmailService,
     private readonly assignments: AssignmentsService,
   ) {}
@@ -45,6 +49,14 @@ export class WorkersController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<WorkerBoard> {
     return this.workers.list(query, user)
+  }
+
+  /* Antes de `:id`: con ParseUUIDPipe, «access-domain» caería como id inválido. */
+  /** El dominio del buzón, para que el front proponga `inicial+apellido@…` sin adivinarlo. */
+  @Requires('recruitment', 'update_worker')
+  @Get('access-domain')
+  accessDomain(): { data: { domain: string } } {
+    return { data: { domain: this.access.domainName } }
   }
 
   /**
@@ -69,6 +81,22 @@ export class WorkersController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: WorkerEntity }> {
     return { data: await this.workers.create(dto, user) }
+  }
+
+  /**
+   * El acceso del colaborador (cuenta de Oranje + buzón corporativo) con la
+   * contraseña temporal que se muestra una sola vez. Es parte del alta, así
+   * que lo cubre el mismo permiso que editar el expediente.
+   */
+  @Requires('recruitment', 'update_worker')
+  @Post(':id/access')
+  @HttpCode(HttpStatus.CREATED)
+  async createAccess(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CreateWorkerAccessDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: WorkerAccessCredential }> {
+    return { data: await this.access.create(id, dto.localPart, user) }
   }
 
   @Requires('recruitment', 'update_worker')
