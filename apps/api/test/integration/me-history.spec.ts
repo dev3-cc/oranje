@@ -5,6 +5,7 @@ import type { PrismaService } from '../../src/infra/prisma/index.js'
 import { PermissionsService } from '../../src/modules/identity/index.js'
 import { DocumentsRepository } from '../../src/modules/personal/documents/documents.repository.js'
 import { DocumentsService } from '../../src/modules/personal/documents/documents.service.js'
+import { AccessDeadlineService } from '../../src/modules/personal/me/access-deadline.service.js'
 import { MeService } from '../../src/modules/personal/me/me.service.js'
 import { TaxDeadlineService } from '../../src/modules/personal/me/tax-deadline.service.js'
 import { WorkersRepository } from '../../src/modules/personal/workers/workers.repository.js'
@@ -40,6 +41,8 @@ const me = new MeService(
   deadline,
   new DocumentsService(new DocumentsRepository(prisma), storageFake),
   notificationsFake,
+  new AccessDeadlineService(prisma),
+  { setPassword: (): Promise<void> => Promise.resolve() } as never,
 )
 
 let actorId: string

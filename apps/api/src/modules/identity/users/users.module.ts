@@ -33,6 +33,12 @@ import { StaffUsersService } from './staff-users.service.js'
     FirebaseAccountsService,
     CorporateEmailService,
   ],
-  exports: [HotelUsersService, MeService, StaffUsersService, CorporateEmailService],
+  exports: [
+    HotelUsersService,
+    MeService,
+    StaffUsersService,
+    CorporateEmailService,
+    FirebaseAccountsService,
+  ],
 })
 export class UsersModule {}

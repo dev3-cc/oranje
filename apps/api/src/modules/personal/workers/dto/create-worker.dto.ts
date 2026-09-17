@@ -56,6 +56,15 @@ export const createWorkerSchema = z.object({
   hiringModalityId: z.uuid().optional(),
   englishLevelId: z.uuid().optional(),
   experienceLevel: z.enum(EXPERIENCE_LEVELS).optional(),
+
+  // Fases 2 y 3, opcionales tambien: las llena el colaborador desde su app,
+  // pero si la Reclutadora ya las tiene en la entrevista puede capturarlas
+  // aqui y validar sin esperar (cambio del 2026-09-17).
+  transportType: z.enum(TRANSPORT_TYPES).optional(),
+  emergencyContactName: z.string().trim().min(1).max(160).optional(),
+  emergencyContactPhone: z.string().trim().min(7).max(32).optional(),
+  emergencyContactRelationship: z.enum(RELATIONSHIPS).optional(),
+  bloodType: z.enum(BLOOD_TYPES).optional(),
 })
 
 export class CreateWorkerDto extends createZodDto(createWorkerSchema) {}
@@ -99,9 +108,32 @@ export const changeStateSchema = z.object({
   toState: z.string().trim().min(1).max(30),
   reasonCode: z.string().trim().min(1).max(60).optional(),
   note: z.string().trim().min(1).max(1000).optional(),
+  /**
+   * Validar (-> Verde fuerte) con el expediente a medias, a sabiendas: quien
+   * valida lo confirma y el colaborador gana 3 dias para completarlo desde su
+   * app. Sin esto, un perfil incompleto sigue siendo PROFILE_INCOMPLETE.
+   */
+  acceptIncompleteProfile: z.boolean().optional(),
 })
 
 export class ChangeStateDto extends createZodDto(changeStateSchema) {}
+
+/**
+ * Solo la parte local: el dominio lo pone el API (el del buzón de cPanel), así
+ * el front no tiene que saberlo. Minúsculas, letras, números, punto y guión,
+ * que es lo que cPanel acepta sin pelear.
+ */
+export const createWorkerAccessSchema = z.object({
+  localPart: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(2)
+    .max(64)
+    .regex(/^[a-z0-9][a-z0-9._-]*[a-z0-9]$/, 'Solo letras, números, punto y guión'),
+})
+
+export class CreateWorkerAccessDto extends createZodDto(createWorkerAccessSchema) {}
 
 // Solo avisan (REASSIGN_REQUESTED, UNASSIGN_REQUESTED): quien decide actúa
 // por fuera del sistema, con lo que ya existe hoy (release, alta en otro
