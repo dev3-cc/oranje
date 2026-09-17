@@ -1,7 +1,7 @@
 import type { MessageDescriptor } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
-import { Alert, AlertDescription, toast } from '@oranje/ui'
+import { Alert, AlertDescription, Checkbox, toast } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
 import { useChangeWorkerStateMutation, useGetWorkerTransitionsQuery } from '../api/workerDetailApi'
@@ -44,7 +44,7 @@ export function ChangeStateDialog({
   isOpen,
   onClose,
   missingProfileFields = [],
-  canFixMissingFromHere = false,
+  missingPhase1Fields = [],
 }: {
   workerId: string
   currentStatus: WorkerStatus
@@ -55,9 +55,10 @@ export function ChangeStateDialog({
       el rechazo del backend dice «a medias» y no dice de QUÉ, así que aquí se
       apaga la opción de antemano con la lista exacta. */
   missingProfileFields?: string[]
-  /** Si todo lo que falta es Fase 1, «Editar» aquí mismo lo arregla; si hay
-      Fase 2/3 (transporte, emergencia), eso lo completa el colaborador. */
-  canFixMissingFromHere?: boolean
+  /** De lo que falta, lo que es Fase 1 (posición, modalidad, inglés,
+      experiencia): lo define Reclutamiento con «Editar» y el colaborador no
+      puede llenarlo, así que con eso pendiente no se valida ni a sabiendas. */
+  missingPhase1Fields?: string[]
 }): ReactNode {
   const { t, i18n } = useLingui()
   const { data: transitions = [], isLoading } = useGetWorkerTransitionsQuery(workerId, {
@@ -68,9 +69,16 @@ export function ChangeStateDialog({
 
   const [toState, setToState] = useState('')
   const [note, setNote] = useState('')
+  /* Reglas de Negocio § Validación con expediente incompleto: se puede validar
+     a medias, pero solo a sabiendas — la casilla es la confirmación y con
+     ella el colaborador gana 3 días para completarlo desde su app. */
+  const [acceptsIncomplete, setAcceptsIncomplete] = useState(false)
 
   const selected = transitions.find((transition) => transition.toState === toState)
-  const isProfileBlocked = selected?.toState === 'STRONG_GREEN' && missingProfileFields.length > 0
+  const isProfileIncomplete =
+    selected?.toState === 'STRONG_GREEN' && missingProfileFields.length > 0
+  const isPhase1Missing = isProfileIncomplete && missingPhase1Fields.length > 0
+  const isProfileBlocked = isProfileIncomplete && (isPhase1Missing || !acceptsIncomplete)
   const canSubmit =
     selected !== undefined && !isProfileBlocked && (!selected.requiresReason || note.trim() !== '')
 
@@ -81,11 +89,13 @@ export function ChangeStateDialog({
         workerId,
         toState: selected.toState,
         ...(note.trim() !== '' ? { note: note.trim() } : {}),
+        ...(isProfileIncomplete ? { acceptIncompleteProfile: true } : {}),
       }).unwrap()
       const label = workerStatusChipLabel(selected.toState as WorkerStatus)
       toast.success(t`Estado cambiado a ${label}`)
       setToState('')
       setNote('')
+      setAcceptsIncomplete(false)
       onClose()
     } catch {
       return
@@ -107,7 +117,11 @@ export function ChangeStateDialog({
           )}
           {isProfileBlocked && (
             <span className="mr-auto text-xs text-ink-3">
-              <Trans>Falta completar el expediente para validarlo</Trans>
+              {isPhase1Missing ? (
+                <Trans>Falta completar el expediente para validarlo</Trans>
+              ) : (
+                <Trans>Completa el expediente o confirma validarlo a medias</Trans>
+              )}
             </span>
           )}
           {!isProfileBlocked && selected?.requiresReason && note.trim() === '' && (
@@ -172,17 +186,42 @@ export function ChangeStateDialog({
           </label>
         ))}
 
-        {toState === 'STRONG_GREEN' && missingProfileFields.length > 0 && (
+        {isPhase1Missing && (
           <p className="rounded-md bg-surface-2 px-4 py-3 text-sm text-ink-2">
             <Trans>
-              No se puede validar todavía: falta {missingProfileFields.join(', ')} en su expediente.
+              No se puede validar todavía: falta {missingPhase1Fields.join(', ')} en su expediente.
             </Trans>{' '}
-            {canFixMissingFromHere ? (
-              <Trans>Ciérrame y usa «Editar» para completarlo.</Trans>
-            ) : (
-              <Trans>Eso lo completa el colaborador desde su propia app.</Trans>
-            )}
+            <Trans>Eso lo define Reclutamiento: ciérrame y usa «Editar» para completarlo.</Trans>
           </p>
+        )}
+
+        {isProfileIncomplete && !isPhase1Missing && (
+          <div className="flex flex-col gap-3 rounded-md bg-surface-2 px-4 py-3 text-sm text-ink-2">
+            <p>
+              <Trans>Su expediente está a medias: falta {missingProfileFields.join(', ')}.</Trans>{' '}
+              <Trans>Eso lo puede completar el colaborador desde su propia app.</Trans>
+            </p>
+            <label className="flex cursor-pointer items-start gap-3">
+              <Checkbox
+                checked={acceptsIncomplete}
+                onCheckedChange={(checked) => {
+                  setAcceptsIncomplete(checked === true)
+                }}
+                className="mt-0.5"
+              />
+              <span>
+                <span className="font-medium text-ink">
+                  <Trans>Validarlo de todas formas</Trans>
+                </span>
+                <span className="block text-xs text-ink-3">
+                  <Trans>
+                    Entra al Pool hoy y tiene 3 días para completar sus datos desde su app; si no lo
+                    hace, su acceso se bloquea hasta que los complete.
+                  </Trans>
+                </span>
+              </span>
+            </label>
+          </div>
         )}
 
         {transitions.length > 0 && (

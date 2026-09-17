@@ -3,6 +3,7 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import { useMemo, useState, type ReactNode } from 'react'
 
 import { useGetPoolOptionsQuery, useGetWorkerPoolQuery } from '../api/poolApi'
+import { CreateAccessDialog } from '../components/CreateAccessDialog'
 import { CreateWorkerDialog } from '../components/CreateWorkerDialog'
 import { PoolFilters } from '../components/PoolFilters'
 import { PoolRoster } from '../components/PoolRoster'
@@ -20,6 +21,7 @@ export function PoolPage(): ReactNode {
   const { t } = useLingui()
   const [filters, setFilters] = useState<Filters>(EMPTY_POOL_FILTERS)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [accessFor, setAccessFor] = useState<{ id: string; fullName: string } | null>(null)
   const [editWorkerId, setEditWorkerId] = useState<string | null>(null)
   const can = useCan()
   /** El alta es de Reclutamiento (recruitment:create_worker); Hotel solo consulta. */
@@ -142,6 +144,17 @@ export function PoolPage(): ReactNode {
         isOpen={isCreateOpen}
         onClose={() => {
           setIsCreateOpen(false)
+        }}
+        onCreated={setAccessFor}
+      />
+
+      {/* El siguiente paso del alta: su acceso (cuenta + correo), con la
+          contraseña temporal que se entrega en mano. */}
+      <CreateAccessDialog
+        isOpen={accessFor !== null}
+        worker={accessFor}
+        onClose={() => {
+          setAccessFor(null)
         }}
       />
     </div>

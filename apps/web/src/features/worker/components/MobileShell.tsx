@@ -15,6 +15,7 @@ import { Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-route
 
 import { useGetMyNotificationsQuery, useGetMyProfileQuery } from '../api/workerApi'
 
+import { PasswordOverdueScreen, ProfileOverdueScreen } from './AccessDeadlineBanner'
 import { SuspendedScreen } from './TaxDeadlineBanner'
 
 import { useAppSelector } from '@/app/hooks'
@@ -24,6 +25,9 @@ import { selectSessionUser } from '@/app/sessionSlice'
 import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
 import { WORKER_ROLE } from '@/shared/constants/roles'
 import { MOTION, SPRING } from '@/shared/lib/motion'
+
+/** Webmail del buzón corporativo (cPanel de oranjepeople.com). */
+const WEBMAIL_URL = 'https://webmail.oranjepeople.com/logout/?locale=en'
 
 /** El orden de las pestañas: decide hacia dónde se desliza la pantalla al cambiar. */
 const TAB_ORDER = [
@@ -102,6 +106,14 @@ export function MobileShell(): ReactNode {
   if (!isWorker) return <Navigate to="/" replace />
 
   const isSuspended = profile?.taxDeadline.status === 'SUSPENDED'
+  /* Los otros dos plazos (contraseña temporal, expediente a medias): vencidos
+     bloquean todo menos lo que los levanta. Cambiar la contraseña va inline;
+     completar los datos vive en Mis datos, así que esas dos rutas siguen
+     abiertas y el resto ve el interceptor. */
+  const isPasswordOverdue = profile?.accessDeadlines.password.status === 'OVERDUE'
+  const isProfileOverdue =
+    profile?.accessDeadlines.profile.status === 'OVERDUE' &&
+    !location.pathname.startsWith('/collaborator/signup-')
 
   /** El contador viene del `meta.unread` del board, no de contar la página. */
   const unread = board?.unread ?? 0
@@ -172,6 +184,30 @@ export function MobileShell(): ReactNode {
                 <MaterialIcon name="person" className="text-lg" aria-hidden />
                 <Trans>Mi Perfil</Trans>
               </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => {
+                  void navigate('/collaborator/password')
+                }}
+              >
+                <MaterialIcon name="password" className="text-lg" aria-hidden />
+                <Trans>Contraseña</Trans>
+              </DropdownMenuItem>
+              {/* El buzón @oranjepeople.com vive en el webmail de cPanel, fuera
+                  de la app; se abre en pestaña nueva y en la pantalla de entrar
+                  (la ruta /logout la muestra limpia aunque haya otra sesión). */}
+              <DropdownMenuItem
+                onSelect={() => {
+                  window.open(WEBMAIL_URL, '_blank', 'noopener')
+                }}
+              >
+                <MaterialIcon name="mail" className="text-lg" aria-hidden />
+                <Trans>Mi correo</Trans>
+                <MaterialIcon
+                  name="open_in_new"
+                  className="ml-auto text-base text-ink-3"
+                  aria-hidden
+                />
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               {/* Idioma junto a la cuenta (D-36): cada idioma en su propio idioma, sin banderas. */}
               {LOCALES.map((locale) => (
@@ -240,6 +276,10 @@ export function MobileShell(): ReactNode {
         <main className="flex-1 overflow-x-clip px-5 py-5">
           {isSuspended ? (
             <SuspendedScreen />
+          ) : isPasswordOverdue ? (
+            <PasswordOverdueScreen />
+          ) : isProfileOverdue ? (
+            <ProfileOverdueScreen />
           ) : (
             <motion.div
               key={location.pathname}

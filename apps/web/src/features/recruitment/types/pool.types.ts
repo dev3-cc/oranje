@@ -11,6 +11,9 @@ export interface PoolWorker {
   hiringModality: string
   status: WorkerStatus
   isProfileComplete: boolean
+  /** Validado a medias: hasta cuándo puede completar el expediente. */
+  profileDueAt: string | null
+  hasAccount: boolean
   hasTaxId: boolean
   createdAt: string
   isBlacklisted: boolean
@@ -66,4 +69,17 @@ export interface CreateWorkerRequest {
   hiringModalityId?: string
   englishLevelId?: string
   experienceLevel?: string
+  /** Fases 2 y 3, opcionales: si la Reclutadora ya las tiene, las captura aquí. */
+  transportType?: string
+  emergencyContactName?: string
+  emergencyContactPhone?: string
+  emergencyContactRelationship?: string
+  bloodType?: string
+}
+
+/** Lo que devuelve `POST /workers/:id/access`, una sola vez. */
+export interface WorkerAccessCredential {
+  email: string
+  password: string
+  mailbox: { created: true } | { created: false; reason: string }
 }

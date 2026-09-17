@@ -32,9 +32,29 @@ export interface LegacyAccessApi {
   corporateEmail: string
 }
 
-/** `GET /workers/me`: mi expediente completo (misma entidad que /workers/:id) + el plazo. */
+/**
+ * Los otros dos plazos de 3 días (Reglas de Negocio § Acceso del Colaborador
+ * y § Validación con expediente incompleto), calculados al leer como el
+ * fiscal. `password`: la contraseña temporal entregada en mano hay que
+ * cambiarla desde la app. `profile`: validado con el expediente a medias, hay
+ * que completarlo. Vencidos (OVERDUE) el API bloquea todo menos lo que los
+ * levanta.
+ */
+export interface AccessDeadlineApi {
+  status: 'NONE' | 'PENDING' | 'OVERDUE'
+  day: number | null
+  dueAt: string | null
+}
+
+export interface AccessDeadlinesApi {
+  password: AccessDeadlineApi
+  profile: AccessDeadlineApi
+}
+
+/** `GET /workers/me`: mi expediente completo (misma entidad que /workers/:id) + los plazos. */
 export type MyProfile = WorkerApi & {
   taxDeadline: TaxDeadlineApi
+  accessDeadlines: AccessDeadlinesApi
   legacyAccess: LegacyAccessApi | null
 }
 

@@ -43,7 +43,7 @@ export const workerDetailApi = baseApi.injectEndpoints({
 
     changeWorkerState: build.mutation<
       unknown,
-      { workerId: string; toState: string; note?: string }
+      { workerId: string; toState: string; note?: string; acceptIncompleteProfile?: boolean }
     >({
       query: ({ workerId, ...body }) => ({
         url: `/workers/${workerId}/transitions`,

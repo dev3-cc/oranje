@@ -4,9 +4,13 @@ import { cn, MaterialIcon, statusLight } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
+import { useGetWorkerDetailQuery } from '../api/workerDetailApi'
+import { missingProfile } from '../lib/profileFields'
 import type { PoolWorker } from '../types/pool.types'
 
+import { ChangeStateDialog } from './ChangeStateDialog'
 import { DeleteWorkerDialog } from './DeleteWorkerDialog'
+import { ProfilePendingLabel } from './ProfilePendingLabel'
 
 import { Button, buttonClass } from '@/shared/components/Button'
 import { CautionPill } from '@/shared/components/CautionPill'
@@ -86,12 +90,22 @@ export function PoolRoster({
   items: PoolWorker[]
   onEdit: (worker: PoolWorker) => void
 }): ReactNode {
-  const { t } = useLingui()
+  const { t, i18n } = useLingui()
   const can = useCan()
   const canDelete = can('recruitment:delete_worker')
+  /** Mover el semáforo es de quien valida (recruitment:validate_signup). */
+  const canValidate = can('recruitment:validate_signup')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [deleting, setDeleting] = useState<PoolWorker | null>(null)
+  const [isChangeOpen, setChangeOpen] = useState(false)
   const selected = items.find((worker) => worker.id === selectedId) ?? items[0]
+  /* La fila del Pool solo sabe si el perfil está completo; el diálogo de
+     estado necesita QUÉ falta, y eso vive en la ficha completa. Se pide solo
+     al abrirlo, para no cargar 300 fichas por listar el Pool. */
+  const { data: detail } = useGetWorkerDetailQuery(selected?.id ?? '', {
+    skip: !isChangeOpen || selected === undefined,
+  })
+  const missing = detail ? missingProfile(detail, i18n) : null
 
   if (items.length === 0) {
     return (
@@ -177,11 +191,16 @@ export function PoolRoster({
                   </span>
                 </p>
                 {/* Las EXCEPCIONES hablan; lo que está bien no se anuncia. */}
-                {(!selected.isProfileComplete || !selected.hasTaxId) && (
+                {(!selected.isProfileComplete || !selected.hasTaxId || !selected.hasAccount) && (
                   <p className="mt-2.5 flex flex-wrap items-center gap-2">
                     {!selected.isProfileComplete && (
                       <CautionPill>
-                        <Trans>Perfil incompleto</Trans>
+                        <ProfilePendingLabel dueAt={selected.profileDueAt} />
+                      </CautionPill>
+                    )}
+                    {!selected.hasAccount && (
+                      <CautionPill>
+                        <Trans>Sin acceso a la app</Trans>
                       </CautionPill>
                     )}
                     {!selected.hasTaxId && (
@@ -218,9 +237,26 @@ export function PoolRoster({
               >
                 <Trans>Editar</Trans>
               </Button>
-              <Link to={`/pool-colaboradores/${selected.id}`} className={buttonClass('primary')}>
+              <Link
+                to={`/collaborator-pool/${selected.id}`}
+                className={buttonClass(canValidate ? 'secondary' : 'primary')}
+              >
                 <Trans>Ver Expediente</Trans>
               </Link>
+              {/* La acción del Pool es mover el semáforo (validar el alta), así
+                  que es la primaria; el expediente pasa a secundaria. Un solo
+                  botón primario por grupo, de menor a mayor compromiso. */}
+              {canValidate && (
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setChangeOpen(true)
+                  }}
+                >
+                  <MaterialIcon name="swap_horiz" className="text-lg" aria-hidden />
+                  <Trans>Cambiar estado</Trans>
+                </Button>
+              )}
             </div>
           </header>
 
@@ -235,6 +271,20 @@ export function PoolRoster({
             <Field icon="work" label={t`Modalidad`} value={selected.hiringModality} />
           </div>
         </article>
+      )}
+
+      {selected && (
+        <ChangeStateDialog
+          workerId={selected.id}
+          currentStatus={selected.status}
+          currentLabel={workerStatusChipLabel(selected.status)}
+          isOpen={isChangeOpen}
+          onClose={() => {
+            setChangeOpen(false)
+          }}
+          missingProfileFields={missing?.labels ?? []}
+          missingPhase1Fields={missing?.phase1 ?? []}
+        />
       )}
 
       {deleting && (

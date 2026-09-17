@@ -23,7 +23,10 @@ import {
   useVerifyWorkerDocumentMutation,
 } from '../api/workerDetailApi'
 import { ChangeStateDialog } from '../components/ChangeStateDialog'
+import { CreateAccessDialog } from '../components/CreateAccessDialog'
 import { CreateWorkerDialog } from '../components/CreateWorkerDialog'
+import { ProfilePendingLabel } from '../components/ProfilePendingLabel'
+import { missingProfile } from '../lib/profileFields'
 
 import { useUploadFileMutation } from '@/app/filesApi'
 import personajeTalento from '@/assets/ilustrations/personaje-talento.svg'
@@ -107,26 +110,12 @@ function Field({
   )
 }
 
-/**
- * Los campos que integran `is_profile_complete`, con su clave estable: la
- * clave decide qué se puede arreglar desde «Editar» (Fase 1) y la etiqueta es
- * lo único que se traduce al pintar (D-36).
- */
-const PROFILE_FIELDS = [
-  { key: 'position', label: msg`Posición`, isPhase1: true },
-  { key: 'english', label: msg`Inglés`, isPhase1: true },
-  { key: 'modality', label: msg`Modalidad`, isPhase1: true },
-  { key: 'experience', label: msg`Experiencia`, isPhase1: true },
-  { key: 'transport', label: msg`Transporte`, isPhase1: false },
-  { key: 'emergencyContact', label: msg`Contacto de emergencia`, isPhase1: false },
-  { key: 'bloodType', label: msg`Tipo de sangre`, isPhase1: false },
-] as const
-
 export function WorkerDetailPage(): ReactNode {
   const { t, i18n } = useLingui()
   const { workerId = '' } = useParams()
   const [isChangeOpen, setChangeOpen] = useState(false)
   const [isEditOpen, setEditOpen] = useState(false)
+  const [isAccessOpen, setAccessOpen] = useState(false)
   const can = useCan()
   /** Mover el semáforo y verificar documentos es de quien valida (recruitment:validate_signup). */
   const canValidate = can('recruitment:validate_signup')
@@ -246,27 +235,7 @@ export function WorkerDetailPage(): ReactNode {
     { label: t`Dirección`, value: worker.address, foot: 'address', icon: 'home' },
   ]
 
-  /** Espejo exacto de `personal.vw_worker.is_profile_complete` (§4 de Estándares
-      de Desarrollo): lo que ahí es un booleano ciego, aquí es la lista de qué
-      falta — antes «el expediente está a medias» no decía de qué. */
-  const missingKeys: Record<string, boolean> = {
-    position: worker.position === null,
-    english: worker.englishLevel === null,
-    modality: worker.hiringModality === null,
-    experience: worker.experienceLevel === null,
-    transport: worker.transportType === null,
-    emergencyContact: worker.emergencyContact === null,
-    bloodType: worker.bloodType === null,
-  }
-  const missing = worker.isProfileComplete
-    ? []
-    : PROFILE_FIELDS.filter((field) => missingKeys[field.key])
-  const missingProfileFields = missing.map((field) => i18n._(field.label))
-
-  /** Solo la Fase 1 (Posición, Inglés, Modalidad, Experiencia) la edita
-      Reclutamiento con «Editar»; Transporte y Fase 3 los completa el
-      colaborador desde su app — «Editar» no puede tocarlos. */
-  const canFixMissingFromHere = missing.every((field) => field.isPhase1)
+  const { labels: missingProfileFields, phase1: missingPhase1Fields } = missingProfile(worker, i18n)
 
   const profileFields = [
     {
@@ -402,11 +371,16 @@ export function WorkerDetailPage(): ReactNode {
             </p>
 
             {/* Las EXCEPCIONES hablan en voz baja, con icono + palabras. */}
-            {(!worker.isProfileComplete || !worker.hasTaxId) && (
+            {(!worker.isProfileComplete || !worker.hasTaxId || !worker.hasAccount) && (
               <p className="mt-2.5 flex flex-wrap items-center gap-2">
                 {!worker.isProfileComplete && (
                   <CautionPill>
-                    <Trans>Perfil incompleto</Trans>
+                    <ProfilePendingLabel dueAt={worker.profileDueAt} />
+                  </CautionPill>
+                )}
+                {!worker.hasAccount && (
+                  <CautionPill>
+                    <Trans>Sin acceso a la app</Trans>
                   </CautionPill>
                 )}
                 {!worker.hasTaxId && (
@@ -428,6 +402,18 @@ export function WorkerDetailPage(): ReactNode {
                 }}
               >
                 <Trans>Editar</Trans>
+              </Button>
+            ) : null}
+            {/* Sin cuenta no hay app ni correo: crear el acceso es parte del
+                alta y va con el mismo permiso que editar el expediente. */}
+            {canEditDocuments && !worker.hasAccount ? (
+              <Button
+                onClick={() => {
+                  setAccessOpen(true)
+                }}
+              >
+                <MaterialIcon name="key" className="text-lg" aria-hidden />
+                <Trans>Crear acceso</Trans>
               </Button>
             ) : null}
             {canValidate ? (
@@ -685,11 +671,19 @@ export function WorkerDetailPage(): ReactNode {
           setChangeOpen(false)
         }}
         missingProfileFields={missingProfileFields}
-        canFixMissingFromHere={canFixMissingFromHere}
+        missingPhase1Fields={missingPhase1Fields}
       />
 
       {/* Antes esto solo se podía desde el Pool: aquí, viendo justo qué falta
           («Perfil incompleto» + la lista), es donde de verdad hace falta. */}
+      <CreateAccessDialog
+        isOpen={isAccessOpen}
+        worker={{ id: worker.id, fullName: worker.fullName }}
+        onClose={() => {
+          setAccessOpen(false)
+        }}
+      />
+
       <CreateWorkerDialog
         isOpen={isEditOpen}
         workerId={worker.id}

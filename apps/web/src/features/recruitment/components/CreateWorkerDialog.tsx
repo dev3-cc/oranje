@@ -28,10 +28,20 @@ import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { isCompletePhone, PhoneInput } from '@/shared/components/PhoneInput'
-import { EXPERIENCE_LABEL, EXPERIENCE_LEVELS } from '@/shared/constants/workerEnums'
+import {
+  BLOOD_LABEL,
+  BLOOD_TYPES,
+  EXPERIENCE_LABEL,
+  EXPERIENCE_LEVELS,
+  RELATIONSHIP_LABEL,
+  RELATIONSHIPS,
+  TRANSPORT_LABEL,
+  TRANSPORT_TYPES,
+} from '@/shared/constants/workerEnums'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
+import type { WorkerApi } from '@/shared/types/apiContract.types'
 
 const UNSET = 'UNSET'
 
@@ -93,6 +103,14 @@ interface Draft {
   hiringModalityId: string
   englishLevelId: string
   experienceLevel: string
+  /* Fases 2 y 3, opcionales: las llena el colaborador desde su app, pero si
+     la Reclutadora ya las tiene en la entrevista las captura aquí y puede
+     validar sin esperar. */
+  transportType: string
+  emergencyContactName: string
+  emergencyContactPhone: string
+  emergencyContactRelationship: string
+  bloodType: string
 }
 
 const EMPTY_DRAFT: Draft = {
@@ -107,6 +125,11 @@ const EMPTY_DRAFT: Draft = {
   hiringModalityId: '',
   englishLevelId: '',
   experienceLevel: '',
+  transportType: '',
+  emergencyContactName: '',
+  emergencyContactPhone: '',
+  emergencyContactRelationship: '',
+  bloodType: '',
 }
 
 function FormRow({
@@ -179,10 +202,13 @@ export function CreateWorkerDialog({
   isOpen,
   onClose,
   workerId,
+  onCreated,
 }: {
   isOpen: boolean
   onClose: () => void
   workerId?: string
+  /** Solo en el alta: el colaborador recién creado, para encadenar el acceso. */
+  onCreated?: (worker: WorkerApi) => void
 }): ReactNode {
   const { t, i18n } = useLingui()
   const isEditing = workerId !== undefined
@@ -226,6 +252,11 @@ export function CreateWorkerDialog({
       hiringModalityId: editing.hiringModality?.id ?? '',
       englishLevelId: editing.englishLevel?.id ?? '',
       experienceLevel: editing.experienceLevel ?? '',
+      transportType: editing.transportType ?? '',
+      emergencyContactName: editing.emergencyContact?.name ?? '',
+      emergencyContactPhone: editing.emergencyContact?.phone ?? '',
+      emergencyContactRelationship: editing.emergencyContact?.relationship ?? '',
+      bloodType: editing.bloodType ?? '',
     })
     setPhotoPreview(editing.photoUrl)
   }, [isOpen, editing])
@@ -280,10 +311,21 @@ export function CreateWorkerDialog({
           ...(draft.hiringModalityId !== '' ? { hiringModalityId: draft.hiringModalityId } : {}),
           ...(draft.englishLevelId !== '' ? { englishLevelId: draft.englishLevelId } : {}),
           ...(draft.experienceLevel !== '' ? { experienceLevel: draft.experienceLevel } : {}),
+          ...(draft.transportType !== '' ? { transportType: draft.transportType } : {}),
+          ...(draft.emergencyContactName.trim() !== ''
+            ? { emergencyContactName: draft.emergencyContactName.trim() }
+            : {}),
+          ...(isCompletePhone(draft.emergencyContactPhone)
+            ? { emergencyContactPhone: draft.emergencyContactPhone.trim() }
+            : {}),
+          ...(draft.emergencyContactRelationship !== ''
+            ? { emergencyContactRelationship: draft.emergencyContactRelationship }
+            : {}),
+          ...(draft.bloodType !== '' ? { bloodType: draft.bloodType } : {}),
         }).unwrap()
         toast.success(t`Colaborador actualizado`)
       } else {
-        await createWorker({
+        const createdWorker = await createWorker({
           fullName: draft.fullName.trim(),
           birthDate: draft.birthDate,
           gender: draft.gender,
@@ -295,9 +337,23 @@ export function CreateWorkerDialog({
           ...(draft.hiringModalityId !== '' ? { hiringModalityId: draft.hiringModalityId } : {}),
           ...(draft.englishLevelId !== '' ? { englishLevelId: draft.englishLevelId } : {}),
           ...(draft.experienceLevel !== '' ? { experienceLevel: draft.experienceLevel } : {}),
+          ...(draft.transportType !== '' ? { transportType: draft.transportType } : {}),
+          ...(draft.emergencyContactName.trim() !== ''
+            ? { emergencyContactName: draft.emergencyContactName.trim() }
+            : {}),
+          ...(isCompletePhone(draft.emergencyContactPhone)
+            ? { emergencyContactPhone: draft.emergencyContactPhone.trim() }
+            : {}),
+          ...(draft.emergencyContactRelationship !== ''
+            ? { emergencyContactRelationship: draft.emergencyContactRelationship }
+            : {}),
+          ...(draft.bloodType !== '' ? { bloodType: draft.bloodType } : {}),
         }).unwrap()
         const created = draft.fullName.trim()
         toast.success(t`Colaborador creado — ${created}`)
+        // El acceso (cuenta + buzón) es el siguiente paso natural del alta:
+        // quien lo pide lo abre con el recién creado, sin buscarlo en el Pool.
+        onCreated?.(createdWorker)
       }
       onClose()
     } catch {
@@ -614,6 +670,111 @@ export function CreateWorkerDialog({
                   ))}
                 </SelectContent>
               </Select>
+            </FormRow>
+
+            <div className="border-t border-line bg-surface-2/60 px-6 py-3">
+              <h3 className="text-sm font-semibold text-ink">
+                <Trans>Transporte, emergencia y salud</Trans>
+              </h3>
+              <p className="text-xs text-ink-4">
+                <Trans>
+                  Opcional: lo completa el colaborador desde su app, pero si ya lo tienes, captúralo
+                  aquí y podrás validarlo sin esperar
+                </Trans>
+              </p>
+            </div>
+
+            <FormRow label={t`Transporte y tipo de sangre`} column="transport_type · blood_type">
+              <Select
+                value={draft.transportType === '' ? UNSET : draft.transportType}
+                onValueChange={(value) => {
+                  update('transportType')(value === UNSET ? '' : value)
+                }}
+              >
+                <SelectTrigger aria-label={t`Transporte`} className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UNSET}>
+                    <Trans>Sin definir aún…</Trans>
+                  </SelectItem>
+                  {TRANSPORT_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {TRANSPORT_LABEL[type]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={draft.bloodType === '' ? UNSET : draft.bloodType}
+                onValueChange={(value) => {
+                  update('bloodType')(value === UNSET ? '' : value)
+                }}
+              >
+                <SelectTrigger aria-label={t`Tipo de sangre`} className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={UNSET}>
+                    <Trans>Sin definir aún…</Trans>
+                  </SelectItem>
+                  {BLOOD_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {BLOOD_LABEL[type]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormRow>
+
+            <FormRow
+              label={t`Contacto de emergencia`}
+              column="emergency_contact_name · emergency_contact_phone · emergency_contact_relationship"
+            >
+              <div className="flex w-full flex-col gap-3">
+                <Input
+                  aria-label={t`Nombre del contacto de emergencia`}
+                  placeholder={t`Nombre, p. ej. Rubén Sandoval`}
+                  value={draft.emergencyContactName}
+                  onChange={(event) => {
+                    update('emergencyContactName')(event.target.value)
+                  }}
+                />
+                <div className="flex gap-3">
+                  <PhoneInput
+                    value={draft.emergencyContactPhone}
+                    onChange={(value) => {
+                      update('emergencyContactPhone')(value)
+                    }}
+                    ariaLabel={t`Teléfono del contacto de emergencia`}
+                    placeholder="404 790 2517"
+                  />
+                  <Select
+                    value={
+                      draft.emergencyContactRelationship === ''
+                        ? UNSET
+                        : draft.emergencyContactRelationship
+                    }
+                    onValueChange={(value) => {
+                      update('emergencyContactRelationship')(value === UNSET ? '' : value)
+                    }}
+                  >
+                    <SelectTrigger aria-label={t`Parentesco`} className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={UNSET}>
+                        <Trans>Parentesco…</Trans>
+                      </SelectItem>
+                      {RELATIONSHIPS.map((relationship) => (
+                        <SelectItem key={relationship} value={relationship}>
+                          {RELATIONSHIP_LABEL[relationship]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </FormRow>
 
             <details className="border-t border-line px-6 py-3">

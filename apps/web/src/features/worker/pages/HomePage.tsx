@@ -9,6 +9,7 @@ import { Link } from 'react-router'
 
 import { useGetTodayPunchingQuery, type MyShiftApi } from '../api/punchApi'
 import { useGetMyProfileQuery, useSetAvailableMutation } from '../api/workerApi'
+import { AccessDeadlineBanner } from '../components/AccessDeadlineBanner'
 import { TaxDeadlineBanner } from '../components/TaxDeadlineBanner'
 import { WorkerSkeleton } from '../components/WorkerSkeleton'
 
@@ -234,6 +235,7 @@ export function HomePage(): ReactNode {
       />
 
       <TaxDeadlineBanner deadline={profile.taxDeadline} />
+      <AccessDeadlineBanner deadlines={profile.accessDeadlines} />
 
       {!profile.isProfileComplete && (
         <NoticeCard

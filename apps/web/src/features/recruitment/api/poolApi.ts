@@ -1,6 +1,7 @@
 import {
   ANY_VALUE,
   type CreateWorkerRequest,
+  type WorkerAccessCredential,
   type PoolFilters,
   type PoolOptions,
   type PoolWorker,
@@ -36,6 +37,8 @@ function toPoolWorker(worker: WorkerApi): PoolWorker {
     hiringModality: worker.hiringModality?.name ?? '—',
     status: worker.state.code as WorkerStatus,
     isProfileComplete: worker.isProfileComplete,
+    profileDueAt: worker.profileDueAt,
+    hasAccount: worker.hasAccount,
     hasTaxId: worker.hasTaxId,
     createdAt: worker.createdAt,
     isBlacklisted: worker.isBlacklisted,
@@ -131,9 +134,36 @@ export const poolApi = baseApi.injectEndpoints({
       ],
     }),
 
-    createWorker: build.mutation<unknown, CreateWorkerRequest>({
+    createWorker: build.mutation<WorkerApi, CreateWorkerRequest>({
       query: (body) => ({ url: '/workers', method: 'POST', body }),
+      transformResponse: (response: ApiEnvelope<WorkerApi>) => response.data,
       invalidatesTags: [{ type: 'Worker' as const, id: 'LIST' }],
+    }),
+
+    /**
+     * El acceso del colaborador: cuenta de Oranje + buzón corporativo con UNA
+     * contraseña temporal que se muestra una sola vez y se entrega en mano.
+     * El dominio lo pone el API; el front solo manda la parte local.
+     */
+    createWorkerAccess: build.mutation<
+      WorkerAccessCredential,
+      { workerId: string; localPart: string }
+    >({
+      query: ({ workerId, localPart }) => ({
+        url: `/workers/${workerId}/access`,
+        method: 'POST',
+        body: { localPart },
+      }),
+      transformResponse: (response: ApiEnvelope<WorkerAccessCredential>) => response.data,
+      invalidatesTags: (_res, _err, { workerId }) => [
+        { type: 'Worker' as const, id: 'LIST' },
+        { type: 'Worker' as const, id: workerId },
+      ],
+    }),
+
+    getAccessDomain: build.query<string, void>({
+      query: () => '/workers/access-domain',
+      transformResponse: (response: ApiEnvelope<{ domain: string }>) => response.data.domain,
     }),
 
     /**
@@ -166,4 +196,6 @@ export const {
   useCreateWorkerMutation,
   useUpdateWorkerMutation,
   useDeleteWorkerMutation,
+  useCreateWorkerAccessMutation,
+  useGetAccessDomainQuery,
 } = poolApi

@@ -128,7 +128,7 @@ describe('PoolPage', () => {
 
     await user.type(scoped.getByPlaceholderText('María Sandoval Ruiz'), 'Braulio Vega')
     await user.type(scoped.getByLabelText('Fecha de nacimiento'), '1994-05-10')
-    await user.type(scoped.getByPlaceholderText('404 790 2517'), '404 555 0199')
+    await user.type(scoped.getByLabelText('Teléfono'), '404 555 0199')
     await user.type(scoped.getByPlaceholderText(/Peachtree/), '88 Auburn Ave, Atlanta')
     await user.click(await scoped.findByLabelText('Zona'))
     await user.click(await screen.findByRole('option', { name: 'Zona Centro' }))
