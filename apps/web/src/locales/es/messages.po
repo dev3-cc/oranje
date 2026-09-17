@@ -473,6 +473,11 @@ msgstr "{0} ya es cliente activo"
 msgid "{0} ya es el principal; si marcas este, lo reemplaza"
 msgstr "{0} ya es el principal; si marcas este, lo reemplaza"
 
+#. placeholder {0}: missingLaterFields.join(', ')
+#: src/features/recruitment/components/ChangeStateDialog.tsx
+msgid "{0}: eso lo completa el colaborador desde su app."
+msgstr "{0}: eso lo completa el colaborador desde su app."
+
 #. placeholder {0}: contract.hotelName
 #: src/features/contracts/components/ContractPdfButton.tsx
 msgid "{0}. Se firma fuera del sistema: el documento sale sin firmas."
@@ -3915,8 +3920,8 @@ msgid "Entra a Oranje"
 msgstr "Entra a Oranje"
 
 #: src/features/recruitment/components/ChangeStateDialog.tsx
-msgid "Entra al Pool hoy y tiene 3 días para completar sus datos desde su app; si no lo hace, su acceso se bloquea hasta que los complete."
-msgstr "Entra al Pool hoy y tiene 3 días para completar sus datos desde su app; si no lo hace, su acceso se bloquea hasta que los complete."
+msgid "Entra al Pool hoy. Lo suyo tiene 3 días para completarlo desde su app; si no lo hace, su acceso se bloquea hasta que lo complete. Lo de Fase 1 no le bloquea nada: eso queda en tus manos."
+msgstr "Entra al Pool hoy. Lo suyo tiene 3 días para completarlo desde su app; si no lo hace, su acceso se bloquea hasta que lo complete. Lo de Fase 1 no le bloquea nada: eso queda en tus manos."
 
 #: src/features/schedule/components/AddShiftDialog.tsx
 #: src/features/timesheet/components/ManualPunchDialog.tsx
@@ -4216,14 +4221,6 @@ msgstr "Ese semáforo no existe."
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Ese turno no es tuyo. Recarga la pantalla e inténtalo de nuevo."
 msgstr "Ese turno no es tuyo. Recarga la pantalla e inténtalo de nuevo."
-
-#: src/features/recruitment/components/ChangeStateDialog.tsx
-msgid "Eso lo define Reclutamiento: ciérrame y usa «Editar» para completarlo."
-msgstr "Eso lo define Reclutamiento: ciérrame y usa «Editar» para completarlo."
-
-#: src/features/recruitment/components/ChangeStateDialog.tsx
-msgid "Eso lo puede completar el colaborador desde su propia app."
-msgstr "Eso lo puede completar el colaborador desde su propia app."
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
 msgid "Esperando aprobación"
@@ -4565,10 +4562,6 @@ msgstr "Factura {0}"
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Factura por hora"
 msgstr "Factura por hora"
-
-#: src/features/recruitment/components/ChangeStateDialog.tsx
-msgid "Falta completar el expediente para validarlo"
-msgstr "Falta completar el expediente para validarlo"
 
 #: src/features/requisitions/types/requisitionForm.schema.ts
 msgid "Falta el departamento"
@@ -5726,6 +5719,11 @@ msgstr "lo avanza el sistema con los ponches; al completar la semana queda Fijo.
 #: src/features/recruitment/components/ChangeStateDialog.tsx
 msgid "lo cierra el Inspector con el alta médica."
 msgstr "lo cierra el Inspector con el alta médica."
+
+#. placeholder {0}: missingPhase1Fields.join(', ')
+#: src/features/recruitment/components/ChangeStateDialog.tsx
+msgid "Lo de Fase 1 ({0}) lo defines tú con «Editar»."
+msgstr "Lo de Fase 1 ({0}) lo defines tú con «Editar»."
 
 #. placeholder {0}: workspace.owner.name
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
@@ -6940,11 +6938,6 @@ msgstr "No se puede activar sin tarifas: agrega al menos una."
 #: src/features/audits/components/AuditFormDialog.tsx
 msgid "No se puede calificar una auditoría donde todo quedó en N/A."
 msgstr "No se puede calificar una auditoría donde todo quedó en N/A."
-
-#. placeholder {0}: missingPhase1Fields.join(', ')
-#: src/features/recruitment/components/ChangeStateDialog.tsx
-msgid "No se puede validar todavía: falta {0} en su expediente."
-msgstr "No se puede validar todavía: falta {0} en su expediente."
 
 #: src/features/timesheet/components/TimesheetDayCell.tsx
 msgid "No se registró entrada ni salida. Puede ser que no tuviera turno ese día, o que el ponche no llegara a guardarse (por ejemplo, fuera de la geocerca). Revisa el Schedule para saber cuál de las dos fue."

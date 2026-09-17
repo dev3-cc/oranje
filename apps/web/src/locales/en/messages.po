@@ -473,6 +473,11 @@ msgstr "{0} is now an active client"
 msgid "{0} ya es el principal; si marcas este, lo reemplaza"
 msgstr "{0} is already the primary one; if you mark this one, it takes over"
 
+#. placeholder {0}: missingLaterFields.join(', ')
+#: src/features/recruitment/components/ChangeStateDialog.tsx
+msgid "{0}: eso lo completa el colaborador desde su app."
+msgstr "{0}: the collaborator completes that from their app."
+
 #. placeholder {0}: contract.hotelName
 #: src/features/contracts/components/ContractPdfButton.tsx
 msgid "{0}. Se firma fuera del sistema: el documento sale sin firmas."
@@ -3915,8 +3920,8 @@ msgid "Entra a Oranje"
 msgstr "Sign in to Oranje"
 
 #: src/features/recruitment/components/ChangeStateDialog.tsx
-msgid "Entra al Pool hoy y tiene 3 días para completar sus datos desde su app; si no lo hace, su acceso se bloquea hasta que los complete."
-msgstr "They join the Pool today and have 3 days to complete their details from their app; if they don't, their access is blocked until they do."
+msgid "Entra al Pool hoy. Lo suyo tiene 3 días para completarlo desde su app; si no lo hace, su acceso se bloquea hasta que lo complete. Lo de Fase 1 no le bloquea nada: eso queda en tus manos."
+msgstr "They join the Pool today. Their part has 3 days to be completed from their app; if not, their access is blocked until they do. Phase 1 never blocks them: that one is in your hands."
 
 #: src/features/schedule/components/AddShiftDialog.tsx
 #: src/features/timesheet/components/ManualPunchDialog.tsx
@@ -4216,14 +4221,6 @@ msgstr "That Status Light doesn't exist."
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Ese turno no es tuyo. Recarga la pantalla e inténtalo de nuevo."
 msgstr "That shift isn't yours. Reload the screen and try again."
-
-#: src/features/recruitment/components/ChangeStateDialog.tsx
-msgid "Eso lo define Reclutamiento: ciérrame y usa «Editar» para completarlo."
-msgstr "Recruitment defines that: close this and use \"Edit\" to complete it."
-
-#: src/features/recruitment/components/ChangeStateDialog.tsx
-msgid "Eso lo puede completar el colaborador desde su propia app."
-msgstr "The collaborator can complete that from their own app."
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
 msgid "Esperando aprobación"
@@ -4565,10 +4562,6 @@ msgstr "Bill {0}"
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Factura por hora"
 msgstr "Bill per hour"
-
-#: src/features/recruitment/components/ChangeStateDialog.tsx
-msgid "Falta completar el expediente para validarlo"
-msgstr "The file must be completed before validating"
 
 #: src/features/requisitions/types/requisitionForm.schema.ts
 msgid "Falta el departamento"
@@ -5726,6 +5719,11 @@ msgstr "the system moves it forward with the punches; once the week is complete 
 #: src/features/recruitment/components/ChangeStateDialog.tsx
 msgid "lo cierra el Inspector con el alta médica."
 msgstr "the Inspector closes it with the medical release."
+
+#. placeholder {0}: missingPhase1Fields.join(', ')
+#: src/features/recruitment/components/ChangeStateDialog.tsx
+msgid "Lo de Fase 1 ({0}) lo defines tú con «Editar»."
+msgstr "Phase 1 ({0}) is yours to define with \"Edit\"."
 
 #. placeholder {0}: workspace.owner.name
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
@@ -6940,11 +6938,6 @@ msgstr "It cannot be activated without rates: add at least one."
 #: src/features/audits/components/AuditFormDialog.tsx
 msgid "No se puede calificar una auditoría donde todo quedó en N/A."
 msgstr "An audit can't be scored when everything is N/A."
-
-#. placeholder {0}: missingPhase1Fields.join(', ')
-#: src/features/recruitment/components/ChangeStateDialog.tsx
-msgid "No se puede validar todavía: falta {0} en su expediente."
-msgstr "Cannot validate yet: {0} missing from their file."
 
 #: src/features/timesheet/components/TimesheetDayCell.tsx
 msgid "No se registró entrada ni salida. Puede ser que no tuviera turno ese día, o que el ponche no llegara a guardarse (por ejemplo, fuera de la geocerca). Revisa el Schedule para saber cuál de las dos fue."

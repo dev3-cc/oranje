@@ -132,7 +132,7 @@ describe('WorkerDetailPage', () => {
     expect(
       await within(dialog).findByText(/falta Contacto de emergencia/, undefined, SLOW),
     ).toBeInTheDocument()
-    expect(within(dialog).getByText(/lo puede completar el colaborador/)).toBeInTheDocument()
+    expect(within(dialog).getByText(/lo completa el colaborador desde su app/)).toBeInTheDocument()
     // Y validarlo a medias exige confirmarlo: sin la casilla, el botón sigue apagado.
     expect(within(dialog).getByRole('button', { name: 'Cambiar estado' })).toBeDisabled()
     await user.click(within(dialog).getByRole('checkbox'))

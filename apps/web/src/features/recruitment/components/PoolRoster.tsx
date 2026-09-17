@@ -284,6 +284,7 @@ export function PoolRoster({
           }}
           missingProfileFields={missing?.labels ?? []}
           missingPhase1Fields={missing?.phase1 ?? []}
+          missingLaterFields={missing?.later ?? []}
         />
       )}
 
