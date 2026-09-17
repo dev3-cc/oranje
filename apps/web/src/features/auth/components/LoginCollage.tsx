@@ -1,9 +1,9 @@
 import { motion, useReducedMotion } from 'framer-motion'
 import type { ReactNode } from 'react'
 
-import fotoSonrisa from '@/assets/login/con-logo/oranje-2-logo.png'
-import fotoLaptop from '@/assets/login/con-logo/oranje-3-logo.png'
-import fotoTablet from '@/assets/login/con-logo/oranje-logo.png'
+import fotoSonrisa from '@/assets/login/con-logo/oranje-2-logo.webp'
+import fotoLaptop from '@/assets/login/con-logo/oranje-3-logo.webp'
+import fotoTablet from '@/assets/login/con-logo/oranje-logo.webp'
 
 /**
  * El collage del login: tres fotos del equipo Oranje (recortes con el logo en

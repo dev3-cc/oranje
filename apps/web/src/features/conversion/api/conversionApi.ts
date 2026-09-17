@@ -157,6 +157,7 @@ async function fetchReadiness(
       prospectId,
       hotelId,
       hotelName: prospect.hotel.name,
+      hotelPhotoUrl: prospect.hotel.photoUrl ?? null,
       currentStatus: 'PINK',
       targetStatus: 'ORANGE',
       approvalNote: approvalNote(),

@@ -967,6 +967,10 @@ msgstr "Al autorizar se fija la urgencia según la fecha de inicio"
 msgid "Al autorizar, la urgencia se calcula contra la fecha de inicio: {start} {daysAhead, plural, one {está a # día} other {está a # días}}, así que {positionCount, plural, one {la posición nace} other {las # posiciones nacen}} en {color} ({label})"
 msgstr "Al autorizar, la urgencia se calcula contra la fecha de inicio: {start} {daysAhead, plural, one {está a # día} other {está a # días}}, así que {positionCount, plural, one {la posición nace} other {las # posiciones nacen}} en {color} ({label})"
 
+#: src/features/conversion/components/ApproveConversionDialog.tsx
+msgid "Al convertirlo"
+msgstr "Al convertirlo"
+
 #: src/features/admin/components/HotelUserFormDialog.tsx
 msgid "Al crear la cuenta, la persona recibe un correo de invitación y establece su contraseña."
 msgstr "Al crear la cuenta, la persona recibe un correo de invitación y establece su contraseña."
@@ -2342,9 +2346,17 @@ msgstr "Conversiones del trimestre"
 msgid "Convertidos"
 msgstr "Convertidos"
 
+#: src/features/conversion/components/ApproveConversionDialog.tsx
+msgid "Convertir en cliente"
+msgstr "Convertir en cliente"
+
 #: src/features/onboarding/pages/ProspectDetailPage.tsx
 msgid "Convertir es del BDC"
 msgstr "Convertir es del BDC"
+
+#: src/features/conversion/components/ApproveConversionDialog.tsx
+msgid "Convirtiendo…"
+msgstr "Convirtiendo…"
 
 #: src/shared/constants/workerEnums.ts
 msgid "Cónyuge"
@@ -3103,6 +3115,10 @@ msgstr "El ciclo comercial"
 msgid "El ciclo comercial del hotel: de prospecto a cliente."
 msgstr "El ciclo comercial del hotel: de prospecto a cliente."
 
+#: src/features/conversion/components/ApproveConversionDialog.tsx
+msgid "El ciclo comercial se cierra aquí: de Naranja no se regresa. Si más adelante el hotel se pausa, se le marca como inactivo, pero el ciclo no vuelve a abrirse."
+msgstr "El ciclo comercial se cierra aquí: de Naranja no se regresa. Si más adelante el hotel se pausa, se le marca como inactivo, pero el ciclo no vuelve a abrirse."
+
 #: src/features/onboarding/components/ArchiveCycleDialog.tsx
 msgid "El ciclo de {hotelName} se cierra definitivamente y el hotel queda libre para un ciclo nuevo."
 msgstr "El ciclo de {hotelName} se cierra definitivamente y el hotel queda libre para un ciclo nuevo."
@@ -3167,8 +3183,8 @@ msgid "El día tiene una anomalía sin resolver{0}: revisa las marcas y explica 
 msgstr "El día tiene una anomalía sin resolver{0}: revisa las marcas y explica la resolución en la nota."
 
 #: src/features/onboarding/pages/ProspectDetailPage.tsx
-msgid "El Documento de T&C ya se negocia. El BDC aprueba la conversión desde Conversión y el hotel pasa a Naranja, listo para pedir personal."
-msgstr "El Documento de T&C ya se negocia. El BDC aprueba la conversión desde Conversión y el hotel pasa a Naranja, listo para pedir personal."
+msgid "El Documento de T&C ya se negocia. El BDC aprueba la conversión desde <0>Conversión</0> y el hotel pasa a Naranja, listo para pedir personal."
+msgstr "El Documento de T&C ya se negocia. El BDC aprueba la conversión desde <0>Conversión</0> y el hotel pasa a Naranja, listo para pedir personal."
 
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "El edificio"
@@ -8051,6 +8067,7 @@ msgstr "Rol"
 msgid "Rosa"
 msgstr "Rosa"
 
+#: src/features/conversion/components/ApproveConversionDialog.tsx
 #: src/features/team/pages/TeamPage.tsx
 msgid "Rosa → Naranja"
 msgstr "Rosa → Naranja"
@@ -8296,6 +8313,10 @@ msgstr "Sí, borrar"
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Sí, cancelar borrador"
 msgstr "Sí, cancelar borrador"
+
+#: src/features/conversion/components/ApproveConversionDialog.tsx
+msgid "Sí, convertir en cliente"
+msgstr "Sí, convertir en cliente"
 
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/components/UserFormDialog.tsx
@@ -9104,6 +9125,7 @@ msgid "Todavía nadie tiene correo corporativo asignado."
 msgstr "Todavía nadie tiene correo corporativo asignado."
 
 #: src/features/contracts/components/ActivateContractDialog.tsx
+#: src/features/conversion/components/ApproveConversionDialog.tsx
 msgid "Todavía no"
 msgstr "Todavía no"
 
