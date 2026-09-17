@@ -34,6 +34,7 @@ const profile: MyProfile = {
   bloodType: null,
   state: { code: 'WHITE', color: 'Blanco', name: 'Pre-asignación' },
   isProfileComplete: false,
+  profileDueAt: null,
   hasTaxId: false,
   hasAccount: true,
   email: 'rnavarro@oranjepeople.com',
@@ -47,6 +48,10 @@ const profile: MyProfile = {
     isDocumentVerified: false,
     /** D-27: sin cifrado conectado, la retención aplica a todos. */
     taxRetentionApplies: true,
+  },
+  accessDeadlines: {
+    password: { status: 'NONE', day: null, dueAt: null },
+    profile: { status: 'NONE', day: null, dueAt: null },
   },
   /** El caso normal: entró con su única cuenta, no una de transición. */
   legacyAccess: null,
@@ -234,6 +239,14 @@ const routes: readonly MockRoute[] = [
     resolve: (): ApiEnvelope<{ id: string }> => {
       profile.taxDeadline = { ...profile.taxDeadline, hasDocument: true, status: 'OK' }
       return { data: { id: 'doc-yo-1' } }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/workers/me/password',
+    resolve: (): ApiEnvelope<{ changed: true }> => {
+      profile.accessDeadlines.password = { status: 'NONE', day: null, dueAt: null }
+      return { data: { changed: true } }
     },
   },
   {

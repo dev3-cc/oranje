@@ -69,6 +69,16 @@ export const workerApi = baseApi.injectEndpoints({
     }),
 
     /**
+     * Sustituye la contraseña temporal que me dieron en mano por la mía
+     * (Reglas de Negocio § Acceso del Colaborador). Levanta el plazo de 3 días
+     * al instante: el perfil se vuelve a pedir.
+     */
+    changeMyPassword: build.mutation<unknown, { newPassword: string }>({
+      query: (body) => ({ url: '/workers/me/password', method: 'POST', body }),
+      invalidatesTags: [{ type: 'Worker' as const, id: 'ME' }],
+    }),
+
+    /**
      * Mis avisos (RF-C-09): una fila por destinatario, no leída = `read_at`
      * nulo. El contrato real es un board paginado con `type`/`entity`
      * anidados; se aplana aquí, en la única frontera (D-28).
@@ -114,6 +124,7 @@ export const {
   useGetMyProfileQuery,
   useGetMyHistoryQuery,
   useCompleteSignupMutation,
+  useChangeMyPasswordMutation,
   useUploadMyDocumentMutation,
   useGetMyNotificationsQuery,
   useMarkNotificationReadMutation,

@@ -316,6 +316,8 @@ export interface WorkerApi {
   bloodType: string | null
   state: StatusRefApi
   isProfileComplete: boolean
+  /** Si se le validó con el expediente a medias, hasta cuándo puede completarlo; null si no aplica. */
+  profileDueAt: string | null
   hasTaxId: boolean
   hasAccount: boolean
   /** El correo con el que entra hoy; null sin cuenta todavía (Blanco recién nacido). */

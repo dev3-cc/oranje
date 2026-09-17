@@ -150,7 +150,7 @@ msgid "{0, plural, one {# día elegido} other {# días elegidos}}"
 msgstr "{0, plural, one {# día elegido} other {# días elegidos}}"
 
 #. placeholder {0}: contract.positionCount
-#: src/features/clients/components/ClientCardItem.tsx
+#: src/features/clients/components/ClientCardGrid.tsx
 msgid "{0, plural, one {# posición} other {# posiciones}}"
 msgstr "{0, plural, one {# posición} other {# posiciones}}"
 
@@ -797,6 +797,10 @@ msgstr "Abrir versión nueva"
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Acceso"
 msgstr "Acceso"
+
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+msgid "Acceso creado"
+msgstr "Acceso creado"
 
 #: src/shared/constants/workerStatus.ts
 msgid "Accidentado"
@@ -1746,6 +1750,14 @@ msgstr "Cambia ese filtro o quítalo con «Quitar filtros» para volver a ver el
 msgid "Cambia la búsqueda o límpiala para volver a ver todos los prospectos en Rosa."
 msgstr "Cambia la búsqueda o límpiala para volver a ver todos los prospectos en Rosa."
 
+#: src/features/worker/components/AccessDeadlineBanner.tsx
+msgid "Cambia tu contraseña"
+msgstr "Cambia tu contraseña"
+
+#: src/features/worker/components/AccessDeadlineBanner.tsx
+msgid "Cambia tu contraseña para seguir"
+msgstr "Cambia tu contraseña para seguir"
+
 #: src/features/recruitment/components/ChangeStateDialog.tsx
 msgid "Cambiando…"
 msgstr "Cambiando…"
@@ -1756,6 +1768,11 @@ msgstr "Cambiando…"
 msgid "Cambiar"
 msgstr "Cambiar"
 
+#: src/features/worker/components/AccessDeadlineBanner.tsx
+#: src/features/worker/components/ChangePasswordForm.tsx
+msgid "Cambiar contraseña"
+msgstr "Cambiar contraseña"
+
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Cambiar de persona es dar de baja este usuario y dar de alta al nuevo."
 msgstr "Cambiar de persona es dar de baja este usuario y dar de alta al nuevo."
@@ -1763,6 +1780,7 @@ msgstr "Cambiar de persona es dar de baja este usuario y dar de alta al nuevo."
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 #: src/features/onboarding/pages/ProspectDetailPage.tsx
 #: src/features/recruitment/components/ChangeStateDialog.tsx
+#: src/features/recruitment/components/PoolRoster.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Cambiar estado"
 msgstr "Cambiar estado"
@@ -1804,6 +1822,7 @@ msgstr "Cancelando…"
 #: src/features/personnel/components/ReportWorkerDialog.tsx
 #: src/features/personnel/components/StandByDialog.tsx
 #: src/features/recruitment/components/ChangeStateDialog.tsx
+#: src/features/recruitment/components/CreateAccessDialog.tsx
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 #: src/features/recruitment/components/DeleteWorkerDialog.tsx
@@ -1915,6 +1934,7 @@ msgstr "Central — Chicago, Houston, Dallas"
 
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/components/UserFormDialog.tsx
+#: src/features/clients/pages/ClientPortfolioPage.tsx
 #: src/features/contracts/components/ContractPdfButton.tsx
 #: src/features/onboarding/components/ContractPreviewDialog.tsx
 #: src/features/onboarding/components/NewProposalDialog.tsx
@@ -1958,10 +1978,6 @@ msgstr "Ciclos abiertos por estado"
 #: src/features/onboarding/pages/ProspectDetailPage.tsx
 msgid "Cierra el ciclo definitivamente y libera al hotel"
 msgstr "Cierra el ciclo definitivamente y libera al hotel"
-
-#: src/features/recruitment/components/ChangeStateDialog.tsx
-msgid "Ciérrame y usa «Editar» para completarlo."
-msgstr "Ciérrame y usa «Editar» para completarlo."
 
 #: src/shared/constants/contactAttempt.ts
 msgid "Cita agendada"
@@ -2108,6 +2124,19 @@ msgstr "Cómo ponchan aquí"
 msgid "completa al menos una posición con su pago y su factura"
 msgstr "completa al menos una posición con su pago y su factura"
 
+#: src/features/recruitment/components/ChangeStateDialog.tsx
+msgid "Completa el expediente o confirma validarlo a medias"
+msgstr "Completa el expediente o confirma validarlo a medias"
+
+#: src/features/worker/components/AccessDeadlineBanner.tsx
+msgid "Completa tus datos"
+msgstr "Completa tus datos"
+
+#: src/features/worker/components/AccessDeadlineBanner.tsx
+msgid "Completa tus datos para seguir"
+msgstr "Completa tus datos para seguir"
+
+#: src/features/worker/components/AccessDeadlineBanner.tsx
 #: src/features/worker/pages/HomePage.tsx
 msgid "Completar mis datos"
 msgstr "Completar mis datos"
@@ -2139,6 +2168,10 @@ msgstr "con el QR del acceso ya leído"
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "Con entrada registrada"
 msgstr "Con entrada registrada"
+
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+msgid "Con este correo entra a la app y revisa su buzón. La contraseña la genera el sistema y la verás una sola vez: anótala y dásela en persona, no por correo."
+msgstr "Con este correo entra a la app y revisa su buzón. La contraseña la genera el sistema y la verás una sola vez: anótala y dásela en persona, no por correo."
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Con estos 9 datos el perfil queda completo; la foto no cuenta"
@@ -2205,6 +2238,8 @@ msgid "Contacto de {name} en QR"
 msgstr "Contacto de {name} en QR"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+#: src/features/recruitment/lib/profileFields.ts
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "Contacto de emergencia"
@@ -2266,16 +2301,31 @@ msgstr "Contractuales"
 
 #: src/features/admin/components/UserFormDialog.tsx
 #: src/features/auth/pages/LoginPage.tsx
+#: src/features/worker/components/MobileShell.tsx
+#: src/features/worker/pages/PasswordPage.tsx
 msgid "Contraseña"
 msgstr "Contraseña"
 
+#: src/features/worker/components/ChangePasswordForm.tsx
+msgid "Contraseña cambiada"
+msgstr "Contraseña cambiada"
+
 #: src/features/admin/pages/CorporateEmailPage.tsx
+#: src/features/recruitment/components/CreateAccessDialog.tsx
 msgid "Contraseña copiada"
 msgstr "Contraseña copiada"
 
 #: src/features/admin/pages/CorporateEmailPage.tsx
 msgid "Contraseña del buzón"
 msgstr "Contraseña del buzón"
+
+#: src/features/worker/components/ChangePasswordForm.tsx
+msgid "Contraseña nueva"
+msgstr "Contraseña nueva"
+
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+msgid "Contraseña temporal"
+msgstr "Contraseña temporal"
 
 #: src/features/clients/components/ClientFilters.tsx
 msgid "Contrato"
@@ -2372,6 +2422,7 @@ msgid "Coordinador de Inspección"
 msgstr "Coordinador de Inspección"
 
 #: src/features/admin/pages/CorporateEmailPage.tsx
+#: src/features/recruitment/components/CreateAccessDialog.tsx
 msgid "Copiar"
 msgstr "Copiar"
 
@@ -2401,10 +2452,19 @@ msgstr "Corregir intento de contacto"
 #: src/features/auth/pages/LoginPage.tsx
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 #: src/features/onboarding/components/ProspectFormDialog.tsx
+#: src/features/recruitment/components/CreateAccessDialog.tsx
 #: src/features/worker/pages/ProfilePage.tsx
 #: src/shared/constants/contactAttempt.ts
 msgid "Correo"
 msgstr "Correo"
+
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+msgid "Correo copiado"
+msgstr "Correo copiado"
+
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+msgid "Correo corporativo"
+msgstr "Correo corporativo"
 
 #: src/features/admin/pages/CorporateEmailPage.tsx
 #: src/layouts/Sidebar.tsx
@@ -2435,11 +2495,21 @@ msgstr "Creada"
 msgid "Creado"
 msgstr "Creado"
 
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+msgid "Créalo desde <0>Correos corporativos</0>."
+msgstr "Créalo desde <0>Correos corporativos</0>."
+
 #: src/features/admin/pages/CorporateEmailPage.tsx
 #: src/features/contracts/components/NewContractDialog.tsx
 #: src/features/conversion/components/RequirementRow.tsx
+#: src/features/recruitment/components/CreateAccessDialog.tsx
 msgid "Creando…"
 msgstr "Creando…"
+
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Crear acceso"
+msgstr "Crear acceso"
 
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Crear borrador"
@@ -2998,10 +3068,6 @@ msgstr "Editar datos del hotel"
 msgid "Editar expediente"
 msgstr "Editar expediente"
 
-#: src/features/clients/components/ClientCardItem.tsx
-msgid "Editar hotel"
-msgstr "Editar hotel"
-
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Editar personal del sistema"
 msgstr "Editar personal del sistema"
@@ -3083,6 +3149,10 @@ msgstr "El botón del menú (☰) en el encabezado esconde el panel y te da más
 #: src/features/onboarding/components/PlacesSearchField.tsx
 msgid "El buscador no está disponible"
 msgstr "El buscador no está disponible"
+
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+msgid "El buzón de correo quedó listo con la misma contraseña."
+msgstr "El buzón de correo quedó listo con la misma contraseña."
 
 #: src/features/admin/pages/CorporateEmailPage.tsx
 msgid "El buzón real detrás del correo @oranjepeople.com de cada colaborador"
@@ -3687,6 +3757,10 @@ msgstr "Elige un rol"
 msgid "Elige un turno para ver a sus colaboradores."
 msgstr "Elige un turno para ver a sus colaboradores."
 
+#: src/features/worker/pages/PasswordPage.tsx
+msgid "Elige una que solo tú sepas; la temporal que te dieron deja de servir."
+msgstr "Elige una que solo tú sepas; la temporal que te dieron deja de servir."
+
 #: src/shared/constants/requisitionStatus.ts
 msgid "Eliminada"
 msgstr "Eliminada"
@@ -3840,6 +3914,10 @@ msgstr "entra {0}"
 msgid "Entra a Oranje"
 msgstr "Entra a Oranje"
 
+#: src/features/recruitment/components/ChangeStateDialog.tsx
+msgid "Entra al Pool hoy y tiene 3 días para completar sus datos desde su app; si no lo hace, su acceso se bloquea hasta que los complete."
+msgstr "Entra al Pool hoy y tiene 3 días para completar sus datos desde su app; si no lo hace, su acceso se bloquea hasta que los complete."
+
 #: src/features/schedule/components/AddShiftDialog.tsx
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/features/timesheet/components/ReviewDayDialog.tsx
@@ -3947,6 +4025,10 @@ msgstr "Es el contacto principal"
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 msgid "es el principal de este hotel"
 msgstr "es el principal de este hotel"
+
+#: src/features/worker/components/ChangePasswordForm.tsx
+msgid "Es la contraseña con la que entras a esta app. La de tu correo corporativo se cambia desde el correo."
+msgstr "Es la contraseña con la que entras a esta app. La de tu correo corporativo se cambia desde el correo."
 
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Es menor de edad"
@@ -4079,6 +4161,10 @@ msgstr "Ese colaborador ya tiene una asignación activa."
 msgid "Ese correo ya está dado de alta en Oranje."
 msgstr "Ese correo ya está dado de alta en Oranje."
 
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+msgid "Ese correo ya está en uso: prueba otro."
+msgstr "Ese correo ya está en uso: prueba otro."
+
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Ese correo ya tiene cuenta de acceso. Da el alta sin contraseña (invitación) o que la persona use «¿Olvidaste tu contraseña?»."
 msgstr "Ese correo ya tiene cuenta de acceso. Da el alta sin contraseña (invitación) o que la persona use «¿Olvidaste tu contraseña?»."
@@ -4132,8 +4218,12 @@ msgid "Ese turno no es tuyo. Recarga la pantalla e inténtalo de nuevo."
 msgstr "Ese turno no es tuyo. Recarga la pantalla e inténtalo de nuevo."
 
 #: src/features/recruitment/components/ChangeStateDialog.tsx
-msgid "Eso lo completa el colaborador desde su propia app."
-msgstr "Eso lo completa el colaborador desde su propia app."
+msgid "Eso lo define Reclutamiento: ciérrame y usa «Editar» para completarlo."
+msgstr "Eso lo define Reclutamiento: ciérrame y usa «Editar» para completarlo."
+
+#: src/features/recruitment/components/ChangeStateDialog.tsx
+msgid "Eso lo puede completar el colaborador desde su propia app."
+msgstr "Eso lo puede completar el colaborador desde su propia app."
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
 msgid "Esperando aprobación"
@@ -4303,6 +4393,10 @@ msgstr "Este ciclo ya estaba cerrado."
 msgid "Este colaborador no tiene un correo @oranjepeople.com asignado todavía."
 msgstr "Este colaborador no tiene un correo @oranjepeople.com asignado todavía."
 
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+msgid "Este colaborador ya tiene acceso."
+msgstr "Este colaborador ya tiene acceso."
+
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 msgid "Este contacto aparece en la bitácora de intentos, así que no se puede borrar. Desactívalo y dejará de mostrarse."
 msgstr "Este contacto aparece en la bitácora de intentos, así que no se puede borrar. Desactívalo y dejará de mostrarse."
@@ -4453,6 +4547,7 @@ msgid "evidencia-turnos.pdf"
 msgstr "evidencia-turnos.pdf"
 
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
+#: src/features/recruitment/lib/profileFields.ts
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 #: src/features/worker/pages/ProfilePage.tsx
 msgid "Experiencia"
@@ -4676,7 +4771,7 @@ msgid "Geocerca"
 msgstr "Geocerca"
 
 #. placeholder {0}: client.geofenceRadiusM
-#: src/features/clients/components/ClientCardItem.tsx
+#: src/features/clients/components/ClientCardGrid.tsx
 msgid "geocerca {0} m"
 msgstr "geocerca {0} m"
 
@@ -4723,6 +4818,7 @@ msgstr "Guardando tu ubicación y tu foto"
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/features/team/components/AssignTerritoryDialog.tsx
 #: src/features/timesheet/components/ReviewDayDialog.tsx
+#: src/features/worker/components/ChangePasswordForm.tsx
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "Guardando…"
 msgstr "Guardando…"
@@ -5025,6 +5121,7 @@ msgstr "Indicador"
 #: src/features/recruitment/components/PoolFilters.tsx
 #: src/features/recruitment/components/PoolRoster.tsx
 #: src/features/recruitment/components/PoolTable.tsx
+#: src/features/recruitment/lib/profileFields.ts
 #: src/features/recruitment/pages/SelfPickPage.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 #: src/features/requisitions/components/AuthorizationPositionsTable.tsx
@@ -5219,6 +5316,11 @@ msgstr "La bitácora del prospecto vive de estos registros: quién buscó al hot
 msgid "La contraseña necesita al menos 8 caracteres"
 msgstr "La contraseña necesita al menos 8 caracteres"
 
+#. placeholder {0}: worker?.fullName ?? ''
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+msgid "La contraseña se muestra una sola vez. Dásela en mano a {0}."
+msgstr "La contraseña se muestra una sola vez. Dásela en mano a {0}."
+
 #: src/features/onboarding/components/SemaforoHelpDialog.tsx
 msgid "La conversión a cliente es exclusiva del BDC y exige el Usuario del Hotel creado."
 msgstr "La conversión a cliente es exclusiva del BDC y exige el Usuario del Hotel creado."
@@ -5236,6 +5338,11 @@ msgstr "La conversión Rosa → Naranja quedó aprobada: el hotel puede generar 
 #: src/features/conversion/api/conversionApi.ts
 msgid "La cuenta con la que el hotel opera Oranje: pedir requisiciones, administrar su Schedule y aprobar horas. Se crea para el contacto principal — {0} · {1} — y sin ella la conversión se bloquea"
 msgstr "La cuenta con la que el hotel opera Oranje: pedir requisiciones, administrar su Schedule y aprobar horas. Se crea para el contacto principal — {0} · {1} — y sin ella la conversión se bloquea"
+
+#. placeholder {0}: credential.mailbox.reason
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+msgid "La cuenta de Oranje ya existe, pero el buzón de correo no se pudo crear: {0}."
+msgstr "La cuenta de Oranje ya existe, pero el buzón de correo no se pudo crear: {0}."
 
 #: src/features/admin/components/HotelUserFormDialog.tsx
 msgid "La cuenta quedó guardada, pero el correo de invitación no salió: reenvíala desde su ficha."
@@ -5385,6 +5492,12 @@ msgstr "La propuesta se trabaja con el hotel en Verde o Café: este está en {0}
 msgid "La propuesta vive en Verde"
 msgstr "La propuesta vive en Verde"
 
+#. placeholder {0}: formatDate(password.dueAt)
+#. placeholder {1}: password.day ?? 1
+#: src/features/worker/components/AccessDeadlineBanner.tsx
+msgid "La que te dieron es temporal. Tienes hasta el <0>{0}</0> (día {1} de 3); después tu acceso se bloquea hasta que la cambies."
+msgstr "La que te dieron es temporal. Tienes hasta el <0>{0}</0> (día {1} de 3); después tu acceso se bloquea hasta que la cambies."
+
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "La requisición es el pedido formal de colaboradores: qué posiciones necesitas y cuántas personas en cada una."
 msgstr "La requisición es el pedido formal de colaboradores: qué posiciones necesitas y cuántas personas en cada una."
@@ -5444,6 +5557,10 @@ msgstr "Las defines tú en la entrevista; el candidato no las declara"
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
 msgid "Las dos"
 msgstr "Las dos"
+
+#: src/features/worker/components/ChangePasswordForm.tsx
+msgid "Las dos contraseñas no coinciden"
+msgstr "Las dos contraseñas no coinciden"
 
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Las enviadas no se editan: para renegociar se abre una versión nueva, que arranca con las tarifas de la anterior. El contrato de esta versión se abre desde el historial."
@@ -5921,6 +6038,10 @@ msgstr "Meta del ciclo: el hotel ya es cliente."
 msgid "MG"
 msgstr "MG"
 
+#: src/features/worker/components/MobileShell.tsx
+msgid "Mi correo"
+msgstr "Mi correo"
+
 #: src/features/team/pages/TeamPage.tsx
 #: src/layouts/Sidebar.tsx
 msgid "Mi Equipo"
@@ -5956,6 +6077,10 @@ msgstr "Mié"
 msgid "Mientras dure tu incapacidad no hay turnos que ponchar. Tu Inspector lleva el seguimiento."
 msgstr "Mientras dure tu incapacidad no hay turnos que ponchar. Tu Inspector lleva el seguimiento."
 
+#: src/features/worker/components/ChangePasswordForm.tsx
+msgid "Mínimo {MIN_LENGTH} caracteres"
+msgstr "Mínimo {MIN_LENGTH} caracteres"
+
 #: src/features/worker/components/MobileShell.tsx
 msgid "Mis datos"
 msgstr "Mis datos"
@@ -5969,6 +6094,7 @@ msgstr "modalidad"
 #: src/features/recruitment/components/PoolFilters.tsx
 #: src/features/recruitment/components/PoolRoster.tsx
 #: src/features/recruitment/components/PoolTable.tsx
+#: src/features/recruitment/lib/profileFields.ts
 #: src/features/recruitment/pages/SelfPickPage.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 #: src/features/requisitions/components/AuthorizationPositionsTable.tsx
@@ -6540,6 +6666,10 @@ msgstr "No se pudo cambiar el estado. Inténtalo de nuevo."
 msgid "No se pudo cambiar el estado. Revisa el motivo e inténtalo de nuevo."
 msgstr "No se pudo cambiar el estado. Revisa el motivo e inténtalo de nuevo."
 
+#: src/features/worker/components/ChangePasswordForm.tsx
+msgid "No se pudo cambiar la contraseña. Inténtalo de nuevo."
+msgstr "No se pudo cambiar la contraseña. Inténtalo de nuevo."
+
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
 msgid "No se pudo cambiar la semana. Inténtalo de nuevo."
 msgstr "No se pudo cambiar la semana. Inténtalo de nuevo."
@@ -6654,6 +6784,10 @@ msgstr "No se pudo copiar. Anótalo a mano."
 msgid "No se pudo corregir el intento. Solo su autor puede hacerlo."
 msgstr "No se pudo corregir el intento. Solo su autor puede hacerlo."
 
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+msgid "No se pudo crear el acceso. Inténtalo de nuevo."
+msgstr "No se pudo crear el acceso. Inténtalo de nuevo."
+
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "No se pudo crear el contrato. Revisa los datos e inténtalo de nuevo."
 msgstr "No se pudo crear el contrato. Revisa los datos e inténtalo de nuevo."
@@ -6661,6 +6795,10 @@ msgstr "No se pudo crear el contrato. Revisa los datos e inténtalo de nuevo."
 #: src/features/conversion/pages/ConversionPage.tsx
 msgid "No se pudo crear la cuenta del hotel. Inténtalo de nuevo."
 msgstr "No se pudo crear la cuenta del hotel. Inténtalo de nuevo."
+
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+msgid "No se pudo crear la cuenta. Inténtalo de nuevo."
+msgstr "No se pudo crear la cuenta. Inténtalo de nuevo."
 
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "No se pudo descartar el borrador. Inténtalo de nuevo."
@@ -6807,7 +6945,7 @@ msgstr "No se puede activar sin tarifas: agrega al menos una."
 msgid "No se puede calificar una auditoría donde todo quedó en N/A."
 msgstr "No se puede calificar una auditoría donde todo quedó en N/A."
 
-#. placeholder {0}: missingProfileFields.join(', ')
+#. placeholder {0}: missingPhase1Fields.join(', ')
 #: src/features/recruitment/components/ChangeStateDialog.tsx
 msgid "No se puede validar todavía: falta {0} en su expediente."
 msgstr "No se puede validar todavía: falta {0} en su expediente."
@@ -6876,6 +7014,10 @@ msgstr "Nombre del BD, p. ej. Rocío Lima…"
 msgid "Nombre del colaborador, p. ej. Ana Rivera…"
 msgstr "Nombre del colaborador, p. ej. Ana Rivera…"
 
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+msgid "Nombre del contacto de emergencia"
+msgstr "Nombre del contacto de emergencia"
+
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "Nombre del hotel"
 msgstr "Nombre del hotel"
@@ -6905,6 +7047,10 @@ msgstr "Nombre o correo, p. ej. Ana Rivera…"
 #: src/features/admin/components/HotelUsersSection.tsx
 msgid "Nombre, correo u hotel, p. ej. Xcaret…"
 msgstr "Nombre, correo u hotel, p. ej. Xcaret…"
+
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+msgid "Nombre, p. ej. Rubén Sandoval"
+msgstr "Nombre, p. ej. Rubén Sandoval"
 
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 msgid "nombre@hotel.mx"
@@ -7047,6 +7193,10 @@ msgstr "opcional"
 msgid "Opcional: en una visita en frío puedes no encontrar a nadie"
 msgstr "Opcional: en una visita en frío puedes no encontrar a nadie"
 
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+msgid "Opcional: lo completa el colaborador desde su app, pero si ya lo tienes, captúralo aquí y podrás validarlo sin esperar"
+msgstr "Opcional: lo completa el colaborador desde su app, pero si ya lo tienes, captúralo aquí y podrás validarlo sin esperar"
+
 #: src/shared/constants/roles.ts
 msgid "Operador de QA"
 msgstr "Operador de QA"
@@ -7174,10 +7324,15 @@ msgstr "Para crear: {0}."
 msgid "parcial"
 msgstr "parcial"
 
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "Parentesco"
 msgstr "Parentesco"
+
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+msgid "Parentesco…"
+msgstr "Parentesco…"
 
 #: src/features/personnel/components/ReportWorkerDialog.tsx
 msgid "Pasa a Rojo: es una incidencia, no una pausa. Inspección la revisa."
@@ -7190,6 +7345,14 @@ msgstr "Pasa a Rosa: queda en pausa, sin turnos nuevos, hasta que el Hotel lo re
 #: src/features/worker/components/TaxDeadlineBanner.tsx
 msgid "Pasaron 5 días sin cargar tu SSN o ITIN. Súbelo aquí y tu acceso vuelve al instante — tus datos y tu historial no se pierden. Si no puedes subirlo, contacta a Oranje (Customer Service)."
 msgstr "Pasaron 5 días sin cargar tu SSN o ITIN. Súbelo aquí y tu acceso vuelve al instante — tus datos y tu historial no se pierden. Si no puedes subirlo, contacta a Oranje (Customer Service)."
+
+#: src/features/worker/components/AccessDeadlineBanner.tsx
+msgid "Pasaron los 3 días para cambiar la contraseña temporal que te dieron. Elige la tuya aquí y tu acceso vuelve al instante — tus datos y tu historial no se pierden."
+msgstr "Pasaron los 3 días para cambiar la contraseña temporal que te dieron. Elige la tuya aquí y tu acceso vuelve al instante — tus datos y tu historial no se pierden."
+
+#: src/features/worker/components/AccessDeadlineBanner.tsx
+msgid "Pasaron los 3 días para completar tu expediente después de que Reclutamiento te validó. Llénalo aquí y tu acceso vuelve al instante — tus datos y tu historial no se pierden."
+msgstr "Pasaron los 3 días para completar tu expediente después de que Reclutamiento te validó. Llénalo aquí y tu acceso vuelve al instante — tus datos y tu historial no se pierden."
 
 #: src/features/worker/pages/Phase2Page.tsx
 msgid "Paso 1 de 2"
@@ -7274,10 +7437,17 @@ msgstr "perfil completo"
 msgid "perfil incompleto"
 msgstr "perfil incompleto"
 
-#: src/features/recruitment/components/PoolRoster.tsx
-#: src/features/recruitment/pages/WorkerDetailPage.tsx
+#: src/features/recruitment/components/ProfilePendingLabel.tsx
 msgid "Perfil incompleto"
 msgstr "Perfil incompleto"
+
+#: src/features/recruitment/components/ProfilePendingLabel.tsx
+msgid "Perfil incompleto · hasta el {date}"
+msgstr "Perfil incompleto · hasta el {date}"
+
+#: src/features/recruitment/components/ProfilePendingLabel.tsx
+msgid "Perfil incompleto · venció, acceso bloqueado"
+msgstr "Perfil incompleto · venció, acceso bloqueado"
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Perfil laboral y salud"
@@ -7311,6 +7481,10 @@ msgstr "Pide al menos 1 persona"
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "Pide personal para tu hotel"
 msgstr "Pide personal para tu hotel"
+
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+msgid "Pídele al Administrador que lo cree desde Correos corporativos."
+msgstr "Pídele al Administrador que lo cree desde Correos corporativos."
 
 #: src/features/onboarding/components/RegisterAttemptDialog.tsx
 msgid "Pidió que llamáramos la próxima semana"
@@ -7368,10 +7542,6 @@ msgstr "Pool por estado"
 msgid "Por ahora la retención del 16% aplica a todos los colaboradores, suban o verifiquen o no su SSN/ITIN — es temporal, mientras se conecta ese proceso."
 msgstr "Por ahora la retención del 16% aplica a todos los colaboradores, suban o verifiquen o no su SSN/ITIN — es temporal, mientras se conecta ese proceso."
 
-#: src/features/clients/components/ClientCardItem.tsx
-msgid "Por ahora, edita el hotel desde su ficha en el Pipeline"
-msgstr "Por ahora, edita el hotel desde su ficha en el Pipeline"
-
 #: src/features/recruitment/types/blacklist.types.ts
 msgid "Por ausencias"
 msgstr "Por ausencias"
@@ -7424,6 +7594,7 @@ msgstr "posición"
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 #: src/features/recruitment/components/PoolFilters.tsx
 #: src/features/recruitment/components/PoolTable.tsx
+#: src/features/recruitment/lib/profileFields.ts
 #: src/features/recruitment/pages/SelfPickPage.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 #: src/features/requisitions/components/AuthorizationPositionsTable.tsx
@@ -7564,6 +7735,10 @@ msgstr "Propuesta v{0} · {1}"
 #: src/layouts/Sidebar.tsx
 msgid "Propuestas"
 msgstr "Propuestas"
+
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+msgid "Propuesto con la inicial y el apellido; cámbialo si ya existe."
+msgstr "Propuesto con la inicial y el apellido; cámbialo si ya existe."
 
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "Prospecto actualizado"
@@ -7796,6 +7971,12 @@ msgstr "Reclutamiento e Inspección toman la operación"
 msgid "Reclutamiento la verá cuando un Manager la autorice. Sin la firma, para ellos no existe."
 msgstr "Reclutamiento la verá cuando un Manager la autorice. Sin la firma, para ellos no existe."
 
+#. placeholder {0}: formatDate(profile.dueAt)
+#. placeholder {1}: profile.day ?? 1
+#: src/features/worker/components/AccessDeadlineBanner.tsx
+msgid "Reclutamiento ya te validó con tu expediente a medias. Tienes hasta el <0>{0}</0> (día {1} de 3); después tu acceso se bloquea hasta que lo completes."
+msgstr "Reclutamiento ya te validó con tu expediente a medias. Tienes hasta el <0>{0}</0> (día {1} de 3); después tu acceso se bloquea hasta que lo completes."
+
 #: src/features/auth/pages/LoginPage.tsx
 msgid "Recupera tu contraseña"
 msgstr "Recupera tu contraseña"
@@ -7883,6 +8064,10 @@ msgstr "Renovar contrato"
 #: src/features/team/components/AssignTerritoryDialog.tsx
 msgid "Repartir el territorio"
 msgstr "Repartir el territorio"
+
+#: src/features/worker/components/ChangePasswordForm.tsx
+msgid "Repítela"
+msgstr "Repítela"
 
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/components/HotelUsersSection.tsx
@@ -8387,6 +8572,11 @@ msgstr "Sigues en Blanco hasta que la Reclutadora valide el alta"
 msgid "Siguiente paso: activar el contrato"
 msgstr "Siguiente paso: activar el contrato"
 
+#: src/features/recruitment/components/PoolRoster.tsx
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Sin acceso a la app"
+msgstr "Sin acceso a la app"
+
 #: src/features/onboarding/pages/PipelinePage.tsx
 #: src/features/team/pages/TeamPage.tsx
 msgid "Sin actividad 7+ días"
@@ -8442,7 +8632,7 @@ msgstr "Sin contacto registrado — agrégalo en la ficha del prospecto"
 msgid "Sin contraseñas de por medio"
 msgstr "Sin contraseñas de por medio"
 
-#: src/features/clients/components/ClientCardItem.tsx
+#: src/features/clients/components/ClientCardGrid.tsx
 #: src/features/clients/components/ClientMapCard.tsx
 #: src/features/clients/components/ClientSpotlightCard.tsx
 msgid "sin contrato"
@@ -8633,6 +8823,7 @@ msgstr "sin salida"
 msgid "Sin salidas registradas todavía. Ningún ciclo se ha ido a Rojo, Café o Negro."
 msgstr "Sin salidas registradas todavía. Ningún ciclo se ha ido a Rojo, Café o Negro."
 
+#: src/features/clients/components/ClientCardGrid.tsx
 #: src/features/contracts/components/ContractCardGrid.tsx
 msgid "Sin tarifas"
 msgstr "Sin tarifas"
@@ -8680,6 +8871,10 @@ msgstr "Sin zonas elegidas el BD queda sin territorio asignado."
 #: src/features/team/components/AssignTerritoryDialog.tsx
 msgid "Sin zonas también es válido"
 msgstr "Sin zonas también es válido"
+
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+msgid "Sirve para entrar a la app y para el correo. Tiene 3 días para cambiarla desde su app; si no, su acceso se bloquea hasta que lo haga."
+msgstr "Sirve para entrar a la app y para el correo. Tiene 3 días para cambiarla desde su app; si no, su acceso se bloquea hasta que lo haga."
 
 #: src/features/requisitions/components/RequisitionJournalDialog.tsx
 #: src/shared/constants/roles.ts
@@ -8767,6 +8962,10 @@ msgstr "Solo el Manager de Área o el Manager General pueden aprobar la semana."
 msgid "Solo el nombre es obligatorio. Puesto, teléfono y correo se registran con lo que se tenga y se completan después."
 msgstr "Solo el nombre es obligatorio. Puesto, teléfono y correo se registran con lo que se tenga y se completan después."
 
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+msgid "Solo letras, números, punto y guión"
+msgstr "Solo letras, números, punto y guión"
+
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 msgid "Solo lo aprobado paga"
 msgstr "Solo lo aprobado paga"
@@ -8849,6 +9048,15 @@ msgstr "Stand-by"
 #: src/features/conversion/pages/ConversionPage.tsx
 msgid "Su conversión ya se aprobó: no hay nada que convertir."
 msgstr "Su conversión ya se aprobó: no hay nada que convertir."
+
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+msgid "Su cuenta de Oranje y su correo corporativo, con una contraseña temporal para entregar en mano."
+msgstr "Su cuenta de Oranje y su correo corporativo, con una contraseña temporal para entregar en mano."
+
+#. placeholder {0}: missingProfileFields.join(', ')
+#: src/features/recruitment/components/ChangeStateDialog.tsx
+msgid "Su expediente está a medias: falta {0}."
+msgstr "Su expediente está a medias: falta {0}."
 
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Su propio peso por reactivo y arrastre para reordenar — por eso vive separado, con una línea divisoria antes de su pestaña."
@@ -8985,6 +9193,10 @@ msgstr "Teléfono copiado: márcalo desde tu celular"
 msgid "Teléfono de emergencia"
 msgstr "Teléfono de emergencia"
 
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+msgid "Teléfono del contacto de emergencia"
+msgstr "Teléfono del contacto de emergencia"
+
 #: src/features/onboarding/components/HotelDataCard.tsx
 msgid "Teléfono general"
 msgstr "Teléfono general"
@@ -9097,6 +9309,8 @@ msgid "Tipo de marca"
 msgstr "Tipo de marca"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+#: src/features/recruitment/lib/profileFields.ts
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 #: src/features/worker/pages/Phase3Page.tsx
 #: src/features/worker/pages/ProfilePage.tsx
@@ -9226,6 +9440,7 @@ msgstr "Todos los días de este grupo pertenecen a esta requisición"
 msgid "Todos los estados"
 msgstr "Todos los estados"
 
+#: src/features/clients/pages/ClientPortfolioPage.tsx
 #: src/features/timesheet/components/TimesheetToolbar.tsx
 msgid "Todos los hoteles"
 msgstr "Todos los hoteles"
@@ -9251,6 +9466,8 @@ msgid "Total: {positionCount, plural, one {# posición} other {# posiciones}} ·
 msgstr "Total: {positionCount, plural, one {# posición} other {# posiciones}} · {totalSlots, plural, one {# slot} other {# slots}}"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+#: src/features/recruitment/lib/profileFields.ts
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 #: src/features/worker/pages/Phase2Page.tsx
 #: src/features/worker/pages/ProfilePage.tsx
@@ -9264,6 +9481,14 @@ msgstr "Transporte guardado"
 #: src/features/worker/pages/Phase2Page.tsx
 msgid "Transporte guardado."
 msgstr "Transporte guardado."
+
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+msgid "Transporte y tipo de sangre"
+msgstr "Transporte y tipo de sangre"
+
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+msgid "Transporte, emergencia y salud"
+msgstr "Transporte, emergencia y salud"
 
 #: src/features/recruitment/pages/BlacklistPage.tsx
 msgid "Tres reglas que el sistema hace cumplir siempre: un colaborador en <0>Gris</0> (accidentado) no se puede vetar; solo hay un veto vigente a la vez y el historial nunca se borra; y al levantarlo la persona vuelve a <1>Blanco</1>, reingresando por la validación de la Reclutadora."
@@ -9623,6 +9848,10 @@ msgstr "Vacaciones"
 msgid "Validar lo hace entrar al Pool"
 msgstr "Validar lo hace entrar al Pool"
 
+#: src/features/recruitment/components/ChangeStateDialog.tsx
+msgid "Validarlo de todas formas"
+msgstr "Validarlo de todas formas"
+
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Varias Reclutadoras pueden trabajar la misma requisición a la vez."
 msgstr "Varias Reclutadoras pueden trabajar la misma requisición a la vez."
@@ -9653,11 +9882,6 @@ msgstr "Vencimiento"
 msgid "Ventas"
 msgstr "Ventas"
 
-#. placeholder {0}: client.hotelName
-#: src/features/clients/components/ClientCardItem.tsx
-msgid "Ver {0} en el mapa"
-msgstr "Ver {0} en el mapa"
-
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Ver bitácora"
 msgstr "Ver bitácora"
@@ -9665,10 +9889,6 @@ msgstr "Ver bitácora"
 #: src/features/conversion/pages/ConversionQueuePage.tsx
 msgid "Ver Clientes Activos"
 msgstr "Ver Clientes Activos"
-
-#: src/features/clients/components/ClientCardItem.tsx
-msgid "Ver detalle"
-msgstr "Ver detalle"
 
 #: src/features/conversion/pages/ConversionPage.tsx
 msgid "Ver en Clientes Activos"
@@ -9968,6 +10188,10 @@ msgstr "Ya hay un documento de {0}: bórralo antes de subir otro."
 msgid "Ya hay un veto vigente para esta persona: levántalo antes de registrar otro."
 msgstr "Ya hay un veto vigente para esta persona: levántalo antes de registrar otro."
 
+#: src/features/recruitment/components/CreateAccessDialog.tsx
+msgid "Ya la anoté"
+msgstr "Ya la anoté"
+
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "ya marcaron hoy"
 msgstr "ya marcaron hoy"
@@ -10016,7 +10240,7 @@ msgstr "Zona {0} · {1}"
 
 #. placeholder {0}: client.zoneName
 #. placeholder {1}: formatDate(client.activatedAt)
-#: src/features/clients/components/ClientCardItem.tsx
+#: src/features/clients/components/ClientCardGrid.tsx
 msgid "Zona {0} · cliente desde {1}"
 msgstr "Zona {0} · cliente desde {1}"
 

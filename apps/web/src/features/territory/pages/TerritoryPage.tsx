@@ -81,8 +81,12 @@ export function TerritoryPage(): ReactNode {
       : (hotels.find((hotel) => hotel.id === pickedHotelId) ??
         (isWideScreen() ? (hotels[0] ?? null) : null))
 
+  // Alto propio: ni el AppShell ni su envoltorio dan altura, así que `h-full`
+  // no resolvía y la página entera se desplazaba con la lista. Con el alto de
+  // la ventana menos header y márgenes, el mapa se queda quieto y solo la
+  // lista de la izquierda se desliza.
   return (
-    <div className="grid grid-cols-1 gap-5 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
+    <div className="grid grid-cols-1 gap-5 lg:h-[calc(100vh-var(--hd)-3rem)] lg:min-h-0 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
       <section className="flex flex-col rounded-lg border border-line bg-surface p-6 lg:min-h-0">
         <h1 className="text-2xl font-bold tracking-tight text-ink">
           {ownerName ? <Trans>Territorio de {ownerName}</Trans> : <Trans>Mi Territorio</Trans>}

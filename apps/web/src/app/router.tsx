@@ -150,6 +150,13 @@ export const router = createBrowserRouter([
             },
           },
           {
+            path: 'password',
+            lazy: async () => {
+              const m = await import('@/features/worker')
+              return { Component: m.PasswordPage }
+            },
+          },
+          {
             path: 'punch',
             lazy: async () => {
               const m = await import('@/features/worker')

@@ -3,6 +3,8 @@
  * modalidad e inglés los registra Requisiciones y `/me` la sesión. Con mocks
  * apagados este módulo es un no-op.
  */
+import type { WorkerAccessCredential } from '../types/pool.types'
+
 // eslint-disable-next-line no-restricted-imports
 import { registerRequisitionsMocks } from '@/features/requisitions/api/requisitionsMocks'
 import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
@@ -95,6 +97,7 @@ function buildWorker(input: {
     bloodType: 'O_POS',
     state: STATE[input.state] ?? (STATE.WHITE as StatusRefApi),
     isProfileComplete: input.isProfileComplete ?? true,
+    profileDueAt: null,
     /** D-27: mientras el cifrado no se conecte, `has_tax_id` es siempre false. */
     hasTaxId: false,
     hasAccount: input.email !== undefined,
@@ -200,6 +203,30 @@ const routes: readonly MockRoute[] = [
       return {
         data: items.map((worker) => ({ ...worker })),
         meta: { page: 1, limit: 100, total: items.length, totalPages: 1 },
+      }
+    },
+  },
+  {
+    method: 'GET',
+    path: '/workers/access-domain',
+    resolve: (): ApiEnvelope<{ domain: string }> => ({ data: { domain: 'oranjepeople.com' } }),
+  },
+  {
+    method: 'POST',
+    path: '/workers/:workerId/access',
+    resolve: ({ params, body }): ApiEnvelope<WorkerAccessCredential> => {
+      const found = workers.find((worker) => worker.id === params.workerId)
+      if (!found) throw new Error('No existe')
+      const { localPart } = (body ?? {}) as { localPart?: string }
+      const email = `${localPart ?? 'colaborador'}@oranjepeople.com`
+      found.hasAccount = true
+      found.email = email
+      return {
+        data: {
+          email,
+          password: 'Temporal-1234',
+          mailbox: { created: false, reason: 'IP de salida no autorizada' },
+        },
       }
     },
   },
