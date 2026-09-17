@@ -1,9 +1,9 @@
 import { Trans, useLingui } from '@lingui/react/macro'
-import { statusLight } from '@oranje/ui'
+import { MaterialIcon, statusLight } from '@oranje/ui'
 import { lazy, Suspense, useMemo, useState, type ReactNode } from 'react'
 
 import { useGetClientsQuery } from '../api/clientsApi'
-import { ClientCardItem } from '../components/ClientCardItem'
+import { ClientCardGrid } from '../components/ClientCardGrid'
 import { ClientFilters } from '../components/ClientFilters'
 import { ClientSpotlightCard } from '../components/ClientSpotlightCard'
 import type { ClientFilters as Filters } from '../types/client.types'
@@ -37,11 +37,15 @@ const EMPTY_FILTERS: Filters = {
 const NO_CONTRACT_COLOR = statusLight['st-gris']
 
 /**
- * Clientes Activos: los hoteles con `activated_at`, en lista y en mapa.
+ * Clientes Activos: los hoteles con `activated_at`, en mapa y en lista.
  *
- * La lista y el mapa comparten selección en los dos sentidos —elegir una
- * tarjeta mueve el mapa y elegir un pin resalta su tarjeta—: son dos vistas de
- * lo mismo, y que cada una llevara su propio foco obligaría a buscar dos veces.
+ * Antes compartían selección: elegir una tarjeta de una lista angosta movía
+ * el mapa, y el hotel elegido desaparecía de esa lista para reaparecer
+ * transformado arriba — Hugo lo reportó como "parece que es una lista
+ * aparte". Ahora el mapa manda: ocupa el ancho completo y un pin abre su
+ * ficha FLOTANDO sobre el mapa mismo (como una tarjeta de lugar). La lista de
+ * abajo deja de tener un mecanismo propio de "elegir" — es la misma rejilla
+ * de tarjetas de Contratos, cada una un enlace directo a su ficha.
  */
 export function ClientPortfolioPage(): ReactNode {
   const { t } = useLingui()
@@ -74,8 +78,12 @@ export function ClientPortfolioPage(): ReactNode {
     [items],
   )
 
-  // Si el filtro se llevó al hotel elegido, manda el primero de los que quedan.
-  const selected = items.find((client) => client.id === selectedId) ?? items[0] ?? null
+  /**
+   * Nadie está elegido hasta que se toca un pin — no hay una tarjeta grande
+   * "por defecto". Si el filtro se llevó al hotel elegido, la tarjeta
+   * flotante simplemente se cierra sola (no hay a quién mostrar).
+   */
+  const selected = items.find((client) => client.id === selectedId) ?? null
 
   /** Las tres cifras de la píldora del mapa. */
   const activeContracts = items.filter((client) => client.contract?.status === 'ACTIVE').length
@@ -161,44 +169,24 @@ export function ClientPortfolioPage(): ReactNode {
 
       {isLoading && !portfolio ? (
         <CardGridSkeleton cards={4} />
+      ) : items.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+          <Trans>
+            Ningún hotel coincide con estos filtros. Cambia la búsqueda o quita un filtro.
+          </Trans>
+        </p>
       ) : (
-        /* La referencia: la ficha grande a la izquierda, el mapa dominante a la derecha. */
-        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
-          {items.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-              <Trans>
-                Ningún hotel coincide con estos filtros. Cambia la búsqueda o quita un filtro.
-              </Trans>
-            </p>
-          ) : (
-            <div className="flex flex-col gap-4">
-              {selected && <ClientSpotlightCard client={selected} />}
-              {items.length > 1 && (
-                <p className="text-sm text-ink-3">
-                  <Trans>Elige un hotel de la lista para verlo en grande arriba</Trans>
-                </p>
-              )}
-              <ul className="flex flex-col gap-3">
-                {items.map((client) => (
-                  <ClientCardItem
-                    key={client.id}
-                    client={client}
-                    isSelected={client.id === selected?.id}
-                    onSelect={setSelectedId}
-                  />
-                ))}
-              </ul>
-            </div>
-          )}
-
+        <div className="flex flex-col gap-6">
+          {/* El mapa manda: ancho completo, con la tarjeta del hotel elegido
+              flotando encima (como una tarjeta de lugar), no al costado. */}
           <div className="relative">
             <HotelPointsMap
               points={points}
               selectedId={selected?.id ?? null}
               onSelect={setSelectedId}
-              className="min-h-[42rem] lg:sticky lg:top-6"
+              className="min-h-[32rem] rounded-2xl"
             />
-            {/* La píldora oscura de métricas, flotando sobre el mapa (referencia). */}
+            {/* La píldora oscura de métricas, flotando arriba del mapa (referencia). */}
             {portfolio && (
               <div className="pointer-events-none absolute top-4 left-1/2 z-10 flex -translate-x-1/2 items-stretch divide-x divide-white/20 rounded-2xl bg-ink/90 px-2 py-2.5 text-white shadow-lg backdrop-blur-sm">
                 <div className="px-4 text-center">
@@ -221,6 +209,33 @@ export function ClientPortfolioPage(): ReactNode {
                 </div>
               </div>
             )}
+
+            {/* La ficha del pin elegido, flotando abajo a la izquierda — se cierra
+                con la X o eligiendo otro pin. */}
+            {selected && (
+              <div className="absolute bottom-4 left-4 z-10 w-[calc(100%-2rem)] max-w-sm">
+                <div className="relative">
+                  <button
+                    type="button"
+                    aria-label={t`Cerrar`}
+                    onClick={() => {
+                      setSelectedId(null)
+                    }}
+                    className="absolute top-3 right-3 z-20 flex size-8 cursor-pointer items-center justify-center rounded-full bg-surface/90 text-ink-3 shadow-sm backdrop-blur-sm transition-colors hover:bg-surface hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
+                  >
+                    <MaterialIcon name="close" className="text-lg" />
+                  </button>
+                  <ClientSpotlightCard client={selected} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <h2 className="mb-3 text-lg font-semibold text-ink">
+              <Trans>Todos los hoteles</Trans>
+            </h2>
+            <ClientCardGrid clients={items} />
           </div>
         </div>
       )}
