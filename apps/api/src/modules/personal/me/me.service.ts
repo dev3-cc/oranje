@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { PrismaService } from '../../../infra/prisma/index.js'
+import { NotificationPublisherService } from '../../notifications/index.js'
 import { DocumentsService } from '../documents/documents.service.js'
 import type { DocumentEntity } from '../documents/documents.service.js'
 import type { UpdateWorkerDto } from '../workers/dto/create-worker.dto.js'
@@ -24,6 +25,7 @@ export class MeService {
     private readonly workers: WorkersService,
     private readonly deadline: TaxDeadlineService,
     private readonly documents: DocumentsService,
+    private readonly notifications: NotificationPublisherService,
   ) {}
 
   // La ficha trae el plazo: el aviso interceptor del dia 4 lo pinta el front
@@ -78,8 +80,27 @@ export class MeService {
     return document
   }
 
+  // Fase 2 la llena el propio Colaborador (autoservicio); a quien le toca
+  // revisar es "la Reclutadora" que lo dio de alta — `worker.created_by`, que
+  // la fila lleva desde que nace y nunca es nulo.
   async completeSignup(dto: UpdateWorkerDto, user: AuthenticatedUser): Promise<WorkerEntity> {
-    return this.workers.update(await this.workerId(user), dto, user)
+    const worker = await this.worker(user)
+    const result = await this.workers.update(worker.id, dto, user)
+
+    try {
+      await this.notifications.publish({
+        type: 'WORKER_PENDING_REVIEW',
+        title: 'Alta pendiente de revisión',
+        body: `${worker.fullName} completó su Fase 2 — ya se puede validar.`,
+        entity: { type: 'personal.worker', id: worker.id },
+        actorUserId: user.id,
+        audience: [{ kind: 'USER', userId: worker.createdBy }],
+      })
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no revierte el guardado.
+    }
+
+    return result
   }
 
   async updateContact(dto: UpdateWorkerDto, user: AuthenticatedUser): Promise<WorkerEntity> {
@@ -103,7 +124,9 @@ export class MeService {
 
   private async worker(user: AuthenticatedUser): Promise<{
     id: string
+    fullName: string
     createdAt: Date
+    createdBy: string
     legacyUserId: string | null
     account: { email: string } | null
   }> {
@@ -111,7 +134,9 @@ export class MeService {
       where: { OR: [{ userId: user.id }, { legacyUserId: user.id }], deletedAt: null },
       select: {
         id: true,
+        fullName: true,
         createdAt: true,
+        createdBy: true,
         legacyUserId: true,
         account: { select: { email: true } },
       },

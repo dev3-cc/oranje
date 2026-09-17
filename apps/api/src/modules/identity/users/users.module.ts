@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common'
 
+import { NotificationsModule } from '../../notifications/index.js'
 import { AuthModule } from '../auth/auth.module.js'
 
 import { CorporateEmailController } from './corporate-email.controller.js'
@@ -15,7 +16,7 @@ import { StaffUsersRepository } from './staff-users.repository.js'
 import { StaffUsersService } from './staff-users.service.js'
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, NotificationsModule],
   controllers: [
     HotelUsersController,
     HotelUsersDirectoryController,

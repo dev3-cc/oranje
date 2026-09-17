@@ -325,7 +325,7 @@ export class RequisitionsService {
       })
     }
 
-    return this.decorateOne(
+    const result = this.decorateOne(
       await this.repo.remove({
         id,
         fromStateId: fromState.id,
@@ -336,6 +336,26 @@ export class RequisitionsService {
         roleCode: user.roleCode,
       }),
     )
+
+    // REQ_DELETED: avisa a quien la creó (el Supervisor) que su requisición
+    // se eliminó. Solo en la rama distinta a Borrador — ahí quien elimina ES
+    // el creador, y no hace falta avisarse a sí mismo.
+    if (from !== DRAFT && row.createdBy) {
+      try {
+        await this.notifications.publish({
+          type: 'REQ_DELETED',
+          title: 'Requisición eliminada',
+          body: `${row.number} fue eliminada${reason ? `: ${reason}` : ''}.`,
+          entity: { type: 'demand.requisition', id },
+          actorUserId: user.id,
+          audience: [{ kind: 'USER', userId: row.createdBy }],
+        })
+      } catch {
+        // Mejor esfuerzo: que Pub/Sub no responda no revierte la eliminación.
+      }
+    }
+
+    return result
   }
 
   async authorize(id: string, user: AuthenticatedUser): Promise<RequisitionEntity> {

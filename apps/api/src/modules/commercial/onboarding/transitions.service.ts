@@ -8,6 +8,7 @@ import {
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { PrismaService } from '../../../infra/prisma/index.js'
+import { NotificationPublisherService } from '../../notifications/index.js'
 
 import type { CreateTransitionDto } from './dto/create-transition.dto.js'
 import type { HistoryEntryEntity, TransitionOptionEntity } from './entities/transition.entity.js'
@@ -17,12 +18,16 @@ import { AllowedTransition, TransitionsRepository } from './transitions.reposito
 const CLIENT_STATE = 'ORANGE'
 const PROPOSAL_STATE = 'GREEN'
 
+// Rol del vault: BD = ROL-V-01, BDC = ROL-V-02 (RR-V-01/RR-V-02).
+const BD_ROLE = 'ROL-V-01'
+
 @Injectable()
 export class TransitionsService {
   constructor(
     private readonly repo: TransitionsRepository,
     private readonly prisma: PrismaService,
     private readonly proposals: ProposalsService,
+    private readonly notifications: NotificationPublisherService,
   ) {}
 
   async available(prospectId: string, user: AuthenticatedUser): Promise<TransitionOptionEntity[]> {
@@ -102,6 +107,7 @@ export class TransitionsService {
     }
 
     let reasonId: string | null = null
+    let reasonName: string | null = null
 
     if (step.requiresReason) {
       if (!dto.reasonCode) {
@@ -121,6 +127,7 @@ export class TransitionsService {
       }
 
       reasonId = reason.id
+      reasonName = reason.name
     }
 
     const target = await this.resolveTarget(prospectId, step)
@@ -151,7 +158,153 @@ export class TransitionsService {
       roleCode: user.roleCode,
     })
 
+    await this.publishTransitionEvent({
+      prospectId,
+      hotelName: prospect.hotelName,
+      ownerUserId: prospect.ownerUserId,
+      from: prospect.state.code,
+      to: target.code,
+      reasonName,
+      user,
+    })
+
     return { from: prospect.state.code, to: target.code }
+  }
+
+  /**
+   * Seis de los siete eventos del catálogo de notificaciones que dispara este
+   * módulo: uno por cada par (from, to) que el negocio considera digno de
+   * aviso. La dirección BD↔BDC no es fija — depende de quién de los dos
+   * ejecutó la transición (`ONBOARDING_TRANSITIONS` del seed):
+   *
+   * - `ORANGE→BLACK`, `PINK→ORANGE`, `PINK→BROWN`, `BROWN|BLACK→LIGHT_BLUE`
+   *   son exclusivas del BDC (RR-V-01/02): el actor YA es el BDC, así que se
+   *   avisa al BD dueño (y en la conversión, también al BDC actor, para que
+   *   quede en su propio feed).
+   * - `GREEN→RED` y `RED→LIGHT_BLUE` son exclusivas del BD: se avisa al BDC
+   *   (`reportsToUserId` del dueño), salvo `GREEN→RED`, donde el aviso es
+   *   para el propio dueño (constatación de cierre, no escalamiento).
+   * - `GREEN→BROWN` la puede disparar CUALQUIERA de los dos: si actuó el BD,
+   *   se avisa a su BDC; si actuó el BDC, el aviso es para sí mismo.
+   *
+   * Mejor esfuerzo, sin bloquear ni revertir la transición.
+   */
+  private async publishTransitionEvent(params: {
+    prospectId: string
+    hotelName: string
+    ownerUserId: string
+    from: string
+    to: string
+    reasonName: string | null
+    user: AuthenticatedUser
+  }): Promise<void> {
+    const { prospectId, hotelName, ownerUserId, from, to, reasonName, user } = params
+
+    let event: { type: string; title: string; body: string; audience: UserAudience[] }
+
+    switch (`${from}->${to}`) {
+      case 'ORANGE->BLACK': {
+        event = {
+          type: 'SALES_CLIENT_BLACK',
+          title: 'Cliente marcado Negro',
+          body: hotelName ? `${hotelName} se marcó como Negro.` : 'El hotel se marcó como Negro.',
+          audience: userAudience(ownerUserId),
+        }
+        break
+      }
+
+      case 'GREEN->RED': {
+        event = {
+          type: 'SALES_CLOSED_RED',
+          title: 'Prospecto cerrado en Rojo',
+          body: reasonName
+            ? `El prospecto se cerró en Rojo. Motivo: ${reasonName}.`
+            : 'El prospecto se cerró en Rojo.',
+          audience: userAudience(ownerUserId),
+        }
+        break
+      }
+
+      case 'PINK->ORANGE': {
+        event = {
+          type: 'SALES_CONVERSION_APPROVED',
+          title: 'Conversión aprobada',
+          body: 'El hotel ya es cliente activo.',
+          audience: [...userAudience(ownerUserId), ...userAudience(user.id)],
+        }
+        break
+      }
+
+      case 'RED->LIGHT_BLUE': {
+        // El actor de esta transición es siempre el BD (seed: solo ROL-V-01);
+        // se avisa a su BDC.
+        event = {
+          type: 'SALES_REJECTION_HANDLED',
+          title: 'Rechazo gestionado',
+          body: 'El prospecto se reactivó tras un rechazo.',
+          audience: userAudience(await this.bdcOf(ownerUserId)),
+        }
+        break
+      }
+
+      case 'GREEN->BROWN':
+      case 'PINK->BROWN': {
+        // GREEN→BROWN la puede disparar el BD o el BDC; PINK→BROWN solo el
+        // BDC. Si quien actuó fue el BD, el aviso es para su BDC; si ya es el
+        // BDC, el aviso queda en su propio feed.
+        const audienceUserId = user.roleCode === BD_ROLE ? await this.bdcOf(ownerUserId) : user.id
+
+        event = {
+          type: 'SALES_STALLED',
+          title: 'Prospecto estancado',
+          body: 'El prospecto se marcó como estancado.',
+          audience: userAudience(audienceUserId),
+        }
+        break
+      }
+
+      case 'BROWN->LIGHT_BLUE':
+      case 'BLACK->LIGHT_BLUE': {
+        // Solo el BDC desbloquea (seed): se avisa al BD dueño del prospecto.
+        event = {
+          type: 'SALES_UNBLOCKED',
+          title: 'Prospecto desbloqueado',
+          body: 'Tu prospecto se desbloqueó y sigue activo.',
+          audience: userAudience(ownerUserId),
+        }
+        break
+      }
+
+      default:
+        return
+    }
+
+    if (event.audience.length === 0) {
+      return
+    }
+
+    try {
+      await this.notifications.publish({
+        type: event.type,
+        title: event.title,
+        body: event.body,
+        entity: { type: 'commercial.prospect', id: prospectId },
+        actorUserId: user.id,
+        audience: event.audience,
+      })
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no revierte la transición.
+    }
+  }
+
+  /** El BDC del BD dueño del prospecto (`reportsToUserId`, RR-V-01/02). */
+  private async bdcOf(ownerUserId: string): Promise<string | null> {
+    const owner = await this.prisma.user.findUnique({
+      where: { id: ownerUserId },
+      select: { reportsToUserId: true },
+    })
+
+    return owner?.reportsToUserId ?? null
   }
 
   private async assertSentProposal(prospectId: string): Promise<void> {
@@ -179,6 +332,8 @@ export class TransitionsService {
     hotelId: string
     onboardingStateId: string
     closedAt: Date | null
+    ownerUserId: string
+    hotelName: string
     state: { code: string }
   }> {
     const row = await this.prisma.prospect.findUnique({
@@ -188,6 +343,8 @@ export class TransitionsService {
         hotelId: true,
         onboardingStateId: true,
         closedAt: true,
+        ownerUserId: true,
+        hotel: { select: { name: true } },
         onboardingState: { select: { code: true } },
       },
     })
@@ -196,7 +353,7 @@ export class TransitionsService {
       throw new NotFoundException({ code: 'PROSPECT_NOT_FOUND', message: 'El prospecto no existe' })
     }
 
-    return { ...row, state: row.onboardingState }
+    return { ...row, hotelName: row.hotel.name, state: row.onboardingState }
   }
 
   private async candidatesTo(
@@ -265,4 +422,10 @@ export class TransitionsService {
 
     return state.id
   }
+}
+
+type UserAudience = { kind: 'USER'; userId: string }
+
+function userAudience(userId: string | null): UserAudience[] {
+  return userId ? [{ kind: 'USER', userId }] : []
 }

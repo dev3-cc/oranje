@@ -4,6 +4,7 @@ import { v7 as uuidv7 } from 'uuid'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { PlacesService } from '../../../infra/places/index.js'
 import { PrismaService } from '../../../infra/prisma/index.js'
+import { NotificationPublisherService } from '../../notifications/index.js'
 
 import type { CreateHotelDto } from './dto/create-hotel.dto.js'
 import type { QueryHotelsDto } from './dto/query-hotels.dto.js'
@@ -27,12 +28,17 @@ export interface Paginated<T> {
   meta: { page: number; limit: number; total: number; totalPages: number }
 }
 
+// Business Developer Coordinator (permissions.ts): quien recibe el aviso de
+// perfil de hotel nuevo es el BDC de la zona, no el BD.
+const BDC = 'ROL-V-02'
+
 @Injectable()
 export class HotelsService {
   constructor(
     private readonly repo: HotelsRepository,
     private readonly places: PlacesService,
     private readonly prisma: PrismaService,
+    private readonly notifications: NotificationPublisherService,
   ) {}
 
   async list(query: QueryHotelsDto): Promise<Paginated<HotelEntity>> {
@@ -71,7 +77,28 @@ export class HotelsService {
 
     await this.resolvePhoto(row.id, dto.placeId ?? null, null)
 
-    return this.get(row.id)
+    const result = await this.get(row.id)
+
+    // SALES_PROSPECT_CREATED: avisa al BDC de la zona que un perfil de hotel
+    // nuevo entró al sistema. La audiencia manda la REGLA ("el BDC de esta
+    // zona"), no una lista pre-resuelta —mismo criterio de
+    // RecipientsService—, así que `ROLE_IN_ZONE` basta: no hace falta
+    // inyectar TerritoriesService aquí, el fan-out ya sabe cruzar
+    // rol+zona con `commercial.user_zone`.
+    try {
+      await this.notifications.publish({
+        type: 'SALES_PROSPECT_CREATED',
+        title: 'Perfil del hotel creado',
+        body: `Se creó el perfil de ${result.name}.`,
+        entity: { type: 'commercial.hotel', id: row.id },
+        actorUserId: userId,
+        audience: [{ kind: 'ROLE_IN_ZONE', roleCode: BDC, zoneId: dto.zoneId }],
+      })
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no revierte el alta.
+    }
+
+    return result
   }
 
   async update(id: string, dto: UpdateHotelDto, userId: string): Promise<HotelEntity> {

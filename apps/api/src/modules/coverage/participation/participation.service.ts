@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { NotificationPublisherService } from '../../notifications/index.js'
 
 import { ParticipantRow, ParticipationRepository } from './participation.repository.js'
 
@@ -21,7 +22,10 @@ export interface ParticipationResult {
 
 @Injectable()
 export class ParticipationService {
-  constructor(private readonly repo: ParticipationRepository) {}
+  constructor(
+    private readonly repo: ParticipationRepository,
+    private readonly notifications: NotificationPublisherService,
+  ) {}
 
   async list(requisitionId: string): Promise<ParticipantEntity[]> {
     await this.requisition(requisitionId)
@@ -57,9 +61,55 @@ export class ParticipationService {
       toStateId: target?.id ?? null,
     })
 
+    const participants = (await this.repo.active(requisitionId)).map(toEntity)
+
+    if (first) {
+      // REQ_TAKEN: avisa al Supervisor y al Manager de Área de que su
+      // requisición ya tiene quien la cubra.
+      const audience = [requisition.createdBy, requisition.areaManagerUserId]
+        .filter((id): id is string => Boolean(id))
+        .map((userId) => ({ kind: 'USER' as const, userId }))
+
+      if (audience.length > 0) {
+        try {
+          await this.notifications.publish({
+            type: 'REQ_TAKEN',
+            title: 'Requisición tomada',
+            body: 'Tu requisición ya tiene quien la cubra.',
+            entity: { type: 'demand.requisition', id: requisitionId },
+            actorUserId: user.id,
+            audience,
+          })
+        } catch {
+          // Mejor esfuerzo: que Pub/Sub no responda no revierte la toma.
+        }
+      }
+    } else {
+      // REQ_PARTICIPANT_JOINED: avisa a las OTRAS Reclutadoras que ya están
+      // trabajando esta requisición, nunca a quien se acaba de unir.
+      const others = participants
+        .filter((p) => p.user.id !== user.id)
+        .map((p) => ({ kind: 'USER' as const, userId: p.user.id }))
+
+      if (others.length > 0) {
+        try {
+          await this.notifications.publish({
+            type: 'REQ_PARTICIPANT_JOINED',
+            title: 'Otra Reclutadora se unió',
+            body: 'Otra Reclutadora se unió a la requisición que estás cubriendo.',
+            entity: { type: 'demand.requisition', id: requisitionId },
+            actorUserId: user.id,
+            audience: others,
+          })
+        } catch {
+          // Mejor esfuerzo: que Pub/Sub no responda no revierte la unión.
+        }
+      }
+    }
+
     return {
       requisitionState: first ? IN_PROGRESS : requisition.stateCode,
-      participants: (await this.repo.active(requisitionId)).map(toEntity),
+      participants,
     }
   }
 
@@ -106,9 +156,14 @@ export class ParticipationService {
     return state
   }
 
-  private async requisition(
-    id: string,
-  ): Promise<{ id: string; number: string; stateId: string; stateCode: string }> {
+  private async requisition(id: string): Promise<{
+    id: string
+    number: string
+    stateId: string
+    stateCode: string
+    createdBy: string | null
+    areaManagerUserId: string | null
+  }> {
     const row = await this.repo.requisition(id)
 
     if (!row || row.deletedAt !== null) {

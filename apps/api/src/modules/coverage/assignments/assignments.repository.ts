@@ -36,6 +36,8 @@ export class AssignmentsRepository {
     coverageStateId: string
     requisitionState: string
     requisitionStateId: string
+    requisitionCreatedBy: string | null
+    requisitionAreaManagerUserId: string | null
   } | null> {
     const row = await this.prisma.position.findUnique({
       where: { id },
@@ -46,7 +48,12 @@ export class AssignmentsRepository {
         deletedAt: true,
         coverageStateId: true,
         requisition: {
-          select: { statusLightStateId: true, statusState: { select: { code: true } } },
+          select: {
+            statusLightStateId: true,
+            statusState: { select: { code: true } },
+            createdBy: true,
+            areaManagerUserId: true,
+          },
         },
       },
     })
@@ -60,6 +67,8 @@ export class AssignmentsRepository {
           coverageStateId: row.coverageStateId,
           requisitionState: row.requisition.statusState.code,
           requisitionStateId: row.requisition.statusLightStateId,
+          requisitionCreatedBy: row.requisition.createdBy,
+          requisitionAreaManagerUserId: row.requisition.areaManagerUserId,
         }
       : null
   }

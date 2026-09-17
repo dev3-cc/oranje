@@ -9,6 +9,7 @@ import {
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { StorageService } from '../../../infra/storage/index.js'
+import { NotificationPublisherService } from '../../notifications/index.js'
 
 import { HOTEL_ROLES } from './dto/create-hotel-user.dto.js'
 import type { CreateStaffUserDto } from './dto/create-staff-user.dto.js'
@@ -74,6 +75,7 @@ export class StaffUsersService {
     private readonly repo: StaffUsersRepository,
     private readonly accounts: FirebaseAccountsService,
     private readonly storage: StorageService,
+    private readonly notifications: NotificationPublisherService,
   ) {}
 
   async list(query: QueryStaffUsersDto): Promise<Paginated<StaffUserEntity>> {
@@ -199,6 +201,30 @@ export class StaffUsersService {
       { userId: actor.id, role: actor.roleCode },
       { ...dto },
     )
+
+    // TEAM_CHANGED: la relación Líder–Reclutadora cambió de verdad (no solo
+    // se reenvió el mismo valor) — avisa a la persona afectada y a su nuevo
+    // Líder. `undefined` en el DTO es "no toqué este campo", así que solo
+    // cuenta cuando el campo SÍ vino y quedó distinto del actual.
+    if (dto.reportsToUserId !== undefined && dto.reportsToUserId !== current.reportsToUserId) {
+      try {
+        await this.notifications.publish({
+          type: 'TEAM_CHANGED',
+          title: 'Cambio de equipo',
+          body: 'Hubo un cambio en la relación Líder–Reclutadora.',
+          entity: { type: 'identity.user', id },
+          actorUserId: actor.id,
+          audience: [
+            { kind: 'USER', userId: id },
+            ...(dto.reportsToUserId
+              ? [{ kind: 'USER' as const, userId: dto.reportsToUserId }]
+              : []),
+          ],
+        })
+      } catch {
+        // Mejor esfuerzo: que Pub/Sub no responda no revierte el cambio.
+      }
+    }
 
     return toEntity(row, await this.signPhotos([row]))
   }

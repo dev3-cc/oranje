@@ -1,6 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { NotificationPublisherService } from '../../notifications/index.js'
 
 import { BlacklistRepository, EntryRow } from './blacklist.repository.js'
 import type { CreateEntryDto, LiftDto } from './dto/blacklist.dto.js'
@@ -25,7 +26,10 @@ export interface EntryEntity {
 
 @Injectable()
 export class BlacklistService {
-  constructor(private readonly repo: BlacklistRepository) {}
+  constructor(
+    private readonly repo: BlacklistRepository,
+    private readonly notifications: NotificationPublisherService,
+  ) {}
 
   async list(workerId?: string, onlyActive = false): Promise<EntryEntity[]> {
     return (await this.repo.listAll({ workerId, onlyActive })).map(toEntity)
@@ -69,6 +73,22 @@ export class BlacklistService {
       userId: user.id,
       roleCode: user.roleCode,
     })
+
+    // WORKER_BLACKLISTED: aviso plano y directo — sin adorno, es un aviso sensible.
+    if (worker.userId) {
+      try {
+        await this.notifications.publish({
+          type: 'WORKER_BLACKLISTED',
+          title: 'Agregado a Blacklist',
+          body: 'Fuiste agregado a la Blacklist.',
+          entity: { type: 'coverage.blacklist_entry', id },
+          actorUserId: user.id,
+          audience: [{ kind: 'USER', userId: worker.userId }],
+        })
+      } catch {
+        // Mejor esfuerzo: que Pub/Sub no responda no revierte el veto.
+      }
+    }
 
     return this.get(id)
   }
@@ -125,9 +145,13 @@ export class BlacklistService {
     return state
   }
 
-  private async worker(
-    id: string,
-  ): Promise<{ id: string; fullName: string; stateId: string; stateCode: string }> {
+  private async worker(id: string): Promise<{
+    id: string
+    fullName: string
+    stateId: string
+    stateCode: string
+    userId: string | null
+  }> {
     const row = await this.repo.worker(id)
 
     if (!row) {

@@ -52,10 +52,10 @@ export class TransitionsRepository {
     })
   }
 
-  async reasonByCode(code: string): Promise<{ id: string } | null> {
+  async reasonByCode(code: string): Promise<{ id: string; name: string } | null> {
     return this.prisma.statusChangeReason.findFirst({
       where: { code, statusLight: { code: STATUS_LIGHT } },
-      select: { id: true },
+      select: { id: true, name: true },
     })
   }
 

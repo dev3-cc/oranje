@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 
 import { IdentityModule } from '../../identity/index.js'
+import { NotificationsModule } from '../../notifications/index.js'
 
 import { HotelContactsController } from './hotel-contacts.controller.js'
 import { HotelContactsRepository } from './hotel-contacts.repository.js'
@@ -10,7 +11,7 @@ import { HotelsRepository } from './hotels.repository.js'
 import { HotelsService } from './hotels.service.js'
 
 @Module({
-  imports: [IdentityModule],
+  imports: [IdentityModule, NotificationsModule],
   controllers: [HotelsController, HotelContactsController],
   providers: [HotelsService, HotelsRepository, HotelContactsService, HotelContactsRepository],
   exports: [HotelsService, HotelContactsService],

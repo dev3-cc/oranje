@@ -9,6 +9,7 @@ import {
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { assignmentStatusLabel, timesheetStatusLabel } from '../../../common/utils/status-labels.js'
 import { parsePunchQrPayload } from '../../commercial/hotels/punch-qr.js'
+import { NotificationPublisherService } from '../../notifications/index.js'
 
 import type { CreateManualPunchDto, CreatePunchDto } from './dto/create-punch.dto.js'
 import { LUNCH_TYPES } from './dto/create-punch.dto.js'
@@ -83,7 +84,10 @@ export interface DayEntity {
 
 @Injectable()
 export class TimesheetsService {
-  constructor(private readonly repo: TimesheetsRepository) {}
+  constructor(
+    private readonly repo: TimesheetsRepository,
+    private readonly notifications: NotificationPublisherService,
+  ) {}
 
   async punch(dto: CreatePunchDto, user: AuthenticatedUser): Promise<PunchResult> {
     const assignment = await this.assignment(dto.assignmentId ?? (await this.assignmentToday(user)))
@@ -161,6 +165,19 @@ export class TimesheetsService {
       userId: user.id,
       roleCode: user.roleCode,
     })
+
+    try {
+      await this.notifications.publish({
+        type: 'PUNCH_CORRECTED',
+        title: 'Ponche corregido',
+        body: `Tu Supervisor registró una marca manual: ${dto.reason}`.slice(0, 500),
+        entity: { type: 'operations.punch_mark', id },
+        actorUserId: user.id,
+        audience: [{ kind: 'WORKER', workerId: assignment.workerId }],
+      })
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no revierte la marca.
+    }
 
     return this.afterPunch(resolvedDayId, id)
   }
@@ -290,6 +307,19 @@ export class TimesheetsService {
       roleCode: user.roleCode,
       event: 'HOURS_APPROVED',
     })
+
+    try {
+      await this.notifications.publish({
+        type: 'HOURS_APPROVED',
+        title: 'Horas aprobadas',
+        body: 'Tus horas de la semana ya están aprobadas.',
+        entity: { type: 'operations.timesheet', id: sheet.id },
+        actorUserId: user.id,
+        audience: [{ kind: 'WORKER', workerId: sheet.worker.id }],
+      })
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no revierte la aprobación.
+    }
 
     return this.get(id)
   }

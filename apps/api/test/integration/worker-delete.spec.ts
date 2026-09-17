@@ -30,8 +30,18 @@ const storage = {
   signedUrl: () => Promise.resolve('https://example.test/firmada'),
 } as unknown as StorageService
 const permissions = new PermissionsService(prisma)
-const workers = new WorkersService(new WorkersRepository(prisma), storage, permissions)
-const assignments = new AssignmentsService(new AssignmentsRepository(prisma), permissions)
+const notificationsFake = { publish: (): Promise<void> => Promise.resolve() } as never
+const workers = new WorkersService(
+  new WorkersRepository(prisma),
+  storage,
+  permissions,
+  notificationsFake,
+)
+const assignments = new AssignmentsService(
+  new AssignmentsRepository(prisma),
+  permissions,
+  notificationsFake,
+)
 
 let user: AuthenticatedUser
 let zoneId: string

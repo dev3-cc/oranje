@@ -69,6 +69,8 @@ export class ProposalsRepository {
     hotelId: string
     closedAt: Date | null
     stateCode: string
+    ownerUserId: string
+    hotelName: string
   } | null> {
     const row = await this.prisma.prospect.findUnique({
       where: { id },
@@ -76,15 +78,27 @@ export class ProposalsRepository {
         id: true,
         hotelId: true,
         closedAt: true,
+        ownerUserId: true,
+        hotel: { select: { name: true } },
         onboardingState: { select: { code: true } },
       },
     })
 
-    return row ? { ...row, stateCode: row.onboardingState.code } : null
+    return row ? { ...row, stateCode: row.onboardingState.code, hotelName: row.hotel.name } : null
   }
 
   async findById(prospectId: string, id: string): Promise<ProposalRow | null> {
     return this.prisma.proposal.findFirst({ where: { id, prospectId }, select: SELECT })
+  }
+
+  /** El BDC del BD dueño del prospecto (`reportsToUserId`, RR-V-01/02). */
+  async bdcOf(ownerUserId: string): Promise<string | null> {
+    const owner = await this.prisma.user.findUnique({
+      where: { id: ownerUserId },
+      select: { reportsToUserId: true },
+    })
+
+    return owner?.reportsToUserId ?? null
   }
 
   async listAcrossProspects(params: {

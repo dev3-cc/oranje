@@ -18,13 +18,14 @@ import { actor } from './fixture.js'
  */
 
 const prisma = db as unknown as PrismaService
-const timesheets = new TimesheetsService(new TimesheetsRepository(prisma))
+const notifications = { publish: (): Promise<void> => Promise.resolve() } as never
+const timesheets = new TimesheetsService(new TimesheetsRepository(prisma), notifications)
 
 const config = {
   get: (k: string) => (k === 'GOOGLE_MAPS_BROWSER_KEY' ? 'llave-de-prueba' : undefined),
 }
 const places = new PlacesService(config as never)
-const schedules = new SchedulesService(new SchedulesRepository(prisma), places)
+const schedules = new SchedulesService(new SchedulesRepository(prisma), places, notifications)
 
 let actorId: string
 let zoneId: string

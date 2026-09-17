@@ -27,7 +27,9 @@ const requisitions = new RequisitionsService(
   { signedUrl: (): Promise<null> => Promise.resolve(null) } as never,
   { publish: (): Promise<void> => Promise.resolve() } as never,
 )
-const schedules = new SchedulesService(new SchedulesRepository(prisma), places)
+const schedules = new SchedulesService(new SchedulesRepository(prisma), places, {
+  publish: (): Promise<void> => Promise.resolve(),
+} as never)
 
 let hotelId: string
 let zoneId: string

@@ -10,6 +10,8 @@ import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { workerStateLabel } from '../../../common/utils/status-labels.js'
 import { StorageService } from '../../../infra/storage/index.js'
 import { PermissionsService } from '../../identity/index.js'
+import { NotificationPublisherService } from '../../notifications/index.js'
+import type { NotificationEvent } from '../../notifications/index.js'
 
 import type {
   ChangeStateDto,
@@ -42,6 +44,7 @@ export class WorkersService {
     private readonly repo: WorkersRepository,
     private readonly storage: StorageService,
     private readonly permissions: PermissionsService,
+    private readonly notifications: NotificationPublisherService,
   ) {}
 
   async create(dto: CreateWorkerDto, user: AuthenticatedUser): Promise<WorkerEntity> {
@@ -342,7 +345,106 @@ export class WorkersService {
       roleCode: user.roleCode,
     })
 
+    await this.notifyStateChange(id, worker, current.code, dto.toState, user)
+
     return this.get(id)
+  }
+
+  /**
+   * WORKER_STATE_CHANGED es el aviso genérico ("algo cambió, revisa tu
+   * estado") y se dispara en TODA transición exitosa. STANDBY_APPLIED,
+   * WORKER_REPORTED y WORKER_VALIDATED son avisos ADICIONALES con más detalle
+   * para esos tres casos puntuales — el catálogo de notificaciones no los
+   * declara excluyentes con el genérico.
+   *
+   * Best-effort de punta a punta: ningún fallo de aquí (Pub/Sub, o resolver
+   * al Manager de Área / Inspector) revierte ni bloquea la transición, que ya
+   * quedó escrita.
+   */
+  private async notifyStateChange(
+    id: string,
+    worker: WorkerRow,
+    fromCode: string,
+    toState: string,
+    user: AuthenticatedUser,
+  ): Promise<void> {
+    await this.safeNotify({
+      type: 'WORKER_STATE_CHANGED',
+      title: 'Cambio de estado',
+      body: `Tu estado pasó de ${workerStateLabel(fromCode)} a ${workerStateLabel(toState)}.`,
+      entity: { type: 'personal.worker', id },
+      actorUserId: user.id,
+      audience: [{ kind: 'WORKER', workerId: id }],
+    })
+
+    if (toState === AVAILABLE && fromCode === PENDING_VALIDATION) {
+      await this.safeNotify({
+        type: 'WORKER_VALIDATED',
+        title: 'Alta validada',
+        body: 'Tu Reclutadora validó tu alta — ya estás disponible.',
+        entity: { type: 'personal.worker', id },
+        actorUserId: user.id,
+        audience: [{ kind: 'WORKER', workerId: id }],
+      })
+    }
+
+    if (toState === STANDBY) {
+      await this.safeNotify({
+        type: 'STANDBY_APPLIED',
+        title: 'Enviado a descanso',
+        body: 'El hotel te envió a descanso.',
+        entity: { type: 'personal.worker', id },
+        actorUserId: user.id,
+        audience: [{ kind: 'WORKER', workerId: id }],
+      })
+
+      try {
+        const scope = await this.repo.activeAssignmentScope(id)
+        const manager = scope
+          ? await this.repo.areaManagerOf(scope.hotelId, scope.departmentId)
+          : null
+
+        if (manager) {
+          await this.safeNotify({
+            type: 'STANDBY_APPLIED',
+            title: 'Colaborador en descanso',
+            body: `${worker.fullName} está en descanso.`,
+            entity: { type: 'personal.worker', id },
+            actorUserId: user.id,
+            audience: [{ kind: 'USER', userId: manager.id }],
+          })
+        }
+      } catch {
+        // Mejor esfuerzo: sin asignación resoluble no hay a quién avisar.
+      }
+    }
+
+    if (toState === REPORTED) {
+      try {
+        const inspector = await this.repo.inspectorOfZone(worker.zone.id)
+
+        if (inspector) {
+          await this.safeNotify({
+            type: 'WORKER_REPORTED',
+            title: 'Colaborador reportado',
+            body: 'El hotel reportó a un colaborador.',
+            entity: { type: 'personal.worker', id },
+            actorUserId: user.id,
+            audience: [{ kind: 'USER', userId: inspector.id }],
+          })
+        }
+      } catch {
+        // Mejor esfuerzo.
+      }
+    }
+  }
+
+  private async safeNotify(event: NotificationEvent): Promise<void> {
+    try {
+      await this.notifications.publish(event)
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no revierte la transición.
+    }
   }
 
   async history(id: string): Promise<

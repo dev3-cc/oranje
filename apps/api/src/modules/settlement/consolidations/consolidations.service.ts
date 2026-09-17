@@ -2,6 +2,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { consolidationStatusLabel } from '../../../common/utils/status-labels.js'
+import { NotificationPublisherService } from '../../notifications/index.js'
 
 import {
   ConsolidationRow,
@@ -47,7 +48,10 @@ export interface MyPayment {
 
 @Injectable()
 export class ConsolidationsService {
-  constructor(private readonly repo: ConsolidationsRepository) {}
+  constructor(
+    private readonly repo: ConsolidationsRepository,
+    private readonly notifications: NotificationPublisherService,
+  ) {}
 
   // Solo pagos ya liberados (RR-C-05): el que esta en curso no se le muestra.
   async mine(user: AuthenticatedUser): Promise<MyPayment[]> {
@@ -162,7 +166,7 @@ export class ConsolidationsService {
   }
 
   async markPaid(id: string, user: AuthenticatedUser): Promise<ConsolidationEntity> {
-    await this.assertStatus(id, AUTHORIZED, 'marcar como pagado')
+    const row = await this.assertStatus(id, AUTHORIZED, 'marcar como pagado')
 
     await this.repo.setStatus({
       id,
@@ -173,10 +177,31 @@ export class ConsolidationsService {
       event: 'CONSOLIDATION_PAID',
     })
 
+    // PAYMENT_RELEASED: avisa al colaborador que su pago quedó liberado. El
+    // monto no se recalcula, se interpola tal cual llega de la base
+    // (`numeric` como string — Estándares de BD sección 3, nada de aritmética
+    // en `number` de JS).
+    try {
+      await this.notifications.publish({
+        type: 'PAYMENT_RELEASED',
+        title: 'Pago liberado',
+        body: `Se liberó tu pago: $${row.netAmount}.`,
+        entity: { type: 'settlement.consolidation', id },
+        actorUserId: user.id,
+        audience: [{ kind: 'WORKER', workerId: row.worker.id }],
+      })
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no revierte el pago.
+    }
+
     return this.get(id)
   }
 
-  private async assertStatus(id: string, expected: string, action: string): Promise<void> {
+  private async assertStatus(
+    id: string,
+    expected: string,
+    action: string,
+  ): Promise<ConsolidationRow> {
     const row = await this.consolidation(id)
 
     if (row.status !== expected) {
@@ -185,6 +210,8 @@ export class ConsolidationsService {
         message: `Para ${action} el consolidado debe estar ${consolidationStatusLabel(expected)}, y está ${consolidationStatusLabel(row.status)}`,
       })
     }
+
+    return row
   }
 
   private async consolidation(id: string): Promise<ConsolidationRow> {

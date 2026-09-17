@@ -22,12 +22,14 @@ import { actor } from './fixture.js'
  */
 
 const prisma = db as unknown as PrismaService
-// La historia no toca el bucket; el storage va como doble para no abrir un
-// cliente de Cloud Storage en las pruebas.
+// La historia no toca el bucket ni Pub/Sub; los dos van como doble para no
+// abrir clientes reales en las pruebas.
+const notificationsFake = { publish: (): Promise<void> => Promise.resolve() } as never
 const workers = new WorkersService(
   new WorkersRepository(prisma),
   { signedUrl: (): Promise<null> => Promise.resolve(null) } as never,
   new PermissionsService(prisma),
+  notificationsFake,
 )
 const storageFake = { signedUrl: (): Promise<null> => Promise.resolve(null) } as never
 const permissions = new PermissionsService(prisma)
@@ -37,6 +39,7 @@ const me = new MeService(
   workers,
   deadline,
   new DocumentsService(new DocumentsRepository(prisma), storageFake),
+  notificationsFake,
 )
 
 let actorId: string
