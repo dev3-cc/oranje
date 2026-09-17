@@ -235,7 +235,11 @@ export function WorkerDetailPage(): ReactNode {
     { label: t`Dirección`, value: worker.address, foot: 'address', icon: 'home' },
   ]
 
-  const { labels: missingProfileFields, phase1: missingPhase1Fields } = missingProfile(worker, i18n)
+  const {
+    labels: missingProfileFields,
+    phase1: missingPhase1Fields,
+    later: missingLaterFields,
+  } = missingProfile(worker, i18n)
 
   const profileFields = [
     {
@@ -672,6 +676,7 @@ export function WorkerDetailPage(): ReactNode {
         }}
         missingProfileFields={missingProfileFields}
         missingPhase1Fields={missingPhase1Fields}
+        missingLaterFields={missingLaterFields}
       />
 
       {/* Antes esto solo se podía desde el Pool: aquí, viendo justo qué falta

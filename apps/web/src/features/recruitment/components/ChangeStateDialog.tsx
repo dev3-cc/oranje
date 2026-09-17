@@ -45,6 +45,7 @@ export function ChangeStateDialog({
   onClose,
   missingProfileFields = [],
   missingPhase1Fields = [],
+  missingLaterFields = [],
 }: {
   workerId: string
   currentStatus: WorkerStatus
@@ -59,6 +60,8 @@ export function ChangeStateDialog({
       experiencia): lo define Reclutamiento con «Editar» y el colaborador no
       puede llenarlo, así que con eso pendiente no se valida ni a sabiendas. */
   missingPhase1Fields?: string[]
+  /** Lo que el colaborador completa desde su app (transporte, emergencia, sangre). */
+  missingLaterFields?: string[]
 }): ReactNode {
   const { t, i18n } = useLingui()
   const { data: transitions = [], isLoading } = useGetWorkerTransitionsQuery(workerId, {
@@ -78,7 +81,7 @@ export function ChangeStateDialog({
   const isProfileIncomplete =
     selected?.toState === 'STRONG_GREEN' && missingProfileFields.length > 0
   const isPhase1Missing = isProfileIncomplete && missingPhase1Fields.length > 0
-  const isProfileBlocked = isProfileIncomplete && (isPhase1Missing || !acceptsIncomplete)
+  const isProfileBlocked = isProfileIncomplete && !acceptsIncomplete
   const canSubmit =
     selected !== undefined && !isProfileBlocked && (!selected.requiresReason || note.trim() !== '')
 
@@ -117,11 +120,7 @@ export function ChangeStateDialog({
           )}
           {isProfileBlocked && (
             <span className="mr-auto text-xs text-ink-3">
-              {isPhase1Missing ? (
-                <Trans>Falta completar el expediente para validarlo</Trans>
-              ) : (
-                <Trans>Completa el expediente o confirma validarlo a medias</Trans>
-              )}
+              <Trans>Completa el expediente o confirma validarlo a medias</Trans>
             </span>
           )}
           {!isProfileBlocked && selected?.requiresReason && note.trim() === '' && (
@@ -186,20 +185,20 @@ export function ChangeStateDialog({
           </label>
         ))}
 
-        {isPhase1Missing && (
-          <p className="rounded-md bg-surface-2 px-4 py-3 text-sm text-ink-2">
-            <Trans>
-              No se puede validar todavía: falta {missingPhase1Fields.join(', ')} en su expediente.
-            </Trans>{' '}
-            <Trans>Eso lo define Reclutamiento: ciérrame y usa «Editar» para completarlo.</Trans>
-          </p>
-        )}
-
-        {isProfileIncomplete && !isPhase1Missing && (
+        {isProfileIncomplete && (
           <div className="flex flex-col gap-3 rounded-md bg-surface-2 px-4 py-3 text-sm text-ink-2">
             <p>
               <Trans>Su expediente está a medias: falta {missingProfileFields.join(', ')}.</Trans>{' '}
-              <Trans>Eso lo puede completar el colaborador desde su propia app.</Trans>
+              {isPhase1Missing && (
+                <Trans>
+                  Lo de Fase 1 ({missingPhase1Fields.join(', ')}) lo defines tú con «Editar».
+                </Trans>
+              )}{' '}
+              {missingLaterFields.length > 0 && (
+                <Trans>
+                  {missingLaterFields.join(', ')}: eso lo completa el colaborador desde su app.
+                </Trans>
+              )}
             </p>
             <label className="flex cursor-pointer items-start gap-3">
               <Checkbox
@@ -215,8 +214,9 @@ export function ChangeStateDialog({
                 </span>
                 <span className="block text-xs text-ink-3">
                   <Trans>
-                    Entra al Pool hoy y tiene 3 días para completar sus datos desde su app; si no lo
-                    hace, su acceso se bloquea hasta que los complete.
+                    Entra al Pool hoy. Lo suyo tiene 3 días para completarlo desde su app; si no lo
+                    hace, su acceso se bloquea hasta que lo complete. Lo de Fase 1 no le bloquea
+                    nada: eso queda en tus manos.
                   </Trans>
                 </span>
               </span>
