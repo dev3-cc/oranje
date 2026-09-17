@@ -6,7 +6,7 @@ import { useGetClientsQuery } from '../api/clientsApi'
 import { ClientCardGrid } from '../components/ClientCardGrid'
 import { ClientFilters } from '../components/ClientFilters'
 import { ClientSpotlightCard } from '../components/ClientSpotlightCard'
-import type { ClientFilters as Filters } from '../types/client.types'
+import type { ClientContractSummary, ClientFilters as Filters } from '../types/client.types'
 
 import fotoEquipo from '@/assets/ilustrations/clientes-equipo.webp'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
@@ -27,6 +27,13 @@ const EMPTY_FILTERS: Filters = {
 
 /** Un hotel sin contrato no tiene semáforo: se pinta gris, no verde ni rojo. */
 const NO_CONTRACT_COLOR = statusLight['st-gris']
+
+/** El texto corto de la burbuja del mapa: redondeado, para que quepa en una píldora. */
+function billRateLabel(contract: ClientContractSummary): string {
+  const min = String(Math.round(contract.minRate))
+  const max = String(Math.round(contract.maxRate))
+  return contract.minRate === contract.maxRate ? `$${min}/h` : `$${min}–${max}/h`
+}
 
 /**
  * Clientes Activos: los hoteles con `activated_at`, en mapa y en lista.
@@ -66,6 +73,12 @@ export function ClientPortfolioPage(): ReactNode {
           : NO_CONTRACT_COLOR,
         // El mapa dibuja la geocerca solo del hotel elegido.
         radiusM: client.geofenceRadiusM,
+        // Burbuja con la tarifa + tarjeta con foto al pasar el mouse (referencia).
+        preview: {
+          photoUrl: client.photoUrl,
+          subtitle: client.zoneName,
+          priceLabel: client.contract ? billRateLabel(client.contract) : null,
+        },
       })),
     [items],
   )

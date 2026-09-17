@@ -67,3 +67,41 @@ export function circleMarkerIcon(color: string, sizePx: number): string {
 
   return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
 }
+
+const PILL_HEIGHT_PX = 28
+const PILL_SELECTED_HEIGHT_PX = 32
+const PILL_CHAR_WIDTH_PX = 6.6
+const PILL_PADDING_X_PX = 12
+const PILL_MIN_WIDTH_PX = 44
+
+function escapeSvgText(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+/**
+ * Burbuja-píldora con texto corto (referencia: precio flotante sobre el
+ * mapa). No hay `mapId`, así que sigue siendo un `Marker` clásico con ícono
+ * SVG — ver el aviso al inicio del archivo — nunca `AdvancedMarker`. El ancho
+ * se estima por número de caracteres (no hay `measureText` sin canvas real);
+ * de sobra para textos cortos como un rango de tarifa.
+ */
+export function pillMarkerIcon(
+  text: string,
+  selected: boolean,
+): { url: string; width: number; height: number } {
+  const height = selected ? PILL_SELECTED_HEIGHT_PX : PILL_HEIGHT_PX
+  const width = Math.max(
+    PILL_MIN_WIDTH_PX,
+    Math.round(text.length * PILL_CHAR_WIDTH_PX + PILL_PADDING_X_PX * 2),
+  )
+  const bg = selected ? '#1A1108' : '#ffffff'
+  const border = selected ? '#1A1108' : '#E3DDD5'
+  const fg = selected ? '#ffffff' : '#1A1108'
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">` +
+    `<rect x="1" y="1" width="${width - 2}" height="${height - 2}" rx="${height / 2}" fill="${bg}" stroke="${border}" stroke-width="1.5"/>` +
+    `<text x="50%" y="53%" text-anchor="middle" dominant-baseline="middle" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="700" fill="${fg}">${escapeSvgText(text)}</text>` +
+    `</svg>`
+
+  return { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`, width, height }
+}
