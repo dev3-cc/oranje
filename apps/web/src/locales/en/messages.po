@@ -6022,10 +6022,6 @@ msgstr "Up to 999 people per position"
 msgid "Medio tiempo"
 msgstr "Part-time"
 
-#: src/features/requisitions/pages/RequisitionBoardPage.tsx
-msgid "menos de 72 h para el inicio"
-msgstr "less than 72 h until start"
-
 #: src/features/timesheet/components/TimesheetViewControls.tsx
 msgid "Mes"
 msgstr "Month"
@@ -7319,6 +7315,10 @@ msgstr "To convert to Orange the Hotel User must exist first: create it from Con
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Para crear: {0}."
 msgstr "To create it: {0}."
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "para el inicio"
+msgstr "until start"
 
 #: src/features/requisitions/utils/coverage.ts
 msgid "parcial"
