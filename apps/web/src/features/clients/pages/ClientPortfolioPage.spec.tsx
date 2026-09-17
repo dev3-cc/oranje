@@ -30,14 +30,15 @@ describe('ClientPortfolioPage', () => {
     expect(
       await screen.findByText('commercial.vw_client · hoteles con activated_at · 6 en cartera'),
     ).toBeInTheDocument()
-    // El elegido vive en la tarjeta grande; la lista trae a los otros 5.
-    expect(screen.getAllByRole('listitem')).toHaveLength(5)
+    // El elegido se ve arriba en grande Y se queda visible, resaltado, en la lista de abajo.
+    expect(screen.getAllByRole('listitem')).toHaveLength(6)
     expect(screen.getByRole('link', { name: 'Abrir ficha del hotel' })).toBeInTheDocument()
   })
 
   it('la tarjeta arma lo que vw_client no trae: contrato, zona y tarifas', async () => {
     renderPortfolio()
 
+    // No es el elegido por defecto: sigue en la lista, sin duplicarse.
     const card = (await screen.findByText('Hotel Puerto Real')).closest('article')
     expect(card).not.toBeNull()
 
@@ -51,9 +52,12 @@ describe('ClientPortfolioPage', () => {
   })
 
   it('un hotel activado sin contrato no finge tener uno', async () => {
+    const user = userEvent.setup()
     renderPortfolio()
 
-    const card = (await screen.findByText('Posada Maya Real')).closest('article')
+    await user.click(await screen.findByRole('button', { name: 'Posada Maya Real' }))
+    const heading = await screen.findByRole('heading', { level: 2, name: 'Posada Maya Real' })
+    const card = heading.closest('article')
     const scoped = within(card as HTMLElement)
 
     expect(scoped.getByText('sin contrato')).toBeInTheDocument()
@@ -63,34 +67,42 @@ describe('ClientPortfolioPage', () => {
     expect(scoped.getByText('120 m')).toBeInTheDocument()
   })
 
-  it('«Ver detalle» abre la ficha del hotel, y el folio su contrato', async () => {
+  it('elegir un hotel de la lista lo manda arriba, y la fila lo dice', async () => {
+    const user = userEvent.setup()
     renderPortfolio()
 
-    const card = (await screen.findByText('Hotel Mirador')).closest('article')
-    const scoped = within(card as HTMLElement)
+    const row = (await screen.findByRole('button', { name: 'Hotel Mirador' })).closest('li')
+    expect(row).not.toBeNull()
+    const scopedRow = within(row as HTMLElement)
 
-    expect(scoped.getByRole('link', { name: /Ver detalle/ })).toHaveAttribute(
-      'href',
-      '/pipeline/psp-0014',
-    )
-    expect(scoped.getByRole('link', { name: 'CT-2026-0098' })).toHaveAttribute(
-      'href',
-      '/contracts/ct-0098',
-    )
+    // Antes de elegirlo, la fila no dice "arriba" — nada indica que sea el elegido.
+    expect(scopedRow.queryByText(/Viéndolo arriba/)).not.toBeInTheDocument()
+
+    await user.click(scopedRow.getByRole('button', { name: 'Hotel Mirador' }))
+
+    // Tras elegirlo, la misma fila avisa que su ficha ya está arriba.
+    expect(await scopedRow.findByText(/Viéndolo arriba/)).toBeInTheDocument()
+    const heading = screen.getByRole('heading', { level: 2, name: 'Hotel Mirador' })
+    const spotlight = heading.closest('article')
+    expect(spotlight).not.toBeNull()
+    expect(
+      within(spotlight as HTMLElement).getByRole('link', { name: /CT-2026-0098/ }),
+    ).toHaveAttribute('href', '/contracts/ct-0098')
   })
 
   it('filtrar por contrato deja fuera a quien no tiene ninguno', async () => {
     const user = userEvent.setup()
     renderPortfolio()
 
-    await screen.findByText('Posada Maya Real')
+    // Es el elegido por defecto: aparece dos veces (arriba y en su fila).
+    await screen.findAllByText('Posada Maya Real')
     await user.click(screen.getByLabelText('Contrato'))
     await user.click(await screen.findByRole('option', { name: 'Contrato: Expirado' }))
 
     await waitFor(() => {
       expect(screen.queryByText('Posada Maya Real')).not.toBeInTheDocument()
     }, SLOW)
-    expect(screen.getByText('Villas Coral')).toBeInTheDocument()
+    expect(screen.getAllByText('Villas Coral').length).toBeGreaterThan(0)
     expect(screen.queryByText('Hotel Puerto Real')).not.toBeInTheDocument()
   })
 
@@ -106,7 +118,8 @@ describe('ClientPortfolioPage', () => {
     await waitFor(() => {
       expect(screen.queryByText('Hotel Puerto Real')).not.toBeInTheDocument()
     }, SLOW)
-    expect(screen.getByText('Hotel Mirador')).toBeInTheDocument()
+    // Con un solo resultado, ese hotel es a la vez la tarjeta grande y la fila.
+    expect(screen.getByRole('heading', { level: 2, name: 'Hotel Mirador' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /Quitar filtros/ }))
     expect(search).toHaveValue('')

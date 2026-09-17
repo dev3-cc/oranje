@@ -144,17 +144,17 @@ export function ClientCardItem({
               </Button>
 
               {/*
-              Lleva a la ficha del Pipeline, que es la misma del hotel: un
-              cliente es un prospecto que llegó a NARANJA, no otra entidad. Allá
-              el semáforo sale naranja y el historial trae el ciclo completo.
-              El contrato tiene su propio enlace en el chip del folio.
+              "Ver detalle" vivía también aquí, duplicando el CTA de la tarjeta
+              grande de arriba (mismo destino) — Hugo reportó que la fila entera
+              se sentía como una lista aparte porque no quedaba claro que
+              elegirla la llevaba arriba. Ahora el único CTA a la ficha del
+              Pipeline es el de la tarjeta grande; aquí solo queda el estado.
             */}
-              <Link
-                to={`/pipeline/${client.prospectId}`}
-                className="inline-flex items-center gap-1.5 rounded-md bg-o-50 px-4 py-2 text-sm font-medium text-o-700 hover:bg-o-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
-              >
-                <Trans>Ver detalle</Trans> <span aria-hidden>→</span>
-              </Link>
+              {isSelected && (
+                <span className="inline-flex items-center gap-1.5 text-sm font-medium text-o-700">
+                  <Trans>Viéndolo arriba</Trans> <span aria-hidden>↑</span>
+                </span>
+              )}
             </div>
           </div>
         </article>

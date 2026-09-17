@@ -173,17 +173,20 @@ export function ClientPortfolioPage(): ReactNode {
           ) : (
             <div className="flex flex-col gap-4">
               {selected && <ClientSpotlightCard client={selected} />}
+              {items.length > 1 && (
+                <p className="text-sm text-ink-3">
+                  <Trans>Elige un hotel de la lista para verlo en grande arriba</Trans>
+                </p>
+              )}
               <ul className="flex flex-col gap-3">
-                {items
-                  .filter((client) => client.id !== selected?.id)
-                  .map((client) => (
-                    <ClientCardItem
-                      key={client.id}
-                      client={client}
-                      isSelected={false}
-                      onSelect={setSelectedId}
-                    />
-                  ))}
+                {items.map((client) => (
+                  <ClientCardItem
+                    key={client.id}
+                    client={client}
+                    isSelected={client.id === selected?.id}
+                    onSelect={setSelectedId}
+                  />
+                ))}
               </ul>
             </div>
           )}
