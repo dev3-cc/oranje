@@ -1,6 +1,15 @@
-import { cn } from '@oranje/ui'
-import { APIProvider, Circle, Map, Marker, useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
-import { useEffect, useMemo, type ReactNode } from 'react'
+import { cn, MaterialIcon } from '@oranje/ui'
+import {
+  APIProvider,
+  Circle,
+  InfoWindow,
+  Map,
+  Marker,
+  useMap,
+  useMapsLibrary,
+  useMarkerRef,
+} from '@vis.gl/react-google-maps'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 
 import { MissingMapsKeyNotice } from './MissingMapsKeyNotice'
 
@@ -11,6 +20,7 @@ import {
   HIDE_POI_MAP_STYLES,
   isMapsEnabled,
   MAPS_API_KEY,
+  pillMarkerIcon,
 } from '@/shared/constants/googleMaps'
 import type { GeoPoint } from '@/shared/types/geo.types'
 
@@ -49,6 +59,26 @@ interface CoreLibrary {
   Size: new (width: number, height: number) => object
 }
 
+/**
+ * ⚠ Mismo motivo que `MapViewport`: `google.maps.Marker` no resuelve. Se trata
+ * como opaco — nunca se leen sus métodos, solo se usa para anclar `InfoWindow`
+ * a ESTE marcador.
+ */
+type MarkerInstance = object
+
+/**
+ * Lo que arma la burbuja-píldora del marcador y la tarjeta flotante al pasar
+ * el mouse (referencia: precio + foto de un buscador de hospedaje). Sin esto
+ * el punto es un simple círculo de color (Mi Territorio no lo usa).
+ */
+export interface HotelMapPointPreview {
+  /** Texto corto en la burbuja, p. ej. un rango de tarifa. `null` = sin dato («—»). */
+  priceLabel: string | null
+  /** Foto de portada de la tarjeta; `null` = sin foto (se pinta un ícono). */
+  photoUrl: string | null
+  subtitle: string
+}
+
 /** Un hotel en el mapa. El color ya viene resuelto: qué significa lo decide cada pantalla. */
 export interface HotelMapPoint {
   id: string
@@ -61,6 +91,7 @@ export interface HotelMapPoint {
    * ver. Los puntos sin radio simplemente no lo pintan.
    */
   radiusM?: number | undefined
+  preview?: HotelMapPointPreview | undefined
 }
 
 /** Encuadra el mapa sobre los puntos visibles y lo reencuadra al filtrar. */
@@ -94,13 +125,120 @@ function FitToPoints({ points }: { points: GeoPoint[] }): null {
   return null
 }
 
+/** Foto de la tarjeta flotante con su plan B: sin URL o si la imagen muere, un ícono. */
+function PreviewPhoto({ photoUrl }: { photoUrl: string | null }): ReactNode {
+  const [isBroken, setIsBroken] = useState(false)
+
+  if (photoUrl === null || isBroken) {
+    return (
+      <span className="flex h-20 items-center justify-center bg-surface-3">
+        <MaterialIcon name="apartment" className="text-2xl text-o-500" aria-hidden />
+      </span>
+    )
+  }
+
+  return (
+    <img
+      src={photoUrl}
+      alt=""
+      loading="lazy"
+      className="h-20 w-full object-cover"
+      onError={() => {
+        setIsBroken(true)
+      }}
+    />
+  )
+}
+
+/** El contenido de la burbuja que flota al pasar el mouse sobre un marcador. */
+function MapPreviewCard({
+  title,
+  preview,
+}: {
+  title: string
+  preview: HotelMapPointPreview
+}): ReactNode {
+  return (
+    <div className="w-52 overflow-hidden rounded-lg">
+      <PreviewPhoto photoUrl={preview.photoUrl} />
+      <div className="p-2.5">
+        <p className="truncate text-sm font-semibold text-ink">{title}</p>
+        <p className="mt-0.5 truncate text-xs text-ink-3">{preview.subtitle}</p>
+        {preview.priceLabel !== null && (
+          <p className="mt-1 text-xs font-semibold text-ink">{preview.priceLabel}</p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Un marcador. La burbuja-píldora (si `preview` viene) o el punto de color de
+ * siempre; la tarjeta flotante al pasar el mouse ancla a ESTE marcador, así
+ * que necesita su propia instancia — de ahí `useMarkerRef` por punto en vez
+ * de un solo `PointMarkers` que los pintaba todos de un tirón.
+ *
+ * Es `Marker` clásico y no `AdvancedMarker`: este último exige un Map ID, y
+ * con Map ID Google ignora los estilos que apagan los comercios. Ver
+ * `shared/constants/googleMaps.ts`.
+ */
+function PointMarker({
+  point,
+  isSelected,
+  core,
+  onSelect,
+}: {
+  point: HotelMapPoint
+  isSelected: boolean
+  core: CoreLibrary
+  onSelect: (id: string) => void
+}): ReactNode {
+  const [markerRef, marker] = useMarkerRef() as unknown as readonly [
+    (instance: MarkerInstance | null) => void,
+    MarkerInstance | null,
+  ]
+  const [isHovered, setIsHovered] = useState(false)
+
+  const size = isSelected ? SELECTED_MARKER_SIZE_PX : MARKER_SIZE_PX
+  const icon = point.preview
+    ? pillMarkerIcon(point.preview.priceLabel ?? '—', isSelected)
+    : { url: circleMarkerIcon(point.color, size), width: size, height: size }
+
+  return (
+    <>
+      <Marker
+        ref={markerRef}
+        position={point.location}
+        title={point.title}
+        zIndex={isSelected ? 2 : isHovered ? 3 : 1}
+        onClick={() => {
+          onSelect(point.id)
+        }}
+        onMouseOver={() => {
+          setIsHovered(true)
+        }}
+        onMouseOut={() => {
+          setIsHovered(false)
+        }}
+        icon={{
+          url: icon.url,
+          scaledSize: new core.Size(icon.width, icon.height),
+          // Centrado en la coordenada: por defecto se ancla abajo.
+          anchor: new core.Point(icon.width / 2, icon.height / 2),
+        }}
+      />
+      {isHovered && point.preview && (
+        <InfoWindow anchor={marker} disableAutoPan shouldFocus={false} headerDisabled>
+          <MapPreviewCard title={point.title} preview={point.preview} />
+        </InfoWindow>
+      )}
+    </>
+  )
+}
+
 /**
  * Marcadores. Va en su propio componente porque `useMapsLibrary` solo funciona
  * dentro del `APIProvider`.
- *
- * Son `Marker` clásicos y no `AdvancedMarker`: estos últimos exigen un Map ID, y
- * con Map ID Google ignora los estilos que apagan los comercios. Ver
- * `shared/constants/googleMaps.ts`.
  */
 function PointMarkers({
   points,
@@ -118,28 +256,15 @@ function PointMarkers({
 
   return (
     <>
-      {points.map((point) => {
-        const isSelected = point.id === selectedId
-        const size = isSelected ? SELECTED_MARKER_SIZE_PX : MARKER_SIZE_PX
-
-        return (
-          <Marker
-            key={point.id}
-            position={point.location}
-            title={point.title}
-            zIndex={isSelected ? 2 : 1}
-            onClick={() => {
-              onSelect(point.id)
-            }}
-            icon={{
-              url: circleMarkerIcon(point.color, size),
-              scaledSize: new core.Size(size, size),
-              // Centrado en la coordenada: por defecto se ancla abajo.
-              anchor: new core.Point(size / 2, size / 2),
-            }}
-          />
-        )
-      })}
+      {points.map((point) => (
+        <PointMarker
+          key={point.id}
+          point={point}
+          isSelected={point.id === selectedId}
+          core={core}
+          onSelect={onSelect}
+        />
+      ))}
     </>
   )
 }
