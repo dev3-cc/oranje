@@ -372,6 +372,11 @@ msgstr "{0} de {1} con buzón"
 msgid "{0} de la meta"
 msgstr "{0} de la meta"
 
+#. placeholder {0}: selected.fullName
+#: src/features/recruitment/components/PoolRoster.tsx
+msgid "{0} deja de verse en el Pool"
+msgstr "{0} deja de verse en el Pool"
+
 #. placeholder {0}: String(portfolio.total)
 #: src/features/clients/pages/ClientPortfolioPage.tsx
 msgid "{0} en cartera"
@@ -3695,6 +3700,7 @@ msgid "Eliminando…"
 msgstr "Eliminando…"
 
 #: src/features/admin/pages/CorporateEmailPage.tsx
+#: src/features/recruitment/components/PoolRoster.tsx
 msgid "Eliminar"
 msgstr "Eliminar"
 
@@ -3711,17 +3717,12 @@ msgid "Eliminar buzón"
 msgstr "Eliminar buzón"
 
 #: src/features/recruitment/components/DeleteWorkerDialog.tsx
-#: src/features/recruitment/components/PoolRoster.tsx
 msgid "Eliminar colaborador"
 msgstr "Eliminar colaborador"
 
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 msgid "Eliminar contacto"
 msgstr "Eliminar contacto"
-
-#: src/features/recruitment/components/PoolRoster.tsx
-msgid "Eliminar del Pool"
-msgstr "Eliminar del Pool"
 
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Eliminar departamento"
@@ -6656,6 +6657,10 @@ msgstr "No se pudo corregir el intento. Solo su autor puede hacerlo."
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "No se pudo crear el contrato. Revisa los datos e inténtalo de nuevo."
 msgstr "No se pudo crear el contrato. Revisa los datos e inténtalo de nuevo."
+
+#: src/features/conversion/pages/ConversionPage.tsx
+msgid "No se pudo crear la cuenta del hotel. Inténtalo de nuevo."
+msgstr "No se pudo crear la cuenta del hotel. Inténtalo de nuevo."
 
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "No se pudo descartar el borrador. Inténtalo de nuevo."
@@ -9945,6 +9950,10 @@ msgstr "Ya existe un hotel con ese nombre: elige «Hotel ya registrado» o cambi
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
 msgid "Ya existe un reactivo con ese texto en esta auditoría."
 msgstr "Ya existe un reactivo con ese texto en esta auditoría."
+
+#: src/features/conversion/pages/ConversionPage.tsx
+msgid "Ya existe un usuario con ese correo."
+msgstr "Ya existe un usuario con ese correo."
 
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Ya existe una fila con ese nombre en este catálogo."

@@ -27,6 +27,7 @@ import {
   type OnboardingStatus,
 } from '@/shared/constants/onboardingStatus'
 import { useCan } from '@/shared/hooks/useCan'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 function notAwaitingState(error: unknown): OnboardingStatus | null {
@@ -197,7 +198,16 @@ export function ConversionPage(): ReactNode {
                       .then(() => {
                         toast.success(t`Cuenta del hotel creada`)
                       })
-                      .catch(() => {})
+                      .catch((err: unknown) => {
+                        toast.error(
+                          apiErrorMessage(err, {
+                            byCode: {
+                              EMAIL_TAKEN: t`Ya existe un usuario con ese correo.`,
+                            },
+                            fallback: t`No se pudo crear la cuenta del hotel. Inténtalo de nuevo.`,
+                          }),
+                        )
+                      })
                   }}
                 />
               ))}

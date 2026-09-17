@@ -111,6 +111,23 @@ export class CPanelService {
       throw new CPanelError([`cPanel respondió HTTP ${response.status}`])
     }
 
+    /*
+     * cPanel contesta 200 con HTML —su pantalla de inicio de sesión— cuando no
+     * acepta la credencial, y eso incluye el caso de un token válido llamado
+     * desde una IP que el hosting no tiene autorizada. Sin esta comprobación,
+     * `response.json()` reventaba con «Unexpected token '<'» y la pantalla
+     * mostraba un 500 sin pista de qué había pasado.
+     */
+    const tipo = response.headers.get('content-type') ?? ''
+
+    if (tipo.includes('text/html')) {
+      this.logger.warn(`cPanel ${fn} devolvió HTML: la credencial no se aceptó desde esta IP`)
+      throw new CPanelError([
+        'cPanel no aceptó la conexión: devolvió su pantalla de inicio de sesión. ' +
+          'Suele ser que la IP desde la que sale el servidor no está autorizada en el hosting.',
+      ])
+    }
+
     const envelope = (await response.json()) as UapiEnvelope<T>
 
     if (envelope.status !== 1) {

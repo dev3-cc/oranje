@@ -372,6 +372,11 @@ msgstr "{0} of {1} with a mailbox"
 msgid "{0} de la meta"
 msgstr "{0} of the target"
 
+#. placeholder {0}: selected.fullName
+#: src/features/recruitment/components/PoolRoster.tsx
+msgid "{0} deja de verse en el Pool"
+msgstr "{0} is no longer shown in the Pool"
+
 #. placeholder {0}: String(portfolio.total)
 #: src/features/clients/pages/ClientPortfolioPage.tsx
 msgid "{0} en cartera"
@@ -3695,6 +3700,7 @@ msgid "Eliminando…"
 msgstr "Deleting…"
 
 #: src/features/admin/pages/CorporateEmailPage.tsx
+#: src/features/recruitment/components/PoolRoster.tsx
 msgid "Eliminar"
 msgstr "Delete"
 
@@ -3711,17 +3717,12 @@ msgid "Eliminar buzón"
 msgstr "Delete mailbox"
 
 #: src/features/recruitment/components/DeleteWorkerDialog.tsx
-#: src/features/recruitment/components/PoolRoster.tsx
 msgid "Eliminar colaborador"
 msgstr "Delete Collaborator"
 
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 msgid "Eliminar contacto"
 msgstr "Delete contact"
-
-#: src/features/recruitment/components/PoolRoster.tsx
-msgid "Eliminar del Pool"
-msgstr "Remove from the Pool"
 
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Eliminar departamento"
@@ -6656,6 +6657,10 @@ msgstr "We couldn't correct the attempt. Only the person who logged it can."
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "No se pudo crear el contrato. Revisa los datos e inténtalo de nuevo."
 msgstr "The contract could not be created. Check the details and try again."
+
+#: src/features/conversion/pages/ConversionPage.tsx
+msgid "No se pudo crear la cuenta del hotel. Inténtalo de nuevo."
+msgstr "The hotel account could not be created. Try again."
 
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "No se pudo descartar el borrador. Inténtalo de nuevo."
@@ -9945,6 +9950,10 @@ msgstr "A hotel with that name already exists: pick “Hotel already registered�
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
 msgid "Ya existe un reactivo con ese texto en esta auditoría."
 msgstr "A checklist item with that text already exists in this audit."
+
+#: src/features/conversion/pages/ConversionPage.tsx
+msgid "Ya existe un usuario con ese correo."
+msgstr "A user with that email already exists."
 
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Ya existe una fila con ese nombre en este catálogo."
