@@ -30,53 +30,33 @@ describe('ClientPortfolioPage', () => {
     expect(
       await screen.findByText('commercial.vw_client · hoteles con activated_at · 6 en cartera'),
     ).toBeInTheDocument()
-    // El elegido vive en la tarjeta grande; la lista trae a los otros 5.
-    expect(screen.getAllByRole('listitem')).toHaveLength(5)
-    expect(screen.getByRole('link', { name: 'Abrir ficha del hotel' })).toBeInTheDocument()
+    // Sin un pin elegido no hay tarjeta flotante: los 6 hoteles viven solo en la rejilla.
+    expect(screen.getAllByRole('listitem')).toHaveLength(6)
+    expect(screen.queryByRole('link', { name: /Abrir ficha del hotel/ })).not.toBeInTheDocument()
   })
 
-  it('la tarjeta arma lo que vw_client no trae: contrato, zona y tarifas', async () => {
+  it('la tarjeta de la rejilla lleva directo a la ficha del hotel', async () => {
     renderPortfolio()
 
-    const card = (await screen.findByText('Hotel Puerto Real')).closest('article')
-    expect(card).not.toBeNull()
+    const link = (await screen.findByText('Hotel Puerto Real')).closest('a')
+    expect(link).not.toBeNull()
+    expect(link).toHaveAttribute('href', '/pipeline/psp-0012')
 
-    const scoped = within(card as HTMLElement)
+    const scoped = within(link as HTMLElement)
     expect(scoped.getByText(/Zona Centro · cliente desde/)).toBeInTheDocument()
-    expect(scoped.getByText('CT-2026-0184')).toBeInTheDocument()
     expect(scoped.getByText('4 posiciones')).toBeInTheDocument()
     expect(scoped.getByText('$230.00 – $380.00')).toBeInTheDocument()
-    expect(scoped.getByText('geocerca 150 m')).toBeInTheDocument()
-    expect(scoped.getByText('America/Cancun')).toBeInTheDocument()
   })
 
   it('un hotel activado sin contrato no finge tener uno', async () => {
     renderPortfolio()
 
-    const card = (await screen.findByText('Posada Maya Real')).closest('article')
-    const scoped = within(card as HTMLElement)
+    const link = (await screen.findByText('Posada Maya Real')).closest('a')
+    const scoped = within(link as HTMLElement)
 
     expect(scoped.getByText('sin contrato')).toBeInTheDocument()
-    expect(scoped.queryByRole('link', { name: /CT-/ })).not.toBeInTheDocument()
-    // Es el elegido: su artículo es la tarjeta grande, con el CTA y la geocerca en su tile.
-    expect(scoped.getByRole('link', { name: 'Abrir ficha del hotel' })).toBeInTheDocument()
-    expect(scoped.getByText('120 m')).toBeInTheDocument()
-  })
-
-  it('«Ver detalle» abre la ficha del hotel, y el folio su contrato', async () => {
-    renderPortfolio()
-
-    const card = (await screen.findByText('Hotel Mirador')).closest('article')
-    const scoped = within(card as HTMLElement)
-
-    expect(scoped.getByRole('link', { name: /Ver detalle/ })).toHaveAttribute(
-      'href',
-      '/pipeline/psp-0014',
-    )
-    expect(scoped.getByRole('link', { name: 'CT-2026-0098' })).toHaveAttribute(
-      'href',
-      '/contracts/ct-0098',
-    )
+    expect(scoped.getByText('geocerca 120 m')).toBeInTheDocument()
+    expect(scoped.getByText('Sin tarifas')).toBeInTheDocument()
   })
 
   it('filtrar por contrato deja fuera a quien no tiene ninguno', async () => {
