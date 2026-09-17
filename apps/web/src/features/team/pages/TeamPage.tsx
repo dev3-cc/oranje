@@ -7,7 +7,7 @@ import { useGetTeamOverviewQuery } from '../api/teamApi'
 import { AssignTerritoryDialog } from '../components/AssignTerritoryDialog'
 import type { TeamMemberCard } from '../types/team.types'
 
-import bdcIllustration from '@/assets/ilustrations/bdc.svg'
+import fotoEquipo from '@/assets/ilustrations/equipo-hotel.webp'
 import personajeAcceso from '@/assets/ilustrations/personaje-acceso-protegido.svg'
 import { Button } from '@/shared/components/Button'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
@@ -287,16 +287,25 @@ export function TeamPage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex items-end justify-between gap-4">
-        <div>
+      {/* Misma cabecera-tarjeta que Conversión, Contratos y Propuestas: título
+          a la izquierda, la foto del equipo (recortada, sin fondo) sentada en
+          el borde inferior y sobresaliendo por arriba; el `clip-path` de la
+          tarjeta la recorta con las esquinas redondeadas y deja 3rem arriba. */}
+      <header className="relative flex items-end justify-between gap-4 rounded-2xl border border-line bg-gradient-to-r from-o-50 via-surface to-surface px-6 pt-5 pb-5 [clip-path:inset(-3rem_0_0_0_round_1rem)] sm:mt-8 sm:min-h-44 sm:pr-80">
+        <div className="relative z-10">
           <h1 className="text-3xl font-bold tracking-tight text-ink">
             <FoldText text={t`Mi Equipo`} />
           </h1>
-          <p className="mt-1.5 text-sm text-ink-3">
+          <p className="mt-1.5 max-w-xl text-sm text-ink-3">
             <Trans>Los BDs que te reportan y cómo va su ciclo comercial</Trans>
           </p>
         </div>
-        <img src={bdcIllustration} alt="" aria-hidden className="hidden h-20 w-auto sm:block" />
+        <img
+          src={fotoEquipo}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute -right-2 -bottom-1 hidden h-[calc(100%+2.5rem)] w-auto object-contain object-bottom drop-shadow-[0_10px_18px_rgba(60,30,0,0.26)] sm:block"
+        />
       </header>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">

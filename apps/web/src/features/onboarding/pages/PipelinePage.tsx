@@ -14,6 +14,7 @@ import { usePipelineFilters } from '../hooks/usePipelineFilters'
 import type { ProspectSummary } from '../types/prospect.types'
 
 import { useGetSessionQuery } from '@/app/sessionApi'
+import fotoPipeline from '@/assets/ilustrations/pipeline-equipo.webp'
 import pipelineIllustration from '@/assets/ilustrations/pipeline.svg'
 import { Button } from '@/shared/components/Button'
 import { FilterReset } from '@/shared/components/FilterReset'
@@ -129,35 +130,45 @@ export function PipelinePage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+      {/* Misma cabecera-tarjeta que Conversión, Contratos y Propuestas: título
+          a la izquierda, la foto (recortada, sin fondo: la mujer y los
+          post-its, sin sus textos) sentada en el borde inferior y sobresaliendo
+          por arriba; el `clip-path` de la tarjeta la recorta con las esquinas
+          redondeadas y deja 3rem arriba. Los botones bajan al bloque de texto. */}
+      <header className="relative flex items-end justify-between gap-4 rounded-2xl border border-line bg-gradient-to-r from-o-50 via-surface to-surface px-6 pt-5 pb-5 [clip-path:inset(-3rem_0_0_0_round_1rem)] sm:mt-8 sm:min-h-44 sm:pr-96">
+        <div className="relative z-10">
           <div className="flex items-center gap-2">
             <h1 className="text-3xl font-bold tracking-tight text-ink">
               <FoldText text={t`Pipeline`} />
             </h1>
             <SemaforoHelpButton />
           </div>
-          <p className="mt-1 text-sm text-ink-3">
+          <p className="mt-1 max-w-xl text-sm text-ink-3">
             {isLoading
               ? t`Cargando prospectos…`
               : t`${board?.openCount ?? 0} prospectos abiertos · ${board?.zoneCount ?? 0} zonas`}
           </p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            {/* Pendiente: ninguna de las dos pantallas destino está diseñada todavía */}
+            <Button disabled title={t`La vista tabla llega pronto`}>
+              <Trans>Vista tabla</Trans>
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setIsFormOpen(true)
+              }}
+            >
+              <Trans>Nuevo prospecto</Trans>
+            </Button>
+          </div>
         </div>
-
-        <div className="flex items-center gap-3">
-          {/* Pendiente: ninguna de las dos pantallas destino está diseñada todavía */}
-          <Button disabled title={t`La vista tabla llega pronto`}>
-            <Trans>Vista tabla</Trans>
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => {
-              setIsFormOpen(true)
-            }}
-          >
-            <Trans>Nuevo prospecto</Trans>
-          </Button>
-        </div>
+        <img
+          src={fotoPipeline}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute -right-2 -bottom-1 hidden h-[calc(100%+2.5rem)] w-auto object-contain object-bottom drop-shadow-[0_10px_18px_rgba(60,30,0,0.26)] sm:block"
+        />
       </header>
 
       <div className="flex flex-wrap items-center gap-3">
