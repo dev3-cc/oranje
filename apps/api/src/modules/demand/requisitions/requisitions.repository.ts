@@ -20,7 +20,7 @@ const SELECT = {
   inspectorId: true,
   createdAt: true,
   updatedAt: true,
-  hotel: { select: { id: true, name: true, photoRef: true } },
+  hotel: { select: { id: true, name: true, photoRef: true, zoneId: true } },
   creator: { select: { id: true, fullName: true, photoPath: true } },
   statusState: { select: STATUS },
   positions: {
@@ -336,6 +336,8 @@ export class RequisitionsRepository {
     urgencyByPosition: Array<{ positionId: string; urgencyStateId: string }>
     userId: string
     roleCode: string
+    /** Inspector de la zona del hotel, resuelto por el servicio (REQ_INSPECTOR_ASSIGNED). */
+    inspectorId?: string | null
   }): Promise<RequisitionRow> {
     const now = new Date()
 
@@ -348,6 +350,7 @@ export class RequisitionsRepository {
           authorizedAt: now,
           updatedAt: now,
           updatedBy: params.userId,
+          ...(params.inspectorId ? { inspectorId: params.inspectorId } : {}),
         },
       })
 
@@ -393,6 +396,39 @@ export class RequisitionsRepository {
 
   async numberTaken(number: string): Promise<boolean> {
     return (await this.prisma.requisition.count({ where: { number } })) > 0
+  }
+
+  // Mismo criterio que `AccidentsRepository.inspectorOfZone`: el Inspector
+  // de la zona del hotel, el más antiguo si hay más de uno.
+  async inspectorOfZone(zoneId: string): Promise<{ id: string } | null> {
+    return this.prisma.user.findFirst({
+      where: { isActive: true, role: { code: 'ROL-I-01' }, zones: { some: { zoneId } } },
+      select: { id: true },
+      orderBy: { createdAt: 'asc' },
+    })
+  }
+
+  // COVERAGE_CLOSURE_REVIEWED: el cierre (Azul claro) ya pasó solo, en
+  // automático (RF-05) — esto es SOLO el registro de que el Líder lo revisó,
+  // no una transición de estado.
+  async logClosureReview(params: {
+    requisitionId: string
+    approved: boolean
+    reason: string | null
+    userId: string
+    roleCode: string
+  }): Promise<void> {
+    await this.prisma.journalEntry.create({
+      data: {
+        id: uuidv7(),
+        entityType: 'demand.requisition',
+        entityId: params.requisitionId,
+        eventType: 'COVERAGE_CLOSURE_REVIEWED',
+        actorUserId: params.userId,
+        actorRole: params.roleCode,
+        payload: { approved: params.approved, reason: params.reason },
+      },
+    })
   }
 
   // `journal.journal` está particionada por mes; el índice

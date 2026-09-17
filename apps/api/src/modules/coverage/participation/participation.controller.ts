@@ -1,8 +1,19 @@
-import { Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from '@nestjs/common'
 
 import { CurrentUser, Requires } from '../../../common/decorators/index.js'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 
+import { ReassignDto } from './dto/reassign.dto.js'
 import { ParticipantEntity, ParticipationResult, ParticipationService } from './participation.service.js'
 
 @Controller('requisitions/:id/participants')
@@ -33,5 +44,17 @@ export class ParticipationController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: ParticipationResult }> {
     return { data: await this.participation.leave(id, user) }
+  }
+
+  @Requires('group', 'reassign_requisition')
+  @Post(':userId/reassign')
+  @HttpCode(HttpStatus.OK)
+  async reassign(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('userId', ParseUUIDPipe) fromUserId: string,
+    @Body() dto: ReassignDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: ParticipationResult }> {
+    return { data: await this.participation.reassign(id, fromUserId, dto.toUserId, user) }
   }
 }
