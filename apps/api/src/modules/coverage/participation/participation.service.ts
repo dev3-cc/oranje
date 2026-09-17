@@ -113,6 +113,78 @@ export class ParticipationService {
     }
   }
 
+  /**
+   * REQ_REASSIGNED: el Líder mueve una requisición de una Reclutadora a
+   * otra, sin tocar el semáforo — sigue IN_PROGRESS, solo cambia quién la
+   * trabaja. Avisa a las dos y a sus dos Líderes (RF-37).
+   */
+  async reassign(
+    requisitionId: string,
+    fromUserId: string,
+    toUserId: string,
+    user: AuthenticatedUser,
+  ): Promise<ParticipationResult> {
+    if (fromUserId === toUserId) {
+      throw new ConflictException({
+        code: 'SAME_RECRUITER',
+        message: 'Ya está trabajando esta requisición',
+      })
+    }
+
+    await this.requisition(requisitionId)
+
+    const from = await this.repo.mine(requisitionId, fromUserId)
+
+    if (!from) {
+      throw new NotFoundException({
+        code: 'PARTICIPATION_NOT_FOUND',
+        message: 'Esa Reclutadora no está trabajando esta requisición',
+      })
+    }
+
+    if (await this.repo.mine(requisitionId, toUserId)) {
+      throw new ConflictException({
+        code: 'ALREADY_PARTICIPATING',
+        message: 'Ya está trabajando esta requisición',
+      })
+    }
+
+    await this.repo.reassign({
+      requisitionId,
+      fromParticipationId: from.id,
+      toUserId,
+      userId: user.id,
+      roleCode: user.roleCode,
+    })
+
+    const [fromBoss, toBoss] = await Promise.all([
+      this.repo.bossOf(fromUserId),
+      this.repo.bossOf(toUserId),
+    ])
+
+    const audience = [...new Set([fromUserId, toUserId, fromBoss, toBoss])]
+      .filter((id): id is string => Boolean(id))
+      .map((userId) => ({ kind: 'USER' as const, userId }))
+
+    try {
+      await this.notifications.publish({
+        type: 'REQ_REASSIGNED',
+        title: 'Requisición reasignada',
+        body: 'Se reasignó una requisición a otra Reclutadora.',
+        entity: { type: 'demand.requisition', id: requisitionId },
+        actorUserId: user.id,
+        audience,
+      })
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no revierte la reasignación.
+    }
+
+    return {
+      requisitionState: (await this.requisition(requisitionId)).stateCode,
+      participants: (await this.repo.active(requisitionId)).map(toEntity),
+    }
+  }
+
   async leave(requisitionId: string, user: AuthenticatedUser): Promise<ParticipationResult> {
     const requisition = await this.requisition(requisitionId)
     const mine = await this.repo.mine(requisitionId, user.id)

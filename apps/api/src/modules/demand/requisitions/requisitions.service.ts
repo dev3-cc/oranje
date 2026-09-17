@@ -395,6 +395,11 @@ export class RequisitionsService {
       })),
     )
 
+    // REQ_INSPECTOR_ASSIGNED: al autorizar, la requisición ya sabe qué
+    // Inspector le toca por la zona del hotel (RR-13, el mismo criterio que
+    // el accidente laboral). La columna existe desde antes; nadie la llenaba.
+    const inspector = row.hotel.zoneId ? await this.repo.inspectorOfZone(row.hotel.zoneId) : null
+
     const result = this.decorateOne(
       await this.repo.authorize({
         id,
@@ -404,8 +409,24 @@ export class RequisitionsService {
         urgencyByPosition,
         userId: user.id,
         roleCode: user.roleCode,
+        inspectorId: inspector?.id ?? null,
       }),
     )
+
+    if (inspector) {
+      try {
+        await this.notifications.publish({
+          type: 'REQ_INSPECTOR_ASSIGNED',
+          title: 'Inspector asignado',
+          body: `Te toca la requisición ${row.number}.`,
+          entity: { type: 'demand.requisition', id },
+          actorUserId: user.id,
+          audience: [{ kind: 'USER', userId: inspector.id }],
+        })
+      } catch {
+        // Mejor esfuerzo: que Pub/Sub no responda no revierte la firma.
+      }
+    }
 
     // REQ_AUTHORIZED (catálogo de notificaciones): avisa a quien la creó —
     // normalmente el Supervisor — que ya está firmada (RF-H-05). Primer
@@ -427,6 +448,59 @@ export class RequisitionsService {
     }
 
     return result
+  }
+
+  /**
+   * COVERAGE_CLOSURE_REVIEWED: el Líder revisa un cierre que ya pasó solo,
+   * en automático, al llenarse el último slot (RF-05) — esto no bloquea ni
+   * reabre nada, es un registro de que ya lo vio. Si objeta, el motivo es
+   * obligatorio; si lo aprueba, no hace falta explicar por qué.
+   */
+  async reviewClosure(
+    id: string,
+    dto: { approved: boolean; reason?: string | undefined },
+    user: AuthenticatedUser,
+  ): Promise<RequisitionEntity> {
+    const row = await this.requisition(id)
+
+    if (row.statusState.code !== 'LIGHT_BLUE') {
+      throw new ConflictException({
+        code: 'REQUISITION_NOT_CLOSED',
+        message: 'Solo se revisa el cierre de una requisición ya cubierta',
+      })
+    }
+
+    if (!dto.approved && !dto.reason) {
+      throw new UnprocessableEntityException({
+        code: 'REASON_REQUIRED',
+        message: 'Si objetas el cierre, dinos por qué',
+      })
+    }
+
+    await this.repo.logClosureReview({
+      requisitionId: id,
+      approved: dto.approved,
+      reason: dto.reason ?? null,
+      userId: user.id,
+      roleCode: user.roleCode,
+    })
+
+    try {
+      await this.notifications.publish({
+        type: 'COVERAGE_CLOSURE_REVIEWED',
+        title: dto.approved ? 'Cierre revisado' : 'Cierre objetado',
+        body: dto.approved
+          ? `${row.number} quedó revisada.`
+          : `${row.number}: ${dto.reason ?? ''}`.trim(),
+        entity: { type: 'demand.requisition', id },
+        actorUserId: user.id,
+        audience: [{ kind: 'REQUISITION_RECRUITERS', requisitionId: id }],
+      })
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no revierte el registro.
+    }
+
+    return this.decorateOne(await this.requisition(id))
   }
 
   /** Quien trae departamento (Supervisor, Manager de Área) solo toca requisiciones cuyas posiciones son de él. */

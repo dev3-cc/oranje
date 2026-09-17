@@ -102,3 +102,12 @@ export const changeStateSchema = z.object({
 })
 
 export class ChangeStateDto extends createZodDto(changeStateSchema) {}
+
+// Solo avisan (REASSIGN_REQUESTED, UNASSIGN_REQUESTED): quien decide actúa
+// por fuera del sistema, con lo que ya existe hoy (release, alta en otro
+// hotel). El motivo es opcional, para no obligar a explicar en el momento.
+export const requestMoveSchema = z.object({
+  reason: z.string().trim().min(1).max(500).optional(),
+})
+
+export class RequestMoveDto extends createZodDto(requestMoveSchema) {}

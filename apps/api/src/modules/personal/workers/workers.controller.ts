@@ -21,6 +21,7 @@ import {
   ChangeStateDto,
   CreateWorkerDto,
   QueryWorkersDto,
+  RequestMoveDto,
   UpdateWorkerDto,
 } from './dto/create-worker.dto.js'
 import type { WorkerEntity } from './entities/worker.entity.js'
@@ -148,5 +149,27 @@ export class WorkersController {
     }>
   }> {
     return { data: await this.workers.history(id) }
+  }
+
+  @Requires('recruitment', 'reassign_worker')
+  @Post(':id/request-reassignment')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async requestReassignment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RequestMoveDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<void> {
+    await this.workers.requestReassignment(id, dto, user)
+  }
+
+  @Requires('recruitment', 'unassign_worker')
+  @Post(':id/request-unassignment')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async requestUnassignment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RequestMoveDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<void> {
+    await this.workers.requestUnassignment(id, dto, user)
   }
 }

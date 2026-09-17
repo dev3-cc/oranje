@@ -218,6 +218,38 @@ export class WorkersRepository {
     })
   }
 
+  // REASSIGN_REQUESTED: sin hotel ni zona que lo acote — Reclutamiento es un
+  // solo equipo, no uno por hotel.
+  async recruitmentManager(): Promise<{ id: string } | null> {
+    return this.prisma.user.findFirst({
+      where: { isActive: true, role: { code: 'ROL-R-03' } },
+      select: { id: true },
+      orderBy: { createdAt: 'asc' },
+    })
+  }
+
+  // REASSIGN_REQUESTED / UNASSIGN_REQUESTED: solo el registro, ninguna
+  // transición — quien decide actúa por fuera con lo que ya existe hoy.
+  async logRequest(params: {
+    workerId: string
+    eventType: string
+    reason: string | null
+    userId: string
+    roleCode: string
+  }): Promise<void> {
+    await this.prisma.journalEntry.create({
+      data: {
+        id: uuidv7(),
+        entityType: 'personal.worker',
+        entityId: params.workerId,
+        eventType: params.eventType,
+        actorUserId: params.userId,
+        actorRole: params.roleCode,
+        payload: { reason: params.reason },
+      },
+    })
+  }
+
   // Nunca se borra la fila (journal, historial del semáforo, auditorías...
   // todo cuelga de `worker_id`): `deleted_at` la saca del Pool y de toda
   // consulta que use BASE, sin romper esas referencias.
