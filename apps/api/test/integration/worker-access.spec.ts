@@ -201,29 +201,8 @@ test('validar con el expediente a medias exige confirmarlo y abre 3 días para c
     workers.changeState(workerId, { toState: 'STRONG_GREEN' }, recruiter),
   ).rejects.toBeInstanceOf(UnprocessableEntityException)
 
-  // Confirmado pero con la Fase 1 a medias tampoco: eso no lo puede llenar el
-  // colaborador, y el plazo no estaría en su mano.
-  await expect(
-    workers.changeState(
-      workerId,
-      { toState: 'STRONG_GREEN', acceptIncompleteProfile: true },
-      recruiter,
-    ),
-  ).rejects.toMatchObject({ response: { code: 'PROFILE_PHASE1_INCOMPLETE' } })
-
-  const position = await db.catalogPosition.findFirstOrThrow({ select: { id: true } })
-  const english = await db.englishLevel.findFirstOrThrow({ select: { id: true } })
-  const modality = await db.hiringModality.findFirstOrThrow({ select: { id: true } })
-  await db.worker.update({
-    where: { id: workerId },
-    data: {
-      catalogPositionId: position.id,
-      englishLevelId: english.id,
-      hiringModalityId: modality.id,
-      experienceLevel: 'NONE',
-    },
-  })
-
+  // Confirmado, se valida aunque falte de todo: lo de la Fase 1 lo completa
+  // Reclutamiento con «Editar», y el plazo del colaborador es por SU parte.
   const validated = await workers.changeState(
     workerId,
     { toState: 'STRONG_GREEN', acceptIncompleteProfile: true },
@@ -268,4 +247,12 @@ test('validar con el expediente a medias exige confirmarlo y abre 3 días para c
     },
   })
   expect((await deadlines.of(account.userId as string)).profile.status).toBe('NONE')
+
+  // Sigue faltando la Fase 1 (nunca se capturó) y aun así al colaborador no se
+  // le cobra: eso es de Reclutamiento, y su parte ya está.
+  const still = await db.worker.findUniqueOrThrow({
+    where: { id: workerId },
+    select: { catalogPositionId: true },
+  })
+  expect(still.catalogPositionId).toBeNull()
 })

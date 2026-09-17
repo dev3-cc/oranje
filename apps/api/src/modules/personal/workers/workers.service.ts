@@ -319,21 +319,9 @@ export class WorkersService {
     }
 
     // Lo que falte de la Fase 1 (posicion, modalidad, ingles, experiencia) lo
-    // decide Oranje y el colaborador NO puede llenarlo desde su app: validarlo
-    // asi lo dejaria con un plazo que no esta en su mano cumplir.
-    if (
-      validatesIncomplete &&
-      (worker.position === null ||
-        worker.hiringModality === null ||
-        worker.englishLevel === null ||
-        worker.experienceLevel === null)
-    ) {
-      throw new UnprocessableEntityException({
-        code: 'PROFILE_PHASE1_INCOMPLETE',
-        message:
-          'Posición, modalidad, inglés y experiencia los define Reclutamiento: complétalos antes de validar',
-      })
-    }
+    // completa Reclutamiento con «Editar»; el plazo de 3 dias que bloquea al
+    // colaborador se cobra SOLO por lo que le toca a el (transporte,
+    // emergencia, tipo de sangre) — ver AccessDeadlineService.
 
     let reasonId: string | null = null
 
