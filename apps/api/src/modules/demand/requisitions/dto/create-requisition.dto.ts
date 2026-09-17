@@ -33,3 +33,14 @@ export const deleteRequisitionSchema = z.object({
 })
 
 export class DeleteRequisitionDto extends createZodDto(deleteRequisitionSchema) {}
+
+// El cierre (Azul claro) sigue pasando solo, en automático, al llenarse el
+// último slot (RF-05) — el Líder no lo bloquea. Esto es la revisión DESPUÉS
+// del hecho: un registro de que ya lo vio, con motivo obligatorio solo si
+// objeta.
+export const reviewClosureSchema = z.object({
+  approved: z.boolean(),
+  reason: z.string().trim().min(1).max(500).optional(),
+})
+
+export class ReviewClosureDto extends createZodDto(reviewClosureSchema) {}

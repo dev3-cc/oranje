@@ -13,7 +13,11 @@ import {
 import { CurrentUser, Requires } from '../../../common/decorators/index.js'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 
-import { CreateRequisitionDto, DeleteRequisitionDto } from './dto/create-requisition.dto.js'
+import {
+  CreateRequisitionDto,
+  DeleteRequisitionDto,
+  ReviewClosureDto,
+} from './dto/create-requisition.dto.js'
 import { QueryRequisitionsDto } from './dto/query-requisitions.dto.js'
 import type { RequisitionEntity, RequisitionJournalEntry } from './entities/requisition.entity.js'
 import { RequisitionBoard, RequisitionsService } from './requisitions.service.js'
@@ -104,5 +108,21 @@ export class RequisitionsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: RequisitionEntity }> {
     return { data: await this.requisitions.authorize(id, user) }
+  }
+
+  /**
+   * El cierre (Azul claro) ya pasó solo al llenarse el último slot (RF-05) —
+   * esto es la revisión del Líder DESPUÉS del hecho, no un permiso que lo
+   * bloquee.
+   */
+  @Requires('requisitions', 'approve_coverage_close')
+  @Post(':id/review-closure')
+  @HttpCode(HttpStatus.OK)
+  async reviewClosure(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ReviewClosureDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: RequisitionEntity }> {
+    return { data: await this.requisitions.reviewClosure(id, dto, user) }
   }
 }

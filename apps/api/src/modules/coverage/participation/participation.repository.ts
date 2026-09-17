@@ -76,6 +76,47 @@ export class ParticipationRepository {
     })
   }
 
+  // REQ_REASSIGNED: el Líder de cada una, para avisarle a ambas cadenas.
+  async bossOf(userId: string): Promise<string | null> {
+    const row = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { reportsToUserId: true },
+    })
+
+    return row?.reportsToUserId ?? null
+  }
+
+  async reassign(params: {
+    requisitionId: string
+    fromParticipationId: string
+    toUserId: string
+    userId: string
+    roleCode: string
+  }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.participation.update({
+        where: { id: params.fromParticipationId },
+        data: { leftAt: new Date() },
+      })
+
+      await tx.participation.create({
+        data: { id: uuidv7(), requisitionId: params.requisitionId, userId: params.toUserId },
+      })
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'demand.requisition',
+          entityId: params.requisitionId,
+          eventType: 'RECRUITER_REASSIGNED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: { toUserId: params.toUserId },
+        },
+      })
+    })
+  }
+
   async join(params: {
     requisitionId: string
     userId: string

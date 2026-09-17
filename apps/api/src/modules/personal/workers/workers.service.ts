@@ -524,6 +524,94 @@ export class WorkersService {
     return row
   }
 
+  /**
+   * REASSIGN_REQUESTED: solo avisa al Manager de Reclutamiento — quien
+   * decide reasigna por fuera, con lo que ya existe (liberar + volver a
+   * asignar). No hay estado de "solicitud pendiente".
+   */
+  async requestReassignment(
+    id: string,
+    dto: { reason?: string | undefined },
+    user: AuthenticatedUser,
+  ): Promise<void> {
+    await this.worker(id)
+
+    await this.repo.logRequest({
+      workerId: id,
+      eventType: 'REASSIGN_REQUESTED',
+      reason: dto.reason ?? null,
+      userId: user.id,
+      roleCode: user.roleCode,
+    })
+
+    const manager = await this.repo.recruitmentManager()
+
+    if (manager) {
+      try {
+        await this.notifications.publish({
+          type: 'REASSIGN_REQUESTED',
+          title: 'Reasignación solicitada',
+          body: dto.reason
+            ? `Se solicita reasignar a un colaborador: ${dto.reason}`
+            : 'Se solicita reasignar a un colaborador.',
+          entity: { type: 'personal.worker', id },
+          actorUserId: user.id,
+          audience: [{ kind: 'USER', userId: manager.id }],
+        })
+      } catch {
+        // Mejor esfuerzo.
+      }
+    }
+  }
+
+  /**
+   * UNASSIGN_REQUESTED: solo avisa al hotel (su Supervisor y Manager de
+   * Área) — quien decide desasigna por fuera con el `DELETE /assignments/:id`
+   * que ya existe. No hay estado de "solicitud pendiente".
+   */
+  async requestUnassignment(
+    id: string,
+    dto: { reason?: string | undefined },
+    user: AuthenticatedUser,
+  ): Promise<void> {
+    await this.worker(id)
+
+    const scope = await this.repo.activeAssignmentScope(id)
+
+    if (!scope) {
+      throw new ConflictException({
+        code: 'NO_ACTIVE_ASSIGNMENT',
+        message: 'No tiene una asignación activa que desasignar',
+      })
+    }
+
+    await this.repo.logRequest({
+      workerId: id,
+      eventType: 'UNASSIGN_REQUESTED',
+      reason: dto.reason ?? null,
+      userId: user.id,
+      roleCode: user.roleCode,
+    })
+
+    try {
+      await this.notifications.publish({
+        type: 'UNASSIGN_REQUESTED',
+        title: 'Desasignación solicitada',
+        body: dto.reason
+          ? `Se solicita desasignar a un colaborador: ${dto.reason}`
+          : 'Se solicita desasignar a un colaborador.',
+        entity: { type: 'personal.worker', id },
+        actorUserId: user.id,
+        audience: [
+          { kind: 'ROLE_IN_HOTEL', roleCode: 'ROL-H-01', hotelId: scope.hotelId },
+          { kind: 'ROLE_IN_HOTEL', roleCode: 'ROL-H-02', hotelId: scope.hotelId },
+        ],
+      })
+    } catch {
+      // Mejor esfuerzo.
+    }
+  }
+
   private async worker(id: string): Promise<WorkerRow> {
     const row = await this.repo.findById(id)
 
