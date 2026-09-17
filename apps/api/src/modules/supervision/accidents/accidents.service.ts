@@ -10,6 +10,7 @@ import { v7 as uuidv7 } from 'uuid'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { PrismaService } from '../../../infra/prisma/index.js'
+import { NotificationPublisherService } from '../../notifications/index.js'
 
 import { AccidentRow, AccidentsRepository } from './accidents.repository.js'
 import type {
@@ -62,6 +63,7 @@ export class AccidentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly repo: AccidentsRepository,
+    private readonly notifications: NotificationPublisherService,
   ) {}
 
   // Escenario A. El colaborador reporta desde la app: la tarjeta nace solo con
@@ -79,13 +81,13 @@ export class AccidentsService {
       })
     }
 
-    return this.create({ ...dto, workerId: worker.id }, user)
+    return this.create({ ...dto, workerId: worker.id }, user, 'WORKER')
   }
 
   // Escenario B. El Supervisor reporta, y puede traer ya lo presencial: en ese
   // caso la tarjeta salta a ON_SITE_CAPTURED sin un paso intermedio.
   async report(dto: ReportAccidentDto, user: AuthenticatedUser): Promise<AccidentEntity> {
-    return this.create(dto, user)
+    return this.create(dto, user, 'HOTEL')
   }
 
   async list(query: QueryAccidentsDto): Promise<AccidentEntity[]> {
@@ -238,6 +240,20 @@ export class AccidentsService {
       })
     })
 
+    // ACCIDENT_CARD_CLOSED: avisa al colaborador que su tarjeta ya se cerró.
+    try {
+      await this.notifications.publish({
+        type: 'ACCIDENT_CARD_CLOSED',
+        title: 'Tarjeta de accidente cerrada',
+        body: 'Tu tarjeta de accidente se cerró.',
+        entity: { type: 'supervision.work_accident', id },
+        actorUserId: user.id,
+        audience: [{ kind: 'WORKER', workerId: worker.id }],
+      })
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no revierte el cierre.
+    }
+
     return this.get(id)
   }
 
@@ -252,6 +268,7 @@ export class AccidentsService {
       immediateCare?: string | undefined
     },
     user: AuthenticatedUser,
+    reportedBy: 'WORKER' | 'HOTEL',
   ): Promise<AccidentEntity> {
     const worker = await this.repo.worker(dto.workerId)
 
@@ -342,7 +359,49 @@ export class AccidentsService {
       })
     })
 
+    // ACCIDENT_REPORTED_A/B (catálogo de notificaciones): quién se avisa
+    // depende de quién reportó. Si fue el colaborador (self-report), el
+    // Supervisor del hotel se entera junto con el Inspector de la zona; si
+    // fue el hotel quien reportó (el Supervisor), solo se avisa al Inspector
+    // — el Supervisor es quien lo está reportando, no hace falta avisarle.
+    try {
+      const audience =
+        reportedBy === 'WORKER'
+          ? await this.reportedByWorkerAudience(dto.hotelId, inspector?.id ?? null)
+          : inspector
+            ? [{ kind: 'USER' as const, userId: inspector.id }]
+            : []
+
+      if (audience.length > 0) {
+        await this.notifications.publish({
+          type: reportedBy === 'WORKER' ? 'ACCIDENT_REPORTED_A' : 'ACCIDENT_REPORTED_B',
+          title:
+            reportedBy === 'WORKER' ? 'Accidente reportado' : 'Accidente reportado por el hotel',
+          body:
+            reportedBy === 'WORKER'
+              ? `${worker.fullName} reportó un accidente.`
+              : `Se reportó un accidente de ${worker.fullName}.`,
+          entity: { type: 'supervision.work_accident', id },
+          actorUserId: user.id,
+          audience,
+        })
+      }
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no revierte el reporte.
+    }
+
     return this.get(id)
+  }
+
+  private async reportedByWorkerAudience(
+    hotelId: string,
+    inspectorId: string | null,
+  ): Promise<Array<{ kind: 'USER'; userId: string }>> {
+    const supervisor = await this.repo.supervisorOfHotel(hotelId)
+
+    return [supervisor?.id ?? null, inspectorId]
+      .filter((id): id is string => Boolean(id))
+      .map((userId) => ({ kind: 'USER' as const, userId }))
   }
 
   // Solo EL inspector de la tarjeta, no cualquier inspector: eso cruza filas y

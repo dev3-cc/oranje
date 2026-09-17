@@ -83,6 +83,15 @@ export class AccidentsRepository {
     })
   }
 
+  // El Supervisor sale del hotel del accidente, mismo criterio que el Inspector.
+  async supervisorOfHotel(hotelId: string): Promise<{ id: string } | null> {
+    return this.prisma.user.findFirst({
+      where: { isActive: true, role: { code: 'ROL-H-01' }, hotelId },
+      select: { id: true },
+      orderBy: { createdAt: 'asc' },
+    })
+  }
+
   async stateByCode(code: string): Promise<{ id: string } | null> {
     return this.prisma.statusLightState.findFirst({
       where: { code, statusLightCode: 'WORKER' },

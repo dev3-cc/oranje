@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core'
 
 import { CoverageModule } from '../coverage/coverage.module.js'
 import { IdentityModule } from '../identity/index.js'
+import { NotificationsModule } from '../notifications/index.js'
 
 import { DocumentsController } from './documents/documents.controller.js'
 import { DocumentsRepository } from './documents/documents.repository.js'
@@ -19,7 +20,7 @@ import { WorkersRepository } from './workers/workers.repository.js'
 import { WorkersService } from './workers/workers.service.js'
 
 @Module({
-  imports: [IdentityModule, CoverageModule],
+  imports: [IdentityModule, CoverageModule, NotificationsModule],
   // MeController va primero: `workers/me` debe ganarle a `workers/:id`.
   controllers: [MeController, WorkersController, DocumentsController, RatesController],
   providers: [

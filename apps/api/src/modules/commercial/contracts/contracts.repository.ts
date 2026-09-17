@@ -27,6 +27,9 @@ export interface ContractRow {
   signedAt: Date | null
   createdAt: Date
   hotel: { id: string; name: string }
+  // Solo para resolver a quien avisar (el BD dueño del ciclo comercial);
+  // no se expone en ContractEntity/toEntity.
+  prospectId: string | null
 }
 
 const BASE = `
@@ -45,6 +48,7 @@ const BASE = `
          c.splits_invoice_by_month AS "splitsInvoiceByMonth",
          c.signed_at  AS "signedAt",
          c.created_at AS "createdAt",
+         c.prospect_id AS "prospectId",
          jsonb_build_object('id', h.id, 'name', h.name) AS hotel
     FROM commercial.contract c
     JOIN commercial.hotel h ON h.id = c.hotel_id`
@@ -245,5 +249,15 @@ export class ContractsRepository {
 
   async numberTaken(number: string): Promise<boolean> {
     return (await this.prisma.contract.count({ where: { number } })) > 0
+  }
+
+  /** El BD dueño del ciclo comercial del que nació este contrato, si tiene uno vinculado. */
+  async prospectOwner(prospectId: string): Promise<string | null> {
+    const row = await this.prisma.prospect.findUnique({
+      where: { id: prospectId },
+      select: { ownerUserId: true },
+    })
+
+    return row?.ownerUserId ?? null
   }
 }

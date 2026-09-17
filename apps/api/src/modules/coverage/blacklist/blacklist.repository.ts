@@ -61,9 +61,13 @@ const shape = (r: Raw): EntryRow => ({
 export class BlacklistRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async worker(
-    id: string,
-  ): Promise<{ id: string; fullName: string; stateId: string; stateCode: string } | null> {
+  async worker(id: string): Promise<{
+    id: string
+    fullName: string
+    stateId: string
+    stateCode: string
+    userId: string | null
+  } | null> {
     const row = await this.prisma.worker.findUnique({
       where: { id },
       select: {
@@ -72,6 +76,7 @@ export class BlacklistRepository {
         deletedAt: true,
         statusLightStateId: true,
         statusState: { select: { code: true } },
+        userId: true,
       },
     })
 
@@ -81,6 +86,7 @@ export class BlacklistRepository {
           fullName: row.fullName,
           stateId: row.statusLightStateId,
           stateCode: row.statusState.code,
+          userId: row.userId,
         }
       : null
   }

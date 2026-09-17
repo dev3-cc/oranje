@@ -8,6 +8,7 @@ import {
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { PlacesService } from '../../../infra/places/index.js'
+import { NotificationPublisherService } from '../../notifications/index.js'
 
 import type { CreateEntryDto } from './dto/create-entry.dto.js'
 import type { CreateScheduleDto } from './dto/create-schedule.dto.js'
@@ -62,6 +63,7 @@ export class SchedulesService {
   constructor(
     private readonly repo: SchedulesRepository,
     private readonly places: PlacesService,
+    private readonly notifications: NotificationPublisherService,
   ) {}
 
   async list(user: AuthenticatedUser): Promise<ScheduleEntity[]> {
@@ -217,6 +219,19 @@ export class SchedulesService {
       })
     }
 
+    try {
+      await this.notifications.publish({
+        type: 'SCHEDULE_EDITED',
+        title: 'Schedule editado',
+        body: `Se agregó un turno el ${dto.workDate.toISOString().slice(0, 10)} a tu Schedule.`,
+        entity: { type: 'operations.schedule_entry', id },
+        actorUserId: user.id,
+        audience: [{ kind: 'WORKER', workerId: assignment.workerId }],
+      })
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no revierte el turno.
+    }
+
     return toEntry(created)
   }
 
@@ -240,6 +255,19 @@ export class SchedulesService {
       userId: user.id,
       roleCode: user.roleCode,
     })
+
+    try {
+      await this.notifications.publish({
+        type: 'SCHEDULE_EDITED',
+        title: 'Turno quitado del Schedule',
+        body: 'Se quitó un turno de tu Schedule.',
+        entity: { type: 'operations.schedule_entry', id: entryId },
+        actorUserId: user.id,
+        audience: [{ kind: 'WORKER', workerId: entry.workerId }],
+      })
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no revierte la eliminación.
+    }
   }
 
   private async insert(params: {

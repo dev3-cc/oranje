@@ -279,15 +279,20 @@ export class SchedulesRepository {
     })
   }
 
-  async entryById(
-    id: string,
-  ): Promise<{ id: string; scheduleId: string; workDate: Date; departmentId: string } | null> {
+  async entryById(id: string): Promise<{
+    id: string
+    scheduleId: string
+    workDate: Date
+    departmentId: string
+    workerId: string
+  } | null> {
     const row = await this.prisma.scheduleEntry.findUnique({
       where: { id },
       select: {
         id: true,
         scheduleId: true,
         workDate: true,
+        workerId: true,
         assignment: {
           select: { slot: { select: { position: { select: { hotelDepartmentId: true } } } } },
         },
@@ -300,6 +305,7 @@ export class SchedulesRepository {
           scheduleId: row.scheduleId,
           workDate: row.workDate,
           departmentId: row.assignment.slot.position.hotelDepartmentId,
+          workerId: row.workerId,
         }
       : null
   }

@@ -9,6 +9,7 @@ import {
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { assignmentStatusLabel } from '../../../common/utils/status-labels.js'
 import { PermissionsService } from '../../identity/index.js'
+import { NotificationPublisherService } from '../../notifications/index.js'
 
 import {
   AssignmentRow,
@@ -49,6 +50,7 @@ export class AssignmentsService {
   constructor(
     private readonly repo: AssignmentsRepository,
     private readonly permissions: PermissionsService,
+    private readonly notifications: NotificationPublisherService,
   ) {}
 
   /**
@@ -119,12 +121,13 @@ export class AssignmentsService {
 
     const closes = coverage.allCovered && position.requisitionState === IN_PROGRESS
     const requisitionState = closes ? await this.stateOf(REQUISITION_LIGHT, FULLY_COVERED) : null
+    const startDate = dto.startDate ?? new Date()
 
     const row = await this.repo.assign({
       slotId: slot.id,
       workerId: dto.workerId,
       type: dto.type,
-      startDate: dto.startDate ?? new Date(),
+      startDate,
       endDate: dto.endDate ?? null,
       requisitionId: position.requisitionId,
       positionId: dto.positionId,
@@ -134,6 +137,43 @@ export class AssignmentsService {
       userId: user.id,
       roleCode: user.roleCode,
     })
+
+    // WORKER_ASSIGNED: avisa al colaborador de su nueva asignación.
+    try {
+      await this.notifications.publish({
+        type: 'WORKER_ASSIGNED',
+        title: 'Nueva asignación',
+        body: `Tienes una nueva asignación a partir del ${startDate.toISOString().slice(0, 10)}.`,
+        entity: { type: 'coverage.assignment', id: row.id },
+        actorUserId: user.id,
+        audience: [{ kind: 'WORKER', workerId: dto.workerId }],
+      })
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no revierte la asignación.
+    }
+
+    // REQ_FULLY_COVERED: avisa al Supervisor y al Manager de Área de que la
+    // requisición ya quedó cubierta al 100%.
+    if (closes) {
+      const audience = [position.requisitionCreatedBy, position.requisitionAreaManagerUserId]
+        .filter((id): id is string => Boolean(id))
+        .map((userId) => ({ kind: 'USER' as const, userId }))
+
+      if (audience.length > 0) {
+        try {
+          await this.notifications.publish({
+            type: 'REQ_FULLY_COVERED',
+            title: 'Requisición cubierta al 100%',
+            body: 'La requisición ya está cubierta al 100%.',
+            entity: { type: 'demand.requisition', id: position.requisitionId },
+            actorUserId: user.id,
+            audience,
+          })
+        } catch {
+          // Mejor esfuerzo: que Pub/Sub no responda no revierte la asignación.
+        }
+      }
+    }
 
     return {
       assignment: toEntity(row),
@@ -199,6 +239,23 @@ export class AssignmentsService {
       userId: user.id,
       roleCode: user.roleCode,
     })
+
+    // WORKER_TEMP_ENDED: solo la temporal se avisa — la fija termina cuando el
+    // hotel manda a descansar al colaborador (Rosa), un aviso distinto.
+    if (row.type === 'TEMPORARY') {
+      try {
+        await this.notifications.publish({
+          type: 'WORKER_TEMP_ENDED',
+          title: 'Asignación temporal terminada',
+          body: `Tu asignación temporal terminó: ${reason}`.slice(0, 500),
+          entity: { type: 'coverage.assignment', id },
+          actorUserId: user.id,
+          audience: [{ kind: 'WORKER', workerId: row.worker.id }],
+        })
+      } catch {
+        // Mejor esfuerzo: que Pub/Sub no responda no revierte la liberación.
+      }
+    }
 
     return toEntity({ ...row, status: 'CANCELLED' })
   }

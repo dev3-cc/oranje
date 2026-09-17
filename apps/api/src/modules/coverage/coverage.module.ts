@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 
 import { IdentityModule } from '../identity/index.js'
+import { NotificationsModule } from '../notifications/index.js'
 
 import { AssignmentsController } from './assignments/assignments.controller.js'
 import { AssignmentsRepository } from './assignments/assignments.repository.js'
@@ -13,7 +14,7 @@ import { ParticipationRepository } from './participation/participation.repositor
 import { ParticipationService } from './participation/participation.service.js'
 
 @Module({
-  imports: [IdentityModule],
+  imports: [IdentityModule, NotificationsModule],
   controllers: [ParticipationController, AssignmentsController, BlacklistController],
   providers: [
     ParticipationService,

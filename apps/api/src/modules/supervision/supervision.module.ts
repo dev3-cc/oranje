@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common'
 
+import { NotificationsModule } from '../notifications/index.js'
+
 import { AccidentsController } from './accidents/accidents.controller.js'
 import { AccidentsRepository } from './accidents/accidents.repository.js'
 import { AccidentsService } from './accidents/accidents.service.js'
@@ -8,6 +10,7 @@ import { AuditsRepository } from './audits/audits.repository.js'
 import { AuditsService } from './audits/audits.service.js'
 
 @Module({
+  imports: [NotificationsModule],
   controllers: [AccidentsController, AuditsController],
   providers: [AccidentsService, AccidentsRepository, AuditsService, AuditsRepository],
   exports: [AccidentsService, AuditsService],

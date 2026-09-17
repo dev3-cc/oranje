@@ -166,6 +166,58 @@ export class WorkersRepository {
     return rows[0]?.existe ?? false
   }
 
+  // El hotel y departamento de la asignación ACTIVA del colaborador — para
+  // resolver a quién avisar (el Manager de Área) cuando lo mandan a
+  // descanso. RR-05 impide dos activas a la vez; si hubiera más de una por
+  // algún hueco de datos, se toma la más reciente.
+  async activeAssignmentScope(
+    workerId: string,
+  ): Promise<{ hotelId: string; departmentId: string } | null> {
+    const rows = await this.prisma.$queryRaw<Array<{ hotelId: string; departmentId: string }>>`
+      SELECT r.hotel_id AS "hotelId", p.hotel_department_id AS "departmentId"
+        FROM coverage.assignment a
+        JOIN demand.slot sl        ON sl.id = a.slot_id
+        JOIN demand."position" p   ON p.id = sl.position_id
+        JOIN demand.requisition r  ON r.id = p.requisition_id
+       WHERE a.worker_id = ${workerId}::uuid
+         AND a.status = 'ACTIVE'
+       ORDER BY a.created_at DESC
+       LIMIT 1`
+
+    return rows[0] ?? null
+  }
+
+  // El Manager de Área responsable de ese departamento del hotel —o quien
+  // cubre el hotel entero, si su cuenta no lleva departamento (jerarquía
+  // simple, Reglas de Negocio · Cuentas del hotel). Se prefiere la cuenta con
+  // el departamento exacto sobre la que cubre todo el hotel.
+  async areaManagerOf(hotelId: string, departmentId: string): Promise<{ id: string } | null> {
+    const scoped = await this.prisma.user.findFirst({
+      where: { isActive: true, hotelId, departmentId, role: { code: 'ROL-H-02' } },
+      select: { id: true },
+    })
+
+    if (scoped) {
+      return scoped
+    }
+
+    return this.prisma.user.findFirst({
+      where: { isActive: true, hotelId, departmentId: null, role: { code: 'ROL-H-02' } },
+      select: { id: true },
+    })
+  }
+
+  // El Inspector de la zona del colaborador (RR-13). Mismo patrón que
+  // `AccidentsRepository.inspectorOfZone`, replicado aquí para no acoplar
+  // `personal` a `supervision` por una sola consulta.
+  async inspectorOfZone(zoneId: string): Promise<{ id: string } | null> {
+    return this.prisma.user.findFirst({
+      where: { isActive: true, role: { code: 'ROL-I-01' }, zones: { some: { zoneId } } },
+      select: { id: true },
+      orderBy: { createdAt: 'asc' },
+    })
+  }
+
   // Nunca se borra la fila (journal, historial del semáforo, auditorías...
   // todo cuelga de `worker_id`): `deleted_at` la saca del Pool y de toda
   // consulta que use BASE, sin romper esas referencias.

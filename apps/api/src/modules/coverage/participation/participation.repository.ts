@@ -21,6 +21,8 @@ export class ParticipationRepository {
     deletedAt: Date | null
     stateId: string
     stateCode: string
+    createdBy: string | null
+    areaManagerUserId: string | null
   } | null> {
     const row = await this.prisma.requisition.findUnique({
       where: { id },
@@ -30,6 +32,8 @@ export class ParticipationRepository {
         deletedAt: true,
         statusLightStateId: true,
         statusState: { select: { code: true } },
+        createdBy: true,
+        areaManagerUserId: true,
       },
     })
 
@@ -40,6 +44,8 @@ export class ParticipationRepository {
           deletedAt: row.deletedAt,
           stateId: row.statusLightStateId,
           stateCode: row.statusState.code,
+          createdBy: row.createdBy,
+          areaManagerUserId: row.areaManagerUserId,
         }
       : null
   }

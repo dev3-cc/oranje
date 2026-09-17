@@ -5,6 +5,7 @@ import type { PrismaService } from '../../src/infra/prisma/index.js'
 import { ProposalsRepository } from '../../src/modules/commercial/onboarding/proposals.repository.js'
 import { ProposalsService } from '../../src/modules/commercial/onboarding/proposals.service.js'
 import { PermissionsService } from '../../src/modules/identity/index.js'
+import type { NotificationPublisherService } from '../../src/modules/notifications/index.js'
 
 import { close, db } from './db.js'
 import { actor } from './fixture.js'
@@ -18,7 +19,9 @@ import { actor } from './fixture.js'
  */
 
 const prisma = db as unknown as PrismaService
-const proposals = new ProposalsService(new ProposalsRepository(prisma))
+// Stub: nada aquí manda a enviar propuesta, pero el constructor lo exige.
+const notifications = { publish: async () => {} } as unknown as NotificationPublisherService
+const proposals = new ProposalsService(new ProposalsRepository(prisma), notifications)
 const permissions = new PermissionsService(prisma)
 
 let user: AuthenticatedUser

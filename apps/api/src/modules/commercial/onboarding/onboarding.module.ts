@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 
 import { IdentityModule } from '../../identity/index.js'
+import { NotificationsModule } from '../../notifications/index.js'
 
 import { ContactAttemptsController } from './contact-attempts.controller.js'
 import { ContactAttemptsRepository } from './contact-attempts.repository.js'
@@ -16,7 +17,7 @@ import { TransitionsRepository } from './transitions.repository.js'
 import { TransitionsService } from './transitions.service.js'
 
 @Module({
-  imports: [IdentityModule],
+  imports: [IdentityModule, NotificationsModule],
   controllers: [
     ProspectsController,
     TransitionsController,

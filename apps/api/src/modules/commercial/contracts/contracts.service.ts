@@ -7,6 +7,7 @@ import {
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { contractStatusLabel } from '../../../common/utils/status-labels.js'
+import { NotificationPublisherService } from '../../notifications/index.js'
 
 import { ContractRow, ContractsRepository, RateRow } from './contracts.repository.js'
 import type { CreateContractDto, UpsertRateDto } from './dto/contract.dto.js'
@@ -39,7 +40,10 @@ export interface ContractEntity {
 
 @Injectable()
 export class ContractsService {
-  constructor(private readonly repo: ContractsRepository) {}
+  constructor(
+    private readonly repo: ContractsRepository,
+    private readonly notifications: NotificationPublisherService,
+  ) {}
 
   async create(dto: CreateContractDto, user: AuthenticatedUser): Promise<ContractEntity> {
     if (!(await this.repo.hotelExists(dto.hotelId))) {
@@ -82,7 +86,35 @@ export class ContractsService {
       roleCode: user.roleCode,
     })
 
-    return this.get(id)
+    const result = await this.get(id)
+
+    // SALES_TERMS_CREATED (catálogo de notificaciones): avisa al BDC —el
+    // manager del BD dueño del ciclo comercial— que el Documento de T&C ya
+    // se redactó. Este modelo no separa un documento de T&C aparte del
+    // Contrato: la entidad hace ese papel para este evento (decisión
+    // confirmada). El segundo salto (BD → su BDC) lo resuelve el propio
+    // catálogo de audiencias con `MANAGER_OF`, igual que `reportsToUserId`
+    // en RecipientsService — no se duplica esa consulta aquí.
+    if (dto.prospectId) {
+      try {
+        const ownerUserId = await this.repo.prospectOwner(dto.prospectId)
+
+        if (ownerUserId) {
+          await this.notifications.publish({
+            type: 'SALES_TERMS_CREATED',
+            title: 'Documento de T&C creado',
+            body: `Se creó el contrato para ${result.hotel.name}.`,
+            entity: { type: 'commercial.contract', id },
+            actorUserId: user.id,
+            audience: [{ kind: 'MANAGER_OF', userId: ownerUserId }],
+          })
+        }
+      } catch {
+        // Mejor esfuerzo: que Pub/Sub no responda no revierte el alta.
+      }
+    }
+
+    return result
   }
 
   async list(hotelId?: string, status?: string): Promise<ContractEntity[]> {
@@ -160,7 +192,30 @@ export class ContractsService {
       event: 'CONTRACT_ACTIVATED',
     })
 
-    return this.get(id)
+    const result = await this.get(id)
+
+    // SALES_TERMS_VALIDATED: no hay un paso de "solo validar" separado de
+    // activar —activar ES el acto de validación más cercano que existe—,
+    // así que el aviso sale aquí. Audiencia: el BD dueño del ciclo
+    // comercial original. Un contrato sin prospecto vinculado (heredado o
+    // migrado, ver el comentario de `prospect_id` en el schema) no tiene un
+    // BD que derivar y se omite sin inventar audiencia.
+    if (row.prospectId) {
+      try {
+        await this.notifications.publish({
+          type: 'SALES_TERMS_VALIDATED',
+          title: 'T&C validado',
+          body: `El contrato de ${result.hotel.name} ya está activo.`,
+          entity: { type: 'commercial.contract', id },
+          actorUserId: user.id,
+          audience: [{ kind: 'PROSPECT_OWNER', prospectId: row.prospectId }],
+        })
+      } catch {
+        // Mejor esfuerzo: que Pub/Sub no responda no revierte la activación.
+      }
+    }
+
+    return result
   }
 
   async close(id: string, expired: boolean, user: AuthenticatedUser): Promise<ContractEntity> {

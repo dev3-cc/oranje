@@ -104,6 +104,7 @@ beforeAll(async () => {
     new StaffUsersRepository(db as unknown as PrismaService),
     new FirebaseAccountsService(config),
     storageFake as unknown as StorageService,
+    { publish: (): Promise<void> => Promise.resolve() } as never,
   )
 })
 

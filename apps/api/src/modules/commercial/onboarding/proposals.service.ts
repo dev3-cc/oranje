@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { NotificationPublisherService } from '../../notifications/index.js'
 
 import type { CreateProposalDto } from './dto/create-proposal.dto.js'
 import type { ProposalEntity } from './entities/proposal.entity.js'
@@ -13,9 +14,21 @@ import { ProposalRow, ProposalsRepository, type RateInput } from './proposals.re
 
 const WORKING_STATES = ['GREEN', 'BROWN']
 
+type ProspectSummary = {
+  id: string
+  hotelId: string
+  closedAt: Date | null
+  stateCode: string
+  ownerUserId: string
+  hotelName: string
+}
+
 @Injectable()
 export class ProposalsService {
-  constructor(private readonly repo: ProposalsRepository) {}
+  constructor(
+    private readonly repo: ProposalsRepository,
+    private readonly notifications: NotificationPublisherService,
+  ) {}
 
   async listAcross(
     ownerUserId: string | null,
@@ -108,7 +121,7 @@ export class ProposalsService {
     proposalId: string,
     user: AuthenticatedUser,
   ): Promise<ProposalEntity> {
-    await this.assertOpen(prospectId)
+    const prospect = await this.assertOpen(prospectId)
 
     const proposal = await this.proposal(prospectId, proposalId)
 
@@ -129,9 +142,30 @@ export class ProposalsService {
       })
     }
 
-    return toEntity(
+    const sent = toEntity(
       await this.repo.send({ prospectId, proposalId, userId: user.id, roleCode: user.roleCode }),
     )
+
+    // SALES_PROPOSAL_SENT: avisa al BDC del BD dueño del prospecto (mejor
+    // esfuerzo, nunca revierte el envío ya guardado).
+    const bdcId = await this.repo.bdcOf(prospect.ownerUserId)
+
+    if (bdcId) {
+      try {
+        await this.notifications.publish({
+          type: 'SALES_PROPOSAL_SENT',
+          title: 'Propuesta enviada',
+          body: `Se envió la propuesta v${sent.version} de ${prospect.hotelName}.`,
+          entity: { type: 'commercial.proposal', id: sent.id },
+          actorUserId: user.id,
+          audience: [{ kind: 'USER', userId: bdcId }],
+        })
+      } catch {
+        // Mejor esfuerzo: que Pub/Sub no responda no revierte el envío.
+      }
+    }
+
+    return sent
   }
 
   // Sin assertOpen a proposito: el caso que resuelve es "lo abri por error y el
@@ -215,7 +249,7 @@ export class ProposalsService {
     }
   }
 
-  private async assertOpen(prospectId: string): Promise<void> {
+  private async assertOpen(prospectId: string): Promise<ProspectSummary> {
     const prospect = await this.prospect(prospectId)
 
     if (prospect.closedAt !== null) {
@@ -231,11 +265,11 @@ export class ProposalsService {
         message: `La propuesta se trabaja en Verde o Café, no en ${prospect.stateCode}`,
       })
     }
+
+    return prospect
   }
 
-  private async prospect(
-    id: string,
-  ): Promise<{ id: string; hotelId: string; closedAt: Date | null; stateCode: string }> {
+  private async prospect(id: string): Promise<ProspectSummary> {
     const row = await this.repo.prospect(id)
 
     if (!row) {

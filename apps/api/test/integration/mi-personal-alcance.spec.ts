@@ -23,6 +23,7 @@ const workers = new WorkersService(
   new WorkersRepository(prisma),
   { signedUrl: (): Promise<null> => Promise.resolve(null) } as never,
   new PermissionsService(prisma),
+  { publish: (): Promise<void> => Promise.resolve() } as never,
 )
 
 let actorId: string

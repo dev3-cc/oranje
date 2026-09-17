@@ -4,6 +4,7 @@ import type { AuthenticatedUser } from '../../src/common/decorators/index.js'
 import type { PrismaService } from '../../src/infra/prisma/index.js'
 import { ProposalsRepository } from '../../src/modules/commercial/onboarding/proposals.repository.js'
 import { ProposalsService } from '../../src/modules/commercial/onboarding/proposals.service.js'
+import type { NotificationPublisherService } from '../../src/modules/notifications/index.js'
 
 import { close, db } from './db.js'
 import { actor } from './fixture.js'
@@ -22,7 +23,10 @@ import { actor } from './fixture.js'
  */
 
 const prisma = db as unknown as PrismaService
-const proposals = new ProposalsService(new ProposalsRepository(prisma))
+// Stub: el envío de propuesta ya no es mudo (dispara SALES_PROPOSAL_SENT), y
+// el constructor exige el publicador aunque esta suite no lo verifique.
+const notifications = { publish: async () => {} } as unknown as NotificationPublisherService
+const proposals = new ProposalsService(new ProposalsRepository(prisma), notifications)
 
 let user: AuthenticatedUser
 let zoneId: string

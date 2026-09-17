@@ -22,6 +22,7 @@ const hotels = new HotelsService(
   new HotelsRepository(prisma),
   new PlacesService(config as never),
   prisma,
+  { publish: (): Promise<void> => Promise.resolve() } as never,
 )
 
 const created: string[] = []
