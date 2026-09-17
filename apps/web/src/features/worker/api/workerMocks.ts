@@ -245,7 +245,9 @@ const routes: readonly MockRoute[] = [
     method: 'POST',
     path: '/workers/me/password',
     resolve: (): ApiEnvelope<{ changed: true }> => {
-      profile.accessDeadlines.password = { status: 'NONE', day: null, dueAt: null }
+      if (profile.accessDeadlines) {
+        profile.accessDeadlines.password = { status: 'NONE', day: null, dueAt: null }
+      }
       return { data: { changed: true } }
     },
   },

@@ -235,7 +235,7 @@ export function HomePage(): ReactNode {
       />
 
       <TaxDeadlineBanner deadline={profile.taxDeadline} />
-      <AccessDeadlineBanner deadlines={profile.accessDeadlines} />
+      {profile.accessDeadlines && <AccessDeadlineBanner deadlines={profile.accessDeadlines} />}
 
       {!profile.isProfileComplete && (
         <NoticeCard
