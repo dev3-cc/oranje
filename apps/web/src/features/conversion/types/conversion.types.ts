@@ -28,6 +28,8 @@ export interface ConversionReadiness {
   /** Para las acciones que pegan al hotel (crear su usuario). */
   hotelId: string
   hotelName: string
+  /** La foto de Places del hotel: el que se va a convertir, con cara. */
+  hotelPhotoUrl: string | null
   currentStatus: OnboardingStatus
   targetStatus: OnboardingStatus
   /** Por qué solo cierto rol aprueba, con sus identificadores de requerimiento. */

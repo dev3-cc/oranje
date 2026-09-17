@@ -9,6 +9,7 @@ import { ContractCardGrid } from '../components/ContractCardGrid'
 import { ContractFilters } from '../components/ContractFilters'
 import { ANY_VALUE, type ContractListFilters } from '../types/contract.types'
 
+import fotoEquipo from '@/assets/ilustrations/contratos-equipo.webp'
 import personajeContratacion from '@/assets/ilustrations/personaje-contratacion.svg'
 import personajeCronograma from '@/assets/ilustrations/personaje-cronograma.svg'
 import personajePago from '@/assets/ilustrations/personaje-pago-procesado.svg'
@@ -83,12 +84,17 @@ export function ContractListPage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+      {/* Misma cabecera-tarjeta que Conversión: título a la izquierda, la foto
+          del equipo (recortada, sin fondo) sentada en el borde inferior y
+          sobresaliendo por arriba. El `clip-path` de la tarjeta la recorta con
+          las esquinas redondeadas y deja 3rem libres arriba. El botón de
+          filtros baja al bloque de texto para no pelearse con la foto. */}
+      <header className="relative flex items-end justify-between gap-4 rounded-2xl border border-line bg-gradient-to-r from-o-50 via-surface to-surface px-6 pt-5 pb-5 [clip-path:inset(-3rem_0_0_0_round_1rem)] sm:mt-8 sm:min-h-44 sm:pr-80">
+        <div className="relative z-10">
           <h1 className="text-3xl font-bold tracking-tight text-ink">
             <FoldText text={t`Contratos`} />
           </h1>
-          <p className="mt-1.5 text-sm text-ink-3">
+          <p className="mt-1.5 max-w-xl text-sm text-ink-3">
             {IS_DEV_UI ? (
               'commercial.contract · un contrato por hotel a la vez en ACTIVE'
             ) : (
@@ -105,21 +111,26 @@ export function ContractListPage(): ReactNode {
               <Trans>¿Cómo funciona?</Trans>
             </button>
           </p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Button
+              onClick={() => {
+                setFiltersOpen((open) => !open)
+              }}
+              aria-expanded={showFilters}
+            >
+              <span className="flex items-center gap-1.5">
+                <MaterialIcon name="filter_list" aria-hidden className="text-base" />
+                <Trans>Filtrar</Trans>
+              </span>
+            </Button>
+          </div>
         </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            onClick={() => {
-              setFiltersOpen((open) => !open)
-            }}
-            aria-expanded={showFilters}
-          >
-            <span className="flex items-center gap-1.5">
-              <MaterialIcon name="filter_list" aria-hidden className="text-base" />
-              <Trans>Filtrar</Trans>
-            </span>
-          </Button>
-        </div>
+        <img
+          src={fotoEquipo}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute -right-2 -bottom-1 hidden h-[calc(100%+2.5rem)] w-auto object-contain object-bottom drop-shadow-[0_10px_18px_rgba(60,30,0,0.26)] sm:block"
+        />
       </header>
 
       {showFilters && (

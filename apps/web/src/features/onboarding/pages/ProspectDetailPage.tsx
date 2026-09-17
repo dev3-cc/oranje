@@ -272,9 +272,17 @@ export function ProspectDetailPage(): ReactNode {
       {/* Quién sigue: en Rosa el ciclo pasa a manos del BDC (RR-V-01/02). */}
       {prospect.status === 'PINK' && (
         <NoticeCard image={conversionNaranja} title={t`Convertir es del BDC`} role="status">
+          {/* «Conversión» lleva a la conversión DE ESTE hotel, no a la cola:
+              quien lee esto ya está en su ficha y lo que quiere es seguir. */}
           <Trans>
-            El Documento de T&C ya se negocia. El BDC aprueba la conversión desde Conversión y el
-            hotel pasa a Naranja, listo para pedir personal.
+            El Documento de T&C ya se negocia. El BDC aprueba la conversión desde{' '}
+            <Link
+              to={`/conversion/${prospect.id}`}
+              className="font-semibold text-o-700 hover:underline"
+            >
+              Conversión
+            </Link>{' '}
+            y el hotel pasa a Naranja, listo para pedir personal.
           </Trans>
         </NoticeCard>
       )}

@@ -8,7 +8,7 @@ import { ClientFilters } from '../components/ClientFilters'
 import { ClientSpotlightCard } from '../components/ClientSpotlightCard'
 import type { ClientFilters as Filters } from '../types/client.types'
 
-import tratoCerrado from '@/assets/ilustrations/personaje-trato-cerrado.svg'
+import fotoEquipo from '@/assets/ilustrations/clientes-equipo.webp'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { FoldText } from '@/shared/components/FoldText'
 import { HotelPointsMap, type HotelMapPoint } from '@/shared/components/HotelPointsMap'
@@ -103,12 +103,16 @@ export function ClientPortfolioPage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="relative isolate flex items-end justify-between gap-4">
-        <div>
+      {/* Misma cabecera-tarjeta que Conversión, Contratos y Propuestas: título
+          a la izquierda, la foto (recortada, sin fondo) sentada en el borde
+          inferior y sobresaliendo por arriba; el `clip-path` de la tarjeta la
+          recorta con las esquinas redondeadas y deja 3rem arriba. */}
+      <header className="relative flex items-end justify-between gap-4 rounded-2xl border border-line bg-gradient-to-r from-o-50 via-surface to-surface px-6 pt-5 pb-5 [clip-path:inset(-3rem_0_0_0_round_1rem)] sm:mt-8 sm:min-h-44 sm:pr-80">
+        <div className="relative z-10">
           <h1 className="text-3xl font-bold tracking-tight text-ink">
             <FoldText text={t`Clientes activos`} />
           </h1>
-          <p className="mt-1.5 text-sm text-ink-3">
+          <p className="mt-1.5 max-w-xl text-sm text-ink-3">
             {IS_DEV_UI ? (
               'commercial.vw_client · hoteles con activated_at'
             ) : (
@@ -117,16 +121,11 @@ export function ClientPortfolioPage(): ReactNode {
             {portfolio && ` · ${t`${String(portfolio.total)} en cartera`}`}
           </p>
         </div>
-        {/* Marca de agua: grande, opacada y disuelta con degradado hacia el contenido. */}
         <img
-          src={tratoCerrado}
+          src={fotoEquipo}
           alt=""
           aria-hidden
-          className="pointer-events-none absolute -top-8 right-0 -z-10 hidden h-56 w-auto opacity-30 sm:block"
-          style={{
-            maskImage: 'linear-gradient(210deg, rgb(0 0 0) 25%, transparent 90%)',
-            WebkitMaskImage: 'linear-gradient(210deg, rgb(0 0 0) 25%, transparent 90%)',
-          }}
+          className="pointer-events-none absolute -right-2 -bottom-1 hidden h-[calc(100%+2.5rem)] w-auto object-contain object-bottom drop-shadow-[0_10px_18px_rgba(60,30,0,0.26)] sm:block"
         />
       </header>
 
