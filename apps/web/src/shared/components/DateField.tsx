@@ -21,6 +21,17 @@ function fromIso(iso: string): Date | undefined {
   return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
 }
 
+/** Los días fuera de `[min, max]` salen apagados; ninguno de los dos es obligatorio. */
+function dayMatchers(
+  min: Date | undefined,
+  max: Date | undefined,
+): { before: Date } | { after: Date } | ({ before: Date } | { after: Date })[] | undefined {
+  if (min && max) return [{ before: min }, { after: max }]
+  if (min) return { before: min }
+  if (max) return { after: max }
+  return undefined
+}
+
 interface DateFieldProps {
   /** `AAAA-MM-DD` o vacío. */
   value: string
@@ -32,6 +43,8 @@ interface DateFieldProps {
   disabled?: boolean
   /** Primer día elegible; los anteriores salen apagados. */
   min?: string
+  /** Último día elegible; los posteriores salen apagados. */
+  max?: string
   className?: string
 }
 
@@ -55,12 +68,14 @@ export function DateField({
   placeholder,
   disabled,
   min,
+  max,
   className,
 }: DateFieldProps): ReactNode {
   const { t } = useLingui()
   const [isOpen, setIsOpen] = useState(false)
   const selected = fromIso(value)
   const minDate = min !== undefined ? fromIso(min) : undefined
+  const maxDate = max !== undefined ? fromIso(max) : undefined
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -93,8 +108,8 @@ export function DateField({
           locale={DAY_PICKER_LOCALE[currentLocale()]}
           weekStartsOn={1}
           selected={selected}
-          defaultMonth={selected ?? minDate ?? new Date()}
-          disabled={minDate ? { before: minDate } : undefined}
+          defaultMonth={selected ?? minDate ?? maxDate ?? new Date()}
+          disabled={dayMatchers(minDate, maxDate)}
           onSelect={(day) => {
             if (!day) return
             onChange(toIso(day))

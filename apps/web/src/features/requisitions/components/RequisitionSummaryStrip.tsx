@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 
 import type { RequisitionDetail } from '../types/requisition.types'
 
-import { formatDateTime, formatPercent } from '@/shared/lib/formatters'
+import { formatDate, formatPercent } from '@/shared/lib/formatters'
 
 /** Sin autorizar todavía: guion largo, no celda vacía. */
 const NOT_AUTHORIZED = '—'
@@ -30,8 +30,10 @@ export function RequisitionSummaryStrip({ detail }: { detail: RequisitionDetail 
       icon: 'how_to_reg',
     },
     {
+      /* Solo la fecha, sin hora: `formatDateTime` no cabía en la celda y se
+         truncaba a "11 sep 20…" — la hora exacta ya vive en la bitácora. */
       label: t`Autorizada el`,
-      value: detail.authorizedAt ? formatDateTime(detail.authorizedAt) : NOT_AUTHORIZED,
+      value: detail.authorizedAt ? formatDate(detail.authorizedAt) : NOT_AUTHORIZED,
       icon: 'event_available',
     },
     { label: t`Inspector de zona`, value: detail.inspectorName, icon: 'verified_user' },
@@ -56,7 +58,7 @@ export function RequisitionSummaryStrip({ detail }: { detail: RequisitionDetail 
           </span>
           <span className="min-w-0">
             <dt className="text-[11px] leading-tight text-ink-3">{field.label}</dt>
-            <dd className="truncate text-base font-bold text-ink" title={field.value}>
+            <dd className="text-base leading-tight font-bold break-words text-ink">
               {field.value}
             </dd>
           </span>
