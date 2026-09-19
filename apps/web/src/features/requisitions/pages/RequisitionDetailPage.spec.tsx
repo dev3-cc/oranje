@@ -80,15 +80,10 @@ describe('RequisitionDetailPage', () => {
 
     const entries = within(history as HTMLElement).getAllByRole('listitem')
 
-    // El asiento más nuevo va primero: «En elaboración → Autorizada», y el
-    // nombre del estado destino sale dos veces, como chip y como título.
-    expect(within(entries[0] as HTMLElement).getByText('En elaboración')).toBeInTheDocument()
-    expect(within(entries[0] as HTMLElement).getAllByText('Autorizada')).toHaveLength(2)
+    // El asiento más nuevo va primero — compacta a un ícono + el nombre de la
+    // acción, sin repetir el semáforo que ya se ve en el encabezado.
+    expect(within(entries[0] as HTMLElement).getByText('Autorizada')).toBeInTheDocument()
     expect(within(entries[1] as HTMLElement).getByText('Creada')).toBeInTheDocument()
-
-    // El alta no tiene estado de origen: nace en «En elaboración», no llega a él.
-    expect(within(entries[1] as HTMLElement).getByText('nace en')).toBeInTheDocument()
-    expect(within(entries[1] as HTMLElement).getAllByText('En elaboración')).toHaveLength(1)
   })
 
   it('una requisición sin autorizar solo tiene el asiento del alta', async () => {

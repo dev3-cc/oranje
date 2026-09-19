@@ -13,11 +13,26 @@
 // application-default login). Nada de esto se imprime ni se guarda.
 import { GoogleAuth } from 'google-auth-library'
 
-const [origen, destino] = process.argv.slice(2)
+// El tercer argumento (opcional) es un archivo con un correo por línea: solo
+// esas cuentas se importan. Sirve para no arrastrar las cuentas de prueba que
+// la limpieza ya sacó de la base.
+import { readFileSync } from 'node:fs'
+
+const [origen, destino, archivoCorreos] = process.argv.slice(2)
 if (!origen || !destino) {
-  console.error('uso: migrar-cuentas-firebase.mjs <proyecto-origen> <proyecto-destino>')
+  console.error(
+    'uso: migrar-cuentas-firebase.mjs <proyecto-origen> <proyecto-destino> [correos.txt]',
+  )
   process.exit(1)
 }
+const permitidos = archivoCorreos
+  ? new Set(
+      readFileSync(archivoCorreos, 'utf8')
+        .split('\n')
+        .map((l) => l.trim().toLowerCase())
+        .filter(Boolean),
+    )
+  : null
 
 const auth = new GoogleAuth({ scopes: ['https://www.googleapis.com/auth/cloud-platform'] })
 const token = await auth.getAccessToken()
@@ -73,7 +88,13 @@ do {
   pageToken = page.nextPageToken
 } while (pageToken)
 
-const pendientes = cuentas.filter((u) => u.email && !existentes.has(u.email.toLowerCase()))
+const pendientes = cuentas.filter(
+  (u) =>
+    u.email &&
+    !existentes.has(u.email.toLowerCase()) &&
+    (permitidos === null || permitidos.has(u.email.toLowerCase())),
+)
+if (permitidos) console.log(`filtro: ${permitidos.size} correos permitidos`)
 console.log(
   `destino ${destino}: ${existentes.size} ya existían · ${pendientes.length} por importar`,
 )
