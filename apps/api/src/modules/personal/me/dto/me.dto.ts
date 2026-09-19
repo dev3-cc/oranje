@@ -1,0 +1,68 @@
+import { z } from 'zod'
+
+import { createZodDto } from '../../../../common/pipes/index.js'
+import {
+  BLOOD_TYPES,
+  RELATIONSHIPS,
+  TRANSPORT_TYPES,
+  photoPath,
+} from '../../workers/dto/create-worker.dto.js'
+
+// Fases 2 y 3 (cambio del 2026-08-22). De la Fase 2 solo queda el TRANSPORTE:
+// posicion, modalidad, ingles y experiencia las decide Oranje y las captura la
+// Reclutadora en la entrevista.
+//
+// SSN e ITIN no estan aqui todavia: viven en columnas cifradas y el cifrado de
+// campo sigue sin conectarse. Hoy lo que cuenta para el plazo de 3 dias es
+// SUBIR el documento al expediente.
+export const completeSignupSchema = z
+  .object({
+    transportType: z.enum(TRANSPORT_TYPES).optional(),
+    // La foto: un expediente migrado puede llegar sin ella y hoy solo la
+    // Reclutadora la sube desde el Pool — el colaborador también debe poder
+    // subir la suya (Hugo, 2026-09-15).
+    photoPath: photoPath.optional(),
+
+    emergencyContactName: z.string().trim().min(1).max(160).optional(),
+    emergencyContactPhone: z.string().trim().min(7).max(32).optional(),
+    emergencyContactRelationship: z.enum(RELATIONSHIPS).optional(),
+    bloodType: z.enum(BLOOD_TYPES).optional(),
+    medicalNotes: z.string().trim().min(1).max(1000).optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, { message: 'No hay nada que completar' })
+
+export class CompleteSignupDto extends createZodDto(completeSignupSchema) {}
+
+// Lo unico editable despues. La posicion, la zona y la modalidad no entran: son
+// decisiones de Reclutamiento. El SSN y el ITIN tampoco, por sensibles.
+export const updateOwnContactSchema = z
+  .object({
+    phone: z.string().trim().min(7).max(32).optional(),
+    emergencyContactName: z.string().trim().min(1).max(160).optional(),
+    emergencyContactPhone: z.string().trim().min(7).max(32).optional(),
+    emergencyContactRelationship: z.enum(RELATIONSHIPS).optional(),
+  })
+  .refine((v) => Object.keys(v).length > 0, { message: 'No hay nada que cambiar' })
+
+export class UpdateOwnContactDto extends createZodDto(updateOwnContactSchema) {}
+
+// Solo el fiscal: la identificación y el comprobante de domicilio los sube la
+// Reclutadora al expediente.
+export const uploadOwnDocumentSchema = z.object({
+  documentType: z.literal('SSN_ITIN'),
+  filePath: z
+    .string()
+    .trim()
+    .max(500)
+    .regex(/^workers\/document\/[A-Za-z0-9._-]+$/, 'Debe ser una ruta devuelta por POST /files'),
+})
+
+export class UploadOwnDocumentDto extends createZodDto(uploadOwnDocumentSchema) {}
+
+// La contraseña nueva sustituye a la temporal entregada en mano (Reglas de
+// Negocio § Acceso del Colaborador). Mínimo el de Firebase (6) subido a 8.
+export const changeOwnPasswordSchema = z.object({
+  newPassword: z.string().min(8).max(128),
+})
+
+export class ChangeOwnPasswordDto extends createZodDto(changeOwnPasswordSchema) {}

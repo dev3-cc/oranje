@@ -1,0 +1,348 @@
+import type { I18n, MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
+import {
+  cn,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  StatusLightBadge,
+  toast,
+} from '@oranje/ui'
+import { useEffect, useState, type ReactNode } from 'react'
+
+import {
+  useChangeProspectStatusMutation,
+  useGetAllowedTransitionsQuery,
+  useGetStatusChangeReasonsQuery,
+} from '../api/onboardingApi'
+
+import { SemaforoHelpButton } from './SemaforoHelpDialog'
+
+import { Button } from '@/shared/components/Button'
+import { Modal } from '@/shared/components/Modal'
+import {
+  ONBOARDING_STATUS_LABEL,
+  ONBOARDING_STATUS_TOKEN,
+  type OnboardingStatus,
+} from '@/shared/constants/onboardingStatus'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
+
+/**
+ * Quién mueve el semáforo desde cada estado, según la tabla del Semáforo
+ * Onboarding del vault: los primeros pasos son del BD — y del BDC, que hereda
+ * lo del BD (Reglas de Negocio, «Herencia por jerarquía»); Rosa la comparten;
+ * Café, Naranja y Negro son del BDC. Se muestra cuando el rol de quien mira no tiene
+ * ningún paso disponible, para que sepa a quién le toca.
+ */
+const STATUS_MOVER: Record<OnboardingStatus, MessageDescriptor> = {
+  GRAY: msg`lo mueve el BD o el BDC.`,
+  LIGHT_BLUE: msg`lo mueve el BD o el BDC.`,
+  GREEN: msg`lo mueve el BD o el BDC.`,
+  YELLOW: msg`lo mueve el BD o el BDC.`,
+  PINK: msg`la conversión a Naranja la aprueba el BDC desde Conversión.`,
+  ORANGE: msg`pausarlo o reactivarlo es del BDC.`,
+  RED: msg`reactivarlo es del BD o del BDC.`,
+  BROWN: msg`desbloquearlo es del BDC.`,
+  BLACK: msg`reactivarlo es del BDC.`,
+}
+
+export interface ChangeStatusDialogProps {
+  isOpen: boolean
+  onClose: () => void
+  prospectId: string
+  hotelName: string
+  currentStatus: OnboardingStatus
+  presetStatus?: OnboardingStatus
+}
+
+const ROLE_SHORT: Record<string, MessageDescriptor> = {
+  'ROL-V-01': msg`el BD`,
+  'ROL-V-02': msg`el BDC`,
+  'ROL-SYS-01': msg`el Sistema`,
+  'ROL-ADM-01': msg`el Administrador`,
+}
+
+/** El `i18n` viene del componente (`useLingui`): así el mensaje habla el idioma activo (D-36). */
+function transitionErrorMessage(error: unknown, i18n: I18n): string {
+  const data = (
+    error as
+      | {
+          data?: {
+            error?: {
+              code?: string
+              message?: string
+              details?: Array<{ field?: string; value?: unknown }>
+            }
+          }
+        }
+      | undefined
+  )?.data
+  const code = data?.error?.code
+  const details = data?.error?.details ?? []
+
+  if (code === 'PROPOSAL_REQUIRED') {
+    return i18n._(
+      msg`Verde no se abandona sin enviar la Propuesta Personalizada: abre la propuesta, envíala y vuelve a intentar.`,
+    )
+  }
+  if (code === 'HOTEL_USER_REQUIRED') {
+    return i18n._(
+      msg`Para convertir a Naranja primero debe existir el Usuario del Hotel: créalo desde Conversión.`,
+    )
+  }
+  if (code === 'TRANSITION_FORBIDDEN') {
+    const roles = details
+      .map((item) => {
+        const shortRole = ROLE_SHORT[String(item.value)]
+        return shortRole ? i18n._(shortRole) : String(item.value)
+      })
+      .join(` ${i18n._(msg`o`)} `)
+    const rolesLabel = roles || i18n._(msg`otro rol`)
+    return i18n._(
+      msg`Ese paso existe, pero lo ejecuta ${rolesLabel}: pídeselo — tu rol no lo tiene asignado.`,
+    )
+  }
+  if (code === 'TRANSITION_NOT_ALLOWED') {
+    const targets = details
+      .map((item) => ONBOARDING_STATUS_LABEL[item.value as OnboardingStatus] ?? String(item.value))
+      .join(', ')
+    return targets
+      ? i18n._(msg`Desde aquí el semáforo solo permite ir a: ${targets}.`)
+      : i18n._(msg`Ese paso no existe en el Semáforo: elige otro estado.`)
+  }
+  if (code === 'REASON_REQUIRED') {
+    return i18n._(msg`Esta transición exige un motivo: elígelo de la lista.`)
+  }
+  if (data?.error?.message) return data.error.message
+  return i18n._(msg`No se pudo cambiar el estado. Revisa el motivo e inténtalo de nuevo.`)
+}
+
+export function ChangeStatusDialog({
+  isOpen,
+  onClose,
+  prospectId,
+  hotelName,
+  currentStatus,
+  presetStatus,
+}: ChangeStatusDialogProps): ReactNode {
+  const { t, i18n } = useLingui()
+  const [selectedStatus, setSelectedStatus] = useState<OnboardingStatus | null>(null)
+  const [reasonId, setReasonId] = useState('')
+
+  const { data: allowed, isLoading: areTransitionsLoading } = useGetAllowedTransitionsQuery(
+    prospectId,
+    { skip: !isOpen },
+  )
+  const [changeStatus, { isLoading: isSaving, error: saveError }] =
+    useChangeProspectStatusMutation()
+
+  const selectedTransition =
+    allowed?.transitions.find((transition) => transition.toStatus === selectedStatus) ?? null
+  const isReasonRequired = selectedTransition?.requiresReason ?? false
+
+  const { data: reasons = [], isLoading: areReasonsLoading } = useGetStatusChangeReasonsQuery(
+    selectedStatus as OnboardingStatus,
+    { skip: !selectedStatus || !isReasonRequired },
+  )
+
+  useEffect(() => {
+    if (isOpen) return
+    setSelectedStatus(null)
+    setReasonId('')
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen || !presetStatus || selectedStatus !== null || !allowed) return
+    if (allowed.transitions.some((transition) => transition.toStatus === presetStatus)) {
+      setSelectedStatus(presetStatus)
+    }
+  }, [isOpen, presetStatus, selectedStatus, allowed])
+
+  const canSubmit = selectedStatus !== null && (!isReasonRequired || reasonId !== '') && !isSaving
+
+  async function handleConfirm(): Promise<void> {
+    if (!selectedStatus) return
+
+    try {
+      await changeStatus({
+        prospectId,
+        toStatus: selectedStatus,
+        ...(isReasonRequired ? { reasonId } : {}),
+      }).unwrap()
+      toast.success(t`Estado cambiado a ${ONBOARDING_STATUS_LABEL[selectedStatus]}`)
+      onClose()
+    } catch {
+      return
+    }
+  }
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t`Cambiar estado`}
+      description={t`${hotelName} · desde ${ONBOARDING_STATUS_LABEL[currentStatus]}. Solo ves los pasos que tu rol puede dar.`}
+      footer={
+        <>
+          <Button onClick={onClose} disabled={isSaving}>
+            <Trans>Cancelar</Trans>
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => {
+              void handleConfirm()
+            }}
+            disabled={!canSubmit}
+          >
+            {isSaving ? <Trans>Guardando…</Trans> : <Trans>Confirmar cambio</Trans>}
+          </Button>
+        </>
+      }
+    >
+      {areTransitionsLoading && (
+        <p className="text-sm text-ink-3">
+          <Trans>Cargando los pasos disponibles…</Trans>
+        </p>
+      )}
+
+      {!areTransitionsLoading && allowed?.transitions.length === 0 && (
+        /* Quién sigue, con nombre: «tu rol no puede» dejaba al BDC sin saber
+           que los primeros estados los mueven el BD o el BDC (Semáforo Onboarding). */
+        <p className="rounded-md bg-surface-2 p-4 text-sm text-ink-2">
+          <Trans>
+            Desde {ONBOARDING_STATUS_LABEL[currentStatus]} tu rol no mueve el prospecto:{' '}
+            {i18n._(STATUS_MOVER[currentStatus])}
+          </Trans>
+        </p>
+      )}
+
+      <fieldset className="flex flex-col gap-3">
+        <legend className="sr-only">
+          <Trans>Nuevo estado</Trans>
+        </legend>
+
+        {allowed?.transitions.map((transition) => {
+          const isSelected = transition.toStatus === selectedStatus
+
+          return (
+            <label
+              key={transition.toStatus}
+              className={cn(
+                'flex cursor-pointer items-center gap-3 rounded-md p-4 transition-colors',
+                isSelected ? 'border-2 border-o-500' : 'border border-line hover:bg-surface-2',
+              )}
+            >
+              <input
+                type="radio"
+                name="toStatus"
+                value={transition.toStatus}
+                checked={isSelected}
+                onChange={() => {
+                  setSelectedStatus(transition.toStatus)
+                  setReasonId('')
+                }}
+                className="sr-only"
+              />
+
+              <span
+                aria-hidden
+                className={cn(
+                  'flex size-5 shrink-0 items-center justify-center rounded-full border',
+                  isSelected ? 'border-o-500' : 'border-line',
+                )}
+              >
+                {isSelected && <span className="size-2.5 rounded-full bg-o-500" />}
+              </span>
+
+              <StatusLightBadge
+                token={ONBOARDING_STATUS_TOKEN[transition.toStatus]}
+                label={ONBOARDING_STATUS_LABEL[transition.toStatus]}
+                className="shrink-0"
+              />
+
+              <span className="min-w-0">
+                <span className="block text-sm font-semibold text-ink">{transition.title}</span>
+                <span className="block text-sm text-ink-3">{transition.description}</span>
+              </span>
+            </label>
+          )
+        })}
+      </fieldset>
+
+      {allowed?.restrictionNote && (
+        <p className="rounded-md bg-o-50 p-4 text-sm leading-relaxed text-ink-2">
+          {allowed.restrictionNote}
+        </p>
+      )}
+
+      {selectedTransition && (
+        <div className="flex flex-col gap-2">
+          <label htmlFor="status-change-reason" className="text-sm font-semibold text-ink">
+            <Trans>Motivo</Trans>{' '}
+            {isReasonRequired ? (
+              <span className="font-normal text-red">
+                <Trans>obligatorio</Trans>
+              </span>
+            ) : (
+              <span className="font-normal text-ink-3">
+                <Trans>opcional</Trans>
+              </span>
+            )}
+          </label>
+
+          <Select
+            key={selectedStatus ?? 'none'}
+            {...(reasonId ? { value: reasonId } : {})}
+            disabled={areReasonsLoading}
+            onValueChange={setReasonId}
+          >
+            <SelectTrigger id="status-change-reason" className="w-full">
+              <SelectValue
+                placeholder={areReasonsLoading ? t`Cargando motivos…` : t`Elige el motivo…`}
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {reasons.map((reason) => (
+                <SelectItem key={reason.id} value={reason.id}>
+                  {reason.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {isReasonRequired && (
+            <p className="text-xs text-ink-3">
+              {IS_DEV_UI ? (
+                'catalogs.status_change_reason — requires_reason está activo en esta transición'
+              ) : (
+                <Trans>El motivo queda en el historial del prospecto.</Trans>
+              )}
+            </p>
+          )}
+        </div>
+      )}
+
+      {saveError !== undefined && (
+        <p role="alert" className="rounded-md bg-red/10 p-4 text-sm text-red">
+          {transitionErrorMessage(saveError, i18n)}
+        </p>
+      )}
+
+      {}
+      <div className="flex items-start gap-2 rounded-md bg-surface-2 p-3">
+        <p className="text-xs leading-relaxed text-ink-3">
+          <Trans>
+            ¿Necesitas regresarlo? El semáforo no retrocede: se sale por una rama y se reactiva
+            hacia Azul claro. Desde <span className="font-semibold">Rojo</span> reactivan el BD o el
+            BDC; desde <span className="font-semibold">Café</span> y{' '}
+            <span className="font-semibold">Negro</span>, solo el BDC.
+          </Trans>
+        </p>
+        <SemaforoHelpButton className="shrink-0" />
+      </div>
+    </Modal>
+  )
+}

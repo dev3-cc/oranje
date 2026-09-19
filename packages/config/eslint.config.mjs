@@ -9,7 +9,20 @@ import importX from 'eslint-plugin-import-x'
  *   sin console.log · orden de imports · sin dependencias circulares.
  */
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/build/**', '**/coverage/**', '**/*.config.*'] },
+  {
+    // `**/coverage/**` se comía apps/api/src/modules/coverage — uno de los
+    // diez módulos de D-01, no un reporte de Jest — y ese módulo nunca se
+    // había lintado. Anclado como ya está `.gitignore` (mismo bug, tercera
+    // vez que aparece): solo el reporte real, en la raíz de cada paquete.
+    ignores: [
+      '**/dist/**',
+      '**/build/**',
+      'coverage/**',
+      'apps/*/coverage/**',
+      'packages/*/coverage/**',
+      '**/*.config.*',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
   {
@@ -25,14 +38,30 @@ export default tseslint.config(
       // sin console.log en código que se mergea (§7)
       'no-console': 'error',
 
-      // una feature se importa solo desde su index.ts (§4)
+      /**
+       * Una feature se importa solo desde su index.ts (§4).
+       *
+       *   ../../infra/prisma/index.js          sí
+       *   ../../infra/prisma/prisma.service.js no
+       *
+       * Antes la regla era `['../*']`, que prohibía TODO import hacia arriba y
+       * dejaba a un módulo de negocio sin forma de llegar a `infra/prisma`.
+       */
       'no-restricted-imports': [
         'error',
         {
           patterns: [
             {
-              group: ['../*'],
-              message: 'Sin imports relativos que suban de nivel: usa el alias del paquete.',
+              group: ['**/modules/*/*', '!**/modules/*/index.js'],
+              message: 'Una feature de modules/ se importa por su index.ts, no por dentro (§4).',
+            },
+            {
+              group: ['**/infra/*/*', '!**/infra/*/index.js'],
+              message: 'infra/ se importa por su index.ts, no por dentro (§4).',
+            },
+            {
+              group: ['@oranje/*/src/*', '@oranje/*/dist/*'],
+              message: 'Un paquete del workspace se importa por su nombre, no por su ruta interna.',
             },
           ],
         },

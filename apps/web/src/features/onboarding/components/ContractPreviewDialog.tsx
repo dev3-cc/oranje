@@ -1,0 +1,131 @@
+import { Trans, useLingui } from '@lingui/react/macro'
+import type { ReactNode } from 'react'
+import { createPortal } from 'react-dom'
+
+import { buildProposalMailto } from '../lib/proposalMail'
+import type { ProposalVersionSummary } from '../types/proposal.types'
+
+import { Button } from '@/shared/components/Button'
+import { ContractDocument } from '@/shared/components/ContractDocument'
+import { Modal } from '@/shared/components/Modal'
+
+/**
+ * Vista previa del contrato de una versión de la propuesta.
+ *
+ * El documento se pinta dos veces: una dentro del modal, para verlo, y otra
+ * portalizada a `#print-root`, para imprimirlo. La copia imprimible vive FUERA
+ * de `#root` a propósito — dentro del modal quedaba encerrada en un contenedor
+ * con `overflow-y: auto` y `max-height`, y al imprimir solo salía el trozo que
+ * cabía en pantalla.
+ *
+ * No se genera el PDF con una librería: eso tocaría el `pnpm-lock.yaml` de la
+ * raíz, fuera del alcance acordado. El diálogo de impresión del navegador ya
+ * ofrece «Guardar como PDF» y produce el mismo archivo.
+ *
+ * Solo se traduce el marco del diálogo (título, descripción, botones): el
+ * documento (`ContractDocument`) es un contrato legal en inglés y no se toca
+ * (D-36).
+ */
+export function ContractPreviewDialog({
+  isOpen,
+  onClose,
+  hotelName,
+  hotelAddress = null,
+  contactEmail = null,
+  senderName = 'Oranje',
+  version,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  hotelName: string
+  hotelAddress?: string | null
+  /** Contacto principal del hotel; sin él, el correo se abre sin destinatario. */
+  contactEmail?: string | null
+  /** Quien firma el correo: el BD o el BDC que lo manda. */
+  senderName?: string
+  version: ProposalVersionSummary
+}): ReactNode {
+  const { t } = useLingui()
+  const printRoot = document.getElementById('print-root')
+
+  /* El documento no sabe de propuestas: recibe el cuadro ya armado, para servir
+     igual a una versión de propuesta y a un contrato firmado. */
+  const documentProps = {
+    rates:
+      version.rates.length > 0
+        ? version.rates.map((rate) => ({
+            key: rate.positionId,
+            positionName: rate.positionName,
+            payRate: rate.payRate,
+            billRate: rate.billRate,
+          }))
+        : [
+            {
+              key: 'global',
+              positionName: 'All positions',
+              payRate: version.payRate,
+              billRate: version.billRate,
+            },
+          ],
+    servicesNote: version.servicesNote,
+  }
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t`Vista previa del contrato`}
+      description={t`${hotelName} · Propuesta v${version.version}. Las tarifas se toman de esta versión.`}
+      className="max-w-3xl"
+      footer={
+        <>
+          <Button onClick={onClose}>
+            <Trans>Cerrar</Trans>
+          </Button>
+          {/* El correo sale del cliente de quien envía, con el texto ya escrito;
+              el PDF lo adjunta esa persona (un mailto no lleva adjuntos). */}
+          <Button
+            onClick={() => {
+              window.location.href = buildProposalMailto({
+                to: contactEmail,
+                hotelName,
+                version,
+                senderName,
+              })
+            }}
+          >
+            <Trans>Enviar por correo</Trans>
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => {
+              window.print()
+            }}
+          >
+            <Trans>Imprimir o guardar como PDF</Trans>
+          </Button>
+        </>
+      }
+    >
+      <div className="rounded-md border border-line bg-surface px-8 py-7">
+        <ContractDocument hotelName={hotelName} hotelAddress={hotelAddress} {...documentProps} />
+      </div>
+
+      {/*
+        Copia imprimible. `aria-hidden` porque para un lector de pantalla el
+        documento ya está arriba: esta es la misma información repetida.
+      */}
+      {printRoot !== null &&
+        createPortal(
+          <div aria-hidden="true">
+            <ContractDocument
+              hotelName={hotelName}
+              hotelAddress={hotelAddress}
+              {...documentProps}
+            />
+          </div>,
+          printRoot,
+        )}
+    </Modal>
+  )
+}

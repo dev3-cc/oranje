@@ -1,0 +1,485 @@
+import { Trans, useLingui } from '@lingui/react/macro'
+import { cn, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@oranje/ui'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { useContext, useState, type ReactNode } from 'react'
+
+import { todayIso } from '../lib/weekNavigation'
+import type {
+  ReviewContext,
+  TimelineRow,
+  TimesheetEntry,
+  TimesheetRow,
+  TimesheetTimeline,
+} from '../types/timesheet.types'
+
+import { TimesheetDayCell } from './TimesheetDayCell'
+import { WeekDragContext } from './WeekSlider'
+import { WorkerWeekSummary } from './WorkerWeekSummary'
+
+import { Button as MovingBorderBox } from '@/shared/components/MovingBorder'
+import { formatDayNumber, formatWeekday } from '@/shared/lib/formatters'
+import { MOTION } from '@/shared/lib/motion'
+
+/** Tinte de la celda: hoy naranja suave, fin de semana gris. Días identificables. */
+function dayTint(day: string, today: string): string {
+  if (day === today) return 'bg-o-500/5'
+  const weekday = new Date(`${day}T00:00:00Z`).getUTCDay()
+  return weekday === 0 || weekday === 6 ? 'bg-ink/5' : ''
+}
+
+/** La fila de resumen de la SEMANA elegida; `null` si esa semana no tiene timesheet. */
+function summaryOf(
+  row: TimelineRow,
+  selectedWeek: string,
+  weekDays: string[],
+): TimesheetRow | null {
+  const summary = row.byWeek[selectedWeek]
+  if (!summary) return null
+  return {
+    timesheetId: summary.timesheetId,
+    requisitionId: row.requisitionId,
+    assignment: row.assignment,
+    workerId: row.workerId,
+    workerName: row.workerName,
+    jobTitle: row.jobTitle,
+    hotelName: row.hotelName,
+    weekStatus: summary.weekStatus,
+    totalHours: summary.totalHours,
+    targetHours: null,
+    entries: row.entries.filter((entry) => weekDays.includes(entry.date)),
+  }
+}
+
+/** Corridas de días CONSECUTIVOS con registro: cada una es un tramo del carril. */
+function runsOf(
+  days: string[],
+  byDate: Map<string, TimesheetEntry>,
+): Array<{ start: number; length: number }> {
+  const runs: Array<{ start: number; length: number }> = []
+  let runStart = -1
+  days.forEach((day, index) => {
+    if (byDate.has(day)) {
+      if (runStart === -1) runStart = index
+    } else if (runStart !== -1) {
+      runs.push({ start: runStart, length: index - runStart })
+      runStart = -1
+    }
+  })
+  if (runStart !== -1) runs.push({ start: runStart, length: days.length - runStart })
+  return runs
+}
+
+/** La fila sin timesheet esta semana: presente, pero en voz baja. */
+function QuietRow({ row }: { row: TimelineRow }): ReactNode {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-dashed border-line px-3 py-3">
+      {row.photoUrl ? (
+        <img
+          src={row.photoUrl}
+          alt=""
+          className="size-11 shrink-0 rounded-full object-cover opacity-70"
+        />
+      ) : (
+        <span
+          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-ink-4 text-sm font-bold text-white"
+          aria-hidden
+        >
+          {row.workerName.charAt(0)}
+        </span>
+      )}
+      <div className="min-w-0">
+        <p className="truncate text-base font-bold text-ink-3">{row.workerName}</p>
+        <p className="text-xs text-ink-4">
+          <Trans>Sin timesheet esta semana</Trans>
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * La rejilla de la semana como CINTA continua: la columna del colaborador es
+ * un marco fijo, y las fechas de TODAS las semanas cargadas viven en una sola
+ * hoja que corre debajo — la ventana enseña 7 días y `--week-drag-x` (del
+ * WeekSlider) la desliza en vivo hacia las vecinas. La transición se apaga
+ * mientras el dedo manda y se enciende para asentarse.
+ *
+ * El resumen de la izquierda es de la SEMANA elegida (el timesheet es semana ×
+ * persona × requisición); una persona sin timesheet esa semana conserva su
+ * fila, con el resumen en silencio.
+ */
+export function TimesheetGrid({
+  timeline,
+  selectedWeek,
+  columnWidth,
+  selectedIds,
+  selectable = true,
+  onToggle,
+  onReview,
+  onManualPunch,
+}: {
+  timeline: TimesheetTimeline
+  /** Lunes ISO de la semana en la ventana. */
+  selectedWeek: string
+  columnWidth: number
+  selectedIds: Set<string>
+  /** `false` = sin casillas: la selección solo existe para el pago en bloque. */
+  selectable?: boolean
+  onToggle: (entryId: string) => void
+  onReview: (
+    entry: TimesheetEntry,
+    workerName: string,
+    context: ReviewContext | undefined,
+    manualPunchTarget: Pick<TimesheetRow, 'requisitionId' | 'workerId' | 'workerName'>,
+  ) => void
+  onManualPunch: (row: TimesheetRow) => void
+}): ReactNode {
+  const { t } = useLingui()
+  const { isDragging } = useContext(WeekDragContext)
+  const reduceMotion = useReducedMotion() ?? false
+  const today = todayIso()
+  /** Corrida bajo el puntero (fila + arranque del tramo): SU marco se enciende,
+      y solo el suyo — dos corridas separadas de la misma fila no se cruzan. */
+  const [litRunKey, setLitRunKey] = useState<string | null>(null)
+  /** El puntito de checadas de la PRIMERA tarjeta de una corrida tiene su
+      propio tooltip, preciso y ya funcionando solo. Mientras el mouse esté
+      encima de ÉL, el tooltip (de TEXTO) del marco cede — el elemento más
+      específico manda; el borde animado no se apaga por esto. */
+  const [isPunchDotHovered, setIsPunchDotHovered] = useState(false)
+
+  const baseIndex = Math.max(timeline.days.indexOf(selectedWeek), 0)
+  const weekDays = timeline.days.slice(baseIndex, baseIndex + 7)
+  const viewportWidth = 7 * columnWidth
+  const sheetStyle = {
+    gridTemplateColumns: `repeat(${String(timeline.days.length)}, ${String(columnWidth)}px)`,
+    transform: `translateX(calc(${String(-baseIndex * columnWidth)}px + var(--week-drag-x, 0px)))`,
+    transition: isDragging
+      ? 'none'
+      : `transform ${String(MOTION.enter * 1000)}ms cubic-bezier(0, 0, 0.2, 1)`,
+  }
+
+  if (timeline.rows.length === 0) {
+    return (
+      <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+        <Trans>
+          Nadie coincide con esos filtros esta semana. Cambia la requisición, el estado o el hotel.
+        </Trans>
+      </p>
+    )
+  }
+
+  return (
+    <>
+      {/* ——— MÓVIL: tarjetas apiladas + tira de días con snap. La skill es
+          clara: tabla ancha en pantalla chica → card layout, no rejilla. ——— */}
+      <div className="flex flex-col gap-4 lg:hidden">
+        {timeline.rows.map((row) => {
+          const byDate = new Map(row.entries.map((item) => [item.date, item]))
+          const summary = summaryOf(row, selectedWeek, weekDays)
+          const daysWithEntry = weekDays.filter((day) => byDate.has(day))
+
+          return (
+            <section key={`${row.workerId}|${row.requisitionId}`} className="flex flex-col gap-2">
+              {summary ? (
+                <WorkerWeekSummary
+                  row={summary}
+                  photoUrl={row.photoUrl}
+                  onManualPunch={onManualPunch}
+                />
+              ) : (
+                <QuietRow row={row} />
+              )}
+              {/* La semana COMPLETA, Lun→Dom: los días sin registro van como
+                  fantasma angosto — así la tira se lee como calendario y no
+                  como una lista suelta de tarjetas. La fila sin nada no repite
+                  el aviso: la propia tarjeta ya lo dice. */}
+              {daysWithEntry.length > 0 && (
+                <ul className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1">
+                  {weekDays.map((day) => {
+                    const entry = byDate.get(day)
+                    if (entry === undefined) {
+                      return (
+                        <li
+                          key={day}
+                          className="flex w-16 shrink-0 snap-start flex-col items-center justify-between rounded-xl border border-dashed border-line/80 p-2"
+                        >
+                          <p className="text-[11px] font-semibold text-ink-4">
+                            {formatWeekday(day)} {formatDayNumber(day)}
+                          </p>
+                          <p className="text-xs text-ink-4" title={t`Sin registro este día`}>
+                            —
+                          </p>
+                        </li>
+                      )
+                    }
+                    return (
+                      <li
+                        key={day}
+                        className="w-44 shrink-0 snap-start rounded-xl border border-line bg-surface p-2"
+                      >
+                        <p className="mb-1 px-1 text-[11px] font-semibold text-ink-3">
+                          {formatWeekday(day)} {formatDayNumber(day)}
+                        </p>
+                        <TimesheetDayCell
+                          entry={entry}
+                          isSelected={selectedIds.has(entry.id)}
+                          selectable={selectable}
+                          onToggle={onToggle}
+                          onReview={(item) => {
+                            onReview(
+                              item,
+                              row.workerName,
+                              {
+                                workerPhotoUrl: row.photoUrl,
+                                jobTitle: row.jobTitle,
+                                hotelName: row.hotelName,
+                                hotelPhotoUrl: row.hotelPhotoUrl,
+                              },
+                              {
+                                requisitionId: row.requisitionId,
+                                workerId: row.workerId,
+                                workerName: row.workerName,
+                              },
+                            )
+                          }}
+                        />
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </section>
+          )
+        })}
+      </div>
+
+      {/* ——— ESCRITORIO: la cinta continua ——— */}
+      {/* `w-fit`: la tarjeta termina donde terminan las columnas — sin lienzo
+          blanco de sobra a la derecha; con zoom grande, scrollea por dentro. */}
+      <div className="hidden w-fit max-w-full overflow-x-auto rounded-lg border border-line bg-surface lg:block">
+        <div className="min-w-max">
+          <div className="flex border-b border-line">
+            {/* Columna FIJA de verdad: `sticky` la ancla también contra el scroll
+              horizontal del contenedor (zoom/trackpad), no solo contra la
+              cinta. En pantallas chicas se angosta: los días primero. */}
+            <div className="sticky left-0 z-20 flex w-52 shrink-0 items-end border-r border-line bg-surface px-4 py-4 text-xs font-semibold tracking-wide text-ink-3 uppercase lg:w-[260px]">
+              <Trans>Colaborador</Trans>
+            </div>
+            <div className="overflow-hidden" style={{ width: viewportWidth }}>
+              <div className="grid h-full items-end" style={sheetStyle}>
+                {timeline.days.map((day) => (
+                  <div
+                    key={day}
+                    className={cn(
+                      'self-stretch border-l border-line px-2 py-3 text-center',
+                      dayTint(day, today),
+                    )}
+                  >
+                    <p className="text-xs text-ink-3">{formatWeekday(day)}</p>
+                    <p
+                      className={cn(
+                        'mx-auto w-9 rounded-lg text-xl font-semibold',
+                        day === today ? 'bg-o-500 text-ink' : 'text-ink',
+                      )}
+                    >
+                      {formatDayNumber(day)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {timeline.rows.map((row) => {
+            const byDate = new Map(row.entries.map((item) => [item.date, item]))
+            const summary = summaryOf(row, selectedWeek, weekDays)
+            const rowKey = `${row.workerId}|${row.requisitionId}`
+            /* Cada índice de día apunta a la corrida (arranque + largo) que lo
+               cubre — no solo el primer día del tramo — para que CUALQUIER
+               celda del grupo, no solo la primera, sepa a qué marco enciende. */
+            const runByDayIndex = new Map<number, { start: number; length: number }>()
+            runsOf(timeline.days, byDate).forEach((run) => {
+              for (let i = run.start; i < run.start + run.length; i += 1) {
+                runByDayIndex.set(i, run)
+              }
+            })
+            /** Corrida a la que apunta el badge de la ficha: la de la semana elegida. */
+            const summaryEntryDate = summary?.entries[0]?.date
+            const summaryDayIndex =
+              summaryEntryDate !== undefined ? timeline.days.indexOf(summaryEntryDate) : -1
+            const summaryRun = summaryDayIndex >= 0 ? runByDayIndex.get(summaryDayIndex) : undefined
+            const summaryRunKey = summaryRun ? `${rowKey}|${String(summaryRun.start)}` : null
+
+            return (
+              <div
+                key={`${row.workerId}|${row.requisitionId}`}
+                className="flex border-b border-line last:border-b-0"
+              >
+                <div className="sticky left-0 z-20 w-52 shrink-0 border-r border-line bg-surface px-2 py-3 lg:w-[260px] lg:px-3">
+                  {/* El cambio ficha ⇄ «sin timesheet» al asentar la cinta es
+                      un FUNDIDO, no un golpe. */}
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    <motion.div
+                      key={summary ? `resumen-${selectedWeek}` : 'quieto'}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: reduceMotion ? 0 : 0.25 }}
+                    >
+                      {summary ? (
+                        <WorkerWeekSummary
+                          row={summary}
+                          photoUrl={row.photoUrl}
+                          onManualPunch={onManualPunch}
+                          onRequisitionHover={(hovering) => {
+                            setLitRunKey(hovering ? summaryRunKey : null)
+                          }}
+                        />
+                      ) : (
+                        <QuietRow row={row} />
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+
+                <div className="overflow-hidden" style={{ width: viewportWidth }}>
+                  <div className="relative grid h-full items-start" style={sheetStyle}>
+                    {timeline.days.map((day, dayIndex) => {
+                      const entry = byDate.get(day)
+                      /* El marco del carril nace en la PRIMERA celda de cada
+                         corrida y hereda la ALTURA de la tarjeta (por eso no
+                         se descuadra con el zoom); su ancho cruza las celdas
+                         siguientes del tramo. Pero el hover se detecta en
+                         TODAS las celdas del tramo — el marco no puede
+                         envolverlas (son hermanas en el árbol, no hijas del
+                         `<span>`), así que cada columna sabe su propia
+                         corrida y enciende la misma llave. */
+                      const run = runByDayIndex.get(dayIndex)
+                      const runKey = run ? `${rowKey}|${String(run.start)}` : null
+                      const isRunLit = runKey !== null && runKey === litRunKey && !reduceMotion
+                      const isRunStart = run !== undefined && run.start === dayIndex
+
+                      return (
+                        <div
+                          key={day}
+                          className={cn(
+                            'relative self-stretch border-l border-line px-2 py-4',
+                            dayTint(day, today),
+                          )}
+                          onMouseEnter={
+                            runKey !== null
+                              ? () => {
+                                  setLitRunKey(runKey)
+                                }
+                              : undefined
+                          }
+                          onMouseLeave={
+                            runKey !== null
+                              ? () => {
+                                  setLitRunKey(null)
+                                }
+                              : undefined
+                          }
+                        >
+                          {/* Un día sin registro se deja VACÍO, no con una tarjeta en
+                            cero: nadie fichó, y dibujar algo sugiere lo contrario. */}
+                          {entry && (
+                            <div className="relative">
+                              {/* En reposo, contorno quieto pero VISIBLE (punteado,
+                                  no se pierde contra el fondo); el borde vivo
+                                  anima con el hover del badge de la requisición
+                                  O el de cualquier tarjeta del tramo — las dos
+                                  formas de preguntar "esto de quién es"
+                                  encienden lo mismo. `z-10` + `pointer-events-none`
+                                  en todo el `<span>`: el marco vive SIEMPRE
+                                  encima de las tarjetas (que pintan después en
+                                  el DOM y sin esto las tapaban) y NUNCA
+                                  bloquea su click de "Revisar el día". El
+                                  `Tooltip` va controlado por `open`, no por su
+                                  propio hover — el trigger ya no puede
+                                  recibirlo. */}
+                              {isRunStart && run && (
+                                <TooltipProvider>
+                                  {/* El puntito de checadas de ESTA MISMA tarjeta manda
+                                      cuando el mouse está sobre él: su tooltip es más
+                                      específico, y encimados los dos se vuelven
+                                      ilegibles. El marco sigue encendido (el borde no
+                                      se apaga), solo cede el globo de texto. */}
+                                  <Tooltip
+                                    open={isRunLit && !isPunchDotHovered}
+                                    onOpenChange={() => {}}
+                                  >
+                                    <TooltipTrigger asChild>
+                                      <span
+                                        className="pointer-events-none absolute -inset-y-1.5 -left-1 z-10"
+                                        style={{ width: run.length * columnWidth - 8 }}
+                                      >
+                                        {isRunLit ? (
+                                          <MovingBorderBox
+                                            as="div"
+                                            duration={3000}
+                                            borderRadius="0.75rem"
+                                            containerClassName="pointer-events-none h-full w-full p-[1.5px] text-base"
+                                            borderClassName="h-[3px] w-16 rounded-full bg-[linear-gradient(90deg,transparent,#FF8000,transparent)] opacity-90"
+                                            className="h-full w-full items-stretch justify-start border border-o-500/40 bg-transparent backdrop-blur-none"
+                                          >
+                                            <span />
+                                          </MovingBorderBox>
+                                        ) : (
+                                          <span className="block h-full w-full rounded-xl border-2 border-dashed border-o-500/70" />
+                                        )}
+                                      </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">
+                                      <p className="text-xs font-semibold">{row.hotelName}</p>
+                                      <p className="text-xs text-ink-3">
+                                        <Trans>
+                                          {entry.requisitionNumber ?? t`Sin folio`} · días de esta
+                                          requisición
+                                        </Trans>
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                              <div className="relative">
+                                <TimesheetDayCell
+                                  entry={entry}
+                                  isSelected={selectedIds.has(entry.id)}
+                                  selectable={selectable}
+                                  onToggle={onToggle}
+                                  onPunchHover={setIsPunchDotHovered}
+                                  onReview={(item) => {
+                                    onReview(
+                                      item,
+                                      row.workerName,
+                                      {
+                                        workerPhotoUrl: row.photoUrl,
+                                        jobTitle: row.jobTitle,
+                                        hotelName: row.hotelName,
+                                        hotelPhotoUrl: row.hotelPhotoUrl,
+                                      },
+                                      {
+                                        requisitionId: row.requisitionId,
+                                        workerId: row.workerId,
+                                        workerName: row.workerName,
+                                      },
+                                    )
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </>
+  )
+}

@@ -1,0 +1,182 @@
+import { Plural, Trans, useLingui } from '@lingui/react/macro'
+import { useState, type ReactNode } from 'react'
+import { Link } from 'react-router'
+
+import { useGetConversionQueueQuery, useGetRecentConversionsQuery } from '../api/conversionApi'
+
+import fotoEquipo from '@/assets/ilustrations/conversion-equipo.webp'
+import { ProspectCard } from '@/features/onboarding'
+import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { EmptyState } from '@/shared/components/EmptyState'
+import { FoldText } from '@/shared/components/FoldText'
+import { HotelThumbnail } from '@/shared/components/HotelThumbnail'
+import { LoadError } from '@/shared/components/LoadError'
+import { MagicCard } from '@/shared/components/MagicCard'
+import { SearchField } from '@/shared/components/SearchField'
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
+import {
+  ONBOARDING_STATUS_LABEL,
+  ONBOARDING_STATUS_TOKEN,
+} from '@/shared/constants/onboardingStatus'
+import { formatDaysInStatus } from '@/shared/lib/formatters'
+import { matchesSearch } from '@/shared/lib/text'
+
+/**
+ * Cola de conversión: prospectos en Rosa esperando la aprobación del BDC.
+ *
+ * ⚠ Esta pantalla NO tiene maqueta. La que llegó es la de un prospecto
+ * concreto, y hacía falta una entrada al módulo desde el sidebar. Se armó con
+ * las formas que ya existen y se rehace cuando llegue su diseño.
+ */
+export function ConversionQueuePage(): ReactNode {
+  const { t } = useLingui()
+  const { data: candidates = [], isLoading, isError, refetch } = useGetConversionQueueQuery()
+  const { data: recent = [] } = useGetRecentConversionsQuery()
+  /** Por hotel, EN MEMORIA: la cola ya está cargada entera. */
+  const [search, setSearch] = useState('')
+
+  const visible = candidates.filter((candidate) => matchesSearch(search, candidate.hotelName))
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Cabecera en contenedor: título a la izquierda y la foto del equipo
+          (recortada, sin fondo, con la mesa) sentada en el borde inferior y
+          SOBRESALIENDO por arriba de la tarjeta, con sombra: efecto 3D. El
+          `mt` deja aire para lo que asoma. En vez de `overflow-hidden`, un
+          `clip-path` en la propia tarjeta: recorta la foto (y su sombra) con
+          las esquinas redondeadas de abajo y los lados —queda pegada al borde
+          por construcción— y deja 3rem libres arriba para lo que sobresale. */}
+      <header className="relative flex items-end justify-between gap-4 rounded-2xl border border-line bg-gradient-to-r from-o-50 via-surface to-surface px-6 pt-5 pb-5 [clip-path:inset(-3rem_0_0_0_round_1rem)] sm:mt-8 sm:min-h-44 sm:pr-96">
+        <div className="relative z-10">
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
+            <FoldText text={t`Conversión`} />
+          </h1>
+          <p className="mt-1.5 text-sm text-ink-3">
+            {isLoading ? (
+              <Trans>Cargando la cola…</Trans>
+            ) : (
+              <Plural
+                value={candidates.length}
+                one="# prospecto en Rosa esperando aprobación"
+                other="# prospectos en Rosa esperando aprobación"
+              />
+            )}
+          </p>
+        </div>
+        <img
+          src={fotoEquipo}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute -right-4 -bottom-2 hidden h-[calc(100%+2.5rem)] w-auto object-contain object-bottom drop-shadow-[0_10px_18px_rgba(60,30,0,0.26)] sm:block"
+        />
+      </header>
+
+      {isLoading && <CardGridSkeleton cards={3} className="grid-cols-1 md:grid-cols-2" />}
+
+      {isError && (
+        <LoadError
+          message={t`No se pudo cargar la cola de Conversión. Reintenta en unos segundos.`}
+          onRetry={() => {
+            void refetch()
+          }}
+        />
+      )}
+
+      {!isLoading && !isError && candidates.length === 0 && (
+        <EmptyState
+          title={t`Nada por convertir`}
+          text={t`Ningún prospecto llegó a Rosa todavía. Un hotel entra aquí cuando su Documento de T&C se negocia y el BD lo mueve a Rosa en el Pipeline; entonces el BDC aprueba la conversión.`}
+        />
+      )}
+
+      {candidates.length > 0 && (
+        <SearchField
+          value={search}
+          onChange={setSearch}
+          label={t`Buscar hotel en la cola`}
+          placeholder={t`Nombre del hotel, p. ej. Puerto Real…`}
+          className="w-full max-w-md"
+        />
+      )}
+
+      {candidates.length > 0 && visible.length === 0 && (
+        <EmptyState
+          title={t`Ningún hotel de la cola se llama «${search.trim()}»`}
+          text={t`Cambia la búsqueda o límpiala para volver a ver todos los prospectos en Rosa.`}
+        />
+      )}
+
+      {visible.length > 0 && (
+        <ul className="flex flex-col gap-3">
+          {visible.map((candidate) => (
+            <li key={candidate.prospectId}>
+              {/* Magic Bento (reactbits): la fila avisa al pasar; se apaga sola en táctil y reduced motion. */}
+              <MagicCard className="rounded-md">
+                <Link
+                  to={`/conversion/${candidate.prospectId}`}
+                  className="flex items-center justify-between gap-4 rounded-md border border-line bg-surface p-4 transition-colors hover:bg-surface-2"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <HotelThumbnail photoUrl={candidate.hotelPhotoUrl} />
+                    <div className="min-w-0">
+                      <p className="text-base font-semibold text-ink">{candidate.hotelName}</p>
+                      <p className="mt-1 text-sm text-ink-3">
+                        {candidate.zone} · {formatDaysInStatus(candidate.daysInStatus)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-4">
+                    <p className="text-sm text-ink-2">
+                      {candidate.pendingRequirements === 0 ? (
+                        <Trans>Listo para aprobar</Trans>
+                      ) : (
+                        <Plural
+                          value={candidate.pendingRequirements}
+                          one="# requisito pendiente"
+                          other="# requisitos pendientes"
+                        />
+                      )}
+                    </p>
+                    <StatusLightSoftBadge
+                      token={ONBOARDING_STATUS_TOKEN[candidate.status]}
+                      label={ONBOARDING_STATUS_LABEL[candidate.status]}
+                    />
+                  </div>
+                </Link>
+              </MagicCard>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* La memoria de la pantalla: lo último que se aprobó, con la MISMA
+          tarjeta del Pipeline — tocarla abre la ficha del hotel. */}
+      {recent.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-base font-semibold text-ink">
+                <Trans>Aprobados recientemente</Trans>
+              </h2>
+              <p className="mt-0.5 text-sm text-ink-3">
+                <Trans>Ya son clientes: su ficha completa vive en Clientes Activos</Trans>
+              </p>
+            </div>
+            <Link
+              to="/active-clients"
+              className="min-h-11 shrink-0 touch-manipulation content-center text-sm font-semibold text-o-700 underline-offset-4 hover:underline"
+            >
+              <Trans>Ver Clientes Activos</Trans>
+            </Link>
+          </div>
+          <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(16rem,22rem))]">
+            {recent.map((prospect) => (
+              <ProspectCard key={prospect.id} prospect={prospect} />
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  )
+}

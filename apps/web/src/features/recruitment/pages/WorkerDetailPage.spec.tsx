@@ -1,0 +1,141 @@
+import { render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { Provider } from 'react-redux'
+import { createMemoryRouter, RouterProvider } from 'react-router'
+import { describe, expect, it } from 'vitest'
+
+import { WorkerDetailPage } from './WorkerDetailPage'
+
+import { store } from '@/app/store'
+
+const SLOW = { timeout: 4000 }
+
+/** Ana Rivera (`wrk-0001`): STRONG_GREEN, perfil completo, 3 documentos. */
+function renderDetail(workerId = 'wrk-0001'): void {
+  const router = createMemoryRouter(
+    [{ path: '/collaborator-pool/:workerId', element: <WorkerDetailPage /> }],
+    { initialEntries: [`/collaborator-pool/${workerId}`] },
+  )
+  render(
+    <Provider store={store}>
+      <RouterProvider router={router} />
+    </Provider>,
+  )
+}
+
+describe('WorkerDetailPage', () => {
+  it('el encabezado dice quién es, su semáforo y lo del ITIN sin fingir', async () => {
+    renderDetail()
+
+    expect(await screen.findByRole('heading', { name: 'Ana Rivera Gómez' })).toBeInTheDocument()
+    expect(screen.getByText('Disponible')).toBeInTheDocument()
+    // Lo que está bien NO se anuncia (perfil completo = silencio); la
+    // excepción sí habla. D-27: se dice la consecuencia, no «ITIN registrado».
+    expect(screen.queryByText(/Perfil incompleto/)).not.toBeInTheDocument()
+    expect(screen.getByText(/Sin ITIN: aplica retención del 16%/)).toBeInTheDocument()
+    // El correo de la cuenta ya se ve en el expediente, no solo "Con cuenta".
+    expect(screen.getByText('arivera@oranjepeople.com')).toBeInTheDocument()
+  })
+
+  it('identidad y perfil hablan en palabras, y lo que el contrato no trae va en raya', async () => {
+    renderDetail()
+
+    await screen.findByRole('heading', { name: 'Ana Rivera Gómez' })
+    expect(screen.getByText('Femenino')).toBeInTheDocument()
+    expect(screen.getByText('1–2 años')).toBeInTheDocument()
+    expect(screen.getByText('Público')).toBeInTheDocument()
+    expect(screen.getByText('O+')).toBeInTheDocument()
+    // El parentesco del fixture es SIBLING y se lee en español.
+    expect(screen.getByText('Hermano/a')).toBeInTheDocument()
+    // medical_notes no viene en /workers/:id: raya, no invento.
+    const medicalNotes = screen.getByText('Notas médicas').closest('div') as HTMLElement
+    expect(within(medicalNotes).getByText('—')).toBeInTheDocument()
+  })
+
+  it('los documentos salen con su verificación real: dos verificados y el ITIN pendiente', async () => {
+    renderDetail()
+
+    // El selector del alta también dice «Identificación oficial»: se cuenta ≥1 fila.
+    expect(
+      (await screen.findAllByText('Identificación oficial', undefined, SLOW)).length,
+    ).toBeGreaterThan(0)
+    expect(screen.getByText('Comprobante de domicilio')).toBeInTheDocument()
+    expect(screen.getAllByText('Verificado')).toHaveLength(2)
+    const itinRow = screen.getByText('SSN / ITIN').closest('li') as HTMLElement
+    expect(within(itinRow).getByText('Pendiente')).toBeInTheDocument()
+  })
+
+  it('el historial cuenta el recorrido del seed, con el nacimiento en BLANCO sin origen', async () => {
+    renderDetail()
+
+    expect(await screen.findByText('— → WHITE', undefined, SLOW)).toBeInTheDocument()
+    expect(screen.getByText('WHITE → STRONG_GREEN')).toBeInTheDocument()
+    expect(screen.getByText('Alta completada (RF-08)')).toBeInTheDocument()
+    expect(screen.getByText('BROWN → STRONG_GREEN')).toBeInTheDocument()
+  })
+
+  it('cambiar estado ofrece solo lo de mi rol y la transición camina de verdad', async () => {
+    renderDetail('wrk-0003')
+    const user = userEvent.setup()
+
+    // María Fernanda está Disponible: la Reclutadora solo puede asignarla temporal.
+    await screen.findByRole('heading', { name: 'María Fernanda Ortiz' })
+    await user.click(screen.getByRole('button', { name: 'Cambiar estado' }))
+
+    const dialog = await screen.findByRole('dialog')
+    expect(await within(dialog).findByText('Asig. temporal', undefined, SLOW)).toBeInTheDocument()
+    expect(within(dialog).queryByText(/ORANGE/)).not.toBeInTheDocument()
+
+    await user.click(await within(dialog).findByRole('radio', undefined, SLOW))
+    await user.click(within(dialog).getByRole('button', { name: 'Cambiar estado' }))
+
+    // El chip del encabezado se actualiza porque la mutación invalida la ficha.
+    await waitFor(() => {
+      expect(screen.getByText('Asig. temporal')).toBeInTheDocument()
+    }, SLOW)
+    // Y la historia ganó su fila: la verdad del semáforo es la tabla de historia.
+    expect(await screen.findByText('STRONG_GREEN → BROWN', undefined, SLOW)).toBeInTheDocument()
+  })
+
+  it('«Editar» completa la Fase 1 desde el expediente — antes solo se podía desde el Pool', async () => {
+    renderDetail('wrk-0004')
+    const user = userEvent.setup()
+
+    // Pedro nace sin Fase 1 (posición, inglés, modalidad) y sin contacto de
+    // emergencia (Fase 3, del colaborador): las dos causas del mismo pill.
+    await screen.findByRole('heading', { name: 'Pedro Alcántara' })
+    expect(screen.getByText(/Perfil incompleto/)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Editar' }))
+    expect(await screen.findByText('Editar colaborador')).toBeInTheDocument()
+
+    await user.click(screen.getByLabelText('Posición'))
+    await user.click(await screen.findByRole('option', { name: 'Housekeeper' }))
+    await user.click(screen.getByLabelText('Modalidad'))
+    await user.click(await screen.findByRole('option', { name: 'Tiempo completo' }))
+    await user.click(screen.getByLabelText('Nivel de inglés'))
+    await user.click(await screen.findByRole('option', { name: 'Básico' }))
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    // El expediente refleja la Fase 1 ya capturada por Reclutamiento.
+    await waitFor(() => {
+      expect(screen.getAllByText('Housekeeper').length).toBeGreaterThan(0)
+    }, SLOW)
+
+    // Pero sigue sin poder validarse: el contacto de emergencia no es Fase 1,
+    // «Editar» no lo toca — lo completa el colaborador desde su app.
+    expect(screen.getByText(/Perfil incompleto/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Cambiar estado' }))
+    const dialog = await screen.findByRole('dialog')
+    await user.click(await within(dialog).findByRole('radio', undefined, SLOW))
+
+    expect(
+      await within(dialog).findByText(/falta Contacto de emergencia/, undefined, SLOW),
+    ).toBeInTheDocument()
+    expect(within(dialog).getByText(/lo completa el colaborador desde su app/)).toBeInTheDocument()
+    // Y validarlo a medias exige confirmarlo: sin la casilla, el botón sigue apagado.
+    expect(within(dialog).getByRole('button', { name: 'Cambiar estado' })).toBeDisabled()
+    await user.click(within(dialog).getByRole('checkbox'))
+    expect(within(dialog).getByRole('button', { name: 'Cambiar estado' })).toBeEnabled()
+  })
+})

@@ -1,0 +1,323 @@
+import { Injectable } from '@nestjs/common'
+import { Prisma } from '@prisma/client'
+import { v7 as uuidv7 } from 'uuid'
+
+import { PrismaService } from '../../../infra/prisma/index.js'
+
+const SELECT = {
+  id: true,
+  version: true,
+  servicesNote: true,
+  payRate: true,
+  billRate: true,
+  sentAt: true,
+  createdAt: true,
+  updatedAt: true,
+  sentBy: { select: { id: true, fullName: true } },
+  rates: {
+    orderBy: { catalogPosition: { name: 'asc' } },
+    select: {
+      id: true,
+      payRate: true,
+      billRate: true,
+      catalogPosition: { select: { id: true, code: true, name: true } },
+    },
+  },
+} as const
+
+export type RateRow = {
+  id: string
+  payRate: Prisma.Decimal
+  billRate: Prisma.Decimal
+  catalogPosition: { id: string; code: string; name: string }
+}
+
+export type ProposalRow = {
+  id: string
+  version: number
+  servicesNote: string | null
+  payRate: Prisma.Decimal | null
+  billRate: Prisma.Decimal | null
+  sentAt: Date | null
+  createdAt: Date
+  updatedAt: Date | null
+  sentBy: { id: string; fullName: string } | null
+  rates: RateRow[]
+}
+
+/** Lo que se guarda de un renglón del cuadro. */
+export type RateInput = { catalogPositionId: string; payRate: string; billRate: string }
+
+@Injectable()
+export class ProposalsRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  /** Qué ids del catálogo existen de verdad, para no guardar un puesto fantasma. */
+  async positionsExist(ids: string[]): Promise<Set<string>> {
+    if (ids.length === 0) return new Set()
+
+    const rows = await this.prisma.catalogPosition.findMany({
+      where: { id: { in: ids } },
+      select: { id: true },
+    })
+
+    return new Set(rows.map((r) => r.id))
+  }
+
+  async prospect(id: string): Promise<{
+    id: string
+    hotelId: string
+    closedAt: Date | null
+    stateCode: string
+    ownerUserId: string
+    hotelName: string
+  } | null> {
+    const row = await this.prisma.prospect.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        hotelId: true,
+        closedAt: true,
+        ownerUserId: true,
+        hotel: { select: { name: true } },
+        onboardingState: { select: { code: true } },
+      },
+    })
+
+    return row ? { ...row, stateCode: row.onboardingState.code, hotelName: row.hotel.name } : null
+  }
+
+  async findById(prospectId: string, id: string): Promise<ProposalRow | null> {
+    return this.prisma.proposal.findFirst({ where: { id, prospectId }, select: SELECT })
+  }
+
+  /** El BDC del BD dueño del prospecto (`reportsToUserId`, RR-V-01/02). */
+  async bdcOf(ownerUserId: string): Promise<string | null> {
+    const owner = await this.prisma.user.findUnique({
+      where: { id: ownerUserId },
+      select: { reportsToUserId: true },
+    })
+
+    return owner?.reportsToUserId ?? null
+  }
+
+  async listAcrossProspects(params: {
+    ownerUserId: string | null
+    onlyDrafts: boolean
+  }): Promise<Array<ProposalRow & { prospectId: string; hotelName: string }>> {
+    const rows = await this.prisma.proposal.findMany({
+      where: {
+        ...(params.onlyDrafts ? { sentAt: null } : {}),
+        prospect: {
+          closedAt: null,
+          ...(params.ownerUserId ? { ownerUserId: params.ownerUserId } : {}),
+        },
+      },
+      orderBy: [{ createdAt: 'desc' }],
+      take: 200,
+      select: {
+        ...SELECT,
+        prospectId: true,
+        prospect: { select: { hotel: { select: { name: true } } } },
+      },
+    })
+
+    return rows.map((r) => ({ ...r, hotelName: r.prospect.hotel.name }))
+  }
+
+  async listAll(prospectId: string): Promise<ProposalRow[]> {
+    return this.prisma.proposal.findMany({
+      where: { prospectId },
+      orderBy: { version: 'desc' },
+      select: SELECT,
+    })
+  }
+
+  async lastSent(prospectId: string): Promise<{ id: string; version: number } | null> {
+    return this.prisma.proposal.findFirst({
+      where: { prospectId, sentAt: { not: null } },
+      orderBy: { version: 'desc' },
+      select: { id: true, version: true },
+    })
+  }
+
+  async openDraft(prospectId: string): Promise<{ id: string; version: number } | null> {
+    return this.prisma.proposal.findFirst({
+      where: { prospectId, sentAt: null },
+      orderBy: { version: 'desc' },
+      select: { id: true, version: true },
+    })
+  }
+
+  async create(params: {
+    prospectId: string
+    servicesNote: string | null
+    rates: RateInput[]
+    payRate: string | null
+    billRate: string | null
+    userId: string
+    roleCode: string
+  }): Promise<ProposalRow> {
+    const id = uuidv7()
+
+    await this.prisma.$transaction(async (tx) => {
+      const last = await tx.proposal.findFirst({
+        where: { prospectId: params.prospectId },
+        orderBy: { version: 'desc' },
+        select: { version: true },
+      })
+
+      const version = (last?.version ?? 0) + 1
+
+      await tx.proposal.create({
+        data: {
+          id,
+          prospectId: params.prospectId,
+          version,
+          servicesNote: params.servicesNote,
+          payRate: params.payRate,
+          billRate: params.billRate,
+        },
+      })
+
+      await insertRates(tx, id, params.rates)
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'commercial.prospect',
+          entityId: params.prospectId,
+          eventType: 'PROPOSAL_DRAFTED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: { proposalId: id, version, rates: params.rates.length },
+        },
+      })
+    })
+
+    return this.prisma.proposal.findUniqueOrThrow({ where: { id }, select: SELECT })
+  }
+
+  // El journal va ANTES del delete y en la misma transaccion: la fila muere,
+  // el rastro no.
+  async discardDraft(params: {
+    prospectId: string
+    proposalId: string
+    version: number
+    userId: string
+    roleCode: string
+  }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'commercial.prospect',
+          entityId: params.prospectId,
+          eventType: 'PROPOSAL_DRAFT_DISCARDED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: { proposalId: params.proposalId, version: params.version },
+        },
+      })
+
+      await tx.proposal.delete({ where: { id: params.proposalId } })
+    })
+  }
+
+  async send(params: {
+    prospectId: string
+    proposalId: string
+    userId: string
+    roleCode: string
+  }): Promise<ProposalRow> {
+    await this.prisma.$transaction(async (tx) => {
+      const updated = await tx.proposal.update({
+        where: { id: params.proposalId },
+        data: { sentAt: new Date(), sentByUserId: params.userId, updatedAt: new Date() },
+        select: { version: true },
+      })
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'commercial.prospect',
+          entityId: params.prospectId,
+          eventType: 'PROPOSAL_SENT',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: { proposalId: params.proposalId, version: updated.version },
+        },
+      })
+    })
+
+    return this.prisma.proposal.findUniqueOrThrow({
+      where: { id: params.proposalId },
+      select: SELECT,
+    })
+  }
+
+  async update(params: {
+    prospectId: string
+    proposalId: string
+    servicesNote: string | null
+    /** `null` = el PATCH no trae cuadro, así que el guardado no lo toca. */
+    rates: RateInput[] | null
+    payRate: string | null
+    billRate: string | null
+    userId: string
+    roleCode: string
+  }): Promise<ProposalRow> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.proposal.update({
+        where: { id: params.proposalId },
+        data: {
+          servicesNote: params.servicesNote,
+          payRate: params.payRate,
+          billRate: params.billRate,
+          updatedAt: new Date(),
+        },
+      })
+
+      /* El cuadro se reemplaza entero: editar un renglón, quitar uno y agregar
+         otro son el mismo gesto, y así el guardado no depende del orden. Pero
+         solo si el PATCH lo trae: una edición que manda únicamente la nota de
+         servicios no puede dejar la propuesta sin tarifas. */
+      if (params.rates !== null) {
+        await tx.proposalRate.deleteMany({ where: { proposalId: params.proposalId } })
+        await insertRates(tx, params.proposalId, params.rates)
+      }
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'commercial.prospect',
+          entityId: params.prospectId,
+          eventType: 'PROPOSAL_UPDATED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: { proposalId: params.proposalId, rates: params.rates?.length ?? null },
+        },
+      })
+    })
+
+    return this.prisma.proposal.findUniqueOrThrow({
+      where: { id: params.proposalId },
+      select: SELECT,
+    })
+  }
+}
+
+/** Los renglones se insertan en la misma transacción que la propuesta. */
+async function insertRates(
+  tx: Prisma.TransactionClient,
+  proposalId: string,
+  rates: RateInput[],
+): Promise<void> {
+  for (const r of rates) {
+    await tx.$executeRaw`
+      INSERT INTO commercial.proposal_rate
+        (id, proposal_id, catalog_position_id, pay_rate, bill_rate)
+      VALUES (${uuidv7()}::uuid, ${proposalId}::uuid, ${r.catalogPositionId}::uuid,
+              ${r.payRate}::numeric, ${r.billRate}::numeric)`
+  }
+}

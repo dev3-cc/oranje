@@ -1,0 +1,49 @@
+import { Trans } from '@lingui/react/macro'
+import type { ReactNode } from 'react'
+
+import type { ClientCard } from '../types/client.types'
+
+import { HotelPhoto } from './HotelPhoto'
+
+import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
+import { CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TOKEN } from '@/shared/constants/contractStatus'
+
+/**
+ * La ficha que se asoma sobre el mapa cuando hay un hotel elegido.
+ *
+ * Repite lo mínimo para saber que es el correcto —nombre, estado del contrato y
+ * folio— y nada más: lo demás ya está en su tarjeta de la izquierda, y llenar
+ * el mapa de datos taparía justo lo que se quería ver.
+ */
+export function ClientMapCard({ client }: { client: ClientCard }): ReactNode {
+  return (
+    /*
+      En la esquina y NO en el centro: `fitBounds` deja los hoteles justo en
+      medio del mapa, así que una ficha centrada tapa los pines que se querían
+      ver. `pointer-events-none` para que no atrape el arrastre del mapa.
+    */
+    <div className="pointer-events-none absolute top-6 left-6 z-10 w-64 max-w-[calc(100%-3rem)] rounded-xl border border-line bg-surface p-3 shadow-lg">
+      <div className="h-20 overflow-hidden rounded-lg">
+        <HotelPhoto photoUrl={client.photoUrl} className="size-full rounded-lg" />
+      </div>
+
+      <p className="mt-3 text-base font-bold text-ink">{client.hotelName}</p>
+
+      <div className="mt-2 flex flex-wrap items-center gap-3">
+        {client.contract ? (
+          <>
+            <StatusLightSoftBadge
+              token={CONTRACT_STATUS_TOKEN[client.contract.status]}
+              label={CONTRACT_STATUS_LABEL[client.contract.status]}
+            />
+            <span className="text-sm text-ink-3">{client.contract.number}</span>
+          </>
+        ) : (
+          <span className="text-sm text-ink-3">
+            <Trans>sin contrato</Trans>
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}

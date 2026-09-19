@@ -1,0 +1,394 @@
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common'
+
+import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { PlacesService } from '../../../infra/places/index.js'
+import { NotificationPublisherService } from '../../notifications/index.js'
+
+import type { CreateEntryDto } from './dto/create-entry.dto.js'
+import type { CreateScheduleDto } from './dto/create-schedule.dto.js'
+import { EntryRow, ScheduleRow, SchedulesRepository } from './schedules.repository.js'
+
+const WEEK_DAYS = 7
+const MAX_SHIFT_HOURS = 16
+
+export interface ScheduleEntity {
+  id: string
+  hotel: { id: string; name: string; timeZone: string }
+  weekStart: string
+  weekEnd: string
+  entryCount: number
+  createdAt: string
+}
+
+export interface EntryEntity {
+  id: string
+  workDate: string
+  startsAt: string
+  endsAt: string
+  minutes: number
+  worker: { id: string; fullName: string }
+  assignmentId: string
+}
+
+export interface MyShift {
+  id: string
+  /// Lo que POST /punches necesita. El colaborador puede ponchar sin mandarlo
+  /// —el servidor resuelve el turno de hoy— pero el front lo usa para saber si
+  /// el turno esta ligado a una asignacion.
+  assignmentId: string
+  workDate: string
+  startsAt: string
+  endsAt: string
+  hotel: string
+  /// La zona IANA del hotel. El front formatea las horas con esta, no con el
+  /// reloj del teléfono: un turno de Cancún visto desde otra zona se corre.
+  hotelTimeZone: string
+  /// URL de media de Places compuesta al leer (D-34). Null si el hotel no
+  /// tiene foto o si no hay llave: nunca rompe la respuesta.
+  hotelPhotoUrl: string | null
+  /// SELFIE | QR: la app sabe si abrir la cámara para la selfie o el lector del
+  /// QR impreso en el acceso (Reglas de Negocio, «Método de ponche por hotel»).
+  hotelPunchMethod: 'SELFIE' | 'QR'
+  position: string
+}
+
+@Injectable()
+export class SchedulesService {
+  constructor(
+    private readonly repo: SchedulesRepository,
+    private readonly places: PlacesService,
+    private readonly notifications: NotificationPublisherService,
+  ) {}
+
+  async list(user: AuthenticatedUser): Promise<ScheduleEntity[]> {
+    return (await this.repo.listAll(user.hotelId)).map(toEntity)
+  }
+
+  // Solo sus turnos, y por rango de fechas: la semana la elige el cliente.
+  async mine(user: AuthenticatedUser, from: Date, to: Date): Promise<MyShift[]> {
+    const workerId = await this.repo.workerOfUser(user.id)
+
+    if (workerId === null) {
+      throw new NotFoundException({
+        code: 'WORKER_NOT_LINKED',
+        message: 'Tu cuenta no está ligada a un colaborador',
+      })
+    }
+
+    return (await this.repo.entriesOfWorker(workerId, from, to)).map((e) => ({
+      id: e.id,
+      assignmentId: e.assignmentId,
+      workDate: e.workDate.toISOString().slice(0, 10),
+      startsAt: e.startsAt.toISOString(),
+      endsAt: e.endsAt.toISOString(),
+      hotel: e.hotelName,
+      hotelTimeZone: e.hotelTimeZone,
+      hotelPhotoUrl: this.places.mediaUrl(e.hotelPhotoRef),
+      hotelPunchMethod: e.hotelPunchMethod === 'QR' ? 'QR' : 'SELFIE',
+      position: e.positionName,
+    }))
+  }
+
+  async get(id: string): Promise<ScheduleEntity> {
+    return toEntity(await this.schedule(id))
+  }
+
+  async create(dto: CreateScheduleDto, user: AuthenticatedUser): Promise<ScheduleEntity> {
+    if (user.hotelId && user.hotelId !== dto.hotelId) {
+      throw new ConflictException({
+        code: 'HOTEL_OUT_OF_SCOPE',
+        message: 'Solo puedes armar el Schedule de tu hotel',
+      })
+    }
+
+    if (!(await this.repo.hotel(dto.hotelId))) {
+      throw new NotFoundException({ code: 'HOTEL_NOT_FOUND', message: 'El hotel no existe' })
+    }
+
+    if (dto.weekStart.getUTCDay() !== 1) {
+      throw new UnprocessableEntityException({
+        code: 'WEEK_MUST_START_MONDAY',
+        message: 'La semana del Schedule empieza en lunes',
+      })
+    }
+
+    if (await this.repo.byWeek(dto.hotelId, dto.weekStart)) {
+      throw new ConflictException({
+        code: 'SCHEDULE_EXISTS',
+        message: 'Este hotel ya tiene Schedule para esa semana',
+      })
+    }
+
+    const weekEnd = new Date(dto.weekStart)
+    weekEnd.setUTCDate(weekEnd.getUTCDate() + WEEK_DAYS - 1)
+
+    return toEntity(
+      await this.repo.create({
+        hotelId: dto.hotelId,
+        weekStart: dto.weekStart,
+        weekEnd,
+        userId: user.id,
+        roleCode: user.roleCode,
+      }),
+    )
+  }
+
+  /**
+   * El Supervisor y el Manager de Área ven el Schedule de SU departamento; el
+   * Manager General, el del hotel completo (Reglas del Hotel · resumen por rol).
+   * El departamento viene de la persona (D-09): sin él, no se acota.
+   */
+  async entries(scheduleId: string, user: AuthenticatedUser): Promise<EntryEntity[]> {
+    await this.schedule(scheduleId)
+
+    return (await this.repo.entries(scheduleId, user.departmentId ?? null)).map(toEntry)
+  }
+
+  private assertDepartment(departmentId: string, user: AuthenticatedUser, message: string): void {
+    if (user.departmentId && departmentId !== user.departmentId) {
+      throw new ForbiddenException({ code: 'DEPARTMENT_OUT_OF_SCOPE', message })
+    }
+  }
+
+  async addEntry(
+    scheduleId: string,
+    dto: CreateEntryDto,
+    user: AuthenticatedUser,
+  ): Promise<EntryEntity> {
+    const schedule = await this.schedule(scheduleId)
+    const assignment = await this.repo.assignment(dto.assignmentId)
+
+    if (!assignment) {
+      throw new NotFoundException({
+        code: 'ASSIGNMENT_NOT_FOUND',
+        message: 'La asignación no existe',
+      })
+    }
+
+    if (assignment.status !== 'ACTIVE') {
+      throw new UnprocessableEntityException({
+        code: 'ASSIGNMENT_NOT_ACTIVE',
+        message: `No se planea sobre una asignación en ${assignment.status}`,
+      })
+    }
+
+    if (assignment.hotelId !== schedule.hotel.id) {
+      throw new UnprocessableEntityException({
+        code: 'ASSIGNMENT_OTHER_HOTEL',
+        message: 'Esa asignación es de otro hotel',
+      })
+    }
+
+    this.assertDepartment(assignment.departmentId, user, 'Solo planeas turnos de tu departamento')
+
+    this.assertInsideWeek(dto.workDate, schedule)
+
+    const { startsLocal, endsLocal, hours } = shiftBounds(dto)
+
+    if (hours > MAX_SHIFT_HOURS) {
+      throw new UnprocessableEntityException({
+        code: 'SHIFT_TOO_LONG',
+        message: `Un turno no puede pasar de ${MAX_SHIFT_HOURS} horas`,
+      })
+    }
+
+    const id = await this.insert({
+      scheduleId,
+      assignmentId: dto.assignmentId,
+      workerId: assignment.workerId,
+      workDate: dto.workDate,
+      startsLocal,
+      endsLocal,
+      timeZone: schedule.hotel.timeZone,
+      workerName: assignment.workerName,
+      user,
+    })
+
+    const created = (await this.repo.entries(scheduleId)).find((e) => e.id === id)
+
+    if (!created) {
+      throw new ConflictException({
+        code: 'ENTRY_NOT_FOUND',
+        message: 'El turno no quedó registrado',
+      })
+    }
+
+    try {
+      await this.notifications.publish({
+        type: 'SCHEDULE_EDITED',
+        title: 'Schedule editado',
+        body: `Se agregó un turno el ${dto.workDate.toISOString().slice(0, 10)} a tu Schedule.`,
+        entity: { type: 'operations.schedule_entry', id },
+        actorUserId: user.id,
+        audience: [{ kind: 'WORKER', workerId: assignment.workerId }],
+      })
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no revierte el turno.
+    }
+
+    return toEntry(created)
+  }
+
+  async removeEntry(scheduleId: string, entryId: string, user: AuthenticatedUser): Promise<void> {
+    await this.schedule(scheduleId)
+
+    const entry = await this.repo.entryById(entryId)
+
+    if (!entry || entry.scheduleId !== scheduleId) {
+      throw new NotFoundException({
+        code: 'ENTRY_NOT_FOUND',
+        message: 'El turno no existe en este Schedule',
+      })
+    }
+
+    this.assertDepartment(entry.departmentId, user, 'Solo quitas turnos de tu departamento')
+
+    await this.repo.removeEntry({
+      entryId,
+      scheduleId,
+      userId: user.id,
+      roleCode: user.roleCode,
+    })
+
+    try {
+      await this.notifications.publish({
+        type: 'SCHEDULE_EDITED',
+        title: 'Turno quitado del Schedule',
+        body: 'Se quitó un turno de tu Schedule.',
+        entity: { type: 'operations.schedule_entry', id: entryId },
+        actorUserId: user.id,
+        audience: [{ kind: 'WORKER', workerId: entry.workerId }],
+      })
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no revierte la eliminación.
+    }
+  }
+
+  private async insert(params: {
+    scheduleId: string
+    assignmentId: string
+    workerId: string
+    workDate: Date
+    startsLocal: string
+    endsLocal: string
+    timeZone: string
+    workerName: string
+    user: AuthenticatedUser
+  }): Promise<string> {
+    try {
+      return await this.repo.addEntry({
+        scheduleId: params.scheduleId,
+        assignmentId: params.assignmentId,
+        workerId: params.workerId,
+        workDate: params.workDate,
+        startsLocal: params.startsLocal,
+        endsLocal: params.endsLocal,
+        timeZone: params.timeZone,
+        userId: params.user.id,
+        roleCode: params.user.roleCode,
+      })
+    } catch (error) {
+      if (isOverlap(error)) {
+        throw new ConflictException({
+          code: 'SHIFT_OVERLAP',
+          message: `${params.workerName} ya tiene un turno que se encima con ese horario`,
+        })
+      }
+
+      throw error
+    }
+  }
+
+  private assertInsideWeek(workDate: Date, schedule: ScheduleRow): void {
+    const day = workDate.toISOString().slice(0, 10)
+    const start = schedule.weekStart.toISOString().slice(0, 10)
+    const end = schedule.weekEnd.toISOString().slice(0, 10)
+
+    if (day < start || day > end) {
+      throw new UnprocessableEntityException({
+        code: 'DATE_OUTSIDE_WEEK',
+        message: `El Schedule cubre del ${start} al ${end}`,
+      })
+    }
+  }
+
+  private async schedule(id: string): Promise<ScheduleRow> {
+    const row = await this.repo.byId(id)
+
+    if (!row) {
+      throw new NotFoundException({
+        code: 'SCHEDULE_NOT_FOUND',
+        message: 'El Schedule no existe',
+      })
+    }
+
+    return row
+  }
+}
+
+/**
+ * La hora de PARED que el Supervisor tecleó, sin zona: quien la ancla es
+ * Postgres con la del hotel.
+ *
+ * `hours` se mide sobre esa hora de pared —que es lo que el Supervisor quiso
+ * decir— y no sobre el instante real; en el día que cambia el horario de verano
+ * difieren en una hora, y para un tope de sanidad la de pared es la correcta.
+ */
+function shiftBounds(dto: CreateEntryDto): {
+  startsLocal: string
+  endsLocal: string
+  hours: number
+} {
+  const day = dto.workDate.toISOString().slice(0, 10)
+  const start = new Date(`${day}T${dto.startTime}:00Z`)
+  const end = new Date(`${day}T${dto.endTime}:00Z`)
+
+  // El turno nocturno cruza medianoche: termina al día siguiente.
+  if (end <= start) {
+    end.setUTCDate(end.getUTCDate() + 1)
+  }
+
+  return {
+    startsLocal: `${day} ${dto.startTime}:00`,
+    endsLocal: `${end.toISOString().slice(0, 10)} ${dto.endTime}:00`,
+    hours: (end.getTime() - start.getTime()) / 3_600_000,
+  }
+}
+
+function isOverlap(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error)
+
+  return message.includes('no_shift_overlap') || message.includes('23P01')
+}
+
+function toEntity(row: ScheduleRow): ScheduleEntity {
+  return {
+    id: row.id,
+    hotel: row.hotel,
+    weekStart: row.weekStart.toISOString().slice(0, 10),
+    weekEnd: row.weekEnd.toISOString().slice(0, 10),
+    entryCount: row._count.entries,
+    createdAt: row.createdAt.toISOString(),
+  }
+}
+
+function toEntry(row: EntryRow): EntryEntity {
+  const startsAt = new Date(row.startsAt)
+  const endsAt = new Date(row.endsAt)
+
+  return {
+    id: row.id,
+    workDate: new Date(row.workDate).toISOString().slice(0, 10),
+    startsAt: startsAt.toISOString(),
+    endsAt: endsAt.toISOString(),
+    minutes: Math.round((endsAt.getTime() - startsAt.getTime()) / 60_000),
+    worker: row.worker,
+    assignmentId: row.assignmentId,
+  }
+}

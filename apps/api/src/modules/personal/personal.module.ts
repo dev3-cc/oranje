@@ -1,0 +1,45 @@
+import { Module } from '@nestjs/common'
+import { APP_GUARD } from '@nestjs/core'
+
+import { CoverageModule } from '../coverage/coverage.module.js'
+import { IdentityModule } from '../identity/index.js'
+import { NotificationsModule } from '../notifications/index.js'
+
+import { DocumentsController } from './documents/documents.controller.js'
+import { DocumentsRepository } from './documents/documents.repository.js'
+import { DocumentsService } from './documents/documents.service.js'
+import { AccessDeadlineGuard } from './me/access-deadline.guard.js'
+import { AccessDeadlineService } from './me/access-deadline.service.js'
+import { MeController } from './me/me.controller.js'
+import { MeService } from './me/me.service.js'
+import { TaxDeadlineGuard } from './me/tax-deadline.guard.js'
+import { TaxDeadlineService } from './me/tax-deadline.service.js'
+import { RatesController } from './rates/rates.controller.js'
+import { RatesRepository } from './rates/rates.repository.js'
+import { RatesService } from './rates/rates.service.js'
+import { WorkerAccessService } from './workers/worker-access.service.js'
+import { WorkersController } from './workers/workers.controller.js'
+import { WorkersRepository } from './workers/workers.repository.js'
+import { WorkersService } from './workers/workers.service.js'
+
+@Module({
+  imports: [IdentityModule, CoverageModule, NotificationsModule],
+  // MeController va primero: `workers/me` debe ganarle a `workers/:id`.
+  controllers: [MeController, WorkersController, DocumentsController, RatesController],
+  providers: [
+    WorkersService,
+    WorkersRepository,
+    WorkerAccessService,
+    DocumentsService,
+    DocumentsRepository,
+    RatesService,
+    RatesRepository,
+    MeService,
+    TaxDeadlineService,
+    AccessDeadlineService,
+    { provide: APP_GUARD, useClass: TaxDeadlineGuard },
+    { provide: APP_GUARD, useClass: AccessDeadlineGuard },
+  ],
+  exports: [WorkersService, DocumentsService, RatesService, TaxDeadlineService],
+})
+export class PersonalModule {}

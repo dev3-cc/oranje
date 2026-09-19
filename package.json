@@ -14,7 +14,13 @@
     "build": "pnpm -r build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "db:proxy": "cloud-sql-proxy oranjeapp-gcp:us-central1:oranje --port 5433",
+    "db:generate": "pnpm -F @oranje/api exec prisma generate",
+    "db:migrate": "pnpm -F @oranje/api exec prisma migrate dev",
+    "db:deploy": "pnpm -F @oranje/api exec prisma migrate deploy",
+    "db:status": "pnpm -F @oranje/api exec prisma migrate status",
+    "db:studio": "pnpm -F @oranje/api exec prisma studio"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

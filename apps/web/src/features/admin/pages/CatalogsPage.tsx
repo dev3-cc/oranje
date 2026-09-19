@@ -1,0 +1,943 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Plural, Trans, useLingui } from '@lingui/react/macro'
+import {
+  cn,
+  MaterialIcon,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  toast,
+} from '@oranje/ui'
+import { useState, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router'
+
+import {
+  useCreateCatalogItemMutation,
+  useDeleteCatalogItemMutation,
+  useGetAdminCatalogsQuery,
+  useUpdateCatalogItemMutation,
+  MANAGED_CATALOGS,
+  type AdminCatalogItem,
+  type AdminCatalogs,
+  type AdminStatusLight,
+  type ManagedCatalog,
+} from '../api/catalogsAdminApi'
+import { AuditChecklistItemsPanel } from '../components/AuditChecklistItemsPanel'
+
+import personajeComencemos from '@/assets/ilustrations/personaje-comencemos.svg'
+import personajeConfiguracion from '@/assets/ilustrations/personaje-configuracion.svg'
+import personajeEstrategia from '@/assets/ilustrations/personaje-estrategia.svg'
+import { Button } from '@/shared/components/Button'
+import { FoldText } from '@/shared/components/FoldText'
+import { LoadError } from '@/shared/components/LoadError'
+import { Modal } from '@/shared/components/Modal'
+import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
+import { SearchField } from '@/shared/components/SearchField'
+import { TableSkeleton } from '@/shared/components/TableSkeleton'
+import { useCan } from '@/shared/hooks/useCan'
+import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
+import { apiErrorMessage } from '@/shared/lib/apiError'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
+import { matchesSearch } from '@/shared/lib/text'
+
+/** Las diapositivas del intro; el texto se traduce al pintar con `i18n._()` (D-36). */
+const INTRO_SLIDES: readonly {
+  image: string
+  title: MessageDescriptor
+  text: MessageDescriptor
+}[] = [
+  {
+    image: personajeConfiguracion,
+    title: msg`Los catálogos alimentan toda la plataforma`,
+    text: msg`Departamentos, posiciones, modalidades e inglés viven aquí — de acá beben las requisiciones y las altas.`,
+  },
+  {
+    image: personajeEstrategia,
+    title: msg`Reactivos de Auditoría es distinto`,
+    text: msg`Su propio peso por reactivo y arrastre para reordenar — por eso vive separado, con una línea divisoria antes de su pestaña.`,
+  },
+  {
+    image: personajeComencemos,
+    title: msg`Eliminar es de verdad`,
+    text: msg`No se archiva: si algo del sistema lo está usando, la propia base lo protege y te lo dice.`,
+  },
+]
+
+/**
+ * Cada pestaña: cómo se llama, su singular y de qué lista bebe. Los textos se
+ * traducen al pintar con `i18n._()` (D-36).
+ */
+interface TabConfig {
+  label: MessageDescriptor
+  pick: (data: AdminCatalogs) => AdminCatalogItem[]
+  /** Singular para los textos de los diálogos. */
+  noun: MessageDescriptor
+  /** El buscador enseña el patrón con un ejemplo de ESA pestaña. */
+  searchPlaceholder: MessageDescriptor
+}
+
+const TAB_CONFIG: Record<ManagedCatalog, TabConfig> = {
+  'hotel-departments': {
+    label: msg`Departamentos y posiciones`,
+    pick: (data) => data.departments,
+    noun: msg`departamento`,
+    searchPlaceholder: msg`Departamento o posición, p. ej. Steward…`,
+  },
+  positions: {
+    label: msg`Posiciones`,
+    pick: (data) => data.positions,
+    noun: msg`posición`,
+    searchPlaceholder: msg`Nombre de la posición, p. ej. Steward…`,
+  },
+  'hiring-modalities': {
+    label: msg`Modalidades`,
+    pick: (data) => data.modalities,
+    noun: msg`modalidad`,
+    searchPlaceholder: msg`Nombre de la modalidad, p. ej. Tiempo completo…`,
+  },
+  'english-levels': {
+    label: msg`Niveles de inglés`,
+    pick: (data) => data.englishLevels,
+    noun: msg`nivel de inglés`,
+    searchPlaceholder: msg`Nombre del nivel, p. ej. Conversacional…`,
+  },
+  zones: {
+    label: msg`Zonas`,
+    pick: (data) => data.zones,
+    noun: msg`zona`,
+    searchPlaceholder: msg`Nombre de la zona, p. ej. Riviera Maya…`,
+  },
+  reasons: {
+    label: msg`Motivos`,
+    pick: (data) => data.reasons,
+    noun: msg`motivo`,
+    searchPlaceholder: msg`Nombre del motivo, p. ej. Se mudó…`,
+  },
+}
+
+/**
+ * Posiciones ya no es pestaña: cada posición pertenece a un departamento y
+ * verlas separadas no decía cuál (Hugo, 2026-09-09). Viven seccionadas
+ * dentro de «Departamentos y posiciones», como los reactivos por categoría.
+ */
+const TABS = MANAGED_CATALOGS.filter((catalog) => catalog !== 'positions').map((catalog) => ({
+  catalog,
+  ...TAB_CONFIG[catalog],
+}))
+
+interface EditorState {
+  catalog: ManagedCatalog
+  noun: MessageDescriptor
+  /** `null` = alta nueva; con fila = renombrar. */
+  item: AdminCatalogItem | null
+  /** Alta de posición desde su sección: el departamento ya viene elegido. */
+  presetDepartmentId?: string
+  /** Alta de motivo desde su sección: el semáforo ya viene elegido. */
+  presetStatusLightCode?: string
+}
+
+/**
+ * Catálogos del sistema, administrables solo con `catalogs:manage` (el
+ * Administrador). Decisión de Hugo (2026-09-04): dejan de vivir solo en el
+ * seed. Eliminar es DELETE de verdad; lo que está en uso lo protege la FK del
+ * back y aquí solo se traduce el 409 a palabras.
+ */
+export function CatalogsPage(): ReactNode {
+  const { t, i18n } = useLingui()
+  const can = useCan()
+  const canManage = can('catalogs:manage')
+  const { data, isLoading, isError, refetch } = useGetAdminCatalogsQuery()
+  /** El intro de página se ve UNA vez; «¿Cómo funciona?» lo reabre. */
+  const { isIntroOpen, dismissIntro, reopenIntro } = useIntroSeen('catalogs')
+
+  /** Los reactivos de auditoría son un catálogo propio (más campos, dueño distinto): pestaña aparte. */
+  const REACTIVOS_TAB = 'audit-checklist-items' as const
+  type TabKey = ManagedCatalog | typeof REACTIVOS_TAB
+  const ALL_TAB_KEYS: readonly TabKey[] = [...MANAGED_CATALOGS, REACTIVOS_TAB]
+  /* La pestaña vive en la URL (regla WIG «la URL refleja el estado», mismo
+     patrón que `?q=` en Mi Territorio): recargar o compartir el enlace deja
+     a la persona en la misma pestaña, no siempre en la primera. */
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedTab = searchParams.get('tab')
+  const active: TabKey =
+    requestedTab !== null && (ALL_TAB_KEYS as readonly string[]).includes(requestedTab)
+      ? requestedTab === 'positions'
+        ? 'hotel-departments' // enlaces viejos a la pestaña que se fusionó
+        : (requestedTab as TabKey)
+      : 'hotel-departments'
+
+  function selectTab(next: TabKey): void {
+    setSearchParams(
+      (previous) => {
+        const params = new URLSearchParams(previous)
+        params.set('tab', next)
+        return params
+      },
+      { replace: true },
+    )
+    setSearch('')
+  }
+
+  /** Filtra EN MEMORIA la pestaña activa por nombre; se vacía al cambiar de pestaña. */
+  const [search, setSearch] = useState('')
+  const [editor, setEditor] = useState<EditorState | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<{
+    catalog: ManagedCatalog
+    noun: MessageDescriptor
+    item: AdminCatalogItem
+  } | null>(null)
+
+  const isReactivosTab = active === REACTIVOS_TAB
+  const isDepartmentsTab = active === 'hotel-departments'
+  const isReasonsTab = active === 'reasons'
+  const tab = active === REACTIVOS_TAB ? null : { catalog: active, ...TAB_CONFIG[active] }
+  const rows = tab && data ? tab.pick(data) : []
+  const visibleRows = rows.filter((row) => matchesSearch(search, row.name))
+  /**
+   * Departamentos con sus posiciones. La búsqueda entra por los dos lados:
+   * un departamento aparece si coincide su nombre (con todas sus posiciones)
+   * o si coincide alguna posición (solo esas).
+   */
+  const sections = (data?.departments ?? [])
+    .map((department) => {
+      const positions = (data?.positions ?? []).filter(
+        (position) => position.hotelDepartmentId === department.id,
+      )
+      const departmentMatches = matchesSearch(search, department.name)
+      const visiblePositions = departmentMatches
+        ? positions
+        : positions.filter((position) => matchesSearch(search, position.name))
+      return { department, positions, visiblePositions, departmentMatches }
+    })
+    .filter((section) => section.departmentMatches || section.visiblePositions.length > 0)
+
+  /** Motivos, seccionados por semáforo: un motivo suelto no dice nada de cuándo aplica. */
+  const reasonSections = (data?.statusLights ?? [])
+    .map((statusLight) => {
+      const reasons = (data?.reasons ?? []).filter(
+        (reason) => reason.statusLightCode === statusLight.code,
+      )
+      const lightMatches = matchesSearch(search, statusLight.name)
+      const visibleReasons = lightMatches
+        ? reasons
+        : reasons.filter((reason) => matchesSearch(search, reason.name))
+      return { statusLight, reasons, visibleReasons, lightMatches }
+    })
+    .filter((section) => section.lightMatches || section.visibleReasons.length > 0)
+
+  if (!canManage) {
+    return (
+      <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+        <Trans>Los catálogos los administra el Administrador del sistema.</Trans>
+      </p>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-wrap items-center gap-3">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
+            <FoldText text={t`Catálogos`} />
+          </h1>
+          <p className="mt-1.5 text-sm text-ink-3">
+            <Trans>
+              Las listas de las que bebe todo el sistema: requisiciones, altas y contratos.
+            </Trans>
+            {IS_DEV_UI && <code className="ml-1.5 text-xs text-ink-4">catalogs.*</code>}
+            {' · '}
+            <button
+              type="button"
+              onClick={reopenIntro}
+              className="cursor-pointer font-medium text-o-700 hover:underline"
+            >
+              <Trans>¿Cómo funciona?</Trans>
+            </button>
+          </p>
+        </div>
+        {tab && !isReasonsTab && (
+          <Button
+            variant="primary"
+            className="ml-auto"
+            onClick={() => {
+              setEditor({ catalog: tab.catalog, noun: tab.noun, item: null })
+            }}
+          >
+            {t`Agregar ${i18n._(tab.noun)}`}
+          </Button>
+        )}
+      </header>
+
+      <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label={t`Catálogo`}>
+        {TABS.map((item) => (
+          <TabButton
+            key={item.catalog}
+            label={i18n._(item.label)}
+            isActive={item.catalog === active}
+            onSelect={() => {
+              selectTab(item.catalog)
+            }}
+          />
+        ))}
+        {/* Los reactivos de auditoría son un catálogo de OTRA naturaleza (más
+            campos, dueño conceptual distinto — la auditoría del Supervisor,
+            no el alta de personal): el separador dice «esto no es un
+            catálogo operativo más», que es justo lo que se perdía cuando
+            era el quinto botón idéntico al final de la fila. */}
+        <span aria-hidden className="mx-1 h-6 w-px shrink-0 bg-line" />
+        <TabButton
+          label={t`Reactivos de Auditoría`}
+          isActive={isReactivosTab}
+          onSelect={() => {
+            selectTab(REACTIVOS_TAB)
+          }}
+        />
+      </div>
+
+      {isReactivosTab ? (
+        <AuditChecklistItemsPanel />
+      ) : (
+        <>
+          <SearchField
+            value={search}
+            onChange={setSearch}
+            label={t`Buscar en ${tab ? i18n._(tab.label) : ''}`}
+            placeholder={tab ? i18n._(tab.searchPlaceholder) : ''}
+            className="w-full max-w-md"
+          />
+
+          {isError && (
+            <LoadError
+              message={t`No se pudieron cargar los catálogos. Reintenta en unos segundos.`}
+              onRetry={() => {
+                void refetch()
+              }}
+            />
+          )}
+
+          {isLoading || !data ? (
+            <TableSkeleton rows={5} columns={3} />
+          ) : isDepartmentsTab ? (
+            data.departments.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+                <Trans>
+                  Todavía no hay departamentos. Agrega el primero con el botón de arriba; las
+                  posiciones se cuelgan de cada uno.
+                </Trans>
+              </p>
+            ) : sections.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+                <Trans>
+                  Ningún departamento ni posición coincide con «{search.trim()}». Cambia la búsqueda
+                  o agrégala.
+                </Trans>
+              </p>
+            ) : (
+              <div className="flex flex-col gap-5">
+                {sections.map(({ department, positions, visiblePositions }) => (
+                  <section key={department.id} aria-labelledby={`dept-${department.id}`}>
+                    {/* El departamento es la sección; sus posiciones, las filas. La
+                        cabecera lleva las acciones del departamento y el alta de
+                        posición ya con el departamento elegido. */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2
+                        id={`dept-${department.id}`}
+                        className="text-xs font-bold tracking-wide text-ink-3 uppercase"
+                      >
+                        {department.name}
+                      </h2>
+                      <span className="text-xs text-ink-4">
+                        <Plural
+                          value={positions.length}
+                          _0="sin posiciones"
+                          one="# posición"
+                          other="# posiciones"
+                        />
+                      </span>
+                      <div className="ml-auto flex items-center gap-1">
+                        <Button
+                          variant="secondary"
+                          className="px-3 py-1 text-xs"
+                          onClick={() => {
+                            setEditor({
+                              catalog: 'positions',
+                              noun: msg`posición`,
+                              item: null,
+                              presetDepartmentId: department.id,
+                            })
+                          }}
+                        >
+                          <Trans>Agregar posición</Trans>
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          className="px-3 py-1 text-xs"
+                          onClick={() => {
+                            setEditor({
+                              catalog: 'hotel-departments',
+                              noun: msg`departamento`,
+                              item: department,
+                            })
+                          }}
+                        >
+                          <Trans>Renombrar</Trans>
+                        </Button>
+                        <button
+                          type="button"
+                          aria-label={t`Eliminar ${department.name}`}
+                          title={t`Eliminar departamento`}
+                          onClick={() => {
+                            setPendingDelete({
+                              catalog: 'hotel-departments',
+                              noun: msg`departamento`,
+                              item: department,
+                            })
+                          }}
+                          className="cursor-pointer rounded-md p-1.5 text-ink-3 transition-colors hover:bg-surface-2 hover:text-red"
+                        >
+                          <MaterialIcon name="delete" className="text-lg" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {visiblePositions.length === 0 ? (
+                      <p className="mt-2 rounded-lg border border-dashed border-line bg-surface px-5 py-4 text-sm text-ink-3">
+                        {positions.length === 0 ? (
+                          <Trans>
+                            Sin posiciones: mientras no tenga, nadie puede pedir personal de este
+                            departamento.
+                          </Trans>
+                        ) : (
+                          <Trans>
+                            Ninguna posición de {department.name} coincide con «{search.trim()}».
+                          </Trans>
+                        )}
+                      </p>
+                    ) : (
+                      <ul className="mt-2 overflow-hidden rounded-lg border border-line bg-surface">
+                        {visiblePositions.map((position) => (
+                          <li
+                            key={position.id}
+                            className="flex items-center gap-3 border-b border-line px-5 py-3 last:border-b-0"
+                          >
+                            <MaterialIcon name="badge" className="text-lg text-ink-4" aria-hidden />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold text-ink">
+                                {position.name}
+                              </p>
+                              {IS_DEV_UI && (
+                                <p className="text-xs">
+                                  <code className="text-ink-4">{position.code}</code>
+                                </p>
+                              )}
+                            </div>
+                            <Button
+                              variant="secondary"
+                              onClick={() => {
+                                setEditor({
+                                  catalog: 'positions',
+                                  noun: msg`posición`,
+                                  item: position,
+                                })
+                              }}
+                            >
+                              <Trans>Renombrar</Trans>
+                            </Button>
+                            <button
+                              type="button"
+                              aria-label={t`Eliminar ${position.name}`}
+                              title={t`Eliminar posición`}
+                              onClick={() => {
+                                setPendingDelete({
+                                  catalog: 'positions',
+                                  noun: msg`posición`,
+                                  item: position,
+                                })
+                              }}
+                              className="cursor-pointer rounded-md p-1.5 text-ink-3 transition-colors hover:bg-surface-2 hover:text-red"
+                            >
+                              <MaterialIcon name="delete" className="text-lg" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                ))}
+              </div>
+            )
+          ) : isReasonsTab ? (
+            data.reasons.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+                <Trans>
+                  Todavía no hay motivos. Agrega el primero desde el semáforo al que pertenece.
+                </Trans>
+              </p>
+            ) : reasonSections.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+                <Trans>
+                  Ningún semáforo ni motivo coincide con «{search.trim()}». Cambia la búsqueda o
+                  agrégalo.
+                </Trans>
+              </p>
+            ) : (
+              <div className="flex flex-col gap-5">
+                {reasonSections.map(({ statusLight, reasons, visibleReasons }) => (
+                  <section key={statusLight.code} aria-labelledby={`light-${statusLight.code}`}>
+                    {/* El semáforo es la sección; sus motivos, las filas — un motivo
+                        suelto no dice cuándo aplica. */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2
+                        id={`light-${statusLight.code}`}
+                        className="text-xs font-bold tracking-wide text-ink-3 uppercase"
+                      >
+                        {statusLight.name}
+                      </h2>
+                      <span className="text-xs text-ink-4">
+                        <Plural
+                          value={reasons.length}
+                          _0="sin motivos"
+                          one="# motivo"
+                          other="# motivos"
+                        />
+                      </span>
+                      <div className="ml-auto flex items-center gap-1">
+                        <Button
+                          variant="secondary"
+                          className="px-3 py-1 text-xs"
+                          onClick={() => {
+                            setEditor({
+                              catalog: 'reasons',
+                              noun: msg`motivo`,
+                              item: null,
+                              presetStatusLightCode: statusLight.code,
+                            })
+                          }}
+                        >
+                          <Trans>Agregar motivo</Trans>
+                        </Button>
+                      </div>
+                    </div>
+
+                    {visibleReasons.length === 0 ? (
+                      <p className="mt-2 rounded-lg border border-dashed border-line bg-surface px-5 py-4 text-sm text-ink-3">
+                        {reasons.length === 0 ? (
+                          <Trans>
+                            Sin motivos: quien cierre o rechace en este semáforo no tendrá de dónde
+                            elegir.
+                          </Trans>
+                        ) : (
+                          <Trans>
+                            Ningún motivo de {statusLight.name} coincide con «{search.trim()}».
+                          </Trans>
+                        )}
+                      </p>
+                    ) : (
+                      <ul className="mt-2 overflow-hidden rounded-lg border border-line bg-surface">
+                        {visibleReasons.map((reason) => (
+                          <li
+                            key={reason.id}
+                            className="flex items-center gap-3 border-b border-line px-5 py-3 last:border-b-0"
+                          >
+                            <MaterialIcon
+                              name="unpublished"
+                              className="text-lg text-ink-4"
+                              aria-hidden
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold text-ink">
+                                {reason.name}
+                              </p>
+                              {IS_DEV_UI && (
+                                <p className="text-xs">
+                                  <code className="text-ink-4">{reason.code}</code>
+                                </p>
+                              )}
+                            </div>
+                            <Button
+                              variant="secondary"
+                              onClick={() => {
+                                setEditor({ catalog: 'reasons', noun: msg`motivo`, item: reason })
+                              }}
+                            >
+                              <Trans>Renombrar</Trans>
+                            </Button>
+                            <button
+                              type="button"
+                              aria-label={t`Eliminar ${reason.name}`}
+                              title={t`Eliminar motivo`}
+                              onClick={() => {
+                                setPendingDelete({
+                                  catalog: 'reasons',
+                                  noun: msg`motivo`,
+                                  item: reason,
+                                })
+                              }}
+                              className="cursor-pointer rounded-md p-1.5 text-ink-3 transition-colors hover:bg-surface-2 hover:text-red"
+                            >
+                              <MaterialIcon name="delete" className="text-lg" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                ))}
+              </div>
+            )
+          ) : rows.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+              <Trans>
+                Este catálogo está vacío. Agrega su primera fila con el botón de arriba.
+              </Trans>
+            </p>
+          ) : visibleRows.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+              <Trans>
+                Ninguna fila coincide con «{search.trim()}». Cambia la búsqueda o agrégala.
+              </Trans>
+            </p>
+          ) : (
+            <ul className="overflow-hidden rounded-lg border border-line bg-surface">
+              {visibleRows.map((row) => (
+                <li
+                  key={row.id}
+                  className="flex items-center gap-3 border-b border-line px-5 py-3 last:border-b-0"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-ink">{row.name}</p>
+                    {IS_DEV_UI && (
+                      <p className="text-xs">
+                        <code className="text-ink-4">{row.code}</code>
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      if (tab) setEditor({ catalog: tab.catalog, noun: tab.noun, item: row })
+                    }}
+                  >
+                    <Trans>Renombrar</Trans>
+                  </Button>
+                  <button
+                    type="button"
+                    aria-label={t`Eliminar ${row.name}`}
+                    title={t`Eliminar ${tab ? i18n._(tab.noun) : ''}`}
+                    onClick={() => {
+                      if (tab) setPendingDelete({ catalog: tab.catalog, noun: tab.noun, item: row })
+                    }}
+                    className="cursor-pointer rounded-md p-1.5 text-ink-3 transition-colors hover:bg-surface-2 hover:text-red"
+                  >
+                    <MaterialIcon name="delete" className="text-lg" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+
+      <Modal
+        isOpen={isIntroOpen}
+        onClose={dismissIntro}
+        title={t`Cómo funcionan los Catálogos`}
+        chromeless
+        className="max-w-2xl"
+      >
+        <OnboardingIntro
+          slides={INTRO_SLIDES.map((slide) => ({
+            image: slide.image,
+            title: i18n._(slide.title),
+            text: i18n._(slide.text),
+          }))}
+          startLabel={t`Ir a Catálogos`}
+          onDone={dismissIntro}
+        />
+      </Modal>
+
+      {editor !== null && data && (
+        <CatalogItemDialog
+          editor={editor}
+          departments={data.departments}
+          statusLights={data.statusLights}
+          onClose={() => {
+            setEditor(null)
+          }}
+        />
+      )}
+
+      {pendingDelete !== null && (
+        <DeleteCatalogItemDialog
+          pending={pendingDelete}
+          onClose={() => {
+            setPendingDelete(null)
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+/** Una pestaña de la fila; comparte estilo entre los catálogos operativos y Reactivos. */
+function TabButton({
+  label,
+  isActive,
+  onSelect,
+}: {
+  label: string
+  isActive: boolean
+  onSelect: () => void
+}): ReactNode {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={isActive}
+      onClick={onSelect}
+      className={cn(
+        'cursor-pointer rounded-full border px-4 py-1.5 text-sm font-semibold transition-colors',
+        isActive
+          ? 'border-o-500 bg-o-500 text-ink'
+          : 'border-line bg-surface text-ink-2 hover:bg-surface-2',
+      )}
+    >
+      {label}
+    </button>
+  )
+}
+
+/** Alta o renombrado de una fila; las posiciones eligen además su departamento, los motivos su semáforo. */
+function CatalogItemDialog({
+  editor,
+  departments,
+  statusLights,
+  onClose,
+}: {
+  editor: EditorState
+  departments: AdminCatalogItem[]
+  statusLights: AdminStatusLight[]
+  onClose: () => void
+}): ReactNode {
+  const { t, i18n } = useLingui()
+  const [name, setName] = useState(editor.item?.name ?? '')
+  const [departmentId, setDepartmentId] = useState(
+    editor.item?.hotelDepartmentId ?? editor.presetDepartmentId ?? '',
+  )
+  const [statusLightCode, setStatusLightCode] = useState(
+    editor.item?.statusLightCode ?? editor.presetStatusLightCode ?? '',
+  )
+  const [error, setError] = useState<string | null>(null)
+  const [createItem, { isLoading: isCreating }] = useCreateCatalogItemMutation()
+  const [updateItem, { isLoading: isUpdating }] = useUpdateCatalogItemMutation()
+
+  const isPosition = editor.catalog === 'positions'
+  const isReason = editor.catalog === 'reasons'
+  const isBusy = isCreating || isUpdating
+  const canSave =
+    name.trim() !== '' &&
+    (!isPosition || departmentId !== '') &&
+    (!isReason || statusLightCode !== '')
+
+  async function save(): Promise<void> {
+    setError(null)
+    try {
+      if (editor.item === null) {
+        await createItem({
+          catalog: editor.catalog,
+          name: name.trim(),
+          ...(isPosition ? { hotelDepartmentId: departmentId } : {}),
+          ...(isReason ? { statusLightCode } : {}),
+        }).unwrap()
+        toast.success(t`Se agregó «${name.trim()}»`)
+      } else {
+        await updateItem({
+          catalog: editor.catalog,
+          id: editor.item.id,
+          name: name.trim(),
+          ...(isPosition && departmentId !== '' ? { hotelDepartmentId: departmentId } : {}),
+          ...(isReason && statusLightCode !== '' ? { statusLightCode } : {}),
+        }).unwrap()
+        toast.success(t`Catálogo actualizado`)
+      }
+      onClose()
+    } catch (saveError) {
+      setError(
+        apiErrorMessage(saveError, {
+          byCode: {
+            CATALOG_NAME_TAKEN: t`Ya existe una fila con ese nombre en este catálogo.`,
+            DEPARTMENT_REQUIRED: t`Una posición pertenece a un departamento: elige a cuál.`,
+            STATUS_LIGHT_REQUIRED: t`Un motivo pertenece a un semáforo: elige a cuál.`,
+            STATUS_LIGHT_UNKNOWN: t`Ese semáforo no existe.`,
+          },
+          fallback: t`No se pudo guardar. Revisa el nombre e inténtalo de nuevo.`,
+        }),
+      )
+    }
+  }
+
+  return (
+    <Modal
+      isOpen
+      onClose={onClose}
+      title={
+        editor.item === null
+          ? t`Agregar ${i18n._(editor.noun)}`
+          : t`Renombrar ${i18n._(editor.noun)}`
+      }
+      footer={
+        <>
+          <Button onClick={onClose} disabled={isBusy}>
+            <Trans>Cancelar</Trans>
+          </Button>
+          <Button
+            variant="primary"
+            disabled={!canSave || isBusy}
+            onClick={() => {
+              void save()
+            }}
+          >
+            {isBusy ? <Trans>Guardando…</Trans> : <Trans>Guardar</Trans>}
+          </Button>
+        </>
+      }
+    >
+      <label className="flex flex-col gap-1.5">
+        <span className="text-sm font-medium text-ink-2">
+          <Trans>Nombre</Trans>
+        </span>
+        <input
+          value={name}
+          onChange={(event) => {
+            setName(event.target.value)
+          }}
+          maxLength={80}
+          placeholder={t`P. ej. Steward`}
+          className="rounded-md border border-line bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none"
+        />
+      </label>
+
+      {isPosition && (
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium text-ink-2">
+            <Trans>Departamento</Trans>
+          </span>
+          <Select
+            {...(departmentId ? { value: departmentId } : {})}
+            onValueChange={setDepartmentId}
+          >
+            <SelectTrigger aria-label={t`Departamento de la posición`} className="w-full">
+              <SelectValue placeholder={t`Elige el departamento`} />
+            </SelectTrigger>
+            <SelectContent>
+              {departments.map((department) => (
+                <SelectItem key={department.id} value={department.id}>
+                  {department.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </label>
+      )}
+
+      {isReason && (
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium text-ink-2">
+            <Trans>Semáforo</Trans>
+          </span>
+          <Select
+            {...(statusLightCode ? { value: statusLightCode } : {})}
+            onValueChange={setStatusLightCode}
+          >
+            <SelectTrigger aria-label={t`Semáforo del motivo`} className="w-full">
+              <SelectValue placeholder={t`Elige el semáforo`} />
+            </SelectTrigger>
+            <SelectContent>
+              {statusLights.map((statusLight) => (
+                <SelectItem key={statusLight.code} value={statusLight.code}>
+                  {statusLight.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </label>
+      )}
+
+      {error !== null && (
+        <p role="alert" className="rounded-md bg-red/10 px-3 py-2 text-sm text-red">
+          {error}
+        </p>
+      )}
+    </Modal>
+  )
+}
+
+/** Confirmación de borrado: se elimina de verdad, y lo usado lo frena el back. */
+function DeleteCatalogItemDialog({
+  pending,
+  onClose,
+}: {
+  pending: { catalog: ManagedCatalog; noun: MessageDescriptor; item: AdminCatalogItem }
+  onClose: () => void
+}): ReactNode {
+  const { t, i18n } = useLingui()
+  const [error, setError] = useState<string | null>(null)
+  const [deleteItem, { isLoading }] = useDeleteCatalogItemMutation()
+
+  async function remove(): Promise<void> {
+    setError(null)
+    try {
+      await deleteItem({ catalog: pending.catalog, id: pending.item.id }).unwrap()
+      toast.success(t`Se eliminó «${pending.item.name}»`)
+      onClose()
+    } catch (deleteError) {
+      setError(
+        apiErrorMessage(deleteError, {
+          byCode: {
+            CATALOG_IN_USE: t`Está en uso: hay requisiciones, posiciones o colaboradores colgando de esta fila. Elimina o reasigna eso primero.`,
+          },
+          fallback: t`No se pudo eliminar. Inténtalo de nuevo.`,
+        }),
+      )
+    }
+  }
+
+  return (
+    <Modal
+      isOpen
+      onClose={onClose}
+      title={t`Eliminar ${i18n._(pending.noun)}`}
+      footer={
+        <>
+          <Button onClick={onClose} disabled={isLoading}>
+            <Trans>Cancelar</Trans>
+          </Button>
+          <Button
+            variant="primary"
+            disabled={isLoading}
+            onClick={() => {
+              void remove()
+            }}
+          >
+            {isLoading ? <Trans>Eliminando…</Trans> : <Trans>Sí, eliminar</Trans>}
+          </Button>
+        </>
+      }
+    >
+      <p className="text-sm text-ink-2">
+        <Trans>
+          «{pending.item.name}» se elimina de verdad — no se archiva. Si algo del sistema lo está
+          usando, el propio sistema lo va a impedir y te lo dirá aquí.
+        </Trans>
+      </p>
+      {error !== null && (
+        <p role="alert" className="rounded-md bg-red/10 px-3 py-2 text-sm text-red">
+          {error}
+        </p>
+      )}
+    </Modal>
+  )
+}

@@ -1,0 +1,391 @@
+import { Trans, useLingui } from '@lingui/react/macro'
+import { StatusLightBadge } from '@oranje/ui'
+import { useState, type ReactNode } from 'react'
+import { Link, useParams } from 'react-router'
+
+import { useDeleteContactAttemptMutation, useGetProspectQuery } from '../api/onboardingApi'
+import { useGetProposalWorkspaceQuery } from '../api/proposalsApi'
+import { ArchiveCycleDialog } from '../components/ArchiveCycleDialog'
+import { ChangeStatusDialog } from '../components/ChangeStatusDialog'
+import { ContactAttemptLog } from '../components/ContactAttemptLog'
+import { ContractStepCard } from '../components/ContractStepCard'
+import { HotelContactList } from '../components/HotelContactList'
+import { HotelContactsDialog } from '../components/HotelContactsDialog'
+import { HotelDataCard } from '../components/HotelDataCard'
+import { HotelPunchQrCard } from '../components/HotelPunchQrCard'
+import { ProposalVersionList } from '../components/ProposalVersionList'
+import { ProspectFormDialog } from '../components/ProspectFormDialog'
+import { RegisterAttemptDialog } from '../components/RegisterAttemptDialog'
+import { StatusTimeline } from '../components/StatusTimeline'
+import type { ContactAttempt } from '../types/prospect.types'
+
+/**
+ * Desde dónde tiene sentido armar el contrato: el vault lo crea en Amarillo
+ * (el hotel ya vio la propuesta) y se sigue trabajando en Rosa, mientras se
+ * negocian los términos.
+ */
+const CONTRACT_STATUSES = new Set(['YELLOW', 'PINK', 'BROWN'])
+
+import { useGetSessionQuery } from '@/app/sessionApi'
+import conversionNaranja from '@/assets/ilustrations/conversion_naranja.svg'
+import { Button } from '@/shared/components/Button'
+import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
+import { NoticeCard } from '@/shared/components/NoticeCard'
+import {
+  isTerminalStatus,
+  ONBOARDING_STATUS_LABEL,
+  ONBOARDING_STATUS_TOKEN,
+} from '@/shared/constants/onboardingStatus'
+import { formatDate } from '@/shared/lib/formatters'
+
+/** Botón secundario SOBRE la foto: pastilla translúcida oscura, texto blanco. */
+const HERO_GHOST_BUTTON =
+  'inline-flex cursor-pointer items-center justify-center rounded-md bg-white/15 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white'
+
+export function ProspectDetailPage(): ReactNode {
+  const { t } = useLingui()
+  const { prospectId = '' } = useParams()
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false)
+  const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
+  const [attemptToEdit, setAttemptToEdit] = useState<ContactAttempt | null>(null)
+  const { data: session } = useGetSessionQuery()
+  const [deleteAttempt] = useDeleteContactAttemptMutation()
+  const [isAttemptDialogOpen, setIsAttemptDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [areContactsOpen, setAreContactsOpen] = useState(false)
+  /** La URL guardada de Places pudo caducar (getUrl es efímera): hero sin foto. */
+  const [isPhotoDead, setPhotoDead] = useState(false)
+
+  const {
+    data: prospect,
+    isLoading,
+    isError,
+  } = useGetProspectQuery(prospectId, { skip: prospectId === '' })
+
+  /**
+   * Las propuestas se piden aparte, al mismo endpoint que usa el editor. Es una
+   * petición más, pero evita que la ficha y el editor muestren versiones
+   * distintas del mismo hotel.
+   */
+  const { data: proposals, isLoading: areProposalsLoading } = useGetProposalWorkspaceQuery(
+    prospectId,
+    { skip: prospectId === '' },
+  )
+
+  if (isLoading) {
+    return <DetailSkeleton />
+  }
+
+  if (isError || !prospect) {
+    return (
+      <div className="flex flex-col items-start gap-4 rounded-lg border border-line bg-surface p-6">
+        <p className="text-sm text-red">
+          <Trans>
+            Este prospecto no existe o ya no está disponible. Vuelve al Pipeline y elige otro.
+          </Trans>
+        </p>
+        <Link to="/pipeline" className="text-sm font-semibold text-o-700 hover:underline">
+          <Trans>Volver al Pipeline</Trans>
+        </Link>
+      </div>
+    )
+  }
+
+  const statusLabel = ONBOARDING_STATUS_LABEL[prospect.status]
+  const terminalTitle = isTerminalStatus(prospect.status)
+    ? t`${statusLabel} es un estado final: el ciclo ya no cambia de estado`
+    : undefined
+  const editHotelDataLabel = t`Editar datos del hotel`
+  const archiveCycleTitle = t`Cierra el ciclo definitivamente y libera al hotel`
+
+  return (
+    <div className="flex flex-col gap-6">
+      <nav aria-label="Ruta" className="flex items-center gap-2 text-sm text-ink-3">
+        <Link to="/pipeline" className="hover:text-o-700">
+          <Trans>Pipeline</Trans>
+        </Link>
+        <span aria-hidden>›</span>
+        <span className="text-ink-2">{prospect.hotelName}</span>
+      </nav>
+
+      {/* Con foto: hero al estilo Netflix — la foto manda, el velo oscuro
+          sostiene el texto blanco y las ACCIONES viven bajo el título, como
+          la fila de Play. Nada flota suelto sobre la foto (en móvil no cabía). */}
+      {prospect.hotel.photoUrl && !isPhotoDead ? (
+        <header className="relative overflow-hidden rounded-xl bg-ink">
+          <img
+            src={prospect.hotel.photoUrl}
+            alt={t`Foto de ${prospect.hotelName} según Google`}
+            className="absolute inset-0 size-full object-cover"
+            onError={() => {
+              setPhotoDead(true)
+            }}
+          />
+          <div
+            aria-hidden
+            className="absolute inset-0 bg-gradient-to-t from-ink via-ink/55 to-ink/5"
+          />
+
+          <div className="relative flex min-h-72 flex-col justify-end p-3 sm:min-h-80 sm:p-4">
+            {/* El panel de vidrio oscuro: el mismo del hero de Inicio y de las tarjetas. */}
+            <div className="rounded-2xl bg-white/15 p-4 backdrop-blur-sm sm:max-w-2xl sm:p-5">
+              <StatusLightBadge
+                token={ONBOARDING_STATUS_TOKEN[prospect.status]}
+                label={statusLabel}
+                className="w-fit"
+              />
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-white drop-shadow-sm sm:text-4xl">
+                {prospect.hotelName}
+              </h1>
+              <p className="mt-1.5 text-sm text-white/85">
+                <Trans>
+                  Ciclo abierto desde {formatDate(prospect.cycleStartedAt)} ·{' '}
+                  {prospect.daysInStatus} días en {statusLabel} · Dueño: {prospect.owner.name}
+                </Trans>
+              </p>
+
+              {/*
+              Un estado terminal no tiene a dónde ir: `NARANJA` es un cliente
+              activo y `ROJO` un rechazo, y ninguno declara transiciones. Abrir
+              el diálogo solo para enseñar una lista vacía es peor que no
+              ofrecerlo.
+            */}
+              <div className="mt-4 flex flex-wrap items-center gap-2.5">
+                <Button
+                  variant="primary"
+                  disabled={isTerminalStatus(prospect.status)}
+                  title={terminalTitle}
+                  onClick={() => {
+                    setIsStatusDialogOpen(true)
+                  }}
+                >
+                  <Trans>Cambiar estado</Trans>
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAttemptDialogOpen(true)
+                  }}
+                  className={HERO_GHOST_BUTTON}
+                >
+                  <Trans>Registrar intento</Trans>
+                </button>
+                {prospect.status !== 'ORANGE' && (
+                  <button
+                    type="button"
+                    title={archiveCycleTitle}
+                    onClick={() => {
+                      setIsArchiveDialogOpen(true)
+                    }}
+                    className={HERO_GHOST_BUTTON}
+                  >
+                    <Trans>Archivar ciclo</Trans>
+                  </button>
+                )}
+                {/* Abre el MISMO modal del alta, en modo edición: un solo formulario. */}
+                <button
+                  type="button"
+                  aria-label={editHotelDataLabel}
+                  title={editHotelDataLabel}
+                  onClick={() => {
+                    setIsEditDialogOpen(true)
+                  }}
+                  className={`${HERO_GHOST_BUTTON} px-2.5`}
+                >
+                  <span className="material-icons-outlined text-xl leading-none" aria-hidden>
+                    edit
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+      ) : (
+        <header className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-3xl font-bold tracking-tight text-ink">{prospect.hotelName}</h1>
+              <StatusLightBadge
+                token={ONBOARDING_STATUS_TOKEN[prospect.status]}
+                label={statusLabel}
+              />
+            </div>
+            <p className="mt-1.5 text-sm text-ink-3">
+              <Trans>
+                Ciclo abierto desde {formatDate(prospect.cycleStartedAt)} · {prospect.daysInStatus}{' '}
+                días en {statusLabel} · Dueño: {prospect.owner.name}
+              </Trans>
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Abre el MISMO modal del alta, en modo edición: un solo formulario. */}
+            <button
+              type="button"
+              aria-label={editHotelDataLabel}
+              title={editHotelDataLabel}
+              onClick={() => {
+                setIsEditDialogOpen(true)
+              }}
+              className="flex size-10 shrink-0 items-center justify-center rounded-md border border-line text-ink-3 transition-colors hover:bg-surface-2 hover:text-o-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
+            >
+              <span className="material-icons-outlined text-xl leading-none" aria-hidden>
+                edit
+              </span>
+            </button>
+            <Button
+              onClick={() => {
+                setIsAttemptDialogOpen(true)
+              }}
+            >
+              <Trans>Registrar intento</Trans>
+            </Button>
+            {/*
+            Un estado terminal no tiene a dónde ir: `NARANJA` es un cliente
+            activo y `ROJO` un rechazo, y ninguno declara transiciones. Abrir el
+            diálogo solo para enseñar una lista vacía es peor que no ofrecerlo.
+          */}
+            <Button
+              variant="primary"
+              disabled={isTerminalStatus(prospect.status)}
+              title={terminalTitle}
+              onClick={() => {
+                setIsStatusDialogOpen(true)
+              }}
+            >
+              <Trans>Cambiar estado</Trans>
+            </Button>
+            {prospect.status !== 'ORANGE' && (
+              <Button
+                variant="secondary"
+                title={archiveCycleTitle}
+                onClick={() => {
+                  setIsArchiveDialogOpen(true)
+                }}
+              >
+                <Trans>Archivar ciclo</Trans>
+              </Button>
+            )}
+          </div>
+        </header>
+      )}
+
+      {/* Quién sigue: en Rosa el ciclo pasa a manos del BDC (RR-V-01/02). */}
+      {prospect.status === 'PINK' && (
+        <NoticeCard image={conversionNaranja} title={t`Convertir es del BDC`} role="status">
+          {/* «Conversión» lleva a la conversión DE ESTE hotel, no a la cola:
+              quien lee esto ya está en su ficha y lo que quiere es seguir. */}
+          <Trans>
+            El Documento de T&C ya se negocia. El BDC aprueba la conversión desde{' '}
+            <Link
+              to={`/conversion/${prospect.id}`}
+              className="font-semibold text-o-700 hover:underline"
+            >
+              Conversión
+            </Link>{' '}
+            y el hotel pasa a Naranja, listo para pedir personal.
+          </Trans>
+        </NoticeCard>
+      )}
+
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="flex flex-col gap-5">
+          <HotelDataCard hotel={prospect.hotel} needDescription={prospect.needDescription} />
+          <HotelPunchQrCard
+            hotelId={prospect.hotel.id}
+            punchMethod={prospect.hotel.punchMethod}
+            punchQr={prospect.hotel.punchQr}
+          />
+          <ContactAttemptLog
+            attempts={prospect.attempts}
+            sessionUserId={session?.id}
+            onEdit={(attempt) => {
+              setAttemptToEdit(attempt)
+              setIsAttemptDialogOpen(true)
+            }}
+            onDelete={(attempt) => {
+              void deleteAttempt({ prospectId: prospect.id, attemptId: attempt.id })
+            }}
+          />
+          <ProposalVersionList
+            prospectId={prospect.id}
+            hotelName={prospect.hotelName}
+            versions={proposals?.versions ?? []}
+            isLoading={areProposalsLoading}
+          />
+
+          {/* De Amarillo en adelante el siguiente papel es el contrato, y se
+              arma con el cuadro de la propuesta que el hotel ya vio. */}
+          {CONTRACT_STATUSES.has(prospect.status) && (
+            <ContractStepCard
+              hotel={{
+                id: prospect.hotel.id,
+                name: prospect.hotelName,
+                photoUrl: prospect.hotel.photoUrl,
+              }}
+              versions={proposals?.versions ?? []}
+            />
+          )}
+        </div>
+
+        <div className="flex flex-col gap-5">
+          <HotelContactList
+            contacts={prospect.contacts}
+            onEdit={() => {
+              setAreContactsOpen(true)
+            }}
+          />
+          <StatusTimeline history={prospect.history} />
+        </div>
+      </div>
+
+      <ProspectFormDialog
+        isOpen={isEditDialogOpen}
+        onClose={() => {
+          setIsEditDialogOpen(false)
+        }}
+        prospect={prospect}
+      />
+
+      <HotelContactsDialog
+        isOpen={areContactsOpen}
+        onClose={() => {
+          setAreContactsOpen(false)
+        }}
+        prospectId={prospect.id}
+        hotelName={prospect.hotelName}
+        contacts={prospect.contacts}
+      />
+
+      <RegisterAttemptDialog
+        isOpen={isAttemptDialogOpen}
+        onClose={() => {
+          setIsAttemptDialogOpen(false)
+          setAttemptToEdit(null)
+        }}
+        prospectId={prospect.id}
+        hotelName={prospect.hotelName}
+        contacts={prospect.contacts}
+        {...(attemptToEdit ? { attempt: attemptToEdit } : {})}
+      />
+
+      <ChangeStatusDialog
+        isOpen={isStatusDialogOpen}
+        onClose={() => {
+          setIsStatusDialogOpen(false)
+        }}
+        prospectId={prospect.id}
+        hotelName={prospect.hotelName}
+        currentStatus={prospect.status}
+      />
+
+      <ArchiveCycleDialog
+        isOpen={isArchiveDialogOpen}
+        onClose={() => {
+          setIsArchiveDialogOpen(false)
+        }}
+        prospectId={prospect.id}
+        hotelName={prospect.hotelName}
+      />
+    </div>
+  )
+}

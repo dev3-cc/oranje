@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "oranjeapp-gcp",
+    "staging": "oranjeapp-gcp",
+    "production": "oranje-prod"
+  }
+}

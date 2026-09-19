@@ -1,0 +1,444 @@
+import { Injectable } from '@nestjs/common'
+import { Prisma } from '@prisma/client'
+import { v7 as uuidv7 } from 'uuid'
+
+import { PrismaService } from '../../../infra/prisma/index.js'
+
+export const REQUISITION_LIGHT = 'REQUISITION'
+export const COVERAGE_LIGHT = 'POSITION_COVERAGE'
+export const URGENCY_LIGHT = 'URGENCY'
+
+const STATUS = { code: true, color: true, name: true } as const
+
+const SELECT = {
+  id: true,
+  number: true,
+  areaManagerUserId: true,
+  createdBy: true,
+  authorizedBy: true,
+  authorizedAt: true,
+  inspectorId: true,
+  createdAt: true,
+  updatedAt: true,
+  hotel: { select: { id: true, name: true, photoRef: true, zoneId: true } },
+  creator: { select: { id: true, fullName: true, photoPath: true } },
+  statusState: { select: STATUS },
+  positions: {
+    where: { deletedAt: null },
+    orderBy: { lineNumber: 'asc' },
+    select: {
+      id: true,
+      lineNumber: true,
+      quantity: true,
+      startDate: true,
+      startTime: true,
+      notes: true,
+      catalogPosition: { select: { id: true, code: true, name: true } },
+      hiringModality: { select: { id: true, code: true, name: true } },
+      englishLevel: { select: { id: true, code: true, name: true } },
+      hotelDepartment: { select: { id: true, code: true, name: true } },
+      coverageState: { select: STATUS },
+      urgencyState: { select: STATUS },
+      slots: { select: { status: true } },
+    },
+  },
+} as const
+
+export type RequisitionRow = Prisma.RequisitionGetPayload<{ select: typeof SELECT }>
+
+const JOURNAL_SELECT = {
+  id: true,
+  eventType: true,
+  actorRole: true,
+  payload: true,
+  occurredAt: true,
+  actor: { select: { fullName: true } },
+} as const
+
+export type JournalRow = Prisma.JournalEntryGetPayload<{ select: typeof JOURNAL_SELECT }>
+
+export interface NewPosition {
+  catalogPositionId: string
+  hiringModalityId: string
+  hotelDepartmentId: string
+  englishLevelId: string | null
+  quantity: number
+  startDate: Date
+  startTime: string | null
+  notes: string | null
+}
+
+export interface RequisitionFilter {
+  page: number
+  limit: number
+  state?: string | undefined
+  hotelId?: string | undefined
+  departmentId?: string | undefined
+  urgency?: string | undefined
+  includeDeleted: boolean
+}
+
+@Injectable()
+export class RequisitionsRepository {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async stateByCode(light: string, code: string): Promise<{ id: string } | null> {
+    return this.prisma.statusLightState.findFirst({
+      where: { code, statusLightCode: light },
+      select: { id: true },
+    })
+  }
+
+  async hotelExists(hotelId: string): Promise<boolean> {
+    return (await this.prisma.hotel.count({ where: { id: hotelId } })) > 0
+  }
+
+  async catalogPositions(ids: string[]): Promise<Set<string>> {
+    const rows = await this.prisma.catalogPosition.findMany({
+      where: { id: { in: ids } },
+      select: { id: true },
+    })
+
+    return new Set(rows.map((r) => r.id))
+  }
+
+  async modalities(ids: string[]): Promise<Set<string>> {
+    const rows = await this.prisma.hiringModality.findMany({
+      where: { id: { in: ids } },
+      select: { id: true },
+    })
+
+    return new Set(rows.map((r) => r.id))
+  }
+
+  async departments(ids: string[]): Promise<Set<string>> {
+    const rows = await this.prisma.hotelDepartment.findMany({
+      where: { id: { in: ids } },
+      select: { id: true },
+    })
+
+    return new Set(rows.map((r) => r.id))
+  }
+
+  async englishLevels(ids: string[]): Promise<Set<string>> {
+    const rows = await this.prisma.englishLevel.findMany({
+      where: { id: { in: ids } },
+      select: { id: true },
+    })
+
+    return new Set(rows.map((r) => r.id))
+  }
+
+  async findById(id: string): Promise<RequisitionRow | null> {
+    return this.prisma.requisition.findUnique({ where: { id }, select: SELECT })
+  }
+
+  async findMany(
+    filter: RequisitionFilter,
+    hotelIds: string[] | null,
+    departmentId: string | null,
+    /** Estados que el caller NO puede ver (la cola de la Reclutadora excluye el borrador). */
+    excludeStates: string[] | null = null,
+  ): Promise<{ rows: RequisitionRow[]; total: number }> {
+    const where: Prisma.RequisitionWhereInput = {
+      ...(filter.includeDeleted ? {} : { deletedAt: null }),
+      /** `state` y `excludeStates` conviven: pedir un estado excluido da vacío, no un bypass. */
+      ...(filter.state ? { statusState: { code: filter.state } } : {}),
+      ...(excludeStates ? { AND: [{ statusState: { code: { notIn: excludeStates } } }] } : {}),
+      ...(filter.hotelId ? { hotelId: filter.hotelId } : {}),
+      ...(hotelIds ? { hotelId: { in: hotelIds } } : {}),
+      ...(filter.departmentId || departmentId
+        ? { positions: { some: { hotelDepartmentId: filter.departmentId ?? departmentId ?? '' } } }
+        : {}),
+      ...(filter.urgency
+        ? { positions: { some: { urgencyState: { code: filter.urgency } } } }
+        : {}),
+    }
+
+    const [rows, total] = await Promise.all([
+      this.prisma.requisition.findMany({
+        where,
+        select: SELECT,
+        orderBy: { createdAt: 'desc' },
+        skip: (filter.page - 1) * filter.limit,
+        take: filter.limit,
+      }),
+      this.prisma.requisition.count({ where }),
+    ])
+
+    return { rows, total }
+  }
+
+  async create(params: {
+    number: string
+    hotelId: string
+    stateId: string
+    coverageStateId: string
+    areaManagerUserId: string | null
+    positions: NewPosition[]
+    userId: string
+    roleCode: string
+  }): Promise<RequisitionRow> {
+    const id = uuidv7()
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.requisition.create({
+        data: {
+          id,
+          number: params.number,
+          hotelId: params.hotelId,
+          statusLightStateId: params.stateId,
+          statusLightCode: REQUISITION_LIGHT,
+          areaManagerUserId: params.areaManagerUserId,
+          createdBy: params.userId,
+          updatedBy: params.userId,
+        },
+      })
+
+      for (const [index, p] of params.positions.entries()) {
+        const positionId = uuidv7()
+
+        await tx.position.create({
+          data: {
+            id: positionId,
+            requisitionId: id,
+            lineNumber: index + 1,
+            catalogPositionId: p.catalogPositionId,
+            hiringModalityId: p.hiringModalityId,
+            hotelDepartmentId: p.hotelDepartmentId,
+            englishLevelId: p.englishLevelId,
+            quantity: p.quantity,
+            startDate: p.startDate,
+            ...(p.startTime ? { startTime: new Date(`1970-01-01T${p.startTime}:00Z`) } : {}),
+            notes: p.notes,
+            coverageStateId: params.coverageStateId,
+            coverageLightCode: COVERAGE_LIGHT,
+          },
+        })
+
+        await tx.slot.createMany({
+          data: Array.from({ length: p.quantity }, (_, n) => ({
+            id: uuidv7(),
+            positionId,
+            ordinal: n + 1,
+          })),
+        })
+      }
+
+      await tx.requisitionStateHistory.create({
+        data: {
+          id: uuidv7(),
+          requisitionId: id,
+          fromStateId: null,
+          toStateId: params.stateId,
+          statusLightCode: REQUISITION_LIGHT,
+          userId: params.userId,
+        },
+      })
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'demand.requisition',
+          entityId: id,
+          eventType: 'REQUISITION_CREATED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: { number: params.number, positions: params.positions.length },
+        },
+      })
+    })
+
+    return this.prisma.requisition.findUniqueOrThrow({ where: { id }, select: SELECT })
+  }
+
+  // Quien puede pasar de un estado a otro lo dice la tabla de transiciones, no
+  // una lista en el codigo.
+  async transitionAllowed(
+    fromStateId: string,
+    toStateId: string,
+    roleCode: string,
+  ): Promise<boolean> {
+    return (
+      (await this.prisma.statusLightTransition.count({
+        where: { fromStateId, toStateId, authorizedRole: { code: roleCode } },
+      })) > 0
+    )
+  }
+
+  // Eliminar es transicion a Morado, NUNCA un DELETE de la fila: la
+  // requisicion es historia del hotel y su timeline vive en
+  // requisition_state_history.
+  async remove(params: {
+    id: string
+    fromStateId: string
+    toStateId: string
+    fromCode: string
+    reason: string | null
+    userId: string
+    roleCode: string
+  }): Promise<RequisitionRow> {
+    const now = new Date()
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.requisition.update({
+        where: { id: params.id },
+        data: {
+          statusLightStateId: params.toStateId,
+          updatedAt: now,
+          updatedBy: params.userId,
+        },
+      })
+
+      await tx.requisitionStateHistory.create({
+        data: {
+          id: uuidv7(),
+          requisitionId: params.id,
+          fromStateId: params.fromStateId,
+          toStateId: params.toStateId,
+          statusLightCode: REQUISITION_LIGHT,
+          userId: params.userId,
+        },
+      })
+
+      // El motivo va al journal y no a `reason_id`: no hay catalogo de motivos
+      // para la Requisicion, y no se inventa uno para un consumidor que no
+      // existe. Si el negocio pide agrupar por motivo, ahi se crea.
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'demand.requisition',
+          entityId: params.id,
+          eventType: 'REQUISITION_DELETED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: { fromState: params.fromCode, reason: params.reason },
+        },
+      })
+    })
+
+    return this.prisma.requisition.findUniqueOrThrow({ where: { id: params.id }, select: SELECT })
+  }
+
+  // Eliminar no desasigna gente en silencio: si hay alguien trabajando, primero
+  // se le libera.
+  async activeAssignments(requisitionId: string): Promise<number> {
+    return this.prisma.assignment.count({
+      where: { status: 'ACTIVE', slot: { position: { requisitionId } } },
+    })
+  }
+
+  async authorize(params: {
+    id: string
+    fromStateId: string
+    toStateId: string
+    coverageStateId: string
+    urgencyByPosition: Array<{ positionId: string; urgencyStateId: string }>
+    userId: string
+    roleCode: string
+    /** Inspector de la zona del hotel, resuelto por el servicio (REQ_INSPECTOR_ASSIGNED). */
+    inspectorId?: string | null
+  }): Promise<RequisitionRow> {
+    const now = new Date()
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.requisition.update({
+        where: { id: params.id },
+        data: {
+          statusLightStateId: params.toStateId,
+          authorizedBy: params.userId,
+          authorizedAt: now,
+          updatedAt: now,
+          updatedBy: params.userId,
+          ...(params.inspectorId ? { inspectorId: params.inspectorId } : {}),
+        },
+      })
+
+      for (const u of params.urgencyByPosition) {
+        await tx.position.update({
+          where: { id: u.positionId },
+          data: {
+            urgencyStateId: u.urgencyStateId,
+            urgencyLightCode: URGENCY_LIGHT,
+            coverageStateId: params.coverageStateId,
+            coverageLightCode: COVERAGE_LIGHT,
+            updatedAt: now,
+          },
+        })
+      }
+
+      await tx.requisitionStateHistory.create({
+        data: {
+          id: uuidv7(),
+          requisitionId: params.id,
+          fromStateId: params.fromStateId,
+          toStateId: params.toStateId,
+          statusLightCode: REQUISITION_LIGHT,
+          userId: params.userId,
+        },
+      })
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'demand.requisition',
+          entityId: params.id,
+          eventType: 'REQUISITION_AUTHORIZED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: { positions: params.urgencyByPosition.length },
+        },
+      })
+    })
+
+    return this.prisma.requisition.findUniqueOrThrow({ where: { id: params.id }, select: SELECT })
+  }
+
+  async numberTaken(number: string): Promise<boolean> {
+    return (await this.prisma.requisition.count({ where: { number } })) > 0
+  }
+
+  // Mismo criterio que `AccidentsRepository.inspectorOfZone`: el Inspector
+  // de la zona del hotel, el más antiguo si hay más de uno.
+  async inspectorOfZone(zoneId: string): Promise<{ id: string } | null> {
+    return this.prisma.user.findFirst({
+      where: { isActive: true, role: { code: 'ROL-I-01' }, zones: { some: { zoneId } } },
+      select: { id: true },
+      orderBy: { createdAt: 'asc' },
+    })
+  }
+
+  // COVERAGE_CLOSURE_REVIEWED: el cierre (Azul claro) ya pasó solo, en
+  // automático (RF-05) — esto es SOLO el registro de que el Líder lo revisó,
+  // no una transición de estado.
+  async logClosureReview(params: {
+    requisitionId: string
+    approved: boolean
+    reason: string | null
+    userId: string
+    roleCode: string
+  }): Promise<void> {
+    await this.prisma.journalEntry.create({
+      data: {
+        id: uuidv7(),
+        entityType: 'demand.requisition',
+        entityId: params.requisitionId,
+        eventType: 'COVERAGE_CLOSURE_REVIEWED',
+        actorUserId: params.userId,
+        actorRole: params.roleCode,
+        payload: { approved: params.approved, reason: params.reason },
+      },
+    })
+  }
+
+  // `journal.journal` está particionada por mes; el índice
+  // `ix_journal_entity` (entity_type, entity_id, occurred_at desc) es justo
+  // para esta consulta.
+  async journal(requisitionId: string): Promise<JournalRow[]> {
+    return this.prisma.journalEntry.findMany({
+      where: { entityType: 'demand.requisition', entityId: requisitionId },
+      select: JOURNAL_SELECT,
+      orderBy: { occurredAt: 'desc' },
+    })
+  }
+}

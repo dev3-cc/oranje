@@ -1,0 +1,376 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
+import { cn, MaterialIcon } from '@oranje/ui'
+import { useMemo, useState, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router'
+
+import { useGetStaffRolesQuery, useGetStaffUsersQuery } from '../api/adminApi'
+import { ColaboradorAccountsSection } from '../components/ColaboradorAccountsSection'
+import { HotelUsersSection } from '../components/HotelUsersSection'
+import { UserFormDialog } from '../components/UserFormDialog'
+import {
+  AccountStatusChip,
+  CellStat,
+  DATE_FORMAT,
+  initialsOf,
+  StatusTabs,
+} from '../components/userListParts'
+import type { StaffUser } from '../types/admin.types'
+
+import personajeConfiguracion from '@/assets/ilustrations/personaje-configuracion.svg'
+import fotoEquipo from '@/assets/ilustrations/usuarios-equipo.webp'
+import { Button } from '@/shared/components/Button'
+import { FilterReset } from '@/shared/components/FilterReset'
+import { FilterSelect } from '@/shared/components/FilterSelect'
+import { LoadError } from '@/shared/components/LoadError'
+import { NoticeCard } from '@/shared/components/NoticeCard'
+import { SearchField } from '@/shared/components/SearchField'
+import { TableSkeleton } from '@/shared/components/TableSkeleton'
+import { useDebounce } from '@/shared/hooks/useDebounce'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
+
+type Scope = 'staff' | 'hotels' | 'colaboradores'
+
+/**
+ * El ámbito vive en la URL (`?ambito=hoteles|colaboradores`): un enlace a la pestaña se puede
+ * compartir. El texto se traduce al pintar con `i18n._()` (D-36).
+ */
+const SCOPES: ReadonlyArray<[Scope, MessageDescriptor, string]> = [
+  ['staff', msg`Personal Oranje`, 'badge'],
+  ['hotels', msg`Personal de hoteles`, 'apartment'],
+  ['colaboradores', msg`Colaboradores`, 'diversity_3'],
+]
+
+export function UsersPage(): ReactNode {
+  const { t, i18n } = useLingui()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const ambito = searchParams.get('ambito')
+  const scope: Scope =
+    ambito === 'hoteles' ? 'hotels' : ambito === 'colaboradores' ? 'colaboradores' : 'staff'
+
+  function setScope(next: Scope): void {
+    setSearchParams(
+      (current) => {
+        const params = new URLSearchParams(current)
+        if (next === 'staff') params.delete('ambito')
+        else params.set('ambito', next === 'hotels' ? 'hoteles' : 'colaboradores')
+        return params
+      },
+      { replace: true },
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Cabecera-tarjeta como las demás secciones. Esta foto va COMPLETA (es un
+          círculo visto desde abajo: recortada quedaría un anillo hueco), a la
+          derecha, a todo el alto y disuelta hacia la tarjeta por la izquierda.
+          Las pestañas de ámbito bajan al bloque de texto. */}
+      <header className="relative flex items-end justify-between gap-4 overflow-hidden rounded-2xl border border-line bg-gradient-to-r from-o-50 via-surface to-surface px-6 pt-5 pb-5 sm:min-h-52 sm:pr-96">
+        <div className="relative z-10">
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
+            <Trans>Usuarios del sistema</Trans>
+          </h1>
+          <p className="mt-1.5 max-w-xl text-sm text-ink-3">
+            {IS_DEV_UI ? (
+              scope === 'staff' ? (
+                'identity.user · personal interno de Oranje · users:manage — solo el Administrador (ROL-ADM-01)'
+              ) : scope === 'hotels' ? (
+                'identity.user · hotel_id NOT NULL · users:manage_hotel — solo el Administrador (ROL-ADM-01)'
+              ) : (
+                'personal.worker + identity.user · users:manage_corporate_email — solo lectura'
+              )
+            ) : scope === 'staff' ? (
+              <Trans>El personal interno de Oranje: quién es, qué rol tiene y si ya entró.</Trans>
+            ) : scope === 'hotels' ? (
+              <Trans>
+                Las cuentas de cada hotel: Supervisores, Managers de Área y Managers Generales.
+              </Trans>
+            ) : (
+              <Trans>Los colaboradores con correo corporativo, y si su buzón real ya existe.</Trans>
+            )}
+          </p>
+          <div
+            role="tablist"
+            aria-label={t`Ámbito`}
+            className="mt-4 flex w-fit gap-1 rounded-xl bg-surface-2 p-1"
+          >
+            {SCOPES.map(([key, label, icon]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={scope === key}
+                onClick={() => {
+                  setScope(key)
+                }}
+                className={cn(
+                  'flex cursor-pointer items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs transition-colors',
+                  scope === key
+                    ? 'border border-line bg-surface font-semibold text-ink'
+                    : 'text-ink-3 hover:text-ink',
+                )}
+              >
+                <MaterialIcon name={icon} className="text-base" aria-hidden />
+                {i18n._(label)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <img
+          src={fotoEquipo}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-auto object-cover object-right sm:block"
+        />
+      </header>
+
+      {scope === 'staff' ? (
+        <StaffUsersSection />
+      ) : scope === 'hotels' ? (
+        <HotelUsersSection />
+      ) : (
+        <ColaboradorAccountsSection />
+      )}
+    </div>
+  )
+}
+
+function StaffUsersSection(): ReactNode {
+  const { t } = useLingui()
+  const [search, setSearch] = useState('')
+  const [roleFilter, setRoleFilter] = useState('ALL')
+  const [tab, setTab] = useState<'active' | 'inactive'>('active')
+  const [editing, setEditing] = useState<StaffUser | null>(null)
+  const [isFormOpen, setIsFormOpen] = useState(false)
+
+  /* El campo responde al instante; la consulta espera a que se deje de teclear. */
+  const settledSearch = useDebounce(search).trim()
+  const hasFilters = search.trim() !== '' || roleFilter !== 'ALL'
+
+  const { data: roles = [] } = useGetStaffRolesQuery()
+
+  const commonParams = {
+    ...(settledSearch ? { search: settledSearch } : {}),
+    ...(roleFilter !== 'ALL' ? { roleCode: roleFilter } : {}),
+  }
+
+  /**
+   * Dos consultas, no una: el personal interno de Oranje YA pasó el tope de
+   * 100 filas del back entre activos e inactivos acumulados (meses de altas
+   * de prueba). Una sola consulta con `includeInactive` mezclaba ambos en la
+   * misma página paginada — con los inactivos dominando por volumen, un
+   * activo recién creado podía quedar fuera de esa ventana. Pedir los
+   * activos APARTE (sin `includeInactive`, el back ya filtra `isActive` del
+   * lado del servidor) garantiza que los ~50 activos reales siempre entren
+   * completos, sin importar cuántos inactivos haya.
+   */
+  const activeQuery = useGetStaffUsersQuery(commonParams)
+  const allQuery = useGetStaffUsersQuery({ ...commonParams, includeInactive: true })
+
+  const active = activeQuery.data?.rows ?? []
+  /* Capado a lo que trae `allQuery` (100 filas): con cientos de inactivos
+     acumulados, esa pestaña no ve el historial completo todavía — pendiente
+     de paginación real si hace falta navegarlo entero. */
+  const inactive = useMemo(
+    () => (allQuery.data?.rows ?? []).filter((u) => !u.isActive),
+    [allQuery.data],
+  )
+  const visible = tab === 'active' ? active : inactive
+  const activeTotal = activeQuery.data?.total ?? active.length
+  /* Inactivos = el total SIN filtrar menos el total de activos — ambos vienen
+     del `meta.total` del back, así que el contador es exacto aunque la lista
+     visible de arriba esté recortada a 100 filas. */
+  const inactiveTotal = allQuery.data
+    ? Math.max(0, allQuery.data.total - activeTotal)
+    : inactive.length
+
+  const isLoading = tab === 'active' ? activeQuery.isLoading : allQuery.isLoading
+  const isFetching = activeQuery.isFetching || allQuery.isFetching
+  const isError = activeQuery.isError || allQuery.isError
+  const error = activeQuery.error ?? allQuery.error
+  function refetch(): void {
+    void activeQuery.refetch()
+    void allQuery.refetch()
+  }
+
+  const nameById = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const user of [...active, ...(allQuery.data?.rows ?? [])]) map.set(user.id, user.fullName)
+    return map
+  }, [active, allQuery.data])
+
+  /* El módulo entero es del Administrador (users:manage): el 403 dice quién sigue. */
+  if ((error as { status?: number } | undefined)?.status === 403) {
+    return (
+      <NoticeCard
+        image={personajeConfiguracion}
+        title={t`Usuarios del sistema es del Administrador`}
+        role="status"
+      >
+        <Trans>
+          El alta, la edición y la baja del personal interno de Oranje las hace el Administrador; tu
+          rol no tiene este módulo.
+        </Trans>
+      </NoticeCard>
+    )
+  }
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-2.5">
+        <StatusTabs
+          tab={tab}
+          onChange={setTab}
+          activeTotal={activeTotal}
+          inactiveTotal={inactiveTotal}
+        />
+        <span className="flex-1" />
+        <SearchField
+          isSearching={isFetching && settledSearch !== ''}
+          value={search}
+          onChange={setSearch}
+          label={t`Buscar usuario`}
+          placeholder={t`Nombre o correo, p. ej. Ana López…`}
+          className="w-72"
+        />
+        <FilterSelect
+          label={t`Rol`}
+          anyLabel={t`todos`}
+          value={roleFilter}
+          options={roles.map((role) => ({ value: role.code, label: role.name }))}
+          onChange={setRoleFilter}
+          icon="badge"
+        />
+        <FilterReset
+          activeCount={(search.trim() !== '' ? 1 : 0) + (roleFilter !== 'ALL' ? 1 : 0)}
+          onReset={() => {
+            setSearch('')
+            setRoleFilter('ALL')
+          }}
+        />
+        <Button
+          variant="primary"
+          onClick={() => {
+            setEditing(null)
+            setIsFormOpen(true)
+          }}
+        >
+          <Trans>Agregar usuario</Trans>
+        </Button>
+      </div>
+
+      {isError ? (
+        <LoadError
+          message={t`No se pudieron cargar los usuarios. Reintenta en unos segundos.`}
+          onRetry={() => {
+            void refetch()
+          }}
+        />
+      ) : isLoading ? (
+        <TableSkeleton rows={6} columns={4} />
+      ) : visible.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+          {hasFilters ? (
+            <Trans>
+              Nadie coincide con esa búsqueda. Prueba otro nombre, correo o rol, o quita los
+              filtros.
+            </Trans>
+          ) : tab === 'active' ? (
+            <Trans>
+              Todavía no hay personal activo. Agrega al primer usuario con el botón de arriba.
+            </Trans>
+          ) : (
+            <Trans>Nadie está de baja. Las personas que des de baja aparecerán aquí.</Trans>
+          )}
+        </p>
+      ) : (
+        <ul className="overflow-hidden rounded-2xl border border-line bg-surface">
+          {visible.map((user) => (
+            <li key={user.id} className="border-b border-line last:border-b-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditing(user)
+                  setIsFormOpen(true)
+                }}
+                className="flex w-full cursor-pointer items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-surface-2"
+              >
+                {user.photoUrl ? (
+                  <img
+                    src={user.photoUrl}
+                    alt=""
+                    className="size-10 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'flex size-10 shrink-0 items-center justify-center rounded-full text-xs font-bold',
+                      user.isActive ? 'bg-o-50 text-o-700' : 'bg-surface-3/70 text-ink-3',
+                    )}
+                  >
+                    {initialsOf(user.fullName)}
+                  </span>
+                )}
+
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="flex items-center gap-1.5">
+                    <span
+                      className={cn(
+                        'truncate text-sm font-bold',
+                        user.isActive ? 'text-ink' : 'text-ink-3',
+                      )}
+                    >
+                      {user.fullName}
+                    </span>
+                    {user.hasAccount && (
+                      <span title={t`Ya entró al sistema`} aria-label={t`Ya entró al sistema`}>
+                        <MaterialIcon name="verified" className="shrink-0 text-base text-o-500" />
+                      </span>
+                    )}
+                  </span>
+                  <span className="truncate text-xs text-ink-3">{user.email}</span>
+                </div>
+
+                <CellStat
+                  value={DATE_FORMAT.format(new Date(user.createdAt))}
+                  label={t`Fecha de alta`}
+                />
+                <CellStat
+                  value={user.reportsToUserId ? (nameById.get(user.reportsToUserId) ?? '—') : '—'}
+                  label={t`Reporta a`}
+                  {...(user.reportsToUserId ? {} : { tone: 'muted' as const })}
+                />
+                <CellStat value={user.role.name} label={t`Rol`} />
+
+                <div className="hidden w-36 shrink-0 justify-end lg:flex">
+                  <AccountStatusChip isActive={user.isActive} hasAccount={user.hasAccount} />
+                </div>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <p className="text-xs leading-relaxed text-ink-3">
+        <Trans>
+          El correo no se edita: es con el que la persona entra. Para cambiar de persona, da de baja
+          y da de alta. La cuenta queda enlazada la primera vez que entra. Las cuentas de los
+          hoteles tienen su propia pestaña: «Personal de hoteles».
+        </Trans>
+      </p>
+
+      <UserFormDialog
+        isOpen={isFormOpen}
+        onClose={() => {
+          setIsFormOpen(false)
+        }}
+        user={editing}
+        roles={roles}
+        reportsToOptions={active}
+      />
+    </>
+  )
+}

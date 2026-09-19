@@ -1,0 +1,285 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { i18n } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
+
+import type {
+  ConversionCandidate,
+  ConversionReadiness,
+  ConversionRequirement,
+} from '../types/conversion.types'
+
+import { registerConversionMocks } from './conversionMocks'
+
+import { baseApi } from '@/app/baseApi'
+import { adaptProspectSummary, type ProspectSummary } from '@/features/onboarding'
+import type { OnboardingStatus } from '@/shared/constants/onboardingStatus'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
+import { formatDayMonth } from '@/shared/lib/formatters'
+import type {
+  ApiEnvelope,
+  HotelContactApi,
+  PaginatedEnvelope,
+  ProposalApi,
+  ProspectApi,
+} from '@/shared/types/apiContract.types'
+
+registerConversionMocks()
+
+type FetchWithBQ = (
+  args: string | { url: string; method?: string; body?: unknown; params?: Record<string, unknown> },
+) => Promise<{ data?: unknown; error?: unknown }>
+
+interface HotelUserApi {
+  id: string
+  email: string
+  fullName: string
+  role: { code: string; name: string }
+}
+
+/** Se arma al pedir la ficha (no al importar): el idioma activo puede cambiar. */
+function approvalNote(): string {
+  const note = i18n._(msg`solo el BDC aprueba esta transición`)
+  return IS_DEV_UI ? `${note} (RR-V-01, RR-V-02)` : note
+}
+
+function buildEffects(): string[] {
+  const effects: Array<[MessageDescriptor, string]> = [
+    [msg`El semáforo pasa a Naranja`, 'prospect.onboarding_state_id → ORANGE'],
+    [msg`El cambio queda en el historial del prospecto`, 'prospect_state_history'],
+    [msg`El hotel queda activado como cliente desde hoy`, 'hotel.activated_at'],
+    [msg`El hotel ya puede generar requisiciones`, 'entra en vw_client'],
+    [msg`Reclutamiento e Inspección toman la operación`, ''],
+  ]
+  return effects.map(([human, tech]) =>
+    IS_DEV_UI && tech ? `${i18n._(human)} · ${tech}` : i18n._(human),
+  )
+}
+
+async function fetchReadiness(
+  fetchWithBQ: FetchWithBQ,
+  prospectId: string,
+): Promise<{ data: ConversionReadiness } | { error: unknown }> {
+  const prospectRes = await fetchWithBQ(`/prospects/${prospectId}`)
+  if (prospectRes.error) return { error: prospectRes.error }
+  const prospect = (prospectRes.data as ApiEnvelope<ProspectApi>).data
+
+  if (prospect.state.code !== 'PINK') {
+    return {
+      error: {
+        status: 409,
+        data: {
+          error: {
+            code: 'NOT_AWAITING_CONVERSION',
+            message: 'La conversión sale de Rosa: este prospecto está en otro estado',
+            state: prospect.state.code,
+          },
+        },
+      },
+    }
+  }
+
+  const hotelId = prospect.hotel.id
+  const [proposalsRes, contactsRes, usersRes] = await Promise.all([
+    fetchWithBQ(`/prospects/${prospectId}/proposals`),
+    fetchWithBQ(`/hotels/${hotelId}/contacts`),
+    fetchWithBQ(`/hotels/${hotelId}/users`),
+  ])
+  if (proposalsRes.error) return { error: proposalsRes.error }
+  if (contactsRes.error) return { error: contactsRes.error }
+  if (usersRes.error) return { error: usersRes.error }
+
+  const proposals = (proposalsRes.data as ApiEnvelope<ProposalApi[]>).data
+  const contacts = (contactsRes.data as ApiEnvelope<HotelContactApi[]>).data
+  const users = (usersRes.data as ApiEnvelope<HotelUserApi[]>).data
+
+  const sentProposal = proposals
+    .filter((proposal) => !proposal.isDraft && proposal.sentAt !== null)
+    .sort((a, b) => b.version - a.version)[0]
+  const primaryContact = contacts.find((contact) => contact.isPrimary) ?? contacts[0]
+  const hotelUser = users[0]
+
+  const requirements: ConversionRequirement[] = [
+    {
+      id: 'proposal-sent',
+      label: i18n._(msg`Propuesta enviada`),
+      detail: sentProposal
+        ? i18n._(
+            msg`Propuesta v${String(sentProposal.version)} · ${formatDayMonth(sentProposal.sentAt as string)}`,
+          )
+        : `${i18n._(msg`Sin propuesta enviada — se elabora y envía en Verde`)}${IS_DEV_UI ? ' (D-22)' : ''}`,
+      isMet: sentProposal !== undefined,
+      action: null,
+    },
+    {
+      id: 'terms-negotiated',
+      label: i18n._(msg`Documento de T&C negociado`),
+      detail: i18n._(
+        msg`Se negocia en Rosa — el sistema aún no lo registra (pendiente de modelar)`,
+      ),
+      isMet: true,
+      action: null,
+    },
+    {
+      id: 'primary-contact',
+      label: i18n._(msg`Contacto principal registrado`),
+      detail: primaryContact
+        ? `${primaryContact.fullName}${primaryContact.jobTitle ? ` · ${primaryContact.jobTitle}` : ''}`
+        : i18n._(msg`Sin contacto registrado — agrégalo en la ficha del prospecto`),
+      isMet: primaryContact !== undefined,
+      action: null,
+    },
+    {
+      id: 'hotel-user',
+      label: i18n._(msg`Usuario del Hotel creado`),
+      /**
+       * El QUÉ antes del clic: esta fila confundió a un usuario real que ya
+       * sabía quién era el contacto — le faltaba saber qué es la cuenta, a
+       * quién se le crea y qué habilita (Usuario del Hotel, RR-V-02).
+       */
+      detail: hotelUser
+        ? `${hotelUser.fullName} · ${hotelUser.role.name}`
+        : primaryContact?.email
+          ? `${i18n._(msg`La cuenta con la que el hotel opera Oranje: pedir requisiciones, administrar su Schedule y aprobar horas. Se crea para el contacto principal — ${primaryContact.fullName} · ${primaryContact.email} — y sin ella la conversión se bloquea`)}${IS_DEV_UI ? ' (RR-V-02)' : ''}`
+          : i18n._(
+              msg`No existe, y el contacto principal no tiene correo: agrégaselo para poder crearlo`,
+            ),
+      isMet: hotelUser !== undefined,
+      action:
+        !hotelUser && primaryContact?.email
+          ? { kind: 'CREATE_HOTEL_USER', label: i18n._(msg`Crear cuenta del hotel`) }
+          : null,
+    },
+  ]
+
+  const canApprove = hotelUser !== undefined
+  return {
+    data: {
+      prospectId,
+      hotelId,
+      hotelName: prospect.hotel.name,
+      hotelPhotoUrl: prospect.hotel.photoUrl ?? null,
+      currentStatus: 'PINK',
+      targetStatus: 'ORANGE',
+      approvalNote: approvalNote(),
+      requirements,
+      effects: buildEffects(),
+      canApprove,
+      blockedReason: canApprove
+        ? null
+        : `${i18n._(msg`Falta el Usuario del Hotel: sin él no se puede aprobar`)}${IS_DEV_UI ? ' (HOTEL_USER_REQUIRED)' : ''}`,
+      hotelUserDraft: primaryContact?.email
+        ? { email: primaryContact.email, fullName: primaryContact.fullName }
+        : null,
+    },
+  }
+}
+
+async function fetchQueue(
+  fetchWithBQ: FetchWithBQ,
+): Promise<{ data: ConversionCandidate[] } | { error: unknown }> {
+  const listRes = await fetchWithBQ({ url: '/prospects', params: { state: 'PINK', limit: 100 } })
+  if (listRes.error) return { error: listRes.error }
+  const prospects = (listRes.data as PaginatedEnvelope<ProspectApi>).data
+
+  const candidates = await Promise.all(
+    prospects.map(async (prospect): Promise<ConversionCandidate> => {
+      const usersRes = await fetchWithBQ(`/hotels/${prospect.hotel.id}/users`)
+      const hasUser =
+        !usersRes.error && (usersRes.data as ApiEnvelope<HotelUserApi[]>).data.length > 0
+      return {
+        prospectId: prospect.id,
+        hotelName: prospect.hotel.name,
+        hotelPhotoUrl: prospect.hotel.photoUrl,
+        zone: prospect.hotel.zone.name,
+        status: prospect.state.code as OnboardingStatus,
+        daysInStatus: Math.max(
+          0,
+          Math.floor((Date.now() - new Date(prospect.stateSince).getTime()) / 86_400_000),
+        ),
+        pendingRequirements: hasUser ? 0 : 1,
+      }
+    }),
+  )
+  return { data: candidates }
+}
+
+export const conversionApi = baseApi.injectEndpoints({
+  endpoints: (build) => ({
+    getConversionQueue: build.query<ConversionCandidate[], void>({
+      queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
+        const result = await fetchQueue(fetchWithBQ as FetchWithBQ)
+        return 'error' in result ? { error: result.error as never } : { data: result.data }
+      },
+      providesTags: [{ type: 'Prospect', id: 'LIST' }],
+    }),
+
+    /**
+     * Los aprobados recientes: prospectos ya en Naranja, del más nuevo al
+     * más viejo, con la MISMA forma que las tarjetas del Pipeline (mismo
+     * adaptador). Es memoria de la pantalla: los clientes viven en Clientes
+     * Activos.
+     */
+    getRecentConversions: build.query<ProspectSummary[], void>({
+      query: () => ({ url: '/prospects', params: { state: 'ORANGE', limit: 6 } }),
+      transformResponse: (raw: PaginatedEnvelope<ProspectApi>) =>
+        [...raw.data]
+          .sort((a, b) => b.stateSince.localeCompare(a.stateSince))
+          .map(adaptProspectSummary),
+      providesTags: [{ type: 'Prospect', id: 'LIST' }],
+    }),
+
+    getConversionReadiness: build.query<ConversionReadiness, string>({
+      queryFn: async (prospectId, _api, _extra, fetchWithBQ) => {
+        const result = await fetchReadiness(fetchWithBQ as FetchWithBQ, prospectId)
+        return 'error' in result ? { error: result.error as never } : { data: result.data }
+      },
+      providesTags: (_result, _error, prospectId) => [{ type: 'Prospect', id: prospectId }],
+    }),
+
+    createHotelUser: build.mutation<
+      unknown,
+      { prospectId: string; hotelId: string; email: string; fullName: string }
+    >({
+      query: ({ hotelId, email, fullName }) => ({
+        url: `/hotels/${hotelId}/users`,
+        method: 'POST',
+        body: { email, fullName, roleCode: 'ROL-H-03' },
+      }),
+      invalidatesTags: (_result, _error, { prospectId }) => [{ type: 'Prospect', id: prospectId }],
+    }),
+
+    approveConversion: build.mutation<unknown, string>({
+      query: (prospectId) => ({
+        url: `/prospects/${prospectId}/transitions`,
+        method: 'POST',
+        body: { toState: 'ORANGE' },
+      }),
+      invalidatesTags: (_result, _error, prospectId) => [
+        { type: 'Prospect', id: prospectId },
+        { type: 'Prospect', id: 'LIST' },
+        { type: 'Hotel', id: 'LIST' },
+      ],
+    }),
+
+    returnToRenegotiation: build.mutation<unknown, { prospectId: string; reasonCode: string }>({
+      query: ({ prospectId, reasonCode }) => ({
+        url: `/prospects/${prospectId}/transitions`,
+        method: 'POST',
+        body: { toState: 'BROWN', reasonCode },
+      }),
+      invalidatesTags: (_result, _error, { prospectId }) => [
+        { type: 'Prospect', id: prospectId },
+        { type: 'Prospect', id: 'LIST' },
+      ],
+    }),
+  }),
+})
+
+export const {
+  useGetConversionQueueQuery,
+  useGetRecentConversionsQuery,
+  useGetConversionReadinessQuery,
+  useCreateHotelUserMutation,
+  useApproveConversionMutation,
+  useReturnToRenegotiationMutation,
+} = conversionApi

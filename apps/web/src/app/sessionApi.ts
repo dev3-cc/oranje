@@ -1,0 +1,230 @@
+import { baseApi } from './baseApi'
+import { activateLocale, currentLocale, type Locale } from './i18n'
+import { sessionCleared, sessionEstablished } from './sessionSlice'
+
+import { roleLabelOf } from '@/shared/constants/roles'
+import { registerMockRoutes } from '@/shared/lib/mockBaseQuery'
+import type { ApiEnvelope, MeApi, SessionApi } from '@/shared/types/apiContract.types'
+import type { SessionUser } from '@/shared/types/session.types'
+
+function toShortName(fullName: string): string {
+  const [first, ...rest] = fullName.trim().split(/\s+/)
+  if (!first || rest.length === 0) return fullName
+  return `${first[0]}. ${rest.join(' ')}`
+}
+
+function adaptSessionUser(session: SessionApi): SessionUser {
+  const role = roleLabelOf(session.user.roleCode)
+  return {
+    id: session.user.id,
+    name: session.user.fullName,
+    shortName: toShortName(session.user.fullName),
+    roleId: session.user.roleCode,
+    /** El canje de sesión no trae foto: llega con el `GET /me` que sigue. */
+    photoUrl: null,
+    roleCode: role.short,
+    roleTitle: role.title,
+    hotel: null,
+    department: null,
+    locale: currentLocale(),
+    permissions: [],
+  }
+}
+
+const MOCK_SESSION_FLAG = 'oranje-mock-session'
+
+const MOCK_SESSION: SessionApi = {
+  accessToken: 'mock-access-token',
+  expiresIn: 900,
+  user: {
+    id: 'usr-ana-ruiz',
+    email: 'ana.ruiz@oranje.mx',
+    fullName: 'Ana Ruiz',
+    roleCode: 'ROL-V-01',
+  },
+}
+
+registerMockRoutes([
+  {
+    method: 'POST',
+    path: '/auth/session',
+    resolve: (): ApiEnvelope<SessionApi> => {
+      localStorage.setItem(MOCK_SESSION_FLAG, 'true')
+      return { data: MOCK_SESSION }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/auth/refresh',
+    resolve: (): ApiEnvelope<SessionApi> => {
+      if (localStorage.getItem(MOCK_SESSION_FLAG) !== 'true') {
+        throw new Error('REFRESH_MISSING')
+      }
+      return { data: MOCK_SESSION }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/auth/logout',
+    resolve: (): null => {
+      localStorage.removeItem(MOCK_SESSION_FLAG)
+      return null
+    },
+  },
+  {
+    method: 'GET',
+    path: '/me',
+    resolve: (): ApiEnvelope<MeApi> => ({
+      data: {
+        id: MOCK_SESSION.user.id,
+        email: MOCK_SESSION.user.email,
+        fullName: MOCK_SESSION.user.fullName,
+        photoUrl: null,
+        role: {
+          code: MOCK_SESSION.user.roleCode,
+          name: 'Business Developer',
+          department: 'Ventas',
+        },
+        hotel: null,
+        department: null,
+        locale: 'es',
+        zones: [],
+        /**
+         * La UNIÓN de todo lo que la UI consulta con `useCan`: en modo mock
+         * ningún botón se esconde. Los recortes por rol solo aplican contra la
+         * API real, que manda la lista exacta de `identity.role_permission`.
+         */
+        permissions: [
+          'catalogs.manage',
+          'payroll.validate',
+          'pipeline.read',
+          'pipeline.create_prospect',
+          'proposals.read',
+          'proposals.create',
+          'proposals.send',
+          'blacklist.read',
+          'blacklist.create',
+          'blacklist.lift',
+          'conversion.approve',
+          'conversion.create_hotel_user',
+          'hotel.punch_qr',
+          'terms_and_conditions.update',
+          'terms_and_conditions.approve',
+          'requisitions.create',
+          'requisitions.authorize',
+          'requisitions.take',
+          'requisitions.delete_empty',
+          'recruitment.create_worker',
+          'recruitment.update_worker',
+          'recruitment.validate_signup',
+          'timesheet.approve_hours',
+          'schedule.update',
+          'audits.create',
+          'audits.read',
+          'audits.update',
+          'users.manage_corporate_email',
+        ],
+      },
+    }),
+  },
+])
+
+let lastAccessToken = ''
+
+function captureToken(raw: ApiEnvelope<SessionApi>): SessionUser {
+  lastAccessToken = raw.data.accessToken
+  return adaptSessionUser(raw.data)
+}
+
+export const sessionApi = baseApi.injectEndpoints({
+  endpoints: (build) => ({
+    getSession: build.query<SessionUser, void>({
+      query: () => '/me',
+      transformResponse: (raw: ApiEnvelope<MeApi>): SessionUser => ({
+        id: raw.data.id,
+        name: raw.data.fullName,
+        shortName: toShortName(raw.data.fullName),
+        roleId: raw.data.role.code,
+        photoUrl: raw.data.photoUrl,
+        roleCode: roleLabelOf(raw.data.role.code).short,
+        roleTitle: raw.data.role.name,
+        hotel: raw.data.hotel,
+        department: raw.data.department
+          ? { id: raw.data.department.id, name: raw.data.department.name }
+          : null,
+        locale: raw.data.locale === 'en' ? 'en' : 'es',
+        permissions: raw.data.permissions,
+      }),
+      /** Al entrar gana el idioma guardado en la persona (D-36). */
+      onQueryStarted: async (_arg, { queryFulfilled }) => {
+        try {
+          const { data } = await queryFulfilled
+          if (data.locale !== currentLocale()) activateLocale(data.locale)
+        } catch {
+          /* Sin sesión no hay preferencia que aplicar. */
+        }
+      },
+    }),
+
+    /** Guarda el idioma en la persona, para que la siga entre dispositivos. */
+    updateMyLocale: build.mutation<void, Locale>({
+      query: (locale) => ({ url: '/me', method: 'PATCH', body: { locale } }),
+    }),
+
+    createSession: build.mutation<SessionUser, { idToken: string }>({
+      query: (body) => ({
+        url: '/auth/session',
+        method: 'POST',
+        body,
+        credentials: 'include',
+      }),
+      transformResponse: captureToken,
+      onQueryStarted: async (_arg, { dispatch, queryFulfilled }) => {
+        try {
+          const { data } = await queryFulfilled
+          dispatch(baseApi.util.resetApiState())
+          dispatch(sessionEstablished({ user: data, accessToken: lastAccessToken }))
+        } catch {
+          dispatch(sessionCleared())
+        }
+      },
+    }),
+
+    refreshSession: build.mutation<SessionUser, void>({
+      query: () => ({ url: '/auth/refresh', method: 'POST', credentials: 'include' }),
+      transformResponse: captureToken,
+      onQueryStarted: async (_arg, { dispatch, queryFulfilled }) => {
+        try {
+          const { data } = await queryFulfilled
+          dispatch(sessionEstablished({ user: data, accessToken: lastAccessToken }))
+        } catch {
+          dispatch(sessionCleared())
+        }
+      },
+    }),
+
+    logout: build.mutation<void, void>({
+      query: () => ({ url: '/auth/logout', method: 'POST', credentials: 'include' }),
+      onQueryStarted: async (_arg, { dispatch, queryFulfilled }) => {
+        try {
+          await queryFulfilled
+        } catch {
+          /* La sesión local se limpia igual aunque falle la llamada: sin
+             `catch`, `queryFulfilled` rechazado se relanzaba solo tras el
+             `finally` y quedaba como una promesa sin atrapar. */
+        } finally {
+          dispatch(sessionCleared())
+          dispatch(baseApi.util.resetApiState())
+        }
+      },
+    }),
+  }),
+})
+
+export const {
+  useGetSessionQuery,
+  useCreateSessionMutation,
+  useRefreshSessionMutation,
+  useLogoutMutation,
+  useUpdateMyLocaleMutation,
+} = sessionApi

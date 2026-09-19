@@ -1,0 +1,274 @@
+import { Plural, Trans, useLingui } from '@lingui/react/macro'
+import {
+  MaterialIcon,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@oranje/ui'
+import { useMemo, useState, type ReactNode } from 'react'
+import { Link } from 'react-router'
+
+import { useGetSelfPickBoardQuery } from '../api/selfPickApi'
+import type { SelfPickRow } from '../types/selfPick.types'
+
+import personajeComencemos from '@/assets/ilustrations/personaje-comencemos.svg'
+import fotoEquipo from '@/assets/ilustrations/selfpick-equipo.webp'
+import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { FilterReset } from '@/shared/components/FilterReset'
+import { FilterSelect } from '@/shared/components/FilterSelect'
+import { HotelPhotoBackdrop } from '@/shared/components/HotelPhotoBackdrop'
+import { LoadError } from '@/shared/components/LoadError'
+import { MagicCard } from '@/shared/components/MagicCard'
+import { IS_DEV_UI } from '@/shared/lib/devMode'
+import { formatDate } from '@/shared/lib/formatters'
+
+const ANY = '__any__'
+
+const FILTER_CLASS =
+  'cursor-pointer rounded-md border border-line bg-surface py-2 pr-8 pl-9 text-sm text-ink focus:border-o-500 focus:outline-none appearance-none'
+
+function uniqueOptions(
+  rows: SelfPickRow[],
+  pick: (row: SelfPickRow) => { id: string; name: string } | null,
+): Array<{ id: string; name: string }> {
+  const map = new Map<string, { id: string; name: string }>()
+  for (const row of rows) {
+    const option = pick(row)
+    if (option) map.set(option.id, option)
+  }
+  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name))
+}
+
+export function SelfPickPage(): ReactNode {
+  const { t } = useLingui()
+  const { data: board, isLoading, isError, refetch } = useGetSelfPickBoardQuery()
+
+  const [positionId, setPositionId] = useState(ANY)
+  const [modalityId, setModalityId] = useState(ANY)
+  const [englishId, setEnglishId] = useState(ANY)
+
+  const rows = useMemo(() => {
+    return (board?.rows ?? []).filter((row) => {
+      if (positionId !== ANY && row.positionCatalogId !== positionId) return false
+      if (modalityId !== ANY && row.modalityId !== modalityId) return false
+      if (englishId !== ANY && row.englishId !== englishId) return false
+      return true
+    })
+  }, [board, positionId, modalityId, englishId])
+
+  if (isLoading)
+    return <CardGridSkeleton cards={6} className="grid-cols-1 md:grid-cols-2 xl:grid-cols-3" />
+  if (isError || !board) {
+    return (
+      <LoadError
+        message={t`No se pudo cargar la Bolsa de Self-Pick. Revisa tu conexión e inténtalo de nuevo.`}
+        onRetry={() => {
+          void refetch()
+        }}
+      />
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Misma cabecera-tarjeta que Conversión, Contratos y Propuestas: título
+          a la izquierda, la foto (recortada, sin fondo) sentada en el borde
+          inferior y sobresaliendo por arriba; el `clip-path` de la tarjeta la
+          recorta con las esquinas redondeadas y deja 3rem arriba. */}
+      <header className="relative flex items-end justify-between gap-4 rounded-2xl border border-line bg-gradient-to-r from-o-50 via-surface to-surface px-6 pt-5 pb-5 [clip-path:inset(-3rem_0_0_0_round_1rem)] sm:mt-8 sm:min-h-44 sm:pr-72">
+        <div className="relative z-10">
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
+            <Trans>Bolsa · Self-Pick</Trans>
+          </h1>
+          <p className="mt-1.5 max-w-xl text-sm text-ink-3">
+            <Trans>
+              <Plural value={board.totalFreeSlots} one="# slot libre" other="# slots libres" /> en{' '}
+              <Plural
+                value={board.totalRequisitions}
+                one="# requisición autorizada"
+                other="# requisiciones autorizadas"
+              />
+            </Trans>
+            {IS_DEV_UI && <code className="text-xs text-ink-4"> · demand.slot vía coverage</code>}
+          </p>
+        </div>
+        <img
+          src={fotoEquipo}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute -right-2 -bottom-1 hidden h-[calc(100%+2.5rem)] w-auto object-contain object-bottom drop-shadow-[0_10px_18px_rgba(60,30,0,0.26)] sm:block"
+        />
+      </header>
+
+      <p className="flex items-start gap-2.5 rounded-lg bg-o-50 px-4 py-3 text-sm leading-relaxed text-ink-2">
+        <MaterialIcon name="flash_on" aria-hidden className="mt-0.5 text-lg text-o-700" />
+        <span>
+          <Trans>
+            <span className="font-semibold text-ink">
+              Gana el primero que confirma{IS_DEV_UI ? ' (RR-15)' : ''}.
+            </span>{' '}
+            Al tomar un slot se bloquea solo ese slot, no la requisición completa: otra Reclutadora
+            puede seguir tomando los demás de la misma posición.
+          </Trans>
+        </span>
+      </p>
+
+      <div className="flex flex-wrap items-center gap-3">
+        {}
+        <span
+          title={
+            IS_DEV_UI
+              ? 'GET /requisitions no expone la zona del hotel todavía'
+              : t`El filtro por zona estará disponible próximamente`
+          }
+          className="relative inline-block"
+        >
+          <MaterialIcon
+            name="place"
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-base text-ink-4"
+          />
+          <Select disabled value="NA">
+            <SelectTrigger
+              aria-label={t`Zona`}
+              className={`${FILTER_CLASS} w-auto cursor-not-allowed opacity-60 shadow-none`}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="NA">
+                {IS_DEV_UI ? 'Zona: el contrato no la expone' : <Trans>Zona: próximamente</Trans>}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </span>
+        <FilterSelect
+          icon="work"
+          label={t`Posición`}
+          anyLabel={t`todas`}
+          anyValue={ANY}
+          value={positionId}
+          options={uniqueOptions(board.rows, (row) => ({
+            id: row.positionCatalogId,
+            name: row.positionName,
+          })).map((option) => ({ value: option.id, label: option.name }))}
+          onChange={setPositionId}
+        />
+        <FilterSelect
+          icon="badge"
+          label={t`Modalidad`}
+          anyLabel={t`todas`}
+          anyValue={ANY}
+          value={modalityId}
+          options={uniqueOptions(board.rows, (row) => ({
+            id: row.modalityId,
+            name: row.modalityName,
+          })).map((option) => ({ value: option.id, label: option.name }))}
+          onChange={setModalityId}
+        />
+        <FilterSelect
+          icon="translate"
+          label={t`Inglés`}
+          anyLabel={t`cualquiera`}
+          anyValue={ANY}
+          value={englishId}
+          options={uniqueOptions(board.rows, (row) =>
+            row.englishId ? { id: row.englishId, name: row.englishName ?? '' } : null,
+          ).map((option) => ({ value: option.id, label: option.name }))}
+          onChange={setEnglishId}
+        />
+        <FilterReset
+          activeCount={[positionId, modalityId, englishId].filter((value) => value !== ANY).length}
+          onReset={() => {
+            setPositionId(ANY)
+            setModalityId(ANY)
+            setEnglishId(ANY)
+          }}
+        />
+      </div>
+
+      {rows.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-line px-4 py-10 text-center">
+          <img src={personajeComencemos} alt="" aria-hidden className="h-32 w-auto" />
+          <p className="text-sm text-ink-3">
+            <Trans>
+              No hay slots libres con estos filtros. La Bolsa se llena cuando un Manager autoriza
+              una requisición; prueba a quitar un filtro.
+            </Trans>
+          </p>
+        </div>
+      ) : (
+        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {rows.map((row) => (
+            <li key={row.positionId}>
+              {/* Tarjeta con la foto del hotel de portada (patrón del Pipeline y del
+                  tablero de Requisiciones): con varias requisiciones del mismo
+                  puesto, el hotel es lo que distingue una de otra, así que va
+                  grande y sobre su foto, no en una línea chica bajo la posición. */}
+              <MagicCard className="rounded-2xl">
+                <Link
+                  to={`/self-pick/${row.requisitionId}/${row.positionId}`}
+                  className="block touch-manipulation overflow-hidden rounded-2xl bg-surface shadow-md transition-shadow hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
+                >
+                  <div className="relative h-36">
+                    <HotelPhotoBackdrop photoUrl={row.hotelPhotoUrl} />
+                    {/* El velo oscuro hacia abajo es lo que hace legible el nombre en blanco. */}
+                    <div
+                      aria-hidden
+                      className="absolute inset-0 bg-gradient-to-t from-ink/80 via-ink/25 to-ink/5"
+                    />
+                    <span className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-o-700 backdrop-blur-sm">
+                      <MaterialIcon name="layers" aria-hidden className="text-sm" />
+                      <Plural value={row.freeSlots} one="# slot libre" other="# slots libres" />
+                    </span>
+                    <div className="absolute inset-x-3 bottom-2.5 text-white">
+                      <p className="truncate text-lg font-bold" title={row.hotelName}>
+                        {row.hotelName}
+                      </p>
+                      <p className="truncate text-xs text-white/80">{row.departmentName}</p>
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <h2 className="text-lg font-bold text-ink">{row.positionName}</h2>
+                    <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm text-ink-2">
+                      <div className="flex items-center gap-1.5">
+                        <MaterialIcon name="event" aria-hidden className="text-base text-ink-3" />
+                        {formatDate(row.startDate)}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <MaterialIcon
+                          name="schedule"
+                          aria-hidden
+                          className="text-base text-ink-3"
+                        />
+                        {row.startTime ?? '—'}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <MaterialIcon name="badge" aria-hidden className="text-base text-ink-3" />
+                        {row.modalityName}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <MaterialIcon
+                          name="translate"
+                          aria-hidden
+                          className="text-base text-ink-3"
+                        />
+                        {row.englishName ?? t`No requerido`}
+                      </div>
+                    </dl>
+                    <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-4">
+                      <MaterialIcon name="assignment" aria-hidden className="text-sm" />
+                      {row.requisitionNumber}
+                    </p>
+                  </div>
+                </Link>
+              </MagicCard>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}

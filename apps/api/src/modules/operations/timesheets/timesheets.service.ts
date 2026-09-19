@@ -1,0 +1,624 @@
+import {
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common'
+
+import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { assignmentStatusLabel, timesheetStatusLabel } from '../../../common/utils/status-labels.js'
+import { parsePunchQrPayload } from '../../commercial/hotels/punch-qr.js'
+import { NotificationPublisherService } from '../../notifications/index.js'
+
+import type { CreateManualPunchDto, CreatePunchDto } from './dto/create-punch.dto.js'
+import { LUNCH_TYPES } from './dto/create-punch.dto.js'
+import {
+  AssignmentContext,
+  DayRow,
+  EnsureDayParams,
+  PunchRow,
+  TimesheetRow,
+  TimesheetsRepository,
+} from './timesheets.repository.js'
+
+const OPEN = 'OPEN'
+const PENDING = 'PENDING_APPROVAL'
+const APPROVED = 'APPROVED'
+
+const CLOCK_IN = 'CLOCK_IN'
+const CLOCK_OUT = 'CLOCK_OUT'
+/** Entre una marca y la siguiente pasan al menos 15 minutos (Reglas de Negocio, «Mecanismo de ponchado»). */
+const MIN_GAP_MINUTES = 15
+
+const GENERAL_MANAGER = 'ROL-H-03'
+
+export interface PunchEntity {
+  id: string
+  type: string
+  serverAt: string
+  deviceAt: string | null
+  insideGeofence: boolean | null
+  isManual: boolean
+  manualReason: string | null
+}
+
+export interface PunchResult {
+  punch: PunchEntity
+  dayId: string
+  grossMinutes: number
+  hasAnomaly: boolean
+}
+
+export interface TimesheetEntity {
+  id: string
+  worker: { id: string; fullName: string }
+  requisitionId: string
+  weekStart: string
+  weekEnd: string
+  status: string
+  approvedAt: string | null
+  /**
+   * La asignación que respalda estas horas. `ACTIVE` admite marcas; `CLOSED`
+   * o `CANCELLED` son historia (se aprueban y pagan, pero ya no se captura);
+   * `null` cuando no hay ninguna — solo pasa con datos sembrados a mano.
+   */
+  assignment: { status: 'ACTIVE' | 'CLOSED' | 'CANCELLED'; endsOn: string | null } | null
+  days?: DayEntity[]
+  totals?: { grossMinutes: number; netMinutes: number; overtimeMinutes: number }
+}
+
+export interface DayEntity {
+  id: string
+  workDate: string
+  grossMinutes: number
+  netMinutes: number
+  lunchDeductionMinutes: number
+  actualLunchMinutes: number | null
+  overtimeMinutes: number
+  isAbsence: boolean
+  hasAnomaly: boolean
+  reviewNote: string | null
+  punches: PunchEntity[]
+}
+
+@Injectable()
+export class TimesheetsService {
+  constructor(
+    private readonly repo: TimesheetsRepository,
+    private readonly notifications: NotificationPublisherService,
+  ) {}
+
+  async punch(dto: CreatePunchDto, user: AuthenticatedUser): Promise<PunchResult> {
+    const assignment = await this.assignment(dto.assignmentId ?? (await this.assignmentToday(user)))
+
+    // La asignación puede llegar en el cuerpo, así que sin esto un colaborador
+    // podía ponchar por otro con solo cambiar el id. Quien poncha es el dueño
+    // de la asignación: el ponche ajeno es el manual, que es del Supervisor.
+    await this.assertOwnAssignment(assignment, user)
+
+    // La evidencia de presencia de Entrada y Salida la decide el HOTEL
+    // (Reglas de Negocio, «Método de ponche por hotel»): la foto tomada en el
+    // momento, o el QR impreso en el acceso. Las marcas de lunch no llevan.
+    const qrVersion = this.assertEvidence(dto, assignment)
+
+    const now = new Date()
+    const { dayId, status, ensure } = await this.openDay(assignment, now)
+
+    this.assertEditable(status)
+    await this.assertMinGap(dayId, now)
+
+    if (dayId !== null && (await this.repo.punchExists(dayId, dto.type))) {
+      throw new ConflictException({
+        code: 'PUNCH_ALREADY_REGISTERED',
+        message: `Ya hay una marca ${dto.type} en este día`,
+      })
+    }
+
+    const inside = assignment.hasCoordinates
+      ? await this.repo.insideGeofence(assignment.hotelId, dto.latitude, dto.longitude)
+      : null
+
+    if (inside === false) {
+      throw new UnprocessableEntityException({
+        code: 'OUTSIDE_GEOFENCE',
+        message: 'Estás fuera del hotel: pide al Supervisor un ponche manual',
+      })
+    }
+
+    // Crear el día (si hacía falta) e insertar la marca son un solo hecho:
+    // si esto lanza, no queda ningún rastro de un día que nunca tuvo marca.
+    const { id, dayId: resolvedDayId } = await this.repo.addPunch({
+      ensure,
+      type: dto.type,
+      latitude: dto.latitude,
+      longitude: dto.longitude,
+      insideGeofence: inside,
+      photoPath: dto.photoPath ?? null,
+      qrVersion,
+      deviceAt: dto.deviceAt ?? null,
+      userId: user.id,
+      roleCode: user.roleCode,
+    })
+
+    return this.afterPunch(resolvedDayId, id)
+  }
+
+  async manualPunch(dto: CreateManualPunchDto, user: AuthenticatedUser): Promise<PunchResult> {
+    const assignment = await this.assignment(dto.assignmentId)
+    const { dayId, status, ensure } = await this.openDay(assignment, dto.workDate)
+
+    this.assertEditable(status)
+
+    if (dayId !== null && (await this.repo.punchExists(dayId, dto.type))) {
+      throw new ConflictException({
+        code: 'PUNCH_ALREADY_REGISTERED',
+        message: `Ya hay una marca ${dto.type} en este día`,
+      })
+    }
+
+    const { id, dayId: resolvedDayId } = await this.repo.addManualPunch({
+      ensure,
+      type: dto.type,
+      occurredAt: dto.occurredAt,
+      reason: dto.reason,
+      userId: user.id,
+      roleCode: user.roleCode,
+    })
+
+    try {
+      await this.notifications.publish({
+        type: 'PUNCH_CORRECTED',
+        title: 'Ponche corregido',
+        body: `Tu Supervisor registró una marca manual: ${dto.reason}`.slice(0, 500),
+        entity: { type: 'operations.punch_mark', id },
+        actorUserId: user.id,
+        audience: [{ kind: 'WORKER', workerId: assignment.workerId }],
+      })
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no revierte la marca.
+    }
+
+    return this.afterPunch(resolvedDayId, id)
+  }
+
+  async list(user: AuthenticatedUser, status?: string): Promise<TimesheetEntity[]> {
+    const rows = await this.repo.listAll({
+      hotelId: user.hotelId,
+      departmentId: user.roleCode === GENERAL_MANAGER ? null : user.departmentId,
+      status,
+    })
+
+    return rows.map(toTimesheet)
+  }
+
+  // Sus horas, con el detalle de cada día y sus marcas: de ahí sale el día de
+  // hoy que la pantalla del ponche necesita para saber cuál marca toca.
+  //
+  // Solo la semana en curso trae detalle; las anteriores van como cabecera,
+  // porque cargar cada marca de un año de historial no lo pide nadie.
+  async mine(user: AuthenticatedUser): Promise<TimesheetEntity[]> {
+    const workerId = await this.repo.workerOfUser(user.id)
+
+    if (workerId === null) {
+      throw new NotFoundException({
+        code: 'WORKER_NOT_LINKED',
+        message: 'Tu cuenta no está ligada a un colaborador',
+      })
+    }
+
+    const sheets = await this.repo.listOfWorker(workerId)
+
+    return Promise.all(
+      sheets.map(async (sheet, index) => (index === 0 ? this.withDays(sheet) : toTimesheet(sheet))),
+    )
+  }
+
+  private async withDays(sheet: TimesheetRow): Promise<TimesheetEntity> {
+    const days = await this.repo.days(sheet.id)
+
+    return {
+      ...toTimesheet(sheet),
+      days: await Promise.all(days.map(async (d) => toDay(d, await this.repo.punches(d.id)))),
+      totals: {
+        grossMinutes: days.reduce((t, d) => t + d.grossMinutes, 0),
+        netMinutes: days.reduce((t, d) => t + d.netMinutes, 0),
+        overtimeMinutes: days.reduce((t, d) => t + d.overtimeMinutes, 0),
+      },
+    }
+  }
+
+  async get(id: string): Promise<TimesheetEntity> {
+    const sheet = await this.timesheet(id)
+    const days = await this.repo.days(id)
+
+    const detailed = await Promise.all(
+      days.map(async (d) => toDay(d, await this.repo.punches(d.id))),
+    )
+
+    return {
+      ...toTimesheet(sheet),
+      days: detailed,
+      totals: {
+        grossMinutes: days.reduce((t, d) => t + d.grossMinutes, 0),
+        netMinutes: days.reduce((t, d) => t + d.netMinutes, 0),
+        overtimeMinutes: days.reduce((t, d) => t + d.overtimeMinutes, 0),
+      },
+    }
+  }
+
+  async submit(id: string, user: AuthenticatedUser): Promise<TimesheetEntity> {
+    const sheet = await this.timesheet(id)
+
+    if (sheet.status !== OPEN) {
+      throw new ConflictException({
+        code: 'TIMESHEET_NOT_OPEN',
+        message: `Esta semana ya está ${timesheetStatusLabel(sheet.status)}: no admite cambios`,
+      })
+    }
+
+    const pending = (await this.repo.days(id)).filter((d) => d.hasAnomaly)
+
+    if (pending.length > 0) {
+      throw new UnprocessableEntityException({
+        code: 'ANOMALIES_PENDING',
+        message: `Quedan ${pending.length} días con anomalía sin resolver`,
+        details: pending.map((d) => ({
+          field: 'workDate',
+          value: d.workDate.toISOString().slice(0, 10),
+        })),
+      })
+    }
+
+    await this.repo.setStatus({
+      id,
+      status: PENDING,
+      approvedBy: null,
+      userId: user.id,
+      roleCode: user.roleCode,
+      event: 'TIMESHEET_SUBMITTED',
+    })
+
+    return this.get(id)
+  }
+
+  async approve(id: string, user: AuthenticatedUser): Promise<TimesheetEntity> {
+    const sheet = await this.timesheet(id)
+
+    if (sheet.status !== PENDING) {
+      throw new ConflictException({
+        code: 'TIMESHEET_NOT_PENDING',
+        message: `Solo se aprueba una semana enviada a aprobación, y esta está ${timesheetStatusLabel(sheet.status)}`,
+      })
+    }
+
+    if (user.departmentId && sheet.departmentId !== user.departmentId) {
+      throw new ForbiddenException({
+        code: 'DEPARTMENT_OUT_OF_SCOPE',
+        message: 'Solo apruebas las horas de tu departamento',
+      })
+    }
+
+    await this.repo.setStatus({
+      id,
+      status: APPROVED,
+      approvedBy: user.id,
+      userId: user.id,
+      roleCode: user.roleCode,
+      event: 'HOURS_APPROVED',
+    })
+
+    try {
+      await this.notifications.publish({
+        type: 'HOURS_APPROVED',
+        title: 'Horas aprobadas',
+        body: 'Tus horas de la semana ya están aprobadas.',
+        entity: { type: 'operations.timesheet', id: sheet.id },
+        actorUserId: user.id,
+        audience: [{ kind: 'WORKER', workerId: sheet.worker.id }],
+      })
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no revierte la aprobación.
+    }
+
+    return this.get(id)
+  }
+
+  async reviewDay(dayId: string, note: string, user: AuthenticatedUser): Promise<DayEntity> {
+    const day = await this.repo.dayById(dayId)
+
+    if (!day) {
+      throw new NotFoundException({ code: 'DAY_NOT_FOUND', message: 'El día no existe' })
+    }
+
+    this.assertEditable(day.status)
+
+    await this.repo.reviewDay({ dayId, note, userId: user.id, roleCode: user.roleCode })
+
+    const rows = await this.repo.days(day.timesheetId)
+    const row = rows.find((d) => d.id === dayId)
+
+    if (!row) {
+      throw new NotFoundException({ code: 'DAY_NOT_FOUND', message: 'El día no existe' })
+    }
+
+    return toDay(row, await this.repo.punches(dayId))
+  }
+
+  private async afterPunch(dayId: string, punchId: string): Promise<PunchResult> {
+    const punches = await this.repo.punches(dayId)
+    const { grossMinutes, hasAnomaly } = summarize(punches)
+
+    await this.repo.recalcDay(dayId, grossMinutes, hasAnomaly)
+
+    const punch = punches.find((p) => p.id === punchId)
+
+    if (!punch) {
+      throw new ConflictException({
+        code: 'PUNCH_NOT_FOUND',
+        message: 'La marca no quedó registrada',
+      })
+    }
+
+    return { punch: toPunch(punch), dayId, grossMinutes, hasAnomaly }
+  }
+
+  private assertEditable(status: string): void {
+    if (status === APPROVED) {
+      throw new ConflictException({
+        code: 'TIMESHEET_APPROVED',
+        message: 'Las horas ya están aprobadas y no se modifican',
+      })
+    }
+  }
+
+  // Read-only a propósito: solo LEE si el timesheet/día ya existen, nunca los
+  // crea. Si el timesheet no existe todavía es uno nuevo — su estado por
+  // defecto es OPEN y la validación pasa trivialmente; si el día no existe,
+  // no puede tener marcas y `punchExists` se salta igual de trivial. Crear
+  // de verdad ocurre solo al final, dentro de la transacción que también
+  // inserta la marca (ver `addPunch`/`addManualPunch`), para que un intento
+  // rechazado no deje una fila fantasma.
+  private async openDay(
+    assignment: AssignmentContext,
+    when: Date,
+  ): Promise<{ dayId: string | null; status: string; ensure: EnsureDayParams }> {
+    const schedule = await this.repo.scheduleOf(assignment.hotelId, when)
+
+    if (!schedule) {
+      throw new UnprocessableEntityException({
+        code: 'SCHEDULE_MISSING',
+        message: 'El hotel no tiene Schedule para esa semana',
+      })
+    }
+
+    const workDate = new Date(`${when.toISOString().slice(0, 10)}T00:00:00Z`)
+
+    const timesheet = await this.repo.findTimesheet({
+      workerId: assignment.workerId,
+      requisitionId: assignment.requisitionId,
+      weekStart: schedule.weekStart,
+    })
+
+    const day = timesheet ? await this.repo.findDay(timesheet.id, workDate) : null
+
+    return {
+      dayId: day?.id ?? null,
+      status: timesheet?.status ?? OPEN,
+      ensure: {
+        scheduleId: schedule.id,
+        workerId: assignment.workerId,
+        requisitionId: assignment.requisitionId,
+        weekStart: schedule.weekStart,
+        weekEnd: schedule.weekEnd,
+        workDate,
+      },
+    }
+  }
+
+  // Sin `assignmentId` en el cuerpo se resuelve el turno de HOY del colaborador
+  // del token. Es lo que permite ponchar desde la app sin que el cliente
+  // conozca su asignación — ningún endpoint suyo la exponía.
+  private async assignmentToday(user: AuthenticatedUser): Promise<string> {
+    const workerId = await this.repo.workerOfUser(user.id)
+
+    if (workerId === null) {
+      throw new NotFoundException({
+        code: 'WORKER_NOT_LINKED',
+        message: 'Tu cuenta no está ligada a un colaborador',
+      })
+    }
+
+    const shifts = await this.repo.shiftsToday(workerId)
+
+    if (shifts.length === 0) {
+      throw new NotFoundException({
+        code: 'NO_SHIFT_TODAY',
+        message: 'No tienes turno programado hoy',
+      })
+    }
+
+    if (shifts.length > 1) {
+      throw new ConflictException({
+        code: 'MULTIPLE_SHIFTS_TODAY',
+        message: 'Tienes más de un turno hoy: di en cuál estás ponchando',
+        details: shifts.map((s) => ({ field: 'assignmentId', value: s.assignmentId })),
+      })
+    }
+
+    return (shifts[0] as { assignmentId: string }).assignmentId
+  }
+
+  /**
+   * Devuelve la versión del QR escaneado (para guardarla en la marca) o `null`
+   * cuando la evidencia es la foto o la marca no la exige.
+   */
+  private assertEvidence(dto: CreatePunchDto, assignment: AssignmentContext): number | null {
+    if (LUNCH_TYPES.includes(dto.type as (typeof LUNCH_TYPES)[number])) return null
+
+    if (assignment.punchMethod !== 'QR') {
+      if (!dto.photoPath) {
+        throw new UnprocessableEntityException({
+          code: 'PHOTO_REQUIRED',
+          message: `La marca ${dto.type} necesita foto`,
+        })
+      }
+      return null
+    }
+
+    if (!dto.qrCode) {
+      throw new UnprocessableEntityException({
+        code: 'QR_REQUIRED',
+        message: `En este hotel la marca ${dto.type} se registra escaneando el QR del acceso`,
+      })
+    }
+
+    const parsed = parsePunchQrPayload(dto.qrCode)
+    const matches =
+      parsed !== null &&
+      parsed.hotelId === assignment.hotelId &&
+      assignment.punchQrSecret !== null &&
+      parsed.secret === assignment.punchQrSecret
+
+    if (!matches) {
+      throw new UnprocessableEntityException({
+        code: 'QR_INVALID',
+        message:
+          'Ese código no es el QR vigente de este hotel: pide el impreso actual, o al Supervisor un ponche manual',
+      })
+    }
+
+    return assignment.punchQrVersion
+  }
+
+  /**
+   * Entre una marca y la siguiente pasan al menos 15 minutos: sin esto la
+   * Entrada, el lunch y su regreso se podían ponchar en el mismo minuto y el
+   * día quedaba «completo» sin haber trabajado. La primera marca del día no
+   * tiene con qué medirse. A propósito NO se dice desde qué hora: la espera
+   * no es un cronómetro para el colaborador (decisión de Hugo, 2026-09-12).
+   */
+  private async assertMinGap(dayId: string | null, now: Date): Promise<void> {
+    if (dayId === null) return
+    const marks = await this.repo.punches(dayId)
+    const last = marks.reduce<Date | null>(
+      (latest, mark) => (latest === null || mark.serverAt > latest ? mark.serverAt : latest),
+      null,
+    )
+    if (last === null) return
+    if (now.getTime() < last.getTime() + MIN_GAP_MINUTES * 60_000) {
+      throw new UnprocessableEntityException({
+        code: 'PUNCH_TOO_SOON',
+        message: 'Aún no puedes registrar la siguiente marca',
+      })
+    }
+  }
+
+  private async assertOwnAssignment(
+    assignment: AssignmentContext,
+    user: AuthenticatedUser,
+  ): Promise<void> {
+    const worker = await this.repo.workerOfUser(user.id)
+
+    if (worker === null || worker !== assignment.workerId) {
+      throw new ForbiddenException({
+        code: 'NOT_YOUR_ASSIGNMENT',
+        message: 'Solo se poncha sobre una asignación propia',
+      })
+    }
+  }
+
+  private async assignment(id: string): Promise<AssignmentContext> {
+    const row = await this.repo.assignment(id)
+
+    if (!row) {
+      throw new NotFoundException({
+        code: 'ASSIGNMENT_NOT_FOUND',
+        message: 'La asignación no existe',
+      })
+    }
+
+    if (row.status !== 'ACTIVE') {
+      throw new UnprocessableEntityException({
+        code: 'ASSIGNMENT_NOT_ACTIVE',
+        message: `No se poncha sobre una asignación ${assignmentStatusLabel(row.status)}`,
+      })
+    }
+
+    return row
+  }
+
+  private async timesheet(id: string): Promise<TimesheetRow & { departmentId: string | null }> {
+    const row = await this.repo.timesheet(id)
+
+    if (!row) {
+      throw new NotFoundException({
+        code: 'TIMESHEET_NOT_FOUND',
+        message: 'El Timesheet no existe',
+      })
+    }
+
+    return row
+  }
+}
+
+export function summarize(punches: PunchRow[]): { grossMinutes: number; hasAnomaly: boolean } {
+  const at = (type: string): Date | undefined => punches.find((p) => p.type === type)?.serverAt
+
+  const start = at(CLOCK_IN)
+  const end = at(CLOCK_OUT)
+
+  if (!start || !end) {
+    return { grossMinutes: 0, hasAnomaly: true }
+  }
+
+  const minutes = Math.round((end.getTime() - start.getTime()) / 60_000)
+
+  return { grossMinutes: Math.max(0, minutes), hasAnomaly: minutes <= 0 }
+}
+
+function toPunch(row: PunchRow): PunchEntity {
+  return {
+    id: row.id,
+    type: row.type,
+    serverAt: row.serverAt.toISOString(),
+    deviceAt: row.deviceAt?.toISOString() ?? null,
+    insideGeofence: row.insideGeofence,
+    isManual: row.isManual,
+    manualReason: row.manualReason,
+  }
+}
+
+function toDay(row: DayRow, punches: PunchRow[]): DayEntity {
+  return {
+    id: row.id,
+    workDate: new Date(row.workDate).toISOString().slice(0, 10),
+    grossMinutes: row.grossMinutes,
+    netMinutes: row.netMinutes,
+    lunchDeductionMinutes: row.lunchDeductionMinutes,
+    actualLunchMinutes: row.actualLunchMinutes,
+    overtimeMinutes: row.overtimeMinutes,
+    isAbsence: row.isAbsence,
+    hasAnomaly: row.hasAnomaly,
+    reviewNote: row.reviewNote,
+    punches: punches.map(toPunch),
+  }
+}
+
+function toTimesheet(row: TimesheetRow): TimesheetEntity {
+  return {
+    id: row.id,
+    worker: row.worker,
+    requisitionId: row.requisitionId,
+    weekStart: new Date(row.weekStart).toISOString().slice(0, 10),
+    weekEnd: new Date(row.weekEnd).toISOString().slice(0, 10),
+    status: row.status,
+    approvedAt: row.approvedAt ? new Date(row.approvedAt).toISOString() : null,
+    assignment: row.assignment
+      ? {
+          status: row.assignment.status as 'ACTIVE' | 'CLOSED' | 'CANCELLED',
+          endsOn: row.assignment.endsOn,
+        }
+      : null,
+  }
+}

@@ -1,0 +1,82 @@
+# Despliegue del front (apps/web) a Firebase Hosting. La rama se llama como su
+# ambiente (§1): staging -> oranjeapp-gcp, main -> oranje-prod.
+#
+# A diferencia del API, aquí NO aplica "un solo artefacto": Vite hornea el
+# ambiente en el build (`--mode` lee el .env.<ambiente> commiteado), así que
+# cada rama construye el suyo. Lo que iguala staging y producción es el
+# commit, no el binario.
+#
+# Hosting estático puro, sin rewrite de /api: el front llama al API por su URL
+# de Cloud Run, así que el API debe listar los dominios del hosting en
+# CORS_ORIGINS.
+name: Desplegar Web
+
+on:
+  push:
+    branches: [staging, main]
+    # Solo lo que puede cambiar el bundle: la app, los paquetes que consume
+    # por fuente, el lockfile y este workflow.
+    paths:
+      - apps/web/**
+      - packages/**
+      - pnpm-lock.yaml
+      - .github/workflows/deploy-web.yml
+
+# Uno a la vez por ambiente: dos merges seguidos competirían por la misma
+# versión del sitio.
+concurrency:
+  group: desplegar-web-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  # Workload Identity Federation: GitHub firma un token y GCP lo cambia por
+  # credenciales, así no hay llave de cuenta de servicio guardada como secreto
+  id-token: write
+
+jobs:
+  desplegar:
+    runs-on: ubuntu-latest
+
+    # El ambiente de GitHub aporta las variables y permite exigir aprobación
+    # manual antes de producción
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+
+    env:
+      MODO: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # El CI del PR ya corrió el typecheck completo, pero este job no espera
+      # al CI del push: se repite aquí para no publicar un bundle que el CI
+      # marcaría en rojo minutos después.
+      - name: Typecheck
+        run: pnpm -F @oranje/web typecheck
+
+      # packages/ui, contracts y domain se consumen por fuente: no hay nada
+      # que compilar antes del build de la app.
+      - name: Build
+        run: pnpm -F @oranje/web exec vite build --mode "$MODO"
+
+      - name: Autenticar contra GCP
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.DEPLOY_SERVICE_ACCOUNT }}
+
+      # firebase-tools usa las credenciales de ADC que dejó el paso anterior.
+      # El sitio es el default del proyecto (<proyecto>.web.app).
+      - name: Desplegar a Firebase Hosting
+        working-directory: apps/web
+        run: npx -y firebase-tools@14 deploy --only hosting --project "${{ vars.GCP_PROJECT_ID }}"

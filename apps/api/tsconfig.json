@@ -1,4 +1,19 @@
 {
   "extends": "../../packages/config/tsconfig/nestjs.json",
-  "include": ["src/**/*.ts", "test/**/*.ts", "prisma/**/*.ts", "prisma.config.ts"]
+  "compilerOptions": {
+    // Explícito porque los globales de Jest no entraban solos.
+    // @types/express no va aquí: se importa por su nombre. multer sí, porque su
+    // tipo de archivo solo existe como global.
+    "types": ["node", "jest", "multer"],
+
+    // Lo exige ts-jest con module: NodeNext
+    "isolatedModules": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts",
+    "prisma/**/*.ts",
+    "scripts/**/*.ts",
+    "prisma.config.ts"
+  ]
 }

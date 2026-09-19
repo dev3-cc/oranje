@@ -1,0 +1,159 @@
+import { render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { Provider } from 'react-redux'
+import { createMemoryRouter, RouterProvider } from 'react-router'
+import { describe, expect, it } from 'vitest'
+
+import { SelfPickPage } from './SelfPickPage'
+import { SlotAssignmentPage } from './SlotAssignmentPage'
+
+import { store } from '@/app/store'
+
+const SLOW = { timeout: 4000 }
+
+function renderSelfPick(): void {
+  const router = createMemoryRouter(
+    [
+      { path: '/self-pick', element: <SelfPickPage /> },
+      { path: '/self-pick/:requisitionId/:positionId', element: <SlotAssignmentPage /> },
+    ],
+    { initialEntries: ['/self-pick'] },
+  )
+  render(
+    <Provider store={store}>
+      <RouterProvider router={router} />
+    </Provider>,
+  )
+}
+
+describe('la Bolsa Self-Pick', () => {
+  it('cuenta los slots libres reales y explica RR-15', async () => {
+    renderSelfPick()
+
+    expect(
+      await screen.findByText('13 slots libres en 5 requisiciones autorizadas', undefined, SLOW),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/Gana el primero que confirma \(RR-15\)/)).toBeInTheDocument()
+    expect(screen.queryByText('202608190930·K7')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Zona')).toBeDisabled()
+  })
+
+  it('cada tarjeta lleva la foto del hotel y su nombre grande sobre ella', async () => {
+    renderSelfPick()
+    await screen.findByText('13 slots libres en 5 requisiciones autorizadas', undefined, SLOW)
+
+    /* Con varias requisiciones del mismo puesto, el hotel es lo que distingue
+       una tarjeta de otra: va sobre su foto de Places (D-34), no en una línea chica. */
+    const title = screen.getAllByText('Hotel Puerto Real')[0]
+    expect(title).toHaveClass('text-lg', 'font-bold')
+    const card = title?.closest('a')
+    expect(card).not.toBeNull()
+    const photo = card?.querySelector('img[src*="picsum.photos"]')
+    expect(photo).not.toBeNull()
+  })
+
+  it('el filtro de posición deja solo sus renglones, y «Quitar filtros» los devuelve', async () => {
+    renderSelfPick()
+    const user = userEvent.setup()
+
+    await screen.findByText('13 slots libres en 5 requisiciones autorizadas', undefined, SLOW)
+    expect(screen.queryByRole('button', { name: /Quitar filtros/ })).not.toBeInTheDocument()
+    await user.click(screen.getByLabelText('Posición'))
+    await user.click(await screen.findByRole('option', { name: 'Posición: Cocinero' }))
+
+    expect(screen.getByRole('heading', { name: 'Cocinero' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Housekeeper' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Quitar filtros/ }))
+    expect(screen.getAllByRole('heading', { name: 'Housekeeper' }).length).toBeGreaterThan(0)
+    expect(screen.queryByRole('button', { name: /Quitar filtros/ })).not.toBeInTheDocument()
+  })
+
+  it('tomar un slot: los ocupados se ven, el libre se asigna y RR-15 avanza el formulario', async () => {
+    renderSelfPick()
+    const user = userEvent.setup()
+
+    const folio = await screen.findByText('202608120930·K7', undefined, SLOW)
+    await user.click(folio.closest('a') as HTMLElement)
+
+    expect(await screen.findByText('Asignación de slot', undefined, SLOW)).toBeInTheDocument()
+    expect(screen.getByText(/renglón 1 · Housekeeper/)).toBeInTheDocument()
+    expect(await screen.findByText('María Sandoval', undefined, SLOW)).toBeInTheDocument()
+    expect(screen.getAllByText('ocupado')).toHaveLength(4)
+    expect(screen.getAllByText('libre')).toHaveLength(2)
+    expect(screen.getByText('Asignar al slot 5')).toBeInTheDocument()
+
+    const assignButton = screen.getByRole('button', { name: 'Asignar colaborador' })
+    await user.click(screen.getByLabelText('Colaborador'))
+    await user.click(await screen.findByRole('option', { name: 'Ana Rivera Gómez · Zona Centro' }))
+    await user.click(screen.getByLabelText('Tipo'))
+    await user.click(await screen.findByRole('option', { name: 'Temporal' }))
+    expect(assignButton).toBeDisabled()
+    await user.click(screen.getByLabelText('Tipo'))
+    await user.click(await screen.findByRole('option', { name: 'Fijo' }))
+    expect(assignButton).toBeEnabled()
+
+    await user.click(assignButton)
+
+    expect(await screen.findByText('Ana Rivera Gómez', undefined, SLOW)).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('Asignar al slot 6')).toBeInTheDocument()
+    }, SLOW)
+    expect(screen.getAllByText('ocupado')).toHaveLength(5)
+  })
+
+  it('el renglón completo lo dice, sin formulario', async () => {
+    renderSelfPick()
+    const user = userEvent.setup()
+
+    const folio = await screen.findByText('202608120930·K7', undefined, SLOW)
+    await user.click(folio.closest('a') as HTMLElement)
+
+    await screen.findByText('Asignar al slot 6', undefined, SLOW)
+    await user.click(screen.getByLabelText('Colaborador'))
+    await user.click(
+      await screen.findByRole('option', { name: 'María Fernanda Ortiz · Zona Centro' }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Asignar colaborador' }))
+
+    expect(await screen.findByText('Renglón completo', undefined, SLOW)).toBeInTheDocument()
+    expect(screen.getByText(/Los 6 slots están ocupados/)).toBeInTheDocument()
+
+    await user.click(screen.getByRole('link', { name: 'Bolsa · Self-Pick' }))
+    expect(
+      await screen.findByText('11 slots libres en 4 requisiciones autorizadas', undefined, SLOW),
+    ).toBeInTheDocument()
+    const board = screen.getByRole('list')
+    expect(within(board).queryByText('202608120930·K7')).not.toBeInTheDocument()
+  })
+
+  it('liberar un slot exige motivo — antes esto solo se podía por API', async () => {
+    renderSelfPick()
+    const user = userEvent.setup()
+
+    // Renglón aparte (D4/Houseman), que ningún otro test de este archivo toca.
+    const folio = await screen.findByText('202608130800·D4', undefined, SLOW)
+    await user.click(folio.closest('a') as HTMLElement)
+    expect(await screen.findByText('ocupado', undefined, SLOW)).toBeInTheDocument()
+    expect(screen.getAllByText('ocupado')).toHaveLength(1)
+    expect(screen.getAllByText('libre')).toHaveLength(3)
+
+    const liberar = screen.getByRole('button', { name: 'Liberar' })
+    await user.click(liberar)
+
+    const confirmButton = screen.getByRole('button', { name: 'Sí, liberar slot' })
+    // Sin motivo no pasa: el back lo exige (`ReleaseAssignmentDto`).
+    expect(confirmButton).toBeDisabled()
+    await user.type(
+      screen.getByLabelText('Motivo para liberar el slot'),
+      'Se equivocaron de persona',
+    )
+    expect(confirmButton).toBeEnabled()
+    await user.click(confirmButton)
+
+    await waitFor(() => {
+      expect(screen.getAllByText('libre')).toHaveLength(4)
+    }, SLOW)
+    expect(screen.queryByText('ocupado')).not.toBeInTheDocument()
+  })
+})
