@@ -36,7 +36,10 @@ jobs:
       REPOSITORIO: oranje
 
     steps:
+      # fetch-depth 2: en main hay que ver los padres del merge para promover.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Autenticar contra GCP
         uses: google-github-actions/auth@v2
@@ -63,6 +66,12 @@ jobs:
 
       # --- main: no construye, promueve lo que ya se probó ---
       # Si el commit no tiene imagen en staging, nunca pasó por ahí y se detiene.
+      #
+      # El PR staging → main se cierra con un merge commit (la protección de
+      # rama no deja hacer fast-forward), así que el SHA de main no existe en
+      # staging: la imagen probada es la de su SEGUNDO padre, que es la punta
+      # de staging al mergear. Se prueba primero el SHA tal cual (por si algún
+      # día el merge fuera fast-forward) y luego el padre.
       - name: Promover la imagen probada en staging
         if: github.ref_name == 'main'
         id: promover
@@ -71,13 +80,21 @@ jobs:
           DESTINO="${{ vars.GCP_PROJECT_ID }}"
           RUTA_ORIGEN="$REGION-docker.pkg.dev/$ORIGEN/$REPOSITORIO/$SERVICIO"
 
-          DIGEST=$(gcloud artifacts docker images describe \
-            "$RUTA_ORIGEN:${{ github.sha }}" \
-            --format='value(image_summary.digest)' \
-            --project "$ORIGEN" 2>/dev/null || true)
+          DIGEST=""
+          for CANDIDATO in "${{ github.sha }}" "$(git rev-parse --verify --quiet HEAD^2 || true)"; do
+            [ -z "$CANDIDATO" ] && continue
+            DIGEST=$(gcloud artifacts docker images describe \
+              "$RUTA_ORIGEN:$CANDIDATO" \
+              --format='value(image_summary.digest)' \
+              --project "$ORIGEN" 2>/dev/null || true)
+            if [ -n "$DIGEST" ]; then
+              echo "Imagen probada en staging: $CANDIDATO → $DIGEST"
+              break
+            fi
+          done
 
           if [ -z "$DIGEST" ]; then
-            echo "::error::El commit ${{ github.sha }} no tiene imagen en staging."
+            echo "::error::Ni ${{ github.sha }} ni su padre de staging tienen imagen en staging."
             echo "::error::Producción solo promueve lo que ya se probó — no reconstruye."
             exit 1
           fi
