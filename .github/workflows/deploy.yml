@@ -17,7 +17,10 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: read
+  # write: el último paso del deploy a producción deja un tag `prod-…` en el
+  # repo como registro de rollback (Estándares §11); con read el push del tag
+  # daba 403 y el primer deploy quedó marcado en rojo ya con todo servido.
+  contents: write
   # Workload Identity Federation: GitHub firma un token y GCP lo cambia por
   # credenciales, así no hay llave de cuenta de servicio guardada como secreto
   id-token: write

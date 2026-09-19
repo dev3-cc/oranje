@@ -58,8 +58,26 @@ paso_dump() {
 
 paso_restore() {
   echo "== 2 restore en prod (--clean: prod queda igual a staging)"
-  PGPASSWORD="$PROD_PGPASSWORD" pg_restore -h localhost -p "$PROD_PORT" -U oranje_dev -d oranje \
-    --clean --if-exists --no-owner --no-privileges --exit-on-error --jobs 4 "$DUMP"
+  # Se vacía prod antes (los esquemas de la app completos): `--clean` de
+  # pg_restore se atora con las particiones del journal ("cannot drop
+  # inherited constraint"). El dump trae los CREATE SCHEMA.
+  local drops=""
+  for s in "${ESQUEMAS[@]}"; do
+    [ "$s" = public ] && continue
+    drops+="DROP SCHEMA IF EXISTS $s CASCADE;"
+  done
+  PGPASSWORD="$PROD_PGPASSWORD" psql -h localhost -p "$PROD_PORT" -U oranje_dev -d oranje -v ON_ERROR_STOP=1 -q \
+    -c "$drops" -c 'DROP TABLE IF EXISTS public._prisma_migrations;' \
+    -c 'DROP FUNCTION IF EXISTS public.set_updated_at() CASCADE;'
+  # pg_dump 17 emite `SET transaction_timeout`, que Postgres 15 no conoce:
+  # se convierte a SQL, se filtra esa línea y se corre con psql parando en
+  # el primer error real.
+  PGPASSWORD="$PROD_PGPASSWORD" pg_restore --no-owner --no-privileges -f - "$DUMP" \
+    | grep -v '^SET transaction_timeout' \
+    | grep -v '^CREATE SCHEMA public;' \
+    | grep -v '^COMMENT ON SCHEMA public ' \
+    | PGPASSWORD="$PROD_PGPASSWORD" psql -h localhost -p "$PROD_PORT" -U oranje_dev -d oranje \
+        -v ON_ERROR_STOP=1 -q
   PGPASSWORD="$PROD_PGPASSWORD" psql -h localhost -p "$PROD_PORT" -U oranje_dev -d oranje -Atc \
     "select count(*) || ' tablas' from information_schema.tables where table_schema in ('catalogs','commercial','coverage','demand','identity','journal','notifications','operations','personal','settlement','supervision')"
 }
@@ -82,7 +100,12 @@ paso_grants() {
 
 paso_firebase() {
   echo "== 6 cuentas de Firebase (con contraseña) staging → prod"
-  node scripts/prod/migrar-cuentas-firebase.mjs "$STAGING_PROJECT" "$PROD_PROJECT"
+  # Solo las cuentas que sobrevivieron a la limpieza: las de prueba no viajan.
+  local correos="${TMPDIR:-/tmp}/oranje-correos-prod.txt"
+  PGPASSWORD="$PROD_PGPASSWORD" psql -h localhost -p "$PROD_PORT" -U oranje_dev -d oranje -Atc \
+    'SELECT lower(email) FROM identity."user"' > "$correos"
+  node scripts/prod/migrar-cuentas-firebase.mjs "$STAGING_PROJECT" "$PROD_PROJECT" "$correos"
+  rm -f "$correos"
 }
 
 paso_bucket() {
