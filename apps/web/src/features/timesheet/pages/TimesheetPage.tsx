@@ -30,6 +30,7 @@ import {
 } from '../types/timesheet.types'
 
 import personajeManager from '@/assets/ilustrations/personaje-manager.svg'
+import fotoEquipo from '@/assets/ilustrations/timesheet-equipo.webp'
 import { Button } from '@/shared/components/Button'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
@@ -136,30 +137,44 @@ export function TimesheetPage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-center gap-3">
-        <div className="flex flex-wrap items-baseline gap-3">
-          <h1 className="text-3xl font-bold tracking-tight text-ink">
-            <FoldText text={t`Timesheet`} />
-          </h1>
-          {/* El rango sale de los días que llegaron, no de un texto aparte: así el
-              título no puede decir una semana distinta de la que se ve. */}
-          {rangeLabel !== '' && (
-            <p className="text-base text-ink-3">
-              <Trans>Semana {rangeLabel}</Trans>
-            </p>
+      {/* Misma cabecera-tarjeta que Conversión, Contratos y Propuestas: título
+          a la izquierda y la foto (recortada, sin fondo; en el teléfono va una
+          captura real del Timesheet en móvil) sentada en el borde inferior y
+          sobresaliendo por arriba; el `clip-path` de la tarjeta la recorta con
+          las esquinas redondeadas y deja 3rem arriba. El navegador de semana
+          y el conmutador de vista bajan al bloque de texto. */}
+      <header className="relative flex items-end justify-between gap-4 rounded-2xl border border-line bg-gradient-to-r from-o-50 via-surface to-surface px-6 pt-5 pb-5 [clip-path:inset(-3rem_0_0_0_round_1rem)] sm:mt-8 sm:min-h-44 sm:pr-72">
+        <div className="relative z-10">
+          <div className="flex flex-wrap items-baseline gap-3">
+            <h1 className="text-3xl font-bold tracking-tight text-ink">
+              <FoldText text={t`Timesheet`} />
+            </h1>
+            {/* El rango sale de los días que llegaron, no de un texto aparte: así el
+                título no puede decir una semana distinta de la que se ve. */}
+            {rangeLabel !== '' && (
+              <p className="text-base text-ink-3">
+                <Trans>Semana {rangeLabel}</Trans>
+              </p>
+            )}
+          </div>
+
+          {selectedWeek !== null && (
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <WeekNavigator
+                weekStart={selectedWeek}
+                availableWeeks={availableWeeks}
+                onSelect={selectWeek}
+              />
+              <TimesheetViewToggle view={view} onChange={setView} />
+            </div>
           )}
         </div>
-
-        {selectedWeek !== null && (
-          <div className="ml-auto flex flex-wrap items-center gap-3">
-            <WeekNavigator
-              weekStart={selectedWeek}
-              availableWeeks={availableWeeks}
-              onSelect={selectWeek}
-            />
-            <TimesheetViewToggle view={view} onChange={setView} />
-          </div>
-        )}
+        <img
+          src={fotoEquipo}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute -right-2 -bottom-1 hidden h-[calc(100%+2.5rem)] w-auto object-contain object-bottom drop-shadow-[0_10px_18px_rgba(60,30,0,0.26)] sm:block"
+        />
       </header>
 
       <TimesheetToolbar
