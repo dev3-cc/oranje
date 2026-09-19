@@ -117,6 +117,16 @@ export class AssignmentsRepository {
     })
   }
 
+  /** `null` si la requisición no existe. Sirve para acotar por hotel antes de listar. */
+  async requisitionHotelId(requisitionId: string): Promise<string | null> {
+    const row = await this.prisma.requisition.findUnique({
+      where: { id: requisitionId },
+      select: { hotelId: true },
+    })
+
+    return row?.hotelId ?? null
+  }
+
   async coverageOf(requisitionId: string): Promise<
     Array<{ positionId: string; quantity: number; taken: number; coverageStateId: string }>
   > {

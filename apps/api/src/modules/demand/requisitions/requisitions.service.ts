@@ -118,7 +118,14 @@ export class RequisitionsService {
       })
     }
 
-    const hotelIds = seesAll || !user.hotelId ? null : [user.hotelId]
+    /*
+     * `read_all` NO levanta el filtro de hotel: esa llave la comparten el
+     * Manager General («todos los departamentos de MI hotel») y Reclutamiento
+     * («todos los hoteles») — comparten el permiso pero no el alcance. Quien
+     * tiene `hotelId` (todo el depto Hotel) se queda SIEMPRE en su hotel; solo
+     * quien no tiene hotel fijo (Reclutamiento) ve todos.
+     */
+    const hotelIds = user.hotelId ? [user.hotelId] : null
 
     const byDepartment = await this.permissions.can(
       user.roleCode,
