@@ -86,7 +86,7 @@ describe('WorkerDetailPage', () => {
     expect(await within(dialog).findByText('Asig. temporal', undefined, SLOW)).toBeInTheDocument()
     expect(within(dialog).queryByText(/ORANGE/)).not.toBeInTheDocument()
 
-    await user.click(within(dialog).getByRole('radio'))
+    await user.click(await within(dialog).findByRole('radio', undefined, SLOW))
     await user.click(within(dialog).getByRole('button', { name: 'Cambiar estado' }))
 
     // El chip del encabezado se actualiza porque la mutación invalida la ficha.
@@ -127,7 +127,7 @@ describe('WorkerDetailPage', () => {
     expect(screen.getByText(/Perfil incompleto/)).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Cambiar estado' }))
     const dialog = await screen.findByRole('dialog')
-    await user.click(within(dialog).getByRole('radio'))
+    await user.click(await within(dialog).findByRole('radio', undefined, SLOW))
 
     expect(
       await within(dialog).findByText(/falta Contacto de emergencia/, undefined, SLOW),
