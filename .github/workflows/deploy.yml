@@ -127,6 +127,21 @@ jobs:
             echo "flag=--allow-unauthenticated" >> "$GITHUB_OUTPUT"
           fi
 
+      # Salida con IP fija, solo en producción (decisión de Hugo, 2026-09-15):
+      # cPanel de A2 solo autoriza direcciones estáticas y desde Cloud Run la
+      # IP cambia en cada petición. El tráfico de salida pasa por la red
+      # `default` y su Cloud NAT (`oranje-nat`, IP reservada `oranje-api-egress`).
+      # Staging sigue sin NAT a propósito: son ~36 USD/mes por ambiente y ahí
+      # Correos corporativos se queda sin probar.
+      - name: Red de salida según el ambiente
+        id: red
+        run: |
+          if [ "${{ vars.APP_ENV }}" = "production" ]; then
+            echo "flag=--network default --subnet default --vpc-egress all-traffic" >> "$GITHUB_OUTPUT"
+          else
+            echo "flag=" >> "$GITHUB_OUTPUT"
+          fi
+
       # Las variables van con delimitador ^|^: --set-env-vars separa por coma
       # y CORS_ORIGINS es una lista separada por comas. ^@^ se descartó el
       # 2026-09-15 porque PUBSUB_SERVICE_ACCOUNT es un correo de cuenta de
@@ -144,7 +159,8 @@ jobs:
             --set-secrets "DATABASE_URL=oranje-database-url:latest,JWT_PRIVATE_KEY=oranje-jwt-private-key:latest,JWT_PUBLIC_KEY=oranje-jwt-public-key:latest,GOOGLE_PLACES_API_KEY=oranje-places-api-key:latest,CPANEL_API_TOKEN=oranje-cpanel-api-token:latest" \
             --min-instances "${{ vars.MIN_INSTANCES }}" \
             --max-instances "${{ vars.MAX_INSTANCES }}" \
-            ${{ steps.acceso.outputs.flag }}
+            ${{ steps.acceso.outputs.flag }} \
+            ${{ steps.red.outputs.flag }}
 
       # Si el contenedor no arranca, la validación de entorno lo tumba y este paso
       # falla. Cloud Run deja sirviendo la revisión anterior
