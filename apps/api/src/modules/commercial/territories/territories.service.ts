@@ -34,24 +34,45 @@ export class TerritoriesService {
   ) {}
 
   async get(userId: string, actor: AuthenticatedUser): Promise<TerritoryEntity> {
-    const isSelf = actor.id === userId
+    if (actor.id === userId) {
+      if (!(await this.permissions.can(actor.roleCode, 'territory', 'read'))) {
+        throw new ForbiddenException({
+          code: 'FORBIDDEN',
+          message: 'Tu rol no tiene territorio propio',
+        })
+      }
+
+      return this.read(userId)
+    }
+
+    const target = await this.user(userId)
+
     // Quien asigna tambien lee: el Administrador no administra un equipo, pero
     // no puede repartir territorio a ciegas.
-    const allowed = isSelf
-      ? await this.permissions.can(actor.roleCode, 'territory', 'read')
-      : (await this.permissions.can(actor.roleCode, 'team', 'read_members')) ||
-        (await this.permissions.can(actor.roleCode, 'territory', 'assign'))
+    const [canAssign, canReadTeam] = await Promise.all([
+      this.permissions.can(actor.roleCode, 'territory', 'assign'),
+      this.permissions.can(actor.roleCode, 'team', 'read_members'),
+    ])
 
-    if (!allowed) {
+    /*
+     * `team:read_members` no basta sola: la llave la comparten el BDC (Mi
+     * Equipo, sus BD) y el Manager de Reclutamiento (su propio equipo) — sin
+     * verificar que ESTE usuario reporte a ESTE actor, cualquiera de los dos
+     * podía leer el territorio de cualquier persona, no solo el de su equipo.
+     */
+    const isMyReport = canReadTeam && target.reportsToUserId === actor.id
+
+    if (!canAssign && !isMyReport) {
       throw new ForbiddenException({
         code: 'FORBIDDEN',
-        message: isSelf
-          ? 'Tu rol no tiene territorio propio'
-          : 'Ver el territorio de otra persona requiere administrar el equipo',
+        message: 'Ver el territorio de otra persona requiere administrar el equipo',
       })
     }
 
-    return this.read(userId)
+    return {
+      user: { id: target.id, fullName: target.fullName, roleCode: target.roleCode },
+      zones: (await this.repo.of(userId)).map(toEntity),
+    }
   }
 
   private async read(userId: string): Promise<TerritoryEntity> {
@@ -106,7 +127,9 @@ export class TerritoriesService {
     return this.repo.holdersOf(zoneId)
   }
 
-  private async user(id: string): Promise<{ id: string; fullName: string; roleCode: string }> {
+  private async user(
+    id: string,
+  ): Promise<{ id: string; fullName: string; roleCode: string; reportsToUserId: string | null }> {
     const row = await this.repo.user(id)
 
     if (!row) {

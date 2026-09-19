@@ -15,14 +15,30 @@ export interface ZoneRow {
 export class TerritoriesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async user(id: string): Promise<{ id: string; fullName: string; roleCode: string } | null> {
+  async user(id: string): Promise<{
+    id: string
+    fullName: string
+    roleCode: string
+    reportsToUserId: string | null
+  } | null> {
     const row = await this.prisma.user.findUnique({
       where: { id },
-      select: { id: true, fullName: true, isActive: true, role: { select: { code: true } } },
+      select: {
+        id: true,
+        fullName: true,
+        isActive: true,
+        reportsToUserId: true,
+        role: { select: { code: true } },
+      },
     })
 
     return row?.isActive === true
-      ? { id: row.id, fullName: row.fullName, roleCode: row.role.code }
+      ? {
+          id: row.id,
+          fullName: row.fullName,
+          roleCode: row.role.code,
+          reportsToUserId: row.reportsToUserId,
+        }
       : null
   }
 

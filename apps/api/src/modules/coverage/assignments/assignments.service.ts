@@ -71,6 +71,20 @@ export class AssignmentsService {
       })
     }
 
+    /*
+     * Faltaba: quien tiene `hotelId` (todo el depto Hotel, vía `read_own`)
+     * podía pedir las asignaciones de CUALQUIER requisición con solo conocer
+     * su id — sin este filtro veía colaboradores de otro hotel. Mismo
+     * criterio que `RequisitionsService.get()`.
+     */
+    const hotelId = await this.repo.requisitionHotelId(requisitionId)
+    if (user.hotelId && hotelId !== null && hotelId !== user.hotelId) {
+      throw new ForbiddenException({
+        code: 'HOTEL_OUT_OF_SCOPE',
+        message: 'Esta requisición no es de tu hotel',
+      })
+    }
+
     return (await this.repo.listByRequisition(requisitionId)).map(toEntity)
   }
 
