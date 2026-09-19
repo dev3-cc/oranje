@@ -1,65 +1,37 @@
-import { Trans, useLingui } from '@lingui/react/macro'
+import { useLingui } from '@lingui/react/macro'
+import { MaterialIcon } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
 import type { RequisitionStatusEvent } from '../types/requisition.types'
 
 import { SectionCard } from '@/shared/components/SectionCard'
-import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
-import {
-  REQUISITION_STATUS_LABEL,
-  REQUISITION_STATUS_TOKEN,
-} from '@/shared/constants/requisitionStatus'
-import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayMonthTime } from '@/shared/lib/formatters'
 
 /**
- * Historia del semáforo de la requisición, de lo más reciente a lo más antiguo.
- *
- * El subtítulo nombra la propiedad de la tabla a propósito: al ser append-only,
- * esta lista es el árbitro de en qué estado está la requisición y de quién la
- * movió. Nada de lo que aparece aquí se edita ni se borra después.
+ * Historia del semáforo de la requisición, de lo más reciente a lo más antiguo
+ * (solo dev, `IS_DEV_UI` — ver `RequisitionDetailPage`; el rastro real para
+ * quien no depura vive en «Ver bitácora»). Compacta a propósito: un ícono por
+ * evento en vez de repetir el par de semáforos que ya se ve en el encabezado.
  */
 export function StatusHistoryCard({ history }: { history: RequisitionStatusEvent[] }): ReactNode {
   const { t, i18n } = useLingui()
 
   return (
-    <SectionCard
-      title={t`Historia de estado`}
-      subtitle={
-        IS_DEV_UI
-          ? 'Append-only: sin updated_at ni deleted_at'
-          : t`Cada cambio queda registrado; nada se edita ni se borra`
-      }
-    >
-      <ol className="flex flex-col">
-        {history.map((event, index) => (
-          <li key={event.id} className={index === 0 ? '' : 'mt-5 border-t border-line pt-5'}>
-            <div className="flex flex-wrap items-center gap-2">
-              {event.fromStatus === null ? (
-                <span className="text-sm text-ink-3">
-                  <Trans>nace en</Trans>
-                </span>
-              ) : (
-                <>
-                  <StatusLightSoftBadge
-                    token={REQUISITION_STATUS_TOKEN[event.fromStatus]}
-                    label={REQUISITION_STATUS_LABEL[event.fromStatus]}
-                  />
-                  <span className="text-ink-3" aria-label={t`cambia a`}>
-                    →
-                  </span>
-                </>
-              )}
-              <StatusLightSoftBadge
-                token={REQUISITION_STATUS_TOKEN[event.toStatus]}
-                label={REQUISITION_STATUS_LABEL[event.toStatus]}
-              />
+    <SectionCard title={t`Historia de estado`}>
+      <ol className="flex flex-col gap-4">
+        {history.map((event) => (
+          <li key={event.id} className="flex items-start gap-3">
+            <MaterialIcon
+              name={event.fromStatus === null ? 'add_circle' : 'check_circle'}
+              className="mt-0.5 shrink-0 text-lg text-o-500"
+              aria-hidden
+            />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-ink">{i18n._(event.action)}</p>
+              <p className="text-xs text-ink-3">
+                {event.byName} · {formatDayMonthTime(event.at)}
+              </p>
             </div>
-
-            <p className="mt-3 text-base font-semibold text-ink">{i18n._(event.action)}</p>
-            <p className="mt-0.5 text-sm text-ink-3">
-              {event.byName} · {formatDayMonthTime(event.at)}
-            </p>
           </li>
         ))}
       </ol>
