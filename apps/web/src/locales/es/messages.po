@@ -1210,6 +1210,7 @@ msgid "Asistencia"
 msgstr "Asistencia"
 
 #: src/features/onboarding/components/ProspectFormDialog.tsx
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "Atrás"
 msgstr "Atrás"
@@ -1662,10 +1663,6 @@ msgstr "Cada cambio de estado, con quién lo hizo y cuándo"
 msgid "Cada cambio de estado, con quién lo hizo y por qué"
 msgstr "Cada cambio de estado, con quién lo hizo y por qué"
 
-#: src/features/requisitions/components/StatusHistoryCard.tsx
-msgid "Cada cambio queda registrado; nada se edita ni se borra"
-msgstr "Cada cambio queda registrado; nada se edita ni se borra"
-
 #: src/features/admin/components/HotelUsersSection.tsx
 msgid "Cada cuenta pertenece a un solo hotel. El primer Manager General nace en la Conversión"
 msgstr "Cada cuenta pertenece a un solo hotel. El primer Manager General nace en la Conversión"
@@ -1730,10 +1727,6 @@ msgstr "Calidad"
 #: src/features/audits/components/AuditFormDialog.tsx
 msgid "Calificación preliminar"
 msgstr "Calificación preliminar"
-
-#: src/features/requisitions/components/StatusHistoryCard.tsx
-msgid "cambia a"
-msgstr "cambia a"
 
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
 msgid "Cambia el estado o la búsqueda, o quítalos con «Quitar filtros» para volver a ver el tablero completo."
@@ -2294,6 +2287,7 @@ msgstr "Contexto que le sirva a quien abra el siguiente ciclo…"
 #: src/features/personnel/components/ReportWorkerDialog.tsx
 #: src/features/personnel/components/StandByDialog.tsx
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
 #: src/features/recruitment/components/LiftBlacklistDialog.tsx
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/shared/components/OnboardingIntro.tsx
@@ -2529,10 +2523,6 @@ msgstr "Crear buzón"
 msgid "Crear colaborador"
 msgstr "Crear colaborador"
 
-#: src/features/recruitment/components/CreateWorkerDialog.tsx
-msgid "Crear colaborador — Fase 1 · Entrevista"
-msgstr "Crear colaborador — Fase 1 · Entrevista"
-
 #: src/features/admin/components/HotelUserFormDialog.tsx
 msgid "Crear cuenta"
 msgstr "Crear cuenta"
@@ -2718,6 +2708,10 @@ msgstr "Datos de emergencia guardados"
 msgid "Datos del hotel"
 msgstr "Datos del hotel"
 
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+msgid "Datos personales"
+msgstr "Datos personales"
+
 #: src/features/team/pages/TeamPage.tsx
 msgid "de abrir el ciclo a convertir"
 msgstr "de abrir el ciclo a convertir"
@@ -2742,6 +2736,10 @@ msgstr "De quién es el territorio"
 #: src/features/onboarding/components/SemaforoHelpDialog.tsx
 msgid "De Verde no se sale sin la Propuesta Personalizada enviada."
 msgstr "De Verde no se sale sin la Propuesta Personalizada enviada."
+
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+msgid "Decisiones de Oranje"
+msgstr "Decisiones de Oranje"
 
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Decisiones de Oranje sobre su perfil"
@@ -4701,6 +4699,7 @@ msgstr "Folio o hotel, p. ej. Puerto Real…"
 msgid "Folio o hotel, p. ej. Xcaret…"
 msgstr "Folio o hotel, p. ej. Xcaret…"
 
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
 #: src/features/worker/components/PhotoUploader.tsx
 msgid "Foto"
 msgstr "Foto"
@@ -5547,6 +5546,10 @@ msgstr "Las cuentas de cada hotel: Supervisores, Managers de Área y Managers Ge
 msgid "Las defines tú en la entrevista; el candidato no las declara"
 msgstr "Las defines tú en la entrevista; el candidato no las declara"
 
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+msgid "Las defines tú en la entrevista; el candidato no las declara."
+msgstr "Las defines tú en la entrevista; el candidato no las declara."
+
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
 msgid "Las dos"
 msgstr "Las dos"
@@ -6199,9 +6202,9 @@ msgstr "Multiplicadores"
 msgid "N/A"
 msgstr "N/A"
 
-#: src/features/requisitions/components/StatusHistoryCard.tsx
-msgid "nace en"
-msgstr "nace en"
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+msgid "Nace en Blanco al guardar"
+msgstr "Nace en Blanco al guardar"
 
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Nace en Blanco: el colaborador termina las fases 2 y 3 en su app — transporte y SSN/ITIN con 3 días de plazo."
@@ -7185,6 +7188,14 @@ msgstr "Opcional: en una visita en frío puedes no encontrar a nadie"
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Opcional: lo completa el colaborador desde su app, pero si ya lo tienes, captúralo aquí y podrás validarlo sin esperar"
 msgstr "Opcional: lo completa el colaborador desde su app, pero si ya lo tienes, captúralo aquí y podrás validarlo sin esperar"
+
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+msgid "Opcional: lo completa el colaborador desde su app, pero si ya lo tienes, captúralo aquí y podrás validarlo sin esperar."
+msgstr "Opcional: lo completa el colaborador desde su app, pero si ya lo tienes, captúralo aquí y podrás validarlo sin esperar."
+
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+msgid "Opcional: puedes agregarla después desde el Pool"
+msgstr "Opcional: puedes agregarla después desde el Pool"
 
 #: src/shared/constants/roles.ts
 msgid "Operador de QA"
@@ -9476,12 +9487,20 @@ msgid "Transporte guardado."
 msgstr "Transporte guardado."
 
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
+msgid "Transporte y salud"
+msgstr "Transporte y salud"
+
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Transporte y tipo de sangre"
 msgstr "Transporte y tipo de sangre"
 
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Transporte, emergencia y salud"
 msgstr "Transporte, emergencia y salud"
+
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+msgid "Transporte, emergencia y salud — opcional"
+msgstr "Transporte, emergencia y salud — opcional"
 
 #: src/features/recruitment/pages/BlacklistPage.tsx
 msgid "Tres reglas que el sistema hace cumplir siempre: un colaborador en <0>Gris</0> (accidentado) no se puede vetar; solo hay un veto vigente a la vez y el historial nunca se borra; y al levantarlo la persona vuelve a <1>Blanco</1>, reingresando por la validación de la Reclutadora."
