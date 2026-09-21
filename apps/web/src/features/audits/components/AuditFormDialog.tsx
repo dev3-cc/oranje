@@ -184,7 +184,7 @@ export function AuditFormDialog({
       className="max-w-3xl"
       footer={
         !isLoading && (
-          <div className="flex w-full items-center justify-between gap-4">
+          <div className="flex w-full flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <span
                 className={cn(
@@ -283,9 +283,11 @@ export function AuditFormDialog({
                   return (
                     <li
                       key={item.id}
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-surface-2 px-3 py-2"
+                      className="flex flex-col gap-2 rounded-md bg-surface-2 px-3 py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
                     >
-                      <span className="flex min-w-0 flex-1 items-center gap-2 text-sm text-ink-2">
+                      {/* En el teléfono el reactivo va arriba y sus tres botones
+                          abajo, a lo ancho; de sm en adelante, en una línea. */}
+                      <span className="flex min-w-0 items-start gap-2 text-sm text-ink-2 sm:flex-1 sm:items-center">
                         {value === undefined && (
                           <MaterialIcon
                             name="warning"
@@ -298,7 +300,7 @@ export function AuditFormDialog({
                       <span
                         role="group"
                         aria-label={t`Respuesta para ${item.label}`}
-                        className="flex gap-1.5"
+                        className="flex shrink-0 flex-wrap gap-1.5"
                       >
                         {RESPONSE_OPTIONS.map((option) => (
                           <button

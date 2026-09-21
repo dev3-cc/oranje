@@ -1,21 +1,14 @@
 import type { MessageDescriptor } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react/macro'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  statusLight,
-} from '@oranje/ui'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@oranje/ui'
 import type { ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import type { RequisitionRow } from '../types/requisition.types'
 
 import { CoverageBar } from './CoverageBar'
+import { UrgencyChip } from './UrgencyChip'
 
 import { EmptyState } from '@/shared/components/EmptyState'
 import { HotelThumbnail } from '@/shared/components/HotelThumbnail'
@@ -23,8 +16,7 @@ import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   REQUISITION_STATUS_LABEL,
   REQUISITION_STATUS_TOKEN,
-  URGENCY_LABEL,
-  URGENCY_TOKEN,
+  URGENCY_HINT,
 } from '@/shared/constants/requisitionStatus'
 import { formatDayMonthTime } from '@/shared/lib/formatters'
 
@@ -108,12 +100,13 @@ export function RequisitionTable({ items }: { items: RequisitionRow[] }): ReactN
 
               <TableCell className="px-4 py-4 whitespace-nowrap">
                 <span className="flex items-center gap-2 text-sm text-ink-2">
-                  <span
-                    className="size-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: statusLight[URGENCY_TOKEN[item.urgency]] }}
-                    aria-hidden
+                  <UrgencyChip
+                    urgency={item.urgency}
+                    startDate={item.startDate}
+                    authorizedAt={item.authorizedAt}
+                    variant="inline"
                   />
-                  {URGENCY_LABEL[item.urgency]}
+                  <span className="text-xs text-ink-4">· {URGENCY_HINT[item.urgency]}</span>
                 </span>
               </TableCell>
 

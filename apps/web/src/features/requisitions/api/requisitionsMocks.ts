@@ -70,9 +70,9 @@ const REQ_STATE: Record<string, StatusRefApi> = {
 }
 
 const URGENCY: Record<string, StatusRefApi> = {
-  RED: { code: 'RED', color: 'Rojo', name: '< 72 h' },
-  YELLOW: { code: 'YELLOW', color: 'Amarillo', name: '72–120 h' },
-  STRONG_GREEN: { code: 'STRONG_GREEN', color: 'Verde fuerte', name: '> 120 h' },
+  RED: { code: 'RED', color: 'Rojo', name: 'Urgente' },
+  YELLOW: { code: 'YELLOW', color: 'Amarillo', name: 'Medio' },
+  STRONG_GREEN: { code: 'STRONG_GREEN', color: 'Verde fuerte', name: 'Normal' },
 }
 
 const COVERAGE_REF: StatusRefApi = { code: 'RED', color: 'Rojo', name: '0–50%' }

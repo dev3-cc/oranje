@@ -548,6 +548,10 @@ msgstr "{hotelName} · desde {0}. Solo ves los pasos que tu rol puede dar."
 msgid "{hotelName} · Propuesta v{0}. Las tarifas se toman de esta versión."
 msgstr "{hotelName} · Propuesta v{0}. Las tarifas se toman de esta versión."
 
+#: src/features/requisitions/components/AuthorizationQueueList.tsx
+msgid "{late, plural, one {Debió iniciar hace # día} other {Debió iniciar hace # días}}"
+msgstr "{late, plural, one {Debió iniciar hace # día} other {Debió iniciar hace # días}}"
+
 #: src/features/dashboard/components/ActivityCards.tsx
 msgid "{memberCount, plural, one {# BD te reporta} other {# BDs te reportan}} · {totalOpen} prospectos abiertos y {totalConversions, plural, one {# conversión} other {# conversiones}} entre todos."
 msgstr "{memberCount, plural, one {# BD te reporta} other {# BDs te reportan}} · {totalOpen} prospectos abiertos y {totalConversions, plural, one {# conversión} other {# conversiones}} entre todos."
@@ -653,10 +657,6 @@ msgstr "+1 404 555 0134"
 msgid "+52 998 123 4567"
 msgstr "+52 998 123 4567"
 
-#: src/shared/constants/requisitionStatus.ts
-msgid "< 72 h"
-msgstr "< 72 h"
-
 #: src/features/contracts/components/ActivateContractDialog.tsx
 msgid "<0>El contrato {activeContractNumber} queda vencido.</0> Solo puede haber uno vigente por hotel."
 msgstr "<0>El contrato {activeContractNumber} queda vencido.</0> Solo puede haber uno vigente por hotel."
@@ -669,10 +669,6 @@ msgstr "<0>Gana el primero que confirma{0}.</0> Al tomar un slot se bloquea solo
 #: src/features/contracts/components/ActivateContractDialog.tsx
 msgid "<0>Las tarifas dejan de editarse.</0> Para cambiarlas después hay que crear un contrato nuevo."
 msgstr "<0>Las tarifas dejan de editarse.</0> Para cambiarlas después hay que crear un contrato nuevo."
-
-#: src/shared/constants/requisitionStatus.ts
-msgid "> 120 h"
-msgstr "> 120 h"
 
 #. placeholder {0}: rate.payRate.toFixed(2)
 #. placeholder {1}: rate.billRate.toFixed(2)
@@ -712,10 +708,6 @@ msgstr "2 camaristas y 1 houseman"
 #: src/shared/constants/workerEnums.ts
 msgid "3–5 años"
 msgstr "3–5 años"
-
-#: src/shared/constants/requisitionStatus.ts
-msgid "72 – 120 h"
-msgstr "72 – 120 h"
 
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "A quién llamamos y qué debemos saber"
@@ -978,8 +970,8 @@ msgid "Al autorizar se fija la urgencia según la fecha de inicio"
 msgstr "Al autorizar se fija la urgencia según la fecha de inicio"
 
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
-msgid "Al autorizar, la urgencia se calcula contra la fecha de inicio: {start} {daysAhead, plural, one {está a # día} other {está a # días}}, así que {positionCount, plural, one {la posición nace} other {las # posiciones nacen}} en {color} ({label})"
-msgstr "Al autorizar, la urgencia se calcula contra la fecha de inicio: {start} {daysAhead, plural, one {está a # día} other {está a # días}}, así que {positionCount, plural, one {la posición nace} other {las # posiciones nacen}} en {color} ({label})"
+msgid "Al autorizar, la urgencia se calcula contra la fecha de inicio: {start} {daysAhead, plural, one {está a # día} other {está a # días}}, así que {positionCount, plural, one {la posición nace} other {las # posiciones nacen}} en {color} ({label}: {hint})"
+msgstr "Al autorizar, la urgencia se calcula contra la fecha de inicio: {start} {daysAhead, plural, one {está a # día} other {está a # días}}, así que {positionCount, plural, one {la posición nace} other {las # posiciones nacen}} en {color} ({label}: {hint})"
 
 #: src/features/conversion/components/ApproveConversionDialog.tsx
 msgid "Al convertirlo"
@@ -1315,6 +1307,10 @@ msgstr "Aún no tienes asignación"
 msgid "Aún no tienes colaboradores asignados"
 msgstr "Aún no tienes colaboradores asignados"
 
+#: src/features/requisitions/components/UrgencyChip.tsx
+msgid "Aún sin autorizar: la urgencia se calcula al autorizar"
+msgstr "Aún sin autorizar: la urgencia se calcula al autorizar"
+
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Aún sin cotizar ningún puesto"
 msgstr "Aún sin cotizar ningún puesto"
@@ -1342,9 +1338,17 @@ msgstr "Autorizada"
 msgid "Autorizada {0}"
 msgstr "Autorizada {0}"
 
+#: src/features/requisitions/components/UrgencyChip.tsx
+msgid "Autorizada {since, plural, one {hace # día} other {hace # días}}"
+msgstr "Autorizada {since, plural, one {hace # día} other {hace # días}}"
+
 #: src/features/requisitions/components/RequisitionSummaryStrip.tsx
 msgid "Autorizada el"
 msgstr "Autorizada el"
+
+#: src/features/requisitions/components/UrgencyChip.tsx
+msgid "Autorizada hoy"
+msgstr "Autorizada hoy"
 
 #: src/features/requisitions/components/RequisitionSummaryStrip.tsx
 msgid "Autorizada por"
@@ -3837,6 +3841,38 @@ msgstr "Emergencia"
 msgid "Empezar"
 msgstr "Empezar"
 
+#. placeholder {0}: formatDate(startDate)
+#. placeholder {1}: -ahead
+#: src/features/requisitions/components/UrgencyChip.tsx
+msgid "Empezó el {0} · {1, plural, one {hace # día} other {hace # días}}"
+msgstr "Empezó el {0} · {1, plural, one {hace # día} other {hace # días}}"
+
+#. placeholder {0}: formatDate(startDate)
+#: src/features/requisitions/components/UrgencyChip.tsx
+msgid "Empieza el {0} · {ahead, plural, one {en # día} other {en # días}}"
+msgstr "Empieza el {0} · {ahead, plural, one {en # día} other {en # días}}"
+
+#: src/shared/constants/requisitionStatus.ts
+msgid "empieza en 3 a 5 días"
+msgstr "empieza en 3 a 5 días"
+
+#: src/shared/constants/requisitionStatus.ts
+msgid "empieza en más de 5 días"
+msgstr "empieza en más de 5 días"
+
+#: src/shared/constants/requisitionStatus.ts
+msgid "empieza en menos de 3 días"
+msgstr "empieza en menos de 3 días"
+
+#. placeholder {0}: formatDate(startDate)
+#: src/features/requisitions/components/UrgencyChip.tsx
+msgid "Empieza hoy, {0}"
+msgstr "Empieza hoy, {0}"
+
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "empiezan en menos de 3 días"
+msgstr "empiezan en menos de 3 días"
+
 #. placeholder {0}: String(days)
 #: src/features/contracts/components/ContractFilters.tsx
 msgid "en {0} días"
@@ -6019,6 +6055,10 @@ msgstr "Máximo 255 caracteres"
 msgid "Máximo 999 personas por posición"
 msgstr "Máximo 999 personas por posición"
 
+#: src/shared/constants/requisitionStatus.ts
+msgid "Medio"
+msgstr "Medio"
+
 #: src/shared/constants/catalogs.ts
 msgid "Medio tiempo"
 msgstr "Medio tiempo"
@@ -7048,6 +7088,10 @@ msgstr "Nombre, p. ej. Rubén Sandoval"
 msgid "nombre@hotel.mx"
 msgstr "nombre@hotel.mx"
 
+#: src/shared/constants/requisitionStatus.ts
+msgid "Normal"
+msgstr "Normal"
+
 #: src/features/onboarding/components/ArchiveCycleDialog.tsx
 #: src/features/personnel/components/ReportWorkerDialog.tsx
 #: src/features/personnel/components/StandByDialog.tsx
@@ -7319,10 +7363,6 @@ msgstr "Para convertir a Naranja primero debe existir el Usuario del Hotel: cré
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Para crear: {0}."
 msgstr "Para crear: {0}."
-
-#: src/features/requisitions/pages/RequisitionBoardPage.tsx
-msgid "para el inicio"
-msgstr "para el inicio"
 
 #: src/features/requisitions/utils/coverage.ts
 msgid "parcial"
@@ -9797,9 +9837,17 @@ msgstr "Uno vigente por hotel"
 msgid "Urgencia"
 msgstr "Urgencia"
 
+#: src/features/requisitions/components/UrgencyChip.tsx
+msgid "Urgencia: {label}. Toca para ver el tiempo"
+msgstr "Urgencia: {label}. Toca para ver el tiempo"
+
+#: src/shared/constants/requisitionStatus.ts
+msgid "Urgente"
+msgstr "Urgente"
+
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
-msgid "Urgentes < 72 h"
-msgstr "Urgentes < 72 h"
+msgid "Urgentes"
+msgstr "Urgentes"
 
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Usuario activado"
@@ -9905,6 +9953,10 @@ msgstr "Ver Clientes Activos"
 #: src/features/conversion/pages/ConversionPage.tsx
 msgid "Ver en Clientes Activos"
 msgstr "Ver en Clientes Activos"
+
+#: src/features/requisitions/components/SlotList.tsx
+msgid "Ver expediente"
+msgstr "Ver expediente"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
 #: src/features/recruitment/components/PoolRoster.tsx

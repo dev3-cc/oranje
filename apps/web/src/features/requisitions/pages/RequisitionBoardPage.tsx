@@ -184,8 +184,8 @@ export function RequisitionBoardPage(): ReactNode {
                 icon="bolt"
                 tone="danger"
                 value={metrics.urgentCount}
-                label={t`Urgentes < 72 h`}
-                foot={IS_DEV_UI ? metrics.urgentRuleId : t`para el inicio`}
+                label={t`Urgentes`}
+                foot={IS_DEV_UI ? metrics.urgentRuleId : t`empiezan en menos de 3 días`}
               />
             </div>
           )}

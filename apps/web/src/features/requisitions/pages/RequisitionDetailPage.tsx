@@ -31,7 +31,6 @@ import {
 } from '@/shared/constants/requisitionStatus'
 import { useCan } from '@/shared/hooks/useCan'
 import { apiErrorMessage } from '@/shared/lib/apiError'
-import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDateTime } from '@/shared/lib/formatters'
 
 /** El `i18n` viene del componente (`useLingui`): así el mensaje habla el idioma activo (D-36). */
@@ -428,16 +427,16 @@ export function RequisitionDetailPage(): ReactNode {
         <div className="flex flex-col gap-6 xl:col-span-2">
           <PositionsTable
             positions={detail.positions}
+            authorizedAt={detail.authorizedAt}
             selectedId={selectedPosition?.id ?? ''}
             onSelect={setSelectedPositionId}
           />
           {selectedPosition && <SlotList position={selectedPosition} />}
         </div>
 
-        {/* La historia de estado se oculta (decisión de Hugo, 2026-09-15): en la
-            ficha competía con lo que sí se viene a hacer, y el rastro completo
-            vive en el journal. Se mantiene en dev para depurar transiciones. */}
-        {IS_DEV_UI && <StatusHistoryCard history={detail.history} />}
+        {/* Se ocultó el 2026-09-15 y volvió a pedido de Hugo (2026-09-21):
+            la ficha enseña por dónde ha pasado la requisición. */}
+        <StatusHistoryCard history={detail.history} />
       </div>
 
       {isJournalOpen && (

@@ -9,6 +9,7 @@ import type {
 import { registerAdminMocks } from './adminMocks'
 
 import { baseApi } from '@/app/baseApi'
+import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import type {
   ApiEnvelope,
   CatalogItemApi,
@@ -17,6 +18,10 @@ import type {
 } from '@/shared/types/apiContract.types'
 
 registerAdminMocks()
+
+type FetchWithBQ = (
+  args: string | { url: string; params?: Record<string, unknown> },
+) => Promise<{ data?: unknown; error?: unknown }>
 
 export interface StaffUsersQuery {
   search?: string
@@ -143,11 +148,15 @@ export const adminApi = baseApi.injectEndpoints({
 
     /* ── Cuentas del hotel (users:manage_hotel) ─────────────────────────── */
     getHotelOptions: build.query<HotelOption[], void>({
-      query: () => ({ url: '/hotels', params: { limit: 100 } }),
-      transformResponse: (response: PaginatedEnvelope<HotelApi>) =>
-        response.data
-          .map((hotel) => ({ id: hotel.id, name: hotel.name }))
-          .sort((a, b) => a.name.localeCompare(b.name, 'es')),
+      queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
+        const result = await fetchAllPages<HotelApi>(fetchWithBQ as FetchWithBQ, '/hotels')
+        if ('error' in result) return { error: result.error as never }
+        return {
+          data: result.data
+            .map((hotel) => ({ id: hotel.id, name: hotel.name }))
+            .sort((a, b) => a.name.localeCompare(b.name, 'es')),
+        }
+      },
     }),
     getHotelDepartmentOptions: build.query<DepartmentOption[], void>({
       query: () => ({ url: '/catalogs/hotel-departments' }),

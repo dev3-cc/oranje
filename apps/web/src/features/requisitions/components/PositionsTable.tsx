@@ -7,10 +7,9 @@ import type { ReactNode } from 'react'
 import type { RequisitionPosition } from '../types/requisition.types'
 
 import { CoverageBadge } from './CoverageBadge'
+import { UrgencyChip } from './UrgencyChip'
 
 import { SectionCard } from '@/shared/components/SectionCard'
-import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
-import { URGENCY_LABEL, URGENCY_TOKEN } from '@/shared/constants/requisitionStatus'
 import { formatDayMonth } from '@/shared/lib/formatters'
 
 /** `#` no es texto: se pinta tal cual; el resto se traduce al pintar con `i18n._()` (D-36). */
@@ -26,10 +25,12 @@ const HEADERS: readonly (MessageDescriptor | '#')[] = [
 
 export function PositionsTable({
   positions,
+  authorizedAt,
   selectedId,
   onSelect,
 }: {
   positions: RequisitionPosition[]
+  authorizedAt: string | null
   selectedId: string
   onSelect: (positionId: string) => void
 }): ReactNode {
@@ -93,9 +94,10 @@ export function PositionsTable({
                 </TableCell>
 
                 <TableCell className="px-3 py-4">
-                  <StatusLightSoftBadge
-                    token={URGENCY_TOKEN[position.urgency]}
-                    label={URGENCY_LABEL[position.urgency]}
+                  <UrgencyChip
+                    urgency={position.urgency}
+                    startDate={position.startDate}
+                    authorizedAt={authorizedAt}
                   />
                 </TableCell>
 
