@@ -12,12 +12,8 @@ import { registerPoolMocks } from './poolMocks'
 
 import { baseApi } from '@/app/baseApi'
 import type { WorkerStatus } from '@/shared/constants/workerStatus'
-import type {
-  ApiEnvelope,
-  CatalogItemApi,
-  PaginatedEnvelope,
-  WorkerApi,
-} from '@/shared/types/apiContract.types'
+import { fetchAllPages } from '@/shared/lib/fetchAllPages'
+import type { ApiEnvelope, CatalogItemApi, WorkerApi } from '@/shared/types/apiContract.types'
 
 registerPoolMocks()
 
@@ -50,24 +46,21 @@ async function fetchPool(
   filters: PoolFilters,
 ): Promise<{ data: WorkerPool } | { error: unknown }> {
   const search = filters.search.trim()
-  const listRes = await fetchWithBQ({
-    url: '/workers',
-    params: {
-      limit: 100,
-      /** El back busca por nombre con `?search=`; vacío no viaja. */
-      ...(search !== '' ? { search } : {}),
-      ...(filters.status !== ANY_VALUE ? { state: filters.status } : {}),
-      ...(filters.zoneId !== ANY_VALUE ? { zoneId: filters.zoneId } : {}),
-      ...(filters.catalogPositionId !== ANY_VALUE
-        ? { catalogPositionId: filters.catalogPositionId }
-        : {}),
-      ...(filters.englishLevelId !== ANY_VALUE ? { englishLevelId: filters.englishLevelId } : {}),
-    },
+  /* La lista no pagina: con 300 colaboradores y una sola página de 100, el
+     encabezado decía «303 en el pool» y la lista enseñaba a 100. */
+  const listRes = await fetchAllPages<WorkerApi>(fetchWithBQ, '/workers', {
+    /** El back busca por nombre con `?search=`; vacío no viaja. */
+    ...(search !== '' ? { search } : {}),
+    ...(filters.status !== ANY_VALUE ? { state: filters.status } : {}),
+    ...(filters.zoneId !== ANY_VALUE ? { zoneId: filters.zoneId } : {}),
+    ...(filters.catalogPositionId !== ANY_VALUE
+      ? { catalogPositionId: filters.catalogPositionId }
+      : {}),
+    ...(filters.englishLevelId !== ANY_VALUE ? { englishLevelId: filters.englishLevelId } : {}),
   })
-  if (listRes.error) return { error: listRes.error }
+  if ('error' in listRes) return { error: listRes.error }
 
-  const board = listRes.data as PaginatedEnvelope<WorkerApi>
-  const workers = board.data.filter(
+  const workers = listRes.data.filter(
     (worker) =>
       filters.hiringModalityId === ANY_VALUE ||
       worker.hiringModality?.id === filters.hiringModalityId,
@@ -76,7 +69,7 @@ async function fetchPool(
   return {
     data: {
       items: workers.map(toPoolWorker),
-      total: filters.hiringModalityId === ANY_VALUE ? board.meta.total : workers.length,
+      total: workers.length,
     },
   }
 }

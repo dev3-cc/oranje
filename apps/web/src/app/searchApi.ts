@@ -11,6 +11,7 @@ import { registerOnboardingMocks } from '@/features/onboarding/api/onboardingMoc
 import { registerPoolMocks } from '@/features/recruitment/api/poolMocks'
 // eslint-disable-next-line no-restricted-imports
 import { registerRequisitionsMocks } from '@/features/requisitions/api/requisitionsMocks'
+import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import type {
   PaginatedEnvelope,
   ProspectApi,
@@ -65,40 +66,45 @@ export const searchApi = baseApi.injectEndpoints({
         if (needle === '') return { data: { prospects: [], requisitions: [], workers: [] } }
 
         const [prospectsRes, requisitionsRes, workersRes] = await Promise.all([
-          fetchWithBQ({ url: '/prospects', params: { limit: 100 } }),
-          fetchWithBQ({ url: '/requisitions', params: { limit: 100 } }),
+          /* Ni `/prospects` ni `/requisitions` buscan del lado del back: se
+             filtra aquí, y para eso hacen falta TODAS las páginas — con solo
+             la primera, el hotel 101 no aparecía nunca. */
+          fetchAllPages<ProspectApi>(fetchWithBQ, '/prospects'),
+          fetchAllPages<RequisitionApi>(fetchWithBQ, '/requisitions'),
           fetchWithBQ({ url: '/workers', params: { limit: MAX_PER_GROUP, search: term.trim() } }),
         ])
 
-        const prospects = prospectsRes.error
-          ? []
-          : (prospectsRes.data as PaginatedEnvelope<ProspectApi>).data
-              .filter((prospect) => normalizeForSearch(prospect.hotel.name).includes(needle))
-              .slice(0, MAX_PER_GROUP)
-              .map((prospect): SearchHit => ({
-                id: prospect.id,
-                kind: 'prospect',
-                title: prospect.hotel.name,
-                subtitle: `Prospecto · ${prospect.state.name}`,
-                to: `/pipeline/${prospect.id}`,
-              }))
+        const prospects =
+          'error' in prospectsRes
+            ? []
+            : prospectsRes.data
+                .filter((prospect) => normalizeForSearch(prospect.hotel.name).includes(needle))
+                .slice(0, MAX_PER_GROUP)
+                .map((prospect): SearchHit => ({
+                  id: prospect.id,
+                  kind: 'prospect',
+                  title: prospect.hotel.name,
+                  subtitle: `Prospecto · ${prospect.state.name}`,
+                  to: `/pipeline/${prospect.id}`,
+                }))
 
-        const requisitions = requisitionsRes.error
-          ? []
-          : (requisitionsRes.data as PaginatedEnvelope<RequisitionApi>).data
-              .filter(
-                (requisition) =>
-                  normalizeForSearch(requisition.number).includes(needle) ||
-                  normalizeForSearch(requisition.hotel.name).includes(needle),
-              )
-              .slice(0, MAX_PER_GROUP)
-              .map((requisition): SearchHit => ({
-                id: requisition.id,
-                kind: 'requisition',
-                title: requisition.number,
-                subtitle: `${requisition.hotel.name} · ${requisition.state.name}`,
-                to: `/requisitions/${requisition.id}`,
-              }))
+        const requisitions =
+          'error' in requisitionsRes
+            ? []
+            : requisitionsRes.data
+                .filter(
+                  (requisition) =>
+                    normalizeForSearch(requisition.number).includes(needle) ||
+                    normalizeForSearch(requisition.hotel.name).includes(needle),
+                )
+                .slice(0, MAX_PER_GROUP)
+                .map((requisition): SearchHit => ({
+                  id: requisition.id,
+                  kind: 'requisition',
+                  title: requisition.number,
+                  subtitle: `${requisition.hotel.name} · ${requisition.state.name}`,
+                  to: `/requisitions/${requisition.id}`,
+                }))
 
         const workers = workersRes.error
           ? []

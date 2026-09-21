@@ -23,7 +23,6 @@ import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import type {
   ApiEnvelope,
   AssignmentApi,
-  PaginatedEnvelope,
   RequisitionApi,
   WorkerApi,
 } from '@/shared/types/apiContract.types'
@@ -186,12 +185,9 @@ export const selfPickApi = baseApi.injectEndpoints({
     getAssignableWorkers: build.query<AssignableWorker[], void>({
       queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
         const bq = fetchWithBQ as FetchWithBQ
-        const result = await bq({
-          url: '/workers',
-          params: { state: 'STRONG_GREEN', limit: 100 },
-        })
-        if (result.error) return { error: result.error as never }
-        const workers = (result.data as PaginatedEnvelope<WorkerApi>).data
+        const result = await fetchAllPages<WorkerApi>(bq, '/workers', { state: 'STRONG_GREEN' })
+        if ('error' in result) return { error: result.error as never }
+        const workers = result.data
         return {
           data: workers.map((worker) => ({
             id: worker.id,

@@ -15,6 +15,8 @@ export interface RequisitionRow {
   positions: number
   coverage: RequisitionCoverage
   urgency: UrgencyLevel
+  /** La posición que empieza primero: es la que manda en la urgencia. */
+  startDate: string | null
   status: RequisitionStatus
   authorizedAt: string | null
   inspectorName: string

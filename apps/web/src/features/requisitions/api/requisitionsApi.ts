@@ -22,7 +22,6 @@ import type {
   AssignmentApi,
   CatalogItemApi,
   HotelApi,
-  PaginatedEnvelope,
   ParticipantApi,
   ParticipationResultApi,
   RequisitionApi,
@@ -45,6 +44,11 @@ function worstUrgency(requisition: RequisitionApi): UrgencyLevel {
   return codes.sort((a, b) => (URGENCY_RANK[a] ?? 9) - (URGENCY_RANK[b] ?? 9))[0] as UrgencyLevel
 }
 
+function earliestStart(requisition: RequisitionApi): string | null {
+  const dates = requisition.positions.map((position) => position.startDate).sort()
+  return dates[0] ?? null
+}
+
 function rowDepartment(requisition: RequisitionApi): string {
   const names = [...new Set(requisition.positions.map((position) => position.department.name))]
   if (names.length === 0) return '—'
@@ -61,6 +65,7 @@ function toRow(requisition: RequisitionApi): RequisitionRow {
     positions: requisition.totalSlots,
     coverage: { filled: requisition.filledSlots, total: requisition.totalSlots },
     urgency: worstUrgency(requisition),
+    startDate: earliestStart(requisition),
     status: requisition.state.code as RequisitionStatus,
     authorizedAt: requisition.authorizedAt,
     inspectorName: '—',
@@ -216,7 +221,7 @@ async function fetchFormOptions(
   fetchWithBQ: FetchWithBQ,
 ): Promise<{ data: RequisitionFormOptions } | { error: unknown }> {
   const [hotelsRes, departmentsRes, positionsRes, modalitiesRes, englishRes] = await Promise.all([
-    fetchWithBQ({ url: '/hotels', params: { limit: 100 } }),
+    fetchAllPages<HotelApi>(fetchWithBQ, '/hotels', { onlyClients: true }),
     fetchWithBQ('/catalogs/hotel-departments'),
     fetchWithBQ('/catalogs/positions'),
     fetchWithBQ('/catalogs/hiring-modalities'),
@@ -228,16 +233,17 @@ async function fetchFormOptions(
 
   return {
     data: {
-      hotels: hotelsRes.error
-        ? []
-        : (hotelsRes.data as PaginatedEnvelope<HotelApi>).data
-            .filter((hotel) => hotel.isClient)
-            .map((hotel) => ({
-              id: hotel.id,
-              name: hotel.name,
-              zoneName: hotel.zone.name.replace(/^Zona\s+/i, ''),
-              photoUrl: hotel.photoUrl,
-            })),
+      hotels:
+        'error' in hotelsRes
+          ? []
+          : hotelsRes.data
+              .filter((hotel) => hotel.isClient)
+              .map((hotel) => ({
+                id: hotel.id,
+                name: hotel.name,
+                zoneName: hotel.zone.name.replace(/^Zona\s+/i, ''),
+                photoUrl: hotel.photoUrl,
+              })),
       departments: (departmentsRes.data as ApiEnvelope<CatalogItemApi[]>).data,
       positions: (positionsRes.data as ApiEnvelope<CatalogItemApi[]>).data,
       modalities: (modalitiesRes.data as ApiEnvelope<CatalogItemApi[]>).data,

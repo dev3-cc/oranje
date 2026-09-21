@@ -27,6 +27,7 @@ import { registerOnboardingMocks } from './onboardingMocks'
 
 import { baseApi } from '@/app/baseApi'
 import type { OnboardingStatus } from '@/shared/constants/onboardingStatus'
+import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import type {
   ApiEnvelope,
   CatalogItemApi,
@@ -344,8 +345,11 @@ export const onboardingApi = baseApi.injectEndpoints({
 
     /** Hoteles ya registrados, para el modo «Hotel ya registrado» del alta. */
     getRegisteredHotels: build.query<RegisteredHotel[], void>({
-      query: () => ({ url: '/hotels', params: { limit: 100 } }),
-      transformResponse: (raw: PaginatedEnvelope<HotelApi>) => raw.data.map(adaptRegisteredHotel),
+      queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
+        const result = await fetchAllPages<HotelApi>(fetchWithBQ as FetchWithBQ, '/hotels')
+        if ('error' in result) return { error: result.error as never }
+        return { data: result.data.map(adaptRegisteredHotel) }
+      },
       providesTags: [{ type: 'Hotel', id: 'LIST' }],
     }),
 
@@ -356,21 +360,21 @@ export const onboardingApi = baseApi.injectEndpoints({
     getHotelMapPoints: build.query<HotelMapPoint[], void>({
       queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
         const [hotelsRes, prospectsRes] = await Promise.all([
-          fetchWithBQ({ url: '/hotels', params: { limit: 100 } }),
-          fetchWithBQ({ url: '/prospects', params: { limit: 100 } }),
+          fetchAllPages<HotelApi>(fetchWithBQ as FetchWithBQ, '/hotels'),
+          fetchAllPages<ProspectApi>(fetchWithBQ as FetchWithBQ, '/prospects'),
         ])
-        if (hotelsRes.error) return { error: hotelsRes.error }
-        if (prospectsRes.error) return { error: prospectsRes.error }
+        if ('error' in hotelsRes) return { error: hotelsRes.error as never }
+        if ('error' in prospectsRes) return { error: prospectsRes.error as never }
 
         const statusByHotel = new Map(
-          (prospectsRes.data as PaginatedEnvelope<ProspectApi>).data.map((prospect) => [
+          prospectsRes.data.map((prospect) => [
             prospect.hotel.id,
             prospect.state.code as OnboardingStatus,
           ]),
         )
 
         return {
-          data: (hotelsRes.data as PaginatedEnvelope<HotelApi>).data
+          data: hotelsRes.data
             .filter((hotel) => hotel.latitude !== null && hotel.longitude !== null)
             .map((hotel) => ({
               id: hotel.id,
