@@ -66,6 +66,8 @@ const INSPECTOR = 'ROL-I-01'
 
 const SYS = 'ROL-SYS-01'
 
+const OBSERVER = 'ROL-OBS-01'
+
 // ---------------------------------------------------------------------------
 // VENTAS — Business Developer y Business Developer Coordinator
 // ---------------------------------------------------------------------------
@@ -75,9 +77,18 @@ const SALES: Permission[] = [
     module: 'pipeline',
     action: 'read',
     label: 'Ver Pipeline (mi territorio)',
-    roles: [BD, BDC, SYS],
+    /* Observador (ROL-OBS-01, pedido de Hugo 2026-09-21): desde su pantalla
+       enlaza al Pipeline real de Ventas — lectura, nunca escritura. Seguro de
+       reutilizar: `hotelId=null` en este rol ya hace que `scope()` no fuerce
+       `ownerUserId`, el mismo criterio que ya usa el BDC. */
+    roles: [BD, BDC, SYS, OBSERVER],
   },
-  { module: 'pipeline', action: 'read_all', label: 'Ver Pipeline global', roles: [BDC, SYS] },
+  {
+    module: 'pipeline',
+    action: 'read_all',
+    label: 'Ver Pipeline global',
+    roles: [BDC, SYS, OBSERVER],
+  },
   {
     module: 'pipeline',
     action: 'create_prospect',
@@ -673,7 +684,12 @@ const RECRUITMENT: Permission[] = [
     module: 'requisitions',
     action: 'read_all',
     label: 'Ver vista global',
-    roles: [GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
+    /* Observador (ROL-OBS-01, pedido de Hugo 2026-09-21): enlaza a la lista
+       real de Requisiciones. Seguro de reutilizar: `hotelId=null` hace que
+       `list()`/`get()` no filtren por hotel, el mismo criterio que
+       Reclutamiento — no repite el hueco de PR #89 porque aquí las DOS
+       lecturas de `hotelId=null` significan lo mismo: "todos los hoteles". */
+    roles: [GROUP_LEAD, RECRUITMENT_MANAGER, SYS, OBSERVER],
   },
   {
     module: 'requisitions',
@@ -711,7 +727,11 @@ const RECRUITMENT: Permission[] = [
     module: 'recruitment',
     action: 'search_candidates',
     label: 'Buscar / filtrar candidatos',
-    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
+    /* Observador (ROL-OBS-01, pedido de Hugo 2026-09-21): "al hacer clic en
+       una persona desde un slot de la requisición debería poder ir a ver el
+       empleado". Es el único permiso que destraba `getScoped()` sin exigir
+       `hotelId` — de lectura, unscoped, igual que Reclutamiento. */
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS, OBSERVER],
   },
   {
     module: 'recruitment',
@@ -1162,6 +1182,34 @@ const INSPECTION: Permission[] = [
   },
 ]
 
+// ---------------------------------------------------------------------------
+// OBSERVADOR — transversal, de solo lectura (ROL-OBS-01, Roles del Sistema.md
+// 2026-09-21). Permisos NUEVOS y propios: no reutiliza `*.read_all` de otros
+// roles a propósito, porque esa fue la causa de los tres huecos de alcance
+// cerrados en PR #89 — un mismo permiso con significado distinto según quién
+// lo tuviera. El Observador no hereda nada y nadie hereda de él.
+// ---------------------------------------------------------------------------
+const OBSERVABILITY: Permission[] = [
+  {
+    module: 'observability',
+    action: 'read_status_durations',
+    label: 'Ver cuánto tarda cada semáforo en cada estado (Observador)',
+    roles: [OBSERVER],
+  },
+  {
+    module: 'observability',
+    action: 'read_punches',
+    label: 'Ver cada ponche de cualquier hotel (Observador)',
+    roles: [OBSERVER],
+  },
+  {
+    module: 'observability',
+    action: 'read_department_metrics',
+    label: 'Ver métricas agregadas de los 7 departamentos (Observador)',
+    roles: [OBSERVER],
+  },
+]
+
 export const PERMISSIONS: Permission[] = [
   ...SALES,
   ...HOTEL,
@@ -1171,6 +1219,7 @@ export const PERMISSIONS: Permission[] = [
   ...WORKER_ROLE,
   ...INSPECTION,
   ...SYSTEM_ADMINISTRATION,
+  ...OBSERVABILITY,
 ]
 
 /**

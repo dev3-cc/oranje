@@ -14,6 +14,7 @@ import { DemandModule } from './modules/demand/index.js'
 import { FilesModule } from './modules/files/index.js'
 import { IdentityModule } from './modules/identity/index.js'
 import { NotificationsModule } from './modules/notifications/index.js'
+import { ObservabilityModule } from './modules/observability/index.js'
 import { OperationsModule } from './modules/operations/index.js'
 import { PersonalModule } from './modules/personal/index.js'
 import { SettlementModule } from './modules/settlement/index.js'
@@ -39,6 +40,7 @@ import { SupervisionModule } from './modules/supervision/index.js'
     FilesModule,
     NotificationsModule,
     SupervisionModule,
+    ObservabilityModule,
   ],
 })
 export class AppModule {}
