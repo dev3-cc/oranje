@@ -3,7 +3,7 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import { Skeleton, cn } from '@oranje/ui'
 import { useReducedMotion } from 'framer-motion'
 import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 
 import { useGetPipelineBoardQuery, useGetZonesQuery } from '../api/onboardingApi'
 import { ChangeStatusDialog } from '../components/ChangeStatusDialog'
@@ -26,6 +26,7 @@ import {
   PIPELINE_COLUMNS,
   type OnboardingStatus,
 } from '@/shared/constants/onboardingStatus'
+import { useCan } from '@/shared/hooks/useCan'
 
 /** El globo carga aparte: three-globe + continentes no pesan en el chunk base. */
 const HotelGlobeCard = lazy(() =>
@@ -48,6 +49,7 @@ const BD_ROLE = 'ROL-V-01'
 export function PipelinePage(): ReactNode {
   const { t } = useLingui()
   const navigate = useNavigate()
+  const can = useCan()
   const [isFormOpen, setIsFormOpen] = useState(false)
   const { filters, isStaleOnly, activeCount, toggleStaleOnly, setZone, setOwnerId, reset } =
     usePipelineFilters()
@@ -60,6 +62,16 @@ export function PipelinePage(): ReactNode {
     value: zone.id,
     label: zone.label.replace(/^Zona\s+/i, ''),
   }))
+
+  /**
+   * El tablero solo pinta prospectos ABIERTOS a propósito — los convertidos
+   * (Naranja) se ven en Clientes Activos (BD/BDC no los necesitan aquí). El
+   * Observador sí quiere ver el ciclo completo, así que gana la columna
+   * Naranja además de las 6 abiertas (Hugo, 2026-09-21: "no se ve el naranja
+   * status, cuando ya es cliente, debería").
+   */
+  const visibleColumns: readonly OnboardingStatus[] =
+    session?.roleId === 'ROL-OBS-01' ? [...PIPELINE_COLUMNS, 'ORANGE'] : PIPELINE_COLUMNS
 
   /** Los filtros puestos, en palabras: el vacío los nombra para que se entienda por qué. */
   const activeFilterLabels = [
@@ -130,6 +142,18 @@ export function PipelinePage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* El Observador llega aquí desde su pantalla de solo lectura; el
+          Pipeline no tiene breadcrumb propio, así que esta línea es solo
+          suya (Hugo, 2026-09-21). Sin flecha propia: el shell (AppShell) ya
+          pinta la suya para esta ruta — dos flechas confundían (Hugo, mismo día). */}
+      {session?.roleId === 'ROL-OBS-01' && (
+        <nav aria-label={t`Ruta`} className="text-sm text-ink-3">
+          <Link to="/observability" className="hover:text-o-700">
+            <Trans>Observador</Trans>
+          </Link>
+        </nav>
+      )}
+
       {/* Misma cabecera-tarjeta que Conversión, Contratos y Propuestas: título
           a la izquierda, la foto (recortada, sin fondo: la mujer y los
           post-its, sin sus textos) sentada en el borde inferior y sobresaliendo
@@ -153,14 +177,16 @@ export function PipelinePage(): ReactNode {
             <Button disabled title={t`La vista tabla llega pronto`}>
               <Trans>Vista tabla</Trans>
             </Button>
-            <Button
-              variant="primary"
-              onClick={() => {
-                setIsFormOpen(true)
-              }}
-            >
-              <Trans>Nuevo prospecto</Trans>
-            </Button>
+            {can('pipeline:create_prospect') && (
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setIsFormOpen(true)
+                }}
+              >
+                <Trans>Nuevo prospecto</Trans>
+              </Button>
+            )}
           </div>
         </div>
         <img
@@ -286,7 +312,7 @@ export function PipelinePage(): ReactNode {
       {board && board.items.length > 0 && (
         <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-4">
-            {PIPELINE_COLUMNS.map((status) => (
+            {visibleColumns.map((status) => (
               <PipelineColumn
                 key={status}
                 status={status}
