@@ -51,8 +51,8 @@ describe('RequisitionDetailPage', () => {
     expect(await screen.findByText('Parcial 1/4')).toBeInTheDocument()
     expect(screen.getByText('Cubierta 2/2')).toBeInTheDocument()
 
-    expect(screen.getByText('< 72 h')).toBeInTheDocument()
-    expect(screen.getByText('72 – 120 h')).toBeInTheDocument()
+    expect(screen.getByText('Urgente')).toBeInTheDocument()
+    expect(screen.getByText('Medio')).toBeInTheDocument()
     expect(screen.getAllByText('Tiempo completo').length).toBeGreaterThan(0)
   })
 

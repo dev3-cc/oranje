@@ -86,12 +86,20 @@ export function Modal({
    * modales de la app declaran su ancho con `max-w-*` SIN breakpoint, que en
    * ≥sm perdería contra ese tope: aquí se espeja cada `max-w-*` del caller a
    * su variante `sm:` para que el ancho pedido gane en todos los tamaños.
+   *
+   * Y el `max-w-*` pelón se RETIRA del className: si se dejara, twMerge lo
+   * haría ganar sobre el `max-w-[calc(100%-2rem)]` base y en un teléfono el
+   * modal saldría de 48rem en una pantalla de 390 px, cortado por la derecha
+   * (Hugo, 2026-09-21: «las tablas no se ven bien en móvil» era esto, en la
+   * auditoría y en cualquier modal ancho). Bajo `sm` manda siempre el ancho
+   * de la pantalla.
    */
-  const widthOverrides = (className ?? '')
-    .split(/\s+/)
+  const classes = (className ?? '').split(/\s+/).filter(Boolean)
+  const widthOverrides = classes
     .filter((item) => item.startsWith('max-w-'))
     .map((item) => `sm:${item}`)
     .join(' ')
+  const classNameSinAncho = classes.filter((item) => !item.startsWith('max-w-')).join(' ')
 
   if (chromeless) {
     return (
@@ -105,7 +113,7 @@ export function Modal({
           className={cn(
             'w-[calc(100vw-2rem)] max-h-[calc(100dvh-2rem)] overflow-hidden p-0',
             'sm:max-w-2xl',
-            className,
+            classNameSinAncho,
             widthOverrides,
           )}
           aria-describedby={undefined}
@@ -130,7 +138,7 @@ export function Modal({
         className={cn(
           'w-[calc(100%-2rem)] max-w-[calc(100%-2rem)] max-h-[calc(100dvh-3rem)] gap-5 overflow-x-hidden overflow-y-auto',
           'sm:max-w-2xl',
-          className,
+          classNameSinAncho,
           widthOverrides,
         )}
         onInteractOutside={onInteract}
@@ -138,7 +146,11 @@ export function Modal({
         /* Sin descripción, Radix avisa en consola; se apaga el aria explícitamente. */
         {...(description === undefined ? { 'aria-describedby': undefined } : {})}
       >
-        <DialogHeader>
+        {/* DialogContent es un grid y sus hijos nacen con min-width:auto, así
+            que una fila que no cabe (los tres botones de un reactivo, un título
+            largo) ensanchaba el contenido más allá del modal y se cortaba por la
+            derecha en el teléfono. `min-w-0` deja que envuelvan. */}
+        <DialogHeader className="min-w-0">
           <DialogTitle className="text-xl font-bold text-ink">{title}</DialogTitle>
           {description && (
             <DialogDescription className="text-sm leading-relaxed text-ink-3">
@@ -147,9 +159,11 @@ export function Modal({
           )}
         </DialogHeader>
 
-        {children}
+        <div className="flex min-w-0 flex-col gap-5">{children}</div>
 
-        {footer && <DialogFooter className="items-center gap-3">{footer}</DialogFooter>}
+        {footer && (
+          <DialogFooter className="min-w-0 flex-wrap items-center gap-3">{footer}</DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   )

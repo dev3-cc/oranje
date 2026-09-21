@@ -10,7 +10,7 @@ import { CoverageBadge } from './CoverageBadge'
 
 import { SectionCard } from '@/shared/components/SectionCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
-import { URGENCY_LABEL, URGENCY_TOKEN } from '@/shared/constants/requisitionStatus'
+import { URGENCY_HINT, URGENCY_LABEL, URGENCY_TOKEN } from '@/shared/constants/requisitionStatus'
 import { formatDayMonth } from '@/shared/lib/formatters'
 
 /** `#` no es texto: se pinta tal cual; el resto se traduce al pintar con `i18n._()` (D-36). */
@@ -93,10 +93,12 @@ export function PositionsTable({
                 </TableCell>
 
                 <TableCell className="px-3 py-4">
-                  <StatusLightSoftBadge
-                    token={URGENCY_TOKEN[position.urgency]}
-                    label={URGENCY_LABEL[position.urgency]}
-                  />
+                  <span title={URGENCY_HINT[position.urgency]}>
+                    <StatusLightSoftBadge
+                      token={URGENCY_TOKEN[position.urgency]}
+                      label={URGENCY_LABEL[position.urgency]}
+                    />
+                  </span>
                 </TableCell>
 
                 <TableCell className="px-3 py-4 text-sm text-ink-2">{position.modality}</TableCell>

@@ -23,6 +23,7 @@ import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   REQUISITION_STATUS_LABEL,
   REQUISITION_STATUS_TOKEN,
+  URGENCY_HINT,
   URGENCY_LABEL,
   URGENCY_TOKEN,
 } from '@/shared/constants/requisitionStatus'
@@ -107,13 +108,17 @@ export function RequisitionTable({ items }: { items: RequisitionRow[] }): ReactN
               </TableCell>
 
               <TableCell className="px-4 py-4 whitespace-nowrap">
-                <span className="flex items-center gap-2 text-sm text-ink-2">
+                <span
+                  className="flex items-center gap-2 text-sm text-ink-2"
+                  title={URGENCY_HINT[item.urgency]}
+                >
                   <span
                     className="size-2 shrink-0 rounded-full"
                     style={{ backgroundColor: statusLight[URGENCY_TOKEN[item.urgency]] }}
                     aria-hidden
                   />
                   {URGENCY_LABEL[item.urgency]}
+                  <span className="text-xs text-ink-4">· {URGENCY_HINT[item.urgency]}</span>
                 </span>
               </TableCell>
 

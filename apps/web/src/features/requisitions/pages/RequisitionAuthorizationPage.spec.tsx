@@ -63,7 +63,9 @@ describe('RequisitionAuthorizationPage', () => {
 
     // La fecha es dinámica (fixtures relativos a hoy): se afirma la frase.
     expect(
-      await screen.findByText(/está a 2 días, así que la posición nace en Rojo \(< 72 h\)/),
+      await screen.findByText(
+        /está a 2 días, así que la posición nace en Rojo \(Urgente: empieza en menos de 3 días\)/,
+      ),
     ).toBeInTheDocument()
   })
 
@@ -78,7 +80,9 @@ describe('RequisitionAuthorizationPage', () => {
 
     // Con 6 días por delante nacen en Verde, no en Rojo.
     expect(
-      screen.getByText(/está a 6 días, así que las 2 posiciones nacen en Verde \(> 120 h\)/),
+      screen.getByText(
+        /está a 6 días, así que las 2 posiciones nacen en Verde \(Normal: empieza en más de 5 días\)/,
+      ),
     ).toBeInTheDocument()
   })
 

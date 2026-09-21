@@ -13,7 +13,11 @@ import type {
 
 import { Button } from '@/shared/components/Button'
 import { SectionCard } from '@/shared/components/SectionCard'
-import { URGENCY_COLOR_NAME, URGENCY_LABEL } from '@/shared/constants/requisitionStatus'
+import {
+  URGENCY_COLOR_NAME,
+  URGENCY_HINT,
+  URGENCY_LABEL,
+} from '@/shared/constants/requisitionStatus'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDayMonth } from '@/shared/lib/formatters'
@@ -54,8 +58,9 @@ export function AuthorizationResolutionForm({
     const start = formatDayMonth(preview.startDate)
     const color = URGENCY_COLOR_NAME[preview.urgency]
     const label = URGENCY_LABEL[preview.urgency]
+    const hint = URGENCY_HINT[preview.urgency]
 
-    return t`Al autorizar, la urgencia se calcula contra la fecha de inicio: ${start} ${plural(daysAhead, { one: 'está a # día', other: 'está a # días' })}, así que ${plural(positionCount, { one: 'la posición nace', other: 'las # posiciones nacen' })} en ${color} (${label})`
+    return t`Al autorizar, la urgencia se calcula contra la fecha de inicio: ${start} ${plural(daysAhead, { one: 'está a # día', other: 'está a # días' })}, así que ${plural(positionCount, { one: 'la posición nace', other: 'las # posiciones nacen' })} en ${color} (${label}: ${hint})`
   }
 
   /** Hasta dónde llega la firma, en palabras (D-09). */

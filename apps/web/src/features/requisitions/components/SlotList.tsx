@@ -3,6 +3,7 @@ import { msg } from '@lingui/core/macro'
 import { useLingui } from '@lingui/react/macro'
 import { cn } from '@oranje/ui'
 import type { ReactNode } from 'react'
+import { Link } from 'react-router'
 
 import type { RequisitionPosition, RequisitionSlot } from '../types/requisition.types'
 
@@ -44,8 +45,22 @@ function SlotRow({ slot }: { slot: RequisitionSlot }): ReactNode {
       </span>
 
       <div className="min-w-0 flex-1">
+        {/* El nombre lleva al expediente: quien mira el slot quiere saber quién
+            es esa persona, no solo que el slot está ocupado (Hugo, 2026-09-21).
+            El API decide si puede verlo: Reclutamiento siempre, el hotel solo a
+            quien tiene asignado — y este slot es suyo. */}
         <p className={cn('truncate text-sm font-medium', isOccupied ? 'text-ink' : 'text-ink-3')}>
-          {slot.assigneeName ?? t`Sin asignar`}
+          {slot.assigneeId && slot.assigneeName ? (
+            <Link
+              to={`/collaborator-pool/${slot.assigneeId}`}
+              className="rounded-sm hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
+              title={t`Ver expediente`}
+            >
+              {slot.assigneeName}
+            </Link>
+          ) : (
+            (slot.assigneeName ?? t`Sin asignar`)
+          )}
         </p>
         <p className="mt-0.5 truncate text-sm text-ink-3">
           {/*
