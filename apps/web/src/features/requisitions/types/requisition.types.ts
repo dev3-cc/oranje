@@ -49,6 +49,8 @@ export interface RequisitionSlot {
   index: number
   status: SlotStatus
   assigneeName: string | null
+  /** Quien ocupa el slot, para abrir su expediente desde aquí. */
+  assigneeId: string | null
   assignedAt: string | null
   /** Por dónde se ofrece un slot libre; se traduce al pintar con `i18n._()` (D-36). */
   offerChannel: MessageDescriptor | null

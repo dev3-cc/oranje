@@ -92,6 +92,7 @@ function buildSlots(position: RequisitionPositionApi, pool: AssignmentApi[]): Re
       index: index + 1,
       status: isOccupied ? 'occupied' : 'free',
       assigneeName: assignment?.worker.fullName ?? null,
+      assigneeId: assignment?.worker.id ?? null,
       assignedAt: assignment?.createdAt ?? null,
       offerChannel: isOccupied ? null : msg`Visible en la Bolsa · Self-Pick`,
     }

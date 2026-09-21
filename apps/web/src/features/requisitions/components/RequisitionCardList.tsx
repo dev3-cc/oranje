@@ -13,6 +13,7 @@ import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   REQUISITION_STATUS_LABEL,
   REQUISITION_STATUS_TOKEN,
+  URGENCY_HINT,
   URGENCY_LABEL,
   URGENCY_TOKEN,
 } from '@/shared/constants/requisitionStatus'
@@ -51,7 +52,7 @@ function RequisitionCard({ item }: { item: RequisitionRow }): ReactNode {
             aria-hidden
             className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-b from-transparent via-surface/70 to-surface"
           />
-          <span className="absolute top-2 right-2">
+          <span className="absolute top-2 right-2" title={URGENCY_HINT[item.urgency]}>
             <StatusLightSoftBadge
               token={URGENCY_TOKEN[item.urgency]}
               label={URGENCY_LABEL[item.urgency]}

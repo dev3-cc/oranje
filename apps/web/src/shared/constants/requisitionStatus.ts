@@ -71,13 +71,28 @@ export const URGENCY_LEVELS = ['RED', 'YELLOW', 'STRONG_GREEN'] as const
 
 export type UrgencyLevel = (typeof URGENCY_LEVELS)[number]
 
+/**
+ * El nombre de cada estado es el del vault (Urgente · Medio · Normal): un
+ * umbral como «< 72 h» no le dice nada a quien mira el tablero (Hugo,
+ * 2026-09-21). El umbral vive en `URGENCY_HINT`, en días y en palabras, para
+ * el título del chip y las frases que lo necesiten.
+ */
 const URGENCY_MESSAGE = {
-  RED: msg`< 72 h`,
-  YELLOW: msg`72 – 120 h`,
-  STRONG_GREEN: msg`> 120 h`,
+  RED: msg`Urgente`,
+  YELLOW: msg`Medio`,
+  STRONG_GREEN: msg`Normal`,
 }
 
 export const URGENCY_LABEL: Record<UrgencyLevel, string> = labelMap(URGENCY_MESSAGE)
+
+const URGENCY_HINT_MESSAGE = {
+  RED: msg`empieza en menos de 3 días`,
+  YELLOW: msg`empieza en 3 a 5 días`,
+  STRONG_GREEN: msg`empieza en más de 5 días`,
+}
+
+/** «empieza en menos de 3 días»: lo que significa el color, para decirlo al lado. */
+export const URGENCY_HINT: Record<UrgencyLevel, string> = labelMap(URGENCY_HINT_MESSAGE)
 
 export const URGENCY_TOKEN: Record<UrgencyLevel, StatusLightToken> = {
   RED: 'st-rojo',

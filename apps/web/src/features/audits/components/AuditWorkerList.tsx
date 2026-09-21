@@ -98,9 +98,11 @@ export function AuditWorkerList({
                   onClick={() => {
                     onSelect({ id: row.workerId, fullName: row.workerName, photoUrl: row.photoUrl })
                   }}
-                  className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-lg border border-line bg-surface px-4 py-3 text-left transition-colors hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
+                  className="flex w-full cursor-pointer flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-lg border border-line bg-surface px-4 py-3 text-left transition-colors hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
                 >
-                  <span className="flex min-w-0 items-center gap-2.5">
+                  {/* En un teléfono el nombre no cede espacio a la píldora: si no
+                      caben los dos, la píldora baja de línea (flex-wrap). */}
+                  <span className="flex min-w-0 flex-1 basis-40 items-center gap-2.5">
                     {row.photoUrl ? (
                       <img
                         src={row.photoUrl}
