@@ -48,6 +48,7 @@ const ROLE_MESSAGE: Partial<Record<string, { short: string; title: MessageDescri
   'ROL-C-01': { short: 'COLAB', title: msg`Colaborador` },
   'ROL-SYS-01': { short: 'SYS', title: msg`Sistema` },
   'ROL-ADM-01': { short: 'ADMIN', title: msg`Administrador` },
+  'ROL-OBS-01': { short: 'OBS', title: msg`Observador` },
 }
 
 /** Se resuelve AL LLAMAR, no al cargar: así sigue al idioma en caliente. */

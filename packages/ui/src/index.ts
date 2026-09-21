@@ -129,3 +129,4 @@ export {
   PopoverTitle,
   PopoverTrigger,
 } from './components/ui/popover'
+export { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs'

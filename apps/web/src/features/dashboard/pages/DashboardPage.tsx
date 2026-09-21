@@ -16,6 +16,9 @@ export function DashboardPage(): ReactNode {
   }
 
   if (session?.roleId === 'ROL-ADM-01') return <Navigate to="/users" replace />
+  /* Observador (ROL-OBS-01) no tiene dashboard propio: su única pantalla es
+     /observability, que ya compone las tres vistas transversales que necesita. */
+  if (session?.roleId === 'ROL-OBS-01') return <Navigate to="/observability" replace />
   /* Inspección no tiene dashboard propio: su único módulo hoy es Accidentes.
      Caer en el de Ventas era ver puros 403. */
   if (session?.roleId.startsWith('ROL-I-')) return <Navigate to="/accidents" replace />

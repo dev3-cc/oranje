@@ -53,6 +53,7 @@ const ROLES: Array<{ code: string; name: string; department: string | null }> = 
   { code: 'ROL-C-01', name: 'Colaborador', department: null },
   { code: 'ROL-SYS-01', name: 'Sistema', department: null },
   { code: 'ROL-ADM-01', name: 'Administrador', department: null },
+  { code: 'ROL-OBS-01', name: 'Observador', department: null },
 ]
 
 // ---------------------------------------------------------------------------

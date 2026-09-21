@@ -42,6 +42,7 @@ const MGR_GENERAL = 'ROL-H-03'
 const ADMIN = 'ROL-ADM-01'
 const INSPECTOR = 'ROL-I-01'
 const COORDINADOR_INSPECCION = 'ROL-I-02'
+const OBSERVADOR = 'ROL-OBS-01'
 
 const VENTAS = [BD, BDC] as const
 const RECLUTAMIENTO = [RECLUTADORA, LIDER_GRUPO, MGR_RECLUTAMIENTO] as const
@@ -53,10 +54,19 @@ const INSPECCION = [INSPECTOR, COORDINADOR_INSPECCION] as const
 
 const STAFF = [...VENTAS, ...RECLUTAMIENTO, ...HOTEL] as const
 
-const MAPPED_ROLES: ReadonlySet<string> = new Set([...STAFF, ...INSPECCION, ADMIN])
+const MAPPED_ROLES: ReadonlySet<string> = new Set([...STAFF, ...INSPECCION, ADMIN, OBSERVADOR])
 
 const MODULES: NavModule[] = [
   { label: msg`Dashboard`, to: '/dashboard', icon: 'space_dashboard', roles: STAFF },
+  /* Observador (ROL-OBS-01, Roles del Sistema.md 2026-09-21): transversal, de
+     solo lectura — no ve nada más del sidebar del staff, ni siquiera el
+     Dashboard, que compone datos por rol que el Observador no tiene. */
+  {
+    label: msg`Observador`,
+    to: '/observability',
+    icon: 'monitoring',
+    roles: [OBSERVADOR],
+  },
   { label: msg`Usuarios`, to: '/users', icon: 'manage_accounts', roles: [ADMIN] },
   { label: msg`Catálogos`, to: '/catalogs', icon: 'category', roles: [ADMIN] },
   {
