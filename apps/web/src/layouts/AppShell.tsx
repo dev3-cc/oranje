@@ -58,7 +58,15 @@ export function AppShell(): ReactNode {
    * directo (sin historial), sube al padre de la ruta.
    */
   const pathSegments = location.pathname.split('/').filter(Boolean)
-  const isSubView = pathSegments.length > 1
+  /**
+   * El Observador es la única excepción: `/requisitions` y `/pipeline` son
+   * "raíz de sección" para Reclutamiento/Ventas, que sí las tienen en su
+   * sidebar — pero el Observador llega ahí desde SU pantalla (`/observability`,
+   * pedido de Hugo 2026-09-21), así que ahí sí son subvista suya.
+   */
+  const isObservadorAwayFromHome =
+    user?.roleId === 'ROL-OBS-01' && pathSegments[0] !== 'observability'
+  const isSubView = pathSegments.length > 1 || isObservadorAwayFromHome
   function goBack(): void {
     if (historyIndex > 0) {
       void navigate(-1)

@@ -168,6 +168,13 @@ export function formatHours(hours: number): string {
   return `${String(Math.round(hours * 10) / 10)}h`
 }
 
+/** `79` -> `3.3 días`; `18` -> `18h`. Bajo 48h en horas, arriba en días — nadie piensa "127 horas". */
+export function formatDurationHuman(hours: number): string {
+  if (hours < 48) return formatHours(hours)
+  const days = Math.round((hours / 24) * 10) / 10
+  return t`${days} días`
+}
+
 /** `0.21` -> `21%`. La API manda la fracción; el símbolo lo pone la UI. */
 export function formatPercent(fraction: number): string {
   return `${Math.round(fraction * 100)}%`

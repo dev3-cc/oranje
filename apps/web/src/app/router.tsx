@@ -416,6 +416,13 @@ export const router = createBrowserRouter([
             },
           },
           {
+            path: 'observability',
+            lazy: async () => {
+              const m = await import('@/features/observability')
+              return { Component: m.ObservabilityPage }
+            },
+          },
+          {
             path: 'my-territory',
             lazy: async () => {
               const m = await import('@/features/territory')

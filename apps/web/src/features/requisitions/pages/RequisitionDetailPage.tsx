@@ -171,6 +171,17 @@ export function RequisitionDetailPage(): ReactNode {
   return (
     <div className="flex flex-col gap-6">
       <nav aria-label={t`Ruta`} className="flex items-center gap-2 text-sm text-ink-3">
+        {/* El Observador no tiene Tablero propio en su sidebar: llega aquí
+            desde su pantalla de solo lectura, así que su ruta de regreso
+            empieza ahí, no en Demanda (Hugo, 2026-09-21). */}
+        {session?.roleId === 'ROL-OBS-01' && (
+          <>
+            <Link to="/observability" className="hover:text-o-700">
+              <Trans>Observador</Trans>
+            </Link>
+            <span aria-hidden>/</span>
+          </>
+        )}
         <Link to="/requisitions" className="hover:text-o-700">
           <Trans>Demanda</Trans>
         </Link>
