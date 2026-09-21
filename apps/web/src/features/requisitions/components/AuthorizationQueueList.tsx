@@ -35,7 +35,12 @@ export function AuthorizationQueueList({
     return t`${department} · ${positionCount} pos · ${plural(slotCount, { one: '# slot', other: '# slots' })}`
   }
 
+  /* Una requisición sin firma cuya fecha ya pasó decía «Inicia en -4 días». */
   function describeStart(days: number): string {
+    if (days < 0) {
+      const late = -days
+      return t`${plural(late, { one: 'Debió iniciar hace # día', other: 'Debió iniciar hace # días' })}`
+    }
     return t`${plural(days, { 0: 'Inicia hoy', one: 'Inicia en # día', other: 'Inicia en # días' })}`
   }
 

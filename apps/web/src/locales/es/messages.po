@@ -548,6 +548,10 @@ msgstr "{hotelName} · desde {0}. Solo ves los pasos que tu rol puede dar."
 msgid "{hotelName} · Propuesta v{0}. Las tarifas se toman de esta versión."
 msgstr "{hotelName} · Propuesta v{0}. Las tarifas se toman de esta versión."
 
+#: src/features/requisitions/components/AuthorizationQueueList.tsx
+msgid "{late, plural, one {Debió iniciar hace # día} other {Debió iniciar hace # días}}"
+msgstr "{late, plural, one {Debió iniciar hace # día} other {Debió iniciar hace # días}}"
+
 #: src/features/dashboard/components/ActivityCards.tsx
 msgid "{memberCount, plural, one {# BD te reporta} other {# BDs te reportan}} · {totalOpen} prospectos abiertos y {totalConversions, plural, one {# conversión} other {# conversiones}} entre todos."
 msgstr "{memberCount, plural, one {# BD te reporta} other {# BDs te reportan}} · {totalOpen} prospectos abiertos y {totalConversions, plural, one {# conversión} other {# conversiones}} entre todos."
@@ -1303,6 +1307,10 @@ msgstr "Aún no tienes asignación"
 msgid "Aún no tienes colaboradores asignados"
 msgstr "Aún no tienes colaboradores asignados"
 
+#: src/features/requisitions/components/UrgencyChip.tsx
+msgid "Aún sin autorizar: la urgencia se calcula al autorizar"
+msgstr "Aún sin autorizar: la urgencia se calcula al autorizar"
+
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Aún sin cotizar ningún puesto"
 msgstr "Aún sin cotizar ningún puesto"
@@ -1330,9 +1338,17 @@ msgstr "Autorizada"
 msgid "Autorizada {0}"
 msgstr "Autorizada {0}"
 
+#: src/features/requisitions/components/UrgencyChip.tsx
+msgid "Autorizada {since, plural, one {hace # día} other {hace # días}}"
+msgstr "Autorizada {since, plural, one {hace # día} other {hace # días}}"
+
 #: src/features/requisitions/components/RequisitionSummaryStrip.tsx
 msgid "Autorizada el"
 msgstr "Autorizada el"
+
+#: src/features/requisitions/components/UrgencyChip.tsx
+msgid "Autorizada hoy"
+msgstr "Autorizada hoy"
 
 #: src/features/requisitions/components/RequisitionSummaryStrip.tsx
 msgid "Autorizada por"
@@ -3825,6 +3841,17 @@ msgstr "Emergencia"
 msgid "Empezar"
 msgstr "Empezar"
 
+#. placeholder {0}: formatDate(startDate)
+#. placeholder {1}: -ahead
+#: src/features/requisitions/components/UrgencyChip.tsx
+msgid "Empezó el {0} · {1, plural, one {hace # día} other {hace # días}}"
+msgstr "Empezó el {0} · {1, plural, one {hace # día} other {hace # días}}"
+
+#. placeholder {0}: formatDate(startDate)
+#: src/features/requisitions/components/UrgencyChip.tsx
+msgid "Empieza el {0} · {ahead, plural, one {en # día} other {en # días}}"
+msgstr "Empieza el {0} · {ahead, plural, one {en # día} other {en # días}}"
+
 #: src/shared/constants/requisitionStatus.ts
 msgid "empieza en 3 a 5 días"
 msgstr "empieza en 3 a 5 días"
@@ -3836,6 +3863,11 @@ msgstr "empieza en más de 5 días"
 #: src/shared/constants/requisitionStatus.ts
 msgid "empieza en menos de 3 días"
 msgstr "empieza en menos de 3 días"
+
+#. placeholder {0}: formatDate(startDate)
+#: src/features/requisitions/components/UrgencyChip.tsx
+msgid "Empieza hoy, {0}"
+msgstr "Empieza hoy, {0}"
 
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
 msgid "empiezan en menos de 3 días"
@@ -9804,6 +9836,10 @@ msgstr "Uno vigente por hotel"
 #: src/features/requisitions/components/RequisitionTable.tsx
 msgid "Urgencia"
 msgstr "Urgencia"
+
+#: src/features/requisitions/components/UrgencyChip.tsx
+msgid "Urgencia: {label}. Toca para ver el tiempo"
+msgstr "Urgencia: {label}. Toca para ver el tiempo"
 
 #: src/shared/constants/requisitionStatus.ts
 msgid "Urgente"

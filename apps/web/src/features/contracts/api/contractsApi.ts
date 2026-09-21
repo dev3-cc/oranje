@@ -10,13 +10,9 @@ import { registerContractsMocks } from './contractsMocks'
 
 import { baseApi } from '@/app/baseApi'
 import type { ContractStatus } from '@/shared/constants/contractStatus'
+import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import { matchesSearch } from '@/shared/lib/text'
-import type {
-  ApiEnvelope,
-  ContractApi,
-  HotelApi,
-  PaginatedEnvelope,
-} from '@/shared/types/apiContract.types'
+import type { ApiEnvelope, ContractApi, HotelApi } from '@/shared/types/apiContract.types'
 
 /**
  * Contratos sobre el contrato real: `GET /contracts` da la lista y
@@ -122,13 +118,13 @@ async function fetchContractList(
 ): Promise<{ data: ContractList } | { error: unknown }> {
   const [contractsRes, hotelsRes] = await Promise.all([
     fetchWithBQ('/contracts'),
-    fetchWithBQ({ url: '/hotels', params: { limit: 100 } }),
+    fetchAllPages<HotelApi>(fetchWithBQ, '/hotels'),
   ])
   if (contractsRes.error) return { error: contractsRes.error }
-  if (hotelsRes.error) return { error: hotelsRes.error }
+  if ('error' in hotelsRes) return { error: hotelsRes.error }
 
   const contracts = (contractsRes.data as ApiEnvelope<ContractApi[]>).data
-  const hotels = (hotelsRes.data as PaginatedEnvelope<HotelApi>).data
+  const hotels = hotelsRes.data
   const zoneByHotel = new Map(hotels.map((hotel) => [hotel.id, hotel.zone.name]))
   /* La foto ya viene en la misma pasada por `/hotels`: la tarjeta la necesita
      para que un contrato se distinga de otro de un vistazo. */
@@ -221,14 +217,14 @@ export const contractsApi = baseApi.injectEndpoints({
       queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
         const bq = fetchWithBQ as FetchWithBQ
         const [hotelsRes, positionsRes] = await Promise.all([
-          bq({ url: '/hotels', params: { limit: 100 } }),
+          fetchAllPages<HotelApi>(bq, '/hotels', { onlyClients: true }),
           bq('/catalogs/positions'),
         ])
-        if (hotelsRes.error) return { error: hotelsRes.error as never }
+        if ('error' in hotelsRes) return { error: hotelsRes.error as never }
         if (positionsRes.error) return { error: positionsRes.error as never }
         return {
           data: {
-            hotels: (hotelsRes.data as PaginatedEnvelope<HotelApi>).data
+            hotels: hotelsRes.data
               .filter((hotel) => hotel.isClient)
               .map((hotel) => ({ id: hotel.id, name: hotel.name })),
             positions: (

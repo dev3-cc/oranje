@@ -20,11 +20,13 @@ import { registerTimesheetMocks } from './timesheetMocks'
 
 import { baseApi } from '@/app/baseApi'
 import type { TimesheetStatus } from '@/shared/constants/timesheetStatus'
+import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import type {
   ApiEnvelope,
   TimesheetApi,
   TimesheetDayApi,
   TimesheetPunchApi,
+  WorkerApi,
 } from '@/shared/types/apiContract.types'
 
 /**
@@ -245,7 +247,7 @@ async function fetchTimeline(
     /* Composición D-28: `/workers` trae la foto Y el puesto de la persona; el
        índice de requisiciones trae folio real y hotel (nombre + foto, D-34).
        Si algo de esto falla, la fila degrada con fallbacks (criterio D-30). */
-    fetchWithBQ({ url: '/workers', params: { limit: 100 } }),
+    fetchAllPages<WorkerApi>(fetchWithBQ, '/workers'),
     fetchRequisitionIndex(fetchWithBQ),
   ])
   if (listRes.error) return { error: listRes.error }
@@ -256,13 +258,8 @@ async function fetchTimeline(
   const fallbackHotel = me.hotel?.name ?? '—'
 
   const workerInfo = new Map<string, { photoUrl: string | null; jobTitle: string }>()
-  if (!workersRes.error) {
-    const workers = (
-      workersRes.data as {
-        data: Array<{ id: string; photoUrl: string | null; position: { name: string } | null }>
-      }
-    ).data
-    for (const worker of workers) {
+  if (!('error' in workersRes)) {
+    for (const worker of workersRes.data) {
       workerInfo.set(worker.id, {
         photoUrl: worker.photoUrl,
         jobTitle: worker.position?.name ?? '—',

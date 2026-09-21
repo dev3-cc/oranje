@@ -14,10 +14,10 @@ import { registerDashboardMocks } from './dashboardMocks'
 import { baseApi } from '@/app/baseApi'
 import { localeTag } from '@/app/i18n'
 import type { OnboardingStatus } from '@/shared/constants/onboardingStatus'
+import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import type {
   ApiEnvelope,
   HotelApi,
-  PaginatedEnvelope,
   ProspectApi,
   TeamMemberApi,
 } from '@/shared/types/apiContract.types'
@@ -83,18 +83,20 @@ function buildStaleList(open: ProspectApi[]): StaleProspect[] {
 async function fetchOverview(
   fetchWithBQ: FetchWithBQ,
 ): Promise<{ data: DashboardOverview } | { error: unknown }> {
+  /* Embudo, conversión y clientes se cuentan sobre el histórico completo,
+     no sobre la primera página de 100 (patrón del «contador que miente»). */
   const [meRes, prospectsRes, hotelsRes] = await Promise.all([
     fetchWithBQ('/me'),
-    fetchWithBQ({ url: '/prospects', params: { limit: 100, includeClosed: true } }),
-    fetchWithBQ({ url: '/hotels', params: { limit: 100 } }),
+    fetchAllPages<ProspectApi>(fetchWithBQ, '/prospects', { includeClosed: true }),
+    fetchAllPages<HotelApi>(fetchWithBQ, '/hotels'),
   ])
   if (meRes.error) return { error: meRes.error }
-  if (prospectsRes.error) return { error: prospectsRes.error }
-  if (hotelsRes.error) return { error: hotelsRes.error }
+  if ('error' in prospectsRes) return { error: prospectsRes.error }
+  if ('error' in hotelsRes) return { error: hotelsRes.error }
 
   const me = (meRes.data as ApiEnvelope<MeApi>).data
-  const prospects = (prospectsRes.data as PaginatedEnvelope<ProspectApi>).data
-  const hotels = (hotelsRes.data as PaginatedEnvelope<HotelApi>).data
+  const prospects = prospectsRes.data
+  const hotels = hotelsRes.data
 
   const open = prospects.filter((prospect) => prospect.isOpen)
   const staleList = buildStaleList(open)
@@ -181,10 +183,10 @@ function countPerWeek(dates: string[], buckets: Array<{ start: Date }>): number[
 async function fetchMyActivity(
   fetchWithBQ: FetchWithBQ,
 ): Promise<{ data: MyActivity } | { error: unknown }> {
-  const res = await fetchWithBQ({ url: '/prospects', params: { limit: 100, includeClosed: true } })
-  if (res.error) return { error: res.error }
+  const res = await fetchAllPages<ProspectApi>(fetchWithBQ, '/prospects', { includeClosed: true })
+  if ('error' in res) return { error: res.error }
 
-  const prospects = (res.data as PaginatedEnvelope<ProspectApi>).data
+  const prospects = res.data
   const buckets = weeklyBuckets()
   const converted = prospects.filter((prospect) => prospect.state.code === 'ORANGE')
 
@@ -220,14 +222,13 @@ async function fetchTeamProgress(
     return { error: teamRes.error }
   }
 
-  const prospectsRes = await fetchWithBQ({
-    url: '/prospects',
-    params: { limit: 100, includeClosed: true },
+  const prospectsRes = await fetchAllPages<ProspectApi>(fetchWithBQ, '/prospects', {
+    includeClosed: true,
   })
-  if (prospectsRes.error) return { error: prospectsRes.error }
+  if ('error' in prospectsRes) return { error: prospectsRes.error }
 
   const members = (teamRes.data as ApiEnvelope<TeamMemberApi[]>).data
-  const prospects = (prospectsRes.data as PaginatedEnvelope<ProspectApi>).data
+  const prospects = prospectsRes.data
 
   return {
     data: members.map((member) => {

@@ -6,9 +6,9 @@ import type {
 } from '../types/dashboard.types'
 
 import { baseApi } from '@/app/baseApi'
+import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import type {
   ApiEnvelope,
-  PaginatedEnvelope,
   RequisitionApi,
   TimesheetApi,
   WorkerApi,
@@ -54,15 +54,17 @@ function toDashboardRequisition(row: RequisitionApi): DashboardRequisition {
 async function fetchRecruitmentOverview(
   fetchWithBQ: FetchWithBQ,
 ): Promise<{ data: RecruitmentOverview } | { error: unknown }> {
+  /* Los contadores se calculan sobre TODO el Pool y toda la cola, no sobre
+     la primera página de 100: con 300 colaboradores «100 en el Pool» mentía. */
   const [workersRes, requisitionsRes] = await Promise.all([
-    fetchWithBQ({ url: '/workers', params: { limit: 100 } }),
-    fetchWithBQ({ url: '/requisitions', params: { limit: 100 } }),
+    fetchAllPages<WorkerApi>(fetchWithBQ, '/workers'),
+    fetchAllPages<RequisitionApi>(fetchWithBQ, '/requisitions'),
   ])
-  if (workersRes.error) return { error: workersRes.error }
-  if (requisitionsRes.error) return { error: requisitionsRes.error }
+  if ('error' in workersRes) return { error: workersRes.error }
+  if ('error' in requisitionsRes) return { error: requisitionsRes.error }
 
-  const workers = (workersRes.data as PaginatedEnvelope<WorkerApi>).data
-  const requisitions = (requisitionsRes.data as PaginatedEnvelope<RequisitionApi>).data
+  const workers = workersRes.data
+  const requisitions = requisitionsRes.data
 
   const queue = requisitions.filter(
     (row) => row.state.code === QUEUE_OPEN || row.state.code === QUEUE_IN_PROGRESS,
@@ -85,13 +87,13 @@ async function fetchHotelOverview(
   fetchWithBQ: FetchWithBQ,
 ): Promise<{ data: HotelOverview } | { error: unknown }> {
   const [requisitionsRes, timesheetsRes] = await Promise.all([
-    fetchWithBQ({ url: '/requisitions', params: { limit: 100 } }),
+    fetchAllPages<RequisitionApi>(fetchWithBQ, '/requisitions'),
     fetchWithBQ('/timesheets'),
   ])
-  if (requisitionsRes.error) return { error: requisitionsRes.error }
+  if ('error' in requisitionsRes) return { error: requisitionsRes.error }
   if (timesheetsRes.error) return { error: timesheetsRes.error }
 
-  const requisitions = (requisitionsRes.data as PaginatedEnvelope<RequisitionApi>).data
+  const requisitions = requisitionsRes.data
   const timesheets = (timesheetsRes.data as ApiEnvelope<TimesheetApi[]>).data
 
   return {
