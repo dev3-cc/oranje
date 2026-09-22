@@ -224,6 +224,17 @@ export class WorkersService {
   async update(id: string, dto: UpdateWorkerDto, user: AuthenticatedUser): Promise<WorkerEntity> {
     await this.worker(id)
 
+    if (dto.birthDate) {
+      const age = yearsSince(dto.birthDate)
+
+      if (age < MIN_AGE) {
+        throw new UnprocessableEntityException({
+          code: 'WORKER_UNDERAGE',
+          message: `El colaborador tiene ${age} años y el mínimo es ${MIN_AGE}`,
+        })
+      }
+    }
+
     await this.repo.update({
       id,
       data: Object.fromEntries(Object.entries(dto).filter(([, v]) => v !== undefined)),
