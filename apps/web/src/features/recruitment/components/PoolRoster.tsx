@@ -12,12 +12,14 @@ import { ChangeStateDialog } from './ChangeStateDialog'
 import { DeleteWorkerDialog } from './DeleteWorkerDialog'
 import { ProfilePendingLabel } from './ProfilePendingLabel'
 
+import { BackToListButton } from '@/shared/components/BackToListButton'
 import { Button, buttonClass } from '@/shared/components/Button'
 import { CautionPill } from '@/shared/components/CautionPill'
 import { MagicCard } from '@/shared/components/MagicCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { workerStatusChipLabel, WORKER_STATUS_TOKEN } from '@/shared/constants/workerStatus'
 import { useCan } from '@/shared/hooks/useCan'
+import { rosterDetailClass, rosterListClass, useListDetail } from '@/shared/hooks/useListDetail'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate } from '@/shared/lib/formatters'
 
@@ -99,6 +101,7 @@ export function PoolRoster({
   const [deleting, setDeleting] = useState<PoolWorker | null>(null)
   const [isChangeOpen, setChangeOpen] = useState(false)
   const selected = items.find((worker) => worker.id === selectedId) ?? items[0]
+  const { showDetailOnMobile, select, backToList } = useListDetail()
   /* La fila del Pool solo sabe si el perfil está completo; el diálogo de
      estado necesita QUÉ falta, y eso vive en la ficha completa. Se pide solo
      al abrirlo, para no cargar 300 fichas por listar el Pool. */
@@ -120,7 +123,7 @@ export function PoolRoster({
 
   return (
     <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[300px_1fr]">
-      <ul className="flex flex-col gap-2">
+      <ul className={cn('flex-col gap-2', rosterListClass(showDetailOnMobile))}>
         {items.map((worker) => (
           <li key={worker.id}>
             {/* Magic Bento (reactbits): la fila que se elige avisa al pasar. */}
@@ -129,6 +132,7 @@ export function PoolRoster({
                 type="button"
                 onClick={() => {
                   setSelectedId(worker.id)
+                  select()
                 }}
                 className={cn(
                   'flex w-full cursor-pointer items-center gap-3 rounded-xl border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500',
@@ -163,7 +167,13 @@ export function PoolRoster({
         /* El detalle se queda a la vista mientras la lista baja (lista-detalle,
            mismo patrón que la Cartera): fijo bajo el header y, si es más alto que
            la ventana, se desliza por dentro sin arrastrar la página. */
-        <article className="flex flex-col gap-5 rounded-xl border border-line bg-surface p-6 lg:sticky lg:top-6 lg:max-h-[calc(100vh-var(--hd)-3rem)] lg:overflow-y-auto">
+        <article
+          className={cn(
+            'flex-col gap-5 rounded-xl border border-line bg-surface p-6 lg:sticky lg:top-6 lg:max-h-[calc(100vh-var(--hd)-3rem)] lg:overflow-y-auto',
+            rosterDetailClass(showDetailOnMobile),
+          )}
+        >
+          <BackToListButton onClick={backToList} />
           <header className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-center gap-4">
               <PoolAvatar worker={selected} className="size-16 text-xl" />

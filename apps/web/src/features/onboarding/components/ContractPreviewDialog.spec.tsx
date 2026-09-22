@@ -68,9 +68,9 @@ describe('ContractPreviewDialog', () => {
     expect(printable.getByText(/Housekeeping para temporada alta\./)).toBeInTheDocument()
     expect(printable.getAllByText('Hotel Mirador').length).toBeGreaterThan(0)
     /* El clausulado completo del acuerdo vigente, no un resumen. */
-    expect(printable.getAllByText('TERM.').length).toBeGreaterThan(0)
-    expect(printable.getByText('ARBITRATION.')).toBeInTheDocument()
-    expect(printable.getByText('ENTIRE AGREEMENT.')).toBeInTheDocument()
+    expect(printable.getAllByText('TERM AND RENEWAL.').length).toBeGreaterThan(0)
+    expect(printable.getByText('DISPUTE RESOLUTION; GOVERNING LAW.')).toBeInTheDocument()
+    expect(printable.getByText('AMENDMENTS; ENTIRE AGREEMENT; COUNTERPARTS.')).toBeInTheDocument()
     expect(printable.getByText(/laws of the State of Georgia/)).toBeInTheDocument()
   })
 
@@ -79,8 +79,10 @@ describe('ContractPreviewDialog', () => {
     renderDialog()
 
     const printable = within(printRoot)
-    expect(printable.getAllByText('By (print name and signature)')).toHaveLength(2)
-    expect(printable.getByText('I AGREE TO THE RATES IN THIS EXHIBIT “A”')).toBeInTheDocument()
+    expect(printable.getAllByText(/^Name\/Title:/)).toHaveLength(2)
+    expect(
+      printable.getByText('I AGREE TO THE RATES AND TERMS IN THIS EXHIBIT “A”'),
+    ).toBeInTheDocument()
     expect(printable.queryByText('Irene Enrriquez')).not.toBeInTheDocument()
   })
 
@@ -99,9 +101,11 @@ describe('ContractPreviewDialog', () => {
     renderDialog()
 
     const printable = within(printRoot)
-    expect(printable.getByText('Exhibit “A”')).toBeInTheDocument()
-    expect(printable.getByText(/cannot be hired by your property/)).toBeInTheDocument()
-    expect(printable.getByText(/I-9 verification/)).toBeInTheDocument()
+    expect(printable.getByText('Exhibit “A” - Rates and Staffing Terms')).toBeInTheDocument()
+    expect(printable.getByText(/employees of Strategic Deployment, LLC/)).toBeInTheDocument()
+    expect(
+      printable.getByText(/Employee screening will be performed in accordance with Section 13/),
+    ).toBeInTheDocument()
   })
 
   it('el botón de correo arma el mensaje con el cuadro y el destinatario', async () => {

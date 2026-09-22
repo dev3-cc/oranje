@@ -24,6 +24,7 @@ import {
 import { ASSIGNMENT_TYPE_LABEL } from '../types/selfPick.types'
 
 import mascotaCelebrando from '@/assets/mascota/mascota-celebrando.png'
+import { useGetPositionPayRateQuery } from '@/features/contracts'
 import { Button } from '@/shared/components/Button'
 import { DateField } from '@/shared/components/DateField'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
@@ -35,6 +36,7 @@ import {
 } from '@/shared/constants/requisitionStatus'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
+import { formatMoney } from '@/shared/lib/formatters'
 
 const COVERAGE_TOKEN: Record<string, StatusLightToken> = {
   RED: 'st-rojo',
@@ -89,6 +91,13 @@ export function SlotAssignmentPage(): ReactNode {
     { skip: requisitionId === '' || positionId === '' },
   )
   const { data: workers = [] } = useGetAssignableWorkersQuery()
+  /* Solo el pago (Hugo, 2026-09-22): nunca la factura al hotel, que es de
+     Ventas. `null` es honesto — sin contrato activo o sin esa posición
+     cotizada — y no bloquea la asignación. */
+  const { data: positionPayRate } = useGetPositionPayRateQuery(
+    { hotelId: board?.hotelId ?? '', catalogPositionId: board?.catalogPositionId ?? '' },
+    { skip: !board },
+  )
   const [assign, { isLoading: isSaving, isError: hasFailed, error: saveError }] =
     useCreateAssignmentMutation()
   const [release, { isLoading: isReleasing, error: releaseError }] = useReleaseAssignmentMutation()
@@ -343,6 +352,22 @@ export function SlotAssignmentPage(): ReactNode {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
+              {positionPayRate && (
+                <div className="rounded-md border border-line bg-surface-2 px-3 py-2">
+                  <p className="text-xs text-ink-3">
+                    <Trans>Se le paga a esta posición</Trans>
+                  </p>
+                  <p className="text-lg font-bold text-ink">
+                    {formatMoney(positionPayRate.payRate)}
+                    <span className="text-sm font-normal text-ink-3"> / hora</span>
+                  </p>
+                  {IS_DEV_UI && (
+                    <code className="text-[11px] text-ink-4">
+                      contrato {positionPayRate.contractNumber}
+                    </code>
+                  )}
+                </div>
+              )}
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="assignment-worker" className="text-sm text-ink-3">
                   <Trans>Colaborador</Trans>

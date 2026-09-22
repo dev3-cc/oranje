@@ -10335,6 +10335,10 @@ msgstr "Volver a Conversión"
 msgid "Volver a la Bolsa"
 msgstr "Volver a la Bolsa"
 
+#: src/shared/components/BackToListButton.tsx
+msgid "Volver a la lista"
+msgstr "Volver a la lista"
+
 #: src/layouts/AppShell.tsx
 msgid "Volver a la página anterior"
 msgstr "Volver a la página anterior"
