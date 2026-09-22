@@ -243,7 +243,7 @@ export function HotelContactsDialog({
       onClose={onClose}
       title={isEditing ? t`Editar contacto` : t`Agregar contacto`}
       description={IS_DEV_UI ? `commercial.hotel_contact · ${hotelName}` : hotelName}
-      className="max-w-[64rem]"
+      className="max-w-3xl"
       footer={
         isEditing ? (
           <div className="flex w-full flex-wrap items-center gap-3">
@@ -310,7 +310,7 @@ export function HotelContactsDialog({
         onSubmit={(event) => {
           void onSubmit(event)
         }}
-        className="grid gap-5 xl:grid-cols-[20rem_minmax(0,1fr)]"
+        className="grid gap-5 lg:grid-cols-[16rem_minmax(0,1fr)]"
       >
         <div>
           <div className="flex items-center justify-between gap-3">
@@ -592,7 +592,7 @@ export function HotelContactsDialog({
           </p>
         </div>
 
-        <p className="rounded-xl bg-yellow/15 p-5 text-sm text-ink-2 xl:col-span-2">
+        <p className="rounded-xl bg-yellow/15 p-5 text-sm text-ink-2 lg:col-span-2">
           <span className="block font-semibold text-o-700">
             <Trans>Solo puede haber un principal por hotel.</Trans>
           </span>

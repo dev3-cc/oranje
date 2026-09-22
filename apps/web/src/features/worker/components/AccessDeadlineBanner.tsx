@@ -15,10 +15,13 @@ const ACTION_LINK =
   'inline-flex min-h-11 touch-manipulation items-center rounded-md bg-o-300 shadow-xs px-4 text-sm font-semibold text-ink transition-colors hover:bg-o-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-700'
 
 /**
- * Los dos plazos de 3 días que corren desde que te dieron acceso (Reglas de
- * Negocio § Acceso del Colaborador y § Validación con expediente incompleto):
+ * Los dos plazos que corren desde que te dieron acceso (Reglas de Negocio §
+ * Acceso del Colaborador y § Validación con expediente incompleto):
  * recordatorio mientras corren. Vencidos no se pintan aquí: el shell bloquea
  * el apartado entero con la salida a la mano.
+ *
+ * La contraseña son 30 días (Hugo, 2026-09-22, antes 3 — muchos colaboradores
+ * comparten hoy Oranje.2026 y necesitan más margen). El expediente sigue en 3.
  */
 export function AccessDeadlineBanner({ deadlines }: { deadlines: AccessDeadlinesApi }): ReactNode {
   const { t } = useLingui()
@@ -41,7 +44,7 @@ export function AccessDeadlineBanner({ deadlines }: { deadlines: AccessDeadlines
           <Trans>
             La que te dieron es temporal. Tienes hasta el{' '}
             <span className="font-semibold">{formatDate(password.dueAt)}</span> (día{' '}
-            {password.day ?? 1} de 3); después tu acceso se bloquea hasta que la cambies.
+            {password.day ?? 1} de 30); después tu acceso se bloquea hasta que la cambies.
           </Trans>
         </NoticeCard>
       )}
@@ -79,8 +82,8 @@ export function PasswordOverdueScreen(): ReactNode {
       </h1>
       <p className="max-w-sm text-sm leading-relaxed text-ink-3">
         <Trans>
-          Pasaron los 3 días para cambiar la contraseña temporal que te dieron. Elige la tuya aquí y
-          tu acceso vuelve al instante — tus datos y tu historial no se pierden.
+          Pasaron los 30 días para cambiar la contraseña temporal que te dieron. Elige la tuya aquí
+          y tu acceso vuelve al instante — tus datos y tu historial no se pierden.
         </Trans>
       </p>
       <div className="w-full text-left">
