@@ -134,7 +134,7 @@ export function CreateAccessDialog({
             </div>
             <p className="text-xs text-ink-3">
               <Trans>
-                Sirve para entrar a la app y para el correo. Tiene 3 días para cambiarla desde su
+                Sirve para entrar a la app y para el correo. Tiene 30 días para cambiarla desde su
                 app; si no, su acceso se bloquea hasta que lo haga.
               </Trans>
             </p>
