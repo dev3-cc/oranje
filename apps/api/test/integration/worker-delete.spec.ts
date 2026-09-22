@@ -194,6 +194,28 @@ test('con una asignación ACTIVA, liberarla primero SÍ permite eliminar', async
   expect(active).toBe(0)
 })
 
+test('la Reclutadora edita el expediente completo, incluida la fecha de nacimiento y el género (Hugo, 2026-09-22)', async () => {
+  const id = await bareWorker(`Editar todo ${String(Date.now())}`)
+
+  const updated = await workers.update(
+    id,
+    { birthDate: new Date('1990-06-15'), gender: 'FEMALE' },
+    user,
+  )
+  expect(updated.birthDate.slice(0, 10)).toBe('1990-06-15')
+  expect(updated.gender).toBe('FEMALE')
+})
+
+test('editar la fecha de nacimiento hacia una minoría de edad se rechaza igual que en el alta', async () => {
+  const id = await bareWorker(`Menor de edad ${String(Date.now())}`)
+  const tooYoung = new Date()
+  tooYoung.setFullYear(tooYoung.getFullYear() - 10)
+
+  await expect(workers.update(id, { birthDate: tooYoung }, user)).rejects.toMatchObject({
+    response: { code: 'WORKER_UNDERAGE' },
+  })
+})
+
 test('subir la foto llega por el mismo update() que usa completeSignup', async () => {
   const id = await bareWorker(`Foto ${String(Date.now())}`)
 
