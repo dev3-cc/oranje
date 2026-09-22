@@ -42,7 +42,7 @@ export function ObservabilityPage(): ReactNode {
           src={fotoEquipo}
           alt=""
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-auto object-cover object-right sm:block"
+          className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-auto object-cover object-right md:block"
         />
       </header>
 

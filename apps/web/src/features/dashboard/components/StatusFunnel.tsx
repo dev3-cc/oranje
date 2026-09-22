@@ -54,7 +54,7 @@ export function StatusFunnel({ buckets }: { buckets: FunnelBucket[] }): ReactNod
           src={personajeDashboard}
           alt=""
           aria-hidden
-          className="pointer-events-none absolute -top-20 right-0 hidden h-24 w-auto sm:block"
+          className="pointer-events-none absolute -top-20 right-0 hidden h-24 w-auto md:block"
         />
 
         {total === 0 ? (
