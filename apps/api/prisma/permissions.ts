@@ -638,6 +638,14 @@ const RECRUITMENT: Permission[] = [
     label: 'Tomar requisición (Self-Pick colaborativo)',
     roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
+  // Hugo, 2026-09-22: al asignar un slot, quién asigna ve cuánto le pagan a
+  // la posición — no la factura al hotel, eso es de Ventas (terms_and_conditions).
+  {
+    module: 'requisitions',
+    action: 'read_position_pay',
+    label: 'Ver el pago de la posición al asignar un slot',
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
+  },
   {
     module: 'requisitions',
     action: 'join',
