@@ -162,6 +162,22 @@ const routes: readonly MockRoute[] = [
     },
   },
   {
+    /**
+     * Debe ir ANTES de `/contracts/:contractId` (mismo orden que exige el
+     * back real): si no, el router de mocks lee "position-rate" como el id.
+     */
+    method: 'GET',
+    path: '/contracts/position-rate',
+    resolve: ({ search }): ApiEnvelope<{ payRate: string; contractNumber: string } | null> => {
+      const hotelId = search.get('hotelId')
+      const catalogPositionId = search.get('catalogPositionId')
+      const active = CONTRACTS.find((item) => item.hotel.id === hotelId && item.status === 'ACTIVE')
+      const rate = active?.rates.find((item) => item.position.id === catalogPositionId)
+      if (!active || !rate) return { data: null }
+      return { data: { payRate: rate.payRate, contractNumber: active.number } }
+    },
+  },
+  {
     method: 'GET',
     path: '/contracts/:contractId',
     resolve: ({ params }): ApiEnvelope<ContractApi> => {

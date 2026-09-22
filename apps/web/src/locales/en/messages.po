@@ -10335,6 +10335,10 @@ msgstr "Back to Conversion"
 msgid "Volver a la Bolsa"
 msgstr "Back to the Self-Pick pool"
 
+#: src/shared/components/BackToListButton.tsx
+msgid "Volver a la lista"
+msgstr "Back to the list"
+
 #: src/layouts/AppShell.tsx
 msgid "Volver a la página anterior"
 msgstr "Go back to the previous page"

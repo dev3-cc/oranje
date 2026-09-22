@@ -14,6 +14,7 @@ import type { PersonnelRow } from '../types/personnel.types'
 
 import { useGetSessionQuery } from '@/app/sessionApi'
 import mascotaSaludando from '@/assets/mascota/mascota-saludando.png'
+import { BackToListButton } from '@/shared/components/BackToListButton'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { FoldText } from '@/shared/components/FoldText'
 import { HotelPhotoBackdrop } from '@/shared/components/HotelPhotoBackdrop'
@@ -33,6 +34,7 @@ import {
   type WorkerStatus,
 } from '@/shared/constants/workerStatus'
 import { useCan } from '@/shared/hooks/useCan'
+import { rosterDetailClass, rosterListClass, useListDetail } from '@/shared/hooks/useListDetail'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { matchesSearch } from '@/shared/lib/text'
 
@@ -224,12 +226,16 @@ function WorkerDetail({
   hotel,
   onStandBy,
   onReport,
+  showDetailOnMobile,
+  onBack,
 }: {
   row: PersonnelRow
   /** El hotel del Supervisor (nombre y foto); `null` degrada a la marca. */
   hotel: { name: string; photoUrl: string | null } | null
   onStandBy: (row: PersonnelRow) => void
   onReport: (row: PersonnelRow) => void
+  showDetailOnMobile: boolean
+  onBack: () => void
 }): ReactNode {
   const { t, i18n } = useLingui()
   const can = useCan()
@@ -239,7 +245,17 @@ function WorkerDetail({
   const paused = NO_SHIFT_LABEL[row.stateCode]
   return (
     /* Detalle fijo mientras la lista baja (lista-detalle, como la Cartera y el Pool). */
-    <article className="overflow-hidden rounded-xl border border-line bg-surface lg:sticky lg:top-6 lg:max-h-[calc(100vh-var(--hd)-3rem)] lg:overflow-y-auto">
+    <article
+      className={cn(
+        'overflow-hidden rounded-xl border border-line bg-surface lg:sticky lg:top-6 lg:max-h-[calc(100vh-var(--hd)-3rem)] lg:overflow-y-auto',
+        rosterDetailClass(showDetailOnMobile, 'lg', 'block'),
+      )}
+    >
+      {/* Fondo claro antes de la foto de portada: la flecha sobre la foto
+          oscura perdía contraste. */}
+      <div className="border-b border-line bg-surface px-3 py-2 lg:hidden">
+        <BackToListButton onClick={onBack} />
+      </div>
       <div className="relative">
         <HotelPhotoBackdrop photoUrl={hotel?.photoUrl ?? null} />
         <div
@@ -457,6 +473,7 @@ export function PersonnelPage(): ReactNode {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   /** Por nombre, EN MEMORIA: el plantel ya está cargado entero. */
   const [search, setSearch] = useState('')
+  const { showDetailOnMobile, select, backToList } = useListDetail()
 
   if (isLoading)
     return <CardGridSkeleton cards={6} className="grid-cols-1 md:grid-cols-2 xl:grid-cols-3" />
@@ -534,7 +551,7 @@ export function PersonnelPage(): ReactNode {
       ) : (
         /* Lista a la izquierda, detalle a la derecha: siempre hay uno elegido. */
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[300px_1fr]">
-          <div className="flex flex-col gap-3">
+          <div className={cn('flex-col gap-3', rosterListClass(showDetailOnMobile))}>
             <SearchField
               value={search}
               onChange={setSearch}
@@ -555,7 +572,10 @@ export function PersonnelPage(): ReactNode {
                     key={row.workerId}
                     row={row}
                     isSelected={row.workerId === selected?.workerId}
-                    onSelect={setSelectedId}
+                    onSelect={(id) => {
+                      setSelectedId(id)
+                      select()
+                    }}
                   />
                 ))}
               </ul>
@@ -568,6 +588,8 @@ export function PersonnelPage(): ReactNode {
               hotel={hotel ?? null}
               onStandBy={setStandByTarget}
               onReport={setReportTarget}
+              showDetailOnMobile={showDetailOnMobile}
+              onBack={backToList}
             />
           )}
         </div>

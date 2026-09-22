@@ -1,5 +1,6 @@
 import { plural } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
+import { cn } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
@@ -9,6 +10,7 @@ import { AuthorizationQueueList } from '../components/AuthorizationQueueList'
 import { AuthorizationResolutionForm } from '../components/AuthorizationResolutionForm'
 
 import personajeManager from '@/assets/ilustrations/personaje-manager.svg'
+import { BackToListButton } from '@/shared/components/BackToListButton'
 import { LoadError } from '@/shared/components/LoadError'
 import { NoticeCard } from '@/shared/components/NoticeCard'
 import { SearchField } from '@/shared/components/SearchField'
@@ -20,6 +22,7 @@ import {
   REQUISITION_STATUS_TOKEN,
 } from '@/shared/constants/requisitionStatus'
 import { useCan } from '@/shared/hooks/useCan'
+import { rosterDetailClass, rosterListClass, useListDetail } from '@/shared/hooks/useListDetail'
 import { matchesSearch } from '@/shared/lib/text'
 
 /**
@@ -36,6 +39,7 @@ export function RequisitionAuthorizationPage(): ReactNode {
   /** Por folio u hotel, EN MEMORIA: la cola ya está cargada entera. */
   const [search, setSearch] = useState('')
   const can = useCan()
+  const { showDetailOnMobile, select, backToList } = useListDetail()
   /** Firmar es de los Managers (requisitions:authorize); los demás solo consultan la cola. */
   const canAuthorize = can('requisitions:authorize')
 
@@ -100,7 +104,7 @@ export function RequisitionAuthorizationPage(): ReactNode {
       </header>
 
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-3">
-        <div className="flex flex-col gap-4">
+        <div className={cn('flex-col gap-4', rosterListClass(showDetailOnMobile, 'xl'))}>
           {queue.items.length > 0 && (
             <SearchField
               value={search}
@@ -112,7 +116,10 @@ export function RequisitionAuthorizationPage(): ReactNode {
           <AuthorizationQueueList
             items={visibleItems}
             selectedId={selected?.id ?? ''}
-            onSelect={setSelectedId}
+            onSelect={(id) => {
+              setSelectedId(id)
+              select()
+            }}
             {...(isFilteredOut
               ? {
                   emptyMessage: t`Ninguna pendiente coincide con «${searchTerm}». Cambia la búsqueda o límpiala para ver toda la cola.`,
@@ -124,7 +131,13 @@ export function RequisitionAuthorizationPage(): ReactNode {
         {selected ? (
           /* Detalle fijo mientras la cola baja (lista-detalle, como el Pool y la Cartera);
              el tope es `xl` porque ahí es donde la cola y el detalle van lado a lado. */
-          <div className="flex flex-col gap-6 xl:col-span-2 xl:sticky xl:top-6 xl:max-h-[calc(100vh-var(--hd)-3rem)] xl:overflow-y-auto">
+          <div
+            className={cn(
+              'flex-col gap-6 xl:col-span-2 xl:sticky xl:top-6 xl:max-h-[calc(100vh-var(--hd)-3rem)] xl:overflow-y-auto',
+              rosterDetailClass(showDetailOnMobile, 'xl'),
+            )}
+          >
+            <BackToListButton onClick={backToList} breakpoint="xl" />
             <section className="rounded-lg border border-line bg-surface">
               <div className="flex flex-wrap items-start justify-between gap-3 p-6">
                 <div className="min-w-0">

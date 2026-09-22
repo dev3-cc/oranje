@@ -81,7 +81,7 @@ describe('ProposalEditorPage', () => {
 
     // El acuerdo completo, con su clausulado y su Exhibit «A».
     expect(within(dialog).getByText('Service Agreement')).toBeInTheDocument()
-    expect(within(dialog).getByText('Exhibit “A”')).toBeInTheDocument()
+    expect(within(dialog).getByText('Exhibit “A” - Rates and Staffing Terms')).toBeInTheDocument()
   })
 
   it('la versión nueva arranca con las tarifas de la anterior', async () => {

@@ -121,6 +121,25 @@ export class ContractsService {
     return (await this.repo.listAll(hotelId ?? null, status ?? null)).map(toEntity)
   }
 
+  /**
+   * Solo el pago: lo que ve Reclutamiento al asignar un slot (Hugo,
+   * 2026-09-22) es cuánto le pagan a la persona, no la factura al hotel — eso
+   * es de Ventas. `null` es honesto en dos casos: el hotel no tiene contrato
+   * activo, o el contrato no cotizó esa posición.
+   */
+  async positionPayRate(
+    hotelId: string,
+    catalogPositionId: string,
+  ): Promise<{ payRate: string; contractNumber: string } | null> {
+    const active = await this.repo.activeOf(hotelId)
+    if (!active) return null
+
+    const rates = await this.repo.rates(active.id)
+    const rate = rates.find((r) => r.position.id === catalogPositionId)
+
+    return rate ? { payRate: rate.payRate, contractNumber: active.number } : null
+  }
+
   async get(id: string): Promise<ContractEntity> {
     const row = await this.contract(id)
 

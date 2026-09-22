@@ -102,3 +102,14 @@ export interface ContractDetail {
   /** Una fila por posición del catálogo (`commercial.contract_rate`). */
   rates: ContractRate[]
 }
+
+/**
+ * Lo que ve Reclutamiento al asignar un slot (Hugo, 2026-09-22): solo el
+ * pago, nunca la factura al hotel — eso sigue siendo de Ventas. `null` es
+ * honesto en dos casos: el hotel no tiene contrato activo, o el contrato no
+ * cotizó esa posición.
+ */
+export interface PositionPayRate {
+  payRate: number
+  contractNumber: string
+}

@@ -2,3 +2,5 @@
 export { ContractListPage } from './pages/ContractListPage'
 export { ContractDetailPage } from './pages/ContractDetailPage'
 export { NewContractDialog, type RateDraft } from './components/NewContractDialog'
+export { useGetPositionPayRateQuery } from './api/contractsApi'
+export type { PositionPayRate } from './types/contract.types'
