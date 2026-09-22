@@ -185,7 +185,7 @@ export function NewContractDialog({
       onClose={onClose}
       title={t`Nuevo contrato`}
       chromeless
-      className="max-w-4xl"
+      className={showIntro ? 'max-w-2xl' : 'max-w-4xl'}
     >
       {showIntro ? (
         <OnboardingIntro

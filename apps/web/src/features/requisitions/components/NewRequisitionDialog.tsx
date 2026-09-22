@@ -328,7 +328,7 @@ export function NewRequisitionDialog({
       onClose={onClose}
       title={t`Nueva requisición`}
       chromeless
-      className="max-w-5xl"
+      className={showIntro ? 'max-w-2xl' : 'max-w-5xl'}
     >
       {showIntro ? (
         <OnboardingIntro

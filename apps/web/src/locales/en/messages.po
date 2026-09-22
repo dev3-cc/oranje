@@ -3355,10 +3355,6 @@ msgstr "The number is assigned on save and urgency runs from the moment a Manage
 msgid "El folio se asigna automáticamente al guardar"
 msgstr "The number is assigned automatically on save"
 
-#: src/features/recruitment/components/CreateWorkerDialog.tsx
-msgid "El género se fija en el alta y no se edita"
-msgstr "Gender is set at sign-up and can't be edited"
-
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
 msgid "El Gris protege"
 msgstr "Gray protects"
@@ -5467,10 +5463,6 @@ msgstr "The end date has to be later than the start."
 msgid "La fecha de fin ya pasó: este contrato debe marcarse expirado."
 msgstr "The end date has already passed: this contract should be marked expired."
 
-#: src/features/recruitment/components/CreateWorkerDialog.tsx
-msgid "La fecha de nacimiento se fija en el alta y no se edita"
-msgstr "The date of birth is set at intake and can't be edited"
-
 #: src/features/requisitions/types/requisitionForm.schema.ts
 msgid "La fecha debe ser un día real (AAAA-MM-DD)"
 msgstr "The date must be a real day (YYYY-MM-DD)"
@@ -5590,8 +5582,8 @@ msgstr "The proposal lives in Green"
 #. placeholder {0}: formatDate(password.dueAt)
 #. placeholder {1}: password.day ?? 1
 #: src/features/worker/components/AccessDeadlineBanner.tsx
-msgid "La que te dieron es temporal. Tienes hasta el <0>{0}</0> (día {1} de 3); después tu acceso se bloquea hasta que la cambies."
-msgstr "The one you were given is temporary. You have until <0>{0}</0> (day {1} of 3); after that your access is blocked until you change it."
+msgid "La que te dieron es temporal. Tienes hasta el <0>{0}</0> (día {1} de 30); después tu acceso se bloquea hasta que la cambies."
+msgstr "The one you were given is temporary. You have until <0>{0}</0> (day {1} of 30); after that your access is blocked until you change it."
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "La requisición es el pedido formal de colaboradores: qué posiciones necesitas y cuántas personas en cada una."
@@ -7491,12 +7483,12 @@ msgid "Pasaron 5 días sin cargar tu SSN o ITIN. Súbelo aquí y tu acceso vuelv
 msgstr "5 days went by without your SSN or ITIN. Upload it here and your access comes back instantly — your info and history aren't lost. If you can't upload it, contact Oranje (Customer Service)."
 
 #: src/features/worker/components/AccessDeadlineBanner.tsx
-msgid "Pasaron los 3 días para cambiar la contraseña temporal que te dieron. Elige la tuya aquí y tu acceso vuelve al instante — tus datos y tu historial no se pierden."
-msgstr "The 3 days to change the temporary password you were given have passed. Pick your own here and your access comes back instantly — your details and history are not lost."
-
-#: src/features/worker/components/AccessDeadlineBanner.tsx
 msgid "Pasaron los 3 días para completar tu expediente después de que Reclutamiento te validó. Llénalo aquí y tu acceso vuelve al instante — tus datos y tu historial no se pierden."
 msgstr "The 3 days to complete your file after Recruitment validated you have passed. Fill it in here and your access comes back instantly — your details and history are not lost."
+
+#: src/features/worker/components/AccessDeadlineBanner.tsx
+msgid "Pasaron los 30 días para cambiar la contraseña temporal que te dieron. Elige la tuya aquí y tu acceso vuelve al instante — tus datos y tu historial no se pierden."
+msgstr "The 30 days to change the temporary password you were given have passed. Pick your own here and your access comes back instantly — your details and history are not lost."
 
 #: src/features/worker/pages/Phase2Page.tsx
 msgid "Paso 1 de 2"
@@ -9051,8 +9043,8 @@ msgid "Sin zonas también es válido"
 msgstr "No zones is valid too"
 
 #: src/features/recruitment/components/CreateAccessDialog.tsx
-msgid "Sirve para entrar a la app y para el correo. Tiene 3 días para cambiarla desde su app; si no, su acceso se bloquea hasta que lo haga."
-msgstr "It works for the app and for the email. They have 3 days to change it from their app; if not, their access is blocked until they do."
+msgid "Sirve para entrar a la app y para el correo. Tiene 30 días para cambiarla desde su app; si no, su acceso se bloquea hasta que lo haga."
+msgstr "It works for the app and for the email. They have 30 days to change it from their app; if not, their access is blocked until they do."
 
 #: src/features/requisitions/components/RequisitionJournalDialog.tsx
 #: src/shared/constants/roles.ts
@@ -9538,6 +9530,10 @@ msgstr "They haven't signed in for the first time yet."
 #: src/features/audits/components/AuditHistoryList.tsx
 msgid "Todavía no hay auditorías"
 msgstr "No audits yet"
+
+#: src/features/onboarding/components/HotelContactList.tsx
+msgid "Todavía no hay contactos."
+msgstr "No contacts yet."
 
 #: src/features/onboarding/components/HotelContactList.tsx
 msgid "Todavía no hay contactos. Usa «Editar» para agregar el primero."
