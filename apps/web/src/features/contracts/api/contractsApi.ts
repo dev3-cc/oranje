@@ -3,6 +3,7 @@ import type {
   ContractList,
   ContractListFilters,
   ContractRow,
+  PositionPayRate,
 } from '../types/contract.types'
 import { ANY_VALUE } from '../types/contract.types'
 
@@ -212,6 +213,29 @@ export const contractsApi = baseApi.injectEndpoints({
       ],
     }),
 
+    /**
+     * Solo el pago de la posición, para el momento de asignar un slot
+     * (Reclutamiento) — no el contrato completo, que es de Ventas.
+     * `data: null` es la respuesta honesta sin contrato activo o sin esa
+     * posición cotizada, y NO un error: la asignación sigue funcionando.
+     */
+    getPositionPayRate: build.query<
+      PositionPayRate | null,
+      { hotelId: string; catalogPositionId: string }
+    >({
+      query: ({ hotelId, catalogPositionId }) => ({
+        url: '/contracts/position-rate',
+        params: { hotelId, catalogPositionId },
+      }),
+      transformResponse: (raw: ApiEnvelope<{ payRate: string; contractNumber: string } | null>) =>
+        raw.data
+          ? { payRate: Number(raw.data.payRate), contractNumber: raw.data.contractNumber }
+          : null,
+      providesTags: (_res, _err, { hotelId }) => [
+        { type: 'Contract' as const, id: `RATE_${hotelId}` },
+      ],
+    }),
+
     /** Lo que el alta necesita elegir: el hotel cliente y las posiciones del catálogo. */
     getContractFormOptions: build.query<ContractFormOptions, void>({
       queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
@@ -309,6 +333,7 @@ export interface CreateContractRequest {
 export const {
   useGetContractsQuery,
   useGetContractQuery,
+  useGetPositionPayRateQuery,
   useGetContractFormOptionsQuery,
   useCreateContractMutation,
   useUpsertContractRateMutation,

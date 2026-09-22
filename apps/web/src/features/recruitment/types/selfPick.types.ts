@@ -53,9 +53,12 @@ export interface SlotBoard {
   requisitionId: string
   requisitionNumber: string
   requisitionState: { code: string; name: string }
+  hotelId: string
   hotelName: string
   lineNumber: number
   positionName: string
+  /** El puesto del catálogo (no el renglón): con esto se pide el pago al contrato. */
+  catalogPositionId: string
   coverage: { code: string; name: string }
   slots: SlotRow[]
   freeSlots: number
