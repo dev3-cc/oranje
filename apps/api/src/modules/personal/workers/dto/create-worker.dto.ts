@@ -72,6 +72,11 @@ export class CreateWorkerDto extends createZodDto(createWorkerSchema) {}
 export const updateWorkerSchema = z
   .object({
     fullName: z.string().trim().min(1).max(160).optional(),
+    // Hugo, 2026-09-22: la Reclutadora debe poder editar el expediente
+    // completo, no solo lo capturado después del alta — incluye lo que antes
+    // se fijaba en Fase 1 y no se tocaba más.
+    birthDate: z.coerce.date().optional(),
+    gender: z.enum(GENDERS).optional(),
     phone: z.string().trim().min(7).max(32).optional(),
     address: z.string().trim().min(1).max(300).optional(),
     zoneId: z.uuid().optional(),

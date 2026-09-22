@@ -3,8 +3,16 @@ import { Injectable } from '@nestjs/common'
 import { PrismaService } from '../../../infra/prisma/index.js'
 
 // Reglas de Negocio § Acceso del Colaborador y § Validación con expediente
-// incompleto. Los dos plazos son de 3 dias y se calculan al leer, como el del
-// SSN/ITIN: un job que deja de correr bloquea a nadie o a todos.
+// incompleto. Los plazos se calculan al leer, como el del SSN/ITIN: un job
+// que deja de correr bloquea a nadie o a todos.
+//
+// La contraseña temporal (Hugo, 2026-09-22: aumentado de 3 a 30 días —
+// muchos colaboradores comparten hoy Oranje.2026 y necesitan más margen
+// antes de quedar bloqueados para ponchar).
+export const PASSWORD_GRACE_DAYS = 30
+// El expediente a medias se queda en 3 días: GRACE_DAYS solo reconstruye el
+// "día N" que se muestra para ese plazo (línea 106), sin tocar su umbral real
+// (`profileDueAt`, fijado en `WorkersService.PROFILE_GRACE_DAYS`).
 export const GRACE_DAYS = 3
 
 export type AccessDeadlineStatus = 'NONE' | 'PENDING' | 'OVERDUE'
@@ -61,7 +69,7 @@ export class AccessDeadlineService {
     const worker = rows[0]
 
     return {
-      password: deadlineFrom(user?.tempPasswordIssuedAt ?? null, GRACE_DAYS, now),
+      password: deadlineFrom(user?.tempPasswordIssuedAt ?? null, PASSWORD_GRACE_DAYS, now),
       // El plazo se queda escrito aunque despues se complete. Al colaborador
       // se le cobra SOLO por su parte (Fases 2 y 3): lo de la Fase 1 lo
       // completa Reclutamiento con «Editar» y no puede bloquearle el acceso

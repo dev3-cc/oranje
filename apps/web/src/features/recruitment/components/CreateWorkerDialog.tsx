@@ -332,6 +332,8 @@ export function CreateWorkerDialog({
         await updateWorker({
           workerId,
           fullName: draft.fullName.trim(),
+          ...(draft.birthDate !== '' ? { birthDate: draft.birthDate } : {}),
+          gender: draft.gender,
           phone: draft.phone.trim(),
           address: draft.address.trim(),
           zoneId: draft.zoneId,
@@ -573,29 +575,19 @@ export function CreateWorkerDialog({
           </FormRow>
 
           <FormRow label={t`Nacimiento y género`} column="birth_date · gender">
-            <Input
-              type="date"
+            <DateField
               value={draft.birthDate}
-              onChange={(event) => {
-                update('birthDate')(event.target.value)
-              }}
+              onChange={update('birthDate')}
               aria-label={t`Fecha de nacimiento`}
               max={maxBirthDate()}
-              disabled
-              title={t`La fecha de nacimiento se fija en el alta y no se edita`}
             />
             <Select
               value={draft.gender}
               onValueChange={(value) => {
                 update('gender')(value as Draft['gender'])
               }}
-              disabled
             >
-              <SelectTrigger
-                aria-label={t`Género`}
-                title={t`El género se fija en el alta y no se edita`}
-                className="w-full"
-              >
+              <SelectTrigger aria-label={t`Género`} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -887,7 +879,7 @@ export function CreateWorkerDialog({
       onClose={onClose}
       title={t`Crear colaborador`}
       chromeless
-      className="max-w-5xl"
+      className={showIntro ? 'max-w-2xl' : 'max-w-4xl'}
     >
       {showIntro ? (
         <OnboardingIntro

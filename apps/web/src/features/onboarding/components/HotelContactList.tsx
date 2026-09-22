@@ -12,25 +12,32 @@ export function HotelContactList({
   onEdit,
 }: {
   contacts: HotelContact[]
-  onEdit: () => void
+  /** Sin ella no hay «Editar»: quien la manda ya decidió si el rol puede (pipeline:update_hotel_profile). */
+  onEdit?: (() => void) | undefined
 }): ReactNode {
   const { t } = useLingui()
   return (
     <SectionCard
       title={t`Contactos del hotel`}
       action={
-        <button
-          type="button"
-          onClick={onEdit}
-          className="shrink-0 rounded-md px-2 py-1 text-sm font-semibold text-o-700 hover:bg-o-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
-        >
-          <Trans>Editar</Trans>
-        </button>
+        onEdit && (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="shrink-0 rounded-md px-2 py-1 text-sm font-semibold text-o-700 hover:bg-o-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
+          >
+            <Trans>Editar</Trans>
+          </button>
+        )
       }
     >
       {contacts.length === 0 ? (
         <p className="py-2 text-sm text-ink-3">
-          <Trans>Todavía no hay contactos. Usa «Editar» para agregar el primero.</Trans>
+          {onEdit ? (
+            <Trans>Todavía no hay contactos. Usa «Editar» para agregar el primero.</Trans>
+          ) : (
+            <Trans>Todavía no hay contactos.</Trans>
+          )}
         </p>
       ) : (
         <ul className="flex flex-col gap-3">

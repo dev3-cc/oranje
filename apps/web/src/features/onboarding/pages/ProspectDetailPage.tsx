@@ -36,6 +36,7 @@ import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
 } from '@/shared/constants/onboardingStatus'
+import { useCan } from '@/shared/hooks/useCan'
 import { formatDate } from '@/shared/lib/formatters'
 
 /** Botón secundario SOBRE la foto: pastilla translúcida oscura, texto blanco. */
@@ -49,6 +50,7 @@ export function ProspectDetailPage(): ReactNode {
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
   const [attemptToEdit, setAttemptToEdit] = useState<ContactAttempt | null>(null)
   const { data: session } = useGetSessionQuery()
+  const can = useCan()
   const [deleteAttempt] = useDeleteContactAttemptMutation()
   const [isAttemptDialogOpen, setIsAttemptDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -97,6 +99,14 @@ export function ProspectDetailPage(): ReactNode {
     : undefined
   const editHotelDataLabel = t`Editar datos del hotel`
   const archiveCycleTitle = t`Cierra el ciclo definitivamente y libera al hotel`
+  /* Ninguno de estos tenía guardia: todo rol que llegaba a esta ficha ya
+     tenía los cuatro permisos, hasta el Observador (Hugo, 2026-09-22:
+     "¿el Observador puede crear, registrar, eliminar?" — el back ya lo
+     rechaza siempre, esto es solo que el botón no mienta). */
+  const canRegisterAttempt = can('pipeline:create_contact_attempt')
+  const canArchiveCycle = can('pipeline:close_cycle')
+  const canEditHotel = can('pipeline:create_prospect')
+  const canManageContacts = can('pipeline:update_hotel_profile')
 
   return (
     <div className="flex flex-col gap-6">
@@ -161,16 +171,18 @@ export function ProspectDetailPage(): ReactNode {
                 >
                   <Trans>Cambiar estado</Trans>
                 </Button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsAttemptDialogOpen(true)
-                  }}
-                  className={HERO_GHOST_BUTTON}
-                >
-                  <Trans>Registrar intento</Trans>
-                </button>
-                {prospect.status !== 'ORANGE' && (
+                {canRegisterAttempt && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAttemptDialogOpen(true)
+                    }}
+                    className={HERO_GHOST_BUTTON}
+                  >
+                    <Trans>Registrar intento</Trans>
+                  </button>
+                )}
+                {prospect.status !== 'ORANGE' && canArchiveCycle && (
                   <button
                     type="button"
                     title={archiveCycleTitle}
@@ -183,19 +195,21 @@ export function ProspectDetailPage(): ReactNode {
                   </button>
                 )}
                 {/* Abre el MISMO modal del alta, en modo edición: un solo formulario. */}
-                <button
-                  type="button"
-                  aria-label={editHotelDataLabel}
-                  title={editHotelDataLabel}
-                  onClick={() => {
-                    setIsEditDialogOpen(true)
-                  }}
-                  className={`${HERO_GHOST_BUTTON} px-2.5`}
-                >
-                  <span className="material-icons-outlined text-xl leading-none" aria-hidden>
-                    edit
-                  </span>
-                </button>
+                {canEditHotel && (
+                  <button
+                    type="button"
+                    aria-label={editHotelDataLabel}
+                    title={editHotelDataLabel}
+                    onClick={() => {
+                      setIsEditDialogOpen(true)
+                    }}
+                    className={`${HERO_GHOST_BUTTON} px-2.5`}
+                  >
+                    <span className="material-icons-outlined text-xl leading-none" aria-hidden>
+                      edit
+                    </span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -219,26 +233,30 @@ export function ProspectDetailPage(): ReactNode {
           </div>
           <div className="flex items-center gap-3">
             {/* Abre el MISMO modal del alta, en modo edición: un solo formulario. */}
-            <button
-              type="button"
-              aria-label={editHotelDataLabel}
-              title={editHotelDataLabel}
-              onClick={() => {
-                setIsEditDialogOpen(true)
-              }}
-              className="flex size-10 shrink-0 items-center justify-center rounded-md border border-line text-ink-3 transition-colors hover:bg-surface-2 hover:text-o-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
-            >
-              <span className="material-icons-outlined text-xl leading-none" aria-hidden>
-                edit
-              </span>
-            </button>
-            <Button
-              onClick={() => {
-                setIsAttemptDialogOpen(true)
-              }}
-            >
-              <Trans>Registrar intento</Trans>
-            </Button>
+            {canEditHotel && (
+              <button
+                type="button"
+                aria-label={editHotelDataLabel}
+                title={editHotelDataLabel}
+                onClick={() => {
+                  setIsEditDialogOpen(true)
+                }}
+                className="flex size-10 shrink-0 items-center justify-center rounded-md border border-line text-ink-3 transition-colors hover:bg-surface-2 hover:text-o-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
+              >
+                <span className="material-icons-outlined text-xl leading-none" aria-hidden>
+                  edit
+                </span>
+              </button>
+            )}
+            {canRegisterAttempt && (
+              <Button
+                onClick={() => {
+                  setIsAttemptDialogOpen(true)
+                }}
+              >
+                <Trans>Registrar intento</Trans>
+              </Button>
+            )}
             {/*
             Un estado terminal no tiene a dónde ir: `NARANJA` es un cliente
             activo y `ROJO` un rechazo, y ninguno declara transiciones. Abrir el
@@ -254,7 +272,7 @@ export function ProspectDetailPage(): ReactNode {
             >
               <Trans>Cambiar estado</Trans>
             </Button>
-            {prospect.status !== 'ORANGE' && (
+            {prospect.status !== 'ORANGE' && canArchiveCycle && (
               <Button
                 variant="secondary"
                 title={archiveCycleTitle}
@@ -330,9 +348,13 @@ export function ProspectDetailPage(): ReactNode {
         <div className="flex flex-col gap-5">
           <HotelContactList
             contacts={prospect.contacts}
-            onEdit={() => {
-              setAreContactsOpen(true)
-            }}
+            onEdit={
+              canManageContacts
+                ? () => {
+                    setAreContactsOpen(true)
+                  }
+                : undefined
+            }
           />
           <StatusTimeline history={prospect.history} />
         </div>

@@ -155,8 +155,8 @@ test('el acceso nace con cuenta enlazada, contraseña temporal y buzón; cPanel 
   const before = await deadlines.of(worker.account?.id as string)
   expect(before.password).toMatchObject({ status: 'PENDING', day: 1 })
 
-  // Cuatro días después, vencido; con la contraseña cambiada, nada que cobrar.
-  const issuedAt = new Date(Date.now() - 4 * 86_400_000)
+  // Treinta y un días después, vencido; con la contraseña cambiada, nada que cobrar.
+  const issuedAt = new Date(Date.now() - 31 * 86_400_000)
   const overdue = await deadlines.of(
     worker.account?.id as string,
     new Date(issuedAt.getTime() + 4 * 86_400_000),
