@@ -93,11 +93,29 @@ export function Modal({
    * (Hugo, 2026-09-21: «las tablas no se ven bien en móvil» era esto, en la
    * auditoría y en cualquier modal ancho). Bajo `sm` manda siempre el ancho
    * de la pantalla.
+   *
+   * `sm:${item}` armado en tiempo de ejecución NUNCA llega a Tailwind: el
+   * build solo escanea TEXTO en busca de nombres de clase completos, así que
+   * una cadena que solo existe como concatenación en el navegador no genera
+   * CSS — la clase queda en el DOM sin efecto, en silencio (descubierto el
+   * 2026-09-22 con Playwright: el ancho pedido nunca se aplicaba pese a que
+   * la clase «correcta» aparecía en el elemento). El mapa de abajo escribe
+   * cada `sm:max-w-*` como texto literal a propósito: son los únicos anchos
+   * que un modal puede pedir — uno nuevo se agrega aquí, nunca se sintetiza.
    */
+  const WIDTH_VARIANTS: Record<string, string> = {
+    'max-w-lg': 'sm:max-w-lg',
+    'max-w-xl': 'sm:max-w-xl',
+    'max-w-2xl': 'sm:max-w-2xl',
+    'max-w-3xl': 'sm:max-w-3xl',
+    'max-w-4xl': 'sm:max-w-4xl',
+    'max-w-5xl': 'sm:max-w-5xl',
+    'max-w-[95rem]': 'sm:max-w-[95rem]',
+  }
   const classes = (className ?? '').split(/\s+/).filter(Boolean)
   const widthOverrides = classes
     .filter((item) => item.startsWith('max-w-'))
-    .map((item) => `sm:${item}`)
+    .map((item) => WIDTH_VARIANTS[item] ?? item)
     .join(' ')
   const classNameSinAncho = classes.filter((item) => !item.startsWith('max-w-')).join(' ')
 
