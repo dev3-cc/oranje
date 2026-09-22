@@ -9,6 +9,7 @@ import type { TeamMemberCard } from '../types/team.types'
 
 import fotoEquipo from '@/assets/ilustrations/equipo-hotel.webp'
 import personajeAcceso from '@/assets/ilustrations/personaje-acceso-protegido.svg'
+import { BackToListButton } from '@/shared/components/BackToListButton'
 import { Button } from '@/shared/components/Button'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { EmptyState } from '@/shared/components/EmptyState'
@@ -24,6 +25,7 @@ import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
 } from '@/shared/constants/onboardingStatus'
+import { rosterDetailClass, rosterListClass, useListDetail } from '@/shared/hooks/useListDetail'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatList, formatPercent } from '@/shared/lib/formatters'
 import { matchesSearch } from '@/shared/lib/text'
@@ -107,14 +109,24 @@ function MemberRow({
 function MemberDetail({
   member,
   onAssignTerritory,
+  showDetailOnMobile,
+  onBack,
 }: {
   member: TeamMemberCard
   onAssignTerritory: (member: TeamMemberCard) => void
+  showDetailOnMobile: boolean
+  onBack: () => void
 }): ReactNode {
   const { t } = useLingui()
   return (
     /* Detalle fijo mientras la lista baja (lista-detalle, como la Cartera y el Pool). */
-    <article className="flex flex-col gap-6 rounded-xl border border-line bg-surface p-6 lg:sticky lg:top-6 lg:max-h-[calc(100vh-var(--hd)-3rem)] lg:overflow-y-auto">
+    <article
+      className={cn(
+        'flex-col gap-6 rounded-xl border border-line bg-surface p-6 lg:sticky lg:top-6 lg:max-h-[calc(100vh-var(--hd)-3rem)] lg:overflow-y-auto',
+        rosterDetailClass(showDetailOnMobile),
+      )}
+    >
+      <BackToListButton onClick={onBack} />
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex items-center gap-4">
           {member.photoUrl ? (
@@ -255,6 +267,7 @@ export function TeamPage(): ReactNode {
   const [territoryMember, setTerritoryMember] = useState<TeamMemberCard | null>(null)
   /** Por nombre, EN MEMORIA: el equipo ya está cargado entero. */
   const [search, setSearch] = useState('')
+  const { showDetailOnMobile, select, backToList } = useListDetail()
 
   const status = (error as { status?: number } | undefined)?.status
 
@@ -304,7 +317,7 @@ export function TeamPage(): ReactNode {
           src={fotoEquipo}
           alt=""
           aria-hidden
-          className="pointer-events-none absolute -right-2 -bottom-1 hidden h-[calc(100%+2.5rem)] w-auto object-contain object-bottom drop-shadow-[0_10px_18px_rgba(60,30,0,0.26)] sm:block"
+          className="pointer-events-none absolute -right-2 -bottom-1 hidden h-[calc(100%+2.5rem)] w-auto object-contain object-bottom drop-shadow-[0_10px_18px_rgba(60,30,0,0.26)] md:block"
         />
       </header>
 
@@ -343,7 +356,7 @@ export function TeamPage(): ReactNode {
       ) : (
         /* Lista a la izquierda, detalle a la derecha: un BD siempre elegido. */
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[300px_1fr]">
-          <div className="flex flex-col gap-3">
+          <div className={cn('flex-col gap-3', rosterListClass(showDetailOnMobile))}>
             <SearchField
               value={search}
               onChange={setSearch}
@@ -364,14 +377,24 @@ export function TeamPage(): ReactNode {
                     key={member.id}
                     member={member}
                     isSelected={member.id === selected?.id}
-                    onSelect={setSelectedId}
+                    onSelect={(id) => {
+                      setSelectedId(id)
+                      select()
+                    }}
                   />
                 ))}
               </ul>
             )}
           </div>
 
-          {selected && <MemberDetail member={selected} onAssignTerritory={setTerritoryMember} />}
+          {selected && (
+            <MemberDetail
+              member={selected}
+              onAssignTerritory={setTerritoryMember}
+              showDetailOnMobile={showDetailOnMobile}
+              onBack={backToList}
+            />
+          )}
         </div>
       )}
 
