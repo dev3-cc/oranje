@@ -1,15 +1,16 @@
 /**
- * El clausulado del acuerdo de servicio, transcrito del contrato vigente que
- * Oranje firma con sus hoteles (Courtyard & Fairfield Lithia Springs, marzo de
- * 2023). Vive aparte del componente porque son doscientas líneas de prosa
- * legal que no cambian nunca.
+ * El clausulado del acuerdo de servicio, transcrito del machote real que
+ * Oranje firma con sus hoteles (Strategic Deployment, LLC — Service Agreement,
+ * recibido de Hugo el 2026-09-22, reemplaza el machote anterior de Courtyard
+ * & Fairfield Lithia Springs). Vive aparte del componente porque son
+ * doscientas líneas de prosa legal que no cambian nunca.
  *
  * Va en INGLÉS a propósito: es el documento que firma un hotel en Georgia y la
- * ley aplicable es la de ese estado (cláusula 16). Traducirlo cambiaría el
+ * ley aplicable es la de ese estado (cláusula 17). Traducirlo cambiaría el
  * texto que las partes acordaron.
  *
  * Los huecos entre llaves los rellena `ContractDocument` con los datos de la
- * propuesta: `{startDate}`, `{endDate}` y `{provider}`.
+ * propuesta: `{startDate}` y `{endDate}`.
  */
 export interface ContractClause {
   title: string
@@ -18,139 +19,169 @@ export interface ContractClause {
 
 export const CONTRACT_CLAUSES: ContractClause[] = [
   {
-    title: 'TERM',
+    title: 'TERM AND RENEWAL',
     paragraphs: [
-      'Beginning as of {startDate} and during a period of one (1) Year (“Term”), unless prior finished pursuant to {endDate} hereof, “Service Provider” makes agreement that they will serve as a Service Provider to Company. This Agreement may be changed or extended for any period at any time, as may be agreed by the parties.',
+      '(a) The initial term begins {startDate} and continues through {endDate} (“Initial Term”), unless terminated earlier as expressly permitted by this Agreement.',
+      '(b) After the Initial Term, this Agreement automatically renews for successive one-year terms unless either Party gives at least thirty (30) days’ written notice before the end of the then-current term.',
+      '(c) After the Initial Term, either Party may terminate without cause upon thirty (30) days’ written notice.',
     ],
   },
   {
-    title: 'DUTIES',
+    title: 'SERVICES AND RESPONSIBILITIES',
     paragraphs: [
-      '(a) Company hereby engages “Service Provider” and “Service Provider” agrees to perform the following duties and responsibilities as described on Exhibit “A” hereto (““Service Provider” Services”).',
-      '(b) “Service Provider” guarantees to Company that it is under no contractual or other limitations or compulsions which are not in agreement with the carrying out this Agreement, or which will obstruct the performance of their duties.',
-      '(c) In performing services, “Service Provider” shall obey, to the best of their information, with all business manners, regulatory, health and safety guidelines recognized by Company and/or applicable laws and regulations.',
-      '(d) “Service Provider” will use the best efforts to provide the same individuals to the hotel and minimize staff turnover on a daily basis.',
+      '(a) Company engages Service Provider to furnish personnel and related staffing services described in Exhibit A. Personnel supplied by Service Provider remain employees of Service Provider.',
+      '(b) Service Provider is responsible for payroll administration, payroll taxes, workers’ compensation coverage, general liability coverage, I-9 compliance, and other employer obligations applicable to its employees, subject to applicable law.',
+      '(c) Service Provider will provide general employment and safety-program orientation. Company is responsible for property-specific training, task direction, daily supervision, workplace safety, security, equipment, chemicals, tools, premises conditions, and property-specific procedures.',
+      '(d) Company shall maintain a workplace compliant with applicable safety and employment laws, disclose known hazards, provide appropriate equipment and protective measures, and promptly report injuries, accidents, complaints, or incidents involving assigned personnel.',
+      '(e) Company shall not discriminate against, harass, retaliate against, or permit unlawful treatment of assigned personnel and shall cooperate with Service Provider in investigating complaints or incidents.',
     ],
   },
   {
-    title: 'SERVICE FEE',
+    title: 'SERVICE FEES, INVOICING AND PAYMENT',
     paragraphs: [
-      '(a) According to the agreement terms hereof, Company shall pay {provider} pursuant to the Contract Cost as described on Exhibit “A” hereto. “Service Provider” shall present weekly invoices for services provided and Company agrees to make monthly payments no later than every 15th days after the services is being delivered. Amounts owed under this section shall be due upon receipt of an invoice, or in any event no later than the 15th day after delivered. Late charges will commence beginning of 35 days after an invoice has been submitted and not paid. A one-time late fee in the amount of 5% of the total outstanding balance for each unpaid (partial or total) invoice will accrue on the 35th day and interest will accrue at a rate equal of 1.5% per month until the outstanding balance is paid in full with the date of the accrual being the date of invoice.',
-      '(b) “Service Provider” agrees that all “Service Provider” services will be rendered by itself as a self-governing contractor and that this Agreement does not generate an employer-employee relationship between “Service Provider” and Company. “Service Provider” or its employees shall have no right to receive any employee benefits including, but not limited to, health and accident insurance, life insurance, sick leave and/or vacation. “Service Provider” makes agreement to pay all taxes including sales, income and employment taxes due in respect of the contract cost and to indemnify Company in the event Company is required to pay any such taxes on behalf of “Service Provider”.',
-      '(c) Georgia has no state labor laws specific to overtime pay. As a result, the federal wage and hour law (FLSA) applies and requires overtime pay to covered, nonexempt employees under that law. An employer that either requires or permits an employee to work overtime is required to pay that employee overtime for those hours. Overtime is considered any hours worked over 40 hours per workweek, and the pay for overtime hours is at least one-and-a-half times an employee’s regular pay rate.',
+      '(a) Company shall pay the rates and charges stated in Exhibit A. Service Provider will issue invoices weekly. Each invoice is due within thirty (30) calendar days from the invoice date (“Net 30”).',
+      '(b) Company shall review weekly time records promptly. Any objection to hours must be delivered in writing, with reasonable detail, within three (3) business days after receipt. If no timely objection is received, the time record is deemed accepted for billing purposes.',
+      '(c) Any invoice dispute must be submitted in writing within five (5) business days after receipt and identify the specific disputed amount and basis. Amounts not timely disputed are deemed accepted. Company shall timely pay all undisputed amounts.',
+      '(d) A one-time late charge of five percent (5%) of the unpaid balance will be assessed on the thirty-fifth (35th) day after the invoice date. Interest will also accrue at one and one-half percent (1.5%) per month, or the maximum lawful rate if lower, from the invoice date until paid in full.',
+      '(e) Company shall reimburse reasonable collection costs, arbitration or court costs, and reasonable attorneys’ fees incurred to collect overdue undisputed amounts, to the extent permitted by law.',
+      '(f) If an undisputed invoice remains unpaid more than five (5) days after its due date, Service Provider may suspend some or all Services upon written notice, without liability and without such suspension constituting breach. Suspension does not waive Company’s payment obligations.',
+      '(g) Upon expiration or termination for any reason, all outstanding invoices, accrued charges, approved but unbilled hours, late fees, interest, and other amounts owed become immediately due and payable.',
     ],
   },
   {
-    title: 'EARLY TERMINATION OF THE TERM',
+    title: 'RATES AND COST ADJUSTMENTS',
     paragraphs: [
-      '(a) The initial Term of this Agreement shall be for a period of one (1) Year, commencing as of the Effective Date. Thereafter, this Agreement can be terminated by either party with a thirty (30) day written notice at any time during the initial term without any termination fees. This agreement shall automatically be extended for successive one-year terms under the same terms and conditions, unless one party submits written notice of its intent to terminate the Services Agreement without any termination fees.',
-      'If “Service Provider” willingly stops performing its duties, or becomes unable to perform its Duties, the provisions of Sections 5 and 6 shall specifically survive the termination of this Services Agreement.',
-      'Notwithstanding any other provision of this Services Agreement to the contrary, either party shall have the right, in its sole discretion, to terminate this Services Agreement Immediately upon written notice to the other party upon the occurrence of any of the following: I. The initiation of a bankruptcy or insolvency proceeding by any party to this Agreement.',
-      '(b) Upon termination, neither party shall have any further responsibilities under this Agreement, except for the compulsions which by their terms endure this termination hereof.',
+      '(a) Rates in Exhibit A are based on stated pay rates, payroll burden, insurance costs, and applicable legal requirements in effect when established.',
+      '(b) Service Provider may adjust bill rates upon written notice to reflect increases in minimum wage, payroll taxes, workers’ compensation premiums, unemployment taxes, legally mandated benefits, insurance costs, or other governmental or statutory employment costs.',
+      '(c) Any Company-requested increase in employee pay rates will result in a corresponding adjustment to the applicable bill rate using the agreed markup methodology unless otherwise agreed in writing.',
+      '(d) Any other discretionary rate change requires written agreement of the Parties.',
     ],
   },
   {
-    title: 'RESTRICTED ACTIVITIES',
+    title: 'OVERTIME AND SCHEDULING',
     paragraphs: [
-      'During the Term and for a period of One (1) year thereafter, Company will not directly or indirectly:',
-      '(a) Solicit or request any employee of “Service Provider” to work in any capacity for the Company without written consent of “Service Provider”;',
-      '(b) Otherwise request, through any other vendor or entity, that any employee of “Service Provider” to work in any capacity for Company without “Service Provider” written consent.',
-      '(c) Company shall be responsible for all matters of security in the hotel premises.',
+      '(a) Overtime shall be paid to covered nonexempt employees at one time and a half after completing 40 worked hours. Company is responsible for the applicable overtime bill rate for overtime hours that Company or its managers or supervisors request, authorize, permit, suffer, or allow to be worked.',
+      '(b) Company shall designate persons authorized to request personnel and approve schedules. Company’s internal failure to obtain approval does not relieve Company of payment responsibility for hours actually worked at Company’s request or with Company’s knowledge.',
+      '(c) Unless otherwise agreed in writing, the overtime bill rate will be calculated by applying the Exhibit A service markup to Service Provider’s actual overtime wage cost for the employee, together with applicable payroll burden and legally required costs.',
     ],
   },
   {
-    title: 'PROPRIETARY RIGHTS',
+    title: 'TERMINATION FOR CAUSE',
     paragraphs: [
-      '(a) Definitions. For the purposes of the terms set forth below shall have the following meanings: i. Confidential information. For the purposes of this Agreement, Confidential Information shall mean and collectively include: all information involving the business, plans and/or technology of “Service Provider” including, but not limited to technological information including techniques, tactics, procedures, conditions, uniqueness, assess, raw data, records, files, formulations, tools design, know-how, knowledge, and trade secrets; developmental, promotion, sales, customer, trader, consulting relationship information, in service, performance, and cost information, computer programming system whether in physical or intangible form, and all record bearing media containing or disclosing the preceding information and techniques including, written business plans, patents and patent applications, grant applications, notes, and memorandum, whether in writing or presented, stored or maintained in or by electronic, magnetic or other means.',
-      'In spite of the previous, the term “Confidential Information” shall not include any information which: (A) can be established to have been in the public area or was publicly known or accessible earlier to the date of the disclosure to “Service Provider”; (B) can be established in writing to have been lawfully in the ownership of “Service Provider” prior to the disclosure of such information to “Service Provider” by Company; (C) becomes part of the public domain or publicly known or available by publication or otherwise, not due to any unauthorized act or omission on the part of “Service Provider”; or (D) is supplied to “Service Provider” by a third party without binder of confidentiality, so long as that such third party has no responsibility to Company or any or its associated companies to maintain such information in confidence.',
-      '(b) Non Disclosure to Third Parties. Apart from as required by this Agreement, the Company shall not, at any time now or in the future, openly or indirectly, use, publish, distribute or otherwise make known any Confidential Information, thoughts, or ideas to any third party without the prior written consent of “Service Provider”.',
-      '(c) Documents, etc. All documents, diskettes, tapes, practical manuals, guides, stipulations, plans, drawings, designs and similar materials, properly maintained lists of present, past or prospective customers, customer offers, request to submit proposals, price lists and data relating to the pricing of Company products and services, records, notebooks and all other materials containing Confidential Information or Information about concepts or ideas (including all copies and reproductions thereof), that come into “Service Provider”’s control or control by reason of “Service Provider”’s performance of the link, whether prepared by “Service Provider” or others: (a) are the property of the Company, (b) will not be used by “Service Provider” in any way other than in connection with the performance of his/her Duties, (c) will not be provided or shown to any third party by “Service Provider”, (d) will not be removed from Company’s or “Service Provider”’s premises (except as “Service Provider” Duties require), and (e) at the termination (for whatever reason), or “Service Provider”’s relationship with Company, will be left with, or forthwith returned by “Service Provider” to Company.',
-      '(d) Patents, etc. “Service Provider” makes agreement that the Company is and shall remain the elite owner of the Confidential Information and concepts and ideas. Any interest in copyrights, discoveries, technological improvements, trade names, brand, services marks, copyrights, copyrightable works, developments, designs, procedures, methods, know-how, data and analysis, whether registrable or not (“Developments”), which “Service Provider”, as a result of providing services to Company under this agreement, may visualize or develop, shall: (i) immediately be brought to the notice of Company by “Service Provider” and (ii) belongs entirely to Company. No license or transportation of any such rights to “Service Provider” is allowed or implied under this Agreement.',
-      '(e) Assignment. “Service Provider” hereby assigns and, to the extent any such assignment cannot be made at present, hereby makes agreement to allocate to Company, without additional return, all of their rights, identify and interest in and to all perceptions, ideas, and developments. “Service Provider” will execute all documents and perform all lawful acts which Company considers necessary or advisable to secure its rights hereunder and to carry out the intent of this Agreement.',
+      '(a) Either Party may terminate immediately upon written notice if the other Party becomes subject to bankruptcy or insolvency proceedings, ceases business operations, or materially breaches this Agreement and, where reasonably curable, fails to cure within ten (10) calendar days after written notice.',
+      '(b) Service Provider may immediately suspend or terminate Services for nonpayment under Section 3, unsafe working conditions, unlawful instructions, threats to assigned personnel, or circumstances reasonably presenting material legal, safety, or financial risk.',
+      '(c) Payment, restrictions, confidentiality, intellectual property, indemnification, limitation of liability, dispute resolution, and provisions that by their nature should survive will survive termination.',
     ],
   },
   {
-    title: 'EQUITABLE RELIEF',
+    title: 'RESTRICTED ACTIVITIES; NON-SOLICITATION; CONVERSION',
     paragraphs: [
-      '“Service Provider” makes agreement that any breach of clauses mentioned above by them would ground irrevocable harm to Company and that, in case of such breach, Company shall have, in addition to any and all remedies of law, the right to an order, definite performance or other reasonable benefit to prevent the breach or susceptible violation of “Service Provider”’s obligations hereunder.',
+      '(a) During the Term and for one (1) year after an employee’s last assignment with Company, Company shall not, without Service Provider’s prior written consent, directly or indirectly solicit, hire, employ, engage, or retain any employee introduced or supplied by Service Provider, whether directly, through an affiliate, contractor, another staffing provider, or other third party.',
+      '(b) Company shall not request or arrange for a Service Provider employee to be transferred to another vendor or entity for the purpose of continuing substantially similar services for Company.',
+      '(c) If Service Provider permits a direct hire or conversion, the Parties shall agree in writing to a commercially reasonable conversion or placement fee before the employee is hired or transferred. Nothing here prohibits conduct that cannot lawfully be restricted.',
+      '(d) The Parties intend this Section to protect Service Provider’s legitimate recruiting, placement, training, and workforce-development interests and to be enforced only to the maximum extent permitted by applicable law.',
     ],
   },
   {
-    title: 'SEVERABILITY; REFORMATION',
+    title: 'CONFIDENTIALITY',
     paragraphs: [
-      'In case any one or more of the conditions or parts of a stipulation included in his Agreement shall, for any cause, be held to be unacceptable, unlawful or unenforceable in any respect, such invalidity, misconduct or unenforceability shall not affect any other condition or part of a condition of this Agreement; and this Agreement shall, to the fullest extent lawful, be reformed and construed as if such invalid or illegal or unenforceable provision, or part of a provision, had never been included herein, and such provision or part reformed so that it would be applicable, lawful and enforceable to the maximum degree possible. Without limiting the previous, if any condition (or part of provision) included in this Agreement shall for any reason be held to be excessively broad as to duration, activity or subject, it shall be interpreted by limiting and reducing it, so as to be enforceable to the fullest level compatible with then existing applicable law.',
+      '(a) “Confidential Information” means nonpublic business, operational, financial, technical, customer, employee, pricing, recruiting, software, process, trade-secret, and other proprietary information disclosed by one Party to the other.',
+      '(b) Confidential Information excludes information lawfully known without restriction before disclosure, information becoming public through no breach, information lawfully received from a third party without confidentiality duty, and information independently developed without use of the other Party’s Confidential Information.',
+      '(c) The receiving Party shall use Confidential Information only as necessary to perform this Agreement and shall not disclose it except to personnel, advisers, insurers, or service providers with a need to know and appropriate confidentiality obligations, or as required by law.',
+      '(d) Upon termination or written request, each Party shall return or destroy the other Party’s Confidential Information, subject to lawful record-retention obligations and routine backup systems.',
+    ],
+  },
+  {
+    title: 'INTELLECTUAL PROPERTY AND PROPRIETARY MATERIALS',
+    paragraphs: [
+      '(a) Each Party retains all rights in intellectual property, materials, systems, processes, know-how, software, methods, templates, data, trademarks, trade names, and other proprietary rights owned, developed, or acquired before this Agreement or independently of the specific Services (“Background IP”).',
+      '(b) Service Provider specifically retains ownership of its staffing methods, recruiting methods and sources, employee and candidate databases, pricing methodologies, training materials, operational procedures, quality-control systems, scheduling methods, software, technology, forms, templates, analytics, and know-how, including improvements developed while performing Services.',
+      '(c) Company retains ownership of its own Background IP and Company-specific confidential materials.',
+      '(d) No Background IP transfers under this Agreement. Any Company-specific deliverable expressly commissioned outside ordinary staffing services will be governed by a separate written statement of work addressing ownership and license rights.',
+      '(e) Neither Party may publicly use the other Party’s name, trademarks, logos, or branding without prior written consent, except as necessary for ordinary internal administration.',
+    ],
+  },
+  {
+    title: 'INDEMNIFICATION',
+    paragraphs: [
+      '(a) Service Provider shall indemnify, defend, and hold harmless Company from third-party claims, damages, liabilities, and reasonable costs to the extent caused by Service Provider’s negligence, willful misconduct, material breach, or failure to satisfy employer obligations expressly assigned to Service Provider.',
+      '(b) Company shall indemnify, defend, and hold harmless Service Provider and its affiliates, officers, employees, and agents from third-party claims, damages, liabilities, and reasonable costs to the extent caused by Company’s negligence, willful misconduct, unsafe premises or equipment, property-specific supervision or instructions, harassment or discrimination by Company personnel, security incidents within Company’s control, or Company’s material breach.',
+      '(c) The indemnified Party shall promptly notify the indemnifying Party and reasonably cooperate. The indemnifying Party may control the defense but may not settle in a manner admitting fault by or imposing nonmonetary obligations on the indemnified Party without written consent.',
+    ],
+  },
+  {
+    title: 'LIMITATION OF LIABILITY',
+    paragraphs: [
+      '(a) To the maximum extent permitted by law, neither Party shall be liable to the other for consequential, incidental, special, exemplary, or punitive damages, or lost profits or lost business, except to the extent payable to a third party under a covered indemnification claim.',
+      '(b) Except for payment obligations, fraud, willful misconduct, confidentiality or intellectual-property violations, indemnification obligations, or liabilities that cannot lawfully be limited, Service Provider’s aggregate contractual liability shall not exceed the total service fees paid or payable by Company during the six (6) months immediately preceding the event giving rise to the claim.',
+    ],
+  },
+  {
+    title: 'INSURANCE AND WORKPLACE COOPERATION',
+    paragraphs: [
+      '(a) Service Provider shall maintain workers’ compensation and general liability insurance consistent with applicable law and its ordinary business practices.',
+      '(b) Company shall maintain commercially reasonable insurance appropriate to its hotel operations, including premises and operational risks.',
+      '(c) Each Party shall reasonably cooperate in incident investigations, insurance claims, workers’ compensation matters, and legally required reporting.',
+    ],
+  },
+  {
+    title: 'EMPLOYEE SCREENING',
+    paragraphs: [
+      '(a) Service Provider will conduct employee screening consistent with its then-current written policies, accepted client requirements, and applicable law. Screening may include I-9 verification, criminal background screening, and drug screening where applicable and lawful.',
+      '(b) No screening process guarantees against employee misconduct, and Company remains responsible for on-site supervision, access controls, security, and property-specific safeguards.',
+    ],
+  },
+  {
+    title: 'INDEPENDENT CONTRACTOR RELATIONSHIP',
+    paragraphs: [
+      '(a) Service Provider is an independent contractor. Nothing creates a partnership, joint venture, agency, or employer-employee relationship between Company and Service Provider.',
+      '(b) Assigned personnel remain employees of Service Provider for payroll and employment-administration purposes, while Company retains responsibility for property-specific direction and supervision as stated in Section 2.',
     ],
   },
   {
     title: 'ASSIGNMENT',
     paragraphs: [
-      '“Service Provider” may assign this Agreement to a third party with the prior written consent of Company so long as the third party is able and agrees in writing to act under the terms of, and assume the responsibilities seth for in this Agreement.',
-    ],
-  },
-  {
-    title: 'HEADINGS',
-    paragraphs: [
-      'Headings and subheadings are for expediency only and shall not be considered to be a part of this Agreement.',
-    ],
-  },
-  {
-    title: 'AMENDMENTS',
-    paragraphs: [
-      'This Agreement may be altered or customized, in while or in part, only by an instrument in writing approved by all parties hereto. Any adjustment, permission, verdict, waiver or other action to be made, taken or given by the Company related to the Agreement shall be made, taken or given on behalf of the Company only by power of the Company’s Directors.',
+      '(a) Service Provider may assign this Agreement to an affiliate or successor in connection with a merger, reorganization, sale of substantially all assets, or similar transaction, or to another qualified entity that assumes Service Provider’s obligations in writing.',
+      '(b) Company may not assign this Agreement without Service Provider’s prior written consent, except to a successor acquiring substantially all of the hotel operation and assuming all payment and contractual obligations in writing.',
     ],
   },
   {
     title: 'NOTICES',
     paragraphs: [
-      'Any notices or other communications required hereunder shall be in writing and shall be considered given when distributed in person or when posted, by qualified or registered first class mail, postage prepaid, return receipt requested, addressed to the parties at their addresses mentioned in the foreword to this Agreement or to such other addresses of which a party shall have notified the others in harmony with the provisions of this clause.',
+      '(a) Formal notices must be in writing and may be delivered personally, by nationally recognized overnight courier, by certified or registered mail, or by email to a designated notice address. Email notice is effective when sent if the sender receives no delivery-failure notice.',
     ],
   },
   {
-    title: 'COUNTERPARTS',
+    title: 'DISPUTE RESOLUTION; GOVERNING LAW',
     paragraphs: [
-      'This Agreement may be executed in two or more complements, each of which shall constitute an original and all of which shall be considered a single agreement.',
+      '(a) This Agreement is governed by the laws of the State of Georgia, without regard to conflict-of-law principles.',
+      '(b) The Parties shall first use good-faith direct negotiation. If unresolved, they shall participate in non-binding mediation in Atlanta, Georgia, with a mutually selected mediator or through the American Arbitration Association (“AAA”).',
+      '(c) If mediation does not resolve the dispute, it shall be finally settled by binding arbitration in Atlanta, Georgia under the AAA Commercial Arbitration Rules then in effect, unless the Parties agree otherwise in writing.',
+      '(d) The prevailing Party in arbitration or other permitted legal proceedings shall be entitled to recover reasonable attorneys’ fees and costs to the extent permitted by law. The arbitrator shall determine prevailing-party status and allocation of arbitration costs.',
     ],
   },
   {
-    title: 'SURVIVAL',
+    title: 'SEVERABILITY AND REFORMATION',
     paragraphs: [
-      'The provisions of concerned sections of this Agreement shall endure the ending of the Term.',
+      'If any provision is held invalid or unenforceable, the remaining provisions remain effective. Any overly broad restriction shall be reformed and enforced to the maximum extent permitted by applicable law.',
     ],
   },
   {
-    title: 'WAIVER OF BREACH',
+    title: 'WAIVER; REMEDIES',
     paragraphs: [
-      'Failure to insist upon strict compliance with any provision of this Services Agreement shall not operate as a waiver with respect to any subsequent or other failure, nor shall such failure to act constitute or be construed or interpreted as a modification or amendment of this Services Agreement.',
+      'Failure to enforce any provision on one occasion is not a waiver on a later occasion. Except where this Agreement expressly provides otherwise, available remedies are cumulative.',
     ],
   },
   {
-    title: 'APPLICABLE LAW',
+    title: 'AMENDMENTS; ENTIRE AGREEMENT; COUNTERPARTS',
     paragraphs: [
-      'This Services Agreement shall be governed and controlled by the laws of the State of Georgia, without reference to its conflicts of laws principles.',
+      'This Agreement, including Exhibit A, is the entire agreement concerning the Services and supersedes prior understandings concerning the same subject matter. Any amendment, waiver, or modification must be in writing and signed by authorized representatives of both Parties. This Agreement may be executed in counterparts and by electronic signature.',
     ],
   },
   {
-    title: 'ARBITRATION',
+    title: 'AUTHORITY',
     paragraphs: [
-      'The Parties agree to use good faith efforts to resolve any dispute, controversy or claim arising out of or in connection with, or relating to, this Services Agreement or any breach or alleged breach hereof (“Dispute”) promptly and fairly. If the Parties are unable to resolve a Dispute by negotiation, the parties agree to submit it non-binding mediation conducted by a mutually selected mediator or, is the option of either party, by the American Arbitration Association (“AAA”). If such mediation is unsuccessful in resolving the Dispute, then such Dispute shall then be submitted to, and settled by arbitration in the City of Atlanta, State of Georgia, pursuant to the commercial arbitration rules then in effect of the AAA (or at any time or at any other place or under any other form of arbitration mutually acceptable to the parties involved). Any award rendered shall be final and conclusive upon the parties and a judgment thereon may be entered in the highest court of the forum, state or federal, having jurisdiction. The expenses of the arbitration, including the cost of experts, evidence and counsel fees, shall be borne by the unsuccessful or losing party in the dispute, controversy or claim that is settled by such arbitration.',
-    ],
-  },
-  {
-    title: 'EQUAL WEIGHT',
-    paragraphs: [
-      'The Parties agree, understand and acknowledge that each and every clause, provision, section, paragraph, term, covenant and condition contained in this Services Agreement is separate and distinct from any and all other clauses, provisions, sections, paragraphs, terms, covenants and conditions contained in this Services Agreement, and further agree, understand and acknowledge that each of the foregoing shall have equal weight, merit and importance among them and shall not have greater or lesser weight, merit or importance than any other clause, provision, section, paragraph, term covenant and/or condition contained in this Service Agreement.',
-    ],
-  },
-  {
-    title: 'REMEDIES',
-    paragraphs: [
-      'All remedies of the Parties hereunder are cumulative, are in addition to any other remedies provided for by law, and may, to the extent permitted by law, be exercised concurrently or separately. The exercise of any one remedy shall not be deemed to be an election of such remedy or to preclude the exercise of any other remedy. The prevailing party in any legal action brought by one party against the other and arising out of this Services Agreement shall be entitled, in addition to any other rights and remedies it may have, to reimbursement for its expenses, including court costs and reasonable attorney’s fees.',
-    ],
-  },
-  {
-    title: 'ENTIRE AGREEMENT',
-    paragraphs: [
-      'This instrument contains the entire agreement between the Parties regarding the engagement of “Service Provider” by the Company. It may not be changed orally, but only by an agreement in writing, signed by the Party against whom enforcement of any waiver, change, modification, extension or discharge is sought.',
+      'Each person signing represents that he or she is authorized to bind the Party on whose behalf the signature is made.',
     ],
   },
 ]

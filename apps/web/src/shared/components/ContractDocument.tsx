@@ -18,23 +18,25 @@ export interface DocumentTerms {
   holiday: { pay: number; bill: number }
 }
 
-/** El prestador del servicio en todos los acuerdos. */
-const PROVIDER = 'Oranje'
+/**
+ * El prestador del servicio en todos los acuerdos: la entidad legal que
+ * factura y emplea, no la marca (Hugo, 2026-09-22, trajo el machote real de
+ * Strategic Deployment, LLC — reemplaza el nombre y la dirección anteriores).
+ */
+const PROVIDER = 'Strategic Deployment, LLC'
+const PROVIDER_ADDRESS = '730 Peachtree St NE, Suite 570, Atlanta, GA 30308'
 
 /**
  * El encabezado del Exhibit «A»: el MISMO texto para todos los hoteles (lo
  * confirmó Hugo), así que vive en la plantilla y no como dato por propuesta.
- * Transcrito del acuerdo vigente, en inglés como el resto del documento.
+ * Transcrito del machote real (Strategic Deployment, LLC), en inglés como el
+ * resto del documento.
  */
 const EXHIBIT_HEADER =
-  'All Employees governed under the Service Agreement are employees of Oranje and cannot be ' +
-  'hired by your property directly or indirectly or moved to another vendor. All employees are ' +
-  'screened including but not limited to drug screens, criminal background checks, I-9 ' +
-  'verification. Oranje is responsible and will prepare, report & remit all payroll data and ' +
-  'payroll taxes. This includes worker’s compensation and general liability insurance, federal ' +
-  '& state income tax, social security, medicare, federal & state unemployment taxes and ACA ' +
-  'Compliant. Oranje will also provide orientation to all employees of our safety program, also ' +
-  'the standards of each client/customer.'
+  `All personnel furnished under the Agreement are employees of ${PROVIDER}. Service Provider ` +
+  'will administer payroll and applicable payroll taxes and maintain workers’ compensation and ' +
+  'general liability coverage as stated in the Agreement. Employee screening will be performed ' +
+  'in accordance with Section 13.'
 
 /** `2026-09-15` → `09/15/2026`, la forma del acuerdo original. */
 function usDate(iso: string): string {
@@ -100,27 +102,20 @@ export function ContractDocument({
   return (
     <article className="text-ink">
       <header className="text-center">
-        <h3 className="text-lg font-bold text-ink">Service Agreement</h3>
+        <h3 className="text-lg font-bold text-ink uppercase">Service Agreement</h3>
       </header>
 
       <p className="mt-5 text-sm leading-relaxed text-ink-2">
-        This Service Agreement is made and entered into by and between{' '}
-        <span className="font-semibold text-ink">{PROVIDER}</span> (“Service Provider”) and{' '}
+        This Service Agreement (“Agreement”) is between{' '}
+        <span className="font-semibold text-ink">{PROVIDER}</span>, a Georgia limited liability
+        company, {PROVIDER_ADDRESS} (“Service Provider”), and{' '}
         <span className="font-semibold text-ink">{hotelName}</span>
-        {hotelAddress ? ` located at ${hotelAddress}` : ''} (“Company”).
+        {hotelAddress ? `, ${hotelAddress}` : ''} (“Company”).
       </p>
 
       <p className="mt-3 text-sm leading-relaxed text-ink-2">
-        WHEREAS, <span className="font-semibold text-ink">{hotelName}</span> (Company) wishes to
-        engage {PROVIDER} (“Service Provider”) to provide certain services to Company described
-        herein and “Service Provider” makes agreement to provide Company services for the
-        reimbursement and otherwise in harmony with the terms and conditions of this Agreement.
-      </p>
-
-      <p className="mt-3 text-sm leading-relaxed text-ink-2">
-        NOW THEREFORE, in consideration of the prior, and for other good and valuable consideration,
-        the receipt and adequacy of which are hereby recognized, acknowledged and approved, Company
-        and “Service Provider”, aiming to be officially bound, agree to the terms set forth below.
+        WHEREAS, Company desires to engage Service Provider to provide staffing and related
+        services, and Service Provider agrees to provide such services under the following terms.
       </p>
 
       <ol className="mt-6 flex list-decimal flex-col gap-5 pl-5">
@@ -140,44 +135,46 @@ export function ContractDocument({
         <h4 className="text-sm font-bold tracking-wide text-ink uppercase">Notices</h4>
         <div className="mt-3 grid grid-cols-1 gap-4 text-sm text-ink-2 sm:grid-cols-2">
           <div>
-            <p className="font-semibold text-ink">Notice to Service Provider:</p>
-            <p>{PROVIDER}</p>
+            <p className="font-semibold text-ink">Service Provider:</p>
+            <p>{PROVIDER},</p>
+            <p>{PROVIDER_ADDRESS}.</p>
+            <p>Email: ______________________________.</p>
           </div>
           <div>
-            <p className="font-semibold text-ink">Notice to Company:</p>
+            <p className="font-semibold text-ink">Company:</p>
             <p>{hotelName}</p>
             {hotelAddress && <p>{hotelAddress}</p>}
+            <p>Email: ______________________________.</p>
           </div>
         </div>
       </section>
 
       {/* Sin firmas: las líneas van en blanco a propósito. */}
       <section className="mt-8">
-        <p className="text-sm text-ink-2">
-          EXECUTED: by the Parties under seal, by their duty authorized representatives, as of the
-          Effective Date.
-        </p>
+        <h4 className="text-sm font-bold tracking-wide text-ink uppercase">Signatures</h4>
         <div className="mt-6 grid grid-cols-1 gap-8 sm:grid-cols-2">
           <div>
             <p className="text-sm font-semibold text-ink">{PROVIDER}</p>
-            <div className="mt-10 border-b border-ink-3" />
-            <p className="mt-2 text-xs text-ink-3">By (print name and signature)</p>
-            <div className="mt-6 border-b border-ink-3" />
-            <p className="mt-2 text-xs text-ink-3">Title</p>
+            <p className="mt-6 text-xs text-ink-3">
+              By: ______________________________ Date: ____________
+            </p>
+            <p className="mt-4 text-xs text-ink-3">Name/Title: ______________________________</p>
           </div>
           <div>
             <p className="text-sm font-semibold text-ink">{hotelName}</p>
-            <div className="mt-10 border-b border-ink-3" />
-            <p className="mt-2 text-xs text-ink-3">By (print name and signature)</p>
-            <div className="mt-6 border-b border-ink-3" />
-            <p className="mt-2 text-xs text-ink-3">Title</p>
+            <p className="mt-6 text-xs text-ink-3">
+              By: ______________________________ Date: ____________
+            </p>
+            <p className="mt-4 text-xs text-ink-3">Name/Title: ______________________________</p>
           </div>
         </div>
       </section>
 
       {/* El Exhibit «A» arranca en su propia hoja al imprimir. */}
       <section className="mt-10 break-before-page">
-        <h4 className="text-center text-sm font-bold text-ink underline">Exhibit “A”</h4>
+        <h4 className="text-center text-sm font-bold text-ink uppercase underline">
+          Exhibit “A” - Rates and Staffing Terms
+        </h4>
         <p className="mt-4 text-xs leading-relaxed text-ink-3">{EXHIBIT_HEADER}</p>
 
         <div className="mt-6 text-center">
@@ -218,9 +215,9 @@ export function ContractDocument({
 
         {terms && (
           <p className="mt-3 text-xs leading-relaxed text-ink-3">
-            Overtime: {terms.overtime.bill.toFixed(2)}× bill rate and{' '}
-            {terms.overtime.pay.toFixed(2)}× pay rate. Holidays: {terms.holiday.bill.toFixed(2)}×
-            bill rate and {terms.holiday.pay.toFixed(2)}× pay rate.
+            Overtime: billed in accordance with Section 5 — {terms.overtime.bill.toFixed(2)}× bill
+            rate and {terms.overtime.pay.toFixed(2)}× pay rate. Holidays:{' '}
+            {terms.holiday.bill.toFixed(2)}× bill rate and {terms.holiday.pay.toFixed(2)}× pay rate.
           </p>
         )}
 
@@ -231,17 +228,21 @@ export function ContractDocument({
         )}
 
         <p className="mt-6 text-center text-sm font-bold text-ink">
-          I AGREE TO THE RATES IN THIS EXHIBIT “A”
+          I AGREE TO THE RATES AND TERMS IN THIS EXHIBIT “A”
         </p>
 
         <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2">
           <div>
-            <div className="border-b border-ink-3" />
-            <p className="mt-2 text-xs text-ink-3">Signature · {hotelName}</p>
+            <p className="text-xs font-semibold text-ink">Company Representative:</p>
+            <p className="mt-6 text-xs text-ink-3">
+              Name &amp; Signature: ______________________________ Date: __________
+            </p>
           </div>
           <div>
-            <div className="border-b border-ink-3" />
-            <p className="mt-2 text-xs text-ink-3">Signature · {PROVIDER}</p>
+            <p className="text-xs font-semibold text-ink">Service Provider Representative:</p>
+            <p className="mt-6 text-xs text-ink-3">
+              Name &amp; Signature: ______________________________ Date: __________
+            </p>
           </div>
         </div>
       </section>
