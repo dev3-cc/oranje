@@ -21,6 +21,13 @@ export interface PoolWorker {
   hasTaxId: boolean
   createdAt: string
   isBlacklisted: boolean
+  /** Dónde está trabajando hoy (asignación ACTIVA más reciente); null sin ninguna. */
+  assignment: {
+    requisitionId: string
+    requisitionNumber: string
+    hotelId: string
+    hotelName: string
+  } | null
 }
 
 export interface WorkerPool {

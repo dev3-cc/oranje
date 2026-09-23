@@ -103,7 +103,7 @@ export class TimesheetsService {
     const qrVersion = this.assertEvidence(dto, assignment)
 
     const now = new Date()
-    const { dayId, status, ensure } = await this.openDay(assignment, now)
+    const { dayId, status, ensure } = await this.openDay(assignment, now, user.id)
 
     this.assertEditable(status)
     await this.assertMinGap(dayId, now)
@@ -146,7 +146,7 @@ export class TimesheetsService {
 
   async manualPunch(dto: CreateManualPunchDto, user: AuthenticatedUser): Promise<PunchResult> {
     const assignment = await this.assignment(dto.assignmentId)
-    const { dayId, status, ensure } = await this.openDay(assignment, dto.workDate)
+    const { dayId, status, ensure } = await this.openDay(assignment, dto.workDate, user.id)
 
     this.assertEditable(status)
 
@@ -382,15 +382,13 @@ export class TimesheetsService {
   private async openDay(
     assignment: AssignmentContext,
     when: Date,
+    userId: string,
   ): Promise<{ dayId: string | null; status: string; ensure: EnsureDayParams }> {
-    const schedule = await this.repo.scheduleOf(assignment.hotelId, when)
-
-    if (!schedule) {
-      throw new UnprocessableEntityException({
-        code: 'SCHEDULE_MISSING',
-        message: 'El hotel no tiene Schedule para esa semana',
-      })
-    }
+    // Beta «Ponche por Horario» (fecha indefinida): antes, sin Schedule de la
+    // semana el ponche se rechazaba (SCHEDULE_MISSING) y alguien tenía que
+    // «Agregar turno» a mano primero. Ahora la semana se abre sola — lo que
+    // respalda el ponche es el Horario de la posición, no un turno planeado.
+    const schedule = await this.repo.ensureSchedule(assignment.hotelId, when, userId)
 
     const workDate = new Date(`${when.toISOString().slice(0, 10)}T00:00:00Z`)
 

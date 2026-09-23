@@ -40,6 +40,8 @@ const profile: MyProfile = {
   email: 'rnavarro@oranjepeople.com',
   isBlacklisted: false,
   createdAt: isoDaysAgo(1),
+  /** Todavía en Blanco: sin asignación. */
+  assignment: null,
   taxDeadline: {
     status: 'OK',
     day: 2,

@@ -75,6 +75,7 @@ function buildWorker(input: {
   isProfileComplete?: boolean
   isBlacklisted?: boolean
   email?: string
+  assignment?: WorkerApi['assignment']
 }): WorkerApi {
   workerSequence += 1
   return {
@@ -104,6 +105,7 @@ function buildWorker(input: {
     email: input.email ?? null,
     isBlacklisted: input.isBlacklisted ?? false,
     createdAt: '2026-08-01T12:00:00.000Z',
+    assignment: input.assignment ?? null,
   }
 }
 
@@ -125,6 +127,12 @@ const workers: WorkerApi[] = [
     positionId: 'pos-hm',
     modalityId: 'mod-ft',
     state: 'ORANGE',
+    assignment: {
+      requisitionId: 'req-0001',
+      requisitionNumber: '202608010900AB',
+      hotelId: 'hotel-1',
+      hotelName: 'Home2 Suites by Hilton Cartersville',
+    },
   }),
   buildWorker({
     fullName: 'María Fernanda Ortiz',

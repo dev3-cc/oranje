@@ -104,21 +104,61 @@ export class TimesheetsRepository {
   // El turno de HOY de un colaborador, con la fecha LOCAL DEL HOTEL: a las
   // 23:00 en Cancun ya es el dia siguiente en UTC, y el turno se buscaria mal.
   //
-  // Devuelve todos los del dia y no el primero: RR-05 impide dos turnos que se
-  // encimen por horas, pero no dos en el mismo dia — quien decide que hacer con
-  // eso es el servicio.
+  // Beta «Ponche por Horario» (fecha indefinida, Reglas de Negocio): ya no se
+  // resuelve por operations.schedule_entry (nadie lo planea) sino por la
+  // asignación ACTIVA cuya posición ya empezó — el Horario de la posición es
+  // lo que hoy respalda el ponche, no un turno capturado a mano.
+  //
+  // Devuelve todas las que apliquen y no la primera: dos asignaciones activas
+  // el mismo día siguen siendo posibles (otro hotel, por ejemplo) — quien
+  // decide que hacer con eso es el servicio.
   async shiftsToday(workerId: string): Promise<Array<{ assignmentId: string }>> {
     return this.prisma.$queryRaw<Array<{ assignmentId: string }>>`
-      SELECT e.assignment_id AS "assignmentId"
-        FROM operations.schedule_entry e
-        JOIN coverage.assignment a  ON a.id = e.assignment_id
+      SELECT a.id AS "assignmentId"
+        FROM coverage.assignment a
         JOIN demand.slot s          ON s.id = a.slot_id
         JOIN demand."position" p    ON p.id = s.position_id
         JOIN demand.requisition r   ON r.id = p.requisition_id
         JOIN commercial.hotel h     ON h.id = r.hotel_id
-       WHERE e.worker_id = ${workerId}::uuid
-         AND e.work_date = (now() AT TIME ZONE h.time_zone)::date
-       ORDER BY lower(e.shift_range)`
+       WHERE a.worker_id = ${workerId}::uuid
+         AND a.status = 'ACTIVE'
+         AND p.start_time IS NOT NULL
+         AND p.start_date <= (now() AT TIME ZONE h.time_zone)::date
+       ORDER BY a.id`
+  }
+
+  // Crea la semana (lunes a domingo, hora local del hotel) si todavía no
+  // existe — antes de la beta, esto lo hacía un humano con «Agregar turno»;
+  // ahora abrir el día lo dispara solo. `ON CONFLICT DO NOTHING` + relectura
+  // absorbe la carrera de dos marcas simultáneas del mismo hotel.
+  async ensureSchedule(
+    hotelId: string,
+    when: Date,
+    userId: string,
+  ): Promise<{ id: string; weekStart: Date; weekEnd: Date }> {
+    const existing = await this.scheduleOf(hotelId, when)
+    if (existing) return existing
+
+    const id = uuidv7()
+
+    await this.prisma.$executeRaw`
+      INSERT INTO operations.schedule (id, hotel_id, week_start, week_end, created_by)
+      SELECT ${id}::uuid,
+             h.id,
+             date_trunc('week', (${when}::timestamptz AT TIME ZONE h.time_zone))::date,
+             date_trunc('week', (${when}::timestamptz AT TIME ZONE h.time_zone))::date + 6,
+             ${userId}::uuid
+        FROM commercial.hotel h
+       WHERE h.id = ${hotelId}::uuid
+      ON CONFLICT (hotel_id, week_start) DO NOTHING`
+
+    const created = await this.scheduleOf(hotelId, when)
+
+    if (!created) {
+      throw new Error('No se pudo abrir la semana del Schedule')
+    }
+
+    return created
   }
 
   async assignment(id: string): Promise<AssignmentContext | null> {

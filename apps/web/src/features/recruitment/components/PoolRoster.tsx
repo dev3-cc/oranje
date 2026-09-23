@@ -179,6 +179,18 @@ export function PoolRoster({
                     <MaterialIcon name="badge" className="text-base" aria-hidden />
                     {selected.catalogPosition === '—' ? t`Sin posición` : selected.catalogPosition}
                   </span>
+                  {selected.assignment && (
+                    <Link
+                      to={`/requisitions/${selected.assignment.requisitionId}`}
+                      className="inline-flex items-center gap-1.5 text-ink-2 hover:text-o-700 hover:underline"
+                    >
+                      <MaterialIcon name="assignment_ind" className="text-base" aria-hidden />
+                      <Trans>
+                        Asignado en {selected.assignment.hotelName} ·{' '}
+                        {selected.assignment.requisitionNumber}
+                      </Trans>
+                    </Link>
+                  )}
                 </p>
                 {/* Las EXCEPCIONES hablan; lo que está bien no se anuncia. */}
                 {(!selected.isProfileComplete || !selected.hasTaxId || !selected.hasAccount) && (
