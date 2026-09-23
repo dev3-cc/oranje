@@ -59,7 +59,22 @@ describe('SchedulePage', () => {
     expect(screen.getAllByText('Ana Rivera Gómez').length).toBeGreaterThan(0)
   })
 
-  it('Agregar turno abre el diálogo con a quién, día y horario — antes solo por API', async () => {
+  it('beta «Ponche por Horario»: nadie planea turnos a mano, el botón no aparece', async () => {
+    renderSchedule()
+
+    await screen.findByText(/Villas Coral · Semana /)
+    expect(screen.queryByRole('button', { name: 'Agregar turno' })).not.toBeInTheDocument()
+  })
+
+  /*
+   * Los dos siguientes cubren el diálogo `AddShiftDialog` (a quién, día,
+   * horario, validación) y quedan en `.skip` mientras `SCHEDULE_CREATION_ENABLED`
+   * sea `false` en SchedulePage.tsx — el botón que los dispara está oculto a
+   * propósito (beta «Ponche por Horario», fecha indefinida), no borrado.
+   * Reactivarlos es volver a poner `SCHEDULE_CREATION_ENABLED = true` ahí y
+   * quitar `.skip` aquí.
+   */
+  it.skip('Agregar turno abre el diálogo con a quién, día y horario — antes solo por API', async () => {
     const user = userEvent.setup()
     renderSchedule()
 
@@ -74,7 +89,7 @@ describe('SchedulePage', () => {
     expect(screen.getByRole('button', { name: 'Agregar turno' })).toBeDisabled()
   })
 
-  it('Agregar turno ofrece a quién elegir — gente con asignación activa en la demanda del hotel', async () => {
+  it.skip('Agregar turno ofrece a quién elegir — gente con asignación activa en la demanda del hotel', async () => {
     const user = userEvent.setup()
     renderSchedule()
 

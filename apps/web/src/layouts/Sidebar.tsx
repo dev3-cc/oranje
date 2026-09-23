@@ -105,7 +105,11 @@ const MODULES: NavModule[] = [
     roles: RECLUTAMIENTO,
   },
   { label: msg`Blacklist`, to: '/blacklist', icon: 'block', roles: RECLUTAMIENTO },
-  { label: msg`Schedule`, to: '/schedule', icon: 'calendar_month', roles: HOTEL },
+  /* Beta «Ponche por Horario» (fecha indefinida, Reglas de Negocio, 2026-09-23):
+     nadie planea turnos a mano y la pantalla ya no tiene entradas propias que
+     mostrar — el Timesheet ya dice quién ponchó. `roles: []` oculta el enlace
+     sin borrar el módulo; revertir es volver a `roles: HOTEL`. */
+  { label: msg`Schedule`, to: '/schedule', icon: 'calendar_month', roles: [] },
   { label: msg`Timesheet`, to: '/timesheet', icon: 'schedule', roles: HOTEL },
   {
     label: msg`Timesheet Global`,

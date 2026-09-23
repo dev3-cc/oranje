@@ -327,6 +327,13 @@ export interface WorkerApi {
   email: string | null
   isBlacklisted: boolean
   createdAt: string
+  /** Dónde está trabajando hoy (asignación ACTIVA más reciente); null sin ninguna. */
+  assignment: {
+    requisitionId: string
+    requisitionNumber: string
+    hotelId: string
+    hotelName: string
+  } | null
 }
 
 /** Una fila de `GET /workers/:id/history` — `personal.worker_state_history`. */
