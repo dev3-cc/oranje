@@ -38,6 +38,7 @@ function toPoolWorker(worker: WorkerApi): PoolWorker {
     hasTaxId: worker.hasTaxId,
     createdAt: worker.createdAt,
     isBlacklisted: worker.isBlacklisted,
+    assignment: worker.assignment,
   }
 }
 
