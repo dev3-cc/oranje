@@ -113,6 +113,7 @@ async function requisicion(user: AuthenticatedUser, hotelId: string): Promise<st
           hotelDepartmentId: departmentId,
           quantity: 1,
           startDate: new Date(Date.now() + 7 * 86_400_000),
+          startTime: '07:00',
         },
       ],
     },

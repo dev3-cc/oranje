@@ -87,6 +87,46 @@ export class SchedulesRepository {
        ORDER BY e.work_date, lower(e.shift_range)`
   }
 
+  // Beta «Ponche por Horario» (fecha indefinida): sin nadie planeando turnos,
+  // el Inicio del Colaborador ya no tiene de dónde sacar «el turno de hoy» —
+  // se sintetiza aquí desde la asignación ACTIVA y el Horario de su posición.
+  // Sin hora de fin (la posición no la captura), `endsAt` viaja null: el front
+  // no inventa un rango, solo muestra la hora de entrada.
+  async virtualShiftToday(workerId: string): Promise<
+    Array<{
+      assignmentId: string
+      workDate: Date
+      startsAt: Date
+      hotelName: string
+      hotelPhotoRef: string | null
+      hotelTimeZone: string
+      hotelPunchMethod: string
+      positionName: string
+    }>
+  > {
+    return this.prisma.$queryRaw`
+      SELECT a.id                       AS "assignmentId",
+             (now() AT TIME ZONE h.time_zone)::date AS "workDate",
+             (((now() AT TIME ZONE h.time_zone)::date + p.start_time)
+               AT TIME ZONE h.time_zone) AS "startsAt",
+             h.name                     AS "hotelName",
+             h.photo_ref                AS "hotelPhotoRef",
+             h.time_zone                AS "hotelTimeZone",
+             h.punch_method             AS "hotelPunchMethod",
+             cp.name                    AS "positionName"
+        FROM coverage.assignment a
+        JOIN demand.slot s          ON s.id = a.slot_id
+        JOIN demand.position p      ON p.id = s.position_id
+        JOIN catalogs.position cp   ON cp.id = p.catalog_position_id
+        JOIN demand.requisition r   ON r.id = p.requisition_id
+        JOIN commercial.hotel h     ON h.id = r.hotel_id
+       WHERE a.worker_id = ${workerId}::uuid
+         AND a.status = 'ACTIVE'
+         AND p.start_time IS NOT NULL
+         AND p.start_date <= (now() AT TIME ZONE h.time_zone)::date
+       ORDER BY a.id`
+  }
+
   async hotel(id: string): Promise<{ id: string; timeZone: string } | null> {
     return this.prisma.hotel.findUnique({ where: { id }, select: { id: true, timeZone: true } })
   }

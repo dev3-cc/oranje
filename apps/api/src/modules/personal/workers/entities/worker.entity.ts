@@ -26,4 +26,11 @@ export interface WorkerEntity {
   email: string | null
   isBlacklisted: boolean
   createdAt: string
+  /// La asignación ACTIVA más reciente: dónde está trabajando hoy. Null sin ninguna.
+  assignment: {
+    requisitionId: string
+    requisitionNumber: string
+    hotelId: string
+    hotelName: string
+  } | null
 }

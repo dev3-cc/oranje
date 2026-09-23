@@ -307,7 +307,14 @@ describe('ponchar sin conocer la asignación', () => {
   it('sin turno hoy responde NO_SHIFT_TODAY', async () => {
     const t = await turnoDeHoy(`punch-sin-${Date.now()}`)
 
-    await db.scheduleEntry.deleteMany({ where: { workerId: t.workerId } })
+    // Beta «Ponche por Horario»: el turno de hoy ya no depende de
+    // schedule_entry, sino de que la posición ya haya empezado. Sin eso, no
+    // hay con qué ponchar.
+    await db.$executeRaw`
+      UPDATE demand.position p
+         SET start_date = current_date + 1
+        FROM demand.slot s, coverage.assignment a
+       WHERE a.id = ${t.assignmentId}::uuid AND a.slot_id = s.id AND s.position_id = p.id`
 
     await expect(
       timesheets.punch(
@@ -320,6 +327,29 @@ describe('ponchar sin conocer la asignación', () => {
         t.user,
       ),
     ).rejects.toMatchObject({ response: { code: 'NO_SHIFT_TODAY' } })
+  })
+
+  it('sin Schedule de la semana, se abre solo al ponchar (beta Horario)', async () => {
+    const t = await turnoDeHoy(`punch-auto-${Date.now()}`)
+
+    const before = await db.schedule.findFirstOrThrow({ where: { hotelId: t.hotelId } })
+    await db.scheduleEntry.deleteMany({ where: { scheduleId: before.id } })
+    await db.schedule.delete({ where: { id: before.id } })
+
+    const result = await timesheets.punch(
+      {
+        type: 'CLOCK_IN',
+        latitude: 21.16,
+        longitude: -86.85,
+        photoPath: 'operations/punch/x.webp',
+      } as never,
+      t.user,
+    )
+    expect(result).toBeTruthy()
+
+    const after = await db.schedule.findFirstOrThrow({ where: { hotelId: t.hotelId } })
+    expect(after.id).not.toBe(before.id)
+    schedulesCreated.push(after.id)
   })
 
   it('no puede ponchar la asignación de otro', async () => {
