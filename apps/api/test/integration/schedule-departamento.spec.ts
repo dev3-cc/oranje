@@ -98,6 +98,7 @@ async function asignacion(department: string, gm: AuthenticatedUser): Promise<st
           hotelDepartmentId: department,
           quantity: 1,
           startDate: new Date(Date.now() + 7 * 86_400_000),
+          startTime: '07:00',
         },
       ],
     },
