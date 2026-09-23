@@ -255,6 +255,9 @@ export interface RequisitionApi {
   inspectorId: string | null
   /** Quién la elaboró, para la tarjeta del tablero; opcional: encargo al back. */
   createdBy?: { id: string; fullName: string; photoUrl: string | null } | null
+  /** Quién la firmó y el Inspector de la zona; opcionales mientras el API viejo responda. */
+  authorizer?: { id: string; fullName: string; photoUrl: string | null } | null
+  inspector?: { id: string; fullName: string; photoUrl: string | null } | null
   positions: RequisitionPositionApi[]
   totalSlots: number
   filledSlots: number

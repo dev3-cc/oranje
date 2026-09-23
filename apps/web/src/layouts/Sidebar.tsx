@@ -22,6 +22,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router'
 import { useGetSessionQuery, useLogoutMutation, useUpdateMyLocaleMutation } from '@/app/sessionApi'
 import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
 import { LanguageSwitch } from '@/shared/components/LanguageSwitch'
+import { SoundSwitch } from '@/shared/components/SoundSwitch'
 import { roleLabelOf } from '@/shared/constants/roles'
 
 interface NavModule {
@@ -262,6 +263,8 @@ export function Sidebar(): ReactNode {
                 void updateMyLocale(locale)
               }}
             />
+            {/* El sonido se apaga aquí mismo: es del aparato, no de la persona. */}
+            <SoundSwitch className="w-full justify-center" />
           </div>
         </SidebarFooter>
       )}

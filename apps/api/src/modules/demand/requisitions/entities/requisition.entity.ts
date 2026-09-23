@@ -28,6 +28,10 @@ export interface RequisitionEntity {
   hotel: { id: string; name: string; photoUrl: string | null }
   /// Quién la pidió. `photoUrl` va firmada al leer, como en /team.
   createdBy: { id: string; fullName: string; photoUrl: string | null } | null
+  /// Quién la firmó y el Inspector de su zona, con la misma forma que
+  /// `createdBy`: la ficha decía «—» porque solo viajaba el uuid.
+  authorizer: { id: string; fullName: string; photoUrl: string | null } | null
+  inspector: { id: string; fullName: string; photoUrl: string | null } | null
   state: StatusRef
   areaManagerUserId: string | null
   authorizedBy: string | null

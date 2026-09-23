@@ -1805,7 +1805,6 @@ msgid "Cambiando…"
 msgstr "Cambiando…"
 
 #: src/features/admin/components/UserFormDialog.tsx
-#: src/features/recruitment/components/CreateWorkerDialog.tsx
 #: src/features/worker/components/PhotoUploader.tsx
 msgid "Cambiar"
 msgstr "Cambiar"
@@ -5661,10 +5660,6 @@ msgid "Las cuentas de cada hotel: Supervisores, Managers de Área y Managers Gen
 msgstr "Las cuentas de cada hotel: Supervisores, Managers de Área y Managers Generales."
 
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
-msgid "Las defines tú en la entrevista; el candidato no las declara"
-msgstr "Las defines tú en la entrevista; el candidato no las declara"
-
-#: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Las defines tú en la entrevista; el candidato no las declara."
 msgstr "Las defines tú en la entrevista; el candidato no las declara."
 
@@ -5812,6 +5807,10 @@ msgstr "Lista de verificación"
 #: src/features/conversion/pages/ConversionQueuePage.tsx
 msgid "Listo para aprobar"
 msgstr "Listo para aprobar"
+
+#: src/features/recruitment/components/ProfileProgressAvatar.tsx
+msgid "Listo para asignar"
+msgstr "Listo para asignar"
 
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "Listo: tu expediente quedó completo. La Reclutadora lo validará"
@@ -6610,6 +6609,10 @@ msgstr "No"
 msgid "No contestó"
 msgstr "No contestó"
 
+#: src/features/recruitment/components/ProfileProgressAvatar.tsx
+msgid "No disponible por su estado"
+msgstr "No disponible por su estado"
+
 #: src/features/conversion/api/conversionApi.ts
 msgid "No existe, y el contacto principal no tiene correo: agrégaselo para poder crearlo"
 msgstr "No existe, y el contacto principal no tiene correo: agrégaselo para poder crearlo"
@@ -7331,10 +7334,6 @@ msgid "Opcional: en una visita en frío puedes no encontrar a nadie"
 msgstr "Opcional: en una visita en frío puedes no encontrar a nadie"
 
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
-msgid "Opcional: lo completa el colaborador desde su app, pero si ya lo tienes, captúralo aquí y podrás validarlo sin esperar"
-msgstr "Opcional: lo completa el colaborador desde su app, pero si ya lo tienes, captúralo aquí y podrás validarlo sin esperar"
-
-#: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Opcional: lo completa el colaborador desde su app, pero si ya lo tienes, captúralo aquí y podrás validarlo sin esperar."
 msgstr "Opcional: lo completa el colaborador desde su app, pero si ya lo tienes, captúralo aquí y podrás validarlo sin esperar."
 
@@ -7478,6 +7477,10 @@ msgstr "Para convertir a Naranja primero debe existir el Usuario del Hotel: cré
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Para crear: {0}."
 msgstr "Para crear: {0}."
+
+#: src/features/recruitment/components/ProfileProgressAvatar.tsx
+msgid "Para poder asignarlo falta capturar en la entrevista: {missingNames}"
+msgstr "Para poder asignarlo falta capturar en la entrevista: {missingNames}"
 
 #: src/features/requisitions/utils/coverage.ts
 msgid "parcial"
@@ -8765,6 +8768,10 @@ msgstr "Sigues en Blanco hasta que la Reclutadora valide el alta"
 msgid "Siguiente paso: activar el contrato"
 msgstr "Siguiente paso: activar el contrato"
 
+#: src/shared/components/SoundSwitch.tsx
+msgid "Silencio"
+msgstr "Silencio"
+
 #: src/features/recruitment/components/PoolRoster.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Sin acceso a la app"
@@ -9228,6 +9235,20 @@ msgstr "Solo un contrato vigente se puede marcar expirado."
 msgid "Soltar en: {0}"
 msgstr "Soltar en: {0}"
 
+#: src/shared/components/SoundSwitch.tsx
+msgid "Sonido"
+msgstr "Sonido"
+
+#: src/features/worker/components/MobileShell.tsx
+#: src/shared/components/SoundSwitch.tsx
+msgid "Sonido apagado"
+msgstr "Sonido apagado"
+
+#: src/features/worker/components/MobileShell.tsx
+#: src/shared/components/SoundSwitch.tsx
+msgid "Sonido encendido"
+msgstr "Sonido encendido"
+
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 #: src/features/worker/pages/Phase2Page.tsx
 #: src/features/worker/pages/ProfilePage.tsx
@@ -9272,8 +9293,8 @@ msgid "Su semana aún no da para medir"
 msgstr "Su semana aún no da para medir"
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
-msgid "Sube y verifica los documentos del Expediente"
-msgstr "Sube y verifica los documentos del Expediente"
+msgid "Sube y verifica los documentos del perfil"
+msgstr "Sube y verifica los documentos del perfil"
 
 #: src/features/admin/components/UserFormDialog.tsx
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
@@ -9706,10 +9727,6 @@ msgstr "Transporte y salud"
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Transporte y tipo de sangre"
 msgstr "Transporte y tipo de sangre"
-
-#: src/features/recruitment/components/CreateWorkerDialog.tsx
-msgid "Transporte, emergencia y salud"
-msgstr "Transporte, emergencia y salud"
 
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Transporte, emergencia y salud — opcional"
@@ -10147,11 +10164,6 @@ msgstr "Ver en Clientes Activos"
 msgid "Ver expediente"
 msgstr "Ver expediente"
 
-#: src/features/personnel/pages/PersonnelPage.tsx
-#: src/features/recruitment/components/PoolRoster.tsx
-msgid "Ver Expediente"
-msgstr "Ver Expediente"
-
 #: src/features/contracts/pages/ContractListPage.tsx
 msgid "Ver los contratos"
 msgstr "Ver los contratos"
@@ -10163,6 +10175,11 @@ msgstr "Ver Mi Equipo"
 #: src/features/contracts/components/ContractPdfButton.tsx
 msgid "Ver PDF"
 msgstr "Ver PDF"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+#: src/features/recruitment/components/PoolRoster.tsx
+msgid "Ver perfil"
+msgstr "Ver perfil"
 
 #: src/features/observability/components/DepartmentMetricsGrid.tsx
 msgid "Ver Pipeline"
