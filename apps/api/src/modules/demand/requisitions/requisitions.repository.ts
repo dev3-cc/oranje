@@ -22,6 +22,8 @@ const SELECT = {
   updatedAt: true,
   hotel: { select: { id: true, name: true, photoRef: true, zoneId: true } },
   creator: { select: { id: true, fullName: true, photoPath: true } },
+  authorizer: { select: { id: true, fullName: true, photoPath: true } },
+  inspector: { select: { id: true, fullName: true, photoPath: true } },
   statusState: { select: STATUS },
   positions: {
     where: { deletedAt: null },
