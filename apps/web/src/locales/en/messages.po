@@ -206,6 +206,12 @@ msgstr "{0, plural, one {Add contact} other {Add # contacts}}"
 msgid "{0, plural, one {Contacto agregado} other {# contactos agregados}}"
 msgstr "{0, plural, one {Contact added} other {# contacts added}}"
 
+#. placeholder {0}: formatTimeIn(shift.startsAt, shift.hotelTimeZone)
+#. placeholder {1}: formatTimeIn(shift.endsAt, shift.hotelTimeZone)
+#: src/features/worker/pages/HomePage.tsx
+msgid "{0} – {1}"
+msgstr "{0} – {1}"
+
 #. placeholder {0}: block.start
 #. placeholder {1}: block.end
 #. placeholder {2}: block.people.length
@@ -266,6 +272,12 @@ msgstr "{0} · bill {1}"
 #: src/features/schedule/pages/SchedulePage.tsx
 msgid "{0} · demanda {1}"
 msgstr "{0} · demand {1}"
+
+#. placeholder {0}: shift.position
+#. placeholder {1}: formatTimeIn(shift.startsAt, shift.hotelTimeZone)
+#: src/features/worker/pages/PunchPage.tsx
+msgid "{0} · desde {1}"
+msgstr "{0} · from {1}"
 
 #. placeholder {0}: entry.requisitionNumber ?? t`Sin folio`
 #: src/features/timesheet/components/TimesheetGrid.tsx
@@ -1196,6 +1208,12 @@ msgstr "Assignments, shift changes and reminders arrive in Notices. Check them e
 #: src/features/requisitions/components/SlotList.tsx
 msgid "Asignado {0}"
 msgstr "Assigned {0}"
+
+#. placeholder {0}: selected.assignment.hotelName
+#. placeholder {1}: selected.assignment.requisitionNumber
+#: src/features/recruitment/components/PoolRoster.tsx
+msgid "Asignado en {0} · {1}"
+msgstr "Assigned at {0} · {1}"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "Asignados hoy"
@@ -2888,6 +2906,11 @@ msgstr "From"
 #: src/features/contracts/components/ContractCardGrid.tsx
 msgid "desde {0}"
 msgstr "from {0}"
+
+#. placeholder {0}: formatTimeIn(shift.startsAt, shift.hotelTimeZone)
+#: src/features/worker/pages/HomePage.tsx
+msgid "Desde {0}"
+msgstr "From {0}"
 
 #. placeholder {0}: ONBOARDING_STATUS_LABEL[currentStatus]
 #. placeholder {1}: i18n._(STATUS_MOVER[currentStatus])
@@ -8532,6 +8555,10 @@ msgstr "Billed at {billRange} per hour"
 #: src/features/contracts/components/RateTable.tsx
 msgid "Se le factura al hotel"
 msgstr "Billed to the hotel"
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Se le paga a esta posición"
+msgstr ""
 
 #: src/features/contracts/components/EditRateDialog.tsx
 #: src/features/contracts/components/MultiplierTable.tsx

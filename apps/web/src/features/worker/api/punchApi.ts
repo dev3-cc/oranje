@@ -32,7 +32,8 @@ export interface MyShiftApi {
   id: string
   workDate: string
   startsAt: string
-  endsAt: string
+  /** `null` en el turno sintético de la beta «Ponche por Horario»: solo hay hora de entrada. */
+  endsAt: string | null
   hotel: string
   position: string
   assignmentId?: string
