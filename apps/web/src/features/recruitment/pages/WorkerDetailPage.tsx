@@ -4,7 +4,6 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import {
   MaterialIcon,
   Select,
-  statusLight,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -26,7 +25,8 @@ import { ChangeStateDialog } from '../components/ChangeStateDialog'
 import { CreateAccessDialog } from '../components/CreateAccessDialog'
 import { CreateWorkerDialog } from '../components/CreateWorkerDialog'
 import { ProfilePendingLabel } from '../components/ProfilePendingLabel'
-import { missingProfile } from '../lib/profileFields'
+import { ProfileProgressAvatar } from '../components/ProfileProgressAvatar'
+import { assignmentReadiness, missingProfile } from '../lib/profileFields'
 
 import { useUploadFileMutation } from '@/app/filesApi'
 import personajeTalento from '@/assets/ilustrations/personaje-talento.svg'
@@ -66,15 +66,6 @@ const DOCUMENT_TYPE_LABEL: Record<string, MessageDescriptor> = {
 /** En dev el historial habla en códigos (documentación viva); en build, en el nombre del estado. */
 function stateName(code: string): string {
   return IS_DEV_UI ? code : (WORKER_STATUS_LABEL[code as WorkerStatus] ?? code)
-}
-
-function initialsOf(fullName: string): string {
-  return fullName
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((word) => word.charAt(0))
-    .join('')
-    .toUpperCase()
 }
 
 function Field({
@@ -240,6 +231,7 @@ export function WorkerDetailPage(): ReactNode {
     phase1: missingPhase1Fields,
     later: missingLaterFields,
   } = missingProfile(worker, i18n)
+  const readiness = assignmentReadiness(worker)
 
   const profileFields = [
     {
@@ -331,22 +323,16 @@ export function WorkerDetailPage(): ReactNode {
         <div aria-hidden className="h-24 bg-gradient-to-r from-o-500/35 via-o-50 to-o-500/15" />
         <div className="flex flex-wrap items-start justify-between gap-4 px-6 pb-5">
           <div>
-            {worker.photoUrl ? (
-              <img
-                src={worker.photoUrl}
-                alt=""
-                style={{ borderColor: statusLight[WORKER_STATUS_TOKEN[status]] }}
-                className="-mt-10 size-20 rounded-full border-2 object-cover ring-4 ring-surface"
-              />
-            ) : (
-              <span
-                aria-hidden
-                style={{ borderColor: statusLight[WORKER_STATUS_TOKEN[status]] }}
-                className="-mt-10 flex size-20 items-center justify-center rounded-full border-2 bg-o-50 text-xl font-bold text-o-700 ring-4 ring-surface"
-              >
-                {initialsOf(worker.fullName)}
-              </span>
-            )}
+            {/* El anillo de fuera dice cuánto lleva lleno el expediente; el de
+                dentro sigue siendo el semáforo (Hugo, 2026-09-23). */}
+            <ProfileProgressAvatar
+              fullName={worker.fullName}
+              photoUrl={worker.photoUrl}
+              status={status}
+              readiness={readiness}
+              size={80}
+              className="-mt-10"
+            />
 
             <div className="mt-3 flex flex-wrap items-center gap-2.5">
               <h1 className="text-2xl font-bold text-ink">{worker.fullName}</h1>
@@ -487,9 +473,7 @@ export function WorkerDetailPage(): ReactNode {
           <SectionCard
             title={t`Documentos`}
             subtitle={
-              IS_DEV_UI
-                ? 'personal.worker_document'
-                : t`Sube y verifica los documentos del Expediente`
+              IS_DEV_UI ? 'personal.worker_document' : t`Sube y verifica los documentos del perfil`
             }
           >
             {/* Alta: tipo + archivo. Verificar el SSN/ITIN NO levanta la retención del
