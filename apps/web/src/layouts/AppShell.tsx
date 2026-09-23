@@ -20,6 +20,7 @@ import { selectSessionUser } from '@/app/sessionSlice'
 import { BackgroundBeams } from '@/shared/components/BackgroundBeams'
 import { MascotaPeek } from '@/shared/components/MascotaPeek'
 import { WORKER_ROLE } from '@/shared/constants/roles'
+import { useNavigationSound } from '@/shared/hooks/useNavigationSound'
 import { useVersionWatcher } from '@/shared/hooks/useVersionWatcher'
 import { saveLastRoute } from '@/shared/lib/lastRoute'
 import { MOTION } from '@/shared/lib/motion'
@@ -39,6 +40,9 @@ export function AppShell(): ReactNode {
 
   /** El toast de «hay una versión nueva» cuando el hosting cambia de build. */
   useVersionWatcher()
+
+  /** Un toque al cambiar de pantalla; se apaga desde el interruptor del menú. */
+  useNavigationSound()
 
   /**
    * La página entra CON dirección: avanzar desliza desde la derecha y volver

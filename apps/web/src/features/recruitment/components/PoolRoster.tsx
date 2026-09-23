@@ -11,6 +11,7 @@ import type { PoolWorker } from '../types/pool.types'
 import { ChangeStateDialog } from './ChangeStateDialog'
 import { DeleteWorkerDialog } from './DeleteWorkerDialog'
 import { ProfilePendingLabel } from './ProfilePendingLabel'
+import { ProfileProgressAvatar } from './ProfileProgressAvatar'
 
 import { BackToListButton } from '@/shared/components/BackToListButton'
 import { Button, buttonClass } from '@/shared/components/Button'
@@ -23,40 +24,19 @@ import { rosterDetailClass, rosterListClass, useListDetail } from '@/shared/hook
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate } from '@/shared/lib/formatters'
 
-function initialsOf(fullName: string): string {
-  return fullName
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((word) => word.charAt(0))
-    .join('')
-    .toUpperCase()
-}
-
-/** La cara con el semáforo como anillo — el mismo lenguaje de Mi Personal. */
-function PoolAvatar({ worker, className }: { worker: PoolWorker; className: string }): ReactNode {
-  const ring = statusLight[WORKER_STATUS_TOKEN[worker.status]]
-  if (worker.photoUrl) {
-    return (
-      <img
-        src={worker.photoUrl}
-        alt=""
-        aria-hidden
-        style={{ borderColor: ring }}
-        className={cn('shrink-0 rounded-full border-2 object-cover', className)}
-      />
-    )
-  }
+/**
+ * La cara con sus dos anillos: el semáforo pegado a la foto y, por fuera,
+ * cuánto lleva lleno el expediente (`ProfileProgressAvatar`).
+ */
+function PoolAvatar({ worker, size }: { worker: PoolWorker; size: number }): ReactNode {
   return (
-    <span
-      aria-hidden
-      style={{ borderColor: ring }}
-      className={cn(
-        'flex shrink-0 items-center justify-center rounded-full border-2 bg-o-500/15 font-bold text-o-700',
-        className,
-      )}
-    >
-      {initialsOf(worker.fullName)}
-    </span>
+    <ProfileProgressAvatar
+      fullName={worker.fullName}
+      photoUrl={worker.photoUrl}
+      status={worker.status}
+      readiness={worker.readiness}
+      size={size}
+    />
   )
 }
 
@@ -141,7 +121,7 @@ export function PoolRoster({
                     : 'border-line bg-surface hover:bg-surface-2',
                 )}
               >
-                <PoolAvatar worker={worker} className="size-11 text-sm" />
+                <PoolAvatar worker={worker} size={40} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-semibold text-ink">
                     {worker.fullName}
@@ -176,7 +156,7 @@ export function PoolRoster({
           <BackToListButton onClick={backToList} />
           <header className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex items-center gap-4">
-              <PoolAvatar worker={selected} className="size-16 text-xl" />
+              <PoolAvatar worker={selected} size={60} />
               <div>
                 <div className="flex flex-wrap items-center gap-2.5">
                   <h2 className="text-2xl font-bold text-ink">{selected.fullName}</h2>
@@ -251,7 +231,7 @@ export function PoolRoster({
                 to={`/collaborator-pool/${selected.id}`}
                 className={buttonClass(canValidate ? 'secondary' : 'primary')}
               >
-                <Trans>Ver Expediente</Trans>
+                <Trans>Ver perfil</Trans>
               </Link>
               {/* La acción del Pool es mover el semáforo (validar el alta), así
                   que es la primaria; el expediente pasa a secundaria. Un solo
