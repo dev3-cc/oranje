@@ -34,6 +34,10 @@ type FetchWithBQ = (
   args: string | { url: string; method?: string; body?: unknown; params?: Record<string, unknown> },
 ) => Promise<{ data?: unknown; error?: unknown }>
 
+/* Cuando el API todavía no trae a la persona (una revisión anterior), el guion
+   es honesto: no se sabe quién. Con el API al día siempre llega el nombre. */
+const UNKNOWN_PERSON = '—'
+
 const URGENCY_RANK: Record<string, number> = { RED: 0, YELLOW: 1, STRONG_GREEN: 2 }
 
 function worstUrgency(requisition: RequisitionApi): UrgencyLevel {
@@ -132,7 +136,7 @@ function toDetail(requisition: RequisitionApi, assignments: AssignmentApi[]): Re
             fromStatus: 'APPLE_GREEN' as RequisitionStatus,
             toStatus: 'GREEN' as RequisitionStatus,
             action: msg`Autorizada`,
-            byName: '—',
+            byName: requisition.authorizer?.fullName ?? UNKNOWN_PERSON,
             at: requisition.authorizedAt,
           },
         ]
@@ -143,7 +147,7 @@ function toDetail(requisition: RequisitionApi, assignments: AssignmentApi[]): Re
       toStatus: 'APPLE_GREEN' as RequisitionStatus,
       action: msg`Creada`,
       /* Quien la creó ES el autor de este evento; el dato ya venía (D-30). */
-      byName: requisition.createdBy?.fullName ?? '—',
+      byName: requisition.createdBy?.fullName ?? UNKNOWN_PERSON,
       at: requisition.createdAt,
     },
   ]
@@ -154,11 +158,13 @@ function toDetail(requisition: RequisitionApi, assignments: AssignmentApi[]): Re
     hotelName: requisition.hotel.name,
     department: rowDepartment(requisition),
     status: requisition.state.code as RequisitionStatus,
-    createdByName: requisition.createdBy?.fullName ?? '—',
+    createdByName: requisition.createdBy?.fullName ?? UNKNOWN_PERSON,
     createdAt: requisition.createdAt,
-    authorizedByName: requisition.authorizedAt ? '—' : null,
+    authorizedByName: requisition.authorizedAt
+      ? (requisition.authorizer?.fullName ?? UNKNOWN_PERSON)
+      : null,
     authorizedAt: requisition.authorizedAt,
-    inspectorName: '—',
+    inspectorName: requisition.inspector?.fullName ?? UNKNOWN_PERSON,
     hotelPhotoUrl: requisition.hotel.photoUrl ?? null,
     totals: {
       positionCount: positions.length,

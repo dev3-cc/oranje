@@ -10,7 +10,7 @@ import {
   MaterialIcon,
 } from '@oranje/ui'
 import { motion, useReducedMotion } from 'framer-motion'
-import { useRef, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 
 import { useGetMyNotificationsQuery, useGetMyProfileQuery } from '../api/workerApi'
@@ -24,7 +24,9 @@ import { useLogoutMutation, useUpdateMyLocaleMutation } from '@/app/sessionApi'
 import { selectSessionUser } from '@/app/sessionSlice'
 import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
 import { WORKER_ROLE } from '@/shared/constants/roles'
+import { useNavigationSound } from '@/shared/hooks/useNavigationSound'
 import { MOTION, SPRING } from '@/shared/lib/motion'
+import { isSoundOn, playSound, setSoundOn } from '@/shared/lib/sound'
 
 /** Webmail del buzón corporativo (cPanel de oranjepeople.com). */
 const WEBMAIL_URL = 'https://webmail.oranjepeople.com/logout/?locale=en'
@@ -72,6 +74,10 @@ export function MobileShell(): ReactNode {
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation()
   const [updateMyLocale] = useUpdateMyLocaleMutation()
   const { t, i18n } = useLingui()
+  const [soundOn, setSoundOnState] = useState(isSoundOn)
+
+  /** El mismo toque al cambiar de pestaña que en el escritorio. */
+  useNavigationSound()
 
   /*
    * La dirección se decide UNA vez por cambio de ruta y se recuerda: los
@@ -234,6 +240,25 @@ export function MobileShell(): ReactNode {
                   {LOCALE_LABEL[locale]}
                 </DropdownMenuItem>
               ))}
+              <DropdownMenuSeparator />
+              {/* El sonido, junto al idioma: las dos son preferencias de quien usa el teléfono. */}
+              <DropdownMenuItem
+                onSelect={(event) => {
+                  /* El menú no se cierra: así se oye el cambio y se puede deshacer. */
+                  event.preventDefault()
+                  const next = !soundOn
+                  setSoundOnState(next)
+                  setSoundOn(next)
+                  if (next) playSound('navigate')
+                }}
+              >
+                <MaterialIcon
+                  name={soundOn ? 'volume_up' : 'volume_off'}
+                  className="text-lg"
+                  aria-hidden
+                />
+                {soundOn ? <Trans>Sonido encendido</Trans> : <Trans>Sonido apagado</Trans>}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 disabled={isLoggingOut}

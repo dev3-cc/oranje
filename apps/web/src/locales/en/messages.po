@@ -1787,7 +1787,6 @@ msgid "Cambiando…"
 msgstr "Changing…"
 
 #: src/features/admin/components/UserFormDialog.tsx
-#: src/features/recruitment/components/CreateWorkerDialog.tsx
 #: src/features/worker/components/PhotoUploader.tsx
 msgid "Cambiar"
 msgstr "Change"
@@ -5638,10 +5637,6 @@ msgid "Las cuentas de cada hotel: Supervisores, Managers de Área y Managers Gen
 msgstr "Each hotel's accounts: Supervisors, Area Managers and General Managers."
 
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
-msgid "Las defines tú en la entrevista; el candidato no las declara"
-msgstr "You set these in the interview; the candidate doesn't declare them"
-
-#: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Las defines tú en la entrevista; el candidato no las declara."
 msgstr "You set these in the interview; the candidate doesn't declare them."
 
@@ -5789,6 +5784,10 @@ msgstr "Checklist"
 #: src/features/conversion/pages/ConversionQueuePage.tsx
 msgid "Listo para aprobar"
 msgstr "Ready to approve"
+
+#: src/features/recruitment/components/ProfileProgressAvatar.tsx
+msgid "Listo para asignar"
+msgstr "Ready to assign"
 
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "Listo: tu expediente quedó completo. La Reclutadora lo validará"
@@ -6587,6 +6586,10 @@ msgstr "Doesn't"
 msgid "No contestó"
 msgstr "No answer"
 
+#: src/features/recruitment/components/ProfileProgressAvatar.tsx
+msgid "No disponible por su estado"
+msgstr "Not available in this status"
+
 #: src/features/conversion/api/conversionApi.ts
 msgid "No existe, y el contacto principal no tiene correo: agrégaselo para poder crearlo"
 msgstr "It doesn't exist, and the main contact has no email: add one so it can be created"
@@ -7308,10 +7311,6 @@ msgid "Opcional: en una visita en frío puedes no encontrar a nadie"
 msgstr "Optional: on a cold visit you may not find anyone"
 
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
-msgid "Opcional: lo completa el colaborador desde su app, pero si ya lo tienes, captúralo aquí y podrás validarlo sin esperar"
-msgstr "Optional: the collaborator completes it from their app, but if you already have it, enter it here and you can validate them without waiting"
-
-#: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Opcional: lo completa el colaborador desde su app, pero si ya lo tienes, captúralo aquí y podrás validarlo sin esperar."
 msgstr "Optional: the collaborator completes it from their app, but if you already have it, enter it here and you can validate them without waiting."
 
@@ -7455,6 +7454,10 @@ msgstr "To convert to Orange the Hotel User must exist first: create it from Con
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Para crear: {0}."
 msgstr "To create it: {0}."
+
+#: src/features/recruitment/components/ProfileProgressAvatar.tsx
+msgid "Para poder asignarlo falta capturar en la entrevista: {missingNames}"
+msgstr "Before assigning, capture in the interview: {missingNames}"
 
 #: src/features/requisitions/utils/coverage.ts
 msgid "parcial"
@@ -8533,6 +8536,10 @@ msgstr "Billed at {billRange} per hour"
 msgid "Se le factura al hotel"
 msgstr "Billed to the hotel"
 
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Se le paga a esta posición"
+msgstr "Paid for this position"
+
 #: src/features/contracts/components/EditRateDialog.tsx
 #: src/features/contracts/components/MultiplierTable.tsx
 #: src/features/contracts/components/RateTable.tsx
@@ -8737,6 +8744,10 @@ msgstr "You stay in White until the Recruiter validates your sign-up"
 #: src/features/contracts/components/ContractNextStep.tsx
 msgid "Siguiente paso: activar el contrato"
 msgstr "Next step: activate the contract"
+
+#: src/shared/components/SoundSwitch.tsx
+msgid "Silencio"
+msgstr "Muted"
 
 #: src/features/recruitment/components/PoolRoster.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
@@ -9201,6 +9212,20 @@ msgstr "Only a contract in force can be marked expired."
 msgid "Soltar en: {0}"
 msgstr "Drop on: {0}"
 
+#: src/shared/components/SoundSwitch.tsx
+msgid "Sonido"
+msgstr "Sound"
+
+#: src/features/worker/components/MobileShell.tsx
+#: src/shared/components/SoundSwitch.tsx
+msgid "Sonido apagado"
+msgstr "Sound off"
+
+#: src/features/worker/components/MobileShell.tsx
+#: src/shared/components/SoundSwitch.tsx
+msgid "Sonido encendido"
+msgstr "Sound on"
+
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 #: src/features/worker/pages/Phase2Page.tsx
 #: src/features/worker/pages/ProfilePage.tsx
@@ -9245,8 +9270,8 @@ msgid "Su semana aún no da para medir"
 msgstr "Their week isn't enough to measure yet"
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
-msgid "Sube y verifica los documentos del Expediente"
-msgstr "Upload and verify the documents in the file"
+msgid "Sube y verifica los documentos del perfil"
+msgstr "Upload and verify the profile's documents"
 
 #: src/features/admin/components/UserFormDialog.tsx
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
@@ -9679,10 +9704,6 @@ msgstr "Transport and health"
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Transporte y tipo de sangre"
 msgstr "Transport and blood type"
-
-#: src/features/recruitment/components/CreateWorkerDialog.tsx
-msgid "Transporte, emergencia y salud"
-msgstr "Transport, emergency and health"
 
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Transporte, emergencia y salud — opcional"
@@ -10120,11 +10141,6 @@ msgstr "See in Active Clients"
 msgid "Ver expediente"
 msgstr "View file"
 
-#: src/features/personnel/pages/PersonnelPage.tsx
-#: src/features/recruitment/components/PoolRoster.tsx
-msgid "Ver Expediente"
-msgstr "View File"
-
 #: src/features/contracts/pages/ContractListPage.tsx
 msgid "Ver los contratos"
 msgstr "See the contracts"
@@ -10136,6 +10152,11 @@ msgstr "View My Team"
 #: src/features/contracts/components/ContractPdfButton.tsx
 msgid "Ver PDF"
 msgstr "View PDF"
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+#: src/features/recruitment/components/PoolRoster.tsx
+msgid "Ver perfil"
+msgstr "View profile"
 
 #: src/features/observability/components/DepartmentMetricsGrid.tsx
 msgid "Ver Pipeline"

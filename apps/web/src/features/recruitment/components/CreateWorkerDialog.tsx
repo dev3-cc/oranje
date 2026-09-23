@@ -394,6 +394,9 @@ export function CreateWorkerDialog({
 
   const initials = initialsOf(draft.fullName)
 
+  /* El tutorial del alta no se asoma al editar — y su ancho angosto tampoco. */
+  const isIntroVisible = showIntro && !isEditing
+
   const missingHint = isEditing
     ? draft.fullName.trim() === ''
       ? t`Falta el nombre completo`
@@ -485,403 +488,15 @@ export function CreateWorkerDialog({
     </p>
   )
 
-  // ---------------------------------------------------------------------
-  // Editar: sin cambios de diseño — una sola pantalla con todos los campos.
-  // ---------------------------------------------------------------------
-  if (isEditing) {
-    return (
-      <Modal
-        isOpen={isOpen}
-        onClose={onClose}
-        title={t`Editar colaborador`}
-        chromeless
-        className="max-w-2xl"
-      >
-        <div className="flex max-h-[calc(100vh-3rem)] flex-col overflow-y-auto">
-          <div className="relative h-36 shrink-0 bg-gradient-to-r from-o-50 via-o-50/70 to-surface-2">
-            <img
-              src={personajeContratacion}
-              alt=""
-              aria-hidden
-              className="absolute right-10 bottom-2 h-32 w-auto"
-            />
-            <button
-              type="button"
-              aria-label={photoPreview ? t`Reemplazar foto` : t`Subir foto`}
-              title={photoPreview ? t`Reemplazar foto` : t`Subir foto`}
-              disabled={isUploading}
-              onClick={() => {
-                photoInputRef.current?.click()
-              }}
-              className="group absolute -bottom-12 left-8 z-10 size-24 cursor-pointer rounded-full border-4 border-surface bg-o-50 shadow-md transition-shadow hover:shadow-lg focus:outline-2 focus:outline-offset-2 focus:outline-o-500 disabled:cursor-wait"
-            >
-              <span className="block size-full overflow-hidden rounded-full">
-                {photoPreview ? (
-                  <img src={photoPreview} alt="" className="size-full object-cover" />
-                ) : initials !== '' ? (
-                  <span
-                    aria-hidden
-                    className="flex size-full items-center justify-center text-2xl font-bold text-o-700"
-                  >
-                    {initials}
-                  </span>
-                ) : (
-                  <span aria-hidden className="flex size-full items-center justify-center">
-                    <MaterialIcon name="photo_camera" className="text-3xl text-o-700" />
-                  </span>
-                )}
-                <span
-                  aria-hidden
-                  className="absolute inset-x-1 bottom-1 rounded-full bg-ink/60 py-0.5 text-center text-[10px] font-semibold text-surface opacity-0 transition-opacity group-hover:opacity-100"
-                >
-                  {isUploading ? t`Subiendo…` : photoPreview ? t`Cambiar` : t`Subir foto`}
-                </span>
-              </span>
-              <span
-                aria-hidden
-                className="absolute -right-0.5 -bottom-0.5 flex size-8 items-center justify-center rounded-full border-2 border-surface bg-o-500 text-ink shadow-sm"
-              >
-                <MaterialIcon name="photo_camera" className="text-base" />
-              </span>
-            </button>
-            {photoInput}
-          </div>
-
-          <header className="px-8 pt-16 pb-5">
-            <h2 className="text-xl font-bold text-ink">
-              {draft.fullName.trim() === '' ? t`Nuevo colaborador` : draft.fullName}
-            </h2>
-            <p className="mt-0.5 text-xs text-ink-3">
-              {t`Editar expediente`}
-              {IS_DEV_UI && <code className="text-[11px] text-ink-4"> · photo_path</code>}
-            </p>
-            {editing?.email && <p className="mt-0.5 text-xs text-ink-3">{editing.email}</p>}
-            {isUploadError && (
-              <p role="alert" className="mt-1 text-xs text-red">
-                {uploadErrorMessage(uploadError, i18n)}
-              </p>
-            )}
-          </header>
-
-          <FormRow label={t`Nombre completo`} column="full_name">
-            <Input
-              value={draft.fullName}
-              onChange={(event) => {
-                update('fullName')(event.target.value)
-              }}
-              aria-label={t`Nombre completo`}
-              placeholder={t`María Sandoval Ruiz`}
-            />
-          </FormRow>
-
-          <FormRow label={t`Nacimiento y género`} column="birth_date · gender">
-            <DateField
-              value={draft.birthDate}
-              onChange={update('birthDate')}
-              aria-label={t`Fecha de nacimiento`}
-              max={maxBirthDate()}
-            />
-            <Select
-              value={draft.gender}
-              onValueChange={(value) => {
-                update('gender')(value as Draft['gender'])
-              }}
-            >
-              <SelectTrigger aria-label={t`Género`} className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {GENDERS.map((gender) => (
-                  <SelectItem key={gender.value} value={gender.value}>
-                    {i18n._(gender.label)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormRow>
-
-          <FormRow label={t`Teléfono y zona`} column="phone · zone_id">
-            <PhoneInput
-              value={draft.phone}
-              onChange={(value) => {
-                update('phone')(value)
-              }}
-              ariaLabel={t`Teléfono`}
-              placeholder="404 790 2517"
-            />
-            <Select
-              {...(draft.zoneId ? { value: draft.zoneId } : {})}
-              onValueChange={update('zoneId')}
-            >
-              <SelectTrigger aria-label={t`Zona`} className="w-full">
-                <SelectValue placeholder={t`Elige la zona…`} />
-              </SelectTrigger>
-              <SelectContent>
-                {(options?.zones ?? []).map((zone) => (
-                  <SelectItem key={zone.id} value={zone.id}>
-                    {zone.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormRow>
-
-          <FormRow label={t`Domicilio`} column="address">
-            <Input
-              value={draft.address}
-              onChange={(event) => {
-                update('address')(event.target.value)
-              }}
-              aria-label={t`Domicilio`}
-              placeholder="1280 Peachtree St NE, Atlanta"
-            />
-          </FormRow>
-
-          <div className="border-t border-line bg-surface-2/60 px-6 py-3">
-            <h3 className="text-sm font-semibold text-ink">
-              <Trans>Decisiones de Oranje sobre su perfil</Trans>
-            </h3>
-            <p className="text-xs text-ink-4">
-              <Trans>Las defines tú en la entrevista; el candidato no las declara</Trans>
-            </p>
-          </div>
-
-          <FormRow
-            label={t`Posición y modalidad`}
-            column="catalog_position_id · hiring_modality_id"
-          >
-            <Select
-              value={draft.catalogPositionId === '' ? UNSET : draft.catalogPositionId}
-              onValueChange={(value) => {
-                update('catalogPositionId')(value === UNSET ? '' : value)
-              }}
-            >
-              <SelectTrigger aria-label={t`Posición`} className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={UNSET}>
-                  <Trans>Sin definir aún…</Trans>
-                </SelectItem>
-                {(options?.positions ?? []).map((position) => (
-                  <SelectItem key={position.id} value={position.id}>
-                    {position.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={draft.hiringModalityId === '' ? UNSET : draft.hiringModalityId}
-              onValueChange={(value) => {
-                update('hiringModalityId')(value === UNSET ? '' : value)
-              }}
-            >
-              <SelectTrigger aria-label={t`Modalidad`} className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={UNSET}>
-                  <Trans>Sin definir aún…</Trans>
-                </SelectItem>
-                {(options?.modalities ?? []).map((modality) => (
-                  <SelectItem key={modality.id} value={modality.id}>
-                    {modality.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormRow>
-
-          <FormRow label={t`Inglés y experiencia`} column="english_level_id · experience_level">
-            <Select
-              value={draft.englishLevelId === '' ? UNSET : draft.englishLevelId}
-              onValueChange={(value) => {
-                update('englishLevelId')(value === UNSET ? '' : value)
-              }}
-            >
-              <SelectTrigger aria-label={t`Nivel de inglés`} className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={UNSET}>
-                  <Trans>Sin definir aún…</Trans>
-                </SelectItem>
-                {(options?.englishLevels ?? []).map((level) => (
-                  <SelectItem key={level.id} value={level.id}>
-                    {level.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={draft.experienceLevel === '' ? UNSET : draft.experienceLevel}
-              onValueChange={(value) => {
-                update('experienceLevel')(value === UNSET ? '' : value)
-              }}
-            >
-              <SelectTrigger aria-label={t`Experiencia`} className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={UNSET}>
-                  <Trans>Sin definir aún…</Trans>
-                </SelectItem>
-                {EXPERIENCE_LEVELS.map((level) => (
-                  <SelectItem key={level} value={level}>
-                    {EXPERIENCE_LABEL[level]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormRow>
-
-          <div className="border-t border-line bg-surface-2/60 px-6 py-3">
-            <h3 className="text-sm font-semibold text-ink">
-              <Trans>Transporte, emergencia y salud</Trans>
-            </h3>
-            <p className="text-xs text-ink-4">
-              <Trans>
-                Opcional: lo completa el colaborador desde su app, pero si ya lo tienes, captúralo
-                aquí y podrás validarlo sin esperar
-              </Trans>
-            </p>
-          </div>
-
-          <FormRow label={t`Transporte y tipo de sangre`} column="transport_type · blood_type">
-            <Select
-              value={draft.transportType === '' ? UNSET : draft.transportType}
-              onValueChange={(value) => {
-                update('transportType')(value === UNSET ? '' : value)
-              }}
-            >
-              <SelectTrigger aria-label={t`Transporte`} className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={UNSET}>
-                  <Trans>Sin definir aún…</Trans>
-                </SelectItem>
-                {TRANSPORT_TYPES.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {TRANSPORT_LABEL[type]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={draft.bloodType === '' ? UNSET : draft.bloodType}
-              onValueChange={(value) => {
-                update('bloodType')(value === UNSET ? '' : value)
-              }}
-            >
-              <SelectTrigger aria-label={t`Tipo de sangre`} className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={UNSET}>
-                  <Trans>Sin definir aún…</Trans>
-                </SelectItem>
-                {BLOOD_TYPES.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {BLOOD_LABEL[type]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormRow>
-
-          <FormRow
-            label={t`Contacto de emergencia`}
-            column="emergency_contact_name · emergency_contact_phone · emergency_contact_relationship"
-          >
-            <div className="flex w-full flex-col gap-3">
-              <Input
-                aria-label={t`Nombre del contacto de emergencia`}
-                placeholder={t`Nombre, p. ej. Rubén Sandoval`}
-                value={draft.emergencyContactName}
-                onChange={(event) => {
-                  update('emergencyContactName')(event.target.value)
-                }}
-              />
-              <div className="flex gap-3">
-                <PhoneInput
-                  value={draft.emergencyContactPhone}
-                  onChange={(value) => {
-                    update('emergencyContactPhone')(value)
-                  }}
-                  ariaLabel={t`Teléfono del contacto de emergencia`}
-                  placeholder="404 790 2517"
-                />
-                <Select
-                  value={
-                    draft.emergencyContactRelationship === ''
-                      ? UNSET
-                      : draft.emergencyContactRelationship
-                  }
-                  onValueChange={(value) => {
-                    update('emergencyContactRelationship')(value === UNSET ? '' : value)
-                  }}
-                >
-                  <SelectTrigger aria-label={t`Parentesco`} className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={UNSET}>
-                      <Trans>Parentesco…</Trans>
-                    </SelectItem>
-                    {RELATIONSHIPS.map((relationship) => (
-                      <SelectItem key={relationship} value={relationship}>
-                        {RELATIONSHIP_LABEL[relationship]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </FormRow>
-
-          {aftermathDetails}
-          {errorBanner}
-
-          <div className="flex items-center justify-end gap-3 border-t border-line px-6 py-4">
-            {missingHint !== null && (
-              <span className="mr-auto flex items-center gap-1.5 rounded-full bg-o-50 px-3 py-1.5 text-xs font-medium text-o-700">
-                <MaterialIcon name="info" className="text-sm" aria-hidden />
-                {missingHint}
-              </span>
-            )}
-            <Button onClick={onClose} disabled={isLoading}>
-              <Trans>Cancelar</Trans>
-            </Button>
-            <Button
-              variant="primary"
-              disabled={!canSubmit}
-              onClick={() => {
-                void submit()
-              }}
-            >
-              {isLoading ? t`Guardando…` : t`Guardar cambios`}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-    )
-  }
-
-  // ---------------------------------------------------------------------
-  // Crear: wizard de 3 pasos, mismo patrón que Nueva Requisición — foto
-  // lateral fija (colab-2, no la del colaborador: esa se sube aparte, en un
-  // control chico dentro del paso 1) + StepIndicator arriba del formulario.
-  // ---------------------------------------------------------------------
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={t`Crear colaborador`}
+      title={isEditing ? t`Editar colaborador` : t`Crear colaborador`}
       chromeless
-      className={showIntro ? 'max-w-2xl' : 'max-w-4xl'}
+      className={isIntroVisible ? 'max-w-2xl' : 'max-w-4xl'}
     >
-      {showIntro ? (
+      {isIntroVisible ? (
         <OnboardingIntro
           slides={INTRO_SLIDES.map((slide) => ({
             image: slide.image,
@@ -919,11 +534,25 @@ export function CreateWorkerDialog({
 
           <section className="flex max-h-[calc(100vh-3rem)] min-w-0 flex-col">
             <header className="border-b border-line px-6 py-5">
+              {/* Al editar, el encabezado dice DE QUIÉN es el expediente: que el
+                  diálogo se llama «Editar colaborador» ya lo dice su título. */}
               <h2 className="text-xl font-bold text-ink">
-                <Trans>Crear colaborador</Trans>
+                {isEditing ? (
+                  draft.fullName.trim() === '' ? (
+                    <Trans>Editar colaborador</Trans>
+                  ) : (
+                    draft.fullName
+                  )
+                ) : (
+                  <Trans>Crear colaborador</Trans>
+                )}
               </h2>
               <p className="mt-1 text-sm text-ink-3">
-                {IS_DEV_UI ? 'personal.worker · nace en BLANCO' : t`Nace en Blanco al guardar`}
+                {isEditing
+                  ? (editing?.email ?? t`Editar expediente`)
+                  : IS_DEV_UI
+                    ? 'personal.worker · nace en BLANCO'
+                    : t`Nace en Blanco al guardar`}
               </p>
               <div className="mt-3">
                 <StepIndicator
@@ -933,6 +562,7 @@ export function CreateWorkerDialog({
                   }))}
                   current={step}
                   onStepClick={setStep}
+                  allowAnyStep={isEditing}
                 />
               </div>
             </header>
@@ -1274,16 +904,20 @@ export function CreateWorkerDialog({
                     <Trans>Atrás</Trans>
                   </Button>
                 )}
-                {step < 3 ? (
+                {/* Al editar se guarda desde cualquier paso: quien viene a corregir
+                    un dato del paso 1 no tiene por qué recorrer los tres. Al dar de
+                    alta, el primario sigue siendo avanzar hasta el final. */}
+                {step < 3 && (
                   <Button
-                    variant="primary"
+                    variant={isEditing ? 'secondary' : 'primary'}
                     type="button"
                     disabled={step === 1 && !canLeaveStep1}
                     onClick={goNext}
                   >
                     <Trans>Continuar</Trans>
                   </Button>
-                ) : (
+                )}
+                {(isEditing || step === 3) && (
                   <Button
                     variant="primary"
                     type="button"
@@ -1292,7 +926,11 @@ export function CreateWorkerDialog({
                       void submit()
                     }}
                   >
-                    {isLoading ? t`Guardando…` : t`Crear colaborador`}
+                    {isLoading
+                      ? t`Guardando…`
+                      : isEditing
+                        ? t`Guardar cambios`
+                        : t`Crear colaborador`}
                   </Button>
                 )}
               </div>

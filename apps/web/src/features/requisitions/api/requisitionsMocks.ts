@@ -142,6 +142,11 @@ function buildRequisition(input: {
     state: REQ_STATE[input.state] ?? (REQ_STATE.APPLE_GREEN as StatusRefApi),
     areaManagerUserId: null,
     authorizedBy: input.authorizedHoursAgo === undefined ? null : 'usr-gm',
+    authorizer:
+      input.authorizedHoursAgo === undefined
+        ? null
+        : { id: 'usr-gm', fullName: 'Aldo Mena', photoUrl: null },
+    inspector: { id: 'usr-insp', fullName: 'Iván Solís', photoUrl: null },
     authorizedAt:
       input.authorizedHoursAgo === undefined ? null : isoHoursAgo(input.authorizedHoursAgo),
     inspectorId: null,
@@ -754,6 +759,7 @@ const routes: readonly MockRoute[] = [
       found.state = REQ_STATE.GREEN as StatusRefApi
       found.authorizedAt = new Date().toISOString()
       found.authorizedBy = 'usr-gm'
+      found.authorizer = { id: 'usr-gm', fullName: 'Aldo Mena', photoUrl: null }
       /** RR-H-05: la urgencia nace al autorizar, contra la fecha de inicio. */
       for (const position of found.positions) {
         const hours = (new Date(position.startDate).getTime() - Date.now()) / 3_600_000
