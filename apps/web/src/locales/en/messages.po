@@ -3638,6 +3638,10 @@ msgstr "The BDC hands out the territory"
 msgid "El usuario quedó guardado, pero el correo de invitación no salió: reenvíala desde su ficha."
 msgstr "The user was saved, but the invitation email didn't go out: resend it from their record."
 
+#: src/features/admin/components/UserFormDialog.tsx
+msgid "El usuario se guardó, pero sus zonas no: ábrelo de nuevo para reintentar."
+msgstr "The user was saved, but their zones weren't: open it again to retry."
+
 #: src/features/recruitment/components/LiftBlacklistDialog.tsx
 msgid "El veto lo puede quitar únicamente el Administrador; si no eres tú, el sistema va a rechazar la acción."
 msgstr "Only the Administrator can lift a ban; if that's not you, the system will reject the action."
@@ -6672,6 +6676,10 @@ msgstr "No free slots with these filters. The Self-Pick pool fills up when a Man
 msgid "No hay vetos con estos filtros. Prueba con otro origen o con el historial completo."
 msgstr "No bans with these filters. Try another source or the full history."
 
+#: src/features/admin/components/UserFormDialog.tsx
+msgid "No hay zonas en el catálogo todavía."
+msgstr "There are no zones in the catalog yet."
+
 #: src/features/observability/components/DepartmentMetricsGrid.tsx
 #: src/features/observability/components/StatusDurationSection.tsx
 msgid "No implementado"
@@ -9086,6 +9094,10 @@ msgstr "Not in force yet"
 msgid "Sin zonas elegidas el BD queda sin territorio asignado."
 msgstr "With no zones picked, the BD is left with no territory."
 
+#: src/features/admin/components/UserFormDialog.tsx
+msgid "Sin zonas elegidas el Inspector no ve ningún hotel para levantar requisiciones ni auditar."
+msgstr "With no zones picked, the Inspector sees no hotel to open requisitions or audits for."
+
 #: src/features/team/components/AssignTerritoryDialog.tsx
 msgid "Sin zonas también es válido"
 msgstr "No zones is valid too"
@@ -9243,6 +9255,10 @@ msgstr "your department only"
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Solo un contrato vigente se puede marcar expirado."
 msgstr "Only a contract in force can be marked expired."
+
+#: src/features/admin/components/UserFormDialog.tsx
+msgid "Solo verá los hoteles de estas zonas — nunca todos."
+msgstr "They'll only see the hotels in these zones — never all of them."
 
 #. placeholder {0}: formatWeekRange(target, addDaysIso(target, 6))
 #: src/features/timesheet/components/WeekSlider.tsx
@@ -10573,6 +10589,7 @@ msgstr "Zone: {0}"
 msgid "Zona: próximamente"
 msgstr "Zone: coming soon"
 
+#: src/features/admin/components/UserFormDialog.tsx
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Zonas"
 msgstr "Zones"

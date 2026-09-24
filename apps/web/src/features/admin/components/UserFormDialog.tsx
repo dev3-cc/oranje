@@ -19,7 +19,10 @@ import { z } from 'zod'
 
 import {
   useCreateStaffUserMutation,
+  useGetUserZonesQuery,
+  useGetZoneOptionsQuery,
   useResendInvitationMutation,
+  useSetUserZonesMutation,
   useUpdateStaffUserMutation,
 } from '../api/adminApi'
 import type { AccessMode, RoleOption, StaffUser } from '../types/admin.types'
@@ -88,6 +91,9 @@ const PENDING_ROLES: ReadonlySet<string> = new Set([
   'ROL-CS-01',
   'ROL-CS-02',
 ])
+
+/** Único rol con zonas propias fuera de Ventas: su alcance de requisiciones y auditorías. */
+const INSPECTOR_ROLE_CODE = 'ROL-I-01'
 
 /* Los mensajes se resuelven al armar el esquema con el `i18n` del componente
    (D-36): quien lo usa lo rearma cuando cambia el idioma. */
@@ -251,6 +257,36 @@ export function UserFormDialog({
   const fullName = watch('fullName')
   const roleCode = watch('roleCode')
 
+  /**
+   * Zonas del Inspector: el campo solo existe con ese rol elegido — aparece
+   * y desaparece con `roleCode`, nunca queda a medio llenar de un rol
+   * anterior porque el envío ignora `selectedZones` si `isInspectorRole` es
+   * falso en ese momento.
+   */
+  const isInspectorRole = roleCode === INSPECTOR_ROLE_CODE
+  const [setUserZones] = useSetUserZonesMutation()
+  const { data: zoneOptions = [] } = useGetZoneOptionsQuery(undefined, {
+    skip: !isOpen || !isInspectorRole,
+  })
+  const { data: existingZones } = useGetUserZonesQuery(user?.id ?? '', {
+    skip: !isOpen || !isEditing || !isInspectorRole,
+  })
+  const [selectedZones, setSelectedZones] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!isOpen) return
+    setSelectedZones(new Set((existingZones ?? []).map((zone) => zone.id)))
+  }, [isOpen, user, existingZones])
+
+  function toggleZone(zoneId: string): void {
+    setSelectedZones((previous) => {
+      const next = new Set(previous)
+      if (next.has(zoneId)) next.delete(zoneId)
+      else next.add(zoneId)
+      return next
+    })
+  }
+
   /** Los jefes posibles dependen del rol elegido (SUPERIOR_ROLES). */
   const allowedSuperiors = SUPERIOR_ROLES[roleCode]
   const superiorOptions = reportsToOptions.filter(
@@ -314,6 +350,21 @@ export function UserFormDialog({
     toast.success(t`Foto subida`)
   }
 
+  /**
+   * Se guarda AL FINAL, con el usuario ya creado/actualizado: si esto falla
+   * el alta o la edición ya se guardaron, así que avisa aparte en vez de
+   * tumbar el flujo principal — se puede reintentar reabriendo el editar.
+   */
+  async function saveZonesIfNeeded(userId: string, savedRoleCode: string): Promise<void> {
+    if (savedRoleCode !== INSPECTOR_ROLE_CODE) return
+    if (!isEditing && selectedZones.size === 0) return
+    try {
+      await setUserZones({ userId, zoneIds: [...selectedZones] }).unwrap()
+    } catch {
+      toast.error(t`El usuario se guardó, pero sus zonas no: ábrelo de nuevo para reintentar.`)
+    }
+  }
+
   async function onSubmit(values: UserFormValues): Promise<void> {
     const reportsToUserId = values.reportsToUserId === NOBODY ? undefined : values.reportsToUserId
 
@@ -328,8 +379,9 @@ export function UserFormDialog({
           ...(photoPath ? { photoPath } : {}),
         },
       }).unwrap()
+      await saveZonesIfNeeded(user.id, values.roleCode)
     } else {
-      await createUser({
+      const newUser = await createUser({
         email: values.email,
         fullName: values.fullName,
         roleCode: values.roleCode,
@@ -337,6 +389,7 @@ export function UserFormDialog({
         ...(values.accessMode === 'PASSWORD' ? { password: values.password } : {}),
         ...(photoPath ? { photoPath } : {}),
       }).unwrap()
+      await saveZonesIfNeeded(newUser.id, values.roleCode)
       toast.success(
         values.accessMode === 'INVITATION'
           ? t`Usuario creado — invitación enviada a ${values.email}`
@@ -554,6 +607,44 @@ export function UserFormDialog({
                   </p>
                   {errors.roleCode && <p className="text-xs text-red">{errors.roleCode.message}</p>}
                 </FormRow>
+
+                {isInspectorRole && (
+                  <FormRow label={t`Zonas`} column="commercial.user_zone">
+                    {zoneOptions.length === 0 ? (
+                      <p className="text-xs text-ink-3">
+                        <Trans>No hay zonas en el catálogo todavía.</Trans>
+                      </p>
+                    ) : (
+                      <ul className="flex flex-col gap-1.5">
+                        {zoneOptions.map((zone) => (
+                          <li key={zone.id}>
+                            <label className="flex cursor-pointer items-center gap-3 rounded-md border border-line p-2.5 transition-colors hover:bg-surface-2 has-checked:border-o-500 has-checked:bg-o-50">
+                              <input
+                                type="checkbox"
+                                checked={selectedZones.has(zone.id)}
+                                onChange={() => {
+                                  toggleZone(zone.id)
+                                }}
+                                className="size-4 accent-o-500"
+                              />
+                              <span className="text-sm font-medium text-ink">{zone.name}</span>
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <p className="text-xs text-ink-3">
+                      {selectedZones.size === 0 ? (
+                        <Trans>
+                          Sin zonas elegidas el Inspector no ve ningún hotel para levantar
+                          requisiciones ni auditar.
+                        </Trans>
+                      ) : (
+                        <Trans>Solo verá los hoteles de estas zonas — nunca todos.</Trans>
+                      )}
+                    </p>
+                  </FormRow>
+                )}
 
                 <FormRow label={t`Reporta a`} column="reports_to_user_id">
                   <Controller

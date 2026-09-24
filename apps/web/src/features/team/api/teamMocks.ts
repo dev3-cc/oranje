@@ -47,6 +47,23 @@ const MEMBERS: TeamMemberApi[] = [
   },
 ]
 
+/**
+ * Zonas de gente FUERA de `MEMBERS` (hoy: el Inspector, desde el alta de
+ * personal del Administrador) — mismo endpoint `/users/:id/zones`, pero sin
+ * inflar `/team`, que es la lista de BDs del BDC y no debe verlos.
+ */
+const otherZones = new Map<string, TeamMemberApi['zones']>()
+
+function zonesOf(userId: string): TeamMemberApi['zones'] | undefined {
+  return MEMBERS.find((item) => item.id === userId)?.zones ?? otherZones.get(userId)
+}
+
+function setZonesOf(userId: string, zones: TeamMemberApi['zones']): void {
+  const member = MEMBERS.find((item) => item.id === userId)
+  if (member) member.zones = zones
+  else otherZones.set(userId, zones)
+}
+
 const routes: readonly MockRoute[] = [
   {
     method: 'GET',
@@ -63,31 +80,30 @@ const routes: readonly MockRoute[] = [
     method: 'PUT',
     path: '/users/:userId/zones',
     resolve: ({ params, body }): { data: null } => {
-      const member = MEMBERS.find((item) => item.id === params.userId)
-      if (!member) throw new Error('USER_NOT_FOUND')
       const zoneIds = ((body ?? {}) as { zoneIds?: string[] }).zoneIds ?? []
-      member.zones = zoneIds.map((zoneId) => ({
-        id: zoneId,
-        code: zoneId.toUpperCase(),
-        name: `Zona ${zoneId.charAt(0).toUpperCase()}${zoneId.slice(1)}`,
-      }))
+      setZonesOf(
+        params.userId ?? '',
+        zoneIds.map((zoneId) => ({
+          id: zoneId,
+          code: zoneId.toUpperCase(),
+          name: `Zona ${zoneId.charAt(0).toUpperCase()}${zoneId.slice(1)}`,
+        })),
+      )
       return { data: null }
     },
   },
   /**
    * LEER las zonas de una persona (Mi Territorio la consume para acotar el
-   * mapa a quien se elija en el selector de dueño) — mismo recurso que el PUT
-   * de arriba, mismos `MEMBERS`, para que asignar y filtrar nunca se
-   * desincronicen entre dos copias de datos.
+   * mapa a quien se elija en el selector de dueño, y el alta de personal para
+   * precargar las del Inspector al editar) — mismo recurso que el PUT de
+   * arriba, mismo almacén, para que asignar y filtrar nunca se desincronicen.
    */
   {
     method: 'GET',
     path: '/users/:userId/zones',
-    resolve: ({ params }): { data: { zones: TeamMemberApi['zones'] } } => {
-      const member = MEMBERS.find((item) => item.id === params.userId)
-      if (!member) throw new Error('USER_NOT_FOUND')
-      return { data: { zones: member.zones.map((zone) => ({ ...zone })) } }
-    },
+    resolve: ({ params }): { data: { zones: TeamMemberApi['zones'] } } => ({
+      data: { zones: (zonesOf(params.userId ?? '') ?? []).map((zone) => ({ ...zone })) },
+    }),
   },
 ]
 
