@@ -11,7 +11,7 @@
     "open:ios": "cap open ios",
     "apk": "pnpm run sync && node scripts/gradle.mjs assembleDebug",
     "lint": "echo 'la app es el bundle de @oranje/web: se linta allá' && exit 0",
-    "typecheck": "echo 'sin código TS propio fuera del capacitor.config' && exit 0",
+    "typecheck": "tsc --noEmit",
     "test": "echo 'sin tests propios' && exit 0",
     "build": "pnpm run sync"
   },
@@ -21,6 +21,8 @@
     "@capacitor/ios": "^7.4.4"
   },
   "devDependencies": {
-    "@capacitor/cli": "^7.4.4"
+    "@capacitor/cli": "^7.4.4",
+    "@oranje/config": "workspace:*",
+    "typescript": "^6.0.3"
   }
 }

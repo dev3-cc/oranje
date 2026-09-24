@@ -160,6 +160,12 @@ importers:
       '@capacitor/cli':
         specifier: ^7.4.4
         version: 7.6.9(supports-color@8.1.1)
+      '@oranje/config':
+        specifier: workspace:*
+        version: link:../../packages/config
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
 
   apps/web:
     dependencies:

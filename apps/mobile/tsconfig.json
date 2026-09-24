@@ -1,0 +1,16 @@
+{
+  /* La app no tiene código de UI propio —es el bundle de @oranje/web—, pero sí
+     un `capacitor.config.ts` donde un nombre de opción mal escrito no da error
+     en tiempo de `sync`: Capacitor ignora lo que no reconoce y la opción
+     simplemente no surte efecto. Tipar ese archivo contra `CapacitorConfig` es
+     lo que convierte ese silencio en un error de compilación. */
+  "extends": "../../packages/config/tsconfig/react.json",
+  "compilerOptions": {
+    /* Vacío, no `["node"]`: el config no toca ninguna API de Node, y con
+       `shamefully-hoist=false` (.npmrc) declarar un tipo que no es dependencia
+       de este paquete no resolvería. */
+    "types": [],
+    "noEmit": true
+  },
+  "include": ["capacitor.config.ts"]
+}
