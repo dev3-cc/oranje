@@ -61,6 +61,17 @@ export class AuditsRepository {
     return (await this.prisma.hotel.count({ where: { id: hotelId } })) > 0
   }
 
+  // El Inspector no tiene hotel fijo: audita los de su zona (Reglas de
+  // Negocio, 2026-09-24) — mismo patrón que RequisitionsRepository.
+  async hotelIdsInUserZones(userId: string): Promise<string[]> {
+    const rows = await this.prisma.hotel.findMany({
+      where: { zone: { userZones: { some: { userId } } } },
+      select: { id: true },
+    })
+
+    return rows.map((r) => r.id)
+  }
+
   // Mismo criterio que `WorkersRepository.isAssignedToHotel`: la relación
   // worker → assignment → slot → position → requisition → hotel cruza cuatro
   // esquemas, y ahí ya se resuelve con SQL crudo en vez de un include anidado.
@@ -100,10 +111,15 @@ export class AuditsRepository {
 
   async findMany(
     filter: AuditFilter,
-    hotelId: string | null,
+    /** Un hotel, varios (las zonas del Inspector), o sin filtro. */
+    hotelId: string | string[] | null,
   ): Promise<{ rows: AuditHeaderRow[]; total: number }> {
     const where: Prisma.AuditWhereInput = {
-      ...(hotelId ? { hotelId } : {}),
+      ...(typeof hotelId === 'string'
+        ? { hotelId }
+        : Array.isArray(hotelId)
+          ? { hotelId: { in: hotelId } }
+          : {}),
       ...(filter.workerId ? { workerId: filter.workerId } : {}),
       ...(filter.auditType ? { auditType: filter.auditType } : {}),
     }

@@ -41,8 +41,16 @@ export class HotelsService {
     private readonly notifications: NotificationPublisherService,
   ) {}
 
-  async list(query: QueryHotelsDto): Promise<Paginated<HotelEntity>> {
-    const { rows, total } = await this.repo.findMany(query)
+  /** Las zonas que le asignó su Coordinador (el Inspector no tiene hotel fijo). */
+  async zonesOfUser(userId: string): Promise<string[]> {
+    return this.repo.zonesOfUser(userId)
+  }
+
+  async list(
+    query: QueryHotelsDto,
+    onlyZoneIds: string[] | null = null,
+  ): Promise<Paginated<HotelEntity>> {
+    const { rows, total } = await this.repo.findMany(query, onlyZoneIds)
 
     return {
       data: rows.map((row) => this.toEntity(row)),
