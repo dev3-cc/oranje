@@ -133,9 +133,15 @@ export class RequisitionsService {
      * Manager General («todos los departamentos de MI hotel») y Reclutamiento
      * («todos los hoteles») — comparten el permiso pero no el alcance. Quien
      * tiene `hotelId` (todo el depto Hotel) se queda SIEMPRE en su hotel; solo
-     * quien no tiene hotel fijo (Reclutamiento) ve todos.
+     * quien no tiene hotel fijo (Reclutamiento) ve todos. El Inspector
+     * también carece de `hotelId`, pero no tiene `read_all` —así que en vez
+     * de "todos", se acota a los hoteles de sus zonas (2026-09-24).
      */
-    const hotelIds = user.hotelId ? [user.hotelId] : null
+    const hotelIds = user.hotelId
+      ? [user.hotelId]
+      : readOwn && !seesAll
+        ? await this.repo.hotelIdsInUserZones(user.id)
+        : null
 
     const byDepartment = await this.permissions.can(
       user.roleCode,
@@ -188,6 +194,15 @@ export class RequisitionsService {
       throw new ForbiddenException({
         code: 'HOTEL_OUT_OF_SCOPE',
         message: 'Esta requisición no es de tu hotel',
+      })
+    }
+
+    // Mismo criterio que el listado: sin hotel fijo pero también sin
+    // `read_all`, el Inspector solo ve las de sus zonas (2026-09-24).
+    if (!user.hotelId && !seesAll && !(await this.repo.hotelInUserZones(row.hotel.id, user.id))) {
+      throw new ForbiddenException({
+        code: 'HOTEL_OUT_OF_ZONE',
+        message: 'Esta requisición no es de ninguna de tus zonas',
       })
     }
 

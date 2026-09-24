@@ -59,7 +59,14 @@ export class HotelsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: HotelEntity }> {
     if (user.hotelId !== id) {
-      await this.assertCanSeeHotels(user)
+      const onlyZoneIds = await this.assertCanSeeHotels(user)
+
+      if (onlyZoneIds && !onlyZoneIds.includes(id)) {
+        throw new ForbiddenException({
+          code: 'HOTEL_OUT_OF_ZONE',
+          message: 'Ese hotel no está en ninguna de tus zonas',
+        })
+      }
     }
 
     return { data: await this.hotels.get(id) }

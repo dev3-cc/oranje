@@ -106,6 +106,17 @@ export class RequisitionsRepository {
     )
   }
 
+  // Mismo criterio que `hotelInUserZones`, para acotar el listado del
+  // Inspector (`list()`) en vez de validar un solo hotel.
+  async hotelIdsInUserZones(userId: string): Promise<string[]> {
+    const rows = await this.prisma.hotel.findMany({
+      where: { zone: { userZones: { some: { userId } } } },
+      select: { id: true },
+    })
+
+    return rows.map((r) => r.id)
+  }
+
   async catalogPositions(ids: string[]): Promise<Set<string>> {
     const rows = await this.prisma.catalogPosition.findMany({
       where: { id: { in: ids } },

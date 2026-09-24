@@ -309,7 +309,9 @@ const HOTEL: Permission[] = [
     module: 'requisitions',
     action: 'read_own',
     label: 'Ver mis requisiciones',
-    roles: [SUPERVISOR, GA, GG, SYS],
+    // El Inspector entra por el mismo permiso; sin hotel fijo, el servicio
+    // lo acota a las de sus zonas en vez de a un hotel (2026-09-24).
+    roles: [SUPERVISOR, GA, GG, SYS, INSPECTOR],
   },
   {
     module: 'requisitions',
@@ -412,26 +414,28 @@ const HOTEL: Permission[] = [
 
   // AUDITORIAS
   // Solo el Supervisor audita y ve auditorias: ni sus Managers por herencia
-  // (decision de Hugo, 2026-09-14).
+  // (decision de Hugo, 2026-09-14). Ampliado el 2026-09-24: el Inspector
+  // también audita, para los hoteles de su zona — sigue sin heredarse hacia
+  // el Coordinador (`inherit: false`), mismo criterio que el Supervisor.
   {
     module: 'audits',
     action: 'create',
     label: 'Auditar presentacion o ambiente de mi hotel',
-    roles: [SUPERVISOR],
+    roles: [SUPERVISOR, INSPECTOR],
     inherit: false,
   },
   {
     module: 'audits',
     action: 'read',
     label: 'Ver auditorias de mi hotel',
-    roles: [SUPERVISOR, SYS],
+    roles: [SUPERVISOR, INSPECTOR, SYS],
     inherit: false,
   },
   {
     module: 'audits',
     action: 'update',
     label: 'Corregir una auditoria',
-    roles: [SUPERVISOR],
+    roles: [SUPERVISOR, INSPECTOR],
     inherit: false,
   },
 
