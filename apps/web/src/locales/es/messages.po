@@ -103,6 +103,10 @@ msgstr "«{0}» se elimina de verdad — no se archiva. Si algo del sistema lo e
 msgid "«{0}» se elimina de verdad. Si alguna auditoría ya lo contestó, el sistema lo va a impedir y te lo dice aquí."
 msgstr "«{0}» se elimina de verdad. Si alguna auditoría ya lo contestó, el sistema lo va a impedir y te lo dice aquí."
 
+#: src/shared/components/ModulePlaceholder.tsx
+msgid "«{title}» ya tiene su lugar en el menú. Lo estamos construyendo y va a estar listo muy pronto."
+msgstr "«{title}» ya tiene su lugar en el menú. Lo estamos construyendo y va a estar listo muy pronto."
+
 #: src/features/onboarding/components/SemaforoHelpDialog.tsx
 msgid "«Regresar» un prospecto es salir por una rama y reactivarlo. La reentrada es siempre hacia Azul claro, el único punto de retorno: se retoma el contacto, no la propuesta vieja."
 msgstr "«Regresar» un prospecto es salir por una rama y reactivarlo. La reentrada es siempre hacia Azul claro, el único punto de retorno: se retoma el contacto, no la propuesta vieja."
@@ -201,10 +205,20 @@ msgstr "{0, plural, one {# zona} other {# zonas}}"
 msgid "{0, plural, one {Agregar contacto} other {Agregar # contactos}}"
 msgstr "{0, plural, one {Agregar contacto} other {Agregar # contactos}}"
 
+#. placeholder {0}: session.zones.length
+#: src/features/audits/pages/AuditsPage.tsx
+msgid "{0, plural, one {Auditas los hoteles de tu zona:} other {Auditas los hoteles de tus zonas:}}"
+msgstr "{0, plural, one {Auditas los hoteles de tu zona:} other {Auditas los hoteles de tus zonas:}}"
+
 #. placeholder {0}: values.drafts.length
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 msgid "{0, plural, one {Contacto agregado} other {# contactos agregados}}"
 msgstr "{0, plural, one {Contacto agregado} other {# contactos agregados}}"
+
+#. placeholder {0}: session.zones.length
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "{0, plural, one {Solo ves los hoteles de tu zona:} other {Solo ves los hoteles de tus zonas:}}"
+msgstr "{0, plural, one {Solo ves los hoteles de tu zona:} other {Solo ves los hoteles de tus zonas:}}"
 
 #. placeholder {0}: formatTimeIn(shift.startsAt, shift.hotelTimeZone)
 #. placeholder {1}: formatTimeIn(shift.endsAt, shift.hotelTimeZone)
@@ -3457,10 +3471,6 @@ msgstr "El Manager General no reporta a nadie."
 msgid "El Manager General ve todos los departamentos"
 msgstr "El Manager General ve todos los departamentos"
 
-#: src/shared/components/ModulePlaceholder.tsx
-msgid "El módulo «{title}» ya está en el menú, pero todavía no tiene diseño ni datos que mostrar. Se construye aquí en cuanto llegue la maqueta."
-msgstr "El módulo «{title}» ya está en el menú, pero todavía no tiene diseño ni datos que mostrar. Se construye aquí en cuanto llegue la maqueta."
-
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 msgid "El motivo queda en el historial del prospecto."
 msgstr "El motivo queda en el historial del prospecto."
@@ -6328,6 +6338,10 @@ msgstr "Motivos de salida a Rojo · Café · Negro"
 msgid "Multiplicadores"
 msgstr "Multiplicadores"
 
+#: src/shared/components/ModulePlaceholder.tsx
+msgid "Muy pronto estará aquí"
+msgstr "Muy pronto estará aquí"
+
 #: src/features/audits/components/AuditFormDialog.tsx
 msgid "N/A"
 msgstr "N/A"
@@ -7463,10 +7477,6 @@ msgstr "Pago {0}"
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Pago por hora"
 msgstr "Pago por hora"
-
-#: src/shared/components/ModulePlaceholder.tsx
-msgid "Pantalla pendiente de diseño"
-msgstr "Pantalla pendiente de diseño"
 
 #. placeholder {0}: row.workerName
 #: src/features/timesheet/components/ManualPunchDialog.tsx
@@ -9642,6 +9652,10 @@ msgstr "Todavía no hay versiones de la propuesta."
 #: src/features/contracts/components/RateTable.tsx
 msgid "Todavía no se cotiza ninguna posición. Agrégala con «Editar tarifas» mientras el contrato sea borrador."
 msgstr "Todavía no se cotiza ninguna posición. Agrégala con «Editar tarifas» mientras el contrato sea borrador."
+
+#: src/features/audits/pages/AuditsPage.tsx
+msgid "Todavía no tienes ningún hotel cliente en tus zonas asignadas — pídele al Coordinador que revise tu zona."
+msgstr "Todavía no tienes ningún hotel cliente en tus zonas asignadas — pídele al Coordinador que revise tu zona."
 
 #: src/features/conversion/pages/ConversionPage.tsx
 msgid "Todavía no toca convertir"

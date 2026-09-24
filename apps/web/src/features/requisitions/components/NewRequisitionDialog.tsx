@@ -37,6 +37,7 @@ import { DateField } from '@/shared/components/DateField'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { StepIndicator } from '@/shared/components/StepIndicator'
+import { ZonePill } from '@/shared/components/ZonePill'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
@@ -476,6 +477,22 @@ export function NewRequisitionDialog({
                           </Select>
                         )}
                       />
+                    )}
+                    {!sessionHotel && session !== undefined && session.zones.length > 0 && (
+                      <div className="flex flex-col gap-1.5 text-sm text-ink-2">
+                        <span className="font-semibold">
+                          <Plural
+                            value={session.zones.length}
+                            one="Solo ves los hoteles de tu zona:"
+                            other="Solo ves los hoteles de tus zonas:"
+                          />
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {session.zones.map((zone) => (
+                            <ZonePill key={zone.id}>{zone.name}</ZonePill>
+                          ))}
+                        </div>
+                      </div>
                     )}
                     {!sessionHotel && options !== undefined && options.hotels.length === 0 && (
                       <span className="text-xs text-ink-3">
