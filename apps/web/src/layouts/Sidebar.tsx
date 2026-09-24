@@ -88,7 +88,9 @@ const MODULES: NavModule[] = [
     label: msg`Requisiciones`,
     to: '/requisitions',
     icon: 'assignment',
-    roles: [...RECLUTAMIENTO, ...HOTEL],
+    /* El Inspector también las crea, acotado a su zona (Reglas de Negocio,
+       2026-09-24); el Coordinador entra por herencia de jerarquía. */
+    roles: [...RECLUTAMIENTO, ...HOTEL, ...INSPECCION],
   },
   {
     label: msg`Pool de Colaboradores`,

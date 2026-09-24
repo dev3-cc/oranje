@@ -4301,6 +4301,10 @@ msgstr "Ese formato no se puede procesar (los HEIC del iPhone no entran): usa JP
 msgid "Ese formato no se puede procesar (los HEIC del iPhone no entran): usa JPG, PNG, WebP o PDF."
 msgstr "Ese formato no se puede procesar (los HEIC del iPhone no entran): usa JPG, PNG, WebP o PDF."
 
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Ese hotel no está en ninguna de tus zonas."
+msgstr "Ese hotel no está en ninguna de tus zonas."
+
 #: src/features/admin/components/HotelUserFormDialog.tsx
 msgid "Ese hotel ya no existe. Recarga la página y vuelve a elegirlo."
 msgstr "Ese hotel ya no existe. Recarga la página y vuelve a elegirlo."
@@ -9809,8 +9813,8 @@ msgid "Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manag
 msgstr "Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel."
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
-msgid "Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área o el Manager General del hotel."
-msgstr "Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área o el Manager General del hotel."
+msgid "Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área, el Manager General del hotel o el Inspector de su zona."
+msgstr "Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área, el Manager General del hotel o el Inspector de su zona."
 
 #: src/features/team/pages/TeamPage.tsx
 msgid "Tu rol no tiene BDs a cargo, así que aquí no hay nada que mostrar."

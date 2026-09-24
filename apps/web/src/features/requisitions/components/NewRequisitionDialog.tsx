@@ -119,8 +119,9 @@ function createRequisitionErrorMessage(error: unknown, i18n: I18n): string {
         msg`Solo puedes pedir posiciones de tu departamento. Las de otro departamento las crea su Manager de Área o el Manager General.`,
       ),
       HOTEL_OUT_OF_SCOPE: i18n._(msg`Solo puedes crear requisiciones de tu hotel.`),
+      HOTEL_OUT_OF_ZONE: i18n._(msg`Ese hotel no está en ninguna de tus zonas.`),
       FORBIDDEN: i18n._(
-        msg`Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área o el Manager General del hotel.`,
+        msg`Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área, el Manager General del hotel o el Inspector de su zona.`,
       ),
       /* El mensaje crudo del backend dice «apunta a un catalogPositionId que no
          existe» — el nombre de columna se coló porque nadie más lo traduce. */
