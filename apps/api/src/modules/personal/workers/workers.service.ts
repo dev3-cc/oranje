@@ -670,5 +670,6 @@ function toEntity(row: WorkerRow, photos: Map<string, string>): WorkerEntity {
     email: row.email,
     isBlacklisted: row.isBlacklisted,
     createdAt: new Date(row.createdAt).toISOString(),
+    assignment: row.assignment,
   }
 }

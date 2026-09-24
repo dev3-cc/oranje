@@ -10,7 +10,7 @@ import {
   MaterialIcon,
   SidebarTrigger,
 } from '@oranje/ui'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { GlobalSearch } from './GlobalSearch'
 
@@ -19,6 +19,7 @@ import {
   useMarkHeaderNotificationReadMutation,
 } from '@/app/notificationsApi'
 import { formatDayMonthTime } from '@/shared/lib/formatters'
+import { playSound } from '@/shared/lib/sound'
 
 /** `⌘K` en Mac, `Ctrl K` en el resto: el atajo se anuncia como se pulsa. */
 const SHORTCUT_LABEL =
@@ -46,6 +47,15 @@ export function Header(): ReactNode {
   const { data: notifications } = useGetHeaderNotificationsQuery()
   const [markRead] = useMarkHeaderNotificationReadMutation()
   const unread = notifications?.unread ?? 0
+
+  /* Cuando el contador SUBE llega algo nuevo: ahí suena, no al abrir la app ni
+     al bajar por leerlas. La primera lectura solo toma nota. */
+  const lastUnread = useRef<number | null>(null)
+  useEffect(() => {
+    const previous = lastUnread.current
+    lastUnread.current = unread
+    if (previous !== null && unread > previous) playSound('notify')
+  }, [unread])
 
   return (
     <header className="relative flex h-hd shrink-0 items-center gap-4 border-b border-line bg-surface px-6">

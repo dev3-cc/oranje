@@ -162,8 +162,15 @@ function Hero({
         <span className="min-w-0 flex-1">
           <span className="block truncate text-base font-bold">{shift.hotel}</span>
           <span className="block text-sm text-white/85">
-            {shift.position} · {formatTimeIn(shift.startsAt, shift.hotelTimeZone)} –{' '}
-            {formatTimeIn(shift.endsAt, shift.hotelTimeZone)}
+            {shift.position} ·{' '}
+            {shift.endsAt ? (
+              <Trans>
+                {formatTimeIn(shift.startsAt, shift.hotelTimeZone)} –{' '}
+                {formatTimeIn(shift.endsAt, shift.hotelTimeZone)}
+              </Trans>
+            ) : (
+              <Trans>Desde {formatTimeIn(shift.startsAt, shift.hotelTimeZone)}</Trans>
+            )}
           </span>
           <span className="mt-2 flex items-center gap-2">
             <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/25">

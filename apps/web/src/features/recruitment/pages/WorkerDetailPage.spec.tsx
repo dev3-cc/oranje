@@ -107,9 +107,12 @@ describe('WorkerDetailPage', () => {
     expect(screen.getByText(/Perfil incompleto/)).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Editar' }))
-    expect(await screen.findByText('Editar colaborador')).toBeInTheDocument()
+    // Editar usa el MISMO asistente que el alta (Hugo, 2026-09-23): la Fase 1
+    // vive en el paso 2, al que se llega con el indicador de pasos.
+    expect(await screen.findByRole('heading', { name: 'Pedro Alcántara' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Decisiones de Oranje/ }))
 
-    await user.click(screen.getByLabelText('Posición'))
+    await user.click(await screen.findByLabelText('Posición'))
     await user.click(await screen.findByRole('option', { name: 'Housekeeper' }))
     await user.click(screen.getByLabelText('Modalidad'))
     await user.click(await screen.findByRole('option', { name: 'Tiempo completo' }))

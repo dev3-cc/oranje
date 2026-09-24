@@ -214,7 +214,13 @@ export class RequisitionsService {
   // a IAM.
   private async signCreatorPhotos(rows: RequisitionRow[]): Promise<Map<string, string>> {
     const paths = [
-      ...new Set(rows.flatMap((r) => (r.creator?.photoPath ? [r.creator.photoPath] : []))),
+      ...new Set(
+        rows.flatMap((r) =>
+          [r.creator?.photoPath, r.authorizer?.photoPath, r.inspector?.photoPath].filter(
+            (path): path is string => typeof path === 'string',
+          ),
+        ),
+      ),
     ]
     const urls = await Promise.all(paths.map((path) => this.storage.signedUrl(path)))
 
@@ -241,13 +247,9 @@ export class RequisitionsService {
     return {
       ...entity,
       hotel: { ...entity.hotel, photoUrl: this.places.mediaUrl(row.hotel.photoRef) },
-      createdBy: row.creator
-        ? {
-            id: row.creator.id,
-            fullName: row.creator.fullName,
-            photoUrl: row.creator.photoPath ? (photos.get(row.creator.photoPath) ?? null) : null,
-          }
-        : null,
+      createdBy: person(row.creator, photos),
+      authorizer: person(row.authorizer, photos),
+      inspector: person(row.inspector, photos),
     }
   }
 
@@ -682,6 +684,19 @@ function toPosition(p: RequisitionRow['positions'][number]): PositionEntity {
 // La foto del hotel se COMPONE (D-34) y la del creador se FIRMA (D-30): son
 // dos mecanismos distintos porque el binario de una es de Google y el de la
 // otra es nuestro.
+/** La misma forma para las tres personas de la ficha: quién la pidió, quién la firmó y el Inspector. */
+function person(
+  row: { id: string; fullName: string; photoPath: string | null } | null | undefined,
+  photos: Map<string, string>,
+): { id: string; fullName: string; photoUrl: string | null } | null {
+  if (!row) return null
+  return {
+    id: row.id,
+    fullName: row.fullName,
+    photoUrl: row.photoPath ? (photos.get(row.photoPath) ?? null) : null,
+  }
+}
+
 function toEntity(row: RequisitionRow): RequisitionEntity {
   const positions = row.positions.map(toPosition)
 
@@ -690,6 +705,8 @@ function toEntity(row: RequisitionRow): RequisitionEntity {
     number: row.number,
     hotel: { id: row.hotel.id, name: row.hotel.name, photoUrl: null },
     createdBy: null,
+    authorizer: null,
+    inspector: null,
     state: row.statusState,
     areaManagerUserId: row.areaManagerUserId,
     authorizedBy: row.authorizedBy,

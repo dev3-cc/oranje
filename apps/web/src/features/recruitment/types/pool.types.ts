@@ -1,3 +1,5 @@
+import type { Readiness } from '../lib/profileFields'
+
 import type { WorkerStatus } from '@/shared/constants/workerStatus'
 
 export interface PoolWorker {
@@ -11,12 +13,21 @@ export interface PoolWorker {
   hiringModality: string
   status: WorkerStatus
   isProfileComplete: boolean
+  /** Si ya se puede meter a una requisición; lo pinta el anillo del avatar. */
+  readiness: Readiness
   /** Validado a medias: hasta cuándo puede completar el expediente. */
   profileDueAt: string | null
   hasAccount: boolean
   hasTaxId: boolean
   createdAt: string
   isBlacklisted: boolean
+  /** Dónde está trabajando hoy (asignación ACTIVA más reciente); null sin ninguna. */
+  assignment: {
+    requisitionId: string
+    requisitionNumber: string
+    hotelId: string
+    hotelName: string
+  } | null
 }
 
 export interface WorkerPool {

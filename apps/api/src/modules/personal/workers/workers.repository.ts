@@ -34,6 +34,15 @@ export interface WorkerRow {
   englishLevel: { id: string; code: string; name: string } | null
   hiringModality: { id: string; code: string; name: string } | null
   state: { code: string; color: string; name: string }
+  /// La asignación ACTIVA más reciente (Reclutamiento pidió ver dónde está
+  /// trabajando alguien desde el Pool, sin ir a la requisición); null sin
+  /// ninguna.
+  assignment: {
+    requisitionId: string
+    requisitionNumber: string
+    hotelId: string
+    hotelName: string
+  } | null
 }
 
 export interface WorkerFilter {
@@ -77,7 +86,12 @@ const BASE = `
            jsonb_build_object('id', e.id, 'code', e.code, 'name', e.name) END AS "englishLevel",
          CASE WHEN m.id IS NULL THEN NULL ELSE
            jsonb_build_object('id', m.id, 'code', m.code, 'name', m.name) END AS "hiringModality",
-         jsonb_build_object('code', s.code, 'color', s.color, 'name', s.name) AS state
+         jsonb_build_object('code', s.code, 'color', s.color, 'name', s.name) AS state,
+         CASE WHEN asg."requisitionId" IS NULL THEN NULL ELSE
+           jsonb_build_object('requisitionId', asg."requisitionId",
+                               'requisitionNumber', asg."requisitionNumber",
+                               'hotelId', asg."hotelId",
+                               'hotelName', asg."hotelName") END AS assignment
     FROM personal.vw_worker w
     JOIN catalogs.zone z ON z.id = w.zone_id
     JOIN catalogs.status_light_state s
@@ -86,6 +100,18 @@ const BASE = `
     LEFT JOIN catalogs.english_level e ON e.id = w.english_level_id
     LEFT JOIN catalogs.hiring_modality m ON m.id = w.hiring_modality_id
     LEFT JOIN identity."user" u ON u.id = w.user_id
+    LEFT JOIN LATERAL (
+      SELECT r.id AS "requisitionId", r.number AS "requisitionNumber",
+             h.id AS "hotelId", h.name AS "hotelName"
+        FROM coverage.assignment a
+        JOIN demand.slot sl        ON sl.id = a.slot_id
+        JOIN demand."position" p2  ON p2.id = sl.position_id
+        JOIN demand.requisition r  ON r.id = p2.requisition_id
+        JOIN commercial.hotel h    ON h.id = r.hotel_id
+       WHERE a.worker_id = w.id AND a.status = 'ACTIVE'
+       ORDER BY a.created_at DESC
+       LIMIT 1
+    ) asg ON true
    WHERE w.deleted_at IS NULL`
 
 @Injectable()

@@ -33,6 +33,13 @@ import { formatDayNumber, formatWeekRange, formatWeekday } from '@/shared/lib/fo
 /** El ancho de un día en el carrusel: la unidad de la cinta continua. */
 const COLUMN_WIDTH = 132
 
+/**
+ * Beta «Ponche por Horario» (fecha indefinida, Reglas de Negocio): la semana
+ * se abre sola al ponchar, así que nadie planea turnos a mano por ahora. No
+ * se borra el botón ni el diálogo — revertir es volver esto a `true`.
+ */
+const SCHEDULE_CREATION_ENABLED = false
+
 /** Cómo se pinta la cobertura de una posición. */
 function coverageTone(filled: number, quantity: number): string {
   if (filled >= quantity) return 'bg-green/15 text-ink-2'
@@ -105,8 +112,7 @@ export function SchedulePage(): ReactNode {
             {IS_DEV_UI && <code className="text-ink-4"> · operations.schedule</code>}
           </p>
         </div>
-        {/* Antes esto solo se podía por API/Postman — ni un botón en el front. */}
-        {can('schedule:update') && timeline && (
+        {SCHEDULE_CREATION_ENABLED && can('schedule:update') && timeline && (
           <Button
             variant="secondary"
             onClick={() => {

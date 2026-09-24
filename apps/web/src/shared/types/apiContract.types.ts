@@ -255,6 +255,9 @@ export interface RequisitionApi {
   inspectorId: string | null
   /** Quién la elaboró, para la tarjeta del tablero; opcional: encargo al back. */
   createdBy?: { id: string; fullName: string; photoUrl: string | null } | null
+  /** Quién la firmó y el Inspector de la zona; opcionales mientras el API viejo responda. */
+  authorizer?: { id: string; fullName: string; photoUrl: string | null } | null
+  inspector?: { id: string; fullName: string; photoUrl: string | null } | null
   positions: RequisitionPositionApi[]
   totalSlots: number
   filledSlots: number
@@ -324,6 +327,13 @@ export interface WorkerApi {
   email: string | null
   isBlacklisted: boolean
   createdAt: string
+  /** Dónde está trabajando hoy (asignación ACTIVA más reciente); null sin ninguna. */
+  assignment: {
+    requisitionId: string
+    requisitionNumber: string
+    hotelId: string
+    hotelName: string
+  } | null
 }
 
 /** Una fila de `GET /workers/:id/history` — `personal.worker_state_history`. */

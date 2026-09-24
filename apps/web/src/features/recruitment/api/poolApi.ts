@@ -1,3 +1,4 @@
+import { assignmentReadiness } from '../lib/profileFields'
 import {
   ANY_VALUE,
   type CreateWorkerRequest,
@@ -33,11 +34,13 @@ function toPoolWorker(worker: WorkerApi): PoolWorker {
     hiringModality: worker.hiringModality?.name ?? '—',
     status: worker.state.code as WorkerStatus,
     isProfileComplete: worker.isProfileComplete,
+    readiness: assignmentReadiness(worker),
     profileDueAt: worker.profileDueAt,
     hasAccount: worker.hasAccount,
     hasTaxId: worker.hasTaxId,
     createdAt: worker.createdAt,
     isBlacklisted: worker.isBlacklisted,
+    assignment: worker.assignment,
   }
 }
 

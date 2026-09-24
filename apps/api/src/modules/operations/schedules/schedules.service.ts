@@ -44,7 +44,10 @@ export interface MyShift {
   assignmentId: string
   workDate: string
   startsAt: string
-  endsAt: string
+  /// `null` cuando el turno es sintético (beta «Ponche por Horario»): la
+  /// posición solo captura la hora de entrada, así que no hay con qué armar
+  /// un rango — el front muestra solo la entrada, no inventa una salida.
+  endsAt: string | null
   hotel: string
   /// La zona IANA del hotel. El front formatea las horas con esta, no con el
   /// reloj del teléfono: un turno de Cancún visto desde otra zona se corre.
@@ -71,6 +74,12 @@ export class SchedulesService {
   }
 
   // Solo sus turnos, y por rango de fechas: la semana la elige el cliente.
+  //
+  // Beta «Ponche por Horario» (fecha indefinida): además de lo REAL de
+  // operations.schedule_entry, si hoy cae dentro del rango pedido y nadie
+  // planeó nada, se agrega el turno sintético de la asignación activa — es
+  // lo único que hace visible el Inicio del Colaborador sin que alguien haya
+  // usado «Agregar turno».
   async mine(user: AuthenticatedUser, from: Date, to: Date): Promise<MyShift[]> {
     const workerId = await this.repo.workerOfUser(user.id)
 
@@ -81,18 +90,44 @@ export class SchedulesService {
       })
     }
 
-    return (await this.repo.entriesOfWorker(workerId, from, to)).map((e) => ({
-      id: e.id,
-      assignmentId: e.assignmentId,
-      workDate: e.workDate.toISOString().slice(0, 10),
-      startsAt: e.startsAt.toISOString(),
-      endsAt: e.endsAt.toISOString(),
-      hotel: e.hotelName,
-      hotelTimeZone: e.hotelTimeZone,
-      hotelPhotoUrl: this.places.mediaUrl(e.hotelPhotoRef),
-      hotelPunchMethod: e.hotelPunchMethod === 'QR' ? 'QR' : 'SELFIE',
-      position: e.positionName,
-    }))
+    const real = await this.repo.entriesOfWorker(workerId, from, to)
+    const plannedDays = new Set(real.map((e) => e.workDate.toISOString().slice(0, 10)))
+
+    const fromDay = from.toISOString().slice(0, 10)
+    const toDay = to.toISOString().slice(0, 10)
+    const virtual = await this.repo.virtualShiftToday(workerId)
+
+    const extras = virtual.filter((v) => {
+      const day = v.workDate.toISOString().slice(0, 10)
+      return day >= fromDay && day <= toDay && !plannedDays.has(day)
+    })
+
+    return [
+      ...real.map((e) => ({
+        id: e.id,
+        assignmentId: e.assignmentId,
+        workDate: e.workDate.toISOString().slice(0, 10),
+        startsAt: e.startsAt.toISOString(),
+        endsAt: e.endsAt.toISOString(),
+        hotel: e.hotelName,
+        hotelTimeZone: e.hotelTimeZone,
+        hotelPhotoUrl: this.places.mediaUrl(e.hotelPhotoRef),
+        hotelPunchMethod: e.hotelPunchMethod === 'QR' ? ('QR' as const) : ('SELFIE' as const),
+        position: e.positionName,
+      })),
+      ...extras.map((v) => ({
+        id: v.assignmentId,
+        assignmentId: v.assignmentId,
+        workDate: v.workDate.toISOString().slice(0, 10),
+        startsAt: v.startsAt.toISOString(),
+        endsAt: null,
+        hotel: v.hotelName,
+        hotelTimeZone: v.hotelTimeZone,
+        hotelPhotoUrl: this.places.mediaUrl(v.hotelPhotoRef),
+        hotelPunchMethod: v.hotelPunchMethod === 'QR' ? ('QR' as const) : ('SELFIE' as const),
+        position: v.positionName,
+      })),
+    ]
   }
 
   async get(id: string): Promise<ScheduleEntity> {

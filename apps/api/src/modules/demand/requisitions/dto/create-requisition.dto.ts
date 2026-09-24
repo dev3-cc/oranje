@@ -9,10 +9,10 @@ export const positionSchema = z.object({
   englishLevelId: z.uuid().optional(),
   quantity: z.number().int().min(1).max(200),
   startDate: z.coerce.date(),
-  startTime: z
-    .string()
-    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
-    .optional(),
+  // Deja de ser opcional: sin Horario, la posición no puede armar el turno
+  // virtual que hoy abre el Timesheet (beta «Ponche por Horario», fecha
+  // indefinida — Reglas de Negocio, «Mecanismo de ponchado»).
+  startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   notes: z.string().trim().min(1).max(1000).optional(),
 })
 

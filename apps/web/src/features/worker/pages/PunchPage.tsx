@@ -465,10 +465,16 @@ export function PunchPage(): ReactNode {
       <section>
         <p className="text-lg font-bold text-ink">{shift.hotel}</p>
         <p className="text-sm text-ink-3">
-          <Trans>
-            {shift.position} · turno {formatTimeIn(shift.startsAt, shift.hotelTimeZone)} –{' '}
-            {formatTimeIn(shift.endsAt, shift.hotelTimeZone)}
-          </Trans>
+          {shift.endsAt ? (
+            <Trans>
+              {shift.position} · turno {formatTimeIn(shift.startsAt, shift.hotelTimeZone)} –{' '}
+              {formatTimeIn(shift.endsAt, shift.hotelTimeZone)}
+            </Trans>
+          ) : (
+            <Trans>
+              {shift.position} · desde {formatTimeIn(shift.startsAt, shift.hotelTimeZone)}
+            </Trans>
+          )}
         </p>
       </section>
 

@@ -83,6 +83,25 @@ async function supervisor(hotelId: string, photoPath: string | null): Promise<Au
   return { id: user.id, roleCode: 'ROL-H-01', hotelId, departmentId: null }
 }
 
+async function generalManager(hotelId: string): Promise<AuthenticatedUser> {
+  const role = await db.role.findFirstOrThrow({ where: { code: 'ROL-H-03' } })
+  const user = await db.user.create({
+    data: {
+      id: uuidv7(),
+      email: `req-firma-${uuidv7().slice(-12)}@oranje.local`,
+      fullName: 'Aldo el que firma',
+      roleId: role.id,
+      hotelId,
+      photoPath: 'users/photo/gm.webp',
+    },
+    select: { id: true },
+  })
+
+  users.push(user.id)
+
+  return { id: user.id, roleCode: 'ROL-H-03', hotelId, departmentId: null }
+}
+
 async function requisicion(user: AuthenticatedUser, hotelId: string): Promise<string> {
   const entity = await requisitions.create(
     {
@@ -94,6 +113,7 @@ async function requisicion(user: AuthenticatedUser, hotelId: string): Promise<st
           hotelDepartmentId: departmentId,
           quantity: 1,
           startDate: new Date(Date.now() + 7 * 86_400_000),
+          startTime: '07:00',
         },
       ],
     },
@@ -169,5 +189,24 @@ describe('la requisición trae la foto del hotel y quién la pidió', () => {
 
     expect(row.hotel.photoUrl).toContain('places/ChIJdef/photos/AQRS/media')
     expect(row.createdBy?.photoUrl).toBe('https://firmada.test/users/photo/otro.webp')
+  })
+
+  /* La ficha decía «Autorizada — » porque del firmante solo viajaba el uuid
+     (Hugo, 2026-09-23): ahora viaja con nombre, como el creador. */
+  it('al autorizar, la ficha dice QUIÉN firmó', async () => {
+    const hotelId = await hotel(null)
+    const supervisora = await supervisor(hotelId, null)
+    const gm = await generalManager(hotelId)
+    const id = await requisicion(supervisora, hotelId)
+
+    const antes = await requisitions.get(id, supervisora)
+    expect(antes.authorizer).toBeNull()
+
+    await requisitions.authorize(id, gm)
+    const despues = await requisitions.get(id, supervisora)
+
+    expect(despues.authorizer?.id).toBe(gm.id)
+    expect(despues.authorizer?.fullName).toBe('Aldo el que firma')
+    expect(despues.authorizer?.photoUrl).toBe('https://firmada.test/users/photo/gm.webp')
   })
 })
