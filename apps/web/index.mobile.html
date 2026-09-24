@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <!--
+      IDÉNTICO al index.html del web a propósito, salvo el `src` del script.
+      La app es la web dentro de un WebView: cualquier divergencia aquí se ve
+      como un defecto visual que no existe en el navegador. En particular NO
+      lleva `viewport-fit=cover` — lo llevaba, y hacía que el contenido se
+      metiera debajo de la barra de estado. Las áreas seguras las resuelve
+      Capacitor del lado nativo (`adjustMarginsForEdgeToEdge`), no el viewport.
+    -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="theme-color" content="#ff8000" />
+    <title>Oranje</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!--
+      Se conserva aunque la app no imprima: `globals.css` le da estilo
+      (`#print-root { display: none }`) y las reglas `@media print` lo
+      referencian. Quitarlo hacía que el CSS de la app dejara de ser el mismo.
+    -->
+    <div id="print-root"></div>
+    <script type="module" src="/src/mobile/main.tsx"></script>
+  </body>
+</html>
