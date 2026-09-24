@@ -1,8 +1,9 @@
 import type { MessageDescriptor } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
-import { Trans, useLingui } from '@lingui/react/macro'
+import { Plural, Trans, useLingui } from '@lingui/react/macro'
 import type { ReactNode } from 'react'
 
+import { useGetAuditableHotelsQuery } from '../api/auditsApi'
 import { AuditHistoryList } from '../components/AuditHistoryList'
 import { AuditHotelCard } from '../components/AuditHotelCard'
 
@@ -13,6 +14,7 @@ import personajeEncuesta from '@/assets/ilustrations/personaje-encuesta.svg'
 import { FoldText } from '@/shared/components/FoldText'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
+import { ZonePill } from '@/shared/components/ZonePill'
 import { useCan } from '@/shared/hooks/useCan'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
@@ -57,6 +59,11 @@ export function AuditsPage(): ReactNode {
   const hotelId = session?.hotel?.id ?? ''
   const hotelName = session?.hotel?.name ?? ''
 
+  /* El Inspector no tiene UN hotel (Supervisor sí): audita los de su zona.
+     La consulta se salta a propósito para todos los demás roles, que ya
+     resuelven su hotel desde la sesión. */
+  const { data: zoneHotels } = useGetAuditableHotelsQuery(undefined, { skip: hotelId !== '' })
+
   /** El intro de página se ve UNA vez; «¿Cómo funciona?» lo reabre. */
   const { isIntroOpen, dismissIntro, reopenIntro } = useIntroSeen('audits')
 
@@ -94,14 +101,7 @@ export function AuditsPage(): ReactNode {
         </p>
       </header>
 
-      {hotelId === '' ? (
-        <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-          <Trans>
-            Tu usuario no tiene un hotel asignado todavía. Sin hotel no hay a quién auditar — pídele
-            al Administrador que revise tu alta.
-          </Trans>
-        </p>
-      ) : (
+      {hotelId !== '' ? (
         <>
           <AuditHotelCard hotelId={hotelId} hotelName={hotelName} canCreate={canCreate} />
 
@@ -112,6 +112,47 @@ export function AuditsPage(): ReactNode {
             <AuditHistoryList hotelId={hotelId} hotelName={hotelName} canUpdate={canUpdate} />
           </section>
         </>
+      ) : zoneHotels && zoneHotels.length > 0 ? (
+        /* Sin hotel fijo (el Inspector): una tarjeta + su historial por cada
+           hotel de su zona — mismas piezas que el Supervisor, repetidas. */
+        <>
+          {session !== undefined && session.zones.length > 0 && (
+            <div className="flex flex-col gap-1.5 text-sm text-ink-2">
+              <span className="font-semibold">
+                <Plural
+                  value={session.zones.length}
+                  one="Auditas los hoteles de tu zona:"
+                  other="Auditas los hoteles de tus zonas:"
+                />
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {session.zones.map((zone) => (
+                  <ZonePill key={zone.id}>{zone.name}</ZonePill>
+                ))}
+              </div>
+            </div>
+          )}
+          {zoneHotels.map((hotel) => (
+            <section key={hotel.id} className="flex flex-col gap-3">
+              <AuditHotelCard hotelId={hotel.id} hotelName={hotel.name} canCreate={canCreate} />
+              <AuditHistoryList hotelId={hotel.id} hotelName={hotel.name} canUpdate={canUpdate} />
+            </section>
+          ))}
+        </>
+      ) : (
+        <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+          {zoneHotels ? (
+            <Trans>
+              Todavía no tienes ningún hotel cliente en tus zonas asignadas — pídele al Coordinador
+              que revise tu zona.
+            </Trans>
+          ) : (
+            <Trans>
+              Tu usuario no tiene un hotel asignado todavía. Sin hotel no hay a quién auditar —
+              pídele al Administrador que revise tu alta.
+            </Trans>
+          )}
+        </p>
       )}
 
       <Modal

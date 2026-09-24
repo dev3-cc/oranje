@@ -88,7 +88,9 @@ const MODULES: NavModule[] = [
     label: msg`Requisiciones`,
     to: '/requisitions',
     icon: 'assignment',
-    roles: [...RECLUTAMIENTO, ...HOTEL],
+    /* El Inspector también las crea, acotado a su zona (Reglas de Negocio,
+       2026-09-24); el Coordinador entra por herencia de jerarquía. */
+    roles: [...RECLUTAMIENTO, ...HOTEL, ...INSPECCION],
   },
   {
     label: msg`Pool de Colaboradores`,
@@ -119,9 +121,10 @@ const MODULES: NavModule[] = [
   },
   { label: msg`Mi Personal`, to: '/my-staff', icon: 'badge', roles: HOTEL },
   { label: msg`Accidentes`, to: '/accidents', icon: 'report', roles: [...HOTEL, ...INSPECCION] },
-  /* Auditar es solo del Supervisor: sus Managers no lo ven (Matriz de Hotel
-     §AUDITORÍAS; fuera de la herencia por jerarquía). */
-  { label: msg`Auditorías`, to: '/audits', icon: 'fact_check', roles: [SUPERVISOR] },
+  /* Auditar es del Supervisor y, desde el 2026-09-24, del Inspector (sus
+     hoteles de zona) — ninguno de sus jefes lo ve (fuera de la herencia por
+     jerarquía a propósito, Hugo). */
+  { label: msg`Auditorías`, to: '/audits', icon: 'fact_check', roles: [SUPERVISOR, INSPECTOR] },
 ]
 
 function modulesForRole(roleId: string | undefined): NavModule[] {

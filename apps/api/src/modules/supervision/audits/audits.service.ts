@@ -55,7 +55,7 @@ export class AuditsService {
   // semáforo, y no escribe al `journal` — su historial es
   // `audit_response_history`.
   async create(dto: CreateAuditInput, user: AuthenticatedUser): Promise<AuditEntity> {
-    this.assertHotelScope(dto.hotelId, user)
+    await this.assertHotelScope(dto.hotelId, user)
 
     if (!(await this.repo.hotelExists(dto.hotelId))) {
       throw new NotFoundException({ code: 'HOTEL_NOT_FOUND', message: 'El hotel no existe' })
@@ -122,7 +122,7 @@ export class AuditsService {
   async update(id: string, dto: UpdateAuditInput, user: AuthenticatedUser): Promise<AuditEntity> {
     const row = await this.audit(id)
 
-    this.assertHotelScope(row.hotelId, user)
+    await this.assertHotelScope(row.hotelId, user)
 
     if (dto.responses && dto.responses.length > 0) {
       this.assertNoDuplicateItems(dto.responses)
@@ -185,7 +185,7 @@ export class AuditsService {
   }
 
   async list(query: QueryAuditsInput, user: AuthenticatedUser): Promise<AuditBoard> {
-    const hotelId = this.resolveScopeHotel(query.hotelId, user)
+    const hotelId = await this.resolveScopeHotel(query.hotelId, user)
 
     const { rows, total } = await this.repo.findMany(query, hotelId)
     const photos = await this.signPhotos(rows.map((r) => r.worker?.photoPath ?? null))
@@ -204,7 +204,7 @@ export class AuditsService {
   async get(id: string, user: AuthenticatedUser): Promise<AuditEntity> {
     const row = await this.audit(id)
 
-    this.assertHotelScope(row.hotelId, user)
+    await this.assertHotelScope(row.hotelId, user)
 
     const photos = await this.signPhotos([row.worker?.photoPath ?? null])
 
@@ -215,7 +215,7 @@ export class AuditsService {
   // con asignación ACTIVA ahí, con la fecha de su última
   // PERSONAL_PRESENTATION (o null si nunca se le ha hecho una).
   async lastPerWorker(hotelId: string, user: AuthenticatedUser): Promise<LastAuditPerWorker[]> {
-    this.assertHotelScope(hotelId, user)
+    await this.assertHotelScope(hotelId, user)
 
     const workers = await this.repo.workersOfHotel(hotelId)
     const lastAudits = await this.repo.lastPersonalAuditByWorker(workers.map((w) => w.id))
@@ -239,37 +239,68 @@ export class AuditsService {
     return new Map(distinct.map((path, index) => [path, urls[index] as string]))
   }
 
-  // `user.hotelId` nulo es el patrón ya establecido (D-09): Manager General y
-  // Sistema ven cualquier hotel. Supervisor y Manager de Área quedan acotados
-  // al suyo — el 403 dice la verdad, no un "no autorizado" genérico.
-  private assertHotelScope(hotelId: string, user: AuthenticatedUser): void {
-    if (user.hotelId && user.hotelId !== hotelId) {
+  // `user.hotelId` nulo es el patrón ya establecido (D-09): Sistema ve
+  // cualquier hotel (sin zonas asignadas). El Inspector tampoco tiene hotel
+  // fijo, pero SÍ tiene zonas: se acota a los hoteles de ahí (2026-09-24).
+  // Supervisor queda acotado al suyo — el 403 dice la verdad, no un "no
+  // autorizado" genérico.
+  private async assertHotelScope(hotelId: string, user: AuthenticatedUser): Promise<void> {
+    if (user.hotelId) {
+      if (user.hotelId !== hotelId) {
+        throw new ForbiddenException({
+          code: 'HOTEL_OUT_OF_SCOPE',
+          message: 'Esta auditoría no es de tu hotel',
+        })
+      }
+      return
+    }
+
+    const zoneHotelIds = await this.repo.hotelIdsInUserZones(user.id)
+
+    if (zoneHotelIds.length > 0 && !zoneHotelIds.includes(hotelId)) {
       throw new ForbiddenException({
-        code: 'HOTEL_OUT_OF_SCOPE',
-        message: 'Esta auditoría no es de tu hotel',
+        code: 'HOTEL_OUT_OF_ZONE',
+        message: 'Ese hotel no está en ninguna de tus zonas',
       })
     }
   }
 
   // Un `hotelId` de query fuera del alcance del caller se RECHAZA (mismo
   // criterio que crear/corregir), no se ignora en silencio: un filtro que se
-  // descarta sin avisar es peor que un 403 claro.
-  private resolveScopeHotel(
+  // descarta sin avisar es peor que un 403 claro. Sin `hotelId` de query, el
+  // Inspector recibe TODOS los de sus zonas (Hugo, 2026-09-24) — de ahí que
+  // esto pueda devolver un arreglo, no solo un hotel.
+  private async resolveScopeHotel(
     queryHotelId: string | undefined,
     user: AuthenticatedUser,
-  ): string | null {
-    if (!user.hotelId) {
+  ): Promise<string | string[] | null> {
+    if (user.hotelId) {
+      if (queryHotelId && queryHotelId !== user.hotelId) {
+        throw new ForbiddenException({
+          code: 'HOTEL_OUT_OF_SCOPE',
+          message: 'Solo puedes ver auditorías de tu hotel',
+        })
+      }
+      return user.hotelId
+    }
+
+    const zoneHotelIds = await this.repo.hotelIdsInUserZones(user.id)
+
+    if (zoneHotelIds.length === 0) {
       return queryHotelId ?? null
     }
 
-    if (queryHotelId && queryHotelId !== user.hotelId) {
-      throw new ForbiddenException({
-        code: 'HOTEL_OUT_OF_SCOPE',
-        message: 'Solo puedes ver auditorías de tu hotel',
-      })
+    if (queryHotelId) {
+      if (!zoneHotelIds.includes(queryHotelId)) {
+        throw new ForbiddenException({
+          code: 'HOTEL_OUT_OF_ZONE',
+          message: 'Ese hotel no está en ninguna de tus zonas',
+        })
+      }
+      return queryHotelId
     }
 
-    return user.hotelId
+    return zoneHotelIds
   }
 
   private assertNoDuplicateItems(responses: NewResponse[]): void {

@@ -34,12 +34,12 @@ export function ModulePlaceholder({ title }: { title: string }): ReactNode {
           className="mx-auto mb-4 h-36 w-auto"
         />
         <p className="text-base font-semibold text-ink">
-          <Trans>Pantalla pendiente de diseño</Trans>
+          <Trans>Muy pronto estará aquí</Trans>
         </p>
         <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-ink-3">
           <Trans>
-            El módulo «{title}» ya está en el menú, pero todavía no tiene diseño ni datos que
-            mostrar. Se construye aquí en cuanto llegue la maqueta.
+            «{title}» ya tiene su lugar en el menú. Lo estamos construyendo y va a estar listo muy
+            pronto.
           </Trans>
         </p>
       </div>

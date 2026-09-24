@@ -90,13 +90,18 @@ describe('la base sembrada respeta la herencia', () => {
     expect([...del].filter((t) => !delJefe.has(t))).toEqual([])
   })
 
-  it('lo marcado sin herencia se queda en su rol: Auditorías es solo del Supervisor', async () => {
+  /* Ampliado el 2026-09-24: el Inspector también audita (sus hoteles de
+     zona), pero sigue sin heredarse hacia el Coordinador — mismo criterio
+     de "sin herencia" que ya protegía al Supervisor. */
+  it('lo marcado sin herencia se queda en su rol: Auditorías es del Supervisor y el Inspector', async () => {
     expect([...SIN_HERENCIA].sort()).toEqual(['audits:create', 'audits:read', 'audits:update'])
     const rows = await db.rolePermission.findMany({
       where: { module: 'audits' },
       select: { role: { select: { code: true } } },
     })
-    expect(new Set(rows.map((r) => r.role.code))).toEqual(new Set(['ROL-H-01', 'ROL-SYS-01']))
+    expect(new Set(rows.map((r) => r.role.code))).toEqual(
+      new Set(['ROL-H-01', 'ROL-I-01', 'ROL-SYS-01']),
+    )
   })
 
   it('la herencia no sube: el BD no gana lo exclusivo del BDC', async () => {
