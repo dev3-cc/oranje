@@ -95,6 +95,17 @@ export class RequisitionsRepository {
     return (await this.prisma.hotel.count({ where: { id: hotelId } })) > 0
   }
 
+  // El Inspector no tiene hotel fijo (cubre zona, no hotel — D-09 no lo
+  // modela con hotelId), así que su alcance para crear se checa aquí: ¿el
+  // hotel pedido cae en alguna de sus zonas asignadas (user_zone)?
+  async hotelInUserZones(hotelId: string, userId: string): Promise<boolean> {
+    return (
+      (await this.prisma.hotel.count({
+        where: { id: hotelId, zone: { userZones: { some: { userId } } } },
+      })) > 0
+    )
+  }
+
   async catalogPositions(ids: string[]): Promise<Set<string>> {
     const rows = await this.prisma.catalogPosition.findMany({
       where: { id: { in: ids } },

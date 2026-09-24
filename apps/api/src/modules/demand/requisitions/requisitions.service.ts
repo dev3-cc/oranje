@@ -66,6 +66,16 @@ export class RequisitionsService {
       throw new NotFoundException({ code: 'HOTEL_NOT_FOUND', message: 'El hotel no existe' })
     }
 
+    // El Inspector no tiene hotel fijo (cubre zona, no hotel): sin `hotelId`
+    // en la sesión, el guard de arriba pasa trivial — aquí se acota a las
+    // zonas que le asignó su Coordinador (Reglas de Negocio, 2026-09-24).
+    if (!user.hotelId && !(await this.repo.hotelInUserZones(dto.hotelId, user.id))) {
+      throw new ForbiddenException({
+        code: 'HOTEL_OUT_OF_ZONE',
+        message: 'Ese hotel no está en ninguna de tus zonas',
+      })
+    }
+
     await this.assertCatalogs(dto)
     this.assertDepartmentScope(dto, user)
 

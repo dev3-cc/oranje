@@ -327,7 +327,9 @@ const HOTEL: Permission[] = [
     module: 'requisitions',
     action: 'create',
     label: 'Crear requisición',
-    roles: [SUPERVISOR, GA, GG],
+    // El Inspector la crea para un hotel de su zona (Reglas de Negocio,
+    // 2026-09-24) — herencia por jerarquía le da lo mismo al Coordinador.
+    roles: [SUPERVISOR, GA, GG, INSPECTOR],
   },
   {
     module: 'requisitions',
