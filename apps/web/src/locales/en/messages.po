@@ -103,6 +103,10 @@ msgstr "“{0}” is deleted for real — it isn't archived. If anything in the 
 msgid "«{0}» se elimina de verdad. Si alguna auditoría ya lo contestó, el sistema lo va a impedir y te lo dice aquí."
 msgstr "“{0}” is deleted for real. If any audit already answered it, the system will stop you and tell you here."
 
+#: src/shared/components/ModulePlaceholder.tsx
+msgid "«{title}» ya tiene su lugar en el menú. Lo estamos construyendo y va a estar listo muy pronto."
+msgstr "“{title}” already has its place in the menu. We're building it, and it'll be ready very soon."
+
 #: src/features/onboarding/components/SemaforoHelpDialog.tsx
 msgid "«Regresar» un prospecto es salir por una rama y reactivarlo. La reentrada es siempre hacia Azul claro, el único punto de retorno: se retoma el contacto, no la propuesta vieja."
 msgstr "“Taking back” a Prospect means exiting through a branch and reactivating it. Re-entry is always into Light Blue, the only return point: you pick up the contact again, not the old Proposal."
@@ -201,10 +205,20 @@ msgstr "{0, plural, one {# Zone} other {# Zones}}"
 msgid "{0, plural, one {Agregar contacto} other {Agregar # contactos}}"
 msgstr "{0, plural, one {Add contact} other {Add # contacts}}"
 
+#. placeholder {0}: session.zones.length
+#: src/features/audits/pages/AuditsPage.tsx
+msgid "{0, plural, one {Auditas los hoteles de tu zona:} other {Auditas los hoteles de tus zonas:}}"
+msgstr "{0, plural, one {You audit the hotels in your zone:} other {You audit the hotels in your zones:}}"
+
 #. placeholder {0}: values.drafts.length
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 msgid "{0, plural, one {Contacto agregado} other {# contactos agregados}}"
 msgstr "{0, plural, one {Contact added} other {# contacts added}}"
+
+#. placeholder {0}: session.zones.length
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "{0, plural, one {Solo ves los hoteles de tu zona:} other {Solo ves los hoteles de tus zonas:}}"
+msgstr "{0, plural, one {You only see hotels in your zone:} other {You only see hotels in your zones:}}"
 
 #. placeholder {0}: formatTimeIn(shift.startsAt, shift.hotelTimeZone)
 #. placeholder {1}: formatTimeIn(shift.endsAt, shift.hotelTimeZone)
@@ -3457,10 +3471,6 @@ msgstr "The General Manager doesn't report to anyone."
 msgid "El Manager General ve todos los departamentos"
 msgstr "The General Manager sees every department"
 
-#: src/shared/components/ModulePlaceholder.tsx
-msgid "El módulo «{title}» ya está en el menú, pero todavía no tiene diseño ni datos que mostrar. Se construye aquí en cuanto llegue la maqueta."
-msgstr "The \"{title}\" module is already in the menu, but it has no design or data to show yet. It gets built here as soon as the mockup arrives."
-
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 msgid "El motivo queda en el historial del prospecto."
 msgstr "The reason stays in the Prospect's history."
@@ -4300,6 +4310,10 @@ msgstr "That format can't be processed (iPhone HEIC files don't work): use JPG, 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Ese formato no se puede procesar (los HEIC del iPhone no entran): usa JPG, PNG, WebP o PDF."
 msgstr "That format can't be processed (iPhone HEIC files don't work): use JPG, PNG, WebP or PDF."
+
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Ese hotel no está en ninguna de tus zonas."
+msgstr "That hotel isn't in any of your zones."
 
 #: src/features/admin/components/HotelUserFormDialog.tsx
 msgid "Ese hotel ya no existe. Recarga la página y vuelve a elegirlo."
@@ -6324,6 +6338,10 @@ msgstr "Exit reasons to Red · Brown · Black"
 msgid "Multiplicadores"
 msgstr "Multipliers"
 
+#: src/shared/components/ModulePlaceholder.tsx
+msgid "Muy pronto estará aquí"
+msgstr "Coming very soon"
+
 #: src/features/audits/components/AuditFormDialog.tsx
 msgid "N/A"
 msgstr "N/A"
@@ -7459,10 +7477,6 @@ msgstr "Pay {0}"
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Pago por hora"
 msgstr "Pay per hour"
-
-#: src/shared/components/ModulePlaceholder.tsx
-msgid "Pantalla pendiente de diseño"
-msgstr "Screen awaiting design"
 
 #. placeholder {0}: row.workerName
 #: src/features/timesheet/components/ManualPunchDialog.tsx
@@ -9639,6 +9653,10 @@ msgstr "No proposal versions yet."
 msgid "Todavía no se cotiza ninguna posición. Agrégala con «Editar tarifas» mientras el contrato sea borrador."
 msgstr "No position is quoted yet. Add one with «Edit rates» while the contract is still a draft."
 
+#: src/features/audits/pages/AuditsPage.tsx
+msgid "Todavía no tienes ningún hotel cliente en tus zonas asignadas — pídele al Coordinador que revise tu zona."
+msgstr "You don't have any client hotels in your assigned zones yet — ask your Coordinator to check your zone."
+
 #: src/features/conversion/pages/ConversionPage.tsx
 msgid "Todavía no toca convertir"
 msgstr "It's not time to convert yet"
@@ -9809,8 +9827,8 @@ msgid "Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manag
 msgstr "Your role doesn't authorize requisitions: the hotel's Area Manager or General Manager does."
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
-msgid "Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área o el Manager General del hotel."
-msgstr "Your role can't create requisitions: the hotel's Supervisor, Area Manager or General Manager does."
+msgid "Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área, el Manager General del hotel o el Inspector de su zona."
+msgstr "Your role can't create requisitions: they're created by the Supervisor, the Area Manager, the General Manager, or the Inspector of the zone."
 
 #: src/features/team/pages/TeamPage.tsx
 msgid "Tu rol no tiene BDs a cargo, así que aquí no hay nada que mostrar."

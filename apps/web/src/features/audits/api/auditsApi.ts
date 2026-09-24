@@ -11,7 +11,12 @@ import type {
 import { registerAuditsMocks } from './auditsMocks'
 
 import { baseApi } from '@/app/baseApi'
-import type { ApiEnvelope, PaginatedEnvelope } from '@/shared/types/apiContract.types'
+import { fetchAllPages } from '@/shared/lib/fetchAllPages'
+import type { ApiEnvelope, HotelApi, PaginatedEnvelope } from '@/shared/types/apiContract.types'
+
+type FetchWithBQ = (
+  args: string | { url: string; params?: Record<string, unknown> },
+) => Promise<{ data?: unknown; error?: unknown }>
 
 /**
  * Auditoría de Presentación y Ambiente (`supervision.audit`), ya construida y
@@ -32,6 +37,23 @@ export const auditsApi = baseApi.injectEndpoints({
       query: (hotelId) => `/hotels/${hotelId}`,
       transformResponse: (raw: ApiEnvelope<{ name: string; photoUrl: string | null }>) => raw.data,
       providesTags: (_res, _err, hotelId) => [{ type: 'Hotel' as const, id: hotelId }],
+    }),
+
+    /**
+     * El Inspector no tiene un hotel fijo como el Supervisor: audita los
+     * hoteles de su(s) zona(s) — `/hotels` ya viene acotado ahí desde el
+     * back (Reglas de Negocio, 2026-09-24). Vacío para todos los demás
+     * roles: no la usan porque tienen `session.hotel`.
+     */
+    getAuditableHotels: build.query<Array<{ id: string; name: string }>, void>({
+      queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
+        const res = await fetchAllPages<HotelApi>(fetchWithBQ as FetchWithBQ, '/hotels', {
+          onlyClients: true,
+        })
+        if ('error' in res) return { error: res.error as never }
+
+        return { data: res.data.map((h) => ({ id: h.id, name: h.name })) }
+      },
     }),
 
     /** Los reactivos vigentes de UNA auditoría, agrupados por categoría y ordinal (lectura abierta). */
@@ -134,6 +156,7 @@ export const auditsApi = baseApi.injectEndpoints({
 
 export const {
   useGetAuditsHotelQuery,
+  useGetAuditableHotelsQuery,
   useGetChecklistItemsQuery,
   useCreateChecklistItemMutation,
   useUpdateChecklistItemMutation,
