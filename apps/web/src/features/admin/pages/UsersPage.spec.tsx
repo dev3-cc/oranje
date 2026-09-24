@@ -183,6 +183,60 @@ describe('UsersPage', () => {
     expect(screen.getByText('nueva@xcaret.local', { selector: 'p' })).toBeInTheDocument()
   })
 
+  it('las zonas solo aparecen con el rol Inspector, y se guardan al crear', async () => {
+    const user = userEvent.setup()
+    renderUsers()
+
+    await user.click(screen.getByRole('button', { name: 'Agregar usuario' }))
+    await user.click(await screen.findByRole('button', { name: 'Saltar' }))
+    expect(screen.queryByText('Zonas')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('combobox', { name: 'Rol' }))
+    await user.click(await screen.findByRole('option', { name: 'Inspector' }))
+    expect(await screen.findByText('Zonas')).toBeInTheDocument()
+    expect(await screen.findByText('Zona Norte')).toBeInTheDocument()
+
+    // Cambiar a otro rol lo vuelve a ocultar, sin dejar nada a medias.
+    await user.click(screen.getByRole('combobox', { name: 'Rol' }))
+    await user.click(await screen.findByRole('option', { name: 'Business Developer' }))
+    expect(screen.queryByText('Zonas')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('combobox', { name: 'Rol' }))
+    await user.click(await screen.findByRole('option', { name: 'Inspector' }))
+    await user.click(await screen.findByText('Zona Norte'))
+    await user.click(screen.getByText('Zona Sur'))
+
+    await user.type(screen.getByLabelText('Nombre completo'), 'Nuevo Inspector')
+    await user.type(screen.getByLabelText('Correo'), 'inspector-nuevo@casacurtidor.com')
+    await user.click(screen.getByRole('button', { name: 'Crear usuario' }))
+
+    expect(await screen.findByText('Invitación enviada a:')).toBeInTheDocument()
+  })
+
+  it('editar un Inspector precarga sus zonas ya asignadas', async () => {
+    const user = userEvent.setup()
+    renderUsers()
+
+    // Se crea uno con zona para tener qué editar: el fixture no trae ninguno.
+    await user.click(screen.getByRole('button', { name: 'Agregar usuario' }))
+    await user.click(await screen.findByRole('button', { name: 'Saltar' }))
+    await user.click(screen.getByRole('combobox', { name: 'Rol' }))
+    await user.click(await screen.findByRole('option', { name: 'Inspector' }))
+    await user.click(await screen.findByText('Zona Centro'))
+    await user.type(screen.getByLabelText('Nombre completo'), 'Inspector Con Zona')
+    await user.type(screen.getByLabelText('Correo'), 'inspector-zona@casacurtidor.com')
+    await user.click(screen.getByRole('button', { name: 'Crear usuario' }))
+    await screen.findByText('Invitación enviada a:')
+    await user.click(screen.getByRole('button', { name: 'Cerrar' }))
+
+    await user.click(await screen.findByText('Inspector Con Zona'))
+    expect(await screen.findByText('Editar usuario')).toBeInTheDocument()
+    const centro = await screen.findByText('Zona Centro')
+    await waitFor(() => {
+      expect(centro.closest('label')?.querySelector('input')).toBeChecked()
+    })
+  })
+
   it('editar una cuenta del hotel bloquea hotel, rol y correo', async () => {
     const user = userEvent.setup()
     renderUsers('/users?ambito=hoteles')
