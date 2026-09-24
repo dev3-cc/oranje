@@ -11,7 +11,12 @@ import { PermissionsService } from '../../identity/index.js'
 import type { SetZonesDto } from './dto/territory.dto.js'
 import { TerritoriesRepository, ZoneRow } from './territories.repository.js'
 
-const TERRITORY_ROLES = ['ROL-V-01', 'ROL-V-02']
+/**
+ * Roles con zonas propias vía `user_zone`: el BD/BDC las usa como territorio
+ * de venta, el Inspector como alcance de requisiciones y auditorías
+ * (2026-09-24) — mismo mecanismo, mismo endpoint, distinto uso.
+ */
+const ZONE_ASSIGNABLE_ROLES = ['ROL-V-01', 'ROL-V-02', 'ROL-I-01']
 
 export interface ZoneEntity {
   id: string
@@ -84,10 +89,10 @@ export class TerritoriesService {
   async set(userId: string, dto: SetZonesDto, actor: AuthenticatedUser): Promise<TerritoryEntity> {
     const user = await this.user(userId)
 
-    if (!TERRITORY_ROLES.includes(user.roleCode)) {
+    if (!ZONE_ASSIGNABLE_ROLES.includes(user.roleCode)) {
       throw new UnprocessableEntityException({
         code: 'ROLE_WITHOUT_TERRITORY',
-        message: `${user.fullName} es ${user.roleCode}: el territorio es de Ventas`,
+        message: `${user.fullName} es ${user.roleCode}: ese rol no tiene zonas`,
       })
     }
 
