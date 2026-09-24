@@ -1,5 +1,12 @@
 import type { HotelUser, RoleOption, StaffUser } from '../types/admin.types'
 
+/**
+ * Import entre features, mismo patrón que `teamMocks.ts` (que ya lo hace con
+ * Onboarding): las zonas del Inspector se leen y escriben con el mismo mock
+ * que usa Mi Territorio, no uno propio.
+ */
+// eslint-disable-next-line no-restricted-imports
+import { registerTeamMocks } from '@/features/team/api/teamMocks'
 import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
 import type {
   ApiEnvelope,
@@ -361,4 +368,10 @@ export function registerAdminMocks(): void {
   if (areRoutesRegistered) return
   areRoutesRegistered = true
   registerMockRoutes(routes)
+  /*
+   * Zonas del Inspector (`/catalogs/zones`, `/users/:id/zones`): mismo mock
+   * que ya usa Mi Territorio — no se duplica la ruta aquí, y el registro es
+   * idempotente (`areRoutesRegistered` en cada archivo).
+   */
+  registerTeamMocks()
 }
