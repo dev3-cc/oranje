@@ -203,7 +203,7 @@ describe('las plantillas hablan los dos idiomas', () => {
       link: 'https://oranje.test/reset?oobCode=abc',
     })
 
-    expect(subject).toBe('Ya tienes cuenta en Oranje')
+    expect(subject).toBe('Te damos la bienvenida a Oranje')
     expect(html).toContain('Hola Juan David:')
     expect(html).toContain('https://oranje.test/reset?oobCode=abc')
     // La versión en texto no es opcional: sin ella el correo puntúa peor en spam.

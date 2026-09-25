@@ -1,3 +1,4 @@
+import { ILLUSTRATION_ACCESS, ILLUSTRATION_WELCOME } from './assets.js'
 import { renderHtml, renderText, type LayoutParts } from './layout.js'
 
 /**
@@ -55,25 +56,27 @@ const accountInvitation: Template<'account-invitation'> = {
   build: (locale, data) =>
     locale === 'en'
       ? {
-          subject: 'Your Oranje account is ready',
-          heading: 'Your Oranje account is ready',
-          preheader: 'Set your password and sign in.',
+          illustrationCid: ILLUSTRATION_WELCOME.cid,
+          subject: 'Welcome to Oranje — set your password',
+          heading: 'Welcome to Oranje',
+          preheader: 'Your account is ready. Set your password to sign in.',
           paragraphs: [
             greeting(locale, data.name),
-            'An Oranje administrator created an account for you. To start using it, set your own password.',
-            'The link works once and expires in a few hours. If it expires, ask for a new one from the sign-in screen.',
+            'Your Oranje team set up an account for you. One step left: create your password and you are in.',
+            'For your security, the link works once and expires in a few hours. If it expires, request a new one from the sign-in screen — no need to ask anyone.',
           ],
-          action: { label: 'Set my password', url: data.link },
+          action: { label: 'Create my password', url: data.link },
           footnote: FOOTNOTE.en,
         }
       : {
-          subject: 'Ya tienes cuenta en Oranje',
-          heading: 'Ya tienes cuenta en Oranje',
-          preheader: 'Crea tu contraseña y entra.',
+          illustrationCid: ILLUSTRATION_WELCOME.cid,
+          subject: 'Te damos la bienvenida a Oranje',
+          heading: 'Te damos la bienvenida a Oranje',
+          preheader: 'Tu cuenta está lista. Crea tu contraseña para entrar.',
           paragraphs: [
             greeting(locale, data.name),
-            'Un administrador de Oranje te creó una cuenta. Para empezar a usarla, crea tu propia contraseña.',
-            'El enlace sirve una sola vez y caduca en unas horas. Si se te vence, pide uno nuevo desde la pantalla de inicio de sesión.',
+            'Tu equipo de Oranje ya te dio de alta. Falta un solo paso: crea tu contraseña y listo, adentro.',
+            'Por tu seguridad, el enlace sirve una sola vez y caduca en unas horas. Si se te vence, pide uno nuevo desde la pantalla de inicio de sesión — sin trámites.',
           ],
           action: { label: 'Crear mi contraseña', url: data.link },
           footnote: FOOTNOTE.es,
@@ -85,27 +88,29 @@ const passwordReset: Template<'password-reset'> = {
   build: (locale, data) =>
     locale === 'en'
       ? {
+          illustrationCid: ILLUSTRATION_ACCESS.cid,
           subject: 'Reset your Oranje password',
-          heading: 'Reset your password',
-          preheader: 'A link to set a new password.',
+          heading: 'Let’s reset your password',
+          preheader: 'Set a new password with this one-time link.',
           paragraphs: [
             greeting(locale, data.name),
-            'We received a request to reset the password for your Oranje account.',
-            'If it was not you, ignore this email: your current password stays as it is.',
+            'We received a request to reset the password for your Oranje account. Use the button below to choose a new one.',
+            'Didn’t request this? You can safely ignore this email — your current password keeps working and nothing changes.',
           ],
-          action: { label: 'Set a new password', url: data.link },
+          action: { label: 'Choose a new password', url: data.link },
           footnote: FOOTNOTE.en,
         }
       : {
+          illustrationCid: ILLUSTRATION_ACCESS.cid,
           subject: 'Restablece tu contraseña de Oranje',
-          heading: 'Restablece tu contraseña',
-          preheader: 'Un enlace para poner una contraseña nueva.',
+          heading: 'Vamos a restablecer tu contraseña',
+          preheader: 'Un enlace de un solo uso para poner una nueva.',
           paragraphs: [
             greeting(locale, data.name),
-            'Recibimos una solicitud para restablecer la contraseña de tu cuenta de Oranje.',
-            'Si no fuiste tú, ignora este correo: tu contraseña actual se queda como está.',
+            'Recibimos una solicitud para restablecer la contraseña de tu cuenta de Oranje. Con el botón de abajo eliges una nueva.',
+            '¿No fuiste tú? Ignora este correo con confianza: tu contraseña actual sigue funcionando y nada cambia.',
           ],
-          action: { label: 'Poner una contraseña nueva', url: data.link },
+          action: { label: 'Elegir contraseña nueva', url: data.link },
           footnote: FOOTNOTE.es,
         },
 }
