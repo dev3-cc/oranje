@@ -1,0 +1,5 @@
+export { MailerModule } from './mailer.module.js'
+export { MailerService } from './mailer.service.js'
+export type { SendMailInput, SendMailResult } from './mailer.service.js'
+export type { Locale, TemplateName } from './templates/index.js'
+export { renderTemplate } from './templates/index.js'
