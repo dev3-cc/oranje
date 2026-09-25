@@ -44,6 +44,7 @@ const profile: MyProfile = {
   assignment: null,
   taxDeadline: {
     status: 'OK',
+    hasStarted: true,
     day: 2,
     dueAt: isoDaysFromNow(2),
     hasDocument: false,
