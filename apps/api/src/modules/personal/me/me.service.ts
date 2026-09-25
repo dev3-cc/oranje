@@ -7,8 +7,8 @@ import {
 import { v7 as uuidv7 } from 'uuid'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { FirebaseAccountsService } from '../../../infra/firebase/index.js'
 import { PrismaService } from '../../../infra/prisma/index.js'
-import { FirebaseAccountsService } from '../../identity/users/firebase-accounts.service.js'
 import { NotificationPublisherService } from '../../notifications/index.js'
 import { DocumentsService } from '../documents/documents.service.js'
 import type { DocumentEntity } from '../documents/documents.service.js'

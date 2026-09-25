@@ -2,6 +2,8 @@ import { ConflictException, UnprocessableEntityException } from '@nestjs/common'
 import type { ConfigService } from '@nestjs/config'
 import { GoogleAuth } from 'google-auth-library'
 
+import { FirebaseAccountsService } from '../../src/infra/firebase/index.js'
+import { MailerService } from '../../src/infra/mailer/index.js'
 import type { PrismaService } from '../../src/infra/prisma/index.js'
 import type { StorageService } from '../../src/infra/storage/index.js'
 import { RolesService } from '../../src/modules/identity/roles/roles.service.js'
@@ -9,7 +11,6 @@ import type { CreateStaffUserDto } from '../../src/modules/identity/users/dto/cr
 import { createStaffUserSchema } from '../../src/modules/identity/users/dto/create-staff-user.dto.js'
 import { queryStaffUsersSchema } from '../../src/modules/identity/users/dto/query-staff-users.dto.js'
 import { updateStaffUserSchema } from '../../src/modules/identity/users/dto/update-staff-user.dto.js'
-import { FirebaseAccountsService } from '../../src/modules/identity/users/firebase-accounts.service.js'
 import { StaffUsersRepository } from '../../src/modules/identity/users/staff-users.repository.js'
 import { StaffUsersService } from '../../src/modules/identity/users/staff-users.service.js'
 
@@ -87,6 +88,19 @@ async function journalOf(userId: string): Promise<Array<{ eventType: string; pay
   })
 }
 
+/**
+ * El mailer SIN configurar: sin las variables del SMTP se declara apagado y
+ * cada correo sale por el respaldo de Firebase, que es lo que estas pruebas
+ * ya simulan. Así siguen valiendo tal cual estaban.
+ */
+function mailerApagado(accounts: FirebaseAccountsService): MailerService {
+  const sinCorreo = {
+    get: (key: string): string | undefined => (key.startsWith('MAIL_') ? undefined : 'oranje-test'),
+  } as unknown as ConfigService<never, true>
+
+  return new MailerService(sinCorreo, db as unknown as PrismaService, accounts)
+}
+
 beforeAll(async () => {
   const actorId = (await actor()).id
 
@@ -103,6 +117,7 @@ beforeAll(async () => {
   service = new StaffUsersService(
     new StaffUsersRepository(db as unknown as PrismaService),
     new FirebaseAccountsService(config),
+    mailerApagado(new FirebaseAccountsService(config)),
     storageFake as unknown as StorageService,
     { publish: (): Promise<void> => Promise.resolve() } as never,
   )

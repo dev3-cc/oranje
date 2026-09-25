@@ -64,15 +64,45 @@ export class FirebaseAccountsService {
   }
 
   /**
-   * Dispara el correo de restablecimiento de contraseña. Sin `returnOobLink`
-   * a propósito: así Firebase manda su propio correo (plantilla en español se
-   * ajusta en consola) y el enlace jamás pasa por aquí.
+   * Dispara el correo de restablecimiento **de Firebase**, con su plantilla,
+   * que no se puede modificar.
+   *
+   * Desde el mailer propio (Hugo, 2026-09-25) esto dejó de ser el camino
+   * normal y pasó a ser el **respaldo**: se usa cuando nuestro SMTP falla y
+   * hay que mandar el correo como sea. El camino normal es
+   * `passwordResetLink`, que trae el enlace para meterlo en nuestra plantilla.
    */
   async sendPasswordReset(email: string): Promise<void> {
     await this.call(`projects/${this.project()}/accounts:sendOobCode`, {
       requestType: 'PASSWORD_RESET',
       email,
     })
+  }
+
+  /**
+   * El mismo enlace del correo anterior, pero SIN que Firebase mande nada:
+   * `returnOobLink` hace que lo devuelva para que lo mandemos nosotros, con
+   * nuestra plantilla y nuestro remitente.
+   *
+   * Es lo que permite tener correo propio sin inventar el mecanismo de
+   * seguridad: el enlace lo sigue emitiendo y validando Firebase, con su
+   * caducidad y su uso único. Solo requiere credenciales de servicio, que es
+   * con lo que ya habla este cliente.
+   */
+  async passwordResetLink(email: string): Promise<string> {
+    const body = await this.call(`projects/${this.project()}/accounts:sendOobCode`, {
+      requestType: 'PASSWORD_RESET',
+      email,
+      returnOobLink: true,
+    })
+
+    const link = body['oobLink']
+
+    if (typeof link !== 'string') {
+      throw new FirebaseAccountsError('NO_OOB_LINK', 'Identity Toolkit no devolvió el enlace')
+    }
+
+    return link
   }
 
   /**

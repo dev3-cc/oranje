@@ -8,6 +8,8 @@ import {
 } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { FirebaseAccountsError, FirebaseAccountsService } from '../../../infra/firebase/index.js'
+import { MailerService } from '../../../infra/mailer/index.js'
 import { StorageService } from '../../../infra/storage/index.js'
 import { NotificationPublisherService } from '../../notifications/index.js'
 
@@ -20,7 +22,6 @@ import type {
   StaffUserEntity,
   StaffUserWithInvitation,
 } from './entities/staff-user.entity.js'
-import { FirebaseAccountsError, FirebaseAccountsService } from './firebase-accounts.service.js'
 import { StaffUserRow, StaffUsersRepository } from './staff-users.repository.js'
 
 export interface Paginated<T> {
@@ -74,6 +75,7 @@ export class StaffUsersService {
   constructor(
     private readonly repo: StaffUsersRepository,
     private readonly accounts: FirebaseAccountsService,
+    private readonly mailer: MailerService,
     private readonly storage: StorageService,
     private readonly notifications: NotificationPublisherService,
   ) {}
@@ -155,12 +157,18 @@ export class StaffUsersService {
     let invitation: InvitationResult = { sent: false }
 
     if (dto.password === undefined) {
-      invitation = await this.sendInvitation(row.id, row.email, actorRef, 'invitation')
+      invitation = await this.sendInvitation(
+        row.id,
+        row.email,
+        row.fullName,
+        actorRef,
+        'invitation',
+      )
     } else if (dto.sendWelcomeEmail) {
       // El correo de bienvenida es el mismo sendOobCode («tienes cuenta con
       // este correo, establece la tuya aquí») y NUNCA lleva la contraseña; el
       // canal para decirla lo elige el Administrador.
-      invitation = await this.sendInvitation(row.id, row.email, actorRef, 'welcome')
+      invitation = await this.sendInvitation(row.id, row.email, row.fullName, actorRef, 'welcome')
     }
 
     return withInvitation(toEntity(row, await this.signPhotos([row])), invitation)
@@ -251,6 +259,7 @@ export class StaffUsersService {
     const invitation = await this.sendInvitation(
       row.id,
       row.email,
+      row.fullName,
       { userId: actor.id, role: actor.roleCode },
       'resend',
     )
@@ -297,6 +306,7 @@ export class StaffUsersService {
   private async sendInvitation(
     userId: string,
     email: string,
+    fullName: string,
     actor: { userId: string; role: string },
     kind: InvitationKind,
   ): Promise<InvitationResult> {
@@ -307,8 +317,26 @@ export class StaffUsersService {
         await this.accounts.createAccount(email)
       }
 
-      await this.accounts.sendPasswordReset(email)
-      await this.repo.journal(userId, 'STAFF_USER_INVITATION_SENT', actor, { email, kind })
+      const delivery = await this.mailer.sendAccountEmail({
+        template: 'account-invitation',
+        to: email,
+        name: fullName,
+        userId,
+      })
+
+      if (delivery.status === 'FAILED') {
+        // Ni el SMTP propio ni el respaldo de Firebase: cae al catch de abajo,
+        // que es quien deja el rastro de la invitación fallida.
+        throw new Error('El correo de invitación no salió por ningún camino')
+      }
+
+      // `transport` dice si salió por lo nuestro o por el respaldo: sin eso, un
+      // correo con la plantilla vieja de Firebase parece un misterio.
+      await this.repo.journal(userId, 'STAFF_USER_INVITATION_SENT', actor, {
+        email,
+        kind,
+        transport: delivery.transport,
+      })
 
       return { sent: true }
     } catch (error) {

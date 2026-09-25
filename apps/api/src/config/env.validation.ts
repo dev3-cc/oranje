@@ -71,6 +71,25 @@ const baseSchema = z.object({
   CPANEL_DOMAIN: optionalVar(z.string().min(1)),
   CPANEL_API_TOKEN: optionalVar(z.string().min(1)),
 
+  // El mailer propio (Hugo, 2026-09-25). Sale por el SMTP de cPanel, que ya
+  // firma con el SPF y el DKIM del dominio. Si FALTA cualquiera de las
+  // cuatro, el mailer queda apagado y todo el correo sigue saliendo por
+  // Firebase, exactamente como hasta hoy: configurar es lo que lo enciende.
+  MAIL_SMTP_HOST: optionalVar(z.string().min(1)),
+  MAIL_SMTP_PORT: optionalVar(z.coerce.number().int().positive()),
+  MAIL_SMTP_USER: optionalVar(z.string().min(1)),
+  MAIL_SMTP_PASSWORD: optionalVar(z.string().min(1)),
+  // Lo que ve quien recibe. El remitente DEBE ser del dominio firmado: uno de
+  // otro dominio pasa el SPF del nuestro por alto y cae en spam.
+  MAIL_FROM_NAME: optionalVar(z.string().min(1)),
+  MAIL_FROM_EMAIL: optionalVar(z.string().email()),
+  // A donde contesta quien le da a "Responder". Sin ella, al remitente.
+  MAIL_REPLY_TO: optionalVar(z.string().email()),
+  // El freno de mano: 'firebase' fuerza el respaldo aunque el SMTP responda
+  // bien, que es el caso en que A2 acepta el correo y no lo entrega. Pasa a
+  // la tabla de ajustes cuando exista la pantalla del Administrador.
+  MAIL_TRANSPORT: z.enum(['own', 'firebase']).default('own'),
+
   STORAGE_BUCKET: z.string().min(1),
   // El consumidor de eventos y el push. Sin ellas el modulo arranca pero
   // responde 401 en /notifications/events y no manda ningun push.

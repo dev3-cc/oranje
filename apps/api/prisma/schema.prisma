@@ -316,6 +316,7 @@ model User {
   notifications          Notification[]
   notificationsTriggered Notification[] @relation("notificationActor")
   devices                Device[]
+  emailDeliveries        EmailDelivery[]
 
   accidentsReported  WorkAccident[] @relation("accidentReportedBy")
   accidentsInspected WorkAccident[] @relation("accidentInspector")
@@ -1928,6 +1929,44 @@ model Device {
 
   @@id([id])
   @@map("device")
+  @@schema("notifications")
+}
+
+/// El rastro de cada correo que sale del sistema.
+///
+/// `transport` dice por DONDE salio: cuando el SMTP propio falla, el mailer
+/// cae solo a Firebase y la fila lo delata, sin que nadie tenga que mirar.
+///
+/// `toUserId` es nulo a proposito: se le escribe a gente sin cuenta (el
+/// contacto de un hotel, por ejemplo), y la direccion es lo unico seguro.
+model EmailDelivery {
+  id String @db.Uuid
+
+  template String @db.Text
+  subject  String @db.Text
+  /// es | en
+  locale   String @db.Text
+
+  toEmail  String  @map("to_email") @db.Text
+  toUserId String? @map("to_user_id") @db.Uuid
+
+  /// SMTP | FIREBASE
+  transport String @db.Text
+  /// SENT | FAILED
+  status    String @db.Text
+  attempts  Int    @default(1)
+
+  messageId String? @map("message_id") @db.Text
+  error     String? @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  sentAt    DateTime? @map("sent_at") @db.Timestamptz(6)
+
+  toUser User? @relation(fields: [toUserId], references: [id], onDelete: SetNull)
+
+  @@id([id])
+  @@index([toEmail, createdAt], map: "ix_email_delivery_to")
+  @@map("email_delivery")
   @@schema("notifications")
 }
 
