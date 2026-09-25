@@ -247,7 +247,7 @@ export interface RequisitionApi {
   id: string
   number: string
   /** `photoUrl` compuesta al leer (D-34); opcional: el contrato la está ganando. */
-  hotel: { id: string; name: string; photoUrl?: string | null }
+  hotel: { id: string; name: string; photoUrl?: string | null; timeZone?: string }
   state: StatusRefApi
   areaManagerUserId: string | null
   authorizedBy: string | null
