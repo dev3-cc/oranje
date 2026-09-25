@@ -20,6 +20,11 @@ import { formatDate } from '@/shared/lib/formatters'
 export function TaxDeadlineBanner({ deadline }: { deadline: TaxDeadlineApi }): ReactNode {
   const { t } = useLingui()
 
+  // Sin asignación todavía el plazo no ha arrancado: nada que avisar.
+  if (!deadline.hasStarted && !deadline.hasDocument) {
+    return null
+  }
+
   if (deadline.hasDocument) {
     return (
       <NoticeCard image={personajePagoProcesado} title={t`SSN/ITIN recibido`} role="status">
@@ -37,6 +42,11 @@ export function TaxDeadlineBanner({ deadline }: { deadline: TaxDeadlineApi }): R
     )
   }
 
+  // A este punto `hasDocument` es falso y el guard de arriba ya descartó
+  // `!hasStarted`: el plazo arrancó, así que `day`/`dueAt` vienen con dato.
+  const day = deadline.day ?? 0
+  const dueAt = deadline.dueAt ?? new Date().toISOString()
+
   if (deadline.status === 'NOTICE') {
     return (
       <NoticeCard
@@ -46,8 +56,8 @@ export function TaxDeadlineBanner({ deadline }: { deadline: TaxDeadlineApi }): R
         role="alert"
       >
         <Trans>
-          El plazo venció el {formatDate(deadline.dueAt)} (vas en el día {deadline.day}). Mañana se
-          suspende tu acceso, y sin tu SSN o ITIN no se te puede pagar.
+          El plazo venció el {formatDate(dueAt)} (vas en el día {day}). Mañana se suspende tu
+          acceso, y sin tu SSN o ITIN no se te puede pagar.
         </Trans>
       </NoticeCard>
     )
@@ -56,8 +66,8 @@ export function TaxDeadlineBanner({ deadline }: { deadline: TaxDeadlineApi }): R
   return (
     <NoticeCard image={personajeCronograma} title={t`Carga tu SSN o ITIN`} role="status">
       <Trans>
-        Tienes hasta el <span className="font-semibold">{formatDate(deadline.dueAt)}</span> (día{' '}
-        {deadline.day} de 3). Sin él no se te puede pagar.
+        Tienes hasta el <span className="font-semibold">{formatDate(dueAt)}</span> (día {day} de 3).
+        Sin él no se te puede pagar.
       </Trans>
     </NoticeCard>
   )

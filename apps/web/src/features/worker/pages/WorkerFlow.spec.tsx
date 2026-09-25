@@ -34,6 +34,7 @@ function renderPage(page: ReactElement): void {
 function deadline(overrides: Partial<TaxDeadlineApi>): TaxDeadlineApi {
   return {
     status: 'OK',
+    hasStarted: true,
     day: 2,
     dueAt: '2026-08-24T15:00:00.000Z',
     hasDocument: false,
@@ -144,6 +145,15 @@ describe('el apartado del Colaborador', () => {
 })
 
 describe('TaxDeadlineBanner', () => {
+  // El caso real de ococom@ (2026-09-25): sin asignación nunca, no hay nada
+  // que avisar, sin importar cuánto tiempo pasó desde el alta.
+  it('sin asignación todavía, no muestra nada', () => {
+    const { container } = render(
+      <TaxDeadlineBanner deadline={deadline({ hasStarted: false, day: null, dueAt: null })} />,
+    )
+    expect(container).toBeEmptyDOMElement()
+  })
+
   it('días 1-3: dice cuánto queda y que sin el documento no hay pago', () => {
     render(<TaxDeadlineBanner deadline={deadline({ status: 'OK', day: 2 })} />)
     expect(screen.getByText(/día 2 de 3/)).toBeInTheDocument()
