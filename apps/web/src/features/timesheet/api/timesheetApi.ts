@@ -21,6 +21,7 @@ import { registerTimesheetMocks } from './timesheetMocks'
 import { baseApi } from '@/app/baseApi'
 import type { TimesheetStatus } from '@/shared/constants/timesheetStatus'
 import { fetchAllPages } from '@/shared/lib/fetchAllPages'
+import { formatTimeIn } from '@/shared/lib/formatters'
 import type {
   ApiEnvelope,
   TimesheetApi,
@@ -44,8 +45,13 @@ type FetchWithBQ = (
 
 const MS_PER_DAY = 86_400_000
 
-function timeOf(iso: string): string {
-  return iso.slice(11, 16)
+/**
+ * La hora del ponche en la zona horaria del HOTEL, no la del navegador que la
+ * lee: mostrar el ISO crudo (UTC) hacía que el Timesheet enseñara la misma
+ * hora sin importar el hotel — reportado por Hugo ponchando en Cancún.
+ */
+function timeOf(iso: string, timeZone: string | undefined): string {
+  return formatTimeIn(iso, timeZone)
 }
 
 /** Lo que el Timesheet necesita saber de cada requisición: folio y hotel. */
@@ -53,6 +59,7 @@ interface RequisitionRefInfo {
   number: string
   hotelName: string
   hotelPhotoUrl: string | null
+  hotelTimeZone: string | undefined
 }
 
 /**
@@ -68,7 +75,11 @@ async function fetchRequisitionIndex(
   if (res.error) return index
   const items = (
     res.data as ApiEnvelope<
-      Array<{ id: string; number: string; hotel: { name: string; photoUrl?: string | null } }>
+      Array<{
+        id: string
+        number: string
+        hotel: { name: string; photoUrl?: string | null; timeZone?: string }
+      }>
     >
   ).data
   for (const item of items) {
@@ -76,6 +87,7 @@ async function fetchRequisitionIndex(
       number: item.number,
       hotelName: item.hotel.name,
       hotelPhotoUrl: item.hotel.photoUrl ?? null,
+      hotelTimeZone: item.hotel.timeZone,
     })
   }
   return index
@@ -86,12 +98,12 @@ function requisitionRefOf(index: Map<string, RequisitionRefInfo>, requisitionId:
   return index.get(requisitionId)?.number ?? `req ${requisitionId.slice(0, 8)}`
 }
 
-function toPunch(punch: TimesheetPunchApi): TimesheetPunch {
+function toPunch(punch: TimesheetPunchApi, hotelTimeZone: string | undefined): TimesheetPunch {
   return {
     id: punch.id,
     type: punch.type,
-    serverTime: timeOf(punch.serverAt),
-    deviceTime: punch.deviceAt ? timeOf(punch.deviceAt) : null,
+    serverTime: timeOf(punch.serverAt, hotelTimeZone),
+    deviceTime: punch.deviceAt ? timeOf(punch.deviceAt, hotelTimeZone) : null,
     insideGeofence: punch.insideGeofence,
     isManual: punch.isManual,
     manualReason: punch.manualReason,
@@ -105,8 +117,12 @@ function dayStatus(day: TimesheetDayApi): TimesheetStatus {
   return 'PENDING'
 }
 
-function toEntry(day: TimesheetDayApi, requisitionRef: string): TimesheetEntry {
-  const punches = day.punches.map(toPunch)
+function toEntry(
+  day: TimesheetDayApi,
+  requisitionRef: string,
+  hotelTimeZone: string | undefined,
+): TimesheetEntry {
+  const punches = day.punches.map((punch) => toPunch(punch, hotelTimeZone))
   const clockIn = punches.find((punch) => punch.type === 'CLOCK_IN')
   const clockOut = punches.find((punch) => punch.type === 'CLOCK_OUT')
 
@@ -180,6 +196,7 @@ async function fetchWeek(
     const detail = (detailRes.data as ApiEnvelope<TimesheetApi>).data
     /** El folio REAL sale del índice de requisiciones (ya no el id recortado). */
     const requisitionRef = requisitionRefOf(requisitionIndex, detail.requisitionId)
+    const hotelTimeZone = requisitionIndex.get(detail.requisitionId)?.hotelTimeZone
 
     rows.push({
       timesheetId: sheet.id,
@@ -192,7 +209,7 @@ async function fetchWeek(
       weekStatus: detail.status,
       totalHours: Math.round(((detail.totals?.netMinutes ?? 0) / 60) * 100) / 100,
       targetHours: null,
-      entries: (detail.days ?? []).map((day) => toEntry(day, requisitionRef)),
+      entries: (detail.days ?? []).map((day) => toEntry(day, requisitionRef, hotelTimeZone)),
     })
   }
 
@@ -317,7 +334,11 @@ async function fetchTimeline(
       entries: [],
       byWeek: {},
     }
-    row.entries.push(...(detail.days ?? []).map((day) => toEntry(day, requisitionRef)))
+    row.entries.push(
+      ...(detail.days ?? []).map((day) =>
+        toEntry(day, requisitionRef, requisitionInfo?.hotelTimeZone),
+      ),
+    )
     row.byWeek[sheet.weekStart] = {
       timesheetId: sheet.id,
       weekStatus: detail.status,
