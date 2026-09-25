@@ -728,7 +728,7 @@ function toEntity(row: RequisitionRow): RequisitionEntity {
   return {
     id: row.id,
     number: row.number,
-    hotel: { id: row.hotel.id, name: row.hotel.name, photoUrl: null },
+    hotel: { id: row.hotel.id, name: row.hotel.name, photoUrl: null, timeZone: row.hotel.timeZone },
     createdBy: null,
     authorizer: null,
     inspector: null,
