@@ -8,6 +8,7 @@ import type { Env } from '../../config/env.validation.js'
 import { FirebaseAccountsService } from '../firebase/index.js'
 import { PrismaService } from '../prisma/index.js'
 
+import { MAIL_ASSETS } from './templates/assets.js'
 import {
   firebaseFallbackOf,
   renderTemplate,
@@ -115,6 +116,15 @@ export class MailerService {
             subject,
             text,
             html,
+            /* Solo lo que este correo pinta: el logo siempre, el personaje si
+               la plantilla lo trae. Adjuntar de más engorda el mensaje. */
+            attachments: MAIL_ASSETS.filter((asset) => html.includes(`cid:${asset.cid}`)).map(
+              (asset) => ({
+                filename: asset.filename,
+                content: Buffer.from(asset.base64, 'base64'),
+                cid: asset.cid,
+              }),
+            ),
           })
 
           await this.record(input, locale, subject, {
