@@ -24,6 +24,11 @@ const COLOR = {
 } as const
 
 export interface LayoutParts {
+  /**
+   * El personaje que acompaña al correo (CID de `assets.ts`). Opcional: un
+   * correo sin ilustración sigue siendo un correo completo.
+   */
+  illustrationCid?: string
   /** El título grande dentro del correo, no el asunto. */
   heading: string
   /** Lo que se lee en la bandeja antes de abrir: si falta, el cliente inventa. */
@@ -64,6 +69,12 @@ export function renderHtml(parts: LayoutParts): string {
     )
     .join('\n')
 
+  /* El personaje centrado, antes del título: es acompañamiento, no contenido —
+     por eso lleva alt vacío y los lectores de pantalla lo saltan. */
+  const illustration = parts.illustrationCid
+    ? `              <img src="cid:${parts.illustrationCid}" width="160" alt="" style="display:block;margin:0 auto 24px;width:160px;height:auto;border:0;">\n`
+    : ''
+
   /* El enlace también va escrito completo debajo del botón: hay clientes que
      no pintan botones, y hay gente que desconfía de ellos con razón. */
   const fallbackLink = parts.action
@@ -87,13 +98,14 @@ export function renderHtml(parts: LayoutParts): string {
       <td align="center" style="padding:32px 16px;">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background-color:${COLOR.surface};border:1px solid ${COLOR.line};border-radius:18px;overflow:hidden;">
           <tr>
-            <td style="background-color:${COLOR.o500};padding:20px 32px;">
-              <span style="font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:20px;font-weight:800;letter-spacing:0.5px;color:${COLOR.ink};">Oranje</span>
+            <td align="center" style="background-color:${COLOR.o500};padding:22px 32px;">
+              <!-- El logo va adjunto por CID: las imágenes remotas se bloquean, las adjuntas no. -->
+              <img src="cid:oranje-logo" width="140" alt="Oranje" style="display:block;width:140px;height:auto;border:0;">
             </td>
           </tr>
           <tr>
             <td style="padding:32px;">
-              <h1 style="margin:0 0 20px;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:22px;line-height:1.3;color:${COLOR.ink};">${escapeHtml(parts.heading)}</h1>
+${illustration}              <h1 style="margin:0 0 20px;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:22px;line-height:1.3;color:${COLOR.ink};">${escapeHtml(parts.heading)}</h1>
 ${body}
 ${parts.action ? button(parts.action.label, parts.action.url) : ''}
 ${fallbackLink}
