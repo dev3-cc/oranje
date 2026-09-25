@@ -52,6 +52,8 @@ let greenId: string
 
 const users: string[] = []
 const workerIds: string[] = []
+const hotelIds: string[] = []
+const requisitionIds: string[] = []
 
 async function colaborador(email: string): Promise<AuthenticatedUser> {
   const role = await db.role.findFirstOrThrow({ where: { code: 'ROL-C-01' } })
@@ -82,6 +84,83 @@ async function colaborador(email: string): Promise<AuthenticatedUser> {
   workerIds.push(worker.id)
 
   return { id: user.id, roleCode: 'ROL-C-01' } as AuthenticatedUser
+}
+
+/**
+ * El plazo de SSN/ITIN corre desde la PRIMERA ASIGNACIÓN (2026-09-25), así
+ * que estos fixtures ya no bastan con `worker.createdAt` atrasado: hace
+ * falta una asignación real, con su `created_at` movido a `days` atrás.
+ * Cadena mínima (hotel → requisición → posición → slot → asignación),
+ * mismo patrón que `punch-turno-de-hoy.spec.ts`.
+ */
+async function asignadoHaceDias(workerId: string, days: number): Promise<void> {
+  const hotel = await db.hotel.create({
+    data: {
+      id: uuidv7(),
+      name: `Hotel plazo ${uuidv7().slice(-8)}`,
+      zoneId,
+      timeZone: 'America/Cancun',
+      createdBy: actorId,
+      updatedBy: actorId,
+    },
+    select: { id: true },
+  })
+  hotelIds.push(hotel.id)
+
+  const reqState = await db.statusLightState.findFirstOrThrow({
+    where: { code: 'APPLE_GREEN', statusLightCode: 'REQUISITION' },
+    select: { id: true },
+  })
+  const department = await db.hotelDepartment.findFirstOrThrow({ select: { id: true } })
+  const position = await db.catalogPosition.findFirstOrThrow({ select: { id: true } })
+  const modality = await db.hiringModality.findFirstOrThrow({ select: { id: true } })
+  const coverage = await db.statusLightState.findFirstOrThrow({
+    where: { statusLightCode: 'POSITION_COVERAGE' },
+    select: { id: true },
+  })
+
+  const requisition = await db.requisition.create({
+    data: {
+      id: uuidv7(),
+      number: `TD${Date.now()}${Math.floor(Math.random() * 100)}`,
+      hotelId: hotel.id,
+      statusLightStateId: reqState.id,
+      statusLightCode: 'REQUISITION',
+      createdBy: actorId,
+    },
+    select: { id: true },
+  })
+  requisitionIds.push(requisition.id)
+
+  const pos = await db.position.create({
+    data: {
+      id: uuidv7(),
+      requisitionId: requisition.id,
+      lineNumber: 1,
+      catalogPositionId: position.id,
+      hiringModalityId: modality.id,
+      hotelDepartmentId: department.id,
+      quantity: 1,
+      startDate: new Date(),
+      startTime: new Date('1970-01-01T07:00:00Z'),
+      coverageStateId: coverage.id,
+      coverageLightCode: 'POSITION_COVERAGE',
+    },
+    select: { id: true },
+  })
+
+  const slot = await db.slot.create({
+    data: { id: uuidv7(), positionId: pos.id, ordinal: 1 },
+    select: { id: true },
+  })
+
+  // `validity` es un daterange y `created_at` va atrasado a propósito: Prisma
+  // no escribe ninguno de los dos, así que ambos van en SQL.
+  await db.$executeRaw`
+    INSERT INTO coverage.assignment (id, slot_id, worker_id, type, validity, status, assigned_by, created_at)
+    VALUES (${uuidv7()}::uuid, ${slot.id}::uuid, ${workerId}::uuid, 'FIXED',
+            daterange(current_date - ${days}::int, NULL), 'ACTIVE', ${actorId}::uuid,
+            now() - make_interval(days => ${days}))`
 }
 
 async function transicion(workerId: string): Promise<void> {
@@ -117,7 +196,12 @@ beforeAll(async () => {
 afterAll(async () => {
   await db.workerDocument.deleteMany({ where: { workerId: { in: workerIds } } })
   await db.workerStateHistory.deleteMany({ where: { workerId: { in: workerIds } } })
+  await db.assignment.deleteMany({ where: { workerId: { in: workerIds } } })
+  await db.slot.deleteMany({ where: { position: { requisitionId: { in: requisitionIds } } } })
+  await db.position.deleteMany({ where: { requisitionId: { in: requisitionIds } } })
+  await db.requisition.deleteMany({ where: { id: { in: requisitionIds } } })
   await db.worker.deleteMany({ where: { id: { in: workerIds } } })
+  await db.hotel.deleteMany({ where: { id: { in: hotelIds } } })
   // El journal es inmutable (RR-16) y retiene a quien subió el documento: a ese
   // usuario no se le borra, se le desactiva.
   try {
@@ -203,6 +287,27 @@ describe('el Colaborador sube su propio SSN/ITIN', () => {
     await db.workerDocument.deleteMany({ where: { workerId } })
   })
 
+  // El caso real que reportó Hugo (2026-09-25): sin asignación nunca, el
+  // plazo no debe ni haber arrancado, sin importar cuánto tiempo pasó desde
+  // el alta.
+  it('sin asignación todavía, el plazo no ha arrancado aunque el alta sea vieja', async () => {
+    const user = await colaborador(`sin-asignar-${Date.now()}@oranje.local`)
+    const workerId = workerIds[workerIds.length - 1] as string
+
+    await db.worker.update({
+      where: { id: workerId },
+      data: { createdAt: new Date(Date.now() - 30 * 86_400_000) },
+    })
+
+    const ficha = await me.get(user)
+
+    expect(ficha.taxDeadline.hasStarted).toBe(false)
+    expect(ficha.taxDeadline.status).toBe('OK')
+    expect(ficha.taxDeadline.day).toBeNull()
+    expect(ficha.taxDeadline.dueAt).toBeNull()
+    expect(await deadline.isSuspended(user.id)).toBe(false)
+  })
+
   // La persona se puede equivocar de archivo y no tiene forma de borrarlo.
   it('un segundo intento reemplaza al anterior sin verificar', async () => {
     const user = await colaborador(`doc-reemplaza-${Date.now()}@oranje.local`)
@@ -260,10 +365,7 @@ describe('el Colaborador sube su propio SSN/ITIN', () => {
     const user = await colaborador(`doc-suspendido-${Date.now()}@oranje.local`)
     const workerId = workerIds[workerIds.length - 1] as string
 
-    await db.worker.update({
-      where: { id: workerId },
-      data: { createdAt: new Date(Date.now() - 6 * 86_400_000) },
-    })
+    await asignadoHaceDias(workerId, 6)
 
     expect(await deadline.isSuspended(user.id)).toBe(true)
 
@@ -281,10 +383,7 @@ describe('el Colaborador sube su propio SSN/ITIN', () => {
     const user = await colaborador(`doc-salida-${Date.now()}@oranje.local`)
     const workerId = workerIds[workerIds.length - 1] as string
 
-    await db.worker.update({
-      where: { id: workerId },
-      data: { createdAt: new Date(Date.now() - 6 * 86_400_000) },
-    })
+    await asignadoHaceDias(workerId, 6)
 
     // 1 · ve POR QUÉ está fuera
     const ficha = await me.get(user)
