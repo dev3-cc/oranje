@@ -2,8 +2,11 @@ import { Injectable } from '@nestjs/common'
 
 import { PrismaService } from '../../../infra/prisma/index.js'
 
-// Reglas del Colaborador § Plazo de SSN/ITIN. Tres dias desde el alta para
-// CARGAR el documento; al cuarto un aviso, al quinto se suspende el acceso.
+// Reglas del Colaborador § Plazo de SSN/ITIN. Tres dias desde la PRIMERA
+// ASIGNACION —no desde el alta— para CARGAR el documento; al cuarto un
+// aviso, al quinto se suspende el acceso. (Cambiado el 2026-09-25, Hugo:
+// antes corria desde el alta, y alguien sin asignar podia llegar al aviso o
+// a la suspension sin haber podido ponchar nunca.)
 const GRACE_DAYS = 3
 const NOTICE_DAY = 4
 const SUSPEND_DAY = 5
@@ -14,9 +17,11 @@ export type TaxDeadlineStatus = 'OK' | 'NOTICE' | 'SUSPENDED'
 
 export interface TaxDeadline {
   status: TaxDeadlineStatus
-  /// Dias transcurridos desde el alta. Dia 1 es el del alta.
-  day: number
-  dueAt: string
+  /// Sin asignacion todavia el plazo no ha arrancado: `day`/`dueAt` van null.
+  hasStarted: boolean
+  /// Dias transcurridos desde la primera asignacion. Dia 1 es el de esa asignacion.
+  day: number | null
+  dueAt: string | null
   /// El documento subido, que es lo que corre el plazo.
   hasDocument: boolean
   /// El documento revisado por la Reclutadora. NO es lo que levanta la
@@ -32,7 +37,7 @@ export interface TaxDeadline {
 }
 
 // Se calcula al leer y no lo escribe un job: un job que deja de correr
-// suspende a nadie o a todos, y aqui la fecha del alta ya dice todo.
+// suspende a nadie o a todos, y aqui la primera asignacion ya dice todo.
 // Se cachea porque el guard lo consulta en CADA peticion del colaborador.
 const CACHE_TTL_MS = 60_000
 
@@ -49,7 +54,8 @@ export class TaxDeadlineService {
     this.cache.delete(userId)
   }
 
-  async of(workerId: string, createdAt: Date, now = new Date()): Promise<TaxDeadline> {
+  async of(workerId: string, now = new Date()): Promise<TaxDeadline> {
+    const startAt = await this.firstAssignmentAt(workerId)
     const document = await this.prisma.workerDocument.findFirst({
       where: { workerId, documentType: TAX_DOCUMENT },
       select: { verifiedAt: true },
@@ -59,11 +65,25 @@ export class TaxDeadlineService {
     const hasDocument = document !== null
     const isDocumentVerified = document?.verifiedAt != null
     const hasTaxId = await this.hasTaxId(workerId)
-    const day = daysSince(createdAt, now)
-    const dueAt = new Date(createdAt.getTime() + GRACE_DAYS * 86_400_000)
+
+    if (startAt === null) {
+      return {
+        status: 'OK',
+        hasStarted: false,
+        day: null,
+        dueAt: null,
+        hasDocument,
+        isDocumentVerified,
+        taxRetentionApplies: !hasTaxId,
+      }
+    }
+
+    const day = daysSince(startAt, now)
+    const dueAt = new Date(startAt.getTime() + GRACE_DAYS * 86_400_000)
 
     return {
       status: hasDocument ? 'OK' : statusFor(day),
+      hasStarted: true,
       day,
       dueAt: dueAt.toISOString(),
       hasDocument,
@@ -81,6 +101,18 @@ export class TaxDeadlineService {
     return rows[0]?.has ?? false
   }
 
+  // Lo que arranca el plazo hoy: la PRIMERA vez que quedo asignado, sin
+  // importar si esa asignacion sigue activa. `null` es "todavia no lo
+  // asignan" — un estado valido, no un dato faltante.
+  private async firstAssignmentAt(workerId: string): Promise<Date | null> {
+    const rows = await this.prisma.$queryRaw<Array<{ firstAssignedAt: Date | null }>>`
+      SELECT MIN(created_at) AS "firstAssignedAt"
+        FROM coverage.assignment
+       WHERE worker_id = ${workerId}::uuid`
+
+    return rows[0]?.firstAssignedAt ?? null
+  }
+
   async isSuspended(userId: string): Promise<boolean> {
     const cached = this.cache.get(userId)
 
@@ -90,11 +122,10 @@ export class TaxDeadlineService {
 
     const worker = await this.prisma.worker.findFirst({
       where: { userId, deletedAt: null },
-      select: { id: true, createdAt: true },
+      select: { id: true },
     })
 
-    const suspended =
-      worker !== null && (await this.of(worker.id, worker.createdAt)).status === 'SUSPENDED'
+    const suspended = worker !== null && (await this.of(worker.id)).status === 'SUSPENDED'
 
     this.cache.set(userId, { suspended, expiresAt: Date.now() + CACHE_TTL_MS })
 
