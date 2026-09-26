@@ -496,3 +496,46 @@ describe('la respuesta dice si el correo salió', () => {
     created.push(entity.id)
   })
 })
+
+describe('el idioma se elige en el alta', () => {
+  it('nace en el idioma que eligió quien dio de alta, no siempre en español', async () => {
+    /* D-36 + Hugo (2026-09-26): el correo de invitación sale ANTES del primer
+       login, así que si el idioma se esperara a que la persona lo eligiera, el
+       único correo que no puede fallar saldría siempre en español. */
+    const enIngles = await service.create(
+      {
+        email: `locale-en-${Date.now()}@oranje.local`,
+        fullName: 'Mary Johnson',
+        roleCode: 'ROL-R-03',
+        locale: 'en',
+        sendWelcomeEmail: false,
+      } as never,
+      auth,
+    )
+
+    const fila = await db.user.findUniqueOrThrow({
+      where: { id: enIngles.id },
+      select: { locale: true },
+    })
+    expect(fila.locale).toBe('en')
+  })
+
+  it('sin elegir nada, sigue naciendo en español', async () => {
+    const porDefecto = await service.create(
+      {
+        email: `locale-def-${Date.now()}@oranje.local`,
+        fullName: 'Juan Pérez',
+        roleCode: 'ROL-R-03',
+        locale: 'es',
+        sendWelcomeEmail: false,
+      } as never,
+      auth,
+    )
+
+    const fila = await db.user.findUniqueOrThrow({
+      where: { id: porDefecto.id },
+      select: { locale: true },
+    })
+    expect(fila.locale).toBe('es')
+  })
+})

@@ -146,6 +146,7 @@ export class StaffUsersService {
       roleCode: dto.roleCode,
       reportsToUserId: dto.reportsToUserId ?? null,
       photoPath: dto.photoPath ?? null,
+      locale: dto.locale,
       credentialOrigin: dto.password !== undefined ? 'password' : 'invitation',
       actorUserId: actor.id,
       actorRole: actor.roleCode,

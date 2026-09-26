@@ -121,6 +121,8 @@ export class HotelUsersRepository {
     roleCode: string
     departmentId: string | null
     reportsToUserId: string | null
+    /** Idioma de la persona (D-36): decide en qué idioma sale su invitación. */
+    locale: string
     actorUserId: string
     actorRole: string
   }): Promise<HotelUserRow> {
@@ -136,6 +138,7 @@ export class HotelUsersRepository {
           hotelId: params.hotelId,
           departmentId: params.departmentId,
           reportsToUserId: params.reportsToUserId,
+          locale: params.locale,
         },
       })
 

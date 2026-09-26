@@ -59,6 +59,7 @@ function buildHotelUserFormSchema(i18n: I18n) {
     hotelId: z.string().min(1, i18n._(msg`Elige el hotel`)),
     roleCode: z.string().min(1, i18n._(msg`Elige el rol`)),
     departmentId: z.string(),
+    locale: z.enum(['es', 'en']),
     fullName: z
       .string()
       .trim()
@@ -144,6 +145,7 @@ export function HotelUserFormDialog({
       hotelId: '',
       roleCode: '',
       departmentId: NO_DEPARTMENT,
+      locale: 'es',
       fullName: '',
       email: '',
       reportsToUserId: NOBODY,
@@ -220,6 +222,9 @@ export function HotelUserFormDialog({
       fullName: user?.fullName ?? '',
       email: user?.email ?? '',
       reportsToUserId: user?.reportsToUserId ?? NOBODY,
+      /* Campo del alta: al reabrir vuelve a español, y quien ya tiene cuenta
+         cambia su idioma desde la suya. */
+      locale: 'es',
     })
   }, [isOpen, user, reset])
 
@@ -259,6 +264,7 @@ export function HotelUserFormDialog({
         email: values.email,
         fullName: values.fullName,
         roleCode: values.roleCode,
+        locale: values.locale,
         ...(department ? { departmentId: department } : {}),
         ...(reportsTo ? { reportsToUserId: reportsTo } : {}),
       },
@@ -476,6 +482,33 @@ export function HotelUserFormDialog({
               )}
               {errors.email && <p className="text-xs text-red">{errors.email.message}</p>}
             </FormRow>
+
+            {!isEditing && (
+              <FormRow label={t`Idioma`} column="locale">
+                <Controller
+                  control={control}
+                  name="locale"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger aria-label={t`Idioma`} className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {/* Cada uno en su propio idioma, como el interruptor del login. */}
+                        <SelectItem value="es">Español</SelectItem>
+                        <SelectItem value="en">English</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <p className="text-xs text-ink-3">
+                  <Trans>
+                    En este idioma le llega la invitación y abre la app la primera vez. Después lo
+                    cambia desde su cuenta.
+                  </Trans>
+                </p>
+              </FormRow>
+            )}
 
             <FormRow label={t`Reporta a`} column="reports_to_user_id">
               <Controller

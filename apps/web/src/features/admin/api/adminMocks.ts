@@ -166,6 +166,9 @@ const HOTEL_ROLE_NAMES: Record<string, string> = {
 
 let nextId = 1
 
+/** El idioma con el que se creó el último usuario; solo para las pruebas. */
+export let lastCreateLocale: 'es' | 'en' | null = null
+
 const routes: readonly MockRoute[] = [
   {
     method: 'GET',
@@ -207,8 +210,12 @@ const routes: readonly MockRoute[] = [
         fullName: string
         roleCode: string
         reportsToUserId?: string
+        locale?: 'es' | 'en'
       }
       const role = ROLES.find((item) => item.code === body.roleCode)
+      /* Lo guarda el mock para que la prueba pueda afirmar que el idioma
+         elegido en el alta VIAJÓ: sin esto solo se probaría el desplegable. */
+      lastCreateLocale = body.locale ?? null
       const user: StaffUser = {
         id: `usr-new-${String(nextId++)}`,
         email: body.email,
