@@ -345,7 +345,16 @@ const HOTEL: Permission[] = [
     label: 'Enviar a autorización',
     roles: [SUPERVISOR, GA, GG],
   },
-  { module: 'requisitions', action: 'authorize', label: 'Autorizar requisición', roles: [GA, GG] },
+  {
+    module: 'requisitions',
+    action: 'authorize',
+    label: 'Autorizar requisición',
+    /* El Inspector autoriza acotado a los hoteles de su zona (regla reabierta
+       el 2026-09-26, decisión de Hugo), sin restricción de departamento —
+       igual que el Manager General, porque el Inspector no se divide por
+       departamento. */
+    roles: [GA, GG, INSPECTOR],
+  },
   {
     module: 'requisitions',
     action: 'reject',

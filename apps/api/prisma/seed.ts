@@ -554,9 +554,11 @@ const OTHER_TRANSITIONS: Array<{
     light: 'REQUISITION',
     from: 'APPLE_GREEN',
     to: 'GREEN',
-    roles: ['ROL-H-02', 'ROL-H-03'],
+    // El Inspector, acotado a los hoteles de su zona (regla reabierta el
+    // 2026-09-26, decisión de Hugo).
+    roles: ['ROL-H-02', 'ROL-H-03', 'ROL-I-01'],
     reason: false,
-    note: 'autoriza el GH o el GM',
+    note: 'autoriza el GH, el GM o el Inspector de su zona',
   },
   // La toma de la bandeja compartida — el Self-Pick, RR-15.
   {

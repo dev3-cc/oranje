@@ -395,21 +395,31 @@ export class RequisitionsService {
   async authorize(id: string, user: AuthenticatedUser): Promise<RequisitionEntity> {
     const row = await this.requisition(id)
 
-    if (user.hotelId && row.hotel.id !== user.hotelId) {
+    if (user.hotelId) {
+      if (row.hotel.id !== user.hotelId) {
+        throw new ForbiddenException({
+          code: 'HOTEL_OUT_OF_SCOPE',
+          message: 'Esta requisición no es de tu hotel',
+        })
+      }
+      // La firma del Manager de Área vale para SU departamento (D-09); la del
+      // Manager General, para todo el hotel. La cola ya filtra, pero el guard
+      // vive aquí: un enlace directo no puede saltárselo.
+      this.assertDepartmentOwnership(
+        row,
+        user,
+        'Solo puedes autorizar requisiciones de tu departamento',
+      )
+    } else if (!(await this.repo.hotelInUserZones(row.hotel.id, user.id))) {
+      // El Inspector autoriza acotado a los hoteles de su zona, sin
+      // restricción de departamento — como el Manager General, porque el
+      // Inspector tampoco se divide por departamento (regla reabierta el
+      // 2026-09-26, decisión de Hugo).
       throw new ForbiddenException({
-        code: 'HOTEL_OUT_OF_SCOPE',
-        message: 'Esta requisición no es de tu hotel',
+        code: 'HOTEL_OUT_OF_ZONE',
+        message: 'Ese hotel no está en ninguna de tus zonas',
       })
     }
-
-    // La firma del Manager de Área vale para SU departamento (D-09); la del
-    // Manager General, para todo el hotel. La cola ya filtra, pero el guard
-    // vive aquí: un enlace directo no puede saltárselo.
-    this.assertDepartmentOwnership(
-      row,
-      user,
-      'Solo puedes autorizar requisiciones de tu departamento',
-    )
 
     if (row.statusState.code !== DRAFT) {
       throw new ConflictException({

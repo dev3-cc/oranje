@@ -304,7 +304,11 @@ export function ReviewDayDialog({
             )}
             {entry.punch === 'INCOMPLETE' && onManualPunch && (
               <Button variant="secondary" className="mt-2" onClick={onManualPunch}>
-                <Trans>Agregar la marca que falta</Trans>
+                {entry.startTime === null ? (
+                  <Trans>Agregar la entrada que falta</Trans>
+                ) : (
+                  <Trans>Agregar la salida que falta</Trans>
+                )}
               </Button>
             )}
           </section>

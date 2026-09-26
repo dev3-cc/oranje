@@ -26,7 +26,7 @@ function regenerateQrErrorMessage(error: unknown, i18n: I18n): string {
 /**
  * Cómo se poncha en este hotel, y el QR cuando aplica (Reglas de Negocio,
  * «Método de ponche por hotel»). El método se cambia editando el hotel; aquí
- * viven las dos acciones del QR: imprimirlo y regenerarlo. Regenerar es
+ * viven las dos acciones del QR: descargarlo y regenerarlo. Regenerar es
  * destructivo para la hoja pegada en el acceso, así que pide un segundo toque.
  */
 export function HotelPunchQrCard({
@@ -54,7 +54,7 @@ export function HotelPunchQrCard({
     try {
       const next = await regenerate(hotelId).unwrap()
       const version = String(next.version)
-      toast.success(t`QR regenerado: versión ${version}. Imprime la hoja nueva.`)
+      toast.success(t`QR regenerado: versión ${version}. Descarga la hoja nueva.`)
       setArmed(false)
     } catch (cause) {
       setError(regenerateQrErrorMessage(cause, i18n))
@@ -95,11 +95,11 @@ export function HotelPunchQrCard({
                     href={`/hotels/${hotelId}/punch-qr`}
                     target="_blank"
                     rel="noreferrer"
-                    title={t`Abre la hoja lista para imprimir o guardar como PDF`}
+                    title={t`Abre la hoja lista para descargar como PDF`}
                     className="inline-flex items-center gap-1.5 rounded-md bg-o-300 shadow-xs px-3 py-1.5 text-sm font-semibold text-ink transition-colors hover:bg-o-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
                   >
-                    <MaterialIcon name="print" className="text-base" aria-hidden />
-                    <Trans>Imprimir QR</Trans>
+                    <MaterialIcon name="download" className="text-base" aria-hidden />
+                    <Trans>Descargar QR</Trans>
                   </a>
                   <Button
                     variant="secondary"
@@ -128,7 +128,7 @@ export function HotelPunchQrCard({
                 </div>
               ) : (
                 <p className="text-xs text-ink-3">
-                  <Trans>El QR lo imprime y regenera el BD, el BDC o el personal del hotel.</Trans>
+                  <Trans>El QR lo descarga y regenera el BD, el BDC o el personal del hotel.</Trans>
                 </p>
               )}
               {error && (
