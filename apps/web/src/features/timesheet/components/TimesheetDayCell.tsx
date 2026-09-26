@@ -151,7 +151,7 @@ export function TimesheetDayCell({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <p
+              <div
                 tabIndex={0}
                 onMouseEnter={() => {
                   onPunchHover?.(true)
@@ -159,50 +159,55 @@ export function TimesheetDayCell({
                 onMouseLeave={() => {
                   onPunchHover?.(false)
                 }}
-                className="mt-1.5 flex cursor-help items-center gap-1 truncate text-xs text-ink-3"
+                className="mt-1.5 flex cursor-help flex-col gap-0.5 text-xs text-ink-3"
               >
-                <span
-                  aria-hidden
-                  className={cn(
-                    'flex size-2.5 shrink-0 items-center justify-center overflow-hidden rounded-full border-2',
-                    PUNCH_CLASS[entry.punch],
-                  )}
-                  style={
-                    entry.punch === 'COMPLETE'
-                      ? { backgroundColor: statusLight['st-verde'] }
-                      : entry.punch === 'INCOMPLETE'
-                        ? { backgroundColor: statusLight['st-rojo'] }
-                        : undefined
-                  }
-                >
-                  {entry.punch === 'COMPLETE' && (
-                    <svg viewBox="0 0 12 12" className="size-2" aria-hidden>
-                      <path
-                        d="M2.5 6.5l2.4 2.4 4.6-5"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
-                  {entry.punch === 'INCOMPLETE' && (
-                    <span className="text-[7px] leading-none font-black text-white">!</span>
-                  )}
-                  {entry.punch === 'NO_SHIFT' && (
-                    <span className="text-[7px] leading-none font-black text-ink-4">?</span>
-                  )}
+                <span className="flex items-center gap-1 truncate">
+                  <span
+                    aria-hidden
+                    className={cn(
+                      'flex size-2.5 shrink-0 items-center justify-center overflow-hidden rounded-full border-2',
+                      PUNCH_CLASS[entry.punch],
+                    )}
+                    style={
+                      entry.punch === 'COMPLETE'
+                        ? { backgroundColor: statusLight['st-verde'] }
+                        : entry.punch === 'INCOMPLETE'
+                          ? { backgroundColor: statusLight['st-rojo'] }
+                          : undefined
+                    }
+                  >
+                    {entry.punch === 'COMPLETE' && (
+                      <svg viewBox="0 0 12 12" className="size-2" aria-hidden>
+                        <path
+                          d="M2.5 6.5l2.4 2.4 4.6-5"
+                          fill="none"
+                          stroke="white"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )}
+                    {entry.punch === 'INCOMPLETE' && (
+                      <span className="text-[7px] leading-none font-black text-white">!</span>
+                    )}
+                    {entry.punch === 'NO_SHIFT' && (
+                      <span className="text-[7px] leading-none font-black text-ink-4">?</span>
+                    )}
+                  </span>
+                  <span className="truncate font-semibold text-ink-2">
+                    {i18n._(PUNCH_STATE_SHORT_LABEL[entry.punch])}
+                  </span>
                 </span>
-                <span className="font-semibold text-ink-2">
-                  {i18n._(PUNCH_STATE_SHORT_LABEL[entry.punch])}
-                </span>
+                {/* En su propia línea: compartir renglón con el punto y la
+                    etiqueta la dejaba cortada (`truncate`) en columnas
+                    angostas — justo la hora que Hugo pedía ver. */}
                 {entry.startTime !== null && entry.endTime !== null && (
-                  <span>
-                    · {entry.startTime} – {entry.endTime}
+                  <span className="pl-3.5 font-semibold text-ink-2">
+                    {entry.startTime} – {entry.endTime}
                   </span>
                 )}
-              </p>
+              </div>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-52">
               <p className="text-xs font-semibold">{PUNCH_STATE_LABEL[entry.punch]}</p>
