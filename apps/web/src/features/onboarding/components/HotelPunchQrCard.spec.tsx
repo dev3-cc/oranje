@@ -21,19 +21,19 @@ function renderCard(props: Partial<Parameters<typeof HotelPunchQrCard>[0]> = {})
 }
 
 describe('HotelPunchQrCard', () => {
-  it('con selfie no ofrece nada que imprimir: solo dice cómo se cambia', () => {
+  it('con selfie no ofrece nada que descargar: solo dice cómo se cambia', () => {
     renderCard({ punchMethod: 'SELFIE', punchQr: null })
 
     expect(screen.getByText('Selfie')).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: /imprimir qr/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /descargar qr/i })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /regenerar/i })).not.toBeInTheDocument()
   })
 
-  it('con QR enseña la versión, la hoja para imprimir y el botón de regenerar', () => {
+  it('con QR enseña la versión, la hoja para descargar y el botón de regenerar', () => {
     renderCard()
 
     expect(screen.getByText(/Versión 2/)).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /imprimir qr/i })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /descargar qr/i })).toHaveAttribute(
       'href',
       '/hotels/hotel-1/punch-qr',
     )
