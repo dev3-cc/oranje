@@ -296,10 +296,19 @@ export class RequisitionsService {
   ): Promise<RequisitionEntity> {
     const row = await this.requisition(id)
 
-    if (user.hotelId && row.hotel.id !== user.hotelId) {
+    if (user.hotelId) {
+      if (row.hotel.id !== user.hotelId) {
+        throw new ForbiddenException({
+          code: 'HOTEL_OUT_OF_SCOPE',
+          message: 'Esta requisición no es de tu hotel',
+        })
+      }
+    } else if (!(await this.repo.hotelInUserZones(row.hotel.id, user.id))) {
+      // El Inspector elimina acotado a los hoteles de su zona, igual que
+      // autoriza (regla ampliada el 2026-09-26, decisión de Hugo).
       throw new ForbiddenException({
-        code: 'HOTEL_OUT_OF_SCOPE',
-        message: 'Esta requisición no es de tu hotel',
+        code: 'HOTEL_OUT_OF_ZONE',
+        message: 'Ese hotel no está en ninguna de tus zonas',
       })
     }
 
