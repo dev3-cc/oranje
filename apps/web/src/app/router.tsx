@@ -212,6 +212,13 @@ export const router = createBrowserRouter([
             },
           },
           {
+            path: 'mail-settings',
+            lazy: async () => {
+              const m = await import('@/features/admin')
+              return { Component: m.MailSettingsPage }
+            },
+          },
+          {
             path: 'corporate-emails',
             lazy: async () => {
               const m = await import('@/features/admin')

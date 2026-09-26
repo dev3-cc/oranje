@@ -127,6 +127,7 @@ registerMockRoutes([
           'audits.read',
           'audits.update',
           'users.manage_corporate_email',
+          'settings.manage',
         ],
       },
     }),

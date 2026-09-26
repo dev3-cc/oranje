@@ -5,6 +5,7 @@ import { GoogleAuth } from 'google-auth-library'
 import { FirebaseAccountsService } from '../../src/infra/firebase/index.js'
 import { MailerService } from '../../src/infra/mailer/index.js'
 import type { PrismaService } from '../../src/infra/prisma/index.js'
+import { SettingsService } from '../../src/infra/settings/index.js'
 import type { StorageService } from '../../src/infra/storage/index.js'
 import { RolesService } from '../../src/modules/identity/roles/roles.service.js'
 import type { CreateStaffUserDto } from '../../src/modules/identity/users/dto/create-staff-user.dto.js'
@@ -24,6 +25,14 @@ import { actor } from './fixture.js'
  * contrato — qué se manda, qué se tolera (EMAIL_EXISTS sin contraseña) y qué
  * se rechaza (EMAIL_EXISTS con contraseña).
  */
+
+/**
+ * Los ajustes REALES contra la base de pruebas: el interruptor vive ahí y
+ * simularlo escondería justo lo que hay que comprobar.
+ */
+function ajustes(): SettingsService {
+  return new SettingsService(db as unknown as PrismaService)
+}
 
 const fetchMock = jest.fn<Promise<unknown>, [string | URL | Request, RequestInit?]>()
 const realFetch = globalThis.fetch
@@ -98,7 +107,7 @@ function mailerApagado(accounts: FirebaseAccountsService): MailerService {
     get: (key: string): string | undefined => (key.startsWith('MAIL_') ? undefined : 'oranje-test'),
   } as unknown as ConfigService<never, true>
 
-  return new MailerService(sinCorreo, db as unknown as PrismaService, accounts)
+  return new MailerService(sinCorreo, db as unknown as PrismaService, accounts, ajustes())
 }
 
 beforeAll(async () => {

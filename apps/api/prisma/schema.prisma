@@ -317,6 +317,7 @@ model User {
   notificationsTriggered Notification[] @relation("notificationActor")
   devices                Device[]
   emailDeliveries        EmailDelivery[]
+  settingsChanged        AppSetting[]
 
   accidentsReported  WorkAccident[] @relation("accidentReportedBy")
   accidentsInspected WorkAccident[] @relation("accidentInspector")
@@ -1930,6 +1931,25 @@ model Device {
   @@id([id])
   @@map("device")
   @@schema("notifications")
+}
+
+/// Los ajustes del sistema que se cambian sin desplegar.
+///
+/// Clave-valor porque son pocos y de tipos distintos; lo que impide que el
+/// valor sea cualquier cosa es `ck_app_setting_value`, que lo valida POR
+/// CLAVE dentro de la base.
+model AppSetting {
+  key   String @db.Text
+  value String @db.Text
+
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  updatedBy String?  @map("updated_by") @db.Uuid
+
+  updatedByUser User? @relation(fields: [updatedBy], references: [id], onDelete: SetNull)
+
+  @@id([key])
+  @@map("app_setting")
+  @@schema("catalogs")
 }
 
 /// El rastro de cada correo que sale del sistema.

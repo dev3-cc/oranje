@@ -7,6 +7,7 @@ import nodemailer, { type Transporter } from 'nodemailer'
 import type { Env } from '../../config/env.validation.js'
 import { FirebaseAccountsService } from '../firebase/index.js'
 import { PrismaService } from '../prisma/index.js'
+import { SETTING_KEYS, SettingsService } from '../settings/index.js'
 
 import { MAIL_ASSETS } from './templates/assets.js'
 import {
@@ -72,6 +73,7 @@ export class MailerService {
     config: ConfigService<Env, true>,
     private readonly prisma: PrismaService,
     private readonly firebase: FirebaseAccountsService,
+    private readonly settings: SettingsService,
   ) {
     this.host = config.get('MAIL_SMTP_HOST', { infer: true })
     this.port = config.get('MAIL_SMTP_PORT', { infer: true })
@@ -84,14 +86,38 @@ export class MailerService {
   }
 
   /** Mismo criterio que `CPanelService.enabled`: sin las cuatro, no hay SMTP. */
-  get enabled(): boolean {
+  get configured(): boolean {
     return (
       this.host !== undefined &&
       this.user !== undefined &&
       this.password !== undefined &&
-      this.fromEmail !== undefined &&
-      this.forced === 'own'
+      this.fromEmail !== undefined
     )
+  }
+
+  /**
+   * Si el correo sale por lo nuestro ahora mismo.
+   *
+   * Son dos cosas distintas y las dos tienen que cumplirse: que el SMTP esté
+   * **configurado** (variables de ambiente) y que el interruptor del
+   * Administrador esté en `own`.
+   *
+   * El interruptor existe para el caso que el respaldo automático no cubre:
+   * cuando el SMTP acepta el correo y no lo entrega. Ahí para el sistema todo
+   * salió bien, así que nadie se cae solo al respaldo — tiene que decirlo una
+   * persona. Tarda hasta un minuto en surtir efecto, que es lo que vive el
+   * valor en memoria; y como cada instancia de Cloud Run tiene la suya, ese
+   * minuto se cuenta por instancia.
+   *
+   * `MAIL_TRANSPORT` queda como el valor por defecto: lo que se usa mientras
+   * no haya fila en la base o mientras la base no responda.
+   */
+  async isEnabled(): Promise<boolean> {
+    if (!this.configured) return false
+
+    const choice = await this.settings.get(SETTING_KEYS.mailTransport, this.forced)
+
+    return choice !== 'firebase'
   }
 
   /**
@@ -104,7 +130,7 @@ export class MailerService {
     let attempts = 0
     let lastError: unknown = null
 
-    if (this.enabled) {
+    if (await this.isEnabled()) {
       while (attempts < MAX_ATTEMPTS) {
         attempts += 1
 
@@ -174,7 +200,7 @@ export class MailerService {
       userId: input.userId ?? null,
     }
 
-    if (this.enabled) {
+    if (await this.isEnabled()) {
       try {
         const link = await this.firebase.passwordResetLink(input.to)
 
