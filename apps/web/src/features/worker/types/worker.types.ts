@@ -8,16 +8,19 @@ import type { WorkerApi } from '@/shared/types/apiContract.types'
  */
 
 /**
- * El plazo de SSN/ITIN (Reglas del Colaborador): 3 días desde el alta.
- * Día 4 = NOTICE (aviso interceptor) · día 5 = SUSPENDED (acceso suspendido).
+ * El plazo de SSN/ITIN (Reglas del Colaborador): 3 días desde la PRIMERA
+ * ASIGNACIÓN, no desde el alta (cambiado el 2026-09-25 — Hugo). Día 4 =
+ * NOTICE (aviso interceptor) · día 5 = SUSPENDED (acceso suspendido).
  * Lo que corre el plazo hoy es SUBIR el documento; la retención del 16% es
  * independiente y aplica mientras `has_tax_id` sea false (D-27).
  */
 export interface TaxDeadlineApi {
   status: 'OK' | 'NOTICE' | 'SUSPENDED'
-  /** Días desde el alta; el día 1 es el del alta. */
-  day: number
-  dueAt: string
+  /** Sin asignación todavía el plazo no ha arrancado: `day`/`dueAt` van en null. */
+  hasStarted: boolean
+  /** Días desde la primera asignación; el día 1 es el de la asignación. */
+  day: number | null
+  dueAt: string | null
   hasDocument: boolean
   isDocumentVerified: boolean
   taxRetentionApplies: boolean

@@ -32,16 +32,19 @@ export class HotelsController {
   /**
    * Sin `@Requires`: la lista es de Ventas (`pipeline:read`), pero el
    * Administrador la necesita para dar de alta cuentas del hotel
-   * (`users:manage_hotel`, Reglas de Negocio · Cuentas del hotel).
+   * (`users:manage_hotel`, Reglas de Negocio · Cuentas del hotel). El
+   * Inspector también entra —para elegir el hotel al crear una
+   * requisición— pero acotado a sus zonas, ignorando cualquier `zoneId` que
+   * mande el cliente (Reglas de Negocio, 2026-09-24).
    */
   @Get()
   async list(
     @Query() query: QueryHotelsDto,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<Paginated<HotelEntity>> {
-    await this.assertCanSeeHotels(user)
+    const onlyZoneIds = await this.assertCanSeeHotels(user)
 
-    return this.hotels.list(query)
+    return this.hotels.list(query, onlyZoneIds)
   }
 
   /**
@@ -56,24 +59,40 @@ export class HotelsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: HotelEntity }> {
     if (user.hotelId !== id) {
-      await this.assertCanSeeHotels(user)
+      const onlyZoneIds = await this.assertCanSeeHotels(user)
+
+      if (onlyZoneIds && !onlyZoneIds.includes(id)) {
+        throw new ForbiddenException({
+          code: 'HOTEL_OUT_OF_ZONE',
+          message: 'Ese hotel no está en ninguna de tus zonas',
+        })
+      }
     }
 
     return { data: await this.hotels.get(id) }
   }
 
-  private async assertCanSeeHotels(user: AuthenticatedUser): Promise<void> {
+  /** `null` = ve todos los hoteles; un arreglo = solo esos (sus zonas). */
+  private async assertCanSeeHotels(user: AuthenticatedUser): Promise<string[] | null> {
     const [sales, admin] = await Promise.all([
       this.permissions.can(user.roleCode, 'pipeline', 'read'),
       this.permissions.can(user.roleCode, 'users', 'manage_hotel'),
     ])
 
-    if (!sales && !admin) {
-      throw new ForbiddenException({
-        code: 'FORBIDDEN',
-        message: 'Ver los hoteles requiere permisos de Ventas o del Administrador',
-      })
+    if (sales || admin) {
+      return null
     }
+
+    const canCreateRequisition = await this.permissions.can(user.roleCode, 'requisitions', 'create')
+
+    if (canCreateRequisition && !user.hotelId) {
+      return this.hotels.zonesOfUser(user.id)
+    }
+
+    throw new ForbiddenException({
+      code: 'FORBIDDEN',
+      message: 'Ver los hoteles requiere permisos de Ventas o del Administrador',
+    })
   }
 
   @Requires('pipeline', 'update_hotel_profile')

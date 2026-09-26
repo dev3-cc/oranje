@@ -66,6 +66,16 @@ export class RequisitionsService {
       throw new NotFoundException({ code: 'HOTEL_NOT_FOUND', message: 'El hotel no existe' })
     }
 
+    // El Inspector no tiene hotel fijo (cubre zona, no hotel): sin `hotelId`
+    // en la sesión, el guard de arriba pasa trivial — aquí se acota a las
+    // zonas que le asignó su Coordinador (Reglas de Negocio, 2026-09-24).
+    if (!user.hotelId && !(await this.repo.hotelInUserZones(dto.hotelId, user.id))) {
+      throw new ForbiddenException({
+        code: 'HOTEL_OUT_OF_ZONE',
+        message: 'Ese hotel no está en ninguna de tus zonas',
+      })
+    }
+
     await this.assertCatalogs(dto)
     this.assertDepartmentScope(dto, user)
 
@@ -123,9 +133,15 @@ export class RequisitionsService {
      * Manager General («todos los departamentos de MI hotel») y Reclutamiento
      * («todos los hoteles») — comparten el permiso pero no el alcance. Quien
      * tiene `hotelId` (todo el depto Hotel) se queda SIEMPRE en su hotel; solo
-     * quien no tiene hotel fijo (Reclutamiento) ve todos.
+     * quien no tiene hotel fijo (Reclutamiento) ve todos. El Inspector
+     * también carece de `hotelId`, pero no tiene `read_all` —así que en vez
+     * de "todos", se acota a los hoteles de sus zonas (2026-09-24).
      */
-    const hotelIds = user.hotelId ? [user.hotelId] : null
+    const hotelIds = user.hotelId
+      ? [user.hotelId]
+      : readOwn && !seesAll
+        ? await this.repo.hotelIdsInUserZones(user.id)
+        : null
 
     const byDepartment = await this.permissions.can(
       user.roleCode,
@@ -178,6 +194,15 @@ export class RequisitionsService {
       throw new ForbiddenException({
         code: 'HOTEL_OUT_OF_SCOPE',
         message: 'Esta requisición no es de tu hotel',
+      })
+    }
+
+    // Mismo criterio que el listado: sin hotel fijo pero también sin
+    // `read_all`, el Inspector solo ve las de sus zonas (2026-09-24).
+    if (!user.hotelId && !seesAll && !(await this.repo.hotelInUserZones(row.hotel.id, user.id))) {
+      throw new ForbiddenException({
+        code: 'HOTEL_OUT_OF_ZONE',
+        message: 'Esta requisición no es de ninguna de tus zonas',
       })
     }
 
@@ -370,21 +395,31 @@ export class RequisitionsService {
   async authorize(id: string, user: AuthenticatedUser): Promise<RequisitionEntity> {
     const row = await this.requisition(id)
 
-    if (user.hotelId && row.hotel.id !== user.hotelId) {
+    if (user.hotelId) {
+      if (row.hotel.id !== user.hotelId) {
+        throw new ForbiddenException({
+          code: 'HOTEL_OUT_OF_SCOPE',
+          message: 'Esta requisición no es de tu hotel',
+        })
+      }
+      // La firma del Manager de Área vale para SU departamento (D-09); la del
+      // Manager General, para todo el hotel. La cola ya filtra, pero el guard
+      // vive aquí: un enlace directo no puede saltárselo.
+      this.assertDepartmentOwnership(
+        row,
+        user,
+        'Solo puedes autorizar requisiciones de tu departamento',
+      )
+    } else if (!(await this.repo.hotelInUserZones(row.hotel.id, user.id))) {
+      // El Inspector autoriza acotado a los hoteles de su zona, sin
+      // restricción de departamento — como el Manager General, porque el
+      // Inspector tampoco se divide por departamento (regla reabierta el
+      // 2026-09-26, decisión de Hugo).
       throw new ForbiddenException({
-        code: 'HOTEL_OUT_OF_SCOPE',
-        message: 'Esta requisición no es de tu hotel',
+        code: 'HOTEL_OUT_OF_ZONE',
+        message: 'Ese hotel no está en ninguna de tus zonas',
       })
     }
-
-    // La firma del Manager de Área vale para SU departamento (D-09); la del
-    // Manager General, para todo el hotel. La cola ya filtra, pero el guard
-    // vive aquí: un enlace directo no puede saltárselo.
-    this.assertDepartmentOwnership(
-      row,
-      user,
-      'Solo puedes autorizar requisiciones de tu departamento',
-    )
 
     if (row.statusState.code !== DRAFT) {
       throw new ConflictException({
@@ -703,7 +738,7 @@ function toEntity(row: RequisitionRow): RequisitionEntity {
   return {
     id: row.id,
     number: row.number,
-    hotel: { id: row.hotel.id, name: row.hotel.name, photoUrl: null },
+    hotel: { id: row.hotel.id, name: row.hotel.name, photoUrl: null, timeZone: row.hotel.timeZone },
     createdBy: null,
     authorizer: null,
     inspector: null,

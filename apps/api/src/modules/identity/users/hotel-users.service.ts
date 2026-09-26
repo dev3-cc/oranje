@@ -7,6 +7,8 @@ import {
 } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { FirebaseAccountsError, FirebaseAccountsService } from '../../../infra/firebase/index.js'
+import { MailerService } from '../../../infra/mailer/index.js'
 
 import type { CreateHotelUserDto } from './dto/create-hotel-user.dto.js'
 import { GENERAL_MANAGER } from './dto/create-hotel-user.dto.js'
@@ -14,7 +16,6 @@ import type { QueryHotelUsersDto } from './dto/query-hotel-users.dto.js'
 import type { UpdateHotelUserDto } from './dto/update-hotel-user.dto.js'
 import type { HotelUserEntity, HotelUserWithInvitation } from './entities/hotel-user.entity.js'
 import type { InvitationErrorCode } from './entities/staff-user.entity.js'
-import { FirebaseAccountsError, FirebaseAccountsService } from './firebase-accounts.service.js'
 import { HotelUserRow, HotelUsersRepository } from './hotel-users.repository.js'
 import type { Paginated } from './staff-users.service.js'
 
@@ -72,6 +73,7 @@ export class HotelUsersService {
   constructor(
     private readonly repo: HotelUsersRepository,
     private readonly accounts: FirebaseAccountsService,
+    private readonly mailer: MailerService,
   ) {}
 
   async list(hotelId: string, includeInactive: boolean): Promise<HotelUserEntity[]> {
@@ -138,6 +140,7 @@ export class HotelUsersService {
     const invitation = await this.sendInvitation(
       row.id,
       row.email,
+      row.fullName,
       { userId: actor.id, role: actor.roleCode },
       'invitation',
     )
@@ -208,6 +211,7 @@ export class HotelUsersService {
     const invitation = await this.sendInvitation(
       row.id,
       row.email,
+      row.fullName,
       { userId: actor.id, role: actor.roleCode },
       'resend',
     )
@@ -326,6 +330,7 @@ export class HotelUsersService {
   private async sendInvitation(
     userId: string,
     email: string,
+    fullName: string,
     actor: { userId: string; role: string },
     kind: 'invitation' | 'resend',
   ): Promise<InvitationResult> {
@@ -333,8 +338,26 @@ export class HotelUsersService {
       // EMAIL_EXISTS aquí NO es error: la cuenta pudo crearse a mano y el
       // enlace ocurre en el primer login.
       await this.accounts.createAccount(email)
-      await this.accounts.sendPasswordReset(email)
-      await this.repo.journal(userId, 'HOTEL_USER_INVITATION_SENT', actor, { email, kind })
+      const delivery = await this.mailer.sendAccountEmail({
+        template: 'account-invitation',
+        to: email,
+        name: fullName,
+        userId,
+      })
+
+      if (delivery.status === 'FAILED') {
+        // Ni el SMTP propio ni el respaldo de Firebase: cae al catch de abajo,
+        // que es quien deja el rastro de la invitación fallida.
+        throw new Error('El correo de invitación no salió por ningún camino')
+      }
+
+      // `transport` dice si salió por lo nuestro o por el respaldo: sin eso, un
+      // correo con la plantilla vieja de Firebase parece un misterio.
+      await this.repo.journal(userId, 'HOTEL_USER_INVITATION_SENT', actor, {
+        email,
+        kind,
+        transport: delivery.transport,
+      })
 
       return { sent: true }
     } catch (error) {

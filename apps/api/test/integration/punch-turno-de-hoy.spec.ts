@@ -291,17 +291,14 @@ describe('ponchar sin conocer la asignación', () => {
     expect(mark.photoPath).toBeNull()
   })
 
-  it('entre una marca y la siguiente pasan al menos 15 minutos', async () => {
+  it('dos marcas seguidas en el mismo minuto ya no se rechazan (quitado 2026-09-25)', async () => {
     const t = await turnoDeHoy(`punch-seguido-${Date.now()}`)
     const marca = { latitude: 21.16, longitude: -86.85, photoPath: 'operations/punch/x.webp' }
 
     await timesheets.punch({ type: 'CLOCK_IN', ...marca } as never, t.user)
 
-    // Salir a lunch en el mismo minuto de la Entrada: el día quedaría
-    // «trabajado» sin trabajo. Se rechaza y dice desde qué hora.
-    await expect(
-      timesheets.punch({ type: 'LUNCH_OUT', ...marca } as never, t.user),
-    ).rejects.toMatchObject({ response: { code: 'PUNCH_TOO_SOON' } })
+    const result = await timesheets.punch({ type: 'LUNCH_OUT', ...marca } as never, t.user)
+    expect(result.punch.type).toBe('LUNCH_OUT')
   })
 
   it('sin turno hoy responde NO_SHIFT_TODAY', async () => {

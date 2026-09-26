@@ -146,6 +146,30 @@ export const adminApi = baseApi.injectEndpoints({
       invalidatesTags: ['StaffUser'],
     }),
 
+    /**
+     * Zonas del Inspector: mismo `PUT /users/:id/zones` que usa el territorio
+     * de Ventas (territory:assign, el Administrador lo tiene), abierto al
+     * Inspector el 2026-09-24 — el alcance de sus requisiciones y auditorías.
+     */
+    getZoneOptions: build.query<Array<{ id: string; name: string }>, void>({
+      query: () => '/catalogs/zones',
+      transformResponse: (response: ApiEnvelope<Array<{ id: string; name: string }>>) =>
+        response.data,
+    }),
+    getUserZones: build.query<Array<{ id: string; name: string }>, string>({
+      query: (userId) => `/users/${userId}/zones`,
+      transformResponse: (response: ApiEnvelope<{ zones: Array<{ id: string; name: string }> }>) =>
+        response.data.zones,
+    }),
+    /** La lista COMPLETA reemplaza a la anterior, como lo define el back. */
+    setUserZones: build.mutation<unknown, { userId: string; zoneIds: string[] }>({
+      query: ({ userId, zoneIds }) => ({
+        url: `/users/${userId}/zones`,
+        method: 'PUT',
+        body: { zoneIds },
+      }),
+    }),
+
     /* ── Cuentas del hotel (users:manage_hotel) ─────────────────────────── */
     getHotelOptions: build.query<HotelOption[], void>({
       queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
@@ -214,6 +238,9 @@ export const {
   useCreateStaffUserMutation,
   useUpdateStaffUserMutation,
   useResendInvitationMutation,
+  useGetZoneOptionsQuery,
+  useGetUserZonesQuery,
+  useSetUserZonesMutation,
   useGetHotelOptionsQuery,
   useGetHotelDepartmentOptionsQuery,
   useGetHotelUsersQuery,

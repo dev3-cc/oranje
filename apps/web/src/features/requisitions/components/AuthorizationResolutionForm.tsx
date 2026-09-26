@@ -27,14 +27,18 @@ function authorizeErrorMessage(error: unknown, i18n: I18n): string {
   return apiErrorMessage(error, {
     byCode: {
       FORBIDDEN: IS_DEV_UI
-        ? 'Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel (D-09).'
+        ? 'Tu rol no autoriza requisiciones: lo hacen el Manager de Área, el Manager General o el Inspector de la zona (D-09).'
         : i18n._(
-            msg`Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel.`,
+            msg`Tu rol no autoriza requisiciones: lo hacen el Manager de Área, el Manager General o el Inspector de la zona.`,
           ),
       DEPARTMENT_OUT_OF_SCOPE: i18n._(
         msg`Esta requisición es de otro departamento: la autoriza su Manager de Área o el Manager General.`,
       ),
       HOTEL_OUT_OF_SCOPE: i18n._(msg`Esta requisición no es de tu hotel.`),
+      HOTEL_OUT_OF_ZONE: i18n._(msg`Ese hotel no está en ninguna de tus zonas.`),
+      REQUISITION_NOT_DRAFT: i18n._(
+        msg`Esta requisición ya no está en Borrador: alguien más ya la autorizó o la cambió de estado.`,
+      ),
     },
     fallback: i18n._(msg`No se pudo autorizar la requisición. Inténtalo de nuevo.`),
   })

@@ -103,6 +103,10 @@ msgstr "“{0}” is deleted for real — it isn't archived. If anything in the 
 msgid "«{0}» se elimina de verdad. Si alguna auditoría ya lo contestó, el sistema lo va a impedir y te lo dice aquí."
 msgstr "“{0}” is deleted for real. If any audit already answered it, the system will stop you and tell you here."
 
+#: src/shared/components/ModulePlaceholder.tsx
+msgid "«{title}» ya tiene su lugar en el menú. Lo estamos construyendo y va a estar listo muy pronto."
+msgstr "“{title}” already has its place in the menu. We're building it, and it'll be ready very soon."
+
 #: src/features/onboarding/components/SemaforoHelpDialog.tsx
 msgid "«Regresar» un prospecto es salir por una rama y reactivarlo. La reentrada es siempre hacia Azul claro, el único punto de retorno: se retoma el contacto, no la propuesta vieja."
 msgstr "“Taking back” a Prospect means exiting through a branch and reactivating it. Re-entry is always into Light Blue, the only return point: you pick up the contact again, not the old Proposal."
@@ -201,10 +205,20 @@ msgstr "{0, plural, one {# Zone} other {# Zones}}"
 msgid "{0, plural, one {Agregar contacto} other {Agregar # contactos}}"
 msgstr "{0, plural, one {Add contact} other {Add # contacts}}"
 
+#. placeholder {0}: session.zones.length
+#: src/features/audits/pages/AuditsPage.tsx
+msgid "{0, plural, one {Auditas los hoteles de tu zona:} other {Auditas los hoteles de tus zonas:}}"
+msgstr "{0, plural, one {You audit the hotels in your zone:} other {You audit the hotels in your zones:}}"
+
 #. placeholder {0}: values.drafts.length
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 msgid "{0, plural, one {Contacto agregado} other {# contactos agregados}}"
 msgstr "{0, plural, one {Contact added} other {# contacts added}}"
+
+#. placeholder {0}: session.zones.length
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "{0, plural, one {Solo ves los hoteles de tu zona:} other {Solo ves los hoteles de tus zonas:}}"
+msgstr "{0, plural, one {You only see hotels in your zone:} other {You only see hotels in your zones:}}"
 
 #. placeholder {0}: formatTimeIn(shift.startsAt, shift.hotelTimeZone)
 #. placeholder {1}: formatTimeIn(shift.endsAt, shift.hotelTimeZone)
@@ -776,8 +790,12 @@ msgid "Abiertos"
 msgstr "Open"
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
-msgid "Abre la hoja lista para imprimir o guardar como PDF"
-msgstr "Opens the sheet ready to print or save as a PDF"
+msgid "Abre la hoja lista para descargar como PDF"
+msgstr "Opens the sheet ready to download as PDF"
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+#~ msgid "Abre la hoja lista para imprimir o guardar como PDF"
+#~ msgstr "Opens the sheet ready to print or save as a PDF"
 
 #: src/features/worker/components/CameraCapture.tsx
 msgid "Abriendo la cámara…"
@@ -943,8 +961,16 @@ msgid "Agregar cuenta del hotel"
 msgstr "Add hotel account"
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
-msgid "Agregar la marca que falta"
-msgstr "Add the missing punch"
+msgid "Agregar la entrada que falta"
+msgstr "Add the missing clock-in"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+#~ msgid "Agregar la marca que falta"
+#~ msgstr "Add the missing punch"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Agregar la salida que falta"
+msgstr "Add the missing clock-out"
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 msgid "Agregar marca manual"
@@ -1331,9 +1357,8 @@ msgstr "No QR generated yet."
 msgid "Aún no hay requisiciones"
 msgstr "No requisitions yet"
 
-#: src/features/worker/pages/PunchPage.tsx
-msgid "Aún no puedes registrar la siguiente marca."
-msgstr "You can't record the next punch yet."
+#~ msgid "Aún no puedes registrar la siguiente marca."
+#~ msgstr "You can't record the next punch yet."
 
 #: src/features/worker/lib/noShiftMessage.ts
 msgid "Aún no te validan"
@@ -1998,8 +2023,8 @@ msgid "Cerrar sesión"
 msgstr "Sign out"
 
 #: src/shared/constants/timesheetStatus.ts
-msgid "Checadas completas"
-msgstr "All punches in"
+#~ msgid "Checadas completas"
+#~ msgstr "All punches in"
 
 #. placeholder {0}: formatDate(prospect.cycleStartedAt)
 #. placeholder {1}: prospect.daysInStatus
@@ -2192,8 +2217,8 @@ msgid "completo"
 msgstr "complete"
 
 #: src/features/timesheet/components/TimesheetDayCell.tsx
-msgid "Completo"
-msgstr "Complete"
+#~ msgid "Completo"
+#~ msgstr "Complete"
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Comprobante de domicilio"
@@ -2881,6 +2906,18 @@ msgstr "Day off"
 msgid "Descansa hoy"
 msgstr "Day off today"
 
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "Descárgala como PDF y pégala en el acceso."
+msgstr "Download it as a PDF and stick it at the entrance."
+
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "Descargar"
+msgstr "Download"
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "Descargar QR"
+msgstr "Download QR"
+
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Descartando…"
 msgstr "Discarding…"
@@ -3457,10 +3494,6 @@ msgstr "The General Manager doesn't report to anyone."
 msgid "El Manager General ve todos los departamentos"
 msgstr "The General Manager sees every department"
 
-#: src/shared/components/ModulePlaceholder.tsx
-msgid "El módulo «{title}» ya está en el menú, pero todavía no tiene diseño ni datos que mostrar. Se construye aquí en cuanto llegue la maqueta."
-msgstr "The \"{title}\" module is already in the menu, but it has no design or data to show yet. It gets built here as soon as the mockup arrives."
-
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 msgid "El motivo queda en el historial del prospecto."
 msgstr "The reason stays in the Prospect's history."
@@ -3509,8 +3542,13 @@ msgstr "The pin is meant to be dragged."
 #. placeholder {0}: formatDate(deadline.dueAt)
 #. placeholder {1}: deadline.day
 #: src/features/worker/components/TaxDeadlineBanner.tsx
-msgid "El plazo venció el {0} (vas en el día {1}). Mañana se suspende tu acceso, y sin tu SSN o ITIN no se te puede pagar."
-msgstr "The deadline was {0} (you're on day {1}). Tomorrow your access is suspended, and without your SSN or ITIN you can't be paid."
+#~ msgid "El plazo venció el {0} (vas en el día {1}). Mañana se suspende tu acceso, y sin tu SSN o ITIN no se te puede pagar."
+#~ msgstr "The deadline was {0} (you're on day {1}). Tomorrow your access is suspended, and without your SSN or ITIN you can't be paid."
+
+#. placeholder {0}: formatDate(dueAt)
+#: src/features/worker/components/TaxDeadlineBanner.tsx
+msgid "El plazo venció el {0} (vas en el día {day}). Mañana se suspende tu acceso, y sin tu SSN o ITIN no se te puede pagar."
+msgstr ""
 
 #: src/features/admin/components/HotelUserFormDialog.tsx
 msgid "El primer Manager General de cada hotel nace en la Conversión; aquí se dan de alta los Supervisores, los Managers de Área y los Managers Generales adicionales."
@@ -3529,8 +3567,12 @@ msgid "El QR de otro hotel no te corresponde."
 msgstr "This QR belongs to another hotel."
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
-msgid "El QR lo imprime y regenera el BD, el BDC o el personal del hotel."
-msgstr "The QR is printed and regenerated by the BD, the BDC or the hotel's staff."
+msgid "El QR lo descarga y regenera el BD, el BDC o el personal del hotel."
+msgstr "The BD, the BDC, or the hotel's staff can download and regenerate the QR."
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+#~ msgid "El QR lo imprime y regenera el BD, el BDC o el personal del hotel."
+#~ msgstr "The QR is printed and regenerated by the BD, the BDC or the hotel's staff."
 
 #. placeholder {0}: String(GEOFENCE_MAX_M)
 #: src/features/onboarding/types/prospectForm.schema.ts
@@ -3627,6 +3669,10 @@ msgstr "The BDC hands out the territory"
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "El usuario quedó guardado, pero el correo de invitación no salió: reenvíala desde su ficha."
 msgstr "The user was saved, but the invitation email didn't go out: resend it from their record."
+
+#: src/features/admin/components/UserFormDialog.tsx
+msgid "El usuario se guardó, pero sus zonas no: ábrelo de nuevo para reintentar."
+msgstr "The user was saved, but their zones weren't: open it again to retry."
 
 #: src/features/recruitment/components/LiftBlacklistDialog.tsx
 msgid "El veto lo puede quitar únicamente el Administrador; si no eres tú, el sistema va a rechazar la acción."
@@ -4175,6 +4221,7 @@ msgstr "That account no longer exists in that hotel. Reload the page."
 msgid "Esa foto no se pudo procesar: toma otra desde la cámara."
 msgstr "That photo couldn't be processed: take another one with the camera."
 
+#: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Esa marca ya quedó registrada hoy."
 msgstr "That punch was already recorded today."
@@ -4191,13 +4238,17 @@ msgstr "That Proposal version doesn't exist. Go back to Proposals and choose ano
 msgid "Escanea el QR del acceso"
 msgstr "Scan the QR at the entrance"
 
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "Escanéalo con la cámara de tu celular al llegar y al salir: te lleva directo a ponchar. También toma tu ubicación."
+msgstr "Scan it with your phone's camera when you arrive and leave: it takes you straight to punching in. It also takes your location."
+
 #: src/features/personnel/components/ContactQr.tsx
 msgid "Escanéalo con tu celular para llamarle o guardar su contacto"
 msgstr "Scan it with your phone to call them or save their contact"
 
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
-msgid "Escanéalo desde la app Oranje al llegar y al salir. La app también toma tu ubicación."
-msgstr "Scan it from the Oranje app when you arrive and when you leave. The app also records your location."
+#~ msgid "Escanéalo desde la app Oranje al llegar y al salir. La app también toma tu ubicación."
+#~ msgstr "Scan it from the Oranje app when you arrive and when you leave. The app also records your location."
 
 #: src/features/worker/pages/PunchPage.tsx
 msgid "escaneando el QR del acceso"
@@ -4301,6 +4352,11 @@ msgstr "That format can't be processed (iPhone HEIC files don't work): use JPG, 
 msgid "Ese formato no se puede procesar (los HEIC del iPhone no entran): usa JPG, PNG, WebP o PDF."
 msgstr "That format can't be processed (iPhone HEIC files don't work): use JPG, PNG, WebP or PDF."
 
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
+#: src/features/requisitions/components/NewRequisitionDialog.tsx
+msgid "Ese hotel no está en ninguna de tus zonas."
+msgstr "That hotel isn't in any of your zones."
+
 #: src/features/admin/components/HotelUserFormDialog.tsx
 msgid "Ese hotel ya no existe. Recarga la página y vuelve a elegirlo."
 msgstr "That hotel no longer exists. Reload the page and pick it again."
@@ -4380,6 +4436,10 @@ msgstr "This requisition was already deleted."
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Esta requisición ya no está autorizada o en proceso: no se puede unir."
 msgstr "This requisition is no longer authorized or in progress: you can't join it."
+
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
+msgid "Esta requisición ya no está en Borrador: alguien más ya la autorizó o la cambió de estado."
+msgstr "This requisition is no longer a Draft: someone else already authorized it or changed its status."
 
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
 msgid "Esta requisición ya no está en proceso: revisa su estado antes de asignar."
@@ -4737,8 +4797,8 @@ msgid "Falta la posición"
 msgstr "The position is missing"
 
 #: src/shared/constants/timesheetStatus.ts
-msgid "Faltan checadas"
-msgstr "Missing punches"
+#~ msgid "Faltan checadas"
+#~ msgstr "Missing punches"
 
 #: src/features/worker/pages/HomePage.tsx
 msgid "Faltan datos tuyos"
@@ -4865,6 +4925,10 @@ msgstr "First to confirm wins: if someone gets there first, the board updates ri
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
 msgid "Generando el código…"
 msgstr "Generating the code…"
+
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "Generando…"
+msgstr "Generating…"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
@@ -5173,12 +5237,12 @@ msgid "Identificado"
 msgstr "Identified"
 
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
-msgid "Imprime esta hoja o guárdala como PDF y pégala en el acceso."
-msgstr "Print this sheet or save it as a PDF and post it at the entrance."
+#~ msgid "Imprime esta hoja o guárdala como PDF y pégala en el acceso."
+#~ msgstr "Print this sheet or save it as a PDF and post it at the entrance."
 
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
-msgid "Imprimir"
-msgstr "Print"
+#~ msgid "Imprimir"
+#~ msgstr "Print"
 
 #: src/features/contracts/components/ContractPdfButton.tsx
 #: src/features/onboarding/components/ContractPreviewDialog.tsx
@@ -5186,8 +5250,8 @@ msgid "Imprimir o guardar como PDF"
 msgstr "Print or save as PDF"
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
-msgid "Imprimir QR"
-msgstr "Print QR"
+#~ msgid "Imprimir QR"
+#~ msgstr "Print QR"
 
 #: src/features/admin/components/ColaboradorAccountsSection.tsx
 #: src/features/admin/components/userListParts.tsx
@@ -5211,8 +5275,8 @@ msgid "incompleto"
 msgstr "incomplete"
 
 #: src/features/timesheet/components/TimesheetDayCell.tsx
-msgid "Incompleto"
-msgstr "Incomplete"
+#~ msgid "Incompleto"
+#~ msgstr "Incomplete"
 
 #: src/features/contracts/utils/validity.ts
 msgid "indefinido"
@@ -6324,6 +6388,10 @@ msgstr "Exit reasons to Red · Brown · Black"
 msgid "Multiplicadores"
 msgstr "Multipliers"
 
+#: src/shared/components/ModulePlaceholder.tsx
+msgid "Muy pronto estará aquí"
+msgstr "Coming very soon"
+
 #: src/features/audits/components/AuditFormDialog.tsx
 msgid "N/A"
 msgstr "N/A"
@@ -6654,6 +6722,10 @@ msgstr "No free slots with these filters. The Self-Pick pool fills up when a Man
 msgid "No hay vetos con estos filtros. Prueba con otro origen o con el historial completo."
 msgstr "No bans with these filters. Try another source or the full history."
 
+#: src/features/admin/components/UserFormDialog.tsx
+msgid "No hay zonas en el catálogo todavía."
+msgstr "There are no zones in the catalog yet."
+
 #: src/features/observability/components/DepartmentMetricsGrid.tsx
 #: src/features/observability/components/StatusDurationSection.tsx
 msgid "No implementado"
@@ -6948,6 +7020,10 @@ msgstr "The requisition couldn't be deleted. Try again."
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "No se pudo eliminar. Inténtalo de nuevo."
 msgstr "We couldn't delete it. Try again."
+
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "No se pudo generar el PDF. Inténtalo de nuevo."
+msgstr "Couldn't generate the PDF. Try again."
 
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "No se pudo guardar el colaborador. Revisa los datos e inténtalo de nuevo."
@@ -7460,10 +7536,6 @@ msgstr "Pay {0}"
 msgid "Pago por hora"
 msgstr "Pay per hour"
 
-#: src/shared/components/ModulePlaceholder.tsx
-msgid "Pantalla pendiente de diseño"
-msgstr "Screen awaiting design"
-
 #. placeholder {0}: row.workerName
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 msgid "Para {0} — la marca quedará señalada como manual, con tu motivo."
@@ -7694,6 +7766,16 @@ msgstr "Punch"
 #: src/features/observability/pages/ObservabilityPage.tsx
 msgid "Ponches"
 msgstr "Punches"
+
+#: src/features/timesheet/components/TimesheetDayCell.tsx
+#: src/shared/constants/timesheetStatus.ts
+msgid "Ponches completos"
+msgstr "Punches complete"
+
+#: src/features/timesheet/components/TimesheetDayCell.tsx
+#: src/shared/constants/timesheetStatus.ts
+msgid "Ponches incompletos"
+msgstr "Punches incomplete"
 
 #: src/features/recruitment/pages/PoolPage.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
@@ -7979,8 +8061,12 @@ msgid "QR del hotel"
 msgstr "Hotel QR"
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
-msgid "QR regenerado: versión {version}. Imprime la hoja nueva."
-msgstr "QR regenerated: version {version}. Print the new sheet."
+msgid "QR regenerado: versión {version}. Descarga la hoja nueva."
+msgstr "QR regenerated: version {version}. Download the new sheet."
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+#~ msgid "QR regenerado: versión {version}. Imprime la hoja nueva."
+#~ msgstr "QR regenerated: version {version}. Print the new sheet."
 
 #: src/features/reports/pages/ReportsPage.tsx
 msgid "qué canal sí logra contacto"
@@ -8394,7 +8480,6 @@ msgid "Revisar"
 msgstr "Review"
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
-#: src/features/timesheet/components/TimesheetDayCell.tsx
 msgid "Revisar el día"
 msgstr "Review the day"
 
@@ -8930,12 +9015,12 @@ msgid "Sin jornadas este día"
 msgstr "No workdays this day"
 
 #: src/features/timesheet/components/TimesheetDayCell.tsx
-msgid "Sin marcas"
-msgstr "No punches"
+#~ msgid "Sin marcas"
+#~ msgstr "No punches"
 
 #: src/shared/constants/timesheetStatus.ts
-msgid "Sin marcas ese día"
-msgstr "No punches that day"
+#~ msgid "Sin marcas ese día"
+#~ msgstr "No punches that day"
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 msgid "Sin marcas registradas todavía."
@@ -8968,6 +9053,14 @@ msgstr "Without camera permission the photo can't be taken. Allow it for this si
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Sin permiso de ubicación no se puede ponchar: actívalo para este sitio en tu teléfono."
 msgstr "Without location permission you can't clock in: turn it on for this site on your phone."
+
+#: src/features/timesheet/components/TimesheetDayCell.tsx
+msgid "Sin ponches"
+msgstr "No punches"
+
+#: src/shared/constants/timesheetStatus.ts
+msgid "Sin ponches ese día"
+msgstr "No punches that day"
 
 #: src/features/recruitment/components/PoolRoster.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
@@ -9071,6 +9164,10 @@ msgstr "Not in force yet"
 #: src/features/team/components/AssignTerritoryDialog.tsx
 msgid "Sin zonas elegidas el BD queda sin territorio asignado."
 msgstr "With no zones picked, the BD is left with no territory."
+
+#: src/features/admin/components/UserFormDialog.tsx
+msgid "Sin zonas elegidas el Inspector no ve ningún hotel para levantar requisiciones ni auditar."
+msgstr "With no zones picked, the Inspector sees no hotel to open requisitions or audits for."
 
 #: src/features/team/components/AssignTerritoryDialog.tsx
 msgid "Sin zonas también es válido"
@@ -9229,6 +9326,10 @@ msgstr "your department only"
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Solo un contrato vigente se puede marcar expirado."
 msgstr "Only a contract in force can be marked expired."
+
+#: src/features/admin/components/UserFormDialog.tsx
+msgid "Solo verá los hoteles de estas zonas — nunca todos."
+msgstr "They'll only see the hotels in these zones — never all of them."
 
 #. placeholder {0}: formatWeekRange(target, addDaysIso(target, 6))
 #: src/features/timesheet/components/WeekSlider.tsx
@@ -9489,8 +9590,13 @@ msgstr "They have an active assignment at a hotel: end it or reassign it first."
 #. placeholder {0}: formatDate(deadline.dueAt)
 #. placeholder {1}: deadline.day
 #: src/features/worker/components/TaxDeadlineBanner.tsx
-msgid "Tienes hasta el <0>{0}</0> (día {1} de 3). Sin él no se te puede pagar."
-msgstr "You have until <0>{0}</0> (day {1} of 3). Without it you can't be paid."
+#~ msgid "Tienes hasta el <0>{0}</0> (día {1} de 3). Sin él no se te puede pagar."
+#~ msgstr "You have until <0>{0}</0> (day {1} of 3). Without it you can't be paid."
+
+#. placeholder {0}: formatDate(dueAt)
+#: src/features/worker/components/TaxDeadlineBanner.tsx
+msgid "Tienes hasta el <0>{0}</0> (día {day} de 3). Sin él no se te puede pagar."
+msgstr ""
 
 #: src/features/onboarding/components/StatusTimeline.tsx
 #: src/features/territory/components/HotelMapCard.tsx
@@ -9638,6 +9744,10 @@ msgstr "No proposal versions yet."
 #: src/features/contracts/components/RateTable.tsx
 msgid "Todavía no se cotiza ninguna posición. Agrégala con «Editar tarifas» mientras el contrato sea borrador."
 msgstr "No position is quoted yet. Add one with «Edit rates» while the contract is still a draft."
+
+#: src/features/audits/pages/AuditsPage.tsx
+msgid "Todavía no tienes ningún hotel cliente en tus zonas asignadas — pídele al Coordinador que revise tu zona."
+msgstr "You don't have any client hotels in your assigned zones yet — ask your Coordinator to check your zone."
 
 #: src/features/conversion/pages/ConversionPage.tsx
 msgid "Todavía no toca convertir"
@@ -9805,12 +9915,16 @@ msgid "Tú resuelves anomalías y dejas la nota; aprobar las horas es del Manage
 msgstr "You resolve anomalies and leave the note; approving hours is up to the Area Manager or the General Manager."
 
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
-msgid "Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel."
-msgstr "Your role doesn't authorize requisitions: the hotel's Area Manager or General Manager does."
+#~ msgid "Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel."
+#~ msgstr "Your role doesn't authorize requisitions: the hotel's Area Manager or General Manager does."
+
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
+msgid "Tu rol no autoriza requisiciones: lo hacen el Manager de Área, el Manager General o el Inspector de la zona."
+msgstr "Your role can't authorize requisitions: that's done by the Area Manager, the General Manager, or the zone's Inspector."
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
-msgid "Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área o el Manager General del hotel."
-msgstr "Your role can't create requisitions: the hotel's Supervisor, Area Manager or General Manager does."
+msgid "Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área, el Manager General del hotel o el Inspector de su zona."
+msgstr "Your role can't create requisitions: they're created by the Supervisor, the Area Manager, the General Manager, or the Inspector of the zone."
 
 #: src/features/team/pages/TeamPage.tsx
 msgid "Tu rol no tiene BDs a cargo, así que aquí no hay nada que mostrar."
@@ -10204,8 +10318,8 @@ msgid "Ver revisión"
 msgstr "View review"
 
 #: src/features/timesheet/components/TimesheetDayCell.tsx
-msgid "Ver revisión del día"
-msgstr "View the day's review"
+#~ msgid "Ver revisión del día"
+#~ msgstr "View the day's review"
 
 #: src/shared/constants/onboardingStatus.ts
 msgid "Verde"
@@ -10555,6 +10669,7 @@ msgstr "Zone: {0}"
 msgid "Zona: próximamente"
 msgstr "Zone: coming soon"
 
+#: src/features/admin/components/UserFormDialog.tsx
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Zonas"
 msgstr "Zones"

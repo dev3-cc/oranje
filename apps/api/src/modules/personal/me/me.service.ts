@@ -7,8 +7,8 @@ import {
 import { v7 as uuidv7 } from 'uuid'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { FirebaseAccountsService } from '../../../infra/firebase/index.js'
 import { PrismaService } from '../../../infra/prisma/index.js'
-import { FirebaseAccountsService } from '../../identity/users/firebase-accounts.service.js'
 import { NotificationPublisherService } from '../../notifications/index.js'
 import { DocumentsService } from '../documents/documents.service.js'
 import type { DocumentEntity } from '../documents/documents.service.js'
@@ -59,7 +59,7 @@ export class MeService {
 
     return {
       ...(await this.workers.get(worker.id)),
-      taxDeadline: await this.deadline.of(worker.id, worker.createdAt),
+      taxDeadline: await this.deadline.of(worker.id),
       accessDeadlines: await this.accessDeadline.of(user.id),
       legacyAccess,
     }

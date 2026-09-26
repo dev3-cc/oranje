@@ -11,11 +11,8 @@ import { v7 as uuidv7 } from 'uuid'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { CPanelError, CPanelService } from '../../../infra/cpanel/index.js'
+import { FirebaseAccountsError, FirebaseAccountsService } from '../../../infra/firebase/index.js'
 import { PrismaService } from '../../../infra/prisma/index.js'
-import {
-  FirebaseAccountsError,
-  FirebaseAccountsService,
-} from '../../identity/users/firebase-accounts.service.js'
 
 const WORKER_ROLE = 'ROL-C-01'
 

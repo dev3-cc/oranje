@@ -3,12 +3,13 @@ import type { ConfigService } from '@nestjs/config'
 import { GoogleAuth } from 'google-auth-library'
 import { v7 as uuidv7 } from 'uuid'
 
+import { FirebaseAccountsService } from '../../src/infra/firebase/index.js'
+import { MailerService } from '../../src/infra/mailer/index.js'
 import type { PrismaService } from '../../src/infra/prisma/index.js'
 import type { CreateHotelUserDto } from '../../src/modules/identity/users/dto/create-hotel-user.dto.js'
 import { createHotelUserSchema } from '../../src/modules/identity/users/dto/create-hotel-user.dto.js'
 import { queryHotelUsersSchema } from '../../src/modules/identity/users/dto/query-hotel-users.dto.js'
 import { updateHotelUserSchema } from '../../src/modules/identity/users/dto/update-hotel-user.dto.js'
-import { FirebaseAccountsService } from '../../src/modules/identity/users/firebase-accounts.service.js'
 import { HotelUsersRepository } from '../../src/modules/identity/users/hotel-users.repository.js'
 import { HotelUsersService } from '../../src/modules/identity/users/hotel-users.service.js'
 
@@ -77,6 +78,19 @@ async function create(hotelId: string, overrides: Record<string, unknown>): Prom
   return entity.id
 }
 
+/**
+ * El mailer SIN configurar: sin las variables del SMTP se declara apagado y
+ * cada correo sale por el respaldo de Firebase, que es lo que estas pruebas
+ * ya simulan. Así siguen valiendo tal cual estaban.
+ */
+function mailerApagado(accounts: FirebaseAccountsService): MailerService {
+  const sinCorreo = {
+    get: (key: string): string | undefined => (key.startsWith('MAIL_') ? undefined : 'oranje-test'),
+  } as unknown as ConfigService<never, true>
+
+  return new MailerService(sinCorreo, db as unknown as PrismaService, accounts)
+}
+
 beforeAll(async () => {
   const actorId = (await actor()).id
 
@@ -93,6 +107,7 @@ beforeAll(async () => {
   service = new HotelUsersService(
     new HotelUsersRepository(db as unknown as PrismaService),
     new FirebaseAccountsService(config),
+    mailerApagado(new FirebaseAccountsService(config)),
   )
 
   hotelA = await hotel()

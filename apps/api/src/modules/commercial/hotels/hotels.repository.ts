@@ -37,9 +37,29 @@ export type HotelRow = Prisma.HotelGetPayload<{ select: typeof SELECT }> & {
 export class HotelsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findMany(query: QueryHotelsDto): Promise<{ rows: HotelRow[]; total: number }> {
+  /** Las zonas que le asignó su Coordinador — hoy a mano, por API. */
+  async zonesOfUser(userId: string): Promise<string[]> {
+    const rows = await this.prisma.userZone.findMany({
+      where: { userId },
+      select: { zoneId: true },
+    })
+
+    return rows.map((r) => r.zoneId)
+  }
+
+  async findMany(
+    query: QueryHotelsDto,
+    /** El Inspector no ve Ventas ni es Admin: se acota a sus zonas desde la
+        sesión, sin importar qué `zoneId` mande el cliente (mismo patrón que
+        `assignedToHotelId` en Mi Personal). */
+    onlyZoneIds: string[] | null = null,
+  ): Promise<{ rows: HotelRow[]; total: number }> {
     const where: Prisma.HotelWhereInput = {
-      ...(query.zoneId ? { zoneId: query.zoneId } : {}),
+      ...(onlyZoneIds
+        ? { zoneId: { in: onlyZoneIds } }
+        : query.zoneId
+          ? { zoneId: query.zoneId }
+          : {}),
       ...(query.onlyClients ? { activatedAt: { not: null } } : {}),
       ...(query.search ? { name: { contains: query.search, mode: 'insensitive' } } : {}),
     }

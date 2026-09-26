@@ -20,7 +20,7 @@ const SELECT = {
   inspectorId: true,
   createdAt: true,
   updatedAt: true,
-  hotel: { select: { id: true, name: true, photoRef: true, zoneId: true } },
+  hotel: { select: { id: true, name: true, photoRef: true, zoneId: true, timeZone: true } },
   creator: { select: { id: true, fullName: true, photoPath: true } },
   authorizer: { select: { id: true, fullName: true, photoPath: true } },
   inspector: { select: { id: true, fullName: true, photoPath: true } },
@@ -93,6 +93,28 @@ export class RequisitionsRepository {
 
   async hotelExists(hotelId: string): Promise<boolean> {
     return (await this.prisma.hotel.count({ where: { id: hotelId } })) > 0
+  }
+
+  // El Inspector no tiene hotel fijo (cubre zona, no hotel — D-09 no lo
+  // modela con hotelId), así que su alcance para crear se checa aquí: ¿el
+  // hotel pedido cae en alguna de sus zonas asignadas (user_zone)?
+  async hotelInUserZones(hotelId: string, userId: string): Promise<boolean> {
+    return (
+      (await this.prisma.hotel.count({
+        where: { id: hotelId, zone: { userZones: { some: { userId } } } },
+      })) > 0
+    )
+  }
+
+  // Mismo criterio que `hotelInUserZones`, para acotar el listado del
+  // Inspector (`list()`) en vez de validar un solo hotel.
+  async hotelIdsInUserZones(userId: string): Promise<string[]> {
+    const rows = await this.prisma.hotel.findMany({
+      where: { zone: { userZones: { some: { userId } } } },
+      select: { id: true },
+    })
+
+    return rows.map((r) => r.id)
   }
 
   async catalogPositions(ids: string[]): Promise<Set<string>> {

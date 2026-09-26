@@ -26,6 +26,7 @@ function adaptSessionUser(session: SessionApi): SessionUser {
     roleTitle: role.title,
     hotel: null,
     department: null,
+    zones: [],
     locale: currentLocale(),
     permissions: [],
   }
@@ -155,6 +156,7 @@ export const sessionApi = baseApi.injectEndpoints({
         department: raw.data.department
           ? { id: raw.data.department.id, name: raw.data.department.name }
           : null,
+        zones: raw.data.zones,
         locale: raw.data.locale === 'en' ? 'en' : 'es',
         permissions: raw.data.permissions,
       }),
