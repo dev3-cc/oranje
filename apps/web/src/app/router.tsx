@@ -157,6 +157,13 @@ export const router = createBrowserRouter([
             },
           },
           {
+            path: 'permissions',
+            lazy: async () => {
+              const m = await import('@/features/worker')
+              return { Component: m.PermissionsPage }
+            },
+          },
+          {
             path: 'punch',
             lazy: async () => {
               const m = await import('@/features/worker')
