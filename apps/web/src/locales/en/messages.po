@@ -1345,9 +1345,8 @@ msgstr "No QR generated yet."
 msgid "Aún no hay requisiciones"
 msgstr "No requisitions yet"
 
-#: src/features/worker/pages/PunchPage.tsx
-msgid "Aún no puedes registrar la siguiente marca."
-msgstr "You can't record the next punch yet."
+#~ msgid "Aún no puedes registrar la siguiente marca."
+#~ msgstr "You can't record the next punch yet."
 
 #: src/features/worker/lib/noShiftMessage.ts
 msgid "Aún no te validan"
