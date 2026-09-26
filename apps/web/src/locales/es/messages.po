@@ -1001,6 +1001,11 @@ msgstr "Agregar usuario"
 msgid "Ahora sigue Reclutamiento"
 msgstr "Ahora sigue Reclutamiento"
 
+#: src/features/admin/pages/MailSettingsPage.tsx
+#: src/layouts/Sidebar.tsx
+msgid "Ajustes del correo"
+msgstr "Ajustes del correo"
+
 #: src/features/dashboard/components/HotelDashboard.tsx
 msgid "Al 100% (Azul claro)"
 msgstr "Al 100% (Azul claro)"
@@ -1344,9 +1349,6 @@ msgstr "Aún no hay QR generado."
 #: src/features/requisitions/components/RequisitionTable.tsx
 msgid "Aún no hay requisiciones"
 msgstr "Aún no hay requisiciones"
-
-#~ msgid "Aún no puedes registrar la siguiente marca."
-#~ msgstr "Aún no puedes registrar la siguiente marca."
 
 #: src/features/worker/lib/noShiftMessage.ts
 msgid "Aún no te validan"
@@ -1838,6 +1840,10 @@ msgstr "Cambiar de persona es dar de baja este usuario y dar de alta al nuevo."
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Cambiar estado"
 msgstr "Cambiar estado"
+
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "Cambiar esto es del Administrador."
+msgstr "Cambiar esto es del Administrador."
 
 #: src/features/worker/components/PhotoUploader.tsx
 msgid "Cambiar foto"
@@ -3327,6 +3333,14 @@ msgstr "El correo no se edita: es con el que la persona entra. Para cambiar de p
 msgid "El correo o la contraseña no coinciden. Revísalos e inténtalo de nuevo."
 msgstr "El correo o la contraseña no coinciden. Revísalos e inténtalo de nuevo."
 
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "El correo saldrá por Firebase hasta que lo regreses"
+msgstr "El correo saldrá por Firebase hasta que lo regreses"
+
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "El correo vuelve a salir por el servidor de Oranje"
+msgstr "El correo vuelve a salir por el servidor de Oranje"
+
 #. placeholder {0}: ONBOARDING_STATUS_LABEL[report.bottleneck.status]
 #. placeholder {1}: String(report.bottleneck.averageDays)
 #: src/features/reports/pages/ReportsPage.tsx
@@ -3514,12 +3528,6 @@ msgstr "El pin exacto y la geocerca validarán los ponches cuando sea cliente: a
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "El pin se arrastra a propósito."
 msgstr "El pin se arrastra a propósito."
-
-#. placeholder {0}: formatDate(deadline.dueAt)
-#. placeholder {1}: deadline.day
-#: src/features/worker/components/TaxDeadlineBanner.tsx
-#~ msgid "El plazo venció el {0} (vas en el día {1}). Mañana se suspende tu acceso, y sin tu SSN o ITIN no se te puede pagar."
-#~ msgstr "El plazo venció el {0} (vas en el día {1}). Mañana se suspende tu acceso, y sin tu SSN o ITIN no se te puede pagar."
 
 #. placeholder {0}: formatDate(dueAt)
 #: src/features/worker/components/TaxDeadlineBanner.tsx
@@ -4014,6 +4022,10 @@ msgstr "En este hotel Entrada y Salida se registran escaneando el QR del acceso.
 msgid "En la geocerca"
 msgstr "En la geocerca"
 
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "en los últimos {days} días"
+msgstr "en los últimos {days} días"
+
 #: src/features/dashboard/components/RecruitmentDashboard.tsx
 #: src/shared/constants/requisitionStatus.ts
 msgid "En proceso"
@@ -4120,6 +4132,10 @@ msgstr "Enviada {0} por {1}"
 msgid "Enviada a aprobación"
 msgstr "Enviada a aprobación"
 
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "Enviado"
+msgstr "Enviado"
+
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/components/UserFormDialog.tsx
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
@@ -4193,6 +4209,7 @@ msgstr "Esa cuenta ya no existe en ese hotel. Recarga la página."
 msgid "Esa foto no se pudo procesar: toma otra desde la cámara."
 msgstr "Esa foto no se pudo procesar: toma otra desde la cámara."
 
+#: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Esa marca ya quedó registrada hoy."
 msgstr "Esa marca ya quedó registrada hoy."
@@ -4504,6 +4521,10 @@ msgstr "Estás fuera del hotel: la marca no se guarda. Pídele al Supervisor un 
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "Este — Atlanta, Miami, Nueva York"
 msgstr "Este — Atlanta, Miami, Nueva York"
+
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "Este ambiente no manda correo propio"
+msgstr "Este ambiente no manda correo propio"
 
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Este borrador lo activa el BDC cuando la verificación de «Qué sigue» esté en verde: al activarlo, el contrato pasa a regir la nómina y la factura del hotel."
@@ -4827,6 +4848,10 @@ msgstr "Fin (opcional)"
 #: src/features/audits/components/AuditFormDialog.tsx
 msgid "Finalizar auditoría"
 msgstr "Finalizar auditoría"
+
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "Firebase (respaldo)"
+msgstr "Firebase (respaldo)"
 
 #. placeholder {0}: contract.signedByName
 #: src/features/contracts/components/ContractChecklist.tsx
@@ -5597,6 +5622,10 @@ msgstr "La persona marcó su entrada y su salida. Revisar el día es aparte: lo 
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "La persona recibirá un correo para establecer su contraseña. Hasta que entre por primera vez, su cuenta aparece como «Invitación enviada»."
 msgstr "La persona recibirá un correo para establecer su contraseña. Hasta que entre por primera vez, su cuenta aparece como «Invitación enviada»."
+
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "La plantilla de Firebase, que no se puede editar. Solo para salir del paso."
+msgstr "La plantilla de Firebase, que no se puede editar. Solo para salir del paso."
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "la posición"
@@ -6720,6 +6749,10 @@ msgstr "No regresó"
 msgid "No requerido"
 msgstr "No requerido"
 
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "No salió"
+msgstr "No salió"
+
 #: src/shared/constants/workerEnums.ts
 msgid "No sé"
 msgstr "No sé"
@@ -6755,6 +6788,10 @@ msgstr "No se pudieron cargar las cuentas de los hoteles. Reintenta en unos segu
 #: src/features/onboarding/pages/ProposalListPage.tsx
 msgid "No se pudieron cargar las propuestas. Reintenta en unos segundos."
 msgstr "No se pudieron cargar las propuestas. Reintenta en unos segundos."
+
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "No se pudieron cargar los ajustes del correo."
+msgstr "No se pudieron cargar los ajustes del correo."
 
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "No se pudieron cargar los catálogos. Reintenta en unos segundos."
@@ -6820,6 +6857,10 @@ msgstr "No se pudo autorizar la requisición. Inténtalo de nuevo."
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "No se pudo borrar el documento. Inténtalo de nuevo."
 msgstr "No se pudo borrar el documento. Inténtalo de nuevo."
+
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "No se pudo cambiar el ajuste. Inténtalo de nuevo."
+msgstr "No se pudo cambiar el ajuste. Inténtalo de nuevo."
 
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "No se pudo cambiar el estado del contrato. Inténtalo de nuevo."
@@ -7120,6 +7161,10 @@ msgstr "No se registró entrada ni salida. Puede ser que no tuviera turno ese d�
 msgid "No tiene fecha de fin: rige hasta que alguien lo marque expirado."
 msgstr "No tiene fecha de fin: rige hasta que alguien lo marque expirado."
 
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "No tiene servidor de correo configurado, así que todo sale por Firebase. El interruptor de abajo no cambia nada hasta que se configure."
+msgstr "No tiene servidor de correo configurado, así que todo sale por Firebase. El interruptor de abajo no cambia nada hasta que se configure."
+
 #: src/features/worker/lib/noShiftMessage.ts
 msgid "No tienes turno programado hoy. Si sí te tocaba, avísale a tu Supervisor para que revise el Schedule."
 msgstr "No tienes turno programado hoy. Si sí te tocaba, avísale a tu Supervisor para que revise el Schedule."
@@ -7260,6 +7305,10 @@ msgstr "Notificaciones: {0} sin leer"
 #: src/layouts/Header.tsx
 msgid "Notificaciones: nada nuevo"
 msgstr "Notificaciones: nada nuevo"
+
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "Nuestras plantillas, remitente @oranjepeople.com."
+msgstr "Nuestras plantillas, remitente @oranjepeople.com."
 
 #: src/features/admin/components/HotelUserFormDialog.tsx
 msgid "Nueva cuenta del hotel"
@@ -7756,6 +7805,22 @@ msgstr "Por disputa"
 #: src/features/onboarding/components/RegisterAttemptDialog.tsx
 msgid "Por dónde buscaste al hotel"
 msgstr "Por dónde buscaste al hotel"
+
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "Por dónde sale el correo"
+msgstr "Por dónde sale el correo"
+
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "Por dónde salen los correos que manda el sistema, y qué ha pasado con ellos."
+msgstr "Por dónde salen los correos que manda el sistema, y qué ha pasado con ellos."
+
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "Por el respaldo"
+msgstr "Por el respaldo"
+
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "Por el servidor de Oranje"
+msgstr "Por el servidor de Oranje"
 
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 msgid "Por qué no existe el ponche: rechazo de ubicación, teléfono sin batería…"
@@ -8394,6 +8459,10 @@ msgstr "Resolución"
 msgid "Resolver y marcar revisado"
 msgstr "Resolver y marcar revisado"
 
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "Respaldo"
+msgstr "Respaldo"
+
 #. placeholder {0}: item.label
 #: src/features/audits/components/AuditFormDialog.tsx
 msgid "Respuesta para {0}"
@@ -8685,6 +8754,10 @@ msgstr "Semana: <0>{coverage}% cubierto</0> · {holes, plural, one {# hueco} oth
 msgid "Servicios ofrecidos"
 msgstr "Servicios ofrecidos"
 
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "Servidor de Oranje"
+msgstr "Servidor de Oranje"
+
 #: src/features/recruitment/components/PoolTable.tsx
 msgid "sí"
 msgstr "sí"
@@ -8710,6 +8783,10 @@ msgstr "Si aparece, el nombre, la dirección, el teléfono, el pin del mapa y la
 #: src/features/contracts/components/ContractNextStep.tsx
 msgid "Si cambian las tarifas, no se edita este: se crea uno nuevo con vigencia propia, para que las semanas ya pagadas no se recalculen."
 msgstr "Si cambian las tarifas, no se edita este: se crea uno nuevo con vigencia propia, para que las semanas ya pagadas no se recalculen."
+
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "Si el servidor de Oranje falla, el sistema se pasa a Firebase él solo. Cambia esto a mano solo cuando el correo parezca salir bien pero no llegue."
+msgstr "Si el servidor de Oranje falla, el sistema se pasa a Firebase él solo. Cambia esto a mano solo cuando el correo parezca salir bien pero no llegue."
 
 #: src/features/contracts/components/EditRateDialog.tsx
 msgid "Si la posición ya tiene tarifa, esta la reemplaza."
@@ -9057,6 +9134,10 @@ msgstr "sin salida"
 #: src/features/reports/pages/ReportsPage.tsx
 msgid "Sin salidas registradas todavía. Ningún ciclo se ha ido a Rojo, Café o Negro."
 msgstr "Sin salidas registradas todavía. Ningún ciclo se ha ido a Rojo, Café o Negro."
+
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "Sin salir"
+msgstr "Sin salir"
 
 #: src/features/clients/components/ClientCardGrid.tsx
 #: src/features/contracts/components/ContractCardGrid.tsx
@@ -9525,12 +9606,6 @@ msgstr "Tiene turno hoy y no ha marcado entrada. Contáctalo — su teléfono es
 msgid "Tiene una asignación activa en un hotel: primero hay que terminarla o reasignarla."
 msgstr "Tiene una asignación activa en un hotel: primero hay que terminarla o reasignarla."
 
-#. placeholder {0}: formatDate(deadline.dueAt)
-#. placeholder {1}: deadline.day
-#: src/features/worker/components/TaxDeadlineBanner.tsx
-#~ msgid "Tienes hasta el <0>{0}</0> (día {1} de 3). Sin él no se te puede pagar."
-#~ msgstr "Tienes hasta el <0>{0}</0> (día {1} de 3). Sin él no se te puede pagar."
-
 #. placeholder {0}: formatDate(dueAt)
 #: src/features/worker/components/TaxDeadlineBanner.tsx
 msgid "Tienes hasta el <0>{0}</0> (día {day} de 3). Sin él no se te puede pagar."
@@ -9618,6 +9693,10 @@ msgstr "Todavía no"
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Todavía no ha entrado por primera vez."
 msgstr "Todavía no ha entrado por primera vez."
+
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "Todavía no ha salido ningún correo desde este ambiente."
+msgstr "Todavía no ha salido ningún correo desde este ambiente."
 
 #: src/features/audits/components/AuditHistoryList.tsx
 msgid "Todavía no hay auditorías"
@@ -9853,10 +9932,6 @@ msgid "Tú resuelves anomalías y dejas la nota; aprobar las horas es del Manage
 msgstr "Tú resuelves anomalías y dejas la nota; aprobar las horas es del Manager de Área o del General."
 
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
-#~ msgid "Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel."
-#~ msgstr "Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel."
-
-#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
 msgid "Tu rol no autoriza requisiciones: lo hacen el Manager de Área, el Manager General o el Inspector de la zona."
 msgstr "Tu rol no autoriza requisiciones: lo hacen el Manager de Área, el Manager General o el Inspector de la zona."
 
@@ -9945,9 +10020,18 @@ msgstr "Ubicación"
 msgid "Última enviada · v{0}"
 msgstr "Última enviada · v{0}"
 
+#. placeholder {0}: formatDateTime(data.updatedAt)
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "Última vez que se cambió: {0}"
+msgstr "Última vez que se cambió: {0}"
+
 #: src/features/dashboard/components/ActivityCards.tsx
 msgid "Últimas 8 semanas"
 msgstr "Últimas 8 semanas"
+
+#: src/features/admin/pages/MailSettingsPage.tsx
+msgid "Últimos correos"
+msgstr "Últimos correos"
 
 #: src/features/observability/components/StatusDurationSection.tsx
 msgid "un colaborador"
