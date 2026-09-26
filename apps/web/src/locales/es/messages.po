@@ -790,8 +790,12 @@ msgid "Abiertos"
 msgstr "Abiertos"
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
-msgid "Abre la hoja lista para imprimir o guardar como PDF"
-msgstr "Abre la hoja lista para imprimir o guardar como PDF"
+msgid "Abre la hoja lista para descargar como PDF"
+msgstr "Abre la hoja lista para descargar como PDF"
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+#~ msgid "Abre la hoja lista para imprimir o guardar como PDF"
+#~ msgstr "Abre la hoja lista para imprimir o guardar como PDF"
 
 #: src/features/worker/components/CameraCapture.tsx
 msgid "Abriendo la cámara…"
@@ -2894,6 +2898,18 @@ msgstr "Descansa"
 msgid "Descansa hoy"
 msgstr "Descansa hoy"
 
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "Descárgala como PDF y pégala en el acceso."
+msgstr "Descárgala como PDF y pégala en el acceso."
+
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "Descargar"
+msgstr "Descargar"
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+msgid "Descargar QR"
+msgstr "Descargar QR"
+
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Descartando…"
 msgstr "Descartando…"
@@ -3543,8 +3559,12 @@ msgid "El QR de otro hotel no te corresponde."
 msgstr "El QR de otro hotel no te corresponde."
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
-msgid "El QR lo imprime y regenera el BD, el BDC o el personal del hotel."
-msgstr "El QR lo imprime y regenera el BD, el BDC o el personal del hotel."
+msgid "El QR lo descarga y regenera el BD, el BDC o el personal del hotel."
+msgstr "El QR lo descarga y regenera el BD, el BDC o el personal del hotel."
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+#~ msgid "El QR lo imprime y regenera el BD, el BDC o el personal del hotel."
+#~ msgstr "El QR lo imprime y regenera el BD, el BDC o el personal del hotel."
 
 #. placeholder {0}: String(GEOFENCE_MAX_M)
 #: src/features/onboarding/types/prospectForm.schema.ts
@@ -4209,13 +4229,17 @@ msgstr "Esa versión de la propuesta no existe. Vuelve a Propuestas y elige otra
 msgid "Escanea el QR del acceso"
 msgstr "Escanea el QR del acceso"
 
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "Escanéalo con la cámara de tu celular al llegar y al salir: te lleva directo a ponchar. También toma tu ubicación."
+msgstr "Escanéalo con la cámara de tu celular al llegar y al salir: te lleva directo a ponchar. También toma tu ubicación."
+
 #: src/features/personnel/components/ContactQr.tsx
 msgid "Escanéalo con tu celular para llamarle o guardar su contacto"
 msgstr "Escanéalo con tu celular para llamarle o guardar su contacto"
 
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
-msgid "Escanéalo desde la app Oranje al llegar y al salir. La app también toma tu ubicación."
-msgstr "Escanéalo desde la app Oranje al llegar y al salir. La app también toma tu ubicación."
+#~ msgid "Escanéalo desde la app Oranje al llegar y al salir. La app también toma tu ubicación."
+#~ msgstr "Escanéalo desde la app Oranje al llegar y al salir. La app también toma tu ubicación."
 
 #: src/features/worker/pages/PunchPage.tsx
 msgid "escaneando el QR del acceso"
@@ -4893,6 +4917,10 @@ msgstr "Gana la primera que confirma: si alguien se adelanta, el tablero se actu
 msgid "Generando el código…"
 msgstr "Generando el código…"
 
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "Generando…"
+msgstr "Generando…"
+
 #: src/features/personnel/pages/PersonnelPage.tsx
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
@@ -5200,12 +5228,12 @@ msgid "Identificado"
 msgstr "Identificado"
 
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
-msgid "Imprime esta hoja o guárdala como PDF y pégala en el acceso."
-msgstr "Imprime esta hoja o guárdala como PDF y pégala en el acceso."
+#~ msgid "Imprime esta hoja o guárdala como PDF y pégala en el acceso."
+#~ msgstr "Imprime esta hoja o guárdala como PDF y pégala en el acceso."
 
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
-msgid "Imprimir"
-msgstr "Imprimir"
+#~ msgid "Imprimir"
+#~ msgstr "Imprimir"
 
 #: src/features/contracts/components/ContractPdfButton.tsx
 #: src/features/onboarding/components/ContractPreviewDialog.tsx
@@ -5213,8 +5241,8 @@ msgid "Imprimir o guardar como PDF"
 msgstr "Imprimir o guardar como PDF"
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
-msgid "Imprimir QR"
-msgstr "Imprimir QR"
+#~ msgid "Imprimir QR"
+#~ msgstr "Imprimir QR"
 
 #: src/features/admin/components/ColaboradorAccountsSection.tsx
 #: src/features/admin/components/userListParts.tsx
@@ -6984,6 +7012,10 @@ msgstr "No se pudo eliminar la requisición. Inténtalo de nuevo."
 msgid "No se pudo eliminar. Inténtalo de nuevo."
 msgstr "No se pudo eliminar. Inténtalo de nuevo."
 
+#: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+msgid "No se pudo generar el PDF. Inténtalo de nuevo."
+msgstr "No se pudo generar el PDF. Inténtalo de nuevo."
+
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "No se pudo guardar el colaborador. Revisa los datos e inténtalo de nuevo."
 msgstr "No se pudo guardar el colaborador. Revisa los datos e inténtalo de nuevo."
@@ -8010,8 +8042,12 @@ msgid "QR del hotel"
 msgstr "QR del hotel"
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
-msgid "QR regenerado: versión {version}. Imprime la hoja nueva."
-msgstr "QR regenerado: versión {version}. Imprime la hoja nueva."
+msgid "QR regenerado: versión {version}. Descarga la hoja nueva."
+msgstr "QR regenerado: versión {version}. Descarga la hoja nueva."
+
+#: src/features/onboarding/components/HotelPunchQrCard.tsx
+#~ msgid "QR regenerado: versión {version}. Imprime la hoja nueva."
+#~ msgstr "QR regenerado: versión {version}. Imprime la hoja nueva."
 
 #: src/features/reports/pages/ReportsPage.tsx
 msgid "qué canal sí logra contacto"

@@ -19,6 +19,7 @@ allowBuilds:
   # plugin-react-swc + la macro de Lingui para SWC (D-36): el postinstall es el
   # fallback del binario nativo.
   '@swc/core': true
+  core-js: true
 
 minimumReleaseAgeExclude:
   - '@testing-library/jest-dom@7.0.1'
