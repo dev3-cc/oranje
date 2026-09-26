@@ -51,9 +51,9 @@ const PUNCH_STATE_DETAIL: Record<PunchState, MessageDescriptor> = {
  * hallazgo que ya corrigió el chip de revisión: el color nunca habla solo).
  */
 const PUNCH_STATE_SHORT_LABEL: Record<PunchState, MessageDescriptor> = {
-  COMPLETE: msg`Completo`,
-  INCOMPLETE: msg`Incompleto`,
-  NO_SHIFT: msg`Sin marcas`,
+  COMPLETE: msg`Ponches completos`,
+  INCOMPLETE: msg`Ponches incompletos`,
+  NO_SHIFT: msg`Sin ponches`,
 }
 
 /**
@@ -114,7 +114,6 @@ export function TimesheetDayCell({
         onClick={() => {
           onReview(entry)
         }}
-        title={entry.status === 'REVIEWED' ? t`Ver revisión del día` : t`Revisar el día`}
         className={cn(
           /* `bg-surface` DEBAJO del tinte: el color del estado va con alfa y,
              sin fondo sólido, el carril de atrás se transparenta y lo ensucia. */

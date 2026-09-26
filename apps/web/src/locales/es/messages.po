@@ -957,8 +957,16 @@ msgid "Agregar cuenta del hotel"
 msgstr "Agregar cuenta del hotel"
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
-msgid "Agregar la marca que falta"
-msgstr "Agregar la marca que falta"
+msgid "Agregar la entrada que falta"
+msgstr "Agregar la entrada que falta"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+#~ msgid "Agregar la marca que falta"
+#~ msgstr "Agregar la marca que falta"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Agregar la salida que falta"
+msgstr "Agregar la salida que falta"
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 msgid "Agregar marca manual"
@@ -2011,8 +2019,8 @@ msgid "Cerrar sesión"
 msgstr "Cerrar sesión"
 
 #: src/shared/constants/timesheetStatus.ts
-msgid "Checadas completas"
-msgstr "Checadas completas"
+#~ msgid "Checadas completas"
+#~ msgstr "Checadas completas"
 
 #. placeholder {0}: formatDate(prospect.cycleStartedAt)
 #. placeholder {1}: prospect.daysInStatus
@@ -2205,8 +2213,8 @@ msgid "completo"
 msgstr "completo"
 
 #: src/features/timesheet/components/TimesheetDayCell.tsx
-msgid "Completo"
-msgstr "Completo"
+#~ msgid "Completo"
+#~ msgstr "Completo"
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Comprobante de domicilio"
@@ -4193,6 +4201,7 @@ msgstr "Esa cuenta ya no existe en ese hotel. Recarga la página."
 msgid "Esa foto no se pudo procesar: toma otra desde la cámara."
 msgstr "Esa foto no se pudo procesar: toma otra desde la cámara."
 
+#: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Esa marca ya quedó registrada hoy."
 msgstr "Esa marca ya quedó registrada hoy."
@@ -4764,8 +4773,8 @@ msgid "Falta la posición"
 msgstr "Falta la posición"
 
 #: src/shared/constants/timesheetStatus.ts
-msgid "Faltan checadas"
-msgstr "Faltan checadas"
+#~ msgid "Faltan checadas"
+#~ msgstr "Faltan checadas"
 
 #: src/features/worker/pages/HomePage.tsx
 msgid "Faltan datos tuyos"
@@ -5238,8 +5247,8 @@ msgid "incompleto"
 msgstr "incompleto"
 
 #: src/features/timesheet/components/TimesheetDayCell.tsx
-msgid "Incompleto"
-msgstr "Incompleto"
+#~ msgid "Incompleto"
+#~ msgstr "Incompleto"
 
 #: src/features/contracts/utils/validity.ts
 msgid "indefinido"
@@ -7726,6 +7735,16 @@ msgstr "Ponche"
 msgid "Ponches"
 msgstr "Ponches"
 
+#: src/features/timesheet/components/TimesheetDayCell.tsx
+#: src/shared/constants/timesheetStatus.ts
+msgid "Ponches completos"
+msgstr "Ponches completos"
+
+#: src/features/timesheet/components/TimesheetDayCell.tsx
+#: src/shared/constants/timesheetStatus.ts
+msgid "Ponches incompletos"
+msgstr "Ponches incompletos"
+
 #: src/features/recruitment/pages/PoolPage.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 #: src/layouts/Sidebar.tsx
@@ -8425,7 +8444,6 @@ msgid "Revisar"
 msgstr "Revisar"
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
-#: src/features/timesheet/components/TimesheetDayCell.tsx
 msgid "Revisar el día"
 msgstr "Revisar el día"
 
@@ -8961,12 +8979,12 @@ msgid "Sin jornadas este día"
 msgstr "Sin jornadas este día"
 
 #: src/features/timesheet/components/TimesheetDayCell.tsx
-msgid "Sin marcas"
-msgstr "Sin marcas"
+#~ msgid "Sin marcas"
+#~ msgstr "Sin marcas"
 
 #: src/shared/constants/timesheetStatus.ts
-msgid "Sin marcas ese día"
-msgstr "Sin marcas ese día"
+#~ msgid "Sin marcas ese día"
+#~ msgstr "Sin marcas ese día"
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 msgid "Sin marcas registradas todavía."
@@ -8999,6 +9017,14 @@ msgstr "Sin permiso de cámara no se puede tomar la foto. Permítelo para este s
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Sin permiso de ubicación no se puede ponchar: actívalo para este sitio en tu teléfono."
 msgstr "Sin permiso de ubicación no se puede ponchar: actívalo para este sitio en tu teléfono."
+
+#: src/features/timesheet/components/TimesheetDayCell.tsx
+msgid "Sin ponches"
+msgstr "Sin ponches"
+
+#: src/shared/constants/timesheetStatus.ts
+msgid "Sin ponches ese día"
+msgstr "Sin ponches ese día"
 
 #: src/features/recruitment/components/PoolRoster.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
@@ -10256,8 +10282,8 @@ msgid "Ver revisión"
 msgstr "Ver revisión"
 
 #: src/features/timesheet/components/TimesheetDayCell.tsx
-msgid "Ver revisión del día"
-msgstr "Ver revisión del día"
+#~ msgid "Ver revisión del día"
+#~ msgstr "Ver revisión del día"
 
 #: src/shared/constants/onboardingStatus.ts
 msgid "Verde"

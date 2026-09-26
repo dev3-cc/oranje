@@ -38,7 +38,7 @@ describe('TimesheetDayCell', () => {
     )
 
     const time = screen.getByText('08:03 – 16:15')
-    const label = screen.getByText('Completo')
+    const label = screen.getByText('Ponches completos')
 
     expect(time).toBeInTheDocument()
     // Renglones distintos: el contenedor de la hora no es el de la etiqueta.
@@ -50,7 +50,7 @@ describe('TimesheetDayCell', () => {
       <TimesheetDayCell entry={entry()} isSelected={false} onToggle={vi.fn()} onReview={vi.fn()} />,
     )
 
-    expect(screen.getByText('Sin marcas')).toBeInTheDocument()
+    expect(screen.getByText('Sin ponches')).toBeInTheDocument()
     expect(screen.queryByText(/–/)).not.toBeInTheDocument()
   })
 })
