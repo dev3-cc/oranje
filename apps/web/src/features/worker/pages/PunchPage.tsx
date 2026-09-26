@@ -4,8 +4,8 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import { MaterialIcon } from '@oranje/ui'
 import { motion, useReducedMotion } from 'framer-motion'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { useSearchParams } from 'react-router'
+import { useEffect, useState, type ReactNode } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 
 import {
   NEEDS_PHOTO,
@@ -213,7 +213,7 @@ function punchErrorMessage(error: unknown, i18n: I18n): string {
     switch (error.message) {
       case 'GEOLOCATION_DENIED':
         return i18n._(
-          msg`Sin permiso de ubicación no se puede ponchar: actívalo para este sitio en tu teléfono.`,
+          msg`Sin permiso de ubicación no se puede ponchar: actívalo en Permisos, en el menú de tu cuenta.`,
         )
       case 'GEOLOCATION_UNSUPPORTED':
         return i18n._(msg`Este navegador no da la ubicación: usa el navegador del teléfono.`)
@@ -270,6 +270,7 @@ function punchErrorMessage(error: unknown, i18n: I18n): string {
  */
 export function PunchPage(): ReactNode {
   const { t, i18n } = useLingui()
+  const navigate = useNavigate()
   const { isIntroOpen, dismissIntro, reopenIntro } = useIntroSeen('worker-punch')
   const { data, isLoading, isError, refetch } = useGetTodayPunchingQuery()
   /** Solo para explicar el «sin turno»: la ficha ya está en caché por Inicio. */
@@ -279,8 +280,9 @@ export function PunchPage(): ReactNode {
   const now = useNow()
   const reduceMotion = useReducedMotion() ?? false
 
-  const photoInputRef = useRef<HTMLInputElement>(null)
   const [failure, setFailure] = useState<string | null>(null)
+  /** Solo para ofrecer el atajo a Permisos cuando el rechazo fue justo por eso. */
+  const [failureNeedsPermission, setFailureNeedsPermission] = useState(false)
   const [phase, setPhase] = useState<PunchPhase>('idle')
   /** El sentido de la marca en curso, fijado al ponchar: el refetch tras el éxito no lo mueve. */
   const [direction, setDirection] = useState<'in' | 'out'>('in')
@@ -311,17 +313,24 @@ export function PunchPage(): ReactNode {
     }
   }, [])
 
+  /**
+   * Los permisos de cámara y ubicación ya se pidieron en el onboarding de
+   * Inicio (el primero que ve el Colaborador): este solo explica el
+   * mecanismo del ponche, no vuelve a pedir nada (2026-09-25, Hugo).
+   */
   if (isIntroOpen) {
     return (
-      <OnboardingIntro
-        slides={INTRO_SLIDES.map((slide) => ({
-          image: slide.image,
-          title: i18n._(slide.title),
-          text: i18n._(slide.text),
-        }))}
-        startLabel={t`Ir a ponchar`}
-        onDone={dismissIntro}
-      />
+      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-surface">
+        <OnboardingIntro
+          slides={INTRO_SLIDES.map((slide) => ({
+            image: slide.image,
+            title: i18n._(slide.title),
+            text: i18n._(slide.text),
+          }))}
+          startLabel={t`Ir a ponchar`}
+          onDone={dismissIntro}
+        />
+      </div>
     )
   }
 
@@ -363,6 +372,7 @@ export function PunchPage(): ReactNode {
   async function submit(photo: File | null, qrCode: string | null = null): Promise<void> {
     if (!canPunch || next === null) return
     setFailure(null)
+    setFailureNeedsPermission(false)
     setDirection(isEntering ? 'in' : 'out')
     setPhase('registering')
     const preview = photo ? URL.createObjectURL(photo) : null
@@ -392,6 +402,7 @@ export function PunchPage(): ReactNode {
       window.setTimeout(backToIdle, OUTCOME_VISIBLE_MS)
     } catch (error) {
       setFailure(punchErrorMessage(error, i18n))
+      setFailureNeedsPermission(error instanceof Error && error.message === 'GEOLOCATION_DENIED')
       const code = readApiError(error).code
       if (code === 'QR_INVALID') setLinkedQr(null)
       setPhase(code === 'OUTSIDE_GEOFENCE' ? 'outside' : 'error')
@@ -435,12 +446,12 @@ export function PunchPage(): ReactNode {
             setCameraOpen(false)
             void submit(file)
           }}
-          onFallback={() => {
-            setCameraOpen(false)
-            photoInputRef.current?.click()
-          }}
           onCancel={() => {
             setCameraOpen(false)
+          }}
+          onOpenPermissions={() => {
+            setCameraOpen(false)
+            void navigate('/collaborator/permissions')
           }}
         />
       )}
@@ -612,23 +623,17 @@ export function PunchPage(): ReactNode {
         )}
       </div>
 
-      <input
-        ref={photoInputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        capture="user"
-        className="hidden"
-        aria-label={t`Foto del ponche`}
-        onChange={(event) => {
-          const file = event.target.files?.[0]
-          event.target.value = ''
-          if (file) void submit(file)
-        }}
-      />
-
       {failure !== null && (
         <p role="alert" className="text-center text-sm text-red">
           {failure}
+          {failureNeedsPermission && (
+            <>
+              {' '}
+              <Link to="/collaborator/permissions" className="font-semibold underline">
+                <Trans>Ir a Permisos</Trans>
+              </Link>
+            </>
+          )}
         </p>
       )}
 

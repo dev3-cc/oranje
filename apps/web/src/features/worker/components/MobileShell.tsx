@@ -201,6 +201,14 @@ export function MobileShell(): ReactNode {
                 <MaterialIcon name="password" className="text-lg" aria-hidden />
                 <Trans>Contraseña</Trans>
               </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => {
+                  void navigate('/collaborator/permissions')
+                }}
+              >
+                <MaterialIcon name="security" className="text-lg" aria-hidden />
+                <Trans>Permisos</Trans>
+              </DropdownMenuItem>
               {/* El buzón @oranjepeople.com vive en el webmail de cPanel, fuera
                   de la app; se abre en pestaña nueva y en la pantalla de entrar
                   (la ruta /logout la muestra limpia aunque haya otra sesión). */}
