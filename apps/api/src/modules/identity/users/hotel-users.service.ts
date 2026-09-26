@@ -133,6 +133,7 @@ export class HotelUsersService {
       roleCode: dto.roleCode,
       departmentId,
       reportsToUserId: dto.reportsToUserId ?? null,
+      locale: dto.locale,
       actorUserId: actor.id,
       actorRole: actor.roleCode,
     })
