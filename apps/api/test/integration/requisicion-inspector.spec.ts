@@ -214,3 +214,60 @@ describe('el Inspector autoriza requisiciones acotado a su zona', () => {
     })
   })
 })
+
+/**
+ * El Inspector también elimina/cancela, acotado a la misma zona (regla
+ * ampliada el 2026-09-26, decisión de Hugo) — en los mismos 4 estados que ya
+ * cubren el Manager de Área y el Manager General.
+ */
+describe('el Inspector elimina requisiciones acotado a su zona', () => {
+  it('elimina una autorizada de un hotel de su zona, con motivo', async () => {
+    const zones = await db.zone.findMany({ take: 2, select: { id: true } })
+    const [suZona, otraZona] = zones
+    if (!suZona || !otraZona) throw new Error('Se requieren al menos 2 zonas sembradas')
+
+    const hotelId = await hotelInZone(suZona.id)
+    const gg = await generalManager(hotelId)
+    const draft = await requisitions.create({ hotelId, positions: positions() }, gg)
+    created.push(draft.id)
+    await requisitions.authorize(draft.id, gg)
+
+    const user = await inspector([suZona.id, otraZona.id])
+    const removed = await requisitions.remove(draft.id, 'ya no se necesita', user)
+
+    expect(removed.state.code).toBe('PURPLE')
+  })
+
+  it('rechaza un hotel fuera de su zona con HOTEL_OUT_OF_ZONE', async () => {
+    const zones = await db.zone.findMany({ take: 2, select: { id: true } })
+    const [suZona, otraZona] = zones
+    if (!suZona || !otraZona) throw new Error('Se requieren al menos 2 zonas sembradas')
+
+    const hotelAjeno = await hotelInZone(otraZona.id)
+    const gg = await generalManager(hotelAjeno)
+    const draft = await requisitions.create({ hotelId: hotelAjeno, positions: positions() }, gg)
+    created.push(draft.id)
+    await requisitions.authorize(draft.id, gg)
+
+    const user = await inspector([suZona.id])
+
+    await expect(requisitions.remove(draft.id, 'motivo', user)).rejects.toMatchObject({
+      response: { code: 'HOTEL_OUT_OF_ZONE' },
+    })
+  })
+
+  it('el Inspector elimina su propio borrador sin motivo', async () => {
+    const zones = await db.zone.findMany({ take: 2, select: { id: true } })
+    const [suZona, otraZona] = zones
+    if (!suZona || !otraZona) throw new Error('Se requieren al menos 2 zonas sembradas')
+
+    const hotelId = await hotelInZone(suZona.id)
+    const user = await inspector([suZona.id, otraZona.id])
+    const draft = await requisitions.create({ hotelId, positions: positions() }, user)
+    created.push(draft.id)
+
+    const removed = await requisitions.remove(draft.id, null, user)
+
+    expect(removed.state.code).toBe('PURPLE')
+  })
+})
