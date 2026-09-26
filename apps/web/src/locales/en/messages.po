@@ -900,6 +900,7 @@ msgstr "Activating, expiring or cancelling a contract is the BDC's job."
 #: src/features/admin/components/ColaboradorAccountsSection.tsx
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/components/UserFormDialog.tsx
+#: src/features/worker/pages/PermissionsPage.tsx
 #: src/shared/constants/contractStatus.ts
 msgid "Activo"
 msgstr "Active"
@@ -1058,6 +1059,10 @@ msgstr "Once lifted, the person re-enters through the Recruiter's validation, as
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 msgid "Al marcar a otro como principal, el anterior deja de serlo en el mismo guardado."
 msgstr "Marking another contact as the primary one drops the previous one in the same save."
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Al ponchar se abre la cámara"
+msgstr "The camera opens when you punch in"
 
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Al tocar el botón se abre la cámara. La foto confirma que eres tú; no se comparte con el hotel."
@@ -1799,6 +1804,10 @@ msgstr "Quality"
 msgid "Calificación preliminar"
 msgstr "Preliminary score"
 
+#: src/features/worker/pages/PermissionsPage.tsx
+msgid "Cámara"
+msgstr "Camera"
+
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
 msgid "Cambia el estado o la búsqueda, o quítalos con «Quitar filtros» para volver a ver el tablero completo."
 msgstr "Change the status or the search, or clear them with \"Clear filters\" to see the full board again."
@@ -2225,6 +2234,10 @@ msgstr "complete"
 #: src/features/timesheet/components/TimesheetDayCell.tsx
 #~ msgid "Completo"
 #~ msgstr "Complete"
+
+#: src/features/worker/pages/PermissionsPage.tsx
+msgid "Comprobando…"
+msgstr "Checking…"
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Comprobante de domicilio"
@@ -2768,6 +2781,10 @@ msgstr "S"
 #: src/features/onboarding/pages/PipelinePage.tsx
 msgid "Da de alta el primero con «Nuevo prospecto»: el ciclo arranca en Gris."
 msgstr "Create the first one with “New Prospect”: the cycle starts in Gray."
+
+#: src/features/worker/pages/PermissionsPage.tsx
+msgid "Dar acceso"
+msgstr "Allow access"
 
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "Dar de alta el hotel abre su ciclo comercial en Gris. Un hotel solo puede tener un ciclo abierto a la vez."
@@ -3707,8 +3724,8 @@ msgid "Elegir el hotel"
 msgstr "Choose the hotel"
 
 #: src/features/worker/components/CameraCapture.tsx
-msgid "Elegir una foto"
-msgstr "Choose a photo"
+#~ msgid "Elegir una foto"
+#~ msgstr "Choose a photo"
 
 #: src/features/schedule/components/AddShiftDialog.tsx
 msgid "Elige a la persona"
@@ -4918,8 +4935,8 @@ msgid "Foto del colaborador"
 msgstr "Collaborator photo"
 
 #: src/features/worker/pages/PunchPage.tsx
-msgid "Foto del ponche"
-msgstr "Punch photo"
+#~ msgid "Foto del ponche"
+#~ msgstr "Punch photo"
 
 #: src/features/worker/components/PhotoUploader.tsx
 msgid "Foto guardada"
@@ -5454,6 +5471,10 @@ msgid "Ir a la semana de este día"
 msgstr "Go to this day's week"
 
 #: src/features/worker/pages/PunchPage.tsx
+msgid "Ir a Permisos"
+msgstr "Go to Permissions"
+
+#: src/features/worker/pages/PunchPage.tsx
 msgid "Ir a ponchar"
 msgstr "Go clock in"
 
@@ -5589,6 +5610,10 @@ msgstr "the Manager's signature"
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "La firma es del Manager"
 msgstr "The signature is the Manager's"
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "La foto confirma que eres tú; no se comparte con el hotel. Al continuar, tu teléfono te va a pedir permiso de cámara."
+msgstr "The photo confirms it's you; it's never shared with the hotel. When you continue, your phone will ask for camera permission."
 
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "La foto pesa demasiado: el máximo es 15 MB."
@@ -5928,6 +5953,10 @@ msgstr "the system moves it forward with the punches (the Inspector confirms the
 msgid "lo avanza el sistema con los ponches; al completar la semana queda Fijo."
 msgstr "the system moves it forward with the punches; once the week is complete they become Permanent."
 
+#: src/features/worker/pages/PermissionsPage.tsx
+msgid "Lo bloqueaste antes: el navegador ya no vuelve a preguntar. Actívalo desde los Ajustes de tu teléfono, en los permisos de este sitio, y vuelve aquí a confirmar."
+msgstr "You blocked it before: the browser won't ask again. Turn it on from your phone's Settings, in this site's permissions, and come back here to confirm."
+
 #: src/features/recruitment/components/ChangeStateDialog.tsx
 msgid "lo cierra el Inspector con el alta médica."
 msgstr "the Inspector closes it with the medical release."
@@ -5983,6 +6012,10 @@ msgstr "What is billed cannot be less than what is paid to the person."
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Lo que se factura no puede ser menor a lo que se paga."
 msgstr "What is billed cannot be less than what is paid."
+
+#: src/features/worker/pages/PermissionsPage.tsx
+msgid "Lo que tu teléfono le permite a Oranje para que puedas ponchar."
+msgstr "What your phone allows Oranje to do so you can punch in."
 
 #: src/features/audits/components/AuditFormDialog.tsx
 msgid "Lo que viste y que vale la pena dejar por escrito…"
@@ -7589,6 +7622,10 @@ msgstr "Pay per hour"
 msgid "Para {0} — la marca quedará señalada como manual, con tu motivo."
 msgstr "For {0} — the punch will be flagged as manual, with your reason."
 
+#: src/features/worker/pages/PermissionsPage.tsx
+msgid "Para confirmar que estás dentro del hotel al ponchar."
+msgstr "To confirm you're inside the hotel when you punch in."
+
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 msgid "Para convertir a Naranja primero debe existir el Usuario del Hotel: créalo desde Conversión."
 msgstr "To convert to Orange the Hotel User must exist first: create it from Conversion."
@@ -7597,6 +7634,10 @@ msgstr "To convert to Orange the Hotel User must exist first: create it from Con
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Para crear: {0}."
 msgstr "To create it: {0}."
+
+#: src/features/worker/pages/PermissionsPage.tsx
+msgid "Para la foto de Entrada y Salida — cuando el hotel usa selfie y no QR."
+msgstr "For the Clock in / Clock out photo — when the hotel uses selfie instead of QR."
 
 #: src/features/recruitment/components/ProfileProgressAvatar.tsx
 msgid "Para poder asignarlo falta capturar en la entrevista: {missingNames}"
@@ -7735,6 +7776,11 @@ msgstr "Incomplete profile · overdue, access blocked"
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Perfil laboral y salud"
 msgstr "Work profile and health"
+
+#: src/features/worker/components/MobileShell.tsx
+#: src/features/worker/pages/PermissionsPage.tsx
+msgid "Permisos"
+msgstr "Permissions"
 
 #: src/features/admin/pages/UsersPage.tsx
 msgid "Personal de hoteles"
@@ -8908,6 +8954,10 @@ msgstr "Yes: they're in Gray and protected"
 msgid "siempre"
 msgstr "always"
 
+#: src/features/worker/pages/PermissionsPage.tsx
+msgid "Sigue bloqueado. Actívalo desde los Ajustes de tu teléfono."
+msgstr "Still blocked. Turn it on from your phone's Settings."
+
 #: src/features/worker/pages/Phase2Page.tsx
 msgid "Sigue con tu contacto de emergencia →"
 msgstr "Continue with your emergency contact →"
@@ -9123,12 +9173,16 @@ msgid "Sin permiso de cámara no se puede leer el QR. Permítelo para este sitio
 msgstr "Without camera permission the QR can't be read. Allow it for this site and try again."
 
 #: src/features/worker/components/CameraCapture.tsx
-msgid "Sin permiso de cámara no se puede tomar la foto. Permítelo para este sitio y vuelve a intentar."
-msgstr "Without camera permission the photo can't be taken. Allow it for this site and try again."
+#~ msgid "Sin permiso de cámara no se puede tomar la foto. Permítelo para este sitio y vuelve a intentar."
+#~ msgstr "Without camera permission the photo can't be taken. Allow it for this site and try again."
 
 #: src/features/worker/pages/PunchPage.tsx
-msgid "Sin permiso de ubicación no se puede ponchar: actívalo para este sitio en tu teléfono."
-msgstr "Without location permission you can't clock in: turn it on for this site on your phone."
+msgid "Sin permiso de ubicación no se puede ponchar: actívalo en Permisos, en el menú de tu cuenta."
+msgstr "Without location permission you can't punch in: turn it on in Permissions, from your account menu."
+
+#: src/features/worker/pages/PunchPage.tsx
+#~ msgid "Sin permiso de ubicación no se puede ponchar: actívalo para este sitio en tu teléfono."
+#~ msgstr "Without location permission you can't clock in: turn it on for this site on your phone."
 
 #: src/features/timesheet/components/TimesheetDayCell.tsx
 msgid "Sin ponches"
@@ -9394,6 +9448,10 @@ msgstr "Only a week sent for approval can be approved."
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Solo se ofrecen los superiores del rol elegido: el BD apunta a su BDC, la Reclutadora a su Líder."
 msgstr "Only the chosen role's superiors are offered: a BD points to their BDC, a Recruiter to their Group Leader."
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Solo se usa al ponchar, para saber que estás dentro del hotel. Al continuar, tu teléfono te va a pedir permiso de ubicación."
+msgstr "It's only used when you punch in, to know you're inside the hotel. When you continue, your phone will ask for location permission."
 
 #: src/features/onboarding/components/RegisterAttemptDialog.tsx
 msgid "Solo su autor corrige"
@@ -10073,6 +10131,7 @@ msgstr "Your info"
 #: src/features/onboarding/components/HotelDataCard.tsx
 #: src/features/onboarding/components/PlacesAutofillSummary.tsx
 #: src/features/onboarding/components/ProspectFormDialog.tsx
+#: src/features/worker/pages/PermissionsPage.tsx
 msgid "Ubicación"
 msgstr "Location"
 
@@ -10622,6 +10681,10 @@ msgstr "W"
 msgid "y"
 msgstr "and"
 
+#: src/features/worker/pages/HomePage.tsx
+msgid "Y tu ubicación, para confirmar dónde estás"
+msgstr "And your location, to confirm where you are"
+
 #: src/features/worker/components/TaxDeadlineBanner.tsx
 msgid "Ya debiste cargar tu SSN o ITIN"
 msgstr "Your SSN or ITIN should already be uploaded"
@@ -10675,6 +10738,10 @@ msgstr "This person already has an active ban: lift it before registering anothe
 #: src/features/recruitment/components/CreateAccessDialog.tsx
 msgid "Ya la anoté"
 msgstr "I wrote it down"
+
+#: src/features/worker/pages/PermissionsPage.tsx
+msgid "Ya lo cambié: comprobar de nuevo"
+msgstr "I already changed it: check again"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "ya marcaron hoy"
