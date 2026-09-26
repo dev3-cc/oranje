@@ -3518,8 +3518,13 @@ msgstr "El pin se arrastra a propósito."
 #. placeholder {0}: formatDate(deadline.dueAt)
 #. placeholder {1}: deadline.day
 #: src/features/worker/components/TaxDeadlineBanner.tsx
-msgid "El plazo venció el {0} (vas en el día {1}). Mañana se suspende tu acceso, y sin tu SSN o ITIN no se te puede pagar."
-msgstr "El plazo venció el {0} (vas en el día {1}). Mañana se suspende tu acceso, y sin tu SSN o ITIN no se te puede pagar."
+#~ msgid "El plazo venció el {0} (vas en el día {1}). Mañana se suspende tu acceso, y sin tu SSN o ITIN no se te puede pagar."
+#~ msgstr "El plazo venció el {0} (vas en el día {1}). Mañana se suspende tu acceso, y sin tu SSN o ITIN no se te puede pagar."
+
+#. placeholder {0}: formatDate(dueAt)
+#: src/features/worker/components/TaxDeadlineBanner.tsx
+msgid "El plazo venció el {0} (vas en el día {day}). Mañana se suspende tu acceso, y sin tu SSN o ITIN no se te puede pagar."
+msgstr "El plazo venció el {0} (vas en el día {day}). Mañana se suspende tu acceso, y sin tu SSN o ITIN no se te puede pagar."
 
 #: src/features/admin/components/HotelUserFormDialog.tsx
 msgid "El primer Manager General de cada hotel nace en la Conversión; aquí se dan de alta los Supervisores, los Managers de Área y los Managers Generales adicionales."
@@ -4314,6 +4319,7 @@ msgstr "Ese formato no se puede procesar (los HEIC del iPhone no entran): usa JP
 msgid "Ese formato no se puede procesar (los HEIC del iPhone no entran): usa JPG, PNG, WebP o PDF."
 msgstr "Ese formato no se puede procesar (los HEIC del iPhone no entran): usa JPG, PNG, WebP o PDF."
 
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "Ese hotel no está en ninguna de tus zonas."
 msgstr "Ese hotel no está en ninguna de tus zonas."
@@ -4397,6 +4403,10 @@ msgstr "Esta requisición ya estaba eliminada."
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Esta requisición ya no está autorizada o en proceso: no se puede unir."
 msgstr "Esta requisición ya no está autorizada o en proceso: no se puede unir."
+
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
+msgid "Esta requisición ya no está en Borrador: alguien más ya la autorizó o la cambió de estado."
+msgstr "Esta requisición ya no está en Borrador: alguien más ya la autorizó o la cambió de estado."
 
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
 msgid "Esta requisición ya no está en proceso: revisa su estado antes de asignar."
@@ -9518,8 +9528,13 @@ msgstr "Tiene una asignación activa en un hotel: primero hay que terminarla o r
 #. placeholder {0}: formatDate(deadline.dueAt)
 #. placeholder {1}: deadline.day
 #: src/features/worker/components/TaxDeadlineBanner.tsx
-msgid "Tienes hasta el <0>{0}</0> (día {1} de 3). Sin él no se te puede pagar."
-msgstr "Tienes hasta el <0>{0}</0> (día {1} de 3). Sin él no se te puede pagar."
+#~ msgid "Tienes hasta el <0>{0}</0> (día {1} de 3). Sin él no se te puede pagar."
+#~ msgstr "Tienes hasta el <0>{0}</0> (día {1} de 3). Sin él no se te puede pagar."
+
+#. placeholder {0}: formatDate(dueAt)
+#: src/features/worker/components/TaxDeadlineBanner.tsx
+msgid "Tienes hasta el <0>{0}</0> (día {day} de 3). Sin él no se te puede pagar."
+msgstr "Tienes hasta el <0>{0}</0> (día {day} de 3). Sin él no se te puede pagar."
 
 #: src/features/onboarding/components/StatusTimeline.tsx
 #: src/features/territory/components/HotelMapCard.tsx
@@ -9838,8 +9853,12 @@ msgid "Tú resuelves anomalías y dejas la nota; aprobar las horas es del Manage
 msgstr "Tú resuelves anomalías y dejas la nota; aprobar las horas es del Manager de Área o del General."
 
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
-msgid "Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel."
-msgstr "Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel."
+#~ msgid "Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel."
+#~ msgstr "Tu rol no autoriza requisiciones: lo hacen el Manager de Área o el Manager General del hotel."
+
+#: src/features/requisitions/components/AuthorizationResolutionForm.tsx
+msgid "Tu rol no autoriza requisiciones: lo hacen el Manager de Área, el Manager General o el Inspector de la zona."
+msgstr "Tu rol no autoriza requisiciones: lo hacen el Manager de Área, el Manager General o el Inspector de la zona."
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área, el Manager General del hotel o el Inspector de su zona."
