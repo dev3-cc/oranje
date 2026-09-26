@@ -203,7 +203,11 @@ describe('REQ_INSPECTOR_ASSIGNED', () => {
     const id = await nuevaRequisicion({ createdBy: supervisorId, areaManagerUserId: areaManagerId })
     publishCalls.length = 0
 
-    await requisitions.authorize(id, actorUser)
+    // Quien autoriza de verdad tiene hotel (GA/GM) o zona (Inspector); el
+    // actor de sistema del fixture no tiene ninguno de los dos y desde el
+    // 2026-09-26 el Inspector sin zona ya no pasa trivial.
+    const gm = await usuario('ROL-H-03', 'GM notif-grupo2', { hotelId })
+    await requisitions.authorize(id, { id: gm, roleCode: 'ROL-H-03', hotelId, departmentId: null })
 
     const row = await db.requisition.findUniqueOrThrow({
       where: { id },
