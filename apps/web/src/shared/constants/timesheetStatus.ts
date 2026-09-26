@@ -66,13 +66,13 @@ export const PUNCH_STATES = ['COMPLETE', 'INCOMPLETE', 'NO_SHIFT'] as const
 export type PunchState = (typeof PUNCH_STATES)[number]
 
 const PUNCH_STATE_MESSAGE = {
-  COMPLETE: msg`Checadas completas`,
-  INCOMPLETE: msg`Faltan checadas`,
+  COMPLETE: msg`Ponches completos`,
+  INCOMPLETE: msg`Ponches incompletos`,
   /* NO "Sin turno": el front solo sabe que no hay marcas ese día (0 punches),
      no si había turno programado — eso vive en el Schedule y hoy no se
      cruza contra el Timesheet. Afirmar "sin turno" sería el mismo error que
      ya se corrigió con `isAbsence`: nombrar una causa que nunca se verificó. */
-  NO_SHIFT: msg`Sin marcas ese día`,
+  NO_SHIFT: msg`Sin ponches ese día`,
 }
 
 export const PUNCH_STATE_LABEL: Record<PunchState, string> = labelMap(PUNCH_STATE_MESSAGE)
