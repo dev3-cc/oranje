@@ -1025,6 +1025,16 @@ const SYSTEM_ADMINISTRATION: Permission[] = [
     roles: [ADMIN],
   },
   {
+    // Decisión de Hugo (2026-09-26): el freno de mano del correo. El respaldo
+    // automático solo se dispara cuando el SMTP FALLA; cuando acepta el
+    // correo y no lo entrega —lo que hace un hosting compartido al
+    // limitarnos— hace falta que una persona lo fuerce, y sin desplegar.
+    module: 'settings',
+    action: 'manage',
+    label: 'Ver y cambiar los ajustes del sistema',
+    roles: [ADMIN],
+  },
+  {
     // Decisión de Hugo (2026-09-14): el buzón real (@oranjepeople.com, cPanel
     // de A2 Hosting) se crea/gestiona desde el Admin — antes era un CSV a
     // mano para otro ingeniero. Este permiso NO crea la cuenta en Oranje
