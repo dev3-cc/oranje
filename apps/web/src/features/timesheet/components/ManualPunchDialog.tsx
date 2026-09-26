@@ -66,6 +66,7 @@ function manualPunchErrorMessage(error: unknown, i18n: I18n): string {
   return apiErrorMessage(error, {
     byCode: {
       ASSIGNMENT_NOT_FOUND: i18n._(msg`El colaborador ya no tiene asignación en esta requisición.`),
+      PUNCH_ALREADY_REGISTERED: i18n._(msg`Esa marca ya quedó registrada hoy.`),
     },
     fallback: i18n._(msg`No se pudo registrar la marca. Inténtalo de nuevo.`),
   })
