@@ -10,6 +10,8 @@ const SELECT = {
   id: true,
   email: true,
   fullName: true,
+  // El idioma de la persona (D-36): decide en que idioma le escribimos.
+  locale: true,
   firebaseUid: true,
   reportsToUserId: true,
   photoPath: true,

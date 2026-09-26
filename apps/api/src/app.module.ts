@@ -8,6 +8,7 @@ import { MailerModule } from './infra/mailer/index.js'
 import { PlacesModule } from './infra/places/index.js'
 import { PrismaModule } from './infra/prisma/index.js'
 import { PubSubModule } from './infra/pubsub/index.js'
+import { SettingsModule } from './infra/settings/index.js'
 import { StorageModule } from './infra/storage/index.js'
 import { CatalogsModule } from './modules/catalogs/index.js'
 import { CommercialModule } from './modules/commercial/index.js'
@@ -19,6 +20,7 @@ import { NotificationsModule } from './modules/notifications/index.js'
 import { ObservabilityModule } from './modules/observability/index.js'
 import { OperationsModule } from './modules/operations/index.js'
 import { PersonalModule } from './modules/personal/index.js'
+import { AppSettingsModule } from './modules/settings/index.js'
 import { SettlementModule } from './modules/settlement/index.js'
 import { SupervisionModule } from './modules/supervision/index.js'
 
@@ -31,6 +33,7 @@ import { SupervisionModule } from './modules/supervision/index.js'
     PlacesModule,
     CPanelModule,
     FirebaseModule,
+    SettingsModule,
     MailerModule,
     HealthModule,
     CatalogsModule,
@@ -45,6 +48,7 @@ import { SupervisionModule } from './modules/supervision/index.js'
     NotificationsModule,
     SupervisionModule,
     ObservabilityModule,
+    AppSettingsModule,
   ],
 })
 export class AppModule {}
