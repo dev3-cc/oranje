@@ -20,7 +20,7 @@ const SELECT = {
   inspectorId: true,
   createdAt: true,
   updatedAt: true,
-  hotel: { select: { id: true, name: true, photoRef: true, zoneId: true } },
+  hotel: { select: { id: true, name: true, photoRef: true, zoneId: true, timeZone: true } },
   creator: { select: { id: true, fullName: true, photoPath: true } },
   authorizer: { select: { id: true, fullName: true, photoPath: true } },
   inspector: { select: { id: true, fullName: true, photoPath: true } },

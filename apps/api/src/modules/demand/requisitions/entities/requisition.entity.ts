@@ -25,7 +25,7 @@ export interface RequisitionEntity {
   number: string
   /// `photoUrl` es la URL de media de Places compuesta al leer (D-34): null si
   /// el hotel no tiene foto o si no hay llave.
-  hotel: { id: string; name: string; photoUrl: string | null }
+  hotel: { id: string; name: string; photoUrl: string | null; timeZone: string }
   /// Quién la pidió. `photoUrl` va firmada al leer, como en /team.
   createdBy: { id: string; fullName: string; photoUrl: string | null } | null
   /// Quién la firmó y el Inspector de su zona, con la misma forma que
