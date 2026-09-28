@@ -236,8 +236,9 @@ export function RequisitionDetailPage(): ReactNode {
           {/*
             Eliminar = Morado (encargo 10). El borrador lo quita quien lo
             escribió (los tres roles del hotel tienen el permiso); de
-            autorizada en adelante, el Manager de Área (su departamento) o el
-            Manager General. Cubierta o ya Morada, no se elimina. Quien no
+            autorizada en adelante, el Manager de Área (su departamento), el
+            Manager General o el Inspector (su zona, regla ampliada el
+            2026-09-26). Cubierta o ya Morada, no se elimina. Quien no
             tiene la atribución NO ve el botón: no es una condición que pueda
             resolver, es su rol.
           */}
@@ -246,7 +247,8 @@ export function RequisitionDetailPage(): ReactNode {
             can('requisitions:delete_empty') &&
             (detail.status === 'APPLE_GREEN' ||
               session?.roleId === 'ROL-H-03' ||
-              session?.roleId === 'ROL-H-02') &&
+              session?.roleId === 'ROL-H-02' ||
+              session?.roleId === 'ROL-I-01') &&
             (!isDeleteArmed || !needsReason) && (
               <Button
                 disabled={isDeleting}
