@@ -36,6 +36,7 @@ import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { PasswordInput } from '@/shared/components/PasswordInput'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
+import { apiErrorMessage as sharedApiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'staff-user-form'
@@ -169,6 +170,22 @@ function apiErrorMessage(error: unknown, i18n: I18n): string {
     default:
       return i18n._(msg`No se pudo guardar el usuario. Revisa los datos e inténtalo de nuevo.`)
   }
+}
+
+/**
+ * `POST /users/:id/resend-invitation` (`staff-users.service.ts`): sus tres
+ * códigos reales, no los del alta principal — el `apiErrorMessage` de arriba
+ * es de guardar, no de reenviar.
+ */
+function resendErrorMessage(error: unknown, i18n: I18n): string {
+  return sharedApiErrorMessage(error, {
+    byCode: {
+      USER_NOT_FOUND: i18n._(msg`Este usuario ya no existe.`),
+      ALREADY_LINKED: i18n._(msg`Ya entró por primera vez: no hace falta reenviar la invitación.`),
+      INVITATION_FAILED: i18n._(msg`Firebase no pudo mandar el correo. Inténtalo de nuevo.`),
+    },
+    fallback: i18n._(msg`No se pudo reenviar la invitación. Inténtalo de nuevo.`),
+  })
 }
 
 function initialsOf(fullName: string): string {
@@ -793,9 +810,14 @@ export function UserFormDialog({
                           type="button"
                           disabled={resendState.isLoading}
                           onClick={() => {
-                            void resendInvitation(user.id).then(() => {
-                              toast.success(t`Invitación enviada`)
-                            })
+                            void resendInvitation(user.id)
+                              .unwrap()
+                              .then(() => {
+                                toast.success(t`Invitación enviada`)
+                              })
+                              .catch((error: unknown) => {
+                                toast.error(resendErrorMessage(error, i18n))
+                              })
                           }}
                         >
                           {resendState.isLoading ? t`Enviando…` : t`Reenviar invitación`}

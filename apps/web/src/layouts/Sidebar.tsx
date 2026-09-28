@@ -14,6 +14,7 @@ import {
   SidebarMenuItem,
   SidebarMenuSkeleton,
   cn,
+  toast,
   useSidebar,
 } from '@oranje/ui'
 import type { ReactNode } from 'react'
@@ -24,6 +25,7 @@ import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
 import { LanguageSwitch } from '@/shared/components/LanguageSwitch'
 import { SoundSwitch } from '@/shared/components/SoundSwitch'
 import { roleLabelOf } from '@/shared/constants/roles'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 
 interface NavModule {
   label: MessageDescriptor
@@ -270,6 +272,16 @@ export function Sidebar(): ReactNode {
               className="w-full"
               onChange={(locale) => {
                 void updateMyLocale(locale)
+                  .unwrap()
+                  .catch((error: unknown) => {
+                    toast.error(
+                      apiErrorMessage(error, {
+                        fallback: i18n._(
+                          msg`No se guardó tu idioma: al volver a entrar puede regresar a español.`,
+                        ),
+                      }),
+                    )
+                  })
               }}
             />
             {/* El sonido se apaga aquí mismo: es del aparato, no de la persona. */}

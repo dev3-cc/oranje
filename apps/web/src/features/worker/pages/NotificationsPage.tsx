@@ -62,7 +62,13 @@ export function NotificationsPage(): ReactNode {
               <button
                 type="button"
                 onClick={() => {
-                  if (isUnread) void markRead(notification.id)
+                  // Mejor esfuerzo: si falla, la notificación sigue apareciendo
+                  // como no leída — se corrige sola en el siguiente refetch,
+                  // no vale la pena un toast por un tap de bajo riesgo.
+                  if (isUnread)
+                    void markRead(notification.id)
+                      .unwrap()
+                      .catch(() => {})
                 }}
                 className={cn(
                   'w-full rounded-lg border p-4 text-left transition-colors',
