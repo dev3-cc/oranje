@@ -11,8 +11,15 @@ export const createHotelUserSchema = z.object({
   roleCode: z.enum(HOTEL_ROLES),
   departmentId: z.uuid().optional(),
   reportsToUserId: z.uuid().optional(),
-  /** Igual que en el personal interno: su invitación sale en este idioma (D-36). */
-  locale: z.enum(['es', 'en']).optional().default('es'),
+  /**
+   * Su invitación sale en este idioma (D-36), y con él abre la app.
+   *
+   * Nace en **inglés**, al revés que el personal interno (Hugo, 2026-09-28):
+   * estas cuentas son del **hotel cliente**, y los hoteles están en Georgia.
+   * Nacer en español dejaba a 38 Managers Generales recibiendo correos que no
+   * leen. Se puede cambiar en el alta; lo que cambia es de qué lado empieza.
+   */
+  locale: z.enum(['es', 'en']).optional().default('en'),
 })
 
 export class CreateHotelUserDto extends createZodDto(createHotelUserSchema) {}
