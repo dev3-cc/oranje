@@ -365,13 +365,19 @@ const HOTEL: Permission[] = [
     module: 'requisitions',
     action: 'delete_empty',
     label: 'Eliminar requisición vacía',
-    roles: [SUPERVISOR, GA, GG, SYS],
+    /* El Inspector elimina su propio borrador, igual que Supervisor — regla
+       ampliada el 2026-09-26 junto con `authorize`, pero se quedó sin este
+       permiso: el botón nunca se mostraba aunque el back ya lo aceptaba
+       (2026-09-28). */
+    roles: [SUPERVISOR, GA, GG, SYS, INSPECTOR],
   },
   {
     module: 'requisitions',
     action: 'delete_with_positions',
     label: 'Eliminar requisición con posiciones',
-    roles: [GA, GG, SYS],
+    /* Mismo alcance que `authorize`: acotado a su zona, sin restricción de
+       departamento (2026-09-28). */
+    roles: [GA, GG, SYS, INSPECTOR],
   },
   {
     module: 'requisitions',
