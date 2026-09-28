@@ -146,6 +146,7 @@ export class StaffUsersService {
       roleCode: dto.roleCode,
       reportsToUserId: dto.reportsToUserId ?? null,
       photoPath: dto.photoPath ?? null,
+      locale: dto.locale,
       credentialOrigin: dto.password !== undefined ? 'password' : 'invitation',
       actorUserId: actor.id,
       actorRole: actor.roleCode,
@@ -161,6 +162,7 @@ export class StaffUsersService {
         row.id,
         row.email,
         row.fullName,
+        row.locale,
         actorRef,
         'invitation',
       )
@@ -168,7 +170,14 @@ export class StaffUsersService {
       // El correo de bienvenida es el mismo sendOobCode («tienes cuenta con
       // este correo, establece la tuya aquí») y NUNCA lleva la contraseña; el
       // canal para decirla lo elige el Administrador.
-      invitation = await this.sendInvitation(row.id, row.email, row.fullName, actorRef, 'welcome')
+      invitation = await this.sendInvitation(
+        row.id,
+        row.email,
+        row.fullName,
+        row.locale,
+        actorRef,
+        'welcome',
+      )
     }
 
     return withInvitation(toEntity(row, await this.signPhotos([row])), invitation)
@@ -260,6 +269,7 @@ export class StaffUsersService {
       row.id,
       row.email,
       row.fullName,
+      row.locale,
       { userId: actor.id, role: actor.roleCode },
       'resend',
     )
@@ -307,6 +317,7 @@ export class StaffUsersService {
     userId: string,
     email: string,
     fullName: string,
+    locale: string | null,
     actor: { userId: string; role: string },
     kind: InvitationKind,
   ): Promise<InvitationResult> {
@@ -321,6 +332,9 @@ export class StaffUsersService {
         template: 'account-invitation',
         to: email,
         name: fullName,
+        // D-36: le escribimos en SU idioma. Quien nunca ha entrado lo tiene
+        // en español, que es el idioma con el que nace la columna.
+        locale: locale === 'en' ? 'en' : 'es',
         userId,
       })
 

@@ -7,23 +7,23 @@ import { FACE_GUIDE_HINT, useFaceGuide } from './useFaceGuide'
 
 import encuadreBuscandoLottie from '@/assets/selfie/oranje-encuadre-buscando.lottie'
 import encuadreListoLottie from '@/assets/selfie/oranje-encuadre-listo.lottie'
-import { Button } from '@/shared/components/Button'
 
 /**
  * La cámara dentro de la app: pide permiso al navegador, muestra la cámara
  * frontal y captura un JPEG al tocar. Nada de selector de archivos: la foto
- * del ponche se toma en el momento (RR del ponche). Si el navegador no da
- * cámara o la persona niega el permiso, se dice en palabras y se ofrece la
- * salida de elegir una foto.
+ * del ponche se toma en el momento (RR del ponche) — sin permiso no hay
+ * foto. Si el navegador ya lo tiene negado, ni se muestra un aviso aquí:
+ * directo a Permisos, que es donde de verdad se arregla (2026-09-25, Hugo).
  */
 export function CameraCapture({
   onCapture,
-  onFallback,
   onCancel,
+  onOpenPermissions,
 }: {
   onCapture: (file: File) => void
-  onFallback: () => void
   onCancel: () => void
+  /** Solo se llama cuando el rechazo fue justo el permiso, no cualquier otra falla de cámara. */
+  onOpenPermissions: () => void
 }): ReactNode {
   const { t, i18n } = useLingui()
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -60,11 +60,11 @@ export function CameraCapture({
         }
       } catch (cause) {
         const name = cause instanceof DOMException ? cause.name : ''
-        setError(
-          name === 'NotAllowedError'
-            ? t`Sin permiso de cámara no se puede tomar la foto. Permítelo para este sitio y vuelve a intentar.`
-            : t`No se pudo abrir la cámara. Cierra otras apps que la usen e inténtalo de nuevo.`,
-        )
+        if (name === 'NotAllowedError') {
+          onOpenPermissions()
+          return
+        }
+        setError(t`No se pudo abrir la cámara. Cierra otras apps que la usen e inténtalo de nuevo.`)
       }
     }
     void start()
@@ -152,9 +152,6 @@ export function CameraCapture({
           <div className="absolute inset-x-6 flex flex-col items-center gap-3 rounded-xl bg-surface p-5 text-center">
             <MaterialIcon name="no_photography" className="text-4xl text-ink-3" aria-hidden />
             <p className="text-sm text-ink-2">{error}</p>
-            <Button variant="primary" onClick={onFallback}>
-              <Trans>Elegir una foto</Trans>
-            </Button>
           </div>
         )}
       </div>

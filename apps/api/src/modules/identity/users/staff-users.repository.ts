@@ -10,6 +10,8 @@ const SELECT = {
   id: true,
   email: true,
   fullName: true,
+  // El idioma de la persona (D-36): decide en que idioma le escribimos.
+  locale: true,
   firebaseUid: true,
   reportsToUserId: true,
   photoPath: true,
@@ -93,6 +95,8 @@ export class StaffUsersRepository {
     roleCode: string
     reportsToUserId: string | null
     photoPath: string | null
+    /** Idioma de la persona (D-36): decide en qué idioma sale su invitación. */
+    locale: string
     /** Cómo nace el acceso. La contraseña en sí JAMÁS llega aquí. */
     credentialOrigin: 'invitation' | 'password'
     actorUserId: string
@@ -109,6 +113,7 @@ export class StaffUsersRepository {
           roleId: params.roleId,
           reportsToUserId: params.reportsToUserId,
           photoPath: params.photoPath,
+          locale: params.locale,
         },
       })
 

@@ -6,6 +6,7 @@ import { v7 as uuidv7 } from 'uuid'
 import { FirebaseAccountsService } from '../../src/infra/firebase/index.js'
 import { MailerService } from '../../src/infra/mailer/index.js'
 import type { PrismaService } from '../../src/infra/prisma/index.js'
+import { SettingsService } from '../../src/infra/settings/index.js'
 import type { CreateHotelUserDto } from '../../src/modules/identity/users/dto/create-hotel-user.dto.js'
 import { createHotelUserSchema } from '../../src/modules/identity/users/dto/create-hotel-user.dto.js'
 import { queryHotelUsersSchema } from '../../src/modules/identity/users/dto/query-hotel-users.dto.js'
@@ -23,6 +24,14 @@ import { actor } from './fixture.js'
  * del hotel, el departamento según el rol, el directorio entre hoteles y que
  * la invitación sale (Firebase mockeado, como en staff-users).
  */
+
+/**
+ * Los ajustes REALES contra la base de pruebas: el interruptor vive ahí y
+ * simularlo escondería justo lo que hay que comprobar.
+ */
+function ajustes(): SettingsService {
+  return new SettingsService(db as unknown as PrismaService)
+}
 
 const fetchMock = jest.fn<Promise<unknown>, [string | URL | Request, RequestInit?]>()
 const realFetch = globalThis.fetch
@@ -88,7 +97,7 @@ function mailerApagado(accounts: FirebaseAccountsService): MailerService {
     get: (key: string): string | undefined => (key.startsWith('MAIL_') ? undefined : 'oranje-test'),
   } as unknown as ConfigService<never, true>
 
-  return new MailerService(sinCorreo, db as unknown as PrismaService, accounts)
+  return new MailerService(sinCorreo, db as unknown as PrismaService, accounts, ajustes())
 }
 
 beforeAll(async () => {

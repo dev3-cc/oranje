@@ -5,6 +5,7 @@ import { GoogleAuth } from 'google-auth-library'
 import { FirebaseAccountsService } from '../../src/infra/firebase/index.js'
 import { MailerService } from '../../src/infra/mailer/index.js'
 import type { PrismaService } from '../../src/infra/prisma/index.js'
+import { SettingsService } from '../../src/infra/settings/index.js'
 import type { StorageService } from '../../src/infra/storage/index.js'
 import { RolesService } from '../../src/modules/identity/roles/roles.service.js'
 import type { CreateStaffUserDto } from '../../src/modules/identity/users/dto/create-staff-user.dto.js'
@@ -24,6 +25,14 @@ import { actor } from './fixture.js'
  * contrato — qué se manda, qué se tolera (EMAIL_EXISTS sin contraseña) y qué
  * se rechaza (EMAIL_EXISTS con contraseña).
  */
+
+/**
+ * Los ajustes REALES contra la base de pruebas: el interruptor vive ahí y
+ * simularlo escondería justo lo que hay que comprobar.
+ */
+function ajustes(): SettingsService {
+  return new SettingsService(db as unknown as PrismaService)
+}
 
 const fetchMock = jest.fn<Promise<unknown>, [string | URL | Request, RequestInit?]>()
 const realFetch = globalThis.fetch
@@ -98,7 +107,7 @@ function mailerApagado(accounts: FirebaseAccountsService): MailerService {
     get: (key: string): string | undefined => (key.startsWith('MAIL_') ? undefined : 'oranje-test'),
   } as unknown as ConfigService<never, true>
 
-  return new MailerService(sinCorreo, db as unknown as PrismaService, accounts)
+  return new MailerService(sinCorreo, db as unknown as PrismaService, accounts, ajustes())
 }
 
 beforeAll(async () => {
@@ -485,5 +494,48 @@ describe('la respuesta dice si el correo salió', () => {
     expect(entry?.payload).toMatchObject({ error: 'Your', detail: mensaje })
 
     created.push(entity.id)
+  })
+})
+
+describe('el idioma se elige en el alta', () => {
+  it('nace en el idioma que eligió quien dio de alta, no siempre en español', async () => {
+    /* D-36 + Hugo (2026-09-26): el correo de invitación sale ANTES del primer
+       login, así que si el idioma se esperara a que la persona lo eligiera, el
+       único correo que no puede fallar saldría siempre en español. */
+    const enIngles = await service.create(
+      {
+        email: `locale-en-${Date.now()}@oranje.local`,
+        fullName: 'Mary Johnson',
+        roleCode: 'ROL-R-03',
+        locale: 'en',
+        sendWelcomeEmail: false,
+      } as never,
+      auth,
+    )
+
+    const fila = await db.user.findUniqueOrThrow({
+      where: { id: enIngles.id },
+      select: { locale: true },
+    })
+    expect(fila.locale).toBe('en')
+  })
+
+  it('sin elegir nada, sigue naciendo en español', async () => {
+    const porDefecto = await service.create(
+      {
+        email: `locale-def-${Date.now()}@oranje.local`,
+        fullName: 'Juan Pérez',
+        roleCode: 'ROL-R-03',
+        locale: 'es',
+        sendWelcomeEmail: false,
+      } as never,
+      auth,
+    )
+
+    const fila = await db.user.findUniqueOrThrow({
+      where: { id: porDefecto.id },
+      select: { locale: true },
+    })
+    expect(fila.locale).toBe('es')
   })
 })

@@ -76,6 +76,12 @@ const MODULES: NavModule[] = [
     icon: 'alternate_email',
     roles: [ADMIN],
   },
+  {
+    label: msg`Ajustes del correo`,
+    to: '/mail-settings',
+    icon: 'outgoing_mail',
+    roles: [ADMIN],
+  },
   { label: msg`Pipeline`, to: '/pipeline', icon: 'view_kanban', roles: VENTAS },
   { label: msg`Mi Territorio`, to: '/my-territory', icon: 'map', roles: VENTAS },
   { label: msg`Propuestas`, to: '/proposals', icon: 'description', roles: VENTAS },

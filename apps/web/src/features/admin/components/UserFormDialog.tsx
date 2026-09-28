@@ -113,6 +113,7 @@ function buildUserFormSchema(i18n: I18n) {
       roleCode: z.string().min(1, i18n._(msg`Elige un rol`)),
       reportsToUserId: z.string(),
       accessMode: z.enum(['INVITATION', 'PASSWORD']),
+      locale: z.enum(['es', 'en']),
       password: z.string(),
     })
     .superRefine((values, context) => {
@@ -249,6 +250,7 @@ export function UserFormDialog({
       roleCode: '',
       reportsToUserId: NOBODY,
       accessMode: 'INVITATION',
+      locale: 'es',
       password: '',
     },
   })
@@ -339,6 +341,9 @@ export function UserFormDialog({
       roleCode: user?.role.code ?? '',
       reportsToUserId: user?.reportsToUserId ?? NOBODY,
       accessMode: 'INVITATION',
+      /* Al reabrir SIEMPRE vuelve a español: es un campo del alta, y una
+         cuenta ya creada cambia su idioma desde su propia cuenta, no aquí. */
+      locale: 'es',
       password: '',
     })
   }, [isOpen, user, reset])
@@ -385,6 +390,7 @@ export function UserFormDialog({
         email: values.email,
         fullName: values.fullName,
         roleCode: values.roleCode,
+        locale: values.locale,
         ...(reportsToUserId ? { reportsToUserId } : {}),
         ...(values.accessMode === 'PASSWORD' ? { password: values.password } : {}),
         ...(photoPath ? { photoPath } : {}),
@@ -606,6 +612,32 @@ export function UserFormDialog({
                     </Trans>
                   </p>
                   {errors.roleCode && <p className="text-xs text-red">{errors.roleCode.message}</p>}
+                </FormRow>
+
+                <FormRow label={t`Idioma`} column="locale">
+                  <Controller
+                    control={control}
+                    name="locale"
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger aria-label={t`Idioma`} className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {/* En su propio idioma, como el interruptor del login: quien
+                              elige «English» lo reconoce aunque no lea español. */}
+                          <SelectItem value="es">Español</SelectItem>
+                          <SelectItem value="en">English</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  <p className="text-xs text-ink-3">
+                    <Trans>
+                      En este idioma le llega la invitación y abre la app la primera vez. Después lo
+                      cambia desde su cuenta.
+                    </Trans>
+                  </p>
                 </FormRow>
 
                 {isInspectorRole && (

@@ -45,6 +45,8 @@ export interface CreateStaffUserBody {
   email: string
   fullName: string
   roleCode: string
+  /** En qué idioma le llega la invitación y abre la app la primera vez (D-36). */
+  locale?: 'es' | 'en'
   reportsToUserId?: string
   password?: string
   sendWelcomeEmail?: boolean
@@ -75,6 +77,8 @@ export interface CreateHotelUserBody {
   email: string
   fullName: string
   roleCode: string
+  /** En qué idioma le llega la invitación y abre la app la primera vez (D-36). */
+  locale?: 'es' | 'en'
   departmentId?: string
   reportsToUserId?: string
 }

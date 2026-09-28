@@ -11,6 +11,8 @@ export const createHotelUserSchema = z.object({
   roleCode: z.enum(HOTEL_ROLES),
   departmentId: z.uuid().optional(),
   reportsToUserId: z.uuid().optional(),
+  /** Igual que en el personal interno: su invitación sale en este idioma (D-36). */
+  locale: z.enum(['es', 'en']).optional().default('es'),
 })
 
 export class CreateHotelUserDto extends createZodDto(createHotelUserSchema) {}

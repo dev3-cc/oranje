@@ -607,7 +607,9 @@ const OTHER_TRANSITIONS: Array<{
     light: 'REQUISITION',
     from: 'APPLE_GREEN',
     to: 'PURPLE',
-    roles: ['ROL-H-01', 'ROL-H-02', 'ROL-H-03'],
+    // El Inspector también crea borradores (por zona, 2026-09-24): el suyo lo
+    // quita él mismo, igual que el Supervisor con el suyo.
+    roles: ['ROL-H-01', 'ROL-H-02', 'ROL-H-03', 'ROL-I-01'],
     reason: false,
     note: 'el borrador lo quita su creador o el GM',
   },
@@ -615,25 +617,25 @@ const OTHER_TRANSITIONS: Array<{
     light: 'REQUISITION',
     from: 'GREEN',
     to: 'PURPLE',
-    roles: ['ROL-H-02', 'ROL-H-03'],
+    roles: ['ROL-H-02', 'ROL-H-03', 'ROL-I-01'],
     reason: true,
-    note: 'ya autorizada: exige motivo',
+    note: 'ya autorizada: exige motivo (el Inspector, acotado a su zona, 2026-09-26)',
   },
   {
     light: 'REQUISITION',
     from: 'YELLOW',
     to: 'PURPLE',
-    roles: ['ROL-H-02', 'ROL-H-03'],
+    roles: ['ROL-H-02', 'ROL-H-03', 'ROL-I-01'],
     reason: true,
-    note: 'con reclutadoras trabajandola: exige motivo',
+    note: 'con reclutadoras trabajandola: exige motivo (el Inspector, acotado a su zona, 2026-09-26)',
   },
   {
     light: 'REQUISITION',
     from: 'RED',
     to: 'PURPLE',
-    roles: ['ROL-H-02', 'ROL-H-03'],
+    roles: ['ROL-H-02', 'ROL-H-03', 'ROL-I-01'],
     reason: true,
-    note: 'cerrada a medias: exige motivo',
+    note: 'cerrada a medias: exige motivo (el Inspector, acotado a su zona, 2026-09-26)',
   },
 
   // --- Indicador de Calidad ---

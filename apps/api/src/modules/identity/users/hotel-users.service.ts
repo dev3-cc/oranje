@@ -133,6 +133,7 @@ export class HotelUsersService {
       roleCode: dto.roleCode,
       departmentId,
       reportsToUserId: dto.reportsToUserId ?? null,
+      locale: dto.locale,
       actorUserId: actor.id,
       actorRole: actor.roleCode,
     })
@@ -141,6 +142,7 @@ export class HotelUsersService {
       row.id,
       row.email,
       row.fullName,
+      row.locale,
       { userId: actor.id, role: actor.roleCode },
       'invitation',
     )
@@ -212,6 +214,7 @@ export class HotelUsersService {
       row.id,
       row.email,
       row.fullName,
+      row.locale,
       { userId: actor.id, role: actor.roleCode },
       'resend',
     )
@@ -331,6 +334,7 @@ export class HotelUsersService {
     userId: string,
     email: string,
     fullName: string,
+    locale: string | null,
     actor: { userId: string; role: string },
     kind: 'invitation' | 'resend',
   ): Promise<InvitationResult> {
@@ -342,6 +346,9 @@ export class HotelUsersService {
         template: 'account-invitation',
         to: email,
         name: fullName,
+        // D-36: le escribimos en SU idioma. Quien nunca ha entrado lo tiene
+        // en español, que es el idioma con el que nace la columna.
+        locale: locale === 'en' ? 'en' : 'es',
         userId,
       })
 

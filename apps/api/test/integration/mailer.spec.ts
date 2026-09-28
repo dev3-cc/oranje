@@ -3,6 +3,7 @@ import type { ConfigService } from '@nestjs/config'
 import type { FirebaseAccountsService } from '../../src/infra/firebase/index.js'
 import { MailerService, renderTemplate } from '../../src/infra/mailer/index.js'
 import type { PrismaService } from '../../src/infra/prisma/index.js'
+import { SettingsService } from '../../src/infra/settings/index.js'
 
 import { close, db } from './db.js'
 
@@ -19,6 +20,14 @@ import { close, db } from './db.js'
  * privado: montar un servidor SMTP de verdad probaría a nodemailer, no a
  * nosotros.
  */
+/**
+ * Los ajustes REALES contra la base de pruebas: el interruptor vive ahí y
+ * simularlo escondería justo lo que hay que comprobar.
+ */
+function ajustes(): SettingsService {
+  return new SettingsService(db as unknown as PrismaService)
+}
+
 const DESTINO = `mailer-prueba-${Date.now()}@oranje.local`
 
 const configCon = (vars: Record<string, string | number | undefined>): ConfigService<never, true> =>
@@ -88,9 +97,9 @@ afterAll(async () => {
 describe('el mailer manda el correo y deja rastro', () => {
   it('sin configurar, el correo sale por Firebase como siempre', async () => {
     const { fake, llamadas } = firebaseFalso()
-    const mailer = new MailerService(configCon({}), db as unknown as PrismaService, fake)
+    const mailer = new MailerService(configCon({}), db as unknown as PrismaService, fake, ajustes())
 
-    expect(mailer.enabled).toBe(false)
+    expect(await mailer.isEnabled()).toBe(false)
 
     const resultado = await mailer.sendAccountEmail({
       template: 'account-invitation',
@@ -114,9 +123,14 @@ describe('el mailer manda el correo y deja rastro', () => {
 
   it('configurado, sale por nuestro SMTP y guarda el id del mensaje', async () => {
     const { fake, llamadas } = firebaseFalso()
-    const mailer = new MailerService(configCon(SMTP_COMPLETO), db as unknown as PrismaService, fake)
+    const mailer = new MailerService(
+      configCon(SMTP_COMPLETO),
+      db as unknown as PrismaService,
+      fake,
+      ajustes(),
+    )
 
-    expect(mailer.enabled).toBe(true)
+    expect(await mailer.isEnabled()).toBe(true)
     const smtp = conTransporte(mailer, 'ok')
 
     const resultado = await mailer.sendAccountEmail({
@@ -137,7 +151,12 @@ describe('el mailer manda el correo y deja rastro', () => {
 
   it('si el SMTP falla, el correo sale igual por el respaldo y la fila lo delata', async () => {
     const { fake, llamadas } = firebaseFalso()
-    const mailer = new MailerService(configCon(SMTP_COMPLETO), db as unknown as PrismaService, fake)
+    const mailer = new MailerService(
+      configCon(SMTP_COMPLETO),
+      db as unknown as PrismaService,
+      fake,
+      ajustes(),
+    )
     const smtp = conTransporte(mailer, 'falla')
 
     const resultado = await mailer.sendAccountEmail({
@@ -160,7 +179,7 @@ describe('el mailer manda el correo y deja rastro', () => {
 
   it('si ni el respaldo puede, queda registrado como fallido y nadie revienta', async () => {
     const { fake } = firebaseFalso({ envioFalla: true })
-    const mailer = new MailerService(configCon({}), db as unknown as PrismaService, fake)
+    const mailer = new MailerService(configCon({}), db as unknown as PrismaService, fake, ajustes())
 
     const resultado = await mailer.sendAccountEmail({
       template: 'password-reset',
