@@ -7,6 +7,7 @@ import { SettingsService } from '../../src/infra/settings/index.js'
 import { PasswordResetService } from '../../src/modules/identity/auth/password-reset.service.js'
 
 import { close, db } from './db.js'
+import { actor } from './fixture.js'
 
 /**
  * El correo de gerencia (Hugo, 2026-09-28) y la recuperación con sobre propio.
@@ -111,16 +112,19 @@ describe('el correo de gerencia se elige por el rol', () => {
 
 describe('«¿Olvidaste tu contraseña?» ya sale con nuestro sobre', () => {
   it('a una cuenta real le llega, y con la plantilla de su rol', async () => {
-    const persona = await db.user.findFirst({
-      where: { isActive: true, role: { code: 'ROL-ADM-01' } },
+    /* El usuario del fixture y no «el primer Administrador que haya»: en CI la
+       base nace vacía y ese Administrador no existe — la prueba pasaba en
+       local por los datos de dev, que es justo lo que no debe decidirlo. */
+    const { id } = await actor()
+    const persona = await db.user.findUniqueOrThrow({
+      where: { id },
       select: { email: true },
     })
 
-    expect(persona).not.toBeNull()
-    await resets.request(persona?.email ?? '')
+    await resets.request(persona.email)
 
     const correo = enviados.at(-1)
-    expect(correo?.to).toBe(persona?.email)
+    expect(correo?.to).toBe(persona.email)
     expect(correo?.subject).toContain('contraseña')
   })
 
