@@ -25,6 +25,7 @@ import { ASSIGNMENT_TYPE_LABEL } from '../types/selfPick.types'
 
 import mascotaCelebrando from '@/assets/mascota/mascota-celebrando.png'
 import { useGetPositionPayRateQuery } from '@/features/contracts'
+import { useJoinRequisitionMutation } from '@/features/requisitions'
 import { Button } from '@/shared/components/Button'
 import { DateField } from '@/shared/components/DateField'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
@@ -34,7 +35,7 @@ import {
   REQUISITION_STATUS_TOKEN,
   type RequisitionStatus,
 } from '@/shared/constants/requisitionStatus'
-import { apiErrorMessage } from '@/shared/lib/apiError'
+import { apiErrorMessage, readApiError } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatMoney } from '@/shared/lib/formatters'
 
@@ -65,6 +66,21 @@ function assignErrorMessage(error: unknown, i18n: I18n): string {
       ),
     },
     fallback: i18n._(msg`No se pudo asignar al colaborador. Inténtalo de nuevo.`),
+  })
+}
+
+/**
+ * Mismo texto que ya usa `RequisitionDetailPage` para «Unirse» — aquí se
+ * dispara sola, no por un botón, cuando la requisición sigue en GREEN.
+ */
+function joinErrorMessage(error: unknown, i18n: I18n): string {
+  return apiErrorMessage(error, {
+    byCode: {
+      REQUISITION_NOT_OPEN: i18n._(
+        msg`Esta requisición ya no está autorizada o en proceso: no se puede unir.`,
+      ),
+    },
+    fallback: i18n._(msg`No se pudo tomar la requisición. Inténtalo de nuevo.`),
   })
 }
 
@@ -101,11 +117,14 @@ export function SlotAssignmentPage(): ReactNode {
   const [assign, { isLoading: isSaving, isError: hasFailed, error: saveError }] =
     useCreateAssignmentMutation()
   const [release, { isLoading: isReleasing, error: releaseError }] = useReleaseAssignmentMutation()
+  const [join, { isLoading: isJoining }] = useJoinRequisitionMutation()
 
   const [workerId, setWorkerId] = useState('')
   const [type, setType] = useState<'FIXED' | 'TEMPORARY'>('FIXED')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  /** Error de la toma silenciosa (ver `submit`); `null` = no aplica o ya pasó. */
+  const [joinError, setJoinError] = useState<unknown>(null)
 
   /* La posición ya dice desde cuándo la pidió el hotel: se propone esa fecha y
      se puede cambiar. Antes arrancaba vacía y se tecleaba a mano, con el riesgo
@@ -152,12 +171,36 @@ export function SlotAssignmentPage(): ReactNode {
     board.nextFreeOrdinal !== null &&
     workerId !== '' &&
     (type !== 'TEMPORARY' || endDate !== '') &&
-    !isSaving
+    !isSaving &&
+    !isJoining
 
   async function submit(): Promise<void> {
     if (!canSubmit) return
+    setJoinError(null)
     const assignedName = workers.find((worker) => worker.id === workerId)?.fullName
     try {
+      /*
+       * El Self-Pick es el modelo colaborativo (RR-15): asignar el primer
+       * slot ES tomar la requisición, sin pasar antes por «Unirse» en la
+       * ficha — esa pantalla vive aparte y el tablero de Self-Pick nunca
+       * enlaza a ella. Sin esto, toda requisición recién autorizada (GREEN,
+       * nadie la tomó todavía) rechazaba CUALQUIER asignación con
+       * REQUISITION_NOT_IN_PROGRESS: la Reclutadora no tenía forma de
+       * resolverlo desde aquí (2026-09-28).
+       */
+      if (board?.requisitionState.code === 'GREEN') {
+        try {
+          await join(requisitionId).unwrap()
+        } catch (error) {
+          const info = readApiError(error)
+          /* `message` cubre el mock local, que no anida bajo `.error.code`
+             (ver apiError.ts); el back real sí manda `code`. */
+          if (info.code !== 'ALREADY_PARTICIPATING' && info.message !== 'ALREADY_PARTICIPATING') {
+            setJoinError(error)
+            return
+          }
+        }
+      }
       await assign({
         positionId,
         workerId,
@@ -480,13 +523,23 @@ export function SlotAssignmentPage(): ReactNode {
                   void submit()
                 }}
               >
-                {isSaving ? <Trans>Asignando…</Trans> : <Trans>Asignar colaborador</Trans>}
+                {isJoining || isSaving ? (
+                  <Trans>Asignando…</Trans>
+                ) : (
+                  <Trans>Asignar colaborador</Trans>
+                )}
               </Button>
 
-              {hasFailed && (
+              {joinError !== null ? (
                 <p role="alert" className="text-sm text-red">
-                  {assignErrorMessage(saveError, i18n)}
+                  {joinErrorMessage(joinError, i18n)}
                 </p>
+              ) : (
+                hasFailed && (
+                  <p role="alert" className="text-sm text-red">
+                    {assignErrorMessage(saveError, i18n)}
+                  </p>
+                )
               )}
 
               <p className="text-xs leading-relaxed text-ink-4">

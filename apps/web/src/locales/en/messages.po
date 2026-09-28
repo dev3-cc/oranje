@@ -4443,6 +4443,7 @@ msgstr "This Requisition is already closed: the slot won't open again."
 msgid "Esta requisición ya estaba eliminada."
 msgstr "This requisition was already deleted."
 
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Esta requisición ya no está autorizada o en proceso: no se puede unir."
 msgstr "This requisition is no longer authorized or in progress: you can't join it."
@@ -7175,6 +7176,10 @@ msgstr "Your document couldn't be uploaded. Try again."
 #: src/features/worker/components/PhotoUploader.tsx
 msgid "No se pudo subir tu foto. Inténtalo de nuevo."
 msgstr "We couldn't upload your photo. Try again."
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "No se pudo tomar la requisición. Inténtalo de nuevo."
+msgstr "Couldn't take the requisition. Try again."
 
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "No se puede activar sin tarifas: agrega al menos una."
