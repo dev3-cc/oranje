@@ -92,7 +92,7 @@ export function ProposalEditorPage({
   const [sendProposal, { isLoading: isSending }] = useSendProposalMutation()
   /** El error del guardado/envío SE VE: tragárselo dejaba botones «muertos». */
   const [actionError, setActionError] = useState<string | null>(null)
-  const [createDraft, { isLoading: isCreating, isError: hasCreateFailed }] =
+  const [createDraft, { isLoading: isCreating, isError: hasCreateFailed, error: createError }] =
     useCreateProposalDraftMutation()
   const [discardDraft, { isLoading: isDiscarding }] = useDiscardProposalDraftMutation()
   /** Descartar pide un segundo toque: es destructivo, como las demás bajas. */
@@ -550,10 +550,19 @@ export function ProposalEditorPage({
                     </Button>
                     {hasCreateFailed && (
                       <p role="alert" className="mt-3 text-sm text-red">
-                        <Trans>
-                          No se pudo abrir la versión: solo el BD dueño del ciclo o el BDC pueden
-                          elaborar la propuesta.
-                        </Trans>
+                        {apiErrorMessage(createError, {
+                          /* Por status y no por código: es el 403 genérico del
+                             guard de permisos (`Tu rol no puede…`), que
+                             `apiErrorMessage` traduciría a un texto sin
+                             nombrar a nadie — aquí sí sabemos quién. El caso
+                             más común, `PROPOSAL_DRAFT_EXISTS`, ya trae un
+                             mensaje humano del back (con la versión exacta)
+                             y llega solo, sin necesitar mapeo. */
+                          byStatus: {
+                            403: t`Solo el BD dueño del ciclo o el BDC pueden elaborar la propuesta.`,
+                          },
+                          fallback: t`No se pudo abrir la versión. Inténtalo de nuevo.`,
+                        })}
                       </p>
                     )}
                   </>

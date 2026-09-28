@@ -1068,6 +1068,10 @@ msgstr "Alejar"
 msgid "Alergias o condiciones médicas"
 msgstr "Alergias o condiciones médicas"
 
+#: src/features/admin/components/AuditChecklistItemsPanel.tsx
+msgid "Alguien más borró un reactivo de esta lista: recarga para ver el orden real."
+msgstr "Alguien más borró un reactivo de esta lista: recarga para ver el orden real."
+
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Alta de personal del sistema"
 msgstr "Alta de personal del sistema"
@@ -4346,6 +4350,10 @@ msgstr "Ese correo ya está en uso: prueba otro."
 msgid "Ese correo ya tiene cuenta de acceso. Da el alta sin contraseña (invitación) o que la persona use «¿Olvidaste tu contraseña?»."
 msgstr "Ese correo ya tiene cuenta de acceso. Da el alta sin contraseña (invitación) o que la persona use «¿Olvidaste tu contraseña?»."
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Ese documento ya estaba verificado."
+msgstr "Ese documento ya estaba verificado."
+
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Ese formato no se pudo abrir: usa una foto JPG, PNG o WebP."
 msgstr "Ese formato no se pudo abrir: usa una foto JPG, PNG o WebP."
@@ -4687,6 +4695,10 @@ msgstr "Este prospecto está en <0>{0}</0> — la conversión sale de Rosa"
 msgid "Este prospecto no existe o ya no está disponible. Vuelve al Pipeline y elige otro."
 msgstr "Este prospecto no existe o ya no está disponible. Vuelve al Pipeline y elige otro."
 
+#: src/features/conversion/pages/ConversionPage.tsx
+msgid "Este prospecto ya no está en Rosa: alguien más lo movió."
+msgstr "Este prospecto ya no está en Rosa: alguien más lo movió."
+
 #: src/features/onboarding/types/proposalDraft.schema.ts
 msgid "Este puesto ya tiene su tarifa más arriba"
 msgstr "Este puesto ya tiene su tarifa más arriba"
@@ -4699,6 +4711,10 @@ msgstr "Este reporte aún no se define"
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Este rol normalmente reporta a alguien: sin jefe no aparecerá en ningún «Mi Equipo»."
 msgstr "Este rol normalmente reporta a alguien: sin jefe no aparecerá en ningún «Mi Equipo»."
+
+#: src/features/admin/components/UserFormDialog.tsx
+msgid "Este usuario ya no existe."
+msgstr "Este usuario ya no existe."
 
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
 msgid "Este veto es <0>manual</0>; los vetos por ausencias o disputa los genera el sistema. Al vetar, la persona pasa a <1>Negro</1> y sale del Pool de Colaboradores."
@@ -4875,6 +4891,10 @@ msgstr "Finalizar auditoría"
 #: src/features/admin/pages/MailSettingsPage.tsx
 msgid "Firebase (respaldo)"
 msgstr "Firebase (respaldo)"
+
+#: src/features/admin/components/UserFormDialog.tsx
+msgid "Firebase no pudo mandar el correo. Inténtalo de nuevo."
+msgstr "Firebase no pudo mandar el correo. Inténtalo de nuevo."
 
 #. placeholder {0}: contract.signedByName
 #: src/features/contracts/components/ContractChecklist.tsx
@@ -6805,6 +6825,11 @@ msgstr "No se encontró la requisición: puede que se haya eliminado o que el en
 msgid "No se guardó"
 msgstr "No se guardó"
 
+#: src/features/worker/components/MobileShell.tsx
+#: src/layouts/Sidebar.tsx
+msgid "No se guardó tu idioma: al volver a entrar puede regresar a español."
+msgstr "No se guardó tu idioma: al volver a entrar puede regresar a español."
+
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "No se podrá cambiar después del alta: es el correo con el que la persona entra."
 msgstr "No se podrá cambiar después del alta: es el correo con el que la persona entra."
@@ -6855,8 +6880,12 @@ msgid "No se pudo abrir la cámara. Cierra otras apps que la usen e inténtalo d
 msgstr "No se pudo abrir la cámara. Cierra otras apps que la usen e inténtalo de nuevo."
 
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
-msgid "No se pudo abrir la versión: solo el BD dueño del ciclo o el BDC pueden elaborar la propuesta."
-msgstr "No se pudo abrir la versión: solo el BD dueño del ciclo o el BDC pueden elaborar la propuesta."
+#~ msgid "No se pudo abrir la versión: solo el BD dueño del ciclo o el BDC pueden elaborar la propuesta."
+#~ msgstr "No se pudo abrir la versión: solo el BD dueño del ciclo o el BDC pueden elaborar la propuesta."
+
+#: src/features/onboarding/pages/ProposalEditorPage.tsx
+msgid "No se pudo abrir la versión. Inténtalo de nuevo."
+msgstr "No se pudo abrir la versión. Inténtalo de nuevo."
 
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "No se pudo actualizar. Inténtalo de nuevo."
@@ -6865,6 +6894,10 @@ msgstr "No se pudo actualizar. Inténtalo de nuevo."
 #: src/features/schedule/components/AddShiftDialog.tsx
 msgid "No se pudo agregar el turno. Inténtalo de nuevo."
 msgstr "No se pudo agregar el turno. Inténtalo de nuevo."
+
+#: src/features/conversion/pages/ConversionPage.tsx
+msgid "No se pudo aprobar la conversión. Inténtalo de nuevo."
+msgstr "No se pudo aprobar la conversión. Inténtalo de nuevo."
 
 #: src/features/onboarding/components/ArchiveCycleDialog.tsx
 msgid "No se pudo archivar el ciclo. Inténtalo de nuevo."
@@ -7040,6 +7073,10 @@ msgstr "No se pudo crear la cuenta. Inténtalo de nuevo."
 msgid "No se pudo descartar el borrador. Inténtalo de nuevo."
 msgstr "No se pudo descartar el borrador. Inténtalo de nuevo."
 
+#: src/features/conversion/pages/ConversionPage.tsx
+msgid "No se pudo devolver a Café. Inténtalo de nuevo."
+msgstr "No se pudo devolver a Café. Inténtalo de nuevo."
+
 #: src/features/recruitment/components/DeleteWorkerDialog.tsx
 msgid "No se pudo eliminar al colaborador. Inténtalo de nuevo."
 msgstr "No se pudo eliminar al colaborador. Inténtalo de nuevo."
@@ -7137,6 +7174,10 @@ msgstr "No se pudo liberar el slot. Inténtalo de nuevo."
 msgid "No se pudo mandar a Stand-by. Inténtalo de nuevo."
 msgstr "No se pudo mandar a Stand-by. Inténtalo de nuevo."
 
+#: src/features/admin/components/UserFormDialog.tsx
+msgid "No se pudo reenviar la invitación. Inténtalo de nuevo."
+msgstr "No se pudo reenviar la invitación. Inténtalo de nuevo."
+
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
 msgid "No se pudo regenerar el QR. Inténtalo de nuevo."
 msgstr "No se pudo regenerar el QR. Inténtalo de nuevo."
@@ -7180,6 +7221,10 @@ msgstr "No se pudo subir tu foto. Inténtalo de nuevo."
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
 msgid "No se pudo tomar la requisición. Inténtalo de nuevo."
 msgstr "No se pudo tomar la requisición. Inténtalo de nuevo."
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "No se pudo verificar el documento. Inténtalo de nuevo."
+msgstr "No se pudo verificar el documento. Inténtalo de nuevo."
 
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "No se puede activar sin tarifas: agrega al menos una."
@@ -7588,6 +7633,10 @@ msgstr "Para {0} — la marca quedará señalada como manual, con tu motivo."
 #: src/features/worker/pages/PermissionsPage.tsx
 msgid "Para confirmar que estás dentro del hotel al ponchar."
 msgstr "Para confirmar que estás dentro del hotel al ponchar."
+
+#: src/features/conversion/pages/ConversionPage.tsx
+msgid "Para convertir a Naranja primero debe existir el Usuario del Hotel: créalo desde aquí mismo."
+msgstr "Para convertir a Naranja primero debe existir el Usuario del Hotel: créalo desde aquí mismo."
 
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 msgid "Para convertir a Naranja primero debe existir el Usuario del Hotel: créalo desde Conversión."
@@ -9312,6 +9361,10 @@ msgstr "Solo el Administrador puede levantar un veto{0}: pídeselo."
 msgid "Solo el BD dueño del ciclo o el BDC abren y envían versiones. Desde tu rol puedes consultarla, no editarla."
 msgstr "Solo el BD dueño del ciclo o el BDC abren y envían versiones. Desde tu rol puedes consultarla, no editarla."
 
+#: src/features/onboarding/pages/ProposalEditorPage.tsx
+msgid "Solo el BD dueño del ciclo o el BDC pueden elaborar la propuesta."
+msgstr "Solo el BD dueño del ciclo o el BDC pueden elaborar la propuesta."
+
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
 msgid "Solo el BD, el BDC o el hotel pueden regenerar su QR."
 msgstr "Solo el BD, el BDC o el hotel pueden regenerar su QR."
@@ -10636,6 +10689,10 @@ msgstr "Ya entró"
 #: src/features/admin/pages/UsersPage.tsx
 msgid "Ya entró al sistema"
 msgstr "Ya entró al sistema"
+
+#: src/features/admin/components/UserFormDialog.tsx
+msgid "Ya entró por primera vez: no hace falta reenviar la invitación."
+msgstr "Ya entró por primera vez: no hace falta reenviar la invitación."
 
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Ya estabas trabajando esta requisición."

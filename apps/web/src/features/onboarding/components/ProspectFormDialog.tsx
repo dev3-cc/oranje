@@ -56,6 +56,7 @@ import {
   type OnboardingStatus,
 } from '@/shared/constants/onboardingStatus'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'prospect-form'
@@ -137,25 +138,26 @@ function Field({
   )
 }
 
-/** El `i18n` viene del componente (`useLingui`): así el mensaje habla el idioma activo (D-36). */
+/**
+ * El `i18n` viene del componente (`useLingui`): así el mensaje habla el
+ * idioma activo (D-36). Pasa SIEMPRE por `apiErrorMessage`: reimplementarlo a
+ * mano (como hacía antes, leyendo `data.error.message` crudo) deja pasar
+ * cualquier código que no sea de los dos aquí listados sin el filtro de
+ * `humanizeApiMessage` — la regla «sin códigos en texto humano» exige esta
+ * puerta única (2026-09-28).
+ */
 function saveErrorMessage(error: unknown, i18n: I18n): string {
-  const data = (
-    error as
-      { data?: { error?: { code?: string; message?: string }; message?: string } } | undefined
-  )?.data
-  const code = data?.error?.code
-
-  if (code === 'PROSPECT_ALREADY_OPEN') {
-    return i18n._(msg`Este hotel ya tiene un ciclo comercial abierto: ciérralo o elige otro hotel.`)
-  }
-  if (code === 'HOTEL_NAME_TAKEN') {
-    return i18n._(
-      msg`Ya existe un hotel con ese nombre: elige «Hotel ya registrado» o cambia el nombre.`,
-    )
-  }
-  if (data?.error?.message) return data.error.message
-  if (typeof data?.message === 'string') return data.message
-  return i18n._(msg`No se pudo guardar el prospecto. Revisa los datos e inténtalo de nuevo.`)
+  return apiErrorMessage(error, {
+    byCode: {
+      PROSPECT_ALREADY_OPEN: i18n._(
+        msg`Este hotel ya tiene un ciclo comercial abierto: ciérralo o elige otro hotel.`,
+      ),
+      HOTEL_NAME_TAKEN: i18n._(
+        msg`Ya existe un hotel con ese nombre: elige «Hotel ya registrado» o cambia el nombre.`,
+      ),
+    },
+    fallback: i18n._(msg`No se pudo guardar el prospecto. Revisa los datos e inténtalo de nuevo.`),
+  })
 }
 
 function SectionTitle({ children, schema }: { children: ReactNode; schema?: string }): ReactNode {

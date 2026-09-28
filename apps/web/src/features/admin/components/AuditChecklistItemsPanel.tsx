@@ -132,8 +132,17 @@ export function AuditChecklistItemsPanel(): ReactNode {
       .filter(({ item, newOrdinal }) => item.ordinal !== newOrdinal)
       .map(({ item, newOrdinal }) => updateItem({ id: item.id, ordinal: newOrdinal }).unwrap())
 
-    void Promise.all(saves).catch(() => {
-      toast.error(t`No se pudo guardar el nuevo orden: vuelve a intentarlo.`)
+    void Promise.all(saves).catch((error: unknown) => {
+      toast.error(
+        apiErrorMessage(error, {
+          byCode: {
+            CHECKLIST_ITEM_NOT_FOUND: i18n._(
+              msg`Alguien más borró un reactivo de esta lista: recarga para ver el orden real.`,
+            ),
+          },
+          fallback: i18n._(msg`No se pudo guardar el nuevo orden: vuelve a intentarlo.`),
+        }),
+      )
       setOrderOverride((previous) => {
         const next = { ...previous }
         delete next[key]

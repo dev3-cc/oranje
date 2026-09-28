@@ -8,6 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   MaterialIcon,
+  toast,
 } from '@oranje/ui'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useRef, useState, type ReactNode } from 'react'
@@ -25,6 +26,7 @@ import { selectSessionUser } from '@/app/sessionSlice'
 import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
 import { WORKER_ROLE } from '@/shared/constants/roles'
 import { useNavigationSound } from '@/shared/hooks/useNavigationSound'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 import { MOTION, SPRING } from '@/shared/lib/motion'
 import { isSoundOn, playSound, setSoundOn } from '@/shared/lib/sound'
 
@@ -236,6 +238,14 @@ export function MobileShell(): ReactNode {
                     if (i18n.locale === locale) return
                     activateLocale(locale)
                     void updateMyLocale(locale)
+                      .unwrap()
+                      .catch((error: unknown) => {
+                        toast.error(
+                          apiErrorMessage(error, {
+                            fallback: t`No se guardó tu idioma: al volver a entrar puede regresar a español.`,
+                          }),
+                        )
+                      })
                   }}
                 >
                   <MaterialIcon
