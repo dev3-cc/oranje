@@ -86,7 +86,7 @@ describe('el interruptor de correo', () => {
     await pantalla.setTransport('firebase', admin)
 
     const resultado = await mailer.sendAccountEmail({
-      template: 'account-invitation',
+      kind: 'invitation',
       to: DESTINO,
       name: 'Juan David',
     })
