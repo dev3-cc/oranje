@@ -27,6 +27,9 @@ trae Android Studio (`jbr`) y el SDK donde Studio lo deja.
 
 ### iOS
 
+Paso a paso completo (requisitos, firma, depuración con Safari y qué probar):
+**[COMPILAR-IOS.md](COMPILAR-IOS.md)**.
+
 **El `.ipa` no se puede generar en Windows.** El proyecto de Xcode está
 completo y configurado en `ios/`, pero compilarlo exige macOS. En un Mac:
 
@@ -46,12 +49,12 @@ entra por [`src/mobile/main.tsx`](../web/src/mobile/main.tsx) y monta
 [`src/mobile/router.tsx`](../web/src/mobile/router.tsx) — solo las rutas del
 Colaborador. El staff no entra: sin `AppShell`, sin sidebar, sin los 25 módulos.
 
-|                  | web (`dist/`) | app (`dist-mobile/`) |
-| ---------------- | ------------- | -------------------- |
-| Peso del bundle  | 34.4 MB       | **5.0 MB**           |
-| three.js, globo  | sí            | no                   |
-| recharts         | sí            | no                   |
-| APK resultante   | —             | 7.7 MB               |
+|                 | web (`dist/`) | app (`dist-mobile/`) |
+| --------------- | ------------- | -------------------- |
+| Peso del bundle | 34.4 MB       | **5.0 MB**           |
+| three.js, globo | sí            | no                   |
+| recharts        | sí            | no                   |
+| APK resultante  | —             | 7.7 MB               |
 
 `app/providers.tsx` **no** se reusa: importa el router del staff en el tope, y
 un import estático entra al bundle aunque la ruta sea inalcanzable. Por eso el
@@ -64,8 +67,8 @@ y en [`Info.plist`](ios/App/App/Info.plist):
 
 | Permiso   | Para qué                                                       |
 | --------- | -------------------------------------------------------------- |
-| Cámara    | La selfie de Entrada/Salida y el lector del QR del acceso       |
-| Ubicación | La geocerca del ponche — el servidor decide, el teléfono ubica  |
+| Cámara    | La selfie de Entrada/Salida y el lector del QR del acceso      |
+| Ubicación | La geocerca del ponche — el servidor decide, el teléfono ubica |
 | Vibración | La confirmación de la marca (Android)                          |
 
 La cámara y el GPS entran por las APIs web de siempre (`getUserMedia`,
@@ -75,17 +78,55 @@ worker.**
 
 ---
 
+## La pantalla nativa de Permisos
+
+La única pantalla **nativa** de la app. Es lo primero que ve el Colaborador al quedar
+con sesión (después del login o al abrir la app con la sesión viva), y vuelve desde
+**Permisos** en el menú de la flecha del avatar.
+
+- Muestra tres tarjetas: **Ubicación** (permitido · sin permiso · solo aproximada ·
+  bloqueado), **GPS del teléfono** (encendido · apagado) y **Cámara**.
+- Si algo falta, la tarjeta ofrece **Dar permiso** (el diálogo del sistema) o **Abrir
+  configuración** cuando el sistema ya no deja preguntar.
+- **Ponchar** solo se habilita con todo en verde. En el worker, `NativePunchGate`
+  aplica la misma regla a la pestaña de Ponchar.
+
+Del lado nativo es un plugin local de Capacitor, `OranjePermissions`, **sin paquete
+npm**:
+
+|          | Android                                                            | iOS                                                                                               |
+| -------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| Plugin   | `OranjePermissionsPlugin.java` (registrado en `MainActivity`)      | `OranjePermissions.swift` (registrado en `OranjeBridgeViewController`, que usa `Main.storyboard`) |
+| Pantalla | `PermissionsActivity.java` + `res/layout/activity_permissions.xml` | `PermissionsViewController` (UIKit, mismo archivo)                                                |
+| Estado   | `PermissionsStatus.java`                                           | `PermissionsStatus` (mismo archivo)                                                               |
+| Textos   | `res/values{,-en}/oranje_permissions_strings.xml`                  | `Copy` (mismo archivo)                                                                            |
+
+El contrato con el WebView: `check()`, `open({ firstName, locale })` (resuelve al
+cerrar con `action: "punch" | "home"`) y el evento `permissionsChanged` cada vez que la
+app vuelve al frente. Del lado web lo consume
+[`nativePermissions.ts`](../web/src/features/worker/lib/nativePermissions.ts), que no
+importa `@capacitor/core`: usa el `window.Capacitor` que inyecta el WebView.
+
+El diseño copia los tokens de `packages/ui` (colores en `oranje_colors.xml` y en
+`Palette`) y usa Montserrat (`res/font/` y `ios/App/App/Fonts/`, bajadas de Fontsource).
+**Si un token o un texto cambia en una plataforma, cambia en la otra.**
+
+> ⚠️ **iOS está escrito pero no compilado.** Esta Mac tiene macOS 12, y Capacitor 7
+> exige Xcode 16. Antes de publicar, en un Mac con Xcode 16+: `pod install`, compilar,
+> y probar los cuatro estados (permitido, sin permiso, aproximada, bloqueado) más el GPS
+> apagado. Android está probado en dispositivo.
+
 ## El origen de la app y el CORS
 
 La app se sirve desde `https://mi.oranjepeople.com` — **el mismo host que la
 web**, configurado en `capacitor.config.ts`. Eso no es casual: ese origen ya
 está en la lista blanca del API, verificado contra producción:
 
-| Origen probado                         | Preflight a `/auth/session`        |
-| -------------------------------------- | ---------------------------------- |
-| `https://mi.oranjepeople.com`          | `Allow-Origin` presente ✅          |
-| `https://colaborador.oranjepeople.com` | sin `Allow-Origin` ❌               |
-| `https://localhost` (el de fábrica)    | sin `Allow-Origin` ❌               |
+| Origen probado                         | Preflight a `/auth/session` |
+| -------------------------------------- | --------------------------- |
+| `https://mi.oranjepeople.com`          | `Allow-Origin` presente ✅  |
+| `https://colaborador.oranjepeople.com` | sin `Allow-Origin` ❌       |
+| `https://localhost` (el de fábrica)    | sin `Allow-Origin` ❌       |
 
 **No hay que tocar `CORS_ORIGINS`**, que se inyecta al desplegar desde una
 variable de GitHub Actions ([`deploy.yml`](../../.github/workflows/deploy.yml))

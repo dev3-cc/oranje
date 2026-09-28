@@ -24,6 +24,14 @@
 
         </activity>
 
+        <!-- La pantalla nativa de Permisos (PermissionsActivity): la abre el
+             plugin OranjePermissions, nunca otra app. -->
+        <activity
+            android:name=".PermissionsActivity"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|screenLayout|uiMode"
+            android:exported="false"
+            android:theme="@style/OranjePermissions" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

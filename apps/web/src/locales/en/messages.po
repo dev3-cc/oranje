@@ -4804,6 +4804,10 @@ msgstr "The position is missing"
 msgid "Faltan datos tuyos"
 msgstr "Some of your info is missing"
 
+#: src/features/worker/components/NativePunchGate.tsx
+msgid "Faltan permisos para ponchar"
+msgstr "Missing permissions to punch"
+
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Fase 1 · Entrevista"
 msgstr "Phase 1 · Interview"
@@ -7554,6 +7558,10 @@ msgstr "To create it: {0}."
 msgid "Para poder asignarlo falta capturar en la entrevista: {missingNames}"
 msgstr "Before assigning, capture in the interview: {missingNames}"
 
+#: src/features/worker/components/NativePunchGate.tsx
+msgid "Para ponchar, la app necesita tu ubicación precisa, el GPS encendido y la cámara. Revisa qué falta y actívalo."
+msgstr "To punch, the app needs your precise location, GPS turned on and the camera. Check what's missing and turn it on."
+
 #: src/features/requisitions/utils/coverage.ts
 msgid "parcial"
 msgstr "partial"
@@ -7687,6 +7695,10 @@ msgstr "Incomplete profile · overdue, access blocked"
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Perfil laboral y salud"
 msgstr "Work profile and health"
+
+#: src/features/worker/components/MobileShell.tsx
+msgid "Permisos"
+msgstr "Permissions"
 
 #: src/features/admin/pages/UsersPage.tsx
 msgid "Personal de hoteles"
@@ -8486,6 +8498,10 @@ msgstr "Review the day"
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 msgid "Revisar no es aprobar"
 msgstr "Reviewing isn't approving"
+
+#: src/features/worker/components/NativePunchGate.tsx
+msgid "Revisar permisos"
+msgstr "Check permissions"
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "Revisión"

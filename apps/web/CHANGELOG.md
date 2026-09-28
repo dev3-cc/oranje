@@ -32,6 +32,85 @@ Reglas:
 
 ---
 
+## 2026-09-28
+
+### 11:28 — Llevar a Inicio al cerrar Permisos con «Ir a Inicio»
+
+**Qué:** `usePermissionsScreen` navega a `/collaborator` cuando la pantalla nativa se
+cierra con `home`; el Atrás de Android ahora devuelve `back` y deja a la persona donde
+estaba. `PermissionsScreenResult.action` suma `'back'`.
+**Por qué:** abierta desde el menú del avatar, «Ir a Inicio» solo cerraba y dejaba a la
+persona en la pantalla de antes (p. ej. Contraseña): el botón no hacía lo que dice.
+Corrige la entrada de las 11:09.
+**Archivos:** `src/features/worker/lib/usePermissionsScreen.ts`,
+`src/features/worker/lib/nativePermissions.ts`
+
+### 11:27 — Detener el lector de QR al cerrarlo (la app quedaba lenta)
+
+**Qué:** en `QrScanner`, el ciclo de lectura revisa una bandera `stopped` después del
+`await detector.detect()`; `onScan` se lee de una ref y deja de ser dependencia del
+efecto; jsQR corre solo sin `BarcodeDetector` (o si este falla), no en cada cuadro además
+de él; al desmontar se suelta el `srcObject` del `<video>`.
+**Por qué:** `cancelAnimationFrame` no alcanzaba al ciclo que estaba esperando a
+`detect()`, y al volver pedía otro cuadro: el lector seguía leyendo para siempre con la
+cámara cerrada. Medido en un moto g 5G (2024) con la app: 12–17 `detect` + jsQR de
+1280×960 por segundo con el lector cerrado, más con cada apertura; toda la app se
+ralentizaba. Además cada render de Ponchar (flecha `onScan` nueva) arrancaba otro ciclo.
+Tras el cambio: 0 por segundo al cerrar, en tres ciclos seguidos.
+**Archivos:** `src/features/worker/components/QrScanner.tsx`
+
+### 11:13 — Traducir los textos de Permisos al inglés
+
+**Qué:** cuatro `msgid` nuevos en los catálogos («Permisos», «Faltan permisos para
+ponchar», «Revisar permisos» y el texto del candado), con su inglés en `en/messages.po`.
+Se extrajo con `lingui extract` sin `--clean`, para no arrastrar al diff la limpieza de
+entradas obsoletas que no son de este cambio.
+**Por qué:** D-36 — todo texto del Colaborador existe en los dos idiomas.
+**Archivos:** `src/locales/es/messages.po`, `src/locales/en/messages.po`
+
+### 11:12 — Agregar «Permisos» al menú del avatar (solo en la app)
+
+**Qué:** en `MobileShell`, entre «Contraseña» y «Mi correo», la opción «Permisos»
+reabre la pantalla nativa. Se pinta solo si `hasNativePermissions()`: en el navegador
+no aparece.
+**Por qué:** el Colaborador tiene que poder volver a la pantalla de Permisos después
+del primer arranque; se pidió en el menú de la flecha del avatar.
+**Archivos:** `src/features/worker/components/MobileShell.tsx`
+
+### 11:11 — Bloquear Ponchar en la app sin ubicación, GPS y cámara
+
+**Qué:** `NativePunchGate`, ruta de layout alrededor de `punch` solo en el router
+móvil: si el nativo dice que falta algo, en lugar de Ponchar muestra un aviso con
+«Revisar permisos». Escucha `permissionsChanged`, así que se abre o se cierra al volver
+de Configuración.
+**Por qué:** «si faltan permisos no deja pasar». El botón de la pantalla nativa ya lo
+cumple; esto cubre los otros caminos (pestaña, deslizar, enlace). El web no lo monta.
+**Archivos:** `src/features/worker/components/NativePunchGate.tsx`,
+`src/mobile/router.tsx`, `src/features/worker/index.ts`
+
+### 11:10 — Abrir la pantalla nativa de Permisos al entrar a la app
+
+**Qué:** `PermissionsOnLaunch`, raíz del router móvil (layout sin `path`): al quedar la
+sesión en `authenticated` abre la pantalla nativa una vez; se rearma al caer a
+`anonymous`. Si se cierra con «Ponchar», navega a `/collaborator/punch`.
+**Por qué:** la pantalla de Permisos es lo primero que ve el Colaborador después del
+login o al abrir la app con sesión. Va fuera de `RequireSession` para ver el cierre de
+sesión, y por estado —no por usuario— para que el refresh de 15 min no la reabra.
+**Archivos:** `src/mobile/PermissionsOnLaunch.tsx`, `src/mobile/router.tsx`
+
+### 11:09 — Crear el puente con la pantalla nativa de Permisos
+
+**Qué:** `lib/nativePermissions.ts` (check, open y el evento `permissionsChanged` del
+plugin `OranjePermissions` de `apps/mobile`) y `lib/usePermissionsScreen.ts` (abre con
+el nombre y el idioma de la persona y lleva a Ponchar si se eligió). Con su spec.
+**Por qué:** los permisos se leen del sistema operativo en nativo y el worker los
+necesita para decidir. Se habla con `window.Capacitor.nativePromise`/`nativeCallback`
+en vez de importar `@capacitor/core`, para no sumar dependencias al web ni tocar el
+`pnpm-lock.yaml`; fuera de la app todo responde `null`.
+**Archivos:** `src/features/worker/lib/nativePermissions.ts`,
+`src/features/worker/lib/nativePermissions.spec.ts`,
+`src/features/worker/lib/usePermissionsScreen.ts`, `src/features/worker/index.ts`
+
 ## 2026-08-13
 
 ### 13:10 — El alta de prospecto pasa a ser un modal

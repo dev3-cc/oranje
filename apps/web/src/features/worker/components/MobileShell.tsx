@@ -14,6 +14,8 @@ import { useRef, useState, type ReactNode } from 'react'
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 
 import { useGetMyNotificationsQuery, useGetMyProfileQuery } from '../api/workerApi'
+import { hasNativePermissions } from '../lib/nativePermissions'
+import { usePermissionsScreen } from '../lib/usePermissionsScreen'
 
 import { PasswordOverdueScreen, ProfileOverdueScreen } from './AccessDeadlineBanner'
 import { SuspendedScreen } from './TaxDeadlineBanner'
@@ -75,6 +77,7 @@ export function MobileShell(): ReactNode {
   const [updateMyLocale] = useUpdateMyLocaleMutation()
   const { t, i18n } = useLingui()
   const [soundOn, setSoundOnState] = useState(isSoundOn)
+  const openPermissions = usePermissionsScreen()
 
   /** El mismo toque al cambiar de pestaña que en el escritorio. */
   useNavigationSound()
@@ -201,6 +204,18 @@ export function MobileShell(): ReactNode {
                 <MaterialIcon name="password" className="text-lg" aria-hidden />
                 <Trans>Contraseña</Trans>
               </DropdownMenuItem>
+              {/* Solo en la app: abre la pantalla NATIVA de Permisos (ubicación,
+                  GPS, cámara). En el navegador el teléfono los pide al usarlos. */}
+              {hasNativePermissions() && (
+                <DropdownMenuItem
+                  onSelect={() => {
+                    void openPermissions()
+                  }}
+                >
+                  <MaterialIcon name="verified_user" className="text-lg" aria-hidden />
+                  <Trans>Permisos</Trans>
+                </DropdownMenuItem>
+              )}
               {/* El buzón @oranjepeople.com vive en el webmail de cPanel, fuera
                   de la app; se abre en pestaña nueva y en la pantalla de entrar
                   (la ruta /logout la muestra limpia aunque haya otra sesión). */}

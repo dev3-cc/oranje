@@ -1,6 +1,8 @@
 import { type ReactElement } from 'react'
 import { createBrowserRouter, Navigate, useLocation, useParams } from 'react-router'
 
+import { PermissionsOnLaunch } from './PermissionsOnLaunch'
+
 import { RequireSession } from '@/app/RequireSession'
 
 /**
@@ -52,105 +54,128 @@ const loginRoute = {
 }
 
 export const mobileRouter = createBrowserRouter([
-  /*
-   * `/` va FUERA de `RequireSession`, y esto no es cosmético: el guard decide
-   * a qué login mandar mirando el pathname —`startsWith('/collaborator')`, ver
-   * `app/RequireSession.tsx`— y la app arranca en `/`, que no empieza con eso.
-   * Con la redirección DENTRO del guard, el guard corría primero, concluía
-   * «esto no es del Colaborador» y mandaba a `/login`: la pantalla en blanco.
-   * Aquí `/` se resuelve antes de que ningún guard opine.
-   *
-   * Sirve además para el regreso del login, que navega a `from ?? '/'`.
-   */
-  { path: '/', element: <Navigate to="/collaborator" replace /> },
-
-  { path: '/collaborator/login', ...loginRoute },
-
-  /*
-   * `/login` también, aunque en esta app no exista el staff: es a donde manda
-   * `RequireSession` cuando el pathname no le parece del Colaborador, y ese
-   * archivo es compartido con la web — no se toca desde aquí. Mapearlo a la
-   * misma puerta convierte ese caso en algo inofensivo en vez de una ruta
-   * muerta. Red de seguridad, no la corrección: la corrección es la de arriba.
-   */
-  { path: '/login', ...loginRoute },
-
   {
-    /* Sin `path`: es una ruta de layout. Sus hijos cuelgan de la raíz igual
-       que antes, pero `/` ya no cae aquí dentro. */
-    Component: RequireSession,
+    /*
+     * La raíz de TODO el árbol: abre la pantalla nativa de Permisos al quedar
+     * con sesión (ver `PermissionsOnLaunch`). Ruta de layout sin `path`: sus
+     * hijos resuelven exactamente igual que si colgaran de la raíz.
+     */
+    Component: PermissionsOnLaunch,
     children: [
-      ...LEGACY_PATHS.map(({ from, to }) => ({
-        path: from,
-        element: <LegacyRedirect to={to} />,
-      })),
+      /*
+       * `/` va FUERA de `RequireSession`, y esto no es cosmético: el guard decide
+       * a qué login mandar mirando el pathname —`startsWith('/collaborator')`, ver
+       * `app/RequireSession.tsx`— y la app arranca en `/`, que no empieza con eso.
+       * Con la redirección DENTRO del guard, el guard corría primero, concluía
+       * «esto no es del Colaborador» y mandaba a `/login`: la pantalla en blanco.
+       * Aquí `/` se resuelve antes de que ningún guard opine.
+       *
+       * Sirve además para el regreso del login, que navega a `from ?? '/'`.
+       */
+      { path: '/', element: <Navigate to="/collaborator" replace /> },
+
+      { path: '/collaborator/login', ...loginRoute },
+
+      /*
+       * `/login` también, aunque en esta app no exista el staff: es a donde manda
+       * `RequireSession` cuando el pathname no le parece del Colaborador, y ese
+       * archivo es compartido con la web — no se toca desde aquí. Mapearlo a la
+       * misma puerta convierte ese caso en algo inofensivo en vez de una ruta
+       * muerta. Red de seguridad, no la corrección: la corrección es la de arriba.
+       */
+      { path: '/login', ...loginRoute },
+
       {
-        path: 'collaborator',
-        lazy: async () => {
-          const m = await import('@/features/worker')
-          return { Component: m.MobileShell }
-        },
+        /* Sin `path`: es una ruta de layout. Sus hijos cuelgan de la raíz igual
+       que antes, pero `/` ya no cae aquí dentro. */
+        Component: RequireSession,
         children: [
+          ...LEGACY_PATHS.map(({ from, to }) => ({
+            path: from,
+            element: <LegacyRedirect to={to} />,
+          })),
           {
-            index: true,
+            path: 'collaborator',
             lazy: async () => {
               const m = await import('@/features/worker')
-              return { Component: m.HomePage }
+              return { Component: m.MobileShell }
             },
-          },
-          {
-            path: 'profile',
-            lazy: async () => {
-              const m = await import('@/features/worker')
-              return { Component: m.ProfilePage }
-            },
-          },
-          {
-            path: 'password',
-            lazy: async () => {
-              const m = await import('@/features/worker')
-              return { Component: m.PasswordPage }
-            },
-          },
-          {
-            path: 'punch',
-            lazy: async () => {
-              const m = await import('@/features/worker')
-              return { Component: m.PunchPage }
-            },
-          },
-          {
-            path: 'signup-2',
-            lazy: async () => {
-              const m = await import('@/features/worker')
-              return { Component: m.Phase2Page }
-            },
-          },
-          {
-            path: 'signup-3',
-            lazy: async () => {
-              const m = await import('@/features/worker')
-              return { Component: m.Phase3Page }
-            },
-          },
-          {
-            path: 'notifications',
-            lazy: async () => {
-              const m = await import('@/features/worker')
-              return { Component: m.NotificationsPage }
-            },
+            children: [
+              {
+                index: true,
+                lazy: async () => {
+                  const m = await import('@/features/worker')
+                  return { Component: m.HomePage }
+                },
+              },
+              {
+                path: 'profile',
+                lazy: async () => {
+                  const m = await import('@/features/worker')
+                  return { Component: m.ProfilePage }
+                },
+              },
+              {
+                path: 'password',
+                lazy: async () => {
+                  const m = await import('@/features/worker')
+                  return { Component: m.PasswordPage }
+                },
+              },
+              {
+                /*
+                 * El candado de Ponchar: sin ubicación precisa, GPS y cámara la
+                 * app no deja entrar (la misma regla que el botón de la pantalla
+                 * nativa de Permisos). Solo existe en este router; el web no lo monta.
+                 */
+                lazy: async () => {
+                  const m = await import('@/features/worker')
+                  return { Component: m.NativePunchGate }
+                },
+                children: [
+                  {
+                    path: 'punch',
+                    lazy: async () => {
+                      const m = await import('@/features/worker')
+                      return { Component: m.PunchPage }
+                    },
+                  },
+                ],
+              },
+              {
+                path: 'signup-2',
+                lazy: async () => {
+                  const m = await import('@/features/worker')
+                  return { Component: m.Phase2Page }
+                },
+              },
+              {
+                path: 'signup-3',
+                lazy: async () => {
+                  const m = await import('@/features/worker')
+                  return { Component: m.Phase3Page }
+                },
+              },
+              {
+                path: 'notifications',
+                lazy: async () => {
+                  const m = await import('@/features/worker')
+                  return { Component: m.NotificationsPage }
+                },
+              },
+            ],
           },
         ],
       },
+
+      /*
+       * Cualquier otra ruta del web (las 25 del staff) no existe aquí: a Inicio.
+       * Va FUERA del guard por lo mismo que `/`: dentro, `RequireSession` resuelve
+       * a login antes de llegar al `Outlet` y el comodín nunca se rendería.
+       * Último de la lista: React Router prefiere lo específico, pero el orden lo
+       * deja explícito para quien lea.
+       */
+      { path: '*', element: <Navigate to="/collaborator" replace /> },
     ],
   },
-
-  /*
-   * Cualquier otra ruta del web (las 25 del staff) no existe aquí: a Inicio.
-   * Va FUERA del guard por lo mismo que `/`: dentro, `RequireSession` resuelve
-   * a login antes de llegar al `Outlet` y el comodín nunca se rendería.
-   * Último de la lista: React Router prefiere lo específico, pero el orden lo
-   * deja explícito para quien lea.
-   */
-  { path: '*', element: <Navigate to="/collaborator" replace /> },
 ])
