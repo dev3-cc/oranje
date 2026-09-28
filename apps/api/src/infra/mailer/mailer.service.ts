@@ -12,6 +12,7 @@ import { SETTING_KEYS, SettingsService } from '../settings/index.js'
 import { MAIL_ASSETS } from './templates/assets.js'
 import {
   firebaseFallbackOf,
+  isManagementRole,
   renderTemplate,
   type Locale,
   type TemplateData,
@@ -186,25 +187,45 @@ export class MailerService {
    * respaldo, que es el correo de Firebase de siempre.
    */
   async sendAccountEmail(input: {
-    template: 'account-invitation' | 'password-reset'
+    kind: 'invitation' | 'password-reset'
     to: string
     name: string
+    /**
+     * El rol de la persona. Con uno de gerencia sale su propia plantilla, que
+     * nombra el puesto; sin `roleCode` (o con cualquier otro) sale la normal.
+     */
+    roleCode?: string | null
+    roleName?: string | null
     locale?: Locale | null
     userId?: string | null
   }): Promise<SendMailResult> {
     const locale: Locale = input.locale === 'en' ? 'en' : 'es'
-    const base = {
-      template: input.template,
-      to: input.to,
-      locale,
-      userId: input.userId ?? null,
-    }
+    const isManagement =
+      typeof input.roleCode === 'string' &&
+      isManagementRole(input.roleCode) &&
+      typeof input.roleName === 'string' &&
+      input.roleName.trim() !== ''
+
+    const template: TemplateName =
+      input.kind === 'invitation'
+        ? isManagement
+          ? 'management-invitation'
+          : 'account-invitation'
+        : isManagement
+          ? 'management-password-reset'
+          : 'password-reset'
+
+    const roleName = input.roleName ?? ''
+    const base = { template, to: input.to, locale, userId: input.userId ?? null }
 
     if (await this.isEnabled()) {
       try {
         const link = await this.firebase.passwordResetLink(input.to)
 
-        return await this.send({ ...base, data: { name: input.name, link } })
+        return await this.send({
+          ...base,
+          data: { name: input.name, link, roleName },
+        })
       } catch (error) {
         /* Sin enlace no hay correo propio posible; el respaldo de abajo lo
            vuelve a intentar por el camino de Firebase, que es el mismo
@@ -213,8 +234,8 @@ export class MailerService {
       }
     }
 
-    const data = { name: input.name, link: '' }
-    const { subject } = renderTemplate(input.template, locale, data)
+    const data = { name: input.name, link: '', roleName }
+    const { subject } = renderTemplate(template, locale, data)
 
     return this.fallback({ ...base, data }, locale, subject, 0, null)
   }

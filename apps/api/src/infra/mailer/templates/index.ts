@@ -16,7 +16,31 @@ export type Locale = 'es' | 'en'
 export interface TemplateData {
   'account-invitation': { name: string; link: string }
   'password-reset': { name: string; link: string }
+  /** Las de gerencia nombran el puesto: es lo que las distingue. */
+  'management-invitation': { name: string; link: string; roleName: string }
+  'management-password-reset': { name: string; link: string; roleName: string }
 }
+
+/**
+ * Los ocho roles de gerencia (Roles del Sistema · uno por departamento, más
+ * los dos del hotel). Reciben su propio correo: nombra el puesto y habla de
+ * lo que ese puesto decide, no de «entrar a la app».
+ *
+ * El Administrador NO está aquí a propósito: el vault lo pone entre los
+ * transversales, no en la línea de mando de ningún departamento.
+ */
+const MANAGEMENT_ROLES = new Set([
+  'ROL-R-03', // Manager de Reclutamiento
+  'ROL-H-03', // Manager General
+  'ROL-H-02', // Manager de Área
+  'ROL-V-02', // Business Developer Coordinator
+  'ROL-I-02', // Coordinador de Inspección
+  'ROL-Q-02', // Manager de QA
+  'ROL-CS-02', // Customer Service Manager
+  'ROL-CO-02', // Manager de Contabilidad
+])
+
+export const isManagementRole = (roleCode: string): boolean => MANAGEMENT_ROLES.has(roleCode)
 
 export type TemplateName = keyof TemplateData
 
@@ -33,7 +57,7 @@ interface Template<K extends TemplateName> {
    * suyos —, y entonces el envío se registra como fallido para reintentarlo.
    */
   firebaseFallback: 'PASSWORD_RESET' | null
-  build(locale: Locale, data: TemplateData[K]): { subject: string } & LayoutParts
+  build: (locale: Locale, data: TemplateData[K]) => { subject: string } & LayoutParts
 }
 
 /** El pie es el mismo en todos: por qué te llegó y qué hacer si no era para ti. */
@@ -115,9 +139,77 @@ const passwordReset: Template<'password-reset'> = {
         },
 }
 
+const managementInvitation: Template<'management-invitation'> = {
+  firebaseFallback: 'PASSWORD_RESET',
+  build: (locale, data) =>
+    locale === 'en'
+      ? {
+          illustrationCid: ILLUSTRATION_WELCOME.cid,
+          subject: `Your ${data.roleName} access at Oranje`,
+          heading: `Welcome, ${data.name.trim().split(/\s+/)[0] ?? ''}`,
+          preheader: `Your ${data.roleName} account is ready.`,
+          paragraphs: [
+            greeting(locale, data.name),
+            `Your Oranje account has been created as ${data.roleName}. From it you follow your department's work and sign off on what needs your decision.`,
+            'Set your password with the button below. The link works once and expires in a few hours; if it does, ask for a new one from the sign-in screen.',
+            'Reply to this email if anything looks off — someone at Oranje reads it.',
+          ],
+          action: { label: 'Set my password', url: data.link },
+          footnote: FOOTNOTE.en,
+        }
+      : {
+          illustrationCid: ILLUSTRATION_WELCOME.cid,
+          subject: `Tu acceso de ${data.roleName} en Oranje`,
+          heading: `Bienvenido, ${data.name.trim().split(/\s+/)[0] ?? ''}`,
+          preheader: `Tu cuenta de ${data.roleName} ya está lista.`,
+          paragraphs: [
+            greeting(locale, data.name),
+            `Tu cuenta de Oranje se creó como ${data.roleName}. Desde ahí sigues el trabajo de tu departamento y firmas lo que pasa por ti.`,
+            'Crea tu contraseña con el botón de abajo. El enlace sirve una sola vez y caduca en unas horas; si se vence, pide uno nuevo desde la pantalla de inicio de sesión.',
+            'Si algo no cuadra, responde a este correo: lo lee alguien de Oranje.',
+          ],
+          action: { label: 'Crear mi contraseña', url: data.link },
+          footnote: FOOTNOTE.es,
+        },
+}
+
+const managementPasswordReset: Template<'management-password-reset'> = {
+  firebaseFallback: 'PASSWORD_RESET',
+  build: (locale, data) =>
+    locale === 'en'
+      ? {
+          illustrationCid: ILLUSTRATION_ACCESS.cid,
+          subject: 'Reset your Oranje password',
+          heading: 'Let’s get you back in',
+          preheader: 'A one-time link to set a new password.',
+          paragraphs: [
+            greeting(locale, data.name),
+            `We received a request to reset the password of your ${data.roleName} account.`,
+            'Didn’t request this? Ignore this email — your current password keeps working. If it happens again without you asking, reply to this email.',
+          ],
+          action: { label: 'Choose a new password', url: data.link },
+          footnote: FOOTNOTE.en,
+        }
+      : {
+          illustrationCid: ILLUSTRATION_ACCESS.cid,
+          subject: 'Restablece tu contraseña de Oranje',
+          heading: 'Vamos a devolverte el acceso',
+          preheader: 'Un enlace de un solo uso para poner una nueva.',
+          paragraphs: [
+            greeting(locale, data.name),
+            `Recibimos una solicitud para restablecer la contraseña de tu cuenta de ${data.roleName}.`,
+            '¿No fuiste tú? Ignora este correo: tu contraseña actual sigue funcionando. Si vuelve a pasar sin que lo pidas, responde a este correo.',
+          ],
+          action: { label: 'Elegir contraseña nueva', url: data.link },
+          footnote: FOOTNOTE.es,
+        },
+}
+
 const TEMPLATES = {
   'account-invitation': accountInvitation,
   'password-reset': passwordReset,
+  'management-invitation': managementInvitation,
+  'management-password-reset': managementPasswordReset,
 } satisfies { [K in TemplateName]: Template<K> }
 
 export const firebaseFallbackOf = (template: TemplateName): 'PASSWORD_RESET' | null =>
@@ -128,7 +220,15 @@ export function renderTemplate<K extends TemplateName>(
   locale: Locale,
   data: TemplateData[K],
 ): RenderedEmail {
-  const { subject, ...parts } = TEMPLATES[template].build(locale, data)
+  /* El mapa de arriba ya garantiza, con `satisfies`, que cada plantilla recibe
+     SUS datos; lo que TypeScript no sabe hacer es estrechar esa unión cuando
+     la clave es genérica, así que el cast va aquí y en ningún otro lado. */
+  const build = TEMPLATES[template].build as (
+    locale: Locale,
+    data: TemplateData[K],
+  ) => { subject: string } & LayoutParts
+
+  const { subject, ...parts } = build(locale, data)
 
   return { subject, html: renderHtml(parts), text: renderText(parts) }
 }

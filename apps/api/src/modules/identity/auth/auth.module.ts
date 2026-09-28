@@ -11,6 +11,7 @@ import { AuthService } from './auth.service.js'
 import { FirebaseTokenService } from './firebase-token.service.js'
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js'
 import { PermissionsGuard } from './guards/permissions.guard.js'
+import { PasswordResetService } from './password-reset.service.js'
 import { PermissionsService } from './permissions.service.js'
 import { RefreshTokenRepository } from './refresh-token.repository.js'
 
@@ -26,6 +27,7 @@ import { RefreshTokenRepository } from './refresh-token.repository.js'
   controllers: [AuthController],
   providers: [
     AuthService,
+    PasswordResetService,
     AccessTokenService,
     FirebaseTokenService,
     RefreshTokenRepository,

@@ -102,7 +102,7 @@ describe('el mailer manda el correo y deja rastro', () => {
     expect(await mailer.isEnabled()).toBe(false)
 
     const resultado = await mailer.sendAccountEmail({
-      template: 'account-invitation',
+      kind: 'invitation',
       to: DESTINO,
       name: 'Juan David',
     })
@@ -134,7 +134,7 @@ describe('el mailer manda el correo y deja rastro', () => {
     const smtp = conTransporte(mailer, 'ok')
 
     const resultado = await mailer.sendAccountEmail({
-      template: 'account-invitation',
+      kind: 'invitation',
       to: DESTINO,
       name: 'Juan David',
     })
@@ -160,7 +160,7 @@ describe('el mailer manda el correo y deja rastro', () => {
     const smtp = conTransporte(mailer, 'falla')
 
     const resultado = await mailer.sendAccountEmail({
-      template: 'account-invitation',
+      kind: 'invitation',
       to: DESTINO,
       name: 'Juan David',
     })
@@ -182,7 +182,7 @@ describe('el mailer manda el correo y deja rastro', () => {
     const mailer = new MailerService(configCon({}), db as unknown as PrismaService, fake, ajustes())
 
     const resultado = await mailer.sendAccountEmail({
-      template: 'password-reset',
+      kind: 'password-reset',
       to: DESTINO,
       name: 'Juan David',
     })

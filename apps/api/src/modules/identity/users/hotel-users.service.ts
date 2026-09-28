@@ -143,6 +143,7 @@ export class HotelUsersService {
       row.email,
       row.fullName,
       row.locale,
+      row.role,
       { userId: actor.id, role: actor.roleCode },
       'invitation',
     )
@@ -215,6 +216,7 @@ export class HotelUsersService {
       row.email,
       row.fullName,
       row.locale,
+      row.role,
       { userId: actor.id, role: actor.roleCode },
       'resend',
     )
@@ -335,6 +337,8 @@ export class HotelUsersService {
     email: string,
     fullName: string,
     locale: string | null,
+    /** Con un rol de gerencia sale su propia plantilla, que nombra el puesto. */
+    role: { code: string; name: string },
     actor: { userId: string; role: string },
     kind: 'invitation' | 'resend',
   ): Promise<InvitationResult> {
@@ -343,9 +347,11 @@ export class HotelUsersService {
       // enlace ocurre en el primer login.
       await this.accounts.createAccount(email)
       const delivery = await this.mailer.sendAccountEmail({
-        template: 'account-invitation',
+        kind: 'invitation',
         to: email,
         name: fullName,
+        roleCode: role.code,
+        roleName: role.name,
         // D-36: le escribimos en SU idioma. Quien nunca ha entrado lo tiene
         // en español, que es el idioma con el que nace la columna.
         locale: locale === 'en' ? 'en' : 'es',

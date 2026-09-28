@@ -18,6 +18,8 @@ import type { Env } from '../../../config/env.validation.js'
 
 import { AuthService, Session } from './auth.service.js'
 import { CreateSessionDto } from './dto/create-session.dto.js'
+import { PasswordResetDto } from './dto/password-reset.dto.js'
+import { PasswordResetService } from './password-reset.service.js'
 
 const REFRESH_COOKIE = 'oranje_refresh'
 
@@ -32,6 +34,7 @@ export class AuthController {
 
   constructor(
     private readonly auth: AuthService,
+    private readonly passwordResets: PasswordResetService,
     config: ConfigService<Env, true>,
   ) {
     this.cookieOptions = {
@@ -41,6 +44,22 @@ export class AuthController {
       path: '/api/v1/auth',
       maxAge: config.get('JWT_REFRESH_TTL_S', { infer: true }) * 1000,
     }
+  }
+
+  /**
+   * «¿Olvidaste tu contraseña?». Público por lo mismo que `session`, y con un
+   * límite más estrecho: es la ruta que manda correo a una dirección que
+   * escribe quien sea.
+   *
+   * Responde **204 siempre**, exista o no la cuenta: si distinguiera, sería
+   * una forma de averiguar quién tiene cuenta en Oranje.
+   */
+  @Public()
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  @Post('password-reset')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async passwordReset(@Body() dto: PasswordResetDto): Promise<void> {
+    await this.passwordResets.request(dto.email)
   }
 
   // Público porque es la puerta: el usuario todavía no tiene token de Oranje.
