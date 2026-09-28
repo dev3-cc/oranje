@@ -28,6 +28,7 @@ import {
   ONBOARDING_STATUS_TOKEN,
   type OnboardingStatus,
 } from '@/shared/constants/onboardingStatus'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 /**
@@ -65,59 +66,49 @@ const ROLE_SHORT: Record<string, MessageDescriptor> = {
   'ROL-ADM-01': msg`el Administrador`,
 }
 
-/** El `i18n` viene del componente (`useLingui`): así el mensaje habla el idioma activo (D-36). */
+/**
+ * El `i18n` viene del componente (`useLingui`): así el mensaje habla el
+ * idioma activo (D-36). Pasa SIEMPRE por `apiErrorMessage`: reimplementarlo a
+ * mano (como hacía antes) deja pasar cualquier código sin el filtro de
+ * `humanizeApiMessage` — un caso real: `REASON_NOT_FOUND` interpola el
+ * `reasonCode` crudo en el mensaje del back, y sin la puerta única salía
+ * textual a pantalla (2026-09-28).
+ */
 function transitionErrorMessage(error: unknown, i18n: I18n): string {
-  const data = (
-    error as
-      | {
-          data?: {
-            error?: {
-              code?: string
-              message?: string
-              details?: Array<{ field?: string; value?: unknown }>
-            }
-          }
-        }
-      | undefined
-  )?.data
-  const code = data?.error?.code
-  const details = data?.error?.details ?? []
-
-  if (code === 'PROPOSAL_REQUIRED') {
-    return i18n._(
-      msg`Verde no se abandona sin enviar la Propuesta Personalizada: abre la propuesta, envíala y vuelve a intentar.`,
-    )
-  }
-  if (code === 'HOTEL_USER_REQUIRED') {
-    return i18n._(
-      msg`Para convertir a Naranja primero debe existir el Usuario del Hotel: créalo desde Conversión.`,
-    )
-  }
-  if (code === 'TRANSITION_FORBIDDEN') {
-    const roles = details
-      .map((item) => {
-        const shortRole = ROLE_SHORT[String(item.value)]
-        return shortRole ? i18n._(shortRole) : String(item.value)
-      })
-      .join(` ${i18n._(msg`o`)} `)
-    const rolesLabel = roles || i18n._(msg`otro rol`)
-    return i18n._(
-      msg`Ese paso existe, pero lo ejecuta ${rolesLabel}: pídeselo — tu rol no lo tiene asignado.`,
-    )
-  }
-  if (code === 'TRANSITION_NOT_ALLOWED') {
-    const targets = details
-      .map((item) => ONBOARDING_STATUS_LABEL[item.value as OnboardingStatus] ?? String(item.value))
-      .join(', ')
-    return targets
-      ? i18n._(msg`Desde aquí el semáforo solo permite ir a: ${targets}.`)
-      : i18n._(msg`Ese paso no existe en el Semáforo: elige otro estado.`)
-  }
-  if (code === 'REASON_REQUIRED') {
-    return i18n._(msg`Esta transición exige un motivo: elígelo de la lista.`)
-  }
-  if (data?.error?.message) return data.error.message
-  return i18n._(msg`No se pudo cambiar el estado. Revisa el motivo e inténtalo de nuevo.`)
+  return apiErrorMessage(error, {
+    byCode: {
+      PROPOSAL_REQUIRED: i18n._(
+        msg`Verde no se abandona sin enviar la Propuesta Personalizada: abre la propuesta, envíala y vuelve a intentar.`,
+      ),
+      HOTEL_USER_REQUIRED: i18n._(
+        msg`Para convertir a Naranja primero debe existir el Usuario del Hotel: créalo desde Conversión.`,
+      ),
+      TRANSITION_FORBIDDEN: (info) => {
+        const roles = info.details
+          .map((item) => {
+            const shortRole = ROLE_SHORT[String(item.value)]
+            return shortRole ? i18n._(shortRole) : String(item.value)
+          })
+          .join(` ${i18n._(msg`o`)} `)
+        const rolesLabel = roles || i18n._(msg`otro rol`)
+        return i18n._(
+          msg`Ese paso existe, pero lo ejecuta ${rolesLabel}: pídeselo — tu rol no lo tiene asignado.`,
+        )
+      },
+      TRANSITION_NOT_ALLOWED: (info) => {
+        const targets = info.details
+          .map(
+            (item) => ONBOARDING_STATUS_LABEL[item.value as OnboardingStatus] ?? String(item.value),
+          )
+          .join(', ')
+        return targets
+          ? i18n._(msg`Desde aquí el semáforo solo permite ir a: ${targets}.`)
+          : i18n._(msg`Ese paso no existe en el Semáforo: elige otro estado.`)
+      },
+      REASON_REQUIRED: i18n._(msg`Esta transición exige un motivo: elígelo de la lista.`),
+    },
+    fallback: i18n._(msg`No se pudo cambiar el estado. Revisa el motivo e inténtalo de nuevo.`),
+  })
 }
 
 export function ChangeStatusDialog({

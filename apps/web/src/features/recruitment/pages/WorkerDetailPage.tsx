@@ -567,12 +567,22 @@ export function WorkerDetailPage(): ReactNode {
                         className="px-3 py-1 text-xs"
                         title={t`Marca el documento como revisado. No afecta la retención del 16% del SSN/ITIN.`}
                         onClick={() => {
+                          setDocumentError(null)
                           void verifyDocument({ workerId, documentId: doc.id })
                             .unwrap()
                             .then(() => {
                               toast.success(t`Documento verificado`)
                             })
-                            .catch(() => {})
+                            .catch((error: unknown) => {
+                              setDocumentError(
+                                apiErrorMessage(error, {
+                                  byCode: {
+                                    DOCUMENT_ALREADY_VERIFIED: t`Ese documento ya estaba verificado.`,
+                                  },
+                                  fallback: t`No se pudo verificar el documento. Inténtalo de nuevo.`,
+                                }),
+                              )
+                            })
                         }}
                       >
                         <Trans>Verificar documento</Trans>

@@ -284,7 +284,16 @@ export function ConversionPage(): ReactNode {
                     .then(() => {
                       toast.success(t`Devuelto a Café`)
                     })
-                    .catch(() => {})
+                    .catch((err: unknown) => {
+                      toast.error(
+                        apiErrorMessage(err, {
+                          byCode: {
+                            TRANSITION_NOT_ALLOWED: t`Este prospecto ya no está en Rosa: alguien más lo movió.`,
+                          },
+                          fallback: t`No se pudo devolver a Café. Inténtalo de nuevo.`,
+                        }),
+                      )
+                    })
                 }}
               >
                 {isReturning ? t`Devolviendo…` : t`Confirmar regreso`}
@@ -324,8 +333,17 @@ export function ConversionPage(): ReactNode {
               setApproveOpen(false)
               toast.success(t`Conversión aprobada`)
             })
-            .catch(() => {
+            .catch((err: unknown) => {
               setApproveOpen(false)
+              toast.error(
+                apiErrorMessage(err, {
+                  byCode: {
+                    HOTEL_USER_REQUIRED: t`Para convertir a Naranja primero debe existir el Usuario del Hotel: créalo desde aquí mismo.`,
+                    TRANSITION_NOT_ALLOWED: t`Este prospecto ya no está en Rosa: alguien más lo movió.`,
+                  },
+                  fallback: t`No se pudo aprobar la conversión. Inténtalo de nuevo.`,
+                }),
+              )
             })
         }}
       />
