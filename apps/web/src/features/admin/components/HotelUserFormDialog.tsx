@@ -145,7 +145,9 @@ export function HotelUserFormDialog({
       hotelId: '',
       roleCode: '',
       departmentId: NO_DEPARTMENT,
-      locale: 'es',
+      /* Inglés y no español: estas cuentas son del hotel cliente, en Georgia
+         (Hugo, 2026-09-28). Se puede cambiar; cambia de qué lado empieza. */
+      locale: 'en',
       fullName: '',
       email: '',
       reportsToUserId: NOBODY,
@@ -222,9 +224,9 @@ export function HotelUserFormDialog({
       fullName: user?.fullName ?? '',
       email: user?.email ?? '',
       reportsToUserId: user?.reportsToUserId ?? NOBODY,
-      /* Campo del alta: al reabrir vuelve a español, y quien ya tiene cuenta
-         cambia su idioma desde la suya. */
-      locale: 'es',
+      /* Campo del alta: al reabrir vuelve al idioma con el que nacen estas
+         cuentas —inglés—, y quien ya tiene cuenta lo cambia desde la suya. */
+      locale: 'en',
     })
   }, [isOpen, user, reset])
 

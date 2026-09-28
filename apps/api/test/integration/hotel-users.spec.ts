@@ -333,3 +333,23 @@ describe('edición y directorio', () => {
     })
   })
 })
+
+describe('las cuentas del hotel nacen en inglés', () => {
+  it('sin elegir idioma, el Manager General del hotel nace en «en»', async () => {
+    /* Hugo (2026-09-28): estas cuentas son del hotel CLIENTE, y los hoteles
+       están en Georgia. Nacer en español dejaba a 38 Managers Generales
+       recibiendo correos que no leen. El personal interno de Oranje sigue
+       naciendo en español — eso lo cubre staff-users.spec. */
+    const id = await create(hotelA, { roleCode: 'ROL-H-03' })
+
+    const fila = await db.user.findUniqueOrThrow({ where: { id }, select: { locale: true } })
+    expect(fila.locale).toBe('en')
+  })
+
+  it('quien da de alta puede elegir español igual', async () => {
+    const id = await create(hotelA, { roleCode: 'ROL-H-03', locale: 'es' })
+
+    const fila = await db.user.findUniqueOrThrow({ where: { id }, select: { locale: true } })
+    expect(fila.locale).toBe('es')
+  })
+})
