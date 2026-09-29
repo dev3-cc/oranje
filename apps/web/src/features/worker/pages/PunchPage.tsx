@@ -25,6 +25,7 @@ import { useUploadFileMutation } from '@/app/filesApi'
 import { localeTag } from '@/app/i18n'
 import checkinLottie from '@/assets/check/oranje-checkin.lottie'
 import checkoutLottie from '@/assets/check/oranje-checkout.lottie'
+import checksCompletosLottie from '@/assets/check/oranje-checks-completos.lottie'
 import exitoEntradaLottie from '@/assets/check/oranje-exito-entrada.lottie'
 import exitoSalidaLottie from '@/assets/check/oranje-exito-salida.lottie'
 import registrandoEntradaLottie from '@/assets/check/oranje-registrando-entrada.lottie'
@@ -534,6 +535,9 @@ export function PunchPage(): ReactNode {
           Mientras la marca se guarda, la naranja cambia a la de la fase en curso:
           registrando (ubicación y foto) y luego verificando (el servidor). */}
       <div className="relative mx-auto flex size-80 items-center justify-center">
+        {/* Sin marcas pendientes no hay nada que "ponchar": la naranja de
+            entrada/salida orbitando detrás sugería lo contrario — en su
+            lugar, los checks de la jornada completa. */}
         <span
           aria-hidden
           className={`pointer-events-none absolute inset-0 scale-125 ${
@@ -542,15 +546,21 @@ export function PunchPage(): ReactNode {
           }`}
         >
           <DotLottieReact
-            key={`${phase}-${phase === 'idle' ? (isEntering ? 'in' : 'out') : direction}`}
-            src={
-              phase === 'idle'
-                ? isEntering
-                  ? checkinLottie
-                  : checkoutLottie
-                : PHASE_LOTTIE[phase][direction]
+            key={
+              isDayComplete
+                ? 'checks-completos'
+                : `${phase}-${phase === 'idle' ? (isEntering ? 'in' : 'out') : direction}`
             }
-            loop={phase !== 'success' && phase !== 'outside' && phase !== 'error'}
+            src={
+              isDayComplete
+                ? checksCompletosLottie
+                : phase === 'idle'
+                  ? isEntering
+                    ? checkinLottie
+                    : checkoutLottie
+                  : PHASE_LOTTIE[phase][direction]
+            }
+            loop={!isDayComplete && phase !== 'success' && phase !== 'outside' && phase !== 'error'}
             autoplay={!reduceMotion}
           />
         </span>
@@ -590,7 +600,7 @@ export function PunchPage(): ReactNode {
                   className="text-4xl text-o-700"
                   aria-hidden
                 />
-                <span className="mt-1 text-base font-bold text-ink">
+                <span className="mt-1 max-w-24 text-center text-base leading-tight font-bold text-ink">
                   {phase === 'success'
                     ? t`¡Listo!`
                     : phase === 'outside'
