@@ -10,11 +10,12 @@ import {
   toast,
 } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
+import { Link } from 'react-router'
 
 import { useCompleteSignupMutation, useGetMyProfileQuery } from '../api/workerApi'
 
 import mascotaFeliz from '@/assets/mascota/mascota-feliz.png'
-import { Button } from '@/shared/components/Button'
+import { Button, buttonClass } from '@/shared/components/Button'
 import { isCompletePhone, PhoneInput } from '@/shared/components/PhoneInput'
 import {
   BLOOD_LABEL,
@@ -109,6 +110,29 @@ export function Phase3Page(): ReactNode {
     } catch {
       return
     }
+  }
+
+  /* El alta termina aquí: en vez de un banner sobre el formulario ya
+     lleno, una pantalla propia de cierre con un solo camino hacia
+     adelante (Hugo, 2026-09-29). */
+  if (isSuccess) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 py-10 text-center">
+        <img src={mascotaFeliz} alt="" aria-hidden className="h-24 w-auto" />
+        <div>
+          <h1 className="text-xl font-bold text-ink">
+            <Trans>Completado</Trans>
+          </h1>
+          <p className="mt-1 text-sm text-ink-2">
+            <Trans>Tu expediente quedó completo. La Reclutadora lo validará</Trans>
+            {IS_DEV_UI ? ' (RF-08)' : ''}.
+          </p>
+        </div>
+        <Link to="/colaborador" className={buttonClass('primary', 'mt-2')}>
+          <Trans>Ir a Inicio</Trans>
+        </Link>
+      </div>
+    )
   }
 
   return (
@@ -232,15 +256,6 @@ export function Phase3Page(): ReactNode {
         {isLoading ? t`Guardando…` : t`Guardar`}
       </Button>
 
-      {isSuccess && (
-        <div className="flex items-center gap-3 rounded-md bg-green/10 px-4 py-3">
-          <img src={mascotaFeliz} alt="" aria-hidden className="h-16 w-auto" />
-          <p className="text-sm text-ink-2">
-            <Trans>Listo: tu expediente quedó completo. La Reclutadora lo validará</Trans>
-            {IS_DEV_UI ? ' (RF-08)' : ''}.
-          </p>
-        </div>
-      )}
       {isError && (
         <p role="alert" className="text-sm text-red">
           {apiErrorMessage(saveError, {

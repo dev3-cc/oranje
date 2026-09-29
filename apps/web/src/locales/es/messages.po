@@ -2215,6 +2215,10 @@ msgstr "Completa tus datos"
 msgid "Completa tus datos para seguir"
 msgstr "Completa tus datos para seguir"
 
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Completado"
+msgstr "Completado"
+
 #: src/features/worker/components/AccessDeadlineBanner.tsx
 #: src/features/worker/pages/HomePage.tsx
 msgid "Completar mis datos"
@@ -5435,6 +5439,10 @@ msgstr "Ir a autorizar"
 msgid "Ir a Catálogos"
 msgstr "Ir a Catálogos"
 
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Ir a Inicio"
+msgstr "Ir a Inicio"
+
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Ir a la propuesta"
 msgstr "Ir a la propuesta"
@@ -5905,10 +5913,6 @@ msgstr "Listo para aprobar"
 #: src/features/recruitment/components/ProfileProgressAvatar.tsx
 msgid "Listo para asignar"
 msgstr "Listo para asignar"
-
-#: src/features/worker/pages/Phase3Page.tsx
-msgid "Listo: tu expediente quedó completo. La Reclutadora lo validará"
-msgstr "Listo: tu expediente quedó completo. La Reclutadora lo validará"
 
 #: src/shared/constants/contactAttempt.ts
 msgid "Llamada"
@@ -8964,10 +8968,6 @@ msgstr "siempre"
 msgid "Sigue bloqueado. Actívalo desde los Ajustes de tu teléfono."
 msgstr "Sigue bloqueado. Actívalo desde los Ajustes de tu teléfono."
 
-#: src/features/worker/pages/Phase2Page.tsx
-msgid "Sigue con tu contacto de emergencia →"
-msgstr "Sigue con tu contacto de emergencia →"
-
 #: src/features/onboarding/components/ContractStepCard.tsx
 msgid "Sigue el contrato"
 msgstr "Sigue el contrato"
@@ -10016,6 +10016,10 @@ msgstr "Tu equipo avanza contigo"
 #: src/features/worker/pages/ProfilePage.tsx
 msgid "Tu estado hoy"
 msgstr "Tu estado hoy"
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Tu expediente quedó completo. La Reclutadora lo validará"
+msgstr "Tu expediente quedó completo. La Reclutadora lo validará"
 
 #: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
 msgid "tu firma"
