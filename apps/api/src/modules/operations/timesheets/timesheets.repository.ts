@@ -494,6 +494,7 @@ export class TimesheetsRepository {
     hotelId: string | null
     departmentId: string | null
     status?: string | undefined
+    limit: number
   }): Promise<TimesheetRow[]> {
     return this.prisma.$queryRaw<TimesheetRow[]>`
       SELECT t.id,
@@ -514,7 +515,7 @@ export class TimesheetsRepository {
                 WHERE p.requisition_id = t.requisition_id
                   AND p.hotel_department_id = ${params.departmentId}::uuid))
        ORDER BY t.week_start DESC
-       LIMIT 100`
+       LIMIT ${params.limit}`
   }
 
   async setStatus(params: {

@@ -3008,6 +3008,10 @@ msgstr "Después: nadie más aprueba. El contrato queda vigente y el hotel puede
 msgid "Detalle de Requisición"
 msgstr "Detalle de Requisición"
 
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Detalle del día"
+msgstr "Detalle del día"
+
 #: src/features/conversion/pages/ConversionPage.tsx
 msgid "Devolver a Café"
 msgstr "Devolver a Café"
@@ -3393,6 +3397,10 @@ msgstr "El desempeño se calcula con turnos y marcas reales: cuando acumule día
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 msgid "El día completo, marca por marca"
 msgstr "El día completo, marca por marca"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "El día tiene una anomalía sin resolver: la revisa el Supervisor del hotel."
+msgstr "El día tiene una anomalía sin resolver: la revisa el Supervisor del hotel."
 
 #. placeholder {0}: IS_DEV_UI && <code className="text-xs text-ink-4"> · has_anomaly = true</code>
 #: src/features/timesheet/components/ReviewDayDialog.tsx
@@ -7357,6 +7365,10 @@ msgid "Nota al BD"
 msgstr "Nota al BD"
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
+msgid "Nota de revisión"
+msgstr "Nota de revisión"
+
+#: src/features/timesheet/components/ReviewDayDialog.tsx
 msgid "Nota de revisión <0>(obligatoria)</0>"
 msgstr "Nota de revisión <0>(obligatoria)</0>"
 
@@ -9922,6 +9934,10 @@ msgstr "Todos los estados"
 #: src/features/timesheet/components/TimesheetToolbar.tsx
 msgid "Todos los hoteles"
 msgstr "Todos los hoteles"
+
+#: src/features/timesheet/pages/TimesheetPage.tsx
+msgid "Todos los hoteles · solo lectura"
+msgstr "Todos los hoteles · solo lectura"
 
 #: src/features/dashboard/components/RecruitmentDashboard.tsx
 msgid "Tomadas por una Reclutadora"

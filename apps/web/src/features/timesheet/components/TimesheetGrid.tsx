@@ -132,7 +132,8 @@ export function TimesheetGrid({
     context: ReviewContext | undefined,
     manualPunchTarget: Pick<TimesheetRow, 'requisitionId' | 'workerId' | 'workerName'>,
   ) => void
-  onManualPunch: (row: TimesheetRow) => void
+  /** `undefined` = quien mira no captura marcas: el botón no se dibuja. */
+  onManualPunch?: ((row: TimesheetRow) => void) | undefined
 }): ReactNode {
   const { t } = useLingui()
   const { isDragging } = useContext(WeekDragContext)

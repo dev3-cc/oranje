@@ -62,6 +62,7 @@ export function ReviewDayDialog({
   workerName,
   context = null,
   onManualPunch,
+  readOnly = false,
   onClose,
 }: {
   entry: TimesheetEntry | null
@@ -70,6 +71,8 @@ export function ReviewDayDialog({
   context?: ReviewContext | null
   /** Abre Marca manual para este mismo día; `undefined` = el botón no se dibuja. */
   onManualPunch?: (() => void) | undefined
+  /** Quien no revisa (el Observador) ve el día y su nota, sin nada que guardar. */
+  readOnly?: boolean
   onClose: () => void
 }): ReactNode {
   const { t, i18n } = useLingui()
@@ -81,8 +84,9 @@ export function ReviewDayDialog({
 
   useEffect(() => {
     setNote(entry?.reviewNote ?? '')
-    if (entry) setShowIntro(isIntroOpen)
-  }, [entry, isIntroOpen])
+    /* El intro enseña a revisar: a quien solo lee no le toca. */
+    if (entry) setShowIntro(isIntroOpen && !readOnly)
+  }, [entry, isIntroOpen, readOnly])
 
   if (!entry) return null
 
@@ -106,11 +110,15 @@ export function ReviewDayDialog({
     <Modal
       isOpen
       onClose={onClose}
-      title={t`Revisión del día`}
+      title={readOnly ? t`Detalle del día` : t`Revisión del día`}
       {...(IS_DEV_UI ? { description: 'operations.timesheet_day' } : {})}
       className="max-w-2xl"
       footer={
-        showIntro ? null : (
+        showIntro ? null : readOnly ? (
+          <Button onClick={onClose}>
+            <Trans>Cerrar</Trans>
+          </Button>
+        ) : (
           <>
             <Button onClick={onClose} disabled={isLoading}>
               <Trans>Cerrar</Trans>
@@ -231,7 +239,14 @@ export function ReviewDayDialog({
             </div>
           </div>
 
-          {entry.hasAnomaly && (
+          {entry.hasAnomaly && readOnly && (
+            <p className="rounded-md bg-yellow/15 px-4 py-3 text-sm text-ink-2">
+              <Trans>
+                El día tiene una anomalía sin resolver: la revisa el Supervisor del hotel.
+              </Trans>
+            </p>
+          )}
+          {entry.hasAnomaly && !readOnly && (
             <p className="rounded-md bg-yellow/15 px-4 py-3 text-sm text-ink-2">
               <Trans>
                 El día tiene una anomalía sin resolver
@@ -313,23 +328,38 @@ export function ReviewDayDialog({
             )}
           </section>
 
-          <label className="flex flex-col gap-2">
-            <span className="text-sm font-semibold text-ink">
-              <Trans>
-                Nota de revisión <span className="font-normal text-ink-3">(obligatoria)</span>
-              </Trans>
-              {IS_DEV_UI && <code className="text-xs font-normal text-ink-4"> · review_note</code>}
-            </span>
-            <textarea
-              value={note}
-              onChange={(event) => {
-                setNote(event.target.value)
-              }}
-              rows={3}
-              placeholder={t`Qué viste y cómo se resuelve — p. ej. «Salió por el acceso de servicio; el GPS tomó la calle.»`}
-              className="rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none"
-            />
-          </label>
+          {readOnly ? (
+            entry.reviewNote !== null && (
+              <section>
+                <h3 className="text-sm font-semibold text-ink">
+                  <Trans>Nota de revisión</Trans>
+                </h3>
+                <p className="mt-2 rounded-md bg-surface-2 px-4 py-3 text-sm whitespace-pre-line text-ink-2">
+                  {entry.reviewNote}
+                </p>
+              </section>
+            )
+          ) : (
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-semibold text-ink">
+                <Trans>
+                  Nota de revisión <span className="font-normal text-ink-3">(obligatoria)</span>
+                </Trans>
+                {IS_DEV_UI && (
+                  <code className="text-xs font-normal text-ink-4"> · review_note</code>
+                )}
+              </span>
+              <textarea
+                value={note}
+                onChange={(event) => {
+                  setNote(event.target.value)
+                }}
+                rows={3}
+                placeholder={t`Qué viste y cómo se resuelve — p. ej. «Salió por el acceso de servicio; el GPS tomó la calle.»`}
+                className="rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none"
+              />
+            </label>
+          )}
 
           {isError && (
             <Alert variant="destructive">

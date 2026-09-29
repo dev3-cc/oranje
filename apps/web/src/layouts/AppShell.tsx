@@ -28,6 +28,9 @@ import { MOTION } from '@/shared/lib/motion'
 /** Lo que una ruta puede decirle al shell desde `handle` (React Router). */
 export type RouteHandle = { fullWidth?: boolean }
 
+/** Las secciones que el Observador tiene en su sidebar: ahí no hay «volver». */
+const OBSERVADOR_SIDEBAR_ROOTS: ReadonlySet<string> = new Set(['observability', 'timesheet'])
+
 export function AppShell(): ReactNode {
   const { t } = useLingui()
   /** Cada navegación se recuerda: si la sesión muere, el login reanuda aquí. */
@@ -69,7 +72,7 @@ export function AppShell(): ReactNode {
    * pedido de Hugo 2026-09-21), así que ahí sí son subvista suya.
    */
   const isObservadorAwayFromHome =
-    user?.roleId === 'ROL-OBS-01' && pathSegments[0] !== 'observability'
+    user?.roleId === 'ROL-OBS-01' && !OBSERVADOR_SIDEBAR_ROOTS.has(pathSegments[0] ?? '')
   const isSubView = pathSegments.length > 1 || isObservadorAwayFromHome
   function goBack(): void {
     if (historyIndex > 0) {
