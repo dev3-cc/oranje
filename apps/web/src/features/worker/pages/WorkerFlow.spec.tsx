@@ -72,9 +72,15 @@ describe('el apartado del Colaborador', () => {
     expect(await screen.findByText(/día 2 de 3/, undefined, SLOW)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Subir mi SSN o ITIN' })).toBeInTheDocument()
     expect(screen.getByText(/Tu transporte quedó guardado\./)).toBeInTheDocument()
+
+    // Un solo camino hacia la Fase 3: el botón, no un enlace duplicado en el aviso de arriba.
     expect(
-      screen.getByRole('link', { name: /Sigue con tu contacto de emergencia/ }),
-    ).toHaveAttribute('href', '/colaborador/alta-3')
+      screen.queryByRole('link', { name: /Sigue con tu contacto de emergencia/ }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Terminar' })).toHaveAttribute(
+      'href',
+      '/colaborador/alta-3',
+    )
   })
 
   it('la Fase 3 cierra el expediente con emergencia, sangre y alergias', async () => {
@@ -97,13 +103,17 @@ describe('el apartado del Colaborador', () => {
     expect(saveButton).toBeEnabled()
 
     await user.click(saveButton)
+
+    // El formulario se sustituye por una pantalla de cierre con un solo camino: Inicio.
+    expect(await screen.findByText('Completado', undefined, SLOW)).toBeInTheDocument()
     expect(
-      await screen.findByText(
-        'Listo: tu expediente quedó completo. La Reclutadora lo validará (RF-08).',
-        undefined,
-        SLOW,
-      ),
+      screen.getByText('Tu expediente quedó completo. La Reclutadora lo validará (RF-08).'),
     ).toBeInTheDocument()
+    expect(screen.queryByLabelText(/Nombre/)).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Ir a Inicio' })).toHaveAttribute(
+      'href',
+      '/colaborador',
+    )
   })
 
   it('los avisos: la no leída resalta y tocarla la marca', async () => {
