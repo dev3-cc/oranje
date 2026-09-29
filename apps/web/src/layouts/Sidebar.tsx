@@ -62,8 +62,9 @@ const MAPPED_ROLES: ReadonlySet<string> = new Set([...STAFF, ...INSPECCION, ADMI
 const MODULES: NavModule[] = [
   { label: msg`Dashboard`, to: '/dashboard', icon: 'space_dashboard', roles: STAFF },
   /* Observador (ROL-OBS-01, Roles del Sistema.md 2026-09-21): transversal, de
-     solo lectura — no ve nada más del sidebar del staff, ni siquiera el
-     Dashboard, que compone datos por rol que el Observador no tiene. */
+     solo lectura — del sidebar del staff solo ve el Timesheet (todos los
+     hoteles, Hugo 2026-09-29); ni siquiera el Dashboard, que compone datos por
+     rol que el Observador no tiene. */
   {
     label: msg`Observador`,
     to: '/observability',
@@ -120,7 +121,10 @@ const MODULES: NavModule[] = [
      mostrar — el Timesheet ya dice quién ponchó. `roles: []` oculta el enlace
      sin borrar el módulo; revertir es volver a `roles: HOTEL`. */
   { label: msg`Schedule`, to: '/schedule', icon: 'calendar_month', roles: [] },
-  { label: msg`Timesheet`, to: '/timesheet', icon: 'schedule', roles: HOTEL },
+  /* El Observador lo ve de todos los hoteles y solo en lectura
+     (`timesheet:read_all_hotels`), para trabajar la nómina mientras se
+     construye Contabilidad (Hugo, 2026-09-29). */
+  { label: msg`Timesheet`, to: '/timesheet', icon: 'schedule', roles: [...HOTEL, OBSERVADOR] },
   {
     label: msg`Timesheet Global`,
     to: '/timesheet-global',

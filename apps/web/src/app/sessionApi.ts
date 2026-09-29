@@ -122,6 +122,8 @@ registerMockRoutes([
           'recruitment.update_worker',
           'recruitment.validate_signup',
           'timesheet.approve_hours',
+          'timesheet.review_punches',
+          'timesheet.create_manual_punch',
           'schedule.update',
           'audits.create',
           'audits.read',

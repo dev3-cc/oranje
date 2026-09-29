@@ -31,6 +31,12 @@ const CLOCK_OUT = 'CLOCK_OUT'
 
 const GENERAL_MANAGER = 'ROL-H-03'
 
+/* Tope del listado (una fila por colaborador × requisición × semana, sin
+   días). Un hotel no llega a 100 en las semanas que se miran; todos los
+   hoteles sí, y cortar ahí escondería semanas sin avisar. */
+const HOTEL_LIMIT = 100
+const ALL_HOTELS_LIMIT = 2000
+
 export interface PunchEntity {
   id: string
   type: string
@@ -179,11 +185,19 @@ export class TimesheetsService {
     return this.afterPunch(resolvedDayId, id)
   }
 
-  async list(user: AuthenticatedUser, status?: string): Promise<TimesheetEntity[]> {
+  // `allHotels` lo decide el controlador por permiso (`read_all_hotels`), nunca
+  // un `hotelId` vacío: que la falta de hotel signifique «todos» es justo la
+  // lectura doble que dejó los huecos de PR #89.
+  async list(
+    user: AuthenticatedUser,
+    status?: string,
+    allHotels = false,
+  ): Promise<TimesheetEntity[]> {
     const rows = await this.repo.listAll({
-      hotelId: user.hotelId,
-      departmentId: user.roleCode === GENERAL_MANAGER ? null : user.departmentId,
+      hotelId: allHotels ? null : user.hotelId,
+      departmentId: allHotels || user.roleCode === GENERAL_MANAGER ? null : user.departmentId,
       status,
+      limit: allHotels ? ALL_HOTELS_LIMIT : HOTEL_LIMIT,
     })
 
     return rows.map(toTimesheet)
