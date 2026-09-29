@@ -6068,8 +6068,8 @@ msgstr "Los reportes por BD llegan con la pantalla de Reportes"
 msgid "Lun"
 msgstr "Lun"
 
-#. placeholder {0}: timeOf(marks.LUNCH_OUT)
-#. placeholder {1}: marks.LUNCH_IN ? timeOf(marks.LUNCH_IN) : '--:--'
+#. placeholder {0}: timeOf(marks.LUNCH_OUT, shiftTimeZone)
+#. placeholder {1}: marks.LUNCH_IN ? timeOf(marks.LUNCH_IN, shiftTimeZone) : '--:--'
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Lunch {0} – {1}"
 msgstr "Lunch {0} – {1}"

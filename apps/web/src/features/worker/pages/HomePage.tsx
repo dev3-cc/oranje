@@ -263,6 +263,20 @@ export function HomePage(): ReactNode {
   /** La tarjeta solo existe si hay algo que decidir o algo encendido. */
   const showAvailability = isAvailable || CAN_GO_AVAILABLE.has(status)
 
+  /**
+   * `isProfileComplete` exige TAMBIÉN posición, modalidad, inglés y
+   * experiencia — los cuatro que decide la Reclutadora en la entrevista
+   * (Fase 1), no el Colaborador. Con esos cuatro faltantes, la tarjeta se
+   * quedaba invitando a «Completar mis datos» para siempre, aunque ya
+   * hubiera terminado transporte, SSN/ITIN y contacto de emergencia — lo
+   * único que de verdad puede llenar desde aquí (Hugo, 2026-09-29).
+   */
+  const missingMyPart =
+    profile.transportType === null ||
+    profile.emergencyContact === null ||
+    profile.bloodType === null ||
+    !profile.taxDeadline.hasDocument
+
   return (
     <div className="flex flex-col gap-5">
       <Hero
@@ -278,7 +292,7 @@ export function HomePage(): ReactNode {
       <TaxDeadlineBanner deadline={profile.taxDeadline} />
       {profile.accessDeadlines && <AccessDeadlineBanner deadlines={profile.accessDeadlines} />}
 
-      {!profile.isProfileComplete && (
+      {missingMyPart && (
         <NoticeCard
           image={personajeSubiendo}
           title={t`Faltan datos tuyos`}
