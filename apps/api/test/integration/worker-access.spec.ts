@@ -256,3 +256,51 @@ test('validar con el expediente a medias exige confirmarlo y abre 3 días para c
   })
   expect(still.catalogPositionId).toBeNull()
 })
+
+test('encender Amarillo es autoservicio del propio Colaborador, no el "cambiar estado" del staff', async () => {
+  // Hugo, 2026-09-29: el botón no funcionaba — `assertCanChangeState`
+  // exigía `recruitment:validate_signup` o `staff:set_standby`/`report`
+  // ANTES de llegar a la tabla de transiciones, y ningún Colaborador
+  // tiene esos permisos. El propio comentario de `me.service.ts` ya decía
+  // que la autorización real era la tabla sembrada (ROL-C-01 solo en
+  // STRONG_GREEN/ORANGE/PINK → YELLOW); el código no la dejaba llegar ahí.
+  const workerId = await bareWorker(`Disponible ${String(Date.now())}`)
+  await workers.changeState(
+    workerId,
+    { toState: 'STRONG_GREEN', acceptIncompleteProfile: true },
+    recruiter,
+  )
+
+  const role = await db.role.findFirstOrThrow({
+    where: { code: 'ROL-C-01' },
+    select: { id: true },
+  })
+  const account = await db.user.create({
+    data: {
+      id: uuidv7(),
+      email: `colab-disponible-${String(Date.now())}@oranje.local`,
+      fullName: 'Colaborador de prueba',
+      roleId: role.id,
+    },
+    select: { id: true },
+  })
+  userIds.push(account.id)
+  const colaborador: AuthenticatedUser = {
+    id: account.id,
+    roleCode: 'ROL-C-01',
+    hotelId: null,
+    departmentId: null,
+  }
+
+  // El endpoint genérico de staff (`POST /workers/:id/transitions`) sigue
+  // cerrado para el propio Colaborador: sin `selfService`, no tiene ni
+  // `recruitment:validate_signup` ni `staff:set_standby`/`report`.
+  await expect(
+    workers.changeState(workerId, { toState: 'YELLOW' }, colaborador),
+  ).rejects.toMatchObject({ response: { code: 'FORBIDDEN' } })
+
+  // El autoservicio (lo que usa `POST /workers/me/availability`) sí lo deja:
+  // decide la tabla de transiciones, no un guard de staff.
+  const activated = await workers.changeState(workerId, { toState: 'YELLOW' }, colaborador, true)
+  expect(activated.state.code).toBe('YELLOW')
+})
