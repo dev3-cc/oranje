@@ -45,31 +45,36 @@ function deadline(overrides: Partial<TaxDeadlineApi>): TaxDeadlineApi {
 }
 
 describe('el apartado del Colaborador', () => {
-  it('la Fase 2 solo pide transporte: los 4 de Oranje ya vienen de la entrevista', async () => {
+  it('la Fase 2 es un asistente de 3 pasos: foto, transporte y SSN/ITIN', async () => {
     renderPage(<Phase2Page />)
     const user = userEvent.setup()
 
+    // Paso 1 · Tu foto: el contexto de la entrevista se ve desde aquí, sin campo editable.
     expect(
       await screen.findByText(/Tu posición \(Housekeeper\), modalidad \(Tiempo completo\)/),
     ).toBeInTheDocument()
     expect(screen.queryByLabelText(/Posición/)).not.toBeInTheDocument()
+    expect(screen.getByText(/Sigues en Blanco hasta que la Reclutadora valide/)).toBeInTheDocument()
 
-    expect(screen.getByText(/día 2 de 3/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Subir mi SSN o ITIN' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
 
-    const sendButton = screen.getByRole('button', { name: 'Enviar' })
-    expect(sendButton).toBeDisabled()
+    // Paso 2 · Transporte: el único campo que de verdad bloquea avanzar.
+    const continueButton = screen.getByRole('button', { name: 'Continuar' })
+    expect(continueButton).toBeDisabled()
 
     await user.click(screen.getByLabelText(/trasladas/))
     await user.click(await screen.findByRole('option', { name: 'Público' }))
-    expect(sendButton).toBeEnabled()
+    expect(continueButton).toBeEnabled()
 
-    await user.click(sendButton)
+    await user.click(continueButton)
+
+    // Paso 3 · SSN/ITIN: llega solo tras guardar el transporte.
+    expect(await screen.findByText(/día 2 de 3/, undefined, SLOW)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Subir mi SSN o ITIN' })).toBeInTheDocument()
+    expect(screen.getByText(/Tu transporte quedó guardado\./)).toBeInTheDocument()
     expect(
-      /* El «Sigue la Fase 3» ahora es un enlace: se busca el texto que lo precede. */
-      await screen.findByText(/Transporte guardado\./, undefined, SLOW),
-    ).toBeInTheDocument()
-    expect(screen.getByText(/Sigues en Blanco hasta que la Reclutadora valide/)).toBeInTheDocument()
+      screen.getByRole('link', { name: /Sigue con tu contacto de emergencia/ }),
+    ).toHaveAttribute('href', '/colaborador/alta-3')
   })
 
   it('la Fase 3 cierra el expediente con emergencia, sangre y alergias', async () => {
