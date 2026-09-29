@@ -24,14 +24,14 @@ export function WorkerSkeleton({
   }
   if (variant === 'punch') {
     return (
-      <div className="flex flex-col items-center gap-6" aria-busy aria-label={t`Cargando`}>
+      <div className="flex flex-col items-center gap-4" aria-busy aria-label={t`Cargando`}>
         <div className="flex w-full flex-col gap-2">
           <Skeleton className="h-6 w-40" />
           <Skeleton className="h-4 w-56" />
         </div>
-        <Skeleton className="h-12 w-44" />
-        <Skeleton className="size-36 rounded-full" />
-        <Skeleton className="h-36 w-full rounded-xl" />
+        <Skeleton className="h-10 w-36" />
+        <Skeleton className="size-32 rounded-full" />
+        <Skeleton className="h-24 w-full rounded-xl" />
       </div>
     )
   }

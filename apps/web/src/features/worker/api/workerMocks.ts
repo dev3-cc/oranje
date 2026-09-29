@@ -14,7 +14,7 @@ import type { ApiEnvelope, WorkerHistoryEntryApi } from '@/shared/types/apiContr
  * decisiones de Oranje, cambio del 2026-08-22) y las fases 2-3 pendientes.
  */
 
-const profile: MyProfile = {
+export const profile: MyProfile = {
   id: 'wrk-yo',
   fullName: 'Rosa Navarro',
   photoUrl: null,

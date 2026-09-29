@@ -25,7 +25,6 @@ import { useUploadFileMutation } from '@/app/filesApi'
 import { localeTag } from '@/app/i18n'
 import checkinLottie from '@/assets/check/oranje-checkin.lottie'
 import checkoutLottie from '@/assets/check/oranje-checkout.lottie'
-import checksCompletosLottie from '@/assets/check/oranje-checks-completos.lottie'
 import exitoEntradaLottie from '@/assets/check/oranje-exito-entrada.lottie'
 import exitoSalidaLottie from '@/assets/check/oranje-exito-salida.lottie'
 import registrandoEntradaLottie from '@/assets/check/oranje-registrando-entrada.lottie'
@@ -184,11 +183,11 @@ const INTRO_SLIDES: readonly {
 /** Un dato del pie: icono, hora y qué es (Entrada · Salida · Horas). */
 function Stat({ icon, value, label }: { icon: string; value: string; label: string }): ReactNode {
   return (
-    <div className="flex flex-col items-center gap-1">
-      <span className="flex size-12 items-center justify-center rounded-full border-2 border-o-500/40 text-o-700">
-        <MaterialIcon name={icon} className="text-2xl" />
+    <div className="flex flex-col items-center gap-0.5">
+      <span className="flex size-10 items-center justify-center rounded-full border-2 border-o-500/40 text-o-700">
+        <MaterialIcon name={icon} className="text-xl" />
       </span>
-      <span className="mt-1 text-sm font-semibold text-ink">{value}</span>
+      <span className="mt-0.5 text-sm font-semibold text-ink">{value}</span>
       <span className="text-xs text-ink-3">{label}</span>
     </div>
   )
@@ -440,7 +439,7 @@ export function PunchPage(): ReactNode {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {isScannerOpen && (
         <QrScanner
           onScan={(code) => {
@@ -489,7 +488,7 @@ export function PunchPage(): ReactNode {
       <section className="text-center" aria-live="polite">
         {isBusy ? (
           <>
-            <p className="text-4xl font-bold tracking-tight text-ink">
+            <p className="text-3xl font-bold tracking-tight text-ink">
               {phase === 'success'
                 ? t`¡Listo!`
                 : phase === 'outside'
@@ -514,7 +513,7 @@ export function PunchPage(): ReactNode {
           </>
         ) : (
           <>
-            <p className="text-5xl font-bold tracking-tight text-ink" aria-live="off">
+            <p className="text-4xl font-bold tracking-tight text-ink" aria-live="off">
               {clockOf(now)}
             </p>
             <p className="mt-1 text-sm text-ink-3">{longDateOf(now)}</p>
@@ -545,102 +544,102 @@ export function PunchPage(): ReactNode {
       {/* El botón: la naranja del check-in o del check-out orbita DETRÁS, como fondo.
           Mientras la marca se guarda, la naranja cambia a la de la fase en curso:
           registrando (ubicación y foto) y luego verificando (el servidor). */}
-      <div className="relative mx-auto flex size-80 items-center justify-center">
-        {/* Sin marcas pendientes no hay nada que "ponchar": la naranja de
-            entrada/salida orbitando detrás sugería lo contrario — en su
-            lugar, los checks de la jornada completa. */}
-        <span
-          aria-hidden
-          className={`pointer-events-none absolute inset-0 scale-125 ${
-            /* Con la foto en el encuadre, los corchetes del lottie la enmarcan POR ENCIMA. */
-            isBusy && photoPreview !== null ? 'z-20' : ''
-          }`}
-        >
-          <DotLottieReact
-            key={
-              isDayComplete
-                ? 'checks-completos'
-                : `${phase}-${phase === 'idle' ? (isEntering ? 'in' : 'out') : direction}`
-            }
-            src={
-              isDayComplete
-                ? checksCompletosLottie
-                : phase === 'idle'
-                  ? isEntering
-                    ? checkinLottie
-                    : checkoutLottie
-                  : PHASE_LOTTIE[phase][direction]
-            }
-            loop={!isDayComplete && phase !== 'success' && phase !== 'outside' && phase !== 'error'}
-            autoplay={!reduceMotion}
-          />
-        </span>
-
+      <div className="relative mx-auto flex size-64 items-center justify-center">
         {isDayComplete ? (
-          <div className="relative z-10 flex size-36 flex-col items-center justify-center rounded-full bg-surface shadow-lg">
-            <img src={mascotaCelebrando} alt="" aria-hidden className="h-16 w-auto" />
-            <span className="mt-1 text-xs font-semibold text-ink">
+          /* Sin marcas pendientes no hay nada que "ponchar": un cierre propio
+             y quieto, no el botón disfrazado — el lottie orbitando detrás (el
+             mismo patrón del check-in/check-out) se veía raro sin un botón
+             al centro que enmarcar (Hugo, 2026-09-29). */
+          <div className="relative z-10 flex size-48 flex-col items-center justify-center gap-1.5 rounded-full bg-green/10">
+            <span className="flex size-14 items-center justify-center rounded-full bg-green text-white shadow-sm">
+              <MaterialIcon name="task_alt" className="text-3xl" aria-hidden />
+            </span>
+            <img src={mascotaCelebrando} alt="" aria-hidden className="h-11 w-auto" />
+            <span className="text-sm font-bold text-ink">
               <Trans>Jornada completa</Trans>
             </span>
           </div>
         ) : (
-          <motion.button
-            type="button"
-            onClick={onTap}
-            disabled={!canPunch}
-            {...tapFeedback(reduceMotion)}
-            aria-label={t`Ponchar ${i18n._(PUNCH_LABEL[next]).toLowerCase()}`}
-            className={`relative z-10 flex size-36 cursor-pointer touch-manipulation flex-col items-center justify-center overflow-hidden bg-surface shadow-lg transition-[border-radius,box-shadow] duration-300 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-o-500 disabled:cursor-not-allowed ${
-              /* Con la foto en el encuadre, el círculo se vuelve cuadro: es el
-                 recuadro que los corchetes del lottie están enmarcando. */
-              isBusy && photoPreview !== null ? 'rounded-2xl' : 'rounded-full'
-            } ${isBusy ? '' : 'disabled:opacity-60'}`}
-          >
-            {isBusy && photoPreview !== null ? (
-              /* Solo la foto en el encuadre: la fase se lee arriba, donde la hora. */
-              <img
-                src={photoPreview}
-                alt=""
-                aria-hidden
-                className="absolute inset-0 size-full object-cover"
+          <>
+            <span
+              aria-hidden
+              className={`pointer-events-none absolute inset-0 scale-125 ${
+                /* Con la foto en el encuadre, los corchetes del lottie la enmarcan POR ENCIMA. */
+                isBusy && photoPreview !== null ? 'z-20' : ''
+              }`}
+            >
+              <DotLottieReact
+                key={`${phase}-${phase === 'idle' ? (isEntering ? 'in' : 'out') : direction}`}
+                src={
+                  phase === 'idle'
+                    ? isEntering
+                      ? checkinLottie
+                      : checkoutLottie
+                    : PHASE_LOTTIE[phase][direction]
+                }
+                loop={phase !== 'success' && phase !== 'outside' && phase !== 'error'}
+                autoplay={!reduceMotion}
               />
-            ) : (
-              <>
-                <MaterialIcon
-                  name={isEntering ? 'login' : 'logout'}
-                  className="text-4xl text-o-700"
+            </span>
+
+            <motion.button
+              type="button"
+              onClick={onTap}
+              disabled={!canPunch}
+              {...tapFeedback(reduceMotion)}
+              aria-label={t`Ponchar ${i18n._(PUNCH_LABEL[next]).toLowerCase()}`}
+              className={`relative z-10 flex size-32 cursor-pointer touch-manipulation flex-col items-center justify-center overflow-hidden bg-surface shadow-lg transition-[border-radius,box-shadow] duration-300 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-o-500 disabled:cursor-not-allowed ${
+                /* Con la foto en el encuadre, el círculo se vuelve cuadro: es el
+                   recuadro que los corchetes del lottie están enmarcando. */
+                isBusy && photoPreview !== null ? 'rounded-2xl' : 'rounded-full'
+              } ${isBusy ? '' : 'disabled:opacity-60'}`}
+            >
+              {isBusy && photoPreview !== null ? (
+                /* Solo la foto en el encuadre: la fase se lee arriba, donde la hora. */
+                <img
+                  src={photoPreview}
+                  alt=""
                   aria-hidden
+                  className="absolute inset-0 size-full object-cover"
                 />
-                <span className="mt-1 max-w-24 text-center text-base leading-tight font-bold text-ink">
-                  {phase === 'success'
-                    ? t`¡Listo!`
-                    : phase === 'outside'
-                      ? t`Fuera del hotel`
-                      : phase === 'error'
-                        ? t`No se guardó`
-                        : phase === 'verifying'
-                          ? t`Verificando…`
-                          : isBusy
-                            ? t`Registrando…`
-                            : i18n._(PUNCH_LABEL[next])}
-                </span>
-                {needsPhoto && !isBusy && (
-                  <span className="text-[11px] text-ink-3">
-                    <Trans>con tu foto</Trans>
+              ) : (
+                <>
+                  <MaterialIcon
+                    name={isEntering ? 'login' : 'logout'}
+                    className="text-3xl text-o-700"
+                    aria-hidden
+                  />
+                  <span className="mt-1 max-w-20 text-center text-sm leading-tight font-bold text-ink">
+                    {phase === 'success'
+                      ? t`¡Listo!`
+                      : phase === 'outside'
+                        ? t`Fuera del hotel`
+                        : phase === 'error'
+                          ? t`No se guardó`
+                          : phase === 'verifying'
+                            ? t`Verificando…`
+                            : isBusy
+                              ? t`Registrando…`
+                              : i18n._(PUNCH_LABEL[next])}
                   </span>
-                )}
-                {needsQr && !isBusy && (
-                  <span className="text-[11px] text-ink-3">
-                    {linkedQr !== null ? (
-                      <Trans>con el QR del acceso ya leído</Trans>
-                    ) : (
-                      <Trans>escaneando el QR del acceso</Trans>
-                    )}
-                  </span>
-                )}
-              </>
-            )}
-          </motion.button>
+                  {needsPhoto && !isBusy && (
+                    <span className="text-[11px] text-ink-3">
+                      <Trans>con tu foto</Trans>
+                    </span>
+                  )}
+                  {needsQr && !isBusy && (
+                    <span className="text-[11px] text-ink-3">
+                      {linkedQr !== null ? (
+                        <Trans>con el QR del acceso ya leído</Trans>
+                      ) : (
+                        <Trans>escaneando el QR del acceso</Trans>
+                      )}
+                    </span>
+                  )}
+                </>
+              )}
+            </motion.button>
+          </>
         )}
       </div>
 
@@ -658,7 +657,7 @@ export function PunchPage(): ReactNode {
         </p>
       )}
 
-      <section className="grid grid-cols-3 gap-2 rounded-xl border border-line bg-surface px-2 py-4">
+      <section className="grid grid-cols-3 gap-2 rounded-xl border border-line bg-surface px-2 py-3">
         <Stat
           icon="login"
           value={marks.CLOCK_IN ? timeOf(marks.CLOCK_IN, shiftTimeZone) : '--:--'}
