@@ -1276,6 +1276,7 @@ msgstr "Attendance"
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
+#: src/features/worker/pages/Phase2Page.tsx
 msgid "Atrás"
 msgstr "Back"
 
@@ -2370,6 +2371,7 @@ msgstr "Context that helps whoever opens the next cycle…"
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 #: src/features/recruitment/components/LiftBlacklistDialog.tsx
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
+#: src/features/worker/pages/Phase2Page.tsx
 #: src/shared/components/OnboardingIntro.tsx
 msgid "Continuar"
 msgstr "Continue"
@@ -3857,8 +3859,8 @@ msgid "Elige tu tipo…"
 msgstr "Choose your type…"
 
 #: src/features/worker/pages/Phase2Page.tsx
-msgid "Elige tu transporte para poder enviar"
-msgstr "Choose your transportation to send"
+msgid "Elige tu transporte para continuar"
+msgstr "Choose your transportation to continue"
 
 #: src/features/worker/pages/Phase2Page.tsx
 msgid "Elige tu transporte…"
@@ -4170,13 +4172,8 @@ msgstr "Sent"
 #: src/features/admin/components/UserFormDialog.tsx
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
-#: src/features/worker/pages/Phase2Page.tsx
 msgid "Enviando…"
 msgstr "Sending…"
-
-#: src/features/worker/pages/Phase2Page.tsx
-msgid "Enviar"
-msgstr "Send"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
 msgid "Enviar a revisión"
@@ -5025,6 +5022,7 @@ msgstr "Saving your location and your photo"
 #: src/features/team/components/AssignTerritoryDialog.tsx
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 #: src/features/worker/components/ChangePasswordForm.tsx
+#: src/features/worker/pages/Phase2Page.tsx
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "Guardando…"
 msgstr "Saving…"
@@ -6878,10 +6876,6 @@ msgstr "We couldn't open the draft. Check that the hotel is still in Green and t
 #: src/features/worker/components/QrScanner.tsx
 msgid "No se pudo abrir la cámara. Cierra otras apps que la usen e inténtalo de nuevo."
 msgstr "The camera couldn't be opened. Close other apps using it and try again."
-
-#: src/features/onboarding/pages/ProposalEditorPage.tsx
-#~ msgid "No se pudo abrir la versión: solo el BD dueño del ciclo o el BDC pueden elaborar la propuesta."
-#~ msgstr "We couldn't open the version: only the BD who owns the cycle or the BDC can write the proposal."
 
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "No se pudo abrir la versión. Inténtalo de nuevo."
@@ -8899,6 +8893,10 @@ msgstr "If the Oranje server fails, the system switches to Firebase on its own. 
 msgid "Si la posición ya tiene tarifa, esta la reemplaza."
 msgstr "If the position already has a rate, this one replaces it."
 
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "Si tu Reclutadora no te la tomó en la entrevista, súbela tú. Se guarda al elegirla."
+msgstr "If your Recruiter didn't take it during the interview, upload it yourself. It saves as soon as you choose it."
+
 #: src/shared/components/MascotaPeek.tsx
 msgid "Si tu sesión caduca, al volver a entrar retomas en la misma pantalla."
 msgstr "If your session expires, you pick up on the same screen when you sign back in."
@@ -9672,6 +9670,10 @@ msgstr "Low season"
 msgid "Temporal"
 msgstr "Temporary"
 
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "Terminar"
+msgstr "Finish"
+
 #. placeholder {0}: member.fullName
 #: src/features/team/components/AssignTerritoryDialog.tsx
 msgid "Territorio asignado a {0}"
@@ -9958,10 +9960,6 @@ msgstr "Transportation"
 msgid "Transporte guardado"
 msgstr "Transportation saved"
 
-#: src/features/worker/pages/Phase2Page.tsx
-msgid "Transporte guardado."
-msgstr "Transportation saved."
-
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Transporte y salud"
 msgstr "Transport and health"
@@ -10082,6 +10080,10 @@ msgstr "Your SSN/ITIN is {0}."
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Tu teléfono manda la ubicación y el sistema verifica que estés en el hotel. Si estás fuera, pídele al Supervisor un ponche manual."
 msgstr "Your phone sends your location and the system checks that you're at the hotel. If you're outside, ask the Supervisor for a manual punch."
+
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "Tu transporte quedó guardado."
+msgstr "Your transportation was saved."
 
 #: src/features/worker/pages/Phase2Page.tsx
 msgid "Tu transporte y tu SSN o ITIN"
