@@ -181,6 +181,7 @@ export class MeService {
       await this.workerId(user),
       { toState: AVAILABLE_VOLUNTARY },
       user,
+      true,
     )
   }
 
