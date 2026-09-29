@@ -134,7 +134,7 @@ export interface MeApi {
   /** URL firmada de la foto del usuario (D-30); `null` sin foto. */
   photoUrl: string | null
   role: { code: string; name: string; department: string | null }
-  hotel: { id: string; name: string } | null
+  hotel: { id: string; name: string; timeZone: string } | null
   department: { id: string; code: string; name: string } | null
   zones: ZoneRefApi[]
   /** Permisos aplanados `modulo.accion`: el sidebar decide qué pinta sin adivinar. */

@@ -37,6 +37,8 @@ export interface PunchRow {
   workerFullName: string
   hotelId: string
   hotelName: string
+  /** La zona del hotel: un ponche se lee donde ocurrió, no donde se mira. */
+  hotelTimeZone: string
   /** Inicio del turno programado ese día (`operations.schedule_entry`), si existe. */
   scheduledStart: Date | null
   /**
@@ -209,6 +211,7 @@ export class ObservabilityRepository {
              w.full_name AS "workerFullName",
              h.id AS "hotelId",
              h.name AS "hotelName",
+             h.time_zone AS "hotelTimeZone",
              lower(se.shift_range) AS "scheduledStart",
              CASE
                WHEN pm.type = 'CLOCK_IN' AND se.shift_range IS NOT NULL

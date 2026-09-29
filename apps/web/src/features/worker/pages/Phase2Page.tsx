@@ -173,11 +173,10 @@ export function Phase2Page(): ReactNode {
 
           <TaxDocumentUploader hasDocument={hasDocument} />
 
+          {/* Un solo camino para seguir: el botón «Terminar» de abajo. Antes
+              también había un enlace aquí que hacía lo mismo (Hugo, 2026-09-29). */}
           <p className="mt-2 rounded-md bg-green/10 px-4 py-3 text-sm text-ink-2">
-            <Trans>Tu transporte quedó guardado.</Trans>{' '}
-            <Link to="/colaborador/alta-3" className="font-semibold text-o-700 underline">
-              <Trans>Sigue con tu contacto de emergencia →</Trans>
-            </Link>
+            <Trans>Tu transporte quedó guardado.</Trans>
           </p>
         </section>
       )}
