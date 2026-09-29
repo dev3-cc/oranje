@@ -8,7 +8,8 @@
       como un defecto visual que no existe en el navegador. En particular NO
       lleva `viewport-fit=cover` — lo llevaba, y hacía que el contenido se
       metiera debajo de la barra de estado. Las áreas seguras las resuelve
-      Capacitor del lado nativo (`adjustMarginsForEdgeToEdge`), no el viewport.
+      Capacitor del lado nativo (`adjustMarginsForEdgeToEdge` en Android,
+      `ios.contentInset` en iOS), no el viewport.
     -->
     <meta
       name="viewport"

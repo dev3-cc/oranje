@@ -41,14 +41,17 @@ const config: CapacitorConfig = {
     hostname: 'mi.oranjepeople.com',
 
     /*
-     * `https` en ambas plataformas, y no el `capacitor://` que iOS usa por
-     * defecto, por dos razones: deja UN solo origen —el mismo de la web, ya
-     * autorizado— en vez de uno por plataforma, y la cookie del refresh sale
-     * del API con `Secure` —obligatorio fuera de local, ver
-     * `env.validation.ts`—, que un origen no-https no puede guardar.
+     * `https` en Android: el origen queda idéntico al de la web, ya autorizado,
+     * y la cookie del refresh —sale del API con `Secure`, ver
+     * `env.validation.ts`— se puede guardar.
+     *
+     * En iOS NO se puede: WKWebView no deja registrar `https` como esquema
+     * propio, y Capacitor descarta en silencio un `iosScheme: 'https'` y vuelve
+     * a `capacitor://` (`CAPInstanceDescriptor.normalize()`). Por eso no se
+     * pone. El origen en iOS es `capacitor://mi.oranjepeople.com`, y está en
+     * `CORS_ORIGINS` desde el 2026-09-29.
      */
     androidScheme: 'https',
-    iosScheme: 'https',
   },
 
   android: {
@@ -64,6 +67,21 @@ const config: CapacitorConfig = {
      * nace debajo de la barra, y dejaría una franja vacía—.
      */
     adjustMarginsForEdgeToEdge: 'auto',
+  },
+
+  ios: {
+    /*
+     * El equivalente en iOS de `adjustMarginsForEdgeToEdge`. Con el valor de
+     * fábrica ("never") el WebView ocupa toda la pantalla y el encabezado del
+     * Colaborador queda debajo del notch / la Dynamic Island. "always" mete las
+     * áreas seguras como inset del scroll nativo: arriba el notch, abajo la
+     * barra de inicio.
+     *
+     * Se resuelve aquí y no con `viewport-fit=cover` + `env(safe-area-inset-*)`
+     * por lo mismo que en Android (ver `index.mobile.html`): el HTML de la app
+     * es idéntico al de la web y no se toca por una necesidad del móvil.
+     */
+    contentInset: 'always',
   },
 
   plugins: {
