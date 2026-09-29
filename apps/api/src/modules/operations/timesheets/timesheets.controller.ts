@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -12,22 +13,34 @@ import {
 
 import { CurrentUser, Requires } from '../../../common/decorators/index.js'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { PermissionsService } from '../../identity/index.js'
 
 import { CreateManualPunchDto, CreatePunchDto } from './dto/create-punch.dto.js'
 import { ReviewDayDto } from './dto/review-day.dto.js'
 import { DayEntity, PunchResult, TimesheetEntity, TimesheetsService } from './timesheets.service.js'
 
+/**
+ * Leer el Timesheet lo pueden dos alcances: el del hotel (`read_department`,
+ * acotado por hotel y departamento, D-09) y el de todos los hoteles
+ * (`read_all_hotels`, solo lectura: el Observador y, con su Matriz, la
+ * Contadora). `@Requires` solo sabe de un par, así que el «uno u otro» se
+ * resuelve aquí. Escribir sigue exigiendo su permiso propio.
+ */
 @Controller()
 export class TimesheetsController {
-  constructor(private readonly timesheets: TimesheetsService) {}
+  constructor(
+    private readonly timesheets: TimesheetsService,
+    private readonly permissions: PermissionsService,
+  ) {}
 
-  @Requires('timesheet', 'read_department')
   @Get('timesheets')
   async list(
     @CurrentUser() user: AuthenticatedUser,
     @Query('status') status?: string,
   ): Promise<{ data: TimesheetEntity[] }> {
-    return { data: await this.timesheets.list(user, status) }
+    const allHotels = await this.readScope(user)
+
+    return { data: await this.timesheets.list(user, status, allHotels) }
   }
 
   // Antes que `:id`, o Nest lee "me" como un uuid.
@@ -37,9 +50,13 @@ export class TimesheetsController {
     return { data: await this.timesheets.mine(user) }
   }
 
-  @Requires('timesheet', 'read_department')
   @Get('timesheets/:id')
-  async get(@Param('id', ParseUUIDPipe) id: string): Promise<{ data: TimesheetEntity }> {
+  async get(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: TimesheetEntity }> {
+    await this.readScope(user)
+
     return { data: await this.timesheets.get(id) }
   }
 
@@ -92,5 +109,22 @@ export class TimesheetsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: TimesheetEntity }> {
     return { data: await this.timesheets.approve(id, user) }
+  }
+
+  /** `true` = todos los hoteles; `false` = el hotel de quien pregunta. */
+  private async readScope(user: AuthenticatedUser): Promise<boolean> {
+    const [allHotels, ownHotel] = await Promise.all([
+      this.permissions.can(user.roleCode, 'timesheet', 'read_all_hotels'),
+      this.permissions.can(user.roleCode, 'timesheet', 'read_department'),
+    ])
+
+    if (!allHotels && !ownHotel) {
+      throw new ForbiddenException({
+        code: 'FORBIDDEN',
+        message: 'Tu rol no puede ver el Timesheet',
+      })
+    }
+
+    return allHotels
   }
 }

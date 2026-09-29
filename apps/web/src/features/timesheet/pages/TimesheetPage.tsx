@@ -1,5 +1,5 @@
 import { Plural, Trans, useLingui } from '@lingui/react/macro'
-import { statusLight } from '@oranje/ui'
+import { MaterialIcon, statusLight } from '@oranje/ui'
 import { useMemo, useState, type ReactNode } from 'react'
 
 import {
@@ -78,6 +78,10 @@ export function TimesheetPage(): ReactNode {
   const can = useCan()
   /** Pagar es de Contabilidad (doble firma del Flujo de Nómina), no del Hotel. */
   const canPay = can('payroll:validate') || can('payroll:authorize')
+  /** Lo que el permiso no autoriza no se dibuja: el Observador solo lee. */
+  const canReview = can('timesheet:review_punches')
+  const canManualPunch = can('timesheet:create_manual_punch')
+  const seesAllHotels = can('timesheet:read_all_hotels')
 
   const { data: week, isLoading, isError, refetch } = useGetTimesheetWeekQuery(filters)
   /**
@@ -157,6 +161,12 @@ export function TimesheetPage(): ReactNode {
               </p>
             )}
           </div>
+          {seesAllHotels && (
+            <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm text-ink-3">
+              <MaterialIcon name="visibility" className="text-base" aria-hidden />
+              <Trans>Todos los hoteles · solo lectura</Trans>
+            </p>
+          )}
 
           {selectedWeek !== null && (
             <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -307,10 +317,14 @@ export function TimesheetPage(): ReactNode {
                   onReview={(entry, workerName, context, manualPunchTarget) => {
                     setReview({ entry, workerName, context: context ?? null, manualPunchTarget })
                   }}
-                  onManualPunch={(row) => {
-                    setManualPunchRow(row)
-                    setManualPunchInitialDate(null)
-                  }}
+                  onManualPunch={
+                    canManualPunch
+                      ? (row) => {
+                          setManualPunchRow(row)
+                          setManualPunchInitialDate(null)
+                        }
+                      : undefined
+                  }
                 />
               ) : (
                 <TableSkeleton rows={7} columns={8} />
@@ -350,8 +364,9 @@ export function TimesheetPage(): ReactNode {
         entry={review?.entry ?? null}
         workerName={review?.workerName ?? ''}
         context={review?.context ?? null}
+        readOnly={!canReview}
         onManualPunch={
-          review
+          review && canManualPunch
             ? () => {
                 setManualPunchRow(review.manualPunchTarget)
                 setManualPunchInitialDate(review.entry.date)

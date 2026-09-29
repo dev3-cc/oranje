@@ -467,6 +467,17 @@ const HOTEL: Permission[] = [
     label: 'Ver Timesheet global del hotel',
     roles: [GG, SYS],
   },
+  /* Todos los hoteles, solo lectura (pedido de Hugo 2026-09-29): el Observador
+     trabaja la nómina con él mientras se construye Contabilidad, y la Contadora
+     lo recibe con su Matriz (decisión de Hugo: ve el Timesheet completo de todos
+     los hoteles). Permiso propio y no `read_all`, que significa «todo MI hotel»:
+     un mismo permiso con dos alcances fue la causa de los huecos de PR #89. */
+  {
+    module: 'timesheet',
+    action: 'read_all_hotels',
+    label: 'Ver el Timesheet de todos los hoteles (solo lectura)',
+    roles: [OBSERVER],
+  },
   {
     module: 'timesheet',
     action: 'review_punches',
