@@ -1,6 +1,9 @@
 import { initializeApp, type FirebaseApp, type FirebaseOptions } from 'firebase/app'
 import {
+  browserLocalPersistence,
   getAuth,
+  indexedDBLocalPersistence,
+  initializeAuth,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   type Auth,
@@ -31,12 +34,37 @@ function readConfig(): FirebaseOptions | undefined {
   }
 }
 
+/**
+ * Dentro de la app del Colaborador (`apps/mobile`). Se lee el `window.Capacitor`
+ * que inyecta el WebView en vez de importar `@capacitor/core`: el web no depende
+ * de Capacitor (ver `features/worker/lib/nativePermissions.ts`).
+ */
+function isNativeApp(): boolean {
+  const cap = (window as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor
+  return cap?.isNativePlatform?.() === true
+}
+
+/**
+ * En la app NO se usa `getAuth`: trae el resolvedor de popup/redirect, que al
+ * iniciar monta un iframe de `authDomain`. En iOS el origen es
+ * `capacitor://mi.oranjepeople.com` y ese iframe nunca termina de cargar, así
+ * que `signInWithEmailAndPassword` se queda esperando para siempre (el login
+ * «se queda cargando» y `/auth/session` nunca se llama). Aquí no hay popups ni
+ * redirects, así que basta con la persistencia y sin resolvedor.
+ */
+function createAuth(firebaseApp: FirebaseApp): Auth {
+  if (!isNativeApp()) return getAuth(firebaseApp)
+  return initializeAuth(firebaseApp, {
+    persistence: [indexedDBLocalPersistence, browserLocalPersistence],
+  })
+}
+
 /** `undefined` cuando no hay configuración — permite levantar el dev server sin proyecto. */
 export function getFirebaseAuth(): Auth | undefined {
   const config = readConfig()
   if (!config) return undefined
   app ??= initializeApp(config)
-  auth ??= getAuth(app)
+  auth ??= createAuth(app)
   return auth
 }
 
