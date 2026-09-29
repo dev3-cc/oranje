@@ -111,16 +111,16 @@ El diseño copia los tokens de `packages/ui` (colores en `oranje_colors.xml` y e
 `Palette`) y usa Montserrat (`res/font/` y `ios/App/App/Fonts/`, bajadas de Fontsource).
 **Si un token o un texto cambia en una plataforma, cambia en la otra.**
 
-> ⚠️ **iOS está escrito pero no compilado.** Esta Mac tiene macOS 12, y Capacitor 7
-> exige Xcode 16. Antes de publicar, en un Mac con Xcode 16+: `pod install`, compilar,
-> y probar los cuatro estados (permitido, sin permiso, aproximada, bloqueado) más el GPS
-> apagado. Android está probado en dispositivo.
+> iOS se compiló por primera vez el 2026-09-28 con Xcode 27 y corre en un iPhone con
+> iOS 27 (login, ponche y subida de la foto y del SSN/ITIN probados). Falta el
+> checklist completo de [COMPILAR-IOS.md](COMPILAR-IOS.md). Android está probado en
+> dispositivo.
 
 ## El origen de la app y el CORS
 
-La app se sirve desde `https://mi.oranjepeople.com` — **el mismo host que la
-web**, configurado en `capacitor.config.ts`. Eso no es casual: ese origen ya
-está en la lista blanca del API, verificado contra producción:
+En Android la app se sirve desde `https://mi.oranjepeople.com` — **el mismo host
+que la web**, configurado en `capacitor.config.ts`. Eso no es casual: ese origen
+ya está en la lista blanca del API, verificado contra producción:
 
 | Origen probado                         | Preflight a `/auth/session` |
 | -------------------------------------- | --------------------------- |
@@ -128,12 +128,11 @@ está en la lista blanca del API, verificado contra producción:
 | `https://colaborador.oranjepeople.com` | sin `Allow-Origin` ❌       |
 | `https://localhost` (el de fábrica)    | sin `Allow-Origin` ❌       |
 
-**No hay que tocar `CORS_ORIGINS`**, que se inyecta al desplegar desde una
-variable de GitHub Actions ([`deploy.yml`](../../.github/workflows/deploy.yml))
-y habría exigido un redespliegue del API.
-
-Los dos esquemas son `https` (iOS no usa su `capacitor://` de fábrica) para que
-Android e iOS compartan un único origen.
+**En iOS el origen es otro: `capacitor://mi.oranjepeople.com`.** WKWebView no
+deja usar `https` como esquema propio y Capacitor vuelve a `capacitor://` sin
+avisar. Ese origen se añadió a `CORS_ORIGINS` —variable de GitHub Actions,
+[`deploy.yml`](../../.github/workflows/deploy.yml)— el 2026-09-29. Sin él, el
+login en iOS se queda cargando.
 
 > **Efecto secundario a tener presente:** dentro de la app ese host queda
 > sombreado — un `fetch` a `https://mi.oranjepeople.com/…` lo atiende el bundle

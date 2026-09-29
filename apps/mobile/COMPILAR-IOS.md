@@ -3,12 +3,10 @@
 Guía para compilar `@oranje/mobile` en un iPhone o en el simulador. Complementa el
 [README](README.md), que explica qué es la app y por qué está hecha con Capacitor.
 
-> **Estado al 2026-09-28:** el proyecto de iOS está completo, pero **nunca se ha
-> compilado**. La pantalla nativa de Permisos (`ios/App/App/OranjePermissions.swift`)
-> se escribió en una Mac sin Xcode 16. Solo se revisó su sintaxis con
-> `swiftc -parse`, no sus tipos. Es probable que la primera compilación muestre algún
-> error menor; la sección [Si falla la compilación](#si-falla-la-compilación) dice
-> dónde buscar.
+> **Estado al 2026-09-29:** compila con Xcode 27 y corre en un iPhone con iOS 27.
+> Lo que hizo falta en la primera compilación (mínimo iOS 15.0, `SceneDelegate`,
+> Firebase Auth, CORS de `capacitor://`) está en [CLAUDE.md](CLAUDE.md). Falta
+> recorrer la lista de [Qué probar la primera vez](#5-qué-probar-la-primera-vez).
 
 ## 1. Requisitos
 
@@ -135,7 +133,7 @@ buena la compilación:
 | Síntoma                                                              | Dónde mirar                                                                                                                                                                                              |
 | -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `pod install`: _No podspec found for Capacitor_                      | Falta `cap sync ios` (paso 3 de §2).                                                                                                                                                                     |
-| Error de Swift en `OranjePermissions.swift`                          | Es el único archivo Swift propio y nunca se ha compilado. Corrige y anota el cambio.                                                                                                                     |
+| Error de Swift en `OranjePermissions.swift`                          | Es el único archivo Swift de la pantalla de Permisos; compiló sin errores con Xcode 27. Corrige y anota el cambio.                                                                                       |
 | _Unknown class OranjeBridgeViewController in Interface Builder file_ | `Base.lproj/Main.storyboard` debe tener `customClass="OranjeBridgeViewController"` y `customModule="App"`, y `OranjePermissions.swift` debe estar en el target **App** (Build Phases › Compile Sources). |
 | La pantalla de Permisos nunca aparece                                | `OranjeBridgeViewController.capacitorDidLoad()` registra el plugin. Desde Safari, `Capacitor.isPluginAvailable('OranjePermissions')` debe dar `true`.                                                    |
 | Todo sale con la fuente del sistema                                  | La carpeta `App/Fonts` debe estar en Build Phases › Copy Bundle Resources, como **referencia de carpeta** (azul), no como grupo (amarillo).                                                              |
