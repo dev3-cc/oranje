@@ -48,8 +48,17 @@ import { formatTimeIn } from '@/shared/lib/formatters'
 import { tapFeedback } from '@/shared/lib/motion'
 import { PUNCH_QR_PARAM, readPunchQrCode } from '@/shared/lib/punchQrLink'
 
-function timeOf(iso: string): string {
-  return new Date(iso).toLocaleTimeString(localeTag(), { hour: '2-digit', minute: '2-digit' })
+/**
+ * La hora de una marca YA REGISTRADA, en la zona del hotel.
+ *
+ * El turno de arriba siempre se leyó con la zona del hotel; sus marcas no, así
+ * que en la misma pantalla convivían dos husos y un colaborador que mirara su
+ * teléfono desde otra ciudad veía «entré a las 08:00» en un turno de 06:00
+ * (Hugo, 2026-09-29). Sin zona conocida cae en la del aparato, que es lo que
+ * hacía antes.
+ */
+function timeOf(iso: string, timeZone?: string): string {
+  return formatTimeIn(iso, timeZone)
 }
 
 function clockOf(date: Date): string {
@@ -356,6 +365,8 @@ export function PunchPage(): ReactNode {
     return <EmptyState image={mascotaPensando} title={message.title} text={message.text} />
   }
 
+  /* La zona sale del turno, que es donde ocurre lo que se está marcando. */
+  const shiftTimeZone = shift.hotelTimeZone
   const marks: Partial<Record<PunchType, string>> = {}
   for (const item of punches ?? []) marks[item.type as PunchType] = item.serverAt
   const next = PUNCH_ORDER.find((type) => marks[type] === undefined) ?? null
@@ -650,12 +661,12 @@ export function PunchPage(): ReactNode {
       <section className="grid grid-cols-3 gap-2 rounded-xl border border-line bg-surface px-2 py-4">
         <Stat
           icon="login"
-          value={marks.CLOCK_IN ? timeOf(marks.CLOCK_IN) : '--:--'}
+          value={marks.CLOCK_IN ? timeOf(marks.CLOCK_IN, shiftTimeZone) : '--:--'}
           label={t`Entrada`}
         />
         <Stat
           icon="logout"
-          value={marks.CLOCK_OUT ? timeOf(marks.CLOCK_OUT) : '--:--'}
+          value={marks.CLOCK_OUT ? timeOf(marks.CLOCK_OUT, shiftTimeZone) : '--:--'}
           label={t`Salida`}
         />
         <Stat icon="schedule" value={hoursOf(marks)} label={t`Horas`} />
@@ -664,7 +675,8 @@ export function PunchPage(): ReactNode {
       {marks.LUNCH_OUT && (
         <p className="text-center text-xs text-ink-3">
           <Trans>
-            Lunch {timeOf(marks.LUNCH_OUT)} – {marks.LUNCH_IN ? timeOf(marks.LUNCH_IN) : '--:--'}
+            Lunch {timeOf(marks.LUNCH_OUT, shiftTimeZone)} –{' '}
+            {marks.LUNCH_IN ? timeOf(marks.LUNCH_IN, shiftTimeZone) : '--:--'}
           </Trans>
         </p>
       )}

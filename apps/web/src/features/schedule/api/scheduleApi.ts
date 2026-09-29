@@ -12,6 +12,7 @@ import { baseApi } from '@/app/baseApi'
 /** Piezas genéricas de navegación semanal, expuestas por el índice de Timesheet (§4). */
 import { addDaysIso } from '@/features/timesheet'
 import { fetchAllPages } from '@/shared/lib/fetchAllPages'
+import { clock24In } from '@/shared/lib/formatters'
 import type {
   ApiEnvelope,
   AssignmentApi,
@@ -41,8 +42,19 @@ const DEMAND_STATES = new Set(['GREEN', 'YELLOW', 'RED'])
 
 const MS_PER_DAY = 86_400_000
 
-function timeOf(iso: string): string {
-  return iso.slice(11, 16)
+/**
+ * La hora del turno EN EL HOTEL.
+ *
+ * Hasta el 2026-09-29 esto cortaba los caracteres del ISO, que viene en UTC:
+ * un turno de 06:00 en Georgia se pintaba como «10:00» en la pantalla donde
+ * se planean los turnos. El instante que manda el API es correcto; lo que
+ * faltaba era convertirlo con la zona del hotel, que `/schedules` ya entrega.
+ *
+ * Sale en 24 h a propósito: el grid RESTA estas horas para colocar cada bloque
+ * en su carril, y `07:00 a. m.` no se puede restar.
+ */
+function timeOf(iso: string, timeZone: string | undefined): string {
+  return clock24In(iso, timeZone)
 }
 
 /** El lunes de la semana que contiene `iso` (aritmética en UTC, como `days`). */
@@ -96,15 +108,23 @@ async function fetchTimeline(
   const entriesError = entriesResults.find((result) => result.error)
   if (entriesError) return { error: entriesError.error }
 
+  /* La zona va por schedule y no en una sola variable: el Manager General ve
+     un solo hotel hoy, pero la cinta junta TODAS sus semanas y nada impide
+     que mañana lleguen de hoteles con husos distintos. */
   const entries: ScheduleWorkerEntry[] = entriesResults
-    .flatMap((result) => (result.data as ApiEnvelope<ScheduleEntryApi[]>).data)
-    .map((entry) => ({
+    .flatMap((result, index) =>
+      (result.data as ApiEnvelope<ScheduleEntryApi[]>).data.map((entry) => ({
+        entry,
+        timeZone: schedules[index]?.hotel.timeZone,
+      })),
+    )
+    .map(({ entry, timeZone }) => ({
       id: entry.id,
       workDate: entry.workDate,
       workerId: entry.worker.id,
       workerName: entry.worker.fullName,
-      startTime: timeOf(entry.startsAt),
-      endTime: timeOf(entry.endsAt),
+      startTime: timeOf(entry.startsAt, timeZone),
+      endTime: timeOf(entry.endsAt, timeZone),
     }))
 
   const relevant = requisitions.filter(

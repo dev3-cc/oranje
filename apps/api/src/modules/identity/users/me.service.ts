@@ -11,7 +11,8 @@ export interface MeEntity {
   role: { code: string; name: string; department: string | null }
   /** URL firmada de la foto (D-30); `null` sin foto o si el firmado falla. */
   photoUrl: string | null
-  hotel: { id: string; name: string } | null
+  /** `timeZone` para que la app lea las horas del hotel donde ocurren. */
+  hotel: { id: string; name: string; timeZone: string } | null
   department: { id: string; code: string; name: string } | null
   zones: Array<{ id: string; code: string; name: string }>
   /** Idioma de la interfaz (D-36): la preferencia vive en la persona. */
@@ -36,7 +37,7 @@ export class MeService {
         photoPath: true,
         locale: true,
         role: { select: { id: true, code: true, name: true, department: true } },
-        hotel: { select: { id: true, name: true } },
+        hotel: { select: { id: true, name: true, timeZone: true } },
         department: { select: { id: true, code: true, name: true } },
         zones: { select: { zone: { select: { id: true, code: true, name: true } } } },
       },

@@ -111,7 +111,7 @@ export function PunchesTable(): ReactNode {
           {(data?.data ?? []).map((punch) => (
             <TableRow key={punch.id}>
               <TableCell className="whitespace-nowrap">
-                {formatDayMonthTime(punch.serverAt)}
+                {formatDayMonthTime(punch.serverAt, punch.hotelTimeZone)}
               </TableCell>
               <TableCell>{punch.hotelName}</TableCell>
               <TableCell>{punch.workerFullName}</TableCell>

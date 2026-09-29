@@ -212,6 +212,7 @@ async function fetchBoard(
         positionName: worker.position?.name ?? '—',
         stateCode: worker.state.code,
         shift: shift ? { startsAt: shift.startsAt, endsAt: shift.endsAt } : null,
+        hotelTimeZone: schedule?.hotel.timeZone,
         clockInAt: clockInByWorker.get(workerId) ?? null,
         canStandBy: OPERATIONAL_STATES.has(worker.state.code),
         canReport: OPERATIONAL_STATES.has(worker.state.code),

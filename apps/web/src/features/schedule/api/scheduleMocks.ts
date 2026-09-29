@@ -33,6 +33,23 @@ function addDays(iso: string, offset: number): string {
 const CURRENT_WEEK_START = mondayOfThisWeek()
 const HOTEL = { id: 'htl-psp-0015', name: 'Villas Coral', timeZone: 'America/New_York' }
 
+/**
+ * El INSTANTE de una hora local del hotel, como lo manda el API de verdad.
+ *
+ * Antes el mock escribía `${día}T${hora}Z`, o sea la hora del hotel disfrazada
+ * de UTC — el mismo defecto que el API tuvo y que ya se corrigió. Así el mock
+ * mentía y la prueba lo daba por bueno: un turno de 07:00 «pasaba» aunque la
+ * pantalla lo pintara en otra zona.
+ */
+function instantAt(day: string, time: string, timeZone: string): string {
+  const asUtc = new Date(`${day}T${time}:00.000Z`)
+  const offset =
+    new Date(asUtc.toLocaleString('en-US', { timeZone })).getTime() -
+    new Date(asUtc.toLocaleString('en-US', { timeZone: 'UTC' })).getTime()
+
+  return new Date(asUtc.getTime() - offset).toISOString()
+}
+
 const ANA = { id: 'wrk-0001', fullName: 'Ana Rivera Gómez' }
 const LUIS = { id: 'wrk-0002', fullName: 'Luis Cabrera' }
 const MARIA = { id: 'wrk-0003', fullName: 'María Fernanda Ortiz' }
@@ -52,8 +69,8 @@ function entry(
   return {
     id: `sce-${String(entrySequence).padStart(4, '0')}`,
     workDate,
-    startsAt: `${workDate}T${start}:00.000Z`,
-    endsAt: `${workDate}T${end}:00.000Z`,
+    startsAt: instantAt(workDate, start, HOTEL.timeZone),
+    endsAt: instantAt(workDate, end, HOTEL.timeZone),
     minutes: 480,
     worker,
     assignmentId: `asg-${String(entrySequence)}`,
@@ -158,8 +175,8 @@ const routes: readonly MockRoute[] = [
       const created: ScheduleEntryApi = {
         id: `sce-added-${String(addedEntrySequence)}`,
         workDate: dto.workDate,
-        startsAt: `${dto.workDate}T${dto.startTime}:00.000Z`,
-        endsAt: `${dto.workDate}T${dto.endTime}:00.000Z`,
+        startsAt: instantAt(dto.workDate, dto.startTime, HOTEL.timeZone),
+        endsAt: instantAt(dto.workDate, dto.endTime, HOTEL.timeZone),
         minutes: 0,
         worker: { id: 'wrk-mock', fullName: 'Turno agregado' },
         assignmentId: dto.assignmentId,
