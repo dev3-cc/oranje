@@ -98,16 +98,56 @@ export function formatDaysInStatus(days: number): string {
   return t`${days} d en estado`
 }
 
-/** `2026-08-12T09:41:00` -> `12 ago 09:41`. */
-export function formatDayMonthTime(iso: string): string {
-  const time = /T(\d{2}:\d{2})/.exec(iso)
-  return time ? `${formatDayMonth(iso)} ${time[1] ?? ''}` : formatDayMonth(iso)
+/**
+ * `2026-08-12T09:41:00Z` -> `12 ago 03:41` en México.
+ *
+ * La hora se CONVIERTE a la zona de quien mira, no se corta del texto: hasta
+ * el 2026-09-29 esto leía los dos dígitos del ISO con una expresión regular,
+ * así que un instante en UTC —como los devuelve el API— se pintaba con la
+ * hora de Greenwich a todo el mundo (Hugo: «mostraba horas que no eran»).
+ *
+ * Aquí la zona correcta es la de la PERSONA: «autorizada hace un momento»
+ * tiene que cuadrar con su reloj de pared. Los hechos que ocurren DENTRO de
+ * un hotel —turnos y ponches— son el otro caso y van con `formatTimeIn` y la
+ * zona del hotel.
+ *
+ * Una fecha sin hora (`2026-08-12`) se devuelve como día, sin inventar una.
+ */
+export function formatDayMonthTime(iso: string, timeZone?: string): string {
+  if (!/T\d{2}:\d{2}/.test(iso)) return formatDayMonth(iso)
+
+  return `${formatDayMonth(localDayIso(iso, timeZone))} ${formatTimeIn(iso, timeZone)}`
 }
 
-/** `2026-08-12T09:30:00` -> `12 ago 2026 09:30`. */
-export function formatDateTime(iso: string): string {
-  const time = /T(\d{2}:\d{2})/.exec(iso)
-  return time ? `${formatDate(iso)} ${time[1] ?? ''}` : formatDate(iso)
+/**
+ * `2026-08-12T09:30:00Z` -> `12 ago 2026 03:30` en México. Ver
+ * `formatDayMonthTime`: la hora se convierte, no se corta.
+ */
+export function formatDateTime(iso: string, timeZone?: string): string {
+  if (!/T\d{2}:\d{2}/.test(iso)) return formatDate(iso)
+
+  return `${formatDate(localDayIso(iso, timeZone))} ${formatTimeIn(iso, timeZone)}`
+}
+
+/**
+ * El DÍA de un instante en la zona que se pida, como `AAAA-MM-DD`.
+ *
+ * Hace falta porque la conversión puede cambiar de día: un ponche de las
+ * 20:00 en Georgia es el día siguiente en UTC, y mostrar «13 ago 20:00»
+ * cuando el ISO dice 13 a las 00:00Z sería mezclar dos días en una línea.
+ */
+function localDayIso(iso: string, timeZone?: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+
+  /* `en-CA` da AAAA-MM-DD, que es justo la forma que leen los formatos de
+     fecha de arriba; el idioma visible lo pone cada uno de ellos. */
+  return date.toLocaleDateString('en-CA', {
+    ...(timeZone ? { timeZone } : {}),
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
 }
 
 /**
@@ -160,6 +200,23 @@ export function formatTimeIn(iso: string, timeZone?: string): string {
   return new Date(iso).toLocaleTimeString(localeTag(), {
     hour: '2-digit',
     minute: '2-digit',
+    ...(timeZone ? { timeZone } : {}),
+  })
+}
+
+/**
+ * `HH:MM` de 24 horas en la zona que se pida. **Es un dato, no una etiqueta.**
+ *
+ * El grid del Schedule usa estas cadenas para COLOCAR cada bloque en su
+ * carril, así que no pueden venir en el formato del idioma: `07:00 a. m.` no
+ * se puede restar. Para lo que la persona lee está `formatTimeIn`, que sí
+ * respeta el idioma.
+ */
+export function clock24In(iso: string, timeZone?: string): string {
+  return new Date(iso).toLocaleTimeString('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
     ...(timeZone ? { timeZone } : {}),
   })
 }

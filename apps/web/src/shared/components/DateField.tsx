@@ -8,6 +8,17 @@ import { formatDate } from '@/shared/lib/formatters'
 
 const DAY_PICKER_LOCALE = { es, en: enUS } as const
 
+/**
+ * Cuánto abarcan los desplegables de mes y año cuando el campo no acota nada.
+ *
+ * Cien años atrás porque el campo más viejo del sistema es la fecha de
+ * nacimiento de un colaborador, y con flechas de mes hay que dar más de
+ * trescientos clics para llegar a 1993 (Hugo, 2026-09-29). Cinco adelante
+ * para las fechas de trabajo, que nunca se planean más lejos.
+ */
+const YEARS_BACK = 100
+const YEARS_AHEAD = 5
+
 /** `Date` local -> `2026-09-18` (la forma de la columna `date`, sin zona). */
 function toIso(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -77,6 +88,12 @@ export function DateField({
   const minDate = min !== undefined ? fromIso(min) : undefined
   const maxDate = max !== undefined ? fromIso(max) : undefined
 
+  /* El rango de los desplegables sale de `min`/`max` cuando el campo los trae
+     —una fecha de inicio no necesita ofrecer 1930— y si no, del rango ancho. */
+  const thisYear = new Date().getFullYear()
+  const startMonth = minDate ?? new Date(thisYear - YEARS_BACK, 0, 1)
+  const endMonth = maxDate ?? new Date(thisYear + YEARS_AHEAD, 11, 31)
+
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
@@ -107,6 +124,10 @@ export function DateField({
           mode="single"
           locale={DAY_PICKER_LOCALE[currentLocale()]}
           weekStartsOn={1}
+          /* Mes y año como desplegables, no solo flechas. */
+          captionLayout="dropdown"
+          startMonth={startMonth}
+          endMonth={endMonth}
           selected={selected}
           defaultMonth={selected ?? minDate ?? maxDate ?? new Date()}
           disabled={dayMatchers(minDate, maxDate)}

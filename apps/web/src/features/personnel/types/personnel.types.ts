@@ -30,6 +30,13 @@ export interface PersonnelRow {
   stateCode: string
   /** Turno de HOY del Schedule; `null` = descansa (o su estado lo explica). */
   shift: { startsAt: string; endsAt: string } | null
+  /**
+   * La zona del hotel del turno: sus horas se leen donde ocurren.
+   *
+   * Viaja con la fila y no se toma de la sesión a propósito — así el dato es
+   * correcto para cualquiera que lo consuma, y no depende de quién mira.
+   */
+  hotelTimeZone: string | undefined
   /** Primera marca CLOCK_IN de hoy; `null` = sin entrada registrada. */
   clockInAt: string | null
   /** Stand-by solo aplica desde estados operativos (seed del semáforo). */

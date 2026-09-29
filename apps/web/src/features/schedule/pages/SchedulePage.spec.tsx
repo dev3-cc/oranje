@@ -52,6 +52,8 @@ describe('SchedulePage', () => {
   it('picar un turno del grid enseña a sus colaboradores en el panel', async () => {
     renderSchedule()
 
+    /* 07:00–15:30 EN EL HOTEL, y en 24 h: el grid resta estas horas para
+       colocar el bloque, así que son dato y no etiqueta. */
     const [shift] = await screen.findAllByText('07:00 – 15:30')
     shift?.closest('button')?.click()
 

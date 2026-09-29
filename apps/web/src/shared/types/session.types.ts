@@ -7,7 +7,8 @@ export interface SessionUser {
   photoUrl: string | null
   roleCode: string
   roleTitle: string
-  hotel: { id: string; name: string } | null
+  /** `timeZone` para leer las horas del hotel donde ocurren, no donde se mira. */
+  hotel: { id: string; name: string; timeZone: string } | null
   /** Alcance dentro del hotel (D-09): el Supervisor y el Manager de Área lo tienen; el Manager General no. */
   department: { id: string; name: string } | null
   /** Sin hotel fijo (el Inspector), el alcance es esto: los hoteles de estas zonas. Vacío para todos los demás roles. */
