@@ -150,7 +150,19 @@ export class WorkersService {
     id: string,
     toState: string,
     user: AuthenticatedUser,
+    selfService: boolean,
   ): Promise<void> {
+    /*
+     * El Colaborador encendiendo su propio Amarillo (Reglas de Negocio §
+     * Disponibilidad) no es ni Reclutamiento validando ni el hotel marcando
+     * Stand-by/Rojo — es OTRO actor, y estos tres guards son del hotel y de
+     * Reclutamiento. `me.service.ts` ya resolvió `id` como el worker del
+     * propio `user`; la autorización real de cuál transición le toca vive en
+     * la tabla de transiciones sembrada (`roleCode: 'ROL-C-01'` solo en
+     * STRONG_GREEN/ORANGE/PINK → YELLOW), que corre después sin excepción.
+     */
+    if (selfService) return
+
     if (await this.permissions.can(user.roleCode, 'recruitment', 'validate_signup')) {
       return
     }
@@ -285,8 +297,9 @@ export class WorkersService {
     id: string,
     dto: ChangeStateDto,
     user: AuthenticatedUser,
+    selfService = false,
   ): Promise<WorkerEntity> {
-    await this.assertCanChangeState(id, dto.toState, user)
+    await this.assertCanChangeState(id, dto.toState, user, selfService)
 
     const worker = await this.worker(id)
     const current = await this.stateOfWorker(id)
