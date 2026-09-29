@@ -3,8 +3,11 @@ import { Provider } from 'react-redux'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
+import { profile } from '../api/workerMocks'
+
 import { HomePage } from './HomePage'
 
+import { baseApi } from '@/app/baseApi'
 import { store } from '@/app/store'
 
 /**
@@ -38,5 +41,26 @@ describe('HomePage del Colaborador', () => {
     expect(await screen.findByText('Faltan datos tuyos')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Marcarme disponible' })).not.toBeInTheDocument()
     expect(screen.queryByText('Disponibilidad')).not.toBeInTheDocument()
+  })
+
+  // Caso real de Hugo (2026-09-29): terminó transporte, SSN/ITIN y contacto
+  // de emergencia, y «Faltan datos tuyos» seguía ahí — `isProfileComplete`
+  // también exige posición/modalidad/inglés/experiencia, que decide la
+  // Reclutadora y su cuenta de prueba nunca tuvo. Sin eso, la tarjeta no se
+  // apaga jamás aunque ya no le quede nada por hacer.
+  it('con SU parte terminada, no invita a completar lo que decide la Reclutadora', async () => {
+    profile.transportType = 'PUBLIC'
+    profile.emergencyContact = { name: 'Oscar', phone: '9983004532', relationship: 'FATHER' }
+    profile.bloodType = 'O_POS'
+    profile.taxDeadline = { ...profile.taxDeadline, hasDocument: true }
+    profile.isProfileComplete = false
+    /* Las pruebas anteriores ya dejaron el perfil viejo en caché del store
+       compartido: sin esto, este render lo serviría sin pedirlo de nuevo. */
+    store.dispatch(baseApi.util.resetApiState())
+
+    await renderHome()
+
+    expect(await screen.findByRole('heading', { name: /Hola, / })).toBeInTheDocument()
+    expect(screen.queryByText('Faltan datos tuyos')).not.toBeInTheDocument()
   })
 })
