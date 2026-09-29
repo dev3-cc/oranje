@@ -116,11 +116,25 @@ struct PermissionsStatus {
             return manager.accuracyAuthorization == .reducedAccuracy ? "approximate" : "granted"
         case .notDetermined:
             return "prompt"
+        case .denied where !CLLocationManager.locationServicesEnabled() && !locationAsked:
+            /* Con Localización apagada iOS dice `denied` para TODAS las apps,
+               aunque nunca hayan pedido nada. Si esta nunca pidió, mandar a
+               Ajustes no sirve: iOS no enlista «Ubicación» en la app hasta que
+               se pide una vez. Se pide, y iOS ofrece encender Localización. */
+            return "prompt"
         default:
             /* En iOS no hay segunda oportunidad: negado (o restringido) solo se
                revierte desde Ajustes. */
             return "denied"
         }
+    }
+
+    private static let locationAskedKey = "oranje.permissions.locationAsked"
+
+    /// Ya se llamó a `requestWhenInUseAuthorization` alguna vez en este teléfono.
+    static var locationAsked: Bool {
+        get { UserDefaults.standard.bool(forKey: locationAskedKey) }
+        set { UserDefaults.standard.set(newValue, forKey: locationAskedKey) }
     }
 }
 
@@ -430,10 +444,17 @@ final class PermissionsViewController: UIViewController, CLLocationManagerDelega
                               action: text("action_settings"), handler: Self.openAppSettings)
         case "prompt":
             locationCard.bind(.warn, text("state_missing"), action: text("action_grant")) { [weak self] in
+                PermissionsStatus.locationAsked = true
                 self?.locationManager.requestWhenInUseAuthorization()
+                /* Con Localización apagada iOS no cambia la autorización —solo
+                   muestra su aviso—, así que el delegado no avisa: se repinta
+                   aquí para que la tarjeta pase a «Bloqueado» con su Ajustes. */
+                self?.render()
             }
         default:
-            locationCard.bind(.error, text("state_blocked"), hint: text("hint_blocked"),
+            /* Con Localización apagada el `denied` puede ser solo eso: lo primero
+               es encenderla, no buscar un permiso que quizá ni aparece. */
+            locationCard.bind(.error, text("state_blocked"), hint: text(status.gps ? "hint_blocked" : "hint_gps"),
                               action: text("action_settings"), handler: Self.openAppSettings)
         }
 
