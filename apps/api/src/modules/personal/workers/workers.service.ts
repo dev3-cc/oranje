@@ -685,6 +685,7 @@ function toEntity(row: WorkerRow, photos: Map<string, string>): WorkerEntity {
     profileDueAt: row.profileDueAt?.toISOString() ?? null,
     hasTaxId: row.hasTaxId,
     hasTaxDocument: row.hasTaxDocument,
+    hasPendingDocument: row.hasPendingDocument,
     hasAccount: row.hasAccount,
     email: row.email,
     isBlacklisted: row.isBlacklisted,

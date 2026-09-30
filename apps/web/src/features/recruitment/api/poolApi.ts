@@ -1,6 +1,7 @@
 import { assignmentReadiness } from '../lib/profileFields'
 import {
   ANY_VALUE,
+  PENDING_VALUE,
   type CreateWorkerRequest,
   type WorkerAccessCredential,
   type PoolFilters,
@@ -38,6 +39,7 @@ function toPoolWorker(worker: WorkerApi): PoolWorker {
     profileDueAt: worker.profileDueAt,
     hasAccount: worker.hasAccount,
     hasTaxId: worker.hasTaxId,
+    hasPendingDocument: worker.hasPendingDocument,
     createdAt: worker.createdAt,
     isBlacklisted: worker.isBlacklisted,
     assignment: worker.assignment,
@@ -65,8 +67,9 @@ async function fetchPool(
 
   const workers = listRes.data.filter(
     (worker) =>
-      filters.hiringModalityId === ANY_VALUE ||
-      worker.hiringModality?.id === filters.hiringModalityId,
+      (filters.hiringModalityId === ANY_VALUE ||
+        worker.hiringModality?.id === filters.hiringModalityId) &&
+      (filters.hasPendingDocument !== PENDING_VALUE || worker.hasPendingDocument),
   )
 
   return {

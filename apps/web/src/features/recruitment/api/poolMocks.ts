@@ -74,6 +74,7 @@ function buildWorker(input: {
   state: string
   isProfileComplete?: boolean
   isBlacklisted?: boolean
+  hasPendingDocument?: boolean
   email?: string
   assignment?: WorkerApi['assignment']
 }): WorkerApi {
@@ -102,6 +103,7 @@ function buildWorker(input: {
     /** D-27: mientras el cifrado no se conecte, `has_tax_id` es siempre false. */
     hasTaxId: false,
     hasTaxDocument: false,
+    hasPendingDocument: input.hasPendingDocument ?? false,
     hasAccount: input.email !== undefined,
     email: input.email ?? null,
     isBlacklisted: input.isBlacklisted ?? false,
@@ -120,6 +122,7 @@ const workers: WorkerApi[] = [
     modalityId: 'mod-ft',
     state: 'STRONG_GREEN',
     email: 'arivera@oranjepeople.com',
+    hasPendingDocument: true,
   }),
   buildWorker({
     fullName: 'Luis Cabrera',
