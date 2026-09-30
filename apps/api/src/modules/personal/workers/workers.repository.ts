@@ -26,6 +26,9 @@ export interface WorkerRow {
   /// `hasTaxId`, que depende del cifrado sin conectar (D-27) y hoy es
   /// siempre falso.
   hasTaxDocument: boolean
+  /// Cargado y TODAVÍA sin revisar: lo que el Pool necesita para no tener
+  /// que abrir cada expediente a ver quién ya mandó a verificar.
+  hasPendingDocument: boolean
   hasAccount: boolean
   /// Hasta cuándo puede completar el expediente si se le validó a medias.
   profileDueAt: Date | null
@@ -58,6 +61,7 @@ export interface WorkerFilter {
   englishLevelId?: string | undefined
   search?: string | undefined
   onlyAvailable: boolean
+  hasPendingDocument: boolean
 }
 
 const BASE = `
@@ -79,6 +83,7 @@ const BASE = `
          w.profile_due_at      AS "profileDueAt",
          w.has_tax_id          AS "hasTaxId",
          w.has_tax_document    AS "hasTaxDocument",
+         w.has_pending_tax_document AS "hasPendingDocument",
          (w.user_id IS NOT NULL) AS "hasAccount",
          u.email AS "email",
          EXISTS (SELECT 1 FROM coverage.blacklist_entry b
@@ -352,6 +357,10 @@ export class WorkersRepository {
       where.push(`s.code IN ('STRONG_GREEN', 'YELLOW')`)
       where.push(`NOT EXISTS (SELECT 1 FROM coverage.blacklist_entry b
                                WHERE b.worker_id = w.id AND b.lifted_at IS NULL)`)
+    }
+
+    if (filter.hasPendingDocument) {
+      where.push(`w.has_pending_tax_document`)
     }
 
     const filtro = where.length > 0 ? ` AND ${where.join(' AND ')}` : ''

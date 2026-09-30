@@ -40,6 +40,8 @@ function deadline(overrides: Partial<TaxDeadlineApi>): TaxDeadlineApi {
     hasDocument: false,
     isDocumentVerified: false,
     taxRetentionApplies: true,
+    wasRejected: false,
+    rejectionReason: null,
     ...overrides,
   }
 }
@@ -179,5 +181,21 @@ describe('TaxDeadlineBanner', () => {
     )
     expect(screen.getByText(/está verificado/)).toBeInTheDocument()
     expect(screen.queryByText(/en verificación/)).not.toBeInTheDocument()
+  })
+
+  // Hugo, 2026-09-30: sin decir CUÁL documento y POR QUÉ, solo se veía
+  // "carga tu SSN o ITIN" otra vez, sin explicar que ya lo había hecho.
+  it('rechazado: dice el motivo y ofrece subirlo de nuevo', () => {
+    renderPage(
+      <TaxDeadlineBanner
+        deadline={deadline({ hasDocument: false, wasRejected: true, rejectionReason: 'no se lee' })}
+      />,
+    )
+    expect(screen.getByText('Tu SSN/ITIN fue rechazado')).toBeInTheDocument()
+    expect(screen.getByText('no se lee')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Subir de nuevo' })).toHaveAttribute(
+      'href',
+      '/collaborator/signup-2',
+    )
   })
 })

@@ -324,6 +324,8 @@ export interface WorkerApi {
   hasTaxId: boolean
   /** Hay un documento SSN/ITIN cargado (verificado o no) — a diferencia de `hasTaxId` (D-27). */
   hasTaxDocument: boolean
+  /** Cargado y todavía sin revisar (Pool: badge/filtro "con documento pendiente"). */
+  hasPendingDocument: boolean
   hasAccount: boolean
   /** El correo con el que entra hoy; null sin cuenta todavía (Blanco recién nacido). */
   email: string | null

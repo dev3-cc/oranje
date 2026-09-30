@@ -105,6 +105,9 @@ export const queryWorkersSchema = z.object({
   englishLevelId: z.uuid().optional(),
   search: z.string().trim().min(1).max(120).optional(),
   onlyAvailable: z.coerce.boolean().default(false),
+  /** Con un SSN/ITIN cargado y sin revisar — Reclutamiento no lo ve hasta
+      abrir el expediente uno por uno (Hugo, 2026-09-30). */
+  hasPendingDocument: z.coerce.boolean().default(false),
 })
 
 export class QueryWorkersDto extends createZodDto(queryWorkersSchema) {}

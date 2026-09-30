@@ -2,9 +2,11 @@ import { v7 as uuidv7 } from 'uuid'
 
 import type { AuthenticatedUser } from '../../src/common/decorators/index.js'
 import type { PrismaService } from '../../src/infra/prisma/index.js'
+import type { NotificationEvent } from '../../src/modules/notifications/index.js'
 import { DocumentsRepository } from '../../src/modules/personal/documents/documents.repository.js'
 import { DocumentsService } from '../../src/modules/personal/documents/documents.service.js'
 import { AccessDeadlineService } from '../../src/modules/personal/me/access-deadline.service.js'
+import { TaxDeadlineService } from '../../src/modules/personal/me/tax-deadline.service.js'
 
 import { close, db } from './db.js'
 import { actor } from './fixture.js'
@@ -19,7 +21,15 @@ import { actor } from './fixture.js'
 const prisma = db as unknown as PrismaService
 const storageFake = { signedUrl: (): Promise<null> => Promise.resolve(null) } as never
 const accessDeadline = new AccessDeadlineService(prisma)
-const documents = new DocumentsService(new DocumentsRepository(prisma), storageFake, accessDeadline)
+const publishSpy = jest.fn<Promise<void>, [NotificationEvent]>().mockResolvedValue(undefined)
+const notificationsFake = { publish: publishSpy } as never
+const documents = new DocumentsService(
+  new DocumentsRepository(prisma),
+  storageFake,
+  accessDeadline,
+  notificationsFake,
+)
+const deadline = new TaxDeadlineService(prisma)
 
 let actorId: string
 let zoneId: string
@@ -121,6 +131,27 @@ describe('Reclutamiento revisa el SSN/ITIN', () => {
     expect(entry?.payload).toMatchObject({ workerId, reason: 'la foto no se lee' })
   })
 
+  // Hugo, 2026-09-30: sin esto el colaborador solo ve que el documento
+  // "desapareció" y la app se lo vuelve a pedir, sin saber por qué.
+  it('rechazar avisa al colaborador cuál documento y por qué', async () => {
+    publishSpy.mockClear()
+    const { workerId } = await workerConCuenta('doc-rechazo-avisa')
+    const doc = await documents.create(
+      workerId,
+      { documentType: 'SSN_ITIN', filePath: 'workers/document/aviso.pdf' },
+      reviewer,
+    )
+
+    await documents.reject(workerId, doc.id, 'la foto no se lee', reviewer)
+
+    expect(publishSpy).toHaveBeenCalledTimes(1)
+    const event = publishSpy.mock.calls[0]?.[0]
+    expect(event?.type).toBe('DOCUMENT_REJECTED')
+    expect(event?.body).toContain('SSN / ITIN')
+    expect(event?.body).toContain('la foto no se lee')
+    expect(event?.audience).toEqual([{ kind: 'WORKER', workerId }])
+  })
+
   it('rechazado tras el día de gracia, suspende de inmediato', async () => {
     const { workerId, userId } = await workerConCuenta('doc-rechazo-suspende')
 
@@ -168,5 +199,34 @@ describe('Reclutamiento revisa el SSN/ITIN', () => {
 
     expect(verified.isVerified).toBe(true)
     expect(verified.verifiedBy?.id).toBe(actorId)
+  })
+
+  // Hugo, 2026-09-30: el colaborador debe ver CUÁL documento y POR QUÉ, no
+  // solo "carga tu SSN o ITIN" otra vez como si nunca lo hubiera subido.
+  it('tras rechazar, el colaborador ve el motivo — y se limpia al volver a subir', async () => {
+    const { workerId } = await workerConCuenta('doc-rechazo-banner')
+    const doc = await documents.create(
+      workerId,
+      { documentType: 'SSN_ITIN', filePath: 'workers/document/e.pdf' },
+      reviewer,
+    )
+
+    await documents.reject(workerId, doc.id, 'foto borrosa', reviewer)
+
+    const after = await deadline.of(workerId)
+    expect(after.hasDocument).toBe(false)
+    expect(after.wasRejected).toBe(true)
+    expect(after.rejectionReason).toBe('foto borrosa')
+
+    // Vuelve a subir: el rechazo queda superado, no se repite.
+    await documents.create(
+      workerId,
+      { documentType: 'SSN_ITIN', filePath: 'workers/document/f.pdf' },
+      reviewer,
+    )
+
+    const resuelto = await deadline.of(workerId)
+    expect(resuelto.hasDocument).toBe(true)
+    expect(resuelto.wasRejected).toBe(false)
   })
 })

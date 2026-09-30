@@ -26,6 +26,12 @@ export interface TaxDeadline {
   /// El documento revisado por la Reclutadora. NO es lo que levanta la
   /// retencion: eso lo decide `has_tax_id`, que lee las columnas cifradas.
   isDocumentVerified: boolean
+  /// Sin documento cargado (`hasDocument` false) por un rechazo reciente que
+  /// todavia no se reemplaza — el aviso en el journal, no una columna nueva
+  /// (Hugo, 2026-09-30: sin esto el colaborador solo ve "carga tu SSN o ITIN"
+  /// otra vez, sin saber que ya lo habia hecho).
+  wasRejected: boolean
+  rejectionReason: string | null
   /// La retencion es INDEPENDIENTE del plazo: aplica mientras no haya SSN/ITIN
   /// verificado, se haya suspendido el acceso o no.
   ///
@@ -54,6 +60,7 @@ export class TaxDeadlineService {
     const isDocumentVerified = document?.verifiedAt != null
     const hasTaxId = await this.hasTaxId(workerId)
     const profileDueAt = worker?.profileDueAt ?? null
+    const rejection = hasDocument ? null : await this.lastRejection(workerId)
 
     if (profileDueAt === null) {
       return {
@@ -64,6 +71,8 @@ export class TaxDeadlineService {
         hasDocument,
         isDocumentVerified,
         taxRetentionApplies: !hasTaxId,
+        wasRejected: rejection !== null,
+        rejectionReason: rejection,
       }
     }
 
@@ -81,7 +90,27 @@ export class TaxDeadlineService {
       hasDocument,
       isDocumentVerified,
       taxRetentionApplies: !hasTaxId,
+      wasRejected: rejection !== null,
+      rejectionReason: rejection,
     }
+  }
+
+  // El motivo vive en el journal (el rechazo borra la fila): el rechazo mas
+  // reciente solo cuenta si no hay documento vivo mas nuevo que lo reemplace
+  // -- por eso el caller solo llama esto cuando `hasDocument` es falso.
+  private async lastRejection(workerId: string): Promise<string | null> {
+    const entry = await this.prisma.journalEntry.findFirst({
+      where: {
+        entityType: 'personal.worker_document',
+        eventType: 'DOCUMENT_REJECTED',
+        payload: { path: ['workerId'], equals: workerId },
+      },
+      orderBy: { occurredAt: 'desc' },
+      select: { payload: true },
+    })
+
+    const payload = entry?.payload as { reason?: string } | null
+    return payload?.reason ?? null
   }
 
   // La misma consulta que el expediente. Dos definiciones de "tiene SSN" serian

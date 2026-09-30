@@ -924,6 +924,13 @@ const NOTIFICATION_TYPES: Array<{
     description: 'Se agrega a Blacklist. Avisa al colaborador (RF-12)',
   },
   {
+    code: 'DOCUMENT_REJECTED',
+    module: 'recruitment',
+    name: 'Documento rechazado',
+    description:
+      'Reclutamiento rechaza un documento del expediente con motivo. Avisa al colaborador (2026-09-30)',
+  },
+  {
     code: 'REQ_PARTICIPANT_JOINED',
     module: 'recruitment',
     name: 'Otra Reclutadora se unió',

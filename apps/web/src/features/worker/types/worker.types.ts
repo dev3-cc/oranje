@@ -27,6 +27,9 @@ export interface TaxDeadlineApi {
   hasDocument: boolean
   isDocumentVerified: boolean
   taxRetentionApplies: boolean
+  /** Sin documento (`hasDocument` false) por un rechazo aún sin reemplazar. */
+  wasRejected: boolean
+  rejectionReason: string | null
 }
 
 /**
