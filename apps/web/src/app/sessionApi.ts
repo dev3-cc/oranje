@@ -130,6 +130,7 @@ registerMockRoutes([
           'audits.update',
           'users.manage_corporate_email',
           'settings.manage',
+          'users.invite_hotel',
         ],
       },
     }),

@@ -46,6 +46,10 @@ msgstr "How does it work?"
 msgid "¿Cómo te trasladas?"
 msgstr "How do you get around?"
 
+#: src/features/dashboard/components/InviteHotelAccountCard.tsx
+msgid "¿Entró alguien nuevo a tu equipo?"
+msgstr "Someone new joined your team?"
+
 #: src/features/auth/pages/LoginPage.tsx
 msgid "¿Eres colaborador? <0>Entra por aquí</0>"
 msgstr "Are you a Collaborator? <0>Sign in here</0>"
@@ -568,6 +572,10 @@ msgstr "{filled} of {total} positions · {label}"
 #: src/features/recruitment/components/DeleteWorkerDialog.tsx
 msgid "{fullName} deja de aparecer en el Pool y en toda búsqueda. Si tiene correo corporativo, también se elimina su buzón."
 msgstr "{fullName} will no longer show up in the Pool or in any search. If they have a corporate email, their mailbox is deleted too."
+
+#: src/features/admin/components/PendingHotelUsers.tsx
+msgid "{fullName} queda activo y le llega su invitación"
+msgstr "{fullName} is now active and their invitation is on its way"
 
 #: src/features/recruitment/components/DeleteWorkerDialog.tsx
 msgid "{fullName} se eliminó del Pool"
@@ -1134,10 +1142,15 @@ msgstr "Approved"
 msgid "Aprobados recientemente"
 msgstr "Recently approved"
 
+#: src/features/admin/components/PendingHotelUsers.tsx
 #: src/features/conversion/pages/ConversionPage.tsx
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
 msgid "Aprobando…"
 msgstr "Approving…"
+
+#: src/features/admin/components/PendingHotelUsers.tsx
+msgid "Aprobar"
+msgstr "Approve"
 
 #: src/features/conversion/pages/ConversionPage.tsx
 msgid "Aprobar conversión"
@@ -2751,6 +2764,10 @@ msgstr "{shortName}'s account"
 #: src/features/conversion/pages/ConversionPage.tsx
 msgid "Cuenta del hotel creada"
 msgstr "Hotel account created"
+
+#: src/features/admin/components/PendingHotelUsers.tsx
+msgid "Cuentas por aprobar"
+msgstr "Accounts to approve"
 
 #: src/features/audits/components/AuditFormDialog.tsx
 msgid "Cumple"
@@ -4674,6 +4691,11 @@ msgstr "This hotel doesn't have a Schedule yet. As soon as a week is programmed,
 msgid "Este hotel ya es cliente activo"
 msgstr "This hotel is already an active client"
 
+#. placeholder {0}: outgoingManager.fullName
+#: src/features/admin/components/HotelUserFormDialog.tsx
+msgid "Este hotel ya tiene gerente: {0}. Si dejó el hotel, dale de baja su cuenta desde «Personal de hoteles» — mientras siga activa puede entrar y aprobar horas."
+msgstr "This hotel already has a manager: {0}. If they left, deactivate their account under “Hotel staff” — while it stays active they can sign in and approve hours."
+
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "Este hotel ya tiene un ciclo comercial abierto: ciérralo o elige otro hotel."
 msgstr "This hotel already has an open commercial cycle: close it or choose another hotel."
@@ -5430,6 +5452,14 @@ msgstr "Invitation sent to:"
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Invitación reenviada: la persona tiene un correo nuevo para establecer su contraseña."
 msgstr "Invitation resent: they have a new email to set their password."
+
+#: src/features/dashboard/components/InviteHotelAccountCard.tsx
+msgid "Invítalo desde aquí y le llega su acceso. Un gerente nuevo lo confirma Oranje antes de que pueda entrar."
+msgstr "Invite them here and their access goes out. A new manager is confirmed by Oranje before they can sign in."
+
+#: src/features/dashboard/components/InviteHotelAccountCard.tsx
+msgid "Invitar cuenta"
+msgstr "Invite account"
 
 #: src/features/audits/pages/AuditsPage.tsx
 msgid "Ir a Auditorías"
@@ -6904,6 +6934,10 @@ msgstr "The shift couldn't be added. Try again."
 #: src/features/conversion/pages/ConversionPage.tsx
 msgid "No se pudo aprobar la conversión. Inténtalo de nuevo."
 msgstr "Couldn't approve the conversion. Try again."
+
+#: src/features/admin/components/PendingHotelUsers.tsx
+msgid "No se pudo aprobar. Inténtalo de nuevo."
+msgstr "Could not approve. Try again."
 
 #: src/features/onboarding/components/ArchiveCycleDialog.tsx
 msgid "No se pudo archivar el ciclo. Inténtalo de nuevo."
@@ -9524,6 +9558,10 @@ msgstr "Their Oranje account and corporate email, with a temporary password to h
 #: src/features/recruitment/components/ChangeStateDialog.tsx
 msgid "Su expediente está a medias: falta {0}."
 msgstr "Their file is half done: {0} missing."
+
+#: src/features/admin/components/PendingHotelUsers.tsx
+msgid "Su hotel los propuso. Al aprobar, la cuenta se activa y les llega la invitación; hasta entonces no pueden entrar."
+msgstr "Their hotel proposed them. On approval the account is activated and their invitation goes out; until then they cannot sign in."
 
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Su propio peso por reactivo y arrastre para reordenar — por eso vive separado, con una línea divisoria antes de su pestaña."
