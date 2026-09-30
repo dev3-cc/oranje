@@ -10,10 +10,11 @@ import { PrismaService } from '../../../infra/prisma/index.js'
 // muchos colaboradores comparten hoy Oranje.2026 y necesitan más margen
 // antes de quedar bloqueados para ponchar).
 export const PASSWORD_GRACE_DAYS = 30
-// El expediente a medias se queda en 3 días: GRACE_DAYS solo reconstruye el
-// "día N" que se muestra para ese plazo (línea 106), sin tocar su umbral real
-// (`profileDueAt`, fijado en `WorkersService.PROFILE_GRACE_DAYS`).
-export const GRACE_DAYS = 3
+// El expediente a medias baja a 1 día (2026-09-30, unificado con el SSN/ITIN):
+// GRACE_DAYS solo reconstruye el "día N" que se muestra para ese plazo (línea
+// 106), sin tocar su umbral real (`profileDueAt`, fijado en
+// `WorkersService.PROFILE_GRACE_DAYS`, la fuente real).
+export const GRACE_DAYS = 1
 
 export type AccessDeadlineStatus = 'NONE' | 'PENDING' | 'OVERDUE'
 
@@ -61,7 +62,8 @@ export class AccessDeadlineService {
               OR emergency_contact_name IS NULL
               OR emergency_contact_phone IS NULL
               OR emergency_contact_relationship IS NULL
-              OR blood_type IS NULL) AS "ownPartMissing"
+              OR blood_type IS NULL
+              OR NOT has_tax_document) AS "ownPartMissing"
         FROM personal.vw_worker
        WHERE (user_id = ${userId}::uuid OR legacy_user_id = ${userId}::uuid)
          AND deleted_at IS NULL
@@ -71,9 +73,9 @@ export class AccessDeadlineService {
     return {
       password: deadlineFrom(user?.tempPasswordIssuedAt ?? null, PASSWORD_GRACE_DAYS, now),
       // El plazo se queda escrito aunque despues se complete. Al colaborador
-      // se le cobra SOLO por su parte (Fases 2 y 3): lo de la Fase 1 lo
-      // completa Reclutamiento con «Editar» y no puede bloquearle el acceso
-      // por algo que no esta en su mano.
+      // se le cobra SOLO por su parte (Fases 2 y 3, y desde 2026-09-30 el
+      // SSN/ITIN): lo de la Fase 1 lo completa Reclutamiento con «Editar» y
+      // no puede bloquearle el acceso por algo que no esta en su mano.
       profile: worker?.ownPartMissing
         ? deadlineFrom(worker.profileDueAt, 0, now)
         : { status: 'NONE', day: null, dueAt: null },

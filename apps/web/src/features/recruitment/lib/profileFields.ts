@@ -16,6 +16,7 @@ export const PROFILE_FIELDS = [
   { key: 'transport', label: msg`Transporte`, isPhase1: false },
   { key: 'emergencyContact', label: msg`Contacto de emergencia`, isPhase1: false },
   { key: 'bloodType', label: msg`Tipo de sangre`, isPhase1: false },
+  { key: 'ssnItin', label: msg`SSN/ITIN`, isPhase1: false },
 ] as const
 
 /**
@@ -24,9 +25,10 @@ export const PROFILE_FIELDS = [
  * falta — «el expediente está a medias» sin decir de qué no sirve de nada.
  *
  * Solo la Fase 1 (Posición, Inglés, Modalidad, Experiencia) la edita
- * Reclutamiento con «Editar»; Transporte y Fase 3 los completa el colaborador
- * desde su app — por eso salen separadas: con Fase 1 pendiente no se valida
- * ni a sabiendas, con solo Fase 2/3 pendiente sí (con plazo de 3 días).
+ * Reclutamiento con «Editar»; Transporte, Fase 3 y el SSN/ITIN los completa
+ * el colaborador desde su app — por eso salen separadas: con Fase 1
+ * pendiente no se valida ni a sabiendas, con solo lo del colaborador
+ * pendiente sí (con plazo de 1 día, unificado el 2026-09-30).
  */
 /**
  * Estados en los que el colaborador YA se puede meter a una requisición: el
@@ -96,6 +98,7 @@ export function missingProfile(
     transport: worker.transportType === null,
     emergencyContact: worker.emergencyContact === null,
     bloodType: worker.bloodType === null,
+    ssnItin: !worker.hasTaxDocument,
   }
   const missing = worker.isProfileComplete
     ? []

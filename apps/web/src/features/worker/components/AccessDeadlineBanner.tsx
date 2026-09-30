@@ -21,7 +21,8 @@ const ACTION_LINK =
  * el apartado entero con la salida a la mano.
  *
  * La contraseña son 30 días (Hugo, 2026-09-22, antes 3 — muchos colaboradores
- * comparten hoy Oranje.2026 y necesitan más margen). El expediente sigue en 3.
+ * comparten hoy Oranje.2026 y necesitan más margen). El expediente baja a 1
+ * día (2026-09-30) y desde entonces incluye el SSN/ITIN.
  */
 export function AccessDeadlineBanner({ deadlines }: { deadlines: AccessDeadlinesApi }): ReactNode {
   const { t } = useLingui()
@@ -64,7 +65,7 @@ export function AccessDeadlineBanner({ deadlines }: { deadlines: AccessDeadlines
           <Trans>
             Reclutamiento ya te validó con tu expediente a medias. Tienes hasta el{' '}
             <span className="font-semibold">{formatDate(profile.dueAt)}</span> (día{' '}
-            {profile.day ?? 1} de 3); después tu acceso se bloquea hasta que lo completes.
+            {profile.day ?? 1} de 1); después tu acceso se bloquea hasta que lo completes.
           </Trans>
         </NoticeCard>
       )}
@@ -103,8 +104,8 @@ export function ProfileOverdueScreen(): ReactNode {
       </h1>
       <p className="max-w-sm text-sm leading-relaxed text-ink-3">
         <Trans>
-          Pasaron los 3 días para completar tu expediente después de que Reclutamiento te validó.
-          Llénalo aquí y tu acceso vuelve al instante — tus datos y tu historial no se pierden.
+          Pasó el día para completar tu expediente después de que Reclutamiento te validó. Llénalo
+          aquí y tu acceso vuelve al instante — tus datos y tu historial no se pierden.
         </Trans>
       </p>
       <Link to="/collaborator/signup-2" className={ACTION_LINK}>

@@ -70,8 +70,8 @@ export const workerApi = baseApi.injectEndpoints({
 
     /**
      * Sustituye la contraseña temporal que me dieron en mano por la mía
-     * (Reglas de Negocio § Acceso del Colaborador). Levanta el plazo de 3 días
-     * al instante: el perfil se vuelve a pedir.
+     * (Reglas de Negocio § Acceso del Colaborador). Levanta el plazo de 30
+     * días al instante: el perfil se vuelve a pedir.
      */
     changeMyPassword: build.mutation<unknown, { newPassword: string }>({
       query: (body) => ({ url: '/workers/me/password', method: 'POST', body }),
