@@ -36,7 +36,12 @@ const storageFake = { signedUrl: (): Promise<null> => Promise.resolve(null) } as
 const permissions = new PermissionsService(prisma)
 const deadline = new TaxDeadlineService(prisma)
 const accessDeadline = new AccessDeadlineService(prisma)
-const documents = new DocumentsService(new DocumentsRepository(prisma), storageFake, accessDeadline)
+const documents = new DocumentsService(
+  new DocumentsRepository(prisma),
+  storageFake,
+  accessDeadline,
+  notificationsFake,
+)
 const me = new MeService(prisma, workers, deadline, documents, notificationsFake, accessDeadline, {
   setPassword: (): Promise<void> => Promise.resolve(),
 } as never)

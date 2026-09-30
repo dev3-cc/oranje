@@ -60,12 +60,12 @@ async function insert(userId: string, entityId: string | null): Promise<string> 
 }
 
 describe('el catálogo de tipos', () => {
-  it('tiene los 56 códigos del vault y ninguno repetido', async () => {
+  it('tiene los 57 códigos del vault y ninguno repetido', async () => {
     const total = await db.notificationType.count()
     const codes = await db.notificationType.findMany({ select: { code: true } })
 
-    expect(total).toBe(56)
-    expect(new Set(codes.map((c) => c.code)).size).toBe(56)
+    expect(total).toBe(57)
+    expect(new Set(codes.map((c) => c.code)).size).toBe(57)
   })
 
   it('PUNCH_REMINDER sigue sembrado sin regla de disparo', async () => {

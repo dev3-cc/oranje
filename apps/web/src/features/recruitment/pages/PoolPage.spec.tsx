@@ -56,6 +56,33 @@ describe('PoolPage', () => {
     expect(within(detail).getByText('31 años')).toBeInTheDocument()
   })
 
+  it('el documento pendiente se ve en la fila, en el detalle y se puede filtrar', async () => {
+    const user = userEvent.setup()
+    renderPool()
+
+    // La fila de Ana (único fixture con SSN/ITIN sin revisar) trae el icono.
+    const row = (await screen.findAllByText('Ana Rivera Gómez'))[0]?.closest('li') as HTMLElement
+    expect(within(row).getByTitle('Documento pendiente de verificar')).toBeInTheDocument()
+    // Julia no tiene documento pendiente: su fila no lo anuncia.
+    const juliaRow = screen.getByText('Julia Mendoza').closest('li') as HTMLElement
+    expect(within(juliaRow).queryByTitle('Documento pendiente de verificar')).toBeNull()
+
+    // Ana viene elegida por defecto: el detalle también lo dice, como excepción.
+    const detail = screen.getByRole('article')
+    expect(within(detail).getByText('Documento pendiente de verificar')).toBeInTheDocument()
+
+    // El filtro «Documento» deja solo a quien tiene algo pendiente.
+    await user.click(screen.getByLabelText('Documento'))
+    await user.click(
+      await screen.findByRole('option', { name: 'Documento: Pendiente de verificar' }),
+    )
+
+    await waitFor(() => {
+      expect(screen.queryByText('Julia Mendoza')).not.toBeInTheDocument()
+    }, SLOW)
+    expect(screen.getAllByText('Ana Rivera Gómez').length).toBeGreaterThan(0)
+  })
+
   it('los filtros van por id de catálogo y filtran en el servidor', async () => {
     const user = userEvent.setup()
     renderPool()
