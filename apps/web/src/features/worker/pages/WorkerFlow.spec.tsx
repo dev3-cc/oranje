@@ -7,7 +7,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
 import { MobileShell } from '../components/MobileShell'
-import { SuspendedScreen, TaxDeadlineBanner } from '../components/TaxDeadlineBanner'
+import { TaxDeadlineBanner } from '../components/TaxDeadlineBanner'
 import type { TaxDeadlineApi } from '../types/worker.types'
 
 import { NotificationsPage } from './NotificationsPage'
@@ -69,8 +69,9 @@ describe('el apartado del Colaborador', () => {
     await user.click(continueButton)
 
     // Paso 3 · SSN/ITIN: llega solo tras guardar el transporte.
-    expect(await screen.findByText(/día 2 de 3/, undefined, SLOW)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Subir mi SSN o ITIN' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('button', { name: 'Subir mi SSN o ITIN' }, SLOW),
+    ).toBeInTheDocument()
     expect(screen.getByText(/Tu transporte quedó guardado\./)).toBeInTheDocument()
 
     // Un solo camino hacia la Fase 3: el botón, no un enlace duplicado en el aviso de arriba.
@@ -160,43 +161,23 @@ describe('el apartado del Colaborador', () => {
 })
 
 describe('TaxDeadlineBanner', () => {
-  // El caso real de ococom@ (2026-09-25): sin asignación nunca, no hay nada
-  // que avisar, sin importar cuánto tiempo pasó desde el alta.
-  it('sin asignación todavía, no muestra nada', () => {
-    const { container } = render(
-      <TaxDeadlineBanner deadline={deadline({ hasStarted: false, day: null, dueAt: null })} />,
-    )
+  // El plazo se unificó con el del expediente a medias (2026-09-30): este
+  // banner ya no cuenta días, solo confirma si el documento llegó.
+  it('sin documento cargado, no muestra nada', () => {
+    const { container } = render(<TaxDeadlineBanner deadline={deadline({ hasDocument: false })} />)
     expect(container).toBeEmptyDOMElement()
   })
 
-  it('días 1-3: dice cuánto queda y que sin el documento no hay pago', () => {
-    render(<TaxDeadlineBanner deadline={deadline({ status: 'OK', day: 2 })} />)
-    expect(screen.getByText(/día 2 de 3/)).toBeInTheDocument()
-    expect(screen.getByText(/no se te puede pagar/)).toBeInTheDocument()
-  })
-
-  it('día 4: el interceptor avisa que mañana se suspende el acceso', () => {
-    render(<TaxDeadlineBanner deadline={deadline({ status: 'NOTICE', day: 4 })} />)
-    expect(screen.getByRole('alert')).toHaveTextContent('Mañana se suspende tu acceso')
-  })
-
-  it('con documento cargado: en verificación, y el pago se habilita al verificar', () => {
+  it('cargado sin verificar: dice que está en verificación', () => {
     render(<TaxDeadlineBanner deadline={deadline({ hasDocument: true })} />)
     expect(screen.getByText(/cargado, en verificación/)).toBeInTheDocument()
-    expect(screen.getByText(/pago queda habilitado/)).toBeInTheDocument()
   })
 
-  it('día 5: la suspensión ofrece subir el documento aquí mismo, y CS como salida', () => {
+  it('verificado: lo dice sin el «en verificación»', () => {
     render(
-      <I18nProvider i18n={i18n}>
-        <Provider store={store}>
-          <SuspendedScreen />
-        </Provider>
-      </I18nProvider>,
+      <TaxDeadlineBanner deadline={deadline({ hasDocument: true, isDocumentVerified: true })} />,
     )
-    expect(screen.getByText('Tu acceso está suspendido')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Subir mi SSN o ITIN' })).toBeInTheDocument()
-    expect(screen.getByText(/Customer Service/)).toBeInTheDocument()
-    expect(screen.getByText(/no se pierden/)).toBeInTheDocument()
+    expect(screen.getByText(/está verificado/)).toBeInTheDocument()
+    expect(screen.queryByText(/en verificación/)).not.toBeInTheDocument()
   })
 })

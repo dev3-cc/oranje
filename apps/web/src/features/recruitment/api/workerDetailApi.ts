@@ -87,14 +87,35 @@ export const workerDetailApi = baseApi.injectEndpoints({
     }),
 
     /**
-     * VERIFICAR es lo que levanta la retención del 16% cuando el documento es
-     * el SSN/ITIN (D-33): cargar corre el plazo, verificar libera. Es permiso
+     * VERIFICAR marca el documento como revisado, sin más efecto — no toca la
+     * retención del 16% (eso lo decide el cifrado de campo sin conectar,
+     * D-27/D-33) ni el plazo (ese lo corre CARGAR, no verificar). Es permiso
      * de validación (`recruitment:validate_signup`), no de captura.
      */
     verifyWorkerDocument: build.mutation<void, { workerId: string; documentId: string }>({
       query: ({ workerId, documentId }) => ({
         url: `/workers/${workerId}/documents/${documentId}/verify`,
         method: 'POST',
+      }),
+      invalidatesTags: (_res, _err, { workerId }) => [
+        { type: 'Worker' as const, id: `${workerId}-documents` },
+      ],
+    }),
+
+    /**
+     * RECHAZAR (2026-09-30) invalida el documento con motivo — a diferencia de
+     * Verificar, esto SÍ cambia si el expediente cuenta como completo: se
+     * vuelve a pedir, y si el día de gracia ya pasó, el acceso se suspende de
+     * inmediato. Mismo permiso que Verificar.
+     */
+    rejectWorkerDocument: build.mutation<
+      void,
+      { workerId: string; documentId: string; reason: string }
+    >({
+      query: ({ workerId, documentId, reason }) => ({
+        url: `/workers/${workerId}/documents/${documentId}/reject`,
+        method: 'POST',
+        body: { reason },
       }),
       invalidatesTags: (_res, _err, { workerId }) => [
         { type: 'Worker' as const, id: `${workerId}-documents` },
@@ -121,5 +142,6 @@ export const {
   useGetWorkerDocumentsQuery,
   useCreateWorkerDocumentMutation,
   useVerifyWorkerDocumentMutation,
+  useRejectWorkerDocumentMutation,
   useDeleteWorkerDocumentMutation,
 } = workerDetailApi

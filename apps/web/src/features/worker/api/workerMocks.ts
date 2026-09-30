@@ -36,6 +36,7 @@ export const profile: MyProfile = {
   isProfileComplete: false,
   profileDueAt: null,
   hasTaxId: false,
+  hasTaxDocument: false,
   hasAccount: true,
   email: 'rnavarro@oranjepeople.com',
   isBlacklisted: false,

@@ -2,6 +2,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { StorageService } from '../../../infra/storage/index.js'
+import { AccessDeadlineService } from '../me/access-deadline.service.js'
 
 import { DocumentRow, DocumentsRepository } from './documents.repository.js'
 import type { CreateDocumentDto } from './dto/document.dto.js'
@@ -30,6 +31,7 @@ export class DocumentsService {
   constructor(
     private readonly repo: DocumentsRepository,
     private readonly storage: StorageService,
+    private readonly accessDeadline: AccessDeadlineService,
   ) {}
 
   async list(workerId: string): Promise<DocumentList> {
@@ -128,6 +130,37 @@ export class DocumentsService {
     }
 
     await this.repo.remove({ id, workerId, userId: user.id, roleCode: user.roleCode })
+  }
+
+  /**
+   * Rechazar (2026-09-30): el documento no sirve (ilegible, incorrecto…), se
+   * invalida con motivo y se le vuelve a pedir al colaborador. Si el día de
+   * gracia del expediente a medias ya pasó, el acceso se suspende de
+   * inmediato — no hay un nuevo día de gracia, ya tuvo el suyo — porque
+   * `is_profile_complete` (y con él `ownPartMissing`) vuelve a contar el
+   * SSN/ITIN como faltante en cuanto la fila desaparece.
+   */
+  async reject(
+    workerId: string,
+    id: string,
+    reason: string,
+    user: AuthenticatedUser,
+  ): Promise<void> {
+    await this.worker(workerId)
+
+    const row = await this.document(workerId, id)
+
+    if (row.verifiedAt !== null) {
+      throw new ConflictException({
+        code: 'DOCUMENT_VERIFIED',
+        message: 'Un documento verificado no se rechaza: deja rastro de quién lo revisó',
+      })
+    }
+
+    await this.repo.reject({ id, workerId, reason, userId: user.id, roleCode: user.roleCode })
+
+    const ownerId = await this.repo.workerUserId(workerId)
+    if (ownerId) this.accessDeadline.invalidate(ownerId)
   }
 
   private async document(workerId: string, id: string): Promise<DocumentRow> {
