@@ -22,6 +22,10 @@ export interface WorkerRow {
   bloodType: string | null
   isProfileComplete: boolean
   hasTaxId: boolean
+  /// Hay un documento SSN/ITIN cargado (verificado o no) — distinto de
+  /// `hasTaxId`, que depende del cifrado sin conectar (D-27) y hoy es
+  /// siempre falso.
+  hasTaxDocument: boolean
   hasAccount: boolean
   /// Hasta cuándo puede completar el expediente si se le validó a medias.
   profileDueAt: Date | null
@@ -74,6 +78,7 @@ const BASE = `
          w.is_profile_complete AS "isProfileComplete",
          w.profile_due_at      AS "profileDueAt",
          w.has_tax_id          AS "hasTaxId",
+         w.has_tax_document    AS "hasTaxDocument",
          (w.user_id IS NOT NULL) AS "hasAccount",
          u.email AS "email",
          EXISTS (SELECT 1 FROM coverage.blacklist_entry b

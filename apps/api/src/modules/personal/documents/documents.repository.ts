@@ -34,6 +34,16 @@ export class DocumentsRepository {
     return row && row.deletedAt === null ? { id: row.id, fullName: row.fullName } : null
   }
 
+  /** La cuenta del colaborador, para invalidar su plazo al rechazar (propia o de transición). */
+  async workerUserId(id: string): Promise<string | null> {
+    const row = await this.prisma.worker.findUnique({
+      where: { id },
+      select: { userId: true, legacyUserId: true },
+    })
+
+    return row?.userId ?? row?.legacyUserId ?? null
+  }
+
   async listAll(workerId: string): Promise<DocumentRow[]> {
     return this.prisma.workerDocument.findMany({
       where: { workerId },
@@ -166,6 +176,32 @@ export class DocumentsRepository {
           actorUserId: params.userId,
           actorRole: params.roleCode,
           payload: { workerId: params.workerId },
+        },
+      })
+    })
+  }
+
+  // Igual que `remove`, pero deja rastro de POR QUÉ (el motivo es
+  // obligatorio) — es lo que distingue un rechazo de un borrado cualquiera.
+  async reject(params: {
+    id: string
+    workerId: string
+    reason: string
+    userId: string
+    roleCode: string
+  }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.workerDocument.delete({ where: { id: params.id } })
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'personal.worker_document',
+          entityId: params.id,
+          eventType: 'DOCUMENT_REJECTED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: { workerId: params.workerId, reason: params.reason },
         },
       })
     })

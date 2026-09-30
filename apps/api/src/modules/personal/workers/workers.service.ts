@@ -23,8 +23,13 @@ import type { WorkerEntity } from './entities/worker.entity.js'
 import { WorkerRow, WorkersRepository } from './workers.repository.js'
 
 const PENDING_VALIDATION = 'WHITE'
-/** Días que gana el colaborador para completar el expediente si se le validó a medias. */
-export const PROFILE_GRACE_DAYS = 3
+/**
+ * Días que gana el colaborador para completar el expediente si se le validó
+ * a medias — transporte, contacto de emergencia, tipo de sangre y SSN/ITIN
+ * (unificado el 2026-09-30, Hugo: el SSN/ITIN dejó de tener su propio plazo
+ * aparte de 3/4/5 días y se pliega a este).
+ */
+export const PROFILE_GRACE_DAYS = 1
 const AVAILABLE = 'STRONG_GREEN'
 const STANDBY = 'PINK'
 const REPORTED = 'RED'
@@ -330,9 +335,9 @@ export class WorkersService {
     }
 
     // Reglas de Negocio § Validación con expediente incompleto: se puede
-    // validar a medias solo a sabiendas, y con eso corren 3 dias para que el
-    // colaborador lo complete desde su app (el plazo se calcula al leer, como
-    // el del SSN/ITIN).
+    // validar a medias solo a sabiendas, y con eso corre 1 dia para que el
+    // colaborador lo complete desde su app (el plazo se calcula al leer).
+    // `isProfileComplete` ya incluye el SSN/ITIN (vw_worker, 2026-09-30).
     const validatesIncomplete = dto.toState === AVAILABLE && !worker.isProfileComplete
 
     if (validatesIncomplete && !dto.acceptIncompleteProfile) {
@@ -343,9 +348,9 @@ export class WorkersService {
     }
 
     // Lo que falte de la Fase 1 (posicion, modalidad, ingles, experiencia) lo
-    // completa Reclutamiento con «Editar»; el plazo de 3 dias que bloquea al
+    // completa Reclutamiento con «Editar»; el plazo de 1 dia que bloquea al
     // colaborador se cobra SOLO por lo que le toca a el (transporte,
-    // emergencia, tipo de sangre) — ver AccessDeadlineService.
+    // emergencia, tipo de sangre, SSN/ITIN) — ver AccessDeadlineService.
 
     let reasonId: string | null = null
 
@@ -679,6 +684,7 @@ function toEntity(row: WorkerRow, photos: Map<string, string>): WorkerEntity {
     isProfileComplete: row.isProfileComplete,
     profileDueAt: row.profileDueAt?.toISOString() ?? null,
     hasTaxId: row.hasTaxId,
+    hasTaxDocument: row.hasTaxDocument,
     hasAccount: row.hasAccount,
     email: row.email,
     isBlacklisted: row.isBlacklisted,

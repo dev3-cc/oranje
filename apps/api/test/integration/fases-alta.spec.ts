@@ -9,7 +9,10 @@ import { actor } from './fixture.js'
  * entrevista; de la Fase 2 solo queda el transporte.
  *
  * Lo que se protege aquí es que la fila pueda nacer a medias — eso ES el
- * estado Blanco — y que `is_profile_complete` siga exigiendo los nueve.
+ * estado Blanco — y que `is_profile_complete` siga exigiendo los nueve
+ * campos y, desde el 2026-09-30, el SSN/ITIN (unificado con el plazo del
+ * expediente a medias: ver Reglas de Negocio § Validación con expediente
+ * incompleto).
  */
 
 let actorId: string
@@ -87,7 +90,7 @@ describe('el alta por fases', () => {
     expect((await view(id)).is_profile_complete).toBe(false)
   })
 
-  it('se completa con el transporte y los datos de emergencia', async () => {
+  it('con los nueve campos pero sin SSN/ITIN sigue incompleto', async () => {
     const position = await db.catalogPosition.findFirstOrThrow({ select: { id: true } })
     const english = await db.englishLevel.findFirstOrThrow({ select: { id: true } })
     const modality = await db.hiringModality.findFirstOrThrow({ select: { id: true } })
@@ -104,7 +107,38 @@ describe('el alta por fases', () => {
       bloodType: 'A_POS',
     })
 
+    expect((await view(id)).is_profile_complete).toBe(false)
+  })
+
+  it('se completa con el transporte, los datos de emergencia y el SSN/ITIN', async () => {
+    const position = await db.catalogPosition.findFirstOrThrow({ select: { id: true } })
+    const english = await db.englishLevel.findFirstOrThrow({ select: { id: true } })
+    const modality = await db.hiringModality.findFirstOrThrow({ select: { id: true } })
+
+    const id = await worker({
+      catalogPositionId: position.id,
+      englishLevelId: english.id,
+      hiringModalityId: modality.id,
+      experienceLevel: 'THREE_TO_FIVE',
+      transportType: 'OWN',
+      emergencyContactName: 'Rosa',
+      emergencyContactPhone: '9992223344',
+      emergencyContactRelationship: 'MOTHER',
+      bloodType: 'A_POS',
+    })
+
+    await db.workerDocument.create({
+      data: {
+        id: uuidv7(),
+        workerId: id,
+        documentType: 'SSN_ITIN',
+        filePath: 'workers/document/completo.pdf',
+      },
+    })
+
     expect((await view(id)).is_profile_complete).toBe(true)
+
+    await db.workerDocument.deleteMany({ where: { workerId: id } })
   })
 
   // D-27: mientras el cifrado de campo no se conecte, la retención del 16%

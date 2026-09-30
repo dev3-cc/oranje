@@ -62,7 +62,7 @@ const INTRO_SLIDES: readonly {
   {
     image: personajeEncuesta,
     title: msg`El expediente se completa por fases`,
-    text: msg`Nace en Blanco: el colaborador termina las fases 2 y 3 en su app — transporte y SSN/ITIN con 3 días de plazo.`,
+    text: msg`Nace en Blanco: el colaborador termina las fases 2 y 3 en su app — si lo validas con algo pendiente, tiene 1 día para completarlo.`,
   },
   {
     image: personajeGracias,
@@ -94,7 +94,7 @@ const GENDERS = [
 /** Documentación viva de dev: no se traduce (IS_DEV_UI). */
 const AFTERMATH_DEV = [
   'Nace en BLANCO: la fila existe a medias, eso ES el estado (D-26).',
-  'El colaborador completa Fase 2 (transporte y SSN/ITIN, con 3 días de plazo) y Fase 3 (emergencia y salud) en la app.',
+  'El colaborador completa Fase 2 (transporte y SSN/ITIN) y Fase 3 (emergencia y salud) en la app; validado a medias, 1 día de plazo.',
   'is_profile_complete vive en vw_worker: los campos obligatorios los declara la vista, sin NOT NULL.',
   'La Reclutadora valida el alta (RF-08) → pasa a VERDE FUERTE y entra al Pool.',
   'Sin SSN/ITIN, la retención del 16% aplica automática (D-27).',
@@ -103,7 +103,7 @@ const AFTERMATH_DEV = [
 /** Lo que lee la persona; se traduce al pintar con `i18n._()` (D-36). */
 const AFTERMATH_MESSAGE: readonly MessageDescriptor[] = [
   msg`Nace en Blanco: el expediente se completa por fases.`,
-  msg`El colaborador completa la Fase 2 (transporte y SSN/ITIN, con 3 días de plazo) y la Fase 3 (contacto de emergencia y salud) desde su app.`,
+  msg`El colaborador completa la Fase 2 (transporte y SSN/ITIN) y la Fase 3 (contacto de emergencia y salud) desde su app; si lo validas a medias, tiene 1 día para completarlo.`,
   msg`Cuando la Reclutadora valida el alta, pasa a Verde fuerte y entra al Pool de Colaboradores.`,
   msg`Por ahora la retención del 16% aplica a todos los colaboradores, suban o verifiquen o no su SSN/ITIN — es temporal, mientras se conecta ese proceso.`,
 ]
