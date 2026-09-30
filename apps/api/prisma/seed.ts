@@ -985,6 +985,16 @@ const NOTIFICATION_TYPES: Array<{
     /* El hotel invita a su propia gente sin pasar por Oranje (Hugo,
        2026-09-30): quien lleva la cuenta tiene que enterarse igual, porque
        ya no es él quien la da de alta. */
+    /* El hotel propone una cuenta gerencial y Oranje confirma (Hugo,
+       2026-09-30): sin este aviso el Administrador tendría que entrar a
+       mirar por si acaso. */
+    code: 'HOTEL_ACCOUNT_PENDING',
+    module: 'commercial',
+    name: 'Cuenta de hotel por aprobar',
+    description:
+      'Un hotel propuso una cuenta gerencial. Avisa a los Administradores, que la aprueban',
+  },
+  {
     code: 'HOTEL_ACCOUNT_INVITED',
     module: 'commercial',
     name: 'Cuenta de hotel invitada',

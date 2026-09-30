@@ -306,9 +306,13 @@ const SALES: Permission[] = [
   // SISTEMA
   {
     module: 'system',
+    /* El Administrador entra el 2026-09-30: su campana respondía 403 y la
+       pantalla lo disimulaba, así que no se enteraba de nada. Ahora hay
+       avisos que son suyos —las cuentas gerenciales que el hotel propone y
+       él aprueba— y sin esto tendría que entrar a mirar por si acaso. */
     action: 'receive_notification',
     label: 'Recibir notificación',
-    roles: [BD, BDC, SYS],
+    roles: [BD, BDC, SYS, ADMIN],
   },
   {
     module: 'system',

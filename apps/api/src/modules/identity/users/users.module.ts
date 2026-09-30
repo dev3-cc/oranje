@@ -5,7 +5,11 @@ import { AuthModule } from '../auth/auth.module.js'
 
 import { CorporateEmailController } from './corporate-email.controller.js'
 import { CorporateEmailService } from './corporate-email.service.js'
-import { HotelUsersController, HotelUsersDirectoryController } from './hotel-users.controller.js'
+import {
+  HotelUsersController,
+  HotelUsersDirectoryController,
+  HotelUsersPendingController,
+} from './hotel-users.controller.js'
 import { HotelUsersRepository } from './hotel-users.repository.js'
 import { HotelUsersService } from './hotel-users.service.js'
 import { MeController } from './me.controller.js'
@@ -19,6 +23,7 @@ import { StaffUsersService } from './staff-users.service.js'
   controllers: [
     HotelUsersController,
     HotelUsersDirectoryController,
+    HotelUsersPendingController,
     MeController,
     StaffUsersController,
     CorporateEmailController,

@@ -94,6 +94,33 @@ export class HotelUsersRepository {
     return prospect?.ownerUserId ?? null
   }
 
+  /**
+   * Deja la cuenta esperando aprobación. Se reusa `is_active` en vez de
+   * inventar un estado: una cuenta inactiva ya es exactamente «no entra
+   * todavía», y el resto del sistema ya lo respeta.
+   */
+  async deactivate(id: string): Promise<void> {
+    await this.prisma.user.update({ where: { id }, data: { isActive: false } })
+  }
+
+  /** Las cuentas gerenciales que el hotel propuso y siguen esperando. */
+  async pendingApprovals(): Promise<HotelUserRow[]> {
+    const rows = await this.prisma.user.findMany({
+      where: {
+        isActive: false,
+        firebaseUid: null,
+        role: { code: { in: ['ROL-H-02', 'ROL-H-03'] } },
+        hotelId: { not: null },
+      },
+      select: SELECT,
+      orderBy: { createdAt: 'desc' },
+    })
+
+    /* El `where` ya excluye las filas sin hotel; el filtro es para que el
+       compilador lo sepa, no para tapar un caso que pueda ocurrir. */
+    return rows.filter((row): row is HotelUserRow => row.hotel !== null)
+  }
+
   async emailTaken(email: string): Promise<boolean> {
     return (await this.prisma.user.count({ where: { email } })) > 0
   }
@@ -108,6 +135,25 @@ export class HotelUsersRepository {
   }
 
   /** Una cuenta del hotel: con hotel. El personal del sistema no entra por aquí. */
+  /** Activa la cuenta propuesta y deja el rastro de quién la aprobó. */
+  async approve(id: string, actor: { userId: string; role: string }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({ where: { id }, data: { isActive: true } })
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'identity.user',
+          entityId: id,
+          eventType: 'HOTEL_USER_APPROVED',
+          actorUserId: actor.userId,
+          actorRole: actor.role,
+          payload: {},
+        },
+      })
+    })
+  }
+
   async findById(id: string): Promise<HotelUserRow | null> {
     const row = await this.prisma.user.findFirst({
       where: { id, hotelId: { not: null } },

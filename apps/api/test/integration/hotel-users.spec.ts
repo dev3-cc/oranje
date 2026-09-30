@@ -446,3 +446,93 @@ describe('invitar cuentas del hotel', () => {
     expect(entity.role.code).toBe('ROL-H-01')
   })
 })
+
+/**
+ * El hotel propone, Oranje confirma (Hugo, 2026-09-30).
+ *
+ * Solo para las dos cuentas gerenciales y solo cuando la propone el hotel: si
+ * invita Oranje, pedirle que se apruebe a sí misma sería ceremonia vacía.
+ */
+describe('las cuentas gerenciales que propone el hotel esperan visto bueno', () => {
+  const desdeElHotel = (roleCode: string, hotelId: string) => ({
+    id: auth.id,
+    roleCode,
+    hotelId,
+    departmentId: null,
+  })
+
+  it('un gerente propuesto por el hotel nace inactivo y SIN invitación', async () => {
+    const huerfano = await hotel()
+    const entity = await service.create(
+      huerfano,
+      dto({ email: `pend-gm-${stamp}@oranje.local`, roleCode: 'ROL-H-03' }),
+      desdeElHotel('ROL-H-02', huerfano),
+    )
+    createdUsers.push(entity.id)
+
+    expect(entity.isActive).toBe(false)
+    /* Mandar la invitación antes de aprobar le daría a la persona un enlace
+       que la deja fuera: su cuenta todavía no entra. */
+    expect(entity.invitationSent).toBe(false)
+  })
+
+  it('aparece en la cola del Administrador, y al aprobarla se activa y sale la invitación', async () => {
+    const huerfano = await hotel()
+    const propuesto = await service.create(
+      huerfano,
+      dto({ email: `pend-ok-${stamp}@oranje.local`, roleCode: 'ROL-H-03' }),
+      desdeElHotel('ROL-H-02', huerfano),
+    )
+    createdUsers.push(propuesto.id)
+
+    const cola = await service.pendingApprovals()
+    expect(cola.map((row) => row.id)).toContain(propuesto.id)
+
+    const aprobado = await service.approve(propuesto.id, auth)
+    expect(aprobado.isActive).toBe(true)
+    expect(aprobado.invitationSent).toBe(true)
+
+    const journal = await db.journalEntry.findMany({
+      where: { entityId: propuesto.id, eventType: 'HOTEL_USER_APPROVED' },
+      select: { actorUserId: true },
+    })
+    expect(journal).toHaveLength(1)
+  })
+
+  it('aprobar dos veces no reenvía nada', async () => {
+    const huerfano = await hotel()
+    const propuesto = await service.create(
+      huerfano,
+      dto({ email: `pend-dos-${stamp}@oranje.local`, roleCode: 'ROL-H-03' }),
+      desdeElHotel('ROL-H-02', huerfano),
+    )
+    createdUsers.push(propuesto.id)
+
+    await service.approve(propuesto.id, auth)
+    await expect(service.approve(propuesto.id, auth)).rejects.toMatchObject({
+      response: { code: 'ALREADY_APPROVED' },
+    })
+  })
+
+  it('un supervisor invitado por su gerente entra directo: la espera es solo para gerencia', async () => {
+    const entity = await service.create(
+      hotelA,
+      dto({ email: `pend-sup-${stamp}@oranje.local`, roleCode: 'ROL-H-01' }),
+      desdeElHotel('ROL-H-03', hotelA),
+    )
+    createdUsers.push(entity.id)
+
+    expect(entity.isActive).toBe(true)
+  })
+
+  it('y si la propone el Administrador, tampoco espera', async () => {
+    const entity = await service.create(
+      hotelB,
+      dto({ email: `pend-adm-${stamp}@oranje.local`, roleCode: 'ROL-H-03' }),
+      auth,
+    )
+    createdUsers.push(entity.id)
+
+    expect(entity.isActive).toBe(true)
+  })
+})

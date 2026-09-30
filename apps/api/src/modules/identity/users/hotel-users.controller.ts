@@ -111,6 +111,32 @@ export class HotelUsersController {
  * El directorio del Administrador: las cuentas de TODOS los hoteles en una
  * lista. Controlador aparte para no chocar con `GET /users/:id` del personal.
  */
+/**
+ * La cola del Administrador: cuentas gerenciales que un hotel propuso y
+ * siguen esperando su visto bueno (Hugo, 2026-09-30).
+ *
+ * Fuera del controlador de un hotel porque no son de uno: son de todos.
+ */
+@Controller('hotel-users/pending')
+export class HotelUsersPendingController {
+  constructor(private readonly users: HotelUsersService) {}
+
+  @Requires('users', 'manage_hotel')
+  @Get()
+  async pending(): Promise<{ data: HotelUserEntity[] }> {
+    return { data: await this.users.pendingApprovals() }
+  }
+
+  @Requires('users', 'manage_hotel')
+  @Post(':id/approve')
+  async approve(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: HotelUserWithInvitation }> {
+    return { data: await this.users.approve(id, user) }
+  }
+}
+
 @Controller('hotel-users')
 export class HotelUsersDirectoryController {
   constructor(private readonly users: HotelUsersService) {}

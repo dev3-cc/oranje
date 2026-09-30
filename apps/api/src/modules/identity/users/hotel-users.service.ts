@@ -33,6 +33,26 @@ const ALLOWED_BOSSES: Record<string, readonly string[]> = {
 }
 
 /** Nombres para los mensajes: ningún código llega a texto humano. */
+/**
+ * Si esta alta queda esperando el visto bueno del Administrador.
+ *
+ * Solo cuando se cumplen las dos cosas (Hugo, 2026-09-30):
+ *
+ * - la propone **el hotel**, no Oranje. Si invita el BD, el BDC o el propio
+ *   Administrador, pedir que Oranje se apruebe a sí mismo sería ceremonia;
+ * - y es un rol **gerencial**. Un supervisor invitado por su gerente entra
+ *   directo, o volvemos a meter a Oranje en todo.
+ */
+function pendingApproval(
+  roleCode: string,
+  hotelId: string,
+  actor: { hotelId: string | null },
+): boolean {
+  const desdeElHotel = actor.hotelId === hotelId
+
+  return desdeElHotel && (roleCode === GENERAL_MANAGER_ROLE || roleCode === AREA_MANAGER_ROLE)
+}
+
 /** Los roles que invitan con límite; los demás caen en el guard general. */
 const SALES_ROLE = 'ROL-V-01'
 const AREA_MANAGER_ROLE = 'ROL-H-02'
@@ -229,6 +249,21 @@ export class HotelUsersService {
 
     await this.notifyAccountOwner(hotelId, row.id, dto.roleCode, actor)
 
+    /*
+     * Una cuenta GERENCIAL propuesta POR EL HOTEL espera el visto bueno del
+     * Administrador (Hugo, 2026-09-30): el hotel propone y Oranje confirma.
+     *
+     * Mientras espera no se manda la invitación. Mandarla antes sería darle
+     * a la persona un enlace que la deja fuera: la cuenta está inactiva y el
+     * login la rechaza, así que pensaría que el sistema no sirve.
+     */
+    if (pendingApproval(dto.roleCode, hotelId, actor)) {
+      await this.repo.deactivate(row.id)
+      await this.notifyAdmins(row.id, dto.roleCode, row.fullName, actor)
+
+      return withInvitation({ ...toEntity(row), isActive: false }, { sent: false })
+    }
+
     const invitation = await this.sendInvitation(
       row.id,
       row.email,
@@ -240,6 +275,78 @@ export class HotelUsersService {
     )
 
     return withInvitation(toEntity(row), invitation)
+  }
+
+  /**
+   * Avisa a los Administradores de que hay una cuenta gerencial esperando.
+   *
+   * El aviso va por rol y no a una persona: cualquiera de ellos puede
+   * resolverlo, y atarlo a uno solo lo dejaría colgado cuando ese esté de
+   * vacaciones.
+   */
+  private async notifyAdmins(
+    userId: string,
+    roleCode: string,
+    fullName: string,
+    actor: AuthenticatedUser,
+  ): Promise<void> {
+    try {
+      await this.notifications.publish({
+        type: 'HOTEL_ACCOUNT_PENDING',
+        title: 'Cuenta de hotel por aprobar',
+        body: `${fullName} fue propuesto como ${ROLE_LABEL[roleCode] ?? roleCode} por su hotel.`,
+        entity: { type: 'identity.user', id: userId },
+        actorUserId: actor.id,
+        audience: [{ kind: 'ROLE', roleCode: 'ROL-ADM-01' }],
+      })
+    } catch {
+      /* Mejor esfuerzo: la cuenta ya quedó pendiente y se ve en la lista. */
+    }
+  }
+
+  /**
+   * El visto bueno: activa la cuenta y **entonces** manda la invitación.
+   *
+   * El orden importa. Mandarla al proponer le daría a la persona un enlace
+   * que la deja fuera, porque su cuenta todavía no entra.
+   */
+  async approve(id: string, actor: AuthenticatedUser): Promise<HotelUserWithInvitation> {
+    const row = await this.repo.findById(id)
+
+    if (!row) {
+      throw new NotFoundException({
+        code: 'USER_NOT_FOUND',
+        message: 'Esa cuenta de hotel no existe',
+      })
+    }
+
+    if (row.isActive) {
+      throw new ConflictException({
+        code: 'ALREADY_APPROVED',
+        message: 'Esta cuenta ya está aprobada',
+      })
+    }
+
+    await this.repo.approve(id, { userId: actor.id, role: actor.roleCode })
+
+    const invitation = await this.sendInvitation(
+      row.id,
+      row.email,
+      row.fullName,
+      row.locale,
+      row.role,
+      { userId: actor.id, role: actor.roleCode },
+      'invitation',
+    )
+
+    const fresh = await this.repo.findById(id)
+
+    return withInvitation(toEntity(fresh ?? row), invitation)
+  }
+
+  /** Lo que el Administrador tiene por resolver. */
+  async pendingApprovals(): Promise<HotelUserEntity[]> {
+    return (await this.repo.pendingApprovals()).map(toEntity)
   }
 
   /**
