@@ -982,6 +982,16 @@ const NOTIFICATION_TYPES: Array<{
     description: 'Se solicita reasignación. Avisa al Manager (RF-17)',
   },
   {
+    /* El hotel invita a su propia gente sin pasar por Oranje (Hugo,
+       2026-09-30): quien lleva la cuenta tiene que enterarse igual, porque
+       ya no es él quien la da de alta. */
+    code: 'HOTEL_ACCOUNT_INVITED',
+    module: 'commercial',
+    name: 'Cuenta de hotel invitada',
+    description:
+      'Alguien del hotel invitó una cuenta nueva. Avisa al Business Developer dueño de la cuenta',
+  },
+  {
     code: 'TEAM_CHANGED',
     module: 'recruitment',
     name: 'Cambio de equipo',

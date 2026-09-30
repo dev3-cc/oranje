@@ -49,6 +49,51 @@ export class HotelUsersRepository {
     return (await this.prisma.hotelDepartment.count({ where: { id } })) > 0
   }
 
+  /**
+   * Si el hotel cae en alguna zona del BD. Su alcance son las zonas y no un
+   * hotel fijo (D-09), así que invitar se acota por ahí.
+   */
+  async hotelInUserZones(hotelId: string, userId: string): Promise<boolean> {
+    const count = await this.prisma.hotel.count({
+      where: { id: hotelId, zone: { users: { some: { userId } } } },
+    })
+
+    return count > 0
+  }
+
+  /**
+   * Si al hotel le queda un Manager General activo.
+   *
+   * Es lo que decide si el Manager de Área puede nombrar uno: con gerente
+   * vivo el cambio lo hace él mismo, su BD o el Administrador; sin ninguno
+   * —la rotación— el segundo de a bordo destraba el hotel sin llamar a nadie.
+   */
+  async hasActiveGeneralManager(hotelId: string): Promise<boolean> {
+    const count = await this.prisma.user.count({
+      where: { hotelId, isActive: true, role: { code: 'ROL-H-03' } },
+    })
+
+    return count > 0
+  }
+
+  /**
+   * El BD que lleva la cuenta comercial del hotel, para avisarle cuando el
+   * propio hotel invita a alguien: ya no es él quien la da de alta, pero
+   * sigue siendo quien responde por ese hotel.
+   *
+   * Sale del ciclo de onboarding ABIERTO; si el hotel no tiene ninguno
+   * (cliente viejo, ciclo archivado) devuelve null y no se avisa a nadie.
+   */
+  async accountOwner(hotelId: string): Promise<string | null> {
+    const prospect = await this.prisma.prospect.findFirst({
+      where: { hotelId, closedAt: null },
+      select: { ownerUserId: true },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    return prospect?.ownerUserId ?? null
+  }
+
   async emailTaken(email: string): Promise<boolean> {
     return (await this.prisma.user.count({ where: { email } })) > 0
   }

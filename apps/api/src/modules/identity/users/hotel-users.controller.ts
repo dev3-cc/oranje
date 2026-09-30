@@ -82,13 +82,23 @@ export class HotelUsersController {
     return { data: await this.users.resendInvitation(hotelId, id, user) }
   }
 
+  /**
+   * Tres vías llegan aquí y `@Requires` solo sabe de un par, así que el «uno
+   * u otro» se resuelve a mano: el Administrador desde Usuarios, el BDC desde
+   * la conversión, y —desde el 2026-09-30— quien puede **invitar**: el BD en
+   * los hoteles de sus zonas y el propio hotel en el suyo.
+   *
+   * Lo que este guard NO decide es a QUÉ rol se puede invitar ni en qué
+   * hotel: eso vive en el servicio, con los datos delante.
+   */
   private async assertCanManage(user: AuthenticatedUser): Promise<void> {
-    const [conversion, admin] = await Promise.all([
+    const [conversion, admin, invite] = await Promise.all([
       this.permissions.can(user.roleCode, 'conversion', 'create_hotel_user'),
       this.permissions.can(user.roleCode, 'users', 'manage_hotel'),
+      this.permissions.can(user.roleCode, 'users', 'invite_hotel'),
     ])
 
-    if (!conversion && !admin) {
+    if (!conversion && !admin && !invite) {
       throw new ForbiddenException({
         code: 'FORBIDDEN',
         message: 'Tu rol no administra las cuentas del hotel',

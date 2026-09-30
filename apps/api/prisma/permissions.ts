@@ -194,6 +194,30 @@ const SALES: Permission[] = [
   },
   { module: 'terms_and_conditions', action: 'approve', label: 'Validar T&C', roles: [BDC] },
 
+  {
+    /**
+     * Invitar cuentas del hotel sin pasar por Oranje (Hugo, 2026-09-30).
+     *
+     * Los gerentes de hotel rotan y el nuevo no hereda el correo del
+     * anterior, así que cada cambio caía en el Administrador. Medido en
+     * producción: **34 de 36 hoteles tienen un solo gerente y nadie más**, y
+     * Holiday Inn Stockbridge acumuló cuatro altas en once días, tres de
+     * ellas muertas.
+     *
+     * Va al **BD**, que es quien visita el hotel; el BDC lo recibe por la
+     * herencia por jerarquía, sin línea aparte. La conversión NO se toca:
+     * crear el PRIMER Usuario del Hotel sigue siendo exclusivo del BDC
+     * (RR-V-02).
+     *
+     * El alcance lo pone el servicio, no esta tabla: el BD solo en los
+     * hoteles de sus zonas.
+     */
+    module: 'users',
+    action: 'invite_hotel',
+    label: 'Invitar cuentas del hotel',
+    roles: [BD],
+  },
+
   // CONVERSIÓN — RR-V-01: solo el BDC aprueba
   {
     module: 'conversion',
@@ -304,6 +328,26 @@ const SALES: Permission[] = [
 // HOTEL — Supervisor, Manager de Área y Manager General
 // ---------------------------------------------------------------------------
 const HOTEL: Permission[] = [
+  {
+    /**
+     * El hotel invita a su propia gente (Hugo, 2026-09-30).
+     *
+     * `inherit: false` a propósito: la herencia por jerarquía haría que el
+     * Manager General lo recibiera del Supervisor, y aquí la dirección
+     * importa al revés — el Supervisor NO invita, porque crear un gerente
+     * desde el escalón más bajo es regalarle el hotel entero.
+     *
+     * Quién puede invitar a qué rol lo decide el servicio, no esta tabla: el
+     * Manager de Área alcanza a un Manager General solo si el hotel se quedó
+     * sin ninguno activo, que es el caso de la rotación.
+     */
+    module: 'users',
+    action: 'invite_hotel',
+    label: 'Invitar cuentas de mi hotel',
+    roles: [GA, GG],
+    inherit: false,
+  },
+
   // REQUISICIONES
   {
     module: 'requisitions',

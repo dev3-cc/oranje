@@ -7,6 +7,7 @@ import { FirebaseAccountsService } from '../../src/infra/firebase/index.js'
 import { MailerService } from '../../src/infra/mailer/index.js'
 import type { PrismaService } from '../../src/infra/prisma/index.js'
 import { SettingsService } from '../../src/infra/settings/index.js'
+import { PermissionsService } from '../../src/modules/identity/auth/permissions.service.js'
 import type { CreateHotelUserDto } from '../../src/modules/identity/users/dto/create-hotel-user.dto.js'
 import { createHotelUserSchema } from '../../src/modules/identity/users/dto/create-hotel-user.dto.js'
 import { queryHotelUsersSchema } from '../../src/modules/identity/users/dto/query-hotel-users.dto.js'
@@ -117,6 +118,12 @@ beforeAll(async () => {
     new HotelUsersRepository(db as unknown as PrismaService),
     new FirebaseAccountsService(config),
     mailerApagado(new FirebaseAccountsService(config)),
+    /* Permisos REALES contra la base sembrada: quién puede invitar a qué rol
+       es justo lo que hay que comprobar, no algo que simular. */
+    new PermissionsService(db as unknown as PrismaService),
+    /* Sin Pub/Sub en las pruebas: el aviso al BD es mejor esfuerzo y lo que
+       importa aquí es el alta, no el correo de cortesía. */
+    { publish: (): Promise<void> => Promise.resolve() } as never,
   )
 
   hotelA = await hotel()
@@ -351,5 +358,91 @@ describe('las cuentas del hotel nacen en inglés', () => {
 
     const fila = await db.user.findUniqueOrThrow({ where: { id }, select: { locale: true } })
     expect(fila.locale).toBe('es')
+  })
+})
+
+/**
+ * Quién puede invitar cuentas del hotel (Hugo, 2026-09-30).
+ *
+ * El problema que lo motiva es de datos, no de opinión: en producción **34 de
+ * 36 hoteles tienen un solo gerente y nadie más**, así que cuando rota no
+ * queda nadie dentro para dar de alta al siguiente y todo cae en Oranje.
+ *
+ * Lo que se prueba aquí son los límites, que es donde se puede hacer daño:
+ * el hotel ajeno, el rol que no toca y la excepción de la rotación.
+ */
+describe('invitar cuentas del hotel', () => {
+  const desde = (roleCode: string, hotelId: string | null) => ({
+    id: auth.id,
+    roleCode,
+    hotelId,
+    departmentId: null,
+  })
+
+  it('el Manager General invita a cualquiera de SU hotel', async () => {
+    const email = `inv-gm-${stamp}@oranje.local`
+    const entity = await service.create(
+      hotelA,
+      dto({ email, roleCode: 'ROL-H-01' }),
+      desde('ROL-H-03', hotelA),
+    )
+    createdUsers.push(entity.id)
+
+    expect(entity.hotel.id).toBe(hotelA)
+  })
+
+  it('pero no en el hotel de al lado', async () => {
+    await expect(
+      service.create(
+        hotelB,
+        dto({ email: `inv-otro-${stamp}@oranje.local`, roleCode: 'ROL-H-01' }),
+        desde('ROL-H-03', hotelA),
+      ),
+    ).rejects.toMatchObject({ response: { code: 'HOTEL_OUT_OF_SCOPE' } })
+  })
+
+  it('el Supervisor no invita a nadie: desde el escalón más bajo se regalaría el hotel', async () => {
+    await expect(
+      service.create(
+        hotelA,
+        dto({ email: `inv-sup-${stamp}@oranje.local`, roleCode: 'ROL-H-03' }),
+        desde('ROL-H-01', hotelA),
+      ),
+    ).rejects.toMatchObject({ response: { code: 'FORBIDDEN' } })
+  })
+
+  it('el Manager de Área NO nombra gerente si el hotel ya tiene uno activo', async () => {
+    /* hotelA ya tiene Manager General de las pruebas de arriba. */
+    await expect(
+      service.create(
+        hotelA,
+        dto({ email: `inv-ga-${stamp}@oranje.local`, roleCode: 'ROL-H-03' }),
+        desde('ROL-H-02', hotelA),
+      ),
+    ).rejects.toMatchObject({ response: { code: 'HOTEL_HAS_GENERAL_MANAGER' } })
+  })
+
+  it('y SÍ lo nombra cuando el hotel se quedó sin ninguno: eso es la rotación', async () => {
+    const huerfano = await hotel()
+
+    const entity = await service.create(
+      huerfano,
+      dto({ email: `inv-rota-${stamp}@oranje.local`, roleCode: 'ROL-H-03' }),
+      desde('ROL-H-02', huerfano),
+    )
+    createdUsers.push(entity.id)
+
+    expect(entity.role.code).toBe('ROL-H-03')
+  })
+
+  it('el Manager de Área sí invita supervisores sin más condiciones', async () => {
+    const entity = await service.create(
+      hotelA,
+      dto({ email: `inv-ga-sup-${stamp}@oranje.local`, roleCode: 'ROL-H-01' }),
+      desde('ROL-H-02', hotelA),
+    )
+    createdUsers.push(entity.id)
+
+    expect(entity.role.code).toBe('ROL-H-01')
   })
 })
