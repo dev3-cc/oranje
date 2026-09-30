@@ -5,6 +5,7 @@ import { useState, type ReactNode } from 'react'
 import { useApproveHotelUserMutation, useGetPendingHotelUsersQuery } from '../api/adminApi'
 
 import { Button } from '@/shared/components/Button'
+import { useCan } from '@/shared/hooks/useCan'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { formatDateTime } from '@/shared/lib/formatters'
 
@@ -21,11 +22,16 @@ import { formatDateTime } from '@/shared/lib/formatters'
  */
 export function PendingHotelUsers(): ReactNode {
   const { t } = useLingui()
-  const { data: pending = [], isLoading } = useGetPendingHotelUsersQuery()
+  const can = useCan()
+  const { data: pending = [], isLoading } = useGetPendingHotelUsersQuery(undefined, {
+    skip: !can('users:approve_hotel'),
+  })
   const [approve, { isLoading: isApproving }] = useApproveHotelUserMutation()
   const [busyId, setBusyId] = useState<string | null>(null)
 
-  if (isLoading || pending.length === 0) return null
+  /* El Administrador y el BDC; a quien no puede aprobar, la consulta le
+     daría 403 y la sección no tendría sentido. */
+  if (!can('users:approve_hotel') || isLoading || pending.length === 0) return null
 
   async function handleApprove(id: string, fullName: string): Promise<void> {
     setBusyId(id)

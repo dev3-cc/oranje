@@ -218,6 +218,27 @@ const SALES: Permission[] = [
     roles: [BD],
   },
 
+  {
+    /**
+     * Confirmar la cuenta gerencial que propone un hotel (Hugo, 2026-09-30).
+     *
+     * Al BDC además del Administrador, por coherencia: el BDC **ya puede
+     * crear** esas mismas cuentas sin que nadie confirme, así que negarle
+     * aprobar no protegía nada — le bastaba con crearla él y saltarse la
+     * cola. Y descarga al Administrador, que si no es el único que puede.
+     *
+     * El BD queda fuera por volumen: son 39 contra 4 BDC, y que la propuesta
+     * de un hotel la confirme alguien distinto de quien lo lleva
+     * comercialmente mantiene un segundo par de ojos.
+     */
+    module: 'users',
+    action: 'approve_hotel',
+    label: 'Aprobar cuentas gerenciales propuestas por un hotel',
+    roles: [BDC],
+    /* Sin herencia: el BDC la tiene por sí mismo, no por ser jefe del BD. */
+    inherit: false,
+  },
+
   // CONVERSIÓN — RR-V-01: solo el BDC aprueba
   {
     module: 'conversion',
@@ -1075,6 +1096,13 @@ const SYSTEM_ADMINISTRATION: Permission[] = [
     // Decisión de Hugo (2026-09-09): el primer Manager General nace con la
     // conversión (BDC); el resto de las cuentas del hotel las administra el
     // Administrador desde Usuarios (Reglas de Negocio · Cuentas del hotel).
+    module: 'users',
+    action: 'approve_hotel',
+    label: 'Aprobar cuentas gerenciales propuestas por un hotel',
+    roles: [ADMIN],
+    inherit: false,
+  },
+  {
     module: 'users',
     action: 'manage_hotel',
     label: 'Alta y gestión de las cuentas del hotel',

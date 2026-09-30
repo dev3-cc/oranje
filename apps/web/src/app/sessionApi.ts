@@ -131,6 +131,7 @@ registerMockRoutes([
           'users.manage_corporate_email',
           'settings.manage',
           'users.invite_hotel',
+          'users.approve_hotel',
         ],
       },
     }),

@@ -121,13 +121,13 @@ export class HotelUsersController {
 export class HotelUsersPendingController {
   constructor(private readonly users: HotelUsersService) {}
 
-  @Requires('users', 'manage_hotel')
+  @Requires('users', 'approve_hotel')
   @Get()
   async pending(): Promise<{ data: HotelUserEntity[] }> {
     return { data: await this.users.pendingApprovals() }
   }
 
-  @Requires('users', 'manage_hotel')
+  @Requires('users', 'approve_hotel')
   @Post(':id/approve')
   async approve(
     @Param('id', ParseUUIDPipe) id: string,
