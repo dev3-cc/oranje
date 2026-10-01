@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router'
 import { GlobalSearch } from './GlobalSearch'
 
 import {
+  CAMPANA_VIVA,
   useGetHeaderNotificationsQuery,
   useMarkHeaderNotificationReadMutation,
 } from '@/app/notificationsApi'
@@ -46,7 +47,7 @@ export function Header(): ReactNode {
     }
   }, [])
 
-  const { data: notifications } = useGetHeaderNotificationsQuery()
+  const { data: notifications } = useGetHeaderNotificationsQuery(undefined, CAMPANA_VIVA)
   const [markRead] = useMarkHeaderNotificationReadMutation()
   const unread = notifications?.unread ?? 0
 

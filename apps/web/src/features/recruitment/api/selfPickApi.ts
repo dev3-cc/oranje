@@ -163,6 +163,22 @@ async function fetchSlotBoard(
   }
 }
 
+/**
+ * Lo que ve el Self-Pick lo cambian OTRAS Reclutadoras: un slot libre y un
+ * colaborador Disponible dejan de estarlo porque alguien más se adelantó, en
+ * su propio navegador. Sin esto cada una trabajaba sobre su tablero viejo,
+ * elegía a quien ya estaba tomado y el rechazo llegaba al final del
+ * formulario (censo del 2026-10-01). El servidor protege bien —el índice
+ * `ux_slot_active_assignment` impide la doble asignación—, así que lo que se
+ * perdía era el trabajo, no la integridad.
+ *
+ * Se refresca **al aterrizar**, no al volver al frente: `refetchOnFocus`
+ * aquí sería peor que el defecto, porque cambiaría la lista por debajo de un
+ * formulario a medio llenar y arrancaría al colaborador ya elegido. Entrar a
+ * la pantalla es el momento de decidir; ahí se pregunta.
+ */
+export const AL_ATERRIZAR = { refetchOnMountOrArgChange: true } as const
+
 export const selfPickApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     getSelfPickBoard: build.query<SelfPickBoard, void>({

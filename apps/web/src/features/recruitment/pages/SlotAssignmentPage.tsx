@@ -17,6 +17,7 @@ import { Link, useParams } from 'react-router'
 
 import {
   useCreateAssignmentMutation,
+  AL_ATERRIZAR,
   useGetAssignableWorkersQuery,
   useGetSlotBoardQuery,
   useReleaseAssignmentMutation,
@@ -104,9 +105,9 @@ export function SlotAssignmentPage(): ReactNode {
     isError,
   } = useGetSlotBoardQuery(
     { requisitionId, positionId },
-    { skip: requisitionId === '' || positionId === '' },
+    { skip: requisitionId === '' || positionId === '', ...AL_ATERRIZAR },
   )
-  const { data: workers = [] } = useGetAssignableWorkersQuery()
+  const { data: workers = [] } = useGetAssignableWorkersQuery(undefined, AL_ATERRIZAR)
   /* Solo el pago (Hugo, 2026-09-22): nunca la factura al hotel, que es de
      Ventas. `null` es honesto — sin contrato activo o sin esa posición
      cotizada — y no bloquea la asignación. */

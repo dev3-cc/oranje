@@ -88,8 +88,12 @@ function isoHoursAgo(hours: number): string {
   return new Date(Date.now() - hours * 3_600_000).toISOString()
 }
 
-/** Forma CRUDA del board del back: `type` y `entity` anidados. */
-const notifications: NotificationApi[] = [
+/**
+ * Forma CRUDA del board del back: `type` y `entity` anidados. Exportada para
+ * que una prueba pueda empujar un aviso a media sesión, que es como llegan de
+ * verdad: los genera otra persona, no quien mira.
+ */
+export const notifications: NotificationApi[] = [
   {
     id: 'ntf-0001',
     type: { code: 'PROFILE_PHASE_PENDING', name: 'Alta pendiente', module: 'worker' },
