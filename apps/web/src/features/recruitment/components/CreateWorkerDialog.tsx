@@ -48,6 +48,31 @@ import type { WorkerApi } from '@/shared/types/apiContract.types'
 
 const UNSET = 'UNSET'
 
+/**
+ * El mismo rótulo que ya usa el formulario, para nombrar el campo real en el
+ * 422 — antes `VALIDATION_ERROR` mostraba un genérico «los datos enviados no
+ * son válidos» sin decir cuál, aunque el back ya manda el campo en `details`
+ * (Hugo, 2026-10-01).
+ */
+const WORKER_FIELD_LABEL: Record<string, MessageDescriptor> = {
+  fullName: msg`Nombre completo`,
+  birthDate: msg`Fecha de nacimiento`,
+  gender: msg`Género`,
+  phone: msg`Teléfono`,
+  address: msg`Dirección`,
+  zoneId: msg`Zona`,
+  catalogPositionId: msg`Posición`,
+  hiringModalityId: msg`Modalidad`,
+  englishLevelId: msg`Nivel de inglés`,
+  experienceLevel: msg`Experiencia`,
+  transportType: msg`Transporte`,
+  emergencyContactName: msg`Nombre del contacto de emergencia`,
+  emergencyContactPhone: msg`Teléfono del contacto de emergencia`,
+  emergencyContactRelationship: msg`Parentesco`,
+  bloodType: msg`Tipo de sangre`,
+  medicalNotes: msg`Notas médicas`,
+}
+
 /** Las diapositivas del intro; el texto se traduce al pintar con `i18n._()` (D-36). */
 const INTRO_SLIDES: readonly {
   image: string
@@ -197,6 +222,21 @@ function saveErrorMessage(error: unknown, i18n: I18n): string {
       WORKER_UNDERAGE: (info) => {
         const reason = info.message ?? i18n._(msg`Es menor de edad`)
         return i18n._(msg`${reason}: revisa la fecha de nacimiento.`)
+      },
+      VALIDATION_ERROR: (info) => {
+        const fields = [
+          ...new Set(
+            info.details
+              .map((detail) => detail.field)
+              .filter((field): field is string => field !== undefined && field !== ''),
+          ),
+        ].map((field) => (WORKER_FIELD_LABEL[field] ? i18n._(WORKER_FIELD_LABEL[field]) : field))
+        if (fields.length === 0) {
+          return i18n._(
+            msg`No se pudo guardar el colaborador. Revisa los datos e inténtalo de nuevo.`,
+          )
+        }
+        return i18n._(msg`Revisa estos campos: ${fields.join(', ')}.`)
       },
     },
     fallback: i18n._(
