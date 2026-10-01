@@ -3124,6 +3124,11 @@ msgstr "Available"
 msgid "Disponibles"
 msgstr "Available"
 
+#: src/features/recruitment/components/PoolFilters.tsx
+#: src/features/recruitment/components/PoolTable.tsx
+msgid "Documento"
+msgstr "Document"
+
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Documento borrado"
 msgstr "Document deleted"
@@ -3135,6 +3140,14 @@ msgstr "T&C document negotiated"
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Documento de Términos y Condiciones"
 msgstr "Terms and Conditions Document"
+
+#: src/features/recruitment/components/PoolCardBoard.tsx
+msgid "documento pendiente"
+msgstr "document pending"
+
+#: src/features/recruitment/components/PoolRoster.tsx
+msgid "Documento pendiente de verificar"
+msgstr "Document pending verification"
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Documento rechazado"
@@ -4763,6 +4776,10 @@ msgstr "This really deletes {0}'s mailbox in cPanel — it can't be undone."
 #: src/features/admin/pages/CorporateEmailPage.tsx
 msgid "Esto es del Administrador"
 msgstr "This is the Administrator's job"
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "Esto no cambia tu turno de hoy: es solo para que te consideren para más."
+msgstr "This doesn't change today's shift — it just means you're considered for more."
 
 #: src/features/recruitment/components/DeleteWorkerDialog.tsx
 msgid "Esto no se deshace desde aquí. Si sigue trabajando en algún hotel, su asignación se libera al eliminarlo. El expediente y su historial se conservan por dentro, pero nadie vuelve a verlo en el Pool."
@@ -6831,6 +6848,10 @@ msgstr "Unread"
 msgid "No mueve ningún semáforo. Audita cuando quieras antes del corte semanal — el sistema te avisa conforme se acerca."
 msgstr "It doesn't move any status light. Audit whenever you like before the weekly cutoff — the system reminds you as it gets closer."
 
+#: src/features/worker/components/TaxDeadlineBanner.tsx
+msgid "No pasó la revisión."
+msgstr "It didn't pass review."
+
 #: src/features/auth/pages/LoginPage.tsx
 msgid "No pudimos conectar con Oranje. Revisa tu conexión e inténtalo en un momento."
 msgstr "We couldn't reach Oranje. Check your connection and try again in a moment."
@@ -7789,6 +7810,7 @@ msgid "Pay rate por hora"
 msgstr "Pay rate per hour"
 
 #: src/features/contracts/components/ContractChecklist.tsx
+#: src/features/recruitment/components/PoolTable.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 #: src/features/worker/pages/ProfilePage.tsx
 #: src/shared/constants/timesheetStatus.ts
@@ -7798,6 +7820,10 @@ msgstr "Pending"
 #: src/features/timesheet/pages/TimesheetGlobalPage.tsx
 msgid "pendiente de horas contractuales"
 msgstr "waiting for contract hours"
+
+#: src/features/recruitment/components/PoolFilters.tsx
+msgid "Pendiente de verificar"
+msgstr "Pending verification"
 
 #: src/features/timesheet/components/TimesheetMonthView.tsx
 msgid "pendientes"
@@ -8841,6 +8867,10 @@ msgstr "It's shown only once: cPanel won't show it again. Copy it before you clo
 msgid "Se negocia en Rosa — el sistema aún no lo registra (pendiente de modelar)"
 msgstr "Negotiated in Pink — the system doesn't record it yet (still to be modeled)"
 
+#: src/features/recruitment/components/PoolRoster.tsx
+msgid "Se puso disponible por su cuenta: no cambia la asignación de arriba."
+msgstr "They marked themselves available on their own — it doesn't change the assignment above."
+
 #: src/features/worker/components/MobileShell.tsx
 msgid "Secciones"
 msgstr "Sections"
@@ -9604,6 +9634,10 @@ msgstr "Upload and verify the profile's documents"
 msgid "Subiendo…"
 msgstr "Uploading…"
 
+#: src/features/worker/components/TaxDeadlineBanner.tsx
+msgid "Subir de nuevo"
+msgstr "Upload again"
+
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Subir documento"
 msgstr "Upload document"
@@ -10142,6 +10176,10 @@ msgstr "Your situation is under review and there are no shifts to clock. Custome
 #: src/features/worker/components/TaxDeadlineBanner.tsx
 msgid "Tu SSN/ITIN está {0}."
 msgstr "Your SSN/ITIN is {0}."
+
+#: src/features/worker/components/TaxDeadlineBanner.tsx
+msgid "Tu SSN/ITIN fue rechazado"
+msgstr "Your SSN/ITIN was rejected"
 
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Tu teléfono manda la ubicación y el sistema verifica que estés en el hotel. Si estás fuera, pídele al Supervisor un ponche manual."
