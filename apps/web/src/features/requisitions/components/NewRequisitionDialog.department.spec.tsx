@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { NewRequisitionDialog } from './NewRequisitionDialog'
 
@@ -51,6 +51,17 @@ async function pick(
 }
 
 describe('NewRequisitionDialog con el departamento fijado por la sesión', () => {
+  // El calendario abre en el mes en curso: fijo el reloj, no el día, para que
+  // «18 de septiembre» siga existiendo cuando pase septiembre.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-09-10T12:00:00'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('el departamento del paso 1 baja a las posiciones, también al reabrir', async () => {
     const user = userEvent.setup()
     const { rerender } = render(
