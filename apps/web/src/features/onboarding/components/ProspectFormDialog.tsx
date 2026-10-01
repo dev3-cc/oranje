@@ -90,6 +90,8 @@ const TIME_ZONES: readonly { value: string; label: MessageDescriptor }[] = [
   { value: 'America/Denver', label: msg`Montaña — Denver, Salt Lake City` },
   { value: 'America/Phoenix', label: msg`Arizona — Phoenix (sin horario de verano)` },
   { value: 'America/Los_Angeles', label: msg`Pacífico — Los Ángeles, Las Vegas` },
+  { value: 'America/Cancun', label: msg`Quintana Roo — Cancún (sin horario de verano)` },
+  { value: 'America/Mexico_City', label: msg`Centro de México — CDMX, Guadalajara, Monterrey` },
 ] as const
 
 function Field({

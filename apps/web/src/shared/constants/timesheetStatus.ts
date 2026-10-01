@@ -61,12 +61,16 @@ export const TIMESHEET_WEEK_STATUS_TOKEN: Record<TimesheetWeekStatus, StatusLigh
   APPROVED: 'st-verde',
 }
 
-export const PUNCH_STATES = ['COMPLETE', 'INCOMPLETE', 'NO_SHIFT'] as const
+export const PUNCH_STATES = ['COMPLETE', 'IN_PROGRESS', 'INCOMPLETE', 'NO_SHIFT'] as const
 
 export type PunchState = (typeof PUNCH_STATES)[number]
 
 const PUNCH_STATE_MESSAGE = {
   COMPLETE: msg`Ponches completos`,
+  /* HOY con entrada y sin salida todavía no es un problema: la jornada
+     sigue. INCOMPLETE es para un día YA PASADO con un extremo faltante —
+     ahí sí hay que resolverlo (Hugo, 2026-10-01). */
+  IN_PROGRESS: msg`Trabajando ahora`,
   INCOMPLETE: msg`Ponches incompletos`,
   /* NO "Sin turno": el front solo sabe que no hay marcas ese día (0 punches),
      no si había turno programado — eso vive en el Schedule y hoy no se

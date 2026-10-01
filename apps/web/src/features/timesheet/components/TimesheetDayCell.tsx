@@ -34,6 +34,7 @@ const NO_HOURS = '—'
  */
 const PUNCH_CLASS = {
   COMPLETE: 'border-transparent',
+  IN_PROGRESS: 'border-transparent',
   INCOMPLETE: 'border-transparent',
   NO_SHIFT: 'border-dashed border-ink-4 bg-transparent',
 } as const
@@ -41,7 +42,8 @@ const PUNCH_CLASS = {
 /** Qué significa el punto, con el detalle que el chip no cuenta. */
 const PUNCH_STATE_DETAIL: Record<PunchState, MessageDescriptor> = {
   COMPLETE: msg`La persona marcó su entrada y su salida. Revisar el día es aparte: lo dice el chip.`,
-  INCOMPLETE: msg`Hay entrada sin salida (o al revés). Así la semana no puede irse a aprobación.`,
+  IN_PROGRESS: msg`Hoy, con entrada marcada y la jornada todavía sin terminar. No es un problema: solo falta que salga.`,
+  INCOMPLETE: msg`Hay entrada sin salida (o al revés), en un día que ya pasó. Así la semana no puede irse a aprobación.`,
   NO_SHIFT: msg`No se registró entrada ni salida. Puede ser que no tuviera turno ese día, o que el ponche no llegara a guardarse (por ejemplo, fuera de la geocerca). Revisa el Schedule para saber cuál de las dos fue.`,
 }
 
@@ -52,6 +54,7 @@ const PUNCH_STATE_DETAIL: Record<PunchState, MessageDescriptor> = {
  */
 const PUNCH_STATE_SHORT_LABEL: Record<PunchState, MessageDescriptor> = {
   COMPLETE: msg`Ponches completos`,
+  IN_PROGRESS: msg`Trabajando ahora`,
   INCOMPLETE: msg`Ponches incompletos`,
   NO_SHIFT: msg`Sin ponches`,
 }
@@ -166,9 +169,14 @@ export function TimesheetDayCell({
                     className={cn(
                       'flex size-2.5 shrink-0 items-center justify-center overflow-hidden rounded-full border-2',
                       PUNCH_CLASS[entry.punch],
+                      /* El punto ENTERO parpadea — "trabajando ahora mismo",
+                         no solo marcado (Hugo, 2026-10-01). Reutiliza el
+                         verde de COMPLETE a propósito: el pulso es lo que los
+                         distingue (vivo vs. ya cerrado), no el color. */
+                      entry.punch === 'IN_PROGRESS' && 'animate-pulse',
                     )}
                     style={
-                      entry.punch === 'COMPLETE'
+                      entry.punch === 'COMPLETE' || entry.punch === 'IN_PROGRESS'
                         ? { backgroundColor: statusLight['st-verde'] }
                         : entry.punch === 'INCOMPLETE'
                           ? { backgroundColor: statusLight['st-rojo'] }
@@ -187,6 +195,9 @@ export function TimesheetDayCell({
                         />
                       </svg>
                     )}
+                    {entry.punch === 'IN_PROGRESS' && (
+                      <span className="size-1 rounded-full bg-white" />
+                    )}
                     {entry.punch === 'INCOMPLETE' && (
                       <span className="text-[7px] leading-none font-black text-white">!</span>
                     )}
@@ -200,12 +211,17 @@ export function TimesheetDayCell({
                 </span>
                 {/* En su propia línea: compartir renglón con el punto y la
                     etiqueta la dejaba cortada (`truncate`) en columnas
-                    angostas — justo la hora que Hugo pedía ver. */}
-                {entry.startTime !== null && entry.endTime !== null && (
-                  <span className="pl-3.5 font-semibold text-ink-2">
-                    {entry.startTime} – {entry.endTime}
-                  </span>
-                )}
+                    angostas — justo la hora que Hugo pedía ver. SIEMPRE se
+                    reserva el renglón, con o sin horas: el marco punteado de
+                    la requisición hereda su alto de la PRIMERA tarjeta de la
+                    corrida (comentario en TimesheetGrid.tsx), así que si las
+                    tarjetas de un mismo tramo varían de alto el texto se
+                    desborda del marco — reportado por Hugo, 2026-10-01. */}
+                <span className="pl-3.5 font-semibold text-ink-2">
+                  {entry.startTime !== null || entry.endTime !== null
+                    ? `${entry.startTime ?? NO_HOURS} – ${entry.endTime ?? NO_HOURS}`
+                    : ' '}
+                </span>
               </div>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-52">
