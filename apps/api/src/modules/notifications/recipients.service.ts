@@ -40,6 +40,11 @@ export class RecipientsService {
         return worker?.userId ? this.activeUsers({ id: worker.userId }) : []
       }
 
+      case 'ROLE':
+        /* Sin hotel ni zona que lo acoten: el rol entero. Hoy solo lo usa el
+           Administrador, que por definición es transversal. */
+        return this.activeUsers({ role: { code: target.roleCode } })
+
       case 'ROLE_IN_HOTEL':
         return this.activeUsers({ role: { code: target.roleCode }, hotelId: target.hotelId })
 

@@ -194,6 +194,51 @@ const SALES: Permission[] = [
   },
   { module: 'terms_and_conditions', action: 'approve', label: 'Validar T&C', roles: [BDC] },
 
+  {
+    /**
+     * Invitar cuentas del hotel sin pasar por Oranje (Hugo, 2026-09-30).
+     *
+     * Los gerentes de hotel rotan y el nuevo no hereda el correo del
+     * anterior, así que cada cambio caía en el Administrador. Medido en
+     * producción: **34 de 36 hoteles tienen un solo gerente y nadie más**, y
+     * Holiday Inn Stockbridge acumuló cuatro altas en once días, tres de
+     * ellas muertas.
+     *
+     * Va al **BD**, que es quien visita el hotel; el BDC lo recibe por la
+     * herencia por jerarquía, sin línea aparte. La conversión NO se toca:
+     * crear el PRIMER Usuario del Hotel sigue siendo exclusivo del BDC
+     * (RR-V-02).
+     *
+     * El alcance lo pone el servicio, no esta tabla: el BD solo en los
+     * hoteles de sus zonas.
+     */
+    module: 'users',
+    action: 'invite_hotel',
+    label: 'Invitar cuentas del hotel',
+    roles: [BD],
+  },
+
+  {
+    /**
+     * Confirmar la cuenta gerencial que propone un hotel (Hugo, 2026-09-30).
+     *
+     * Al BDC además del Administrador, por coherencia: el BDC **ya puede
+     * crear** esas mismas cuentas sin que nadie confirme, así que negarle
+     * aprobar no protegía nada — le bastaba con crearla él y saltarse la
+     * cola. Y descarga al Administrador, que si no es el único que puede.
+     *
+     * El BD queda fuera por volumen: son 39 contra 4 BDC, y que la propuesta
+     * de un hotel la confirme alguien distinto de quien lo lleva
+     * comercialmente mantiene un segundo par de ojos.
+     */
+    module: 'users',
+    action: 'approve_hotel',
+    label: 'Aprobar cuentas gerenciales propuestas por un hotel',
+    roles: [BDC],
+    /* Sin herencia: el BDC la tiene por sí mismo, no por ser jefe del BD. */
+    inherit: false,
+  },
+
   // CONVERSIÓN — RR-V-01: solo el BDC aprueba
   {
     module: 'conversion',
@@ -282,9 +327,13 @@ const SALES: Permission[] = [
   // SISTEMA
   {
     module: 'system',
+    /* El Administrador entra el 2026-09-30: su campana respondía 403 y la
+       pantalla lo disimulaba, así que no se enteraba de nada. Ahora hay
+       avisos que son suyos —las cuentas gerenciales que el hotel propone y
+       él aprueba— y sin esto tendría que entrar a mirar por si acaso. */
     action: 'receive_notification',
     label: 'Recibir notificación',
-    roles: [BD, BDC, SYS],
+    roles: [BD, BDC, SYS, ADMIN],
   },
   {
     module: 'system',
@@ -304,6 +353,26 @@ const SALES: Permission[] = [
 // HOTEL — Supervisor, Manager de Área y Manager General
 // ---------------------------------------------------------------------------
 const HOTEL: Permission[] = [
+  {
+    /**
+     * El hotel invita a su propia gente (Hugo, 2026-09-30).
+     *
+     * `inherit: false` a propósito: la herencia por jerarquía haría que el
+     * Manager General lo recibiera del Supervisor, y aquí la dirección
+     * importa al revés — el Supervisor NO invita, porque crear un gerente
+     * desde el escalón más bajo es regalarle el hotel entero.
+     *
+     * Quién puede invitar a qué rol lo decide el servicio, no esta tabla: el
+     * Manager de Área alcanza a un Manager General solo si el hotel se quedó
+     * sin ninguno activo, que es el caso de la rotación.
+     */
+    module: 'users',
+    action: 'invite_hotel',
+    label: 'Invitar cuentas de mi hotel',
+    roles: [GA, GG],
+    inherit: false,
+  },
+
   // REQUISICIONES
   {
     module: 'requisitions',
@@ -1027,6 +1096,13 @@ const SYSTEM_ADMINISTRATION: Permission[] = [
     // Decisión de Hugo (2026-09-09): el primer Manager General nace con la
     // conversión (BDC); el resto de las cuentas del hotel las administra el
     // Administrador desde Usuarios (Reglas de Negocio · Cuentas del hotel).
+    module: 'users',
+    action: 'approve_hotel',
+    label: 'Aprobar cuentas gerenciales propuestas por un hotel',
+    roles: [ADMIN],
+    inherit: false,
+  },
+  {
     module: 'users',
     action: 'manage_hotel',
     label: 'Alta y gestión de las cuentas del hotel',

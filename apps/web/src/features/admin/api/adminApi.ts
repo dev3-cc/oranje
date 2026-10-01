@@ -213,6 +213,22 @@ export const adminApi = baseApi.injectEndpoints({
       transformResponse: (response: ApiEnvelope<HotelUser>) => response.data,
       invalidatesTags: ['HotelUser'],
     }),
+    /**
+     * La cola del Administrador: cuentas gerenciales que un hotel propuso y
+     * esperan su visto bueno (Hugo, 2026-09-30).
+     */
+    getPendingHotelUsers: build.query<HotelUser[], void>({
+      query: () => '/hotel-users/pending',
+      transformResponse: (response: ApiEnvelope<HotelUser[]>) => response.data,
+      providesTags: ['HotelUser'],
+    }),
+
+    approveHotelUser: build.mutation<HotelUser, string>({
+      query: (id) => ({ url: `/hotel-users/pending/${id}/approve`, method: 'POST' }),
+      transformResponse: (response: ApiEnvelope<HotelUser>) => response.data,
+      invalidatesTags: ['HotelUser'],
+    }),
+
     updateHotelUser: build.mutation<
       HotelUser,
       { hotelId: string; id: string; body: UpdateHotelUserBody }
@@ -249,6 +265,8 @@ export const {
   useGetHotelDepartmentOptionsQuery,
   useGetHotelUsersQuery,
   useCreateHotelUserMutation,
+  useGetPendingHotelUsersQuery,
+  useApproveHotelUserMutation,
   useUpdateHotelUserMutation,
   useResendHotelInvitationMutation,
 } = adminApi

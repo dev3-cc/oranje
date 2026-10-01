@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -9,6 +10,8 @@ import {
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { FirebaseAccountsError, FirebaseAccountsService } from '../../../infra/firebase/index.js'
 import { MailerService } from '../../../infra/mailer/index.js'
+import { NotificationPublisherService } from '../../notifications/index.js'
+import { PermissionsService } from '../auth/permissions.service.js'
 
 import type { CreateHotelUserDto } from './dto/create-hotel-user.dto.js'
 import { GENERAL_MANAGER } from './dto/create-hotel-user.dto.js'
@@ -30,6 +33,31 @@ const ALLOWED_BOSSES: Record<string, readonly string[]> = {
 }
 
 /** Nombres para los mensajes: ningún código llega a texto humano. */
+/**
+ * Si esta alta queda esperando el visto bueno del Administrador.
+ *
+ * Solo cuando se cumplen las dos cosas (Hugo, 2026-09-30):
+ *
+ * - la propone **el hotel**, no Oranje. Si invita el BD, el BDC o el propio
+ *   Administrador, pedir que Oranje se apruebe a sí mismo sería ceremonia;
+ * - y es un rol **gerencial**. Un supervisor invitado por su gerente entra
+ *   directo, o volvemos a meter a Oranje en todo.
+ */
+function pendingApproval(
+  roleCode: string,
+  hotelId: string,
+  actor: { hotelId: string | null },
+): boolean {
+  const desdeElHotel = actor.hotelId === hotelId
+
+  return desdeElHotel && (roleCode === GENERAL_MANAGER_ROLE || roleCode === AREA_MANAGER_ROLE)
+}
+
+/** Los roles que invitan con límite; los demás caen en el guard general. */
+const SALES_ROLE = 'ROL-V-01'
+const AREA_MANAGER_ROLE = 'ROL-H-02'
+const GENERAL_MANAGER_ROLE = 'ROL-H-03'
+
 const ROLE_LABEL: Record<string, string> = {
   [SUPERVISOR]: 'Supervisor',
   [AREA_MANAGER]: 'Manager de Área',
@@ -74,6 +102,8 @@ export class HotelUsersService {
     private readonly repo: HotelUsersRepository,
     private readonly accounts: FirebaseAccountsService,
     private readonly mailer: MailerService,
+    private readonly permissions: PermissionsService,
+    private readonly notifications: NotificationPublisherService,
   ) {}
 
   async list(hotelId: string, includeInactive: boolean): Promise<HotelUserEntity[]> {
@@ -96,12 +126,91 @@ export class HotelUsersService {
     }
   }
 
+  /**
+   * Quién puede invitar a qué rol, y en qué hotel.
+   *
+   * Nace de un problema medido (Hugo, 2026-09-30): los gerentes de hotel
+   * rotan, el nuevo no hereda el correo del anterior y cada cambio caía en
+   * el Administrador. En producción **34 de 36 hoteles tienen un solo
+   * gerente y nadie más**, así que «que invite quien ya está dentro» no
+   * alcanza solo: por eso el BD también invita, en los hoteles de sus zonas.
+   *
+   * El reparto:
+   *
+   * - **Administrador y BDC**: como hasta ahora, sin límite de hotel.
+   * - **BD**: cualquier cuenta, pero solo en los hoteles de sus zonas.
+   * - **Manager General**: cualquier cuenta de SU hotel.
+   * - **Manager de Área**: supervisores y managers de área de su hotel, y un
+   *   Manager General **solo si el hotel se quedó sin ninguno activo**. Esa
+   *   excepción es la que cubre la rotación; sin ella, el segundo de a bordo
+   *   podría nombrarse jefe cuando quisiera.
+   * - **Supervisor**: no invita. Crear un gerente desde el escalón más bajo
+   *   es regalar el hotel entero.
+   */
+  private async assertCanInvite(
+    hotelId: string,
+    roleCode: string,
+    actor: AuthenticatedUser,
+  ): Promise<void> {
+    const [admin, conversion] = await Promise.all([
+      this.permissions.can(actor.roleCode, 'users', 'manage_hotel'),
+      this.permissions.can(actor.roleCode, 'conversion', 'create_hotel_user'),
+    ])
+
+    if (admin || conversion) return
+
+    /* El BD: su alcance son las zonas, no un hotel (D-09). */
+    if (actor.roleCode === SALES_ROLE) {
+      if (!(await this.repo.hotelInUserZones(hotelId, actor.id))) {
+        throw new ForbiddenException({
+          code: 'HOTEL_OUT_OF_ZONE',
+          message: 'Solo puedes invitar cuentas en los hoteles de tus zonas',
+        })
+      }
+
+      return
+    }
+
+    /* Los roles del hotel: el suyo y nada más. */
+    if (actor.hotelId !== hotelId) {
+      throw new ForbiddenException({
+        code: 'HOTEL_OUT_OF_SCOPE',
+        message: 'Solo puedes invitar cuentas de tu propio hotel',
+      })
+    }
+
+    if (actor.roleCode === GENERAL_MANAGER_ROLE) return
+
+    if (actor.roleCode === AREA_MANAGER_ROLE) {
+      if (roleCode !== GENERAL_MANAGER_ROLE) return
+
+      /* La excepción de la rotación: se puede nombrar gerente solo cuando el
+         hotel no tiene ninguno. Con uno activo, esto es el Administrador o
+         el BD quien lo hace — o el propio gerente saliente. */
+      if (await this.repo.hasActiveGeneralManager(hotelId)) {
+        throw new ForbiddenException({
+          code: 'HOTEL_HAS_GENERAL_MANAGER',
+          message:
+            'Este hotel ya tiene Manager General activo: el cambio lo hace él, tu Business Developer o el Administrador',
+        })
+      }
+
+      return
+    }
+
+    throw new ForbiddenException({
+      code: 'FORBIDDEN',
+      message: 'Tu rol no invita cuentas del hotel',
+    })
+  }
+
   async create(
     hotelId: string,
     dto: CreateHotelUserDto,
     actor: AuthenticatedUser,
   ): Promise<HotelUserWithInvitation> {
     await this.assertHotel(hotelId)
+    await this.assertCanInvite(hotelId, dto.roleCode, actor)
 
     const role = await this.repo.roleByCode(dto.roleCode)
 
@@ -138,6 +247,23 @@ export class HotelUsersService {
       actorRole: actor.roleCode,
     })
 
+    await this.notifyAccountOwner(hotelId, row.id, dto.roleCode, actor)
+
+    /*
+     * Una cuenta GERENCIAL propuesta POR EL HOTEL espera el visto bueno del
+     * Administrador (Hugo, 2026-09-30): el hotel propone y Oranje confirma.
+     *
+     * Mientras espera no se manda la invitación. Mandarla antes sería darle
+     * a la persona un enlace que la deja fuera: la cuenta está inactiva y el
+     * login la rechaza, así que pensaría que el sistema no sirve.
+     */
+    if (pendingApproval(dto.roleCode, hotelId, actor)) {
+      await this.repo.deactivate(row.id)
+      await this.notifyAdmins(row.id, dto.roleCode, row.fullName, actor)
+
+      return withInvitation({ ...toEntity(row), isActive: false }, { sent: false })
+    }
+
     const invitation = await this.sendInvitation(
       row.id,
       row.email,
@@ -149,6 +275,112 @@ export class HotelUsersService {
     )
 
     return withInvitation(toEntity(row), invitation)
+  }
+
+  /**
+   * Avisa a los Administradores de que hay una cuenta gerencial esperando.
+   *
+   * El aviso va por rol y no a una persona: cualquiera de ellos puede
+   * resolverlo, y atarlo a uno solo lo dejaría colgado cuando ese esté de
+   * vacaciones.
+   */
+  private async notifyAdmins(
+    userId: string,
+    roleCode: string,
+    fullName: string,
+    actor: AuthenticatedUser,
+  ): Promise<void> {
+    try {
+      await this.notifications.publish({
+        type: 'HOTEL_ACCOUNT_PENDING',
+        title: 'Cuenta de hotel por aprobar',
+        body: `${fullName} fue propuesto como ${ROLE_LABEL[roleCode] ?? roleCode} por su hotel.`,
+        entity: { type: 'identity.user', id: userId },
+        actorUserId: actor.id,
+        audience: [{ kind: 'ROLE', roleCode: 'ROL-ADM-01' }],
+      })
+    } catch {
+      /* Mejor esfuerzo: la cuenta ya quedó pendiente y se ve en la lista. */
+    }
+  }
+
+  /**
+   * El visto bueno: activa la cuenta y **entonces** manda la invitación.
+   *
+   * El orden importa. Mandarla al proponer le daría a la persona un enlace
+   * que la deja fuera, porque su cuenta todavía no entra.
+   */
+  async approve(id: string, actor: AuthenticatedUser): Promise<HotelUserWithInvitation> {
+    const row = await this.repo.findById(id)
+
+    if (!row) {
+      throw new NotFoundException({
+        code: 'USER_NOT_FOUND',
+        message: 'Esa cuenta de hotel no existe',
+      })
+    }
+
+    if (row.isActive) {
+      throw new ConflictException({
+        code: 'ALREADY_APPROVED',
+        message: 'Esta cuenta ya está aprobada',
+      })
+    }
+
+    await this.repo.approve(id, { userId: actor.id, role: actor.roleCode })
+
+    const invitation = await this.sendInvitation(
+      row.id,
+      row.email,
+      row.fullName,
+      row.locale,
+      row.role,
+      { userId: actor.id, role: actor.roleCode },
+      'invitation',
+    )
+
+    const fresh = await this.repo.findById(id)
+
+    return withInvitation(toEntity(fresh ?? row), invitation)
+  }
+
+  /** Lo que el Administrador tiene por resolver. */
+  async pendingApprovals(): Promise<HotelUserEntity[]> {
+    return (await this.repo.pendingApprovals()).map(toEntity)
+  }
+
+  /**
+   * Avisa al BD que lleva el hotel cuando la invitación vino DEL PROPIO
+   * HOTEL.
+   *
+   * Solo en ese caso: si la mandó el BD, el Administrador o el BDC, avisarle
+   * a quien acaba de hacerlo sería ruido. Y es mejor esfuerzo — que Pub/Sub
+   * no responda no puede deshacer un alta que ya ocurrió.
+   */
+  private async notifyAccountOwner(
+    hotelId: string,
+    userId: string,
+    roleCode: string,
+    actor: AuthenticatedUser,
+  ): Promise<void> {
+    if (actor.hotelId !== hotelId) return
+
+    try {
+      const ownerUserId = await this.repo.accountOwner(hotelId)
+
+      if (!ownerUserId) return
+
+      await this.notifications.publish({
+        type: 'HOTEL_ACCOUNT_INVITED',
+        title: 'Cuenta nueva en tu hotel',
+        body: `El hotel invitó a un ${ROLE_LABEL[roleCode] ?? roleCode}.`,
+        entity: { type: 'identity.user', id: userId },
+        actorUserId: actor.id,
+        audience: [{ kind: 'USER', userId: ownerUserId }],
+      })
+    } catch {
+      /* Mejor esfuerzo: el alta ya ocurrió y avisar es secundario. */
+    }
   }
 
   async update(

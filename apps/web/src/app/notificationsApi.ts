@@ -7,6 +7,7 @@
 import { baseApi } from '@/app/baseApi'
 // eslint-disable-next-line no-restricted-imports
 import { registerWorkerMocks } from '@/features/worker/api/workerMocks'
+import { notificationTarget } from '@/shared/lib/notificationTarget'
 
 registerWorkerMocks()
 
@@ -17,6 +18,8 @@ interface NotificationApi {
   body: string
   createdAt: string
   readAt: string | null
+  /** La entidad que provocó el aviso; es lo que permite llevar a la acción. */
+  entity: { type: string; id: string } | null
   /** Quien lo disparó con su acción; null en avisos sin actor humano. */
   actor: { id: string; fullName: string; photoUrl: string | null } | null
 }
@@ -33,6 +36,11 @@ export interface HeaderNotification {
   createdAt: string
   isRead: boolean
   actor: { fullName: string; photoUrl: string | null } | null
+  /**
+   * A dónde lleva al tocarlo, ya resuelto a ruta; `null` cuando la entidad no
+   * tiene pantalla conocida y el aviso solo se marca leído.
+   */
+  href: string | null
 }
 
 export interface HeaderNotifications {
@@ -60,6 +68,7 @@ export const notificationsApi = baseApi.injectEndpoints({
           actor: item.actor
             ? { fullName: item.actor.fullName, photoUrl: item.actor.photoUrl }
             : null,
+          href: notificationTarget(item.entity ?? null),
         })),
         unread: raw.meta.unread,
       }),
