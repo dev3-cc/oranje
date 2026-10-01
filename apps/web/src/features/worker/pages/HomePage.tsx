@@ -318,6 +318,17 @@ export function HomePage(): ReactNode {
           <p className="text-sm font-semibold text-ink">
             <Trans>Disponibilidad</Trans>
           </p>
+          {/* Encender Amarillo con una asignación viva no es un conflicto: el
+              semáforo no se mueve al asignar, solo con los ponches — aclarado
+              aquí para que no piense que esto cancela lo que ya tiene
+              (Hugo, 2026-09-30). */}
+          {today?.shift && (
+            <p className="mt-1 text-xs text-ink-3">
+              <Trans>
+                Esto no cambia tu turno de hoy: es solo para que te consideren para más.
+              </Trans>
+            </p>
+          )}
           {isAvailable ? (
             <p className="mt-1 text-sm text-ink-2">
               <Trans>

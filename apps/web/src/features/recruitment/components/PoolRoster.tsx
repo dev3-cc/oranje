@@ -132,6 +132,11 @@ export function PoolRoster({
                     {workerStatusChipLabel(worker.status)} · {worker.zoneName}
                   </span>
                 </span>
+                {worker.hasPendingDocument && (
+                  <span title={t`Documento pendiente de verificar`}>
+                    <MaterialIcon name="task_alt" className="shrink-0 text-base text-yellow" />
+                  </span>
+                )}
                 <span
                   aria-hidden
                   className="size-2.5 shrink-0 rounded-full"
@@ -192,8 +197,21 @@ export function PoolRoster({
                     </Link>
                   )}
                 </p>
+                {/* Amarillo con asignación viva no es un conflicto: el semáforo
+                    no se mueve al asignar, solo con los ponches — aclarado para
+                    que no se lea como un error (Hugo, 2026-09-30). */}
+                {selected.status === 'YELLOW' && selected.assignment && (
+                  <p className="mt-1 text-xs text-ink-3">
+                    <Trans>
+                      Se puso disponible por su cuenta: no cambia la asignación de arriba.
+                    </Trans>
+                  </p>
+                )}
                 {/* Las EXCEPCIONES hablan; lo que está bien no se anuncia. */}
-                {(!selected.isProfileComplete || !selected.hasTaxId || !selected.hasAccount) && (
+                {(!selected.isProfileComplete ||
+                  !selected.hasTaxId ||
+                  !selected.hasAccount ||
+                  selected.hasPendingDocument) && (
                   <p className="mt-2.5 flex flex-wrap items-center gap-2">
                     {!selected.isProfileComplete && (
                       <CautionPill>
@@ -210,6 +228,11 @@ export function PoolRoster({
                         <Trans>
                           Sin ITIN: aplica retención del 16%{IS_DEV_UI ? ' (D-27)' : ''}
                         </Trans>
+                      </CautionPill>
+                    )}
+                    {selected.hasPendingDocument && (
+                      <CautionPill>
+                        <Trans>Documento pendiente de verificar</Trans>
                       </CautionPill>
                     )}
                   </p>

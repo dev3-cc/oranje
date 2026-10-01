@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import {
   ANY_VALUE,
   EMPTY_POOL_FILTERS,
+  PENDING_VALUE,
   type PoolFilters as Filters,
   type PoolOptions,
 } from '../types/pool.types'
@@ -39,6 +40,7 @@ export function PoolFilters({
     filters.englishLevelId !== ANY_VALUE,
     filters.hiringModalityId !== ANY_VALUE,
     filters.status !== ANY_VALUE,
+    filters.hasPendingDocument !== ANY_VALUE,
   ].filter(Boolean).length
 
   return (
@@ -115,6 +117,15 @@ export function PoolFilters({
             value: status,
             label: WORKER_STATUS_LABEL[status],
           }))}
+        />
+
+        <FilterSelect
+          icon="task_alt"
+          label={t`Documento`}
+          anyLabel={t`cualquiera`}
+          value={filters.hasPendingDocument}
+          onChange={update('hasPendingDocument')}
+          options={[{ value: PENDING_VALUE, label: t`Pendiente de verificar` }]}
         />
 
         <FilterReset

@@ -2,12 +2,22 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { StorageService } from '../../../infra/storage/index.js'
+import { NotificationPublisherService } from '../../notifications/index.js'
 import { AccessDeadlineService } from '../me/access-deadline.service.js'
 
 import { DocumentRow, DocumentsRepository } from './documents.repository.js'
 import type { CreateDocumentDto } from './dto/document.dto.js'
 
 const TAX_DOCUMENT = 'SSN_ITIN'
+
+// Mismo nombre que ve la Reclutadora en el expediente (WorkerDetailPage.tsx,
+// DOCUMENT_TYPE_LABEL) — el colaborador debe reconocer de cuál documento se trata.
+const DOCUMENT_TYPE_NAME: Record<string, string> = {
+  SSN_ITIN: 'SSN / ITIN',
+  ID: 'Identificación oficial',
+  PROOF_OF_ADDRESS: 'Comprobante de domicilio',
+  OTHER: 'documento',
+}
 
 export interface DocumentEntity {
   id: string
@@ -32,6 +42,7 @@ export class DocumentsService {
     private readonly repo: DocumentsRepository,
     private readonly storage: StorageService,
     private readonly accessDeadline: AccessDeadlineService,
+    private readonly notifications: NotificationPublisherService,
   ) {}
 
   async list(workerId: string): Promise<DocumentList> {
@@ -139,6 +150,11 @@ export class DocumentsService {
    * inmediato — no hay un nuevo día de gracia, ya tuvo el suyo — porque
    * `is_profile_complete` (y con él `ownPartMissing`) vuelve a contar el
    * SSN/ITIN como faltante en cuanto la fila desaparece.
+   *
+   * Sin avisarle, el colaborador solo ve que el documento "desapareció" y
+   * la app se lo vuelve a pedir sin explicar por qué (Hugo, 2026-09-30):
+   * el aviso dice CUÁL documento y el motivo, para que no piense que su
+   * carga se perdió.
    */
   async reject(
     workerId: string,
@@ -146,7 +162,7 @@ export class DocumentsService {
     reason: string,
     user: AuthenticatedUser,
   ): Promise<void> {
-    await this.worker(workerId)
+    const worker = await this.worker(workerId)
 
     const row = await this.document(workerId, id)
 
@@ -161,6 +177,20 @@ export class DocumentsService {
 
     const ownerId = await this.repo.workerUserId(workerId)
     if (ownerId) this.accessDeadline.invalidate(ownerId)
+
+    const documentName = DOCUMENT_TYPE_NAME[row.documentType] ?? row.documentType
+    try {
+      await this.notifications.publish({
+        type: 'DOCUMENT_REJECTED',
+        title: 'Documento rechazado',
+        body: `Tu ${documentName} no pasó la revisión: ${reason}. Súbelo de nuevo desde Mis datos.`,
+        entity: { type: 'personal.worker_document', id },
+        actorUserId: user.id,
+        audience: [{ kind: 'WORKER', workerId: worker.id }],
+      })
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no revierte el rechazo, que ya quedó escrito.
+    }
   }
 
   private async document(workerId: string, id: string): Promise<DocumentRow> {
