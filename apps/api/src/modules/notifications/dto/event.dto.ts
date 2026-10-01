@@ -24,6 +24,9 @@ export const audienceSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('PROSPECT_OWNER'), prospectId: z.uuid() }),
   z.object({ kind: z.literal('REQUISITION_RECRUITERS'), requisitionId: z.uuid() }),
   z.object({ kind: z.literal('MANAGER_OF'), userId: z.uuid() }),
+  /* Un rol COMPLETO, sin hotel ni zona: el Administrador no tiene ninguno de
+     los dos y hay avisos que son suyos (Hugo, 2026-09-30). */
+  z.object({ kind: z.literal('ROLE'), roleCode: z.string() }),
 ])
 
 export type Audience = z.infer<typeof audienceSchema>

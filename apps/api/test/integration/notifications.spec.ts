@@ -60,12 +60,16 @@ async function insert(userId: string, entityId: string | null): Promise<string> 
 }
 
 describe('el catálogo de tipos', () => {
-  it('tiene los 57 códigos del vault y ninguno repetido', async () => {
+  /* 57 del Catálogo de Notificaciones del vault más los 2 del alta de
+     cuentas del hotel, que nacieron con la función y todavía no están
+     asentados ahí. El conteo exacto es el punto: un tipo sembrado dos
+     veces, o uno que se cae del seed, no se nota de ninguna otra forma. */
+  it('tiene los 59 tipos sembrados y ninguno repetido', async () => {
     const total = await db.notificationType.count()
     const codes = await db.notificationType.findMany({ select: { code: true } })
 
-    expect(total).toBe(57)
-    expect(new Set(codes.map((c) => c.code)).size).toBe(57)
+    expect(total).toBe(59)
+    expect(new Set(codes.map((c) => c.code)).size).toBe(59)
   })
 
   it('PUNCH_REMINDER sigue sembrado sin regla de disparo', async () => {

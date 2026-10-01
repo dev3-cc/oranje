@@ -5,6 +5,7 @@ import { useGetHotelOverviewQuery } from '../api/roleDashboardsApi'
 
 import { StatTile } from './ActivityCards'
 import { IdentityHeader } from './IdentityHeader'
+import { InviteHotelAccountCard } from './InviteHotelAccountCard'
 import { RequisitionMiniList } from './RequisitionMiniList'
 
 const DashboardGlobe = lazy(() =>
@@ -46,6 +47,8 @@ export function HotelDashboard({ session }: { session: SessionUser }): ReactNode
           <DashboardGlobe />
         </Suspense>
       </IdentityHeader>
+
+      <InviteHotelAccountCard session={session} />
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatTile

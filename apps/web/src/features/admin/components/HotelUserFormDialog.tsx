@@ -167,6 +167,16 @@ export function HotelUserFormDialog({
     { skip: !isOpen || hotelId === '' },
   )
   const allowedSuperiors = roleCode ? HOTEL_SUPERIOR_ROLES[roleCode] : undefined
+  /* El gerente que YA está, cuando se va a nombrar otro: la rotación casi
+     nunca se avisa, y esas cuentas se quedan vivas — Holiday Inn Stockbridge
+     acumuló cuatro gerentes activos, tres que nunca entraron (Hugo,
+     2026-09-30). */
+  const outgoingManager = isGeneralManager
+    ? ((hotelPeople?.rows ?? []).find(
+        (row) => row.role.code === HOTEL_GENERAL_MANAGER && row.isActive,
+      ) ?? null)
+    : null
+
   const superiorOptions = (hotelPeople?.rows ?? []).filter(
     (option) =>
       option.id !== user?.id &&
@@ -484,6 +494,16 @@ export function HotelUserFormDialog({
               )}
               {errors.email && <p className="text-xs text-red">{errors.email.message}</p>}
             </FormRow>
+
+            {!isEditing && outgoingManager !== null && (
+              <p className="rounded-xl border border-yellow bg-yellow/15 px-4 py-3 text-sm text-ink-2">
+                <Trans>
+                  Este hotel ya tiene gerente: {outgoingManager.fullName}. Si dejó el hotel, dale de
+                  baja su cuenta desde «Personal de hoteles» — mientras siga activa puede entrar y
+                  aprobar horas.
+                </Trans>
+              </p>
+            )}
 
             {!isEditing && (
               <FormRow label={t`Idioma`} column="locale">
