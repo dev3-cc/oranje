@@ -21,7 +21,7 @@ const CADENAS: Array<[jefe: string, subordinado: string]> = [
 
 afterAll(close)
 
-/** Filas fuera de la herencia (`inherit: false`): hoy, Auditorías. */
+/** Filas fuera de la herencia (`inherit: false`); el censo está más abajo. */
 const SIN_HERENCIA = new Set(
   PERMISSIONS.filter((p) => p.inherit === false).map((p) => `${p.module}:${p.action}`),
 )
@@ -90,11 +90,29 @@ describe('la base sembrada respeta la herencia', () => {
     expect([...del].filter((t) => !delJefe.has(t))).toEqual([])
   })
 
+  /* El censo de las excepciones va aparte y nombra una por una: esta
+     aserción existe para que `inherit: false` no crezca sin que nadie lo
+     note, así que al agregar una hay que venir aquí a decir por qué. */
+  it('las excepciones a la herencia son solo estas cinco', () => {
+    expect([...SIN_HERENCIA].sort()).toEqual([
+      // Auditar es del Supervisor y del Inspector, nunca de sus jefes
+      // (orden de Hugo, 2026-09-14; el Inspector se sumó el 2026-09-24).
+      'audits:create',
+      'audits:read',
+      'audits:update',
+      // Confirmar una cuenta de gerencia que el propio hotel propuso: es
+      // el segundo par de ojos, y heredarlo lo devolvería a quien invita.
+      'users:approve_hotel',
+      // Invitar desde el hotel: cada rol invita por su propia regla de
+      // alcance, así que heredar le daría al jefe la del subordinado.
+      'users:invite_hotel',
+    ])
+  })
+
   /* Ampliado el 2026-09-24: el Inspector también audita (sus hoteles de
      zona), pero sigue sin heredarse hacia el Coordinador — mismo criterio
      de "sin herencia" que ya protegía al Supervisor. */
   it('lo marcado sin herencia se queda en su rol: Auditorías es del Supervisor y el Inspector', async () => {
-    expect([...SIN_HERENCIA].sort()).toEqual(['audits:create', 'audits:read', 'audits:update'])
     const rows = await db.rolePermission.findMany({
       where: { module: 'audits' },
       select: { role: { select: { code: true } } },
