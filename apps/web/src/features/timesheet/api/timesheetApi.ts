@@ -21,7 +21,7 @@ import { registerTimesheetMocks } from './timesheetMocks'
 import { baseApi } from '@/app/baseApi'
 import type { TimesheetStatus } from '@/shared/constants/timesheetStatus'
 import { fetchAllPages } from '@/shared/lib/fetchAllPages'
-import { formatTimeIn } from '@/shared/lib/formatters'
+import { formatTimeIn, todayIn } from '@/shared/lib/formatters'
 import type {
   ApiEnvelope,
   TimesheetApi,
@@ -125,6 +125,10 @@ function toEntry(
   const punches = day.punches.map((punch) => toPunch(punch, hotelTimeZone))
   const clockIn = punches.find((punch) => punch.type === 'CLOCK_IN')
   const clockOut = punches.find((punch) => punch.type === 'CLOCK_OUT')
+  /* Hoy con solo entrada no es un día incompleto: la jornada sigue — se lee
+     en la zona del HOTEL, no en la de quien revisa (mismo criterio que la
+     hora de la marca, Hugo, 2026-10-01). */
+  const isToday = day.workDate === todayIn(hotelTimeZone)
 
   return {
     id: day.id,
@@ -134,7 +138,14 @@ function toEntry(
     startTime: clockIn?.serverTime ?? null,
     endTime: clockOut?.serverTime ?? null,
     requisitionNumber: requisitionRef,
-    punch: clockIn && clockOut ? 'COMPLETE' : punches.length > 0 ? 'INCOMPLETE' : 'NO_SHIFT',
+    punch:
+      clockIn && clockOut
+        ? 'COMPLETE'
+        : punches.length === 0
+          ? 'NO_SHIFT'
+          : isToday
+            ? 'IN_PROGRESS'
+            : 'INCOMPLETE',
     hasAnomaly: day.hasAnomaly,
     isAbsence: day.isAbsence,
     reviewNote: day.reviewNote,

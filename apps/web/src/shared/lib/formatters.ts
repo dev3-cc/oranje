@@ -221,6 +221,21 @@ export function clock24In(iso: string, timeZone?: string): string {
   })
 }
 
+/**
+ * `2026-10-01` de HOY en la zona que se pida. Sin zona, la del navegador.
+ *
+ * Sirve para comparar contra `work_date` (un día del hotel, sin hora): un
+ * turno que empezó y todavía no termina no es lo mismo que uno que terminó
+ * sin que alguien marcara salida, y la frontera entre los dos es el día de
+ * HOY en la zona donde ocurre el turno — no en la del navegador de quien
+ * revisa (Hugo, 2026-10-01).
+ */
+export function todayIn(timeZone?: string): string {
+  return new Date().toLocaleDateString('en-CA', {
+    ...(timeZone ? { timeZone } : {}),
+  })
+}
+
 export function formatHours(hours: number): string {
   return `${String(Math.round(hours * 10) / 10)}h`
 }
