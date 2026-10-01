@@ -53,4 +53,35 @@ describe('TimesheetDayCell', () => {
     expect(screen.getByText('Sin ponches')).toBeInTheDocument()
     expect(screen.queryByText(/–/)).not.toBeInTheDocument()
   })
+
+  // Hugo, 2026-10-01: un día en curso con solo entrada no es un problema —
+  // antes se leía igual que un día pasado al que le faltó una marca.
+  it('hoy, con entrada y sin salida, dice "en curso" y no "incompletos"', () => {
+    render(
+      <TimesheetDayCell
+        entry={entry({ punch: 'IN_PROGRESS', startTime: '08:03', endTime: null })}
+        isSelected={false}
+        onToggle={vi.fn()}
+        onReview={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('Trabajando ahora')).toBeInTheDocument()
+    expect(screen.queryByText(/incompletos/)).not.toBeInTheDocument()
+  })
+
+  // Antes el renglón de hora exigía las DOS marcas o no mostraba nada; un día
+  // ya pasado con solo entrada se leía igual que uno sin ningún ponche.
+  it('con una sola marca muestra esa hora y un guion del lado que falta', () => {
+    render(
+      <TimesheetDayCell
+        entry={entry({ punch: 'INCOMPLETE', startTime: '08:03', endTime: null })}
+        isSelected={false}
+        onToggle={vi.fn()}
+        onReview={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText('08:03 – —')).toBeInTheDocument()
+  })
 })

@@ -93,8 +93,13 @@ describe('ProspectFormDialog', () => {
 
     // Paso 1: el edificio, prellenado.
     expect(screen.getByLabelText('Nombre del hotel')).toHaveValue('Hotel Puerto Real')
-    // Radix Select no es un <select>: el valor se lee del trigger.
-    expect(screen.getByLabelText('Zona horaria')).toHaveTextContent('America/Cancun')
+    // Radix Select no es un <select>: el valor se lee del trigger. Antes
+    // "America/Cancun" no tenía opción propia y el trigger caía al valor
+    // crudo (fallback huérfano); ahora es una opción real con su etiqueta
+    // humana (Hugo, 2026-10-01).
+    expect(screen.getByLabelText('Zona horaria')).toHaveTextContent(
+      'Quintana Roo — Cancún (sin horario de verano)',
+    )
 
     // Paso 2: la ubicación, solo pin y geocerca (el buscador de Google vive en el paso 1).
     await user.click(screen.getByRole('button', { name: 'Continuar' }))

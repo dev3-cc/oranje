@@ -25,6 +25,7 @@ import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
+import { formatDayMonth } from '@/shared/lib/formatters'
 
 const PUNCH_TYPE_LABEL: Record<string, MessageDescriptor> = {
   CLOCK_IN: msg`Entrada`,
@@ -61,12 +62,19 @@ const INTRO_SLIDES: readonly {
   },
 ]
 
-/** El `i18n` viene del componente (`useLingui`): así el mensaje habla el idioma activo (D-36). */
-function manualPunchErrorMessage(error: unknown, i18n: I18n): string {
+/**
+ * El `i18n` viene del componente (`useLingui`): así el mensaje habla el
+ * idioma activo (D-36). `workDate` es el día elegido en el formulario, no
+ * necesariamente hoy — el mensaje decía «hoy» aunque la marca fuera de otro
+ * día (Hugo, 2026-10-01).
+ */
+function manualPunchErrorMessage(error: unknown, i18n: I18n, workDate: string): string {
   return apiErrorMessage(error, {
     byCode: {
       ASSIGNMENT_NOT_FOUND: i18n._(msg`El colaborador ya no tiene asignación en esta requisición.`),
-      PUNCH_ALREADY_REGISTERED: i18n._(msg`Esa marca ya quedó registrada hoy.`),
+      PUNCH_ALREADY_REGISTERED: i18n._(
+        msg`Esa marca ya quedó registrada el ${formatDayMonth(workDate)}.`,
+      ),
     },
     fallback: i18n._(msg`No se pudo registrar la marca. Inténtalo de nuevo.`),
   })
@@ -146,7 +154,7 @@ export function ManualPunchDialog({
         <div className="flex flex-col gap-4">
           {isError && (
             <p role="alert" className="text-sm text-red">
-              {manualPunchErrorMessage(error, i18n)}
+              {manualPunchErrorMessage(error, i18n, workDate)}
             </p>
           )}
 

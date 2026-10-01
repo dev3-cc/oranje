@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { formatDate, formatDateTime, formatDayMonthTime, formatTimeIn } from './formatters'
+import { formatDate, formatDateTime, formatDayMonthTime, formatTimeIn, todayIn } from './formatters'
 
 /**
  * Las horas que no eran (Hugo, 2026-09-29).
@@ -46,5 +46,24 @@ describe('la hora se convierte, no se corta del texto', () => {
     })
 
     expect(formatDateTime(instante)).toContain(local.replace(/\s?[ap]\.?\s?m\.?/i, '').trim())
+  })
+})
+
+describe('todayIn', () => {
+  // 02:00 UTC del 2 de octubre son las 22:00 del 1 en Nueva York: si HOY se
+  // calcula en UTC a secas, un turno que sigue abierto pasada la medianoche
+  // de Greenwich se lee como "de ayer" aunque siga siendo hoy en el hotel.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-02T02:00:00.000Z'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('hoy se calcula en la zona del hotel, no en UTC', () => {
+    expect(todayIn('America/New_York')).toBe('2026-10-01')
+    expect(todayIn('UTC')).toBe('2026-10-02')
   })
 })

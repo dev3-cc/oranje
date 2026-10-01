@@ -229,9 +229,9 @@ export function ReviewDayDialog({
                       <Trans>Entrada – Salida</Trans>
                     </span>
                     <span className="block truncate text-base font-bold text-ink">
-                      {entry.startTime === null || entry.endTime === null
+                      {entry.startTime === null && entry.endTime === null
                         ? '—'
-                        : `${entry.startTime} – ${entry.endTime}`}
+                        : `${entry.startTime ?? '—'} – ${entry.endTime ?? '—'}`}
                     </span>
                   </span>
                 </div>
