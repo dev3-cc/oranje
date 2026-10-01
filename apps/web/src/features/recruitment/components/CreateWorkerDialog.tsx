@@ -297,6 +297,15 @@ export function CreateWorkerDialog({
     setStep(1)
   }, [isOpen, isEditing])
 
+  /*
+   * Solo al ABRIR el expediente de esta persona — no en cada actualización de
+   * la consulta. Dependía del objeto `editing` completo, y RTK Query le da
+   * una referencia NUEVA cada vez que el caché del colaborador se invalida
+   * en segundo plano (otra pestaña, otra acción); con eso en las
+   * dependencias, el efecto se repetía mientras la persona seguía editando y
+   * le pisaba lo que acababa de escribir — reportado con la fecha de
+   * nacimiento, pero le pasaba a cualquier campo (Hugo, 2026-10-01).
+   */
   useEffect(() => {
     if (!isOpen || !editing) return
     setDraft({
@@ -318,7 +327,8 @@ export function CreateWorkerDialog({
       bloodType: editing.bloodType ?? '',
     })
     setPhotoPreview(editing.photoUrl)
-  }, [isOpen, editing])
+    // Solo el id dispara el resync a propósito — ver comentario arriba.
+  }, [isOpen, editing?.id])
 
   async function handlePhoto(file: File): Promise<void> {
     setPhotoPreview(URL.createObjectURL(file))
