@@ -287,6 +287,8 @@ const routes: readonly MockRoute[] = [
       if (!found) throw new Error('WORKER_NOT_FOUND')
       const payload = (body ?? {}) as Partial<{
         fullName: string
+        birthDate: string
+        gender: string
         phone: string
         address: string
         zoneId: string
@@ -294,9 +296,16 @@ const routes: readonly MockRoute[] = [
         hiringModalityId: string
         englishLevelId: string
         experienceLevel: string
+        transportType: string
+        emergencyContactName: string
+        emergencyContactPhone: string
+        emergencyContactRelationship: string
+        bloodType: string
         photoPath: string
       }>
       if (payload.fullName !== undefined) found.fullName = payload.fullName
+      if (payload.birthDate !== undefined) found.birthDate = payload.birthDate
+      if (payload.gender !== undefined) found.gender = payload.gender
       if (payload.phone !== undefined) found.phone = payload.phone
       if (payload.address !== undefined) found.address = payload.address
       if (payload.zoneId !== undefined) {
@@ -312,6 +321,20 @@ const routes: readonly MockRoute[] = [
         found.englishLevel = ENGLISH[payload.englishLevelId] ?? found.englishLevel
       }
       if (payload.experienceLevel !== undefined) found.experienceLevel = payload.experienceLevel
+      if (payload.transportType !== undefined) found.transportType = payload.transportType
+      if (
+        payload.emergencyContactName !== undefined ||
+        payload.emergencyContactPhone !== undefined ||
+        payload.emergencyContactRelationship !== undefined
+      ) {
+        found.emergencyContact = {
+          name: payload.emergencyContactName ?? found.emergencyContact?.name ?? '',
+          phone: payload.emergencyContactPhone ?? found.emergencyContact?.phone ?? '',
+          relationship:
+            payload.emergencyContactRelationship ?? found.emergencyContact?.relationship ?? '',
+        }
+      }
+      if (payload.bloodType !== undefined) found.bloodType = payload.bloodType
       /** Espejo del `is_profile_complete` de `vw_worker`: sin esto, editar los
           9 campos de un WHITE nunca lo dejaba listo para validar en las pruebas. */
       found.isProfileComplete =
