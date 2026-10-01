@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { useGetMyNotificationsQuery, useMarkNotificationReadMutation } from '../api/workerApi'
 import { WorkerSkeleton } from '../components/WorkerSkeleton'
 
+import { CAMPANA_VIVA } from '@/app/notificationsApi'
 import personajeErrorTecnico from '@/assets/ilustrations/personaje-error-tecnico.svg'
 import personajeNotificaciones from '@/assets/ilustrations/personaje-notificaciones.svg'
 import { formatDayMonthTime } from '@/shared/lib/formatters'
@@ -17,7 +18,7 @@ import { formatDayMonthTime } from '@/shared/lib/formatters'
  */
 export function NotificationsPage(): ReactNode {
   const { t } = useLingui()
-  const { data: board, isLoading, isError } = useGetMyNotificationsQuery()
+  const { data: board, isLoading, isError } = useGetMyNotificationsQuery(undefined, CAMPANA_VIVA)
   const [markRead] = useMarkNotificationReadMutation()
   const notifications = board?.items ?? []
 
