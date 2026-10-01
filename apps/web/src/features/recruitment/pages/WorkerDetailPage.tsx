@@ -19,6 +19,7 @@ import {
   useGetWorkerDetailQuery,
   useGetWorkerDocumentsQuery,
   useGetWorkerHistoryQuery,
+  useRejectWorkerDocumentMutation,
   useVerifyWorkerDocumentMutation,
 } from '../api/workerDetailApi'
 import { ChangeStateDialog } from '../components/ChangeStateDialog'
@@ -126,10 +127,14 @@ export function WorkerDetailPage(): ReactNode {
   const [uploadFile, { isLoading: isUploadingFile }] = useUploadFileMutation()
   const [createDocument, { isLoading: isSavingDocument }] = useCreateWorkerDocumentMutation()
   const [verifyDocument] = useVerifyWorkerDocumentMutation()
+  const [rejectDocument, { isLoading: isRejecting }] = useRejectWorkerDocumentMutation()
   const [deleteDocument] = useDeleteWorkerDocumentMutation()
   const [documentError, setDocumentError] = useState<string | null>(null)
   /** Borrar pide segundo clic sobre la misma fila. */
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null)
+  /** Rechazar pide el motivo: abre el campo sobre la misma fila. */
+  const [rejectingId, setRejectingId] = useState<string | null>(null)
+  const [rejectReason, setRejectReason] = useState('')
   const isUploading = isUploadingFile || isSavingDocument
 
   function documentTypeLabel(documentType: string): string {
@@ -158,6 +163,30 @@ export function WorkerDetailPage(): ReactNode {
             413: t`El archivo pasa de 15 MB: comprímelo o escanéalo con menos resolución.`,
           },
           fallback: t`No se pudo subir el documento. Inténtalo de nuevo.`,
+        }),
+      )
+    }
+  }
+
+  async function handleReject(documentId: string): Promise<void> {
+    if (rejectingId !== documentId) {
+      setRejectingId(documentId)
+      setRejectReason('')
+      return
+    }
+    if (rejectReason.trim().length < 4) return
+    try {
+      await rejectDocument({ workerId, documentId, reason: rejectReason.trim() }).unwrap()
+      toast.success(t`Documento rechazado`)
+      setRejectingId(null)
+      setRejectReason('')
+    } catch (error) {
+      setDocumentError(
+        apiErrorMessage(error, {
+          byCode: {
+            DOCUMENT_VERIFIED: t`Ese documento ya estaba verificado: no se puede rechazar.`,
+          },
+          fallback: t`No se pudo rechazar el documento. Inténtalo de nuevo.`,
         }),
       )
     }
@@ -457,8 +486,8 @@ export function WorkerDetailPage(): ReactNode {
             title={t`Perfil laboral y salud`}
             subtitle={
               IS_DEV_UI
-                ? 'todas nulables · 9 integran is_profile_complete (vw_worker) — la foto no cuenta'
-                : t`Con estos 9 datos el perfil queda completo; la foto no cuenta`
+                ? 'todas nulables · 9 integran is_profile_complete (vw_worker) junto con el SSN/ITIN de Documentos — la foto no cuenta'
+                : t`Con estos datos y el SSN/ITIN de Documentos el perfil queda completo; la foto no cuenta`
             }
           >
             <div className="@container">
@@ -530,85 +559,134 @@ export function WorkerDetailPage(): ReactNode {
             ) : (
               <ul className="divide-y divide-line">
                 {(documents?.data ?? []).map((doc) => (
-                  <li key={doc.id} className="flex flex-wrap items-center gap-3 py-3">
-                    <span className="w-52 text-sm font-medium text-ink">
-                      {documentTypeLabel(doc.documentType)}
-                    </span>
-                    {doc.url ? (
-                      <a
-                        href={doc.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-sm text-o-700 hover:underline"
-                      >
-                        {doc.filePath.split('/').pop()}
-                      </a>
-                    ) : (
-                      <span className="text-sm text-ink-2">{doc.filePath.split('/').pop()}</span>
-                    )}
-                    <span className="ml-auto text-xs text-ink-3">
-                      {doc.verifiedBy?.fullName ?? '—'}
-                    </span>
-                    <span className="w-24 text-xs text-ink-3">
-                      {doc.verifiedAt === null ? '—' : formatDate(doc.verifiedAt)}
-                    </span>
-                    <span
-                      className={
-                        doc.isVerified
-                          ? 'rounded-full bg-green/15 px-3 py-1 text-xs font-medium text-ink-2'
-                          : 'rounded-full border border-dashed border-ink-4 px-3 py-1 text-xs text-ink-3'
-                      }
-                    >
-                      {doc.isVerified ? <Trans>Verificado</Trans> : <Trans>Pendiente</Trans>}
-                    </span>
-                    {!doc.isVerified && canValidate && (
-                      <Button
-                        variant="secondary"
-                        className="px-3 py-1 text-xs"
-                        title={t`Marca el documento como revisado. No afecta la retención del 16% del SSN/ITIN.`}
-                        onClick={() => {
-                          setDocumentError(null)
-                          void verifyDocument({ workerId, documentId: doc.id })
-                            .unwrap()
-                            .then(() => {
-                              toast.success(t`Documento verificado`)
-                            })
-                            .catch((error: unknown) => {
-                              setDocumentError(
-                                apiErrorMessage(error, {
-                                  byCode: {
-                                    DOCUMENT_ALREADY_VERIFIED: t`Ese documento ya estaba verificado.`,
-                                  },
-                                  fallback: t`No se pudo verificar el documento. Inténtalo de nuevo.`,
-                                }),
-                              )
-                            })
-                        }}
-                      >
-                        <Trans>Verificar documento</Trans>
-                      </Button>
-                    )}
-                    {canEditDocuments && (
-                      <button
-                        type="button"
-                        aria-label={t`Borrar ${documentTypeLabel(doc.documentType)}`}
-                        title={
-                          confirmingDeleteId === doc.id
-                            ? t`Otro clic lo borra definitivamente`
-                            : t`Borrar el documento`
+                  <li key={doc.id} className="flex flex-col gap-2 py-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="w-52 text-sm font-medium text-ink">
+                        {documentTypeLabel(doc.documentType)}
+                      </span>
+                      {doc.url ? (
+                        <a
+                          href={doc.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm text-o-700 hover:underline"
+                        >
+                          {doc.filePath.split('/').pop()}
+                        </a>
+                      ) : (
+                        <span className="text-sm text-ink-2">{doc.filePath.split('/').pop()}</span>
+                      )}
+                      <span className="ml-auto text-xs text-ink-3">
+                        {doc.verifiedBy?.fullName ?? '—'}
+                      </span>
+                      <span className="w-24 text-xs text-ink-3">
+                        {doc.verifiedAt === null ? '—' : formatDate(doc.verifiedAt)}
+                      </span>
+                      <span
+                        className={
+                          doc.isVerified
+                            ? 'rounded-full bg-green/15 px-3 py-1 text-xs font-medium text-ink-2'
+                            : 'rounded-full border border-dashed border-ink-4 px-3 py-1 text-xs text-ink-3'
                         }
-                        onClick={() => {
-                          void handleDelete(doc.id)
-                        }}
-                        className={`cursor-pointer rounded-md p-1.5 transition-colors hover:bg-surface-2 ${
-                          confirmingDeleteId === doc.id ? 'text-red' : 'text-ink-3 hover:text-red'
-                        }`}
                       >
-                        <MaterialIcon
-                          name={confirmingDeleteId === doc.id ? 'delete_forever' : 'delete'}
-                          className="text-lg"
+                        {doc.isVerified ? <Trans>Verificado</Trans> : <Trans>Pendiente</Trans>}
+                      </span>
+                      {!doc.isVerified && canValidate && (
+                        <Button
+                          variant="secondary"
+                          className="px-3 py-1 text-xs"
+                          title={t`Marca el documento como revisado. No afecta la retención del 16% del SSN/ITIN.`}
+                          onClick={() => {
+                            setDocumentError(null)
+                            void verifyDocument({ workerId, documentId: doc.id })
+                              .unwrap()
+                              .then(() => {
+                                toast.success(t`Documento verificado`)
+                              })
+                              .catch((error: unknown) => {
+                                setDocumentError(
+                                  apiErrorMessage(error, {
+                                    byCode: {
+                                      DOCUMENT_ALREADY_VERIFIED: t`Ese documento ya estaba verificado.`,
+                                    },
+                                    fallback: t`No se pudo verificar el documento. Inténtalo de nuevo.`,
+                                  }),
+                                )
+                              })
+                          }}
+                        >
+                          <Trans>Verificar documento</Trans>
+                        </Button>
+                      )}
+                      {!doc.isVerified && canValidate && (
+                        <Button
+                          variant="secondary"
+                          className="px-3 py-1 text-xs text-red"
+                          title={t`No sirve (ilegible, incorrecto…): se le vuelve a pedir al colaborador.`}
+                          onClick={() => {
+                            setDocumentError(null)
+                            void handleReject(doc.id)
+                          }}
+                        >
+                          <Trans>Rechazar</Trans>
+                        </Button>
+                      )}
+                      {canEditDocuments && (
+                        <button
+                          type="button"
+                          aria-label={t`Borrar ${documentTypeLabel(doc.documentType)}`}
+                          title={
+                            confirmingDeleteId === doc.id
+                              ? t`Otro clic lo borra definitivamente`
+                              : t`Borrar el documento`
+                          }
+                          onClick={() => {
+                            void handleDelete(doc.id)
+                          }}
+                          className={`cursor-pointer rounded-md p-1.5 transition-colors hover:bg-surface-2 ${
+                            confirmingDeleteId === doc.id ? 'text-red' : 'text-ink-3 hover:text-red'
+                          }`}
+                        >
+                          <MaterialIcon
+                            name={confirmingDeleteId === doc.id ? 'delete_forever' : 'delete'}
+                            className="text-lg"
+                          />
+                        </button>
+                      )}
+                    </div>
+                    {rejectingId === doc.id && (
+                      <div className="flex items-center gap-2 rounded-md bg-red/10 p-2">
+                        <input
+                          type="text"
+                          autoFocus
+                          value={rejectReason}
+                          onChange={(event) => {
+                            setRejectReason(event.target.value)
+                          }}
+                          placeholder={t`¿Por qué se rechaza? (ilegible, incorrecto…)`}
+                          aria-label={t`Motivo del rechazo`}
+                          className="flex-1 rounded-md border border-line bg-surface px-3 py-1.5 text-sm text-ink focus:border-o-500 focus:outline-none"
                         />
-                      </button>
+                        <Button
+                          variant="secondary"
+                          className="px-3 py-1 text-xs"
+                          onClick={() => {
+                            setRejectingId(null)
+                          }}
+                        >
+                          <Trans>Cancelar</Trans>
+                        </Button>
+                        <Button
+                          variant="primary"
+                          className="px-3 py-1 text-xs"
+                          disabled={rejectReason.trim().length < 4 || isRejecting}
+                          onClick={() => {
+                            void handleReject(doc.id)
+                          }}
+                        >
+                          <Trans>Confirmar rechazo</Trans>
+                        </Button>
+                      </div>
                     )}
                   </li>
                 ))}

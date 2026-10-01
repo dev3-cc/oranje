@@ -17,7 +17,6 @@ import { Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-route
 import { useGetMyNotificationsQuery, useGetMyProfileQuery } from '../api/workerApi'
 
 import { PasswordOverdueScreen, ProfileOverdueScreen } from './AccessDeadlineBanner'
-import { SuspendedScreen } from './TaxDeadlineBanner'
 
 import { useAppSelector } from '@/app/hooks'
 import { activateLocale, LOCALE_LABEL, LOCALES } from '@/app/i18n'
@@ -113,11 +112,11 @@ export function MobileShell(): ReactNode {
   /** El staff no tiene expediente propio: su casa es el shell del sidebar. */
   if (!isWorker) return <Navigate to="/" replace />
 
-  const isSuspended = profile?.taxDeadline.status === 'SUSPENDED'
-  /* Los otros dos plazos (contraseña temporal, expediente a medias): vencidos
-     bloquean todo menos lo que los levanta. Cambiar la contraseña va inline;
-     completar los datos vive en Mis datos, así que esas dos rutas siguen
-     abiertas y el resto ve el interceptor. */
+  /* Los dos plazos (contraseña temporal, expediente a medias — que desde el
+     2026-09-30 incluye el SSN/ITIN): vencidos bloquean todo menos lo que los
+     levanta. Cambiar la contraseña va inline; completar los datos vive en
+     Mis datos, así que esas dos rutas siguen abiertas y el resto ve el
+     interceptor. */
   /* `accessDeadlines` con `?.`: un API anterior a este cambio (o el deploy del
      front llegando antes que el del API) no lo manda, y sin él la app no
      puede quedarse en blanco: simplemente no hay plazos que cobrar. */
@@ -320,9 +319,7 @@ export function MobileShell(): ReactNode {
          * elástico) y al soltar decide; el vertical sigue siendo scroll.
          */}
         <main className="flex-1 overflow-x-clip px-5 py-5">
-          {isSuspended ? (
-            <SuspendedScreen />
-          ) : isPasswordOverdue ? (
+          {isPasswordOverdue ? (
             <PasswordOverdueScreen />
           ) : isProfileOverdue ? (
             <ProfileOverdueScreen />

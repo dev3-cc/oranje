@@ -66,6 +66,10 @@ msgstr "Need to take it back? The Status Light never goes backwards: you exit th
 msgid "¿Por qué se elimina? El motivo queda en el journal."
 msgstr "Why is it being deleted? The reason stays in the log."
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "¿Por qué se rechaza? (ilegible, incorrecto…)"
+msgstr "Why is it being rejected? (illegible, incorrect…)"
+
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "¿Qué es de ti?"
 msgstr "Anything we should know?"
@@ -1919,6 +1923,7 @@ msgstr "Cancelling…"
 #: src/features/recruitment/components/DeleteWorkerDialog.tsx
 #: src/features/recruitment/components/LiftBlacklistDialog.tsx
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 #: src/features/schedule/components/AddShiftDialog.tsx
@@ -1952,10 +1957,6 @@ msgstr "Quantity {ordinal}"
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
 msgid "Capturar una marca que el ponche no registró, con motivo"
 msgstr "Record a punch the clock-in didn't capture, with a reason"
-
-#: src/features/worker/components/TaxDeadlineBanner.tsx
-msgid "Carga tu SSN o ITIN"
-msgstr "Upload your SSN or ITIN"
 
 #: src/features/worker/components/TaxDeadlineBanner.tsx
 msgid "cargado, en verificación"
@@ -2270,8 +2271,8 @@ msgid "Con este correo entra a la app y revisa su buzón. La contraseña la gene
 msgstr "They use this email to sign in to the app and check their mailbox. The system generates the password and you will see it only once: write it down and hand it over in person, not by email."
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
-msgid "Con estos 9 datos el perfil queda completo; la foto no cuenta"
-msgstr "These 9 fields complete the profile; the photo doesn't count"
+msgid "Con estos datos y el SSN/ITIN de Documentos el perfil queda completo; la foto no cuenta"
+msgstr "With these fields and the SSN/ITIN in Documents the profile is complete; the photo doesn't count"
 
 #: src/features/contracts/components/ContractChecklist.tsx
 msgid "Con problema"
@@ -2300,6 +2301,10 @@ msgstr "Confirming you're at the hotel"
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 msgid "Confirmar cambio"
 msgstr "Confirm change"
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Confirmar rechazo"
+msgstr "Confirm rejection"
 
 #: src/features/conversion/pages/ConversionPage.tsx
 msgid "Confirmar regreso"
@@ -2674,10 +2679,6 @@ msgstr "When the Recruiter validates the sign-up, they move to Strong Green and 
 #: src/features/worker/lib/noShiftMessage.ts
 msgid "Cuando la Reclutadora valide tus datos quedarás Disponible para asignación. Con tu primera requisición, tu turno aparece aquí."
 msgstr "Once the Recruiter validates your info you'll be Available for assignment. With your first requisition, your shift shows up here."
-
-#: src/features/worker/components/TaxDeadlineBanner.tsx
-msgid "Cuando Oranje lo verifique, tu pago queda habilitado."
-msgstr "Once Oranje verifies it, your pay is enabled."
 
 #: src/features/worker/lib/noShiftMessage.ts
 msgid "Cuando Reclutamiento te asigne a una requisición, tu turno del día aparece aquí y podrás ponchar."
@@ -3135,6 +3136,10 @@ msgstr "T&C document negotiated"
 msgid "Documento de Términos y Condiciones"
 msgstr "Terms and Conditions Document"
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Documento rechazado"
+msgstr "Document rejected"
+
 #: src/features/worker/components/TaxDocumentUploader.tsx
 msgid "Documento recibido. Si te equivocaste de archivo, súbelo de nuevo y reemplaza el anterior."
 msgstr "Document received. If you picked the wrong file, upload it again to replace the previous one."
@@ -3358,8 +3363,8 @@ msgid "El ciclo sigue vivo en Café: se retoma desde el Pipeline cuando el hotel
 msgstr "The cycle is still alive in Brown: pick it up from the Pipeline when the hotel unblocks."
 
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
-msgid "El colaborador completa la Fase 2 (transporte y SSN/ITIN, con 3 días de plazo) y la Fase 3 (contacto de emergencia y salud) desde su app."
-msgstr "The Collaborator completes Phase 2 (transport and SSN/ITIN, within 3 days) and Phase 3 (emergency contact and health) from their app."
+msgid "El colaborador completa la Fase 2 (transporte y SSN/ITIN) y la Fase 3 (contacto de emergencia y salud) desde su app; si lo validas a medias, tiene 1 día para completarlo."
+msgstr "The collaborator completes Phase 2 (transportation and SSN/ITIN) and Phase 3 (emergency contact and health) from the app; if you validate them incomplete, they have 1 day to finish it."
 
 #: src/features/timesheet/api/timesheetApi.ts
 msgid "El colaborador no tiene asignación en esta requisición"
@@ -3588,11 +3593,6 @@ msgstr "The exact pin and the geofence will validate punches once it's a client:
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "El pin se arrastra a propósito."
 msgstr "The pin is meant to be dragged."
-
-#. placeholder {0}: formatDate(dueAt)
-#: src/features/worker/components/TaxDeadlineBanner.tsx
-msgid "El plazo venció el {0} (vas en el día {day}). Mañana se suspende tu acceso, y sin tu SSN o ITIN no se te puede pagar."
-msgstr "The deadline passed on {0} (you are on day {day}). Tomorrow your access is suspended, and without your SSN or ITIN you can't be paid."
 
 #: src/features/admin/components/HotelUserFormDialog.tsx
 msgid "El primer Manager General de cada hotel nace en la Conversión; aquí se dan de alta los Supervisores, los Managers de Área y los Managers Generales adicionales."
@@ -4121,8 +4121,8 @@ msgid "Entra a Oranje"
 msgstr "Sign in to Oranje"
 
 #: src/features/recruitment/components/ChangeStateDialog.tsx
-msgid "Entra al Pool hoy. Lo suyo tiene 3 días para completarlo desde su app; si no lo hace, su acceso se bloquea hasta que lo complete. Lo de Fase 1 no le bloquea nada: eso queda en tus manos."
-msgstr "They join the Pool today. Their part has 3 days to be completed from their app; if not, their access is blocked until they do. Phase 1 never blocks them: that one is in your hands."
+msgid "Entra al Pool hoy. Lo suyo tiene 1 día para completarlo desde su app; si no lo hace, su acceso se bloquea hasta que lo complete. Lo de Fase 1 no le bloquea nada: eso queda en tus manos."
+msgstr "They join the Pool today. They have 1 day to complete their part from the app; if they don't, their access locks until they do. What's missing from Phase 1 doesn't block them — that's on you."
 
 #: src/features/observability/components/PunchesTable.tsx
 #: src/features/schedule/components/AddShiftDialog.tsx
@@ -4375,6 +4375,10 @@ msgstr "That email is already in use: try another one."
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Ese correo ya tiene cuenta de acceso. Da el alta sin contraseña (invitación) o que la persona use «¿Olvidaste tu contraseña?»."
 msgstr "That email already has a sign-in account. Sign them up without a password (invitation) or have the person use “Forgot your password?”."
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Ese documento ya estaba verificado: no se puede rechazar."
+msgstr "That document was already verified: it can't be rejected."
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Ese documento ya estaba verificado."
@@ -6428,6 +6432,10 @@ msgstr "Reason for closing"
 msgid "Motivo del levantamiento <0>(obligatorio)</0>"
 msgstr "Reason for lifting <0>(required)</0>"
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Motivo del rechazo"
+msgstr "Rejection reason"
+
 #: src/features/conversion/pages/ConversionPage.tsx
 msgid "Motivo del regreso (obligatorio):"
 msgstr "Reason for sending it back (required):"
@@ -6481,8 +6489,8 @@ msgid "Nace en Blanco al guardar"
 msgstr "Starts in White once saved"
 
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
-msgid "Nace en Blanco: el colaborador termina las fases 2 y 3 en su app — transporte y SSN/ITIN con 3 días de plazo."
-msgstr "Starts in White: the collaborator finishes phases 2 and 3 in their app — transport and SSN/ITIN, with a 3-day deadline."
+msgid "Nace en Blanco: el colaborador termina las fases 2 y 3 en su app — si lo validas con algo pendiente, tiene 1 día para completarlo."
+msgstr "Born in White: the collaborator finishes phases 2 and 3 in the app — if you validate them with something still pending, they have 1 day to complete it."
 
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Nace en Blanco: el expediente se completa por fases."
@@ -7214,6 +7222,10 @@ msgstr "We couldn't release the slot. Try again."
 msgid "No se pudo mandar a Stand-by. Inténtalo de nuevo."
 msgstr "They couldn't be sent to Stand-by. Try again."
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "No se pudo rechazar el documento. Inténtalo de nuevo."
+msgstr "The document couldn't be rejected. Try again."
+
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "No se pudo reenviar la invitación. Inténtalo de nuevo."
 msgstr "Couldn't resend the invitation. Try again."
@@ -7277,6 +7289,10 @@ msgstr "An audit can't be scored when everything is N/A."
 #: src/features/timesheet/components/TimesheetDayCell.tsx
 msgid "No se registró entrada ni salida. Puede ser que no tuviera turno ese día, o que el ponche no llegara a guardarse (por ejemplo, fuera de la geocerca). Revisa el Schedule para saber cuál de las dos fue."
 msgstr "No clock-in or clock-out was recorded. Either there was no shift that day, or the punch never got saved (outside the geofence, for example). Check the Schedule to find out which."
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "No sirve (ilegible, incorrecto…): se le vuelve a pedir al colaborador."
+msgstr "It doesn't work (illegible, incorrect…): the collaborator will be asked to upload it again."
 
 #: src/features/contracts/components/ContractNextStep.tsx
 msgid "No tiene fecha de fin: rige hasta que alguien lo marque expirado."
@@ -7721,14 +7737,6 @@ msgstr "Goes to Red: it's an incident, not a pause. Inspection reviews it."
 msgid "Pasa a Rosa: queda en pausa, sin turnos nuevos, hasta que el Hotel lo reactive."
 msgstr "They move to Pink: paused, with no new shifts, until the Hotel reactivates them."
 
-#: src/features/worker/components/TaxDeadlineBanner.tsx
-msgid "Pasaron 5 días sin cargar tu SSN o ITIN. Súbelo aquí y tu acceso vuelve al instante — tus datos y tu historial no se pierden. Si no puedes subirlo, contacta a Oranje (Customer Service)."
-msgstr "5 days went by without your SSN or ITIN. Upload it here and your access comes back instantly — your info and history aren't lost. If you can't upload it, contact Oranje (Customer Service)."
-
-#: src/features/worker/components/AccessDeadlineBanner.tsx
-msgid "Pasaron los 3 días para completar tu expediente después de que Reclutamiento te validó. Llénalo aquí y tu acceso vuelve al instante — tus datos y tu historial no se pierden."
-msgstr "The 3 days to complete your file after Recruitment validated you have passed. Fill it in here and your access comes back instantly — your details and history are not lost."
-
 #: src/features/worker/components/AccessDeadlineBanner.tsx
 msgid "Pasaron los 30 días para cambiar la contraseña temporal que te dieron. Elige la tuya aquí y tu acceso vuelve al instante — tus datos y tu historial no se pierden."
 msgstr "The 30 days to change the temporary password you were given have passed. Pick your own here and your access comes back instantly — your details and history are not lost."
@@ -7740,6 +7748,10 @@ msgstr "Step 1 of 2"
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "Paso 2 de 2"
 msgstr "Step 2 of 2"
+
+#: src/features/worker/components/AccessDeadlineBanner.tsx
+msgid "Pasó el día para completar tu expediente después de que Reclutamiento te validó. Llénalo aquí y tu acceso vuelve al instante — tus datos y tu historial no se pierden."
+msgstr "The day to complete your file after Recruitment validated you has passed. Fill it out here and your access comes back instantly — your data and history aren't lost."
 
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "pausa temporal (Rosa)"
@@ -8358,6 +8370,7 @@ msgstr "Actual"
 msgid "Recentrar"
 msgstr "Recenter"
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
 msgid "Rechazar"
 msgstr "Reject"
@@ -8398,8 +8411,8 @@ msgstr "Recruitment will see it once a Manager authorizes it. Without the signat
 #. placeholder {0}: formatDate(profile.dueAt)
 #. placeholder {1}: profile.day ?? 1
 #: src/features/worker/components/AccessDeadlineBanner.tsx
-msgid "Reclutamiento ya te validó con tu expediente a medias. Tienes hasta el <0>{0}</0> (día {1} de 3); después tu acceso se bloquea hasta que lo completes."
-msgstr "Recruitment already validated you with your file half done. You have until <0>{0}</0> (day {1} of 3); after that your access is blocked until you complete it."
+msgid "Reclutamiento ya te validó con tu expediente a medias. Tienes hasta el <0>{0}</0> (día {1} de 1); después tu acceso se bloquea hasta que lo completes."
+msgstr "Recruitment already validated you with your incomplete file. You have until <0>{0}</0> (day {1} of 1); after that your access locks until you complete it."
 
 #: src/features/auth/pages/LoginPage.tsx
 msgid "Recupera tu contraseña"
@@ -9538,6 +9551,10 @@ msgstr "SSN / ITIN"
 msgid "SSN o ITIN subido"
 msgstr "SSN or ITIN uploaded"
 
+#: src/features/recruitment/lib/profileFields.ts
+msgid "SSN/ITIN"
+msgstr "SSN/ITIN"
+
 #: src/features/worker/components/TaxDeadlineBanner.tsx
 msgid "SSN/ITIN recibido"
 msgstr "SSN/ITIN received"
@@ -9772,11 +9789,6 @@ msgstr "They have a shift today and haven't clocked in. Reach out — their phon
 #: src/features/recruitment/components/DeleteWorkerDialog.tsx
 msgid "Tiene una asignación activa en un hotel: primero hay que terminarla o reasignarla."
 msgstr "They have an active assignment at a hotel: end it or reassign it first."
-
-#. placeholder {0}: formatDate(dueAt)
-#: src/features/worker/components/TaxDeadlineBanner.tsx
-msgid "Tienes hasta el <0>{0}</0> (día {day} de 3). Sin él no se te puede pagar."
-msgstr "You have until <0>{0}</0> (day {day} of 3). Without it you can't be paid."
 
 #: src/features/onboarding/components/StatusTimeline.tsx
 #: src/features/territory/components/HotelMapCard.tsx
@@ -10033,10 +10045,6 @@ msgstr "Three rules the system always enforces: a collaborator in <0>Gray</0> (i
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "tú"
 msgstr "you"
-
-#: src/features/worker/components/TaxDeadlineBanner.tsx
-msgid "Tu acceso está suspendido"
-msgstr "Your access is suspended"
 
 #: src/features/dashboard/components/ActivityCards.tsx
 msgid "Tu actividad"
@@ -10736,10 +10744,6 @@ msgstr "and"
 #: src/features/worker/pages/HomePage.tsx
 msgid "Y tu ubicación, para confirmar dónde estás"
 msgstr "And your location, to confirm where you are"
-
-#: src/features/worker/components/TaxDeadlineBanner.tsx
-msgid "Ya debiste cargar tu SSN o ITIN"
-msgstr "Your SSN or ITIN should already be uploaded"
 
 #: src/features/admin/components/userListParts.tsx
 msgid "Ya entró"

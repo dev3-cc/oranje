@@ -12,7 +12,6 @@ import { AccessDeadlineGuard } from './me/access-deadline.guard.js'
 import { AccessDeadlineService } from './me/access-deadline.service.js'
 import { MeController } from './me/me.controller.js'
 import { MeService } from './me/me.service.js'
-import { TaxDeadlineGuard } from './me/tax-deadline.guard.js'
 import { TaxDeadlineService } from './me/tax-deadline.service.js'
 import { RatesController } from './rates/rates.controller.js'
 import { RatesRepository } from './rates/rates.repository.js'
@@ -37,7 +36,6 @@ import { WorkersService } from './workers/workers.service.js'
     MeService,
     TaxDeadlineService,
     AccessDeadlineService,
-    { provide: APP_GUARD, useClass: TaxDeadlineGuard },
     { provide: APP_GUARD, useClass: AccessDeadlineGuard },
   ],
   exports: [WorkersService, DocumentsService, RatesService, TaxDeadlineService],

@@ -2,24 +2,23 @@ import { Injectable } from '@nestjs/common'
 
 import { PrismaService } from '../../../infra/prisma/index.js'
 
-// Reglas del Colaborador § Plazo de SSN/ITIN. Tres dias desde la PRIMERA
-// ASIGNACION —no desde el alta— para CARGAR el documento; al cuarto un
-// aviso, al quinto se suspende el acceso. (Cambiado el 2026-09-25, Hugo:
-// antes corria desde el alta, y alguien sin asignar podia llegar al aviso o
-// a la suspension sin haber podido ponchar nunca.)
-const GRACE_DAYS = 3
-const NOTICE_DAY = 4
-const SUSPEND_DAY = 5
-
+// Reglas de Negocio § Validación con expediente incompleto (unificado el
+// 2026-09-30, Hugo: el SSN/ITIN dejó de tener su propio plazo — antes 3/4/5
+// días desde la PRIMERA ASIGNACIÓN, sin casilla — y ahora es una pieza más
+// del expediente a medias, con el mismo `profile_due_at` que transporte,
+// contacto de emergencia y tipo de sangre. Este servicio ya no decide NADA
+// sobre el acceso (eso es AccessDeadlineGuard/PROFILE_OVERDUE); solo arma la
+// lectura para el banner del Colaborador — de dónde salía antes de esta
+// unificación, sigue siendo el nombre que la persona reconoce en la app.
 const TAX_DOCUMENT = 'SSN_ITIN'
 
 export type TaxDeadlineStatus = 'OK' | 'NOTICE' | 'SUSPENDED'
 
 export interface TaxDeadline {
   status: TaxDeadlineStatus
-  /// Sin asignacion todavia el plazo no ha arrancado: `day`/`dueAt` van null.
+  /// Sin validación con expediente a medias todavía, el plazo no ha arrancado.
   hasStarted: boolean
-  /// Dias transcurridos desde la primera asignacion. Dia 1 es el de esa asignacion.
+  /// Días transcurridos desde que se validó a medias. Día 1 es ese día.
   day: number | null
   dueAt: string | null
   /// El documento subido, que es lo que corre el plazo.
@@ -27,6 +26,12 @@ export interface TaxDeadline {
   /// El documento revisado por la Reclutadora. NO es lo que levanta la
   /// retencion: eso lo decide `has_tax_id`, que lee las columnas cifradas.
   isDocumentVerified: boolean
+  /// Sin documento cargado (`hasDocument` false) por un rechazo reciente que
+  /// todavia no se reemplaza — el aviso en el journal, no una columna nueva
+  /// (Hugo, 2026-09-30: sin esto el colaborador solo ve "carga tu SSN o ITIN"
+  /// otra vez, sin saber que ya lo habia hecho).
+  wasRejected: boolean
+  rejectionReason: string | null
   /// La retencion es INDEPENDIENTE del plazo: aplica mientras no haya SSN/ITIN
   /// verificado, se haya suspendido el acceso o no.
   ///
@@ -36,26 +41,15 @@ export interface TaxDeadline {
   taxRetentionApplies: boolean
 }
 
-// Se calcula al leer y no lo escribe un job: un job que deja de correr
-// suspende a nadie o a todos, y aqui la primera asignacion ya dice todo.
-// Se cachea porque el guard lo consulta en CADA peticion del colaborador.
-const CACHE_TTL_MS = 60_000
-
 @Injectable()
 export class TaxDeadlineService {
-  private readonly cache = new Map<string, { suspended: boolean; expiresAt: number }>()
-
   constructor(private readonly prisma: PrismaService) {}
 
-  // Al subir el documento la suspension se levanta AL INSTANTE. Sin esto la
-  // persona sube su SSN y sigue fuera hasta que expire la cache, que es
-  // exactamente el momento en que menos se entiende.
-  invalidate(userId: string): void {
-    this.cache.delete(userId)
-  }
-
   async of(workerId: string, now = new Date()): Promise<TaxDeadline> {
-    const startAt = await this.firstAssignmentAt(workerId)
+    const worker = await this.prisma.worker.findUnique({
+      where: { id: workerId },
+      select: { profileDueAt: true },
+    })
     const document = await this.prisma.workerDocument.findFirst({
       where: { workerId, documentType: TAX_DOCUMENT },
       select: { verifiedAt: true },
@@ -65,8 +59,10 @@ export class TaxDeadlineService {
     const hasDocument = document !== null
     const isDocumentVerified = document?.verifiedAt != null
     const hasTaxId = await this.hasTaxId(workerId)
+    const profileDueAt = worker?.profileDueAt ?? null
+    const rejection = hasDocument ? null : await this.lastRejection(workerId)
 
-    if (startAt === null) {
+    if (profileDueAt === null) {
       return {
         status: 'OK',
         hasStarted: false,
@@ -75,21 +71,46 @@ export class TaxDeadlineService {
         hasDocument,
         isDocumentVerified,
         taxRetentionApplies: !hasTaxId,
+        wasRejected: rejection !== null,
+        rejectionReason: rejection,
       }
     }
 
-    const day = daysSince(startAt, now)
-    const dueAt = new Date(startAt.getTime() + GRACE_DAYS * 86_400_000)
+    // `profileDueAt` YA es la fecha límite (fijada como validated_at +
+    // PROFILE_GRACE_DAYS en WorkersService): el "día 1" es el de la
+    // validación, un día antes de esa fecha límite.
+    const start = new Date(profileDueAt.getTime() - 86_400_000)
+    const day = daysSince(start, now)
 
     return {
-      status: hasDocument ? 'OK' : statusFor(day),
+      status: hasDocument || now.getTime() <= profileDueAt.getTime() ? 'OK' : 'SUSPENDED',
       hasStarted: true,
       day,
-      dueAt: dueAt.toISOString(),
+      dueAt: profileDueAt.toISOString(),
       hasDocument,
       isDocumentVerified,
       taxRetentionApplies: !hasTaxId,
+      wasRejected: rejection !== null,
+      rejectionReason: rejection,
     }
+  }
+
+  // El motivo vive en el journal (el rechazo borra la fila): el rechazo mas
+  // reciente solo cuenta si no hay documento vivo mas nuevo que lo reemplace
+  // -- por eso el caller solo llama esto cuando `hasDocument` es falso.
+  private async lastRejection(workerId: string): Promise<string | null> {
+    const entry = await this.prisma.journalEntry.findFirst({
+      where: {
+        entityType: 'personal.worker_document',
+        eventType: 'DOCUMENT_REJECTED',
+        payload: { path: ['workerId'], equals: workerId },
+      },
+      orderBy: { occurredAt: 'desc' },
+      select: { payload: true },
+    })
+
+    const payload = entry?.payload as { reason?: string } | null
+    return payload?.reason ?? null
   }
 
   // La misma consulta que el expediente. Dos definiciones de "tiene SSN" serian
@@ -100,45 +121,6 @@ export class TaxDeadlineService {
 
     return rows[0]?.has ?? false
   }
-
-  // Lo que arranca el plazo hoy: la PRIMERA vez que quedo asignado, sin
-  // importar si esa asignacion sigue activa. `null` es "todavia no lo
-  // asignan" — un estado valido, no un dato faltante.
-  private async firstAssignmentAt(workerId: string): Promise<Date | null> {
-    const rows = await this.prisma.$queryRaw<Array<{ firstAssignedAt: Date | null }>>`
-      SELECT MIN(created_at) AS "firstAssignedAt"
-        FROM coverage.assignment
-       WHERE worker_id = ${workerId}::uuid`
-
-    return rows[0]?.firstAssignedAt ?? null
-  }
-
-  async isSuspended(userId: string): Promise<boolean> {
-    const cached = this.cache.get(userId)
-
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.suspended
-    }
-
-    const worker = await this.prisma.worker.findFirst({
-      where: { userId, deletedAt: null },
-      select: { id: true },
-    })
-
-    const suspended = worker !== null && (await this.of(worker.id)).status === 'SUSPENDED'
-
-    this.cache.set(userId, { suspended, expiresAt: Date.now() + CACHE_TTL_MS })
-
-    return suspended
-  }
-}
-
-function statusFor(day: number): TaxDeadlineStatus {
-  if (day >= SUSPEND_DAY) {
-    return 'SUSPENDED'
-  }
-
-  return day >= NOTICE_DAY ? 'NOTICE' : 'OK'
 }
 
 // Por dias de calendario y no por horas: quien se dio de alta a las 23:50

@@ -74,6 +74,7 @@ function buildWorker(input: {
   state: string
   isProfileComplete?: boolean
   isBlacklisted?: boolean
+  hasPendingDocument?: boolean
   email?: string
   assignment?: WorkerApi['assignment']
 }): WorkerApi {
@@ -101,6 +102,8 @@ function buildWorker(input: {
     profileDueAt: null,
     /** D-27: mientras el cifrado no se conecte, `has_tax_id` es siempre false. */
     hasTaxId: false,
+    hasTaxDocument: false,
+    hasPendingDocument: input.hasPendingDocument ?? false,
     hasAccount: input.email !== undefined,
     email: input.email ?? null,
     isBlacklisted: input.isBlacklisted ?? false,
@@ -119,6 +122,7 @@ const workers: WorkerApi[] = [
     modalityId: 'mod-ft',
     state: 'STRONG_GREEN',
     email: 'arivera@oranjepeople.com',
+    hasPendingDocument: true,
   }),
   buildWorker({
     fullName: 'Luis Cabrera',
@@ -410,6 +414,22 @@ const routes: readonly MockRoute[] = [
       doc.isVerified = true
       doc.verifiedBy = { id: 'usr-diana', fullName: 'Diana Roldán' }
       doc.verifiedAt = new Date().toISOString()
+      return { data: null }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/workers/:workerId/documents/:documentId/reject',
+    resolve: ({ params, body }): { data: null } => {
+      const workerId = params.workerId ?? ''
+      const doc = (DOCUMENTS[workerId] ?? []).find((item) => item.id === params.documentId)
+      if (!doc) throw new Error('DOCUMENT_NOT_FOUND')
+      if (doc.isVerified) throw new Error('DOCUMENT_VERIFIED')
+      const dto = body as { reason: string }
+      if (!dto.reason || dto.reason.trim().length < 4) throw new Error('VALIDATION_ERROR')
+      DOCUMENTS[workerId] = (DOCUMENTS[workerId] ?? []).filter(
+        (item) => item.id !== params.documentId,
+      )
       return { data: null }
     },
   },

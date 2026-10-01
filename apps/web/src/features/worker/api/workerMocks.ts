@@ -36,6 +36,8 @@ export const profile: MyProfile = {
   isProfileComplete: false,
   profileDueAt: null,
   hasTaxId: false,
+  hasTaxDocument: false,
+  hasPendingDocument: false,
   hasAccount: true,
   email: 'rnavarro@oranjepeople.com',
   isBlacklisted: false,
@@ -51,6 +53,8 @@ export const profile: MyProfile = {
     isDocumentVerified: false,
     /** D-27: sin cifrado conectado, la retención aplica a todos. */
     taxRetentionApplies: true,
+    wasRejected: false,
+    rejectionReason: null,
   },
   accessDeadlines: {
     password: { status: 'NONE', day: null, dueAt: null },

@@ -35,25 +35,25 @@ const workers = new WorkersService(
 const storageFake = { signedUrl: (): Promise<null> => Promise.resolve(null) } as never
 const permissions = new PermissionsService(prisma)
 const deadline = new TaxDeadlineService(prisma)
-const me = new MeService(
-  prisma,
-  workers,
-  deadline,
-  new DocumentsService(new DocumentsRepository(prisma), storageFake),
+const accessDeadline = new AccessDeadlineService(prisma)
+const documents = new DocumentsService(
+  new DocumentsRepository(prisma),
+  storageFake,
+  accessDeadline,
   notificationsFake,
-  new AccessDeadlineService(prisma),
-  { setPassword: (): Promise<void> => Promise.resolve() } as never,
 )
+const me = new MeService(prisma, workers, deadline, documents, notificationsFake, accessDeadline, {
+  setPassword: (): Promise<void> => Promise.resolve(),
+} as never)
 
 let actorId: string
 let zoneId: string
 let whiteId: string
 let greenId: string
+let recruiter: AuthenticatedUser
 
 const users: string[] = []
 const workerIds: string[] = []
-const hotelIds: string[] = []
-const requisitionIds: string[] = []
 
 async function colaborador(email: string): Promise<AuthenticatedUser> {
   const role = await db.role.findFirstOrThrow({ where: { code: 'ROL-C-01' } })
@@ -87,80 +87,39 @@ async function colaborador(email: string): Promise<AuthenticatedUser> {
 }
 
 /**
- * El plazo de SSN/ITIN corre desde la PRIMERA ASIGNACIÓN (2026-09-25), así
- * que estos fixtures ya no bastan con `worker.createdAt` atrasado: hace
- * falta una asignación real, con su `created_at` movido a `days` atrás.
- * Cadena mínima (hotel → requisición → posición → slot → asignación),
- * mismo patrón que `punch-turno-de-hoy.spec.ts`.
+ * El SSN/ITIN se unificó con el plazo de "expediente a medias" (2026-09-30):
+ * ya no corre desde la primera asignación, corre desde que la Reclutadora
+ * valida con la casilla "Validarlo de todas formas". `fillOthers` decide si
+ * transporte/emergencia/sangre ya están llenos, para aislar si lo único que
+ * falta es el SSN/ITIN.
  */
-async function asignadoHaceDias(workerId: string, days: number): Promise<void> {
-  const hotel = await db.hotel.create({
-    data: {
-      id: uuidv7(),
-      name: `Hotel plazo ${uuidv7().slice(-8)}`,
-      zoneId,
-      timeZone: 'America/Cancun',
-      createdBy: actorId,
-      updatedBy: actorId,
-    },
-    select: { id: true },
-  })
-  hotelIds.push(hotel.id)
+async function validarIncompleto(workerId: string, fillOthers: boolean): Promise<void> {
+  if (fillOthers) {
+    await db.worker.update({
+      where: { id: workerId },
+      data: {
+        transportType: 'PUBLIC',
+        emergencyContactName: 'Mamá',
+        emergencyContactPhone: '9991112222',
+        emergencyContactRelationship: 'MOTHER',
+        bloodType: 'O_POS',
+      },
+    })
+  }
 
-  const reqState = await db.statusLightState.findFirstOrThrow({
-    where: { code: 'APPLE_GREEN', statusLightCode: 'REQUISITION' },
-    select: { id: true },
-  })
-  const department = await db.hotelDepartment.findFirstOrThrow({ select: { id: true } })
-  const position = await db.catalogPosition.findFirstOrThrow({ select: { id: true } })
-  const modality = await db.hiringModality.findFirstOrThrow({ select: { id: true } })
-  const coverage = await db.statusLightState.findFirstOrThrow({
-    where: { statusLightCode: 'POSITION_COVERAGE' },
-    select: { id: true },
-  })
+  await workers.changeState(
+    workerId,
+    { toState: 'STRONG_GREEN', acceptIncompleteProfile: true },
+    recruiter,
+  )
+}
 
-  const requisition = await db.requisition.create({
-    data: {
-      id: uuidv7(),
-      number: `TD${Date.now()}${Math.floor(Math.random() * 100)}`,
-      hotelId: hotel.id,
-      statusLightStateId: reqState.id,
-      statusLightCode: 'REQUISITION',
-      createdBy: actorId,
-    },
-    select: { id: true },
+/** El día de gracia (1 día) ya pasó: se suspende sin esperar a que corra de verdad. */
+async function venceElPlazo(workerId: string): Promise<void> {
+  await db.worker.update({
+    where: { id: workerId },
+    data: { profileDueAt: new Date(Date.now() - 86_400_000) },
   })
-  requisitionIds.push(requisition.id)
-
-  const pos = await db.position.create({
-    data: {
-      id: uuidv7(),
-      requisitionId: requisition.id,
-      lineNumber: 1,
-      catalogPositionId: position.id,
-      hiringModalityId: modality.id,
-      hotelDepartmentId: department.id,
-      quantity: 1,
-      startDate: new Date(),
-      startTime: new Date('1970-01-01T07:00:00Z'),
-      coverageStateId: coverage.id,
-      coverageLightCode: 'POSITION_COVERAGE',
-    },
-    select: { id: true },
-  })
-
-  const slot = await db.slot.create({
-    data: { id: uuidv7(), positionId: pos.id, ordinal: 1 },
-    select: { id: true },
-  })
-
-  // `validity` es un daterange y `created_at` va atrasado a propósito: Prisma
-  // no escribe ninguno de los dos, así que ambos van en SQL.
-  await db.$executeRaw`
-    INSERT INTO coverage.assignment (id, slot_id, worker_id, type, validity, status, assigned_by, created_at)
-    VALUES (${uuidv7()}::uuid, ${slot.id}::uuid, ${workerId}::uuid, 'FIXED',
-            daterange(current_date - ${days}::int, NULL), 'ACTIVE', ${actorId}::uuid,
-            now() - make_interval(days => ${days}))`
 }
 
 async function transicion(workerId: string): Promise<void> {
@@ -191,17 +150,28 @@ beforeAll(async () => {
       select: { id: true },
     })
   ).id
+
+  const recruiterRole = await db.role.findFirstOrThrow({
+    where: { code: 'ROL-R-01' },
+    select: { id: true },
+  })
+  const recruiterUser = await db.user.create({
+    data: {
+      id: uuidv7(),
+      email: `recl-plazo-${String(Date.now())}@oranje.local`,
+      fullName: 'Reclutadora de plazo',
+      roleId: recruiterRole.id,
+    },
+    select: { id: true },
+  })
+  users.push(recruiterUser.id)
+  recruiter = { id: recruiterUser.id, roleCode: 'ROL-R-01', hotelId: null, departmentId: null }
 })
 
 afterAll(async () => {
   await db.workerDocument.deleteMany({ where: { workerId: { in: workerIds } } })
   await db.workerStateHistory.deleteMany({ where: { workerId: { in: workerIds } } })
-  await db.assignment.deleteMany({ where: { workerId: { in: workerIds } } })
-  await db.slot.deleteMany({ where: { position: { requisitionId: { in: requisitionIds } } } })
-  await db.position.deleteMany({ where: { requisitionId: { in: requisitionIds } } })
-  await db.requisition.deleteMany({ where: { id: { in: requisitionIds } } })
   await db.worker.deleteMany({ where: { id: { in: workerIds } } })
-  await db.hotel.deleteMany({ where: { id: { in: hotelIds } } })
   // El journal es inmutable (RR-16) y retiene a quien subió el documento: a ese
   // usuario no se le borra, se le desactiva.
   try {
@@ -287,11 +257,11 @@ describe('el Colaborador sube su propio SSN/ITIN', () => {
     await db.workerDocument.deleteMany({ where: { workerId } })
   })
 
-  // El caso real que reportó Hugo (2026-09-25): sin asignación nunca, el
-  // plazo no debe ni haber arrancado, sin importar cuánto tiempo pasó desde
-  // el alta.
-  it('sin asignación todavía, el plazo no ha arrancado aunque el alta sea vieja', async () => {
-    const user = await colaborador(`sin-asignar-${Date.now()}@oranje.local`)
+  // El SSN/ITIN se unificó con el plazo del expediente a medias (2026-09-30):
+  // sin haber sido validado así todavía, el plazo no ha arrancado, sin
+  // importar cuánto tiempo pasó desde el alta.
+  it('sin validar con el expediente a medias, el plazo no ha arrancado aunque el alta sea vieja', async () => {
+    const user = await colaborador(`sin-validar-${Date.now()}@oranje.local`)
     const workerId = workerIds[workerIds.length - 1] as string
 
     await db.worker.update({
@@ -305,7 +275,7 @@ describe('el Colaborador sube su propio SSN/ITIN', () => {
     expect(ficha.taxDeadline.status).toBe('OK')
     expect(ficha.taxDeadline.day).toBeNull()
     expect(ficha.taxDeadline.dueAt).toBeNull()
-    expect(await deadline.isSuspended(user.id)).toBe(false)
+    expect(await accessDeadline.overdueOf(user.id)).not.toContain('PROFILE')
   })
 
   // La persona se puede equivocar de archivo y no tiene forma de borrarlo.
@@ -360,18 +330,20 @@ describe('el Colaborador sube su propio SSN/ITIN', () => {
   })
 
   // Sin esto la persona queda encerrada: la unica salida esta detras de la
-  // puerta que la falta de SSN/ITIN cerro.
-  it('suspendido al día 5, subir el documento le devuelve el acceso', async () => {
+  // puerta que la falta de SSN/ITIN cerro. El único faltante es el SSN/ITIN
+  // (fillOthers=true): así se aisla que subirlo, solo, resuelve el plazo.
+  it('vencido el día de gracia, subir el documento le devuelve el acceso', async () => {
     const user = await colaborador(`doc-suspendido-${Date.now()}@oranje.local`)
     const workerId = workerIds[workerIds.length - 1] as string
 
-    await asignadoHaceDias(workerId, 6)
+    await validarIncompleto(workerId, true)
+    await venceElPlazo(workerId)
 
-    expect(await deadline.isSuspended(user.id)).toBe(true)
+    expect(await accessDeadline.overdueOf(user.id)).toContain('PROFILE')
 
     await me.uploadDocument({ documentType: 'SSN_ITIN', filePath: 'workers/document/s.pdf' }, user)
 
-    expect(await deadline.isSuspended(user.id)).toBe(false)
+    expect(await accessDeadline.overdueOf(user.id)).not.toContain('PROFILE')
 
     await db.workerDocument.deleteMany({ where: { workerId } })
   })
@@ -383,11 +355,11 @@ describe('el Colaborador sube su propio SSN/ITIN', () => {
     const user = await colaborador(`doc-salida-${Date.now()}@oranje.local`)
     const workerId = workerIds[workerIds.length - 1] as string
 
-    await asignadoHaceDias(workerId, 6)
+    await validarIncompleto(workerId, true)
+    await venceElPlazo(workerId)
 
     // 1 · ve POR QUÉ está fuera
-    const ficha = await me.get(user)
-    expect(ficha.taxDeadline.status).toBe('SUSPENDED')
+    expect(await accessDeadline.overdueOf(user.id)).toContain('PROFILE')
 
     // 2 · los bytes: el destino los acepta por `worker:complete_signup`
     expect(await permissions.can(user.roleCode, 'worker', 'complete_signup')).toBe(true)
@@ -395,9 +367,26 @@ describe('el Colaborador sube su propio SSN/ITIN', () => {
     // 3 · registra el documento y vuelve
     await me.uploadDocument({ documentType: 'SSN_ITIN', filePath: 'workers/document/x.pdf' }, user)
 
-    expect((await me.get(user)).taxDeadline.status).toBe('OK')
+    expect(await accessDeadline.overdueOf(user.id)).not.toContain('PROFILE')
 
     await db.workerDocument.deleteMany({ where: { workerId } })
+  })
+
+  // El corazón del cambio del 2026-09-30: si SOLO falta el SSN/ITIN (lo demás
+  // ya está lleno), sigue siendo "expediente a medias" — antes de unificar,
+  // esto no bloqueaba nada.
+  it('con todo lo demás lleno, solo el SSN/ITIN faltante ya cuenta como expediente a medias', async () => {
+    const user = await colaborador(`solo-ssn-${Date.now()}@oranje.local`)
+    const workerId = workerIds[workerIds.length - 1] as string
+
+    await expect(
+      workers.changeState(workerId, { toState: 'STRONG_GREEN' }, recruiter),
+    ).rejects.toMatchObject({ response: { code: 'PROFILE_INCOMPLETE' } })
+
+    await validarIncompleto(workerId, true)
+    await venceElPlazo(workerId)
+
+    expect(await accessDeadline.overdueOf(user.id)).toContain('PROFILE')
   })
 
   it('no puede subirle a otro: la ruta no acepta un worker ajeno', async () => {

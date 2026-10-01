@@ -190,7 +190,7 @@ test('con cPanel sano el buzón se crea y la respuesta lo dice', async () => {
   expect(credential.mailbox).toEqual({ created: true })
 })
 
-test('validar con el expediente a medias exige confirmarlo y abre 3 días para completarlo', async () => {
+test('validar con el expediente a medias exige confirmarlo y abre 1 día para completarlo', async () => {
   const workerId = await bareWorker(`Incompleto ${String(Date.now())}`)
 
   // Sin confirmar, sigue siendo lo de siempre.
@@ -212,8 +212,8 @@ test('validar con el expediente a medias exige confirmarlo y abre 3 días para c
   expect(validated.state.code).toBe('STRONG_GREEN')
   expect(validated.isProfileComplete).toBe(false)
   const dueAt = new Date(validated.profileDueAt as string)
-  expect(dueAt.getTime() - Date.now()).toBeGreaterThan(2.9 * 86_400_000)
-  expect(dueAt.getTime() - Date.now()).toBeLessThan(3.1 * 86_400_000)
+  expect(dueAt.getTime() - Date.now()).toBeGreaterThan(0.9 * 86_400_000)
+  expect(dueAt.getTime() - Date.now()).toBeLessThan(1.1 * 86_400_000)
 
   // El plazo lo ve el colaborador en su ficha (por su cuenta), y se levanta
   // solo al completar el expediente: no hay nada que limpiar.
@@ -246,7 +246,20 @@ test('validar con el expediente a medias exige confirmarlo y abre 3 días para c
       bloodType: 'O_POS',
     },
   })
+  // El SSN/ITIN se unificó a esta misma parte (2026-09-30): sin él, sigue
+  // siendo "expediente a medias" aunque lo demás ya esté.
+  expect((await deadlines.of(account.userId as string)).profile.status).toBe('OVERDUE')
+
+  await db.workerDocument.create({
+    data: {
+      id: uuidv7(),
+      workerId,
+      documentType: 'SSN_ITIN',
+      filePath: 'workers/document/incompleto.pdf',
+    },
+  })
   expect((await deadlines.of(account.userId as string)).profile.status).toBe('NONE')
+  await db.workerDocument.deleteMany({ where: { workerId } })
 
   // Sigue faltando la Fase 1 (nunca se capturó) y aun así al colaborador no se
   // le cobra: eso es de Reclutamiento, y su parte ya está.

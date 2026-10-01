@@ -60,7 +60,7 @@ export function ChangeStateDialog({
       experiencia): lo define Reclutamiento con «Editar» y el colaborador no
       puede llenarlo, así que con eso pendiente no se valida ni a sabiendas. */
   missingPhase1Fields?: string[]
-  /** Lo que el colaborador completa desde su app (transporte, emergencia, sangre). */
+  /** Lo que el colaborador completa desde su app (transporte, emergencia, sangre, SSN/ITIN). */
   missingLaterFields?: string[]
 }): ReactNode {
   const { t, i18n } = useLingui()
@@ -74,7 +74,8 @@ export function ChangeStateDialog({
   const [note, setNote] = useState('')
   /* Reglas de Negocio § Validación con expediente incompleto: se puede validar
      a medias, pero solo a sabiendas — la casilla es la confirmación y con
-     ella el colaborador gana 3 días para completarlo desde su app. */
+     ella el colaborador gana 1 día para completarlo desde su app (incluido
+     el SSN/ITIN, unificado el 2026-09-30). */
   const [acceptsIncomplete, setAcceptsIncomplete] = useState(false)
 
   const selected = transitions.find((transition) => transition.toState === toState)
@@ -214,7 +215,7 @@ export function ChangeStateDialog({
                 </span>
                 <span className="block text-xs text-ink-3">
                   <Trans>
-                    Entra al Pool hoy. Lo suyo tiene 3 días para completarlo desde su app; si no lo
+                    Entra al Pool hoy. Lo suyo tiene 1 día para completarlo desde su app; si no lo
                     hace, su acceso se bloquea hasta que lo complete. Lo de Fase 1 no le bloquea
                     nada: eso queda en tus manos.
                   </Trans>

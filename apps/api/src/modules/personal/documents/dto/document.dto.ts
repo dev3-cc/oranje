@@ -16,3 +16,9 @@ export const createDocumentSchema = z.object({
 })
 
 export class CreateDocumentDto extends createZodDto(createDocumentSchema) {}
+
+export const rejectDocumentSchema = z.object({
+  reason: z.string().trim().min(4, 'El motivo debe explicar por qué se rechaza').max(500),
+})
+
+export class RejectDocumentDto extends createZodDto(rejectDocumentSchema) {}
