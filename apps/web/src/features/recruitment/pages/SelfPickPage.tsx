@@ -10,7 +10,7 @@ import {
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
-import { useGetSelfPickBoardQuery } from '../api/selfPickApi'
+import { AL_ATERRIZAR, useGetSelfPickBoardQuery } from '../api/selfPickApi'
 import type { SelfPickRow } from '../types/selfPick.types'
 
 import personajeComencemos from '@/assets/ilustrations/personaje-comencemos.svg'
@@ -43,7 +43,12 @@ function uniqueOptions(
 
 export function SelfPickPage(): ReactNode {
   const { t } = useLingui()
-  const { data: board, isLoading, isError, refetch } = useGetSelfPickBoardQuery()
+  const {
+    data: board,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetSelfPickBoardQuery(undefined, AL_ATERRIZAR)
 
   const [positionId, setPositionId] = useState(ANY)
   const [modalityId, setModalityId] = useState(ANY)

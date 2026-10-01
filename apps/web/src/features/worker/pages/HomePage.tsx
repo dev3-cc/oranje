@@ -8,7 +8,11 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
 import { useGetTodayPunchingQuery, type MyShiftApi } from '../api/punchApi'
-import { useGetMyProfileQuery, useSetAvailableMutation } from '../api/workerApi'
+import {
+  REFRESCO_DEL_PERFIL,
+  useGetMyProfileQuery,
+  useSetAvailableMutation,
+} from '../api/workerApi'
 import { AccessDeadlineBanner } from '../components/AccessDeadlineBanner'
 import { TaxDeadlineBanner } from '../components/TaxDeadlineBanner'
 import { WorkerSkeleton } from '../components/WorkerSkeleton'
@@ -219,7 +223,7 @@ export function HomePage(): ReactNode {
   const { t, i18n } = useLingui()
   const { isIntroOpen, dismissIntro } = useIntroSeen('worker-home')
   const reduceMotion = useReducedMotion() ?? false
-  const { data: profile, isLoading } = useGetMyProfileQuery()
+  const { data: profile, isLoading } = useGetMyProfileQuery(undefined, REFRESCO_DEL_PERFIL)
   const { data: today, isSuccess: isTodayResolved } = useGetTodayPunchingQuery()
   const [setAvailable, { isLoading: isSwitching, isError, error }] = useSetAvailableMutation()
 

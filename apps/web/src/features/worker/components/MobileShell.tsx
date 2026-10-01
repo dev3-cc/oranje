@@ -14,12 +14,17 @@ import { motion, useReducedMotion } from 'framer-motion'
 import { useRef, useState, type ReactNode } from 'react'
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 
-import { useGetMyNotificationsQuery, useGetMyProfileQuery } from '../api/workerApi'
+import {
+  REFRESCO_DEL_PERFIL,
+  useGetMyNotificationsQuery,
+  useGetMyProfileQuery,
+} from '../api/workerApi'
 
 import { PasswordOverdueScreen, ProfileOverdueScreen } from './AccessDeadlineBanner'
 
 import { useAppSelector } from '@/app/hooks'
 import { activateLocale, LOCALE_LABEL, LOCALES } from '@/app/i18n'
+import { CAMPANA_VIVA } from '@/app/notificationsApi'
 import { useLogoutMutation, useUpdateMyLocaleMutation } from '@/app/sessionApi'
 import { selectSessionUser } from '@/app/sessionSlice'
 import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
@@ -106,8 +111,14 @@ export function MobileShell(): ReactNode {
   }
 
   const isWorker = user === null || user.roleId === WORKER_ROLE
-  const { data: profile } = useGetMyProfileQuery(undefined, { skip: !isWorker })
-  const { data: board } = useGetMyNotificationsQuery(undefined, { skip: !isWorker })
+  const { data: profile } = useGetMyProfileQuery(undefined, {
+    skip: !isWorker,
+    ...REFRESCO_DEL_PERFIL,
+  })
+  const { data: board } = useGetMyNotificationsQuery(undefined, {
+    skip: !isWorker,
+    ...CAMPANA_VIVA,
+  })
 
   /** El staff no tiene expediente propio: su casa es el shell del sidebar. */
   if (!isWorker) return <Navigate to="/" replace />
