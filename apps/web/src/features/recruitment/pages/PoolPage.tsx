@@ -13,6 +13,7 @@ import fotoEquipo from '@/assets/ilustrations/pool-equipo.webp'
 import { Button } from '@/shared/components/Button'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
+import { RefreshControl } from '@/shared/components/RefreshControl'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { useCan } from '@/shared/hooks/useCan'
 import { useDebounce } from '@/shared/hooks/useDebounce'
@@ -38,6 +39,7 @@ export function PoolPage(): ReactNode {
     isFetching,
     isError,
     refetch,
+    fulfilledTimeStamp,
   } = useGetWorkerPoolQuery(appliedFilters)
   /** Cualquier filtro o texto fuera de su valor «todos». */
   const isFiltered =
@@ -47,6 +49,16 @@ export function PoolPage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
+      <div className="flex justify-end">
+        <RefreshControl
+          onRefresh={() => {
+            void refetch()
+          }}
+          isFetching={isFetching}
+          fulfilledTimeStamp={fulfilledTimeStamp}
+          label={t`el Pool de Colaboradores`}
+        />
+      </div>
       <nav aria-label={t`Ruta`} className="flex items-center gap-2 text-sm text-ink-3">
         <span>
           <Trans>Reclutamiento</Trans>

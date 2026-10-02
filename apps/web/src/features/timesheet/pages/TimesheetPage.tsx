@@ -7,6 +7,7 @@ import {
   useGetTimesheetTimelineQuery,
   useGetTimesheetWeekQuery,
 } from '../api/timesheetApi'
+import { timesheetApi } from '../api/timesheetApi'
 import { ManualPunchDialog } from '../components/ManualPunchDialog'
 import { ReviewDayDialog } from '../components/ReviewDayDialog'
 import { TimesheetGrid } from '../components/TimesheetGrid'
@@ -29,12 +30,14 @@ import {
   type TimesheetRow,
 } from '../types/timesheet.types'
 
+import { useAppDispatch } from '@/app/hooks'
 import personajeManager from '@/assets/ilustrations/personaje-manager.svg'
 import fotoEquipo from '@/assets/ilustrations/timesheet-equipo.webp'
 import { Button } from '@/shared/components/Button'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { NoticeCard } from '@/shared/components/NoticeCard'
+import { RefreshControl } from '@/shared/components/RefreshControl'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import {
   DEFAULT_COLUMN_WIDTH,
@@ -83,15 +86,46 @@ export function TimesheetPage(): ReactNode {
   const canManualPunch = can('timesheet:create_manual_punch')
   const seesAllHotels = can('timesheet:read_all_hotels')
 
-  const { data: week, isLoading, isError, refetch } = useGetTimesheetWeekQuery(filters)
+  const {
+    data: week,
+    isLoading,
+    isError,
+    isFetching: weekFetching,
+    fulfilledTimeStamp: weekAt,
+  } = useGetTimesheetWeekQuery(filters)
   /**
    * La CINTA para la vista Días: todas las semanas de una vez. `weekStart` va
    * fijo en ALL para que navegar NO cambie la llave de caché — moverse de
    * semana es mover la ventana, no pedir datos.
    */
-  const { data: timeline } = useGetTimesheetTimelineQuery({ ...filters, weekStart: ANY_VALUE })
+  const {
+    data: timeline,
+    isFetching: timelineFetching,
+    fulfilledTimeStamp: timelineAt,
+  } = useGetTimesheetTimelineQuery({ ...filters, weekStart: ANY_VALUE })
   /** El agregado del mes solo se pide cuando la vista Mes está a la vista. */
-  const { data: month } = useGetTimesheetMonthQuery(filters, { skip: view !== 'MONTH' })
+  const {
+    data: month,
+    isFetching: monthFetching,
+    fulfilledTimeStamp: monthAt,
+  } = useGetTimesheetMonthQuery(filters, { skip: view !== 'MONTH' })
+
+  /**
+   * «Actualizar» invalida la etiqueta que las TRES comparten, así que vuelve
+   * a pedir la que esté abierta y nada más — la del Mes no se pide si la
+   * vista Mes no está a la vista. Y la leyenda mide la consulta que de verdad
+   * se está viendo: en la cinta, la cinta.
+   */
+  const dispatch = useAppDispatch()
+  const refetch = (): void => {
+    dispatch(timesheetApi.util.invalidateTags([{ type: 'Timesheet', id: 'LIST' }]))
+  }
+  const vista =
+    view === 'MONTH'
+      ? { isFetching: monthFetching, at: monthAt }
+      : view === 'DAYS'
+        ? { isFetching: timelineFetching, at: timelineAt }
+        : { isFetching: weekFetching, at: weekAt }
 
   const availableWeeks = timeline?.availableWeeks ?? week?.availableWeeks ?? []
   /** La semana en la ventana: la pedida si existe; si no, la más reciente. */
@@ -196,6 +230,15 @@ export function TimesheetPage(): ReactNode {
         onChange={setFilters}
         onColumnWidthChange={setColumnWidth}
       />
+
+      <div className="flex justify-end">
+        <RefreshControl
+          onRefresh={refetch}
+          isFetching={vista.isFetching}
+          fulfilledTimeStamp={vista.at}
+          label={t`el Timesheet`}
+        />
+      </div>
 
       {/* Quién sigue: el Supervisor envía, el Manager aprueba (D-09). */}
       {week &&
