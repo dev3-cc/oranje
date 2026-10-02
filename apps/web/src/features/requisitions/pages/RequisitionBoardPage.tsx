@@ -17,6 +17,7 @@ import { FilterSelect } from '@/shared/components/FilterSelect'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { NoticeCard } from '@/shared/components/NoticeCard'
+import { RefreshControl } from '@/shared/components/RefreshControl'
 import { SearchField } from '@/shared/components/SearchField'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import {
@@ -103,7 +104,14 @@ export function RequisitionBoardPage(): ReactNode {
   /** Crear es del hotel (requisitions:create): Reclutamiento consulta el tablero sin el botón. */
   const canCreate = can('requisitions:create')
 
-  const { data: board, isLoading, isError, refetch } = useGetRequisitionBoardQuery()
+  const {
+    data: board,
+    isLoading,
+    isError,
+    refetch,
+    isFetching,
+    fulfilledTimeStamp,
+  } = useGetRequisitionBoardQuery()
 
   const metrics = board?.metrics
   const items = board?.items ?? []
@@ -266,6 +274,14 @@ export function RequisitionBoardPage(): ReactNode {
             onChange={setStatus}
           />
           <FilterReset activeCount={activeCount} onReset={resetFilters} />
+          <RefreshControl
+            onRefresh={() => {
+              void refetch()
+            }}
+            isFetching={isFetching}
+            fulfilledTimeStamp={fulfilledTimeStamp}
+            label={t`el tablero de Requisiciones`}
+          />
         </div>
       )}
 
