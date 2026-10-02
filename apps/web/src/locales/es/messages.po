@@ -2024,6 +2024,10 @@ msgstr "Centra tu cara en el óvalo"
 msgid "Central — Chicago, Houston, Dallas"
 msgstr "Central — Chicago, Houston, Dallas"
 
+#: src/features/onboarding/components/ProspectFormDialog.tsx
+msgid "Centro de México — CDMX, Guadalajara, Monterrey"
+msgstr "Centro de México — CDMX, Guadalajara, Monterrey"
+
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/components/UserFormDialog.tsx
 #: src/features/clients/pages/ClientPortfolioPage.tsx
@@ -3104,6 +3108,7 @@ msgid "Diferencia"
 msgstr "Diferencia"
 
 #: src/features/onboarding/components/HotelDataCard.tsx
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Dirección"
 msgstr "Dirección"
@@ -4278,7 +4283,11 @@ msgstr "Esa cuenta ya no existe en ese hotel. Recarga la página."
 msgid "Esa foto no se pudo procesar: toma otra desde la cámara."
 msgstr "Esa foto no se pudo procesar: toma otra desde la cámara."
 
+#. placeholder {0}: formatDayMonth(workDate)
 #: src/features/timesheet/components/ManualPunchDialog.tsx
+msgid "Esa marca ya quedó registrada el {0}."
+msgstr "Esa marca ya quedó registrada el {0}."
+
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Esa marca ya quedó registrada hoy."
 msgstr "Esa marca ya quedó registrada hoy."
@@ -5143,8 +5152,8 @@ msgid "Hay dos renglones para el mismo puesto: deja uno solo."
 msgstr "Hay dos renglones para el mismo puesto: deja uno solo."
 
 #: src/features/timesheet/components/TimesheetDayCell.tsx
-msgid "Hay entrada sin salida (o al revés). Así la semana no puede irse a aprobación."
-msgstr "Hay entrada sin salida (o al revés). Así la semana no puede irse a aprobación."
+msgid "Hay entrada sin salida (o al revés), en un día que ya pasó. Así la semana no puede irse a aprobación."
+msgstr "Hay entrada sin salida (o al revés), en un día que ya pasó. Así la semana no puede irse a aprobación."
 
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Hay un puesto donde el bill rate queda por debajo del pay rate: se pierde en cada hora."
@@ -5307,6 +5316,10 @@ msgstr "Hoy no tienes turno. Cuando te asignen, aquí aparece el hotel y el hora
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Hoy tienes más de un turno: pídele al Supervisor que registre la marca."
 msgstr "Hoy tienes más de un turno: pídele al Supervisor que registre la marca."
+
+#: src/features/timesheet/components/TimesheetDayCell.tsx
+msgid "Hoy, con entrada marcada y la jornada todavía sin terminar. No es un problema: solo falta que salga."
+msgstr "Hoy, con entrada marcada y la jornada todavía sin terminar. No es un problema: solo falta que salga."
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Identidad"
@@ -7451,6 +7464,7 @@ msgstr "Nota del cierre"
 msgid "Notas"
 msgstr "Notas"
 
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Notas médicas"
 msgstr "Notas médicas"
@@ -8326,6 +8340,10 @@ msgstr "Quién la está trabajando"
 msgid "Quién trabaja el turno"
 msgstr "Quién trabaja el turno"
 
+#: src/features/onboarding/components/ProspectFormDialog.tsx
+msgid "Quintana Roo — Cancún (sin horario de verano)"
+msgstr "Quintana Roo — Cancún (sin horario de verano)"
+
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
 msgid "Quita el filtro para reordenar"
 msgstr "Quita el filtro para reordenar"
@@ -8671,6 +8689,11 @@ msgstr "Resultado"
 #: src/layouts/GlobalSearch.tsx
 msgid "Resultados"
 msgstr "Resultados"
+
+#. placeholder {0}: fields.join(', ')
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+msgid "Revisa estos campos: {0}."
+msgstr "Revisa estos campos: {0}."
 
 #: src/shared/constants/timesheetStatus.ts
 msgid "Revisado"
@@ -10042,6 +10065,11 @@ msgstr "Total del equipo: {0} abiertos · {1} convertidos · {2}{3}"
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "Total: {positionCount, plural, one {# posición} other {# posiciones}} · {totalSlots, plural, one {# slot} other {# slots}}"
 msgstr "Total: {positionCount, plural, one {# posición} other {# posiciones}} · {totalSlots, plural, one {# slot} other {# slots}}"
+
+#: src/features/timesheet/components/TimesheetDayCell.tsx
+#: src/shared/constants/timesheetStatus.ts
+msgid "Trabajando ahora"
+msgstr "Trabajando ahora"
 
 #: src/features/observability/components/StatusDurationSection.tsx
 msgid "Transiciones"
