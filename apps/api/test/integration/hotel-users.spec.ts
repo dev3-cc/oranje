@@ -14,6 +14,7 @@ import { queryHotelUsersSchema } from '../../src/modules/identity/users/dto/quer
 import { updateHotelUserSchema } from '../../src/modules/identity/users/dto/update-hotel-user.dto.js'
 import { HotelUsersRepository } from '../../src/modules/identity/users/hotel-users.repository.js'
 import { HotelUsersService } from '../../src/modules/identity/users/hotel-users.service.js'
+import type { NotificationEvent } from '../../src/modules/notifications/index.js'
 
 import { close, db } from './db.js'
 import { actor } from './fixture.js'
@@ -35,6 +36,7 @@ function ajustes(): SettingsService {
 }
 
 const fetchMock = jest.fn<Promise<unknown>, [string | URL | Request, RequestInit?]>()
+const publishSpy = jest.fn<Promise<void>, [NotificationEvent]>(() => Promise.resolve())
 const realFetch = globalThis.fetch
 
 function respondOk(): Promise<unknown> {
@@ -121,9 +123,10 @@ beforeAll(async () => {
     /* Permisos REALES contra la base sembrada: quién puede invitar a qué rol
        es justo lo que hay que comprobar, no algo que simular. */
     new PermissionsService(db as unknown as PrismaService),
-    /* Sin Pub/Sub en las pruebas: el aviso al BD es mejor esfuerzo y lo que
-       importa aquí es el alta, no el correo de cortesía. */
-    { publish: (): Promise<void> => Promise.resolve() } as never,
+    /* Sin Pub/Sub en las pruebas: el aviso es mejor esfuerzo y lo que importa
+       aquí es el alta, no la entrega — el stub sí se espía para comprobar A
+       QUIÉN se intenta avisar, que es lógica propia y no de Pub/Sub. */
+    { publish: publishSpy } as never,
   )
 
   hotelA = await hotel()
@@ -137,6 +140,7 @@ beforeAll(async () => {
 beforeEach(() => {
   fetchMock.mockReset()
   fetchMock.mockImplementation(respondOk)
+  publishSpy.mockClear()
 })
 
 afterAll(async () => {
@@ -474,6 +478,23 @@ describe('las cuentas gerenciales que propone el hotel esperan visto bueno', () 
     /* Mandar la invitación antes de aprobar le daría a la persona un enlace
        que la deja fuera: su cuenta todavía no entra. */
     expect(entity.invitationSent).toBe(false)
+  })
+
+  it('avisa a quien puede aprobar: el Administrador Y el BDC, no solo al primero', async () => {
+    /* El BDC ya tenía el permiso (`users:approve_hotel`) desde el 2026-10-01
+       pero el aviso solo llegaba a Administradores: tenía con qué actuar y
+       nada que le dijera que había algo que actuar (Hugo, 2026-10-02). */
+    const huerfano = await hotel()
+    const propuesto = await service.create(
+      huerfano,
+      dto({ email: `pend-aviso-${stamp}@oranje.local`, roleCode: 'ROL-H-03' }),
+      desdeElHotel('ROL-H-02', huerfano),
+    )
+    createdUsers.push(propuesto.id)
+
+    const [evento] = publishSpy.mock.calls.find(([e]) => e.type === 'HOTEL_ACCOUNT_PENDING') ?? []
+    expect(evento?.audience).toContainEqual({ kind: 'ROLE', roleCode: 'ROL-ADM-01' })
+    expect(evento?.audience).toContainEqual({ kind: 'ROLE', roleCode: 'ROL-V-02' })
   })
 
   it('aparece en la cola del Administrador, y al aprobarla se activa y sale la invitación', async () => {
