@@ -13,6 +13,12 @@ describe('a dónde lleva un aviso', () => {
     expect(notificationTarget({ type: 'operations.punch_mark', id: 'p-1' })).toBe('/timesheet')
   })
 
+  it('una cuenta lleva al Dashboard, que redirige solo al Administrador a Usuarios', () => {
+    /* Para el BDC con algo pendiente de aprobar, «Usuarios» ni aparece en su
+       sidebar — el Dashboard sí es suyo, y es donde ahora vive la cola. */
+    expect(notificationTarget({ type: 'identity.user', id: 'u-1' })).toBe('/dashboard')
+  })
+
   it('sin entidad no hay destino: el aviso solo se marca leído', () => {
     expect(notificationTarget(null)).toBeNull()
   })

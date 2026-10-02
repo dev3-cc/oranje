@@ -278,11 +278,14 @@ export class HotelUsersService {
   }
 
   /**
-   * Avisa a los Administradores de que hay una cuenta gerencial esperando.
+   * Avisa a quien puede aprobar que hay una cuenta gerencial esperando: el
+   * Administrador y el BDC (`users:approve_hotel`, Reglas de Negocio ·
+   * Cuentas del hotel). Se quedaba solo en Administradores — un resto de
+   * cuando la aprobación era suya en exclusiva — y el BDC se enteraba de que
+   * había algo pendiente solo si alguien se lo decía (Hugo, 2026-10-02).
    *
-   * El aviso va por rol y no a una persona: cualquiera de ellos puede
-   * resolverlo, y atarlo a uno solo lo dejaría colgado cuando ese esté de
-   * vacaciones.
+   * El aviso va por rol y no a una persona: cualquiera puede resolverlo, y
+   * atarlo a uno solo lo dejaría colgado cuando ese esté de vacaciones.
    */
   private async notifyAdmins(
     userId: string,
@@ -297,7 +300,10 @@ export class HotelUsersService {
         body: `${fullName} fue propuesto como ${ROLE_LABEL[roleCode] ?? roleCode} por su hotel.`,
         entity: { type: 'identity.user', id: userId },
         actorUserId: actor.id,
-        audience: [{ kind: 'ROLE', roleCode: 'ROL-ADM-01' }],
+        audience: [
+          { kind: 'ROLE', roleCode: 'ROL-ADM-01' },
+          { kind: 'ROLE', roleCode: 'ROL-V-02' },
+        ],
       })
     } catch {
       /* Mejor esfuerzo: la cuenta ya quedó pendiente y se ve en la lista. */
