@@ -356,6 +356,49 @@ export class HotelUsersService {
   }
 
   /**
+   * El rechazo: nunca llegó a existir de verdad, así que se borra —con
+   * motivo obligatorio y aviso a quien la propuso— en vez de quedar inactiva
+   * para siempre mezclada con las cuentas que sí se dieron de baja (Hugo,
+   * 2026-10-02).
+   */
+  async reject(id: string, reason: string, actor: AuthenticatedUser): Promise<void> {
+    const row = await this.repo.findById(id)
+
+    if (!row) {
+      throw new NotFoundException({
+        code: 'USER_NOT_FOUND',
+        message: 'Esa cuenta de hotel no existe',
+      })
+    }
+
+    if (row.isActive) {
+      throw new ConflictException({
+        code: 'ALREADY_APPROVED',
+        message: 'Esta cuenta ya está aprobada: un rechazo no deshace una aprobación',
+      })
+    }
+
+    const proposedBy = await this.repo.proposedBy(id)
+
+    await this.repo.reject(id, reason, { userId: actor.id, role: actor.roleCode })
+
+    if (proposedBy) {
+      try {
+        await this.notifications.publish({
+          type: 'HOTEL_ACCOUNT_REJECTED',
+          title: 'Cuenta de hotel rechazada',
+          body: `${row.fullName} no fue aprobado como ${ROLE_LABEL[row.role.code] ?? row.role.code}: ${reason}`,
+          entity: { type: 'identity.user', id },
+          actorUserId: actor.id,
+          audience: [{ kind: 'USER', userId: proposedBy }],
+        })
+      } catch {
+        /* Mejor esfuerzo: el rechazo ya quedó escrito, avisar es secundario. */
+      }
+    }
+  }
+
+  /**
    * Avisa al BD que lleva el hotel cuando la invitación vino DEL PROPIO
    * HOTEL.
    *

@@ -535,6 +535,55 @@ describe('las cuentas gerenciales que propone el hotel esperan visto bueno', () 
     })
   })
 
+  it('rechazar borra la fila, deja el motivo en el journal y avisa a quien la propuso', async () => {
+    const huerfano = await hotel()
+    const propuesto = await service.create(
+      huerfano,
+      dto({ email: `pend-rechazo-${stamp}@oranje.local`, roleCode: 'ROL-H-03' }),
+      desdeElHotel('ROL-H-02', huerfano),
+    )
+    /* La fila la borra el propio rechazo, pero el journal de los dos
+       eventos (creación y rechazo) sigue ahí — se registra para que el
+       `afterAll` lo limpie; borrar un `user.id` que ya no existe es un
+       no-op, no un error. */
+    createdUsers.push(propuesto.id)
+    publishSpy.mockClear()
+
+    await service.reject(propuesto.id, 'El hotel propuso a la persona equivocada', auth)
+
+    const borrado = await service.pendingApprovals()
+    expect(borrado.map((row) => row.id)).not.toContain(propuesto.id)
+
+    const journal = await db.journalEntry.findMany({
+      where: { entityId: propuesto.id, eventType: 'HOTEL_USER_REJECTED' },
+      select: { payload: true, actorUserId: true },
+    })
+    expect(journal).toHaveLength(1)
+    expect(journal[0]?.payload).toMatchObject({
+      reason: 'El hotel propuso a la persona equivocada',
+    })
+
+    const [evento] = publishSpy.mock.calls.find(([e]) => e.type === 'HOTEL_ACCOUNT_REJECTED') ?? []
+    expect(evento?.audience).toContainEqual({ kind: 'USER', userId: auth.id })
+    expect(evento?.body).toContain('El hotel propuso a la persona equivocada')
+  })
+
+  it('una cuenta ya aprobada no se puede rechazar', async () => {
+    const huerfano = await hotel()
+    const propuesto = await service.create(
+      huerfano,
+      dto({ email: `pend-no-rechaza-${stamp}@oranje.local`, roleCode: 'ROL-H-03' }),
+      desdeElHotel('ROL-H-02', huerfano),
+    )
+    createdUsers.push(propuesto.id)
+
+    await service.approve(propuesto.id, auth)
+
+    await expect(service.reject(propuesto.id, 'ya es tarde', auth)).rejects.toMatchObject({
+      response: { code: 'ALREADY_APPROVED' },
+    })
+  })
+
   it('un supervisor invitado por su gerente entra directo: la espera es solo para gerencia', async () => {
     const entity = await service.create(
       hotelA,

@@ -176,6 +176,18 @@ const PENDING_HOTEL_USERS: HotelUser[] = [
     isActive: false,
     createdAt: '2026-10-01T16:40:00.000Z',
   },
+  {
+    id: 'husr-pend-tomas',
+    email: 'tomas.rivera@xcaret.local',
+    fullName: 'Tomás Rivera',
+    role: { code: 'ROL-H-02', name: 'Manager de Área' },
+    hotel: { id: 'hotel-xcaret', name: 'Hotel Xcaret' },
+    department: null,
+    reportsToUserId: null,
+    hasAccount: false,
+    isActive: false,
+    createdAt: '2026-10-01T17:10:00.000Z',
+  },
 ]
 
 const HOTEL_ROLE_NAMES: Record<string, string> = {
@@ -405,6 +417,16 @@ const routes: readonly MockRoute[] = [
       const activated: HotelUser = { ...approved, isActive: true, invitationSent: true }
       HOTEL_USERS.unshift(activated)
       return { data: activated }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/hotel-users/pending/:id/reject',
+    resolve: (request): null => {
+      const index = PENDING_HOTEL_USERS.findIndex((item) => item.id === request.params.id)
+      if (index === -1) throw new Error(`No hay nada pendiente con id ${String(request.params.id)}`)
+      PENDING_HOTEL_USERS.splice(index, 1)
+      return null
     },
   },
 ]
