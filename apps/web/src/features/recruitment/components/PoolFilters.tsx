@@ -120,7 +120,7 @@ export function PoolFilters({
         />
 
         <FilterSelect
-          icon="task_alt"
+          icon="warning_amber"
           label={t`Documento`}
           anyLabel={t`cualquiera`}
           value={filters.hasPendingDocument}

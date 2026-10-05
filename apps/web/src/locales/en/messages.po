@@ -615,6 +615,10 @@ msgstr "{number} · {department} · {positions, plural, one {# position} other {
 msgid "{pending, plural, one {# pendiente} other {# pendientes}}"
 msgstr "{pending, plural, one {# pending} other {# pending}}"
 
+#: src/features/recruitment/pages/PoolPage.tsx
+msgid "{pendingDocsCount} por verificar"
+msgstr "{pendingDocsCount} to verify"
+
 #: src/features/dashboard/components/RecruitmentDashboard.tsx
 msgid "{pendingValidation} en Blanco, por validar"
 msgstr "{pendingValidation} in White, pending validation"
@@ -10578,6 +10582,10 @@ msgstr "View Pipeline (Sales)"
 #: src/features/onboarding/components/ProposalVersionList.tsx
 msgid "Ver propuesta"
 msgstr "See proposal"
+
+#: src/features/recruitment/pages/PoolPage.tsx
+msgid "Ver quién tiene un documento (SSN/ITIN) pendiente de verificar"
+msgstr "See who has a document (SSN/ITIN) pending verification"
 
 #: src/features/observability/components/DepartmentMetricsGrid.tsx
 #: src/features/observability/components/StatusDurationSection.tsx
