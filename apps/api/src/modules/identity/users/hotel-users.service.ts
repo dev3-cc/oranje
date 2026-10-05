@@ -278,11 +278,14 @@ export class HotelUsersService {
   }
 
   /**
-   * Avisa a los Administradores de que hay una cuenta gerencial esperando.
+   * Avisa a quien puede aprobar que hay una cuenta gerencial esperando: el
+   * Administrador y el BDC (`users:approve_hotel`, Reglas de Negocio ·
+   * Cuentas del hotel). Se quedaba solo en Administradores — un resto de
+   * cuando la aprobación era suya en exclusiva — y el BDC se enteraba de que
+   * había algo pendiente solo si alguien se lo decía (Hugo, 2026-10-02).
    *
-   * El aviso va por rol y no a una persona: cualquiera de ellos puede
-   * resolverlo, y atarlo a uno solo lo dejaría colgado cuando ese esté de
-   * vacaciones.
+   * El aviso va por rol y no a una persona: cualquiera puede resolverlo, y
+   * atarlo a uno solo lo dejaría colgado cuando ese esté de vacaciones.
    */
   private async notifyAdmins(
     userId: string,
@@ -297,7 +300,10 @@ export class HotelUsersService {
         body: `${fullName} fue propuesto como ${ROLE_LABEL[roleCode] ?? roleCode} por su hotel.`,
         entity: { type: 'identity.user', id: userId },
         actorUserId: actor.id,
-        audience: [{ kind: 'ROLE', roleCode: 'ROL-ADM-01' }],
+        audience: [
+          { kind: 'ROLE', roleCode: 'ROL-ADM-01' },
+          { kind: 'ROLE', roleCode: 'ROL-V-02' },
+        ],
       })
     } catch {
       /* Mejor esfuerzo: la cuenta ya quedó pendiente y se ve en la lista. */
@@ -347,6 +353,49 @@ export class HotelUsersService {
   /** Lo que el Administrador tiene por resolver. */
   async pendingApprovals(): Promise<HotelUserEntity[]> {
     return (await this.repo.pendingApprovals()).map(toEntity)
+  }
+
+  /**
+   * El rechazo: nunca llegó a existir de verdad, así que se borra —con
+   * motivo obligatorio y aviso a quien la propuso— en vez de quedar inactiva
+   * para siempre mezclada con las cuentas que sí se dieron de baja (Hugo,
+   * 2026-10-02).
+   */
+  async reject(id: string, reason: string, actor: AuthenticatedUser): Promise<void> {
+    const row = await this.repo.findById(id)
+
+    if (!row) {
+      throw new NotFoundException({
+        code: 'USER_NOT_FOUND',
+        message: 'Esa cuenta de hotel no existe',
+      })
+    }
+
+    if (row.isActive) {
+      throw new ConflictException({
+        code: 'ALREADY_APPROVED',
+        message: 'Esta cuenta ya está aprobada: un rechazo no deshace una aprobación',
+      })
+    }
+
+    const proposedBy = await this.repo.proposedBy(id)
+
+    await this.repo.reject(id, reason, { userId: actor.id, role: actor.roleCode })
+
+    if (proposedBy) {
+      try {
+        await this.notifications.publish({
+          type: 'HOTEL_ACCOUNT_REJECTED',
+          title: 'Cuenta de hotel rechazada',
+          body: `${row.fullName} no fue aprobado como ${ROLE_LABEL[row.role.code] ?? row.role.code}: ${reason}`,
+          entity: { type: 'identity.user', id },
+          actorUserId: actor.id,
+          audience: [{ kind: 'USER', userId: proposedBy }],
+        })
+      } catch {
+        /* Mejor esfuerzo: el rechazo ya quedó escrito, avisar es secundario. */
+      }
+    }
   }
 
   /**

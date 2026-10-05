@@ -229,6 +229,16 @@ export const adminApi = baseApi.injectEndpoints({
       invalidatesTags: ['HotelUser'],
     }),
 
+    /** Nunca llegó a existir de verdad: se borra, con motivo obligatorio. */
+    rejectHotelUser: build.mutation<void, { id: string; reason: string }>({
+      query: ({ id, reason }) => ({
+        url: `/hotel-users/pending/${id}/reject`,
+        method: 'POST',
+        body: { reason },
+      }),
+      invalidatesTags: ['HotelUser'],
+    }),
+
     updateHotelUser: build.mutation<
       HotelUser,
       { hotelId: string; id: string; body: UpdateHotelUserBody }
@@ -267,6 +277,7 @@ export const {
   useCreateHotelUserMutation,
   useGetPendingHotelUsersQuery,
   useApproveHotelUserMutation,
+  useRejectHotelUserMutation,
   useUpdateHotelUserMutation,
   useResendHotelInvitationMutation,
 } = adminApi
