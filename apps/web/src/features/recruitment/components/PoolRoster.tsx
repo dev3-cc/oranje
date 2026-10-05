@@ -133,8 +133,13 @@ export function PoolRoster({
                   </span>
                 </span>
                 {worker.hasPendingDocument && (
+                  /* `task_alt` ya significa «completado» en el resto de la app
+                     (TaxDocumentUploader, Ponchar): usarlo en amarillo para
+                     «pendiente» era el mismo ícono con dos sentidos opuestos.
+                     `warning_amber` es el que ya usa CautionPill para esta
+                     misma excepción en el detalle. */
                   <span title={t`Documento pendiente de verificar`}>
-                    <MaterialIcon name="task_alt" className="shrink-0 text-base text-yellow" />
+                    <MaterialIcon name="warning_amber" className="shrink-0 text-base text-yellow" />
                   </span>
                 )}
                 <span
