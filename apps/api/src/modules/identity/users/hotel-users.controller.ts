@@ -18,6 +18,7 @@ import { PermissionsService } from '../auth/permissions.service.js'
 
 import { CreateHotelUserDto } from './dto/create-hotel-user.dto.js'
 import { QueryHotelUsersDto } from './dto/query-hotel-users.dto.js'
+import { RejectHotelUserDto } from './dto/reject-hotel-user.dto.js'
 import { UpdateHotelUserDto } from './dto/update-hotel-user.dto.js'
 import type { HotelUserEntity, HotelUserWithInvitation } from './entities/hotel-user.entity.js'
 import { HotelUsersService } from './hotel-users.service.js'
@@ -134,6 +135,17 @@ export class HotelUsersPendingController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: HotelUserWithInvitation }> {
     return { data: await this.users.approve(id, user) }
+  }
+
+  @Requires('users', 'approve_hotel')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post(':id/reject')
+  async reject(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RejectHotelUserDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<void> {
+    await this.users.reject(id, dto.reason, user)
   }
 }
 
