@@ -611,6 +611,10 @@ msgstr "{late, plural, one {Debió iniciar hace # día} other {Debió iniciar ha
 msgid "{memberCount, plural, one {# BD te reporta} other {# BDs te reportan}} · {totalOpen} prospectos abiertos y {totalConversions, plural, one {# conversión} other {# conversiones}} entre todos."
 msgstr "{memberCount, plural, one {# BD te reporta} other {# BDs te reportan}} · {totalOpen} prospectos abiertos y {totalConversions, plural, one {# conversión} other {# conversiones}} entre todos."
 
+#: src/shared/components/RefreshControl.tsx
+msgid "{minutos, plural, one {Actualizado hace # minuto} other {Actualizado hace # minutos}}"
+msgstr "{minutos, plural, one {Actualizado hace # minuto} other {Actualizado hace # minutos}}"
+
 #: src/features/schedule/pages/SchedulePage.tsx
 msgid "{missing, plural, one {# hueco} other {# huecos}}"
 msgstr "{missing, plural, one {# hueco} other {# huecos}}"
@@ -933,6 +937,22 @@ msgstr "Activo — puede entrar al sistema"
 #: src/features/admin/components/userListParts.tsx
 msgid "Activos"
 msgstr "Activos"
+
+#: src/shared/components/RefreshControl.tsx
+msgid "Actualizado hace un momento"
+msgstr "Actualizado hace un momento"
+
+#: src/shared/components/RefreshControl.tsx
+msgid "Actualizando…"
+msgstr "Actualizando…"
+
+#: src/shared/components/RefreshControl.tsx
+msgid "Actualizar"
+msgstr "Actualizar"
+
+#: src/shared/components/RefreshControl.tsx
+msgid "Actualizar {label}"
+msgstr "Actualizar {label}"
 
 #: src/shared/constants/roles.ts
 msgid "Administrador"
@@ -3626,6 +3646,14 @@ msgstr "El pin exacto y la geocerca validarán los ponches cuando sea cliente: a
 msgid "El pin se arrastra a propósito."
 msgstr "El pin se arrastra a propósito."
 
+#: src/features/onboarding/pages/PipelinePage.tsx
+msgid "el Pipeline"
+msgstr "el Pipeline"
+
+#: src/features/recruitment/pages/PoolPage.tsx
+msgid "el Pool de Colaboradores"
+msgstr "el Pool de Colaboradores"
+
 #: src/features/admin/components/HotelUserFormDialog.tsx
 msgid "El primer Manager General de cada hotel nace en la Conversión; aquí se dan de alta los Supervisores, los Managers de Área y los Managers Generales adicionales."
 msgstr "El primer Manager General de cada hotel nace en la Conversión; aquí se dan de alta los Supervisores, los Managers de Área y los Managers Generales adicionales."
@@ -3672,6 +3700,10 @@ msgstr "El renglón no existe"
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "El rol que elijas decide qué módulos verá la persona al entrar. Las cuentas de los hoteles se dan de alta en su propia pestaña."
 msgstr "El rol que elijas decide qué módulos verá la persona al entrar. Las cuentas de los hoteles se dan de alta en su propia pestaña."
+
+#: src/features/schedule/pages/SchedulePage.tsx
+msgid "el Schedule"
+msgstr "el Schedule"
 
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "El semáforo lo acompaña del primer contacto hasta cliente activo — cada paso queda en su historia."
@@ -3726,6 +3758,10 @@ msgstr "El Supervisor ya la envió; ya no se puede editar. Falta que un Manager 
 msgid "El Supervisor, el Manager de Área o el Manager General las abren desde su zona. Aquí ves las que llegan, su urgencia y cómo va la cobertura."
 msgstr "El Supervisor, el Manager de Área o el Manager General las abren desde su zona. Aquí ves las que llegan, su urgencia y cómo va la cobertura."
 
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "el tablero de Requisiciones"
+msgstr "el tablero de Requisiciones"
+
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "El teléfono de emergencia necesita al menos 7 dígitos (sin la lada)"
 msgstr "El teléfono de emergencia necesita al menos 7 dígitos (sin la lada)"
@@ -3737,6 +3773,10 @@ msgstr "El teléfono necesita al menos 7 dígitos (sin contar la lada)"
 #: src/features/team/components/AssignTerritoryDialog.tsx
 msgid "El territorio lo reparte el BDC"
 msgstr "El territorio lo reparte el BDC"
+
+#: src/features/timesheet/pages/TimesheetPage.tsx
+msgid "el Timesheet"
+msgstr "el Timesheet"
 
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "El usuario quedó guardado, pero el correo de invitación no salió: reenvíala desde su ficha."

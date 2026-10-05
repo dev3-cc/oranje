@@ -611,6 +611,10 @@ msgstr "{late, plural, one {Should have started # day ago} other {Should have st
 msgid "{memberCount, plural, one {# BD te reporta} other {# BDs te reportan}} · {totalOpen} prospectos abiertos y {totalConversions, plural, one {# conversión} other {# conversiones}} entre todos."
 msgstr "{memberCount, plural, one {# BD reports to you} other {# BDs report to you}} · {totalOpen} open prospects and {totalConversions, plural, one {# conversion} other {# conversions}} between them."
 
+#: src/shared/components/RefreshControl.tsx
+msgid "{minutos, plural, one {Actualizado hace # minuto} other {Actualizado hace # minutos}}"
+msgstr "{minutos, plural, one {Updated # minute ago} other {Updated # minutes ago}}"
+
 #: src/features/schedule/pages/SchedulePage.tsx
 msgid "{missing, plural, one {# hueco} other {# huecos}}"
 msgstr "{missing, plural, one {# gap} other {# gaps}}"
@@ -933,6 +937,22 @@ msgstr "Active — can sign in"
 #: src/features/admin/components/userListParts.tsx
 msgid "Activos"
 msgstr "Active"
+
+#: src/shared/components/RefreshControl.tsx
+msgid "Actualizado hace un momento"
+msgstr "Updated just now"
+
+#: src/shared/components/RefreshControl.tsx
+msgid "Actualizando…"
+msgstr "Updating…"
+
+#: src/shared/components/RefreshControl.tsx
+msgid "Actualizar"
+msgstr "Refresh"
+
+#: src/shared/components/RefreshControl.tsx
+msgid "Actualizar {label}"
+msgstr "Refresh {label}"
 
 #: src/shared/constants/roles.ts
 msgid "Administrador"
@@ -3626,6 +3646,14 @@ msgstr "The exact pin and the geofence will validate punches once it's a client:
 msgid "El pin se arrastra a propósito."
 msgstr "The pin is meant to be dragged."
 
+#: src/features/onboarding/pages/PipelinePage.tsx
+msgid "el Pipeline"
+msgstr "the Pipeline"
+
+#: src/features/recruitment/pages/PoolPage.tsx
+msgid "el Pool de Colaboradores"
+msgstr "the Collaborator Pool"
+
 #: src/features/admin/components/HotelUserFormDialog.tsx
 msgid "El primer Manager General de cada hotel nace en la Conversión; aquí se dan de alta los Supervisores, los Managers de Área y los Managers Generales adicionales."
 msgstr "Each hotel's first General Manager is born in the Conversion; Supervisors, Area Managers and additional General Managers are signed up here."
@@ -3672,6 +3700,10 @@ msgstr "That line doesn't exist"
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "El rol que elijas decide qué módulos verá la persona al entrar. Las cuentas de los hoteles se dan de alta en su propia pestaña."
 msgstr "The role you pick decides which modules the person will see when they sign in. Hotel accounts are signed up in their own tab."
+
+#: src/features/schedule/pages/SchedulePage.tsx
+msgid "el Schedule"
+msgstr "the Schedule"
 
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "El semáforo lo acompaña del primer contacto hasta cliente activo — cada paso queda en su historia."
@@ -3726,6 +3758,10 @@ msgstr "The Supervisor already sent it; it can't be edited anymore. It's waiting
 msgid "El Supervisor, el Manager de Área o el Manager General las abren desde su zona. Aquí ves las que llegan, su urgencia y cómo va la cobertura."
 msgstr "The Supervisor, the Area Manager or the General Manager open them from their side. Here you see the ones coming in, their urgency and how coverage is going."
 
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "el tablero de Requisiciones"
+msgstr "the Requisitions board"
+
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "El teléfono de emergencia necesita al menos 7 dígitos (sin la lada)"
 msgstr "The emergency phone needs at least 7 digits (no area code)"
@@ -3737,6 +3773,10 @@ msgstr "The phone needs at least 7 digits (not counting the area code)"
 #: src/features/team/components/AssignTerritoryDialog.tsx
 msgid "El territorio lo reparte el BDC"
 msgstr "The BDC hands out the territory"
+
+#: src/features/timesheet/pages/TimesheetPage.tsx
+msgid "el Timesheet"
+msgstr "the Timesheet"
 
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "El usuario quedó guardado, pero el correo de invitación no salió: reenvíala desde su ficha."
