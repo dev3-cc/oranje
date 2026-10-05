@@ -83,6 +83,24 @@ describe('PoolPage', () => {
     expect(screen.getAllByText('Ana Rivera Gómez').length).toBeGreaterThan(0)
   })
 
+  it('la píldora de documentos pendientes avisa sin filtrar, y filtra al tocarla', async () => {
+    const user = userEvent.setup()
+    renderPool()
+
+    // Un solo fixture con documento pendiente (Ana): la píldora lo dice de
+    // entrada, sin que nadie haya abierto el filtro «Documento» todavía.
+    const pill = await screen.findByRole('button', { name: '1 por verificar' })
+    expect(pill).toBeInTheDocument()
+    expect(screen.getByText('Julia Mendoza')).toBeInTheDocument()
+
+    await user.click(pill)
+
+    await waitFor(() => {
+      expect(screen.queryByText('Julia Mendoza')).not.toBeInTheDocument()
+    }, SLOW)
+    expect(screen.getAllByText('Ana Rivera Gómez').length).toBeGreaterThan(0)
+  })
+
   it('los filtros van por id de catálogo y filtran en el servidor', async () => {
     const user = userEvent.setup()
     renderPool()

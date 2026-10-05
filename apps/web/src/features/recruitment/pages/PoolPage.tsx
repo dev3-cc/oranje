@@ -1,5 +1,6 @@
 import { plural } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
+import { MaterialIcon } from '@oranje/ui'
 import { useMemo, useState, type ReactNode } from 'react'
 
 import { useGetPoolOptionsQuery, useGetWorkerPoolQuery } from '../api/poolApi'
@@ -7,7 +8,12 @@ import { CreateAccessDialog } from '../components/CreateAccessDialog'
 import { CreateWorkerDialog } from '../components/CreateWorkerDialog'
 import { PoolFilters } from '../components/PoolFilters'
 import { PoolRoster } from '../components/PoolRoster'
-import { ANY_VALUE, EMPTY_POOL_FILTERS, type PoolFilters as Filters } from '../types/pool.types'
+import {
+  ANY_VALUE,
+  EMPTY_POOL_FILTERS,
+  PENDING_VALUE,
+  type PoolFilters as Filters,
+} from '../types/pool.types'
 
 import fotoEquipo from '@/assets/ilustrations/pool-equipo.webp'
 import { Button } from '@/shared/components/Button'
@@ -46,6 +52,16 @@ export function PoolPage(): ReactNode {
     filters.search.trim() !== '' ||
     Object.entries(filters).some(([key, value]) => key !== 'search' && value !== ANY_VALUE)
   const { data: options } = useGetPoolOptionsQuery()
+
+  /* Cuántos tienen SSN/ITIN sin revisar EN TODO EL POOL, sin importar qué
+     filtro esté activo: antes solo se sabía abriendo el desplegable
+     «Documento» a ciegas — Hugo pidió verlo sin tener que pensar en
+     filtrar (2026-10-02). */
+  const { data: pendingDocsPool } = useGetWorkerPoolQuery({
+    ...EMPTY_POOL_FILTERS,
+    hasPendingDocument: PENDING_VALUE,
+  })
+  const pendingDocsCount = pendingDocsPool?.total ?? 0
 
   return (
     <div className="flex flex-col gap-6">
@@ -110,6 +126,22 @@ export function PoolPage(): ReactNode {
                   El alta es de Reclutamiento: la Reclutadora captura la Fase 1 en la entrevista.
                 </Trans>
               </p>
+            )}
+            {/* Proactiva: antes solo se sabía que había documentos sin
+                revisar si se te ocurría abrir el filtro «Documento» (Hugo,
+                2026-10-02). El color nunca va solo: ícono + palabras. */}
+            {pendingDocsCount > 0 && (
+              <button
+                type="button"
+                title={t`Ver quién tiene un documento (SSN/ITIN) pendiente de verificar`}
+                onClick={() => {
+                  setFilters((prev) => ({ ...prev, hasPendingDocument: PENDING_VALUE }))
+                }}
+                className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-yellow/20 py-1.5 pr-3 pl-2.5 text-xs font-semibold text-ink-2 transition-colors hover:bg-yellow/30"
+              >
+                <MaterialIcon name="warning_amber" className="text-sm" aria-hidden />
+                <Trans>{pendingDocsCount} por verificar</Trans>
+              </button>
             )}
           </div>
         </div>

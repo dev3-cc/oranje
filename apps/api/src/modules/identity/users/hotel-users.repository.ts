@@ -154,6 +154,44 @@ export class HotelUsersRepository {
     })
   }
 
+  /**
+   * Quién la propuso, leyendo el journal: no se guarda en una columna
+   * aparte, el rastro de `HOTEL_USER_CREATED` ya lo tiene.
+   */
+  async proposedBy(id: string): Promise<string | null> {
+    const entry = await this.prisma.journalEntry.findFirst({
+      where: { entityType: 'identity.user', entityId: id, eventType: 'HOTEL_USER_CREATED' },
+      select: { actorUserId: true },
+      orderBy: { occurredAt: 'asc' },
+    })
+
+    return entry?.actorUserId ?? null
+  }
+
+  /**
+   * Rechaza y borra la fila: una cuenta pendiente nunca llegó a existir de
+   * verdad —sin acceso, sin invitación—, así que no hay nada que conservar
+   * ahí; el rastro vive en el journal, que no se toca al borrar (`entityId`
+   * es un vínculo polimórfico sin FK, igual que en cualquier otro borrado).
+   */
+  async reject(id: string, reason: string, actor: { userId: string; role: string }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'identity.user',
+          entityId: id,
+          eventType: 'HOTEL_USER_REJECTED',
+          actorUserId: actor.userId,
+          actorRole: actor.role,
+          payload: { reason },
+        },
+      })
+
+      await tx.user.delete({ where: { id } })
+    })
+  }
+
   async findById(id: string): Promise<HotelUserRow | null> {
     const row = await this.prisma.user.findFirst({
       where: { id, hotelId: { not: null } },

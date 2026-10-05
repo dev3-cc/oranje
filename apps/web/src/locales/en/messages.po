@@ -66,6 +66,10 @@ msgstr "Need to take it back? The Status Light never goes backwards: you exit th
 msgid "¿Por qué se elimina? El motivo queda en el journal."
 msgstr "Why is it being deleted? The reason stays in the log."
 
+#: src/features/admin/components/PendingHotelUsers.tsx
+msgid "¿Por qué se rechaza?"
+msgstr "Why reject it?"
+
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "¿Por qué se rechaza? (ilegible, incorrecto…)"
 msgstr "Why is it being rejected? (illegible, incorrect…)"
@@ -581,6 +585,10 @@ msgstr "{fullName} will no longer show up in the Pool or in any search. If they 
 msgid "{fullName} queda activo y le llega su invitación"
 msgstr "{fullName} is now active and their invitation is on its way"
 
+#: src/features/admin/components/PendingHotelUsers.tsx
+msgid "{fullName} queda sin aprobar; se avisó a quien la propuso"
+msgstr "{fullName} stays unapproved; whoever proposed them was notified"
+
 #: src/features/recruitment/components/DeleteWorkerDialog.tsx
 msgid "{fullName} se eliminó del Pool"
 msgstr "{fullName} was removed from the Pool"
@@ -618,6 +626,10 @@ msgstr "{number} · {department} · {positions, plural, one {# position} other {
 #: src/features/contracts/components/ContractChecklist.tsx
 msgid "{pending, plural, one {# pendiente} other {# pendientes}}"
 msgstr "{pending, plural, one {# pending} other {# pending}}"
+
+#: src/features/recruitment/pages/PoolPage.tsx
+msgid "{pendingDocsCount} por verificar"
+msgstr "{pendingDocsCount} to verify"
 
 #: src/features/dashboard/components/RecruitmentDashboard.tsx
 msgid "{pendingValidation} en Blanco, por validar"
@@ -1922,6 +1934,7 @@ msgstr "Cancelling…"
 
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
 #: src/features/admin/components/HotelUserFormDialog.tsx
+#: src/features/admin/components/PendingHotelUsers.tsx
 #: src/features/admin/components/UserFormDialog.tsx
 #: src/features/admin/pages/CatalogsPage.tsx
 #: src/features/admin/pages/CorporateEmailPage.tsx
@@ -2326,6 +2339,7 @@ msgstr "Confirming you're at the hotel"
 msgid "Confirmar cambio"
 msgstr "Confirm change"
 
+#: src/features/admin/components/PendingHotelUsers.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Confirmar rechazo"
 msgstr "Confirm rejection"
@@ -5671,6 +5685,10 @@ msgstr "The account was saved, but the invitation email didn't go out: resend it
 msgid "La cuenta quedó guardada, pero el correo de invitación no salió. Reenvíala desde su ficha en unos minutos."
 msgstr "The account was saved, but the invitation email didn't go out. Resend it from their record in a few minutes."
 
+#: src/features/admin/components/PendingHotelUsers.tsx
+msgid "La cuenta se borra: el hotel tendría que proponerla de nuevo."
+msgstr "The account gets deleted: the hotel would have to propose it again."
+
 #: src/features/onboarding/components/PlacesAutofillSummary.tsx
 msgid "la eliges tú — Google no la conoce"
 msgstr "you pick it — Google doesn't know it"
@@ -6502,6 +6520,7 @@ msgstr "Reason for closing"
 msgid "Motivo del levantamiento <0>(obligatorio)</0>"
 msgstr "Reason for lifting <0>(required)</0>"
 
+#: src/features/admin/components/PendingHotelUsers.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Motivo del rechazo"
 msgstr "Rejection reason"
@@ -7299,6 +7318,10 @@ msgstr "They couldn't be sent to Stand-by. Try again."
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "No se pudo rechazar el documento. Inténtalo de nuevo."
 msgstr "The document couldn't be rejected. Try again."
+
+#: src/features/admin/components/PendingHotelUsers.tsx
+msgid "No se pudo rechazar. Inténtalo de nuevo."
+msgstr "Couldn't reject it. Try again."
 
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "No se pudo reenviar la invitación. Inténtalo de nuevo."
@@ -8454,6 +8477,7 @@ msgstr "Actual"
 msgid "Recentrar"
 msgstr "Recenter"
 
+#: src/features/admin/components/PendingHotelUsers.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
 msgid "Rechazar"
@@ -10619,6 +10643,10 @@ msgstr "View Pipeline (Sales)"
 msgid "Ver propuesta"
 msgstr "See proposal"
 
+#: src/features/recruitment/pages/PoolPage.tsx
+msgid "Ver quién tiene un documento (SSN/ITIN) pendiente de verificar"
+msgstr "See who has a document (SSN/ITIN) pending verification"
+
 #: src/features/observability/components/DepartmentMetricsGrid.tsx
 #: src/features/observability/components/StatusDurationSection.tsx
 msgid "Ver requisiciones"
@@ -10920,6 +10948,10 @@ msgstr "You were no longer working on this requisition."
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Ya puede entrar con la contraseña que definiste. Compártesela por un canal seguro — no viaja por correo."
 msgstr "They can sign in now with the password you set. Share it through a secure channel — it doesn't travel by email."
+
+#: src/features/admin/components/PendingHotelUsers.tsx
+msgid "Ya se aprobó: un rechazo no deshace una aprobación."
+msgstr "It's already approved: a rejection doesn't undo an approval."
 
 #: src/features/conversion/pages/ConversionQueuePage.tsx
 msgid "Ya son clientes: su ficha completa vive en Clientes Activos"

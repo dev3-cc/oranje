@@ -9,6 +9,10 @@ import { PipelineFlowCard } from './PipelineFlowCard'
 import { StaleProspectList } from './StaleProspectList'
 import { StatusFunnel } from './StatusFunnel'
 
+/* Mismo componente que usa Usuarios del Administrador (ya se reutiliza así
+   desde Hotel con `HotelUserFormDialog`): el BDC lo necesita aquí, en SU
+   pantalla, porque «Usuarios» ni aparece en su sidebar. */
+import { PendingHotelUsers } from '@/features/admin'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { LoadError } from '@/shared/components/LoadError'
 import { formatList } from '@/shared/lib/formatters'
@@ -53,6 +57,10 @@ export function SalesDashboard(): ReactNode {
           <DashboardGlobe />
         </Suspense>
       </IdentityHeader>
+
+      {/* Lo que espera una acción va primero; se oculta sola sin nada
+          pendiente (Hugo, 2026-10-02: el BDC no tenía dónde verlo). */}
+      <PendingHotelUsers />
 
       <MyActivityCard
         stats={{

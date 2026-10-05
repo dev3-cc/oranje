@@ -30,7 +30,13 @@ const ROUTE_BY_ENTITY: Record<string, (id: string) => string> = {
   /* Una asignación se resuelve mirando a su colaborador, que es lo que la
      persona quiere ver; sin pantalla de asignación suelta. */
   'coverage.assignment': () => '/my-staff',
-  'identity.user': () => '/users',
+  /* `/dashboard` y no `/users`: una cuenta de personal no tiene pantalla
+     propia por id, y «Usuarios» es solo del Administrador — un BDC con un
+     aviso de cuenta por aprobar aterrizaba ahí y no veía nada (Hugo,
+     2026-10-02). `/dashboard` ya redirige al Administrador A `/users`, así
+     que para él el destino no cambia; para el resto cae en SU dashboard, que
+     es donde ahora vive lo que tenga pendiente. */
+  'identity.user': () => '/dashboard',
 }
 
 export function notificationTarget(entity: NotificationEntityRef | null): string | null {
