@@ -65,6 +65,13 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <!--
+        POST_NOTIFICATIONS  Android 13+: sin él el sistema no muestra avisos de
+                      la app. Lo pide la pantalla de Permisos en su perfil de
+                      hotel (PermissionsActivity, profile "hotel"); negarlo no
+                      bloquea nada.
+    -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!--
         `required="false"`: el hotel puede tener tabletas sin GPS propio o sin

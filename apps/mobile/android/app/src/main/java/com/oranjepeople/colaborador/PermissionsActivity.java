@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.View;
@@ -36,10 +37,17 @@ import java.util.Locale;
  *
  * Al cerrarse devuelve `action`: "punch" (ir a Ponchar), "home" (a Inicio) o
  * "back" (el botón Atrás del sistema: solo cerrar, quedarse donde se estaba).
+ *
+ * Perfil "hotel" (Supervisor, Manager de Área, Manager General): una sola
+ * tarjeta, Notificaciones, y «Continuar» en lugar de «Ponchar». Nunca bloquea:
+ * sin notificaciones el hotel trabaja igual. Cierra con "home".
  */
 public class PermissionsActivity extends AppCompatActivity {
 
     static final String EXTRA_FIRST_NAME = "firstName";
+    static final String EXTRA_PROFILE = "profile";
+    static final String PROFILE_WORKER = "worker";
+    static final String PROFILE_HOTEL = "hotel";
     static final String RESULT_ACTION = "action";
     static final String ACTION_PUNCH = "punch";
     static final String ACTION_HOME = "home";
@@ -56,6 +64,8 @@ public class PermissionsActivity extends AppCompatActivity {
     private View locationCard;
     private View gpsCard;
     private View cameraCard;
+    private View notificationsCard;
+    private boolean isHotel;
     private TextView summary;
     private TextView punchLocked;
     private Button punch;
@@ -103,16 +113,22 @@ public class PermissionsActivity extends AppCompatActivity {
         locationCard = findViewById(R.id.perm_card_location);
         gpsCard = findViewById(R.id.perm_card_gps);
         cameraCard = findViewById(R.id.perm_card_camera);
+        notificationsCard = findViewById(R.id.perm_card_notifications);
+        isHotel = PROFILE_HOTEL.equals(getIntent().getStringExtra(EXTRA_PROFILE));
 
         setupCard(locationCard, R.drawable.ic_perm_location, R.string.perm_location_title, R.string.perm_location_body);
         setupCard(gpsCard, R.drawable.ic_perm_gps, R.string.perm_gps_title, R.string.perm_gps_body);
         setupCard(cameraCard, R.drawable.ic_perm_camera, R.string.perm_camera_title, R.string.perm_camera_body);
 
-        punch.setOnClickListener(view -> {
-            /* Doble candado: el botón ya está deshabilitado, pero se verifica al tocar. */
-            if (PermissionsStatus.isReady(this)) finishWith(ACTION_PUNCH);
-        });
-        findViewById(R.id.perm_go_home).setOnClickListener(view -> finishWith(ACTION_HOME));
+        if (isHotel) {
+            setupHotelProfile();
+        } else {
+            punch.setOnClickListener(view -> {
+                /* Doble candado: el botón ya está deshabilitado, pero se verifica al tocar. */
+                if (PermissionsStatus.isReady(this)) finishWith(ACTION_PUNCH);
+            });
+            findViewById(R.id.perm_go_home).setOnClickListener(view -> finishWith(ACTION_HOME));
+        }
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -128,7 +144,27 @@ public class PermissionsActivity extends AppCompatActivity {
         render();
     }
 
+    /** Perfil de hotel: solo Notificaciones; «Continuar» siempre habilitado, sin «Ir a Inicio». */
+    private void setupHotelProfile() {
+        locationCard.setVisibility(View.GONE);
+        gpsCard.setVisibility(View.GONE);
+        cameraCard.setVisibility(View.GONE);
+        notificationsCard.setVisibility(View.VISIBLE);
+        setupCard(notificationsCard, R.drawable.ic_perm_notifications, R.string.perm_notifications_title,
+            R.string.perm_notifications_body);
+        punchLocked.setVisibility(View.GONE);
+        punch.setText(R.string.perm_continue);
+        punch.setCompoundDrawablesRelativeWithIntrinsicBounds(0, 0, 0, 0);
+        punch.setPaddingRelative(punch.getPaddingEnd(), punch.getPaddingTop(), punch.getPaddingEnd(), punch.getPaddingBottom());
+        punch.setOnClickListener(view -> finishWith(ACTION_HOME));
+        findViewById(R.id.perm_go_home).setVisibility(View.GONE);
+    }
+
     private void render() {
+        if (isHotel) {
+            renderNotifications();
+            return;
+        }
         renderLocation();
         renderGps();
         renderCamera();
@@ -184,6 +220,46 @@ public class PermissionsActivity extends AppCompatActivity {
                 bind(cameraCard, Tone.ERROR, R.string.perm_state_blocked, R.string.perm_hint_blocked,
                     R.string.perm_action_settings, this::openAppSettings);
         }
+    }
+
+    private void renderNotifications() {
+        String state = PermissionsStatus.notifications(this);
+        switch (state) {
+            case PermissionsStatus.GRANTED:
+                bind(notificationsCard, Tone.OK, R.string.perm_state_granted, 0, 0, null);
+                break;
+            case PermissionsStatus.PROMPT:
+                bind(notificationsCard, Tone.WARN, R.string.perm_state_missing, 0, R.string.perm_action_grant,
+                    this::askNotifications);
+                break;
+            default:
+                bind(notificationsCard, Tone.ERROR, R.string.perm_state_blocked, R.string.perm_hint_notifications_blocked,
+                    R.string.perm_action_settings, this::openNotificationSettings);
+        }
+        boolean granted = PermissionsStatus.GRANTED.equals(state);
+        summary.setText(granted ? R.string.perm_hotel_summary_ready : R.string.perm_hotel_summary_missing);
+    }
+
+    /** Android 13+ lo pide con el diálogo del sistema; antes de 13 no hay diálogo: a Configuración. */
+    private void askNotifications() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            openNotificationSettings();
+            return;
+        }
+        PermissionsStatus.markAsked(this, Manifest.permission.POST_NOTIFICATIONS);
+        requestPermissions.launch(new String[] {Manifest.permission.POST_NOTIFICATIONS});
+    }
+
+    /** Directo a las notificaciones de la app (Android 8+); antes, a su ficha. */
+    private void openNotificationSettings() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            openAppSettings();
+            return;
+        }
+        Intent intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            .putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName())
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
     }
 
     private void askLocation() {

@@ -31,4 +31,12 @@
     <string name="perm_punch">Punch</string>
     <string name="perm_punch_locked">Turn on the permissions above to punch.</string>
     <string name="perm_go_home">Go to Home</string>
+
+    <!-- Hotel profile (Supervisor, Area Manager, General Manager). -->
+    <string name="perm_notifications_title">Notifications</string>
+    <string name="perm_notifications_body">To let you know when a requisition needs your approval, gets filled or changes, and what happens with your staff.</string>
+    <string name="perm_hint_notifications_blocked">You turned them off: turn them on in your phone\'s settings.</string>
+    <string name="perm_hotel_summary_ready">All set: we\'ll let you know what matters.</string>
+    <string name="perm_hotel_summary_missing">We recommend turning on notifications. You can do it later.</string>
+    <string name="perm_continue">Continue</string>
 </resources>

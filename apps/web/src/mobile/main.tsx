@@ -9,6 +9,7 @@ import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
 import { RouterProvider } from 'react-router'
 
+import { installNativeApiFetch } from './nativeApiFetch'
 import { mobileRouter } from './router'
 
 import { i18n } from '@/app/i18n'
@@ -22,6 +23,11 @@ import { store } from '@/app/store'
  * en el .apk. La composición es de tres líneas; la duplicación sale más barata
  * que el arrastre.
  */
+
+/* En iOS, el API por el HTTP nativo: la cookie del refresh no sobrevive en el
+   WKWebView (ver `nativeApiFetch.ts`). Antes de montar, para que la primera
+   petición —el refresh del arranque— ya salga por ahí. */
+installNativeApiFetch(import.meta.env.VITE_API_URL)
 
 const container = document.getElementById('root')
 if (!container) throw new Error('Falta #root en index.html')

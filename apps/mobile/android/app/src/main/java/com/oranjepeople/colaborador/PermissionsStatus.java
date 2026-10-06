@@ -6,8 +6,10 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.LocationManager;
+import android.os.Build;
 
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.location.LocationManagerCompat;
 
@@ -64,6 +66,19 @@ final class PermissionsStatus {
         return !DENIED.equals(state(activity, Manifest.permission.ACCESS_FINE_LOCATION));
     }
 
+    /**
+     * Las notificaciones de la app (perfil de hotel). En Android 13+ son un
+     * permiso que se pide; antes de 13 vienen encendidas y solo se apagan desde
+     * Configuración. En los dos casos, si la persona las apagó en Configuración
+     * cuentan como bloqueadas aunque el permiso siga concedido.
+     */
+    static String notifications(Activity activity) {
+        boolean enabled = NotificationManagerCompat.from(activity).areNotificationsEnabled();
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return enabled ? GRANTED : DENIED;
+        String state = state(activity, Manifest.permission.POST_NOTIFICATIONS);
+        return GRANTED.equals(state) && !enabled ? DENIED : state;
+    }
+
     /** El interruptor de «Ubicación» del teléfono, independiente del permiso de la app. */
     static boolean isGpsOn(Context context) {
         LocationManager manager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
@@ -74,9 +89,10 @@ final class PermissionsStatus {
         return GRANTED.equals(location(activity)) && GRANTED.equals(camera(activity)) && isGpsOn(activity);
     }
 
-    /** Lo que recibe el WebView: `{ location, camera, gps, ready }`. */
+    /** Lo que recibe el WebView: `{ location, camera, gps, ready, notifications }`. */
     static JSObject toJs(Activity activity) {
         JSObject result = new JSObject();
+        result.put("notifications", notifications(activity));
         result.put("location", location(activity));
         result.put("camera", camera(activity));
         result.put("gps", isGpsOn(activity));

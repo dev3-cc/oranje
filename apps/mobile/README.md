@@ -1,9 +1,22 @@
-# @oranje/mobile — la app del Colaborador
+# @oranje/mobile — Oranje People, la app del Colaborador y del hotel
 
-Android e iOS. **No hay UI propia aquí**: la app es el apartado del Colaborador
-de `@oranje/web` (`features/worker`, las rutas `/collaborator/*`) empaquetado
-con Capacitor. Un cambio en esas pantallas llega a la app con un `sync`, sin
-tocar nada de esta carpeta.
+Android e iOS, con el nombre visible **Oranje People** (el `appId`,
+`com.oranjepeople.colaborador`, no cambia). **No hay UI propia aquí**: la app es
+`@oranje/web` empaquetado con Capacitor, con su propio punto de entrada y router
+([`src/mobile/`](../web/src/mobile)). Un cambio en esas pantallas llega a la app
+con un `sync`, sin tocar nada de esta carpeta.
+
+**Un solo login** ([`AppLoginPage`](../web/src/mobile/AppLoginPage.tsx)) y, al
+entrar, el rol decide el apartado ([`roles.ts`](../web/src/mobile/roles.ts)):
+
+| Rol                                                           | Apartado                                                  |
+| ------------------------------------------------------------- | --------------------------------------------------------- |
+| Colaborador (`ROL-C-01`)                                      | `/collaborator` — el de `features/worker`                 |
+| Supervisor, Manager de Área, Manager General (`ROL-H-01..03`) | `/hotel` — [`src/mobile/hotel/`](../web/src/mobile/hotel) |
+| Cualquier otro                                                | `/unsupported` — le dice que su trabajo está en el web    |
+
+El apartado del hotel vive solo en la app: el web no lo carga. Llega por fases
+(Requisiciones, Inicio con KPIs, Mi personal, Timesheet…); hoy tiene el Inicio.
 
 Se eligió Capacitor sobre React Native —que es lo que decía el README de la
 raíz— porque el Colaborador ya estaba escrito y probado como web responsive:
@@ -80,6 +93,12 @@ worker.**
 
 ## La pantalla nativa de Permisos
 
+Tiene dos perfiles (`open({ profile })`): **worker** —lo que sigue— y **hotel**,
+con una sola tarjeta, **Notificaciones** (`POST_NOTIFICATIONS` en Android 13+,
+`UNUserNotificationCenter` en iOS) y «Continuar», que nunca bloquea. El perfil
+hotel solo pide el permiso; registrar el token para push queda para después
+(el API ya tiene `POST /devices`).
+
 La única pantalla **nativa** de la app. Es lo primero que ve el Colaborador al quedar
 con sesión (después del login o al abrir la app con la sesión viva), y vuelve desde
 **Permisos** en el menú de la flecha del avatar.
@@ -149,9 +168,18 @@ de Identity Toolkit y **no** depende de los dominios autorizados. Si aun así el
 login devolviera `auth/unauthorized-domain`, añadir el host en la consola de
 Firebase → Authentication → Settings → Authorized domains.
 
-## ⚠️ Pendiente antes de publicar: el refresh de 15 minutos
+## El refresh de 15 minutos
 
-**Esto no está resuelto y hay que probarlo en dispositivo.**
+**Android:** funciona con el WebView tal cual.
+
+**iOS: arreglado en la app, falta probarlo en un iPhone.** Las peticiones al API
+salen por el HTTP nativo ([`nativeApiFetch.ts`](../web/src/mobile/nativeApiFetch.ts)):
+la cookie del refresh vive en la cookie jar de iOS y el `FormData` se rearma para
+que la foto llegue entera. Para probarlo: entrar, esperar 16 minutos y usar la app;
+subir una foto (perfil o ponche) y confirmar que llega legible. Si hiciera falta
+diagnosticarlo en Android: `localStorage['oranje.nativeApiFetch'] = 'on'` y reabrir.
+
+Lo que sigue es el análisis original, de antes del arreglo:
 
 El access token vive 15 minutos y se renueva con la cookie `oranje_refresh`
 (`httpOnly`, `SameSite=None; Secure`) contra `POST /auth/refresh`. En el

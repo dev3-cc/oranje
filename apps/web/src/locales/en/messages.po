@@ -55,6 +55,7 @@ msgid "¿Eres colaborador? <0>Entra por aquí</0>"
 msgstr "Are you a Collaborator? <0>Sign in here</0>"
 
 #: src/features/auth/pages/LoginPage.tsx
+#: src/mobile/AppLoginPage.tsx
 msgid "¿La olvidaste?"
 msgstr "Forgot it?"
 
@@ -85,6 +86,10 @@ msgstr "Are you sure? Tap “Yes, discard draft” to confirm."
 #: src/features/auth/pages/LoginPage.tsx
 msgid "¿Sin acceso? Pídele el alta al Administrador de tu departamento."
 msgstr "No access yet? Ask your department's Administrator to set you up."
+
+#: src/mobile/AppLoginPage.tsx
+msgid "¿Sin acceso? Si eres colaborador, tu Reclutadora te da de alta. Si trabajas en un hotel, pide el alta a tu Manager."
+msgstr "No access yet? If you're a collaborator, your Recruiter sets you up. If you work at a hotel, ask your Manager for access."
 
 #: src/features/auth/pages/LoginPage.tsx
 msgid "¿Sin acceso? Tu Reclutadora te da de alta y te llega un correo para crear tu contraseña."
@@ -705,6 +710,7 @@ msgid "{years} a"
 msgstr "{years} yr"
 
 #: src/features/auth/pages/LoginPage.tsx
+#: src/mobile/AppLoginPage.tsx
 msgid "← Volver a iniciar sesión"
 msgstr "← Back to sign in"
 
@@ -1103,6 +1109,10 @@ msgstr "The camera opens when you punch in"
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Al tocar el botón se abre la cámara. La foto confirma que eres tú; no se comparte con el hotel."
 msgstr "Tapping the button opens the camera. The photo confirms it's you; it isn't shared with the hotel."
+
+#: src/mobile/hotel/HotelHomePage.tsx
+msgid "Alcance"
+msgstr "Scope"
 
 #: src/features/onboarding/components/HotelLocationMap.tsx
 msgid "Alejar"
@@ -2082,6 +2092,8 @@ msgstr "Close the hotel record"
 
 #: src/features/worker/components/MobileShell.tsx
 #: src/layouts/Sidebar.tsx
+#: src/mobile/hotel/HotelShell.tsx
+#: src/mobile/UnsupportedRolePage.tsx
 msgid "Cerrar sesión"
 msgstr "Sign out"
 
@@ -2444,6 +2456,7 @@ msgstr "Contract"
 #: src/features/auth/pages/LoginPage.tsx
 #: src/features/worker/components/MobileShell.tsx
 #: src/features/worker/pages/PasswordPage.tsx
+#: src/mobile/AppLoginPage.tsx
 msgid "Contraseña"
 msgstr "Password"
 
@@ -2595,6 +2608,7 @@ msgstr "Correct contact attempt"
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 #: src/features/recruitment/components/CreateAccessDialog.tsx
 #: src/features/worker/pages/ProfilePage.tsx
+#: src/mobile/AppLoginPage.tsx
 #: src/shared/constants/contactAttempt.ts
 msgid "Correo"
 msgstr "Email"
@@ -2797,6 +2811,7 @@ msgid "Cuenta dada de baja"
 msgstr "Account deactivated"
 
 #: src/features/worker/components/MobileShell.tsx
+#: src/mobile/hotel/HotelShell.tsx
 msgid "Cuenta de {shortName}"
 msgstr "{shortName}'s account"
 
@@ -3305,6 +3320,7 @@ msgid "Ejecutivo"
 msgstr "Executive"
 
 #: src/features/auth/pages/LoginPage.tsx
+#: src/mobile/AppLoginPage.tsx
 msgid "El acceso no está configurado en este ambiente. Avisa al Administrador."
 msgstr "Sign-in isn't set up in this environment. Let the Administrator know."
 
@@ -3443,6 +3459,7 @@ msgid "El correo no se edita: es con el que la persona entra. Para cambiar de pe
 msgstr "The email can't be edited: it's what the person signs in with. To switch person, deactivate and sign up the new one. The account links up the first time they sign in. Hotel accounts have their own tab: “Hotel staff”."
 
 #: src/features/auth/pages/LoginPage.tsx
+#: src/mobile/AppLoginPage.tsx
 msgid "El correo o la contraseña no coinciden. Revísalos e inténtalo de nuevo."
 msgstr "The email or password doesn't match. Check them and try again."
 
@@ -4189,6 +4206,7 @@ msgid "entra {0}"
 msgstr "{0} steps in"
 
 #: src/features/auth/pages/LoginPage.tsx
+#: src/mobile/AppLoginPage.tsx
 msgid "Entra a Oranje"
 msgstr "Sign in to Oranje"
 
@@ -4228,6 +4246,11 @@ msgstr "Clock in, lunch and clock out, each with its geofence and its two clocks
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Entrada, salida al lunch, regreso y salida. El botón siempre sabe cuál toca: solo tócalo cuando llegue el momento."
 msgstr "Clock in, out to lunch, back from lunch and clock out. The button always knows which one is next: just tap it when the time comes."
+
+#. placeholder {0}: role.title
+#: src/mobile/UnsupportedRolePage.tsx
+msgid "Entraste como {0}. Tu trabajo en Oranje está en el web, desde la computadora."
+msgstr "You signed in as {0}. Your work in Oranje is on the web, from a computer."
 
 #. placeholder {0}: contract.hotelName
 #: src/features/contracts/pages/ContractDetailPage.tsx
@@ -4281,6 +4304,7 @@ msgid "Enviar a revisión"
 msgstr "Send for review"
 
 #: src/features/auth/pages/LoginPage.tsx
+#: src/mobile/AppLoginPage.tsx
 msgid "Enviar enlace"
 msgstr "Send link"
 
@@ -4392,14 +4416,17 @@ msgid "Escribe el nombre del hotel"
 msgstr "Write the hotel's name"
 
 #: src/features/auth/types/login.schema.ts
+#: src/mobile/AppLoginPage.tsx
 msgid "Escribe tu contraseña"
 msgstr "Write your password"
 
 #: src/features/auth/types/login.schema.ts
+#: src/mobile/AppLoginPage.tsx
 msgid "Escribe tu correo"
 msgstr "Write your email"
 
 #: src/features/auth/pages/LoginPage.tsx
+#: src/mobile/AppLoginPage.tsx
 msgid "Escribe tu correo y te mandamos el enlace."
 msgstr "Write your email and we'll send you the link."
 
@@ -4412,6 +4439,7 @@ msgid "Escribe un correo válido, como ana@hotel.com"
 msgstr "Write a valid email, like ana@hotel.com"
 
 #: src/features/auth/types/login.schema.ts
+#: src/mobile/AppLoginPage.tsx
 msgid "Escribe un correo válido, como ana@oranje.mx"
 msgstr "Write a valid email, like ana@oranje.mx"
 
@@ -4516,6 +4544,10 @@ msgstr "That shift isn't yours. Reload the screen and try again."
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
 msgid "Esperando aprobación"
 msgstr "Awaiting approval"
+
+#: src/mobile/UnsupportedRolePage.tsx
+msgid "Esta app es para colaboradores y hoteles"
+msgstr "This app is for collaborators and hotels"
 
 #: src/features/audits/components/AuditFormDialog.tsx
 msgid "Esta auditoría no es de tu hotel."
@@ -4946,6 +4978,10 @@ msgstr "The position is missing"
 msgid "Faltan datos tuyos"
 msgstr "Some of your info is missing"
 
+#: src/features/worker/components/NativePunchGate.tsx
+msgid "Faltan permisos para ponchar"
+msgstr "Missing permissions to punch"
+
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Fase 1 · Entrevista"
 msgstr "Phase 1 · Interview"
@@ -5250,6 +5286,7 @@ msgid "histórico"
 msgstr "all time"
 
 #: src/features/worker/pages/HomePage.tsx
+#: src/mobile/hotel/HotelHomePage.tsx
 msgid "Hola, {firstName}"
 msgstr "Hi, {firstName}"
 
@@ -5292,6 +5329,7 @@ msgstr "Net hours"
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/features/requisitions/components/RequisitionTable.tsx
 #: src/features/timesheet/components/TimesheetToolbar.tsx
+#: src/mobile/hotel/HotelHomePage.tsx
 msgid "Hotel"
 msgstr "Hotel"
 
@@ -5460,10 +5498,12 @@ msgid "Inicia sesión"
 msgstr "Sign in"
 
 #: src/features/auth/pages/LoginPage.tsx
+#: src/mobile/AppLoginPage.tsx
 msgid "Iniciando sesión…"
 msgstr "Signing in…"
 
 #: src/features/auth/pages/LoginPage.tsx
+#: src/mobile/AppLoginPage.tsx
 msgid "Iniciar sesión"
 msgstr "Sign in"
 
@@ -5472,6 +5512,7 @@ msgstr "Sign in"
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/features/requisitions/components/PositionsTable.tsx
 #: src/features/worker/components/MobileShell.tsx
+#: src/mobile/hotel/HotelShell.tsx
 msgid "Inicio"
 msgstr "Home"
 
@@ -6476,6 +6517,7 @@ msgid "Montaña — Denver, Salt Lake City"
 msgstr "Mountain — Denver, Salt Lake City"
 
 #: src/features/auth/pages/LoginPage.tsx
+#: src/mobile/AppLoginPage.tsx
 msgid "Mostrar contraseña"
 msgstr "Show password"
 
@@ -6925,6 +6967,7 @@ msgid "No pasó la revisión."
 msgstr "It didn't pass review."
 
 #: src/features/auth/pages/LoginPage.tsx
+#: src/mobile/AppLoginPage.tsx
 msgid "No pudimos conectar con Oranje. Revisa tu conexión e inténtalo en un momento."
 msgstr "We couldn't reach Oranje. Check your connection and try again in a moment."
 
@@ -7633,6 +7676,7 @@ msgid "observados"
 msgstr "flagged"
 
 #: src/features/auth/pages/LoginPage.tsx
+#: src/mobile/AppLoginPage.tsx
 msgid "Ocultar contraseña"
 msgstr "Hide password"
 
@@ -7813,6 +7857,10 @@ msgstr "For the Clock in / Clock out photo — when the hotel uses selfie instea
 msgid "Para poder asignarlo falta capturar en la entrevista: {missingNames}"
 msgstr "Before assigning, capture in the interview: {missingNames}"
 
+#: src/features/worker/components/NativePunchGate.tsx
+msgid "Para ponchar, la app necesita tu ubicación precisa, el GPS encendido y la cámara. Revisa qué falta y actívalo."
+msgstr "To punch, the app needs your precise location, GPS turned on and the camera. Check what's missing and turn it on."
+
 #: src/features/requisitions/utils/coverage.ts
 msgid "parcial"
 msgstr "partial"
@@ -7950,6 +7998,7 @@ msgstr "Work profile and health"
 
 #: src/features/worker/components/MobileShell.tsx
 #: src/features/worker/pages/PermissionsPage.tsx
+#: src/mobile/hotel/HotelShell.tsx
 msgid "Permisos"
 msgstr "Permissions"
 
@@ -8523,6 +8572,7 @@ msgid "Reclutamiento ya te validó con tu expediente a medias. Tienes hasta el <
 msgstr "Recruitment already validated you with your incomplete file. You have until <0>{0}</0> (day {1} of 1); after that your access locks until you complete it."
 
 #: src/features/auth/pages/LoginPage.tsx
+#: src/mobile/AppLoginPage.tsx
 msgid "Recupera tu contraseña"
 msgstr "Reset your password"
 
@@ -8712,6 +8762,10 @@ msgstr "Requisitions in queue"
 msgid "Requisiciones por autorizar"
 msgstr "Requisitions pending authorization"
 
+#: src/mobile/hotel/HotelHomePage.tsx
+msgid "Requisiciones, Timesheet y tu personal se suman a la app en las próximas versiones. Mientras, siguen en el web."
+msgstr "Requisitions, Timesheet and your staff join the app in upcoming versions. Meanwhile, they stay on the web."
+
 #: src/features/conversion/pages/ConversionPage.tsx
 msgid "Requisitos para habilitar la conversión"
 msgstr "What's needed to unlock the conversion"
@@ -8778,6 +8832,10 @@ msgstr "Review the day"
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 msgid "Revisar no es aprobar"
 msgstr "Reviewing isn't approving"
+
+#: src/features/worker/components/NativePunchGate.tsx
+msgid "Revisar permisos"
+msgstr "Check permissions"
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "Revisión"
@@ -8959,6 +9017,7 @@ msgid "Se puso disponible por su cuenta: no cambia la asignación de arriba."
 msgstr "They marked themselves available on their own — it doesn't change the assignment above."
 
 #: src/features/worker/components/MobileShell.tsx
+#: src/mobile/hotel/HotelShell.tsx
 msgid "Secciones"
 msgstr "Sections"
 
@@ -9054,6 +9113,7 @@ msgid "Si {0} sigue siendo cliente, lo que sigue es crear un contrato nuevo."
 msgstr "If {0} is still a client, what comes next is creating a new contract."
 
 #: src/features/auth/pages/LoginPage.tsx
+#: src/mobile/AppLoginPage.tsx
 msgid "Si <0>{resetSentTo}</0> está registrado en Oranje, el enlace ya va en camino. Revisa también la carpeta de spam."
 msgstr "If <0>{resetSentTo}</0> is registered with Oranje, the link is on its way. Check your spam folder too."
 
@@ -9803,6 +9863,7 @@ msgid "Tasa de conversión"
 msgstr "Conversion rate"
 
 #: src/features/auth/pages/LoginPage.tsx
+#: src/mobile/AppLoginPage.tsx
 msgid "Te mandamos un enlace al correo para crear una nueva."
 msgstr "We'll email you a link to create a new one."
 
@@ -10075,6 +10136,7 @@ msgid "Todavía se puede corregir y capturar marcas. El Supervisor la envía cua
 msgstr "It can still be corrected and punches can still be recorded. The Supervisor sends it when it's ready."
 
 #: src/features/admin/components/HotelUsersSection.tsx
+#: src/mobile/hotel/HotelHomePage.tsx
 msgid "Todo el hotel"
 msgstr "The whole hotel"
 
@@ -10190,6 +10252,7 @@ msgid "Tu cuenta aún no tiene permiso para subir la foto: Oranje lo está habil
 msgstr "Your account can't upload the photo yet: Oranje is enabling it."
 
 #: src/features/auth/pages/LoginPage.tsx
+#: src/mobile/AppLoginPage.tsx
 msgid "Tu cuenta no está activa en Oranje. Pide al Administrador que la active."
 msgstr "Your Oranje account isn't active. Ask the Administrator to activate it."
 
@@ -10220,6 +10283,10 @@ msgstr "Your photo"
 #: src/features/audits/components/AuditHotelCard.tsx
 msgid "Tu hotel"
 msgstr "Your hotel"
+
+#: src/mobile/hotel/HotelHomePage.tsx
+msgid "Tu hotel llega a la app"
+msgstr "Your hotel comes to the app"
 
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Tu marca quedó registrada"
@@ -10288,6 +10355,10 @@ msgstr "Your transportation and your SSN or ITIN"
 #: src/features/worker/pages/HomePage.tsx
 msgid "Tu transporte, tu SSN o ITIN y un contacto de emergencia. Con eso Reclutamiento puede validarte y empiezas a recibir turnos."
 msgstr "Your transportation, your SSN or ITIN and an emergency contact. With that, Recruitment can validate you and you start getting shifts."
+
+#: src/mobile/AppLoginPage.tsx
+msgid "Tu turno o la operación de tu hotel, en tu celular."
+msgstr "Your shift or your hotel's operation, on your phone."
 
 #: src/features/auth/pages/LoginPage.tsx
 msgid "Tu turno, tu ponche y tus datos, en tu celular."

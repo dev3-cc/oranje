@@ -32,6 +32,82 @@ Reglas:
 
 ---
 
+## 2026-10-06
+
+### 13:41 — Abrir la pantalla nativa de Permisos en el idioma de la persona
+
+**Qué:** `PermissionsOnLaunch` espera a `/me` y a que su idioma quede aplicado antes de
+abrir la pantalla nativa (Colaborador y hotel).
+**Por qué:** probado en un emulador Android 15 con la cuenta de un Manager General y el
+teléfono en inglés: la pantalla nativa se abría en inglés y, un instante después, la app
+cambiaba al español guardado en la persona (D-36). Mismo fallo para el Colaborador.
+**Archivos:** `src/mobile/PermissionsOnLaunch.tsx`
+
+### 13:31 — Pulir lo visual del login único y del apartado del hotel
+
+**Qué:** revisado en Chromium a 360 y 412 px con el bundle de la app y el API simulado
+(Manager General, Manager de Área, Supervisor en inglés, un rol del staff y el
+Colaborador). Cinco arreglos, todos en `src/mobile`:
+
+- Login: el pie («Oranje People · v0.1.0») ya no se parte a 360 px; la tarjeta usa
+  `p-6` en pantallas angostas.
+- Login: la ayuda «¿Sin acceso?» pasa de `ink-4` a `ink-3`.
+- Hotel: la barra de pestañas no se pinta mientras haya una sola.
+- Hotel: el separador del menú solo aparece junto con «Permisos».
+- «Esta app es para…»: el botón «Cerrar sesión» pasa a 48 px de alto y ancho completo.
+
+**Por qué:** `ink-4` es 2.7:1, solo decorativo según los tokens. Una sola píldora
+naranja a todo lo ancho parecía un botón y no una navegación. El botón quedaba chico
+para el dedo. El reparto por rol se confirmó en los cinco casos, sin bucles.
+**Archivos:** `src/mobile/AppLoginPage.tsx`, `src/mobile/hotel/HotelShell.tsx`,
+`src/mobile/UnsupportedRolePage.tsx`
+
+### 13:24 — Traducir los textos nuevos de la app y recuperar tres perdidos
+
+**Qué:** `lingui extract` sin `--clean`: entradas nuevas del login único, del apartado
+del hotel y de la pantalla para otros roles, con su inglés. Vuelven «Faltan permisos
+para ponchar», «Revisar permisos» y el texto del candado de Ponchar, con la traducción
+que ya tenían.
+**Por qué:** D-36. Las tres de Ponchar desaparecieron del catálogo en el merge de
+«sincroniza el catalogo de i18n» (#191): en la app salían en español aunque estuviera en
+inglés. Solo se agregan entradas; ninguna existente cambia.
+**Archivos:** `src/locales/es/messages.po`, `src/locales/en/messages.po`
+
+### 13:22 — Mandar el API por el HTTP nativo en la app de iOS
+
+**Qué:** `mobile/nativeApiFetch.ts`, instalado en `mobile/main.tsx`: solo en la app de
+iOS y solo hacia `VITE_API_URL`, `fetch` sale por el plugin `CapacitorHttp`; el
+`FormData` se rearma como `formData` (archivos en base64). Con su spec.
+**Por qué:** en iOS el origen es `capacitor://` y la cookie del refresh queda de tercero;
+WKWebView no la guarda y la sesión moría a los 15 minutos. Por el HTTP nativo vive en
+la cookie jar de iOS. No es `CapacitorHttp.enabled` porque ese parche también afecta a
+Android y corrompe el multipart que arma RTK Query. No toca `app/baseApi.ts` ni el web.
+**Archivos:** `src/mobile/nativeApiFetch.ts`, `src/mobile/nativeApiFetch.spec.ts`,
+`src/mobile/main.tsx`
+
+### 13:20 — Abrir la pantalla nativa de Permisos según el rol
+
+**Qué:** `PermissionsOnLaunch` abre el perfil del Colaborador (ubicación, GPS, cámara)
+solo al Colaborador, y el perfil de hotel (notificaciones) al Supervisor, al Manager de
+Área y al Manager General (`mobile/hotel/hotelPermissions.ts`). El resto no ve ninguna.
+**Por qué:** con el hotel dentro de la app, el gerente recibía la pantalla de ponchar.
+Las notificaciones se piden desde ya para cuando lleguen las push; negarlas no bloquea.
+**Archivos:** `src/mobile/PermissionsOnLaunch.tsx`, `src/mobile/hotel/hotelPermissions.ts`
+
+### 13:15 — Un solo login en la app y reparto por rol
+
+**Qué:** `AppLoginPage` (puerta única, textos neutros) en `/login` y
+`/collaborator/login` del router móvil; `/` reparte con `MobileRoleHome`: Colaborador a
+`/collaborator`, hotel a `/hotel` (`HotelShell` + `HotelHomePage`), el resto a
+`/unsupported` (`UnsupportedRolePage`). El comodín va a `/`.
+**Por qué:** el hotel entra a la app. Antes un rol que no fuera Colaborador rebotaba
+entre `/` y `/collaborator` sin fin. El login del web tiene dos puertas que se enlazan
+entre sí; en la app no hay a dónde enlazar, y se repiten sus textos donde aplican para
+reusar la traducción. Nada de esto vive fuera de `src/mobile`.
+**Archivos:** `src/mobile/router.tsx`, `src/mobile/roles.ts`, `src/mobile/MobileRoleHome.tsx`,
+`src/mobile/AppLoginPage.tsx`, `src/mobile/UnsupportedRolePage.tsx`,
+`src/mobile/hotel/HotelShell.tsx`, `src/mobile/hotel/HotelHomePage.tsx`
+
 ## 2026-09-28
 
 ### 11:28 — Llevar a Inicio al cerrar Permisos con «Ir a Inicio»

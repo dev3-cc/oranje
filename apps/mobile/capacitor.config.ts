@@ -7,7 +7,7 @@ import type { CapacitorConfig } from '@capacitor/cli'
  */
 const config: CapacitorConfig = {
   appId: 'com.oranjepeople.colaborador',
-  appName: 'Oranje Colaborador',
+  appName: 'Oranje People',
 
   /* El `dist-mobile` de @oranje/web. Es una referencia a un ARTEFACTO de build,
      no un import de código: la regla «apps/* nunca importa de otro apps/*»

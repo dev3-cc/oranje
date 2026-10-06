@@ -1,7 +1,9 @@
 import { type ReactElement } from 'react'
 import { createBrowserRouter, Navigate, useLocation, useParams } from 'react-router'
 
+import { MobileRoleHome } from './MobileRoleHome'
 import { PermissionsOnLaunch } from './PermissionsOnLaunch'
+import { HOTEL_HOME, UNSUPPORTED_HOME } from './roles'
 
 import { RequireSession } from '@/app/RequireSession'
 
@@ -43,13 +45,15 @@ function LegacyRedirect({ to }: { to: string }): ReactElement {
 }
 
 /**
- * La puerta, con los textos del Colaborador (ROL-C-01). Se monta en DOS rutas
- * a propósito — ver el comentario de `/login` abajo.
+ * LA puerta de la app: una sola para el Colaborador y para el hotel
+ * (`AppLoginPage`). Se monta en las dos rutas a las que manda `RequireSession`
+ * —`/collaborator/login` para lo del Colaborador, `/login` para todo lo
+ * demás—: ese archivo es compartido con la web y no se toca desde aquí.
  */
 const loginRoute = {
   lazy: async () => {
-    const m = await import('@/features/auth')
-    return { Component: m.ColaboradorLoginPage }
+    const m = await import('./AppLoginPage')
+    return { Component: m.AppLoginPage }
   },
 }
 
@@ -62,27 +66,7 @@ export const mobileRouter = createBrowserRouter([
      */
     Component: PermissionsOnLaunch,
     children: [
-      /*
-       * `/` va FUERA de `RequireSession`, y esto no es cosmético: el guard decide
-       * a qué login mandar mirando el pathname —`startsWith('/collaborator')`, ver
-       * `app/RequireSession.tsx`— y la app arranca en `/`, que no empieza con eso.
-       * Con la redirección DENTRO del guard, el guard corría primero, concluía
-       * «esto no es del Colaborador» y mandaba a `/login`: la pantalla en blanco.
-       * Aquí `/` se resuelve antes de que ningún guard opine.
-       *
-       * Sirve además para el regreso del login, que navega a `from ?? '/'`.
-       */
-      { path: '/', element: <Navigate to="/collaborator" replace /> },
-
       { path: '/collaborator/login', ...loginRoute },
-
-      /*
-       * `/login` también, aunque en esta app no exista el staff: es a donde manda
-       * `RequireSession` cuando el pathname no le parece del Colaborador, y ese
-       * archivo es compartido con la web — no se toca desde aquí. Mapearlo a la
-       * misma puerta convierte ese caso en algo inofensivo en vez de una ruta
-       * muerta. Red de seguridad, no la corrección: la corrección es la de arriba.
-       */
       { path: '/login', ...loginRoute },
 
       {
@@ -90,6 +74,37 @@ export const mobileRouter = createBrowserRouter([
        que antes, pero `/` ya no cae aquí dentro. */
         Component: RequireSession,
         children: [
+          /*
+           * `/` reparte por rol: el Colaborador a `/collaborator`, el hotel a
+           * `/hotel`, el resto del staff a la pantalla que le dice que su
+           * trabajo está en el web. Dentro del guard: sin sesión, el guard
+           * manda a `/login` (la puerta única) y el login regresa a `/`.
+           */
+          { index: true, Component: MobileRoleHome },
+          {
+            path: UNSUPPORTED_HOME.slice(1),
+            lazy: async () => {
+              const m = await import('./UnsupportedRolePage')
+              return { Component: m.UnsupportedRolePage }
+            },
+          },
+          {
+            /* El apartado del hotel: Supervisor, Manager de Área y Manager General. */
+            path: HOTEL_HOME.slice(1),
+            lazy: async () => {
+              const m = await import('./hotel/HotelShell')
+              return { Component: m.HotelShell }
+            },
+            children: [
+              {
+                index: true,
+                lazy: async () => {
+                  const m = await import('./hotel/HotelHomePage')
+                  return { Component: m.HotelHomePage }
+                },
+              },
+            ],
+          },
           ...LEGACY_PATHS.map(({ from, to }) => ({
             path: from,
             element: <LegacyRedirect to={to} />,
@@ -169,13 +184,11 @@ export const mobileRouter = createBrowserRouter([
       },
 
       /*
-       * Cualquier otra ruta del web (las 25 del staff) no existe aquí: a Inicio.
-       * Va FUERA del guard por lo mismo que `/`: dentro, `RequireSession` resuelve
-       * a login antes de llegar al `Outlet` y el comodín nunca se rendería.
-       * Último de la lista: React Router prefiere lo específico, pero el orden lo
-       * deja explícito para quien lea.
+       * Cualquier otra ruta del web (las del staff) no existe aquí: a `/`, que
+       * reparte por rol. Último de la lista: React Router prefiere lo
+       * específico, pero el orden lo deja explícito para quien lea.
        */
-      { path: '*', element: <Navigate to="/collaborator" replace /> },
+      { path: '*', element: <Navigate to="/" replace /> },
     ],
   },
 ])

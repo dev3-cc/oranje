@@ -3,6 +3,7 @@ import Capacitor
 import CoreLocation
 import CoreText
 import UIKit
+import UserNotifications
 
 /*
  * La pantalla NATIVA de Permisos de la app del Colaborador, en iOS. Es el
@@ -30,7 +31,9 @@ class OranjeBridgeViewController: CAPBridgeViewController {
 
 // MARK: - Plugin
 
-/// check() → { location, camera, gps, ready } · open({ firstName, locale }) →
+/// check() → { location, camera, gps, ready } · open({ firstName, locale, profile }) →
+/// profile "worker" (por defecto: ubicación, GPS, cámara y «Ponchar») u "hotel"
+/// (solo notificaciones y «Continuar»; nunca bloquea) →
 /// al cerrar, { action: "punch" | "home", ...estado } (iOS no tiene «atrás»:
 /// la pantalla es modal y se cierra con sus botones) · evento
 /// "permissionsChanged" al volver la app al frente. Del lado web lo llama
@@ -62,8 +65,9 @@ public class OranjePermissionsPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func open(_ call: CAPPluginCall) {
         let firstName = call.getString("firstName") ?? ""
         let locale = call.getString("locale") ?? "es"
+        let isHotel = call.getString("profile") == "hotel"
         DispatchQueue.main.async { [weak self] in
-            let screen = PermissionsViewController(firstName: firstName, locale: locale) { action in
+            let screen = PermissionsViewController(firstName: firstName, locale: locale, isHotel: isHotel) { action in
                 var result = PermissionsStatus.current().js
                 result["action"] = action
                 call.resolve(result)
@@ -173,7 +177,13 @@ private enum Copy {
         "action_settings": "Abrir configuración",
         "punch": "Ponchar",
         "punch_locked": "Activa los permisos de arriba para poder ponchar.",
-        "go_home": "Ir a Inicio"
+        "go_home": "Ir a Inicio",
+        "notifications_title": "Notificaciones",
+        "notifications_body": "Para avisarte cuando una requisición necesita tu autorización, se cubre o cambia, y de lo que pasa con tu personal.",
+        "hint_notifications_blocked": "Las desactivaste: actívalas en la configuración del teléfono.",
+        "hotel_summary_ready": "Listo: te avisaremos de lo importante.",
+        "hotel_summary_missing": "Te recomendamos activar las notificaciones. Puedes hacerlo después.",
+        "continue": "Continuar"
     ]
 
     static let english: [String: String] = [
@@ -201,7 +211,13 @@ private enum Copy {
         "action_settings": "Open settings",
         "punch": "Punch",
         "punch_locked": "Turn on the permissions above to punch.",
-        "go_home": "Go to Home"
+        "go_home": "Go to Home",
+        "notifications_title": "Notifications",
+        "notifications_body": "To let you know when a requisition needs your approval, gets filled or changes, and what happens with your staff.",
+        "hint_notifications_blocked": "You turned them off: turn them on in your phone's settings.",
+        "hotel_summary_ready": "All set: we'll let you know what matters.",
+        "hotel_summary_missing": "We recommend turning on notifications. You can do it later.",
+        "continue": "Continue"
     ]
 }
 
@@ -266,6 +282,8 @@ private enum Montserrat {
 final class PermissionsViewController: UIViewController, CLLocationManagerDelegate {
     private let firstName: String
     private let locale: String
+    /// Perfil de hotel: solo Notificaciones y «Continuar» (ver el plugin).
+    private let isHotel: Bool
     private let onClose: (String) -> Void
     private let locationManager = CLLocationManager()
     private var didClose = false
@@ -276,10 +294,13 @@ final class PermissionsViewController: UIViewController, CLLocationManagerDelega
     private let locationCard = PermissionCard()
     private let gpsCard = PermissionCard()
     private let cameraCard = PermissionCard()
+    private let notificationsCard = PermissionCard()
+    private let home = UIButton(type: .system)
 
-    init(firstName: String, locale: String, onClose: @escaping (String) -> Void) {
+    init(firstName: String, locale: String, isHotel: Bool = false, onClose: @escaping (String) -> Void) {
         self.firstName = firstName.trimmingCharacters(in: .whitespaces)
         self.locale = locale
+        self.isHotel = isHotel
         self.onClose = onClose
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .fullScreen
@@ -340,8 +361,10 @@ final class PermissionsViewController: UIViewController, CLLocationManagerDelega
         locationCard.setup(icon: "location.fill", title: text("location_title"), body: text("location_body"))
         gpsCard.setup(icon: "scope", title: text("gps_title"), body: text("gps_body"))
         cameraCard.setup(icon: "camera.fill", title: text("camera_title"), body: text("camera_body"))
+        notificationsCard.setup(icon: "bell.fill", title: text("notifications_title"), body: text("notifications_body"))
 
-        let content = UIStackView(arrangedSubviews: [eyebrow, greeting, summary, locationCard, gpsCard, cameraCard])
+        let cards: [UIView] = isHotel ? [notificationsCard] : [locationCard, gpsCard, cameraCard]
+        let content = UIStackView(arrangedSubviews: [eyebrow, greeting, summary] + cards)
         content.axis = .vertical
         content.spacing = 12
         content.setCustomSpacing(6, after: eyebrow)
@@ -371,9 +394,11 @@ final class PermissionsViewController: UIViewController, CLLocationManagerDelega
         punchConfig.baseBackgroundColor = Palette.o300
         punchConfig.baseForegroundColor = Palette.ink
         punchConfig.background.cornerRadius = 12
-        punchConfig.image = UIImage(systemName: "touchid")
+        punchConfig.image = isHotel ? nil : UIImage(systemName: "touchid")
         punchConfig.imagePadding = 10
-        punchConfig.attributedTitle = AttributedString(text("punch"), attributes: AttributeContainer([.font: Montserrat.font(600, 16)]))
+        punchConfig.attributedTitle = AttributedString(
+            text(isHotel ? "continue" : "punch"), attributes: AttributeContainer([.font: Montserrat.font(600, 16)])
+        )
         punch.configuration = punchConfig
         punch.configurationUpdateHandler = { button in
             button.configuration?.background.backgroundColor = button.isHighlighted ? Palette.o400 : Palette.o300
@@ -381,14 +406,17 @@ final class PermissionsViewController: UIViewController, CLLocationManagerDelega
         }
         punch.heightAnchor.constraint(equalToConstant: 56).isActive = true
         punch.addAction(UIAction { [weak self] _ in
-            /* Doble candado: el botón ya está deshabilitado, pero se verifica al tocar. */
-            if PermissionsStatus.current().ready { self?.close("punch") }
+            guard let self else { return }
+            /* Hotel: «Continuar» nunca bloquea. Colaborador: doble candado —el
+               botón ya está deshabilitado, pero se verifica al tocar—. */
+            if self.isHotel { self.close("home") } else if PermissionsStatus.current().ready { self.close("punch") }
         }, for: .touchUpInside)
 
         var homeConfig = UIButton.Configuration.plain()
         homeConfig.baseForegroundColor = Palette.ink2
         homeConfig.attributedTitle = AttributedString(text("go_home"), attributes: AttributeContainer([.font: Montserrat.font(600, 15)]))
-        let home = UIButton(configuration: homeConfig)
+        home.configuration = homeConfig
+        home.isHidden = isHotel
         home.heightAnchor.constraint(equalToConstant: 48).isActive = true
         home.addAction(UIAction { [weak self] _ in self?.close("home") }, for: .touchUpInside)
 
@@ -434,6 +462,10 @@ final class PermissionsViewController: UIViewController, CLLocationManagerDelega
     // MARK: Estado
 
     @objc private func render() {
+        if isHotel {
+            renderNotifications()
+            return
+        }
         let status = PermissionsStatus.current()
 
         switch status.location {
@@ -484,6 +516,45 @@ final class PermissionsViewController: UIViewController, CLLocationManagerDelega
         summary.text = text(status.ready ? "summary_ready" : "summary_missing")
         punchLocked.isHidden = status.ready
         punch.isEnabled = status.ready
+    }
+
+    /// Perfil de hotel. La autorización de notificaciones se lee asíncrona.
+    private func renderNotifications() {
+        punchLocked.isHidden = true
+        punch.isEnabled = true
+        UNUserNotificationCenter.current().getNotificationSettings { [weak self] settings in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                switch settings.authorizationStatus {
+                case .authorized, .provisional, .ephemeral:
+                    self.notificationsCard.bind(.ok, self.text("state_granted"))
+                    self.summary.text = self.text("hotel_summary_ready")
+                case .notDetermined:
+                    self.notificationsCard.bind(.warn, self.text("state_missing"), action: self.text("action_grant")) { [weak self] in
+                        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in
+                            DispatchQueue.main.async { self?.render() }
+                        }
+                    }
+                    self.summary.text = self.text("hotel_summary_missing")
+                default:
+                    self.notificationsCard.bind(.error, self.text("state_blocked"), hint: self.text("hint_notifications_blocked"),
+                                                action: self.text("action_settings"), handler: Self.openNotificationSettings)
+                    self.summary.text = self.text("hotel_summary_missing")
+                }
+            }
+        }
+    }
+
+    /// iOS 16+ abre directo las notificaciones de la app; antes, sus ajustes.
+    private static func openNotificationSettings() {
+        let target: String
+        if #available(iOS 16.0, *) {
+            target = UIApplication.openNotificationSettingsURLString
+        } else {
+            target = UIApplication.openSettingsURLString
+        }
+        guard let url = URL(string: target) else { return }
+        UIApplication.shared.open(url)
     }
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {

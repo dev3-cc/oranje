@@ -32,4 +32,12 @@
     <string name="perm_punch">Ponchar</string>
     <string name="perm_punch_locked">Activa los permisos de arriba para poder ponchar.</string>
     <string name="perm_go_home">Ir a Inicio</string>
+
+    <!-- Perfil de hotel (Supervisor, Manager de Área, Manager General). -->
+    <string name="perm_notifications_title">Notificaciones</string>
+    <string name="perm_notifications_body">Para avisarte cuando una requisición necesita tu autorización, se cubre o cambia, y de lo que pasa con tu personal.</string>
+    <string name="perm_hint_notifications_blocked">Las desactivaste: actívalas en la configuración del teléfono.</string>
+    <string name="perm_hotel_summary_ready">Listo: te avisaremos de lo importante.</string>
+    <string name="perm_hotel_summary_missing">Te recomendamos activar las notificaciones. Puedes hacerlo después.</string>
+    <string name="perm_continue">Continuar</string>
 </resources>

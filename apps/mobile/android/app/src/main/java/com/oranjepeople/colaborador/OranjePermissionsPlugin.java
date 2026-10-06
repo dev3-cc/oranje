@@ -15,7 +15,9 @@ import com.getcapacitor.annotation.CapacitorPlugin;
  * El puente entre la pantalla nativa de Permisos y el worker (WebView).
  *
  *   check()           → { location, camera, gps, ready }   (ver PermissionsStatus)
- *   open({ firstName, locale })
+ *   open({ firstName, locale, profile })
+ *                     → profile "worker" (por defecto: ubicación, GPS, cámara
+ *                       y «Ponchar») u "hotel" (notificaciones y «Continuar»)
  *                     → abre la pantalla y resuelve al cerrarla con
  *                       { action: "punch" | "home" | "back", ...estado }
  *   evento "permissionsChanged"
@@ -41,6 +43,7 @@ public class OranjePermissionsPlugin extends Plugin {
         }
         Intent intent = new Intent(getContext(), PermissionsActivity.class);
         intent.putExtra(PermissionsActivity.EXTRA_FIRST_NAME, call.getString("firstName"));
+        intent.putExtra(PermissionsActivity.EXTRA_PROFILE, call.getString("profile", PermissionsActivity.PROFILE_WORKER));
         startActivityForResult(call, intent, "onScreenClosed");
     }
 
