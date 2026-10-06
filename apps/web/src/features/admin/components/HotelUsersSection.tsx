@@ -10,6 +10,7 @@ import {
 import { HOTEL_ROLE_OPTIONS, type HotelUser } from '../types/admin.types'
 
 import { HotelUserFormDialog } from './HotelUserFormDialog'
+import { PendingHotelUsers } from './PendingHotelUsers'
 import { AccountStatusChip, CellStat, DATE_FORMAT, initialsOf, StatusTabs } from './userListParts'
 
 import { Button } from '@/shared/components/Button'
@@ -74,6 +75,9 @@ export function HotelUsersSection(): ReactNode {
 
   return (
     <>
+      {/* Arriba de los filtros: es lo único que pide una acción HOY. */}
+      <PendingHotelUsers />
+
       <div className="flex flex-wrap items-center gap-2.5">
         <StatusTabs
           tab={tab}

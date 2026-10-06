@@ -18,6 +18,7 @@ import { PermissionsService } from '../auth/permissions.service.js'
 
 import { CreateHotelUserDto } from './dto/create-hotel-user.dto.js'
 import { QueryHotelUsersDto } from './dto/query-hotel-users.dto.js'
+import { RejectHotelUserDto } from './dto/reject-hotel-user.dto.js'
 import { UpdateHotelUserDto } from './dto/update-hotel-user.dto.js'
 import type { HotelUserEntity, HotelUserWithInvitation } from './entities/hotel-user.entity.js'
 import { HotelUsersService } from './hotel-users.service.js'
@@ -82,13 +83,23 @@ export class HotelUsersController {
     return { data: await this.users.resendInvitation(hotelId, id, user) }
   }
 
+  /**
+   * Tres vías llegan aquí y `@Requires` solo sabe de un par, así que el «uno
+   * u otro» se resuelve a mano: el Administrador desde Usuarios, el BDC desde
+   * la conversión, y —desde el 2026-09-30— quien puede **invitar**: el BD en
+   * los hoteles de sus zonas y el propio hotel en el suyo.
+   *
+   * Lo que este guard NO decide es a QUÉ rol se puede invitar ni en qué
+   * hotel: eso vive en el servicio, con los datos delante.
+   */
   private async assertCanManage(user: AuthenticatedUser): Promise<void> {
-    const [conversion, admin] = await Promise.all([
+    const [conversion, admin, invite] = await Promise.all([
       this.permissions.can(user.roleCode, 'conversion', 'create_hotel_user'),
       this.permissions.can(user.roleCode, 'users', 'manage_hotel'),
+      this.permissions.can(user.roleCode, 'users', 'invite_hotel'),
     ])
 
-    if (!conversion && !admin) {
+    if (!conversion && !admin && !invite) {
       throw new ForbiddenException({
         code: 'FORBIDDEN',
         message: 'Tu rol no administra las cuentas del hotel',
@@ -101,6 +112,43 @@ export class HotelUsersController {
  * El directorio del Administrador: las cuentas de TODOS los hoteles en una
  * lista. Controlador aparte para no chocar con `GET /users/:id` del personal.
  */
+/**
+ * La cola del Administrador: cuentas gerenciales que un hotel propuso y
+ * siguen esperando su visto bueno (Hugo, 2026-09-30).
+ *
+ * Fuera del controlador de un hotel porque no son de uno: son de todos.
+ */
+@Controller('hotel-users/pending')
+export class HotelUsersPendingController {
+  constructor(private readonly users: HotelUsersService) {}
+
+  @Requires('users', 'approve_hotel')
+  @Get()
+  async pending(): Promise<{ data: HotelUserEntity[] }> {
+    return { data: await this.users.pendingApprovals() }
+  }
+
+  @Requires('users', 'approve_hotel')
+  @Post(':id/approve')
+  async approve(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: HotelUserWithInvitation }> {
+    return { data: await this.users.approve(id, user) }
+  }
+
+  @Requires('users', 'approve_hotel')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post(':id/reject')
+  async reject(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RejectHotelUserDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<void> {
+    await this.users.reject(id, dto.reason, user)
+  }
+}
+
 @Controller('hotel-users')
 export class HotelUsersDirectoryController {
   constructor(private readonly users: HotelUsersService) {}

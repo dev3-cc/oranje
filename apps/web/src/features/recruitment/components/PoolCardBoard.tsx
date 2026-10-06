@@ -136,6 +136,11 @@ export function PoolCardBoard({
                     >
                       {worker.isProfileComplete ? t`perfil completo` : t`perfil incompleto`}
                     </span>
+                    {worker.hasPendingDocument && (
+                      <span className="rounded-full bg-yellow/20 px-2 py-0.5 text-[11px] font-medium text-ink-2">
+                        {t`documento pendiente`}
+                      </span>
+                    )}
                   </span>
                 </button>
               ))}

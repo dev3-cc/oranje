@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { useGetMyNotificationsQuery, useMarkNotificationReadMutation } from '../api/workerApi'
 import { WorkerSkeleton } from '../components/WorkerSkeleton'
 
+import { CAMPANA_VIVA } from '@/app/notificationsApi'
 import personajeErrorTecnico from '@/assets/ilustrations/personaje-error-tecnico.svg'
 import personajeNotificaciones from '@/assets/ilustrations/personaje-notificaciones.svg'
 import { formatDayMonthTime } from '@/shared/lib/formatters'
@@ -17,7 +18,7 @@ import { formatDayMonthTime } from '@/shared/lib/formatters'
  */
 export function NotificationsPage(): ReactNode {
   const { t } = useLingui()
-  const { data: board, isLoading, isError } = useGetMyNotificationsQuery()
+  const { data: board, isLoading, isError } = useGetMyNotificationsQuery(undefined, CAMPANA_VIVA)
   const [markRead] = useMarkNotificationReadMutation()
   const notifications = board?.items ?? []
 
@@ -62,7 +63,13 @@ export function NotificationsPage(): ReactNode {
               <button
                 type="button"
                 onClick={() => {
-                  if (isUnread) void markRead(notification.id)
+                  // Mejor esfuerzo: si falla, la notificación sigue apareciendo
+                  // como no leída — se corrige sola en el siguiente refetch,
+                  // no vale la pena un toast por un tap de bajo riesgo.
+                  if (isUnread)
+                    void markRead(notification.id)
+                      .unwrap()
+                      .catch(() => {})
                 }}
                 className={cn(
                   'w-full rounded-lg border p-4 text-left transition-colors',

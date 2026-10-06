@@ -35,6 +35,28 @@ function toMyNotification(raw: NotificationApi): MyNotificationList['items'][num
 
 export const workerApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
+    /**
+     * Se refresca solo, y es la única consulta de la app que lo hace.
+     *
+     * Lo que esta ficha trae no lo cambia el Colaborador: a su documento lo
+     * rechaza Reclutamiento, su semáforo lo mueve el sistema, su acceso lo
+     * bloquea un plazo que vence. Todo eso pasa en OTRO navegador, así que
+     * nada invalida la caché de este y el aviso aparecía recién al recargar
+     * a mano (reportado por Hugo el 2026-10-01: «no lo muestra
+     * inmediatamente, tienes que presionar cargar»).
+     *
+     * Por eso vuelve a pedirse al traer la app al frente —el caso del
+     * teléfono que estuvo en el bolsillo—, al recuperar la red, y al entrar
+     * a una pantalla si el dato ya tiene más de 30 segundos. Los 30 segundos
+     * son para que moverse entre las cuatro pestañas no dispare una consulta
+     * por toque.
+     *
+     * Las banderas son del hook, no del endpoint, así que viven en
+     * `REFRESCO_DEL_PERFIL` y se aplican donde se consulta. NO se ponen en
+     * `baseApi`: a lo ancho de la app harían que la cinta del Timesheet
+     * —que carga todas las semanas de una vez— se rearmara cada vez que
+     * alguien cambia de ventana.
+     */
     getMyProfile: build.query<MyProfile, void>({
       query: () => '/workers/me',
       transformResponse: (raw: ApiEnvelope<MyProfile>) => raw.data,
@@ -70,8 +92,8 @@ export const workerApi = baseApi.injectEndpoints({
 
     /**
      * Sustituye la contraseña temporal que me dieron en mano por la mía
-     * (Reglas de Negocio § Acceso del Colaborador). Levanta el plazo de 3 días
-     * al instante: el perfil se vuelve a pedir.
+     * (Reglas de Negocio § Acceso del Colaborador). Levanta el plazo de 30
+     * días al instante: el perfil se vuelve a pedir.
      */
     changeMyPassword: build.mutation<unknown, { newPassword: string }>({
       query: (body) => ({ url: '/workers/me/password', method: 'POST', body }),
@@ -117,6 +139,21 @@ export const availabilityApi = workerApi.injectEndpoints({
     }),
   }),
 })
+
+/**
+ * Cómo se refresca la ficha del Colaborador. Se declara una vez para que las
+ * cinco pantallas que la consultan no se desincronicen entre ellas.
+ *
+ * `refetchOnFocus` es el que resuelve el reporte: basta con que lo tenga el
+ * shell, que está montado siempre, para que la app entera reciba la ficha
+ * fresca al volver al frente.
+ */
+export const REFRESCO_DEL_PERFIL = {
+  refetchOnFocus: true,
+  refetchOnReconnect: true,
+  /** En segundos: entrar a una pantalla no vuelve a pedir si ya es reciente. */
+  refetchOnMountOrArgChange: 30,
+} as const
 
 export const { useSetAvailableMutation } = availabilityApi
 

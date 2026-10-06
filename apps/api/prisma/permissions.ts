@@ -194,6 +194,51 @@ const SALES: Permission[] = [
   },
   { module: 'terms_and_conditions', action: 'approve', label: 'Validar T&C', roles: [BDC] },
 
+  {
+    /**
+     * Invitar cuentas del hotel sin pasar por Oranje (Hugo, 2026-09-30).
+     *
+     * Los gerentes de hotel rotan y el nuevo no hereda el correo del
+     * anterior, así que cada cambio caía en el Administrador. Medido en
+     * producción: **34 de 36 hoteles tienen un solo gerente y nadie más**, y
+     * Holiday Inn Stockbridge acumuló cuatro altas en once días, tres de
+     * ellas muertas.
+     *
+     * Va al **BD**, que es quien visita el hotel; el BDC lo recibe por la
+     * herencia por jerarquía, sin línea aparte. La conversión NO se toca:
+     * crear el PRIMER Usuario del Hotel sigue siendo exclusivo del BDC
+     * (RR-V-02).
+     *
+     * El alcance lo pone el servicio, no esta tabla: el BD solo en los
+     * hoteles de sus zonas.
+     */
+    module: 'users',
+    action: 'invite_hotel',
+    label: 'Invitar cuentas del hotel',
+    roles: [BD],
+  },
+
+  {
+    /**
+     * Confirmar la cuenta gerencial que propone un hotel (Hugo, 2026-09-30).
+     *
+     * Al BDC además del Administrador, por coherencia: el BDC **ya puede
+     * crear** esas mismas cuentas sin que nadie confirme, así que negarle
+     * aprobar no protegía nada — le bastaba con crearla él y saltarse la
+     * cola. Y descarga al Administrador, que si no es el único que puede.
+     *
+     * El BD queda fuera por volumen: son 39 contra 4 BDC, y que la propuesta
+     * de un hotel la confirme alguien distinto de quien lo lleva
+     * comercialmente mantiene un segundo par de ojos.
+     */
+    module: 'users',
+    action: 'approve_hotel',
+    label: 'Aprobar cuentas gerenciales propuestas por un hotel',
+    roles: [BDC],
+    /* Sin herencia: el BDC la tiene por sí mismo, no por ser jefe del BD. */
+    inherit: false,
+  },
+
   // CONVERSIÓN — RR-V-01: solo el BDC aprueba
   {
     module: 'conversion',
@@ -282,9 +327,13 @@ const SALES: Permission[] = [
   // SISTEMA
   {
     module: 'system',
+    /* El Administrador entra el 2026-09-30: su campana respondía 403 y la
+       pantalla lo disimulaba, así que no se enteraba de nada. Ahora hay
+       avisos que son suyos —las cuentas gerenciales que el hotel propone y
+       él aprueba— y sin esto tendría que entrar a mirar por si acaso. */
     action: 'receive_notification',
     label: 'Recibir notificación',
-    roles: [BD, BDC, SYS],
+    roles: [BD, BDC, SYS, ADMIN],
   },
   {
     module: 'system',
@@ -304,6 +353,26 @@ const SALES: Permission[] = [
 // HOTEL — Supervisor, Manager de Área y Manager General
 // ---------------------------------------------------------------------------
 const HOTEL: Permission[] = [
+  {
+    /**
+     * El hotel invita a su propia gente (Hugo, 2026-09-30).
+     *
+     * `inherit: false` a propósito: la herencia por jerarquía haría que el
+     * Manager General lo recibiera del Supervisor, y aquí la dirección
+     * importa al revés — el Supervisor NO invita, porque crear un gerente
+     * desde el escalón más bajo es regalarle el hotel entero.
+     *
+     * Quién puede invitar a qué rol lo decide el servicio, no esta tabla: el
+     * Manager de Área alcanza a un Manager General solo si el hotel se quedó
+     * sin ninguno activo, que es el caso de la rotación.
+     */
+    module: 'users',
+    action: 'invite_hotel',
+    label: 'Invitar cuentas de mi hotel',
+    roles: [GA, GG],
+    inherit: false,
+  },
+
   // REQUISICIONES
   {
     module: 'requisitions',
@@ -365,13 +434,19 @@ const HOTEL: Permission[] = [
     module: 'requisitions',
     action: 'delete_empty',
     label: 'Eliminar requisición vacía',
-    roles: [SUPERVISOR, GA, GG, SYS],
+    /* El Inspector elimina su propio borrador, igual que Supervisor — regla
+       ampliada el 2026-09-26 junto con `authorize`, pero se quedó sin este
+       permiso: el botón nunca se mostraba aunque el back ya lo aceptaba
+       (2026-09-28). */
+    roles: [SUPERVISOR, GA, GG, SYS, INSPECTOR],
   },
   {
     module: 'requisitions',
     action: 'delete_with_positions',
     label: 'Eliminar requisición con posiciones',
-    roles: [GA, GG, SYS],
+    /* Mismo alcance que `authorize`: acotado a su zona, sin restricción de
+       departamento (2026-09-28). */
+    roles: [GA, GG, SYS, INSPECTOR],
   },
   {
     module: 'requisitions',
@@ -460,6 +535,17 @@ const HOTEL: Permission[] = [
     action: 'read_all',
     label: 'Ver Timesheet global del hotel',
     roles: [GG, SYS],
+  },
+  /* Todos los hoteles, solo lectura (pedido de Hugo 2026-09-29): el Observador
+     trabaja la nómina con él mientras se construye Contabilidad, y la Contadora
+     lo recibe con su Matriz (decisión de Hugo: ve el Timesheet completo de todos
+     los hoteles). Permiso propio y no `read_all`, que significa «todo MI hotel»:
+     un mismo permiso con dos alcances fue la causa de los huecos de PR #89. */
+  {
+    module: 'timesheet',
+    action: 'read_all_hotels',
+    label: 'Ver el Timesheet de todos los hoteles (solo lectura)',
+    roles: [OBSERVER],
   },
   {
     module: 'timesheet',
@@ -1011,6 +1097,13 @@ const SYSTEM_ADMINISTRATION: Permission[] = [
     // conversión (BDC); el resto de las cuentas del hotel las administra el
     // Administrador desde Usuarios (Reglas de Negocio · Cuentas del hotel).
     module: 'users',
+    action: 'approve_hotel',
+    label: 'Aprobar cuentas gerenciales propuestas por un hotel',
+    roles: [ADMIN],
+    inherit: false,
+  },
+  {
+    module: 'users',
     action: 'manage_hotel',
     label: 'Alta y gestión de las cuentas del hotel',
     roles: [ADMIN],
@@ -1022,6 +1115,16 @@ const SYSTEM_ADMINISTRATION: Permission[] = [
     module: 'catalogs',
     action: 'manage',
     label: 'Gestionar los catálogos del sistema',
+    roles: [ADMIN],
+  },
+  {
+    // Decisión de Hugo (2026-09-26): el freno de mano del correo. El respaldo
+    // automático solo se dispara cuando el SMTP FALLA; cuando acepta el
+    // correo y no lo entrega —lo que hace un hosting compartido al
+    // limitarnos— hace falta que una persona lo fuerce, y sin desplegar.
+    module: 'settings',
+    action: 'manage',
+    label: 'Ver y cambiar los ajustes del sistema',
     roles: [ADMIN],
   },
   {

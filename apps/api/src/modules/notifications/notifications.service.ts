@@ -44,7 +44,21 @@ const SELECT = {
   createdAt: true,
   readAt: true,
   type: { select: { code: true, name: true, module: true } },
-  actor: { select: { id: true, fullName: true, photoPath: true } },
+  /*
+   * `worker.photoPath` además de la del usuario: la foto de un colaborador
+   * vive en `personal.worker`, no en su cuenta, así que un aviso disparado
+   * por él salía SIEMPRE con iniciales aunque tuviera foto (Hugo,
+   * 2026-09-30). Medido en producción: 7 colaboradores con foto contra 1
+   * usuario con foto.
+   */
+  actor: {
+    select: {
+      id: true,
+      fullName: true,
+      photoPath: true,
+      worker: { select: { photoPath: true } },
+    },
+  },
 } as const
 
 @Injectable()
@@ -142,10 +156,16 @@ export class NotificationsService {
   // Se firman las rutas distintas, no una por fila: la misma persona
   // disparando varios avisos en la pagina firma su foto una sola vez.
   private async signActorPhotos(
-    rows: Array<{ actor: { photoPath: string | null } | null }>,
+    rows: Array<{
+      actor: { photoPath: string | null; worker: { photoPath: string | null } | null } | null
+    }>,
   ): Promise<Map<string, string>> {
     const paths = [
-      ...new Set(rows.flatMap((row) => (row.actor?.photoPath ? [row.actor.photoPath] : []))),
+      ...new Set(
+        rows.flatMap((row) =>
+          actorPhotoPath(row.actor) ? [actorPhotoPath(row.actor) as string] : [],
+        ),
+      ),
     ]
     const urls = await Promise.all(paths.map((path) => this.storage.signedUrl(path)))
 
@@ -287,6 +307,29 @@ export class NotificationsService {
   }
 }
 
+/**
+ * La foto del actor, mire donde mire.
+ *
+ * La de su cuenta primero y la del colaborador después: quien dispara un
+ * aviso puede ser un colaborador, y su retrato vive en `personal.worker`, no
+ * en `identity.user`. Sin esto, el Pool enseña su cara y la campana lo deja
+ * con iniciales.
+ */
+function actorPhotoPath(
+  actor: { photoPath: string | null; worker?: { photoPath: string | null } | null } | null,
+): string | null {
+  return actor?.photoPath ?? actor?.worker?.photoPath ?? null
+}
+
+function photoUrlOf(
+  actor: { photoPath: string | null; worker?: { photoPath: string | null } | null },
+  photos: Map<string, string>,
+): string | null {
+  const path = actorPhotoPath(actor)
+
+  return path ? (photos.get(path) ?? null) : null
+}
+
 function toEntity(
   row: {
     id: string
@@ -297,7 +340,12 @@ function toEntity(
     createdAt: Date
     readAt: Date | null
     type: { code: string; name: string; module: string }
-    actor: { id: string; fullName: string; photoPath: string | null } | null
+    actor: {
+      id: string
+      fullName: string
+      photoPath: string | null
+      worker?: { photoPath: string | null } | null
+    } | null
   },
   photos: Map<string, string> = new Map(),
 ): NotificationEntity {
@@ -311,7 +359,7 @@ function toEntity(
       ? {
           id: row.actor.id,
           fullName: row.actor.fullName,
-          photoUrl: row.actor.photoPath ? (photos.get(row.actor.photoPath) ?? null) : null,
+          photoUrl: photoUrlOf(row.actor, photos),
         }
       : null,
     createdAt: row.createdAt.toISOString(),

@@ -2,3 +2,4 @@
 export { RequisitionBoardPage } from './pages/RequisitionBoardPage'
 export { RequisitionDetailPage } from './pages/RequisitionDetailPage'
 export { RequisitionAuthorizationPage } from './pages/RequisitionAuthorizationPage'
+export { useJoinRequisitionMutation } from './api/requisitionsApi'

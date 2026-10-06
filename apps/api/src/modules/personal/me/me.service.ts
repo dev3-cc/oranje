@@ -130,7 +130,9 @@ export class MeService {
   }
 
   // El colaborador sube SU documento fiscal (RF-C-01). Nace sin verificar:
-  // verificar sigue siendo de la Reclutadora.
+  // verificar sigue siendo de la Reclutadora. El SSN/ITIN es una pieza más
+  // del expediente a medias (2026-09-30): lo que levanta el bloqueo de
+  // acceso es AccessDeadlineService, no un plazo fiscal aparte.
   async uploadDocument(
     dto: { documentType: 'SSN_ITIN'; filePath: string },
     user: AuthenticatedUser,
@@ -138,7 +140,7 @@ export class MeService {
     const document = await this.documents.createOwn(await this.workerId(user), dto.filePath, user)
 
     // Que el acceso vuelva ya, no cuando expire la cache del guard.
-    this.deadline.invalidate(user.id)
+    this.accessDeadline.invalidate(user.id)
 
     return document
   }
@@ -181,6 +183,7 @@ export class MeService {
       await this.workerId(user),
       { toState: AVAILABLE_VOLUNTARY },
       user,
+      true,
     )
   }
 

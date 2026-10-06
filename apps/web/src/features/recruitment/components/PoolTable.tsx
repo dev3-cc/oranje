@@ -118,6 +118,18 @@ function buildColumns(i18n: I18n): ColumnDef<PoolWorker, unknown>[] {
       header: i18n._(msg`ITIN`),
       cell: ({ row }) => (row.original.hasTaxId ? i18n._(msg`sí`) : i18n._(msg`no`)),
     },
+    {
+      accessorKey: 'hasPendingDocument',
+      header: col(i18n, 'has_pending_tax_document', msg`Documento`),
+      /* Solo la excepción habla: sin pendiente, la celda va vacía — mismo
+         patrón que el resto del Pool (Hugo, 2026-09-30). */
+      cell: ({ row }) =>
+        row.original.hasPendingDocument ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-yellow/20 px-2.5 py-0.5 text-xs font-medium text-ink-2">
+            {i18n._(msg`Pendiente`)}
+          </span>
+        ) : null,
+    },
   ]
 }
 

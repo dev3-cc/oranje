@@ -29,7 +29,10 @@ function Calendar({
       )}
       captionLayout={captionLayout}
       formatters={{
-        formatMonthDropdown: (date) => date.toLocaleString('default', { month: 'short' }),
+        /* El idioma activo, no el del sistema: `'default'` lo traía el CLI de
+           shadcn y dejaba los meses en inglés con la app en español. */
+        formatMonthDropdown: (date, dateLib) =>
+          dateLib?.format(date, 'LLL') ?? date.toLocaleString(undefined, { month: 'short' }),
         ...formatters,
       }}
       classNames={{

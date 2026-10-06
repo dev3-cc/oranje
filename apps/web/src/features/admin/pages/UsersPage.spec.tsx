@@ -4,6 +4,8 @@ import { Provider } from 'react-redux'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
+import { lastCreateLocale } from '../api/adminMocks'
+
 import { UsersPage } from './UsersPage'
 
 import { store } from '@/app/store'
@@ -86,6 +88,31 @@ describe('UsersPage', () => {
     expect(
       await screen.findByText('La contraseña necesita al menos 8 caracteres'),
     ).toBeInTheDocument()
+  })
+
+  it('el idioma elegido en el alta viaja al servidor', async () => {
+    /* Hugo (2026-09-26): el idioma se elige aquí porque la invitación sale
+       ANTES del primer login — si esperáramos a que la persona lo eligiera, el
+       primer correo saldría siempre en español. */
+    const user = userEvent.setup()
+    renderUsers()
+    await screen.findByText('Hugo Curtidor')
+
+    await user.click(screen.getByRole('button', { name: 'Agregar usuario' }))
+    await user.click(await screen.findByRole('button', { name: 'Saltar' }))
+
+    await user.type(screen.getByLabelText('Nombre completo'), 'Mary Johnson')
+    await user.type(screen.getByLabelText('Correo'), 'mary@casacurtidor.com')
+
+    await user.click(screen.getByRole('combobox', { name: 'Rol' }))
+    await user.click(await screen.findByRole('option', { name: 'Reclutadora' }))
+
+    await user.click(screen.getByRole('combobox', { name: 'Idioma' }))
+    await user.click(await screen.findByRole('option', { name: 'English' }))
+
+    await user.click(screen.getByRole('button', { name: 'Crear usuario' }))
+
+    await waitFor(() => expect(lastCreateLocale).toBe('en'))
   })
 
   it('editar bloquea el correo: cambiar de persona es baja y alta', async () => {

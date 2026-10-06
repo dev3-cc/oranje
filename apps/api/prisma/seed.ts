@@ -607,7 +607,9 @@ const OTHER_TRANSITIONS: Array<{
     light: 'REQUISITION',
     from: 'APPLE_GREEN',
     to: 'PURPLE',
-    roles: ['ROL-H-01', 'ROL-H-02', 'ROL-H-03'],
+    // El Inspector también crea borradores (por zona, 2026-09-24): el suyo lo
+    // quita él mismo, igual que el Supervisor con el suyo.
+    roles: ['ROL-H-01', 'ROL-H-02', 'ROL-H-03', 'ROL-I-01'],
     reason: false,
     note: 'el borrador lo quita su creador o el GM',
   },
@@ -615,25 +617,25 @@ const OTHER_TRANSITIONS: Array<{
     light: 'REQUISITION',
     from: 'GREEN',
     to: 'PURPLE',
-    roles: ['ROL-H-02', 'ROL-H-03'],
+    roles: ['ROL-H-02', 'ROL-H-03', 'ROL-I-01'],
     reason: true,
-    note: 'ya autorizada: exige motivo',
+    note: 'ya autorizada: exige motivo (el Inspector, acotado a su zona, 2026-09-26)',
   },
   {
     light: 'REQUISITION',
     from: 'YELLOW',
     to: 'PURPLE',
-    roles: ['ROL-H-02', 'ROL-H-03'],
+    roles: ['ROL-H-02', 'ROL-H-03', 'ROL-I-01'],
     reason: true,
-    note: 'con reclutadoras trabajandola: exige motivo',
+    note: 'con reclutadoras trabajandola: exige motivo (el Inspector, acotado a su zona, 2026-09-26)',
   },
   {
     light: 'REQUISITION',
     from: 'RED',
     to: 'PURPLE',
-    roles: ['ROL-H-02', 'ROL-H-03'],
+    roles: ['ROL-H-02', 'ROL-H-03', 'ROL-I-01'],
     reason: true,
-    note: 'cerrada a medias: exige motivo',
+    note: 'cerrada a medias: exige motivo (el Inspector, acotado a su zona, 2026-09-26)',
   },
 
   // --- Indicador de Calidad ---
@@ -922,6 +924,13 @@ const NOTIFICATION_TYPES: Array<{
     description: 'Se agrega a Blacklist. Avisa al colaborador (RF-12)',
   },
   {
+    code: 'DOCUMENT_REJECTED',
+    module: 'recruitment',
+    name: 'Documento rechazado',
+    description:
+      'Reclutamiento rechaza un documento del expediente con motivo. Avisa al colaborador (2026-09-30)',
+  },
+  {
     code: 'REQ_PARTICIPANT_JOINED',
     module: 'recruitment',
     name: 'Otra Reclutadora se unió',
@@ -978,6 +987,26 @@ const NOTIFICATION_TYPES: Array<{
     module: 'recruitment',
     name: 'Reasignación solicitada',
     description: 'Se solicita reasignación. Avisa al Manager (RF-17)',
+  },
+  {
+    /* El hotel invita a su propia gente sin pasar por Oranje (Hugo,
+       2026-09-30): quien lleva la cuenta tiene que enterarse igual, porque
+       ya no es él quien la da de alta. */
+    /* El hotel propone una cuenta gerencial y Oranje confirma (Hugo,
+       2026-09-30): sin este aviso el Administrador tendría que entrar a
+       mirar por si acaso. */
+    code: 'HOTEL_ACCOUNT_PENDING',
+    module: 'commercial',
+    name: 'Cuenta de hotel por aprobar',
+    description:
+      'Un hotel propuso una cuenta gerencial. Avisa a los Administradores, que la aprueban',
+  },
+  {
+    code: 'HOTEL_ACCOUNT_INVITED',
+    module: 'commercial',
+    name: 'Cuenta de hotel invitada',
+    description:
+      'Alguien del hotel invitó una cuenta nueva. Avisa al Business Developer dueño de la cuenta',
   },
   {
     code: 'TEAM_CHANGED',

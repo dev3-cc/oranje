@@ -8,25 +8,29 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   MaterialIcon,
+  toast,
 } from '@oranje/ui'
 import { motion, useReducedMotion } from 'framer-motion'
 import { useRef, useState, type ReactNode } from 'react'
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 
-import { useGetMyNotificationsQuery, useGetMyProfileQuery } from '../api/workerApi'
-import { hasNativePermissions } from '../lib/nativePermissions'
-import { usePermissionsScreen } from '../lib/usePermissionsScreen'
+import {
+  REFRESCO_DEL_PERFIL,
+  useGetMyNotificationsQuery,
+  useGetMyProfileQuery,
+} from '../api/workerApi'
 
 import { PasswordOverdueScreen, ProfileOverdueScreen } from './AccessDeadlineBanner'
-import { SuspendedScreen } from './TaxDeadlineBanner'
 
 import { useAppSelector } from '@/app/hooks'
 import { activateLocale, LOCALE_LABEL, LOCALES } from '@/app/i18n'
+import { CAMPANA_VIVA } from '@/app/notificationsApi'
 import { useLogoutMutation, useUpdateMyLocaleMutation } from '@/app/sessionApi'
 import { selectSessionUser } from '@/app/sessionSlice'
 import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
 import { WORKER_ROLE } from '@/shared/constants/roles'
 import { useNavigationSound } from '@/shared/hooks/useNavigationSound'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 import { MOTION, SPRING } from '@/shared/lib/motion'
 import { isSoundOn, playSound, setSoundOn } from '@/shared/lib/sound'
 
@@ -77,7 +81,6 @@ export function MobileShell(): ReactNode {
   const [updateMyLocale] = useUpdateMyLocaleMutation()
   const { t, i18n } = useLingui()
   const [soundOn, setSoundOnState] = useState(isSoundOn)
-  const openPermissions = usePermissionsScreen()
 
   /** El mismo toque al cambiar de pestaña que en el escritorio. */
   useNavigationSound()
@@ -108,17 +111,23 @@ export function MobileShell(): ReactNode {
   }
 
   const isWorker = user === null || user.roleId === WORKER_ROLE
-  const { data: profile } = useGetMyProfileQuery(undefined, { skip: !isWorker })
-  const { data: board } = useGetMyNotificationsQuery(undefined, { skip: !isWorker })
+  const { data: profile } = useGetMyProfileQuery(undefined, {
+    skip: !isWorker,
+    ...REFRESCO_DEL_PERFIL,
+  })
+  const { data: board } = useGetMyNotificationsQuery(undefined, {
+    skip: !isWorker,
+    ...CAMPANA_VIVA,
+  })
 
   /** El staff no tiene expediente propio: su casa es el shell del sidebar. */
   if (!isWorker) return <Navigate to="/" replace />
 
-  const isSuspended = profile?.taxDeadline.status === 'SUSPENDED'
-  /* Los otros dos plazos (contraseña temporal, expediente a medias): vencidos
-     bloquean todo menos lo que los levanta. Cambiar la contraseña va inline;
-     completar los datos vive en Mis datos, así que esas dos rutas siguen
-     abiertas y el resto ve el interceptor. */
+  /* Los dos plazos (contraseña temporal, expediente a medias — que desde el
+     2026-09-30 incluye el SSN/ITIN): vencidos bloquean todo menos lo que los
+     levanta. Cambiar la contraseña va inline; completar los datos vive en
+     Mis datos, así que esas dos rutas siguen abiertas y el resto ve el
+     interceptor. */
   /* `accessDeadlines` con `?.`: un API anterior a este cambio (o el deploy del
      front llegando antes que el del API) no lo manda, y sin él la app no
      puede quedarse en blanco: simplemente no hay plazos que cobrar. */
@@ -204,18 +213,14 @@ export function MobileShell(): ReactNode {
                 <MaterialIcon name="password" className="text-lg" aria-hidden />
                 <Trans>Contraseña</Trans>
               </DropdownMenuItem>
-              {/* Solo en la app: abre la pantalla NATIVA de Permisos (ubicación,
-                  GPS, cámara). En el navegador el teléfono los pide al usarlos. */}
-              {hasNativePermissions() && (
-                <DropdownMenuItem
-                  onSelect={() => {
-                    void openPermissions()
-                  }}
-                >
-                  <MaterialIcon name="verified_user" className="text-lg" aria-hidden />
-                  <Trans>Permisos</Trans>
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuItem
+                onSelect={() => {
+                  void navigate('/collaborator/permissions')
+                }}
+              >
+                <MaterialIcon name="security" className="text-lg" aria-hidden />
+                <Trans>Permisos</Trans>
+              </DropdownMenuItem>
               {/* El buzón @oranjepeople.com vive en el webmail de cPanel, fuera
                   de la app; se abre en pestaña nueva y en la pantalla de entrar
                   (la ruta /logout la muestra limpia aunque haya otra sesión). */}
@@ -243,6 +248,14 @@ export function MobileShell(): ReactNode {
                     if (i18n.locale === locale) return
                     activateLocale(locale)
                     void updateMyLocale(locale)
+                      .unwrap()
+                      .catch((error: unknown) => {
+                        toast.error(
+                          apiErrorMessage(error, {
+                            fallback: t`No se guardó tu idioma: al volver a entrar puede regresar a español.`,
+                          }),
+                        )
+                      })
                   }}
                 >
                   <MaterialIcon
@@ -317,9 +330,7 @@ export function MobileShell(): ReactNode {
          * elástico) y al soltar decide; el vertical sigue siendo scroll.
          */}
         <main className="flex-1 overflow-x-clip px-5 py-5">
-          {isSuspended ? (
-            <SuspendedScreen />
-          ) : isPasswordOverdue ? (
+          {isPasswordOverdue ? (
             <PasswordOverdueScreen />
           ) : isProfileOverdue ? (
             <ProfileOverdueScreen />

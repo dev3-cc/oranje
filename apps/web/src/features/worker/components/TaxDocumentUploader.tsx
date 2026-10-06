@@ -10,9 +10,10 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
 
 /**
  * Subir el SSN/ITIN (RF-C-01): una foto clara o un PDF → `POST /files`
- * (WORKER_DOCUMENT) → `POST /workers/me/documents`. Vive en Mis datos y en
- * la pantalla de suspensión del día 5: cargarlo es lo que levanta el acceso
- * (D-33), así que nunca puede quedar detrás de la suspensión.
+ * (WORKER_DOCUMENT) → `POST /workers/me/documents`. Vive en Mis datos
+ * (Fase 2), que sigue abierta aun con el acceso vencido (`@AllowWhenOverdue`
+ * en `POST /workers/me/documents`) — cargarlo es lo que levanta el bloqueo,
+ * así que nunca puede quedar detrás de él.
  */
 export function TaxDocumentUploader({ hasDocument }: { hasDocument: boolean }): ReactNode {
   const { t } = useLingui()

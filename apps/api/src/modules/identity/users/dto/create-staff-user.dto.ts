@@ -39,6 +39,15 @@ export const createStaffUserSchema = z.object({
    * establece la tuya aquí») se manda igual salvo que el alta diga que no.
    * El correo nunca lleva la contraseña.
    */
+  /**
+   * En qué idioma le escribimos y en cuál abre la app (D-36).
+   *
+   * Se elige en el alta porque el correo de invitación sale ANTES de que la
+   * persona entre por primera vez: si esperáramos a que ella lo eligiera, el
+   * primer correo —el único que no puede fallar— saldría siempre en español.
+   * Ella lo cambia después desde su cuenta.
+   */
+  locale: z.enum(['es', 'en']).optional().default('es'),
   sendWelcomeEmail: z.boolean().optional().default(true),
 })
 

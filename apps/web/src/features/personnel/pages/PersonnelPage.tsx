@@ -36,6 +36,7 @@ import {
 import { useCan } from '@/shared/hooks/useCan'
 import { rosterDetailClass, rosterListClass, useListDetail } from '@/shared/hooks/useListDetail'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
+import { clock24In } from '@/shared/lib/formatters'
 import { matchesSearch } from '@/shared/lib/text'
 
 /** Se traduce al pintar con `i18n._()` (D-36). */
@@ -68,8 +69,16 @@ function initialsOf(fullName: string): string {
     .toUpperCase()
 }
 
-function timeOf(iso: string): string {
-  return iso.slice(11, 16)
+/**
+ * La hora EN EL HOTEL, en 24 h.
+ *
+ * Cortaba los caracteres del ISO, que viene en UTC: un turno de 07:00 en
+ * Georgia se leía «11:00» (Hugo, 2026-09-29). Es la misma corrección del
+ * Schedule, y la zona sale de la sesión — quien abre Mi Personal es siempre
+ * del hotel que mira.
+ */
+function timeOf(iso: string, timeZone: string | undefined): string {
+  return clock24In(iso, timeZone)
 }
 
 function statusToken(row: PersonnelRow): keyof typeof statusLight {
@@ -113,14 +122,14 @@ function WorkerAvatar({ row, className }: { row: PersonnelRow; className: string
 }
 
 /** Qué dice la fila de la izquierda debajo del nombre: turno y marca, en corto. El `i18n` viene del componente (D-36). */
-function rowSubtitle(row: PersonnelRow, i18n: I18n): string {
+function rowSubtitle(row: PersonnelRow, i18n: I18n, timeZone: string | undefined): string {
   /* Rosa/Gris mandan sobre el turno: un pausado o protegido no debe leerse
      como si fuera a trabajar. */
   const paused = NO_SHIFT_LABEL[row.stateCode]
   if (paused !== undefined) return i18n._(paused)
   if (!row.shift) return i18n._(msg`Descansa hoy`)
-  const shift = `${timeOf(row.shift.startsAt)}–${timeOf(row.shift.endsAt)}`
-  const clockIn = row.clockInAt ? timeOf(row.clockInAt) : null
+  const shift = `${timeOf(row.shift.startsAt, timeZone)}–${timeOf(row.shift.endsAt, timeZone)}`
+  const clockIn = row.clockInAt ? timeOf(row.clockInAt, timeZone) : null
   return clockIn !== null ? i18n._(msg`${shift} · entró ${clockIn}`) : shift
 }
 
@@ -129,10 +138,13 @@ function WorkerRow({
   row,
   isSelected,
   onSelect,
+  hotelTimeZone,
 }: {
   row: PersonnelRow
   isSelected: boolean
   onSelect: (workerId: string) => void
+  /** La zona del hotel: el turno se lee donde ocurre. */
+  hotelTimeZone: string | undefined
 }): ReactNode {
   const { t, i18n } = useLingui()
   const missingEntry = hasMissingEntry(row)
@@ -159,7 +171,7 @@ function WorkerRow({
                 missingEntry ? 'font-semibold text-red' : 'text-ink-3',
               )}
             >
-              {rowSubtitle(row, i18n)}
+              {rowSubtitle(row, i18n, row.hotelTimeZone ?? hotelTimeZone)}
               {missingEntry && ` · ${t`sin entrada`}`}
             </span>
           </span>
@@ -230,8 +242,8 @@ function WorkerDetail({
   onBack,
 }: {
   row: PersonnelRow
-  /** El hotel del Supervisor (nombre y foto); `null` degrada a la marca. */
-  hotel: { name: string; photoUrl: string | null } | null
+  /** El hotel del Supervisor (nombre, foto y zona); `null` degrada a la marca. */
+  hotel: { name: string; photoUrl: string | null; timeZone?: string } | null
   onStandBy: (row: PersonnelRow) => void
   onReport: (row: PersonnelRow) => void
   showDetailOnMobile: boolean
@@ -345,13 +357,19 @@ function WorkerDetail({
               paused !== undefined
                 ? i18n._(paused)
                 : row.shift
-                  ? `${timeOf(row.shift.startsAt)}–${timeOf(row.shift.endsAt)}`
+                  ? `${timeOf(row.shift.startsAt, row.hotelTimeZone ?? hotel?.timeZone)}–${timeOf(row.shift.endsAt, row.hotelTimeZone ?? hotel?.timeZone)}`
                   : t`Descansa`
             }
           />
           <Metric
             label={t`Entrada de hoy`}
-            value={row.clockInAt ? timeOf(row.clockInAt) : row.shift ? t`Sin entrada` : '—'}
+            value={
+              row.clockInAt
+                ? timeOf(row.clockInAt, row.hotelTimeZone ?? hotel?.timeZone)
+                : row.shift
+                  ? t`Sin entrada`
+                  : '—'
+            }
             {...(missingEntry ? { tone: 'alert' as const } : {})}
           />
           {canReadAudits && (
@@ -467,6 +485,9 @@ export function PersonnelPage(): ReactNode {
   /** El hotel del Supervisor: nombre de /me, foto compuesta de /hotels/:id. */
   const { data: session } = useGetSessionQuery()
   const hotelId = session?.hotel?.id ?? ''
+  /* La zona sale de la sesión y no de la tarjeta del hotel: la tarjeta puede
+     tardar o fallar, y una hora mal leída es peor que una foto que falta. */
+  const hotelTimeZone = session?.hotel?.timeZone
   const { data: hotel } = useGetHotelCardQuery(hotelId, { skip: hotelId === '' })
   const [standByTarget, setStandByTarget] = useState<PersonnelRow | null>(null)
   const [reportTarget, setReportTarget] = useState<PersonnelRow | null>(null)
@@ -576,6 +597,7 @@ export function PersonnelPage(): ReactNode {
                       setSelectedId(id)
                       select()
                     }}
+                    hotelTimeZone={hotelTimeZone}
                   />
                 ))}
               </ul>
@@ -585,7 +607,9 @@ export function PersonnelPage(): ReactNode {
           {selected && (
             <WorkerDetail
               row={selected}
-              hotel={hotel ?? null}
+              hotel={
+                hotel ? { ...hotel, ...(hotelTimeZone ? { timeZone: hotelTimeZone } : {}) } : null
+              }
               onStandBy={setStandByTarget}
               onReport={setReportTarget}
               showDetailOnMobile={showDetailOnMobile}

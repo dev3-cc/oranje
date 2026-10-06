@@ -4,8 +4,8 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import { MaterialIcon } from '@oranje/ui'
 import { motion, useReducedMotion } from 'framer-motion'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { useSearchParams } from 'react-router'
+import { useEffect, useState, type ReactNode } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 
 import {
   NEEDS_PHOTO,
@@ -47,8 +47,17 @@ import { formatTimeIn } from '@/shared/lib/formatters'
 import { tapFeedback } from '@/shared/lib/motion'
 import { PUNCH_QR_PARAM, readPunchQrCode } from '@/shared/lib/punchQrLink'
 
-function timeOf(iso: string): string {
-  return new Date(iso).toLocaleTimeString(localeTag(), { hour: '2-digit', minute: '2-digit' })
+/**
+ * La hora de una marca YA REGISTRADA, en la zona del hotel.
+ *
+ * El turno de arriba siempre se leyó con la zona del hotel; sus marcas no, así
+ * que en la misma pantalla convivían dos husos y un colaborador que mirara su
+ * teléfono desde otra ciudad veía «entré a las 08:00» en un turno de 06:00
+ * (Hugo, 2026-09-29). Sin zona conocida cae en la del aparato, que es lo que
+ * hacía antes.
+ */
+function timeOf(iso: string, timeZone?: string): string {
+  return formatTimeIn(iso, timeZone)
 }
 
 function clockOf(date: Date): string {
@@ -174,11 +183,11 @@ const INTRO_SLIDES: readonly {
 /** Un dato del pie: icono, hora y qué es (Entrada · Salida · Horas). */
 function Stat({ icon, value, label }: { icon: string; value: string; label: string }): ReactNode {
   return (
-    <div className="flex flex-col items-center gap-1">
-      <span className="flex size-12 items-center justify-center rounded-full border-2 border-o-500/40 text-o-700">
-        <MaterialIcon name={icon} className="text-2xl" />
+    <div className="flex flex-col items-center gap-0.5">
+      <span className="flex size-10 items-center justify-center rounded-full border-2 border-o-500/40 text-o-700">
+        <MaterialIcon name={icon} className="text-xl" />
       </span>
-      <span className="mt-1 text-sm font-semibold text-ink">{value}</span>
+      <span className="mt-0.5 text-sm font-semibold text-ink">{value}</span>
       <span className="text-xs text-ink-3">{label}</span>
     </div>
   )
@@ -213,7 +222,7 @@ function punchErrorMessage(error: unknown, i18n: I18n): string {
     switch (error.message) {
       case 'GEOLOCATION_DENIED':
         return i18n._(
-          msg`Sin permiso de ubicación no se puede ponchar: actívalo para este sitio en tu teléfono.`,
+          msg`Sin permiso de ubicación no se puede ponchar: actívalo en Permisos, en el menú de tu cuenta.`,
         )
       case 'GEOLOCATION_UNSUPPORTED':
         return i18n._(msg`Este navegador no da la ubicación: usa el navegador del teléfono.`)
@@ -270,6 +279,7 @@ function punchErrorMessage(error: unknown, i18n: I18n): string {
  */
 export function PunchPage(): ReactNode {
   const { t, i18n } = useLingui()
+  const navigate = useNavigate()
   const { isIntroOpen, dismissIntro, reopenIntro } = useIntroSeen('worker-punch')
   const { data, isLoading, isError, refetch } = useGetTodayPunchingQuery()
   /** Solo para explicar el «sin turno»: la ficha ya está en caché por Inicio. */
@@ -279,8 +289,9 @@ export function PunchPage(): ReactNode {
   const now = useNow()
   const reduceMotion = useReducedMotion() ?? false
 
-  const photoInputRef = useRef<HTMLInputElement>(null)
   const [failure, setFailure] = useState<string | null>(null)
+  /** Solo para ofrecer el atajo a Permisos cuando el rechazo fue justo por eso. */
+  const [failureNeedsPermission, setFailureNeedsPermission] = useState(false)
   const [phase, setPhase] = useState<PunchPhase>('idle')
   /** El sentido de la marca en curso, fijado al ponchar: el refetch tras el éxito no lo mueve. */
   const [direction, setDirection] = useState<'in' | 'out'>('in')
@@ -311,17 +322,24 @@ export function PunchPage(): ReactNode {
     }
   }, [])
 
+  /**
+   * Los permisos de cámara y ubicación ya se pidieron en el onboarding de
+   * Inicio (el primero que ve el Colaborador): este solo explica el
+   * mecanismo del ponche, no vuelve a pedir nada (2026-09-25, Hugo).
+   */
   if (isIntroOpen) {
     return (
-      <OnboardingIntro
-        slides={INTRO_SLIDES.map((slide) => ({
-          image: slide.image,
-          title: i18n._(slide.title),
-          text: i18n._(slide.text),
-        }))}
-        startLabel={t`Ir a ponchar`}
-        onDone={dismissIntro}
-      />
+      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-surface">
+        <OnboardingIntro
+          slides={INTRO_SLIDES.map((slide) => ({
+            image: slide.image,
+            title: i18n._(slide.title),
+            text: i18n._(slide.text),
+          }))}
+          startLabel={t`Ir a ponchar`}
+          onDone={dismissIntro}
+        />
+      </div>
     )
   }
 
@@ -346,6 +364,8 @@ export function PunchPage(): ReactNode {
     return <EmptyState image={mascotaPensando} title={message.title} text={message.text} />
   }
 
+  /* La zona sale del turno, que es donde ocurre lo que se está marcando. */
+  const shiftTimeZone = shift.hotelTimeZone
   const marks: Partial<Record<PunchType, string>> = {}
   for (const item of punches ?? []) marks[item.type as PunchType] = item.serverAt
   const next = PUNCH_ORDER.find((type) => marks[type] === undefined) ?? null
@@ -363,6 +383,7 @@ export function PunchPage(): ReactNode {
   async function submit(photo: File | null, qrCode: string | null = null): Promise<void> {
     if (!canPunch || next === null) return
     setFailure(null)
+    setFailureNeedsPermission(false)
     setDirection(isEntering ? 'in' : 'out')
     setPhase('registering')
     const preview = photo ? URL.createObjectURL(photo) : null
@@ -392,6 +413,7 @@ export function PunchPage(): ReactNode {
       window.setTimeout(backToIdle, OUTCOME_VISIBLE_MS)
     } catch (error) {
       setFailure(punchErrorMessage(error, i18n))
+      setFailureNeedsPermission(error instanceof Error && error.message === 'GEOLOCATION_DENIED')
       const code = readApiError(error).code
       if (code === 'QR_INVALID') setLinkedQr(null)
       setPhase(code === 'OUTSIDE_GEOFENCE' ? 'outside' : 'error')
@@ -417,7 +439,7 @@ export function PunchPage(): ReactNode {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {isScannerOpen && (
         <QrScanner
           onScan={(code) => {
@@ -435,12 +457,12 @@ export function PunchPage(): ReactNode {
             setCameraOpen(false)
             void submit(file)
           }}
-          onFallback={() => {
-            setCameraOpen(false)
-            photoInputRef.current?.click()
-          }}
           onCancel={() => {
             setCameraOpen(false)
+          }}
+          onOpenPermissions={() => {
+            setCameraOpen(false)
+            void navigate('/collaborator/permissions')
           }}
         />
       )}
@@ -466,7 +488,7 @@ export function PunchPage(): ReactNode {
       <section className="text-center" aria-live="polite">
         {isBusy ? (
           <>
-            <p className="text-4xl font-bold tracking-tight text-ink">
+            <p className="text-3xl font-bold tracking-tight text-ink">
               {phase === 'success'
                 ? t`¡Listo!`
                 : phase === 'outside'
@@ -491,7 +513,7 @@ export function PunchPage(): ReactNode {
           </>
         ) : (
           <>
-            <p className="text-5xl font-bold tracking-tight text-ink" aria-live="off">
+            <p className="text-4xl font-bold tracking-tight text-ink" aria-live="off">
               {clockOf(now)}
             </p>
             <p className="mt-1 text-sm text-ink-3">{longDateOf(now)}</p>
@@ -522,125 +544,128 @@ export function PunchPage(): ReactNode {
       {/* El botón: la naranja del check-in o del check-out orbita DETRÁS, como fondo.
           Mientras la marca se guarda, la naranja cambia a la de la fase en curso:
           registrando (ubicación y foto) y luego verificando (el servidor). */}
-      <div className="relative mx-auto flex size-80 items-center justify-center">
-        <span
-          aria-hidden
-          className={`pointer-events-none absolute inset-0 scale-125 ${
-            /* Con la foto en el encuadre, los corchetes del lottie la enmarcan POR ENCIMA. */
-            isBusy && photoPreview !== null ? 'z-20' : ''
-          }`}
-        >
-          <DotLottieReact
-            key={`${phase}-${phase === 'idle' ? (isEntering ? 'in' : 'out') : direction}`}
-            src={
-              phase === 'idle'
-                ? isEntering
-                  ? checkinLottie
-                  : checkoutLottie
-                : PHASE_LOTTIE[phase][direction]
-            }
-            loop={phase !== 'success' && phase !== 'outside' && phase !== 'error'}
-            autoplay={!reduceMotion}
-          />
-        </span>
-
+      <div className="relative mx-auto flex size-64 items-center justify-center">
         {isDayComplete ? (
-          <div className="relative z-10 flex size-36 flex-col items-center justify-center rounded-full bg-surface shadow-lg">
-            <img src={mascotaCelebrando} alt="" aria-hidden className="h-16 w-auto" />
-            <span className="mt-1 text-xs font-semibold text-ink">
+          /* Sin marcas pendientes no hay nada que "ponchar": un cierre propio
+             y quieto, no el botón disfrazado — el lottie orbitando detrás (el
+             mismo patrón del check-in/check-out) se veía raro sin un botón
+             al centro que enmarcar (Hugo, 2026-09-29). */
+          <div className="relative z-10 flex size-48 flex-col items-center justify-center gap-1.5 rounded-full bg-green/10">
+            <span className="flex size-14 items-center justify-center rounded-full bg-green text-white shadow-sm">
+              <MaterialIcon name="task_alt" className="text-3xl" aria-hidden />
+            </span>
+            <img src={mascotaCelebrando} alt="" aria-hidden className="h-11 w-auto" />
+            <span className="text-sm font-bold text-ink">
               <Trans>Jornada completa</Trans>
             </span>
           </div>
         ) : (
-          <motion.button
-            type="button"
-            onClick={onTap}
-            disabled={!canPunch}
-            {...tapFeedback(reduceMotion)}
-            aria-label={t`Ponchar ${i18n._(PUNCH_LABEL[next]).toLowerCase()}`}
-            className={`relative z-10 flex size-36 cursor-pointer touch-manipulation flex-col items-center justify-center overflow-hidden bg-surface shadow-lg transition-[border-radius,box-shadow] duration-300 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-o-500 disabled:cursor-not-allowed ${
-              /* Con la foto en el encuadre, el círculo se vuelve cuadro: es el
-                 recuadro que los corchetes del lottie están enmarcando. */
-              isBusy && photoPreview !== null ? 'rounded-2xl' : 'rounded-full'
-            } ${isBusy ? '' : 'disabled:opacity-60'}`}
-          >
-            {isBusy && photoPreview !== null ? (
-              /* Solo la foto en el encuadre: la fase se lee arriba, donde la hora. */
-              <img
-                src={photoPreview}
-                alt=""
-                aria-hidden
-                className="absolute inset-0 size-full object-cover"
+          <>
+            <span
+              aria-hidden
+              className={`pointer-events-none absolute inset-0 scale-125 ${
+                /* Con la foto en el encuadre, los corchetes del lottie la enmarcan POR ENCIMA. */
+                isBusy && photoPreview !== null ? 'z-20' : ''
+              }`}
+            >
+              <DotLottieReact
+                key={`${phase}-${phase === 'idle' ? (isEntering ? 'in' : 'out') : direction}`}
+                src={
+                  phase === 'idle'
+                    ? isEntering
+                      ? checkinLottie
+                      : checkoutLottie
+                    : PHASE_LOTTIE[phase][direction]
+                }
+                loop={phase !== 'success' && phase !== 'outside' && phase !== 'error'}
+                autoplay={!reduceMotion}
               />
-            ) : (
-              <>
-                <MaterialIcon
-                  name={isEntering ? 'login' : 'logout'}
-                  className="text-4xl text-o-700"
+            </span>
+
+            <motion.button
+              type="button"
+              onClick={onTap}
+              disabled={!canPunch}
+              {...tapFeedback(reduceMotion)}
+              aria-label={t`Ponchar ${i18n._(PUNCH_LABEL[next]).toLowerCase()}`}
+              className={`relative z-10 flex size-32 cursor-pointer touch-manipulation flex-col items-center justify-center overflow-hidden bg-surface shadow-lg transition-[border-radius,box-shadow] duration-300 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-o-500 disabled:cursor-not-allowed ${
+                /* Con la foto en el encuadre, el círculo se vuelve cuadro: es el
+                   recuadro que los corchetes del lottie están enmarcando. */
+                isBusy && photoPreview !== null ? 'rounded-2xl' : 'rounded-full'
+              } ${isBusy ? '' : 'disabled:opacity-60'}`}
+            >
+              {isBusy && photoPreview !== null ? (
+                /* Solo la foto en el encuadre: la fase se lee arriba, donde la hora. */
+                <img
+                  src={photoPreview}
+                  alt=""
                   aria-hidden
+                  className="absolute inset-0 size-full object-cover"
                 />
-                <span className="mt-1 text-base font-bold text-ink">
-                  {phase === 'success'
-                    ? t`¡Listo!`
-                    : phase === 'outside'
-                      ? t`Fuera del hotel`
-                      : phase === 'error'
-                        ? t`No se guardó`
-                        : phase === 'verifying'
-                          ? t`Verificando…`
-                          : isBusy
-                            ? t`Registrando…`
-                            : i18n._(PUNCH_LABEL[next])}
-                </span>
-                {needsPhoto && !isBusy && (
-                  <span className="text-[11px] text-ink-3">
-                    <Trans>con tu foto</Trans>
+              ) : (
+                <>
+                  <MaterialIcon
+                    name={isEntering ? 'login' : 'logout'}
+                    className="text-3xl text-o-700"
+                    aria-hidden
+                  />
+                  <span className="mt-1 max-w-20 text-center text-sm leading-tight font-bold text-ink">
+                    {phase === 'success'
+                      ? t`¡Listo!`
+                      : phase === 'outside'
+                        ? t`Fuera del hotel`
+                        : phase === 'error'
+                          ? t`No se guardó`
+                          : phase === 'verifying'
+                            ? t`Verificando…`
+                            : isBusy
+                              ? t`Registrando…`
+                              : i18n._(PUNCH_LABEL[next])}
                   </span>
-                )}
-                {needsQr && !isBusy && (
-                  <span className="text-[11px] text-ink-3">
-                    {linkedQr !== null ? (
-                      <Trans>con el QR del acceso ya leído</Trans>
-                    ) : (
-                      <Trans>escaneando el QR del acceso</Trans>
-                    )}
-                  </span>
-                )}
-              </>
-            )}
-          </motion.button>
+                  {needsPhoto && !isBusy && (
+                    <span className="text-[11px] text-ink-3">
+                      <Trans>con tu foto</Trans>
+                    </span>
+                  )}
+                  {needsQr && !isBusy && (
+                    <span className="text-[11px] text-ink-3">
+                      {linkedQr !== null ? (
+                        <Trans>con el QR del acceso ya leído</Trans>
+                      ) : (
+                        <Trans>escaneando el QR del acceso</Trans>
+                      )}
+                    </span>
+                  )}
+                </>
+              )}
+            </motion.button>
+          </>
         )}
       </div>
-
-      <input
-        ref={photoInputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        capture="user"
-        className="hidden"
-        aria-label={t`Foto del ponche`}
-        onChange={(event) => {
-          const file = event.target.files?.[0]
-          event.target.value = ''
-          if (file) void submit(file)
-        }}
-      />
 
       {failure !== null && (
         <p role="alert" className="text-center text-sm text-red">
           {failure}
+          {failureNeedsPermission && (
+            <>
+              {' '}
+              <Link to="/collaborator/permissions" className="font-semibold underline">
+                <Trans>Ir a Permisos</Trans>
+              </Link>
+            </>
+          )}
         </p>
       )}
 
-      <section className="grid grid-cols-3 gap-2 rounded-xl border border-line bg-surface px-2 py-4">
+      <section className="grid grid-cols-3 gap-2 rounded-xl border border-line bg-surface px-2 py-3">
         <Stat
           icon="login"
-          value={marks.CLOCK_IN ? timeOf(marks.CLOCK_IN) : '--:--'}
+          value={marks.CLOCK_IN ? timeOf(marks.CLOCK_IN, shiftTimeZone) : '--:--'}
           label={t`Entrada`}
         />
         <Stat
           icon="logout"
-          value={marks.CLOCK_OUT ? timeOf(marks.CLOCK_OUT) : '--:--'}
+          value={marks.CLOCK_OUT ? timeOf(marks.CLOCK_OUT, shiftTimeZone) : '--:--'}
           label={t`Salida`}
         />
         <Stat icon="schedule" value={hoursOf(marks)} label={t`Horas`} />
@@ -649,7 +674,8 @@ export function PunchPage(): ReactNode {
       {marks.LUNCH_OUT && (
         <p className="text-center text-xs text-ink-3">
           <Trans>
-            Lunch {timeOf(marks.LUNCH_OUT)} – {marks.LUNCH_IN ? timeOf(marks.LUNCH_IN) : '--:--'}
+            Lunch {timeOf(marks.LUNCH_OUT, shiftTimeZone)} –{' '}
+            {marks.LUNCH_IN ? timeOf(marks.LUNCH_IN, shiftTimeZone) : '--:--'}
           </Trans>
         </p>
       )}

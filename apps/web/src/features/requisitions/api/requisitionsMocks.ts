@@ -609,6 +609,11 @@ const routes: readonly MockRoute[] = [
       )
       const position = requisition?.positions.find((item) => item.id === payload.positionId)
       if (!requisition || !position) throw new Error('POSITION_NOT_FOUND')
+      /* Mismo candado que el back real (`assignments.service.ts`): sin esto,
+         el mock dejaba pasar cualquier asignación aunque la requisición
+         siguiera GREEN (sin tomar), y nada detectaba la regresión del
+         2026-09-28. */
+      if (requisition.state.code !== 'YELLOW') throw new Error('REQUISITION_NOT_IN_PROGRESS')
       const taken = assignmentsByPosition.get(position.id) ?? []
       if (taken.length >= position.quantity) {
         throw new Error('Otra reclutadora ganó el slot (RR-15): ya no quedan libres')

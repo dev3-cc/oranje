@@ -36,6 +36,7 @@ import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { PasswordInput } from '@/shared/components/PasswordInput'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
+import { apiErrorMessage as sharedApiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 
 const FORM_ID = 'staff-user-form'
@@ -113,6 +114,7 @@ function buildUserFormSchema(i18n: I18n) {
       roleCode: z.string().min(1, i18n._(msg`Elige un rol`)),
       reportsToUserId: z.string(),
       accessMode: z.enum(['INVITATION', 'PASSWORD']),
+      locale: z.enum(['es', 'en']),
       password: z.string(),
     })
     .superRefine((values, context) => {
@@ -168,6 +170,22 @@ function apiErrorMessage(error: unknown, i18n: I18n): string {
     default:
       return i18n._(msg`No se pudo guardar el usuario. Revisa los datos e inténtalo de nuevo.`)
   }
+}
+
+/**
+ * `POST /users/:id/resend-invitation` (`staff-users.service.ts`): sus tres
+ * códigos reales, no los del alta principal — el `apiErrorMessage` de arriba
+ * es de guardar, no de reenviar.
+ */
+function resendErrorMessage(error: unknown, i18n: I18n): string {
+  return sharedApiErrorMessage(error, {
+    byCode: {
+      USER_NOT_FOUND: i18n._(msg`Este usuario ya no existe.`),
+      ALREADY_LINKED: i18n._(msg`Ya entró por primera vez: no hace falta reenviar la invitación.`),
+      INVITATION_FAILED: i18n._(msg`Firebase no pudo mandar el correo. Inténtalo de nuevo.`),
+    },
+    fallback: i18n._(msg`No se pudo reenviar la invitación. Inténtalo de nuevo.`),
+  })
 }
 
 function initialsOf(fullName: string): string {
@@ -249,6 +267,7 @@ export function UserFormDialog({
       roleCode: '',
       reportsToUserId: NOBODY,
       accessMode: 'INVITATION',
+      locale: 'es',
       password: '',
     },
   })
@@ -339,6 +358,9 @@ export function UserFormDialog({
       roleCode: user?.role.code ?? '',
       reportsToUserId: user?.reportsToUserId ?? NOBODY,
       accessMode: 'INVITATION',
+      /* Al reabrir SIEMPRE vuelve a español: es un campo del alta, y una
+         cuenta ya creada cambia su idioma desde su propia cuenta, no aquí. */
+      locale: 'es',
       password: '',
     })
   }, [isOpen, user, reset])
@@ -385,6 +407,7 @@ export function UserFormDialog({
         email: values.email,
         fullName: values.fullName,
         roleCode: values.roleCode,
+        locale: values.locale,
         ...(reportsToUserId ? { reportsToUserId } : {}),
         ...(values.accessMode === 'PASSWORD' ? { password: values.password } : {}),
         ...(photoPath ? { photoPath } : {}),
@@ -608,6 +631,32 @@ export function UserFormDialog({
                   {errors.roleCode && <p className="text-xs text-red">{errors.roleCode.message}</p>}
                 </FormRow>
 
+                <FormRow label={t`Idioma`} column="locale">
+                  <Controller
+                    control={control}
+                    name="locale"
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger aria-label={t`Idioma`} className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {/* En su propio idioma, como el interruptor del login: quien
+                              elige «English» lo reconoce aunque no lea español. */}
+                          <SelectItem value="es">Español</SelectItem>
+                          <SelectItem value="en">English</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  <p className="text-xs text-ink-3">
+                    <Trans>
+                      En este idioma le llega la invitación y abre la app la primera vez. Después lo
+                      cambia desde su cuenta.
+                    </Trans>
+                  </p>
+                </FormRow>
+
                 {isInspectorRole && (
                   <FormRow label={t`Zonas`} column="commercial.user_zone">
                     {zoneOptions.length === 0 ? (
@@ -761,9 +810,14 @@ export function UserFormDialog({
                           type="button"
                           disabled={resendState.isLoading}
                           onClick={() => {
-                            void resendInvitation(user.id).then(() => {
-                              toast.success(t`Invitación enviada`)
-                            })
+                            void resendInvitation(user.id)
+                              .unwrap()
+                              .then(() => {
+                                toast.success(t`Invitación enviada`)
+                              })
+                              .catch((error: unknown) => {
+                                toast.error(resendErrorMessage(error, i18n))
+                              })
                           }}
                         >
                           {resendState.isLoading ? t`Enviando…` : t`Reenviar invitación`}

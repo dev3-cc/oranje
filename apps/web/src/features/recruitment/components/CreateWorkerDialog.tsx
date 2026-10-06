@@ -48,6 +48,31 @@ import type { WorkerApi } from '@/shared/types/apiContract.types'
 
 const UNSET = 'UNSET'
 
+/**
+ * El mismo rótulo que ya usa el formulario, para nombrar el campo real en el
+ * 422 — antes `VALIDATION_ERROR` mostraba un genérico «los datos enviados no
+ * son válidos» sin decir cuál, aunque el back ya manda el campo en `details`
+ * (Hugo, 2026-10-01).
+ */
+const WORKER_FIELD_LABEL: Record<string, MessageDescriptor> = {
+  fullName: msg`Nombre completo`,
+  birthDate: msg`Fecha de nacimiento`,
+  gender: msg`Género`,
+  phone: msg`Teléfono`,
+  address: msg`Dirección`,
+  zoneId: msg`Zona`,
+  catalogPositionId: msg`Posición`,
+  hiringModalityId: msg`Modalidad`,
+  englishLevelId: msg`Nivel de inglés`,
+  experienceLevel: msg`Experiencia`,
+  transportType: msg`Transporte`,
+  emergencyContactName: msg`Nombre del contacto de emergencia`,
+  emergencyContactPhone: msg`Teléfono del contacto de emergencia`,
+  emergencyContactRelationship: msg`Parentesco`,
+  bloodType: msg`Tipo de sangre`,
+  medicalNotes: msg`Notas médicas`,
+}
+
 /** Las diapositivas del intro; el texto se traduce al pintar con `i18n._()` (D-36). */
 const INTRO_SLIDES: readonly {
   image: string
@@ -62,7 +87,7 @@ const INTRO_SLIDES: readonly {
   {
     image: personajeEncuesta,
     title: msg`El expediente se completa por fases`,
-    text: msg`Nace en Blanco: el colaborador termina las fases 2 y 3 en su app — transporte y SSN/ITIN con 3 días de plazo.`,
+    text: msg`Nace en Blanco: el colaborador termina las fases 2 y 3 en su app — si lo validas con algo pendiente, tiene 1 día para completarlo.`,
   },
   {
     image: personajeGracias,
@@ -94,7 +119,7 @@ const GENDERS = [
 /** Documentación viva de dev: no se traduce (IS_DEV_UI). */
 const AFTERMATH_DEV = [
   'Nace en BLANCO: la fila existe a medias, eso ES el estado (D-26).',
-  'El colaborador completa Fase 2 (transporte y SSN/ITIN, con 3 días de plazo) y Fase 3 (emergencia y salud) en la app.',
+  'El colaborador completa Fase 2 (transporte y SSN/ITIN) y Fase 3 (emergencia y salud) en la app; validado a medias, 1 día de plazo.',
   'is_profile_complete vive en vw_worker: los campos obligatorios los declara la vista, sin NOT NULL.',
   'La Reclutadora valida el alta (RF-08) → pasa a VERDE FUERTE y entra al Pool.',
   'Sin SSN/ITIN, la retención del 16% aplica automática (D-27).',
@@ -103,7 +128,7 @@ const AFTERMATH_DEV = [
 /** Lo que lee la persona; se traduce al pintar con `i18n._()` (D-36). */
 const AFTERMATH_MESSAGE: readonly MessageDescriptor[] = [
   msg`Nace en Blanco: el expediente se completa por fases.`,
-  msg`El colaborador completa la Fase 2 (transporte y SSN/ITIN, con 3 días de plazo) y la Fase 3 (contacto de emergencia y salud) desde su app.`,
+  msg`El colaborador completa la Fase 2 (transporte y SSN/ITIN) y la Fase 3 (contacto de emergencia y salud) desde su app; si lo validas a medias, tiene 1 día para completarlo.`,
   msg`Cuando la Reclutadora valida el alta, pasa a Verde fuerte y entra al Pool de Colaboradores.`,
   msg`Por ahora la retención del 16% aplica a todos los colaboradores, suban o verifiquen o no su SSN/ITIN — es temporal, mientras se conecta ese proceso.`,
 ]
@@ -198,6 +223,21 @@ function saveErrorMessage(error: unknown, i18n: I18n): string {
         const reason = info.message ?? i18n._(msg`Es menor de edad`)
         return i18n._(msg`${reason}: revisa la fecha de nacimiento.`)
       },
+      VALIDATION_ERROR: (info) => {
+        const fields = [
+          ...new Set(
+            info.details
+              .map((detail) => detail.field)
+              .filter((field): field is string => field !== undefined && field !== ''),
+          ),
+        ].map((field) => (WORKER_FIELD_LABEL[field] ? i18n._(WORKER_FIELD_LABEL[field]) : field))
+        if (fields.length === 0) {
+          return i18n._(
+            msg`No se pudo guardar el colaborador. Revisa los datos e inténtalo de nuevo.`,
+          )
+        }
+        return i18n._(msg`Revisa estos campos: ${fields.join(', ')}.`)
+      },
     },
     fallback: i18n._(
       msg`No se pudo guardar el colaborador. Revisa los datos e inténtalo de nuevo.`,
@@ -257,6 +297,15 @@ export function CreateWorkerDialog({
     setStep(1)
   }, [isOpen, isEditing])
 
+  /*
+   * Solo al ABRIR el expediente de esta persona — no en cada actualización de
+   * la consulta. Dependía del objeto `editing` completo, y RTK Query le da
+   * una referencia NUEVA cada vez que el caché del colaborador se invalida
+   * en segundo plano (otra pestaña, otra acción); con eso en las
+   * dependencias, el efecto se repetía mientras la persona seguía editando y
+   * le pisaba lo que acababa de escribir — reportado con la fecha de
+   * nacimiento, pero le pasaba a cualquier campo (Hugo, 2026-10-01).
+   */
   useEffect(() => {
     if (!isOpen || !editing) return
     setDraft({
@@ -278,7 +327,8 @@ export function CreateWorkerDialog({
       bloodType: editing.bloodType ?? '',
     })
     setPhotoPreview(editing.photoUrl)
-  }, [isOpen, editing])
+    // Solo el id dispara el resync a propósito — ver comentario arriba.
+  }, [isOpen, editing?.id])
 
   async function handlePhoto(file: File): Promise<void> {
     setPhotoPreview(URL.createObjectURL(file))

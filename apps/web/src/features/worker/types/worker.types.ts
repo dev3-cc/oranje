@@ -8,22 +8,28 @@ import type { WorkerApi } from '@/shared/types/apiContract.types'
  */
 
 /**
- * El plazo de SSN/ITIN (Reglas del Colaborador): 3 días desde la PRIMERA
- * ASIGNACIÓN, no desde el alta (cambiado el 2026-09-25 — Hugo). Día 4 =
- * NOTICE (aviso interceptor) · día 5 = SUSPENDED (acceso suspendido).
- * Lo que corre el plazo hoy es SUBIR el documento; la retención del 16% es
- * independiente y aplica mientras `has_tax_id` sea false (D-27).
+ * El SSN/ITIN se unificó con el plazo del expediente a medias (2026-09-30):
+ * ya no corre aparte desde la primera asignación — `hasStarted` arranca
+ * cuando Reclutamiento valida con el expediente incompleto, y el plazo real
+ * lo gobierna `AccessDeadlineApi.profile` (1 día). Este objeto solo confirma
+ * si el documento llegó; `status`/`day`/`dueAt` quedan por compatibilidad
+ * pero el front ya no los usa para contar días.
+ * La retención del 16% sigue siendo independiente y aplica mientras
+ * `has_tax_id` sea false (D-27).
  */
 export interface TaxDeadlineApi {
   status: 'OK' | 'NOTICE' | 'SUSPENDED'
-  /** Sin asignación todavía el plazo no ha arrancado: `day`/`dueAt` van en null. */
+  /** Sin validación con expediente a medias todavía, el plazo no ha arrancado. */
   hasStarted: boolean
-  /** Días desde la primera asignación; el día 1 es el de la asignación. */
+  /** Días desde la validación; el día 1 es ese día. */
   day: number | null
   dueAt: string | null
   hasDocument: boolean
   isDocumentVerified: boolean
   taxRetentionApplies: boolean
+  /** Sin documento (`hasDocument` false) por un rechazo aún sin reemplazar. */
+  wasRejected: boolean
+  rejectionReason: string | null
 }
 
 /**
@@ -36,12 +42,12 @@ export interface LegacyAccessApi {
 }
 
 /**
- * Los otros dos plazos de 3 días (Reglas de Negocio § Acceso del Colaborador
- * y § Validación con expediente incompleto), calculados al leer como el
- * fiscal. `password`: la contraseña temporal entregada en mano hay que
- * cambiarla desde la app. `profile`: validado con el expediente a medias, hay
- * que completarlo. Vencidos (OVERDUE) el API bloquea todo menos lo que los
- * levanta.
+ * Los dos plazos que sí bloquean acceso (Reglas de Negocio § Acceso del
+ * Colaborador y § Validación con expediente incompleto), calculados al leer.
+ * `password`: 30 días para cambiar la temporal entregada en mano.
+ * `profile`: 1 día para completar lo suyo tras validarse a medias — desde el
+ * 2026-09-30 incluye el SSN/ITIN. Vencidos (OVERDUE) el API bloquea todo
+ * menos lo que los levanta.
  */
 export interface AccessDeadlineApi {
   status: 'NONE' | 'PENDING' | 'OVERDUE'

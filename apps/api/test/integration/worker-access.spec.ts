@@ -190,7 +190,7 @@ test('con cPanel sano el buzón se crea y la respuesta lo dice', async () => {
   expect(credential.mailbox).toEqual({ created: true })
 })
 
-test('validar con el expediente a medias exige confirmarlo y abre 3 días para completarlo', async () => {
+test('validar con el expediente a medias exige confirmarlo y abre 1 día para completarlo', async () => {
   const workerId = await bareWorker(`Incompleto ${String(Date.now())}`)
 
   // Sin confirmar, sigue siendo lo de siempre.
@@ -212,8 +212,8 @@ test('validar con el expediente a medias exige confirmarlo y abre 3 días para c
   expect(validated.state.code).toBe('STRONG_GREEN')
   expect(validated.isProfileComplete).toBe(false)
   const dueAt = new Date(validated.profileDueAt as string)
-  expect(dueAt.getTime() - Date.now()).toBeGreaterThan(2.9 * 86_400_000)
-  expect(dueAt.getTime() - Date.now()).toBeLessThan(3.1 * 86_400_000)
+  expect(dueAt.getTime() - Date.now()).toBeGreaterThan(0.9 * 86_400_000)
+  expect(dueAt.getTime() - Date.now()).toBeLessThan(1.1 * 86_400_000)
 
   // El plazo lo ve el colaborador en su ficha (por su cuenta), y se levanta
   // solo al completar el expediente: no hay nada que limpiar.
@@ -246,7 +246,20 @@ test('validar con el expediente a medias exige confirmarlo y abre 3 días para c
       bloodType: 'O_POS',
     },
   })
+  // El SSN/ITIN se unificó a esta misma parte (2026-09-30): sin él, sigue
+  // siendo "expediente a medias" aunque lo demás ya esté.
+  expect((await deadlines.of(account.userId as string)).profile.status).toBe('OVERDUE')
+
+  await db.workerDocument.create({
+    data: {
+      id: uuidv7(),
+      workerId,
+      documentType: 'SSN_ITIN',
+      filePath: 'workers/document/incompleto.pdf',
+    },
+  })
   expect((await deadlines.of(account.userId as string)).profile.status).toBe('NONE')
+  await db.workerDocument.deleteMany({ where: { workerId } })
 
   // Sigue faltando la Fase 1 (nunca se capturó) y aun así al colaborador no se
   // le cobra: eso es de Reclutamiento, y su parte ya está.
@@ -255,4 +268,52 @@ test('validar con el expediente a medias exige confirmarlo y abre 3 días para c
     select: { catalogPositionId: true },
   })
   expect(still.catalogPositionId).toBeNull()
+})
+
+test('encender Amarillo es autoservicio del propio Colaborador, no el "cambiar estado" del staff', async () => {
+  // Hugo, 2026-09-29: el botón no funcionaba — `assertCanChangeState`
+  // exigía `recruitment:validate_signup` o `staff:set_standby`/`report`
+  // ANTES de llegar a la tabla de transiciones, y ningún Colaborador
+  // tiene esos permisos. El propio comentario de `me.service.ts` ya decía
+  // que la autorización real era la tabla sembrada (ROL-C-01 solo en
+  // STRONG_GREEN/ORANGE/PINK → YELLOW); el código no la dejaba llegar ahí.
+  const workerId = await bareWorker(`Disponible ${String(Date.now())}`)
+  await workers.changeState(
+    workerId,
+    { toState: 'STRONG_GREEN', acceptIncompleteProfile: true },
+    recruiter,
+  )
+
+  const role = await db.role.findFirstOrThrow({
+    where: { code: 'ROL-C-01' },
+    select: { id: true },
+  })
+  const account = await db.user.create({
+    data: {
+      id: uuidv7(),
+      email: `colab-disponible-${String(Date.now())}@oranje.local`,
+      fullName: 'Colaborador de prueba',
+      roleId: role.id,
+    },
+    select: { id: true },
+  })
+  userIds.push(account.id)
+  const colaborador: AuthenticatedUser = {
+    id: account.id,
+    roleCode: 'ROL-C-01',
+    hotelId: null,
+    departmentId: null,
+  }
+
+  // El endpoint genérico de staff (`POST /workers/:id/transitions`) sigue
+  // cerrado para el propio Colaborador: sin `selfService`, no tiene ni
+  // `recruitment:validate_signup` ni `staff:set_standby`/`report`.
+  await expect(
+    workers.changeState(workerId, { toState: 'YELLOW' }, colaborador),
+  ).rejects.toMatchObject({ response: { code: 'FORBIDDEN' } })
+
+  // El autoservicio (lo que usa `POST /workers/me/availability`) sí lo deja:
+  // decide la tabla de transiciones, no un guard de staff.
+  const activated = await workers.changeState(workerId, { toState: 'YELLOW' }, colaborador, true)
+  expect(activated.state.code).toBe('YELLOW')
 })

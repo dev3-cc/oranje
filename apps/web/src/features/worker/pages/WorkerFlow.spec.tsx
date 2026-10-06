@@ -7,7 +7,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
 import { MobileShell } from '../components/MobileShell'
-import { SuspendedScreen, TaxDeadlineBanner } from '../components/TaxDeadlineBanner'
+import { TaxDeadlineBanner } from '../components/TaxDeadlineBanner'
 import type { TaxDeadlineApi } from '../types/worker.types'
 
 import { NotificationsPage } from './NotificationsPage'
@@ -40,36 +40,50 @@ function deadline(overrides: Partial<TaxDeadlineApi>): TaxDeadlineApi {
     hasDocument: false,
     isDocumentVerified: false,
     taxRetentionApplies: true,
+    wasRejected: false,
+    rejectionReason: null,
     ...overrides,
   }
 }
 
 describe('el apartado del Colaborador', () => {
-  it('la Fase 2 solo pide transporte: los 4 de Oranje ya vienen de la entrevista', async () => {
+  it('la Fase 2 es un asistente de 3 pasos: foto, transporte y SSN/ITIN', async () => {
     renderPage(<Phase2Page />)
     const user = userEvent.setup()
 
+    // Paso 1 · Tu foto: el contexto de la entrevista se ve desde aquí, sin campo editable.
     expect(
       await screen.findByText(/Tu posición \(Housekeeper\), modalidad \(Tiempo completo\)/),
     ).toBeInTheDocument()
     expect(screen.queryByLabelText(/Posición/)).not.toBeInTheDocument()
+    expect(screen.getByText(/Sigues en Blanco hasta que la Reclutadora valide/)).toBeInTheDocument()
 
-    expect(screen.getByText(/día 2 de 3/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Subir mi SSN o ITIN' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
 
-    const sendButton = screen.getByRole('button', { name: 'Enviar' })
-    expect(sendButton).toBeDisabled()
+    // Paso 2 · Transporte: el único campo que de verdad bloquea avanzar.
+    const continueButton = screen.getByRole('button', { name: 'Continuar' })
+    expect(continueButton).toBeDisabled()
 
     await user.click(screen.getByLabelText(/trasladas/))
     await user.click(await screen.findByRole('option', { name: 'Público' }))
-    expect(sendButton).toBeEnabled()
+    expect(continueButton).toBeEnabled()
 
-    await user.click(sendButton)
+    await user.click(continueButton)
+
+    // Paso 3 · SSN/ITIN: llega solo tras guardar el transporte.
     expect(
-      /* El «Sigue la Fase 3» ahora es un enlace: se busca el texto que lo precede. */
-      await screen.findByText(/Transporte guardado\./, undefined, SLOW),
+      await screen.findByRole('button', { name: 'Subir mi SSN o ITIN' }, SLOW),
     ).toBeInTheDocument()
-    expect(screen.getByText(/Sigues en Blanco hasta que la Reclutadora valide/)).toBeInTheDocument()
+    expect(screen.getByText(/Tu transporte quedó guardado\./)).toBeInTheDocument()
+
+    // Un solo camino hacia la Fase 3: el botón, no un enlace duplicado en el aviso de arriba.
+    expect(
+      screen.queryByRole('link', { name: /Sigue con tu contacto de emergencia/ }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Terminar' })).toHaveAttribute(
+      'href',
+      '/colaborador/alta-3',
+    )
   })
 
   it('la Fase 3 cierra el expediente con emergencia, sangre y alergias', async () => {
@@ -92,13 +106,17 @@ describe('el apartado del Colaborador', () => {
     expect(saveButton).toBeEnabled()
 
     await user.click(saveButton)
+
+    // El formulario se sustituye por una pantalla de cierre con un solo camino: Inicio.
+    expect(await screen.findByText('Completado', undefined, SLOW)).toBeInTheDocument()
     expect(
-      await screen.findByText(
-        'Listo: tu expediente quedó completo. La Reclutadora lo validará (RF-08).',
-        undefined,
-        SLOW,
-      ),
+      screen.getByText('Tu expediente quedó completo. La Reclutadora lo validará (RF-08).'),
     ).toBeInTheDocument()
+    expect(screen.queryByLabelText(/Nombre/)).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Ir a Inicio' })).toHaveAttribute(
+      'href',
+      '/colaborador',
+    )
   })
 
   it('los avisos: la no leída resalta y tocarla la marca', async () => {
@@ -145,43 +163,39 @@ describe('el apartado del Colaborador', () => {
 })
 
 describe('TaxDeadlineBanner', () => {
-  // El caso real de ococom@ (2026-09-25): sin asignación nunca, no hay nada
-  // que avisar, sin importar cuánto tiempo pasó desde el alta.
-  it('sin asignación todavía, no muestra nada', () => {
-    const { container } = render(
-      <TaxDeadlineBanner deadline={deadline({ hasStarted: false, day: null, dueAt: null })} />,
-    )
+  // El plazo se unificó con el del expediente a medias (2026-09-30): este
+  // banner ya no cuenta días, solo confirma si el documento llegó.
+  it('sin documento cargado, no muestra nada', () => {
+    const { container } = render(<TaxDeadlineBanner deadline={deadline({ hasDocument: false })} />)
     expect(container).toBeEmptyDOMElement()
   })
 
-  it('días 1-3: dice cuánto queda y que sin el documento no hay pago', () => {
-    render(<TaxDeadlineBanner deadline={deadline({ status: 'OK', day: 2 })} />)
-    expect(screen.getByText(/día 2 de 3/)).toBeInTheDocument()
-    expect(screen.getByText(/no se te puede pagar/)).toBeInTheDocument()
-  })
-
-  it('día 4: el interceptor avisa que mañana se suspende el acceso', () => {
-    render(<TaxDeadlineBanner deadline={deadline({ status: 'NOTICE', day: 4 })} />)
-    expect(screen.getByRole('alert')).toHaveTextContent('Mañana se suspende tu acceso')
-  })
-
-  it('con documento cargado: en verificación, y el pago se habilita al verificar', () => {
+  it('cargado sin verificar: dice que está en verificación', () => {
     render(<TaxDeadlineBanner deadline={deadline({ hasDocument: true })} />)
     expect(screen.getByText(/cargado, en verificación/)).toBeInTheDocument()
-    expect(screen.getByText(/pago queda habilitado/)).toBeInTheDocument()
   })
 
-  it('día 5: la suspensión ofrece subir el documento aquí mismo, y CS como salida', () => {
+  it('verificado: lo dice sin el «en verificación»', () => {
     render(
-      <I18nProvider i18n={i18n}>
-        <Provider store={store}>
-          <SuspendedScreen />
-        </Provider>
-      </I18nProvider>,
+      <TaxDeadlineBanner deadline={deadline({ hasDocument: true, isDocumentVerified: true })} />,
     )
-    expect(screen.getByText('Tu acceso está suspendido')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Subir mi SSN o ITIN' })).toBeInTheDocument()
-    expect(screen.getByText(/Customer Service/)).toBeInTheDocument()
-    expect(screen.getByText(/no se pierden/)).toBeInTheDocument()
+    expect(screen.getByText(/está verificado/)).toBeInTheDocument()
+    expect(screen.queryByText(/en verificación/)).not.toBeInTheDocument()
+  })
+
+  // Hugo, 2026-09-30: sin decir CUÁL documento y POR QUÉ, solo se veía
+  // "carga tu SSN o ITIN" otra vez, sin explicar que ya lo había hecho.
+  it('rechazado: dice el motivo y ofrece subirlo de nuevo', () => {
+    renderPage(
+      <TaxDeadlineBanner
+        deadline={deadline({ hasDocument: false, wasRejected: true, rejectionReason: 'no se lee' })}
+      />,
+    )
+    expect(screen.getByText('Tu SSN/ITIN fue rechazado')).toBeInTheDocument()
+    expect(screen.getByText('no se lee')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Subir de nuevo' })).toHaveAttribute(
+      'href',
+      '/collaborator/signup-2',
+    )
   })
 })

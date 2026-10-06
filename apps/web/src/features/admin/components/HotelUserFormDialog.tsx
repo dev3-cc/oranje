@@ -59,6 +59,7 @@ function buildHotelUserFormSchema(i18n: I18n) {
     hotelId: z.string().min(1, i18n._(msg`Elige el hotel`)),
     roleCode: z.string().min(1, i18n._(msg`Elige el rol`)),
     departmentId: z.string(),
+    locale: z.enum(['es', 'en']),
     fullName: z
       .string()
       .trim()
@@ -144,6 +145,9 @@ export function HotelUserFormDialog({
       hotelId: '',
       roleCode: '',
       departmentId: NO_DEPARTMENT,
+      /* Inglés y no español: estas cuentas son del hotel cliente, en Georgia
+         (Hugo, 2026-09-28). Se puede cambiar; cambia de qué lado empieza. */
+      locale: 'en',
       fullName: '',
       email: '',
       reportsToUserId: NOBODY,
@@ -163,6 +167,16 @@ export function HotelUserFormDialog({
     { skip: !isOpen || hotelId === '' },
   )
   const allowedSuperiors = roleCode ? HOTEL_SUPERIOR_ROLES[roleCode] : undefined
+  /* El gerente que YA está, cuando se va a nombrar otro: la rotación casi
+     nunca se avisa, y esas cuentas se quedan vivas — Holiday Inn Stockbridge
+     acumuló cuatro gerentes activos, tres que nunca entraron (Hugo,
+     2026-09-30). */
+  const outgoingManager = isGeneralManager
+    ? ((hotelPeople?.rows ?? []).find(
+        (row) => row.role.code === HOTEL_GENERAL_MANAGER && row.isActive,
+      ) ?? null)
+    : null
+
   const superiorOptions = (hotelPeople?.rows ?? []).filter(
     (option) =>
       option.id !== user?.id &&
@@ -220,6 +234,9 @@ export function HotelUserFormDialog({
       fullName: user?.fullName ?? '',
       email: user?.email ?? '',
       reportsToUserId: user?.reportsToUserId ?? NOBODY,
+      /* Campo del alta: al reabrir vuelve al idioma con el que nacen estas
+         cuentas —inglés—, y quien ya tiene cuenta lo cambia desde la suya. */
+      locale: 'en',
     })
   }, [isOpen, user, reset])
 
@@ -259,6 +276,7 @@ export function HotelUserFormDialog({
         email: values.email,
         fullName: values.fullName,
         roleCode: values.roleCode,
+        locale: values.locale,
         ...(department ? { departmentId: department } : {}),
         ...(reportsTo ? { reportsToUserId: reportsTo } : {}),
       },
@@ -476,6 +494,43 @@ export function HotelUserFormDialog({
               )}
               {errors.email && <p className="text-xs text-red">{errors.email.message}</p>}
             </FormRow>
+
+            {!isEditing && outgoingManager !== null && (
+              <p className="rounded-xl border border-yellow bg-yellow/15 px-4 py-3 text-sm text-ink-2">
+                <Trans>
+                  Este hotel ya tiene gerente: {outgoingManager.fullName}. Si dejó el hotel, dale de
+                  baja su cuenta desde «Personal de hoteles» — mientras siga activa puede entrar y
+                  aprobar horas.
+                </Trans>
+              </p>
+            )}
+
+            {!isEditing && (
+              <FormRow label={t`Idioma`} column="locale">
+                <Controller
+                  control={control}
+                  name="locale"
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger aria-label={t`Idioma`} className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {/* Cada uno en su propio idioma, como el interruptor del login. */}
+                        <SelectItem value="es">Español</SelectItem>
+                        <SelectItem value="en">English</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <p className="text-xs text-ink-3">
+                  <Trans>
+                    En este idioma le llega la invitación y abre la app la primera vez. Después lo
+                    cambia desde su cuenta.
+                  </Trans>
+                </p>
+              </FormRow>
+            )}
 
             <FormRow label={t`Reporta a`} column="reports_to_user_id">
               <Controller

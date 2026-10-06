@@ -11,10 +11,12 @@ import {
   SidebarTrigger,
 } from '@oranje/ui'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router'
 
 import { GlobalSearch } from './GlobalSearch'
 
 import {
+  CAMPANA_VIVA,
   useGetHeaderNotificationsQuery,
   useMarkHeaderNotificationReadMutation,
 } from '@/app/notificationsApi'
@@ -26,6 +28,7 @@ const SHORTCUT_LABEL =
   typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘ K' : 'Ctrl K'
 
 export function Header(): ReactNode {
+  const navigate = useNavigate()
   const { t } = useLingui()
   const [isSearchOpen, setSearchOpen] = useState(false)
 
@@ -44,7 +47,7 @@ export function Header(): ReactNode {
     }
   }, [])
 
-  const { data: notifications } = useGetHeaderNotificationsQuery()
+  const { data: notifications } = useGetHeaderNotificationsQuery(undefined, CAMPANA_VIVA)
   const [markRead] = useMarkHeaderNotificationReadMutation()
   const unread = notifications?.unread ?? 0
 
@@ -123,8 +126,17 @@ export function Header(): ReactNode {
                 key={item.id}
                 onSelect={() => {
                   if (!item.isRead) void markRead(item.id)
+                  /* Llevar a la acción, no solo marcar leído: el aviso dice
+                     que algo pasó y la persona tenía que buscar la pantalla a
+                     mano (Hugo, 2026-09-30). Un aviso sin pantalla conocida
+                     se queda como estaba. */
+                  if (item.href !== null) void navigate(item.href)
                 }}
-                className={cn('flex items-start gap-2.5', !item.isRead && 'bg-o-50/60')}
+                className={cn(
+                  'flex items-start gap-2.5',
+                  !item.isRead && 'bg-o-50/60',
+                  item.href !== null && 'cursor-pointer',
+                )}
               >
                 {/* Quien disparó el aviso con su acción, no de quien lo recibe. */}
                 {item.actor?.photoUrl ? (

@@ -14,7 +14,7 @@ import { CurrentUser, Requires } from '../../../common/decorators/index.js'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 
 import { DocumentEntity, DocumentList, DocumentsService } from './documents.service.js'
-import { CreateDocumentDto } from './dto/document.dto.js'
+import { CreateDocumentDto, RejectDocumentDto } from './dto/document.dto.js'
 
 @Controller('workers/:id/documents')
 export class DocumentsController {
@@ -46,6 +46,18 @@ export class DocumentsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: DocumentEntity }> {
     return { data: await this.documents.verify(id, documentId, user) }
+  }
+
+  @Requires('recruitment', 'validate_signup')
+  @Post(':documentId/reject')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async reject(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('documentId', ParseUUIDPipe) documentId: string,
+    @Body() dto: RejectDocumentDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<void> {
+    await this.documents.reject(id, documentId, dto.reason, user)
   }
 
   @Requires('recruitment', 'update_worker')

@@ -134,7 +134,7 @@ export interface MeApi {
   /** URL firmada de la foto del usuario (D-30); `null` sin foto. */
   photoUrl: string | null
   role: { code: string; name: string; department: string | null }
-  hotel: { id: string; name: string } | null
+  hotel: { id: string; name: string; timeZone: string } | null
   department: { id: string; code: string; name: string } | null
   zones: ZoneRefApi[]
   /** Permisos aplanados `modulo.accion`: el sidebar decide qué pinta sin adivinar. */
@@ -322,6 +322,10 @@ export interface WorkerApi {
   /** Si se le validó con el expediente a medias, hasta cuándo puede completarlo; null si no aplica. */
   profileDueAt: string | null
   hasTaxId: boolean
+  /** Hay un documento SSN/ITIN cargado (verificado o no) — a diferencia de `hasTaxId` (D-27). */
+  hasTaxDocument: boolean
+  /** Cargado y todavía sin revisar (Pool: badge/filtro "con documento pendiente"). */
+  hasPendingDocument: boolean
   hasAccount: boolean
   /** El correo con el que entra hoy; null sin cuenta todavía (Blanco recién nacido). */
   email: string | null

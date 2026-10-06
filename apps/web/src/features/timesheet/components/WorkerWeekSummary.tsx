@@ -117,7 +117,7 @@ export function WorkerWeekSummary({
   row: TimesheetRow
   /** Foto del colaborador; `null` = iniciales sobre naranja. */
   photoUrl?: string | null
-  onManualPunch?: (row: TimesheetRow) => void
+  onManualPunch?: ((row: TimesheetRow) => void) | undefined
   /** Pasar el puntero por el badge de la requisición enciende su tramo de días. */
   onRequisitionHover?: (hovering: boolean) => void
 }): ReactNode {
@@ -128,6 +128,8 @@ export function WorkerWeekSummary({
   const can = useCan()
   /** Aprobar es de los Managers (timesheet:approve_hours); el Supervisor envía y captura. */
   const canApprove = can('timesheet:approve_hours')
+  /** Enviar es de quien revisa; el Observador solo lee y no ve el botón. */
+  const canSubmit = can('timesheet:review_punches')
 
   /* Lo que el back rechazaría DESPUÉS se dice ANTES, en el botón (patrón
      honesto: deshabilitado con título). Enviar exige cero anomalías; capturar
@@ -277,20 +279,22 @@ export function WorkerWeekSummary({
         <div className="flex flex-wrap gap-1.5">
           {row.weekStatus === 'OPEN' && (
             <>
-              <button
-                type="button"
-                disabled={isSubmitting || submitBlock !== null}
-                title={submitBlock ?? t`Mandar la semana a aprobación del Manager`}
-                onClick={() => {
-                  void runAction('submit')
-                }}
-                className={cn(
-                  'cursor-pointer rounded-md bg-o-300 shadow-xs px-2 py-1 text-[11px] font-semibold text-ink transition-colors hover:bg-o-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500 disabled:opacity-60',
-                  isSubmitting ? 'disabled:cursor-wait' : 'disabled:cursor-not-allowed',
-                )}
-              >
-                {isSubmitting ? t`Enviando…` : t`Enviar a revisión`}
-              </button>
+              {canSubmit && (
+                <button
+                  type="button"
+                  disabled={isSubmitting || submitBlock !== null}
+                  title={submitBlock ?? t`Mandar la semana a aprobación del Manager`}
+                  onClick={() => {
+                    void runAction('submit')
+                  }}
+                  className={cn(
+                    'cursor-pointer rounded-md bg-o-300 shadow-xs px-2 py-1 text-[11px] font-semibold text-ink transition-colors hover:bg-o-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500 disabled:opacity-60',
+                    isSubmitting ? 'disabled:cursor-wait' : 'disabled:cursor-not-allowed',
+                  )}
+                >
+                  {isSubmitting ? t`Enviando…` : t`Enviar a revisión`}
+                </button>
+              )}
               {onManualPunch !== undefined && (
                 <button
                   type="button"

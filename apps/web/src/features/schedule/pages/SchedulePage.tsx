@@ -25,6 +25,7 @@ import {
 import { Button } from '@/shared/components/Button'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
+import { RefreshControl } from '@/shared/components/RefreshControl'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { useCan } from '@/shared/hooks/useCan'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
@@ -74,7 +75,14 @@ export function SchedulePage(): ReactNode {
   const [selection, setSelection] = useState<ScheduleShiftSelection | null>(null)
   const [isAddShiftOpen, setIsAddShiftOpen] = useState(false)
 
-  const { data: timeline, isLoading, isError, refetch } = useGetScheduleTimelineQuery()
+  const {
+    data: timeline,
+    isLoading,
+    isError,
+    refetch,
+    isFetching,
+    fulfilledTimeStamp,
+  } = useGetScheduleTimelineQuery()
 
   /** La semana en la ventana: la pedida si existe; si no, la más reciente. */
   const selectedWeek = timeline ? resolveWeek(timeline.availableWeeks, requestedWeek) : null
@@ -100,6 +108,16 @@ export function SchedulePage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
+      <div className="flex justify-end">
+        <RefreshControl
+          onRefresh={() => {
+            void refetch()
+          }}
+          isFetching={isFetching}
+          fulfilledTimeStamp={fulfilledTimeStamp}
+          label={t`el Schedule`}
+        />
+      </div>
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-ink">

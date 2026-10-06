@@ -158,6 +158,38 @@ const HOTEL_USERS: HotelUser[] = [
   },
 ]
 
+/**
+ * Lo que un hotel propuso para un rol gerencial y espera el visto bueno del
+ * Administrador o el BDC (Hugo, 2026-09-30): nace inactiva y sin invitación,
+ * aparte del directorio normal porque ESE es justo el punto — no se ve ahí.
+ */
+const PENDING_HOTEL_USERS: HotelUser[] = [
+  {
+    id: 'husr-pend-lucia',
+    email: 'lucia.vargas@xcaretmexico.local',
+    fullName: 'Lucía Vargas',
+    role: { code: 'ROL-H-03', name: 'Manager General' },
+    hotel: { id: 'hotel-xcaret-mexico', name: 'Hotel Xcaret México' },
+    department: null,
+    reportsToUserId: null,
+    hasAccount: false,
+    isActive: false,
+    createdAt: '2026-10-01T16:40:00.000Z',
+  },
+  {
+    id: 'husr-pend-tomas',
+    email: 'tomas.rivera@xcaret.local',
+    fullName: 'Tomás Rivera',
+    role: { code: 'ROL-H-02', name: 'Manager de Área' },
+    hotel: { id: 'hotel-xcaret', name: 'Hotel Xcaret' },
+    department: null,
+    reportsToUserId: null,
+    hasAccount: false,
+    isActive: false,
+    createdAt: '2026-10-01T17:10:00.000Z',
+  },
+]
+
 const HOTEL_ROLE_NAMES: Record<string, string> = {
   'ROL-H-01': 'Supervisor',
   'ROL-H-02': 'Manager de Área',
@@ -165,6 +197,9 @@ const HOTEL_ROLE_NAMES: Record<string, string> = {
 }
 
 let nextId = 1
+
+/** El idioma con el que se creó el último usuario; solo para las pruebas. */
+export let lastCreateLocale: 'es' | 'en' | null = null
 
 const routes: readonly MockRoute[] = [
   {
@@ -207,8 +242,12 @@ const routes: readonly MockRoute[] = [
         fullName: string
         roleCode: string
         reportsToUserId?: string
+        locale?: 'es' | 'en'
       }
       const role = ROLES.find((item) => item.code === body.roleCode)
+      /* Lo guarda el mock para que la prueba pueda afirmar que el idioma
+         elegido en el alta VIAJÓ: sin esto solo se probaría el desplegable. */
+      lastCreateLocale = body.locale ?? null
       const user: StaffUser = {
         id: `usr-new-${String(nextId++)}`,
         email: body.email,
@@ -358,6 +397,36 @@ const routes: readonly MockRoute[] = [
       const user = USERS.find((item) => item.id === request.params.userId)
       if (!user) throw new Error('usuario no encontrado en el mock')
       return { data: user }
+    },
+  },
+  {
+    method: 'GET',
+    path: '/hotel-users/pending',
+    resolve: (): ApiEnvelope<HotelUser[]> => ({
+      data: PENDING_HOTEL_USERS.map((user) => ({ ...user })),
+    }),
+  },
+  {
+    method: 'POST',
+    path: '/hotel-users/pending/:id/approve',
+    resolve: (request): ApiEnvelope<HotelUser> => {
+      const index = PENDING_HOTEL_USERS.findIndex((item) => item.id === request.params.id)
+      if (index === -1) throw new Error(`No hay nada pendiente con id ${String(request.params.id)}`)
+      const [approved] = PENDING_HOTEL_USERS.splice(index, 1)
+      if (!approved) throw new Error('No se pudo aprobar')
+      const activated: HotelUser = { ...approved, isActive: true, invitationSent: true }
+      HOTEL_USERS.unshift(activated)
+      return { data: activated }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/hotel-users/pending/:id/reject',
+    resolve: (request): null => {
+      const index = PENDING_HOTEL_USERS.findIndex((item) => item.id === request.params.id)
+      if (index === -1) throw new Error(`No hay nada pendiente con id ${String(request.params.id)}`)
+      PENDING_HOTEL_USERS.splice(index, 1)
+      return null
     },
   },
 ]

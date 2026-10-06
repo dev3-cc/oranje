@@ -8,13 +8,20 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
 import { useGetTodayPunchingQuery, type MyShiftApi } from '../api/punchApi'
-import { useGetMyProfileQuery, useSetAvailableMutation } from '../api/workerApi'
+import {
+  REFRESCO_DEL_PERFIL,
+  useGetMyProfileQuery,
+  useSetAvailableMutation,
+} from '../api/workerApi'
 import { AccessDeadlineBanner } from '../components/AccessDeadlineBanner'
 import { TaxDeadlineBanner } from '../components/TaxDeadlineBanner'
 import { WorkerSkeleton } from '../components/WorkerSkeleton'
+import { requestCameraPermission, requestLocationPermission } from '../lib/devicePermissions'
 
 import auraAnimation from '@/assets/dashboard/oranje-aura.lottie'
+import personajeAcceso from '@/assets/ilustrations/personaje-acceso-protegido.svg'
 import personajeBienvenida from '@/assets/ilustrations/personaje-bienvenida.svg'
+import personajeFoto from '@/assets/ilustrations/personaje-foto.svg'
 import personajeNotificaciones from '@/assets/ilustrations/personaje-notificaciones.svg'
 import personajePerfil from '@/assets/ilustrations/personaje-perfil.svg'
 import personajeSubiendo from '@/assets/ilustrations/personaje-subiendo.svg'
@@ -52,7 +59,20 @@ const INTRO_SLIDES: readonly {
     title: msg`Los avisos importan`,
     text: msg`Asignaciones, cambios de turno y recordatorios llegan a Avisos. Revísalos cada día.`,
   },
+  {
+    image: personajeFoto,
+    title: msg`Al ponchar se abre la cámara`,
+    text: msg`La foto confirma que eres tú; no se comparte con el hotel. Al continuar, tu teléfono te va a pedir permiso de cámara.`,
+  },
+  {
+    image: personajeAcceso,
+    title: msg`Y tu ubicación, para confirmar dónde estás`,
+    text: msg`Solo se usa al ponchar, para saber que estás dentro del hotel. Al continuar, tu teléfono te va a pedir permiso de ubicación.`,
+  },
 ]
+
+/** A qué diapositiva de INTRO_SLIDES pertenece la explicación de la cámara. */
+const CAMERA_SLIDE_INDEX = 3
 
 /** Los tres orígenes desde donde el semáforo deja encender Amarillo (seed). */
 const CAN_GO_AVAILABLE: ReadonlySet<string> = new Set(['STRONG_GREEN', 'ORANGE', 'PINK'])
@@ -203,21 +223,39 @@ export function HomePage(): ReactNode {
   const { t, i18n } = useLingui()
   const { isIntroOpen, dismissIntro } = useIntroSeen('worker-home')
   const reduceMotion = useReducedMotion() ?? false
-  const { data: profile, isLoading } = useGetMyProfileQuery()
+  const { data: profile, isLoading } = useGetMyProfileQuery(undefined, REFRESCO_DEL_PERFIL)
   const { data: today, isSuccess: isTodayResolved } = useGetTodayPunchingQuery()
   const [setAvailable, { isLoading: isSwitching, isError, error }] = useSetAvailableMutation()
 
+  /**
+   * Cámara y ubicación se piden AQUÍ, en el primer onboarding que ve el
+   * Colaborador — no en Ponchar, que es donde primero se pidieron y Hugo
+   * corrigió: el permiso se pide una vez, al llegar, no cada vez que se
+   * abre la cámara (2026-09-25).
+   */
+  function handleIntroAdvance(fromIndex: number): void {
+    if (fromIndex === CAMERA_SLIDE_INDEX - 1) {
+      void requestCameraPermission()
+    }
+    if (fromIndex === CAMERA_SLIDE_INDEX) {
+      void requestLocationPermission()
+    }
+  }
+
   if (isIntroOpen) {
     return (
-      <OnboardingIntro
-        slides={INTRO_SLIDES.map((slide) => ({
-          image: slide.image,
-          title: i18n._(slide.title),
-          text: i18n._(slide.text),
-        }))}
-        startLabel={t`Empezar`}
-        onDone={dismissIntro}
-      />
+      <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-surface">
+        <OnboardingIntro
+          slides={INTRO_SLIDES.map((slide) => ({
+            image: slide.image,
+            title: i18n._(slide.title),
+            text: i18n._(slide.text),
+          }))}
+          startLabel={t`Empezar`}
+          onAdvance={handleIntroAdvance}
+          onDone={dismissIntro}
+        />
+      </div>
     )
   }
 
@@ -228,6 +266,20 @@ export function HomePage(): ReactNode {
   const isAvailable = status === 'YELLOW'
   /** La tarjeta solo existe si hay algo que decidir o algo encendido. */
   const showAvailability = isAvailable || CAN_GO_AVAILABLE.has(status)
+
+  /**
+   * `isProfileComplete` exige TAMBIÉN posición, modalidad, inglés y
+   * experiencia — los cuatro que decide la Reclutadora en la entrevista
+   * (Fase 1), no el Colaborador. Con esos cuatro faltantes, la tarjeta se
+   * quedaba invitando a «Completar mis datos» para siempre, aunque ya
+   * hubiera terminado transporte, SSN/ITIN y contacto de emergencia — lo
+   * único que de verdad puede llenar desde aquí (Hugo, 2026-09-29).
+   */
+  const missingMyPart =
+    profile.transportType === null ||
+    profile.emergencyContact === null ||
+    profile.bloodType === null ||
+    !profile.taxDeadline.hasDocument
 
   return (
     <div className="flex flex-col gap-5">
@@ -244,7 +296,7 @@ export function HomePage(): ReactNode {
       <TaxDeadlineBanner deadline={profile.taxDeadline} />
       {profile.accessDeadlines && <AccessDeadlineBanner deadlines={profile.accessDeadlines} />}
 
-      {!profile.isProfileComplete && (
+      {missingMyPart && (
         <NoticeCard
           image={personajeSubiendo}
           title={t`Faltan datos tuyos`}
@@ -270,6 +322,17 @@ export function HomePage(): ReactNode {
           <p className="text-sm font-semibold text-ink">
             <Trans>Disponibilidad</Trans>
           </p>
+          {/* Encender Amarillo con una asignación viva no es un conflicto: el
+              semáforo no se mueve al asignar, solo con los ponches — aclarado
+              aquí para que no piense que esto cancela lo que ya tiene
+              (Hugo, 2026-09-30). */}
+          {today?.shift && (
+            <p className="mt-1 text-xs text-ink-3">
+              <Trans>
+                Esto no cambia tu turno de hoy: es solo para que te consideren para más.
+              </Trans>
+            </p>
+          )}
           {isAvailable ? (
             <p className="mt-1 text-sm text-ink-2">
               <Trans>

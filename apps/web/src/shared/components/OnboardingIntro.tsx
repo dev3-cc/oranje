@@ -15,10 +15,13 @@ export interface OnboardingSlide {
 export function OnboardingIntro({
   slides,
   onDone,
+  onAdvance,
   startLabel,
 }: {
   slides: readonly OnboardingSlide[]
   onDone: () => void
+  /** Solo se llama al tocar «Continuar», nunca al «Saltar». */
+  onAdvance?: (fromIndex: number) => void
   startLabel: string
 }): ReactNode {
   const { t } = useLingui()
@@ -65,6 +68,7 @@ export function OnboardingIntro({
           className="w-full"
           onClick={() => {
             if (!isLast) {
+              onAdvance?.(slide)
               setSlide(slide + 1)
               return
             }

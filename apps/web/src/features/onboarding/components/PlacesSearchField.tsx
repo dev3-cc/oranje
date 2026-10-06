@@ -107,12 +107,12 @@ function PlacesAutocompleteInput({
         placeId: place.place_id ?? null,
       })
 
-      /* Google monta el desplegable en <body>, fuera de React, y solo lo
-         retiraba al desmontar — quedaba huérfano ahí el resto del paso 1.
-         Elegir Zona después chocaba con ese nodo suelto (fuera de cualquier
-         DismissableLayer de Radix) y cerraba el modal solo. Se limpia aquí,
-         en cuanto ya eligió, no cuando el campo se desmonte. */
-      for (const node of document.querySelectorAll('.pac-container')) node.remove()
+      /* Google ya cierra su propio desplegable al elegir: forzar aquí el
+         retiro de `.pac-container` rompía la SEGUNDA búsqueda del mismo
+         campo (Hugo, 2026-10-01) — Google guarda una referencia al nodo y,
+         sin él, deja de montar uno nuevo. La limpieza real que hacía falta
+         es la del desmontaje (abajo): ahí es donde el nodo quedaba huérfano
+         al cambiar de paso del asistente y chocaba con Radix. */
       inputRef.current?.blur()
     })
 

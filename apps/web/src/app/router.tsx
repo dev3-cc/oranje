@@ -157,6 +157,13 @@ export const router = createBrowserRouter([
             },
           },
           {
+            path: 'permissions',
+            lazy: async () => {
+              const m = await import('@/features/worker')
+              return { Component: m.PermissionsPage }
+            },
+          },
+          {
             path: 'punch',
             lazy: async () => {
               const m = await import('@/features/worker')
@@ -209,6 +216,13 @@ export const router = createBrowserRouter([
             lazy: async () => {
               const m = await import('@/features/admin')
               return { Component: m.CatalogsPage }
+            },
+          },
+          {
+            path: 'mail-settings',
+            lazy: async () => {
+              const m = await import('@/features/admin')
+              return { Component: m.MailSettingsPage }
             },
           },
           {

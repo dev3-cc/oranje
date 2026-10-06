@@ -1,4 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit'
+import { setupListeners } from '@reduxjs/toolkit/query'
 
 import { baseApi } from './baseApi'
 import { sessionReducer } from './sessionSlice'
@@ -19,6 +20,14 @@ export const store = configureStore({
   },
   middleware: (getDefault) => getDefault().concat(baseApi.middleware),
 })
+
+/**
+ * Sin esto, `refetchOnFocus` y `refetchOnReconnect` de cualquier endpoint
+ * quedan inertes: son los listeners los que avisan al store que la pestaña
+ * volvió al frente o que la red regresó. No refresca nada por su cuenta —
+ * cada endpoint decide si le interesa (hoy, solo el perfil del Colaborador).
+ */
+setupListeners(store.dispatch)
 
 export type RootState = ReturnType<typeof store.getState>
 export type AppDispatch = typeof store.dispatch

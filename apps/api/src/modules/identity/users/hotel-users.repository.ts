@@ -11,6 +11,8 @@ const SELECT = {
   id: true,
   email: true,
   fullName: true,
+  // El idioma de la persona (D-36): decide en que idioma le escribimos.
+  locale: true,
   firebaseUid: true,
   reportsToUserId: true,
   isActive: true,
@@ -47,6 +49,78 @@ export class HotelUsersRepository {
     return (await this.prisma.hotelDepartment.count({ where: { id } })) > 0
   }
 
+  /**
+   * Si el hotel cae en alguna zona del BD. Su alcance son las zonas y no un
+   * hotel fijo (D-09), así que invitar se acota por ahí.
+   */
+  async hotelInUserZones(hotelId: string, userId: string): Promise<boolean> {
+    const count = await this.prisma.hotel.count({
+      where: { id: hotelId, zone: { users: { some: { userId } } } },
+    })
+
+    return count > 0
+  }
+
+  /**
+   * Si al hotel le queda un Manager General activo.
+   *
+   * Es lo que decide si el Manager de Área puede nombrar uno: con gerente
+   * vivo el cambio lo hace él mismo, su BD o el Administrador; sin ninguno
+   * —la rotación— el segundo de a bordo destraba el hotel sin llamar a nadie.
+   */
+  async hasActiveGeneralManager(hotelId: string): Promise<boolean> {
+    const count = await this.prisma.user.count({
+      where: { hotelId, isActive: true, role: { code: 'ROL-H-03' } },
+    })
+
+    return count > 0
+  }
+
+  /**
+   * El BD que lleva la cuenta comercial del hotel, para avisarle cuando el
+   * propio hotel invita a alguien: ya no es él quien la da de alta, pero
+   * sigue siendo quien responde por ese hotel.
+   *
+   * Sale del ciclo de onboarding ABIERTO; si el hotel no tiene ninguno
+   * (cliente viejo, ciclo archivado) devuelve null y no se avisa a nadie.
+   */
+  async accountOwner(hotelId: string): Promise<string | null> {
+    const prospect = await this.prisma.prospect.findFirst({
+      where: { hotelId, closedAt: null },
+      select: { ownerUserId: true },
+      orderBy: { createdAt: 'desc' },
+    })
+
+    return prospect?.ownerUserId ?? null
+  }
+
+  /**
+   * Deja la cuenta esperando aprobación. Se reusa `is_active` en vez de
+   * inventar un estado: una cuenta inactiva ya es exactamente «no entra
+   * todavía», y el resto del sistema ya lo respeta.
+   */
+  async deactivate(id: string): Promise<void> {
+    await this.prisma.user.update({ where: { id }, data: { isActive: false } })
+  }
+
+  /** Las cuentas gerenciales que el hotel propuso y siguen esperando. */
+  async pendingApprovals(): Promise<HotelUserRow[]> {
+    const rows = await this.prisma.user.findMany({
+      where: {
+        isActive: false,
+        firebaseUid: null,
+        role: { code: { in: ['ROL-H-02', 'ROL-H-03'] } },
+        hotelId: { not: null },
+      },
+      select: SELECT,
+      orderBy: { createdAt: 'desc' },
+    })
+
+    /* El `where` ya excluye las filas sin hotel; el filtro es para que el
+       compilador lo sepa, no para tapar un caso que pueda ocurrir. */
+    return rows.filter((row): row is HotelUserRow => row.hotel !== null)
+  }
+
   async emailTaken(email: string): Promise<boolean> {
     return (await this.prisma.user.count({ where: { email } })) > 0
   }
@@ -61,6 +135,63 @@ export class HotelUsersRepository {
   }
 
   /** Una cuenta del hotel: con hotel. El personal del sistema no entra por aquí. */
+  /** Activa la cuenta propuesta y deja el rastro de quién la aprobó. */
+  async approve(id: string, actor: { userId: string; role: string }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({ where: { id }, data: { isActive: true } })
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'identity.user',
+          entityId: id,
+          eventType: 'HOTEL_USER_APPROVED',
+          actorUserId: actor.userId,
+          actorRole: actor.role,
+          payload: {},
+        },
+      })
+    })
+  }
+
+  /**
+   * Quién la propuso, leyendo el journal: no se guarda en una columna
+   * aparte, el rastro de `HOTEL_USER_CREATED` ya lo tiene.
+   */
+  async proposedBy(id: string): Promise<string | null> {
+    const entry = await this.prisma.journalEntry.findFirst({
+      where: { entityType: 'identity.user', entityId: id, eventType: 'HOTEL_USER_CREATED' },
+      select: { actorUserId: true },
+      orderBy: { occurredAt: 'asc' },
+    })
+
+    return entry?.actorUserId ?? null
+  }
+
+  /**
+   * Rechaza y borra la fila: una cuenta pendiente nunca llegó a existir de
+   * verdad —sin acceso, sin invitación—, así que no hay nada que conservar
+   * ahí; el rastro vive en el journal, que no se toca al borrar (`entityId`
+   * es un vínculo polimórfico sin FK, igual que en cualquier otro borrado).
+   */
+  async reject(id: string, reason: string, actor: { userId: string; role: string }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'identity.user',
+          entityId: id,
+          eventType: 'HOTEL_USER_REJECTED',
+          actorUserId: actor.userId,
+          actorRole: actor.role,
+          payload: { reason },
+        },
+      })
+
+      await tx.user.delete({ where: { id } })
+    })
+  }
+
   async findById(id: string): Promise<HotelUserRow | null> {
     const row = await this.prisma.user.findFirst({
       where: { id, hotelId: { not: null } },
@@ -119,6 +250,8 @@ export class HotelUsersRepository {
     roleCode: string
     departmentId: string | null
     reportsToUserId: string | null
+    /** Idioma de la persona (D-36): decide en qué idioma sale su invitación. */
+    locale: string
     actorUserId: string
     actorRole: string
   }): Promise<HotelUserRow> {
@@ -134,6 +267,7 @@ export class HotelUsersRepository {
           hotelId: params.hotelId,
           departmentId: params.departmentId,
           reportsToUserId: params.reportsToUserId,
+          locale: params.locale,
         },
       })
 

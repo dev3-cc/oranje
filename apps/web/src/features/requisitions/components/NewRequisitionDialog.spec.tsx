@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { NewRequisitionDialog } from './NewRequisitionDialog'
 
@@ -45,6 +45,17 @@ async function renderDialog(onClose = vi.fn()): Promise<{ onClose: () => void }>
 }
 
 describe('NewRequisitionDialog', () => {
+  // El calendario abre en el mes en curso: fijo el reloj, no el día, para que
+  // «18 de septiembre» siga existiendo cuando pase septiembre.
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-09-10T12:00:00'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('no pide el folio: lo genera el backend al guardar', async () => {
     await renderDialog()
 

@@ -21,6 +21,11 @@ export interface WorkerEntity {
   /// Si se le validó con el expediente a medias, hasta cuándo puede completarlo (ISO); null si no aplica.
   profileDueAt: string | null
   hasTaxId: boolean
+  /// Hay un documento SSN/ITIN cargado (verificado o no) — a diferencia de
+  /// `hasTaxId`, no depende del cifrado (D-27).
+  hasTaxDocument: boolean
+  /// Cargado y todavía sin revisar (Pool: badge/filtro "con documento pendiente").
+  hasPendingDocument: boolean
   hasAccount: boolean
   /// El correo con el que entra hoy (worker.user_id); null sin cuenta todavía.
   email: string | null

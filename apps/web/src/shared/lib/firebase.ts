@@ -1,13 +1,5 @@
 import { initializeApp, type FirebaseApp, type FirebaseOptions } from 'firebase/app'
-import {
-  browserLocalPersistence,
-  getAuth,
-  indexedDBLocalPersistence,
-  initializeAuth,
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword,
-  type Auth,
-} from 'firebase/auth'
+import { getAuth, signInWithEmailAndPassword, type Auth } from 'firebase/auth'
 
 /**
  * Firebase Auth es la autoridad de identidad (D-05).
@@ -34,37 +26,12 @@ function readConfig(): FirebaseOptions | undefined {
   }
 }
 
-/**
- * Dentro de la app del Colaborador (`apps/mobile`). Se lee el `window.Capacitor`
- * que inyecta el WebView en vez de importar `@capacitor/core`: el web no depende
- * de Capacitor (ver `features/worker/lib/nativePermissions.ts`).
- */
-function isNativeApp(): boolean {
-  const cap = (window as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor
-  return cap?.isNativePlatform?.() === true
-}
-
-/**
- * En la app NO se usa `getAuth`: trae el resolvedor de popup/redirect, que al
- * iniciar monta un iframe de `authDomain`. En iOS el origen es
- * `capacitor://mi.oranjepeople.com` y ese iframe nunca termina de cargar, así
- * que `signInWithEmailAndPassword` se queda esperando para siempre (el login
- * «se queda cargando» y `/auth/session` nunca se llama). Aquí no hay popups ni
- * redirects, así que basta con la persistencia y sin resolvedor.
- */
-function createAuth(firebaseApp: FirebaseApp): Auth {
-  if (!isNativeApp()) return getAuth(firebaseApp)
-  return initializeAuth(firebaseApp, {
-    persistence: [indexedDBLocalPersistence, browserLocalPersistence],
-  })
-}
-
 /** `undefined` cuando no hay configuración — permite levantar el dev server sin proyecto. */
 export function getFirebaseAuth(): Auth | undefined {
   const config = readConfig()
   if (!config) return undefined
   app ??= initializeApp(config)
-  auth ??= createAuth(app)
+  auth ??= getAuth(app)
   return auth
 }
 
@@ -86,12 +53,29 @@ export async function signInWithEmail(email: string, password: string): Promise<
 }
 
 /**
- * Recuperación de contraseña: Firebase manda el correo con el enlace, la API
- * ni se entera (la contraseña vive en Firebase, D-05). Sin proyecto
- * configurado no hace nada: el mock no tiene a dónde escribir.
+ * Recuperación de contraseña **por el API**, no por el SDK.
+ *
+ * La contraseña sigue viviendo en Firebase (D-05) y el enlace lo sigue
+ * emitiendo él; lo que cambia es quién manda el correo. Mientras esto lo
+ * hacía `sendPasswordResetEmail` desde el navegador, era el único correo del
+ * sistema que salía con la plantilla de Firebase, que no se puede tocar.
+ *
+ * El API responde 204 exista o no la cuenta, así que aquí tampoco hay nada
+ * que distinguir: la pantalla dice lo mismo siempre.
  */
 export async function requestPasswordReset(email: string): Promise<void> {
-  const auth = getFirebaseAuth()
-  if (!auth) return
-  await sendPasswordResetEmail(auth, email)
+  const base = import.meta.env.VITE_API_URL ?? '/api/v1'
+
+  try {
+    await fetch(`${base}/auth/password-reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+  } catch {
+    /* Ni el error de red se cuenta: la pantalla ya dice lo mismo exista o no
+       la cuenta, y distinguir «no hay internet» de «no existe» aquí solo
+       serviría para adivinar quién tiene cuenta. Quien no reciba el correo
+       vuelve a pedirlo. */
+  }
 }

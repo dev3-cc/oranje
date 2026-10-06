@@ -23,8 +23,13 @@ import type { WorkerEntity } from './entities/worker.entity.js'
 import { WorkerRow, WorkersRepository } from './workers.repository.js'
 
 const PENDING_VALIDATION = 'WHITE'
-/** Días que gana el colaborador para completar el expediente si se le validó a medias. */
-export const PROFILE_GRACE_DAYS = 3
+/**
+ * Días que gana el colaborador para completar el expediente si se le validó
+ * a medias — transporte, contacto de emergencia, tipo de sangre y SSN/ITIN
+ * (unificado el 2026-09-30, Hugo: el SSN/ITIN dejó de tener su propio plazo
+ * aparte de 3/4/5 días y se pliega a este).
+ */
+export const PROFILE_GRACE_DAYS = 1
 const AVAILABLE = 'STRONG_GREEN'
 const STANDBY = 'PINK'
 const REPORTED = 'RED'
@@ -150,7 +155,19 @@ export class WorkersService {
     id: string,
     toState: string,
     user: AuthenticatedUser,
+    selfService: boolean,
   ): Promise<void> {
+    /*
+     * El Colaborador encendiendo su propio Amarillo (Reglas de Negocio §
+     * Disponibilidad) no es ni Reclutamiento validando ni el hotel marcando
+     * Stand-by/Rojo — es OTRO actor, y estos tres guards son del hotel y de
+     * Reclutamiento. `me.service.ts` ya resolvió `id` como el worker del
+     * propio `user`; la autorización real de cuál transición le toca vive en
+     * la tabla de transiciones sembrada (`roleCode: 'ROL-C-01'` solo en
+     * STRONG_GREEN/ORANGE/PINK → YELLOW), que corre después sin excepción.
+     */
+    if (selfService) return
+
     if (await this.permissions.can(user.roleCode, 'recruitment', 'validate_signup')) {
       return
     }
@@ -285,8 +302,9 @@ export class WorkersService {
     id: string,
     dto: ChangeStateDto,
     user: AuthenticatedUser,
+    selfService = false,
   ): Promise<WorkerEntity> {
-    await this.assertCanChangeState(id, dto.toState, user)
+    await this.assertCanChangeState(id, dto.toState, user, selfService)
 
     const worker = await this.worker(id)
     const current = await this.stateOfWorker(id)
@@ -317,9 +335,9 @@ export class WorkersService {
     }
 
     // Reglas de Negocio § Validación con expediente incompleto: se puede
-    // validar a medias solo a sabiendas, y con eso corren 3 dias para que el
-    // colaborador lo complete desde su app (el plazo se calcula al leer, como
-    // el del SSN/ITIN).
+    // validar a medias solo a sabiendas, y con eso corre 1 dia para que el
+    // colaborador lo complete desde su app (el plazo se calcula al leer).
+    // `isProfileComplete` ya incluye el SSN/ITIN (vw_worker, 2026-09-30).
     const validatesIncomplete = dto.toState === AVAILABLE && !worker.isProfileComplete
 
     if (validatesIncomplete && !dto.acceptIncompleteProfile) {
@@ -330,9 +348,9 @@ export class WorkersService {
     }
 
     // Lo que falte de la Fase 1 (posicion, modalidad, ingles, experiencia) lo
-    // completa Reclutamiento con «Editar»; el plazo de 3 dias que bloquea al
+    // completa Reclutamiento con «Editar»; el plazo de 1 dia que bloquea al
     // colaborador se cobra SOLO por lo que le toca a el (transporte,
-    // emergencia, tipo de sangre) — ver AccessDeadlineService.
+    // emergencia, tipo de sangre, SSN/ITIN) — ver AccessDeadlineService.
 
     let reasonId: string | null = null
 
@@ -666,6 +684,8 @@ function toEntity(row: WorkerRow, photos: Map<string, string>): WorkerEntity {
     isProfileComplete: row.isProfileComplete,
     profileDueAt: row.profileDueAt?.toISOString() ?? null,
     hasTaxId: row.hasTaxId,
+    hasTaxDocument: row.hasTaxDocument,
+    hasPendingDocument: row.hasPendingDocument,
     hasAccount: row.hasAccount,
     email: row.email,
     isBlacklisted: row.isBlacklisted,

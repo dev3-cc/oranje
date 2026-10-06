@@ -59,6 +59,8 @@ export interface Punch {
   workerFullName: string
   hotelId: string
   hotelName: string
+  /** La zona del hotel: el ponche se lee donde ocurrió. */
+  hotelTimeZone: string
   /** Inicio del turno programado ese día, si lo hay. */
   scheduledStart: string | null
   /** Solo para CLOCK_IN con turno ese día: positivo = tarde, negativo = antes. Sin tolerancia inventada. */

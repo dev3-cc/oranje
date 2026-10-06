@@ -45,6 +45,8 @@ export interface CreateStaffUserBody {
   email: string
   fullName: string
   roleCode: string
+  /** En qué idioma le llega la invitación y abre la app la primera vez (D-36). */
+  locale?: 'es' | 'en'
   reportsToUserId?: string
   password?: string
   sendWelcomeEmail?: boolean
@@ -75,6 +77,8 @@ export interface CreateHotelUserBody {
   email: string
   fullName: string
   roleCode: string
+  /** En qué idioma le llega la invitación y abre la app la primera vez (D-36). */
+  locale?: 'es' | 'en'
   departmentId?: string
   reportsToUserId?: string
 }
@@ -209,6 +213,32 @@ export const adminApi = baseApi.injectEndpoints({
       transformResponse: (response: ApiEnvelope<HotelUser>) => response.data,
       invalidatesTags: ['HotelUser'],
     }),
+    /**
+     * La cola del Administrador: cuentas gerenciales que un hotel propuso y
+     * esperan su visto bueno (Hugo, 2026-09-30).
+     */
+    getPendingHotelUsers: build.query<HotelUser[], void>({
+      query: () => '/hotel-users/pending',
+      transformResponse: (response: ApiEnvelope<HotelUser[]>) => response.data,
+      providesTags: ['HotelUser'],
+    }),
+
+    approveHotelUser: build.mutation<HotelUser, string>({
+      query: (id) => ({ url: `/hotel-users/pending/${id}/approve`, method: 'POST' }),
+      transformResponse: (response: ApiEnvelope<HotelUser>) => response.data,
+      invalidatesTags: ['HotelUser'],
+    }),
+
+    /** Nunca llegó a existir de verdad: se borra, con motivo obligatorio. */
+    rejectHotelUser: build.mutation<void, { id: string; reason: string }>({
+      query: ({ id, reason }) => ({
+        url: `/hotel-users/pending/${id}/reject`,
+        method: 'POST',
+        body: { reason },
+      }),
+      invalidatesTags: ['HotelUser'],
+    }),
+
     updateHotelUser: build.mutation<
       HotelUser,
       { hotelId: string; id: string; body: UpdateHotelUserBody }
@@ -245,6 +275,9 @@ export const {
   useGetHotelDepartmentOptionsQuery,
   useGetHotelUsersQuery,
   useCreateHotelUserMutation,
+  useGetPendingHotelUsersQuery,
+  useApproveHotelUserMutation,
+  useRejectHotelUserMutation,
   useUpdateHotelUserMutation,
   useResendHotelInvitationMutation,
 } = adminApi
