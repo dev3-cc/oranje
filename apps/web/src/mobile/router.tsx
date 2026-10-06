@@ -103,6 +103,27 @@ export const mobileRouter = createBrowserRouter([
                   return { Component: m.HotelHomePage }
                 },
               },
+              {
+                path: 'requisitions',
+                lazy: async () => {
+                  const m = await import('./hotel/requisitions/RequisitionsPage')
+                  return { Component: m.RequisitionsPage }
+                },
+              },
+              {
+                path: 'requisitions/new',
+                lazy: async () => {
+                  const m = await import('./hotel/requisitions/NewRequisitionPage')
+                  return { Component: m.NewRequisitionPage }
+                },
+              },
+              {
+                path: 'requisitions/:requisitionId',
+                lazy: async () => {
+                  const m = await import('./hotel/requisitions/RequisitionDetailPage')
+                  return { Component: m.RequisitionDetailPage }
+                },
+              },
             ],
           },
           ...LEGACY_PATHS.map(({ from, to }) => ({

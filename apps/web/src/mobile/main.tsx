@@ -4,6 +4,7 @@ import 'material-icons/iconfont/outlined.css'
 import '../styles/globals.css'
 
 import { I18nProvider } from '@lingui/react'
+import { Toaster } from '@oranje/ui'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
@@ -37,6 +38,10 @@ createRoot(container).render(
     <I18nProvider i18n={i18n}>
       <Provider store={store}>
         <RouterProvider router={mobileRouter} />
+        {/* Los avisos (`toast`) de la app. En el web los monta `AppShell`, que la
+            app no carga: sin esto, ningún aviso del Colaborador ni del hotel
+            se veía. */}
+        <Toaster />
       </Provider>
     </I18nProvider>
   </StrictMode>,

@@ -34,6 +34,29 @@ Reglas:
 
 ## 2026-10-06
 
+### 13:56 — Mostrar los avisos (`toast`) dentro de la app
+
+**Qué:** `mobile/main.tsx` monta el `Toaster` de `@oranje/ui`.
+**Por qué:** en el web lo monta `AppShell`, que la app no carga: ningún aviso de la app se
+veía. Afectaba también al Colaborador (contraseña, foto, documentos, Mis datos, Inicio).
+**Archivos:** `src/mobile/main.tsx`
+
+### 13:56 — Requisiciones del hotel en la app
+
+**Qué:** pestaña «Requisiciones» en `/hotel`: lista con filtros (Todas, Por autorizar,
+Abiertas, Cubiertas), detalle con posiciones y quién ocupa cada lugar, Autorizar y
+Eliminar con confirmación, y el alta en tres pasos (`/hotel/requisitions/new`). Capa de
+datos propia (`requisitionsAppApi.ts`) sobre los mismos endpoints del web.
+**Por qué:** fase 2 del apartado del hotel. Las reglas son las del web: crear con
+`requisitions:create`; autorizar un borrador con `requisitions:authorize`; eliminar con
+`requisitions:delete_empty` (el borrador, su autor; de Autorizada en adelante, el Manager
+de Área o el General, con motivo). El Supervisor y el Manager de Área piden para su
+departamento; el General lo elige. Los mensajes repiten los del web para reusar su
+traducción. Las reglas de ESLint no dejan importar el interior de
+`features/requisitions`, por eso la capa es propia.
+**Archivos:** `src/mobile/hotel/requisitions/*`, `src/mobile/router.tsx`,
+`src/mobile/hotel/HotelShell.tsx`, `src/locales/{es,en}/messages.po`
+
 ### 13:41 — Abrir la pantalla nativa de Permisos en el idioma de la persona
 
 **Qué:** `PermissionsOnLaunch` espera a `/me` y a que su idioma quede aplicado antes de

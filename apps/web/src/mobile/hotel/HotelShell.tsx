@@ -55,6 +55,7 @@ export function HotelShell(): ReactNode {
    */
   const tabs: Array<{ to: string; label: string; end: boolean }> = [
     { to: '/hotel', label: t`Inicio`, end: true },
+    { to: '/hotel/requisitions', label: t`Requisiciones`, end: false },
   ]
 
   const tabClass = ({ isActive }: { isActive: boolean }): string =>
