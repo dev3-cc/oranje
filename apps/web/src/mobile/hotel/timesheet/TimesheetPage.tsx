@@ -30,13 +30,19 @@ export function TimesheetPage(): ReactNode {
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedWeek = searchParams.get('week')
   const { data, isLoading, error, refetch, isFetching } = useAppTimesheetWeekQuery(requestedWeek)
-  const [filter, setFilter] = useState<Filter>(
-    can('timesheet:approve_hours') ? 'PENDING_APPROVAL' : 'all',
-  )
+  /*
+   * `null` = sin elegir: quien aprueba arranca en «Por aprobar» SOLO si hay
+   * alguna; si no, en «Todas». Arrancar en un filtro vacío decía «No hay
+   * semanas» con seis abiertas en la lista (visto con datos reales).
+   */
+  const [chosenFilter, setFilter] = useState<Filter | null>(null)
 
   const rows = data?.rows ?? []
   const weeks = data?.availableWeeks ?? []
   const weekIndex = data?.weekStart ? weeks.indexOf(data.weekStart) : -1
+  const hasPending = rows.some((row) => row.status === 'PENDING_APPROVAL')
+  const filter: Filter =
+    chosenFilter ?? (can('timesheet:approve_hours') && hasPending ? 'PENDING_APPROVAL' : 'all')
   const visible = rows.filter((row) => filter === 'all' || row.status === filter)
   const countOf = (status: TimesheetWeekStatus): number =>
     rows.filter((row) => row.status === status).length

@@ -34,6 +34,14 @@ Reglas:
 
 ## 2026-10-06
 
+### 14:22 — El Timesheet de la app abre en «Por aprobar» solo si hay alguna
+
+**Qué:** el filtro inicial del Timesheet del hotel se decide con los datos: quien aprueba
+arranca en «Por aprobar» si hay semanas enviadas; si no, en «Todas».
+**Por qué:** probado con datos reales (Manager General, Villa Magna): con 0 por aprobar y
+6 abiertas, la primera pantalla decía «No hay semanas en este filtro».
+**Archivos:** `src/mobile/hotel/timesheet/TimesheetPage.tsx`
+
 ### 14:19 — QR de ponche e invitar cuentas en la app del hotel
 
 **Qué:** «QR de ponche» en el menú del avatar (`hotel:punch_qr`): el QR del hotel en
