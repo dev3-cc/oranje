@@ -39,6 +39,9 @@ export interface AppRequisitionRow {
   startDate: string | null
   createdByName: string | null
   createdAt: string
+  authorizedAt: string | null
+  /** Lugares sin cubrir por departamento (para la demanda del Inicio). */
+  openByDepartment: Array<{ department: string; open: number }>
 }
 
 export interface AppRequisitionSlot {
@@ -123,6 +126,16 @@ function toRow(requisition: RequisitionApi): AppRequisitionRow {
     startDate: requisition.positions.map((position) => position.startDate).sort()[0] ?? null,
     createdByName: requisition.createdBy?.fullName ?? null,
     createdAt: requisition.createdAt,
+    authorizedAt: requisition.authorizedAt,
+    openByDepartment: [
+      ...requisition.positions
+        .reduce((byDepartment, position) => {
+          const name = position.department.name
+          const open = Math.max(position.quantity - position.filled, 0)
+          return byDepartment.set(name, (byDepartment.get(name) ?? 0) + open)
+        }, new Map<string, number>())
+        .entries(),
+    ].map(([department, open]) => ({ department, open })),
   }
 }
 

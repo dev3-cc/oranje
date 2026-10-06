@@ -567,6 +567,7 @@ msgstr "{days, plural, =0 {Starts today} one {Starts in # day} other {Starts in 
 msgid "{days} d en estado"
 msgstr "{days} d in status"
 
+#: src/mobile/hotel/HotelHomePage.tsx
 #: src/shared/lib/formatters.ts
 msgid "{days} días"
 msgstr "{days} days"
@@ -660,6 +661,10 @@ msgstr "{quantity, plural, one {# free slot} other {# free slots}}"
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "{reason}: revisa la fecha de nacimiento."
 msgstr "{reason}: check the date of birth."
+
+#: src/mobile/hotel/HotelHomePage.tsx
+msgid "{rounded} h"
+msgstr "{rounded} h"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "{shift} · entró {clockIn}"
@@ -813,6 +818,7 @@ msgid "Abierta"
 msgstr "Open"
 
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
+#: src/mobile/hotel/HotelHomePage.tsx
 #: src/mobile/hotel/requisitions/RequisitionsPage.tsx
 msgid "Abiertas"
 msgstr "Open"
@@ -1116,10 +1122,6 @@ msgstr "The camera opens when you punch in"
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Al tocar el botón se abre la cámara. La foto confirma que eres tú; no se comparte con el hotel."
 msgstr "Tapping the button opens the camera. The photo confirms it's you; it isn't shared with the hotel."
-
-#: src/mobile/hotel/HotelHomePage.tsx
-msgid "Alcance"
-msgstr "Scope"
 
 #: src/features/onboarding/components/HotelLocationMap.tsx
 msgid "Alejar"
@@ -2029,6 +2031,7 @@ msgid "Cargado, sin verificar"
 msgstr "Uploaded, not verified"
 
 #: src/features/worker/components/WorkerSkeleton.tsx
+#: src/mobile/hotel/HotelHomePage.tsx
 #: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 #: src/mobile/hotel/requisitions/RequisitionsPage.tsx
 msgid "Cargando"
@@ -2176,6 +2179,7 @@ msgstr "Active Clients"
 #: src/features/requisitions/components/PositionsTable.tsx
 #: src/features/requisitions/components/RequisitionSummaryStrip.tsx
 #: src/features/requisitions/components/RequisitionTable.tsx
+#: src/mobile/hotel/HotelHomePage.tsx
 #: src/mobile/hotel/requisitions/requisitionParts.tsx
 msgid "Cobertura"
 msgstr "Coverage"
@@ -2184,6 +2188,10 @@ msgstr "Coverage"
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
 msgid "Cobertura · {0}"
 msgstr "Coverage · {0}"
+
+#: src/mobile/hotel/HotelHomePage.tsx
+msgid "Cobertura de las abiertas"
+msgstr "Coverage of open requisitions"
 
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
 msgid "Cobertura parcial"
@@ -4154,6 +4162,10 @@ msgstr "Starts today, {0}"
 msgid "empiezan en menos de 3 días"
 msgstr "start in less than 3 days"
 
+#: src/mobile/hotel/HotelHomePage.tsx
+msgid "Empiezan en menos de 3 días"
+msgstr "Start in less than 3 days"
+
 #. placeholder {0}: String(days)
 #: src/features/contracts/components/ContractFilters.tsx
 msgid "en {0} días"
@@ -4332,6 +4344,10 @@ msgstr "Sent for approval"
 #: src/features/admin/pages/MailSettingsPage.tsx
 msgid "Enviado"
 msgstr "Sent"
+
+#: src/mobile/hotel/HotelHomePage.tsx
+msgid "Enviados por el Supervisor"
+msgstr "Submitted by the Supervisor"
 
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/components/UserFormDialog.tsx
@@ -4581,6 +4597,10 @@ msgstr "That Status Light doesn't exist."
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Ese turno no es tuyo. Recarga la pantalla e inténtalo de nuevo."
 msgstr "That shift isn't yours. Reload the screen and try again."
+
+#: src/mobile/hotel/HotelHomePage.tsx
+msgid "Esperan la firma de un Manager"
+msgstr "Waiting for a Manager's approval"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
 msgid "Esperando aprobación"
@@ -5383,7 +5403,6 @@ msgstr "Net hours"
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/features/requisitions/components/RequisitionTable.tsx
 #: src/features/timesheet/components/TimesheetToolbar.tsx
-#: src/mobile/hotel/HotelHomePage.tsx
 #: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Hotel"
 msgstr "Hotel"
@@ -6214,6 +6233,10 @@ msgstr "What Oranje decides"
 msgid "Lo que dejes marcado ES el territorio completo del BD — desmarcar una zona se la quita en el mismo guardado."
 msgstr "What you leave checked IS the BD's whole territory — unchecking a zone takes it away in that same save."
 
+#: src/mobile/hotel/HotelHomePage.tsx
+msgid "Lo que falta por departamento"
+msgstr "What's missing by department"
+
 #: src/features/onboarding/components/PlacesAutofillSummary.tsx
 msgid "Lo que Google llenó por ti"
 msgstr "What Google filled in for you"
@@ -6300,6 +6323,14 @@ msgstr "The hotels in your zones, from prospect to active client.{0} Each pin op
 #: src/features/team/pages/TeamPage.tsx
 msgid "Los reportes por BD llegan con la pantalla de Reportes"
 msgstr "Per-BD reports come with the Reports screen"
+
+#: src/mobile/hotel/HotelHomePage.tsx
+msgid "Lugares cubiertos de lo que pediste y sigue abierto."
+msgstr "Filled spots out of what you requested and is still open."
+
+#: src/mobile/hotel/HotelHomePage.tsx
+msgid "Lugares por cubrir"
+msgstr "Spots to fill"
 
 #: src/features/timesheet/components/TimesheetMonthView.tsx
 msgid "Lun"
@@ -6976,9 +7007,17 @@ msgstr "Not available in this status"
 msgid "No existe, y el contacto principal no tiene correo: agrégaselo para poder crearlo"
 msgstr "It doesn't exist, and the main contact has no email: add one so it can be created"
 
+#: src/mobile/hotel/HotelHomePage.tsx
+msgid "No falta nadie en las requisiciones abiertas."
+msgstr "Nobody is missing in the open requisitions."
+
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "No hay hoteles libres: todos tienen ciclo abierto"
 msgstr "No hotels are free: they all have an open cycle"
+
+#: src/mobile/hotel/HotelHomePage.tsx
+msgid "No hay requisiciones abiertas ahora."
+msgstr "There are no open requisitions right now."
 
 #: src/features/schedule/pages/SchedulePage.tsx
 msgid "No hay requisiciones autorizadas para esta semana. Cuando un Manager autorice una, sus posiciones aparecerán aquí."
@@ -7104,6 +7143,7 @@ msgstr "We couldn't load the hotel accounts. Try again in a few seconds."
 msgid "No se pudieron cargar las propuestas. Reintenta en unos segundos."
 msgstr "We couldn't load the proposals. Try again in a few seconds."
 
+#: src/mobile/hotel/HotelHomePage.tsx
 #: src/mobile/hotel/requisitions/RequisitionsPage.tsx
 msgid "No se pudieron cargar las requisiciones."
 msgstr "The requisitions couldn't be loaded."
@@ -8112,6 +8152,10 @@ msgstr "Hotel staff"
 msgid "Personal Oranje"
 msgstr "Oranje staff"
 
+#: src/mobile/hotel/HotelHomePage.tsx
+msgid "Personas que faltan en las abiertas"
+msgstr "People still missing in open requisitions"
+
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
 msgid "Peso"
 msgstr "Weight"
@@ -8218,6 +8262,7 @@ msgstr "For absences"
 
 #: src/features/dashboard/components/HotelDashboard.tsx
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
+#: src/mobile/hotel/HotelHomePage.tsx
 #: src/mobile/hotel/requisitions/RequisitionsPage.tsx
 msgid "Por autorizar"
 msgstr "Pending authorization"
@@ -8382,6 +8427,10 @@ msgstr "average as a client"
 #: src/features/observability/components/StatusDurationSection.tsx
 msgid "Promedio hasta resolver"
 msgstr "Average until resolved"
+
+#: src/mobile/hotel/HotelHomePage.tsx
+msgid "Promedio, últimos 90 días"
+msgstr "Average, last 90 days"
 
 #: src/shared/constants/workerEnums.ts
 msgid "Propio"
@@ -8681,6 +8730,10 @@ msgstr "Recruitment and Inspection take over the operation"
 msgid "Reclutamiento la verá cuando un Manager la autorice. Sin la firma, para ellos no existe."
 msgstr "Recruitment will see it once a Manager authorizes it. Without the signature, it doesn't exist for them."
 
+#: src/mobile/hotel/HotelHomePage.tsx
+msgid "Reclutamiento las está cubriendo"
+msgstr "Recruitment is filling them"
+
 #. placeholder {0}: formatDate(profile.dueAt)
 #. placeholder {1}: profile.day ?? 1
 #: src/features/worker/components/AccessDeadlineBanner.tsx
@@ -8889,10 +8942,6 @@ msgstr "Requisitions in queue"
 #: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
 msgid "Requisiciones por autorizar"
 msgstr "Requisitions pending authorization"
-
-#: src/mobile/hotel/HotelHomePage.tsx
-msgid "Requisiciones, Timesheet y tu personal se suman a la app en las próximas versiones. Mientras, siguen en el web."
-msgstr "Requisitions, Timesheet and your staff join the app in upcoming versions. Meanwhile, they stay on the web."
 
 #: src/features/conversion/pages/ConversionPage.tsx
 msgid "Requisitos para habilitar la conversión"
@@ -10088,6 +10137,10 @@ msgstr "Full-time"
 msgid "Tiempo extra"
 msgstr "Overtime"
 
+#: src/mobile/hotel/HotelHomePage.tsx
+msgid "Tiempo para autorizar"
+msgstr "Time to authorize"
+
 #: src/features/reports/pages/ReportsPage.tsx
 msgid "Tiempo por color del semáforo"
 msgstr "Time per Status Light color"
@@ -10129,6 +10182,10 @@ msgstr "Global Timesheet"
 #: src/features/timesheet/pages/TimesheetGlobalPage.tsx
 msgid "Timesheet Global · Cumplimiento"
 msgstr "Global Timesheet · Compliance"
+
+#: src/mobile/hotel/HotelHomePage.tsx
+msgid "Timesheets por aprobar"
+msgstr "Timesheets to approve"
 
 #: src/features/dashboard/components/HotelDashboard.tsx
 msgid "Timesheets sin aprobar"
@@ -10425,10 +10482,6 @@ msgstr "Your photo"
 msgid "Tu hotel"
 msgstr "Your hotel"
 
-#: src/mobile/hotel/HotelHomePage.tsx
-msgid "Tu hotel llega a la app"
-msgstr "Your hotel comes to the app"
-
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Tu marca quedó registrada"
 msgstr "Your punch was recorded"
@@ -10716,6 +10769,7 @@ msgid "Urgente"
 msgstr "Urgent"
 
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
+#: src/mobile/hotel/HotelHomePage.tsx
 msgid "Urgentes"
 msgstr "Urgent"
 
@@ -10870,6 +10924,10 @@ msgstr "View requisitions"
 #: src/features/timesheet/components/TimesheetHoursView.tsx
 msgid "Ver revisión"
 msgstr "View review"
+
+#: src/mobile/hotel/HotelHomePage.tsx
+msgid "Ver todas las requisiciones"
+msgstr "See all requisitions"
 
 #: src/shared/constants/onboardingStatus.ts
 msgid "Verde"

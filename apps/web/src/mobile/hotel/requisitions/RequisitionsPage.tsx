@@ -1,7 +1,7 @@
 import { Trans, useLingui } from '@lingui/react/macro'
 import { cn, MaterialIcon } from '@oranje/ui'
 import { useMemo, useState, type ReactNode } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 
 import { CoverageBar, RequisitionStatusChip, UrgencyChip } from './requisitionParts'
 import { useAppRequisitionsQuery, type AppRequisitionRow } from './requisitionsAppApi'
@@ -14,6 +14,13 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
 import { formatDayMonth } from '@/shared/lib/formatters'
 
 type Filter = 'all' | 'draft' | 'open' | 'covered'
+
+const FILTERS: readonly Filter[] = ['all', 'draft', 'open', 'covered']
+
+/** El filtro llega en `?filter=` (las métricas del Inicio): un valor desconocido es «Todas». */
+function filterFrom(value: string | null): Filter {
+  return FILTERS.find((item) => item === value) ?? 'all'
+}
 
 /** Abiertas = autorizadas o en trabajo de Reclutamiento; no cuenta borradores ni eliminadas. */
 const OPEN: ReadonlySet<string> = new Set(['GREEN', 'YELLOW', 'RED'])
@@ -35,7 +42,8 @@ export function RequisitionsPage(): ReactNode {
   const { t } = useLingui()
   const can = useCan()
   const { data: rows, isLoading, error, refetch, isFetching } = useAppRequisitionsQuery()
-  const [filter, setFilter] = useState<Filter>('all')
+  const [searchParams] = useSearchParams()
+  const [filter, setFilter] = useState<Filter>(() => filterFrom(searchParams.get('filter')))
 
   const counts = useMemo(() => {
     const list = rows ?? []

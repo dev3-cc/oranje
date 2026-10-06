@@ -34,6 +34,20 @@ Reglas:
 
 ## 2026-10-06
 
+### 14:00 — KPIs del hotel en el Inicio de la app
+
+**Qué:** el Inicio de `/hotel` muestra Por autorizar, Abiertas, Urgentes y Lugares por
+cubrir (cada uno lleva a la lista filtrada con `?filter=`), la cobertura de las abiertas,
+el tiempo promedio para autorizar (90 días), lo que falta por departamento y, con
+`timesheet:approve_hours`, los timesheets por aprobar. `computeHotelKpis` con su spec.
+**Por qué:** fase 3. Todo sale de `GET /requisitions` y `GET /timesheets` con el alcance de
+la sesión, sin endpoints nuevos. Urgentes cuenta también los borradores: es lo que más
+urge firmar. Lo que pide datos que el API todavía no agrega (time to fill, puntualidad,
+inasistencias, costo) queda fuera hasta que el backend lo exponga.
+**Archivos:** `src/mobile/hotel/HotelHomePage.tsx`, `src/mobile/hotel/home/*`,
+`src/mobile/hotel/requisitions/requisitionsAppApi.ts`,
+`src/mobile/hotel/requisitions/RequisitionsPage.tsx`, `src/locales/{es,en}/messages.po`
+
 ### 13:56 — Mostrar los avisos (`toast`) dentro de la app
 
 **Qué:** `mobile/main.tsx` monta el `Toaster` de `@oranje/ui`.
