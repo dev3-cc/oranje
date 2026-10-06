@@ -34,6 +34,19 @@ Reglas:
 
 ## 2026-10-06
 
+### 14:05 — Mi personal del hotel en la app
+
+**Qué:** pestaña «Mi personal» (`staff:read`) en `/hotel`: resumen de hoy (con turno, ya
+entraron, en Stand-by, accidentados), la plantilla con su semáforo, turno y entrada de
+hoy, y la ficha de cada persona (asistencia y puntualidad de la semana, teléfono,
+contacto de emergencia) con Mandar a Stand-by y Reportar.
+**Por qué:** fase 4. Compone los mismos datos que `features/personnel` (Schedule de la
+semana, timesheets con sus ponches, `/workers`). Stand-by (Rosa) y Reportar (Rojo) son la
+transición del semáforo con motivo obligatorio y nota opcional, solo desde un estado
+operativo y con `staff:set_standby` / `staff:report`; mismos motivos y textos que el web.
+**Archivos:** `src/mobile/hotel/staff/*`, `src/mobile/router.tsx`,
+`src/mobile/hotel/HotelShell.tsx`, `src/locales/{es,en}/messages.po`
+
 ### 14:00 — KPIs del hotel en el Inicio de la app
 
 **Qué:** el Inicio de `/hotel` muestra Por autorizar, Abiertas, Urgentes y Lugares por

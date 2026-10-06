@@ -118,6 +118,20 @@ export const mobileRouter = createBrowserRouter([
                 },
               },
               {
+                path: 'staff',
+                lazy: async () => {
+                  const m = await import('./hotel/staff/StaffPage')
+                  return { Component: m.StaffPage }
+                },
+              },
+              {
+                path: 'staff/:workerId',
+                lazy: async () => {
+                  const m = await import('./hotel/staff/StaffMemberPage')
+                  return { Component: m.StaffMemberPage }
+                },
+              },
+              {
                 path: 'requisitions/:requisitionId',
                 lazy: async () => {
                   const m = await import('./hotel/requisitions/RequisitionDetailPage')

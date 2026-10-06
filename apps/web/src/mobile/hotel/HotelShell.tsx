@@ -21,6 +21,7 @@ import { activateLocale, LOCALE_LABEL, LOCALES } from '@/app/i18n'
 import { useGetSessionQuery, useLogoutMutation, useUpdateMyLocaleMutation } from '@/app/sessionApi'
 import { selectSessionUser } from '@/app/sessionSlice'
 import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
+import { useCan } from '@/shared/hooks/useCan'
 
 /**
  * El apartado del hotel en la app (Supervisor, Manager de Área y Manager
@@ -38,6 +39,7 @@ export function HotelShell(): ReactNode {
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation()
   const [updateMyLocale] = useUpdateMyLocaleMutation()
   const openPermissions = useHotelPermissionsScreen()
+  const can = useCan()
 
   /* Quien no es del hotel no se queda aquí: a su apartado. */
   if (!isHotelRole(user?.roleId)) return <Navigate to={homePathFor(user?.roleId)} replace />
@@ -56,6 +58,7 @@ export function HotelShell(): ReactNode {
   const tabs: Array<{ to: string; label: string; end: boolean }> = [
     { to: '/hotel', label: t`Inicio`, end: true },
     { to: '/hotel/requisitions', label: t`Requisiciones`, end: false },
+    ...(can('staff:read') ? [{ to: '/hotel/staff', label: t`Mi personal`, end: false }] : []),
   ]
 
   const tabClass = ({ isActive }: { isActive: boolean }): string =>
