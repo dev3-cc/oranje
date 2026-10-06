@@ -58,6 +58,9 @@ export function HotelShell(): ReactNode {
   const tabs: Array<{ to: string; label: string; end: boolean }> = [
     { to: '/hotel', label: t`Inicio`, end: true },
     { to: '/hotel/requisitions', label: t`Requisiciones`, end: false },
+    ...(can('timesheet:read_department') || can('timesheet:read_all')
+      ? [{ to: '/hotel/timesheet', label: t`Timesheet`, end: false }]
+      : []),
     ...(can('staff:read') ? [{ to: '/hotel/staff', label: t`Mi personal`, end: false }] : []),
   ]
 

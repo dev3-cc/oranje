@@ -34,6 +34,22 @@ Reglas:
 
 ## 2026-10-06
 
+### 14:14 — Timesheet del hotel en la app
+
+**Qué:** pestaña «Timesheet» (`timesheet:read_department` o `read_all`) en `/hotel`: la
+semana con navegación (`?week=`), filtros por estado, resumen (horas, por aprobar, días
+con anomalía) y una tarjeta por persona con sus siete días en puntos. El detalle
+(`/hotel/timesheet/:id`) muestra cada día con sus marcas (hora del hotel, manual, fuera
+de geocerca) y las acciones: Revisar día con nota, Agregar marca manual con motivo,
+Enviar semana y Aprobar semana.
+**Por qué:** fase 5. Mismos endpoints y reglas que `features/timesheet` (D-09): revisar y
+enviar con `review_punches` (enviar se bloquea con anomalías sin revisar), marca manual
+con `create_manual_punch` y asignación activa, aprobar con `approve_hours` solo una semana
+enviada. El resumen de arriba es el «Timesheet Global» del Manager General. Mensajes de
+error iguales al web para reusar su traducción.
+**Archivos:** `src/mobile/hotel/timesheet/*`, `src/mobile/router.tsx`,
+`src/mobile/hotel/HotelShell.tsx`, `src/locales/{es,en}/messages.po`
+
 ### 14:05 — Mi personal del hotel en la app
 
 **Qué:** pestaña «Mi personal» (`staff:read`) en `/hotel`: resumen de hoy (con turno, ya

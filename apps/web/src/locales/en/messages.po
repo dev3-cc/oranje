@@ -390,6 +390,11 @@ msgstr "{0} years old"
 msgid "{0} colaboradores"
 msgstr "{0} collaborators"
 
+#. placeholder {0}: row.pendingAnomalies
+#: src/mobile/hotel/timesheet/TimesheetPage.tsx
+msgid "{0} con anomalía"
+msgstr "{0} with anomaly"
+
 #. placeholder {0}: metrics.awaitingOver48h
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
 msgid "{0} con más de 48 h"
@@ -544,6 +549,7 @@ msgid "{0}× lo facturado"
 msgstr "{0}× the billed rate"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "{anomalies, plural, one {# día con anomalía} other {# días con anomalía}} por revisar: resuélvelos antes de enviar la semana"
 msgstr "{anomalies, plural, one {# day with an anomaly} other {# days with anomalies}} to review: resolve them before sending the week"
 
@@ -822,6 +828,7 @@ msgstr "Open"
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
 #: src/mobile/hotel/HotelHomePage.tsx
 #: src/mobile/hotel/requisitions/RequisitionsPage.tsx
+#: src/mobile/hotel/timesheet/TimesheetPage.tsx
 msgid "Abiertas"
 msgstr "Open"
 
@@ -1030,6 +1037,7 @@ msgid "Agregar la salida que falta"
 msgstr "Add the missing clock-out"
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Agregar marca manual"
 msgstr "Add manual punch"
 
@@ -1186,6 +1194,14 @@ msgstr "Analysis with history; today's pulse lives in the Dashboard"
 msgid "Ancho de columna"
 msgstr "Column width"
 
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
+msgid "Anomalía sin revisar"
+msgstr "Unreviewed anomaly"
+
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
+msgid "Anomalías"
+msgstr "Anomalies"
+
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Antes hay que resolver lo que dice «Qué sigue»"
 msgstr "First resolve what «What's next» says"
@@ -1197,6 +1213,10 @@ msgstr "First you have to resolve: {0}."
 
 #: src/shared/constants/timesheetStatus.ts
 msgid "Aprobada"
+msgstr "Approved"
+
+#: src/mobile/hotel/timesheet/TimesheetPage.tsx
+msgid "Aprobadas"
 msgstr "Approved"
 
 #: src/features/conversion/pages/ConversionQueuePage.tsx
@@ -1222,6 +1242,7 @@ msgid "Aprobar la conversión Rosa → Naranja —o devolverla a Café— es del
 msgstr "Approving the Pink → Orange conversion —or sending it back to Brown— is the BDC's job. Once approved, the hotel becomes an active client and can create Requisitions."
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Aprobar semana"
 msgstr "Approve week"
 
@@ -2009,6 +2030,7 @@ msgstr "Cancelling…"
 #: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 #: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 #: src/mobile/hotel/staff/StaffMemberPage.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Cancelar"
 msgstr "Cancel"
 
@@ -2052,6 +2074,8 @@ msgstr "Uploaded, not verified"
 #: src/mobile/hotel/requisitions/RequisitionsPage.tsx
 #: src/mobile/hotel/staff/StaffMemberPage.tsx
 #: src/mobile/hotel/staff/StaffPage.tsx
+#: src/mobile/hotel/timesheet/TimesheetPage.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Cargando"
 msgstr "Loading"
 
@@ -2811,6 +2835,10 @@ msgstr "Once the first Personal Presentation or Environment & Resources audit is
 msgid "Cuando tu hotel pida personal, las requisiciones aparecen aquí."
 msgstr "When your hotel requests staff, the requisitions show up here."
 
+#: src/mobile/hotel/timesheet/TimesheetPage.tsx
+msgid "Cuando tu personal ponche, sus semanas aparecen aquí."
+msgstr "When your staff punches, their weeks show up here."
+
 #: src/features/requisitions/components/RequisitionCardList.tsx
 #: src/features/requisitions/components/RequisitionTable.tsx
 msgid "Cuando un hotel pida personal, su requisición aparecerá aquí con su semáforo. Los borradores solo los ve quien los crea."
@@ -3167,6 +3195,7 @@ msgstr "Sent back to Brown"
 
 #: src/features/schedule/components/AddShiftDialog.tsx
 #: src/features/timesheet/components/ManualPunchDialog.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Día"
 msgstr "Day"
 
@@ -3191,12 +3220,17 @@ msgid "Día festivo"
 msgstr "Holiday"
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Día revisado"
 msgstr "Day reviewed"
 
 #: src/features/timesheet/components/TimesheetViewControls.tsx
 msgid "Días"
 msgstr "Days"
+
+#: src/mobile/hotel/timesheet/TimesheetPage.tsx
+msgid "Días con anomalía"
+msgstr "Days with anomaly"
 
 #: src/features/timesheet/pages/TimesheetPage.tsx
 msgid "Días de una misma requisición"
@@ -3505,6 +3539,7 @@ msgid "El colaborador completa la Fase 2 (transporte y SSN/ITIN) y la Fase 3 (co
 msgstr "The collaborator completes Phase 2 (transportation and SSN/ITIN) and Phase 3 (emergency contact and health) from the app; if you validate them incomplete, they have 1 day to finish it."
 
 #: src/features/timesheet/api/timesheetApi.ts
+#: src/mobile/hotel/timesheet/timesheetAppApi.ts
 msgid "El colaborador no tiene asignación en esta requisición"
 msgstr "The collaborator has no assignment on this requisition"
 
@@ -3514,6 +3549,7 @@ msgid "El colaborador pasa a Rojo: es una incidencia, no una pausa — Inspecci�
 msgstr "The Collaborator goes to Red: it's an incident, not a pause — Inspection reviews it and decides whether they come back or are out."
 
 #: src/features/timesheet/components/ManualPunchDialog.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "El colaborador ya no tiene asignación en esta requisición."
 msgstr "The collaborator no longer has an assignment on this requisition."
 
@@ -4304,6 +4340,7 @@ msgstr "They join the Pool today. They have 1 day to complete their part from th
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 #: src/features/worker/api/punchApi.ts
 #: src/features/worker/pages/PunchPage.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Entrada"
 msgstr "Clock in"
 
@@ -4412,6 +4449,10 @@ msgstr "Send by email"
 msgid "Enviar propuesta"
 msgstr "Send Proposal"
 
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
+msgid "Enviar semana a aprobación"
+msgstr "Submit week for approval"
+
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "Es el contacto principal"
 msgstr "This is the primary contact"
@@ -4455,6 +4496,7 @@ msgstr "That photo couldn't be processed: take another one with the camera."
 
 #. placeholder {0}: formatDayMonth(workDate)
 #: src/features/timesheet/components/ManualPunchDialog.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Esa marca ya quedó registrada el {0}."
 msgstr "That punch was already recorded on {0}."
 
@@ -4706,6 +4748,7 @@ msgid "Esta semana"
 msgstr "This week"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Esta semana es de otro departamento: no te toca aprobarla."
 msgstr "This week belongs to another department: it isn't yours to approve."
 
@@ -4714,6 +4757,7 @@ msgid "Esta semana no hay jornadas con horas. La vista Días también enseña au
 msgstr "There are no workdays with hours this week. The Days view also shows absences and pending days."
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Esta semana ya se envió a aprobación: no admite más cambios."
 msgstr "This week was already sent for approval: no more changes allowed."
 
@@ -5209,6 +5253,7 @@ msgid "Fuera de geocerca"
 msgstr "Outside geofence"
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Fuera de la geocerca"
 msgstr "Outside the geofence"
 
@@ -5325,6 +5370,10 @@ msgstr "Save correction"
 msgid "Guardar requisición"
 msgstr "Save requisition"
 
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
+msgid "Guardar revisión"
+msgstr "Save review"
+
 #: src/features/contracts/components/EditRateDialog.tsx
 msgid "Guardar tarifa"
 msgstr "Save rate"
@@ -5416,6 +5465,7 @@ msgstr "Hi, {firstName}"
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Hora"
 msgstr "Time"
 
@@ -5437,8 +5487,13 @@ msgstr "End time"
 
 #: src/features/timesheet/components/TimesheetViewControls.tsx
 #: src/features/worker/pages/PunchPage.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Horas"
 msgstr "Hours"
+
+#: src/mobile/hotel/timesheet/TimesheetPage.tsx
+msgid "Horas de la semana"
+msgstr "Hours this week"
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 msgid "Horas netas"
@@ -5803,6 +5858,7 @@ msgid "La aprobación es del Manager"
 msgstr "Approval is up to the Manager"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "La asignación se canceló: las horas registradas se conservan, pero ya no se capturan marcas"
 msgstr "The assignment was cancelled: recorded hours are kept, but no more punches can be recorded"
 
@@ -5811,6 +5867,7 @@ msgid "La asignación terminó el {endsOn}: las horas se aprueban y pagan, pero 
 msgstr "The assignment ended on {endsOn}: hours get approved and paid, but no more punches can be recorded"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "La asignación terminó: las horas se aprueban y pagan, pero ya no se capturan marcas"
 msgstr "The assignment ended: hours get approved and paid, but no more punches can be recorded"
 
@@ -5911,6 +5968,10 @@ msgstr "The photo is too heavy: 15 MB is the limit."
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 msgid "La geocerca rechazó la marca, se acabó la pila o no hubo señal: para eso existe la marca manual."
 msgstr "The geofence rejected the punch, the battery died or there was no signal: that's what the manual punch is for."
+
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
+msgid "La geocerca rechazó la marca, se acabó la pila…"
+msgstr "The geofence rejected the punch, the battery died…"
 
 #: src/features/onboarding/types/prospectForm.schema.ts
 msgid "La geocerca se mide en metros enteros"
@@ -6464,6 +6525,7 @@ msgstr "Send the week to the Manager for approval"
 
 #: src/features/observability/components/PunchesTable.tsx
 #: src/features/recruitment/types/blacklist.types.ts
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Manual"
 msgstr "Manual"
 
@@ -6489,12 +6551,17 @@ msgstr "Mark the location on the map"
 
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Marca manual"
 msgstr "Manual punch"
 
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 msgid "Marca manual registrada"
 msgstr "Manual punch recorded"
+
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
+msgid "Marca registrada"
+msgstr "Punch recorded"
 
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Marcando…"
@@ -6695,6 +6762,7 @@ msgstr "reason"
 #: src/features/recruitment/components/LiftBlacklistDialog.tsx
 #: src/features/recruitment/pages/BlacklistPage.tsx
 #: src/mobile/hotel/staff/StaffMemberPage.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Motivo"
 msgstr "Reason"
 
@@ -7109,6 +7177,10 @@ msgstr "No requisitions to authorize. When a Supervisor creates one, it'll show 
 msgid "No hay semanas anteriores con datos"
 msgstr "No earlier weeks with data"
 
+#: src/mobile/hotel/timesheet/TimesheetPage.tsx
+msgid "No hay semanas en este filtro."
+msgstr "No weeks in this filter."
+
 #: src/features/timesheet/components/TimesheetViewControls.tsx
 msgid "No hay semanas más recientes con datos"
 msgstr "No later weeks with data"
@@ -7316,6 +7388,7 @@ msgid "No se pudo cambiar la contraseña. Inténtalo de nuevo."
 msgstr "The password could not be changed. Try again."
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "No se pudo cambiar la semana. Inténtalo de nuevo."
 msgstr "The week couldn't be changed. Try again."
 
@@ -7361,6 +7434,10 @@ msgstr "The Schedule couldn't be loaded. Check your connection and try again."
 msgid "No se pudo cargar el Tablero de Requisiciones. Revisa tu conexión e inténtalo de nuevo."
 msgstr "The Requisition Board couldn't be loaded. Check your connection and try again."
 
+#: src/mobile/hotel/timesheet/TimesheetPage.tsx
+msgid "No se pudo cargar el Timesheet."
+msgstr "The Timesheet couldn't be loaded."
+
 #: src/features/requisitions/components/RequisitionJournalDialog.tsx
 msgid "No se pudo cargar la bitácora. Inténtalo de nuevo."
 msgstr "The log couldn't be loaded. Try again."
@@ -7404,6 +7481,10 @@ msgstr "The Global Timesheet week couldn't be loaded. Try again in a few seconds
 #: src/features/timesheet/pages/TimesheetPage.tsx
 msgid "No se pudo cargar la semana del Timesheet. Reintenta en unos segundos."
 msgstr "The Timesheet week couldn't be loaded. Try again in a few seconds."
+
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
+msgid "No se pudo cargar la semana."
+msgstr "The week couldn't be loaded."
 
 #: src/features/team/pages/TeamPage.tsx
 msgid "No se pudo cargar Mi Equipo. Reintenta en unos segundos."
@@ -7530,6 +7611,7 @@ msgid "No se pudo guardar la requisición. Revisa las posiciones e inténtalo de
 msgstr "The requisition couldn't be saved. Check the positions and try again."
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "No se pudo guardar la revisión. Inténtalo de nuevo."
 msgstr "The review couldn't be saved. Try again."
 
@@ -7587,6 +7669,7 @@ msgid "No se pudo registrar el veto. Revisa que la persona no esté en Gris ni t
 msgstr "We couldn't register the ban. Check that the person isn't in Gray and doesn't already have an active ban, then try again."
 
 #: src/features/timesheet/components/ManualPunchDialog.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "No se pudo registrar la marca. Inténtalo de nuevo."
 msgstr "The punch couldn't be recorded. Try again."
 
@@ -7761,6 +7844,7 @@ msgid "Nota al BD"
 msgstr "Note to the BD"
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Nota de revisión"
 msgstr "Review note"
 
@@ -7771,6 +7855,10 @@ msgstr "Review note <0>(required)</0>"
 #: src/features/onboarding/components/ArchiveCycleDialog.tsx
 msgid "Nota del cierre"
 msgstr "Closing note"
+
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
+msgid "Nota:"
+msgstr "Note:"
 
 #: src/features/onboarding/components/RegisterAttemptDialog.tsx
 msgid "Notas"
@@ -7960,6 +8048,7 @@ msgid "otro rol"
 msgstr "another role"
 
 #: src/features/contracts/components/MultiplierTable.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Overtime"
 msgstr "Overtime"
 
@@ -8330,6 +8419,10 @@ msgstr "Pool by status"
 msgid "Por ahora la retención del 16% aplica a todos los colaboradores, suban o verifiquen o no su SSN/ITIN — es temporal, mientras se conecta ese proceso."
 msgstr "For now the 16% withholding applies to every collaborator, whether or not they upload or verify their SSN/ITIN — it's temporary, until that process is wired up."
 
+#: src/mobile/hotel/timesheet/TimesheetPage.tsx
+msgid "Por aprobar"
+msgstr "To approve"
+
 #: src/features/recruitment/types/blacklist.types.ts
 msgid "Por ausencias"
 msgstr "For absences"
@@ -8650,6 +8743,10 @@ msgstr "What happens after intake"
 msgid "Qué pasó con este intento"
 msgstr "What happened on this attempt"
 
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
+msgid "Qué pasó y cómo se resolvió…"
+msgstr "What happened and how it was resolved…"
+
 #: src/features/personnel/components/ReportWorkerDialog.tsx
 msgid "Qué pasó y cuándo…"
 msgstr "What happened and when…"
@@ -8667,6 +8764,7 @@ msgid "Queda señalada como manual"
 msgstr "It's flagged as manual"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Quedan días con anomalía sin resolver: revísalos antes de enviar la semana."
 msgstr "There are still days with unresolved anomalies: review them before sending the week."
 
@@ -8861,10 +8959,12 @@ msgid "Registrar la marca"
 msgstr "Record the punch"
 
 #: src/features/timesheet/components/ManualPunchDialog.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Registrar marca"
 msgstr "Record punch"
 
 #: src/features/timesheet/components/ManualPunchDialog.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Registras la hora real del hecho, no la de ahora: esa es la que cuenta horas para la nómina."
 msgstr "You record the actual time it happened, not the current time: that's what counts hours for payroll."
 
@@ -8881,6 +8981,7 @@ msgstr "Clock in and clock out"
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 #: src/features/worker/api/punchApi.ts
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Regreso de lunch"
 msgstr "Back from lunch"
 
@@ -9079,6 +9180,10 @@ msgstr "reviewed"
 msgid "Revisar"
 msgstr "Review"
 
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
+msgid "Revisar día"
+msgstr "Review day"
+
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 msgid "Revisar el día"
 msgstr "Review the day"
@@ -9171,6 +9276,7 @@ msgstr "They leave the Pool while the ban is active; the full history stays and 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 #: src/features/worker/api/punchApi.ts
 #: src/features/worker/pages/PunchPage.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Salida"
 msgstr "Clock out"
 
@@ -9178,6 +9284,7 @@ msgstr "Clock out"
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 #: src/features/worker/api/punchApi.ts
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Salida a lunch"
 msgstr "Out to lunch"
 
@@ -9329,18 +9436,22 @@ msgid "Semana {rangeLabel}"
 msgstr "Week {rangeLabel}"
 
 #: src/features/timesheet/components/TimesheetViewControls.tsx
+#: src/mobile/hotel/timesheet/TimesheetPage.tsx
 msgid "Semana anterior"
 msgstr "Previous week"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Semana aprobada"
 msgstr "Week approved"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Semana enviada a revisión"
 msgstr "Week sent for review"
 
 #: src/features/timesheet/components/TimesheetViewControls.tsx
+#: src/mobile/hotel/timesheet/TimesheetPage.tsx
 msgid "Semana siguiente"
 msgstr "Next week"
 
@@ -9508,6 +9619,7 @@ msgid "Sin aprobación no se paga"
 msgstr "No approval, no pay"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Sin asignación en esta requisición: no hay contra qué capturar marcas"
 msgstr "No assignment on this requisition: there's nothing to record punches against"
 
@@ -9749,6 +9861,10 @@ msgstr "No exits on record yet. No cycle has gone to Red, Brown or Black."
 msgid "Sin salir"
 msgstr "Never sent"
 
+#: src/mobile/hotel/timesheet/TimesheetPage.tsx
+msgid "Sin semanas todavía"
+msgstr "No weeks yet"
+
 #: src/features/clients/components/ClientCardGrid.tsx
 #: src/features/contracts/components/ContractCardGrid.tsx
 msgid "Sin tarifas"
@@ -9889,6 +10005,7 @@ msgid "Solo el contrato define lo que se paga y se factura"
 msgstr "Only the contract defines what is paid and what is billed"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Solo el Manager de Área o el Manager General pueden aprobar la semana."
 msgstr "Only the Area Manager or the General Manager can approve the week."
 
@@ -9943,6 +10060,7 @@ msgid "Solo roles internos de Oranje — las cuentas de los hoteles van en «Per
 msgstr "Oranje's internal roles only — hotel accounts go in “Hotel staff”."
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Solo se aprueba una semana enviada a aprobación."
 msgstr "Only a week sent for approval can be approved."
 
@@ -10256,6 +10374,9 @@ msgstr "Status Light timeline"
 
 #: src/features/timesheet/pages/TimesheetPage.tsx
 #: src/layouts/Sidebar.tsx
+#: src/mobile/hotel/HotelShell.tsx
+#: src/mobile/hotel/timesheet/TimesheetPage.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Timesheet"
 msgstr "Timesheet"
 
@@ -10276,6 +10397,7 @@ msgid "Timesheets sin aprobar"
 msgstr "Unapproved Timesheets"
 
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
+#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Tipo"
 msgstr "Type"
 
@@ -10320,6 +10442,7 @@ msgstr "all"
 #: src/features/territory/components/TerritoryZoneChips.tsx
 #: src/features/timesheet/components/TimesheetToolbar.tsx
 #: src/mobile/hotel/requisitions/RequisitionsPage.tsx
+#: src/mobile/hotel/timesheet/TimesheetPage.tsx
 msgid "Todas"
 msgstr "All"
 

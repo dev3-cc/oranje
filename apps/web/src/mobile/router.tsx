@@ -118,6 +118,20 @@ export const mobileRouter = createBrowserRouter([
                 },
               },
               {
+                path: 'timesheet',
+                lazy: async () => {
+                  const m = await import('./hotel/timesheet/TimesheetPage')
+                  return { Component: m.TimesheetPage }
+                },
+              },
+              {
+                path: 'timesheet/:timesheetId',
+                lazy: async () => {
+                  const m = await import('./hotel/timesheet/TimesheetWeekPage')
+                  return { Component: m.TimesheetWeekPage }
+                },
+              },
+              {
                 path: 'staff',
                 lazy: async () => {
                   const m = await import('./hotel/staff/StaffPage')
