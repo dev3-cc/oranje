@@ -47,6 +47,7 @@ msgid "¿Cómo te trasladas?"
 msgstr "How do you get around?"
 
 #: src/features/dashboard/components/InviteHotelAccountCard.tsx
+#: src/mobile/hotel/home/InviteAccountCard.tsx
 msgid "¿Entró alguien nuevo a tu equipo?"
 msgstr "Someone new joined your team?"
 
@@ -2027,6 +2028,7 @@ msgstr "Cancelling…"
 #: src/features/team/components/AssignTerritoryDialog.tsx
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/features/worker/components/CameraCapture.tsx
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 #: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 #: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 #: src/mobile/hotel/staff/StaffMemberPage.tsx
@@ -2437,6 +2439,7 @@ msgid "Confirmar regreso"
 msgstr "Confirm send back"
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "Confirmar: el anterior deja de servir"
 msgstr "Confirm: the old one stops working"
 
@@ -3537,6 +3540,10 @@ msgstr "The cycle is still alive in Brown: pick it up from the Pipeline when the
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "El colaborador completa la Fase 2 (transporte y SSN/ITIN) y la Fase 3 (contacto de emergencia y salud) desde su app; si lo validas a medias, tiene 1 día para completarlo."
 msgstr "The collaborator completes Phase 2 (transportation and SSN/ITIN) and Phase 3 (emergency contact and health) from the app; if you validate them incomplete, they have 1 day to finish it."
+
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
+msgid "El colaborador lo escanea al entrar y al salir, junto con su ubicación. Para imprimirlo, tómale captura o descárgalo desde el web."
+msgstr "Collaborators scan it when clocking in and out, along with their location. To print it, take a screenshot or download it from the web."
 
 #: src/features/timesheet/api/timesheetApi.ts
 #: src/mobile/hotel/timesheet/timesheetAppApi.ts
@@ -5699,6 +5706,7 @@ msgstr "Sign in"
 #: src/features/requisitions/components/PositionsTable.tsx
 #: src/features/worker/components/MobileShell.tsx
 #: src/mobile/hotel/HotelShell.tsx
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "Inicio"
 msgstr "Home"
 
@@ -5770,10 +5778,12 @@ msgid "Invitación reenviada: la persona tiene un correo nuevo para establecer s
 msgstr "Invitation resent: they have a new email to set their password."
 
 #: src/features/dashboard/components/InviteHotelAccountCard.tsx
+#: src/mobile/hotel/home/InviteAccountCard.tsx
 msgid "Invítalo desde aquí y le llega su acceso. Un gerente nuevo lo confirma Oranje antes de que pueda entrar."
 msgstr "Invite them here and their access goes out. A new manager is confirmed by Oranje before they can sign in."
 
 #: src/features/dashboard/components/InviteHotelAccountCard.tsx
+#: src/mobile/hotel/home/InviteAccountCard.tsx
 msgid "Invitar cuenta"
 msgstr "Invite account"
 
@@ -7422,6 +7432,10 @@ msgstr "The hotel's staff couldn't be loaded. Try again."
 msgid "No se pudo cargar el Pool de Colaboradores. Revisa tu conexión e inténtalo de nuevo."
 msgstr "We couldn't load the Collaborator Pool. Check your connection and try again."
 
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
+msgid "No se pudo cargar el QR del hotel."
+msgstr "The hotel's QR couldn't be loaded."
+
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
 msgid "No se pudo cargar el QR. Inténtalo de nuevo."
 msgstr "The QR couldn't be loaded. Try again."
@@ -7657,6 +7671,7 @@ msgid "No se pudo reenviar la invitación. Inténtalo de nuevo."
 msgstr "Couldn't resend the invitation. Try again."
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "No se pudo regenerar el QR. Inténtalo de nuevo."
 msgstr "The QR couldn't be regenerated. Try again."
 
@@ -8708,8 +8723,15 @@ msgstr "Positions quoted"
 msgid "Puntualidad"
 msgstr "Punctuality"
 
+#: src/mobile/hotel/HotelShell.tsx
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
+msgid "QR de ponche"
+msgstr "Punch QR"
+
 #. placeholder {0}: data.hotelName
+#. placeholder {0}: qr.hotelName
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "QR de ponche de {0}"
 msgstr "Punch QR for {0}"
 
@@ -8717,6 +8739,10 @@ msgstr "Punch QR for {0}"
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "QR del hotel"
 msgstr "Hotel QR"
+
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
+msgid "QR regenerado: versión {version}. Cambia la hoja del acceso."
+msgstr "QR regenerated: version {version}. Replace the sheet at the entrance."
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
 msgid "QR regenerado: versión {version}. Descarga la hoja nueva."
@@ -8929,10 +8955,12 @@ msgid "Reenviar invitación"
 msgstr "Resend invitation"
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "Regenerando…"
 msgstr "Regenerating…"
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "Regenerar QR"
 msgstr "Regenerate QR"
 
@@ -10689,6 +10717,10 @@ msgstr "Your photo"
 msgid "Tu hotel"
 msgstr "Your hotel"
 
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
+msgid "Tu hotel poncha con selfie: la app toma la foto en el momento de ponchar y no hace falta QR. Para cambiarlo, pídeselo a Oranje."
+msgstr "Your hotel punches with a selfie: the app takes the photo when punching and no QR is needed. To change it, ask Oranje."
+
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Tu marca quedó registrada"
 msgstr "Your punch was recorded"
@@ -11176,8 +11208,11 @@ msgid "Versión {0} · borrador sin enviar"
 msgstr "Version {0} · unsent draft"
 
 #. placeholder {0}: String(punchQr.version)
+#. placeholder {0}: String(qr.version)
 #. placeholder {1}: formatDateTime(punchQr.generatedAt)
+#. placeholder {1}: formatDateTime(qr.generatedAt)
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "Versión {0} · generado el {1}"
 msgstr "Version {0} · generated on {1}"
 

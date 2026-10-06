@@ -15,8 +15,18 @@ entrar, el rol decide el apartado ([`roles.ts`](../web/src/mobile/roles.ts)):
 | Supervisor, Manager de Área, Manager General (`ROL-H-01..03`) | `/hotel` — [`src/mobile/hotel/`](../web/src/mobile/hotel) |
 | Cualquier otro                                                | `/unsupported` — le dice que su trabajo está en el web    |
 
-El apartado del hotel vive solo en la app: el web no lo carga. Llega por fases
-(Requisiciones, Inicio con KPIs, Mi personal, Timesheet…); hoy tiene el Inicio.
+El apartado del hotel vive solo en la app: el web no lo carga. Usa los mismos endpoints
+y permisos que el web (cada acción se muestra según `/me`):
+
+| Sección             | Qué hace                                                                                                                                                                        | Permiso                                                                |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Inicio              | Rol, hotel y alcance; Por autorizar, Abiertas, Urgentes, Lugares por cubrir, cobertura, tiempo para autorizar, demanda por departamento, timesheets por aprobar; invitar cuenta | `users:invite_hotel` para invitar                                      |
+| Requisiciones       | Lista con filtros, detalle, alta en 3 pasos, autorizar y eliminar                                                                                                               | `requisitions:create` · `:authorize` · `:delete_empty`                 |
+| Timesheet           | Semana por persona, revisar día, marca manual, enviar y aprobar                                                                                                                 | `timesheet:review_punches` · `:create_manual_punch` · `:approve_hours` |
+| Mi personal         | Plantilla con turno y entrada de hoy, ficha, Stand-by y Reportar                                                                                                                | `staff:read` · `:set_standby` · `:report`                              |
+| QR de ponche (menú) | Ver el QR en grande y regenerarlo (sin descargar: el WebView no baja archivos)                                                                                                  | `hotel:punch_qr`                                                       |
+
+Las Auditorías no están en la app: las hace el Supervisor desde el web.
 
 Se eligió Capacitor sobre React Native —que es lo que decía el README de la
 raíz— porque el Colaborador ya estaba escrito y probado como web responsive:

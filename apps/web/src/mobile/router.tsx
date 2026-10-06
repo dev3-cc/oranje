@@ -132,6 +132,13 @@ export const mobileRouter = createBrowserRouter([
                 },
               },
               {
+                path: 'punch-qr',
+                lazy: async () => {
+                  const m = await import('./hotel/punchQr/HotelPunchQrPage')
+                  return { Component: m.HotelPunchQrPage }
+                },
+              },
+              {
                 path: 'staff',
                 lazy: async () => {
                   const m = await import('./hotel/staff/StaffPage')

@@ -5,6 +5,7 @@ import { Link } from 'react-router'
 
 import { useAppPendingTimesheetsQuery } from './home/hotelHomeApi'
 import { computeHotelKpis } from './home/hotelKpis'
+import { InviteAccountCard } from './home/InviteAccountCard'
 import { useAppRequisitionsQuery } from './requisitions/requisitionsAppApi'
 
 import { useAppSelector } from '@/app/hooks'
@@ -211,6 +212,8 @@ export function HotelHomePage(): ReactNode {
               </ul>
             )}
           </section>
+
+          <InviteAccountCard />
 
           <Link
             to="/hotel/requisitions"

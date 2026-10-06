@@ -47,6 +47,7 @@ msgid "¿Cómo te trasladas?"
 msgstr "¿Cómo te trasladas?"
 
 #: src/features/dashboard/components/InviteHotelAccountCard.tsx
+#: src/mobile/hotel/home/InviteAccountCard.tsx
 msgid "¿Entró alguien nuevo a tu equipo?"
 msgstr "¿Entró alguien nuevo a tu equipo?"
 
@@ -2027,6 +2028,7 @@ msgstr "Cancelando…"
 #: src/features/team/components/AssignTerritoryDialog.tsx
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/features/worker/components/CameraCapture.tsx
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 #: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 #: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 #: src/mobile/hotel/staff/StaffMemberPage.tsx
@@ -2437,6 +2439,7 @@ msgid "Confirmar regreso"
 msgstr "Confirmar regreso"
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "Confirmar: el anterior deja de servir"
 msgstr "Confirmar: el anterior deja de servir"
 
@@ -3537,6 +3540,10 @@ msgstr "El ciclo sigue vivo en Café: se retoma desde el Pipeline cuando el hote
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "El colaborador completa la Fase 2 (transporte y SSN/ITIN) y la Fase 3 (contacto de emergencia y salud) desde su app; si lo validas a medias, tiene 1 día para completarlo."
 msgstr "El colaborador completa la Fase 2 (transporte y SSN/ITIN) y la Fase 3 (contacto de emergencia y salud) desde su app; si lo validas a medias, tiene 1 día para completarlo."
+
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
+msgid "El colaborador lo escanea al entrar y al salir, junto con su ubicación. Para imprimirlo, tómale captura o descárgalo desde el web."
+msgstr "El colaborador lo escanea al entrar y al salir, junto con su ubicación. Para imprimirlo, tómale captura o descárgalo desde el web."
 
 #: src/features/timesheet/api/timesheetApi.ts
 #: src/mobile/hotel/timesheet/timesheetAppApi.ts
@@ -5699,6 +5706,7 @@ msgstr "Iniciar sesión"
 #: src/features/requisitions/components/PositionsTable.tsx
 #: src/features/worker/components/MobileShell.tsx
 #: src/mobile/hotel/HotelShell.tsx
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "Inicio"
 msgstr "Inicio"
 
@@ -5770,10 +5778,12 @@ msgid "Invitación reenviada: la persona tiene un correo nuevo para establecer s
 msgstr "Invitación reenviada: la persona tiene un correo nuevo para establecer su contraseña."
 
 #: src/features/dashboard/components/InviteHotelAccountCard.tsx
+#: src/mobile/hotel/home/InviteAccountCard.tsx
 msgid "Invítalo desde aquí y le llega su acceso. Un gerente nuevo lo confirma Oranje antes de que pueda entrar."
 msgstr "Invítalo desde aquí y le llega su acceso. Un gerente nuevo lo confirma Oranje antes de que pueda entrar."
 
 #: src/features/dashboard/components/InviteHotelAccountCard.tsx
+#: src/mobile/hotel/home/InviteAccountCard.tsx
 msgid "Invitar cuenta"
 msgstr "Invitar cuenta"
 
@@ -7422,6 +7432,10 @@ msgstr "No se pudo cargar el plantel del hotel. Inténtalo de nuevo."
 msgid "No se pudo cargar el Pool de Colaboradores. Revisa tu conexión e inténtalo de nuevo."
 msgstr "No se pudo cargar el Pool de Colaboradores. Revisa tu conexión e inténtalo de nuevo."
 
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
+msgid "No se pudo cargar el QR del hotel."
+msgstr "No se pudo cargar el QR del hotel."
+
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
 msgid "No se pudo cargar el QR. Inténtalo de nuevo."
 msgstr "No se pudo cargar el QR. Inténtalo de nuevo."
@@ -7657,6 +7671,7 @@ msgid "No se pudo reenviar la invitación. Inténtalo de nuevo."
 msgstr "No se pudo reenviar la invitación. Inténtalo de nuevo."
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "No se pudo regenerar el QR. Inténtalo de nuevo."
 msgstr "No se pudo regenerar el QR. Inténtalo de nuevo."
 
@@ -8708,8 +8723,15 @@ msgstr "Puestos cotizados"
 msgid "Puntualidad"
 msgstr "Puntualidad"
 
+#: src/mobile/hotel/HotelShell.tsx
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
+msgid "QR de ponche"
+msgstr "QR de ponche"
+
 #. placeholder {0}: data.hotelName
+#. placeholder {0}: qr.hotelName
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "QR de ponche de {0}"
 msgstr "QR de ponche de {0}"
 
@@ -8717,6 +8739,10 @@ msgstr "QR de ponche de {0}"
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "QR del hotel"
 msgstr "QR del hotel"
+
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
+msgid "QR regenerado: versión {version}. Cambia la hoja del acceso."
+msgstr "QR regenerado: versión {version}. Cambia la hoja del acceso."
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
 msgid "QR regenerado: versión {version}. Descarga la hoja nueva."
@@ -8929,10 +8955,12 @@ msgid "Reenviar invitación"
 msgstr "Reenviar invitación"
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "Regenerando…"
 msgstr "Regenerando…"
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "Regenerar QR"
 msgstr "Regenerar QR"
 
@@ -10689,6 +10717,10 @@ msgstr "Tu foto"
 msgid "Tu hotel"
 msgstr "Tu hotel"
 
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
+msgid "Tu hotel poncha con selfie: la app toma la foto en el momento de ponchar y no hace falta QR. Para cambiarlo, pídeselo a Oranje."
+msgstr "Tu hotel poncha con selfie: la app toma la foto en el momento de ponchar y no hace falta QR. Para cambiarlo, pídeselo a Oranje."
+
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Tu marca quedó registrada"
 msgstr "Tu marca quedó registrada"
@@ -11176,8 +11208,11 @@ msgid "Versión {0} · borrador sin enviar"
 msgstr "Versión {0} · borrador sin enviar"
 
 #. placeholder {0}: String(punchQr.version)
+#. placeholder {0}: String(qr.version)
 #. placeholder {1}: formatDateTime(punchQr.generatedAt)
+#. placeholder {1}: formatDateTime(qr.generatedAt)
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
+#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "Versión {0} · generado el {1}"
 msgstr "Versión {0} · generado el {1}"
 

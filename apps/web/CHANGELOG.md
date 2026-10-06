@@ -34,6 +34,22 @@ Reglas:
 
 ## 2026-10-06
 
+### 14:19 — QR de ponche e invitar cuentas en la app del hotel
+
+**Qué:** «QR de ponche» en el menú del avatar (`hotel:punch_qr`): el QR del hotel en
+grande, con su versión, y «Regenerar» confirmado; si el hotel poncha con selfie, lo dice.
+En el Inicio, la tarjeta «¿Entró alguien nuevo a tu equipo?» (`users:invite_hotel`) con
+el mismo `HotelUserFormDialog` que exporta `features/admin`.
+**Por qué:** fase 6, la última del apartado del hotel. El QR no se descarga como en el web:
+aquel abre una hoja para guardar como PDF y el WebView no descarga archivos. La liga del
+QR se arma con `https://mi.oranjepeople.com` fijo: en iOS el origen de la app es
+`capacitor://` y ese QR no lo abriría ninguna cámara. Las Auditorías no entran: el hotel
+manager no las hace (Hugo).
+**Archivos:** `src/mobile/hotel/punchQr/HotelPunchQrPage.tsx`,
+`src/mobile/hotel/home/InviteAccountCard.tsx`, `src/mobile/hotel/HotelHomePage.tsx`,
+`src/mobile/hotel/HotelShell.tsx`, `src/mobile/router.tsx`,
+`src/locales/{es,en}/messages.po`
+
 ### 14:14 — Timesheet del hotel en la app
 
 **Qué:** pestaña «Timesheet» (`timesheet:read_department` o `read_all`) en `/hotel`: la

@@ -10,7 +10,7 @@ import {
   MaterialIcon,
 } from '@oranje/ui'
 import type { ReactNode } from 'react'
-import { Navigate, NavLink, Outlet } from 'react-router'
+import { Navigate, NavLink, Outlet, useNavigate } from 'react-router'
 
 import { homePathFor, isHotelRole } from '../roles'
 
@@ -40,6 +40,7 @@ export function HotelShell(): ReactNode {
   const [updateMyLocale] = useUpdateMyLocaleMutation()
   const openPermissions = useHotelPermissionsScreen()
   const can = useCan()
+  const navigate = useNavigate()
 
   /* Quien no es del hotel no se queda aquí: a su apartado. */
   if (!isHotelRole(user?.roleId)) return <Navigate to={homePathFor(user?.roleId)} replace />
@@ -111,6 +112,19 @@ export function HotelShell(): ReactNode {
                   >
                     <MaterialIcon name="notifications" className="text-lg" aria-hidden />
                     <Trans>Permisos</Trans>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              {can('hotel:punch_qr') && (
+                <>
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      void navigate('/hotel/punch-qr')
+                    }}
+                  >
+                    <MaterialIcon name="qr_code_2" className="text-lg" aria-hidden />
+                    <Trans>QR de ponche</Trans>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                 </>
