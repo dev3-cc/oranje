@@ -132,6 +132,20 @@ export const mobileRouter = createBrowserRouter([
                 },
               },
               {
+                path: 'costs',
+                lazy: async () => {
+                  const m = await import('./hotel/costs/CostsPage')
+                  return { Component: m.CostsPage }
+                },
+              },
+              {
+                path: 'costs/:weekStart',
+                lazy: async () => {
+                  const m = await import('./hotel/costs/CostWeekPage')
+                  return { Component: m.CostWeekPage }
+                },
+              },
+              {
                 path: 'punch-qr',
                 lazy: async () => {
                   const m = await import('./hotel/punchQr/HotelPunchQrPage')

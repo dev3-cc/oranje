@@ -6,6 +6,7 @@ import { Link } from 'react-router'
 import { useAppPendingTimesheetsQuery } from './home/hotelHomeApi'
 import { computeHotelKpis } from './home/hotelKpis'
 import { InviteAccountCard } from './home/InviteAccountCard'
+import { WeekCostCard } from './home/WeekCostCard'
 import { useAppRequisitionsQuery } from './requisitions/requisitionsAppApi'
 
 import { useAppSelector } from '@/app/hooks'
@@ -124,6 +125,8 @@ export function HotelHomePage(): ReactNode {
               to="/hotel/requisitions?filter=open"
             />
           </div>
+
+          <WeekCostCard />
 
           <section className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4">
             <div className="flex items-baseline justify-between gap-3">

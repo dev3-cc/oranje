@@ -462,6 +462,11 @@ msgstr "{0} months left"
 msgid "{0} min antes"
 msgstr "{0} min early"
 
+#. placeholder {0}: position.workers
+#: src/mobile/hotel/costs/CostWeekPage.tsx
+msgid "{0} personas"
+msgstr "{0} people"
+
 #. placeholder {0}: String(rates.length)
 #: src/features/contracts/components/ContractChecklist.tsx
 msgid "{0} posiciones cotizadas: cada una con su pay rate y su bill rate."
@@ -492,6 +497,11 @@ msgstr "{0} saved · {pendingLabel}"
 #: src/features/reports/pages/ReportsPage.tsx
 msgid "{0} salidas · Rojo {1} · Café {2} · Negro {3} — reactivables a Azul claro{4}"
 msgstr "{0} exits · Red {1} · Brown {2} · Black {3} — can be reactivated into Light Blue{4}"
+
+#. placeholder {0}: closedWithCost.length
+#: src/mobile/hotel/costs/CostsPage.tsx
+msgid "{0} semanas aprobadas"
+msgstr "{0} approved weeks"
 
 #. placeholder {0}: member.staleCount
 #: src/features/team/pages/TeamPage.tsx
@@ -543,6 +553,11 @@ msgstr "{0}. It is signed outside the system: the document comes out unsigned."
 #: src/features/dashboard/components/RequisitionMiniList.tsx
 msgid "{0}/{1} cubiertos"
 msgstr "{0}/{1} covered"
+
+#. placeholder {0}: moneyOf(position.billRate)
+#: src/mobile/hotel/costs/CostWeekPage.tsx
+msgid "{0}/h"
+msgstr "{0}/h"
 
 #. placeholder {0}: contract.multipliers.overtime.bill.toFixed(2)
 #: src/features/contracts/components/ActivateContractDialog.tsx
@@ -2071,6 +2086,8 @@ msgid "Cargado, sin verificar"
 msgstr "Uploaded, not verified"
 
 #: src/features/worker/components/WorkerSkeleton.tsx
+#: src/mobile/hotel/costs/CostsPage.tsx
+#: src/mobile/hotel/costs/CostWeekPage.tsx
 #: src/mobile/hotel/HotelHomePage.tsx
 #: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 #: src/mobile/hotel/requisitions/RequisitionsPage.tsx
@@ -2714,6 +2731,16 @@ msgstr "Fix whatever needs it for {hotelName}: it's saved on the same audit, not
 msgid "Corrige lo que haga falta: se guarda con PATCH, sobre la misma auditoría."
 msgstr "Fix whatever needs it: it's saved on the same audit, not as a new one."
 
+#: src/mobile/hotel/home/WeekCostCard.tsx
+msgid "Costo de esta semana"
+msgstr "This week's cost"
+
+#: src/mobile/hotel/costs/CostsPage.tsx
+#: src/mobile/hotel/costs/CostWeekPage.tsx
+#: src/mobile/hotel/HotelShell.tsx
+msgid "Costos"
+msgstr "Costs"
+
 #: src/features/onboarding/components/NewProposalDialog.tsx
 msgid "Cotizar →"
 msgstr "Quote →"
@@ -2967,6 +2994,14 @@ msgstr "Deactivating deletes nothing: the person can no longer sign in and their
 #: src/layouts/Sidebar.tsx
 msgid "Dashboard"
 msgstr "Dashboard"
+
+#: src/mobile/hotel/home/WeekCostCard.tsx
+msgid "Datos de ejemplo"
+msgstr "Sample data"
+
+#: src/mobile/hotel/costs/costsParts.tsx
+msgid "Datos de ejemplo: así se verán tus costos cuando el cálculo esté disponible. Los números no son reales."
+msgstr "Sample data: this is how your costs will look once the calculation is available. The numbers aren't real."
 
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "Datos de emergencia guardados"
@@ -3585,6 +3620,10 @@ msgstr "Email will go out through Firebase until you switch it back"
 msgid "El correo vuelve a salir por el servidor de Oranje"
 msgstr "Email is going out through the Oranje server again"
 
+#: src/mobile/hotel/costs/CostsPage.tsx
+msgid "El costo es lo que el hotel paga a Oranje: tarifa del contrato por hora trabajada, y el overtime con su recargo. Es el mismo cálculo de la factura."
+msgstr "The cost is what the hotel pays Oranje: the contract rate per hour worked, and overtime with its surcharge. It's the same calculation as the invoice."
+
 #. placeholder {0}: ONBOARDING_STATUS_LABEL[report.bottleneck.status]
 #. placeholder {1}: String(report.bottleneck.averageDays)
 #: src/features/reports/pages/ReportsPage.tsx
@@ -3682,6 +3721,10 @@ msgstr "The hotel prints a code at the entrance and the app scans it, along with
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
 msgid "El hotel no tiene QR generado todavía: regenéralo desde su ficha."
 msgstr "This hotel doesn't have a QR yet: regenerate it from its profile."
+
+#: src/mobile/hotel/costs/costsParts.tsx
+msgid "El hotel no tiene un contrato activo con tarifas."
+msgstr "The hotel doesn't have an active contract with rates."
 
 #: src/features/conversion/api/conversionApi.ts
 msgid "El hotel queda activado como cliente desde hoy"
@@ -4262,6 +4305,10 @@ msgstr "On the Blacklist"
 msgid "En contacto"
 msgstr "In contact"
 
+#: src/mobile/hotel/costs/CostsPage.tsx
+msgid "en curso"
+msgstr "in progress"
+
 #. placeholder {0}: formatDate(selected.createdAt)
 #. placeholder {0}: formatDate(worker.createdAt)
 #: src/features/recruitment/components/PoolRoster.tsx
@@ -4750,6 +4797,7 @@ msgstr "This requisition is no longer a Draft: someone else already authorized i
 msgid "Esta requisición ya no está en proceso: revisa su estado antes de asignar."
 msgstr "This Requisition is no longer in progress: check its status before assigning."
 
+#: src/mobile/hotel/costs/CostsPage.tsx
 #: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "Esta semana"
 msgstr "This week"
@@ -5021,6 +5069,21 @@ msgstr "This user no longer exists."
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
 msgid "Este veto es <0>manual</0>; los vetos por ausencias o disputa los genera el sistema. Al vetar, la persona pasa a <1>Negro</1> y sale del Pool de Colaboradores."
 msgstr "This ban is <0>manual</0>; bans for absences or disputes are generated by the system. Once banned, the person moves to <1>Black</1> and leaves the Collaborator Pool."
+
+#: src/mobile/hotel/home/WeekCostCard.tsx
+msgid "Estimado al día"
+msgstr "Estimated to date"
+
+#. placeholder {0}: moneyOf(previous.approvedCost)
+#: src/mobile/hotel/home/WeekCostCard.tsx
+msgid "Estimado al día · semana pasada {0} aprobado"
+msgstr "Estimated to date · last week {0} approved"
+
+#. placeholder {0}: hoursOf(current.regularMinutes)
+#. placeholder {1}: hoursOf(current.overtimeMinutes)
+#: src/mobile/hotel/costs/CostsPage.tsx
+msgid "Estimado con lo ponchado hasta hoy · {0} regulares · {1} overtime"
+msgstr "Estimated from punches so far · {0} regular · {1} overtime"
 
 #. placeholder {0}: deleteTarget?.email ?? ''
 #: src/features/admin/pages/CorporateEmailPage.tsx
@@ -5414,6 +5477,10 @@ msgstr "Up to 10 min late"
 msgid "Hay auditorías con respuestas a este reactivo: no se puede eliminar."
 msgstr "There are audits with answers to this item: it can't be deleted."
 
+#: src/mobile/hotel/costs/costsParts.tsx
+msgid "Hay días con anomalía sin revisar."
+msgstr "There are days with unreviewed anomalies."
+
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Hay dos renglones para el mismo puesto: deja uno solo."
 msgstr "There are two lines for the same position: keep only one."
@@ -5421,6 +5488,10 @@ msgstr "There are two lines for the same position: keep only one."
 #: src/features/timesheet/components/TimesheetDayCell.tsx
 msgid "Hay entrada sin salida (o al revés), en un día que ya pasó. Así la semana no puede irse a aprobación."
 msgstr "There's a clock-in without a clock-out (or the other way around), on a day that's already past. The week can't go to approval like this."
+
+#: src/mobile/hotel/costs/costsParts.tsx
+msgid "Hay horas sin aprobar: el monto puede cambiar."
+msgstr "There are unapproved hours: the amount may change."
 
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Hay un puesto donde el bill rate queda por debajo del pay rate: se pierde en cada hora."
@@ -5657,6 +5728,11 @@ msgstr "Says when the attempt happened"
 msgid "Indicador"
 msgstr "Indicator"
 
+#: src/mobile/hotel/costs/CostsPage.tsx
+#: src/mobile/hotel/costs/costsParts.tsx
+msgid "Información incompleta"
+msgstr "Incomplete information"
+
 #: src/features/personnel/pages/PersonnelPage.tsx
 #: src/features/recruitment/components/PoolFilters.tsx
 #: src/features/recruitment/components/PoolRoster.tsx
@@ -5705,6 +5781,7 @@ msgstr "Sign in"
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/features/requisitions/components/PositionsTable.tsx
 #: src/features/worker/components/MobileShell.tsx
+#: src/mobile/hotel/costs/CostsPage.tsx
 #: src/mobile/hotel/HotelShell.tsx
 #: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "Inicio"
@@ -7311,6 +7388,10 @@ msgstr "We couldn't load the catalogs. Try again in a few seconds."
 msgid "No se pudieron cargar los contratos. Reintenta en unos segundos."
 msgstr "The contracts could not be loaded. Try again in a few seconds."
 
+#: src/mobile/hotel/costs/CostsPage.tsx
+msgid "No se pudieron cargar los costos."
+msgstr "Costs couldn't be loaded."
+
 #: src/features/onboarding/components/HotelGlobeCard.tsx
 msgid "No se pudieron cargar los hoteles del mapa. Recarga la página para reintentar."
 msgstr "We couldn't load the hotels on the map. Reload the page to try again."
@@ -7496,6 +7577,7 @@ msgstr "The Global Timesheet week couldn't be loaded. Try again in a few seconds
 msgid "No se pudo cargar la semana del Timesheet. Reintenta en unos segundos."
 msgstr "The Timesheet week couldn't be loaded. Try again in a few seconds."
 
+#: src/mobile/hotel/costs/CostWeekPage.tsx
 #: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "No se pudo cargar la semana."
 msgstr "The week couldn't be loaded."
@@ -8063,6 +8145,7 @@ msgid "otro rol"
 msgstr "another role"
 
 #: src/features/contracts/components/MultiplierTable.tsx
+#: src/mobile/hotel/costs/CostWeekPage.tsx
 #: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Overtime"
 msgstr "Overtime"
@@ -8473,6 +8556,10 @@ msgstr "Through the backup"
 msgid "Por el servidor de Oranje"
 msgstr "Through the Oranje server"
 
+#: src/mobile/hotel/costs/CostWeekPage.tsx
+msgid "Por posición"
+msgstr "By position"
+
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 msgid "Por qué no existe el ponche: rechazo de ubicación, teléfono sin batería…"
 msgstr "Why there's no punch: location rejected, phone out of battery…"
@@ -8484,6 +8571,14 @@ msgstr "Why this slot is being released…"
 #: src/features/reports/pages/ReportsPage.tsx
 msgid "por qué se van los ciclos, y que son reactivables"
 msgstr "why cycles leave, and that they can be reactivated"
+
+#: src/mobile/hotel/costs/CostsPage.tsx
+msgid "Por semana"
+msgstr "By week"
+
+#: src/mobile/hotel/costs/CostsPage.tsx
+msgid "Por semana trabajada"
+msgstr "Per week worked"
 
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "Por si algo pasa"
@@ -8609,6 +8704,10 @@ msgstr "average as a client"
 #: src/features/observability/components/StatusDurationSection.tsx
 msgid "Promedio hasta resolver"
 msgstr "Average until resolved"
+
+#: src/mobile/hotel/costs/CostsPage.tsx
+msgid "Promedio por semana"
+msgstr "Average per week"
 
 #: src/mobile/hotel/HotelHomePage.tsx
 msgid "Promedio, últimos 90 días"
@@ -9012,6 +9111,10 @@ msgstr "Clock in and clock out"
 #: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Regreso de lunch"
 msgstr "Back from lunch"
+
+#: src/mobile/hotel/costs/CostWeekPage.tsx
+msgid "Regulares"
+msgstr "Regular"
 
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
 msgid "Renglón completo"
@@ -10223,6 +10326,10 @@ msgstr "Upload my SSN or ITIN"
 msgid "Subir otro archivo"
 msgstr "Upload another file"
 
+#: src/mobile/hotel/costs/CostWeekPage.tsx
+msgid "Suma solo las posiciones con tarifa."
+msgstr "Only positions with a rate are added up."
+
 #: src/features/admin/types/admin.types.ts
 #: src/shared/constants/roles.ts
 msgid "Supervisor"
@@ -10239,6 +10346,10 @@ msgstr "Their info"
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
 msgid "Tablero de Requisiciones"
 msgstr "Requisition Board"
+
+#: src/mobile/hotel/costs/CostWeekPage.tsx
+msgid "Tarifa"
+msgstr "Rate"
 
 #: src/features/contracts/components/EditRateDialog.tsx
 msgid "Tarifa de facturación"
@@ -10474,6 +10585,10 @@ msgstr "all"
 msgid "Todas"
 msgstr "All"
 
+#: src/mobile/hotel/costs/CostWeekPage.tsx
+msgid "Todas las posiciones tienen tarifa."
+msgstr "All positions have a rate."
+
 #: src/features/admin/components/ColaboradorAccountsSection.tsx
 msgid "Todavía nadie tiene correo corporativo asignado."
 msgstr "No one has a company email yet."
@@ -10548,6 +10663,10 @@ msgstr "There are no checklist items for this audit yet. Ask the Administrator t
 msgid "Todavía no hay reactivos. Agrega el primero con el botón de arriba."
 msgstr "No checklist items yet. Add the first one with the button above."
 
+#: src/mobile/hotel/costs/CostsPage.tsx
+msgid "Todavía no hay semanas trabajadas."
+msgstr "No weeks worked yet."
+
 #: src/features/onboarding/components/ProposalVersionHistory.tsx
 msgid "Todavía no hay versiones de la propuesta."
 msgstr "No proposal versions yet."
@@ -10612,6 +10731,10 @@ msgstr "Taken by a Recruiter"
 #: src/features/worker/components/CameraCapture.tsx
 msgid "Tomar foto"
 msgstr "Take photo"
+
+#: src/mobile/hotel/costs/CostsPage.tsx
+msgid "Total de las semanas cerradas"
+msgstr "Total of closed weeks"
 
 #. placeholder {0}: report.teamTotals.open
 #. placeholder {1}: report.teamTotals.converted
@@ -10945,6 +11068,10 @@ msgstr "A clear photo or a PDF. Oranje reviews it and lets you know when it's ve
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
 msgid "Una persona en accidente laboral no puede vetarse: primero se resuelve su caso, luego se decide."
 msgstr "Someone with a workplace accident can't be banned: their case is resolved first, then it's decided."
+
+#: src/mobile/hotel/costs/costsParts.tsx
+msgid "Una posición no tiene tarifa en el contrato: sus horas no tienen costo."
+msgstr "A position has no rate in the contract: its hours have no cost."
 
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Una posición pertenece a un departamento: elige a cuál."

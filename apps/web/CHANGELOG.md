@@ -32,6 +32,27 @@ Reglas:
 
 ---
 
+## 2026-10-07
+
+### 11:03 — Costos del hotel en la app, con datos de ejemplo
+
+**Qué:** sección «Costos» (`/hotel/costs`, `/hotel/costs/:weekStart`) y el KPI «Costo de
+esta semana» en el Inicio, para quien tiene `dashboard:read_all` (Manager General) o
+`dashboard:read_department` (Manager de Área). Muestra el costo estimado de la semana
+actual, el total y el promedio de las semanas cerradas (aprobado), una barra por semana
+y el desglose por posición (personas, horas, overtime, tarifa, costo). Donde falta un
+dato dice «Información incompleta» y por qué. Contrato en `costsContract.ts`.
+**Por qué:** el hotel necesita ver cómo va de costos. Los endpoints los construye el
+backend tal cual (`apps/mobile/docs/COSTOS-HOTEL-API.md`); mientras respondan 404, la app
+pinta DATOS DE EJEMPLO (`costsSample.ts`) con un aviso visible de que son ficticios.
+Cualquier otro error es error: no se tapa con el ejemplo. El costo es lo que el hotel
+paga a Oranje (`bill_rate`, overtime con su multiplicador), igual que la factura; nunca el
+`pay_rate` ni el margen. Los montos usan separador de miles: el `formatMoney`
+compartido es para tarifas y no agrupa.
+**Archivos:** `src/mobile/hotel/costs/*`, `src/mobile/hotel/home/WeekCostCard.tsx`,
+`src/mobile/hotel/HotelHomePage.tsx`, `src/mobile/hotel/HotelShell.tsx`,
+`src/mobile/router.tsx`, `src/locales/{es,en}/messages.po`
+
 ## 2026-10-06
 
 ### 14:22 — El Timesheet de la app abre en «Por aprobar» solo si hay alguna

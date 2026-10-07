@@ -116,6 +116,16 @@ export function HotelShell(): ReactNode {
                   <DropdownMenuSeparator />
                 </>
               )}
+              {(can('dashboard:read_all') || can('dashboard:read_department')) && (
+                <DropdownMenuItem
+                  onSelect={() => {
+                    void navigate('/hotel/costs')
+                  }}
+                >
+                  <MaterialIcon name="payments" className="text-lg" aria-hidden />
+                  <Trans>Costos</Trans>
+                </DropdownMenuItem>
+              )}
               {can('hotel:punch_qr') && (
                 <>
                   <DropdownMenuItem
