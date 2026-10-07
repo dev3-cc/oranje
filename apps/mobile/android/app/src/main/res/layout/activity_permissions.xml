@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    La pantalla nativa de Permisos: lo primero que ve el Colaborador al entrar.
+    Copia el shell del worker (encabezado blanco con el logo y la raya de color
+    line) y sus tokens, para que el paso al WebView no se note.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/perm_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/surface"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="20dp"
+        android:paddingTop="18dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="18dp">
+
+        <ImageView
+            android:layout_width="128dp"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:contentDescription="Oranje"
+            android:src="@drawable/oranje_logo" />
+    </FrameLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/line" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@color/bg"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingTop="24dp"
+            android:paddingEnd="20dp"
+            android:paddingBottom="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/montserrat_700"
+                android:letterSpacing="0.08"
+                android:text="@string/perm_eyebrow"
+                android:textColor="@color/o_700"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/perm_greeting"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:fontFamily="@font/montserrat_700"
+                android:textColor="@color/ink"
+                android:textSize="24sp" />
+
+            <TextView
+                android:id="@+id/perm_summary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="8dp"
+                android:fontFamily="@font/montserrat_500"
+                android:textColor="@color/ink_2"
+                android:textSize="14sp" />
+
+            <include
+                android:id="@+id/perm_card_location"
+                layout="@layout/item_permission_card" />
+
+            <include
+                android:id="@+id/perm_card_gps"
+                layout="@layout/item_permission_card" />
+
+            <include
+                android:id="@+id/perm_card_camera"
+                layout="@layout/item_permission_card" />
+
+            <!-- Solo en el perfil de hotel: ahí es la única tarjeta. -->
+            <include
+                android:id="@+id/perm_card_notifications"
+                layout="@layout/item_permission_card"
+                android:visibility="gone" />
+        </LinearLayout>
+    </ScrollView>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/line" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="12dp">
+
+        <TextView
+            android:id="@+id/perm_punch_locked"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:fontFamily="@font/montserrat_500"
+            android:gravity="center"
+            android:text="@string/perm_punch_locked"
+            android:textColor="@color/ink_3"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/perm_punch"
+            style="@style/OranjeButton"
+            android:layout_height="56dp"
+            android:background="@drawable/bg_perm_button_primary"
+            android:drawableStart="@drawable/ic_perm_punch"
+            android:drawableTint="@color/ink"
+            android:paddingStart="24dp"
+            android:paddingEnd="48dp"
+            android:text="@string/perm_punch"
+            android:textSize="16sp" />
+
+        <Button
+            android:id="@+id/perm_go_home"
+            style="@style/OranjeButton"
+            android:layout_height="48dp"
+            android:layout_marginTop="4dp"
+            android:text="@string/perm_go_home"
+            android:textColor="@color/ink_2" />
+    </LinearLayout>
+</LinearLayout>

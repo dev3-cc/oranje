@@ -1,24 +1,28 @@
-import { Trans } from '@lingui/react/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@oranje/ui'
-import type { ReactNode } from 'react'
+import { type ReactNode, useMemo, useState } from 'react'
 
-import { useGetDepartmentMetricsQuery, useGetStatusDurationsQuery } from '../api/observabilityApi'
-import { DepartmentMetricsGrid } from '../components/DepartmentMetricsGrid'
-import { PunchesTable } from '../components/PunchesTable'
-import { StatusDurationSection } from '../components/StatusDurationSection'
+import { PeriodSelector } from '../components/TabParts'
+import { PERIOD_LABEL, type PeriodKey, periodOf } from '../lib/period'
+import { HotelTab } from '../tabs/HotelTab'
+import { AccountingTab, InspectionTab } from '../tabs/InspectionTab'
+import { RecruitmentTab } from '../tabs/RecruitmentTab'
+import { SalesTab } from '../tabs/SalesTab'
+import { WorkerTab } from '../tabs/WorkerTab'
 
 import fotoEquipo from '@/assets/ilustrations/observador-equipo.webp'
-import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 
 /**
- * Observador (`ROL-OBS-01`): transversal, de solo lectura. Ve los 9 semáforos
- * con el nivel de detalle que honestamente tienen (Roles del Sistema.md,
- * 2026-09-21 — "sin SLA ni umbral inventado"), el ponche de cualquier hotel y
- * las métricas de los 7 departamentos.
+ * Observador (`ROL-OBS-01`): transversal, de solo lectura. Una pestaña por
+ * departamento con sus KPIs, compuestos en el front con las listas que el
+ * Observador ya lee (Guía del Observador, 2026-10-07). Las metas son las del
+ * tablero maquetado y se marcan como de ejemplo; viven en `lib/kpi.ts`.
  */
 export function ObservabilityPage(): ReactNode {
-  const { data: lights, isLoading: isLoadingLights } = useGetStatusDurationsQuery()
-  const { data: departments, isLoading: isLoadingDepartments } = useGetDepartmentMetricsQuery()
+  const { i18n } = useLingui()
+  const [periodKey, setPeriodKey] = useState<PeriodKey>('week')
+  const period = useMemo(() => periodOf(periodKey), [periodKey])
+  const periodLabel = i18n._(PERIOD_LABEL[periodKey])
 
   return (
     <div className="space-y-6">
@@ -33,8 +37,8 @@ export function ObservabilityPage(): ReactNode {
           </h1>
           <p className="mt-1.5 max-w-xl text-sm text-ink-3">
             <Trans>
-              Cuánto tarda cada semáforo, cada ponche de cualquier hotel, y las métricas de los 7
-              departamentos — todo de solo lectura.
+              Los indicadores de cada departamento, calculados con lo que el sistema ya registra —
+              todo de solo lectura.
             </Trans>
           </p>
         </div>
@@ -46,41 +50,55 @@ export function ObservabilityPage(): ReactNode {
         />
       </header>
 
-      <Tabs defaultValue="status">
-        <TabsList>
-          <TabsTrigger value="status">
-            <Trans>Semáforos</Trans>
-          </TabsTrigger>
-          <TabsTrigger value="punches">
-            <Trans>Ponches</Trans>
-          </TabsTrigger>
-          <TabsTrigger value="departments">
-            <Trans>Departamentos</Trans>
-          </TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="sales" className="gap-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="-mx-1 overflow-x-auto px-1">
+            <TabsList>
+              <TabsTrigger value="sales">
+                <Trans>Ventas</Trans>
+              </TabsTrigger>
+              <TabsTrigger value="hotel">
+                <Trans>Hotel</Trans>
+              </TabsTrigger>
+              <TabsTrigger value="recruitment">
+                <Trans>Reclutamiento</Trans>
+              </TabsTrigger>
+              <TabsTrigger value="worker">
+                <Trans>Colaborador</Trans>
+              </TabsTrigger>
+              <TabsTrigger value="inspection">
+                <Trans>Inspección</Trans>
+              </TabsTrigger>
+              <TabsTrigger value="accounting">
+                <Trans>Contabilidad</Trans>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          <PeriodSelector value={periodKey} onChange={setPeriodKey} />
+        </div>
+        <p className="text-xs text-ink-3">
+          <Trans>
+            Las metas son de ejemplo, tomadas del tablero maquetado: todavía nadie las aprobó.
+          </Trans>
+        </p>
 
-        <TabsContent value="status" className="space-y-4">
-          {isLoadingLights ? (
-            <CardGridSkeleton cards={9} className="grid-cols-1 md:grid-cols-2 xl:grid-cols-3" />
-          ) : (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {(lights ?? []).map((light) => (
-                <StatusDurationSection key={light.code} light={light} />
-              ))}
-            </div>
-          )}
+        <TabsContent value="sales">
+          <SalesTab period={period} periodLabel={periodLabel} />
         </TabsContent>
-
-        <TabsContent value="punches">
-          <PunchesTable />
+        <TabsContent value="hotel">
+          <HotelTab period={period} periodLabel={periodLabel} />
         </TabsContent>
-
-        <TabsContent value="departments">
-          {isLoadingDepartments ? (
-            <CardGridSkeleton cards={7} className="grid-cols-1 md:grid-cols-2 xl:grid-cols-3" />
-          ) : (
-            <DepartmentMetricsGrid metrics={departments ?? []} />
-          )}
+        <TabsContent value="recruitment">
+          <RecruitmentTab period={period} periodLabel={periodLabel} />
+        </TabsContent>
+        <TabsContent value="worker">
+          <WorkerTab period={period} periodLabel={periodLabel} />
+        </TabsContent>
+        <TabsContent value="inspection">
+          <InspectionTab period={period} periodLabel={periodLabel} />
+        </TabsContent>
+        <TabsContent value="accounting">
+          <AccountingTab />
         </TabsContent>
       </Tabs>
     </div>
