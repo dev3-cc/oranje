@@ -34,6 +34,12 @@ Reglas:
 
 ## 2026-10-07
 
+### 13:33 — Rehacer el Observador como KPIs por departamento
+
+**Qué:** las pestañas Semáforos/Ponches/Departamentos se reemplazan por Ventas, Hotel, Reclutamiento, Colaborador, Inspección y Contabilidad, cada una con sus KPIs (30) calculados en el front, una franja «Hoy en el sistema», selector de periodo (esta semana por defecto, mes, 90 días) y metas de ejemplo del tablero maquetado marcadas como tales.
+**Por qué:** pedido de Hugo: construir sin back los KPIs que ya se pueden, por departamento (Guía del Observador). Las metas viven solo en `lib/kpi.ts`; sin meta documentada se muestra «Sin meta»; lo aproximado o histórico se dice en la tarjeta.
+**Archivos:** `src/features/observability/{api/observabilityApi.ts,pages/ObservabilityPage.tsx,lib/*,tabs/*,components/KpiCard.tsx,components/TabParts.tsx}`; se borran `components/{StatusDurationSection,PunchesTable,DepartmentMetricsGrid}.tsx`; `src/locales/{es,en}/messages.po`.
+
 ### 11:03 — Costos del hotel en la app, con datos de ejemplo
 
 **Qué:** sección «Costos» (`/hotel/costs`, `/hotel/costs/:weekStart`) y el KPI «Costo de
