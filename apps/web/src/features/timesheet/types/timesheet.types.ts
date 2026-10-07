@@ -101,6 +101,14 @@ export interface TimesheetFilters {
   hotelName: string
   /** Lunes ISO de la semana a enseñar; `ALL` = la más reciente con datos. */
   weekStart: string
+  /**
+   * El periodo a revisar, `AAAA-MM-DD` o vacío en cada extremo (Hugo,
+   * 2026-10-05). Acota la lista de semanas de la que salen LAS TRES vistas,
+   * así que la navegación con flechas queda dentro del rango sola. Un solo
+   * extremo ya acota: «desde el 1» es una pregunta legítima.
+   */
+  from: string
+  to: string
 }
 
 export const EMPTY_TIMESHEET_FILTERS: TimesheetFilters = {
@@ -109,6 +117,8 @@ export const EMPTY_TIMESHEET_FILTERS: TimesheetFilters = {
   status: ANY_VALUE,
   hotelName: ANY_VALUE,
   weekStart: ANY_VALUE,
+  from: '',
+  to: '',
 }
 
 /** Identidad que acompaña a la Revisión del día: el hero del modal. */

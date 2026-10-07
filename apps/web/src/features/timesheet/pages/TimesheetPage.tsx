@@ -34,6 +34,7 @@ import { useAppDispatch } from '@/app/hooks'
 import personajeManager from '@/assets/ilustrations/personaje-manager.svg'
 import fotoEquipo from '@/assets/ilustrations/timesheet-equipo.webp'
 import { Button } from '@/shared/components/Button'
+import { EmptyState } from '@/shared/components/EmptyState'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { NoticeCard } from '@/shared/components/NoticeCard'
@@ -130,6 +131,9 @@ export function TimesheetPage(): ReactNode {
   const availableWeeks = timeline?.availableWeeks ?? week?.availableWeeks ?? []
   /** La semana en la ventana: la pedida si existe; si no, la más reciente. */
   const selectedWeek = resolveWeek(availableWeeks, filters.weekStart)
+  /** El periodo dejó fuera todo lo que había. Distinto de «no hay nada». */
+  const periodoVacio =
+    !isLoading && availableWeeks.length === 0 && (filters.from !== '' || filters.to !== '')
 
   function toggle(entryId: string): void {
     setSelectedIds((previous) => {
@@ -230,6 +234,27 @@ export function TimesheetPage(): ReactNode {
         onChange={setFilters}
         onColumnWidthChange={setColumnWidth}
       />
+
+      {/* Sin esto la pantalla se queda EN BLANCO cuando el periodo elegido no
+          tiene ni una semana: todo lo de abajo cuelga de `selectedWeek`, que
+          sin semanas es null. Un vacío sin explicación se lee como que la app
+          se rompió, no como que el filtro está muy estrecho. */}
+      {periodoVacio && (
+        <EmptyState
+          title={t`No hay horas en ese periodo`}
+          text={t`Ningún colaborador tiene registro entre esas fechas. Amplía el periodo o quítalo para ver todo.`}
+          action={
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setFilters({ ...filters, from: '', to: '' })
+              }}
+            >
+              {t`Ver todo el periodo`}
+            </Button>
+          }
+        />
+      )}
 
       <div className="flex justify-end">
         <RefreshControl

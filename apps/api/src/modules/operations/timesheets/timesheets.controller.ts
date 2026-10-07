@@ -37,10 +37,14 @@ export class TimesheetsController {
   async list(
     @CurrentUser() user: AuthenticatedUser,
     @Query('status') status?: string,
+    /* El periodo acota en la consulta, no después: así el tope del listado
+       no se alcanza por el paso del tiempo (Hugo, 2026-10-05). */
+    @Query('from') from?: string,
+    @Query('to') to?: string,
   ): Promise<{ data: TimesheetEntity[] }> {
     const allHotels = await this.readScope(user)
 
-    return { data: await this.timesheets.list(user, status, allHotels) }
+    return { data: await this.timesheets.list(user, status, allHotels, { from, to }) }
   }
 
   // Antes que `:id`, o Nest lee "me" como un uuid.
