@@ -134,6 +134,10 @@ msgstr "«{title}» ya tiene su lugar en el menú. Lo estamos construyendo y va 
 msgid "«Ingresó» = su primera semana con ponches en todo su historial. «Trabajó» una semana = ponchó al menos una vez esa semana; no dice cuántos días. Lo que pasó con quien ya no trabaja sale de su estado actual en el Semáforo del Colaborador."
 msgstr "«Ingresó» = su primera semana con ponches en todo su historial. «Trabajó» una semana = ponchó al menos una vez esa semana; no dice cuántos días. Lo que pasó con quien ya no trabaja sale de su estado actual en el Semáforo del Colaborador."
 
+#: src/features/observability/components/CohortsView.tsx
+msgid "«Ingresó» = su primera semana ponchando en este hotel."
+msgstr "«Ingresó» = su primera semana ponchando en este hotel."
+
 #: src/features/onboarding/components/SemaforoHelpDialog.tsx
 msgid "«Regresar» un prospecto es salir por una rama y reactivarlo. La reentrada es siempre hacia Azul claro, el único punto de retorno: se retoma el contacto, no la propuesta vieja."
 msgstr "«Regresar» un prospecto es salir por una rama y reactivarlo. La reentrada es siempre hacia Azul claro, el único punto de retorno: se retoma el contacto, no la propuesta vieja."
@@ -2974,6 +2978,10 @@ msgstr "Cuando el Schedule programe a alguien en este hotel, aparecerá aquí pa
 msgid "Cuando el Schedule programe turnos de tus requisiciones, aparecerán aquí con su estado y sus marcas del día."
 msgstr "Cuando el Schedule programe turnos de tus requisiciones, aparecerán aquí con su estado y sus marcas del día."
 
+#: src/features/observability/components/CohortsView.tsx
+msgid "Cuando empezó a ponchar"
+msgstr "Cuando empezó a ponchar"
+
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Cuando la Reclutadora valida el alta, pasa a Verde fuerte y entra al Pool de Colaboradores."
 msgstr "Cuando la Reclutadora valida el alta, pasa a Verde fuerte y entra al Pool de Colaboradores."
@@ -3296,7 +3304,9 @@ msgid "Desde"
 msgstr "Desde"
 
 #. placeholder {0}: formatMoney(row.minBillRate)
+#. placeholder {0}: weekRangeOf(item.firstWeek)
 #: src/features/contracts/components/ContractCardGrid.tsx
+#: src/features/observability/components/CohortsView.tsx
 msgid "desde {0}"
 msgstr "desde {0}"
 
@@ -5761,6 +5771,7 @@ msgstr "Horas netas"
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/components/HotelUsersSection.tsx
 #: src/features/contracts/components/ContractTable.tsx
+#: src/features/observability/components/CohortsView.tsx
 #: src/features/observability/pages/ObservabilityPage.tsx
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/features/requisitions/components/RequisitionTable.tsx
@@ -5841,6 +5852,7 @@ msgstr "Housekeeping y Steward para temporada alta…"
 msgid "hoy"
 msgstr "hoy"
 
+#: src/features/observability/components/CohortsView.tsx
 #: src/features/timesheet/components/TimesheetViewControls.tsx
 msgid "Hoy"
 msgstr "Hoy"
@@ -5978,9 +5990,19 @@ msgstr "Ingreso al Pool"
 msgid "Ingresos"
 msgstr "Ingresos"
 
+#. placeholder {0}: weekRangeOf(range.from)
+#. placeholder {1}: weekRangeOf(range.to)
 #: src/features/observability/components/CohortsView.tsx
-msgid "Ingresos de las últimas 12 semanas"
-msgstr "Ingresos de las últimas 12 semanas"
+msgid "Ingresos de {0} a {1}"
+msgstr "Ingresos de {0} a {1}"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Ingresos de la ventana elegida"
+msgstr "Ingresos de la ventana elegida"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Ingresos desde la semana del"
+msgstr "Ingresos desde la semana del"
 
 #. placeholder {0}: formatDayMonth(row.startDate)
 #: src/mobile/hotel/requisitions/RequisitionsPage.tsx
@@ -6019,6 +6041,10 @@ msgstr "Inicio {ordinal}"
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Inicio de la semana de nómina"
 msgstr "Inicio de la semana de nómina"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Inicio del historial"
+msgstr "Inicio del historial"
 
 #: src/features/contracts/components/ContractChecklist.tsx
 msgid "Inicio y fin definidos: la nómina toma lo que regía cada día."
@@ -11157,8 +11183,8 @@ msgstr "Todas las posiciones tienen tarifa."
 
 #. placeholder {0}: sizes.length
 #: src/features/observability/components/CohortSection.tsx
-msgid "Todas: últimas {0} semanas"
-msgstr "Todas: últimas {0} semanas"
+msgid "Todas: {0} semanas"
+msgstr "Todas: {0} semanas"
 
 #: src/features/admin/components/ColaboradorAccountsSection.tsx
 msgid "Todavía nadie tiene correo corporativo asignado."
@@ -11299,6 +11325,7 @@ msgid "Todos los estados"
 msgstr "Todos los estados"
 
 #: src/features/clients/pages/ClientPortfolioPage.tsx
+#: src/features/observability/components/CohortsView.tsx
 #: src/features/timesheet/components/TimesheetToolbar.tsx
 msgid "Todos los hoteles"
 msgstr "Todos los hoteles"
@@ -11687,6 +11714,14 @@ msgstr "Una requisición autorizada la elimina el Manager de Área de su departa
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Una requisición en este estado no se elimina: las cubiertas se conservan como historia."
 msgstr "Una requisición en este estado no se elimina: las cubiertas se conservan como historia."
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Una semana antes"
+msgstr "Una semana antes"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Una semana después"
+msgstr "Una semana después"
 
 #: src/features/contracts/components/RateTable.tsx
 msgid "Una tarifa por posición del catálogo"

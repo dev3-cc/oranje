@@ -34,6 +34,12 @@ Reglas:
 
 ## 2026-10-07
 
+### 16:43 — Moverse en el tiempo y filtrar por hotel en Ingresos
+
+**Qué:** Ingresos tiene un filtro de hotel (con la semana en que empezó a ponchar) y una ventana de 12 semanas que se mueve: flechas semana a semana, calendario, «Cuando empezó a ponchar» / «Inicio del historial» y «Hoy». Cohortes, retención y totales se calculan sobre esa ventana; las columnas de retención siguen hasta hoy.
+**Por qué:** pedido de Hugo: poder ir, por ejemplo, al momento en que Villa Magna empezó a ponchar. Con un hotel elegido, «ingresó» = primera semana ponchando en ese hotel.
+**Archivos:** `src/features/observability/{lib/cohorts.ts,lib/cohorts.spec.ts,components/CohortsView.tsx,components/CohortSection.tsx}`; `src/locales/{es,en}/messages.po`.
+
 ### 16:31 — El desglose de Ingresos siempre se ve
 
 **Qué:** si nadie de la cohorte dejó de trabajar, la sección lo dice en lugar de desaparecer. Los helpers de formato salen de `CohortSection.tsx` a `lib/cohortFormat.ts`.

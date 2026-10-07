@@ -1,15 +1,18 @@
 import { Trans, useLingui } from '@lingui/react/macro'
-import { cn } from '@oranje/ui'
+import { cn, MaterialIcon } from '@oranje/ui'
 import { type ReactNode, useState } from 'react'
 
 import { share, weekRangeOf } from '../lib/cohortFormat'
 import {
+  addWeeks,
   buildPresence,
   cohortSizes,
+  firstWeekOf,
   type Granularity,
   mondayOf,
   retentionAt,
   retentionTable,
+  type Window,
 } from '../lib/cohorts'
 
 import { CohortSection, Stat } from './CohortSection'
@@ -19,9 +22,10 @@ import { TruncatedNotice } from './TabParts'
 import { formatPercent } from '@/shared/lib/formatters'
 import type { RequisitionApi, TimesheetApi, WorkerApi } from '@/shared/types/apiContract.types'
 
-/** Cohortes que se pueden elegir y filas de la tabla de retención. */
-const COHORT_WEEKS = 12
-const COHORT_MONTHS = 6
+/** El ancho de la ventana de tiempo, en semanas. */
+const WINDOW_WEEKS = 12
+
+const ALL_HOTELS = 'ALL'
 
 /**
  * «Ingresos» en Colaborador: qué pasó con quienes empezaron a trabajar en una
@@ -41,20 +45,47 @@ export function CohortsView({
   const { i18n, t } = useLingui()
   const currentWeek = mondayOf(new Date().toLocaleDateString('en-CA'))
   const [granularity, setGranularity] = useState<Granularity>('week')
+  const [hotelId, setHotelId] = useState<string>(ALL_HOTELS)
+  /* La ventana se guarda por su primer lunes; termina 11 semanas después o hoy. */
+  const [windowFrom, setWindowFrom] = useState(() => addWeeks(currentWeek, -(WINDOW_WEEKS - 1)))
+  const windowTo = [addWeeks(windowFrom, WINDOW_WEEKS - 1), currentWeek].sort()[0] as string
+  const range: Window = { from: windowFrom, to: windowTo }
+  const isPresent = windowTo === currentWeek
 
+  const hotelByRequisition = new Map(
+    requisitions.map((requisition) => [requisition.id, requisition.hotel]),
+  )
   const hotelOf = new Map(
     requisitions.map((requisition) => [requisition.id, requisition.hotel.name]),
   )
-  const presence = buildPresence(timesheets, hotelOf)
-  const workersById = new Map(workers.map((worker) => [worker.id, worker]))
-  const sizes = cohortSizes(presence, currentWeek, COHORT_WEEKS)
+  /* Los hoteles que tienen ponches, con su primera semana: «desde cuándo poncha». */
+  const hotelStarts = new Map<string, { id: string; name: string; firstWeek: string }>()
+  for (const sheet of timesheets) {
+    const hotel = hotelByRequisition.get(sheet.requisitionId)
+    if (!hotel) continue
+    const week = mondayOf(sheet.weekStart)
+    const known = hotelStarts.get(hotel.id)
+    if (!known || week < known.firstWeek) {
+      hotelStarts.set(hotel.id, { id: hotel.id, name: hotel.name, firstWeek: week })
+    }
+  }
+  const hotels = [...hotelStarts.values()].sort((a, b) => a.name.localeCompare(b.name))
+  const hotel = hotelStarts.get(hotelId) ?? null
 
-  const retention = retentionTable(
-    presence,
-    granularity,
-    currentWeek,
-    granularity === 'week' ? COHORT_WEEKS : COHORT_MONTHS,
+  const presence = buildPresence(timesheets, hotelOf, (sheet) =>
+    hotel === null ? true : hotelByRequisition.get(sheet.requisitionId)?.id === hotel.id,
   )
+  const firstWeek = firstWeekOf(presence)
+  const workersById = new Map(workers.map((worker) => [worker.id, worker]))
+  const sizes = cohortSizes(presence, range)
+
+  const moveTo = (from: string): void => {
+    const latest = addWeeks(currentWeek, -(WINDOW_WEEKS - 1))
+    const earliest = firstWeek ?? latest
+    setWindowFrom(from > latest ? latest : from < earliest && earliest < latest ? earliest : from)
+  }
+
+  const retention = retentionTable(presence, granularity, currentWeek, range)
   const columns = Math.max(0, ...retention.map((row) => row.cells.length))
   const monthLabel = (month: string): string =>
     new Date(`${month}-01T00:00:00Z`).toLocaleDateString(i18n.locale, {
@@ -63,9 +94,9 @@ export function CohortsView({
       timeZone: 'UTC',
     })
 
-  const at1 = retentionAt(presence, 1, currentWeek, COHORT_WEEKS)
-  const at4 = retentionAt(presence, 4, currentWeek, COHORT_WEEKS * 2)
-  const at12 = retentionAt(presence, 12, currentWeek, COHORT_WEEKS * 3)
+  const at1 = retentionAt(presence, 1, currentWeek, range)
+  const at4 = retentionAt(presence, 4, currentWeek, range)
+  const at12 = retentionAt(presence, 12, currentWeek, range)
 
   return (
     <div className="flex flex-col gap-6">
@@ -77,6 +108,107 @@ export function CohortsView({
         </Trans>
       </PeopleNotice>
       {truncated && <TruncatedNotice />}
+
+      {/* Moverse en el tiempo: un hotel y la ventana de 12 semanas. */}
+      <section className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="flex min-w-0 flex-col gap-1 text-xs font-semibold text-ink-3">
+            <Trans>Hotel</Trans>
+            <select
+              id="cohort-hotel"
+              value={hotelId}
+              onChange={(event) => {
+                setHotelId(event.target.value)
+              }}
+              className="min-h-10 max-w-full rounded-lg border border-line bg-surface px-2 text-sm font-normal text-ink"
+            >
+              <option value={ALL_HOTELS}>{t`Todos los hoteles`}</option>
+              {hotels.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name} · {t`desde ${weekRangeOf(item.firstWeek)}`}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-semibold text-ink-3">
+              <Trans>Ingresos desde la semana del</Trans>
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                aria-label={t`Una semana antes`}
+                disabled={firstWeek === null || windowFrom <= firstWeek}
+                onClick={() => {
+                  moveTo(addWeeks(windowFrom, -1))
+                }}
+                className="inline-flex size-10 items-center justify-center rounded-lg border border-line text-ink-2 hover:bg-surface-2 disabled:opacity-40"
+              >
+                <MaterialIcon name="chevron_left" className="text-xl" aria-hidden />
+              </button>
+              <input
+                id="cohort-from"
+                type="date"
+                value={windowFrom}
+                max={currentWeek}
+                onChange={(event) => {
+                  if (event.target.value) moveTo(mondayOf(event.target.value))
+                }}
+                className="min-h-10 rounded-lg border border-line bg-surface px-2 text-sm text-ink"
+              />
+              <button
+                type="button"
+                aria-label={t`Una semana después`}
+                disabled={isPresent}
+                onClick={() => {
+                  moveTo(addWeeks(windowFrom, 1))
+                }}
+                className="inline-flex size-10 items-center justify-center rounded-lg border border-line text-ink-2 hover:bg-surface-2 disabled:opacity-40"
+              >
+                <MaterialIcon name="chevron_right" className="text-xl" aria-hidden />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={firstWeek === null || windowFrom === firstWeek}
+              onClick={() => {
+                if (firstWeek) moveTo(firstWeek)
+              }}
+              className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-line px-3 text-sm font-medium text-ink-2 hover:bg-surface-2 disabled:opacity-40"
+            >
+              <MaterialIcon name="first_page" className="text-lg" aria-hidden />
+              {hotel ? t`Cuando empezó a ponchar` : t`Inicio del historial`}
+            </button>
+            <button
+              type="button"
+              disabled={isPresent}
+              onClick={() => {
+                moveTo(addWeeks(currentWeek, -(WINDOW_WEEKS - 1)))
+              }}
+              className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-line px-3 text-sm font-medium text-ink-2 hover:bg-surface-2 disabled:opacity-40"
+            >
+              <MaterialIcon name="today" className="text-lg" aria-hidden />
+              <Trans>Hoy</Trans>
+            </button>
+          </div>
+        </div>
+        <p className="text-sm text-ink-2">
+          <Trans>
+            Ingresos de {weekRangeOf(range.from)} a {weekRangeOf(range.to)}
+          </Trans>
+          {hotel && <> · {hotel.name}</>}
+          {hotel && (
+            <span className="text-ink-3">
+              {' '}
+              · <Trans>«Ingresó» = su primera semana ponchando en este hotel.</Trans>
+            </span>
+          )}
+        </p>
+      </section>
 
       {/* Retención de las cohortes recientes, en una línea. */}
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -90,7 +222,7 @@ export function CohortsView({
               </Trans>
             )
           }
-          hint={<Trans>Ingresos de las últimas 12 semanas</Trans>}
+          hint={<Trans>Ingresos de la ventana elegida</Trans>}
         />
         <Stat
           label={<Trans>Siguen a las 4 semanas</Trans>}
@@ -119,6 +251,8 @@ export function CohortsView({
       </section>
 
       <CohortSection
+        key={`${hotelId}|${range.from}`}
+        defaultWeek={isPresent ? addWeeks(currentWeek, -1) : range.from}
         presence={presence}
         currentWeek={currentWeek}
         workers={workersById}

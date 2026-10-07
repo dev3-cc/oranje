@@ -4,7 +4,9 @@ import {
   addWeeks,
   buildPresence,
   cohortDetail,
+  cohortSizes,
   exitCause,
+  firstWeekOf,
   mondayOf,
   retentionAt,
   retentionTable,
@@ -111,7 +113,10 @@ describe('retención', () => {
   )
 
   it('tabla semanal por cohorte, con la columna en curso marcada', () => {
-    const table = retentionTable(presence, 'week', CURRENT, 6)
+    const table = retentionTable(presence, 'week', CURRENT, {
+      from: addWeeks(CURRENT, -5),
+      to: CURRENT,
+    })
     const row = table.find((item) => item.cohort === start)
     expect(row?.size).toBe(2)
     expect(row?.cells.map((cell) => cell.share)).toEqual([1, 0.5, 0, 0, 0.5])
@@ -119,11 +124,16 @@ describe('retención', () => {
   })
 
   it('a 1 semana solo cuenta cohortes cuya semana siguiente ya terminó', () => {
-    expect(retentionAt(presence, 1, CURRENT, 12)).toEqual({ part: 1, whole: 3 })
+    expect(
+      retentionAt(presence, 1, CURRENT, { from: addWeeks(CURRENT, -12), to: CURRENT }),
+    ).toEqual({ part: 1, whole: 3 })
   })
 
   it('mensual agrupa por el mes del primer lunes', () => {
-    const table = retentionTable(presence, 'month', CURRENT, 3)
+    const table = retentionTable(presence, 'month', CURRENT, {
+      from: addWeeks(CURRENT, -12),
+      to: CURRENT,
+    })
     expect(table[0]?.cohort).toBe('2026-09')
     expect(table[0]?.size).toBe(3)
   })
@@ -157,5 +167,37 @@ describe('quién originó la salida', () => {
     expect(exitCause('BLACK', []).area).toBe('WORKER')
     expect(exitCause('GRAY', []).area).toBe('SYSTEM')
     expect(exitCause('YELLOW', [entry('ORANGE', 'YELLOW')]).area).toBe('WORKER')
+  })
+})
+
+describe('viajar en el tiempo', () => {
+  const presence = buildPresence(
+    [
+      sheet('a', '2026-08-03', 'r1'),
+      sheet('a', '2026-08-10', 'r2'),
+      sheet('b', '2026-08-10', 'r2'),
+    ],
+    new Map([
+      ['r1', 'Hotel Uno'],
+      ['r2', 'Villa Magna'],
+    ]),
+    (item) => item.requisitionId === 'r2',
+  )
+
+  it('con un hotel, el ingreso es la primera semana en ese hotel', () => {
+    expect(presence.get('a')?.firstWeek).toBe('2026-08-10')
+    expect(firstWeekOf(presence)).toBe('2026-08-10')
+  })
+
+  it('la ventana elige las cohortes; las columnas siguen hasta hoy', () => {
+    const window = { from: '2026-08-10', to: '2026-08-24' }
+    expect(cohortSizes(presence, window)).toEqual([
+      { week: '2026-08-24', size: 0 },
+      { week: '2026-08-17', size: 0 },
+      { week: '2026-08-10', size: 2 },
+    ])
+    const [row] = retentionTable(presence, 'week', CURRENT, window)
+    expect(row?.cohort).toBe('2026-08-10')
+    expect(row?.cells).toHaveLength(9)
   })
 })

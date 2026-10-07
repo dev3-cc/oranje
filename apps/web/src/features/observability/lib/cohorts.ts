@@ -75,9 +75,12 @@ export interface WorkerPresence {
 export function buildPresence(
   timesheets: TimesheetApi[],
   hotelOfRequisition: Map<string, string>,
+  /** Solo las semanas que pasan el filtro (un hotel): «ingresó» = primera semana ahí. */
+  include: (sheet: TimesheetApi) => boolean = () => true,
 ): Map<string, WorkerPresence> {
   const presence = new Map<string, WorkerPresence>()
   for (const sheet of timesheets) {
+    if (!include(sheet)) continue
     const week = mondayOf(sheet.weekStart)
     const entry = presence.get(sheet.worker.id) ?? {
       workerId: sheet.worker.id,
@@ -327,20 +330,38 @@ export function cohortDetail(
   return { members, returned, eligible, active }
 }
 
-/** Ingresos por semana, de la más reciente a la más vieja. */
+/** La ventana de tiempo que se mira: de un lunes a otro, incluidos. */
+export interface Window {
+  from: string
+  to: string
+}
+
+/** Los lunes de la ventana, del más reciente al más viejo. */
+export function weeksOf(window: Window): string[] {
+  return Array.from({ length: weeksBetween(window.from, window.to) + 1 }, (_, index) =>
+    addWeeks(window.to, -index),
+  )
+}
+
+/** Ingresos por semana de la ventana, de la más reciente a la más vieja. */
 export function cohortSizes(
   presence: Map<string, WorkerPresence>,
-  currentWeek: string,
-  weeks: number,
+  window: Window,
 ): Array<{ week: string; size: number }> {
   const sizes = new Map<string, number>()
   for (const entry of presence.values()) {
     sizes.set(entry.firstWeek, (sizes.get(entry.firstWeek) ?? 0) + 1)
   }
-  return Array.from({ length: weeks }, (_, index) => {
-    const week = addWeeks(currentWeek, -index)
-    return { week, size: sizes.get(week) ?? 0 }
-  })
+  return weeksOf(window).map((week) => ({ week, size: sizes.get(week) ?? 0 }))
+}
+
+/** La primera semana con ponches de todo el historial (o del hotel filtrado). */
+export function firstWeekOf(presence: Map<string, WorkerPresence>): string | null {
+  let first: string | null = null
+  for (const entry of presence.values()) {
+    if (first === null || entry.firstWeek < first) first = entry.firstWeek
+  }
+  return first
 }
 
 // --- Retención por cohorte ---------------------------------------------------
@@ -363,7 +384,8 @@ export function retentionTable(
   presence: Map<string, WorkerPresence>,
   granularity: Granularity,
   currentWeek: string,
-  rows: number,
+  /** Las cohortes que entran como filas; las columnas siguen hasta hoy. */
+  window: Window,
 ): RetentionRow[] {
   const current = granularity === 'week' ? currentWeek : monthOf(currentWeek)
   const keyOf = (week: string): string => (granularity === 'week' ? week : monthOf(week))
@@ -381,7 +403,12 @@ export function retentionTable(
     groups.set(cohort, list)
   }
 
-  return Array.from({ length: rows }, (_, index) => shift(current, -index))
+  const last = keyOf(window.to)
+  const first = keyOf(window.from)
+  const rows: string[] = []
+  for (let cohort = last; cohort >= first; cohort = shift(cohort, -1)) rows.push(cohort)
+
+  return rows
     .map((cohort) => {
       const members = groups.get(cohort) ?? []
       return {
@@ -402,20 +429,19 @@ export function retentionTable(
 }
 
 /**
- * Retención a k semanas, sumando todas las cohortes de `cohorts` cuya semana
- * +k ya terminó. `null` si ninguna llega todavía.
+ * Retención a k semanas, sumando las cohortes de la ventana cuya semana +k ya
+ * terminó. `null` si ninguna llega todavía.
  */
 export function retentionAt(
   presence: Map<string, WorkerPresence>,
   k: number,
   currentWeek: string,
-  cohorts: number,
+  window: Window,
 ): { part: number; whole: number } | null {
-  const oldest = addWeeks(currentWeek, -cohorts)
   let part = 0
   let whole = 0
   for (const entry of presence.values()) {
-    if (entry.firstWeek < oldest) continue
+    if (entry.firstWeek < window.from || entry.firstWeek > window.to) continue
     const target = addWeeks(entry.firstWeek, k)
     if (target >= currentWeek) continue
     whole += 1

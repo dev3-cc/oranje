@@ -103,14 +103,17 @@ export function CohortSection({
   currentWeek,
   workers,
   sizes,
+  defaultWeek,
 }: {
   presence: Map<string, WorkerPresence>
   currentWeek: string
   workers: Map<string, WorkerApi>
   sizes: Array<{ week: string; size: number }>
+  /** La semana que se abre primero: la de la ventana que más interesa. */
+  defaultWeek: string
 }): ReactNode {
   const { i18n, t } = useLingui()
-  const [selected, setSelected] = useState<string>(() => addWeeks(currentWeek, -1))
+  const [selected, setSelected] = useState<string>(defaultWeek)
   const [filter, setFilter] = useState<Filter>('all')
   const isAll = selected === 'ALL'
   const weeks = isAll ? sizes.map((item) => item.week) : [selected]
@@ -207,7 +210,7 @@ export function CohortSection({
             className="min-h-9 max-w-full rounded-lg border border-line bg-surface px-2 text-sm text-ink"
           >
             <option value="ALL">
-              {t`Todas: últimas ${sizes.length} semanas`} · {totalRecent}
+              {t`Todas: ${sizes.length} semanas`} · {totalRecent}
             </option>
             {sizes.map((item) => (
               <option key={item.week} value={item.week}>
