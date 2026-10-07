@@ -192,11 +192,14 @@ export class TimesheetsService {
     user: AuthenticatedUser,
     status?: string,
     allHotels = false,
+    range?: { from?: string | undefined; to?: string | undefined },
   ): Promise<TimesheetEntity[]> {
     const rows = await this.repo.listAll({
       hotelId: allHotels ? null : user.hotelId,
       departmentId: allHotels || user.roleCode === GENERAL_MANAGER ? null : user.departmentId,
       status,
+      from: range?.from ?? null,
+      to: range?.to ?? null,
       limit: allHotels ? ALL_HOTELS_LIMIT : HOTEL_LIMIT,
     })
 

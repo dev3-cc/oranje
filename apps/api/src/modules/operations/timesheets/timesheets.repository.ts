@@ -490,10 +490,27 @@ export class TimesheetsRepository {
        LIMIT 52`
   }
 
+  /**
+   * El periodo se filtra AQUÍ y no en el navegador (Hugo, 2026-10-05).
+   *
+   * El front sabía recortar por fechas, pero pedía todas las semanas y
+   * recortaba después: el tope de `limit` seguía mordiendo antes, y cuando
+   * muerde la pantalla enseña lo que quepa **sin decir que cortó** — el mismo
+   * defecto del contador del Pool que decía 100 con 307 en la base. Con el
+   * rango en la consulta, lo que se pide ya viene acotado y el tope deja de
+   * poder alcanzarse por el simple paso del tiempo.
+   *
+   * El criterio es el mismo que el del front: una semana entra si **toca** el
+   * periodo, no si cabe entera — quien pide «del 1 al 20» espera ver la
+   * semana que empieza el 29 y termina el 4.
+   */
   async listAll(params: {
     hotelId: string | null
     departmentId: string | null
     status?: string | undefined
+    /** `AAAA-MM-DD`; `null` = sin acotar por ese extremo. */
+    from?: string | null
+    to?: string | null
     limit: number
   }): Promise<TimesheetRow[]> {
     return this.prisma.$queryRaw<TimesheetRow[]>`
@@ -510,6 +527,8 @@ export class TimesheetsRepository {
         JOIN demand.requisition r ON r.id = t.requisition_id
        WHERE (${params.hotelId}::uuid IS NULL OR r.hotel_id = ${params.hotelId}::uuid)
          AND (${params.status}::text IS NULL OR t.status = ${params.status}::text)
+         AND (${params.from ?? null}::date IS NULL OR t.week_end   >= ${params.from ?? null}::date)
+         AND (${params.to ?? null}::date   IS NULL OR t.week_start <= ${params.to ?? null}::date)
          AND (${params.departmentId}::uuid IS NULL OR EXISTS (
                SELECT 1 FROM demand."position" p
                 WHERE p.requisition_id = t.requisition_id

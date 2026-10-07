@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useGetTimesheetWeekQuery } from '../api/timesheetApi'
 import { ANY_VALUE, type TimesheetFilters as Filters } from '../types/timesheet.types'
 
+import { DateRangeField, hasRange } from '@/shared/components/DateRangeField'
 import { FilterReset } from '@/shared/components/FilterReset'
 import { SearchField } from '@/shared/components/SearchField'
 import {
@@ -80,6 +81,9 @@ export function TimesheetToolbar({
   /* La semana (`weekStart`) es navegación, no filtro: ni cuenta ni se quita. */
   const activeFilters =
     (draft.trim() !== '' ? 1 : 0) +
+    /* El periodo SÍ es filtro —acota lo que se ve— a diferencia de la semana,
+       que es navegación. Cuenta como uno aunque tenga dos extremos. */
+    (hasRange({ from: filters.from, to: filters.to }) ? 1 : 0) +
     [filters.requisitionNumber, filters.status, filters.hotelName].filter(
       (value) => value !== ANY_VALUE,
     ).length
@@ -92,6 +96,8 @@ export function TimesheetToolbar({
       requisitionNumber: ANY_VALUE,
       status: ANY_VALUE,
       hotelName: ANY_VALUE,
+      from: '',
+      to: '',
     })
   }
 
@@ -160,6 +166,16 @@ export function TimesheetToolbar({
               ))}
             </SelectContent>
           </Select>
+        </LabeledControl>
+
+        <LabeledControl label={t`Periodo`}>
+          <DateRangeField
+            value={{ from: filters.from, to: filters.to }}
+            onChange={(range) => {
+              onChange({ ...filters, ...range })
+            }}
+            label={t`del Timesheet`}
+          />
         </LabeledControl>
 
         <FilterReset activeCount={activeFilters} onReset={resetFilters} />

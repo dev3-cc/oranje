@@ -2911,6 +2911,10 @@ msgstr "Set a password"
 msgid "Definir tarifa por posición"
 msgstr "Set the rate for a position"
 
+#: src/features/timesheet/components/TimesheetToolbar.tsx
+msgid "del Timesheet"
+msgstr "for the Timesheet"
+
 #: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
@@ -3035,6 +3039,11 @@ msgstr "From {currentLabel} your role can't move the Collaborator: {0}"
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 msgid "Desde aquí el semáforo solo permite ir a: {targets}."
 msgstr "From here the Status Light only allows going to: {targets}."
+
+#. placeholder {0}: formatDate(value.from)
+#: src/shared/components/DateRangeField.tsx
+msgid "Desde el {0}"
+msgstr "From {0}"
 
 #: src/features/onboarding/components/SemaforoHelpDialog.tsx
 msgid "desde Naranja, por el BDC"
@@ -5197,6 +5206,11 @@ msgstr "{days} days ago"
 msgid "Hasta"
 msgstr "Until"
 
+#. placeholder {0}: formatDate(value.to)
+#: src/shared/components/DateRangeField.tsx
+msgid "Hasta el {0}"
+msgstr "Until {0}"
+
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
 msgid "Hay auditorías con respuestas a este reactivo: no se puede eliminar."
 msgstr "There are audits with answers to this item: it can't be deleted."
@@ -6652,8 +6666,8 @@ msgid "Nadie coincide con esos filtros esta semana. Cambia la requisición, el e
 msgstr "No one matches those filters this week. Change the requisition, the status or the hotel."
 
 #: src/features/timesheet/pages/TimesheetGlobalPage.tsx
-msgid "Nadie coincide con esos filtros. Cambia el nombre, la requisición, el estado o el hotel."
-msgstr "No one matches those filters. Change the name, the requisition, the status or the hotel."
+msgid "Nadie coincide con esos filtros. Cambia el nombre, la requisición, el estado, el hotel o el periodo."
+msgstr "No one matches those filters. Try changing the name, requisition, status, hotel or date range."
 
 #: src/features/admin/pages/CorporateEmailPage.tsx
 msgid "Nadie en la lista se llama «{search}»."
@@ -6722,6 +6736,10 @@ msgstr "No BD on your team is named “{0}”. Change the search or clear it to 
 #: src/features/recruitment/components/PoolTable.tsx
 msgid "Ningún colaborador coincide con estos filtros. Cambia o quita un filtro para ver más."
 msgstr "No collaborator matches these filters. Change or drop a filter to see more."
+
+#: src/features/timesheet/pages/TimesheetPage.tsx
+msgid "Ningún colaborador tiene registro entre esas fechas. Amplía el periodo o quítalo para ver todo."
+msgstr "No Collaborator has hours between those dates. Widen the date range or clear it to see everything."
 
 #: src/features/contracts/components/ContractRowList.tsx
 msgid "Ningún contrato coincide"
@@ -6861,6 +6879,10 @@ msgstr "Not available in this status"
 #: src/features/conversion/api/conversionApi.ts
 msgid "No existe, y el contacto principal no tiene correo: agrégaselo para poder crearlo"
 msgstr "It doesn't exist, and the main contact has no email: add one so it can be created"
+
+#: src/features/timesheet/pages/TimesheetPage.tsx
+msgid "No hay horas en ese periodo"
+msgstr "No hours in that date range"
 
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "No hay hoteles libres: todos tienen ciclo abierto"
@@ -7947,6 +7969,14 @@ msgstr "Incomplete profile · overdue, access blocked"
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Perfil laboral y salud"
 msgstr "Work profile and health"
+
+#: src/features/timesheet/components/TimesheetToolbar.tsx
+msgid "Periodo"
+msgstr "Date range"
+
+#: src/shared/components/DateRangeField.tsx
+msgid "Periodo {label}"
+msgstr "Date range {label}"
 
 #: src/features/worker/components/MobileShell.tsx
 #: src/features/worker/pages/PermissionsPage.tsx
@@ -10078,6 +10108,10 @@ msgstr "It can still be corrected and punches can still be recorded. The Supervi
 msgid "Todo el hotel"
 msgstr "The whole hotel"
 
+#: src/shared/components/DateRangeField.tsx
+msgid "Todo el periodo"
+msgstr "All dates"
+
 #: src/features/admin/components/HotelUsersSection.tsx
 #: src/features/admin/pages/UsersPage.tsx
 #: src/features/clients/components/ClientFilters.tsx
@@ -10656,6 +10690,11 @@ msgstr "View requisitions"
 #: src/features/timesheet/components/TimesheetHoursView.tsx
 msgid "Ver revisión"
 msgstr "View review"
+
+#: src/features/timesheet/pages/TimesheetPage.tsx
+#: src/shared/components/DateRangeField.tsx
+msgid "Ver todo el periodo"
+msgstr "See all dates"
 
 #: src/shared/constants/onboardingStatus.ts
 msgid "Verde"

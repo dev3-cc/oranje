@@ -153,6 +153,51 @@ function toEntry(
   }
 }
 
+/**
+ * Lo que viaja al servidor: el estado y el periodo.
+ *
+ * El periodo se manda, no se recorta aquí: pedir todas las semanas y filtrar
+ * después deja que el tope del listado muerda antes — y cuando muerde, la
+ * pantalla enseña lo que quepa sin decir que cortó (Hugo, 2026-10-05).
+ */
+function paramsDe(filters: TimesheetFilters): Record<string, string> {
+  return {
+    ...(filters.status !== ANY_VALUE ? { status: filters.status } : {}),
+    ...(filters.from !== '' ? { from: filters.from } : {}),
+    ...(filters.to !== '' ? { to: filters.to } : {}),
+  }
+}
+
+/**
+ * Acota los timesheets al periodo elegido (Hugo, 2026-10-05).
+ *
+ * Se aplica en LAS TRES vistas, en el mismo punto donde cada una extrae la
+ * lista, porque de ahí sale `availableWeeks` — y de `availableWeeks` sale lo
+ * que pinta la cinta, a qué semana saltan las flechas y qué mes abre el
+ * calendario. Filtrar aquí hace que las tres queden dentro del rango sin
+ * lógica propia en ninguna.
+ *
+ * Una semana entra si **toca** el periodo, no si cabe entero: quien pide
+ * «del 1 al 20» espera ver la semana que empieza el 29 y termina el 4.
+ *
+ * **El servidor ya filtra por fechas**; esto se queda como segunda línea por
+ * una razón concreta: los mocks locales no aplican el `WHERE` del back, y un
+ * mock que no se comporta como el servidor es justo lo que escondió el
+ * defecto del Self-Pick en septiembre. Con el filtro también aquí, lo que se
+ * ve en local es lo que se verá en producción.
+ */
+export function enElPeriodo(timesheets: TimesheetApi[], filters: TimesheetFilters): TimesheetApi[] {
+  if (filters.from === '' && filters.to === '') return timesheets
+
+  return timesheets.filter((sheet) => {
+    const inicio = sheet.weekStart
+    const fin = addDaysIso(inicio, 6)
+    if (filters.to !== '' && inicio > filters.to) return false
+    if (filters.from !== '' && fin < filters.from) return false
+    return true
+  })
+}
+
 async function fetchWeek(
   fetchWithBQ: FetchWithBQ,
   filters: TimesheetFilters,
@@ -160,7 +205,7 @@ async function fetchWeek(
   const [listRes, meRes, requisitionIndex] = await Promise.all([
     fetchWithBQ({
       url: '/timesheets',
-      params: { ...(filters.status !== ANY_VALUE ? { status: filters.status } : {}) },
+      params: paramsDe(filters),
     }),
     fetchWithBQ('/me'),
     fetchRequisitionIndex(fetchWithBQ),
@@ -168,7 +213,7 @@ async function fetchWeek(
   if (listRes.error) return { error: listRes.error }
   if (meRes.error) return { error: meRes.error }
 
-  const timesheets = (listRes.data as ApiEnvelope<TimesheetApi[]>).data
+  const timesheets = enElPeriodo((listRes.data as ApiEnvelope<TimesheetApi[]>).data, filters)
   const me = (meRes.data as ApiEnvelope<{ hotel: { name: string } | null }>).data
   const fallbackHotel = me.hotel?.name ?? '—'
 
@@ -269,7 +314,7 @@ async function fetchTimeline(
   const [listRes, meRes, workersRes, requisitionIndex] = await Promise.all([
     fetchWithBQ({
       url: '/timesheets',
-      params: { ...(filters.status !== ANY_VALUE ? { status: filters.status } : {}) },
+      params: paramsDe(filters),
     }),
     fetchWithBQ('/me'),
     /* Composición D-28: `/workers` trae la foto Y el puesto de la persona; el
@@ -281,7 +326,7 @@ async function fetchTimeline(
   if (listRes.error) return { error: listRes.error }
   if (meRes.error) return { error: meRes.error }
 
-  const timesheets = (listRes.data as ApiEnvelope<TimesheetApi[]>).data
+  const timesheets = enElPeriodo((listRes.data as ApiEnvelope<TimesheetApi[]>).data, filters)
   const me = (meRes.data as ApiEnvelope<{ hotel: { name: string } | null }>).data
   const fallbackHotel = me.hotel?.name ?? '—'
 
@@ -400,13 +445,13 @@ async function fetchMonth(
   const [listRes, requisitionIndex] = await Promise.all([
     fetchWithBQ({
       url: '/timesheets',
-      params: { ...(filters.status !== ANY_VALUE ? { status: filters.status } : {}) },
+      params: paramsDe(filters),
     }),
     fetchRequisitionIndex(fetchWithBQ),
   ])
   if (listRes.error) return { error: listRes.error }
 
-  const timesheets = (listRes.data as ApiEnvelope<TimesheetApi[]>).data
+  const timesheets = enElPeriodo((listRes.data as ApiEnvelope<TimesheetApi[]>).data, filters)
   if (timesheets.length === 0) return { data: { month: '', days: [] } }
 
   const availableWeeks = [...new Set(timesheets.map((sheet) => sheet.weekStart))].sort()
