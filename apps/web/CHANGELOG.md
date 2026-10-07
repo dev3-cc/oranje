@@ -34,6 +34,12 @@ Reglas:
 
 ## 2026-10-07
 
+### 16:24 — Ingresos por persona, con motivo y quién originó la salida
+
+**Qué:** en «Ingresos» se puede ver una semana o todas las de las últimas 12. La tabla por persona trae su semana de ingreso, semanas trabajadas sobre posibles con su %, qué pasó, el motivo y quién lo originó (hotel, Inspección, Reclutamiento, el colaborador o automático), con filtro Todos / Siguen trabajando / Ya no trabajan. Hay un segundo desglose «Quién originó la salida» con conteo y %.
+**Por qué:** pedido de Hugo: ver tal cual a cada persona de la cohorte, sus motivos y el porcentaje. El historial no trae el rol de quien actuó: el área se deduce de la transición, que solo puede hacer un área; los cambios automáticos no vienen en el historial y su ausencia también lo dice.
+**Archivos:** `src/features/observability/{lib/cohorts.ts,lib/cohorts.spec.ts,components/CohortSection.tsx,components/CohortsView.tsx}`; `src/locales/{es,en}/messages.po`.
+
 ### 16:07 — Ingresos y retención de colaboradores en el Observador
 
 **Qué:** la pestaña Colaborador tiene la sub-vista «KPIs / Ingresos». Para la semana de ingreso elegida: cuántos ingresaron, cuántos regresaron el lunes y la semana siguiente, cuántos siguen trabajando, qué pasó con quienes ya no trabajan (según su estado y el motivo del historial) y la lista de personas. Además, la retención por cohorte semanal o mensual y la retención a 1, 4 y 12 semanas.

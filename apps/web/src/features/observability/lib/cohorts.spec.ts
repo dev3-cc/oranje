@@ -4,6 +4,7 @@ import {
   addWeeks,
   buildPresence,
   cohortDetail,
+  exitCause,
   mondayOf,
   retentionAt,
   retentionTable,
@@ -57,25 +58,42 @@ describe('cohorte de ingreso', () => {
   ]) as unknown as Map<string, WorkerApi>
 
   it('cuenta solo a quien trabajó por primera vez esa semana', () => {
-    const detail = cohortDetail(presence, lastWeek, CURRENT, workers)
+    const detail = cohortDetail(presence, [lastWeek], CURRENT, workers)
     expect(detail.members.map((member) => member.workerId)).toEqual(['a', 'b'])
-    expect(detail.returnedNextWeek).toBe(1)
-    expect(detail.members[0]?.hotels).toEqual(['Hotel Uno'])
+    expect(detail).toMatchObject({ returned: 1, eligible: 2 })
+    expect(detail.members[0]).toMatchObject({
+      hotels: ['Hotel Uno'],
+      cohortWeek: lastWeek,
+      weeksWorked: 2,
+      weeksPossible: 2,
+      returnedNextWeek: true,
+    })
+  })
+
+  it('varias semanas a la vez: cada quien con su cohorte', () => {
+    const detail = cohortDetail(presence, [lastWeek, addWeeks(CURRENT, -3)], CURRENT, workers)
+    expect(detail.members.map((member) => member.cohortWeek)).toEqual([
+      lastWeek,
+      lastWeek,
+      addWeeks(CURRENT, -3),
+    ])
+    expect(detail.members[2]).toMatchObject({ weeksWorked: 2, weeksPossible: 4 })
   })
 
   it('a quien ya no trabaja lo explica su estado actual', () => {
-    const detail = cohortDetail(presence, lastWeek, CURRENT, workers)
+    const detail = cohortDetail(presence, [lastWeek], CURRENT, workers)
     expect(detail.members.find((member) => member.workerId === 'a')?.outcome).toBe('ACTIVE')
     // b solo ponchó en su semana de ingreso: ya no cuenta como activo, y su
     // estado (Stand-by) dice por qué.
     expect(detail.active).toBe(1)
     expect(detail.members.find((member) => member.workerId === 'b')?.outcome).toBe('STAND_BY')
-    const older = cohortDetail(presence, addWeeks(CURRENT, -3), CURRENT, workers)
+    const older = cohortDetail(presence, [addWeeks(CURRENT, -3)], CURRENT, workers)
     expect(older.members[0]?.outcome).toBe('ACTIVE')
   })
 
-  it('la semana siguiente que no ha empezado da null', () => {
-    expect(cohortDetail(presence, CURRENT, CURRENT, workers).returnedNextWeek).toBeNull()
+  it('la semana siguiente que no ha empezado no cuenta', () => {
+    const detail = cohortDetail(presence, [CURRENT], CURRENT, workers)
+    expect(detail.eligible).toBe(0)
   })
 })
 
@@ -108,5 +126,36 @@ describe('retención', () => {
     const table = retentionTable(presence, 'month', CURRENT, 3)
     expect(table[0]?.cohort).toBe('2026-09')
     expect(table[0]?.size).toBe(3)
+  })
+})
+
+describe('quién originó la salida', () => {
+  const entry = (fromState: string | null, toState: string, reason: string | null = null) => ({
+    id: toState,
+    fromState,
+    toState,
+    reason,
+    occurredAt: '2026-10-01T15:00:00Z',
+    userName: 'Alguien',
+  })
+
+  it('Stand-by y Reportado los pone el hotel, con su motivo', () => {
+    expect(exitCause('PINK', [entry('ORANGE', 'PINK', 'Temporada baja')])).toMatchObject({
+      area: 'HOTEL',
+      reason: 'Temporada baja',
+      by: 'Alguien',
+    })
+  })
+
+  it('Blacklist desde Reportado es del Inspector; si no, de Reclutamiento', () => {
+    expect(exitCause('BLACK', [entry('RED', 'BLACK')]).area).toBe('INSPECTION')
+    expect(exitCause('BLACK', [entry('STRONG_GREEN', 'BLACK')]).area).toBe('RECRUITMENT')
+  })
+
+  it('sin fila en el historial fue automático: No regresó es del colaborador', () => {
+    expect(exitCause('PURPLE', [])).toMatchObject({ area: 'WORKER', by: null })
+    expect(exitCause('BLACK', []).area).toBe('WORKER')
+    expect(exitCause('GRAY', []).area).toBe('SYSTEM')
+    expect(exitCause('YELLOW', [entry('ORANGE', 'YELLOW')]).area).toBe('WORKER')
   })
 })

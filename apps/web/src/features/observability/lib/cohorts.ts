@@ -1,7 +1,11 @@
 import type { MessageDescriptor } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 
-import type { TimesheetApi, WorkerApi } from '@/shared/types/apiContract.types'
+import type {
+  TimesheetApi,
+  WorkerApi,
+  WorkerHistoryEntryApi,
+} from '@/shared/types/apiContract.types'
 
 /**
  * Ingresos y retención de colaboradores, a partir de las semanas de timesheet.
@@ -147,25 +151,127 @@ const OUTCOME_OF_STATE: Record<string, CohortOutcome> = {
   BROWN: 'ASSIGNED_NOT_WORKING',
 }
 
-/** Estados cuyo motivo vale la pena leer del historial. */
-export const STATES_WITH_REASON = new Set(['PINK', 'RED'])
+// --- Quién originó la salida ------------------------------------------------
+
+/**
+ * El área detrás del último cambio de estado. El historial del API no trae el
+ * rol de quien actuó, pero cada transición del Semáforo del Colaborador solo
+ * la puede hacer un área (`WORKER_TRANSITIONS` del seed): el área se deduce del
+ * cambio. Los cambios automáticos no vienen en el historial (el API solo
+ * devuelve los que hizo una persona); su ausencia también dice qué pasó.
+ */
+export type ExitArea = 'HOTEL' | 'INSPECTION' | 'RECRUITMENT' | 'WORKER' | 'SYSTEM' | 'UNKNOWN'
+
+export const EXIT_AREAS: ExitArea[] = [
+  'HOTEL',
+  'INSPECTION',
+  'RECRUITMENT',
+  'WORKER',
+  'SYSTEM',
+  'UNKNOWN',
+]
+
+export const EXIT_AREA_LABEL: Record<ExitArea, MessageDescriptor> = {
+  HOTEL: msg`Hotel (gerente o supervisor)`,
+  INSPECTION: msg`Inspección`,
+  RECRUITMENT: msg`Reclutamiento`,
+  WORKER: msg`El colaborador`,
+  SYSTEM: msg`Automático`,
+  UNKNOWN: msg`Sin dato`,
+}
+
+export interface ExitCause {
+  area: ExitArea
+  /** Motivo del catálogo, tal cual lo capturaron (viene en español del API). */
+  reason: string | null
+  /** Explicación cuando no hay motivo capturado. */
+  note: MessageDescriptor | null
+  /** Quién lo hizo; `null` si fue automático. */
+  by: string | null
+  at: string | null
+}
+
+/** Cuando el cambio fue automático y no hay fila en el historial. */
+const AUTOMATIC: Record<string, { area: ExitArea; note: MessageDescriptor | null }> = {
+  PURPLE: { area: 'WORKER', note: msg`Faltó sin justificación` },
+  BLACK: { area: 'WORKER', note: msg`Tres faltas: Blacklist automático` },
+  GRAY: { area: 'SYSTEM', note: msg`Accidente laboral` },
+  STRONG_GREEN: { area: 'SYSTEM', note: msg`Terminó su asignación` },
+  // Sigue asignado y sin ponches: el qué pasó ya lo dice; no hay motivo registrado.
+  APPLE_GREEN: { area: 'UNKNOWN', note: null },
+  LIGHT_BLUE: { area: 'UNKNOWN', note: null },
+  ORANGE: { area: 'UNKNOWN', note: null },
+}
+
+function areaOf(entry: WorkerHistoryEntryApi): ExitArea {
+  switch (entry.toState) {
+    case 'PINK':
+    case 'RED':
+      return 'HOTEL'
+    case 'YELLOW':
+      return 'WORKER'
+    case 'BROWN':
+      return 'RECRUITMENT'
+    case 'BLACK':
+      // Desde Reportado lo resuelve el Inspector; si no, fue un Blacklist manual de Reclutamiento.
+      return entry.fromState === 'RED' ? 'INSPECTION' : 'RECRUITMENT'
+    case 'STRONG_GREEN':
+      if (entry.fromState === 'PINK') return 'HOTEL'
+      if (entry.fromState === 'RED' || entry.fromState === 'GRAY') return 'INSPECTION'
+      return 'RECRUITMENT'
+    default:
+      return 'UNKNOWN'
+  }
+}
+
+/** Por qué alguien en `stateCode` ya no trabaja, desde su historial. */
+export function exitCause(stateCode: string | null, history: WorkerHistoryEntryApi[]): ExitCause {
+  const last = [...history]
+    .filter((entry) => entry.toState === stateCode)
+    .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0]
+  if (last) {
+    return {
+      area: areaOf(last),
+      reason: last.reason,
+      note: null,
+      by: last.userName,
+      at: last.occurredAt,
+    }
+  }
+  const automatic = stateCode ? AUTOMATIC[stateCode] : undefined
+  return {
+    area: automatic?.area ?? 'UNKNOWN',
+    reason: null,
+    note: automatic?.note ?? null,
+    by: null,
+    at: null,
+  }
+}
+
+// --- Cohorte -----------------------------------------------------------------
 
 export interface CohortMember {
   workerId: string
   name: string
+  /** Lunes de su semana de ingreso. */
+  cohortWeek: string
   /** Hoteles de su semana de ingreso. */
   hotels: string[]
   weeksWorked: number
+  /** Semanas desde su ingreso hasta la actual, incluidas las dos. */
+  weeksPossible: number
   lastWeek: string
+  /** ¿Trabajó la semana siguiente a su ingreso? `null` si todavía no empieza. */
+  returnedNextWeek: boolean | null
   stateCode: string | null
   outcome: CohortOutcome
 }
 
 export interface CohortDetail {
-  week: string
   members: CohortMember[]
-  /** `null` si la semana siguiente todavía no empieza. */
-  returnedNextWeek: number | null
+  /** De quienes ya pudieron regresar, cuántos trabajaron la semana siguiente. */
+  returned: number
+  eligible: number
   /**
    * Trabajaron esta semana o la pasada, contando solo semanas posteriores a
    * su ingreso (si no, la cohorte de la semana pasada saldría siempre al 100%).
@@ -173,21 +279,30 @@ export interface CohortDetail {
   active: number
 }
 
+/** Quienes ingresaron en cualquiera de `weeks`. */
 export function cohortDetail(
   presence: Map<string, WorkerPresence>,
-  week: string,
+  weeks: string[],
   currentWeek: string,
   workers: Map<string, WorkerApi>,
 ): CohortDetail {
-  const nextWeek = addWeeks(week, 1)
+  const cohortWeeks = new Set(weeks)
   const previousWeek = addWeeks(currentWeek, -1)
-  let returnedNextWeek = 0
+  let returned = 0
+  let eligible = 0
   let active = 0
   const members: CohortMember[] = []
 
   for (const entry of presence.values()) {
-    if (entry.firstWeek !== week) continue
-    if (entry.weeks.has(nextWeek)) returnedNextWeek += 1
+    if (!cohortWeeks.has(entry.firstWeek)) continue
+    const week = entry.firstWeek
+    const nextWeek = addWeeks(week, 1)
+    const canReturn = nextWeek <= currentWeek
+    const didReturn = entry.weeks.has(nextWeek)
+    if (canReturn) {
+      eligible += 1
+      if (didReturn) returned += 1
+    }
     const recent = [previousWeek, currentWeek].filter((candidate) => candidate > week)
     const isActive = recent.length === 0 || recent.some((candidate) => entry.weeks.has(candidate))
     if (isActive) active += 1
@@ -195,9 +310,12 @@ export function cohortDetail(
     members.push({
       workerId: entry.workerId,
       name: entry.name,
+      cohortWeek: week,
       hotels: [...(entry.weeks.get(week) ?? [])].sort(),
       weeksWorked: entry.weeks.size,
+      weeksPossible: weeksBetween(week, currentWeek) + 1,
       lastWeek: entry.lastWeek,
+      returnedNextWeek: canReturn ? didReturn : null,
       stateCode,
       outcome: isActive
         ? 'ACTIVE'
@@ -205,13 +323,8 @@ export function cohortDetail(
     })
   }
 
-  members.sort((a, b) => a.name.localeCompare(b.name))
-  return {
-    week,
-    members,
-    returnedNextWeek: nextWeek <= currentWeek ? returnedNextWeek : null,
-    active,
-  }
+  members.sort((a, b) => b.cohortWeek.localeCompare(a.cohortWeek) || a.name.localeCompare(b.name))
+  return { members, returned, eligible, active }
 }
 
 /** Ingresos por semana, de la más reciente a la más vieja. */

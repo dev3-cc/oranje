@@ -81,7 +81,7 @@ msgstr "¿Por qué se rechaza? (ilegible, incorrecto…)"
 msgid "¿Qué es de ti?"
 msgstr "¿Qué es de ti?"
 
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/components/CohortSection.tsx
 msgid "¿Qué pasó con los que ingresaron?"
 msgstr "¿Qué pasó con los que ingresaron?"
 
@@ -425,6 +425,7 @@ msgstr "{0} d sin intento"
 #. placeholder {1}: at1.whole
 #. placeholder {1}: at12.whole
 #. placeholder {1}: at4.whole
+#: src/features/observability/components/CohortSection.tsx
 #: src/features/observability/components/CohortsView.tsx
 #: src/features/observability/components/KpiCard.tsx
 msgid "{0} de {1}"
@@ -437,10 +438,14 @@ msgid "{0} de {1} con buzón"
 msgstr "{0} de {1} con buzón"
 
 #. placeholder {0}: detail.active
-#. placeholder {0}: detail.returnedNextWeek
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/components/CohortSection.tsx
 msgid "{0} de {size}"
 msgstr "{0} de {size}"
+
+#. placeholder {0}: item.count
+#: src/features/observability/components/CohortSection.tsx
+msgid "{0} de {total}"
+msgstr "{0} de {total}"
 
 #. placeholder {0}: formatHours(row.totalHours)
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
@@ -601,7 +606,7 @@ msgstr "{assignedName} asignado al slot"
 msgid "{averageDays} d"
 msgstr "{averageDays} d"
 
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/components/CohortSection.tsx
 msgid "{backMonday} de {size}"
 msgstr "{backMonday} de {size}"
 
@@ -938,6 +943,10 @@ msgstr "Accidentados"
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
 msgid "Accidente abierto"
 msgstr "Accidente abierto"
+
+#: src/features/observability/lib/cohorts.ts
+msgid "Accidente laboral"
+msgstr "Accidente laboral"
 
 #: src/layouts/Sidebar.tsx
 msgid "Accidentes"
@@ -1558,6 +1567,10 @@ msgstr "Aún sin describir"
 #: src/features/onboarding/components/PlacesAutofillSummary.tsx
 msgid "aún sin pin"
 msgstr "aún sin pin"
+
+#: src/features/observability/lib/cohorts.ts
+msgid "Automático"
+msgstr "Automático"
 
 #: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
 msgid "Autorización de Requisición"
@@ -2360,7 +2373,7 @@ msgstr "Cola del Self-Pick"
 
 #: src/features/admin/pages/CorporateEmailPage.tsx
 #: src/features/auth/pages/LoginPage.tsx
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/components/CohortSection.tsx
 #: src/features/observability/pages/ObservabilityPage.tsx
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
 #: src/features/recruitment/pages/BlacklistPage.tsx
@@ -3693,6 +3706,10 @@ msgstr "El ciclo de {hotelName} se cierra definitivamente y el hotel queda libre
 msgid "El ciclo sigue vivo en Café: se retoma desde el Pipeline cuando el hotel se desbloquee."
 msgstr "El ciclo sigue vivo en Café: se retoma desde el Pipeline cuando el hotel se desbloquee."
 
+#: src/features/observability/lib/cohorts.ts
+msgid "El colaborador"
+msgstr "El colaborador"
+
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "El colaborador completa la Fase 2 (transporte y SSN/ITIN) y la Fase 3 (contacto de emergencia y salud) desde su app; si lo validas a medias, tiene 1 día para completarlo."
 msgstr "El colaborador completa la Fase 2 (transporte y SSN/ITIN) y la Fase 3 (contacto de emergencia y salud) desde su app; si lo validas a medias, tiene 1 día para completarlo."
@@ -3909,6 +3926,10 @@ msgstr "El motivo queda en el historial del prospecto."
 #: src/features/personnel/components/StandByDialog.tsx
 msgid "El motivo queda en su historia"
 msgstr "El motivo queda en su historia"
+
+#: src/features/observability/components/CohortSection.tsx
+msgid "El motivo y quién lo originó se leen de las primeras {MAX_HISTORIES} personas que ya no trabajan. Elige una sola semana para verlo de todas."
+msgstr "El motivo y quién lo originó se leen de las primeras {MAX_HISTORIES} personas que ya no trabajan. Elige una sola semana para verlo de todas."
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "el nivel de inglés"
@@ -4294,6 +4315,10 @@ msgstr "Elige un turno para ver a sus colaboradores."
 #: src/features/worker/pages/PasswordPage.tsx
 msgid "Elige una que solo tú sepas; la temporal que te dieron deja de servir."
 msgstr "Elige una que solo tú sepas; la temporal que te dieron deja de servir."
+
+#: src/features/observability/components/CohortSection.tsx
+msgid "Elige una semana para verlo."
+msgstr "Elige una semana para verlo."
 
 #: src/shared/constants/requisitionStatus.ts
 msgid "Eliminada"
@@ -5346,6 +5371,10 @@ msgstr "Faltan datos tuyos"
 msgid "Faltan permisos para ponchar"
 msgstr "Faltan permisos para ponchar"
 
+#: src/features/observability/lib/cohorts.ts
+msgid "Faltó sin justificación"
+msgstr "Faltó sin justificación"
+
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Fase 1 · Entrevista"
 msgstr "Fase 1 · Entrevista"
@@ -5740,7 +5769,11 @@ msgstr "Horas netas"
 msgid "Hotel"
 msgstr "Hotel"
 
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/lib/cohorts.ts
+msgid "Hotel (gerente o supervisor)"
+msgstr "Hotel (gerente o supervisor)"
+
+#: src/features/observability/components/CohortSection.tsx
 msgid "Hotel al ingresar"
 msgstr "Hotel al ingresar"
 
@@ -5929,7 +5962,7 @@ msgstr "Inglés {ordinal}"
 msgid "Inglés y experiencia"
 msgstr "Inglés y experiencia"
 
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/components/CohortSection.tsx
 msgid "Ingresaron"
 msgstr "Ingresaron"
 
@@ -5991,6 +6024,7 @@ msgstr "Inicio de la semana de nómina"
 msgid "Inicio y fin definidos: la nómina toma lo que regía cada día."
 msgstr "Inicio y fin definidos: la nómina toma lo que regía cada día."
 
+#: src/features/observability/lib/cohorts.ts
 #: src/features/observability/pages/ObservabilityPage.tsx
 msgid "Inspección"
 msgstr "Inspección"
@@ -6423,7 +6457,7 @@ msgstr "La semana de nómina no puede empezar y terminar el mismo día."
 msgid "La semana en cinco medidas"
 msgstr "La semana en cinco medidas"
 
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/components/CohortSection.tsx
 msgid "La semana siguiente todavía no empieza."
 msgstr "La semana siguiente todavía no empieza."
 
@@ -7102,6 +7136,10 @@ msgstr "Modalidades"
 msgid "Montaña — Denver, Salt Lake City"
 msgstr "Montaña — Denver, Salt Lake City"
 
+#: src/features/observability/components/CohortSection.tsx
+msgid "Mostrar"
+msgstr "Mostrar"
+
 #: src/features/auth/pages/LoginPage.tsx
 #: src/mobile/AppLoginPage.tsx
 msgid "Mostrar contraseña"
@@ -7301,7 +7339,7 @@ msgstr "Nadie coincide con la búsqueda."
 msgid "Nadie de este departamento tiene actividad registrada que se pueda ver."
 msgstr "Nadie de este departamento tiene actividad registrada que se pueda ver."
 
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/components/CohortSection.tsx
 msgid "Nadie empezó a trabajar esa semana."
 msgstr "Nadie empezó a trabajar esa semana."
 
@@ -8839,7 +8877,7 @@ msgstr "Ponches manuales"
 msgid "Ponches registrados fuera del radio del hotel."
 msgstr "Ponches registrados fuera del radio del hotel."
 
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/components/CohortSection.tsx
 msgid "Ponchó esta semana o la pasada, después de su semana de ingreso."
 msgstr "Ponchó esta semana o la pasada, después de su semana de ingreso."
 
@@ -8896,6 +8934,7 @@ msgstr "Por el respaldo"
 msgid "Por el servidor de Oranje"
 msgstr "Por el servidor de Oranje"
 
+#: src/features/observability/components/CohortSection.tsx
 #: src/features/observability/components/TabParts.tsx
 msgid "Por persona"
 msgstr "Por persona"
@@ -9234,15 +9273,11 @@ msgstr "Qué pasa al aprobar"
 msgid "Qué pasa después del alta"
 msgstr "Qué pasa después del alta"
 
-#: src/features/observability/components/CohortsView.tsx
-msgid "Qué pasó"
-msgstr "Qué pasó"
-
 #: src/features/onboarding/components/RegisterAttemptDialog.tsx
 msgid "Qué pasó con este intento"
 msgstr "Qué pasó con este intento"
 
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/components/CohortSection.tsx
 msgid "Qué pasó con quienes ya no trabajan"
 msgstr "Qué pasó con quienes ya no trabajan"
 
@@ -9253,6 +9288,10 @@ msgstr "Qué pasó y cómo se resolvió…"
 #: src/features/personnel/components/ReportWorkerDialog.tsx
 msgid "Qué pasó y cuándo…"
 msgstr "Qué pasó y cuándo…"
+
+#: src/features/observability/components/CohortSection.tsx
+msgid "Qué pasó y motivo"
+msgstr "Qué pasó y motivo"
 
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Qué va a cubrir Oranje en este hotel"
@@ -9283,6 +9322,14 @@ msgstr "quién convierte y en cuánto tiempo"
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Quién la está trabajando"
 msgstr "Quién la está trabajando"
+
+#: src/features/observability/components/CohortSection.tsx
+msgid "Quién lo originó"
+msgstr "Quién lo originó"
+
+#: src/features/observability/components/CohortSection.tsx
+msgid "Quién originó la salida"
+msgstr "Quién originó la salida"
 
 #: src/features/schedule/components/AddShiftDialog.tsx
 msgid "Quién trabaja el turno"
@@ -9401,6 +9448,7 @@ msgstr "Reclutadora salió"
 msgid "Reclutadora se unió"
 msgstr "Reclutadora se unió"
 
+#: src/features/observability/lib/cohorts.ts
 #: src/features/observability/pages/ObservabilityPage.tsx
 #: src/features/recruitment/pages/BlacklistPage.tsx
 #: src/features/recruitment/pages/PoolPage.tsx
@@ -9491,7 +9539,7 @@ msgstr "Registró"
 msgid "Registro de entrada y salida"
 msgstr "Registro de entrada y salida"
 
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/components/CohortSection.tsx
 msgid "Regresaron el lunes"
 msgstr "Regresaron el lunes"
 
@@ -9997,7 +10045,7 @@ msgstr "Semana anterior"
 msgid "Semana aprobada"
 msgstr "Semana aprobada"
 
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/components/CohortSection.tsx
 msgid "Semana de ingreso"
 msgstr "Semana de ingreso"
 
@@ -10027,7 +10075,7 @@ msgstr "Semanas de timesheet que el hotel recibió y todavía no aprueba."
 msgid "Semanas sin aprobar"
 msgstr "Semanas sin aprobar"
 
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/components/CohortSection.tsx
 msgid "Semanas trabajadas"
 msgstr "Semanas trabajadas"
 
@@ -10172,7 +10220,7 @@ msgstr "Siguen a las 12 semanas"
 msgid "Siguen a las 4 semanas"
 msgstr "Siguen a las 4 semanas"
 
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/components/CohortSection.tsx
 msgid "Siguen trabajando"
 msgstr "Siguen trabajando"
 
@@ -10275,6 +10323,10 @@ msgstr "sin cubrir"
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Sin cuenta todavía"
 msgstr "Sin cuenta todavía"
+
+#: src/features/observability/lib/cohorts.ts
+msgid "Sin dato"
+msgstr "Sin dato"
 
 #: src/features/observability/components/KpiCard.tsx
 msgid "Sin datos"
@@ -10637,7 +10689,7 @@ msgstr "Solo los consolidados de nómina por estado. Los KPIs de Contabilidad (c
 msgid "Solo los hoteles en Verde (o Café, para renegociar) pueden abrir propuesta — y de Verde no se avanza sin enviarla."
 msgstr "Solo los hoteles en Verde (o Café, para renegociar) pueden abrir propuesta — y de Verde no se avanza sin enviarla."
 
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/components/CohortSection.tsx
 msgid "Solo para las dos semanas más recientes."
 msgstr "Solo para las dos semanas más recientes."
 
@@ -10766,7 +10818,7 @@ msgstr "Su expediente está a medias: falta {0}."
 msgid "Su hotel los propuso. Al aprobar, la cuenta se activa y les llega la invitación; hasta entonces no pueden entrar."
 msgstr "Su hotel los propuso. Al aprobar, la cuenta se activa y les llega la invitación; hasta entonces no pueden entrar."
 
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/components/CohortSection.tsx
 msgid "Su lunes todavía no llega."
 msgstr "Su lunes todavía no llega."
 
@@ -10950,6 +11002,10 @@ msgstr "Temporal"
 msgid "Terminar"
 msgstr "Terminar"
 
+#: src/features/observability/lib/cohorts.ts
+msgid "Terminó su asignación"
+msgstr "Terminó su asignación"
+
 #. placeholder {0}: member.fullName
 #: src/features/team/components/AssignTerritoryDialog.tsx
 msgid "Territorio asignado a {0}"
@@ -11099,6 +11155,11 @@ msgstr "Todas"
 msgid "Todas las posiciones tienen tarifa."
 msgstr "Todas las posiciones tienen tarifa."
 
+#. placeholder {0}: sizes.length
+#: src/features/observability/components/CohortSection.tsx
+msgid "Todas: últimas {0} semanas"
+msgstr "Todas: últimas {0} semanas"
+
 #: src/features/admin/components/ColaboradorAccountsSection.tsx
 msgid "Todavía nadie tiene correo corporativo asignado."
 msgstr "Todavía nadie tiene correo corporativo asignado."
@@ -11217,6 +11278,10 @@ msgstr "Todo el periodo"
 msgid "todos"
 msgstr "todos"
 
+#: src/features/observability/components/CohortSection.tsx
+msgid "Todos"
+msgstr "Todos"
+
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
 msgid "todos los departamentos de tu hotel"
 msgstr "todos los departamentos de tu hotel"
@@ -11283,7 +11348,7 @@ msgstr "Trabajaron en su semana 12 · ~90 días"
 msgid "Trabajaron en su semana 4 · ~30 días"
 msgstr "Trabajaron en su semana 4 · ~30 días"
 
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/components/CohortSection.tsx
 msgid "Trabajaron la semana siguiente"
 msgstr "Trabajaron la semana siguiente"
 
@@ -11311,6 +11376,10 @@ msgstr "Transporte y tipo de sangre"
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Transporte, emergencia y salud — opcional"
 msgstr "Transporte, emergencia y salud — opcional"
+
+#: src/features/observability/lib/cohorts.ts
+msgid "Tres faltas: Blacklist automático"
+msgstr "Tres faltas: Blacklist automático"
 
 #: src/features/recruitment/pages/BlacklistPage.tsx
 msgid "Tres reglas que el sistema hace cumplir siempre: un colaborador en <0>Gris</0> (accidentado) no se puede vetar; solo hay un veto vigente a la vez y el historial nunca se borra; y al levantarlo la persona vuelve a <1>Blanco</1>, reingresando por la validación de la Reclutadora."
@@ -11493,7 +11562,7 @@ msgstr "Última actividad"
 msgid "Última enviada · v{0}"
 msgstr "Última enviada · v{0}"
 
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/components/CohortSection.tsx
 msgid "Última semana"
 msgstr "Última semana"
 
@@ -12124,6 +12193,10 @@ msgstr "ya marcaron hoy"
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Ya no estabas trabajando esta requisición."
 msgstr "Ya no estabas trabajando esta requisición."
+
+#: src/features/observability/components/CohortSection.tsx
+msgid "Ya no trabajan"
+msgstr "Ya no trabajan"
 
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Ya puede entrar con la contraseña que definiste. Compártesela por un canal seguro — no viaja por correo."
