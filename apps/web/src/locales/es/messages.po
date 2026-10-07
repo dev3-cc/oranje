@@ -965,6 +965,10 @@ msgstr "Activar es del BDC"
 msgid "Activar, expirar o cancelar un contrato es del BDC."
 msgstr "Activar, expirar o cancelar un contrato es del BDC."
 
+#: src/features/observability/components/PeopleView.tsx
+msgid "Actividad en el periodo"
+msgstr "Actividad en el periodo"
+
 #: src/features/admin/components/ColaboradorAccountsSection.tsx
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/components/UserFormDialog.tsx
@@ -1236,6 +1240,10 @@ msgstr "Antes hay que resolver: {0}."
 msgid "Anticipación"
 msgstr "Anticipación"
 
+#: src/features/observability/tabs/SalesTab.tsx
+msgid "Aparece quien tiene prospectos o registró intentos. Quien no tiene cartera ni actividad no se puede listar desde aquí. Las conversiones se le cuentan al dueño del prospecto."
+msgstr "Aparece quien tiene prospectos o registró intentos. Quien no tiene cartera ni actividad no se puede listar desde aquí. Las conversiones se le cuentan al dueño del prospecto."
+
 #: src/shared/constants/timesheetStatus.ts
 msgid "Aprobada"
 msgstr "Aprobada"
@@ -1331,6 +1339,10 @@ msgstr "Archivo del SSN o ITIN"
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "Arizona — Phoenix (sin horario de verano)"
 msgstr "Arizona — Phoenix (sin horario de verano)"
+
+#: src/features/observability/lib/people.ts
+msgid "Arrancan en el periodo"
+msgstr "Arrancan en el periodo"
 
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "Arrastra el mapa para dejar el pin en la entrada por donde llegan los colaboradores."
@@ -2236,6 +2248,10 @@ msgstr "Cierra el ciclo definitivamente y libera al hotel"
 msgid "Cita agendada"
 msgstr "Cita agendada"
 
+#: src/features/observability/lib/people.ts
+msgid "Citas"
+msgstr "Citas"
+
 #: src/features/observability/lib/salesKpis.ts
 msgid "Citas agendadas"
 msgstr "Citas agendadas"
@@ -2697,6 +2713,7 @@ msgid "Conversión por BD"
 msgstr "Conversión por BD"
 
 #: src/features/dashboard/components/ActivityCards.tsx
+#: src/features/observability/lib/people.ts
 msgid "Conversiones"
 msgstr "Conversiones"
 
@@ -2761,6 +2778,7 @@ msgstr "Corregir intento de contacto"
 #: src/features/admin/components/UserFormDialog.tsx
 #: src/features/admin/pages/CorporateEmailPage.tsx
 #: src/features/auth/pages/LoginPage.tsx
+#: src/features/observability/lib/people.ts
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 #: src/features/recruitment/components/CreateAccessDialog.tsx
@@ -2777,6 +2795,10 @@ msgstr "Correo copiado"
 #: src/features/recruitment/components/CreateAccessDialog.tsx
 msgid "Correo corporativo"
 msgstr "Correo corporativo"
+
+#: src/features/observability/lib/people.ts
+msgid "Correos"
+msgstr "Correos"
 
 #: src/features/admin/pages/CorporateEmailPage.tsx
 #: src/layouts/Sidebar.tsx
@@ -2875,6 +2897,10 @@ msgstr "Crear usuario"
 #: src/features/admin/pages/CorporateEmailPage.tsx
 msgid "Crear y gestionar buzones corporativos es una acción del sistema, reservada al Administrador."
 msgstr "Crear y gestionar buzones corporativos es una acción del sistema, reservada al Administrador."
+
+#: src/features/observability/lib/people.ts
+msgid "Creó la requisición"
+msgstr "Creó la requisición"
 
 #: src/features/recruitment/components/PoolFilters.tsx
 #: src/features/recruitment/pages/SelfPickPage.tsx
@@ -4930,6 +4956,10 @@ msgstr "Estado: {0}"
 msgid "Estado: {statusLabel}"
 msgstr "Estado: {statusLabel}"
 
+#: src/features/observability/lib/people.ts
+msgid "Estancados"
+msgstr "Estancados"
+
 #: src/features/worker/pages/HomePage.tsx
 msgid "Estás <0>disponible por voluntad propia</0>: Reclutamiento puede asignarte en cuanto haya una requisición."
 msgstr "Estás <0>disponible por voluntad propia</0>: Reclutamiento puede asignarte en cuanto haya una requisición."
@@ -5668,6 +5698,10 @@ msgstr "Hotel"
 msgid "Hotel cliente"
 msgstr "Hotel cliente"
 
+#: src/features/observability/lib/people.ts
+msgid "Hotel convertido en cliente"
+msgstr "Hotel convertido en cliente"
+
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "Hotel nuevo"
 msgstr "Hotel nuevo"
@@ -5917,6 +5951,10 @@ msgstr "Intento corregido"
 msgid "Intento registrado"
 msgstr "Intento registrado"
 
+#: src/features/observability/lib/people.ts
+msgid "Intentos"
+msgstr "Intentos"
+
 #: src/features/observability/lib/salesKpis.ts
 msgid "Intentos de contacto con resultado «cita agendada». No existe una entidad de cita: es una aproximación."
 msgstr "Intentos de contacto con resultado «cita agendada». No existe una entidad de cita: es una aproximación."
@@ -6052,6 +6090,10 @@ msgstr "Jornadas en curso"
 #: src/features/timesheet/components/TimesheetMonthView.tsx
 msgid "Jue"
 msgstr "Jue"
+
+#: src/features/observability/components/TabParts.tsx
+msgid "KPIs"
+msgstr "KPIs"
 
 #: src/features/schedule/components/ScheduleMiniCalendar.tsx
 msgid "L"
@@ -6501,9 +6543,14 @@ msgstr "Listo para aprobar"
 msgid "Listo para asignar"
 msgstr "Listo para asignar"
 
+#: src/features/observability/lib/people.ts
 #: src/shared/constants/contactAttempt.ts
 msgid "Llamada"
 msgstr "Llamada"
+
+#: src/features/observability/lib/people.ts
+msgid "Llamadas"
+msgstr "Llamadas"
 
 #: src/features/recruitment/components/ChangeStateDialog.tsx
 msgid "lo asigna Reclutamiento (la Reclutadora, su Líder de Grupo o el Manager); el propio colaborador puede ponerse Disponible voluntario."
@@ -6670,6 +6717,10 @@ msgstr "Lugares cubiertos sobre lugares pedidos, de las requisiciones que empiez
 #: src/mobile/hotel/HotelHomePage.tsx
 msgid "Lugares por cubrir"
 msgstr "Lugares por cubrir"
+
+#: src/features/observability/lib/people.ts
+msgid "Lugares por cubrir en las suyas"
+msgstr "Lugares por cubrir en las suyas"
 
 #: src/features/timesheet/components/TimesheetMonthView.tsx
 msgid "Lun"
@@ -7168,6 +7219,10 @@ msgstr "Nadie coincide con esos filtros. Cambia el nombre, la requisición, el e
 msgid "Nadie coincide con la búsqueda."
 msgstr "Nadie coincide con la búsqueda."
 
+#: src/features/observability/components/PeopleView.tsx
+msgid "Nadie de este departamento tiene actividad registrada que se pueda ver."
+msgstr "Nadie de este departamento tiene actividad registrada que se pueda ver."
+
 #: src/features/admin/pages/CorporateEmailPage.tsx
 msgid "Nadie en la lista se llama «{search}»."
 msgstr "Nadie en la lista se llama «{search}»."
@@ -7464,6 +7519,10 @@ msgstr "No pasó la revisión."
 #: src/mobile/AppLoginPage.tsx
 msgid "No pudimos conectar con Oranje. Revisa tu conexión e inténtalo en un momento."
 msgstr "No pudimos conectar con Oranje. Revisa tu conexión e inténtalo en un momento."
+
+#: src/features/observability/components/PeopleView.tsx
+msgid "No registró nada en el periodo."
+msgstr "No registró nada en el periodo."
 
 #: src/shared/constants/workerStatus.ts
 msgid "No regresó"
@@ -8570,6 +8629,10 @@ msgstr "Periodo {label}"
 msgid "Permisos"
 msgstr "Permisos"
 
+#: src/features/observability/components/PeopleView.tsx
+msgid "Persona"
+msgstr "Persona"
+
 #: src/features/admin/pages/UsersPage.tsx
 msgid "Personal de hoteles"
 msgstr "Personal de hoteles"
@@ -8741,6 +8804,10 @@ msgstr "Por el respaldo"
 msgid "Por el servidor de Oranje"
 msgstr "Por el servidor de Oranje"
 
+#: src/features/observability/components/TabParts.tsx
+msgid "Por persona"
+msgstr "Por persona"
+
 #: src/mobile/hotel/costs/CostWeekPage.tsx
 msgid "Por posición"
 msgstr "Por posición"
@@ -8843,6 +8910,7 @@ msgstr "Posiciones con urgencia roja y lugares vacíos, en requisiciones que se 
 msgid "Posiciones solicitadas"
 msgstr "Posiciones solicitadas"
 
+#: src/features/observability/lib/people.ts
 #: src/features/observability/lib/recruitmentKpis.ts
 msgid "Posiciones urgentes sin cubrir"
 msgstr "Posiciones urgentes sin cubrir"
@@ -8983,6 +9051,7 @@ msgid "Prospectos"
 msgstr "Prospectos"
 
 #: src/features/dashboard/components/ActivityCards.tsx
+#: src/features/observability/lib/people.ts
 #: src/features/team/pages/TeamPage.tsx
 msgid "Prospectos abiertos"
 msgstr "Prospectos abiertos"
@@ -9193,6 +9262,14 @@ msgstr "Reactivos de Auditoría es distinto"
 #: src/features/timesheet/pages/TimesheetGlobalPage.tsx
 msgid "Reales"
 msgstr "Reales"
+
+#: src/features/observability/lib/people.ts
+msgid "Reasignadas"
+msgstr "Reasignadas"
+
+#: src/features/observability/lib/people.ts
+msgid "Reasignó la requisición"
+msgstr "Reasignó la requisición"
 
 #: src/features/onboarding/components/HotelLocationMap.tsx
 msgid "Recentrar"
@@ -9442,9 +9519,17 @@ msgstr "Requisición eliminada"
 msgid "Requisiciones"
 msgstr "Requisiciones"
 
+#: src/features/observability/lib/people.ts
+msgid "Requisiciones a su cargo"
+msgstr "Requisiciones a su cargo"
+
 #: src/features/dashboard/components/HotelDashboard.tsx
 msgid "Requisiciones abiertas"
 msgstr "Requisiciones abiertas"
+
+#: src/features/observability/lib/people.ts
+msgid "Requisiciones abiertas en su zona"
+msgstr "Requisiciones abiertas en su zona"
 
 #: src/features/observability/lib/hotelKpis.ts
 msgid "Requisiciones creadas en el periodo que hoy están eliminadas. No incluye las modificadas."
@@ -9465,6 +9550,10 @@ msgstr "Requisiciones en cola"
 #: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
 msgid "Requisiciones por autorizar"
 msgstr "Requisiciones por autorizar"
+
+#: src/features/observability/lib/people.ts
+msgid "Requisiciones que creó"
+msgstr "Requisiciones que creó"
 
 #: src/features/conversion/pages/ConversionPage.tsx
 msgid "Requisitos para habilitar la conversión"
@@ -9606,6 +9695,10 @@ msgstr "S"
 #: src/features/timesheet/components/TimesheetMonthView.tsx
 msgid "Sáb"
 msgstr "Sáb"
+
+#: src/features/observability/tabs/RecruitmentTab.tsx
+msgid "Sale de la bitácora de las requisiciones: quién las tomó, soltó o reasignó. A quién asignó cada reclutador no se ve: eso se registra en otra bitácora que el Observador no lee. Quien no movió ninguna requisición no aparece."
+msgstr "Sale de la bitácora de las requisiciones: quién las tomó, soltó o reasignó. A quién asignó cada reclutador no se ve: eso se registra en otra bitácora que el Observador no lee. Quien no movió ninguna requisición no aparece."
 
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
 msgid "Sale del Pool mientras el veto viva; el historial completo queda y solo el Administrador lo levanta."
@@ -9956,6 +10049,10 @@ msgstr "Sin acceso a la app"
 #: src/features/team/pages/TeamPage.tsx
 msgid "Sin actividad 7+ días"
 msgstr "Sin actividad 7+ días"
+
+#: src/features/observability/components/PeopleView.tsx
+msgid "Sin actividad en el periodo"
+msgstr "Sin actividad en el periodo"
 
 #: src/features/dashboard/components/StaleProspectList.tsx
 msgid "Sin actividad reciente"
@@ -10377,6 +10474,10 @@ msgid "Solo lo aprobado paga"
 msgstr "Solo lo aprobado paga"
 
 #: src/features/observability/tabs/InspectionTab.tsx
+msgid "Solo lo que dicen las requisiciones: las de su zona y las que creó. Sus auditorías, accidentes y visitas no se ven: el Observador no tiene permiso para leerlos. Un inspector sin requisiciones asignadas no aparece."
+msgstr "Solo lo que dicen las requisiciones: las de su zona y las que creó. Sus auditorías, accidentes y visitas no se ven: el Observador no tiene permiso para leerlos. Un inspector sin requisiciones asignadas no aparece."
+
+#: src/features/observability/tabs/InspectionTab.tsx
 msgid "Solo los consolidados de nómina por estado. Los KPIs de Contabilidad (consolidados a tiempo, días a invoice, cobro, fuga de horas) necesitan que el Observador pueda leer nómina y facturación."
 msgstr "Solo los consolidados de nómina por estado. Los KPIs de Contabilidad (consolidados a tiempo, días a invoice, cobro, fuga de horas) necesitan que el Observador pueda leer nómina y facturación."
 
@@ -10443,10 +10544,18 @@ msgstr "Solo un contrato vigente se puede marcar expirado."
 msgid "Solo verá los hoteles de estas zonas — nunca todos."
 msgstr "Solo verá los hoteles de estas zonas — nunca todos."
 
+#: src/features/observability/lib/people.ts
+msgid "Soltadas"
+msgstr "Soltadas"
+
 #. placeholder {0}: formatWeekRange(target, addDaysIso(target, 6))
 #: src/features/timesheet/components/WeekSlider.tsx
 msgid "Soltar en: {0}"
 msgstr "Soltar en: {0}"
+
+#: src/features/observability/lib/people.ts
+msgid "Soltó la requisición"
+msgstr "Soltó la requisición"
 
 #: src/shared/components/SoundSwitch.tsx
 msgid "Sonido"
@@ -10848,6 +10957,10 @@ msgstr "Todavía no ha entrado por primera vez."
 msgid "Todavía no ha salido ningún correo desde este ambiente."
 msgstr "Todavía no ha salido ningún correo desde este ambiente."
 
+#: src/features/observability/tabs/InspectionTab.tsx
+msgid "Todavía no hay actividad por persona en Contabilidad: quién consolidó, validó o pagó vive en nómina y facturación, que el Observador no tiene permiso para leer."
+msgstr "Todavía no hay actividad por persona en Contabilidad: quién consolidó, validó o pagó vive en nómina y facturación, que el Observador no tiene permiso para leer."
+
 #: src/features/audits/components/AuditHistoryList.tsx
 msgid "Todavía no hay auditorías"
 msgstr "Todavía no hay auditorías"
@@ -10961,6 +11074,10 @@ msgstr "Todos los hoteles"
 msgid "Todos los hoteles · solo lectura"
 msgstr "Todos los hoteles · solo lectura"
 
+#: src/features/observability/lib/people.ts
+msgid "Tomadas"
+msgstr "Tomadas"
+
 #: src/features/dashboard/components/RecruitmentDashboard.tsx
 msgid "Tomadas por una Reclutadora"
 msgstr "Tomadas por una Reclutadora"
@@ -10968,6 +11085,10 @@ msgstr "Tomadas por una Reclutadora"
 #: src/features/worker/components/CameraCapture.tsx
 msgid "Tomar foto"
 msgstr "Tomar foto"
+
+#: src/features/observability/lib/people.ts
+msgid "Tomó la requisición"
+msgstr "Tomó la requisición"
 
 #: src/mobile/hotel/costs/CostsPage.tsx
 msgid "Total de las semanas cerradas"
@@ -11186,6 +11307,10 @@ msgstr "Tus datos"
 #: src/features/worker/pages/PermissionsPage.tsx
 msgid "Ubicación"
 msgstr "Ubicación"
+
+#: src/features/observability/components/PeopleView.tsx
+msgid "Última actividad"
+msgstr "Última actividad"
 
 #. placeholder {0}: lastSent.version
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
@@ -11648,10 +11773,12 @@ msgstr "vigentes"
 msgid "Visible en la Bolsa · Self-Pick"
 msgstr "Visible en la Bolsa · Self-Pick"
 
+#: src/features/observability/lib/people.ts
 #: src/shared/constants/contactAttempt.ts
 msgid "Visita en frío"
 msgstr "Visita en frío"
 
+#: src/features/observability/lib/people.ts
 #: src/features/observability/lib/salesKpis.ts
 msgid "Visitas en frío"
 msgstr "Visitas en frío"
@@ -11660,6 +11787,7 @@ msgstr "Visitas en frío"
 msgid "Visitas en frío registradas en el periodo, de todos los BD."
 msgstr "Visitas en frío registradas en el periodo, de todos los BD."
 
+#: src/features/observability/components/TabParts.tsx
 #: src/features/timesheet/components/TimesheetViewControls.tsx
 msgid "Vista"
 msgstr "Vista"

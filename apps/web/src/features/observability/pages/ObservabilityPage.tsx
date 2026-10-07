@@ -95,7 +95,7 @@ export function ObservabilityPage(): ReactNode {
           <WorkerTab period={period} periodLabel={periodLabel} />
         </TabsContent>
         <TabsContent value="inspection">
-          <InspectionTab periodLabel={periodLabel} />
+          <InspectionTab period={period} periodLabel={periodLabel} />
         </TabsContent>
         <TabsContent value="accounting">
           <AccountingTab />

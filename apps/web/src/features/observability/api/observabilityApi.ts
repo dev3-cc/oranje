@@ -1,3 +1,4 @@
+import type { ProspectAttempt } from '../lib/people'
 import type { DepartmentMetric, Punch, StatusLightSummary } from '../types/observability.types'
 
 import { baseApi } from '@/app/baseApi'
@@ -10,6 +11,7 @@ import type {
   PaginatedEnvelope,
   ProspectApi,
   RequisitionApi,
+  RequisitionJournalEntryApi,
   TimesheetApi,
   WorkerApi,
 } from '@/shared/types/apiContract.types'
@@ -141,16 +143,44 @@ export const observabilityApi = baseApi.injectEndpoints({
     }),
 
     /** Los intentos de contacto de los prospectos dados (los que se movieron en el periodo). */
-    getObserverContactAttempts: build.query<ContactAttemptApi[], string[]>({
+    /** Cada intento lleva el `prospectId` de donde salió: el intento no lo trae. */
+    getObserverContactAttempts: build.query<ProspectAttempt[], string[]>({
       async queryFn(prospectIds, _api, _extra, baseQuery) {
         const fetchWithBQ = baseQuery as FetchWithBQ
-        const results = await inBatches(prospectIds, (id) =>
-          fetchWithBQ(`/prospects/${id}/contact-attempts`),
-        )
-        const failed = results.find((res) => res.error)
-        if (failed) return { error: failed.error as never }
+        const results = await inBatches(prospectIds, async (id) => ({
+          id,
+          res: await fetchWithBQ(`/prospects/${id}/contact-attempts`),
+        }))
+        const failed = results.find(({ res }) => res.error)
+        if (failed) return { error: failed.res.error as never }
         return {
-          data: results.flatMap((res) => (res.data as { data: ContactAttemptApi[] }).data),
+          data: results.flatMap(({ id, res }) =>
+            (res.data as { data: ContactAttemptApi[] }).data.map((attempt) => ({
+              ...attempt,
+              prospectId: id,
+            })),
+          ),
+        }
+      },
+    }),
+
+    /** Bitácora por requisición, para la actividad de cada reclutador. */
+    getObserverJournals: build.query<Record<string, RequisitionJournalEntryApi[]>, string[]>({
+      async queryFn(requisitionIds, _api, _extra, baseQuery) {
+        const fetchWithBQ = baseQuery as FetchWithBQ
+        const results = await inBatches(requisitionIds, async (id) => ({
+          id,
+          res: await fetchWithBQ(`/requisitions/${id}/journal`),
+        }))
+        const failed = results.find(({ res }) => res.error)
+        if (failed) return { error: failed.res.error as never }
+        return {
+          data: Object.fromEntries(
+            results.map(({ id, res }) => [
+              id,
+              (res.data as ApiEnvelope<RequisitionJournalEntryApi[]>).data,
+            ]),
+          ),
         }
       },
     }),
@@ -186,4 +216,5 @@ export const {
   useGetObserverPunchesSinceQuery,
   useGetObserverContactAttemptsQuery,
   useGetObserverAssignmentsQuery,
+  useGetObserverJournalsQuery,
 } = observabilityApi

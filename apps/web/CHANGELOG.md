@@ -34,6 +34,12 @@ Reglas:
 
 ## 2026-10-07
 
+### 13:51 — Vista «Por persona» en los departamentos del Observador
+
+**Qué:** Ventas, Reclutamiento, Inspección y Contabilidad tienen la sub-vista «KPIs / Por persona»: una fila por persona (tabla en escritorio, tarjetas en móvil), de la menos activa a la más activa, y un panel con sus números y su línea de tiempo del periodo. Hotel y Colaborador se quedan solo con KPIs.
+**Por qué:** pedido de Hugo: ver qué hace cada persona de cada departamento, menos Colaborador y sin métricas por persona en Hotel. Ventas sale de prospectos e intentos; Reclutamiento de la bitácora de las requisiciones (solo al abrir la vista); Inspección de las requisiciones asignadas y creadas; Contabilidad solo enseña su aviso. Cada vista dice lo que no puede ver.
+**Archivos:** `src/features/observability/{lib/people.ts,lib/people.spec.ts,components/PeopleView.tsx,components/TabParts.tsx,api/observabilityApi.ts,tabs/SalesTab.tsx,tabs/RecruitmentTab.tsx,tabs/InspectionTab.tsx,pages/ObservabilityPage.tsx}`; `src/locales/{es,en}/messages.po`.
+
 ### 13:33 — Rehacer el Observador como KPIs por departamento
 
 **Qué:** las pestañas Semáforos/Ponches/Departamentos se reemplazan por Ventas, Hotel, Reclutamiento, Colaborador, Inspección y Contabilidad, cada una con sus KPIs (30) calculados en el front, una franja «Hoy en el sistema», selector de periodo (esta semana por defecto, mes, 90 días) y metas de ejemplo del tablero maquetado marcadas como tales.

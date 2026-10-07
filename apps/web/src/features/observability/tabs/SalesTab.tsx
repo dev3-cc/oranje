@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react'
+import { Trans } from '@lingui/react/macro'
+import { type ReactNode, useState } from 'react'
 
 import {
   useGetObserverClientHotelsQuery,
@@ -8,7 +9,16 @@ import {
   useGetStatusDurationsQuery,
 } from '../api/observabilityApi'
 import { KpiGrid } from '../components/KpiCard'
-import { type SnapshotItem, SnapshotStrip, TabState, TruncatedNotice } from '../components/TabParts'
+import { PeopleNotice, PeopleView } from '../components/PeopleView'
+import {
+  type DepartmentView,
+  type SnapshotItem,
+  SnapshotStrip,
+  TabState,
+  TruncatedNotice,
+  ViewSwitch,
+} from '../components/TabParts'
+import { salesPeople } from '../lib/people'
 import { type Period } from '../lib/period'
 import { salesKpis } from '../lib/salesKpis'
 
@@ -36,6 +46,7 @@ export function SalesTab({
   period: Period
   periodLabel: string
 }): ReactNode {
+  const [view, setView] = useState<DepartmentView>('kpis')
   const prospects = useGetObserverProspectsQuery()
   const hotels = useGetObserverClientHotelsQuery()
   const requisitions = useGetObserverRequisitionsQuery()
@@ -57,33 +68,59 @@ export function SalesTab({
   const error = sources.find((source) => source.error)?.error
 
   return (
-    <TabState
-      isLoading={sources.some((source) => source.isLoading)}
-      error={error}
-      onRetry={() => {
-        for (const source of sources) if (source.error) void source.refetch()
-      }}
-      cards={7}
-    >
-      {prospects.data && hotels.data && requisitions.data && (
-        <>
-          {(prospects.data.truncated || hotels.data.truncated || requisitions.data.truncated) && (
-            <TruncatedNotice />
-          )}
-          <SnapshotStrip items={openByState(prospects.data.rows)} />
-          <KpiGrid
-            periodLabel={periodLabel}
-            kpis={salesKpis({
-              period,
-              prospects: prospects.data.rows,
-              attempts: attempts.data ?? [],
-              clientHotels: hotels.data.rows,
-              requisitions: requisitions.data.rows,
-              onboarding: lights.data?.find((light) => light.code === 'ONBOARDING'),
-            })}
-          />
-        </>
-      )}
-    </TabState>
+    <div className="flex flex-col gap-4">
+      <ViewSwitch value={view} onChange={setView} />
+      <TabState
+        isLoading={sources.some((source) => source.isLoading)}
+        error={error}
+        onRetry={() => {
+          for (const source of sources) if (source.error) void source.refetch()
+        }}
+        cards={7}
+      >
+        {prospects.data && hotels.data && requisitions.data && (
+          <>
+            {(prospects.data.truncated || hotels.data.truncated || requisitions.data.truncated) && (
+              <TruncatedNotice />
+            )}
+            {view === 'kpis' ? (
+              <>
+                <SnapshotStrip items={openByState(prospects.data.rows)} />
+                <KpiGrid
+                  periodLabel={periodLabel}
+                  kpis={salesKpis({
+                    period,
+                    prospects: prospects.data.rows,
+                    attempts: attempts.data ?? [],
+                    clientHotels: hotels.data.rows,
+                    requisitions: requisitions.data.rows,
+                    onboarding: lights.data?.find((light) => light.code === 'ONBOARDING'),
+                  })}
+                />
+              </>
+            ) : (
+              <>
+                <PeopleNotice>
+                  <Trans>
+                    Aparece quien tiene prospectos o registró intentos. Quien no tiene cartera ni
+                    actividad no se puede listar desde aquí. Las conversiones se le cuentan al dueño
+                    del prospecto.
+                  </Trans>
+                </PeopleNotice>
+                <PeopleView
+                  columns={5}
+                  periodLabel={periodLabel}
+                  rows={salesPeople({
+                    period,
+                    prospects: prospects.data.rows,
+                    attempts: attempts.data ?? [],
+                  })}
+                />
+              </>
+            )}
+          </>
+        )}
+      </TabState>
+    </div>
   )
 }

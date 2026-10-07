@@ -121,3 +121,46 @@ export function TabState({
   }
   return <div className="flex flex-col gap-4">{children}</div>
 }
+
+export type DepartmentView = 'kpis' | 'people'
+
+/** «KPIs / Por persona»: las dos vistas de un departamento. */
+export function ViewSwitch({
+  value,
+  onChange,
+}: {
+  value: DepartmentView
+  onChange: (view: DepartmentView) => void
+}): ReactNode {
+  const { t } = useLingui()
+  const options: Array<{ view: DepartmentView; label: string; icon: string }> = [
+    { view: 'kpis', label: t`KPIs`, icon: 'bar_chart' },
+    { view: 'people', label: t`Por persona`, icon: 'groups' },
+  ]
+  return (
+    <div
+      role="radiogroup"
+      aria-label={t`Vista`}
+      className="inline-flex self-start rounded-xl border border-line bg-surface p-1"
+    >
+      {options.map((option) => (
+        <button
+          key={option.view}
+          type="button"
+          role="radio"
+          aria-checked={value === option.view}
+          onClick={() => {
+            onChange(option.view)
+          }}
+          className={cn(
+            'inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium transition-colors',
+            value === option.view ? 'bg-o-50 text-ink' : 'text-ink-3 hover:text-ink',
+          )}
+        >
+          <MaterialIcon name={option.icon} className="text-base" aria-hidden />
+          {option.label}
+        </button>
+      ))}
+    </div>
+  )
+}
