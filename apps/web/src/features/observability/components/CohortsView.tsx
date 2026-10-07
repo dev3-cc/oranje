@@ -2,6 +2,7 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import { cn } from '@oranje/ui'
 import { type ReactNode, useState } from 'react'
 
+import { share, weekRangeOf } from '../lib/cohortFormat'
 import {
   buildPresence,
   cohortSizes,
@@ -11,7 +12,7 @@ import {
   retentionTable,
 } from '../lib/cohorts'
 
-import { CohortSection, share, Stat, weekRangeOf } from './CohortSection'
+import { CohortSection, Stat } from './CohortSection'
 import { PeopleNotice } from './PeopleView'
 import { TruncatedNotice } from './TabParts'
 

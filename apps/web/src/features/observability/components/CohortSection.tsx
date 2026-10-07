@@ -7,6 +7,7 @@ import {
   useGetObserverPunchesSinceQuery,
   useGetObserverWorkerHistoriesQuery,
 } from '../api/observabilityApi'
+import { share, weekRangeOf } from '../lib/cohortFormat'
 import {
   addWeeks,
   COHORT_OUTCOME_LABEL,
@@ -22,23 +23,11 @@ import {
 import { localDay } from '../lib/period'
 
 import { WORKER_STATUS_LABEL, type WorkerStatus } from '@/shared/constants/workerStatus'
-import { formatDayMonthTime, formatPercent, formatWeekRange } from '@/shared/lib/formatters'
+import { formatDayMonthTime } from '@/shared/lib/formatters'
 import type { WorkerApi } from '@/shared/types/apiContract.types'
 
 /** Historiales por consulta: uno por persona que ya no trabaja. */
 const MAX_HISTORIES = 300
-
-/** `lunes` → «28 sep – 4 oct» (el domingo es el lunes siguiente menos un día). */
-export function weekRangeOf(monday: string): string {
-  const sunday = new Date(Date.parse(`${addWeeks(monday, 1)}T00:00:00Z`) - 86_400_000)
-    .toISOString()
-    .slice(0, 10)
-  return formatWeekRange(monday, sunday)
-}
-
-export function share(part: number, whole: number): string {
-  return whole === 0 ? '—' : formatPercent(part / whole)
-}
 
 export function Stat({
   label,
@@ -287,7 +276,13 @@ export function CohortSection({
             />
           </div>
 
-          {gone.length > 0 && (
+          {gone.length === 0 ? (
+            <p className="rounded-xl border border-line bg-surface p-4 text-sm text-ink-2">
+              <Trans>
+                Todos los de esta cohorte siguen trabajando: no hay salidas que desglosar.
+              </Trans>
+            </p>
+          ) : (
             <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
               <Breakdown
                 title={<Trans>Qué pasó con quienes ya no trabajan</Trans>}

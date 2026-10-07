@@ -34,6 +34,12 @@ Reglas:
 
 ## 2026-10-07
 
+### 16:31 — El desglose de Ingresos siempre se ve
+
+**Qué:** si nadie de la cohorte dejó de trabajar, la sección lo dice en lugar de desaparecer. Los helpers de formato salen de `CohortSection.tsx` a `lib/cohortFormat.ts`.
+**Por qué:** Hugo no veía el desglose: el navegador no recargaba el componente (Fast Refresh no admite un archivo que exporta funciones que no son componentes) y, sin salidas, la sección no aparecía.
+**Archivos:** `src/features/observability/{lib/cohortFormat.ts,components/CohortSection.tsx,components/CohortsView.tsx}`; `src/locales/{es,en}/messages.po`.
+
 ### 16:24 — Ingresos por persona, con motivo y quién originó la salida
 
 **Qué:** en «Ingresos» se puede ver una semana o todas las de las últimas 12. La tabla por persona trae su semana de ingreso, semanas trabajadas sobre posibles con su %, qué pasó, el motivo y quién lo originó (hotel, Inspección, Reclutamiento, el colaborador o automático), con filtro Todos / Siguen trabajando / Ya no trabajan. Hay un segundo desglose «Quién originó la salida» con conteo y %.

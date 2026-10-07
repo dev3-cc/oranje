@@ -11282,6 +11282,10 @@ msgstr "all"
 msgid "Todos"
 msgstr "All"
 
+#: src/features/observability/components/CohortSection.tsx
+msgid "Todos los de esta cohorte siguen trabajando: no hay salidas que desglosar."
+msgstr "Everyone in this cohort is still working: there are no exits to break down."
+
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
 msgid "todos los departamentos de tu hotel"
 msgstr "every department in your hotel"
