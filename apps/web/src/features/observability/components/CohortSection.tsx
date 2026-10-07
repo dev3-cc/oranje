@@ -43,9 +43,11 @@ export function Stat({
   return (
     <div className="flex flex-col gap-1 rounded-2xl border border-line bg-surface p-4">
       <p className="text-sm font-semibold text-ink-2">{label}</p>
-      <p className="flex items-baseline gap-2">
+      <p className="flex flex-wrap items-baseline gap-x-2">
         <span className="text-3xl font-bold text-ink tabular-nums">{value}</span>
-        {detail && <span className="text-sm text-ink-3 tabular-nums">{detail}</span>}
+        {detail && (
+          <span className="text-sm whitespace-nowrap text-ink-3 tabular-nums">{detail}</span>
+        )}
       </p>
       {hint && <p className="text-xs text-ink-3">{hint}</p>}
     </div>
@@ -94,32 +96,38 @@ function Breakdown({
 type Filter = 'all' | 'active' | 'gone'
 
 /**
- * «¿Qué pasó con los que ingresaron?»: una semana de ingreso o todas las
- * recientes, con el desglose por qué pasó y por quién lo originó, y la lista
- * por persona con su cohorte, su porcentaje de semanas trabajadas y su motivo.
+ * «¿Qué pasó con los que ingresaron?»: la semana elegida en la línea de tiempo
+ * o las 12 de su franja, con el desglose por qué pasó y por quién lo originó, y
+ * la lista por persona con su cohorte, su % de semanas trabajadas y su motivo.
  */
 export function CohortSection({
   presence,
   currentWeek,
   workers,
-  sizes,
-  defaultWeek,
+  selected,
+  band,
+  isBand,
+  onBandChange,
+  hotelName,
 }: {
   presence: Map<string, WorkerPresence>
   currentWeek: string
   workers: Map<string, WorkerApi>
-  sizes: Array<{ week: string; size: number }>
-  /** La semana que se abre primero: la de la ventana que más interesa. */
-  defaultWeek: string
+  selected: string
+  /** Las 12 semanas alrededor de la elegida. */
+  band: string[]
+  isBand: boolean
+  onBandChange: (isBand: boolean) => void
+  hotelName: string | null
 }): ReactNode {
   const { i18n, t } = useLingui()
-  const [selected, setSelected] = useState<string>(defaultWeek)
   const [filter, setFilter] = useState<Filter>('all')
-  const isAll = selected === 'ALL'
-  const weeks = isAll ? sizes.map((item) => item.week) : [selected]
+  const isAll = isBand
+  const weeks = isAll ? band : [selected]
   const detail = cohortDetail(presence, weeks, currentWeek, workers)
   const size = detail.members.length
-  const totalRecent = sizes.reduce((sum, item) => sum + item.size, 0)
+  const bandFrom = band[band.length - 1] ?? selected
+  const bandTo = band[0] ?? selected
 
   /* «¿Regresaron el lunes?»: los ponches de ese lunes, solo para una semana
      y si cae en las dos más recientes (la ventana de ponches). */
@@ -195,30 +203,50 @@ export function CohortSection({
 
   return (
     <section className="flex flex-col gap-4 rounded-2xl border border-line bg-surface-2 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-base font-semibold text-ink">
-          <Trans>¿Qué pasó con los que ingresaron?</Trans>
-        </h3>
-        <label className="flex items-center gap-2 text-sm text-ink-2">
-          <Trans>Semana de ingreso</Trans>
-          <select
-            id="cohort-week"
-            value={selected}
-            onChange={(event) => {
-              setSelected(event.target.value)
-            }}
-            className="min-h-9 max-w-full rounded-lg border border-line bg-surface px-2 text-sm text-ink"
-          >
-            <option value="ALL">
-              {t`Todas: ${sizes.length} semanas`} · {totalRecent}
-            </option>
-            {sizes.map((item) => (
-              <option key={item.week} value={item.week}>
-                {weekRangeOf(item.week)} · {item.size}
-              </option>
-            ))}
-          </select>
-        </label>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold tracking-wide text-ink-3 uppercase">
+            <Trans>¿Qué pasó con los que ingresaron?</Trans>
+          </p>
+          <h3 className="text-xl font-bold text-ink">
+            {isAll ? (
+              <Trans>
+                De {weekRangeOf(bandFrom)} a {weekRangeOf(bandTo)}
+              </Trans>
+            ) : (
+              <Trans>Semana del {weekRangeOf(selected)}</Trans>
+            )}
+            {hotelName && <span className="font-semibold text-ink-2"> · {hotelName}</span>}
+          </h3>
+        </div>
+        <div
+          role="radiogroup"
+          aria-label={t`Qué semanas ver`}
+          className="inline-flex rounded-xl border border-line bg-surface p-1"
+        >
+          {(
+            [
+              [false, t`Solo esta semana`],
+              [true, t`Las ${band.length} semanas alrededor`],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={String(value)}
+              type="button"
+              role="radio"
+              aria-checked={isAll === value}
+              onClick={() => {
+                onBandChange(value)
+              }}
+              className={cn(
+                'min-h-8 rounded-lg px-3 text-sm font-medium',
+                isAll === value ? 'bg-o-50 text-ink' : 'text-ink-3 hover:text-ink',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {size === 0 ? (

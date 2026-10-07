@@ -34,6 +34,12 @@ Reglas:
 
 ## 2026-10-07
 
+### 16:59 — Ingresos más intuitivo: línea de tiempo por semana
+
+**Qué:** los dos controles de tiempo (ventana con calendario y selector de semana) se unen en una línea de tiempo: una barra por semana con cuántos ingresaron; se toca una barra o se usan las flechas (también del teclado). Botones «Cuando empezó a ponchar» y «Semana pasada» junto al hotel, título «Semana del…», interruptor «Solo esta semana / Las 12 semanas alrededor», la fila elegida resaltada y clicable en la retención, y «¿Cómo se calcula?» plegado.
+**Por qué:** pedido de Hugo: hacerlo más intuitivo. Había dos nociones de semana distintas y no se veía cuánta gente entraba cada semana.
+**Archivos:** `src/features/observability/components/{CohortTimeline.tsx,CohortsView.tsx,CohortSection.tsx}`; `src/locales/{es,en}/messages.po`.
+
 ### 16:43 — Moverse en el tiempo y filtrar por hotel en Ingresos
 
 **Qué:** Ingresos tiene un filtro de hotel (con la semana en que empezó a ponchar) y una ventana de 12 semanas que se mueve: flechas semana a semana, calendario, «Cuando empezó a ponchar» / «Inicio del historial» y «Hoy». Cohortes, retención y totales se calculan sobre esa ventana; las columnas de retención siguen hasta hoy.

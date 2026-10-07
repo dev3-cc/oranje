@@ -8,6 +8,7 @@ import {
   buildPresence,
   cohortSizes,
   firstWeekOf,
+  weeksOf,
   type Granularity,
   mondayOf,
   retentionAt,
@@ -16,7 +17,7 @@ import {
 } from '../lib/cohorts'
 
 import { CohortSection, Stat } from './CohortSection'
-import { PeopleNotice } from './PeopleView'
+import { CohortTimeline } from './CohortTimeline'
 import { TruncatedNotice } from './TabParts'
 
 import { formatPercent } from '@/shared/lib/formatters'
@@ -46,11 +47,9 @@ export function CohortsView({
   const currentWeek = mondayOf(new Date().toLocaleDateString('en-CA'))
   const [granularity, setGranularity] = useState<Granularity>('week')
   const [hotelId, setHotelId] = useState<string>(ALL_HOTELS)
-  /* La ventana se guarda por su primer lunes; termina 11 semanas después o hoy. */
-  const [windowFrom, setWindowFrom] = useState(() => addWeeks(currentWeek, -(WINDOW_WEEKS - 1)))
-  const windowTo = [addWeeks(windowFrom, WINDOW_WEEKS - 1), currentWeek].sort()[0] as string
-  const range: Window = { from: windowFrom, to: windowTo }
-  const isPresent = windowTo === currentWeek
+  /* La semana que se mira. Por defecto la pasada: la actual todavía no termina. */
+  const [picked, setPicked] = useState(() => addWeeks(currentWeek, -1))
+  const [isBand, setIsBand] = useState(false)
 
   const hotelByRequisition = new Map(
     requisitions.map((requisition) => [requisition.id, requisition.hotel]),
@@ -77,13 +76,23 @@ export function CohortsView({
   )
   const firstWeek = firstWeekOf(presence)
   const workersById = new Map(workers.map((worker) => [worker.id, worker]))
-  const sizes = cohortSizes(presence, range)
+  /* La semana elegida no puede quedar antes de que el hotel empezara. */
+  const start = firstWeek ?? currentWeek
+  const selected = picked < start ? start : picked > currentWeek ? currentWeek : picked
+  const timeline = cohortSizes(presence, { from: start, to: currentWeek }).reverse()
 
-  const moveTo = (from: string): void => {
-    const latest = addWeeks(currentWeek, -(WINDOW_WEEKS - 1))
-    const earliest = firstWeek ?? latest
-    setWindowFrom(from > latest ? latest : from < earliest && earliest < latest ? earliest : from)
+  /* La franja de 12 semanas alrededor de la elegida (5 antes, 6 después),
+     recortada al historial: es lo que comparan la tabla y los totales. */
+  let bandFrom = addWeeks(selected, -5)
+  if (bandFrom < start) bandFrom = start
+  let bandTo = addWeeks(bandFrom, WINDOW_WEEKS - 1)
+  if (bandTo > currentWeek) {
+    bandTo = currentWeek
+    const shifted = addWeeks(bandTo, -(WINDOW_WEEKS - 1))
+    bandFrom = shifted < start ? start : shifted
   }
+  const range: Window = { from: bandFrom, to: bandTo }
+  const bandWeeks = weeksOf(range)
 
   const retention = retentionTable(presence, granularity, currentWeek, range)
   const columns = Math.max(0, ...retention.map((row) => row.cells.length))
@@ -100,22 +109,34 @@ export function CohortsView({
 
   return (
     <div className="flex flex-col gap-6">
-      <PeopleNotice>
-        <Trans>
-          «Ingresó» = su primera semana con ponches en todo su historial. «Trabajó» una semana =
-          ponchó al menos una vez esa semana; no dice cuántos días. Lo que pasó con quien ya no
-          trabaja sale de su estado actual en el Semáforo del Colaborador.
-        </Trans>
-      </PeopleNotice>
+      <details className="group rounded-xl border border-line bg-surface-2 px-4 py-2 text-sm text-ink-2">
+        <summary className="flex cursor-pointer list-none items-center gap-2 font-medium text-ink-2">
+          <MaterialIcon name="help" className="text-lg text-ink-3" aria-hidden />
+          <Trans>¿Cómo se calcula?</Trans>
+          <MaterialIcon
+            name="expand_more"
+            className="ml-auto text-lg text-ink-3 transition-transform group-open:rotate-180"
+            aria-hidden
+          />
+        </summary>
+        <p className="pt-2 pb-1">
+          <Trans>
+            «Ingresó» = su primera semana con ponches en todo su historial. «Trabajó» una semana =
+            ponchó al menos una vez esa semana; no dice cuántos días. Lo que pasó con quien ya no
+            trabaja sale de su estado actual en el Semáforo del Colaborador.
+          </Trans>
+        </p>
+      </details>
       {truncated && <TruncatedNotice />}
 
-      {/* Moverse en el tiempo: un hotel y la ventana de 12 semanas. */}
+      {/* Moverse en el tiempo: el hotel, los saltos rápidos y la línea de tiempo. */}
       <section className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4">
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="flex min-w-0 flex-col gap-1 text-xs font-semibold text-ink-3">
-            <Trans>Hotel</Trans>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <label className="flex min-w-0 items-center gap-2 text-sm font-semibold text-ink-2">
+            <MaterialIcon name="apartment" className="text-xl text-ink-3" aria-hidden />
             <select
               id="cohort-hotel"
+              aria-label={t`Hotel`}
               value={hotelId}
               onChange={(event) => {
                 setHotelId(event.target.value)
@@ -125,58 +146,17 @@ export function CohortsView({
               <option value={ALL_HOTELS}>{t`Todos los hoteles`}</option>
               {hotels.map((item) => (
                 <option key={item.id} value={item.id}>
-                  {item.name} · {t`desde ${weekRangeOf(item.firstWeek)}`}
+                  {item.name}
                 </option>
               ))}
             </select>
           </label>
-
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-semibold text-ink-3">
-              <Trans>Ingresos desde la semana del</Trans>
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                aria-label={t`Una semana antes`}
-                disabled={firstWeek === null || windowFrom <= firstWeek}
-                onClick={() => {
-                  moveTo(addWeeks(windowFrom, -1))
-                }}
-                className="inline-flex size-10 items-center justify-center rounded-lg border border-line text-ink-2 hover:bg-surface-2 disabled:opacity-40"
-              >
-                <MaterialIcon name="chevron_left" className="text-xl" aria-hidden />
-              </button>
-              <input
-                id="cohort-from"
-                type="date"
-                value={windowFrom}
-                max={currentWeek}
-                onChange={(event) => {
-                  if (event.target.value) moveTo(mondayOf(event.target.value))
-                }}
-                className="min-h-10 rounded-lg border border-line bg-surface px-2 text-sm text-ink"
-              />
-              <button
-                type="button"
-                aria-label={t`Una semana después`}
-                disabled={isPresent}
-                onClick={() => {
-                  moveTo(addWeeks(windowFrom, 1))
-                }}
-                className="inline-flex size-10 items-center justify-center rounded-lg border border-line text-ink-2 hover:bg-surface-2 disabled:opacity-40"
-              >
-                <MaterialIcon name="chevron_right" className="text-xl" aria-hidden />
-              </button>
-            </div>
-          </div>
-
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              disabled={firstWeek === null || windowFrom === firstWeek}
+              disabled={selected === start}
               onClick={() => {
-                if (firstWeek) moveTo(firstWeek)
+                setPicked(start)
               }}
               className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-line px-3 text-sm font-medium text-ink-2 hover:bg-surface-2 disabled:opacity-40"
             >
@@ -185,29 +165,48 @@ export function CohortsView({
             </button>
             <button
               type="button"
-              disabled={isPresent}
+              disabled={selected === addWeeks(currentWeek, -1)}
               onClick={() => {
-                moveTo(addWeeks(currentWeek, -(WINDOW_WEEKS - 1)))
+                setPicked(addWeeks(currentWeek, -1))
               }}
               className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-line px-3 text-sm font-medium text-ink-2 hover:bg-surface-2 disabled:opacity-40"
             >
               <MaterialIcon name="today" className="text-lg" aria-hidden />
-              <Trans>Hoy</Trans>
+              <Trans>Semana pasada</Trans>
             </button>
           </div>
         </div>
-        <p className="text-sm text-ink-2">
-          <Trans>
-            Ingresos de {weekRangeOf(range.from)} a {weekRangeOf(range.to)}
-          </Trans>
-          {hotel && <> · {hotel.name}</>}
-          {hotel && (
-            <span className="text-ink-3">
-              {' '}
-              · <Trans>«Ingresó» = su primera semana ponchando en este hotel.</Trans>
-            </span>
-          )}
-        </p>
+
+        {firstWeek === null ? (
+          <p className="text-sm text-ink-3">
+            <Trans>Todavía no hay ponches para este hotel.</Trans>
+          </p>
+        ) : (
+          <>
+            <CohortTimeline
+              sizes={timeline}
+              selected={selected}
+              band={range}
+              onSelect={setPicked}
+            />
+            <p className="text-xs text-ink-3">
+              {hotel ? (
+                <Trans>
+                  Cada barra es una semana y su número, cuántas personas empezaron a ponchar en{' '}
+                  {hotel.name} esa semana (desde {weekRangeOf(hotel.firstWeek)}). Toca una barra o
+                  usa las flechas para moverte; lo sombreado son las 12 semanas que se comparan
+                  abajo.
+                </Trans>
+              ) : (
+                <Trans>
+                  Cada barra es una semana y su número, cuántas personas empezaron a trabajar esa
+                  semana. Toca una barra o usa las flechas para moverte; lo sombreado son las 12
+                  semanas que se comparan abajo.
+                </Trans>
+              )}
+            </p>
+          </>
+        )}
       </section>
 
       {/* Retención de las cohortes recientes, en una línea. */}
@@ -222,7 +221,7 @@ export function CohortsView({
               </Trans>
             )
           }
-          hint={<Trans>Ingresos de la ventana elegida</Trans>}
+          hint={<Trans>Ingresos de las 12 semanas sombreadas</Trans>}
         />
         <Stat
           label={<Trans>Siguen a las 4 semanas</Trans>}
@@ -251,12 +250,14 @@ export function CohortsView({
       </section>
 
       <CohortSection
-        key={`${hotelId}|${range.from}`}
-        defaultWeek={isPresent ? addWeeks(currentWeek, -1) : range.from}
         presence={presence}
         currentWeek={currentWeek}
         workers={workersById}
-        sizes={sizes}
+        selected={selected}
+        band={bandWeeks}
+        isBand={isBand}
+        onBandChange={setIsBand}
+        hotelName={hotel?.name ?? null}
       />
 
       {/* Retención por cohorte. */}
@@ -326,8 +327,26 @@ export function CohortsView({
               </thead>
               <tbody>
                 {retention.map((row) => (
-                  <tr key={row.cohort} className="border-b border-line last:border-0">
-                    <td className="sticky left-0 bg-surface px-3 py-2 whitespace-nowrap text-ink">
+                  <tr
+                    key={row.cohort}
+                    className={cn(
+                      'border-b border-line last:border-0',
+                      granularity === 'week' && 'cursor-pointer hover:bg-surface-2',
+                      row.cohort === (granularity === 'week' ? selected : selected.slice(0, 7)) &&
+                        'bg-o-50',
+                    )}
+                    onClick={() => {
+                      if (granularity === 'week') setPicked(row.cohort)
+                    }}
+                  >
+                    <td
+                      className={cn(
+                        'sticky left-0 px-3 py-2 whitespace-nowrap text-ink',
+                        row.cohort === (granularity === 'week' ? selected : selected.slice(0, 7))
+                          ? 'bg-o-50 font-semibold'
+                          : 'bg-surface',
+                      )}
+                    >
                       {granularity === 'week' ? weekRangeOf(row.cohort) : monthLabel(row.cohort)}
                     </td>
                     <td className="px-3 py-2 text-right text-ink tabular-nums">{row.size}</td>

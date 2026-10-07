@@ -42,6 +42,10 @@ msgstr "¿Cómo funciona el ponche?"
 msgid "¿Cómo funciona?"
 msgstr "¿Cómo funciona?"
 
+#: src/features/observability/components/CohortsView.tsx
+msgid "¿Cómo se calcula?"
+msgstr "¿Cómo se calcula?"
+
 #: src/features/worker/pages/Phase2Page.tsx
 msgid "¿Cómo te trasladas?"
 msgstr "¿Cómo te trasladas?"
@@ -133,10 +137,6 @@ msgstr "«{title}» ya tiene su lugar en el menú. Lo estamos construyendo y va 
 #: src/features/observability/components/CohortsView.tsx
 msgid "«Ingresó» = su primera semana con ponches en todo su historial. «Trabajó» una semana = ponchó al menos una vez esa semana; no dice cuántos días. Lo que pasó con quien ya no trabaja sale de su estado actual en el Semáforo del Colaborador."
 msgstr "«Ingresó» = su primera semana con ponches en todo su historial. «Trabajó» una semana = ponchó al menos una vez esa semana; no dice cuántos días. Lo que pasó con quien ya no trabaja sale de su estado actual en el Semáforo del Colaborador."
-
-#: src/features/observability/components/CohortsView.tsx
-msgid "«Ingresó» = su primera semana ponchando en este hotel."
-msgstr "«Ingresó» = su primera semana ponchando en este hotel."
 
 #: src/features/onboarding/components/SemaforoHelpDialog.tsx
 msgid "«Regresar» un prospecto es salir por una rama y reactivarlo. La reentrada es siempre hacia Azul claro, el único punto de retorno: se retoma el contacto, no la propuesta vieja."
@@ -566,6 +566,12 @@ msgstr "{0} ya es cliente activo"
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 msgid "{0} ya es el principal; si marcas este, lo reemplaza"
 msgstr "{0} ya es el principal; si marcas este, lo reemplaza"
+
+#. placeholder {0}: weekRangeOf(item.week)
+#. placeholder {1}: item.size
+#: src/features/observability/components/CohortTimeline.tsx
+msgid "{0}: {1} ingresos"
+msgstr "{0}: {1} ingresos"
 
 #. placeholder {0}: missingLaterFields.join(', ')
 #: src/features/recruitment/components/ChangeStateDialog.tsx
@@ -1934,6 +1940,16 @@ msgstr "Buzón eliminado"
 msgid "Buzón sin crear"
 msgstr "Buzón sin crear"
 
+#. placeholder {0}: hotel.name
+#. placeholder {1}: weekRangeOf(hotel.firstWeek)
+#: src/features/observability/components/CohortsView.tsx
+msgid "Cada barra es una semana y su número, cuántas personas empezaron a ponchar en {0} esa semana (desde {1}). Toca una barra o usa las flechas para moverte; lo sombreado son las 12 semanas que se comparan abajo."
+msgstr "Cada barra es una semana y su número, cuántas personas empezaron a ponchar en {0} esa semana (desde {1}). Toca una barra o usa las flechas para moverte; lo sombreado son las 12 semanas que se comparan abajo."
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Cada barra es una semana y su número, cuántas personas empezaron a trabajar esa semana. Toca una barra o usa las flechas para moverte; lo sombreado son las 12 semanas que se comparan abajo."
+msgstr "Cada barra es una semana y su número, cuántas personas empezaron a trabajar esa semana. Toca una barra o usa las flechas para moverte; lo sombreado son las 12 semanas que se comparan abajo."
+
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Cada cambio de estado, con quién lo hizo y cuándo"
 msgstr "Cada cambio de estado, con quién lo hizo y cuándo"
@@ -3156,6 +3172,12 @@ msgstr "Datos del hotel"
 msgid "Datos personales"
 msgstr "Datos personales"
 
+#. placeholder {0}: weekRangeOf(bandFrom)
+#. placeholder {1}: weekRangeOf(bandTo)
+#: src/features/observability/components/CohortSection.tsx
+msgid "De {0} a {1}"
+msgstr "De {0} a {1}"
+
 #: src/features/team/pages/TeamPage.tsx
 msgid "de abrir el ciclo a convertir"
 msgstr "de abrir el ciclo a convertir"
@@ -3304,9 +3326,7 @@ msgid "Desde"
 msgstr "Desde"
 
 #. placeholder {0}: formatMoney(row.minBillRate)
-#. placeholder {0}: weekRangeOf(item.firstWeek)
 #: src/features/contracts/components/ContractCardGrid.tsx
-#: src/features/observability/components/CohortsView.tsx
 msgid "desde {0}"
 msgstr "desde {0}"
 
@@ -5852,7 +5872,6 @@ msgstr "Housekeeping y Steward para temporada alta…"
 msgid "hoy"
 msgstr "hoy"
 
-#: src/features/observability/components/CohortsView.tsx
 #: src/features/timesheet/components/TimesheetViewControls.tsx
 msgid "Hoy"
 msgstr "Hoy"
@@ -5990,19 +6009,9 @@ msgstr "Ingreso al Pool"
 msgid "Ingresos"
 msgstr "Ingresos"
 
-#. placeholder {0}: weekRangeOf(range.from)
-#. placeholder {1}: weekRangeOf(range.to)
 #: src/features/observability/components/CohortsView.tsx
-msgid "Ingresos de {0} a {1}"
-msgstr "Ingresos de {0} a {1}"
-
-#: src/features/observability/components/CohortsView.tsx
-msgid "Ingresos de la ventana elegida"
-msgstr "Ingresos de la ventana elegida"
-
-#: src/features/observability/components/CohortsView.tsx
-msgid "Ingresos desde la semana del"
-msgstr "Ingresos desde la semana del"
+msgid "Ingresos de las 12 semanas sombreadas"
+msgstr "Ingresos de las 12 semanas sombreadas"
 
 #. placeholder {0}: formatDayMonth(row.startDate)
 #: src/mobile/hotel/requisitions/RequisitionsPage.tsx
@@ -6502,6 +6511,11 @@ msgstr "La vigencia está bien definida"
 #: src/features/onboarding/pages/PipelinePage.tsx
 msgid "La vista tabla llega pronto"
 msgstr "La vista tabla llega pronto"
+
+#. placeholder {0}: band.length
+#: src/features/observability/components/CohortSection.tsx
+msgid "Las {0} semanas alrededor"
+msgstr "Las {0} semanas alrededor"
 
 #: src/features/audits/components/AuditHotelCard.tsx
 msgid "Las auditorías las hace el Supervisor del hotel; tú puedes ver el historial."
@@ -9319,6 +9333,10 @@ msgstr "Qué pasó y cuándo…"
 msgid "Qué pasó y motivo"
 msgstr "Qué pasó y motivo"
 
+#: src/features/observability/components/CohortSection.tsx
+msgid "Qué semanas ver"
+msgstr "Qué semanas ver"
+
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Qué va a cubrir Oranje en este hotel"
 msgstr "Qué va a cubrir Oranje en este hotel"
@@ -10075,10 +10093,19 @@ msgstr "Semana aprobada"
 msgid "Semana de ingreso"
 msgstr "Semana de ingreso"
 
+#. placeholder {0}: weekRangeOf(selected)
+#: src/features/observability/components/CohortSection.tsx
+msgid "Semana del {0}"
+msgstr "Semana del {0}"
+
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
 #: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Semana enviada a revisión"
 msgstr "Semana enviada a revisión"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Semana pasada"
+msgstr "Semana pasada"
 
 #: src/features/timesheet/components/TimesheetViewControls.tsx
 #: src/mobile/hotel/timesheet/TimesheetPage.tsx
@@ -10092,6 +10119,10 @@ msgstr "Semana: <0>{coverage}% cubierto</0> · {holes, plural, one {# hueco} oth
 #: src/features/observability/components/CohortsView.tsx
 msgid "Semanal"
 msgstr "Semanal"
+
+#: src/features/observability/components/CohortTimeline.tsx
+msgid "Semanas de ingreso"
+msgstr "Semanas de ingreso"
 
 #: src/features/observability/lib/hotelKpis.ts
 msgid "Semanas de timesheet que el hotel recibió y todavía no aprueba."
@@ -10695,6 +10726,10 @@ msgstr "Solo el Manager de Área o el Manager General pueden aprobar la semana."
 msgid "Solo el nombre es obligatorio. Puesto, teléfono y correo se registran con lo que se tenga y se completan después."
 msgstr "Solo el nombre es obligatorio. Puesto, teléfono y correo se registran con lo que se tenga y se completan después."
 
+#: src/features/observability/components/CohortSection.tsx
+msgid "Solo esta semana"
+msgstr "Solo esta semana"
+
 #: src/features/recruitment/components/CreateAccessDialog.tsx
 msgid "Solo letras, números, punto y guión"
 msgstr "Solo letras, números, punto y guión"
@@ -11181,11 +11216,6 @@ msgstr "Todas"
 msgid "Todas las posiciones tienen tarifa."
 msgstr "Todas las posiciones tienen tarifa."
 
-#. placeholder {0}: sizes.length
-#: src/features/observability/components/CohortSection.tsx
-msgid "Todas: {0} semanas"
-msgstr "Todas: {0} semanas"
-
 #: src/features/admin/components/ColaboradorAccountsSection.tsx
 msgid "Todavía nadie tiene correo corporativo asignado."
 msgstr "Todavía nadie tiene correo corporativo asignado."
@@ -11247,6 +11277,10 @@ msgstr "Todavía no hay motivos. Agrega el primero desde el semáforo al que per
 #: src/features/admin/pages/UsersPage.tsx
 msgid "Todavía no hay personal activo. Agrega al primer usuario con el botón de arriba."
 msgstr "Todavía no hay personal activo. Agrega al primer usuario con el botón de arriba."
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Todavía no hay ponches para este hotel."
+msgstr "Todavía no hay ponches para este hotel."
 
 #: src/features/onboarding/components/ProposalVersionList.tsx
 msgid "Todavía no hay propuesta para este hotel. Empieza con «Abrir propuesta»."
@@ -11715,11 +11749,11 @@ msgstr "Una requisición autorizada la elimina el Manager de Área de su departa
 msgid "Una requisición en este estado no se elimina: las cubiertas se conservan como historia."
 msgstr "Una requisición en este estado no se elimina: las cubiertas se conservan como historia."
 
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/components/CohortTimeline.tsx
 msgid "Una semana antes"
 msgstr "Una semana antes"
 
-#: src/features/observability/components/CohortsView.tsx
+#: src/features/observability/components/CohortTimeline.tsx
 msgid "Una semana después"
 msgstr "Una semana después"
 
