@@ -14,6 +14,7 @@ import type {
   RequisitionJournalEntryApi,
   TimesheetApi,
   WorkerApi,
+  WorkerHistoryEntryApi,
 } from '@/shared/types/apiContract.types'
 
 /** `fetchWithBQ` de un `queryFn`: el tipo exacto no está exportado por RTK. */
@@ -26,6 +27,26 @@ const FETCH_ALL_CAP = 2000
 
 /** Una semana de ponches de todos los hoteles cabe de sobra; más es otro tablero. */
 const PUNCH_MAX_PAGES = 30
+
+/** El tope de filas de `GET /timesheets` para todos los hoteles. */
+const TIMESHEET_LIMIT = 2000
+
+/** Antes de que existiera cualquier timesheet: el historial completo. */
+const HISTORY_START = '2024-01-01'
+
+const DAY_MS = 86_400_000
+
+function todayIso(): string {
+  return new Date().toLocaleDateString('en-CA')
+}
+
+function addDaysIso(day: string, days: number): string {
+  return new Date(Date.parse(`${day}T00:00:00Z`) + days * DAY_MS).toISOString().slice(0, 10)
+}
+
+function daysBetweenIso(from: string, to: string): number {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS)
+}
 
 /** Llamadas por detalle (intentos, asignaciones) en paralelo, por tandas. */
 const BATCH_SIZE = 8
@@ -164,6 +185,63 @@ export const observabilityApi = baseApi.injectEndpoints({
       },
     }),
 
+    /**
+     * Todas las semanas de timesheet desde el arranque, para ingresos y
+     * retención. `GET /timesheets` corta en 2000 filas: si un rango llega al
+     * tope se parte en dos, hasta llegar a una semana.
+     */
+    getObserverTimesheetHistory: build.query<Listed<TimesheetApi>, void>({
+      async queryFn(_arg, _api, _extra, baseQuery) {
+        const fetchWithBQ = baseQuery as FetchWithBQ
+        const rows = new Map<string, TimesheetApi>()
+        let truncated = false
+
+        const fetchRange = async (from: string, to: string): Promise<unknown> => {
+          const res = await fetchWithBQ({ url: '/timesheets', params: { from, to } })
+          if (res.error) return res.error
+          const data = (res.data as ApiEnvelope<TimesheetApi[]>).data
+          if (data.length >= TIMESHEET_LIMIT) {
+            const days = daysBetweenIso(from, to)
+            if (days <= 7) {
+              truncated = true
+            } else {
+              const middle = addDaysIso(from, Math.floor(days / 2))
+              const left = await fetchRange(from, middle)
+              if (left) return left
+              return fetchRange(addDaysIso(middle, 1), to)
+            }
+          }
+          for (const sheet of data) rows.set(sheet.id, sheet)
+          return null
+        }
+
+        const error = await fetchRange(HISTORY_START, addDaysIso(todayIso(), 7))
+        if (error) return { error: error as never }
+        return { data: { rows: [...rows.values()], truncated } }
+      },
+    }),
+
+    /** Historial de estados de cada colaborador dado: el motivo de su salida. */
+    getObserverWorkerHistories: build.query<Record<string, WorkerHistoryEntryApi[]>, string[]>({
+      async queryFn(workerIds, _api, _extra, baseQuery) {
+        const fetchWithBQ = baseQuery as FetchWithBQ
+        const results = await inBatches(workerIds, async (id) => ({
+          id,
+          res: await fetchWithBQ(`/workers/${id}/history`),
+        }))
+        const failed = results.find(({ res }) => res.error)
+        if (failed) return { error: failed.res.error as never }
+        return {
+          data: Object.fromEntries(
+            results.map(({ id, res }) => [
+              id,
+              (res.data as ApiEnvelope<WorkerHistoryEntryApi[]>).data,
+            ]),
+          ),
+        }
+      },
+    }),
+
     /** Bitácora por requisición, para la actividad de cada reclutador. */
     getObserverJournals: build.query<Record<string, RequisitionJournalEntryApi[]>, string[]>({
       async queryFn(requisitionIds, _api, _extra, baseQuery) {
@@ -217,4 +295,6 @@ export const {
   useGetObserverContactAttemptsQuery,
   useGetObserverAssignmentsQuery,
   useGetObserverJournalsQuery,
+  useGetObserverTimesheetHistoryQuery,
+  useGetObserverWorkerHistoriesQuery,
 } = observabilityApi

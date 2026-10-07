@@ -34,6 +34,12 @@ Reglas:
 
 ## 2026-10-07
 
+### 16:07 — Ingresos y retención de colaboradores en el Observador
+
+**Qué:** la pestaña Colaborador tiene la sub-vista «KPIs / Ingresos». Para la semana de ingreso elegida: cuántos ingresaron, cuántos regresaron el lunes y la semana siguiente, cuántos siguen trabajando, qué pasó con quienes ya no trabajan (según su estado y el motivo del historial) y la lista de personas. Además, la retención por cohorte semanal o mensual y la retención a 1, 4 y 12 semanas.
+**Por qué:** pedido de Hugo: saber qué pasó con los colaboradores que ingresaron y medir la retención. Sale de las semanas de timesheet (solo existen si la persona ponchó), sin endpoint nuevo del back; «ingresó» = su primera semana con ponches.
+**Archivos:** `src/features/observability/{lib/cohorts.ts,lib/cohorts.spec.ts,components/CohortsView.tsx,components/TabParts.tsx,tabs/WorkerTab.tsx,api/observabilityApi.ts}`; `src/locales/{es,en}/messages.po`.
+
 ### 13:51 — Vista «Por persona» en los departamentos del Observador
 
 **Qué:** Ventas, Reclutamiento, Inspección y Contabilidad tienen la sub-vista «KPIs / Por persona»: una fila por persona (tabla en escritorio, tarjetas en móvil), de la menos activa a la más activa, y un panel con sus números y su línea de tiempo del periodo. Hotel y Colaborador se quedan solo con KPIs.

@@ -122,20 +122,27 @@ export function TabState({
   return <div className="flex flex-col gap-4">{children}</div>
 }
 
-export type DepartmentView = 'kpis' | 'people'
+export type DepartmentView = 'kpis' | 'people' | 'cohorts'
 
-/** «KPIs / Por persona»: las dos vistas de un departamento. */
+/** La segunda vista de un departamento: «Por persona» o, en Colaborador, «Ingresos». */
+type SecondView = Exclude<DepartmentView, 'kpis'>
+
+/** «KPIs / Por persona» (o «KPIs / Ingresos»): las dos vistas de un departamento. */
 export function ViewSwitch({
   value,
   onChange,
+  second = 'people',
 }: {
   value: DepartmentView
   onChange: (view: DepartmentView) => void
+  second?: SecondView
 }): ReactNode {
   const { t } = useLingui()
   const options: Array<{ view: DepartmentView; label: string; icon: string }> = [
     { view: 'kpis', label: t`KPIs`, icon: 'bar_chart' },
-    { view: 'people', label: t`Por persona`, icon: 'groups' },
+    second === 'people'
+      ? { view: 'people', label: t`Por persona`, icon: 'groups' }
+      : { view: 'cohorts', label: t`Ingresos`, icon: 'how_to_reg' },
   ]
   return (
     <div

@@ -81,6 +81,10 @@ msgstr "Why is it being rejected? (illegible, incorrect…)"
 msgid "¿Qué es de ti?"
 msgstr "Anything we should know?"
 
+#: src/features/observability/components/CohortsView.tsx
+msgid "¿Qué pasó con los que ingresaron?"
+msgstr "What happened to the people who started?"
+
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "¿Seguro? Toca «Sí, descartar borrador» para confirmar."
 msgstr "Are you sure? Tap “Yes, discard draft” to confirm."
@@ -125,6 +129,10 @@ msgstr "“{0}” is deleted for real. If any audit already answered it, the sys
 #: src/shared/components/ModulePlaceholder.tsx
 msgid "«{title}» ya tiene su lugar en el menú. Lo estamos construyendo y va a estar listo muy pronto."
 msgstr "“{title}” already has its place in the menu. We're building it, and it'll be ready very soon."
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "«Ingresó» = su primera semana con ponches en todo su historial. «Trabajó» una semana = ponchó al menos una vez esa semana; no dice cuántos días. Lo que pasó con quien ya no trabaja sale de su estado actual en el Semáforo del Colaborador."
+msgstr "“Started” = their first week with punches in their whole history. “Worked” a week = punched at least once that week; it doesn't say how many days. What happened to people who no longer work comes from their current state in the Worker traffic light."
 
 #: src/features/onboarding/components/SemaforoHelpDialog.tsx
 msgid "«Regresar» un prospecto es salir por una rama y reactivarlo. La reentrada es siempre hacia Azul claro, el único punto de retorno: se retoma el contacto, no la propuesta vieja."
@@ -411,8 +419,13 @@ msgstr "{0} conv."
 msgid "{0} d sin intento"
 msgstr "{0} d without an attempt"
 
-#. placeholder {0}: kpi.ratio.part
-#. placeholder {1}: kpi.ratio.whole
+#. placeholder {0}: at1.part
+#. placeholder {0}: at12.part
+#. placeholder {0}: at4.part
+#. placeholder {1}: at1.whole
+#. placeholder {1}: at12.whole
+#. placeholder {1}: at4.whole
+#: src/features/observability/components/CohortsView.tsx
 #: src/features/observability/components/KpiCard.tsx
 msgid "{0} de {1}"
 msgstr "{0} of {1}"
@@ -422,6 +435,12 @@ msgstr "{0} of {1}"
 #: src/features/admin/pages/CorporateEmailPage.tsx
 msgid "{0} de {1} con buzón"
 msgstr "{0} of {1} with a mailbox"
+
+#. placeholder {0}: detail.active
+#. placeholder {0}: detail.returnedNextWeek
+#: src/features/observability/components/CohortsView.tsx
+msgid "{0} de {size}"
+msgstr "{0} of {size}"
 
 #. placeholder {0}: formatHours(row.totalHours)
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
@@ -581,6 +600,10 @@ msgstr "{assignedName} assigned to the slot"
 #: src/features/dashboard/components/ActivityCards.tsx
 msgid "{averageDays} d"
 msgstr "{averageDays} d"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "{backMonday} de {size}"
+msgstr "{backMonday} of {size}"
 
 #: src/features/requisitions/components/AuthorizationQueueList.tsx
 msgid "{days, plural, =0 {Inicia hoy} one {Inicia en # día} other {Inicia en # días}}"
@@ -903,6 +926,7 @@ msgstr "Access"
 msgid "Acceso creado"
 msgstr "Access created"
 
+#: src/features/observability/lib/cohorts.ts
 #: src/shared/constants/workerStatus.ts
 msgid "Accidentado"
 msgstr "Injured"
@@ -1095,6 +1119,10 @@ msgstr "Add shift"
 #: src/features/admin/pages/UsersPage.tsx
 msgid "Agregar usuario"
 msgstr "Add user"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Agrupar por"
+msgstr "Group by"
 
 #: src/features/observability/components/KpiCard.tsx
 msgid "Ahora"
@@ -1378,6 +1406,10 @@ msgstr "Assigned {0}"
 #: src/features/recruitment/components/PoolRoster.tsx
 msgid "Asignado en {0} · {1}"
 msgstr "Assigned at {0} · {1}"
+
+#: src/features/observability/lib/cohorts.ts
+msgid "Asignado, pero sin ponches recientes"
+msgstr "Assigned, but no recent punches"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "Asignados hoy"
@@ -1678,6 +1710,7 @@ msgstr "Requisition log"
 msgid "BLACK · Blacklist"
 msgstr "BLACK · Blacklist"
 
+#: src/features/observability/lib/cohorts.ts
 #: src/features/observability/lib/workerKpis.ts
 #: src/features/recruitment/pages/BlacklistPage.tsx
 #: src/layouts/Sidebar.tsx
@@ -1908,6 +1941,14 @@ msgstr "Every send stays as a version; none of them are deleted."
 #: src/features/onboarding/components/SemaforoHelpDialog.tsx
 msgid "Cada estado avanza solo hacia el siguiente; el semáforo nunca retrocede."
 msgstr "Each status only moves on to the next one; the Status Light never goes backwards."
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Cada fila son quienes ingresaron esa semana; cada columna, qué parte trabajó k semanas después. La columna en curso todavía puede subir."
+msgstr "Each row is the people who started that week; each column, the share who worked k weeks later. The current column can still go up."
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Cada fila son quienes ingresaron ese mes; cada columna, qué parte trabajó k meses después. El mes en curso todavía puede subir."
+msgstr "Each row is the people who started that month; each column, the share who worked k months later. The current month can still go up."
 
 #: src/features/onboarding/components/RegisterAttemptDialog.tsx
 msgid "Cada intento cuenta la historia"
@@ -2319,6 +2360,7 @@ msgstr "Self-Pick queue"
 
 #: src/features/admin/pages/CorporateEmailPage.tsx
 #: src/features/auth/pages/LoginPage.tsx
+#: src/features/observability/components/CohortsView.tsx
 #: src/features/observability/pages/ObservabilityPage.tsx
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
 #: src/features/recruitment/pages/BlacklistPage.tsx
@@ -3796,6 +3838,10 @@ msgstr "The hotel prints the code at the entrance; the app scans it along with t
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "El hotel imprime un código en el acceso y la app lo escanea, con la ubicación."
 msgstr "The hotel prints a code at the entrance and the app scans it, along with the location."
+
+#: src/features/observability/lib/cohorts.ts
+msgid "El hotel lo mandó a descansar (Stand-by)"
+msgstr "The hotel sent them to rest (Stand-by)"
 
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
 msgid "El hotel no tiene QR generado todavía: regenéralo desde su ficha."
@@ -5694,6 +5740,10 @@ msgstr "Net hours"
 msgid "Hotel"
 msgstr "Hotel"
 
+#: src/features/observability/components/CohortsView.tsx
+msgid "Hotel al ingresar"
+msgstr "Hotel when starting"
+
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Hotel cliente"
 msgstr "Client hotel"
@@ -5879,9 +5929,25 @@ msgstr "English {ordinal}"
 msgid "Inglés y experiencia"
 msgstr "English and experience"
 
+#: src/features/observability/components/CohortsView.tsx
+msgid "Ingresaron"
+msgstr "Started"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Ingreso"
+msgstr "Start"
+
 #: src/features/observability/lib/recruitmentKpis.ts
 msgid "Ingreso al Pool"
 msgstr "Pool intake"
+
+#: src/features/observability/components/TabParts.tsx
+msgid "Ingresos"
+msgstr "Starts"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Ingresos de las últimas 12 semanas"
+msgstr "Starts in the last 12 weeks"
 
 #. placeholder {0}: formatDayMonth(row.startDate)
 #: src/mobile/hotel/requisitions/RequisitionsPage.tsx
@@ -6356,6 +6422,10 @@ msgstr "The payroll week cannot start and end on the same day."
 #: src/features/personnel/components/WorkerPerformanceRadar.tsx
 msgid "La semana en cinco medidas"
 msgstr "The week in five measures"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "La semana siguiente todavía no empieza."
+msgstr "The following week hasn't started yet."
 
 #: src/features/worker/pages/PunchPage.tsx
 msgid "La semana ya se cerró: esta marca la captura el Supervisor."
@@ -6922,9 +6992,17 @@ msgstr "Medium"
 msgid "Medio tiempo"
 msgstr "Part-time"
 
+#: src/features/observability/components/CohortsView.tsx
+msgid "Mensual"
+msgstr "Monthly"
+
 #: src/features/timesheet/components/TimesheetViewControls.tsx
 msgid "Mes"
 msgstr "Month"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Mes {k}"
+msgstr "Month {k}"
 
 #: src/features/observability/components/KpiCard.tsx
 msgid "meta de ejemplo"
@@ -7222,6 +7300,10 @@ msgstr "Nobody matches the search."
 #: src/features/observability/components/PeopleView.tsx
 msgid "Nadie de este departamento tiene actividad registrada que se pueda ver."
 msgstr "No one in this department has recorded activity that can be shown."
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Nadie empezó a trabajar esa semana."
+msgstr "Nobody started working that week."
 
 #: src/features/admin/pages/CorporateEmailPage.tsx
 msgid "Nadie en la lista se llama «{search}»."
@@ -7524,6 +7606,7 @@ msgstr "We couldn't reach Oranje. Check your connection and try again in a momen
 msgid "No registró nada en el periodo."
 msgstr "Recorded nothing in the period."
 
+#: src/features/observability/lib/cohorts.ts
 #: src/shared/constants/workerStatus.ts
 msgid "No regresó"
 msgstr "Didn't return"
@@ -8348,6 +8431,7 @@ msgstr "Source"
 msgid "Otra Reclutadora tomó este slot antes{0}: el tablero ya se actualizó, revisa el siguiente libre."
 msgstr "Another Recruiter took this slot first{0}: the board is already updated, check the next free one."
 
+#: src/features/observability/lib/cohorts.ts
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 #: src/shared/constants/workerEnums.ts
@@ -8641,6 +8725,10 @@ msgstr "Hotel staff"
 msgid "Personal Oranje"
 msgstr "Oranje staff"
 
+#: src/features/observability/components/CohortsView.tsx
+msgid "Personas"
+msgstr "People"
+
 #: src/features/observability/lib/recruitmentKpis.ts
 msgid "Personas asignadas que no ponchan su primer día, con el primer día en el periodo."
 msgstr "Assigned people who don't punch in on their first day, with that first day in the period."
@@ -8750,6 +8838,10 @@ msgstr "Manual punches"
 #: src/features/observability/lib/workerKpis.ts
 msgid "Ponches registrados fuera del radio del hotel."
 msgstr "Punches recorded outside the hotel's radius."
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Ponchó esta semana o la pasada, después de su semana de ingreso."
+msgstr "Punched this week or last week, after their start week."
 
 #: src/features/recruitment/pages/PoolPage.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
@@ -9142,9 +9234,17 @@ msgstr "What happens when you approve"
 msgid "Qué pasa después del alta"
 msgstr "What happens after intake"
 
+#: src/features/observability/components/CohortsView.tsx
+msgid "Qué pasó"
+msgstr "What happened"
+
 #: src/features/onboarding/components/RegisterAttemptDialog.tsx
 msgid "Qué pasó con este intento"
 msgstr "What happened on this attempt"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Qué pasó con quienes ya no trabajan"
+msgstr "What happened to those who no longer work"
 
 #: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Qué pasó y cómo se resolvió…"
@@ -9391,6 +9491,14 @@ msgstr "Logged by"
 msgid "Registro de entrada y salida"
 msgstr "Clock in and clock out"
 
+#: src/features/observability/components/CohortsView.tsx
+msgid "Regresaron el lunes"
+msgstr "Came back on Monday"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Regresaron la semana siguiente"
+msgstr "Came back the following week"
+
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 #: src/features/worker/api/punchApi.ts
@@ -9442,6 +9550,10 @@ msgstr "Reported"
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "Reportado (Rojo)"
 msgstr "Reported (Red)"
+
+#: src/features/observability/lib/cohorts.ts
+msgid "Reportado por el hotel"
+msgstr "Reported by the hotel"
 
 #: src/features/personnel/components/ReportWorkerDialog.tsx
 msgid "Reportando…"
@@ -9592,6 +9704,10 @@ msgstr "Outcome"
 #: src/layouts/GlobalSearch.tsx
 msgid "Resultados"
 msgstr "Results"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Retención por cohorte"
+msgstr "Retention by cohort"
 
 #. placeholder {0}: fields.join(', ')
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
@@ -9845,6 +9961,10 @@ msgstr "Selfie"
 msgid "Selfie es lo normal. QR es para los hoteles que no permiten tomar fotos: Oranje genera un código que el hotel imprime en el acceso."
 msgstr "Selfie is the norm. QR is for hotels that don't allow photos: Oranje generates a code the hotel prints at the entrance."
 
+#: src/features/observability/components/CohortsView.tsx
+msgid "Sem {k}"
+msgstr "Wk {k}"
+
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Semáforo"
 msgstr "Status Light"
@@ -9877,6 +9997,10 @@ msgstr "Previous week"
 msgid "Semana aprobada"
 msgstr "Week approved"
 
+#: src/features/observability/components/CohortsView.tsx
+msgid "Semana de ingreso"
+msgstr "Start week"
+
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
 #: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Semana enviada a revisión"
@@ -9891,6 +10015,10 @@ msgstr "Next week"
 msgid "Semana: <0>{coverage}% cubierto</0> · {holes, plural, one {# hueco} other {# huecos}} — se asignan desde la Bolsa de la Reclutadora"
 msgstr "Week: <0>{coverage}% covered</0> · {holes, plural, one {# gap} other {# gaps}} — assigned from the Recruiter's Pool"
 
+#: src/features/observability/components/CohortsView.tsx
+msgid "Semanal"
+msgstr "Weekly"
+
 #: src/features/observability/lib/hotelKpis.ts
 msgid "Semanas de timesheet que el hotel recibió y todavía no aprueba."
 msgstr "Timesheet weeks the hotel received and hasn't approved yet."
@@ -9898,6 +10026,10 @@ msgstr "Timesheet weeks the hotel received and hasn't approved yet."
 #: src/features/observability/lib/hotelKpis.ts
 msgid "Semanas sin aprobar"
 msgstr "Unapproved weeks"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Semanas trabajadas"
+msgstr "Weeks worked"
 
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 #: src/features/onboarding/pages/ProposalVersionPage.tsx
@@ -10028,6 +10160,22 @@ msgstr "Next comes the contract"
 msgid "Sigue siendo {0}. Arrastra el mapa para dejar el pin en la entrada por donde llegan los colaboradores: mover el pin no cambia el hotel, solo dónde se poncha."
 msgstr "It's still {0}. Drag the map to drop the pin at the entrance the collaborators use: moving the pin doesn't change the hotel, only where they clock in."
 
+#: src/features/observability/lib/cohorts.ts
+msgid "Sigue trabajando"
+msgstr "Still working"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Siguen a las 12 semanas"
+msgstr "Still working at 12 weeks"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Siguen a las 4 semanas"
+msgstr "Still working at 4 weeks"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Siguen trabajando"
+msgstr "Still working"
+
 #: src/features/worker/pages/Phase2Page.tsx
 msgid "Sigues en Blanco hasta que la Reclutadora valide el alta"
 msgstr "You stay in White until the Recruiter validates your sign-up"
@@ -10066,6 +10214,10 @@ msgstr "No approval, no pay"
 #: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Sin asignación en esta requisición: no hay contra qué capturar marcas"
 msgstr "No assignment on this requisition: there's nothing to record punches against"
+
+#: src/features/observability/lib/cohorts.ts
+msgid "Sin asignación: terminó o lo liberaron"
+msgstr "No assignment: it ended or they were released"
 
 #: src/features/requisitions/components/SlotList.tsx
 msgid "Sin asignar"
@@ -10485,6 +10637,10 @@ msgstr "Payroll consolidations by status only. Accounting KPIs (on-time consolid
 msgid "Solo los hoteles en Verde (o Café, para renegociar) pueden abrir propuesta — y de Verde no se avanza sin enviarla."
 msgstr "Only hotels in Green (or Brown, to renegotiate) can open a proposal — and there's no moving on from Green without sending it."
 
+#: src/features/observability/components/CohortsView.tsx
+msgid "Solo para las dos semanas más recientes."
+msgstr "Only for the two most recent weeks."
+
 #: src/features/schedule/components/AddShiftDialog.tsx
 msgid "Solo planeas turnos de tu departamento."
 msgstr "You only plan shifts for your department."
@@ -10609,6 +10765,10 @@ msgstr "Their file is half done: {0} missing."
 #: src/features/admin/components/PendingHotelUsers.tsx
 msgid "Su hotel los propuso. Al aprobar, la cuenta se activa y les llega la invitación; hasta entonces no pueden entrar."
 msgstr "Their hotel proposed them. On approval the account is activated and their invitation goes out; until then they cannot sign in."
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Su lunes todavía no llega."
+msgstr "Their Monday hasn't come yet."
 
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Su propio peso por reactivo y arrastre para reordenar — por eso vive separado, con una línea divisoria antes de su pestaña."
@@ -10989,6 +11149,10 @@ msgstr "No departments yet. Add the first one with the button above; positions h
 msgid "Todavía no hay hoteles dados de alta: los crea Ventas en el Pipeline."
 msgstr "No hotels on file yet: Sales creates them in the Pipeline."
 
+#: src/features/observability/components/CohortsView.tsx
+msgid "Todavía no hay ingresos que medir."
+msgstr "No starts to measure yet."
+
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Todavía no hay motivos. Agrega el primero desde el semáforo al que pertenece."
 msgstr "No reasons yet. Add the first one from the Status Light it belongs to."
@@ -11110,6 +11274,18 @@ msgstr "Total: {positionCount, plural, one {# position} other {# positions}} · 
 #: src/shared/constants/timesheetStatus.ts
 msgid "Trabajando ahora"
 msgstr "Working now"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Trabajaron en su semana 12 · ~90 días"
+msgstr "Worked in their week 12 · ~90 days"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Trabajaron en su semana 4 · ~30 días"
+msgstr "Worked in their week 4 · ~30 days"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Trabajaron la semana siguiente"
+msgstr "Worked the following week"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
@@ -11316,6 +11492,10 @@ msgstr "Last activity"
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Última enviada · v{0}"
 msgstr "Last sent · v{0}"
+
+#: src/features/observability/components/CohortsView.tsx
+msgid "Última semana"
+msgstr "Last week worked"
 
 #. placeholder {0}: formatDateTime(data.updatedAt)
 #: src/features/admin/pages/MailSettingsPage.tsx
