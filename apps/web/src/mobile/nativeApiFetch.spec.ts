@@ -39,9 +39,9 @@ afterEach(() => {
 describe('homePathFor', () => {
   it('reparte por rol: Colaborador, hotel y el resto', () => {
     expect(homePathFor('ROL-C-01')).toBe('/collaborator')
-    expect(homePathFor('ROL-H-01')).toBe('/hotel')
-    expect(homePathFor('ROL-H-02')).toBe('/hotel')
-    expect(homePathFor('ROL-H-03')).toBe('/hotel')
+    expect(homePathFor('ROL-H-01')).toBe('/dashboard')
+    expect(homePathFor('ROL-H-02')).toBe('/dashboard')
+    expect(homePathFor('ROL-H-03')).toBe('/dashboard')
     expect(homePathFor('ROL-V-01')).toBe('/unsupported')
     expect(homePathFor(undefined)).toBe('/unsupported')
   })

@@ -32,6 +32,14 @@ Reglas:
 
 ---
 
+## 2026-10-08
+
+### 13:19 — La app del hotel consume el web tal cual
+
+**Qué:** los roles del hotel (Supervisor, Manager de Área, Manager General) ven en la app el mismo `AppShell` del web y sus mismas pantallas (Dashboard, Requisiciones, Timesheet, Timesheet Global, Mi Personal, Accidentes, Auditorías) y la hoja del QR. Las rutas del staff salen de `app/router.tsx` a `app/staffRoutes.tsx` para compartirlas sin crear un segundo router. Se borran las pantallas propias de `src/mobile/hotel/` (incluido Costos con datos de ejemplo); la única pantalla nativa del hotel es la de Permisos (notificaciones). El Colaborador no cambia.
+**Por qué:** pedido de Hugo: el Timesheet del hotel en la app no se veía como en el web; la app debe consumir las vistas del web, no reconstruirlas. Costos se quita.
+**Archivos:** `src/app/{router.tsx,staffRoutes.tsx}`; `src/mobile/{router.tsx,layouts.tsx,main.tsx,roles.ts,PermissionsOnLaunch.tsx,hotelPermissions.ts,nativeApiFetch.spec.ts}`; se borra `src/mobile/hotel/`; `src/locales/{es,en}/messages.po`; `../mobile/README.md`; se borra `../mobile/docs/COSTOS-HOTEL-API.md`.
+
 ## 2026-10-07
 
 ### 16:59 — Ingresos más intuitivo: línea de tiempo por semana

@@ -9,25 +9,19 @@ con un `sync`, sin tocar nada de esta carpeta.
 **Un solo login** ([`AppLoginPage`](../web/src/mobile/AppLoginPage.tsx)) y, al
 entrar, el rol decide el apartado ([`roles.ts`](../web/src/mobile/roles.ts)):
 
-| Rol                                                           | Apartado                                                  |
-| ------------------------------------------------------------- | --------------------------------------------------------- |
-| Colaborador (`ROL-C-01`)                                      | `/collaborator` — el de `features/worker`                 |
-| Supervisor, Manager de Área, Manager General (`ROL-H-01..03`) | `/hotel` — [`src/mobile/hotel/`](../web/src/mobile/hotel) |
-| Cualquier otro                                                | `/unsupported` — le dice que su trabajo está en el web    |
+| Rol                                                           | Apartado                                               |
+| ------------------------------------------------------------- | ------------------------------------------------------ |
+| Colaborador (`ROL-C-01`)                                      | `/collaborator` — el de `features/worker`              |
+| Supervisor, Manager de Área, Manager General (`ROL-H-01..03`) | `/dashboard` — el web tal cual (`AppShell`)            |
+| Cualquier otro                                                | `/unsupported` — le dice que su trabajo está en el web |
 
-El apartado del hotel vive solo en la app: el web no lo carga. Usa los mismos endpoints
-y permisos que el web (cada acción se muestra según `/me`):
-
-| Sección                | Qué hace                                                                                                                                                                                                                                                                | Permiso                                                                |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Inicio                 | Rol, hotel y alcance; Por autorizar, Abiertas, Urgentes, Lugares por cubrir, cobertura, tiempo para autorizar, demanda por departamento, timesheets por aprobar; invitar cuenta                                                                                         | `users:invite_hotel` para invitar                                      |
-| Requisiciones          | Lista con filtros, detalle, alta en 3 pasos, autorizar y eliminar                                                                                                                                                                                                       | `requisitions:create` · `:authorize` · `:delete_empty`                 |
-| Timesheet              | Semana por persona, revisar día, marca manual, enviar y aprobar                                                                                                                                                                                                         | `timesheet:review_punches` · `:create_manual_punch` · `:approve_hours` |
-| Mi personal            | Plantilla con turno y entrada de hoy, ficha, Stand-by y Reportar                                                                                                                                                                                                        | `staff:read` · `:set_standby` · `:report`                              |
-| Costos (Inicio y menú) | Costo de la semana actual (estimado) y por semana trabajada, desglose por posición, «Información incompleta» con su motivo. **Hoy con datos de ejemplo**: el backend aún no publica `/hotel-costs` (contrato en [`docs/COSTOS-HOTEL-API.md`](docs/COSTOS-HOTEL-API.md)) | `dashboard:read_all` · `:read_department`                              |
-| QR de ponche (menú)    | Ver el QR en grande y regenerarlo (sin descargar: el WebView no baja archivos)                                                                                                                                                                                          | `hotel:punch_qr`                                                       |
-
-Las Auditorías no están en la app: las hace el Supervisor desde el web.
+Los roles del hotel ven **el web tal cual**: el mismo `AppShell` (sidebar, header,
+buscador, notificaciones) y las mismas pantallas —Dashboard, Requisiciones,
+Timesheet, Timesheet Global, Mi Personal, Accidentes y, para el Supervisor,
+Auditorías—, con los mismos permisos. Las rutas se comparten desde
+[`app/staffRoutes.tsx`](../web/src/app/staffRoutes.tsx): la app las consume, no
+las reconstruye. Lo único nativo del hotel es la pantalla de Permisos
+(notificaciones), que se abre al entrar.
 
 Se eligió Capacitor sobre React Native —que es lo que decía el README de la
 raíz— porque el Colaborador ya estaba escrito y probado como web responsive:
