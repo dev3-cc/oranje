@@ -93,6 +93,11 @@ export function ManualPunchDialog({
   const { t, i18n } = useLingui()
   const isOpen = row !== null
   const [createPunch, { isLoading, isError, error }] = useCreateManualPunchMutation()
+  /* Entre que la marca ya se escribió y la cuadrícula de atrás la refleja
+     hay un hueco sin ningún indicador — se ve como que el ponche "no pasó"
+     (Hugo, 2026-10-09). El diálogo se queda abierto, ocupado, ese ratito más
+     en vez de cerrarse al instante y dejar la cuadrícula vieja a la vista. */
+  const [isSyncing, setIsSyncing] = useState(false)
 
   const [workDate, setWorkDate] = useState('')
   const [time, setTime] = useState('')
@@ -107,9 +112,11 @@ export function ManualPunchDialog({
     setTime('')
     setType('CLOCK_IN')
     setReason('')
+    setIsSyncing(false)
   }, [isOpen, initialDate])
 
-  const canSubmit = workDate !== '' && time !== '' && reason.trim() !== '' && !isLoading
+  const canSubmit =
+    workDate !== '' && time !== '' && reason.trim() !== '' && !isLoading && !isSyncing
 
   async function submit(): Promise<void> {
     if (!canSubmit || !row) return
@@ -123,7 +130,15 @@ export function ManualPunchDialog({
         reason: reason.trim(),
       }).unwrap()
       toast.success(t`Marca manual registrada`)
-      onClose()
+      /* La escritura ya terminó; la cuadrícula de atrás todavía no se
+         refrescó (el refetch que dispara la invalidación es aparte y no es
+         awaitable desde aquí). Un respiro breve, mostrado como tal, en vez
+         de cerrar y dejarla vieja a la vista un rato sin avisar. */
+      setIsSyncing(true)
+      window.setTimeout(() => {
+        setIsSyncing(false)
+        onClose()
+      }, 600)
     } catch {
       return
     }
@@ -216,7 +231,7 @@ export function ManualPunchDialog({
           </label>
 
           <div className="flex justify-end gap-3 border-t border-line pt-4">
-            <Button variant="secondary" onClick={onClose}>
+            <Button variant="secondary" disabled={isSyncing} onClick={onClose}>
               <Trans>Cancelar</Trans>
             </Button>
             <Button
@@ -226,7 +241,7 @@ export function ManualPunchDialog({
                 void submit()
               }}
             >
-              {isLoading ? t`Registrando…` : t`Registrar marca`}
+              {isSyncing ? t`Actualizando…` : isLoading ? t`Registrando…` : t`Registrar marca`}
             </Button>
           </div>
         </div>
