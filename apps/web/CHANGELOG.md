@@ -32,6 +32,14 @@ Reglas:
 
 ---
 
+## 2026-10-09
+
+### 11:32 — App: la subida de fotos en iOS y el permiso de ubicación del ponche
+
+**Qué:** (1) `mobile/nativeApiFetch.ts` ya no borra el `Content-Type` de las subidas: manda `multipart/form-data` y el lado nativo pone su boundary. (2) Dentro de la app, la ubicación del ponche y la del onboarding van por `@capacitor/geolocation` (nuevo en `apps/mobile`) a través del puente `features/worker/lib/nativeGeolocation.ts`; en el navegador siguen con `navigator.geolocation`, sin cambios.
+**Por qué:** Hugo: en iOS subir la foto daba «Los datos enviados no son válidos» — el `CapacitorHttp` nativo solo arma el cuerpo si hay `Content-Type`, y sin él la subida salía vacía. Y al ponchar, el WKWebView volvía a pedir la ubicación aunque la app ya tenía el permiso. Todo condicionado a la app: el web queda igual.
+**Archivos:** `src/mobile/{nativeApiFetch.ts,nativeApiFetch.spec.ts}`; `src/features/worker/lib/{nativeGeolocation.ts,nativeGeolocation.spec.ts,devicePermissions.ts}`; `src/features/worker/pages/PunchPage.tsx`; `../mobile/package.json`; `../mobile/android/{app/capacitor.build.gradle,capacitor.settings.gradle}`; `../../pnpm-lock.yaml`.
+
 ## 2026-10-08
 
 ### 13:19 — La app del hotel consume el web tal cual
