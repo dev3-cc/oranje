@@ -13,9 +13,11 @@ export interface PayAdjustmentRow {
   requestedAt: Date
   approvedAt: Date | null
   rejectionReason: string | null
+  includedAt: Date | null
   payConcept: { id: string; code: string; name: string } | null
   requestedByUser: { id: string; fullName: string }
   approvedByUser: { id: string; fullName: string } | null
+  includedByUser: { id: string; fullName: string } | null
   worker: { id: string; fullName: string }
   hotelName: string
   requisitionNumber: string
@@ -31,9 +33,11 @@ const SELECT = {
   requestedAt: true,
   approvedAt: true,
   rejectionReason: true,
+  includedAt: true,
   payConcept: { select: { id: true, code: true, name: true } },
   requestedByUser: { select: { id: true, fullName: true } },
   approvedByUser: { select: { id: true, fullName: true } },
+  includedByUser: { select: { id: true, fullName: true } },
   assignment: {
     select: {
       worker: { select: { id: true, fullName: true } },
@@ -60,9 +64,11 @@ type RawRow = {
   requestedAt: Date
   approvedAt: Date | null
   rejectionReason: string | null
+  includedAt: Date | null
   payConcept: { id: string; code: string; name: string } | null
   requestedByUser: { id: string; fullName: string }
   approvedByUser: { id: string; fullName: string } | null
+  includedByUser: { id: string; fullName: string } | null
   assignment: {
     worker: { id: string; fullName: string }
     slot: { position: { requisition: { number: string; hotel: { name: string } } } }
@@ -82,9 +88,11 @@ function toRow(row: RawRow): PayAdjustmentRow {
     requestedAt: row.requestedAt,
     approvedAt: row.approvedAt,
     rejectionReason: row.rejectionReason,
+    includedAt: row.includedAt,
     payConcept: row.payConcept,
     requestedByUser: row.requestedByUser,
     approvedByUser: row.approvedByUser,
+    includedByUser: row.includedByUser,
     worker: row.assignment.worker,
     hotelName: row.assignment.slot.position.requisition.hotel.name,
     requisitionNumber: row.assignment.slot.position.requisition.number,
@@ -182,6 +190,16 @@ export class PayAdjustmentsRepository {
     return rows.map((row) => toRow(row as RawRow))
   }
 
+  /** La cola de Contabilidad: todo lo APPROVED sin incluir, del más viejo al más nuevo. */
+  async approvedPendingInclusion(): Promise<PayAdjustmentRow[]> {
+    const rows = await this.prisma.assignmentPayAdjustment.findMany({
+      where: { status: 'APPROVED', includedAt: null },
+      select: SELECT,
+      orderBy: { approvedAt: 'asc' },
+    })
+    return rows.map((row) => toRow(row as RawRow))
+  }
+
   async resolve(params: {
     id: string
     status: 'APPROVED' | 'REJECTED'
@@ -210,6 +228,33 @@ export class PayAdjustmentsRepository {
           actorUserId: params.userId,
           actorRole: params.roleCode,
           payload: { rejectionReason: params.rejectionReason },
+        },
+      })
+
+      const row = await tx.assignmentPayAdjustment.findUniqueOrThrow({
+        where: { id: params.id },
+        select: SELECT,
+      })
+      return toRow(row)
+    })
+  }
+
+  async include(params: { id: string; userId: string; roleCode: string }): Promise<PayAdjustmentRow> {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.assignmentPayAdjustment.update({
+        where: { id: params.id },
+        data: { includedBy: params.userId, includedAt: new Date() },
+      })
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'coverage.assignment_pay_adjustment',
+          entityId: params.id,
+          eventType: 'PAY_ADJUSTMENT_INCLUDED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: {},
         },
       })
 
