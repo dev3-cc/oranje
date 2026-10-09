@@ -17,7 +17,7 @@ import {
   toast,
   useSidebar,
 } from '@oranje/ui'
-import type { ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router'
 
 import { useGetSessionQuery, useLogoutMutation, useUpdateMyLocaleMutation } from '@/app/sessionApi'
@@ -147,17 +147,74 @@ function modulesForRole(roleId: string | undefined): NavModule[] {
 /** Filas fijas mientras la sesión resuelve — ni todas las secciones ni ninguna, solo "cargando". */
 const SKELETON_ROWS = 7
 
+/**
+ * Dónde está el módulo activo dentro del menú, en píxeles.
+ *
+ * El camino es UNA sola pieza que se mueve, no una decoración que nace y
+ * muere con cada módulo: así se desliza de uno a otro en vez de desaparecer
+ * y reaparecer más abajo (Hugo, 2026-10-09). Por eso hay que medir, no basta
+ * con marcar el activo.
+ *
+ * Se mide con `useLayoutEffect` y no con `useEffect` porque el navegador
+ * tiene que pintar ya con la posición correcta; con el efecto normal el
+ * camino aparecería arriba y saltaría a su sitio en el primer cuadro.
+ */
+function usePosicionDelActivo(
+  ruta: string,
+  listo: boolean,
+): {
+  menuRef: React.RefObject<HTMLUListElement | null>
+  caja: { top: number; height: number } | null
+} {
+  const menuRef = useRef<HTMLUListElement>(null)
+  const [caja, setCaja] = useState<{ top: number; height: number } | null>(null)
+
+  useLayoutEffect(() => {
+    const medir = (): void => {
+      const menu = menuRef.current
+      const activo = menu?.querySelector<HTMLElement>('[data-active="true"]')
+      if (!menu || !activo) {
+        setCaja(null)
+        return
+      }
+      /* Se mide con las posiciones en pantalla y no con `offsetTop`: ese se
+         cuenta desde el ancestro posicionado, que no siempre es este menú —
+         daba el mismo valor en todos los módulos. */
+      const aquí = activo.getBoundingClientRect()
+      const marco = menu.getBoundingClientRect()
+      setCaja({ top: aquí.top - marco.top, height: aquí.height })
+    }
+
+    medir()
+    /* La barra se colapsa y la ventana cambia de tamaño: si no se vuelve a
+       medir, el camino se queda donde estaba y señala al módulo equivocado. */
+    const observer = new ResizeObserver(medir)
+    if (menuRef.current) observer.observe(menuRef.current)
+    return () => {
+      observer.disconnect()
+    }
+  }, [ruta, listo])
+
+  return { menuRef, caja }
+}
+
 export function Sidebar(): ReactNode {
   const { data: session, isLoading: isSessionLoading } = useGetSessionQuery()
   const [logout, { isLoading: isLoggingOut }] = useLogoutMutation()
   const [updateMyLocale] = useUpdateMyLocaleMutation()
   const { i18n } = useLingui()
-  const { setOpenMobile } = useSidebar()
+  const { setOpenMobile, isMobile, state } = useSidebar()
   const location = useLocation()
   const navigate = useNavigate()
+  const caminoVisible = !isMobile && state === 'expanded'
+  const { menuRef, caja } = usePosicionDelActivo(location.pathname, !isSessionLoading)
 
   return (
-    <SidebarRoot>
+    /* Sin la línea divisoria: la barra es blanca y el contenido beige, así que
+       ya se distinguen solos, y el borde cortaba el camino del módulo activo
+       justo donde debía verse continuo (Hugo, 2026-10-09). Se apaga desde
+       aquí y no en el componente copiado de shadcn, para no ensuciar su diff. */
+    <SidebarRoot className="border-r-0!">
       <SidebarHeader className="h-hd justify-center px-5">
         <div className="w-44 aspect-[1024/100] self-start" role="img" aria-label="Oranje">
           <DotLottieReact src={logoAnimado} loop autoplay />
@@ -167,7 +224,19 @@ export function Sidebar(): ReactNode {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu ref={menuRef} className="relative">
+              {/* El camino: una sola pieza que se desliza al módulo activo.
+                  Va DETRÁS del texto (-z-10) y no recibe clics. */}
+              {caminoVisible && caja !== null && (
+                <li
+                  aria-hidden
+                  className="sidebar-camino pointer-events-none absolute left-0 z-0 w-[calc(100%+0.5rem)] rounded-l-md bg-bg"
+                  style={{
+                    transform: `translateY(${String(caja.top)}px)`,
+                    height: `${String(caja.height)}px`,
+                  }}
+                />
+              )}
               {isSessionLoading ? (
                 Array.from({ length: SKELETON_ROWS }, (_, row) => (
                   <SidebarMenuItem key={row}>
@@ -193,8 +262,27 @@ export function Sidebar(): ReactNode {
                               setOpenMobile(false)
                             }}
                             className={cn(
-                              'flex items-center gap-3 px-3 py-2.5 text-sm',
+                              /* `relative` en TODOS: sin posicionar, un enlace
+                                 queda debajo de la pieza del camino, que sí lo
+                                 está, y el texto se pierde. */
+                              'relative z-10 flex items-center gap-3 px-3 py-2.5 text-sm',
                               !isActive && 'text-ink-2',
+                              /* El camino solo tiene sentido con la barra
+                                 pegada al contenido: colapsada o en la hoja
+                                 del celular no hay con qué fundirse, y la
+                                 curva quedaría flotando. */
+                              isActive &&
+                                !isMobile &&
+                                state === 'expanded' &&
+                                /* El radio va como utilidad y no en el CSS del camino: las
+                                   utilidades de Tailwind ganan sobre la capa de
+                                   componentes, y `rounded-md` del botón pisaba las
+                                   esquinas rectas de la derecha. */
+                                /* El fondo y las curvas ya NO viven aquí: los pinta la pieza
+                                   que se desliza. Aquí solo queda el texto, y
+                                   `bg-transparent!` apaga el tinte naranja que el
+                                   botón de shadcn trae para el estado activo. */
+                                'bg-transparent! font-semibold text-ink',
                             )}
                           >
                             <span
