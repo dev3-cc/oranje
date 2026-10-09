@@ -7,7 +7,7 @@ import {
   useGetTimesheetTimelineQuery,
   useGetTimesheetWeekQuery,
 } from '../api/timesheetApi'
-import { timesheetApi } from '../api/timesheetApi'
+import { AttendanceView } from '../components/AttendanceView'
 import { ManualPunchDialog } from '../components/ManualPunchDialog'
 import { ReviewDayDialog } from '../components/ReviewDayDialog'
 import { TimesheetGrid } from '../components/TimesheetGrid'
@@ -30,15 +30,12 @@ import {
   type TimesheetRow,
 } from '../types/timesheet.types'
 
-import { useAppDispatch } from '@/app/hooks'
 import personajeManager from '@/assets/ilustrations/personaje-manager.svg'
 import fotoEquipo from '@/assets/ilustrations/timesheet-equipo.webp'
 import { Button } from '@/shared/components/Button'
-import { EmptyState } from '@/shared/components/EmptyState'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { NoticeCard } from '@/shared/components/NoticeCard'
-import { RefreshControl } from '@/shared/components/RefreshControl'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import {
   DEFAULT_COLUMN_WIDTH,
@@ -87,53 +84,19 @@ export function TimesheetPage(): ReactNode {
   const canManualPunch = can('timesheet:create_manual_punch')
   const seesAllHotels = can('timesheet:read_all_hotels')
 
-  const {
-    data: week,
-    isLoading,
-    isError,
-    isFetching: weekFetching,
-    fulfilledTimeStamp: weekAt,
-  } = useGetTimesheetWeekQuery(filters)
+  const { data: week, isLoading, isError, refetch } = useGetTimesheetWeekQuery(filters)
   /**
    * La CINTA para la vista Días: todas las semanas de una vez. `weekStart` va
    * fijo en ALL para que navegar NO cambie la llave de caché — moverse de
    * semana es mover la ventana, no pedir datos.
    */
-  const {
-    data: timeline,
-    isFetching: timelineFetching,
-    fulfilledTimeStamp: timelineAt,
-  } = useGetTimesheetTimelineQuery({ ...filters, weekStart: ANY_VALUE })
+  const { data: timeline } = useGetTimesheetTimelineQuery({ ...filters, weekStart: ANY_VALUE })
   /** El agregado del mes solo se pide cuando la vista Mes está a la vista. */
-  const {
-    data: month,
-    isFetching: monthFetching,
-    fulfilledTimeStamp: monthAt,
-  } = useGetTimesheetMonthQuery(filters, { skip: view !== 'MONTH' })
-
-  /**
-   * «Actualizar» invalida la etiqueta que las TRES comparten, así que vuelve
-   * a pedir la que esté abierta y nada más — la del Mes no se pide si la
-   * vista Mes no está a la vista. Y la leyenda mide la consulta que de verdad
-   * se está viendo: en la cinta, la cinta.
-   */
-  const dispatch = useAppDispatch()
-  const refetch = (): void => {
-    dispatch(timesheetApi.util.invalidateTags([{ type: 'Timesheet', id: 'LIST' }]))
-  }
-  const vista =
-    view === 'MONTH'
-      ? { isFetching: monthFetching, at: monthAt }
-      : view === 'DAYS'
-        ? { isFetching: timelineFetching, at: timelineAt }
-        : { isFetching: weekFetching, at: weekAt }
+  const { data: month } = useGetTimesheetMonthQuery(filters, { skip: view !== 'MONTH' })
 
   const availableWeeks = timeline?.availableWeeks ?? week?.availableWeeks ?? []
   /** La semana en la ventana: la pedida si existe; si no, la más reciente. */
   const selectedWeek = resolveWeek(availableWeeks, filters.weekStart)
-  /** El periodo dejó fuera todo lo que había. Distinto de «no hay nada». */
-  const periodoVacio =
-    !isLoading && availableWeeks.length === 0 && (filters.from !== '' || filters.to !== '')
 
   function toggle(entryId: string): void {
     setSelectedIds((previous) => {
@@ -234,36 +197,6 @@ export function TimesheetPage(): ReactNode {
         onChange={setFilters}
         onColumnWidthChange={setColumnWidth}
       />
-
-      {/* Sin esto la pantalla se queda EN BLANCO cuando el periodo elegido no
-          tiene ni una semana: todo lo de abajo cuelga de `selectedWeek`, que
-          sin semanas es null. Un vacío sin explicación se lee como que la app
-          se rompió, no como que el filtro está muy estrecho. */}
-      {periodoVacio && (
-        <EmptyState
-          title={t`No hay horas en ese periodo`}
-          text={t`Ningún colaborador tiene registro entre esas fechas. Amplía el periodo o quítalo para ver todo.`}
-          action={
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setFilters({ ...filters, from: '', to: '' })
-              }}
-            >
-              {t`Ver todo el periodo`}
-            </Button>
-          }
-        />
-      )}
-
-      <div className="flex justify-end">
-        <RefreshControl
-          onRefresh={refetch}
-          isFetching={vista.isFetching}
-          fulfilledTimeStamp={vista.at}
-          label={t`el Timesheet`}
-        />
-      </div>
 
       {/* Quién sigue: el Supervisor envía, el Manager aprueba (D-09). */}
       {week &&
@@ -415,6 +348,9 @@ export function TimesheetPage(): ReactNode {
               ) : (
                 <TableSkeleton rows={5} columns={7} />
               ))}
+            {view === 'ATTENDANCE' && selectedWeek !== null && (
+              <AttendanceView rows={week.rows} selectedWeek={selectedWeek} />
+            )}
           </WeekSlider>
         )
       )}
