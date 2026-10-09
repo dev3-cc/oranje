@@ -58,4 +58,21 @@ export class PayAdjustmentsController {
   ): Promise<{ data: PayAdjustmentEntity }> {
     return { data: await this.payAdjustments.reject(id, dto.reason, user) }
   }
+
+  /** La cola de Contabilidad: todo lo APPROVED y sin incluir, de cualquier hotel. */
+  @Requires('payroll', 'generate')
+  @Get('pay-adjustments/approved-pending-inclusion')
+  async approvedPendingInclusion(): Promise<{ data: PayAdjustmentEntity[] }> {
+    return { data: await this.payAdjustments.approvedPendingInclusion() }
+  }
+
+  @Requires('payroll', 'generate')
+  @Post('pay-adjustments/:id/include')
+  @HttpCode(HttpStatus.OK)
+  async include(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: PayAdjustmentEntity }> {
+    return { data: await this.payAdjustments.include(id, user) }
+  }
 }

@@ -290,6 +290,14 @@ export async function makeWorker(
 /** Borra lo creado, al revés, incluidos los consolidados de los colaboradores de la prueba. */
 export async function cleanup(reg: Registry, workerIds: string[]): Promise<void> {
   if (workerIds.length > 0) {
+    // Las deducciones (Hugo, 2026-10-09: el descuento de un ajuste/gasto
+    // incluido ya genera una fila propia aquí) también apuntan RESTRICT al
+    // consolidado — sin esto, borrarlo truena.
+    await db.$executeRawUnsafe(
+      `DELETE FROM settlement.deduction WHERE consolidation_id IN
+         (SELECT id FROM settlement.consolidation WHERE worker_id = ANY($1::uuid[]))`,
+      workerIds,
+    )
     await db.$executeRawUnsafe(
       `DELETE FROM settlement.consolidation_detail WHERE consolidation_id IN
          (SELECT id FROM settlement.consolidation WHERE worker_id = ANY($1::uuid[]))`,

@@ -25,6 +25,8 @@ export interface PayAdjustmentEntity {
   approvedBy: { id: string; fullName: string } | null
   approvedAt: string | null
   rejectionReason: string | null
+  includedBy: { id: string; fullName: string } | null
+  includedAt: string | null
   worker: { id: string; fullName: string }
   hotelName: string
   requisitionNumber: string
@@ -155,6 +157,45 @@ export class PayAdjustmentsService {
     return toEntity(row)
   }
 
+  /** La cola de Contabilidad: aprobados por el Observador, todavía sin
+      decidir si pesan en la nómina. */
+  async approvedPendingInclusion(): Promise<PayAdjustmentEntity[]> {
+    return (await this.repo.approvedPendingInclusion()).map(toEntity)
+  }
+
+  /**
+   * Contabilidad decide, viendo antes qué hace, si este ajuste/gasto se
+   * suma a la próxima corrida de pago. Que el Observador lo haya aprobado es
+   * condición necesaria, no suficiente — esto es lo que de verdad lo mete al
+   * cálculo (Hugo, 2026-10-09).
+   */
+  async include(id: string, user: AuthenticatedUser): Promise<PayAdjustmentEntity> {
+    const row = await this.repo.byId(id)
+
+    if (!row) {
+      throw new NotFoundException({
+        code: 'PAY_ADJUSTMENT_NOT_FOUND',
+        message: 'Ese ajuste no existe',
+      })
+    }
+    if (row.status !== 'APPROVED') {
+      throw new ConflictException({
+        code: 'PAY_ADJUSTMENT_NOT_APPROVED',
+        message: 'Solo se incluye un ajuste ya aprobado por el Observador',
+      })
+    }
+    if (row.includedAt) {
+      throw new ConflictException({
+        code: 'PAY_ADJUSTMENT_ALREADY_INCLUDED',
+        message: 'Ese ajuste ya está incluido en la nómina',
+      })
+    }
+
+    const included = await this.repo.include({ id, userId: user.id, roleCode: user.roleCode })
+
+    return toEntity(included)
+  }
+
   private async pendingOrThrow(id: string): Promise<void> {
     const row = await this.repo.byId(id)
 
@@ -188,6 +229,8 @@ function toEntity(row: PayAdjustmentRow): PayAdjustmentEntity {
     approvedBy: row.approvedByUser,
     approvedAt: row.approvedAt ? row.approvedAt.toISOString() : null,
     rejectionReason: row.rejectionReason,
+    includedBy: row.includedByUser,
+    includedAt: row.includedAt ? row.includedAt.toISOString() : null,
     worker: row.worker,
     hotelName: row.hotelName,
     requisitionNumber: row.requisitionNumber,

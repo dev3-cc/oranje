@@ -342,6 +342,7 @@ model User {
 
   payAdjustmentsRequested AssignmentPayAdjustment[] @relation("payAdjustmentRequestedBy")
   payAdjustmentsApproved  AssignmentPayAdjustment[] @relation("payAdjustmentApprovedBy")
+  payAdjustmentsIncluded  AssignmentPayAdjustment[] @relation("payAdjustmentIncludedBy")
 
   @@id([id])
   @@index([roleId], map: "ix_user_role")
@@ -1234,6 +1235,17 @@ model AssignmentPayAdjustment {
   approvedAt       DateTime? @map("approved_at") @db.Timestamptz(6)
   rejectionReason  String?   @map("rejection_reason") @db.Text
 
+  /// Que el Observador lo apruebe no lo mete a la nómina: Contabilidad
+  /// decide si lo incluye, viendo antes qué hace (Hugo, 2026-10-09). Solo
+  /// con esto puesto el cálculo lo toma en cuenta.
+  includedAt DateTime? @map("included_at") @db.Timestamptz(6)
+  includedBy String?   @map("included_by") @db.Uuid
+
+  /// Que Contabilidad lo incluya es la DECISIÓN; que la corrida de pago ya
+  /// lo haya tomado en cuenta de verdad es otro hecho — lo pone el sistema,
+  /// no una persona, y es lo que hace la corrida idempotente.
+  appliedAt DateTime? @map("applied_at") @db.Timestamptz(6)
+
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
 
@@ -1241,6 +1253,7 @@ model AssignmentPayAdjustment {
   payConcept    PayConcept? @relation(fields: [payConceptId], references: [id], onDelete: Restrict)
   requestedByUser User      @relation("payAdjustmentRequestedBy", fields: [requestedBy], references: [id], onDelete: Restrict)
   approvedByUser   User?    @relation("payAdjustmentApprovedBy", fields: [approvedBy], references: [id], onDelete: Restrict)
+  includedByUser   User?    @relation("payAdjustmentIncludedBy", fields: [includedBy], references: [id], onDelete: Restrict)
 
   @@id([id])
   @@index([assignmentId], map: "ix_assignment_pay_adjustment_assignment")
