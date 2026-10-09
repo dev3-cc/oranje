@@ -40,7 +40,7 @@ import {
 } from '@/shared/constants/requisitionStatus'
 import { useCan } from '@/shared/hooks/useCan'
 import { apiErrorMessage, readApiError } from '@/shared/lib/apiError'
-import { IS_DEV_UI } from '@/shared/lib/devMode'
+import { IS_DEV_OR_STAGING_UI, IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatMoney } from '@/shared/lib/formatters'
 
 const COVERAGE_TOKEN: Record<string, StatusLightToken> = {
@@ -157,7 +157,7 @@ export function SlotAssignmentPage(): ReactNode {
      cotizada — y no bloquea la asignación. */
   const { data: positionPayRate } = useGetPositionPayRateQuery(
     { hotelId: board?.hotelId ?? '', catalogPositionId: board?.catalogPositionId ?? '' },
-    { skip: !board },
+    { skip: !board || !IS_DEV_OR_STAGING_UI },
   )
   const [assign, { isLoading: isSaving, isError: hasFailed, error: saveError }] =
     useCreateAssignmentMutation()
