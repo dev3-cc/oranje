@@ -608,4 +608,74 @@ export class TimesheetsRepository {
 
     return row ? { id: row.id, timesheetId: row.timesheetId, status: row.timesheet.status } : null
   }
+  /**
+   * Cuántos días DISTINTOS lleva ponchados en esta asignación.
+   *
+   * El timesheet se guarda por semana y requisición, no por asignación, así
+   * que se cuenta por colaborador + requisición. Un día cuenta cuando tiene
+   * al menos una marca: lo que el vault llama «asistir» es haber ponchado.
+   */
+  async workedDays(workerId: string, requisitionId: string): Promise<number> {
+    const rows = await this.prisma.$queryRaw<Array<{ n: number }>>`
+      SELECT count(DISTINCT d.work_date)::int AS n
+        FROM operations.timesheet t
+        JOIN operations.timesheet_day d ON d.timesheet_id = t.id
+       WHERE t.worker_id = ${workerId}::uuid
+         AND t.requisition_id = ${requisitionId}::uuid
+         AND EXISTS (SELECT 1 FROM operations.punch_mark p WHERE p.timesheet_day_id = d.id)`
+    return rows[0]?.n ?? 0
+  }
+
+  /** En qué estado del semáforo está hoy, con el id del estado. */
+  async workerState(workerId: string): Promise<{ stateId: string; code: string } | null> {
+    const row = await this.prisma.worker.findUnique({
+      where: { id: workerId },
+      select: { statusLightStateId: true, statusState: { select: { code: true } } },
+    })
+    return row ? { stateId: row.statusLightStateId, code: row.statusState.code } : null
+  }
+
+  async workerStateByCode(code: string): Promise<{ id: string } | null> {
+    return this.prisma.statusLightState.findFirst({
+      where: { code, statusLightCode: 'WORKER' },
+      select: { id: true },
+    })
+  }
+
+  /**
+   * Avanza el semáforo del colaborador y lo deja en la historia.
+   *
+   * `fromStateId` va en el `where` a propósito: si entre que se leyó el estado
+   * y se escribe alguien lo movió —a Gris por un accidente, a Negro por la
+   * Blacklist— esta escritura no encuentra fila y no pisa nada. Devuelve si
+   * de verdad avanzó.
+   */
+  async advanceWorkerState(params: {
+    workerId: string
+    fromStateId: string
+    toStateId: string
+  }): Promise<boolean> {
+    return this.prisma.$transaction(async (tx) => {
+      const { count } = await tx.worker.updateMany({
+        where: { id: params.workerId, statusLightStateId: params.fromStateId },
+        data: { statusLightStateId: params.toStateId, updatedAt: new Date() },
+      })
+
+      if (count === 0) return false
+
+      await tx.workerStateHistory.create({
+        data: {
+          id: uuidv7(),
+          workerId: params.workerId,
+          fromStateId: params.fromStateId,
+          toStateId: params.toStateId,
+          statusLightCode: 'WORKER',
+          /* Sin persona: lo movió el sistema al contar los días ponchados.
+             La columna es nulable justo para esto. */
+          userId: null,
+        },
+      })
+      return true
+    })
+  }
 }

@@ -389,7 +389,7 @@ const assignmentsByPosition = new Map<string, AssignmentApi[]>()
           type: 'FIXED',
           status: 'ACTIVE',
           worker: { id: `wrk-seed-${String(occupantIndex)}`, fullName: name },
-          slot: { id: `slot-${position.id}-${String(ordinal)}`, ordinal },
+          slot: { id: `slot-${position.id}-${String(ordinal)}`, ordinal, positionId: position.id },
           createdAt: requisition.createdAt,
         })
       }
@@ -626,7 +626,11 @@ const routes: readonly MockRoute[] = [
           id: payload.workerId ?? '',
           fullName: mockWorkerNameById(payload.workerId ?? ''),
         },
-        slot: { id: `slot-${position.id}-${String(taken.length + 1)}`, ordinal: taken.length + 1 },
+        slot: {
+          id: `slot-${position.id}-${String(taken.length + 1)}`,
+          ordinal: taken.length + 1,
+          positionId: position.id,
+        },
         createdAt: new Date().toISOString(),
       }
       assignmentsByPosition.set(position.id, [...taken, created])

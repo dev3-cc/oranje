@@ -40,6 +40,21 @@ export class AssignmentsController {
     return { data: await this.assignments.create(dto, user) }
   }
 
+  /**
+   * El barrido de las vencidas, para quien lo quiera disparar a mano.
+   *
+   * No es la única vía: al asignar se cierran primero las de esa persona, así
+   * que el camino normal se cura solo. Esto sirve para ponerse al día de golpe
+   * —y es el gancho por el que un programador de tareas lo correrá a diario
+   * cuando se configure—.
+   */
+  @Requires('requisitions', 'take')
+  @Post('assignments/close-expired')
+  @HttpCode(HttpStatus.OK)
+  async closeExpired(): Promise<{ data: { cerradas: number; fallidas: number } }> {
+    return { data: await this.assignments.closeExpired() }
+  }
+
   @Requires('requisitions', 'take')
   @Delete('assignments/:id')
   @HttpCode(HttpStatus.OK)

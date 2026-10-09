@@ -1,4 +1,5 @@
 import {
+  Logger,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -86,8 +87,21 @@ export interface DayEntity {
   punches: PunchEntity[]
 }
 
+/**
+ * La progresión del fijo, tal como la describe el Semáforo del Colaborador.
+ * El orden importa: se busca por el estado de ORIGEN, así que cada paso solo
+ * aplica desde el anterior.
+ */
+const PROGRESION: ReadonlyArray<{ desde: string; hacia: string; días: number }> = [
+  { desde: 'STRONG_GREEN', hacia: 'APPLE_GREEN', días: 1 },
+  { desde: 'APPLE_GREEN', hacia: 'LIGHT_BLUE', días: 3 },
+  { desde: 'LIGHT_BLUE', hacia: 'ORANGE', días: 7 },
+]
+
 @Injectable()
 export class TimesheetsService {
+  private readonly logger = new Logger(TimesheetsService.name)
+
   constructor(
     private readonly repo: TimesheetsRepository,
     private readonly notifications: NotificationPublisherService,
@@ -144,6 +158,8 @@ export class TimesheetsService {
       roleCode: user.roleCode,
     })
 
+    await this.advanceWorkerProgress(assignment)
+
     return this.afterPunch(resolvedDayId, id)
   }
 
@@ -181,6 +197,10 @@ export class TimesheetsService {
     } catch {
       // Mejor esfuerzo: que Pub/Sub no responda no revierte la marca.
     }
+
+    /* La marca manual también es asistencia: el vault habla de ASISTIR, no de
+       quién capturó la marca. */
+    await this.advanceWorkerProgress(assignment)
 
     return this.afterPunch(resolvedDayId, id)
   }
@@ -357,6 +377,51 @@ export class TimesheetsService {
     }
 
     return toDay(row, await this.repo.punches(dayId))
+  }
+
+  /**
+   * La progresión del Semáforo del Colaborador, que la dispara el ponche.
+   *
+   * El vault la describe así: al ASISTIR el día 1 pasa a Verde manzana; al
+   * ponchar el tercer día, a Azul claro; al completar 7 días, a Naranja (fijo).
+   * Las tres están sembradas a nombre del Sistema y hasta hoy no las disparaba
+   * nadie: el semáforo solo se movía a mano (Hugo, 2026-10-09).
+   *
+   * Se exige el estado de ORIGEN exacto, así que:
+   *  - es idempotente — ponchar dos veces el mismo día no avanza dos veces;
+   *  - no pisa a nadie — en Café (temporal), Gris, Rojo o Negro no hay paso
+   *    que dar, y la escritura ni siquiera encuentra fila;
+   *  - no se salta escalones — con 7 días, quien está en Verde manzana pasa
+   *    primero a Azul claro, y el siguiente ponche lo lleva a Naranja.
+   *
+   * Es «mejor esfuerzo»: el ponche ya quedó registrado y un tropiezo aquí no
+   * puede revertirlo. Lo peor que pasa es que el color avance en el siguiente.
+   */
+  private async advanceWorkerProgress(assignment: AssignmentContext): Promise<void> {
+    try {
+      const actual = await this.repo.workerState(assignment.workerId)
+      const paso = actual ? PROGRESION.find((p) => p.desde === actual.code) : undefined
+
+      if (!actual || !paso) return
+
+      const días = await this.repo.workedDays(assignment.workerId, assignment.requisitionId)
+      if (días < paso.días) return
+
+      const destino = await this.repo.workerStateByCode(paso.hacia)
+      if (!destino) return
+
+      await this.repo.advanceWorkerState({
+        workerId: assignment.workerId,
+        fromStateId: actual.stateId,
+        toStateId: destino.id,
+      })
+    } catch (error) {
+      this.logger.warn(
+        `No se pudo avanzar el semáforo de ${assignment.workerId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      )
+    }
   }
 
   private async afterPunch(dayId: string, punchId: string): Promise<PunchResult> {

@@ -1438,7 +1438,12 @@ msgstr "Assigned today"
 msgid "Asignando…"
 msgstr "Assigning…"
 
-#. placeholder {0}: String(board.nextFreeOrdinal)
+#: src/features/requisitions/components/PositionsTable.tsx
+#: src/features/requisitions/components/SlotList.tsx
+msgid "Asignar al siguiente slot libre"
+msgstr "Assign to the next free slot"
+
+#. placeholder {0}: String(objetivo ?? board.nextFreeOrdinal)
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
 msgid "Asignar al slot {0}"
 msgstr "Assign to slot {0}"
@@ -1996,12 +2001,16 @@ msgid "Cada posición deja margen"
 msgstr "Every position leaves a margin"
 
 #: src/features/requisitions/components/PositionsTable.tsx
-msgid "Cada posición lleva dos semáforos: Cobertura (cuántos slots están ocupados) y Urgencia (cuánto falta para su inicio)"
-msgstr "Each position carries two status lights: Coverage (how many slots are taken) and Urgency (how long until it starts)"
+#~ msgid "Cada posición lleva dos semáforos: Cobertura (cuántos slots están ocupados) y Urgencia (cuánto falta para su inicio)"
+#~ msgstr "Each position carries two status lights: Coverage (how many slots are taken) and Urgency (how long until it starts)"
 
 #: src/features/audits/pages/AuditsPage.tsx
 msgid "Cada reactivo pesa lo suyo"
 msgstr "Each checklist item has its own weight"
+
+#: src/features/requisitions/components/PositionsTable.tsx
+msgid "Cada renglón es un puesto que el hotel pidió: cuántas personas, desde cuándo y con qué modalidad. Cada persona pedida es un <0>slot</0>, y los slots se llenan en orden. <1>Cobertura</1> dice cuántos ya tienen a alguien; <2>Urgencia</2>, cuánto falta para que empiece."
+msgstr "Each line is a position the hotel asked for: how many people, starting when, and under which hiring modality. Every person requested is a <0>slot</0>, and slots are filled in order. <1>Coverage</1> shows how many already have someone; <2>Urgency</2>, how long until it starts."
 
 #: src/features/contracts/pages/ContractListPage.tsx
 msgid "Cada semana, el pago al colaborador y el cobro al hotel se calculan con estas tarifas y estos recargos. Si el contrato no está activo, ese hotel no puede facturar."
@@ -2486,6 +2495,10 @@ msgstr "How the Status Light works"
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Cómo funcionan los Catálogos"
 msgstr "How Catalogs work"
+
+#: src/features/worker/pages/HomePage.tsx
+msgid "cómo llegas al trabajo"
+msgstr "how you get to work"
 
 #: src/features/worker/pages/Phase2Page.tsx
 msgid "Cómo llegas al trabajo"
@@ -3229,7 +3242,7 @@ msgstr "Set the rate for a position"
 
 #: src/features/timesheet/components/TimesheetToolbar.tsx
 msgid "del Timesheet"
-msgstr ""
+msgstr "of the Timesheet"
 
 #: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
@@ -3353,7 +3366,7 @@ msgstr "From here the Status Light only allows going to: {targets}."
 #. placeholder {0}: formatDate(value.from)
 #: src/shared/components/DateRangeField.tsx
 msgid "Desde el {0}"
-msgstr ""
+msgstr "From {0}"
 
 #: src/features/onboarding/components/SemaforoHelpDialog.tsx
 msgid "desde Naranja, por el BDC"
@@ -5327,6 +5340,11 @@ msgstr "Bill {0}"
 msgid "Factura por hora"
 msgstr "Bill per hour"
 
+#. placeholder {0}: formatList(faltantes)
+#: src/features/worker/pages/HomePage.tsx
+msgid "Falta {0}. Con eso Reclutamiento puede validarte y empiezas a recibir turnos. Tu foto no hace falta para esto."
+msgstr "Still missing: {0}. With that, Recruitment can validate you and you start getting shifts. Your photo is not needed for this."
+
 #: src/features/requisitions/types/requisitionForm.schema.ts
 msgid "Falta el departamento"
 msgstr "The department is missing"
@@ -5675,7 +5693,7 @@ msgstr "Up to 10 min late"
 #. placeholder {0}: formatDate(value.to)
 #: src/shared/components/DateRangeField.tsx
 msgid "Hasta el {0}"
-msgstr ""
+msgstr "To {0}"
 
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
 msgid "Hay auditorías con respuestas a este reactivo: no se puede eliminar."
@@ -6656,12 +6674,16 @@ msgid "Liberar"
 msgstr "Release"
 
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
-msgid "libre"
-msgstr "free"
+#~ msgid "libre"
+#~ msgstr "free"
 
 #: src/features/requisitions/components/SlotList.tsx
 msgid "Libre"
 msgstr "Free"
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "libre · elegir"
+msgstr "free · pick"
 
 #: src/shared/constants/roles.ts
 msgid "Líder de Grupo de Reclutadoras"
@@ -6695,6 +6717,15 @@ msgstr "Call"
 #: src/features/observability/lib/people.ts
 msgid "Llamadas"
 msgstr "Calls"
+
+#. placeholder {0}: String(slot.ordinal)
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Llenar el slot {0} en vez de este"
+msgstr "Fill slot {0} instead of this one"
+
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Llenar un slot es de Reclutamiento: la Reclutadora, su Líder de Grupo o el Manager de Reclutamiento."
+msgstr "Filling a slot belongs to Recruitment: the Recruiter, their Group Leader or the Recruitment Manager."
 
 #: src/features/recruitment/components/ChangeStateDialog.tsx
 msgid "lo asigna Reclutamiento (la Reclutadora, su Líder de Grupo o el Manager); el propio colaborador puede ponerse Disponible voluntario."
@@ -6754,6 +6785,10 @@ msgstr "What Oranje decides"
 #: src/features/team/components/AssignTerritoryDialog.tsx
 msgid "Lo que dejes marcado ES el territorio completo del BD — desmarcar una zona se la quita en el mismo guardado."
 msgstr "What you leave checked IS the BD's whole territory — unchecking a zone takes it away in that same save."
+
+#: src/features/requisitions/components/PositionsTable.tsx
+msgid "Lo que el hotel pidió en esta requisición, renglón por renglón"
+msgstr "What the hotel asked for in this requisition, line by line"
 
 #: src/mobile/hotel/HotelHomePage.tsx
 msgid "Lo que falta por departamento"
@@ -7364,12 +7399,8 @@ msgid "Nadie coincide con esos filtros esta semana. Cambia la requisición, el e
 msgstr "No one matches those filters this week. Change the requisition, the status or the hotel."
 
 #: src/features/timesheet/pages/TimesheetGlobalPage.tsx
-#~ msgid "Nadie coincide con esos filtros. Cambia el nombre, la requisición, el estado o el hotel."
-#~ msgstr "No one matches those filters. Change the name, the requisition, the status or the hotel."
-
-#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
 msgid "Nadie coincide con esos filtros. Cambia el nombre, la requisición, el estado, el hotel o el periodo."
-msgstr ""
+msgstr "No one matches those filters. Change the name, requisition, status, hotel or period."
 
 #: src/mobile/hotel/staff/StaffPage.tsx
 msgid "Nadie coincide con la búsqueda."
@@ -7453,7 +7484,7 @@ msgstr "No collaborator matches these filters. Change or drop a filter to see mo
 
 #: src/features/timesheet/pages/TimesheetPage.tsx
 msgid "Ningún colaborador tiene registro entre esas fechas. Amplía el periodo o quítalo para ver todo."
-msgstr ""
+msgstr "No collaborator has records between those dates. Widen the period or clear it to see everything."
 
 #: src/features/contracts/components/ContractRowList.tsx
 msgid "Ningún contrato coincide"
@@ -7600,7 +7631,7 @@ msgstr "Nobody is missing in the open requisitions."
 
 #: src/features/timesheet/pages/TimesheetPage.tsx
 msgid "No hay horas en ese periodo"
-msgstr ""
+msgstr "No hours in that period"
 
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "No hay hoteles libres: todos tienen ciclo abierto"
@@ -8472,6 +8503,7 @@ msgid "Ojo: el {activeContractNumber} sigue vigente para este hotel — solo pue
 msgstr "Heads up: {activeContractNumber} is still in force for this hotel — only one can be active, so activating this one means expiring that one."
 
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
+#: src/features/worker/pages/Phase2Page.tsx
 msgid "opcional"
 msgstr "optional"
 
@@ -8624,6 +8656,11 @@ msgstr "To create it: {0}."
 #: src/features/worker/pages/PermissionsPage.tsx
 msgid "Para la foto de Entrada y Salida — cuando el hotel usa selfie y no QR."
 msgstr "For the Clock in / Clock out photo — when the hotel uses selfie instead of QR."
+
+#. placeholder {0}: REQUISITION_STATUS_LABEL[detail.status]
+#: src/features/requisitions/pages/RequisitionDetailPage.tsx
+msgid "Para llenar un slot, la requisición tiene que estar autorizada y en proceso. Ahora está en {0}."
+msgstr "To fill a slot, the requisition must be authorized and in progress. Right now it is {0}."
 
 #: src/features/recruitment/components/ProfileProgressAvatar.tsx
 msgid "Para poder asignarlo falta capturar en la entrevista: {missingNames}"
@@ -8783,7 +8820,7 @@ msgstr "Period"
 
 #: src/shared/components/DateRangeField.tsx
 msgid "Periodo {label}"
-msgstr ""
+msgstr "Period {label}"
 
 #: src/features/worker/components/MobileShell.tsx
 #: src/features/worker/pages/PermissionsPage.tsx
@@ -9299,6 +9336,10 @@ msgstr "QR regenerated: version {version}. Download the new sheet."
 #: src/features/reports/pages/ReportsPage.tsx
 msgid "qué canal sí logra contacto"
 msgstr "which channel actually gets through"
+
+#: src/features/requisitions/components/PositionsTable.tsx
+msgid "Qué estás viendo"
+msgstr "What you're looking at"
 
 #: src/features/onboarding/components/HotelDataCard.tsx
 #: src/features/onboarding/components/ProspectFormDialog.tsx
@@ -10010,6 +10051,10 @@ msgstr "Paid for this position"
 msgid "Se le paga al colaborador"
 msgstr "Paid to the Collaborator"
 
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "se llena ahora"
+msgstr "filling now"
+
 #: src/features/admin/pages/CorporateEmailPage.tsx
 msgid "Se muestra una sola vez: cPanel no la vuelve a enseñar. Cópiala antes de cerrar."
 msgstr "It's shown only once: cPanel won't show it again. Copy it before you close."
@@ -10181,8 +10226,12 @@ msgid "Si la posición ya tiene tarifa, esta la reemplaza."
 msgstr "If the position already has a rate, this one replaces it."
 
 #: src/features/worker/pages/Phase2Page.tsx
-msgid "Si tu Reclutadora no te la tomó en la entrevista, súbela tú. Se guarda al elegirla."
-msgstr "If your Recruiter didn't take it during the interview, upload it yourself. It saves as soon as you choose it."
+#~ msgid "Si tu Reclutadora no te la tomó en la entrevista, súbela tú. Se guarda al elegirla."
+#~ msgstr "If your Recruiter didn't take it during the interview, upload it yourself. It saves as soon as you choose it."
+
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "Si tu Reclutadora no te la tomó en la entrevista, súbela tú. Se guarda al elegirla. No hace falta para que te validen."
+msgstr "If your Recruiter didn't take it at the interview, upload it yourself. It saves as soon as you pick it. It isn't needed for you to be validated."
 
 #: src/shared/components/MascotaPeek.tsx
 msgid "Si tu sesión caduca, al volver a entrar retomas en la misma pantalla."
@@ -11325,7 +11374,7 @@ msgstr "The whole hotel"
 
 #: src/shared/components/DateRangeField.tsx
 msgid "Todo el periodo"
-msgstr ""
+msgstr "The whole period"
 
 #: src/features/admin/components/HotelUsersSection.tsx
 #: src/features/admin/pages/UsersPage.tsx
@@ -11458,6 +11507,10 @@ msgstr "you"
 msgid "Tu actividad"
 msgstr "Your activity"
 
+#: src/features/worker/pages/HomePage.tsx
+msgid "tu contacto de emergencia"
+msgstr "your emergency contact"
+
 #. placeholder {0}: profile.legacyAccess.corporateEmail
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Tu correo para entrar cambia a <0>{0}</0>: úsalo la próxima vez."
@@ -11533,6 +11586,10 @@ msgstr "Your role can't authorize requisitions: that's done by the Area Manager,
 msgid "Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área, el Manager General del hotel o el Inspector de su zona."
 msgstr "Your role can't create requisitions: they're created by the Supervisor, the Area Manager, the General Manager, or the Inspector of the zone."
 
+#: src/features/requisitions/pages/RequisitionBoardPage.tsx
+msgid "Tu rol no tiene acceso al Tablero de Requisiciones. Lo ven el hotel que las pide y Reclutamiento."
+msgstr "Your role has no access to the Requisitions board. It is for the hotel that raises them and for Recruitment."
+
 #: src/features/team/pages/TeamPage.tsx
 msgid "Tu rol no tiene BDs a cargo, así que aquí no hay nada que mostrar."
 msgstr "Your role has no BDs under it, so there's nothing to show here."
@@ -11553,6 +11610,10 @@ msgstr "Your status light, in words"
 msgid "Tu situación está en revisión y no hay turnos que ponchar. Customer Service te puede orientar."
 msgstr "Your situation is under review and there are no shifts to clock. Customer Service can guide you."
 
+#: src/features/worker/pages/HomePage.tsx
+msgid "tu SSN o ITIN"
+msgstr "your SSN or ITIN"
+
 #. placeholder {0}: deadline.isDocumentVerified ? t`verificado` : t`cargado, en verificación`
 #: src/features/worker/components/TaxDeadlineBanner.tsx
 msgid "Tu SSN/ITIN está {0}."
@@ -11566,6 +11627,10 @@ msgstr "Your SSN/ITIN was rejected"
 msgid "Tu teléfono manda la ubicación y el sistema verifica que estés en el hotel. Si estás fuera, pídele al Supervisor un ponche manual."
 msgstr "Your phone sends your location and the system checks that you're at the hotel. If you're outside, ask the Supervisor for a manual punch."
 
+#: src/features/worker/pages/HomePage.tsx
+msgid "tu tipo de sangre"
+msgstr "your blood type"
+
 #: src/features/worker/pages/Phase2Page.tsx
 msgid "Tu transporte quedó guardado."
 msgstr "Your transportation was saved."
@@ -11575,8 +11640,8 @@ msgid "Tu transporte y tu SSN o ITIN"
 msgstr "Your transportation and your SSN or ITIN"
 
 #: src/features/worker/pages/HomePage.tsx
-msgid "Tu transporte, tu SSN o ITIN y un contacto de emergencia. Con eso Reclutamiento puede validarte y empiezas a recibir turnos."
-msgstr "Your transportation, your SSN or ITIN and an emergency contact. With that, Recruitment can validate you and you start getting shifts."
+#~ msgid "Tu transporte, tu SSN o ITIN y un contacto de emergencia. Con eso Reclutamiento puede validarte y empiezas a recibir turnos."
+#~ msgstr "Your transportation, your SSN or ITIN and an emergency contact. With that, Recruitment can validate you and you start getting shifts."
 
 #: src/mobile/AppLoginPage.tsx
 msgid "Tu turno o la operación de tu hotel, en tu celular."
@@ -11914,13 +11979,14 @@ msgstr "View log"
 msgid "Ver Clientes Activos"
 msgstr "See Active Clients"
 
+#. placeholder {0}: slot.assigneeName
+#: src/features/requisitions/components/SlotList.tsx
+msgid "Ver el perfil de {0}"
+msgstr "View {0}'s profile"
+
 #: src/features/conversion/pages/ConversionPage.tsx
 msgid "Ver en Clientes Activos"
 msgstr "See in Active Clients"
-
-#: src/features/requisitions/components/SlotList.tsx
-msgid "Ver expediente"
-msgstr "View file"
 
 #: src/features/contracts/pages/ContractListPage.tsx
 msgid "Ver los contratos"
@@ -11959,7 +12025,7 @@ msgstr "See all requisitions"
 #: src/features/timesheet/pages/TimesheetPage.tsx
 #: src/shared/components/DateRangeField.tsx
 msgid "Ver todo el periodo"
-msgstr ""
+msgstr "See the whole period"
 
 #: src/shared/constants/onboardingStatus.ts
 msgid "Verde"
