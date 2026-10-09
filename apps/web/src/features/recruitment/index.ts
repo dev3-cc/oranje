@@ -9,4 +9,4 @@ export {
   useApprovePayAdjustmentMutation,
   useRejectPayAdjustmentMutation,
 } from './api/payAdjustmentsApi'
-export type { PayAdjustment } from './types/selfPick.types'
+export type { PayAdjustment, SettlementEffect } from './types/selfPick.types'

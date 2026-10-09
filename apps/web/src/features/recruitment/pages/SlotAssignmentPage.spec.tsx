@@ -57,3 +57,38 @@ describe('la asignación de slot toma la requisición si hace falta (RR-15)', ()
     expect(screen.getByText('Asignar al slot 2')).toBeInTheDocument()
   })
 })
+
+/**
+ * El gasto (Uber…) exige decir quién lo pagó antes de poder asignar (Hugo,
+ * 2026-10-09): sin eso, Contabilidad no sabría si sumarle o restarle algo al
+ * colaborador. El ajuste de tarifa no lo pide — ese no tiene de quién
+ * reembolsar o descontar.
+ */
+describe('el gasto de una eventual exige decir quién lo pagó', () => {
+  it('al elegir el concepto aparecen las tres disposiciones, y se puede elegir una', async () => {
+    renderSelfPick()
+    const user = userEvent.setup()
+
+    const folio = await screen.findByText('202608140700·E1', undefined, SLOW)
+    await user.click(folio.closest('a') as HTMLElement)
+    await screen.findByText('Asignación de slot', undefined, SLOW)
+
+    await user.click(screen.getByLabelText('Tipo'))
+    await user.click(await screen.findByRole('option', { name: 'Temporal' }))
+
+    await user.click(screen.getByLabelText(/Agregar un gasto extra/))
+    await user.click(screen.getByLabelText('Concepto del gasto'))
+    await user.click(await screen.findByRole('option', { name: 'Uber' }))
+
+    const oranje = screen.getByRole('radio', { name: /Gasto de la empresa/ })
+    const colaborador = screen.getByRole('radio', { name: /Lo pagó el colaborador/ })
+    const descuento = screen.getByRole('radio', { name: /descontárselo/ })
+    expect(oranje).not.toBeChecked()
+    expect(colaborador).not.toBeChecked()
+    expect(descuento).not.toBeChecked()
+
+    await user.click(colaborador)
+    expect(colaborador).toBeChecked()
+    expect(oranje).not.toBeChecked()
+  })
+})

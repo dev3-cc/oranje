@@ -9,6 +9,7 @@ export interface PayAdjustmentRow {
   amount: string
   reason: string
   status: string
+  settlementEffect: string | null
   requestedAt: Date
   approvedAt: Date | null
   rejectionReason: string | null
@@ -26,6 +27,7 @@ const SELECT = {
   amount: true,
   reason: true,
   status: true,
+  settlementEffect: true,
   requestedAt: true,
   approvedAt: true,
   rejectionReason: true,
@@ -54,6 +56,7 @@ type RawRow = {
   amount: { toFixed(decimals: number): string }
   reason: string
   status: string
+  settlementEffect: string | null
   requestedAt: Date
   approvedAt: Date | null
   rejectionReason: string | null
@@ -75,6 +78,7 @@ function toRow(row: RawRow): PayAdjustmentRow {
     amount: row.amount.toFixed(2),
     reason: row.reason,
     status: row.status,
+    settlementEffect: row.settlementEffect,
     requestedAt: row.requestedAt,
     approvedAt: row.approvedAt,
     rejectionReason: row.rejectionReason,
@@ -107,6 +111,7 @@ export class PayAdjustmentsRepository {
     payConceptId: string | null
     amount: string
     reason: string
+    settlementEffect: string | null
     userId: string
     roleCode: string
   }): Promise<PayAdjustmentRow> {
@@ -120,6 +125,7 @@ export class PayAdjustmentsRepository {
           payConceptId: params.payConceptId,
           amount: params.amount,
           reason: params.reason,
+          settlementEffect: params.settlementEffect,
           requestedBy: params.userId,
         },
       })
@@ -136,6 +142,7 @@ export class PayAdjustmentsRepository {
             assignmentId: params.assignmentId,
             payConceptId: params.payConceptId,
             amount: params.amount,
+            settlementEffect: params.settlementEffect,
           },
         },
       })
