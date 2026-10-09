@@ -4,3 +4,9 @@ export { WorkerDetailPage } from './pages/WorkerDetailPage'
 export { BlacklistPage } from './pages/BlacklistPage'
 export { SelfPickPage } from './pages/SelfPickPage'
 export { SlotAssignmentPage } from './pages/SlotAssignmentPage'
+export {
+  useGetPendingPayAdjustmentsQuery,
+  useApprovePayAdjustmentMutation,
+  useRejectPayAdjustmentMutation,
+} from './api/payAdjustmentsApi'
+export type { PayAdjustment, SettlementEffect } from './types/selfPick.types'

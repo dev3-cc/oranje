@@ -218,8 +218,12 @@ export const selfPickApi = baseApi.injectEndpoints({
       providesTags: [{ type: 'Worker' as const, id: 'LIST' }],
     }),
 
-    createAssignment: build.mutation<unknown, CreateAssignmentRequest>({
+    /* El `id` de la asignación creada: lo necesita el ajuste de pago de la
+       eventual (Hugo, 2026-10-08), que no existe hasta que la asignación
+       existe. Antes el tipo era `unknown` porque nadie lo usaba. */
+    createAssignment: build.mutation<{ assignment: { id: string } }, CreateAssignmentRequest>({
       query: (body) => ({ url: '/assignments', method: 'POST', body }),
+      transformResponse: (res: ApiEnvelope<{ assignment: { id: string } }>) => res.data,
       invalidatesTags: (_res, _err, { positionId }) => [
         { type: 'Requisition' as const, id: 'SELF_PICK' },
         { type: 'Requisition' as const, id: `slots-${positionId}` },
