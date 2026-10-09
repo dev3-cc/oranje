@@ -44,7 +44,8 @@ function findJdk() {
 
 /** Dónde dejó Android Studio el SDK. */
 function findSdk() {
-  if (process.env.ANDROID_HOME && existsSync(process.env.ANDROID_HOME)) return process.env.ANDROID_HOME
+  if (process.env.ANDROID_HOME && existsSync(process.env.ANDROID_HOME))
+    return process.env.ANDROID_HOME
   if (process.env.ANDROID_SDK_ROOT && existsSync(process.env.ANDROID_SDK_ROOT)) {
     return process.env.ANDROID_SDK_ROOT
   }
@@ -62,7 +63,9 @@ if (!javaHome) {
   process.exit(1)
 }
 if (!androidHome) {
-  console.error('No se encontró el SDK de Android. Instálalo desde Android Studio o pon ANDROID_HOME.')
+  console.error(
+    'No se encontró el SDK de Android. Instálalo desde Android Studio o pon ANDROID_HOME.',
+  )
   process.exit(1)
 }
 
@@ -80,7 +83,12 @@ const result = spawnSync(wrapper, task, {
   cwd: androidDir,
   stdio: 'inherit',
   shell: isWindows,
-  env: { ...process.env, JAVA_HOME: javaHome, ANDROID_HOME: androidHome, ANDROID_SDK_ROOT: androidHome },
+  env: {
+    ...process.env,
+    JAVA_HOME: javaHome,
+    ANDROID_HOME: androidHome,
+    ANDROID_SDK_ROOT: androidHome,
+  },
 })
 
 process.exit(result.status ?? 1)
