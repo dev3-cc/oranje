@@ -34,6 +34,12 @@ Reglas:
 
 ## 2026-10-09
 
+### 16:31 — App: «Permisos» del Colaborador ya no se reabre en ciclo
+
+**Qué:** `mobile/NativePermissionsRoute.tsx` abre la pantalla nativa con `openNativePermissions` (ahora exportado por `features/worker`) y decide UNA sola navegación al cerrarla: «Ponchar» e «Ir a Inicio» reemplazan la entrada del historial; Atrás regresa.
+**Por qué:** probado en el emulador con un Colaborador real: al pulsar «Ir a Inicio», `usePermissionsScreen` navegaba al Inicio y la ruta además hacía «regresar» (`go -1`); las dos navegaciones se pisaban, la app volvía a `/collaborator/permissions` y la pantalla se abría otra vez. Solo app; el web no cambia.
+**Archivos:** `src/mobile/{NativePermissionsRoute.tsx,NativePermissionsRoute.spec.tsx}`; `src/features/worker/index.ts`.
+
 ### 15:45 — App: el teclado ya no tapa los formularios y «Permisos» del Colaborador abre la pantalla nativa
 
 **Qué:** (1) `@capacitor/keyboard` en `apps/mobile` con `resize: 'native'` y `resizeOnFullScreen`: al abrir el teclado la pantalla de la app se encoge. (2) Nueva ruta de la app `/collaborator/permissions` (`mobile/NativePermissionsRoute.tsx`) que abre la pantalla nativa de Permisos y, al cerrarla, va a Ponchar, al Inicio o regresa.
