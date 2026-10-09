@@ -340,6 +340,9 @@ model User {
   deductionsRefunded       Deduction[]     @relation("deductionRefundedBy")
   invoicesApproved         Invoice[]       @relation("invoiceApprovedBy")
 
+  payAdjustmentsRequested AssignmentPayAdjustment[] @relation("payAdjustmentRequestedBy")
+  payAdjustmentsApproved  AssignmentPayAdjustment[] @relation("payAdjustmentApprovedBy")
+
   @@id([id])
   @@index([roleId], map: "ix_user_role")
   @@index([hotelId], map: "ix_user_hotel")
@@ -718,6 +721,24 @@ model CatalogPosition {
   @@id([id])
   @@index([hotelDepartmentId], map: "ix_position_hotel_department")
   @@map("position")
+  @@schema("catalogs")
+}
+
+/// Conceptos de pago extra que puede cubrir un rate interno (p. ej. «Uber»).
+/// Catálogo del Administrador; decisión de Hugo, 2026-10-05 (P-CO-07).
+model PayConcept {
+  id   String @db.Uuid
+  code String @unique @db.Text
+  name String @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  workerRates      WorkerRate[]
+  payAdjustments   AssignmentPayAdjustment[]
+
+  @@id([id])
+  @@map("pay_concept")
   @@schema("catalogs")
 }
 
@@ -1171,11 +1192,52 @@ model Assignment {
   assignedByUser User   @relation(fields: [assignedBy], references: [id], onDelete: Restrict)
 
   scheduleEntries ScheduleEntry[]
+  payAdjustments  AssignmentPayAdjustment[]
 
   @@id([id])
   @@index([workerId], map: "ix_assignment_worker")
   @@index([slotId], map: "ix_assignment_slot")
   @@map("assignment")
+  @@schema("coverage")
+}
+
+/// El ajuste de tarifa o el gasto extra (p. ej. «Uber») de una asignación
+/// EVENTUAL (Hugo, 2026-10-08). Reclutamiento lo captura al llenar el slot;
+/// solo el Observador lo aprueba — excepción deliberada a que es, por lo
+/// demás, un rol de puro lectura. Hasta que se aprueba no pesa en el pago.
+///
+/// `payConceptId` NULO = ajuste del rate llano de esa posición; CON VALOR =
+/// el gasto del concepto (Uber…). Sin UNIQUE sobre `assignmentId`: un mismo
+/// slot puede llevar el ajuste de tarifa Y un gasto, cada uno con su propia
+/// aprobación.
+model AssignmentPayAdjustment {
+  id             String  @db.Uuid
+  assignmentId   String  @map("assignment_id") @db.Uuid
+  payConceptId   String? @map("pay_concept_id") @db.Uuid
+  amount         Decimal @db.Decimal(10, 2)
+  reason         String  @db.Text
+
+  /// PENDING · APPROVED · REJECTED. Lista cerrada y técnica: text + CHECK.
+  status String @default("PENDING") @db.Text
+
+  requestedBy String   @map("requested_by") @db.Uuid
+  requestedAt DateTime @default(now()) @map("requested_at") @db.Timestamptz(6)
+
+  approvedBy       String?   @map("approved_by") @db.Uuid
+  approvedAt       DateTime? @map("approved_at") @db.Timestamptz(6)
+  rejectionReason  String?   @map("rejection_reason") @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  assignment    Assignment  @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
+  payConcept    PayConcept? @relation(fields: [payConceptId], references: [id], onDelete: Restrict)
+  requestedByUser User      @relation("payAdjustmentRequestedBy", fields: [requestedBy], references: [id], onDelete: Restrict)
+  approvedByUser   User?    @relation("payAdjustmentApprovedBy", fields: [approvedBy], references: [id], onDelete: Restrict)
+
+  @@id([id])
+  @@index([assignmentId], map: "ix_assignment_pay_adjustment_assignment")
+  @@map("assignment_pay_adjustment")
   @@schema("coverage")
 }
 
@@ -1613,6 +1675,8 @@ model WorkerRate {
   workerId          String  @map("worker_id") @db.Uuid
   /// NULO = aplica a todas las posiciones del colaborador.
   catalogPositionId String? @map("catalog_position_id") @db.Uuid
+  /// NULO = tarifa interna normal. Con valor, la tarifa es para ese concepto de pago extra.
+  payConceptId      String? @map("pay_concept_id") @db.Uuid
   rate              Decimal @db.Decimal(10, 2)
 
   validFrom DateTime  @map("valid_from") @db.Date
@@ -1626,6 +1690,7 @@ model WorkerRate {
 
   worker           Worker           @relation(fields: [workerId], references: [id], onDelete: Restrict)
   catalogPosition  CatalogPosition? @relation(fields: [catalogPositionId], references: [id], onDelete: Restrict)
+  payConcept       PayConcept?      @relation(fields: [payConceptId], references: [id], onDelete: Restrict)
   authorizedByUser User             @relation("workerRateAuthorizedBy", fields: [authorizedBy], references: [id], onDelete: Restrict)
 
   /// El unico que impide dos rates vigentes a la vez es PARCIAL y ademas lleva
