@@ -8,5 +8,8 @@ export {
   useGetPendingPayAdjustmentsQuery,
   useApprovePayAdjustmentMutation,
   useRejectPayAdjustmentMutation,
+  useGetApprovedPendingInclusionQuery,
+  useIncludePayAdjustmentMutation,
 } from './api/payAdjustmentsApi'
+export { seedApprovedPendingInclusion } from './api/payAdjustmentsMocks'
 export type { PayAdjustment, SettlementEffect } from './types/selfPick.types'
