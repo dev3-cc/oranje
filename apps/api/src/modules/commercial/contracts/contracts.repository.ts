@@ -193,7 +193,7 @@ export class ContractsRepository {
         VALUES (${uuidv7()}::uuid, ${params.contractId}::uuid,
                 ${params.catalogPositionId}::uuid,
                 ${params.payRate}::numeric, ${params.billRate}::numeric)
-        ON CONFLICT ON CONSTRAINT ux_contract_rate_position
+        ON CONFLICT (contract_id, catalog_position_id)
         DO UPDATE SET pay_rate = EXCLUDED.pay_rate,
                       bill_rate = EXCLUDED.bill_rate,
                       updated_at = now()`
