@@ -34,6 +34,12 @@ Reglas:
 
 ## 2026-10-09
 
+### 15:45 — App: el teclado ya no tapa los formularios y «Permisos» del Colaborador abre la pantalla nativa
+
+**Qué:** (1) `@capacitor/keyboard` en `apps/mobile` con `resize: 'native'` y `resizeOnFullScreen`: al abrir el teclado la pantalla de la app se encoge. (2) Nueva ruta de la app `/collaborator/permissions` (`mobile/NativePermissionsRoute.tsx`) que abre la pantalla nativa de Permisos y, al cerrarla, va a Ponchar, al Inicio o regresa.
+**Por qué:** Hugo: en el paso 2 de Nueva requisición del hotel no se podía bajar y se rompía abajo — con edge-to-edge (Android 15) el teclado se dibujaba encima del WebView sin encogerlo y tapaba los campos y los botones. Y «Permisos» del menú del Colaborador volvía al Inicio: el merge de staging del 2026-10-06 (`003a910`) quitó la opción nativa y dejó el enlace a `/collaborator/permissions`, ruta que la app no tenía. Solo app; el web no cambia.
+**Archivos:** `src/mobile/{router.tsx,NativePermissionsRoute.tsx,NativePermissionsRoute.spec.tsx}`; `../mobile/{capacitor.config.ts,package.json}`; `../mobile/android/{app/capacitor.build.gradle,capacitor.settings.gradle}`; `../../pnpm-lock.yaml`.
+
 ### 11:32 — App: la subida de fotos en iOS y el permiso de ubicación del ponche
 
 **Qué:** (1) `mobile/nativeApiFetch.ts` ya no borra el `Content-Type` de las subidas: manda `multipart/form-data` y el lado nativo pone su boundary. (2) Dentro de la app, la ubicación del ponche y la del onboarding van por `@capacitor/geolocation` (nuevo en `apps/mobile`) a través del puente `features/worker/lib/nativeGeolocation.ts`; en el navegador siguen con `navigator.geolocation`, sin cambios.

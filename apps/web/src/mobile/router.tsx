@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate, useLocation, useParams } from 'react-rou
 
 import { HotelOnly, WithToaster } from './layouts'
 import { MobileRoleHome } from './MobileRoleHome'
+import { NativePermissionsRoute } from './NativePermissionsRoute'
 import { PermissionsOnLaunch } from './PermissionsOnLaunch'
 import { UNSUPPORTED_HOME } from './roles'
 
@@ -168,6 +169,14 @@ export const mobileRouter = createBrowserRouter([
                       const m = await import('@/features/worker')
                       return { Component: m.NotificationsPage }
                     },
+                  },
+                  {
+                    /*
+                     * «Permisos» del menú y los avisos de Ponchar: en la app abre
+                     * la pantalla NATIVA. Sin esta ruta caía en `*` y volvía al Inicio.
+                     */
+                    path: 'permissions',
+                    Component: NativePermissionsRoute,
                   },
                 ],
               },
