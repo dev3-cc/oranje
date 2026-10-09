@@ -1,9 +1,10 @@
-import type { I18n } from '@lingui/core'
+import type { I18n, MessageDescriptor } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
 import {
   cn,
   Input,
+  MaterialIcon,
   Select,
   SelectContent,
   SelectItem,
@@ -23,7 +24,7 @@ import {
   useGetSlotBoardQuery,
   useReleaseAssignmentMutation,
 } from '../api/selfPickApi'
-import { ASSIGNMENT_TYPE_LABEL } from '../types/selfPick.types'
+import { ASSIGNMENT_TYPE_LABEL, type SettlementEffect } from '../types/selfPick.types'
 
 import mascotaCelebrando from '@/assets/mascota/mascota-celebrando.png'
 import { useGetPositionPayRateQuery } from '@/features/contracts'
@@ -48,6 +49,34 @@ const COVERAGE_TOKEN: Record<string, StatusLightToken> = {
   LIGHT_BLUE: 'st-azul-claro',
   GREEN: 'st-verde',
 }
+
+/** Quién pagó el gasto decide qué hace Contabilidad con el pago del
+    colaborador (Hugo, 2026-10-09): nunca se asume, siempre se elige. */
+const SETTLEMENT_EFFECT_OPTIONS: readonly {
+  value: SettlementEffect
+  icon: string
+  label: MessageDescriptor
+  hint: MessageDescriptor
+}[] = [
+  {
+    value: 'COMPANY_EXPENSE',
+    icon: 'domain',
+    label: msg`Lo pagó Oranje`,
+    hint: msg`Gasto de la empresa: no se le descuenta ni se le suma nada al colaborador.`,
+  },
+  {
+    value: 'REIMBURSE',
+    icon: 'account_balance_wallet',
+    label: msg`Lo pagó el colaborador`,
+    hint: msg`Se le reembolsa: se suma a lo que Contabilidad le paga en su próxima nómina.`,
+  },
+  {
+    value: 'PAYROLL_DEDUCTION',
+    icon: 'remove_circle_outline',
+    label: msg`Lo pagó Oranje, descontárselo`,
+    hint: msg`El colaborador pidió que Oranje lo cubriera: se le resta de su próxima nómina.`,
+  },
+] as const
 
 /** El `i18n` viene del componente (D-36). */
 function assignErrorMessage(error: unknown, i18n: I18n): string {
@@ -100,6 +129,9 @@ function releaseErrorMessage(error: unknown, i18n: I18n): string {
 /** El `i18n` viene del componente (D-36). */
 function adjustmentErrorMessage(error: unknown, i18n: I18n): string {
   return apiErrorMessage(error, {
+    byCode: {
+      SETTLEMENT_EFFECT_REQUIRED: i18n._(msg`Falta decir quién pagó el gasto.`),
+    },
     fallback: i18n._(
       msg`La asignación quedó hecha, pero el ajuste/gasto no se pudo pedir. Vuelve a intentarlo.`,
     ),
@@ -161,6 +193,9 @@ export function SlotAssignmentPage(): ReactNode {
   const [expensePayConceptId, setExpensePayConceptId] = useState('')
   const [expenseAmount, setExpenseAmount] = useState('')
   const [expenseReason, setExpenseReason] = useState('')
+  /* Quién lo pagó decide qué hace Contabilidad con el pago del colaborador
+     (Hugo, 2026-10-09): no se asume, cada gasto lo dice. */
+  const [expenseSettlementEffect, setExpenseSettlementEffect] = useState<SettlementEffect | ''>('')
   const [expenseError, setExpenseError] = useState<unknown>(null)
   const [expenseRequested, setExpenseRequested] = useState<string | null>(null)
 
@@ -170,6 +205,7 @@ export function SlotAssignmentPage(): ReactNode {
     if (type !== 'TEMPORARY') {
       setWantsRateAdjustment(false)
       setWantsExpense(false)
+      setExpenseSettlementEffect('')
       setRateError(null)
       setExpenseError(null)
     }
@@ -226,7 +262,8 @@ export function SlotAssignmentPage(): ReactNode {
     (expenseAmount !== '' &&
       expenseAmountValue > 0 &&
       expenseReason.trim() !== '' &&
-      expensePayConceptId !== '')
+      expensePayConceptId !== '' &&
+      expenseSettlementEffect !== '')
 
   const canSubmit =
     board.nextFreeOrdinal !== null &&
@@ -314,6 +351,7 @@ export function SlotAssignmentPage(): ReactNode {
             payConceptId: expensePayConceptId,
             amount: expenseAmountValue,
             reason: expenseReason.trim(),
+            ...(expenseSettlementEffect ? { settlementEffect: expenseSettlementEffect } : {}),
           }).unwrap()
           toast.success(t`Gasto pedido: queda pendiente de que lo apruebe el Observador`)
           setExpenseRequested(expenseAmountValue.toFixed(2))
@@ -321,6 +359,7 @@ export function SlotAssignmentPage(): ReactNode {
           setExpenseAmount('')
           setExpenseReason('')
           setExpensePayConceptId('')
+          setExpenseSettlementEffect('')
         } catch (error) {
           setExpenseError(error)
         }
@@ -748,6 +787,43 @@ export function SlotAssignmentPage(): ReactNode {
                           </p>
                         )}
                       </div>
+                      <fieldset className="flex flex-col gap-1.5">
+                        <legend className="text-sm text-ink-3">
+                          <Trans>¿Quién lo pagó?</Trans>
+                        </legend>
+                        <div className="grid grid-cols-1 gap-2">
+                          {SETTLEMENT_EFFECT_OPTIONS.map((option) => (
+                            <label
+                              key={option.value}
+                              className="flex cursor-pointer items-start gap-3 rounded-lg border border-line bg-surface p-3 transition-colors has-[:checked]:border-o-500 has-[:checked]:bg-o-50 hover:bg-surface-2"
+                            >
+                              <input
+                                type="radio"
+                                name="expense-settlement-effect"
+                                value={option.value}
+                                checked={expenseSettlementEffect === option.value}
+                                onChange={() => {
+                                  setExpenseSettlementEffect(option.value)
+                                }}
+                                className="mt-1 accent-o-500"
+                              />
+                              <span className="min-w-0">
+                                <span className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+                                  <MaterialIcon
+                                    name={option.icon}
+                                    className="text-base"
+                                    aria-hidden
+                                  />
+                                  {i18n._(option.label)}
+                                </span>
+                                <span className="block text-xs text-ink-3">
+                                  {i18n._(option.hint)}
+                                </span>
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </fieldset>
                       <div className="flex flex-col gap-1.5">
                         <span className="text-sm text-ink-3">
                           <Trans>Monto</Trans>

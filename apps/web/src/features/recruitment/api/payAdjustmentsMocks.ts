@@ -1,4 +1,4 @@
-import type { PayAdjustment } from '../types/selfPick.types'
+import type { PayAdjustment, SettlementEffect } from '../types/selfPick.types'
 
 import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
 import type { ApiEnvelope } from '@/shared/types/apiContract.types'
@@ -18,7 +18,12 @@ const routes: readonly MockRoute[] = [
     method: 'POST',
     path: '/assignments/:assignmentId/pay-adjustments',
     resolve: ({ params, body }): ApiEnvelope<PayAdjustment> => {
-      const dto = body as { payConceptId?: string; amount: number; reason: string }
+      const dto = body as {
+        payConceptId?: string
+        amount: number
+        reason: string
+        settlementEffect?: SettlementEffect
+      }
       seq += 1
       const row: PayAdjustment = {
         id: `mock-adj-${String(seq)}`,
@@ -26,6 +31,7 @@ const routes: readonly MockRoute[] = [
         amount: dto.amount.toFixed(2),
         reason: dto.reason,
         status: 'PENDING',
+        settlementEffect: dto.settlementEffect ?? null,
         payConcept: dto.payConceptId ? { id: dto.payConceptId, code: 'UBER', name: 'Uber' } : null,
         requestedBy: { id: 'mock-user', fullName: 'Reclutadora de prueba' },
         requestedAt: new Date().toISOString(),
@@ -92,6 +98,7 @@ export function seedPendingPayAdjustment(overrides: Partial<PayAdjustment> = {})
     amount: '120.00',
     reason: 'Uber de prueba',
     status: 'PENDING',
+    settlementEffect: 'REIMBURSE',
     payConcept: { id: 'pc-uber', code: 'UBER', name: 'Uber' },
     requestedBy: { id: 'mock-user', fullName: 'Reclutadora de prueba' },
     requestedAt: new Date().toISOString(),

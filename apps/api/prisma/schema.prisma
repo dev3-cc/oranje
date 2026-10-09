@@ -1217,6 +1217,13 @@ model AssignmentPayAdjustment {
   amount         Decimal @db.Decimal(10, 2)
   reason         String  @db.Text
 
+  /// Solo del GASTO (payConceptId con valor): REIMBURSE (el colaborador lo
+  /// pagó, Contabilidad se lo suma) · COMPANY_EXPENSE (lo pagó Oranje, no le
+  /// toca nada a su pago) · PAYROLL_DEDUCTION (lo pagó Oranje pero se lo
+  /// descuenta, a petición del colaborador). NULL en el ajuste de tarifa
+  /// llano — ahí no hay de quién reembolsar o descontar.
+  settlementEffect String? @map("settlement_effect") @db.Text
+
   /// PENDING · APPROVED · REJECTED. Lista cerrada y técnica: text + CHECK.
   status String @default("PENDING") @db.Text
 

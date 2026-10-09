@@ -94,6 +94,15 @@ export interface AssignableWorker {
 }
 
 /**
+ * Solo del GASTO (`payConcept` con valor): quién lo pagó decide qué hace
+ * Contabilidad con el pago del colaborador (Hugo, 2026-10-09).
+ * REIMBURSE = el colaborador lo pagó, se le suma a su nómina ·
+ * COMPANY_EXPENSE = lo pagó Oranje, no le toca nada a su pago ·
+ * PAYROLL_DEDUCTION = lo pagó Oranje pero se lo descuenta, a petición suya.
+ */
+export type SettlementEffect = 'REIMBURSE' | 'COMPANY_EXPENSE' | 'PAYROLL_DEDUCTION'
+
+/**
  * El ajuste de tarifa o el gasto extra (p. ej. «Uber») de una asignación
  * EVENTUAL (Hugo, 2026-10-08): Reclutamiento lo pide al llenar el slot, solo
  * el Observador lo aprueba o lo rechaza, y mientras está PENDING no pesa en
@@ -105,6 +114,7 @@ export interface PayAdjustment {
   amount: string
   reason: string
   status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  settlementEffect: SettlementEffect | null
   payConcept: { id: string; code: string; name: string } | null
   requestedBy: { id: string; fullName: string }
   requestedAt: string
@@ -121,4 +131,5 @@ export interface CreatePayAdjustmentRequest {
   payConceptId?: string
   amount: number
   reason: string
+  settlementEffect?: SettlementEffect
 }

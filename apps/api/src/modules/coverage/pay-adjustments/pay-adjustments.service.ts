@@ -18,6 +18,7 @@ export interface PayAdjustmentEntity {
   amount: string
   reason: string
   status: string
+  settlementEffect: string | null
   payConcept: { id: string; code: string; name: string } | null
   requestedBy: { id: string; fullName: string }
   requestedAt: string
@@ -77,11 +78,28 @@ export class PayAdjustmentsService {
       })
     }
 
+    /* Zod ya lo exige en la petición HTTP, pero el servicio se llama también
+       directo (pruebas, otros módulos): la regla de negocio no puede
+       depender solo de la capa que valida la forma. */
+    if (dto.payConceptId && !dto.settlementEffect) {
+      throw new UnprocessableEntityException({
+        code: 'SETTLEMENT_EFFECT_REQUIRED',
+        message: 'Falta decir quién pagó el gasto: Oranje, el colaborador, o Oranje a descontarle',
+      })
+    }
+    if (!dto.payConceptId && dto.settlementEffect) {
+      throw new UnprocessableEntityException({
+        code: 'SETTLEMENT_EFFECT_NOT_APPLICABLE',
+        message: 'El ajuste de tarifa no lleva quién pagó: eso es solo del gasto',
+      })
+    }
+
     const row = await this.repo.create({
       assignmentId,
       payConceptId: dto.payConceptId ?? null,
       amount: dto.amount.toFixed(2),
       reason: dto.reason,
+      settlementEffect: dto.settlementEffect ?? null,
       userId: user.id,
       roleCode: user.roleCode,
     })
@@ -163,6 +181,7 @@ function toEntity(row: PayAdjustmentRow): PayAdjustmentEntity {
     amount: row.amount,
     reason: row.reason,
     status: row.status,
+    settlementEffect: row.settlementEffect,
     payConcept: row.payConcept,
     requestedBy: row.requestedByUser,
     requestedAt: row.requestedAt.toISOString(),

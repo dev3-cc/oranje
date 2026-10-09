@@ -89,6 +89,10 @@ msgstr "Anything we should know?"
 msgid "¿Qué pasó con los que ingresaron?"
 msgstr "What happened to the people who started?"
 
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "¿Quién lo pagó?"
+msgstr "Who paid for it?"
+
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "¿Seguro? Toca «Sí, descartar borrador» para confirmar."
 msgstr "Are you sure? Tap “Yes, discard draft” to confirm."
@@ -3382,6 +3386,10 @@ msgstr "Describe the services offered"
 msgid "Descripción"
 msgstr "Description"
 
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
+msgid "Descuento: se le resta"
+msgstr "Deduction: subtracted from their pay"
+
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Desde"
 msgstr "From"
@@ -3822,6 +3830,10 @@ msgstr "The collaborator has no assignment on this requisition"
 #: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "El colaborador pasa a Rojo: es una incidencia, no una pausa — Inspección la revisa y decide si vuelve o queda fuera."
 msgstr "The Collaborator goes to Red: it's an incident, not a pause — Inspection reviews it and decides whether they come back or are out."
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "El colaborador pidió que Oranje lo cubriera: se le resta de su próxima nómina."
+msgstr "The collaborator asked Oranje to cover it: it's subtracted from their next payroll."
 
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
@@ -5396,6 +5408,10 @@ msgstr "Bill {0}"
 msgid "Factura por hora"
 msgstr "Bill per hour"
 
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Falta decir quién pagó el gasto."
+msgstr "Missing who paid for the expense."
+
 #: src/features/requisitions/types/requisitionForm.schema.ts
 msgid "Falta el departamento"
 msgstr "The department is missing"
@@ -5607,6 +5623,14 @@ msgstr "First to confirm wins: if someone gets there first, the board updates ri
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
 msgid "Gasto de {0} pedido: pendiente de aprobación."
 msgstr "Expense of {0} requested: pending approval."
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Gasto de la empresa: no se le descuenta ni se le suma nada al colaborador."
+msgstr "Company expense: nothing is added to or subtracted from the collaborator's pay."
+
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
+msgid "Gasto de Oranje"
+msgstr "Oranje's expense"
 
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
 msgid "Gasto pedido: queda pendiente de que lo apruebe el Observador"
@@ -6824,6 +6848,18 @@ msgstr "You do it, right here (Sales)."
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 msgid "lo mueve el BD o el BDC."
 msgstr "the BD or the BDC moves it."
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Lo pagó el colaborador"
+msgstr "The collaborator paid for it"
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Lo pagó Oranje"
+msgstr "Oranje paid for it"
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Lo pagó Oranje, descontárselo"
+msgstr "Oranje paid for it, deduct it from them"
 
 #: src/features/contracts/pages/ContractListPage.tsx
 msgid "Lo que cada hotel nos paga y lo que le pagamos a su gente. Un contrato vigente por hotel."
@@ -9660,6 +9696,10 @@ msgstr "Recruitment already validated you with your incomplete file. You have un
 msgid "Recupera tu contraseña"
 msgstr "Reset your password"
 
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
+msgid "Reembolso: se le suma"
+msgstr "Reimbursement: added to their pay"
+
 #: src/features/admin/components/UserFormDialog.tsx
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Reemplazar foto"
@@ -10147,6 +10187,10 @@ msgstr "Paid for this position"
 #: src/features/contracts/components/RateTable.tsx
 msgid "Se le paga al colaborador"
 msgstr "Paid to the Collaborator"
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Se le reembolsa: se suma a lo que Contabilidad le paga en su próxima nómina."
+msgstr "They're reimbursed: it's added to what Accounting pays them in their next payroll."
 
 #: src/features/admin/pages/CorporateEmailPage.tsx
 msgid "Se muestra una sola vez: cPanel no la vuelve a enseñar. Cópiala antes de cerrar."
