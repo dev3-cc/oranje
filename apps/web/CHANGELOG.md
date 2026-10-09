@@ -34,6 +34,12 @@ Reglas:
 
 ## 2026-10-09
 
+### 16:49 — App iOS: las fotos de hotel se ven
+
+**Qué:** `mobile/nativeHotelPhotos.ts`, instalado desde `mobile/main.tsx`: en iOS, toda imagen de `places.googleapis.com` (por `setAttribute('src')` o por la propiedad `src`) se baja por el HTTP nativo con `Referer: https://mi.oranjepeople.com/` y se entrega como `blob:`, con caché.
+**Por qué:** Hugo: en iOS no se veían las fotos de los hoteles. La foto lleva la llave del navegador de Google, restringida por referrer a `https://mi.oranjepeople.com`; en iOS el origen es `capacitor://mi.oranjepeople.com` y Google responde 403 `API_KEY_HTTP_REFERRER_BLOCKED` (verificado con una foto real). Los mapas no se cubren: los roles del hotel no los ven. Solo app; el web no cambia.
+**Archivos:** `src/mobile/{nativeHotelPhotos.ts,nativeHotelPhotos.spec.ts,main.tsx}`.
+
 ### 16:31 — App: «Permisos» del Colaborador ya no se reabre en ciclo
 
 **Qué:** `mobile/NativePermissionsRoute.tsx` abre la pantalla nativa con `openNativePermissions` (ahora exportado por `features/worker`) y decide UNA sola navegación al cerrarla: «Ponchar» e «Ir a Inicio» reemplazan la entrada del historial; Atrás regresa.

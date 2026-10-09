@@ -10,6 +10,7 @@ import { Provider } from 'react-redux'
 import { RouterProvider } from 'react-router'
 
 import { installNativeApiFetch } from './nativeApiFetch'
+import { installNativeHotelPhotos } from './nativeHotelPhotos'
 import { mobileRouter } from './router'
 
 import { i18n } from '@/app/i18n'
@@ -26,6 +27,10 @@ import { store } from '@/app/store'
    WKWebView (ver `nativeApiFetch.ts`). Antes de montar, para que la primera
    petición —el refresh del arranque— ya salga por ahí. */
 installNativeApiFetch(import.meta.env.VITE_API_URL)
+
+/* En iOS, las fotos de hotel de Google por el HTTP nativo con el referrer de la
+   web: con el origen `capacitor://` Google las rechaza (ver `nativeHotelPhotos.ts`). */
+installNativeHotelPhotos()
 
 const container = document.getElementById('root')
 if (!container) throw new Error('Falta #root en index.html')
