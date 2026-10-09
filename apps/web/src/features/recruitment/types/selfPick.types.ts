@@ -92,3 +92,33 @@ export interface AssignableWorker {
   zoneName: string
   stateCode: string
 }
+
+/**
+ * El ajuste de tarifa o el gasto extra (p. ej. «Uber») de una asignación
+ * EVENTUAL (Hugo, 2026-10-08): Reclutamiento lo pide al llenar el slot, solo
+ * el Observador lo aprueba o lo rechaza, y mientras está PENDING no pesa en
+ * nada. `payConcept` ausente = ajuste del rate llano de la posición.
+ */
+export interface PayAdjustment {
+  id: string
+  assignmentId: string
+  amount: string
+  reason: string
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  payConcept: { id: string; code: string; name: string } | null
+  requestedBy: { id: string; fullName: string }
+  requestedAt: string
+  approvedBy: { id: string; fullName: string } | null
+  approvedAt: string | null
+  rejectionReason: string | null
+  worker: { id: string; fullName: string }
+  hotelName: string
+  requisitionNumber: string
+}
+
+export interface CreatePayAdjustmentRequest {
+  assignmentId: string
+  payConceptId?: string
+  amount: number
+  reason: string
+}

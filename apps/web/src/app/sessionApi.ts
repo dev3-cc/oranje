@@ -118,6 +118,7 @@ registerMockRoutes([
           'requisitions.authorize',
           'requisitions.take',
           'requisitions.delete_empty',
+          'requisitions.request_pay_adjustment',
           'recruitment.create_worker',
           'recruitment.update_worker',
           'recruitment.validate_signup',

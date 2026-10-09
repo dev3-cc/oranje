@@ -26,6 +26,9 @@ export const MANAGED_CATALOGS = [
   'english-levels',
   'zones',
   'reasons',
+  // Conceptos de pago extra (p. ej. «Uber»): el gasto de una asignación
+  // eventual sale de aquí (Hugo, 2026-10-08, P-CO-07).
+  'pay-concepts',
 ] as const
 
 export type ManagedCatalog = (typeof MANAGED_CATALOGS)[number]
@@ -52,6 +55,7 @@ export interface AdminCatalogs {
   englishLevels: AdminCatalogItem[]
   zones: AdminCatalogItem[]
   reasons: AdminCatalogItem[]
+  payConcepts: AdminCatalogItem[]
   /** Para el select "¿qué semáforo?" al dar de alta un motivo. */
   statusLights: AdminStatusLight[]
 }
@@ -66,16 +70,25 @@ export const catalogsAdminApi = baseApi.injectEndpoints({
     getAdminCatalogs: build.query<AdminCatalogs, void>({
       queryFn: async (_arg, _api, _extra, rawBaseQuery) => {
         const fetchWithBQ = rawBaseQuery as FetchWithBQ
-        const [departments, positions, modalities, english, zones, reasons, statusLights] =
-          await Promise.all([
-            fetchWithBQ('/catalogs/hotel-departments'),
-            fetchWithBQ('/catalogs/positions'),
-            fetchWithBQ('/catalogs/hiring-modalities'),
-            fetchWithBQ('/catalogs/english-levels'),
-            fetchWithBQ('/catalogs/zones'),
-            fetchWithBQ('/catalogs/reasons'),
-            fetchWithBQ('/catalogs/status-lights'),
-          ])
+        const [
+          departments,
+          positions,
+          modalities,
+          english,
+          zones,
+          reasons,
+          payConcepts,
+          statusLights,
+        ] = await Promise.all([
+          fetchWithBQ('/catalogs/hotel-departments'),
+          fetchWithBQ('/catalogs/positions'),
+          fetchWithBQ('/catalogs/hiring-modalities'),
+          fetchWithBQ('/catalogs/english-levels'),
+          fetchWithBQ('/catalogs/zones'),
+          fetchWithBQ('/catalogs/reasons'),
+          fetchWithBQ('/catalogs/pay-concepts'),
+          fetchWithBQ('/catalogs/status-lights'),
+        ])
         for (const res of [
           departments,
           positions,
@@ -83,6 +96,7 @@ export const catalogsAdminApi = baseApi.injectEndpoints({
           english,
           zones,
           reasons,
+          payConcepts,
           statusLights,
         ]) {
           if (res.error) return { error: res.error as never }
@@ -105,6 +119,7 @@ export const catalogsAdminApi = baseApi.injectEndpoints({
             englishLevels: items(english),
             zones: items(zones),
             reasons: reasonItems,
+            payConcepts: items(payConcepts),
             statusLights: statusLightItems,
           },
         }

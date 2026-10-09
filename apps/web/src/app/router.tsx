@@ -437,6 +437,14 @@ export const router = createBrowserRouter([
             },
           },
           {
+            /* La única pantalla de escritura del Observador (Hugo, 2026-10-08). */
+            path: 'pay-adjustments',
+            lazy: async () => {
+              const m = await import('@/features/observability')
+              return { Component: m.PayAdjustmentsQueuePage }
+            },
+          },
+          {
             path: 'my-territory',
             lazy: async () => {
               const m = await import('@/features/territory')

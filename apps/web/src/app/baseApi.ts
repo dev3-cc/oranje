@@ -141,6 +141,7 @@ export const baseApi = createApi({
     'ChecklistItem',
     'CorporateEmail',
     'MailSettings',
+    'PayAdjustment',
   ],
   endpoints: () => ({}),
 })

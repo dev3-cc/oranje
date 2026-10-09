@@ -116,6 +116,12 @@ const TAB_CONFIG: Record<ManagedCatalog, TabConfig> = {
     noun: msg`motivo`,
     searchPlaceholder: msg`Nombre del motivo, p. ej. Se mudó…`,
   },
+  'pay-concepts': {
+    label: msg`Conceptos de pago`,
+    pick: (data) => data.payConcepts,
+    noun: msg`concepto de pago`,
+    searchPlaceholder: msg`Nombre del concepto, p. ej. Uber…`,
+  },
 }
 
 /**
