@@ -114,11 +114,20 @@ msgstr "Do you work at Oranje or at a hotel? <0>Sign in here</0>"
 msgid "· {0} pers."
 msgstr "· {0} people"
 
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
+msgid "· ajuste a la tarifa de la posición"
+msgstr "· adjustment to the position's rate"
+
 #. placeholder {0}: lastSent.version
 #. placeholder {1}: lastSent.sentAt ? formatDate(lastSent.sentAt) : '—'
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "· el hotel tiene la v{0} (enviada {1})"
 msgstr "· the hotel has v{0} (sent {1})"
+
+#. placeholder {0}: row.payConcept.name
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
+msgid "· gasto: {0}"
+msgstr "· expense: {0}"
 
 #. placeholder {0}: pending.item.name
 #: src/features/admin/pages/CatalogsPage.tsx
@@ -269,6 +278,12 @@ msgstr "{0} – {1} · {2} on the shift"
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "{0} — próximamente"
 msgstr "{0} — coming soon"
+
+#. placeholder {0}: target.worker.fullName
+#. placeholder {1}: formatMoney(Number(target.amount))
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
+msgid "{0} · {1} — el motivo queda registrado y Reclutamiento lo ve."
+msgstr "{0} · {1} — the reason is logged and Recruitment sees it."
 
 #. placeholder {0}: detail.hotelName
 #. placeholder {1}: detail.department
@@ -1135,6 +1150,10 @@ msgstr "Add item"
 msgid "Agregar turno"
 msgstr "Add shift"
 
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Agregar un gasto extra (p. ej. Uber)"
+msgstr "Add an extra expense (e.g. Uber)"
+
 #: src/features/admin/pages/UsersPage.tsx
 msgid "Agregar usuario"
 msgstr "Add user"
@@ -1151,10 +1170,36 @@ msgstr "Now"
 msgid "Ahora sigue Reclutamiento"
 msgstr "Recruitment is up next"
 
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Ajustar la tarifa de esta posición"
+msgstr "Adjust this position's rate"
+
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
+msgid "Ajuste aprobado"
+msgstr "Adjustment approved"
+
+#. placeholder {0}: formatMoney(Number(rateRequested))
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Ajuste de {0} pedido: pendiente de aprobación."
+msgstr "Adjustment of {0} requested: pending approval."
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Ajuste de tarifa pedido: queda pendiente de que lo apruebe el Observador"
+msgstr "Rate adjustment requested: pending the Observer's approval"
+
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
+msgid "Ajuste rechazado"
+msgstr "Adjustment rejected"
+
 #: src/features/admin/pages/MailSettingsPage.tsx
 #: src/layouts/Sidebar.tsx
 msgid "Ajustes del correo"
 msgstr "Email settings"
+
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
+#: src/layouts/Sidebar.tsx
+msgid "Ajustes pendientes"
+msgstr "Pending Adjustments"
 
 #: src/features/dashboard/components/HotelDashboard.tsx
 msgid "Al 100% (Azul claro)"
@@ -1305,11 +1350,13 @@ msgstr "Recently approved"
 
 #: src/features/admin/components/PendingHotelUsers.tsx
 #: src/features/conversion/pages/ConversionPage.tsx
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
 msgid "Aprobando…"
 msgstr "Approving…"
 
 #: src/features/admin/components/PendingHotelUsers.tsx
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
 msgid "Aprobar"
 msgstr "Approve"
 
@@ -2122,6 +2169,7 @@ msgstr "Cancelling…"
 #: src/features/audits/components/AuditFormDialog.tsx
 #: src/features/contracts/components/EditRateDialog.tsx
 #: src/features/contracts/components/NewContractDialog.tsx
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
 #: src/features/onboarding/components/ArchiveCycleDialog.tsx
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 #: src/features/onboarding/components/HotelContactsDialog.tsx
@@ -2581,8 +2629,21 @@ msgid "Con turno hoy"
 msgstr "On shift today"
 
 #: src/features/contracts/components/MultiplierTable.tsx
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
 msgid "Concepto"
 msgstr "Item"
+
+#: src/features/admin/pages/CatalogsPage.tsx
+msgid "concepto de pago"
+msgstr "pay concept"
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Concepto del gasto"
+msgstr "Expense concept"
+
+#: src/features/admin/pages/CatalogsPage.tsx
+msgid "Conceptos de pago"
+msgstr "Pay Concepts"
 
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Confirmando que estás en el hotel"
@@ -3229,7 +3290,7 @@ msgstr "Set the rate for a position"
 
 #: src/features/timesheet/components/TimesheetToolbar.tsx
 msgid "del Timesheet"
-msgstr ""
+msgstr "of the Timesheet"
 
 #: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
@@ -3353,7 +3414,7 @@ msgstr "From here the Status Light only allows going to: {targets}."
 #. placeholder {0}: formatDate(value.from)
 #: src/shared/components/DateRangeField.tsx
 msgid "Desde el {0}"
-msgstr ""
+msgstr "From {0}"
 
 #: src/features/onboarding/components/SemaforoHelpDialog.tsx
 msgid "desde Naranja, por el BDC"
@@ -3637,6 +3698,10 @@ msgstr "the Administrator"
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "El Administrador no reporta a nadie."
 msgstr "The Administrator doesn't report to anyone."
+
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
+msgid "El ajuste de tarifa o el gasto extra (p. ej. Uber) de una asignación eventual. Mientras esté aquí, no pesa en ningún pago."
+msgstr "The rate adjustment or extra expense (e.g. Uber) of a temporary assignment. While it's here, it doesn't count toward any pay."
 
 #: src/features/recruitment/pages/PoolPage.tsx
 msgid "El alta es de Reclutamiento: la Reclutadora captura la Fase 1 en la entrevista."
@@ -4192,6 +4257,10 @@ msgstr "Choose the owner"
 #: src/features/onboarding/types/prospectForm.schema.ts
 msgid "Elige al dueño del prospecto"
 msgstr "Choose the Prospect's owner"
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Elige el concepto…"
+msgstr "Choose the concept…"
 
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/pages/CatalogsPage.tsx
@@ -5534,6 +5603,15 @@ msgstr "Outside the hotel"
 msgid "Gana la primera que confirma: si alguien se adelanta, el tablero se actualiza al momento."
 msgstr "First to confirm wins: if someone gets there first, the board updates right away."
 
+#. placeholder {0}: formatMoney(Number(expenseRequested))
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Gasto de {0} pedido: pendiente de aprobación."
+msgstr "Expense of {0} requested: pending approval."
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Gasto pedido: queda pendiente de que lo apruebe el Observador"
+msgstr "Expense requested: pending the Observer's approval"
+
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
 msgid "Generando el código…"
 msgstr "Generating the code…"
@@ -5675,7 +5753,7 @@ msgstr "Up to 10 min late"
 #. placeholder {0}: formatDate(value.to)
 #: src/shared/components/DateRangeField.tsx
 msgid "Hasta el {0}"
-msgstr ""
+msgstr "To {0}"
 
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
 msgid "Hay auditorías con respuestas a este reactivo: no se puede eliminar."
@@ -6249,6 +6327,10 @@ msgstr "Approval is the BDC's"
 #: src/features/timesheet/pages/TimesheetPage.tsx
 msgid "La aprobación es del Manager"
 msgstr "Approval is up to the Manager"
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "La asignación quedó hecha, pero el ajuste/gasto no se pudo pedir. Vuelve a intentarlo."
+msgstr "The assignment went through, but the adjustment/expense couldn't be requested. Try again."
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
 #: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
@@ -7176,6 +7258,14 @@ msgstr "Hiring modalities"
 msgid "Montaña — Denver, Salt Lake City"
 msgstr "Mountain — Denver, Salt Lake City"
 
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Monto"
+msgstr "Amount"
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Monto del gasto, en dólares"
+msgstr "Expense amount, in dollars"
+
 #: src/features/observability/components/CohortSection.tsx
 msgid "Mostrar"
 msgstr "Show"
@@ -7193,12 +7283,14 @@ msgstr "Show or hide the menu"
 msgid "motivo"
 msgstr "reason"
 
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 #: src/features/personnel/components/ReportWorkerDialog.tsx
 #: src/features/personnel/components/StandByDialog.tsx
 #: src/features/recruitment/components/ChangeStateDialog.tsx
 #: src/features/recruitment/components/LiftBlacklistDialog.tsx
 #: src/features/recruitment/pages/BlacklistPage.tsx
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
 #: src/mobile/hotel/staff/StaffMemberPage.tsx
 #: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Motivo"
@@ -7220,15 +7312,24 @@ msgstr "Reason (goes to the log, required)"
 msgid "Motivo de la marca manual"
 msgstr "Reason for the manual punch"
 
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Motivo del ajuste de tarifa"
+msgstr "Rate adjustment reason"
+
 #: src/features/onboarding/components/ArchiveCycleDialog.tsx
 msgid "Motivo del cierre"
 msgstr "Reason for closing"
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Motivo del gasto"
+msgstr "Expense reason"
 
 #: src/features/recruitment/components/LiftBlacklistDialog.tsx
 msgid "Motivo del levantamiento <0>(obligatorio)</0>"
 msgstr "Reason for lifting <0>(required)</0>"
 
 #: src/features/admin/components/PendingHotelUsers.tsx
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Motivo del rechazo"
 msgstr "Rejection reason"
@@ -7364,12 +7465,8 @@ msgid "Nadie coincide con esos filtros esta semana. Cambia la requisición, el e
 msgstr "No one matches those filters this week. Change the requisition, the status or the hotel."
 
 #: src/features/timesheet/pages/TimesheetGlobalPage.tsx
-#~ msgid "Nadie coincide con esos filtros. Cambia el nombre, la requisición, el estado o el hotel."
-#~ msgstr "No one matches those filters. Change the name, the requisition, the status or the hotel."
-
-#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
 msgid "Nadie coincide con esos filtros. Cambia el nombre, la requisición, el estado, el hotel o el periodo."
-msgstr ""
+msgstr "No one matches these filters. Change the name, requisition, status, hotel, or period."
 
 #: src/mobile/hotel/staff/StaffPage.tsx
 msgid "Nadie coincide con la búsqueda."
@@ -7453,7 +7550,7 @@ msgstr "No collaborator matches these filters. Change or drop a filter to see mo
 
 #: src/features/timesheet/pages/TimesheetPage.tsx
 msgid "Ningún colaborador tiene registro entre esas fechas. Amplía el periodo o quítalo para ver todo."
-msgstr ""
+msgstr "No collaborator has a record between those dates. Widen the period or clear it to see everything."
 
 #: src/features/contracts/components/ContractRowList.tsx
 msgid "Ningún contrato coincide"
@@ -7600,7 +7697,7 @@ msgstr "Nobody is missing in the open requisitions."
 
 #: src/features/timesheet/pages/TimesheetPage.tsx
 msgid "No hay horas en ese periodo"
-msgstr ""
+msgstr "There are no hours in that period"
 
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "No hay hoteles libres: todos tienen ciclo abierto"
@@ -7751,6 +7848,10 @@ msgstr "The requisitions couldn't be loaded."
 msgid "No se pudieron cargar los ajustes del correo."
 msgstr "The email settings couldn't be loaded."
 
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
+msgid "No se pudieron cargar los ajustes pendientes. Reintenta en unos segundos."
+msgstr "Couldn't load the pending adjustments. Try again in a few seconds."
+
 #: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "No se pudieron cargar los catálogos."
 msgstr "The catalogs couldn't be loaded."
@@ -7813,6 +7914,7 @@ msgid "No se pudo aprobar la conversión. Inténtalo de nuevo."
 msgstr "Couldn't approve the conversion. Try again."
 
 #: src/features/admin/components/PendingHotelUsers.tsx
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
 msgid "No se pudo aprobar. Inténtalo de nuevo."
 msgstr "Could not approve. Try again."
 
@@ -8124,6 +8226,7 @@ msgid "No se pudo rechazar el documento. Inténtalo de nuevo."
 msgstr "The document couldn't be rejected. Try again."
 
 #: src/features/admin/components/PendingHotelUsers.tsx
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
 msgid "No se pudo rechazar. Inténtalo de nuevo."
 msgstr "Couldn't reject it. Try again."
 
@@ -8265,6 +8368,10 @@ msgstr "BD's name, e.g. Rocío Lima…"
 #: src/features/timesheet/components/TimesheetToolbar.tsx
 msgid "Nombre del colaborador, p. ej. Ana Rivera…"
 msgstr "Collaborator's name, e.g. Ana Rivera…"
+
+#: src/features/admin/pages/CatalogsPage.tsx
+msgid "Nombre del concepto, p. ej. Uber…"
+msgstr "Concept name, e.g. Uber…"
 
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Nombre del contacto de emergencia"
@@ -8474,6 +8581,10 @@ msgstr "Heads up: {activeContractNumber} is still in force for this hotel — on
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 msgid "opcional"
 msgstr "optional"
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Opcional, y las dos pueden ir juntas: cada una la aprueba el Observador por separado antes de que pese en el pago."
+msgstr "Optional, and both can go together: each one is approved by the Observer separately before it counts toward pay."
 
 #: src/features/onboarding/components/RegisterAttemptDialog.tsx
 msgid "Opcional: en una visita en frío puedes no encontrar a nadie"
@@ -8711,6 +8822,12 @@ msgstr "Pay rate"
 msgid "Pay rate por hora"
 msgstr "Pay rate per hour"
 
+#. placeholder {0}: row.requestedBy.fullName
+#. placeholder {1}: formatDateTime(row.requestedAt)
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
+msgid "Pedido por {0} · {1}"
+msgstr "Requested by {0} · {1}"
+
 #: src/features/contracts/components/ContractChecklist.tsx
 #: src/features/recruitment/components/PoolTable.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
@@ -8783,7 +8900,7 @@ msgstr "Period"
 
 #: src/shared/components/DateRangeField.tsx
 msgid "Periodo {label}"
-msgstr ""
+msgstr "Period {label}"
 
 #: src/features/worker/components/MobileShell.tsx
 #: src/features/worker/pages/PermissionsPage.tsx
@@ -8983,9 +9100,21 @@ msgstr "By person"
 msgid "Por posición"
 msgstr "By position"
 
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Por qué esta tarifa…"
+msgstr "Why this rate…"
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Por qué este gasto…"
+msgstr "Why this expense…"
+
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 msgid "Por qué no existe el ponche: rechazo de ubicación, teléfono sin batería…"
 msgstr "Why there's no punch: location rejected, phone out of battery…"
+
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
+msgid "Por qué no procede…"
+msgstr "Why it doesn't apply…"
 
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
 msgid "Por qué se libera este slot…"
@@ -9466,11 +9595,20 @@ msgstr "Reassigned the requisition"
 msgid "Recentrar"
 msgstr "Recenter"
 
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
+msgid "Rechazando…"
+msgstr "Rejecting…"
+
 #: src/features/admin/components/PendingHotelUsers.tsx
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
 msgid "Rechazar"
 msgstr "Reject"
+
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
+msgid "Rechazar ajuste"
+msgstr "Reject adjustment"
 
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
 msgid "Rechazar estará disponible próximamente"
@@ -10244,6 +10382,10 @@ msgstr "Yes, release slot"
 msgid "Sí, marcar expirado"
 msgstr "Yes, mark expired"
 
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
+msgid "Sí, rechazar"
+msgstr "Yes, reject"
+
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
 msgid "Sí: está en Gris y protegido"
 msgstr "Yes: they're in Gray and protected"
@@ -10311,6 +10453,10 @@ msgstr "No activity in the period"
 msgid "Sin actividad reciente"
 msgstr "No recent activity"
 
+#: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
+msgid "Sin ajustes pendientes: nada que aprobar por ahora."
+msgstr "No pending adjustments: nothing to approve for now."
+
 #: src/features/dashboard/components/HotelDashboard.tsx
 msgid "Sin aprobación no se paga"
 msgstr "No approval, no pay"
@@ -10345,6 +10491,10 @@ msgstr "No open cycle"
 #: src/features/team/pages/TeamPage.tsx
 msgid "Sin ciclos abiertos ahora mismo: todo lo suyo está convertido o cerrado."
 msgstr "No open cycles right now: everything of theirs is converted or closed."
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Sin conceptos en el catálogo: pídele al Administrador que agregue uno en Catálogos."
+msgstr "No concepts in the catalog yet: ask the Administrator to add one in Catalogs."
 
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Sin conexión: la marca no se puede guardar todavía. Vuelve a intentarlo cuando tengas señal."
@@ -10957,6 +11107,14 @@ msgstr "Requisition Board"
 msgid "Tarifa"
 msgstr "Rate"
 
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Tarifa acordada"
+msgstr "Agreed rate"
+
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Tarifa acordada, en dólares"
+msgstr "Agreed rate, in dollars"
+
 #: src/features/contracts/components/EditRateDialog.tsx
 msgid "Tarifa de facturación"
 msgstr "Bill rate"
@@ -11325,7 +11483,7 @@ msgstr "The whole hotel"
 
 #: src/shared/components/DateRangeField.tsx
 msgid "Todo el periodo"
-msgstr ""
+msgstr "The whole period"
 
 #: src/features/admin/components/HotelUsersSection.tsx
 #: src/features/admin/pages/UsersPage.tsx
@@ -11959,7 +12117,7 @@ msgstr "See all requisitions"
 #: src/features/timesheet/pages/TimesheetPage.tsx
 #: src/shared/components/DateRangeField.tsx
 msgid "Ver todo el periodo"
-msgstr ""
+msgstr "View the whole period"
 
 #: src/shared/constants/onboardingStatus.ts
 msgid "Verde"
