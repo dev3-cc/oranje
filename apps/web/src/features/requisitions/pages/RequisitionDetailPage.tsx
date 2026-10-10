@@ -443,8 +443,21 @@ export function RequisitionDetailPage(): ReactNode {
             authorizedAt={detail.authorizedAt}
             selectedId={selectedPosition?.id ?? ''}
             onSelect={setSelectedPositionId}
+            requisitionId={requisitionId}
+            canAssign={canParticipate && isOpenState}
           />
-          {selectedPosition && <SlotList position={selectedPosition} />}
+          {selectedPosition && (
+            <SlotList
+              position={selectedPosition}
+              requisitionId={requisitionId}
+              canAssign={canParticipate && isOpenState}
+              assignHint={
+                canParticipate
+                  ? t`Para llenar un slot, la requisición tiene que estar autorizada y en proceso. Ahora está en ${REQUISITION_STATUS_LABEL[detail.status]}.`
+                  : t`Llenar un slot es de Reclutamiento: la Reclutadora, su Líder de Grupo o el Manager de Reclutamiento.`
+              }
+            />
+          )}
         </div>
 
         {/* Se ocultó el 2026-09-15 y volvió a pedido de Hugo (2026-09-21):

@@ -210,7 +210,9 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
       <HotelBackdrop />
 
       {/* La tarjeta blanca es SOLO el formulario; el collage flota al lado, sobre el mosaico. */}
-      <div className="relative z-10 flex w-full max-w-5xl items-center gap-8 lg:gap-12">
+      {/* En móvil se apila, con las fotos arriba: estaban ocultas bajo `md` y
+          Hugo las quiere siempre (2026-10-09), aunque tapen el mosaico. */}
+      <div className="relative z-10 flex w-full max-w-5xl flex-col items-center gap-8 md:flex-row lg:gap-12">
         <motion.div
           initial={{ opacity: 0, y: 24, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -485,7 +487,7 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="relative hidden min-h-[600px] flex-1 md:block"
+          className="relative order-first h-56 w-full shrink-0 md:order-none md:h-auto md:min-h-[600px] md:w-auto md:flex-1"
         >
           <LoginCollage />
         </motion.aside>

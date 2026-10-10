@@ -25,6 +25,7 @@ import {
   REQUISITION_STATUSES,
 } from '@/shared/constants/requisitionStatus'
 import { useCan } from '@/shared/hooks/useCan'
+import { readApiError } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { matchesSearch } from '@/shared/lib/text'
 
@@ -108,6 +109,7 @@ export function RequisitionBoardPage(): ReactNode {
     data: board,
     isLoading,
     isError,
+    error: boardError,
     refetch,
     isFetching,
     fulfilledTimeStamp,
@@ -247,12 +249,23 @@ export function RequisitionBoardPage(): ReactNode {
 
       {isLoading && <TableSkeleton rows={6} columns={6} />}
 
+      {/* Un 403 no es un problema de red: decirlo así manda a la persona a
+          revisar su internet por algo que nunca va a cambiar (Hugo,
+          2026-10-09, entrando como Contadora). */}
       {isError && (
         <LoadError
-          message={t`No se pudo cargar el Tablero de Requisiciones. Revisa tu conexión e inténtalo de nuevo.`}
-          onRetry={() => {
-            void refetch()
-          }}
+          message={
+            readApiError(boardError).status === 403
+              ? t`Tu rol no tiene acceso al Tablero de Requisiciones. Lo ven el hotel que las pide y Reclutamiento.`
+              : t`No se pudo cargar el Tablero de Requisiciones. Revisa tu conexión e inténtalo de nuevo.`
+          }
+          {...(readApiError(boardError).status === 403
+            ? {}
+            : {
+                onRetry: () => {
+                  void refetch()
+                },
+              })}
         />
       )}
 

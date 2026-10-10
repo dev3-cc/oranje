@@ -90,3 +90,72 @@
   z-index: 60;
   pointer-events: auto;
 }
+
+/**
+ * El camino del sidebar: el módulo activo se funde con el contenido.
+ *
+ * Idea de Hugo (2026-10-09), a partir de una barra ajena: en vez de pintar el
+ * activo como una píldora suelta, toma el color del contenido y las esquinas
+ * de arriba y abajo se curvan hacia adentro, así que la vista parece abrirse
+ * un camino desde el menú.
+ *
+ * Aquí va al revés que en la referencia —su barra es oscura y el contenido
+ * claro; la nuestra es blanca y el contenido beige— pero el contraste existe,
+ * que es lo único que el truco necesita.
+ *
+ * Es UNA sola pieza que se desliza, no una decoración que nace y muere con
+ * cada módulo: así se mueve de uno a otro en vez de desaparecer y reaparecer
+ * más abajo. Su posición la mide el componente.
+ *
+ * El ancho, el radio, el recorte y el fondo NO viven aquí: el botón de shadcn
+ * los trae como utilidades y las utilidades de Tailwind ganan sobre esta capa.
+ * Van en el componente con `!`, donde sí compiten de tú a tú. Aquí queda solo
+ * lo que nadie disputa.
+ */
+@layer components {
+  .sidebar-camino {
+    /* Solo `transform` y `height`: mover con `top` obliga al navegador a
+       recalcular la página en cada cuadro y se ve a tirones. */
+    transition:
+      transform 220ms cubic-bezier(0.4, 0, 0.2, 1),
+      height 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Las dos curvas. Son bloques del color del contenido a los que se les
+     recorta un cuarto de disco con una máscara: una esquina CÓNCAVA no se
+     puede pedir con `border-radius`. */
+  .sidebar-camino::before,
+  .sidebar-camino::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    width: var(--camino-r);
+    height: var(--camino-r);
+    background: var(--bg);
+    pointer-events: none;
+  }
+
+  /* Arriba: el disco se centra en la esquina superior izquierda del bloque,
+     así el beige solo sobrevive pegado al borde derecho y crece al bajar. */
+  .sidebar-camino::before {
+    top: calc(var(--camino-r) * -1);
+    mask: radial-gradient(circle var(--camino-r) at 0 0, transparent 99%, #000 100%);
+  }
+
+  /* Abajo: el mismo disco, espejado. */
+  .sidebar-camino::after {
+    bottom: calc(var(--camino-r) * -1);
+    mask: radial-gradient(circle var(--camino-r) at 0 100%, transparent 99%, #000 100%);
+  }
+
+  /* Quien pidió menos movimiento ve el cambio de golpe, sin recorrido. */
+  @media (prefers-reduced-motion: reduce) {
+    .sidebar-camino {
+      transition: none;
+    }
+  }
+}
+
+:root {
+  --camino-r: 0.75rem;
+}

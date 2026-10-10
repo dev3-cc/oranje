@@ -23,15 +23,33 @@ const SLOT_STATUS_LABEL: Record<RequisitionSlot['status'], MessageDescriptor> = 
   free: msg`Libre`,
 }
 
-function SlotRow({ slot }: { slot: RequisitionSlot }): ReactNode {
+function SlotRow({
+  slot,
+  assignHref,
+}: {
+  slot: RequisitionSlot
+  /** A dónde lleva un slot libre; `null` = esta fila no se puede llenar desde aquí. */
+  assignHref: string | null
+}): ReactNode {
   const { t, i18n } = useLingui()
   const isOccupied = slot.status === 'occupied'
+
+  const destino =
+    isOccupied && slot.assigneeId !== null && slot.assigneeName !== null
+      ? {
+          href: `/collaborator-pool/${slot.assigneeId}`,
+          nombre: t`Ver el perfil de ${slot.assigneeName}`,
+        }
+      : assignHref !== null
+        ? { href: assignHref, nombre: t`Asignar al siguiente slot libre` }
+        : null
 
   return (
     <li
       className={cn(
-        'flex items-center gap-4 rounded-lg border px-4 py-3.5',
+        'relative flex items-center gap-4 rounded-lg border px-4 py-3.5',
         isOccupied ? 'border-line bg-surface' : 'border-transparent bg-surface-2',
+        destino !== null && 'transition-colors hover:bg-surface-3',
       )}
     >
       <span
@@ -45,22 +63,8 @@ function SlotRow({ slot }: { slot: RequisitionSlot }): ReactNode {
       </span>
 
       <div className="min-w-0 flex-1">
-        {/* El nombre lleva al expediente: quien mira el slot quiere saber quién
-            es esa persona, no solo que el slot está ocupado (Hugo, 2026-09-21).
-            El API decide si puede verlo: Reclutamiento siempre, el hotel solo a
-            quien tiene asignado — y este slot es suyo. */}
         <p className={cn('truncate text-sm font-medium', isOccupied ? 'text-ink' : 'text-ink-3')}>
-          {slot.assigneeId && slot.assigneeName ? (
-            <Link
-              to={`/collaborator-pool/${slot.assigneeId}`}
-              className="rounded-sm hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
-              title={t`Ver expediente`}
-            >
-              {slot.assigneeName}
-            </Link>
-          ) : (
-            (slot.assigneeName ?? t`Sin asignar`)
-          )}
+          {slot.assigneeName ?? t`Sin asignar`}
         </p>
         <p className="mt-0.5 truncate text-sm text-ink-3">
           {/*
@@ -73,6 +77,24 @@ function SlotRow({ slot }: { slot: RequisitionSlot }): ReactNode {
             : slot.offerChannel && i18n._(slot.offerChannel)}
         </p>
       </div>
+
+      {/* Toda la fila es un enlace (Hugo, 2026-10-09): libre lleva a llenarla,
+          ocupada al perfil de quien la ocupa. Es un enlace estirado y no un
+          `onClick` en el `li` para que se abra en otra pestaña, se alcance con
+          el tabulador y el lector de pantalla lo anuncie como lo que es.
+          El del slot libre dice «el siguiente libre» y no el número de ESTA
+          fila: la pantalla de destino siempre llena el siguiente slot libre de
+          la posición, así que prometer el 2 y llenar el 1 sería mentir.
+          Para el perfil, el API decide si puede verlo: Reclutamiento siempre,
+          el hotel solo a quien tiene asignado — y este slot es suyo. */}
+      {destino !== null && (
+        <Link
+          to={destino.href}
+          className="absolute inset-0 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
+        >
+          <span className="sr-only">{destino.nombre}</span>
+        </Link>
+      )}
 
       <span
         className={cn(
@@ -90,9 +112,31 @@ function SlotRow({ slot }: { slot: RequisitionSlot }): ReactNode {
   )
 }
 
-export function SlotList({ position }: { position: RequisitionPosition }): ReactNode {
+export function SlotList({
+  position,
+  requisitionId,
+  canAssign,
+  assignHint,
+}: {
+  position: RequisitionPosition
+  requisitionId: string
+  /**
+   * Si desde esta ficha se puede llenar un slot. Lo decide la pantalla: pide
+   * `requisitions:take` Y que la requisición esté abierta, que son las dos
+   * condiciones reales de la pantalla de asignación. Sin eso no se dibuja el
+   * enlace — un renglón que al tocarlo rebota es peor que uno quieto.
+   */
+  canAssign: boolean
+  /**
+   * Por qué no se puede llenar desde aquí, cuando no se puede. Sin esto el
+   * renglón simplemente no responde y no hay forma de saber si falta un
+   * permiso, falta la firma o es un defecto (Hugo, 2026-10-09).
+   */
+  assignHint?: string
+}): ReactNode {
   const { t } = useLingui()
   const { index, name } = position
+  const assignHref = canAssign ? `/self-pick/${requisitionId}/${position.id}` : null
 
   return (
     <SectionCard
@@ -103,9 +147,19 @@ export function SlotList({ position }: { position: RequisitionPosition }): React
           : t`Cada slot es un lugar por cubrir. Un slot libre se puede borrar; uno ocupado no.`
       }
     >
+      {!canAssign &&
+        assignHint !== undefined &&
+        position.slots.some((s) => s.status === 'free') && (
+          <p className="mb-3 rounded-md bg-surface-2 px-3 py-2 text-sm text-ink-2">{assignHint}</p>
+        )}
+
       <ul className="flex flex-col gap-3">
         {position.slots.map((slot) => (
-          <SlotRow key={slot.id} slot={slot} />
+          <SlotRow
+            key={slot.id}
+            slot={slot}
+            assignHref={slot.status === 'free' ? assignHref : null}
+          />
         ))}
       </ul>
     </SectionCard>

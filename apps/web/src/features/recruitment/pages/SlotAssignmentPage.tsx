@@ -152,6 +152,13 @@ export function SlotAssignmentPage(): ReactNode {
     { skip: requisitionId === '' || positionId === '', ...AL_ATERRIZAR },
   )
   const { data: workers = [] } = useGetAssignableWorkersQuery(undefined, AL_ATERRIZAR)
+  /**
+   * El lugar elegido (Hugo, 2026-10-09). `null` = «el que siga», que es el
+   * comportamiento de siempre y el que usa el Self-Pick. Se guarda el ordinal
+   * y no el id porque el tablero se reconstruye por `quantity` y los ids de
+   * los libres no llegan al cliente; el ordinal es único dentro de la posición.
+   */
+  const [slotElegido, setSlotElegido] = useState<number | null>(null)
   /* Solo el pago (Hugo, 2026-09-22): nunca la factura al hotel, que es de
      Ventas. `null` es honesto — sin contrato activo o sin esa posición
      cotizada — y no bloquea la asignación. */
@@ -265,8 +272,14 @@ export function SlotAssignmentPage(): ReactNode {
       expensePayConceptId !== '' &&
       expenseSettlementEffect !== '')
 
+  /* Si el elegido se ocupó mientras tanto (RR-15), se cae al siguiente libre
+     en vez de mandar al servidor algo que ya sabemos que va a rechazar. */
+  const libres = board.slots.filter((slot) => slot.workerName === null).map((s) => s.ordinal)
+  const objetivo =
+    slotElegido !== null && libres.includes(slotElegido) ? slotElegido : board.nextFreeOrdinal
+
   const canSubmit =
-    board.nextFreeOrdinal !== null &&
+    objetivo !== null &&
     workerId !== '' &&
     (type !== 'TEMPORARY' || endDate !== '') &&
     isRateFilled &&
@@ -308,6 +321,11 @@ export function SlotAssignmentPage(): ReactNode {
       }
       const created = await assign({
         positionId,
+        /* Solo cuando lo eligió una persona. Si no, decide el servidor: el
+           tablero se reconstruye en el cliente y dictarle un ordinal a partir
+           de una vista equivocada convierte un desajuste silencioso en un
+           rechazo duro — que es justo lo que pasó (Hugo, 2026-10-09). */
+        ...(slotElegido !== null ? { slotOrdinal: slotElegido } : {}),
         workerId,
         type,
         ...(startDate !== '' ? { startDate } : {}),
@@ -422,105 +440,145 @@ export function SlotAssignmentPage(): ReactNode {
           }
         >
           <ul className="divide-y divide-line">
-            {board.slots.map((slot) => (
-              <li key={slot.ordinal} className="py-3">
-                {/* `flex-wrap`: con nombre largo + tipo + estado + Liberar no
+            {board.slots.map((slot) => {
+              /* Cuál se va a llenar: el panel de la derecha dice el número,
+                 pero aquí no se veía cuál de la lista era (Hugo, 2026-10-09). */
+              const esElQueSigue = slot.ordinal === objetivo
+              const sePuedeElegir = slot.workerName === null && !esElQueSigue
+              return (
+                <li
+                  key={slot.ordinal}
+                  className={cn(
+                    'relative py-3',
+                    esElQueSigue && '-mx-2 rounded-lg bg-o-50/60 px-2',
+                    sePuedeElegir && '-mx-2 rounded-lg px-2 transition-colors hover:bg-surface-2',
+                  )}
+                  aria-current={esElQueSigue ? 'true' : undefined}
+                >
+                  {/* Elegir OTRO lugar libre (Hugo, 2026-10-09). Botón estirado
+                      sobre el renglón: la fila entera es el blanco, y el teclado
+                      lo alcanza como un control de verdad. */}
+                  {sePuedeElegir && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSlotElegido(slot.ordinal)
+                      }}
+                      className="absolute inset-0 z-10 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
+                    >
+                      <span className="sr-only">
+                        {t`Llenar el slot ${String(slot.ordinal)} en vez de este`}
+                      </span>
+                    </button>
+                  )}
+                  {/* `flex-wrap`: con nombre largo + tipo + estado + Liberar no
                     caben en una sola línea en mobile — antes se salían del
                     borde en vez de bajar de renglón (Hugo, 2026-10-08). */}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                  <span
-                    className={cn(
-                      'flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold',
-                      slot.workerName === null ? 'bg-o-50 text-o-700' : 'bg-surface-2 text-ink-3',
-                    )}
-                  >
-                    {slot.ordinal}
-                  </span>
-                  <div className="min-w-0 flex-1 basis-32">
-                    <p className="truncate text-sm font-medium text-ink">
-                      {slot.workerName ?? '—'}
-                    </p>
-                    {IS_DEV_UI && (
-                      <code className="text-[11px] text-ink-4">ordinal {slot.ordinal}</code>
-                    )}
-                  </div>
-                  <div className="ml-[44px] flex flex-wrap items-center gap-2 sm:ml-0">
-                    {slot.assignmentType !== null && (
-                      <span className="text-xs text-ink-3">
-                        {ASSIGNMENT_TYPE_LABEL[slot.assignmentType] ?? slot.assignmentType}
-                      </span>
-                    )}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                     <span
                       className={cn(
-                        'rounded-full px-3 py-1 text-xs font-medium',
-                        slot.workerName === null
-                          ? 'border border-dashed border-o-500 text-o-700'
-                          : 'bg-surface-2 text-ink-2',
+                        'flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold',
+                        slot.workerName === null ? 'bg-o-50 text-o-700' : 'bg-surface-2 text-ink-3',
                       )}
                     >
-                      {slot.workerName === null ? t`libre` : t`ocupado`}
+                      {slot.ordinal}
                     </span>
-                    {/* Antes de esto no había forma de deshacer una asignación
-                        mal hecha desde la pantalla: solo por API. */}
-                    {slot.assignmentId !== null && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setReleaseTarget(
-                            releaseTarget === slot.assignmentId ? null : slot.assignmentId,
-                          )
-                          setReleaseReason('')
-                        }}
-                        className="shrink-0 cursor-pointer rounded-md border border-line px-2.5 py-1 text-xs font-medium text-ink-2 transition-colors hover:bg-surface-2"
-                      >
-                        <Trans>Liberar</Trans>
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {releaseTarget !== null && releaseTarget === slot.assignmentId && (
-                  <div className="mt-2.5 ml-[52px] flex flex-col gap-2 rounded-md bg-surface-2 p-3">
-                    <label className="flex flex-col gap-1">
-                      <span className="text-xs text-ink-3">
-                        <Trans>Motivo (queda en el journal, obligatorio)</Trans>
-                      </span>
-                      <Input
-                        value={releaseReason}
-                        onChange={(event) => {
-                          setReleaseReason(event.target.value)
-                        }}
-                        placeholder={t`Por qué se libera este slot…`}
-                        aria-label={t`Motivo para liberar el slot`}
-                      />
-                    </label>
-                    {releaseError !== undefined && (
-                      <p role="alert" className="text-xs text-red">
-                        {releaseErrorMessage(releaseError, i18n)}
+                    <div className="min-w-0 flex-1 basis-32">
+                      <p className="truncate text-sm font-medium text-ink">
+                        {slot.workerName ?? '—'}
                       </p>
-                    )}
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        onClick={() => {
-                          setReleaseTarget(null)
-                        }}
+                      {IS_DEV_UI && (
+                        <code className="text-[11px] text-ink-4">ordinal {slot.ordinal}</code>
+                      )}
+                    </div>
+                    <div className="ml-[44px] flex flex-wrap items-center gap-2 sm:ml-0">
+                      {slot.assignmentType !== null && (
+                        <span className="text-xs text-ink-3">
+                          {ASSIGNMENT_TYPE_LABEL[slot.assignmentType] ?? slot.assignmentType}
+                        </span>
+                      )}
+                      <span
+                        className={cn(
+                          'rounded-full px-3 py-1 text-xs font-medium',
+                          slot.workerName === null
+                            ? 'border border-dashed border-o-500 text-o-700'
+                            : 'bg-surface-2 text-ink-2',
+                        )}
                       >
-                        <Trans>Cancelar</Trans>
-                      </Button>
-                      <Button
-                        variant="primary"
-                        disabled={releaseReason.trim() === '' || isReleasing}
-                        onClick={() => {
-                          void confirmRelease()
-                        }}
-                      >
-                        {isReleasing ? <Trans>Liberando…</Trans> : <Trans>Sí, liberar slot</Trans>}
-                      </Button>
+                        {esElQueSigue ? (
+                          <Trans>se llena ahora</Trans>
+                        ) : slot.workerName === null ? (
+                          <Trans>libre · elegir</Trans>
+                        ) : (
+                          t`ocupado`
+                        )}
+                      </span>
+                      {/* Antes de esto no había forma de deshacer una asignación
+                        mal hecha desde la pantalla: solo por API. */}
+                      {slot.assignmentId !== null && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReleaseTarget(
+                              releaseTarget === slot.assignmentId ? null : slot.assignmentId,
+                            )
+                            setReleaseReason('')
+                          }}
+                          className="relative z-20 shrink-0 cursor-pointer rounded-md border border-line px-2.5 py-1 text-xs font-medium text-ink-2 transition-colors hover:bg-surface-2"
+                        >
+                          <Trans>Liberar</Trans>
+                        </button>
+                      )}
                     </div>
                   </div>
-                )}
-              </li>
-            ))}
+
+                  {releaseTarget !== null && releaseTarget === slot.assignmentId && (
+                    <div className="mt-2.5 ml-[52px] flex flex-col gap-2 rounded-md bg-surface-2 p-3">
+                      <label className="flex flex-col gap-1">
+                        <span className="text-xs text-ink-3">
+                          <Trans>Motivo (queda en el journal, obligatorio)</Trans>
+                        </span>
+                        <Input
+                          value={releaseReason}
+                          onChange={(event) => {
+                            setReleaseReason(event.target.value)
+                          }}
+                          placeholder={t`Por qué se libera este slot…`}
+                          aria-label={t`Motivo para liberar el slot`}
+                        />
+                      </label>
+                      {releaseError !== undefined && (
+                        <p role="alert" className="text-xs text-red">
+                          {releaseErrorMessage(releaseError, i18n)}
+                        </p>
+                      )}
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          onClick={() => {
+                            setReleaseTarget(null)
+                          }}
+                        >
+                          <Trans>Cancelar</Trans>
+                        </Button>
+                        <Button
+                          variant="primary"
+                          disabled={releaseReason.trim() === '' || isReleasing}
+                          onClick={() => {
+                            void confirmRelease()
+                          }}
+                        >
+                          {isReleasing ? (
+                            <Trans>Liberando…</Trans>
+                          ) : (
+                            <Trans>Sí, liberar slot</Trans>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </li>
+              )
+            })}
           </ul>
         </SectionCard>
 
@@ -528,7 +586,7 @@ export function SlotAssignmentPage(): ReactNode {
           title={
             board.nextFreeOrdinal === null
               ? t`Renglón completo`
-              : t`Asignar al slot ${String(board.nextFreeOrdinal)}`
+              : t`Asignar al slot ${String(objetivo ?? board.nextFreeOrdinal)}`
           }
           subtitle={
             IS_DEV_UI ? 'coverage.assignment' : t`Elige quién ocupa el siguiente slot libre`
