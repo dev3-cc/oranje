@@ -34,6 +34,12 @@ Reglas:
 
 ## 2026-10-10
 
+### 10:46 — Observador: altas de candidatos por reclutadora
+
+**Qué:** en Reclutamiento › «Por persona», la métrica «Candidatos dados de alta» y el evento «Dio de alta al candidato» (con su nombre) en el detalle de cada persona. Por cada candidato creado en el periodo (`createdAt`, tope de 60) se pide su historial (`/workers/:id/history`, solo al abrir la vista) y su primera entrada —sin estado de origen— dice quién lo dio de alta. Se suma a la fila de la bitácora con el mismo nombre o abre una nueva. La tabla pasa a 6 columnas.
+**Por qué:** Hugo: el Observador debe ver si la reclutadora dio de alta candidatos nuevos. El alta del API (`workers.repository.ts` `create`) escribe esa primera entrada del historial con el usuario que la hizo; `WorkerApi` no trae `createdBy`, así que no hizo falta tocar el back. El historial trae el nombre, no el rol: se agrupa por nombre.
+**Archivos:** `src/features/observability/lib/people.ts`, `src/features/observability/lib/people.spec.ts`, `src/features/observability/tabs/RecruitmentTab.tsx`, `src/locales/es/messages.po`, `src/locales/en/messages.po`.
+
 ### 09:25 — App: aviso de privacidad en `public/`
 
 **Qué:** `public/privacidad.html` (español) y `public/privacy.html` (inglés): aviso de privacidad estático, sin JavaScript, con lo que la app recolecta hoy (cuenta, perfil, SSN/ITIN, tipo de sangre y contacto de emergencia, ubicación solo al ponchar, selfie/QR, datos del hotel) y con quién se comparte. Se agrega `corepack pnpm -F @oranje/mobile add @capacitor/filesystem @capacitor/share` (dependencias de `apps/mobile`, ver la entrada de abajo).

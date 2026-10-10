@@ -2081,6 +2081,10 @@ msgstr "Cancel draft"
 msgid "Cancelar edición"
 msgstr "Cancel editing"
 
+#: src/features/observability/lib/people.ts
+msgid "Candidatos dados de alta"
+msgstr "Candidates signed up"
+
 #: src/features/requisitions/components/AuthorizationPositionsTable.tsx
 #: src/features/requisitions/components/PositionsTable.tsx
 msgid "Cant."
@@ -3321,6 +3325,10 @@ msgstr "Days without anomalies"
 #: src/features/timesheet/pages/TimesheetGlobalPage.tsx
 msgid "Diferencia"
 msgstr "Difference"
+
+#: src/features/observability/lib/people.ts
+msgid "Dio de alta al candidato"
+msgstr "Signed up the candidate"
 
 #: src/features/onboarding/components/HotelDataCard.tsx
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
@@ -9407,8 +9415,10 @@ msgid "Sáb"
 msgstr "Sat"
 
 #: src/features/observability/tabs/RecruitmentTab.tsx
-msgid "Sale de la bitácora de las requisiciones: quién las tomó, soltó o reasignó. A quién asignó cada reclutador no se ve: eso se registra en otra bitácora que el Observador no lee. Quien no movió ninguna requisición no aparece."
-msgstr "Comes from the requisitions' log: who took, released or reassigned them. Who each recruiter assigned isn't shown: that's recorded in another log the Observer can't read. Anyone who didn't move a requisition doesn't appear."
+msgid "Sale de la bitácora de las requisiciones (quién las tomó, soltó o reasignó) y del historial de cada candidato nuevo (quién lo dio de alta). A quién asignó cada reclutador no se ve: eso se registra en otra bitácora que el Observador no lee. Quien no movió ninguna requisición ni dio de alta a nadie no aparece."
+msgstr "It comes from the requisitions' log (who took, dropped or reassigned them) and from each new candidate's history (who signed them up). Who each recruiter assigned isn't shown: that's recorded in another log the Observer can't read. Anyone who didn't move a requisition or sign anyone up doesn't appear."
+
+#: src/features/observability/tabs/RecruitmentTab.tsx
 
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
 msgid "Sale del Pool mientras el veto viva; el historial completo queda y solo el Administrador lo levanta."
