@@ -34,6 +34,12 @@ Reglas:
 
 ## 2026-10-10
 
+### 11:55 — Router: quitar el shell duplicado que dejó el merge de staging
+
+**Qué:** se borra de `app/router.tsx` el bloque `{ Component: AppShell, children: [...] }` que el merge `1826984` (staging → rama-geo) volvió a meter junto a `staffShellRoute`; la única ruta nueva de ese bloque, `pay-adjustments` (cola de ajustes del Observador, #202/#203), pasa a `app/staffRoutes.tsx`.
+**Por qué:** el lint de staging falló (11 errores `no-unsafe-*` en `router.tsx`): el bloque usaba `AppShell`, `RoleHome`, `FULL_WIDTH`, `LEGACY_STAFF_ROUTES`, `PENDING_MODULES` y `ModulePlaceholder`, que el router ya no importa porque las rutas del staff viven en `staffRoutes.tsx` (las comparte la app). Las demás 32 rutas del bloque ya estaban allá; el web queda con las mismas rutas.
+**Archivos:** `src/app/router.tsx`, `src/app/staffRoutes.tsx`.
+
 ### 11:40 — Formato de Prettier en los avisos de privacidad
 
 **Qué:** `prettier --write` sobre `public/privacidad.html` y `public/privacy.html`; solo cambia el formato, no el texto.
