@@ -32,6 +32,20 @@ Reglas:
 
 ---
 
+## 2026-10-10
+
+### 09:25 — App: aviso de privacidad en `public/`
+
+**Qué:** `public/privacidad.html` (español) y `public/privacy.html` (inglés): aviso de privacidad estático, sin JavaScript, con lo que la app recolecta hoy (cuenta, perfil, SSN/ITIN, tipo de sangre y contacto de emergencia, ubicación solo al ponchar, selfie/QR, datos del hotel) y con quién se comparte. Se agrega `corepack pnpm -F @oranje/mobile add @capacitor/filesystem @capacitor/share` (dependencias de `apps/mobile`, ver la entrada de abajo).
+**Por qué:** Hugo pidió las políticas de privacidad dentro de la pantalla de Permisos. La pantalla nativa (Android e iOS) abre este mismo HTML desde el bundle de la app, y la web lo sirve en `/privacidad.html`: esa es la URL que pide App Store Connect. Es contenido nuevo: ninguna pantalla del web cambia. Borrador para revisión legal (plazos de conservación y el correo `privacidad@oranjepeople.com` por confirmar).
+**Archivos:** `public/privacidad.html`, `public/privacy.html`.
+
+### 09:20 — App: «Descargar QR» funciona dentro de la app
+
+**Qué:** `mobile/nativeDownloads.ts`, instalado desde `mobile/main.tsx`: (1) una liga `target="_blank"` del mismo origen se abre en la app con el router; (2) se define `window.saveAs`, que jsPDF usa en vez de su `<a download>`, para escribir el PDF en la caché (`@capacitor/filesystem`) y abrir la hoja de compartir del sistema (`@capacitor/share`). La hoja del QR, que vive fuera del shell, se monta en la app dentro de `WithBackBar` (`mobile/layouts.tsx`): barra con «Volver» y su `Toaster`.
+**Por qué:** Hugo: «Descargar QR» no funcionaba en la app. En iOS el `_blank` acababa en `UIApplication.open` con un URL `capacitor://`, y en Android recargaba la app; además el WebView no descarga `blob:`. La comparación de origen se hace por esquema y host: con `capacitor://` `URL.origin` vale `"null"` (lo encontró la prueba). Verificado en el emulador Android: la hoja se abre con «Volver», «Descargar» abre la hoja de compartir con `qr-ponche-<hotel>.pdf`, cerrarla no muestra error y «Volver» regresa al dashboard. Solo app; el web no cambia.
+**Archivos:** `src/mobile/nativeDownloads.ts`, `src/mobile/nativeDownloads.spec.ts`, `src/mobile/layouts.tsx`, `src/mobile/router.tsx`, `src/mobile/main.tsx`, `src/locales/es/messages.po`, `src/locales/en/messages.po`.
+
 ## 2026-10-09
 
 ### 16:49 — App iOS: las fotos de hotel se ven

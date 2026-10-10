@@ -10,6 +10,7 @@ import { Provider } from 'react-redux'
 import { RouterProvider } from 'react-router'
 
 import { installNativeApiFetch } from './nativeApiFetch'
+import { installNativeDownloads } from './nativeDownloads'
 import { installNativeHotelPhotos } from './nativeHotelPhotos'
 import { mobileRouter } from './router'
 
@@ -31,6 +32,12 @@ installNativeApiFetch(import.meta.env.VITE_API_URL)
 /* En iOS, las fotos de hotel de Google por el HTTP nativo con el referrer de la
    web: con el origen `capacitor://` Google las rechaza (ver `nativeHotelPhotos.ts`). */
 installNativeHotelPhotos()
+
+/* «Descargar QR»: la hoja se abre en la app y el PDF va a la hoja de compartir
+   del sistema; el WebView no descarga archivos (ver `nativeDownloads.ts`). */
+installNativeDownloads((path) => {
+  void mobileRouter.navigate(path)
+})
 
 const container = document.getElementById('root')
 if (!container) throw new Error('Falta #root en index.html')

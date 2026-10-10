@@ -1,7 +1,7 @@
 import { type ReactElement } from 'react'
 import { createBrowserRouter, Navigate, useLocation, useParams } from 'react-router'
 
-import { HotelOnly, WithToaster } from './layouts'
+import { HotelOnly, WithBackBar, WithToaster } from './layouts'
 import { MobileRoleHome } from './MobileRoleHome'
 import { NativePermissionsRoute } from './NativePermissionsRoute'
 import { PermissionsOnLaunch } from './PermissionsOnLaunch'
@@ -197,7 +197,10 @@ export const mobileRouter = createBrowserRouter([
         children: [
           {
             Component: HotelOnly,
-            children: [punchQrPrintRoute, staffShellRouteForApp],
+            children: [
+              { Component: WithBackBar, children: [punchQrPrintRoute] },
+              staffShellRouteForApp,
+            ],
           },
         ],
       },

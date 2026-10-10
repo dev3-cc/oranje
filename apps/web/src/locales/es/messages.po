@@ -7651,6 +7651,10 @@ msgstr "No se pudo eliminar. Inténtalo de nuevo."
 msgid "No se pudo generar el PDF. Inténtalo de nuevo."
 msgstr "No se pudo generar el PDF. Inténtalo de nuevo."
 
+#: src/mobile/nativeDownloads.ts
+msgid "No se pudo guardar el archivo. Inténtalo de nuevo."
+msgstr "No se pudo guardar el archivo. Inténtalo de nuevo."
+
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "No se pudo guardar el colaborador. Revisa los datos e inténtalo de nuevo."
 msgstr "No se pudo guardar el colaborador. Revisa los datos e inténtalo de nuevo."
@@ -11543,6 +11547,7 @@ msgid "Vista tabla"
 msgstr "Vista tabla"
 
 #: src/layouts/AppShell.tsx
+#: src/mobile/layouts.tsx
 msgid "Volver"
 msgstr "Volver"
 
