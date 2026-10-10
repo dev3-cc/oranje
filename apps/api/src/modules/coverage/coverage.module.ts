@@ -12,10 +12,18 @@ import { BlacklistService } from './blacklist/blacklist.service.js'
 import { ParticipationController } from './participation/participation.controller.js'
 import { ParticipationRepository } from './participation/participation.repository.js'
 import { ParticipationService } from './participation/participation.service.js'
+import { PayAdjustmentsController } from './pay-adjustments/pay-adjustments.controller.js'
+import { PayAdjustmentsRepository } from './pay-adjustments/pay-adjustments.repository.js'
+import { PayAdjustmentsService } from './pay-adjustments/pay-adjustments.service.js'
 
 @Module({
   imports: [IdentityModule, NotificationsModule],
-  controllers: [ParticipationController, AssignmentsController, BlacklistController],
+  controllers: [
+    ParticipationController,
+    AssignmentsController,
+    BlacklistController,
+    PayAdjustmentsController,
+  ],
   providers: [
     ParticipationService,
     ParticipationRepository,
@@ -23,7 +31,9 @@ import { ParticipationService } from './participation/participation.service.js'
     AssignmentsRepository,
     BlacklistService,
     BlacklistRepository,
+    PayAdjustmentsService,
+    PayAdjustmentsRepository,
   ],
-  exports: [ParticipationService, AssignmentsService, BlacklistService],
+  exports: [ParticipationService, AssignmentsService, BlacklistService, PayAdjustmentsService],
 })
 export class CoverageModule {}

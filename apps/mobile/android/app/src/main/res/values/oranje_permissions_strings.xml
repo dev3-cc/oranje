@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- La pantalla nativa de Permisos, en español (idioma por defecto). El inglés vive en values-en. -->
+<resources>
+    <string name="perm_eyebrow">PERMISOS</string>
+    <string name="perm_greeting">Hola, %1$s</string>
+    <string name="perm_greeting_anonymous">Hola</string>
+    <string name="perm_summary_ready">Todo listo para ponchar.</string>
+    <string name="perm_summary_missing">Antes de ponchar, activa lo que falta.</string>
+
+    <string name="perm_location_title">Ubicación</string>
+    <string name="perm_location_body">Confirma que estás en el hotel cuando ponchas. Solo se usa en ese momento.</string>
+    <string name="perm_gps_title">GPS del teléfono</string>
+    <string name="perm_gps_body">Sin el GPS encendido el teléfono no puede dar tu ubicación, aunque la app tenga permiso.</string>
+    <string name="perm_camera_title">Cámara</string>
+    <string name="perm_camera_body">Para tu foto de Entrada y Salida, y para leer el código QR del hotel.</string>
+
+    <string name="perm_state_granted">Permitido</string>
+    <string name="perm_state_missing">Sin permiso</string>
+    <string name="perm_state_blocked">Bloqueado</string>
+    <string name="perm_state_approximate">Solo aproximada</string>
+    <string name="perm_state_on">Encendido</string>
+    <string name="perm_state_off">Apagado</string>
+
+    <string name="perm_hint_blocked">Lo negaste antes: ahora solo se activa desde la configuración del teléfono.</string>
+    <string name="perm_hint_approximate">Con la ubicación aproximada el sistema puede creer que estás fuera del hotel. Activa la precisa.</string>
+
+    <string name="perm_action_grant">Dar permiso</string>
+    <string name="perm_action_settings">Abrir configuración</string>
+    <string name="perm_action_precise">Usar ubicación precisa</string>
+    <string name="perm_action_gps">Encender GPS</string>
+
+    <string name="perm_punch">Ponchar</string>
+    <string name="perm_punch_locked">Activa los permisos de arriba para poder ponchar.</string>
+    <string name="perm_go_home">Ir a Inicio</string>
+
+    <!-- Perfil de hotel (Supervisor, Manager de Área, Manager General). -->
+    <string name="perm_notifications_title">Notificaciones</string>
+    <string name="perm_notifications_body">Para avisarte cuando una requisición necesita tu autorización, se cubre o cambia, y de lo que pasa con tu personal.</string>
+    <string name="perm_hint_notifications_blocked">Las desactivaste: actívalas en la configuración del teléfono.</string>
+    <string name="perm_hotel_summary_ready">Listo: te avisaremos de lo importante.</string>
+    <string name="perm_hotel_summary_missing">Te recomendamos activar las notificaciones. Puedes hacerlo después.</string>
+    <string name="perm_continue">Continuar</string>
+</resources>

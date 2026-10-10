@@ -71,6 +71,15 @@ const MODULES: NavModule[] = [
     icon: 'monitoring',
     roles: [OBSERVADOR],
   },
+  /* La única acción de escritura del Observador (Hugo, 2026-10-08): el ajuste
+     de tarifa o el gasto extra de una asignación eventual que pidió
+     Reclutamiento. Por lo demás, el rol sigue siendo de puro lectura. */
+  {
+    label: msg`Ajustes pendientes`,
+    to: '/pay-adjustments',
+    icon: 'rule',
+    roles: [OBSERVADOR],
+  },
   { label: msg`Usuarios`, to: '/users', icon: 'manage_accounts', roles: [ADMIN] },
   { label: msg`Catálogos`, to: '/catalogs', icon: 'category', roles: [ADMIN] },
   {

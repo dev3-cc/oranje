@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- El `default` del botón del web: mango o-300 y o-400 al presionar, radio r-md. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape><solid android:color="@color/o_400" /><corners android:radius="12dp" /></shape>
+    </item>
+    <item>
+        <shape><solid android:color="@color/o_300" /><corners android:radius="12dp" /></shape>
+    </item>
+</selector>
