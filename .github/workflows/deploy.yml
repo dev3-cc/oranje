@@ -86,15 +86,14 @@ jobs:
           DESTINO="${{ vars.GCP_PROJECT_ID }}"
           RUTA_ORIGEN="$REGION-docker.pkg.dev/$ORIGEN/$REPOSITORIO/$SERVICIO"
 
-          # Un release a main puede quedar con el enlace a staging a más de
-          # un nivel de profundidad (un merge commit cuyo segundo padre es
-          # OTRO merge commit, no la punta de staging directa — pasó el
-          # 2026-10-10 tras dos intentos de enlazar la historia). Se camina
-          # por los segundos padres, no solo el inmediato.
+          # Caminar solo "segundos padres" en cadena se rompe en cuanto un
+          # commit intermedio no es un merge (p. ej. un hotfix lineal
+          # encima de main, como pasó el 2026-10-10): esa rama no tiene
+          # segundo padre y el camino hacia staging se corta ahí aunque
+          # siga siendo ancestro por el primer padre. Se busca en TODOS
+          # los ancestros recientes, no solo en una columna.
           DIGEST=""
-          CANDIDATO="${{ github.sha }}"
-          for _ in 1 2 3 4 5; do
-            [ -z "$CANDIDATO" ] && break
+          for CANDIDATO in $(git rev-list --max-count=50 "${{ github.sha }}"); do
             DIGEST=$(gcloud artifacts docker images describe \
               "$RUTA_ORIGEN:$CANDIDATO" \
               --format='value(image_summary.digest)' \
@@ -103,11 +102,10 @@ jobs:
               echo "Imagen probada en staging: $CANDIDATO → $DIGEST"
               break
             fi
-            CANDIDATO=$(git rev-parse --verify --quiet "$CANDIDATO^2" 2>/dev/null || true)
           done
 
           if [ -z "$DIGEST" ]; then
-            echo "::error::Ni ${{ github.sha }} ni los segundos padres de sus últimos 5 merges tienen imagen en staging."
+            echo "::error::Ninguno de los últimos 50 ancestros de ${{ github.sha }} tiene imagen en staging."
             echo "::error::Producción solo promueve lo que ya se probó — no reconstruye."
             exit 1
           fi
