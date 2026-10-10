@@ -34,6 +34,12 @@ Reglas:
 
 ## 2026-10-10
 
+### 11:40 — Formato de Prettier en los avisos de privacidad
+
+**Qué:** `prettier --write` sobre `public/privacidad.html` y `public/privacy.html`; solo cambia el formato, no el texto.
+**Por qué:** el merge a staging falló en `pnpm format:check` por esos dos archivos: lint-staged solo formatea `ts/tsx/json/md/yml`, así que los HTML entraron sin formato.
+**Archivos:** `public/privacidad.html`, `public/privacy.html`.
+
 ### 10:46 — Observador: altas de candidatos por reclutadora
 
 **Qué:** en Reclutamiento › «Por persona», la métrica «Candidatos dados de alta» y el evento «Dio de alta al candidato» (con su nombre) en el detalle de cada persona. Por cada candidato creado en el periodo (`createdAt`, tope de 60) se pide su historial (`/workers/:id/history`, solo al abrir la vista) y su primera entrada —sin estado de origen— dice quién lo dio de alta. Se suma a la fila de la bitácora con el mismo nombre o abre una nueva. La tabla pasa a 6 columnas.
