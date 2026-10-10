@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { inspectionPeople, recruitmentPeople, salesPeople } from './people'
 import { periodOf } from './period'
 
-import type { ProspectApi, RequisitionApi } from '@/shared/types/apiContract.types'
+import type { ProspectApi, RequisitionApi, WorkerApi } from '@/shared/types/apiContract.types'
 
 const NOW = new Date(2026, 9, 7, 15, 0, 0)
 const WEEK = periodOf('week', NOW)
@@ -142,6 +142,67 @@ describe('Reclutamiento por persona', () => {
     expect(rita && metric(rita, 'Lugares por cubrir en las suyas')).toBe(3)
     expect(sara && metric(sara, 'Requisiciones a su cargo')).toBe(0)
     expect(sara && metric(sara, 'Soltadas')).toBe(1)
+  })
+
+  it('cuenta los candidatos que dio de alta cada reclutadora', () => {
+    const workers = [
+      { id: 'w1', fullName: 'Luis Pérez', createdAt: at(5) },
+      { id: 'w2', fullName: 'Eva Ruiz', createdAt: at(6) },
+      { id: 'w3', fullName: 'Viejo', createdAt: at(1) },
+    ] as WorkerApi[]
+    const signup = (id: string, userName: string, day: number) => [
+      {
+        id: `${id}-b`,
+        fromState: 'PENDING_VALIDATION',
+        toState: 'GREEN',
+        reason: null,
+        occurredAt: at(day + 1),
+        userName: 'Otra',
+      },
+      {
+        id,
+        fromState: null,
+        toState: 'PENDING_VALIDATION',
+        reason: null,
+        occurredAt: at(day),
+        userName,
+      },
+    ]
+    const rows = recruitmentPeople({
+      period: WEEK,
+      requisitions: [requisition],
+      journals: {
+        r1: [
+          {
+            id: '1',
+            eventType: 'RECRUITER_JOINED',
+            actorName: 'Rita',
+            actorRole: 'ROL-R-01',
+            payload: null,
+            occurredAt: at(5),
+          },
+        ],
+      },
+      workers,
+      histories: {
+        w1: signup('h1', 'Rita', 5),
+        w2: signup('h2', 'Nora', 6),
+        w3: signup('h3', 'Rita', 1),
+      },
+    })
+
+    const rita = rows.find((row) => row.name === 'Rita')
+    const nora = rows.find((row) => row.name === 'Nora')
+    expect(rows).toHaveLength(2)
+    // Rita: la de la bitácora, con su alta de la semana (la del día 1 queda fuera).
+    expect(rita && metric(rita, 'Candidatos dados de alta')).toBe(1)
+    expect(rita && metric(rita, 'Requisiciones a su cargo')).toBe(1)
+    expect(rita?.events.find((event) => event.kind === 'WORKER_CREATED')?.subject).toBe(
+      'Luis Pérez',
+    )
+    // Nora no movió requisiciones: aparece solo por su alta.
+    expect(nora && metric(nora, 'Candidatos dados de alta')).toBe(1)
+    expect(nora?.roleCode).toBeNull()
   })
 })
 

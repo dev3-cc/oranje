@@ -32,6 +32,60 @@ Reglas:
 
 ---
 
+## 2026-10-10
+
+### 10:46 — Observador: altas de candidatos por reclutadora
+
+**Qué:** en Reclutamiento › «Por persona», la métrica «Candidatos dados de alta» y el evento «Dio de alta al candidato» (con su nombre) en el detalle de cada persona. Por cada candidato creado en el periodo (`createdAt`, tope de 60) se pide su historial (`/workers/:id/history`, solo al abrir la vista) y su primera entrada —sin estado de origen— dice quién lo dio de alta. Se suma a la fila de la bitácora con el mismo nombre o abre una nueva. La tabla pasa a 6 columnas.
+**Por qué:** Hugo: el Observador debe ver si la reclutadora dio de alta candidatos nuevos. El alta del API (`workers.repository.ts` `create`) escribe esa primera entrada del historial con el usuario que la hizo; `WorkerApi` no trae `createdBy`, así que no hizo falta tocar el back. El historial trae el nombre, no el rol: se agrupa por nombre.
+**Archivos:** `src/features/observability/lib/people.ts`, `src/features/observability/lib/people.spec.ts`, `src/features/observability/tabs/RecruitmentTab.tsx`, `src/locales/es/messages.po`, `src/locales/en/messages.po`.
+
+### 09:25 — App: aviso de privacidad en `public/`
+
+**Qué:** `public/privacidad.html` (español) y `public/privacy.html` (inglés): aviso de privacidad estático, sin JavaScript, con lo que la app recolecta hoy (cuenta, perfil, SSN/ITIN, tipo de sangre y contacto de emergencia, ubicación solo al ponchar, selfie/QR, datos del hotel) y con quién se comparte. Se agrega `corepack pnpm -F @oranje/mobile add @capacitor/filesystem @capacitor/share` (dependencias de `apps/mobile`, ver la entrada de abajo).
+**Por qué:** Hugo pidió las políticas de privacidad dentro de la pantalla de Permisos. La pantalla nativa (Android e iOS) abre este mismo HTML desde el bundle de la app, y la web lo sirve en `/privacidad.html`: esa es la URL que pide App Store Connect. Es contenido nuevo: ninguna pantalla del web cambia. Borrador para revisión legal (plazos de conservación y el correo `privacidad@oranjepeople.com` por confirmar).
+**Archivos:** `public/privacidad.html`, `public/privacy.html`.
+
+### 09:20 — App: «Descargar QR» funciona dentro de la app
+
+**Qué:** `mobile/nativeDownloads.ts`, instalado desde `mobile/main.tsx`: (1) una liga `target="_blank"` del mismo origen se abre en la app con el router; (2) se define `window.saveAs`, que jsPDF usa en vez de su `<a download>`, para escribir el PDF en la caché (`@capacitor/filesystem`) y abrir la hoja de compartir del sistema (`@capacitor/share`). La hoja del QR, que vive fuera del shell, se monta en la app dentro de `WithBackBar` (`mobile/layouts.tsx`): barra con «Volver» y su `Toaster`.
+**Por qué:** Hugo: «Descargar QR» no funcionaba en la app. En iOS el `_blank` acababa en `UIApplication.open` con un URL `capacitor://`, y en Android recargaba la app; además el WebView no descarga `blob:`. La comparación de origen se hace por esquema y host: con `capacitor://` `URL.origin` vale `"null"` (lo encontró la prueba). Verificado en el emulador Android: la hoja se abre con «Volver», «Descargar» abre la hoja de compartir con `qr-ponche-<hotel>.pdf`, cerrarla no muestra error y «Volver» regresa al dashboard. Solo app; el web no cambia.
+**Archivos:** `src/mobile/nativeDownloads.ts`, `src/mobile/nativeDownloads.spec.ts`, `src/mobile/layouts.tsx`, `src/mobile/router.tsx`, `src/mobile/main.tsx`, `src/locales/es/messages.po`, `src/locales/en/messages.po`.
+
+## 2026-10-09
+
+### 16:49 — App iOS: las fotos de hotel se ven
+
+**Qué:** `mobile/nativeHotelPhotos.ts`, instalado desde `mobile/main.tsx`: en iOS, toda imagen de `places.googleapis.com` (por `setAttribute('src')` o por la propiedad `src`) se baja por el HTTP nativo con `Referer: https://mi.oranjepeople.com/` y se entrega como `blob:`, con caché.
+**Por qué:** Hugo: en iOS no se veían las fotos de los hoteles. La foto lleva la llave del navegador de Google, restringida por referrer a `https://mi.oranjepeople.com`; en iOS el origen es `capacitor://mi.oranjepeople.com` y Google responde 403 `API_KEY_HTTP_REFERRER_BLOCKED` (verificado con una foto real). Los mapas no se cubren: los roles del hotel no los ven. Solo app; el web no cambia.
+**Archivos:** `src/mobile/{nativeHotelPhotos.ts,nativeHotelPhotos.spec.ts,main.tsx}`.
+
+### 16:31 — App: «Permisos» del Colaborador ya no se reabre en ciclo
+
+**Qué:** `mobile/NativePermissionsRoute.tsx` abre la pantalla nativa con `openNativePermissions` (ahora exportado por `features/worker`) y decide UNA sola navegación al cerrarla: «Ponchar» e «Ir a Inicio» reemplazan la entrada del historial; Atrás regresa.
+**Por qué:** probado en el emulador con un Colaborador real: al pulsar «Ir a Inicio», `usePermissionsScreen` navegaba al Inicio y la ruta además hacía «regresar» (`go -1`); las dos navegaciones se pisaban, la app volvía a `/collaborator/permissions` y la pantalla se abría otra vez. Solo app; el web no cambia.
+**Archivos:** `src/mobile/{NativePermissionsRoute.tsx,NativePermissionsRoute.spec.tsx}`; `src/features/worker/index.ts`.
+
+### 15:45 — App: el teclado ya no tapa los formularios y «Permisos» del Colaborador abre la pantalla nativa
+
+**Qué:** (1) `@capacitor/keyboard` en `apps/mobile` con `resize: 'native'` y `resizeOnFullScreen`: al abrir el teclado la pantalla de la app se encoge. (2) Nueva ruta de la app `/collaborator/permissions` (`mobile/NativePermissionsRoute.tsx`) que abre la pantalla nativa de Permisos y, al cerrarla, va a Ponchar, al Inicio o regresa.
+**Por qué:** Hugo: en el paso 2 de Nueva requisición del hotel no se podía bajar y se rompía abajo — con edge-to-edge (Android 15) el teclado se dibujaba encima del WebView sin encogerlo y tapaba los campos y los botones. Y «Permisos» del menú del Colaborador volvía al Inicio: el merge de staging del 2026-10-06 (`003a910`) quitó la opción nativa y dejó el enlace a `/collaborator/permissions`, ruta que la app no tenía. Solo app; el web no cambia.
+**Archivos:** `src/mobile/{router.tsx,NativePermissionsRoute.tsx,NativePermissionsRoute.spec.tsx}`; `../mobile/{capacitor.config.ts,package.json}`; `../mobile/android/{app/capacitor.build.gradle,capacitor.settings.gradle}`; `../../pnpm-lock.yaml`.
+
+### 11:32 — App: la subida de fotos en iOS y el permiso de ubicación del ponche
+
+**Qué:** (1) `mobile/nativeApiFetch.ts` ya no borra el `Content-Type` de las subidas: manda `multipart/form-data` y el lado nativo pone su boundary. (2) Dentro de la app, la ubicación del ponche y la del onboarding van por `@capacitor/geolocation` (nuevo en `apps/mobile`) a través del puente `features/worker/lib/nativeGeolocation.ts`; en el navegador siguen con `navigator.geolocation`, sin cambios.
+**Por qué:** Hugo: en iOS subir la foto daba «Los datos enviados no son válidos» — el `CapacitorHttp` nativo solo arma el cuerpo si hay `Content-Type`, y sin él la subida salía vacía. Y al ponchar, el WKWebView volvía a pedir la ubicación aunque la app ya tenía el permiso. Todo condicionado a la app: el web queda igual.
+**Archivos:** `src/mobile/{nativeApiFetch.ts,nativeApiFetch.spec.ts}`; `src/features/worker/lib/{nativeGeolocation.ts,nativeGeolocation.spec.ts,devicePermissions.ts}`; `src/features/worker/pages/PunchPage.tsx`; `../mobile/package.json`; `../mobile/android/{app/capacitor.build.gradle,capacitor.settings.gradle}`; `../../pnpm-lock.yaml`.
+
+## 2026-10-08
+
+### 13:19 — La app del hotel consume el web tal cual
+
+**Qué:** los roles del hotel (Supervisor, Manager de Área, Manager General) ven en la app el mismo `AppShell` del web y sus mismas pantallas (Dashboard, Requisiciones, Timesheet, Timesheet Global, Mi Personal, Accidentes, Auditorías) y la hoja del QR. Las rutas del staff salen de `app/router.tsx` a `app/staffRoutes.tsx` para compartirlas sin crear un segundo router. Se borran las pantallas propias de `src/mobile/hotel/` (incluido Costos con datos de ejemplo); la única pantalla nativa del hotel es la de Permisos (notificaciones). El Colaborador no cambia.
+**Por qué:** pedido de Hugo: el Timesheet del hotel en la app no se veía como en el web; la app debe consumir las vistas del web, no reconstruirlas. Costos se quita.
+**Archivos:** `src/app/{router.tsx,staffRoutes.tsx}`; `src/mobile/{router.tsx,layouts.tsx,main.tsx,roles.ts,PermissionsOnLaunch.tsx,hotelPermissions.ts,nativeApiFetch.spec.ts}`; se borra `src/mobile/hotel/`; `src/locales/{es,en}/messages.po`; `../mobile/README.md`; se borra `../mobile/docs/COSTOS-HOTEL-API.md`.
+
 ## 2026-10-07
 
 ### 16:59 — Ingresos más intuitivo: línea de tiempo por semana

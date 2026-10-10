@@ -51,7 +51,6 @@ msgid "¿Cómo te trasladas?"
 msgstr "How do you get around?"
 
 #: src/features/dashboard/components/InviteHotelAccountCard.tsx
-#: src/mobile/hotel/home/InviteAccountCard.tsx
 msgid "¿Entró alguien nuevo a tu equipo?"
 msgstr "Someone new joined your team?"
 
@@ -69,7 +68,6 @@ msgid "¿Necesitas regresarlo? El semáforo no retrocede: se sale por una rama y
 msgstr "Need to take it back? The Status Light never goes backwards: you exit through a branch and reactivate into Light Blue. From <0>Red</0> the BD or the BDC reactivate it; from <1>Brown</1> and <2>Black</2>, only the BDC."
 
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 msgid "¿Por qué se elimina? El motivo queda en el journal."
 msgstr "Why is it being deleted? The reason stays in the log."
 
@@ -430,11 +428,6 @@ msgstr "{0} years old"
 msgid "{0} colaboradores"
 msgstr "{0} collaborators"
 
-#. placeholder {0}: row.pendingAnomalies
-#: src/mobile/hotel/timesheet/TimesheetPage.tsx
-msgid "{0} con anomalía"
-msgstr "{0} with anomaly"
-
 #. placeholder {0}: metrics.awaitingOver48h
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
 msgid "{0} con más de 48 h"
@@ -518,11 +511,6 @@ msgstr "{0} m"
 msgid "{0} meses restantes"
 msgstr "{0} months left"
 
-#. placeholder {0}: position.workers
-#: src/mobile/hotel/costs/CostWeekPage.tsx
-msgid "{0} personas"
-msgstr "{0} people"
-
 #. placeholder {0}: String(rates.length)
 #: src/features/contracts/components/ContractChecklist.tsx
 msgid "{0} posiciones cotizadas: cada una con su pay rate y su bill rate."
@@ -553,11 +541,6 @@ msgstr "{0} saved · {pendingLabel}"
 #: src/features/reports/pages/ReportsPage.tsx
 msgid "{0} salidas · Rojo {1} · Café {2} · Negro {3} — reactivables a Azul claro{4}"
 msgstr "{0} exits · Red {1} · Brown {2} · Black {3} — can be reactivated into Light Blue{4}"
-
-#. placeholder {0}: closedWithCost.length
-#: src/mobile/hotel/costs/CostsPage.tsx
-msgid "{0} semanas aprobadas"
-msgstr "{0} approved weeks"
 
 #. placeholder {0}: member.staleCount
 #: src/features/team/pages/TeamPage.tsx
@@ -616,18 +599,12 @@ msgstr "{0}. It is signed outside the system: the document comes out unsigned."
 msgid "{0}/{1} cubiertos"
 msgstr "{0}/{1} covered"
 
-#. placeholder {0}: moneyOf(position.billRate)
-#: src/mobile/hotel/costs/CostWeekPage.tsx
-msgid "{0}/h"
-msgstr "{0}/h"
-
 #. placeholder {0}: contract.multipliers.overtime.bill.toFixed(2)
 #: src/features/contracts/components/ActivateContractDialog.tsx
 msgid "{0}× lo facturado"
 msgstr "{0}× the billed rate"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "{anomalies, plural, one {# día con anomalía} other {# días con anomalía}} por revisar: resuélvelos antes de enviar la semana"
 msgstr "{anomalies, plural, one {# day with an anomaly} other {# days with anomalies}} to review: resolve them before sending the week"
 
@@ -656,7 +633,6 @@ msgid "{days} d en estado"
 msgstr "{days} d in status"
 
 #: src/features/observability/components/KpiCard.tsx
-#: src/mobile/hotel/HotelHomePage.tsx
 #: src/shared/lib/formatters.ts
 msgid "{days} días"
 msgstr "{days} days"
@@ -751,10 +727,6 @@ msgstr "{quantity, plural, one {# free slot} other {# free slots}}"
 msgid "{reason}: revisa la fecha de nacimiento."
 msgstr "{reason}: check the date of birth."
 
-#: src/mobile/hotel/HotelHomePage.tsx
-msgid "{rounded} h"
-msgstr "{rounded} h"
-
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "{shift} · entró {clockIn}"
 msgstr "{shift} · clocked in {clockIn}"
@@ -793,12 +765,10 @@ msgid "{value} m"
 msgstr "{value} m"
 
 #: src/features/personnel/components/StandByDialog.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "{workerName} quedó en Stand-by"
 msgstr "{workerName} is now on Stand-by"
 
 #: src/features/personnel/components/ReportWorkerDialog.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "{workerName} quedó reportado"
 msgstr "{workerName} has been reported"
 
@@ -900,9 +870,6 @@ msgid "Abierta"
 msgstr "Open"
 
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
-#: src/mobile/hotel/HotelHomePage.tsx
-#: src/mobile/hotel/requisitions/RequisitionsPage.tsx
-#: src/mobile/hotel/timesheet/TimesheetPage.tsx
 msgid "Abiertas"
 msgstr "Open"
 
@@ -972,10 +939,6 @@ msgstr "Access created"
 #: src/shared/constants/workerStatus.ts
 msgid "Accidentado"
 msgstr "Injured"
-
-#: src/mobile/hotel/staff/StaffPage.tsx
-msgid "Accidentados"
-msgstr "In accident"
 
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
 msgid "Accidente abierto"
@@ -1133,7 +1096,6 @@ msgid "Agregar la salida que falta"
 msgstr "Add the missing clock-out"
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Agregar marca manual"
 msgstr "Add manual punch"
 
@@ -1150,7 +1112,6 @@ msgid "Agregar otro contacto"
 msgstr "Add another contact"
 
 #: src/features/admin/pages/CatalogsPage.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Agregar posición"
 msgstr "Add position"
 
@@ -1233,10 +1194,6 @@ msgstr "Authorizing sets the urgency based on the start date"
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
 msgid "Al autorizar, la urgencia se calcula contra la fecha de inicio: {start} {daysAhead, plural, one {está a # día} other {está a # días}}, así que {positionCount, plural, one {la posición nace} other {las # posiciones nacen}} en {color} ({label}: {hint})"
 msgstr "When you authorize, urgency is calculated against the start date: {start} {daysAhead, plural, one {is # day away} other {is # days away}}, so {positionCount, plural, one {the position starts} other {the # positions start}} in {color} ({label}: {hint})"
-
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
-msgid "Al autorizarla pasa a Autorizada y Reclutamiento empieza a cubrirla. ¿Seguro?"
-msgstr "Once approved it becomes Authorized and Recruitment starts filling it. Are you sure?"
 
 #: src/features/conversion/components/ApproveConversionDialog.tsx
 msgid "Al convertirlo"
@@ -1328,14 +1285,6 @@ msgstr "Analysis with history; today's pulse lives in the Dashboard"
 msgid "Ancho de columna"
 msgstr "Column width"
 
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
-msgid "Anomalía sin revisar"
-msgstr "Unreviewed anomaly"
-
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
-msgid "Anomalías"
-msgstr "Anomalies"
-
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Antes hay que resolver lo que dice «Qué sigue»"
 msgstr "First resolve what «What's next» says"
@@ -1355,10 +1304,6 @@ msgstr "Shows people who own prospects or logged attempts. Anyone with no portfo
 
 #: src/shared/constants/timesheetStatus.ts
 msgid "Aprobada"
-msgstr "Approved"
-
-#: src/mobile/hotel/timesheet/TimesheetPage.tsx
-msgid "Aprobadas"
 msgstr "Approved"
 
 #: src/features/conversion/pages/ConversionQueuePage.tsx
@@ -1386,7 +1331,6 @@ msgid "Aprobar la conversión Rosa → Naranja —o devolverla a Café— es del
 msgstr "Approving the Pink → Orange conversion —or sending it back to Brown— is the BDC's job. Once approved, the hotel becomes an active client and can create Requisitions."
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Aprobar semana"
 msgstr "Approve week"
 
@@ -1531,7 +1475,6 @@ msgstr "Attendance"
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/features/worker/pages/Phase2Page.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Atrás"
 msgstr "Back"
 
@@ -1616,7 +1559,6 @@ msgstr "No QR generated yet."
 
 #: src/features/requisitions/components/RequisitionCardList.tsx
 #: src/features/requisitions/components/RequisitionTable.tsx
-#: src/mobile/hotel/requisitions/RequisitionsPage.tsx
 msgid "Aún no hay requisiciones"
 msgstr "No requisitions yet"
 
@@ -1658,7 +1600,6 @@ msgstr "Requisition Authorization"
 
 #: src/features/requisitions/api/requisitionsApi.ts
 #: src/features/requisitions/components/RequisitionTable.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 #: src/shared/constants/requisitionStatus.ts
 msgid "Autorizada"
 msgstr "Authorized"
@@ -1700,18 +1641,12 @@ msgstr "Authorized, not yet taken (Self-Pick)"
 msgid "Autorizado"
 msgstr "Authorized"
 
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
-msgid "Autorizando…"
-msgstr "Authorizing…"
-
 #: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 msgid "Autorizar es del Manager de Área o del Manager General: cuando firmen, la requisición pasa a Autorizada y Reclutamiento la ve en la Bolsa del Self-Pick."
 msgstr "Authorizing is up to the Area Manager or the General Manager: once they sign, the requisition becomes Authorized and Recruitment sees it in the Self-Pick pool."
 
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 msgid "Autorizar requisición"
 msgstr "Authorize requisition"
 
@@ -1878,10 +1813,6 @@ msgstr "Search the hotel on Google"
 msgid "Busca el hotel o marca el punto en el mapa"
 msgstr "Search the hotel or drop the point on the map"
 
-#: src/mobile/hotel/staff/StaffPage.tsx
-msgid "Busca por nombre o puesto"
-msgstr "Search by name or position"
-
 #: src/features/onboarding/components/PlacesSearchField.tsx
 msgid "Buscador no disponible: marca la ubicación directo en el mapa"
 msgstr "Search isn't available: mark the location straight on the map"
@@ -1927,10 +1858,6 @@ msgstr "Search hotel account"
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Buscar en {0}"
 msgstr "Search in {0}"
-
-#: src/mobile/hotel/staff/StaffPage.tsx
-msgid "Buscar en tu personal"
-msgstr "Search your staff"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "Buscar en tu plantel"
@@ -2219,11 +2146,6 @@ msgstr "Cancelling…"
 #: src/features/team/components/AssignTerritoryDialog.tsx
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/features/worker/components/CameraCapture.tsx
-#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Cancelar"
 msgstr "Cancel"
 
@@ -2235,13 +2157,16 @@ msgstr "Cancel draft"
 msgid "Cancelar edición"
 msgstr "Cancel editing"
 
+#: src/features/observability/lib/people.ts
+msgid "Candidatos dados de alta"
+msgstr "Candidates signed up"
+
 #: src/features/requisitions/components/AuthorizationPositionsTable.tsx
 #: src/features/requisitions/components/PositionsTable.tsx
 msgid "Cant."
 msgstr "Qty"
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Cantidad"
 msgstr "Quantity"
 
@@ -2266,15 +2191,6 @@ msgid "Cargado, sin verificar"
 msgstr "Uploaded, not verified"
 
 #: src/features/worker/components/WorkerSkeleton.tsx
-#: src/mobile/hotel/costs/CostsPage.tsx
-#: src/mobile/hotel/costs/CostWeekPage.tsx
-#: src/mobile/hotel/HotelHomePage.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
-#: src/mobile/hotel/requisitions/RequisitionsPage.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
-#: src/mobile/hotel/staff/StaffPage.tsx
-#: src/mobile/hotel/timesheet/TimesheetPage.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Cargando"
 msgstr "Loading"
 
@@ -2361,7 +2277,6 @@ msgstr "Close the hotel record"
 
 #: src/features/worker/components/MobileShell.tsx
 #: src/layouts/Sidebar.tsx
-#: src/mobile/hotel/HotelShell.tsx
 #: src/mobile/UnsupportedRolePage.tsx
 msgid "Cerrar sesión"
 msgstr "Sign out"
@@ -2444,8 +2359,6 @@ msgstr "Clients without requisitions"
 #: src/features/requisitions/components/PositionsTable.tsx
 #: src/features/requisitions/components/RequisitionSummaryStrip.tsx
 #: src/features/requisitions/components/RequisitionTable.tsx
-#: src/mobile/hotel/HotelHomePage.tsx
-#: src/mobile/hotel/requisitions/requisitionParts.tsx
 msgid "Cobertura"
 msgstr "Coverage"
 
@@ -2453,10 +2366,6 @@ msgstr "Coverage"
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
 msgid "Cobertura · {0}"
 msgstr "Coverage · {0}"
-
-#: src/mobile/hotel/HotelHomePage.tsx
-msgid "Cobertura de las abiertas"
-msgstr "Coverage of open requisitions"
 
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
 msgid "Cobertura parcial"
@@ -2655,10 +2564,6 @@ msgstr "with your photo"
 msgid "con turno del Schedule"
 msgstr "with a shift on the Schedule"
 
-#: src/mobile/hotel/staff/StaffPage.tsx
-msgid "Con turno hoy"
-msgstr "On shift today"
-
 #: src/features/contracts/components/MultiplierTable.tsx
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
 msgid "Concepto"
@@ -2694,7 +2599,6 @@ msgid "Confirmar regreso"
 msgstr "Confirm send back"
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
-#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "Confirmar: el anterior deja de servir"
 msgstr "Confirm: the old one stops working"
 
@@ -2782,7 +2686,6 @@ msgstr "Context that helps whoever opens the next cycle…"
 #: src/features/recruitment/components/LiftBlacklistDialog.tsx
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/features/worker/pages/Phase2Page.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 #: src/shared/components/OnboardingIntro.tsx
 msgid "Continuar"
 msgstr "Continue"
@@ -2980,16 +2883,6 @@ msgstr "Fix whatever needs it for {hotelName}: it's saved on the same audit, not
 msgid "Corrige lo que haga falta: se guarda con PATCH, sobre la misma auditoría."
 msgstr "Fix whatever needs it: it's saved on the same audit, not as a new one."
 
-#: src/mobile/hotel/home/WeekCostCard.tsx
-msgid "Costo de esta semana"
-msgstr "This week's cost"
-
-#: src/mobile/hotel/costs/CostsPage.tsx
-#: src/mobile/hotel/costs/CostWeekPage.tsx
-#: src/mobile/hotel/HotelShell.tsx
-msgid "Costos"
-msgstr "Costs"
-
 #: src/features/onboarding/components/NewProposalDialog.tsx
 msgid "Cotizar →"
 msgstr "Quote →"
@@ -2999,7 +2892,6 @@ msgid "cPanel rechazó la operación."
 msgstr "cPanel rejected the operation."
 
 #: src/features/requisitions/api/requisitionsApi.ts
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 msgid "Creada"
 msgstr "Created"
 
@@ -3053,7 +2945,6 @@ msgid "Crear prospecto"
 msgstr "Create Prospect"
 
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Crear requisición"
 msgstr "Create requisition"
 
@@ -3098,14 +2989,6 @@ msgstr "When the Recruiter validates the sign-up, they move to Strong Green and 
 msgid "Cuando la Reclutadora valide tus datos quedarás Disponible para asignación. Con tu primera requisición, tu turno aparece aquí."
 msgstr "Once the Recruiter validates your info you'll be Available for assignment. With your first requisition, your shift shows up here."
 
-#: src/mobile/hotel/requisitions/RequisitionsPage.tsx
-msgid "Cuando pidas personal, tus requisiciones aparecen aquí."
-msgstr "When you request staff, your requisitions show up here."
-
-#: src/mobile/hotel/staff/StaffPage.tsx
-msgid "Cuando Reclutamiento cubra tus requisiciones y haya turnos esta semana, tu personal aparece aquí."
-msgstr "When Recruitment fills your requisitions and there are shifts this week, your staff shows up here."
-
 #: src/features/worker/lib/noShiftMessage.ts
 msgid "Cuando Reclutamiento te asigne a una requisición, tu turno del día aparece aquí y podrás ponchar."
 msgstr "When Recruitment assigns you to a requisition, today's shift shows up here and you'll be able to clock in."
@@ -3117,14 +3000,6 @@ msgstr "When a new version ships we let you know with a message: reload and you'
 #: src/features/audits/components/AuditHistoryList.tsx
 msgid "Cuando se guarde la primera de Presentación Personal o de Ambiente y Recursos, aparecerá aquí."
 msgstr "Once the first Personal Presentation or Environment & Resources audit is saved, it'll show up here."
-
-#: src/mobile/hotel/requisitions/RequisitionsPage.tsx
-msgid "Cuando tu hotel pida personal, las requisiciones aparecen aquí."
-msgstr "When your hotel requests staff, the requisitions show up here."
-
-#: src/mobile/hotel/timesheet/TimesheetPage.tsx
-msgid "Cuando tu personal ponche, sus semanas aparecen aquí."
-msgstr "When your staff punches, their weeks show up here."
 
 #: src/features/requisitions/components/RequisitionCardList.tsx
 #: src/features/requisitions/components/RequisitionTable.tsx
@@ -3152,7 +3027,6 @@ msgid "Cubierta totalmente"
 msgstr "Fully covered"
 
 #: src/features/dashboard/components/HotelDashboard.tsx
-#: src/mobile/hotel/requisitions/RequisitionsPage.tsx
 msgid "Cubiertas"
 msgstr "Covered"
 
@@ -3186,7 +3060,6 @@ msgid "Cuenta dada de baja"
 msgstr "Account deactivated"
 
 #: src/features/worker/components/MobileShell.tsx
-#: src/mobile/hotel/HotelShell.tsx
 msgid "Cuenta de {shortName}"
 msgstr "{shortName}'s account"
 
@@ -3243,14 +3116,6 @@ msgstr "Deactivating deletes nothing: the person can no longer sign in and their
 #: src/layouts/Sidebar.tsx
 msgid "Dashboard"
 msgstr "Dashboard"
-
-#: src/mobile/hotel/home/WeekCostCard.tsx
-msgid "Datos de ejemplo"
-msgstr "Sample data"
-
-#: src/mobile/hotel/costs/costsParts.tsx
-msgid "Datos de ejemplo: así se verán tus costos cuando el cálculo esté disponible. Los números no son reales."
-msgstr "Sample data: this is how your costs will look once the calculation is available. The numbers aren't real."
 
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "Datos de emergencia guardados"
@@ -3344,7 +3209,6 @@ msgstr "department"
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/pages/CatalogsPage.tsx
 #: src/features/requisitions/components/RequisitionTable.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Departamento"
 msgstr "Department"
 
@@ -3381,7 +3245,6 @@ msgid "Descansa"
 msgstr "Day off"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
-#: src/mobile/hotel/staff/staffParts.tsx
 msgid "Descansa hoy"
 msgstr "Day off today"
 
@@ -3497,7 +3360,6 @@ msgstr "Sent back to Brown"
 
 #: src/features/schedule/components/AddShiftDialog.tsx
 #: src/features/timesheet/components/ManualPunchDialog.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Día"
 msgstr "Day"
 
@@ -3522,17 +3384,12 @@ msgid "Día festivo"
 msgstr "Holiday"
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Día revisado"
 msgstr "Day reviewed"
 
 #: src/features/timesheet/components/TimesheetViewControls.tsx
 msgid "Días"
 msgstr "Days"
-
-#: src/mobile/hotel/timesheet/TimesheetPage.tsx
-msgid "Días con anomalía"
-msgstr "Days with anomaly"
 
 #: src/features/timesheet/pages/TimesheetPage.tsx
 msgid "Días de una misma requisición"
@@ -3565,6 +3422,10 @@ msgstr "Days without anomalies"
 #: src/features/timesheet/pages/TimesheetGlobalPage.tsx
 msgid "Diferencia"
 msgstr "Difference"
+
+#: src/features/observability/lib/people.ts
+msgid "Dio de alta al candidato"
+msgstr "Signed up the candidate"
 
 #: src/features/onboarding/components/HotelDataCard.tsx
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
@@ -3844,17 +3705,11 @@ msgstr "The worker"
 msgid "El colaborador completa la Fase 2 (transporte y SSN/ITIN) y la Fase 3 (contacto de emergencia y salud) desde su app; si lo validas a medias, tiene 1 día para completarlo."
 msgstr "The collaborator completes Phase 2 (transportation and SSN/ITIN) and Phase 3 (emergency contact and health) from the app; if you validate them incomplete, they have 1 day to finish it."
 
-#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
-msgid "El colaborador lo escanea al entrar y al salir, junto con su ubicación. Para imprimirlo, tómale captura o descárgalo desde el web."
-msgstr "Collaborators scan it when clocking in and out, along with their location. To print it, take a screenshot or download it from the web."
-
 #: src/features/timesheet/api/timesheetApi.ts
-#: src/mobile/hotel/timesheet/timesheetAppApi.ts
 msgid "El colaborador no tiene asignación en esta requisición"
 msgstr "The collaborator has no assignment on this requisition"
 
 #: src/features/personnel/components/ReportWorkerDialog.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "El colaborador pasa a Rojo: es una incidencia, no una pausa — Inspección la revisa y decide si vuelve o queda fuera."
 msgstr "The Collaborator goes to Red: it's an incident, not a pause — Inspection reviews it and decides whether they come back or are out."
 
@@ -3863,7 +3718,6 @@ msgid "El colaborador pidió que Oranje lo cubriera: se le resta de su próxima 
 msgstr "The collaborator asked Oranje to cover it: it's subtracted from their next payroll."
 
 #: src/features/timesheet/components/ManualPunchDialog.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "El colaborador ya no tiene asignación en esta requisición."
 msgstr "The collaborator no longer has an assignment on this requisition."
 
@@ -3891,10 +3745,6 @@ msgstr "Email will go out through Firebase until you switch it back"
 #: src/features/admin/pages/MailSettingsPage.tsx
 msgid "El correo vuelve a salir por el servidor de Oranje"
 msgstr "Email is going out through the Oranje server again"
-
-#: src/mobile/hotel/costs/CostsPage.tsx
-msgid "El costo es lo que el hotel paga a Oranje: tarifa del contrato por hora trabajada, y el overtime con su recargo. Es el mismo cálculo de la factura."
-msgstr "The cost is what the hotel pays Oranje: the contract rate per hour worked, and overtime with its surcharge. It's the same calculation as the invoice."
 
 #. placeholder {0}: ONBOARDING_STATUS_LABEL[report.bottleneck.status]
 #. placeholder {1}: String(report.bottleneck.averageDays)
@@ -3978,7 +3828,6 @@ msgstr "the hotel"
 
 #: src/features/conversion/pages/ConversionPage.tsx
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "El hotel"
 msgstr "The hotel"
 
@@ -3997,10 +3846,6 @@ msgstr "The hotel sent them to rest (Stand-by)"
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
 msgid "El hotel no tiene QR generado todavía: regenéralo desde su ficha."
 msgstr "This hotel doesn't have a QR yet: regenerate it from its profile."
-
-#: src/mobile/hotel/costs/costsParts.tsx
-msgid "El hotel no tiene un contrato activo con tarifas."
-msgstr "The hotel doesn't have an active contract with rates."
 
 #: src/features/conversion/api/conversionApi.ts
 msgid "El hotel queda activado como cliente desde hoy"
@@ -4300,7 +4145,6 @@ msgstr "Choose the concept…"
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/pages/CatalogsPage.tsx
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Elige el departamento"
 msgstr "Choose the department"
 
@@ -4333,7 +4177,6 @@ msgstr "Choose the hotel…"
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 #: src/features/personnel/components/ReportWorkerDialog.tsx
 #: src/features/personnel/components/StandByDialog.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "Elige el motivo…"
 msgstr "Choose the reason…"
 
@@ -4379,12 +4222,10 @@ msgid "Elige el tipo de sangre"
 msgstr "Choose the blood type"
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Elige la modalidad"
 msgstr "Choose the hiring modality"
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Elige la posición"
 msgstr "Choose the position"
 
@@ -4463,7 +4304,6 @@ msgstr "Deleted"
 #: src/features/admin/pages/CorporateEmailPage.tsx
 #: src/features/recruitment/components/DeleteWorkerDialog.tsx
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 msgid "Eliminando…"
 msgstr "Deleting…"
 
@@ -4517,12 +4357,10 @@ msgid "Eliminar reactivo"
 msgstr "Delete item"
 
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 msgid "Eliminar requisición"
 msgstr "Delete requisition"
 
 #: src/features/worker/pages/ProfilePage.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "Emergencia"
 msgstr "Emergency"
 
@@ -4562,10 +4400,6 @@ msgstr "Starts today, {0}"
 msgid "empiezan en menos de 3 días"
 msgstr "start in less than 3 days"
 
-#: src/mobile/hotel/HotelHomePage.tsx
-msgid "Empiezan en menos de 3 días"
-msgstr "Start in less than 3 days"
-
 #. placeholder {0}: String(days)
 #: src/features/contracts/components/ContractFilters.tsx
 msgid "en {0} días"
@@ -4588,10 +4422,6 @@ msgstr "On the Blacklist"
 #: src/features/territory/components/TerritoryMapLegend.tsx
 msgid "En contacto"
 msgstr "In contact"
-
-#: src/mobile/hotel/costs/CostsPage.tsx
-msgid "en curso"
-msgstr "in progress"
 
 #. placeholder {0}: formatDate(selected.createdAt)
 #. placeholder {0}: formatDate(worker.createdAt)
@@ -4643,7 +4473,6 @@ msgid "En proceso"
 msgstr "In progress"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
-#: src/mobile/hotel/staff/StaffPage.tsx
 msgid "En Stand-by"
 msgstr "On Stand-by"
 
@@ -4675,7 +4504,6 @@ msgstr "They join the Pool today. They have 1 day to complete their part from th
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 #: src/features/worker/api/punchApi.ts
 #: src/features/worker/pages/PunchPage.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Entrada"
 msgstr "Clock in"
 
@@ -4717,10 +4545,6 @@ msgstr "You signed in as {0}. Your work in Oranje is on the web, from a computer
 msgid "Entre <0>Oranje</0> y <1>{0}</1>"
 msgstr "Between <0>Oranje</0> and <1>{0}</1>"
 
-#: src/mobile/hotel/staff/staffParts.tsx
-msgid "Entró {clockIn}"
-msgstr "In at {clockIn}"
-
 #: src/features/onboarding/components/ProposalVersionHistory.tsx
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Enviada"
@@ -4756,10 +4580,6 @@ msgstr "Sent for approval"
 msgid "Enviado"
 msgstr "Sent"
 
-#: src/mobile/hotel/HotelHomePage.tsx
-msgid "Enviados por el Supervisor"
-msgstr "Submitted by the Supervisor"
-
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/components/UserFormDialog.tsx
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
@@ -4787,10 +4607,6 @@ msgstr "Send by email"
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Enviar propuesta"
 msgstr "Send Proposal"
-
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
-msgid "Enviar semana a aprobación"
-msgstr "Submit week for approval"
 
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "Es el contacto principal"
@@ -4835,7 +4651,6 @@ msgstr "That photo couldn't be processed: take another one with the camera."
 
 #. placeholder {0}: formatDayMonth(workDate)
 #: src/features/timesheet/components/ManualPunchDialog.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Esa marca ya quedó registrada el {0}."
 msgstr "That punch was already recorded on {0}."
 
@@ -5014,10 +4829,6 @@ msgstr "That Status Light doesn't exist."
 msgid "Ese turno no es tuyo. Recarga la pantalla e inténtalo de nuevo."
 msgstr "That shift isn't yours. Reload the screen and try again."
 
-#: src/mobile/hotel/HotelHomePage.tsx
-msgid "Esperan la firma de un Manager"
-msgstr "Waiting for a Manager's approval"
-
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
 msgid "Esperando aprobación"
 msgstr "Awaiting approval"
@@ -5047,12 +4858,10 @@ msgid "Esta es la versión que tiene el hotel: la última que se le envió."
 msgstr "This is the version the hotel has: the last one sent to them."
 
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 msgid "Esta requisición es de otro departamento: la autoriza su Manager de Área o el Manager General."
 msgstr "This requisition belongs to another department: its Area Manager or the General Manager authorizes it."
 
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 msgid "Esta requisición no es de tu hotel."
 msgstr "This requisition isn't from your hotel."
 
@@ -5074,7 +4883,6 @@ msgid "Esta requisición ya no está autorizada o en proceso: no se puede unir."
 msgstr "This requisition is no longer authorized or in progress: you can't join it."
 
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 msgid "Esta requisición ya no está en Borrador: alguien más ya la autorizó o la cambió de estado."
 msgstr "This requisition is no longer a Draft: someone else already authorized it or changed its status."
 
@@ -5083,13 +4891,10 @@ msgid "Esta requisición ya no está en proceso: revisa su estado antes de asign
 msgstr "This Requisition is no longer in progress: check its status before assigning."
 
 #: src/features/observability/lib/period.ts
-#: src/mobile/hotel/costs/CostsPage.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "Esta semana"
 msgstr "This week"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Esta semana es de otro departamento: no te toca aprobarla."
 msgstr "This week belongs to another department: it isn't yours to approve."
 
@@ -5098,7 +4903,6 @@ msgid "Esta semana no hay jornadas con horas. La vista Días también enseña au
 msgstr "There are no workdays with hours this week. The Days view also shows absences and pending days."
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Esta semana ya se envió a aprobación: no admite más cambios."
 msgstr "This week was already sent for approval: no more changes allowed."
 
@@ -5196,7 +5000,6 @@ msgid "Este borrador lo activa el BDC cuando la verificación de «Qué sigue» 
 msgstr "The BDC activates this draft once the «What's next» check is green: activating it makes the contract govern the hotel's payroll and invoice."
 
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 msgid "Este borrador no es tuyo: lo elimina quien lo creó o el Manager General."
 msgstr "This draft isn't yours: whoever created it or the General Manager can delete it."
 
@@ -5215,10 +5018,6 @@ msgstr "This cycle was already closed."
 #: src/features/admin/pages/CorporateEmailPage.tsx
 msgid "Este colaborador no tiene un correo @oranjepeople.com asignado todavía."
 msgstr "This Collaborator doesn't have an @oranjepeople.com address yet."
-
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
-msgid "Este colaborador ya no está en tu personal."
-msgstr "This collaborator is no longer in your staff."
 
 #: src/features/recruitment/components/CreateAccessDialog.tsx
 msgid "Este colaborador ya tiene acceso."
@@ -5364,21 +5163,6 @@ msgstr "This user no longer exists."
 msgid "Este veto es <0>manual</0>; los vetos por ausencias o disputa los genera el sistema. Al vetar, la persona pasa a <1>Negro</1> y sale del Pool de Colaboradores."
 msgstr "This ban is <0>manual</0>; bans for absences or disputes are generated by the system. Once banned, the person moves to <1>Black</1> and leaves the Collaborator Pool."
 
-#: src/mobile/hotel/home/WeekCostCard.tsx
-msgid "Estimado al día"
-msgstr "Estimated to date"
-
-#. placeholder {0}: moneyOf(previous.approvedCost)
-#: src/mobile/hotel/home/WeekCostCard.tsx
-msgid "Estimado al día · semana pasada {0} aprobado"
-msgstr "Estimated to date · last week {0} approved"
-
-#. placeholder {0}: hoursOf(current.regularMinutes)
-#. placeholder {1}: hoursOf(current.overtimeMinutes)
-#: src/mobile/hotel/costs/CostsPage.tsx
-msgid "Estimado con lo ponchado hasta hoy · {0} regulares · {1} overtime"
-msgstr "Estimated from punches so far · {0} regular · {1} overtime"
-
 #. placeholder {0}: deleteTarget?.email ?? ''
 #: src/features/admin/pages/CorporateEmailPage.tsx
 msgid "Esto borra de verdad el buzón de {0} en cPanel — no se puede deshacer."
@@ -5451,7 +5235,6 @@ msgid "Falta el departamento"
 msgstr "The department is missing"
 
 #: src/features/requisitions/types/requisitionForm.schema.ts
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Falta el departamento del hotel"
 msgstr "The hotel department is missing"
 
@@ -5480,12 +5263,10 @@ msgid "Falta el Usuario del Hotel: sin él no se puede aprobar"
 msgstr "The Hotel User is missing: without one it can't be approved"
 
 #: src/features/personnel/components/ReportWorkerDialog.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "Falta grave en el hotel"
 msgstr "Serious misconduct at the hotel"
 
 #: src/features/requisitions/types/requisitionForm.schema.ts
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Falta la fecha de inicio"
 msgstr "The start date is missing"
 
@@ -5498,17 +5279,14 @@ msgid "Falta la fecha y hora del intento"
 msgstr "The date and time of the attempt are missing"
 
 #: src/features/requisitions/types/requisitionForm.schema.ts
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Falta la hora"
 msgstr "The time is missing"
 
 #: src/features/requisitions/types/requisitionForm.schema.ts
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Falta la modalidad"
 msgstr "The hiring modality is missing"
 
 #: src/features/requisitions/types/requisitionForm.schema.ts
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Falta la posición"
 msgstr "The position is missing"
 
@@ -5544,8 +5322,6 @@ msgid "Fecha de fin"
 msgstr "End date"
 
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 msgid "Fecha de inicio"
 msgstr "Start date"
 
@@ -5638,7 +5414,6 @@ msgid "Foto subida"
 msgstr "Photo uploaded"
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Fuera de la geocerca"
 msgstr "Outside the geofence"
 
@@ -5745,7 +5520,6 @@ msgstr "Saving your location and your photo"
 #: src/features/worker/components/ChangePasswordForm.tsx
 #: src/features/worker/pages/Phase2Page.tsx
 #: src/features/worker/pages/Phase3Page.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Guardando…"
 msgstr "Saving…"
 
@@ -5776,10 +5550,6 @@ msgstr "Save correction"
 msgid "Guardar requisición"
 msgstr "Save requisition"
 
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
-msgid "Guardar revisión"
-msgstr "Save review"
-
 #: src/features/contracts/components/EditRateDialog.tsx
 msgid "Guardar tarifa"
 msgstr "Save rate"
@@ -5805,10 +5575,6 @@ msgstr "{days} days ago"
 msgid "Hasta"
 msgstr "Until"
 
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
-msgid "Hasta 10 min tarde"
-msgstr "Up to 10 min late"
-
 #. placeholder {0}: formatDate(value.to)
 #: src/shared/components/DateRangeField.tsx
 msgid "Hasta el {0}"
@@ -5818,10 +5584,6 @@ msgstr "To {0}"
 msgid "Hay auditorías con respuestas a este reactivo: no se puede eliminar."
 msgstr "There are audits with answers to this item: it can't be deleted."
 
-#: src/mobile/hotel/costs/costsParts.tsx
-msgid "Hay días con anomalía sin revisar."
-msgstr "There are days with unreviewed anomalies."
-
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Hay dos renglones para el mismo puesto: deja uno solo."
 msgstr "There are two lines for the same position: keep only one."
@@ -5829,10 +5591,6 @@ msgstr "There are two lines for the same position: keep only one."
 #: src/features/timesheet/components/TimesheetDayCell.tsx
 msgid "Hay entrada sin salida (o al revés), en un día que ya pasó. Así la semana no puede irse a aprobación."
 msgstr "There's a clock-in without a clock-out (or the other way around), on a day that's already past. The week can't go to approval like this."
-
-#: src/mobile/hotel/costs/costsParts.tsx
-msgid "Hay horas sin aprobar: el monto puede cambiar."
-msgstr "There are unapproved hours: the amount may change."
 
 #: src/features/observability/components/TabParts.tsx
 msgid "Hay más registros de los que esta pantalla puede traer: algunos números se calcularon sobre una parte."
@@ -5883,15 +5641,12 @@ msgid "Histórico"
 msgstr "All time"
 
 #: src/features/worker/pages/HomePage.tsx
-#: src/mobile/hotel/HotelHomePage.tsx
 msgid "Hola, {firstName}"
 msgstr "Hi, {firstName}"
 
 #: src/features/requisitions/components/AuthorizationPositionsTable.tsx
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/features/timesheet/components/ManualPunchDialog.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Hora"
 msgstr "Time"
 
@@ -5913,7 +5668,6 @@ msgstr "End time"
 
 #: src/features/timesheet/components/TimesheetViewControls.tsx
 #: src/features/worker/pages/PunchPage.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Horas"
 msgstr "Hours"
 
@@ -5942,7 +5696,6 @@ msgstr "Hours per week"
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/features/requisitions/components/RequisitionTable.tsx
 #: src/features/timesheet/components/TimesheetToolbar.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Hotel"
 msgstr "Hotel"
 
@@ -6082,7 +5835,6 @@ msgid "Inactivos"
 msgstr "Inactive"
 
 #: src/features/personnel/components/ReportWorkerDialog.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "Inasistencias"
 msgstr "Absences"
 
@@ -6110,11 +5862,6 @@ msgstr "Says when the attempt happened"
 msgid "Indicador"
 msgstr "Indicator"
 
-#: src/mobile/hotel/costs/CostsPage.tsx
-#: src/mobile/hotel/costs/costsParts.tsx
-msgid "Información incompleta"
-msgstr "Incomplete information"
-
 #: src/features/personnel/pages/PersonnelPage.tsx
 #: src/features/recruitment/components/PoolFilters.tsx
 #: src/features/recruitment/components/PoolRoster.tsx
@@ -6125,9 +5872,6 @@ msgstr "Incomplete information"
 #: src/features/requisitions/components/AuthorizationPositionsTable.tsx
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/features/worker/pages/ProfilePage.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "Inglés"
 msgstr "English"
 
@@ -6159,11 +5903,6 @@ msgstr "Starts"
 msgid "Ingresos de las 12 semanas sombreadas"
 msgstr "Starts in the 12 shaded weeks"
 
-#. placeholder {0}: formatDayMonth(row.startDate)
-#: src/mobile/hotel/requisitions/RequisitionsPage.tsx
-msgid "Inicia {0}"
-msgstr "Starts {0}"
-
 #: src/features/auth/pages/LoginPage.tsx
 msgid "Inicia sesión"
 msgstr "Sign in"
@@ -6183,9 +5922,6 @@ msgstr "Sign in"
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/features/requisitions/components/PositionsTable.tsx
 #: src/features/worker/components/MobileShell.tsx
-#: src/mobile/hotel/costs/CostsPage.tsx
-#: src/mobile/hotel/HotelShell.tsx
-#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "Inicio"
 msgstr "Home"
 
@@ -6211,7 +5947,6 @@ msgid "Inspección"
 msgstr "Inspection"
 
 #: src/features/requisitions/components/RequisitionTable.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 #: src/shared/constants/roles.ts
 msgid "Inspector"
 msgstr "Inspector"
@@ -6274,12 +6009,10 @@ msgid "Invitación reenviada: la persona tiene un correo nuevo para establecer s
 msgstr "Invitation resent: they have a new email to set their password."
 
 #: src/features/dashboard/components/InviteHotelAccountCard.tsx
-#: src/mobile/hotel/home/InviteAccountCard.tsx
 msgid "Invítalo desde aquí y le llega su acceso. Un gerente nuevo lo confirma Oranje antes de que pueda entrar."
 msgstr "Invite them here and their access goes out. A new manager is confirmed by Oranje before they can sign in."
 
 #: src/features/dashboard/components/InviteHotelAccountCard.tsx
-#: src/mobile/hotel/home/InviteAccountCard.tsx
 msgid "Invitar cuenta"
 msgstr "Invite account"
 
@@ -6401,7 +6134,6 @@ msgid "La asignación quedó hecha, pero el ajuste/gasto no se pudo pedir. Vuelv
 msgstr "The assignment went through, but the adjustment/expense couldn't be requested. Try again."
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "La asignación se canceló: las horas registradas se conservan, pero ya no se capturan marcas"
 msgstr "The assignment was cancelled: recorded hours are kept, but no more punches can be recorded"
 
@@ -6410,7 +6142,6 @@ msgid "La asignación terminó el {endsOn}: las horas se aprueban y pagan, pero 
 msgstr "The assignment ended on {endsOn}: hours get approved and paid, but no more punches can be recorded"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "La asignación terminó: las horas se aprueban y pagan, pero ya no se capturan marcas"
 msgstr "The assignment ended: hours get approved and paid, but no more punches can be recorded"
 
@@ -6483,7 +6214,6 @@ msgid "La fecha de fin ya pasó: este contrato debe marcarse expirado."
 msgstr "The end date has already passed: this contract should be marked expired."
 
 #: src/features/requisitions/types/requisitionForm.schema.ts
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "La fecha debe ser un día real (AAAA-MM-DD)"
 msgstr "The date must be a real day (YYYY-MM-DD)"
 
@@ -6512,16 +6242,11 @@ msgstr "The photo is too heavy: 15 MB is the limit."
 msgid "La geocerca rechazó la marca, se acabó la pila o no hubo señal: para eso existe la marca manual."
 msgstr "The geofence rejected the punch, the battery died or there was no signal: that's what the manual punch is for."
 
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
-msgid "La geocerca rechazó la marca, se acabó la pila…"
-msgstr "The geofence rejected the punch, the battery died…"
-
 #: src/features/onboarding/types/prospectForm.schema.ts
 msgid "La geocerca se mide en metros enteros"
 msgstr "The geofence is measured in whole meters"
 
 #: src/features/requisitions/types/requisitionForm.schema.ts
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "La hora debe ser HH:MM (00:00–23:59)"
 msgstr "The time must be HH:MM (00:00–23:59)"
 
@@ -6720,7 +6445,6 @@ msgid "Las notas al BD llegan pronto"
 msgstr "Notes to the BD are coming soon"
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Las posiciones"
 msgstr "The positions"
 
@@ -7033,17 +6757,9 @@ msgstr "Each department's indicators, calculated from what the system already re
 msgid "Los reportes por BD llegan con la pantalla de Reportes"
 msgstr "Per-BD reports come with the Reports screen"
 
-#: src/mobile/hotel/HotelHomePage.tsx
-msgid "Lugares cubiertos de lo que pediste y sigue abierto."
-msgstr "Filled spots out of what you requested and is still open."
-
 #: src/features/observability/lib/recruitmentKpis.ts
 msgid "Lugares cubiertos sobre lugares pedidos, de las requisiciones que empiezan en el periodo."
 msgstr "Filled slots over requested slots, for requisitions starting in the period."
-
-#: src/mobile/hotel/HotelHomePage.tsx
-msgid "Lugares por cubrir"
-msgstr "Spots to fill"
 
 #: src/features/observability/lib/people.ts
 msgid "Lugares por cubrir en las suyas"
@@ -7110,18 +6826,15 @@ msgid "Manda primero la propuesta: el contrato se arma con las tarifas que el ho
 msgstr "Send the proposal first: the contract is built with the rates the hotel accepted."
 
 #: src/features/personnel/components/StandByDialog.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "Mandando…"
 msgstr "Sending…"
 
 #: src/features/personnel/components/StandByDialog.tsx
 #: src/features/personnel/pages/PersonnelPage.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "Mandar a Stand-by"
 msgstr "Send to Stand-by"
 
 #: src/features/personnel/components/StandByDialog.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "Mandar a Stand-by a {workerName}"
 msgstr "Send {workerName} to Stand-by"
 
@@ -7130,7 +6843,6 @@ msgid "Mandar la semana a aprobación del Manager"
 msgstr "Send the week to the Manager for approval"
 
 #: src/features/recruitment/types/blacklist.types.ts
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Manual"
 msgstr "Manual"
 
@@ -7152,17 +6864,12 @@ msgstr "Mark the location on the map"
 
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Marca manual"
 msgstr "Manual punch"
 
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 msgid "Marca manual registrada"
 msgstr "Manual punch recorded"
-
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
-msgid "Marca registrada"
-msgstr "Punch recorded"
 
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Marcando…"
@@ -7241,7 +6948,6 @@ msgid "Máximo 255 caracteres"
 msgstr "255 characters max"
 
 #: src/features/requisitions/types/requisitionForm.schema.ts
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Máximo 999 personas por posición"
 msgstr "Up to 999 people per position"
 
@@ -7294,12 +7000,6 @@ msgstr "Only the BDC sees My Team"
 msgid "Mi Perfil"
 msgstr "My Profile"
 
-#: src/mobile/hotel/HotelShell.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
-#: src/mobile/hotel/staff/StaffPage.tsx
-msgid "Mi personal"
-msgstr "My staff"
-
 #: src/features/personnel/pages/PersonnelPage.tsx
 #: src/layouts/Sidebar.tsx
 msgid "Mi Personal"
@@ -7346,8 +7046,6 @@ msgstr "hiring modality"
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/features/requisitions/components/PositionsTable.tsx
 #: src/features/worker/pages/ProfilePage.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "Modalidad"
 msgstr "Hiring modality"
 
@@ -7511,10 +7209,6 @@ msgstr "It starts as a Draft: the rates are fine-tuned there and activating it i
 msgid "Nace en Borrador: para que Reclutamiento la vea, un Manager debe autorizarla — la urgencia corre desde ese momento."
 msgstr "It starts as a Draft: for Recruitment to see it, a Manager has to authorize it — urgency runs from that moment."
 
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
-msgid "Nace En elaboración: el folio se asigna al guardar y Reclutamiento la ve cuando un Manager la autoriza."
-msgstr "It starts In draft: the number is assigned on save, and Recruitment sees it once a Manager authorizes it."
-
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "Nace por autorizar"
 msgstr "Starts pending authorization"
@@ -7572,10 +7266,6 @@ msgstr "No one matches those filters this week. Change the requisition, the stat
 #: src/features/timesheet/pages/TimesheetGlobalPage.tsx
 msgid "Nadie coincide con esos filtros. Cambia el nombre, la requisición, el estado, el hotel o el periodo."
 msgstr "No one matches these filters. Change the name, requisition, status, hotel, or period."
-
-#: src/mobile/hotel/staff/StaffPage.tsx
-msgid "Nadie coincide con la búsqueda."
-msgstr "Nobody matches the search."
 
 #: src/features/observability/components/PeopleView.tsx
 msgid "Nadie de este departamento tiene actividad registrada que se pueda ver."
@@ -7792,6 +7482,9 @@ msgstr "Not available in this status"
 msgid "No existe, y el contacto principal no tiene correo: agrégaselo para poder crearlo"
 msgstr "It doesn't exist, and the main contact has no email: add one so it can be created"
 
+#: src/features/timesheet/pages/TimesheetPage.tsx
+msgid "No hay horas en ese periodo"
+msgstr ""
 #: src/mobile/hotel/HotelHomePage.tsx
 msgid "No falta nadie en las requisiciones abiertas."
 msgstr "Nobody is missing in the open requisitions."
@@ -7804,10 +7497,6 @@ msgstr "No hotels are free: they all have an open cycle"
 msgid "No hay nada que contar."
 msgstr "Nothing to count."
 
-#: src/mobile/hotel/HotelHomePage.tsx
-msgid "No hay requisiciones abiertas ahora."
-msgstr "There are no open requisitions right now."
-
 #: src/features/schedule/pages/SchedulePage.tsx
 msgid "No hay requisiciones autorizadas para esta semana. Cuando un Manager autorice una, sus posiciones aparecerán aquí."
 msgstr "There are no authorized requisitions for this week. When a Manager authorizes one, its positions will show up here."
@@ -7815,10 +7504,6 @@ msgstr "There are no authorized requisitions for this week. When a Manager autho
 #: src/features/dashboard/components/RecruitmentDashboard.tsx
 msgid "No hay requisiciones autorizadas por ahora."
 msgstr "No authorized requisitions right now."
-
-#: src/mobile/hotel/requisitions/RequisitionsPage.tsx
-msgid "No hay requisiciones en este filtro."
-msgstr "No requisitions in this filter."
 
 #: src/features/requisitions/components/AuthorizationQueueList.tsx
 msgid "No hay requisiciones esperando tu firma."
@@ -7832,10 +7517,6 @@ msgstr "No requisitions to authorize. When a Supervisor creates one, it'll show 
 #: src/features/timesheet/components/WeekSlider.tsx
 msgid "No hay semanas anteriores con datos"
 msgstr "No earlier weeks with data"
-
-#: src/mobile/hotel/timesheet/TimesheetPage.tsx
-msgid "No hay semanas en este filtro."
-msgstr "No weeks in this filter."
 
 #: src/features/timesheet/components/TimesheetViewControls.tsx
 msgid "No hay semanas más recientes con datos"
@@ -7885,8 +7566,6 @@ msgstr "Didn't return"
 
 #: src/features/recruitment/pages/SelfPickPage.tsx
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 #: src/shared/constants/catalogs.ts
 msgid "No requerido"
 msgstr "Not required"
@@ -7936,11 +7615,6 @@ msgstr "We couldn't load the hotel accounts. Try again in a few seconds."
 msgid "No se pudieron cargar las propuestas. Reintenta en unos segundos."
 msgstr "We couldn't load the proposals. Try again in a few seconds."
 
-#: src/mobile/hotel/HotelHomePage.tsx
-#: src/mobile/hotel/requisitions/RequisitionsPage.tsx
-msgid "No se pudieron cargar las requisiciones."
-msgstr "The requisitions couldn't be loaded."
-
 #: src/features/admin/pages/MailSettingsPage.tsx
 msgid "No se pudieron cargar los ajustes del correo."
 msgstr "The email settings couldn't be loaded."
@@ -7960,10 +7634,6 @@ msgstr "We couldn't load the catalogs. Try again in a few seconds."
 #: src/features/contracts/pages/ContractListPage.tsx
 msgid "No se pudieron cargar los contratos. Reintenta en unos segundos."
 msgstr "The contracts could not be loaded. Try again in a few seconds."
-
-#: src/mobile/hotel/costs/CostsPage.tsx
-msgid "No se pudieron cargar los costos."
-msgstr "Costs couldn't be loaded."
 
 #: src/features/onboarding/components/HotelGlobeCard.tsx
 msgid "No se pudieron cargar los hoteles del mapa. Recarga la página para reintentar."
@@ -8028,7 +7698,6 @@ msgid "No se pudo asignar al colaborador. Inténtalo de nuevo."
 msgstr "We couldn't assign the collaborator. Try again."
 
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 msgid "No se pudo autorizar la requisición. Inténtalo de nuevo."
 msgstr "The requisition couldn't be authorized. Try again."
 
@@ -8057,7 +7726,6 @@ msgid "No se pudo cambiar la contraseña. Inténtalo de nuevo."
 msgstr "The password could not be changed. Try again."
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "No se pudo cambiar la semana. Inténtalo de nuevo."
 msgstr "The week couldn't be changed. Try again."
 
@@ -8091,10 +7759,6 @@ msgstr "The hotel's staff couldn't be loaded. Try again."
 msgid "No se pudo cargar el Pool de Colaboradores. Revisa tu conexión e inténtalo de nuevo."
 msgstr "We couldn't load the Collaborator Pool. Check your connection and try again."
 
-#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
-msgid "No se pudo cargar el QR del hotel."
-msgstr "The hotel's QR couldn't be loaded."
-
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
 msgid "No se pudo cargar el QR. Inténtalo de nuevo."
 msgstr "The QR couldn't be loaded. Try again."
@@ -8106,10 +7770,6 @@ msgstr "The Schedule couldn't be loaded. Check your connection and try again."
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
 msgid "No se pudo cargar el Tablero de Requisiciones. Revisa tu conexión e inténtalo de nuevo."
 msgstr "The Requisition Board couldn't be loaded. Check your connection and try again."
-
-#: src/mobile/hotel/timesheet/TimesheetPage.tsx
-msgid "No se pudo cargar el Timesheet."
-msgstr "The Timesheet couldn't be loaded."
 
 #: src/features/requisitions/components/RequisitionJournalDialog.tsx
 msgid "No se pudo cargar la bitácora. Inténtalo de nuevo."
@@ -8143,10 +7803,6 @@ msgstr "We couldn't load the list of collaborators."
 msgid "No se pudo cargar la lista de correos corporativos."
 msgstr "We couldn't load the list of company emails."
 
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
-msgid "No se pudo cargar la requisición."
-msgstr "The requisition couldn't be loaded."
-
 #: src/features/timesheet/pages/TimesheetGlobalPage.tsx
 msgid "No se pudo cargar la semana del Timesheet Global. Reintenta en unos segundos."
 msgstr "The Global Timesheet week couldn't be loaded. Try again in a few seconds."
@@ -8155,11 +7811,6 @@ msgstr "The Global Timesheet week couldn't be loaded. Try again in a few seconds
 msgid "No se pudo cargar la semana del Timesheet. Reintenta en unos segundos."
 msgstr "The Timesheet week couldn't be loaded. Try again in a few seconds."
 
-#: src/mobile/hotel/costs/CostWeekPage.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
-msgid "No se pudo cargar la semana."
-msgstr "The week couldn't be loaded."
-
 #: src/features/team/pages/TeamPage.tsx
 msgid "No se pudo cargar Mi Equipo. Reintenta en unos segundos."
 msgstr "We couldn't load My Team. Try again in a few seconds."
@@ -8167,11 +7818,6 @@ msgstr "We couldn't load My Team. Try again in a few seconds."
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "No se pudo cargar Mi Personal. Revisa tu conexión e inténtalo de nuevo."
 msgstr "My Staff couldn't be loaded. Check your connection and try again."
-
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
-#: src/mobile/hotel/staff/StaffPage.tsx
-msgid "No se pudo cargar tu personal."
-msgstr "Your staff couldn't be loaded."
 
 #: src/features/territory/pages/TerritoryPage.tsx
 msgid "No se pudo cargar tu territorio. Reintenta."
@@ -8222,7 +7868,6 @@ msgid "No se pudo eliminar al colaborador. Inténtalo de nuevo."
 msgstr "We couldn't delete the collaborator. Try again."
 
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 msgid "No se pudo eliminar la requisición. Inténtalo de nuevo."
 msgstr "The requisition couldn't be deleted. Try again."
 
@@ -8234,6 +7879,10 @@ msgstr "We couldn't delete it. Try again."
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
 msgid "No se pudo generar el PDF. Inténtalo de nuevo."
 msgstr "Couldn't generate the PDF. Try again."
+
+#: src/mobile/nativeDownloads.ts
+msgid "No se pudo guardar el archivo. Inténtalo de nuevo."
+msgstr "Couldn't save the file. Try again."
 
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "No se pudo guardar el colaborador. Revisa los datos e inténtalo de nuevo."
@@ -8280,12 +7929,10 @@ msgid "No se pudo guardar la propuesta. Revisa las tarifas e inténtalo de nuevo
 msgstr "We couldn't save the proposal. Check the rates and try again."
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "No se pudo guardar la requisición. Revisa las posiciones e inténtalo de nuevo."
 msgstr "The requisition couldn't be saved. Check the positions and try again."
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "No se pudo guardar la revisión. Inténtalo de nuevo."
 msgstr "The review couldn't be saved. Try again."
 
@@ -8314,7 +7961,6 @@ msgid "No se pudo liberar el slot. Inténtalo de nuevo."
 msgstr "We couldn't release the slot. Try again."
 
 #: src/features/personnel/components/StandByDialog.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "No se pudo mandar a Stand-by. Inténtalo de nuevo."
 msgstr "They couldn't be sent to Stand-by. Try again."
 
@@ -8332,7 +7978,6 @@ msgid "No se pudo reenviar la invitación. Inténtalo de nuevo."
 msgstr "Couldn't resend the invitation. Try again."
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
-#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "No se pudo regenerar el QR. Inténtalo de nuevo."
 msgstr "The QR couldn't be regenerated. Try again."
 
@@ -8345,12 +7990,10 @@ msgid "No se pudo registrar el veto. Revisa que la persona no esté en Gris ni t
 msgstr "We couldn't register the ban. Check that the person isn't in Gray and doesn't already have an active ban, then try again."
 
 #: src/features/timesheet/components/ManualPunchDialog.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "No se pudo registrar la marca. Inténtalo de nuevo."
 msgstr "The punch couldn't be recorded. Try again."
 
 #: src/features/personnel/components/ReportWorkerDialog.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "No se pudo reportar al colaborador. Inténtalo de nuevo."
 msgstr "The Collaborator couldn't be reported. Try again."
 
@@ -8519,7 +8162,6 @@ msgstr "Normal"
 #: src/features/onboarding/components/ArchiveCycleDialog.tsx
 #: src/features/personnel/components/ReportWorkerDialog.tsx
 #: src/features/personnel/components/StandByDialog.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "Nota (opcional)"
 msgstr "Note (optional)"
 
@@ -8528,7 +8170,6 @@ msgid "Nota al BD"
 msgstr "Note to the BD"
 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Nota de revisión"
 msgstr "Review note"
 
@@ -8539,10 +8180,6 @@ msgstr "Review note <0>(required)</0>"
 #: src/features/onboarding/components/ArchiveCycleDialog.tsx
 msgid "Nota del cierre"
 msgstr "Closing note"
-
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
-msgid "Nota:"
-msgstr "Note:"
 
 #: src/features/onboarding/components/RegisterAttemptDialog.tsx
 msgid "Notas"
@@ -8570,10 +8207,6 @@ msgstr "Notifications: nothing new"
 msgid "Nuestras plantillas, remitente @oranjepeople.com."
 msgstr "Our templates, sent from @oranjepeople.com."
 
-#: src/mobile/hotel/requisitions/RequisitionsPage.tsx
-msgid "Nueva"
-msgstr "New"
-
 #: src/features/admin/components/HotelUserFormDialog.tsx
 msgid "Nueva cuenta del hotel"
 msgstr "New hotel account"
@@ -8584,7 +8217,6 @@ msgid "Nueva propuesta"
 msgstr "New proposal"
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Nueva requisición"
 msgstr "New requisition"
 
@@ -8739,8 +8371,6 @@ msgid "otro rol"
 msgstr "another role"
 
 #: src/features/contracts/components/MultiplierTable.tsx
-#: src/mobile/hotel/costs/CostWeekPage.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Overtime"
 msgstr "Overtime"
 
@@ -8867,7 +8497,6 @@ msgid "Pasa a Rojo: es una incidencia, no una pausa. Inspección la revisa."
 msgstr "Goes to Red: it's an incident, not a pause. Inspection reviews it."
 
 #: src/features/personnel/components/StandByDialog.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "Pasa a Rosa: queda en pausa, sin turnos nuevos, hasta que el Hotel lo reactive."
 msgstr "They move to Pink: paused, with no new shifts, until the Hotel reactivates them."
 
@@ -8886,10 +8515,6 @@ msgstr "Step 2 of 2"
 #: src/features/worker/components/AccessDeadlineBanner.tsx
 msgid "Pasó el día para completar tu expediente después de que Reclutamiento te validó. Llénalo aquí y tu acceso vuelve al instante — tus datos y tu historial no se pierden."
 msgstr "The day to complete your file after Recruitment validated you has passed. Fill it out here and your access comes back instantly — your data and history aren't lost."
-
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
-msgid "Pasos"
-msgstr "Steps"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "pausa temporal (Rosa)"
@@ -9009,7 +8634,6 @@ msgstr "Period {label}"
 
 #: src/features/worker/components/MobileShell.tsx
 #: src/features/worker/pages/PermissionsPage.tsx
-#: src/mobile/hotel/HotelShell.tsx
 msgid "Permisos"
 msgstr "Permissions"
 
@@ -9033,10 +8657,6 @@ msgstr "People"
 msgid "Personas asignadas que no ponchan su primer día, con el primer día en el periodo."
 msgstr "Assigned people who don't punch in on their first day, with that first day in the period."
 
-#: src/mobile/hotel/HotelHomePage.tsx
-msgid "Personas que faltan en las abiertas"
-msgstr "People still missing in open requisitions"
-
 #: src/features/observability/lib/workerKpis.ts
 msgid "Personas que poncharon entrada hoy y todavía no su salida."
 msgstr "People who clocked in today and haven't clocked out yet."
@@ -9055,7 +8675,6 @@ msgid "Peso en el promedio ponderado del score"
 msgstr "Weight in the score's weighted average"
 
 #: src/features/requisitions/types/requisitionForm.schema.ts
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Pide al menos 1 persona"
 msgstr "Request at least 1 person"
 
@@ -9066,10 +8685,6 @@ msgstr "Request staff for your hotel"
 #: src/features/recruitment/components/CreateAccessDialog.tsx
 msgid "Pídele al Administrador que lo cree desde Correos corporativos."
 msgstr "Ask the Administrator to create it from Corporate emails."
-
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
-msgid "Pides para tu departamento."
-msgstr "You request for your department."
 
 #: src/features/onboarding/components/RegisterAttemptDialog.tsx
 msgid "Pidió que llamáramos la próxima semana"
@@ -9157,18 +8772,12 @@ msgstr "Pool by status"
 msgid "Por ahora la retención del 16% aplica a todos los colaboradores, suban o verifiquen o no su SSN/ITIN — es temporal, mientras se conecta ese proceso."
 msgstr "For now the 16% withholding applies to every collaborator, whether or not they upload or verify their SSN/ITIN — it's temporary, until that process is wired up."
 
-#: src/mobile/hotel/timesheet/TimesheetPage.tsx
-msgid "Por aprobar"
-msgstr "To approve"
-
 #: src/features/recruitment/types/blacklist.types.ts
 msgid "Por ausencias"
 msgstr "For absences"
 
 #: src/features/dashboard/components/HotelDashboard.tsx
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
-#: src/mobile/hotel/HotelHomePage.tsx
-#: src/mobile/hotel/requisitions/RequisitionsPage.tsx
 msgid "Por autorizar"
 msgstr "Pending authorization"
 
@@ -9229,14 +8838,6 @@ msgstr "Why this slot is being released…"
 msgid "por qué se van los ciclos, y que son reactivables"
 msgstr "why cycles leave, and that they can be reactivated"
 
-#: src/mobile/hotel/costs/CostsPage.tsx
-msgid "Por semana"
-msgstr "By week"
-
-#: src/mobile/hotel/costs/CostsPage.tsx
-msgid "Por semana trabajada"
-msgstr "Per week worked"
-
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "Por si algo pasa"
 msgstr "In case something happens"
@@ -9267,14 +8868,12 @@ msgstr "position"
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/features/requisitions/components/PositionsTable.tsx
 #: src/features/worker/pages/ProfilePage.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Posición"
 msgstr "Position"
 
 #. placeholder {0}: String(index + 1)
 #. placeholder {0}: index + 1
 #: src/features/contracts/components/NewContractDialog.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Posición {0}"
 msgstr "Position {0}"
 
@@ -9303,7 +8902,6 @@ msgstr "positions"
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 #: src/features/requisitions/components/PositionsTable.tsx
 #: src/features/requisitions/components/RequisitionSummaryStrip.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 msgid "Posiciones"
 msgstr "Positions"
 
@@ -9379,17 +8977,9 @@ msgstr "Average from opening a cycle to closing it, all time."
 msgid "Promedio en Autorizada más promedio en En proceso, de todo el histórico."
 msgstr "Average time in Authorized plus average in In progress, all time."
 
-#: src/mobile/hotel/costs/CostsPage.tsx
-msgid "Promedio por semana"
-msgstr "Average per week"
-
 #: src/features/observability/lib/hotelKpis.ts
 msgid "Promedio que un colaborador pasa en Stand-by, de todo el histórico."
 msgstr "Average time a worker spends in Stand-by, all time."
-
-#: src/mobile/hotel/HotelHomePage.tsx
-msgid "Promedio, últimos 90 días"
-msgstr "Average, last 90 days"
 
 #: src/shared/constants/workerEnums.ts
 msgid "Propio"
@@ -9501,19 +9091,11 @@ msgstr "Positions quoted"
 
 #: src/features/observability/lib/workerKpis.ts
 #: src/features/personnel/components/WorkerPerformanceRadar.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "Puntualidad"
 msgstr "Punctuality"
 
-#: src/mobile/hotel/HotelShell.tsx
-#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
-msgid "QR de ponche"
-msgstr "Punch QR"
-
 #. placeholder {0}: data.hotelName
-#. placeholder {0}: qr.hotelName
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
-#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "QR de ponche de {0}"
 msgstr "Punch QR for {0}"
 
@@ -9521,10 +9103,6 @@ msgstr "Punch QR for {0}"
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "QR del hotel"
 msgstr "Hotel QR"
-
-#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
-msgid "QR regenerado: versión {version}. Cambia la hoja del acceso."
-msgstr "QR regenerated: version {version}. Replace the sheet at the entrance."
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
 msgid "QR regenerado: versión {version}. Descarga la hoja nueva."
@@ -9559,10 +9137,6 @@ msgstr "What happened on this attempt"
 msgid "Qué pasó con quienes ya no trabajan"
 msgstr "What happened to those who no longer work"
 
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
-msgid "Qué pasó y cómo se resolvió…"
-msgstr "What happened and how it was resolved…"
-
 #: src/features/personnel/components/ReportWorkerDialog.tsx
 msgid "Qué pasó y cuándo…"
 msgstr "What happened and when…"
@@ -9588,7 +9162,6 @@ msgid "Queda señalada como manual"
 msgstr "It's flagged as manual"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Quedan días con anomalía sin resolver: revísalos antes de enviar la semana."
 msgstr "There are still days with unresolved anomalies: review them before sending the week."
 
@@ -9641,11 +9214,6 @@ msgstr "Remove this position from the request"
 #: src/shared/components/FilterReset.tsx
 msgid "Quitar filtros"
 msgstr "Clear filters"
-
-#. placeholder {0}: index + 1
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
-msgid "Quitar la posición {0}"
-msgstr "Remove position {0}"
 
 #. placeholder {0}: String(index + 1)
 #: src/features/contracts/components/NewContractDialog.tsx
@@ -9754,10 +9322,6 @@ msgstr "Recruitment and Inspection take over the operation"
 msgid "Reclutamiento la verá cuando un Manager la autorice. Sin la firma, para ellos no existe."
 msgstr "Recruitment will see it once a Manager authorizes it. Without the signature, it doesn't exist for them."
 
-#: src/mobile/hotel/HotelHomePage.tsx
-msgid "Reclutamiento las está cubriendo"
-msgstr "Recruitment is filling them"
-
 #. placeholder {0}: formatDate(profile.dueAt)
 #. placeholder {1}: profile.day ?? 1
 #: src/features/worker/components/AccessDeadlineBanner.tsx
@@ -9784,12 +9348,10 @@ msgid "Reenviar invitación"
 msgstr "Resend invitation"
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
-#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "Regenerando…"
 msgstr "Regenerating…"
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
-#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "Regenerar QR"
 msgstr "Regenerate QR"
 
@@ -9816,12 +9378,10 @@ msgid "Registrar la marca"
 msgstr "Record the punch"
 
 #: src/features/timesheet/components/ManualPunchDialog.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Registrar marca"
 msgstr "Record punch"
 
 #: src/features/timesheet/components/ManualPunchDialog.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Registras la hora real del hecho, no la de ahora: esa es la que cuenta horas para la nómina."
 msgstr "You record the actual time it happened, not the current time: that's what counts hours for payroll."
 
@@ -9846,13 +9406,8 @@ msgstr "Came back the following week"
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 #: src/features/worker/api/punchApi.ts
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Regreso de lunch"
 msgstr "Back from lunch"
-
-#: src/mobile/hotel/costs/CostWeekPage.tsx
-msgid "Regulares"
-msgstr "Regular"
 
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
 msgid "Renglón completo"
@@ -9905,12 +9460,10 @@ msgstr "Reporting…"
 
 #: src/features/personnel/components/ReportWorkerDialog.tsx
 #: src/features/personnel/pages/PersonnelPage.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "Reportar"
 msgstr "Report"
 
 #: src/features/personnel/components/ReportWorkerDialog.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "Reportar a {workerName}"
 msgstr "Report {workerName}"
 
@@ -9936,12 +9489,7 @@ msgstr "Requisition"
 msgid "Requisición · {0}"
 msgstr "Requisition · {0}"
 
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
-msgid "Requisición {requisitionNumber} autorizada"
-msgstr "Requisition {requisitionNumber} authorized"
-
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 msgid "Requisición {requisitionNumber} eliminada"
 msgstr "Requisition {requisitionNumber} deleted"
 
@@ -9958,10 +9506,6 @@ msgstr "Requisition created"
 msgid "Requisición creada — quedó en Borrador"
 msgstr "Requisition created — it's in Draft"
 
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
-msgid "Requisición creada: queda En elaboración hasta que un Manager la autorice."
-msgstr "Requisition created: it stays In draft until a Manager authorizes it."
-
 #: src/features/requisitions/components/RequisitionJournalDialog.tsx
 msgid "Requisición eliminada"
 msgstr "Requisition deleted"
@@ -9969,9 +9513,6 @@ msgstr "Requisition deleted"
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
 #: src/layouts/GlobalSearch.tsx
 #: src/layouts/Sidebar.tsx
-#: src/mobile/hotel/HotelShell.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
-#: src/mobile/hotel/requisitions/RequisitionsPage.tsx
 msgid "Requisiciones"
 msgstr "Requisitions"
 
@@ -10071,10 +9612,6 @@ msgstr "reviewed"
 msgid "Revisar"
 msgstr "Review"
 
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
-msgid "Revisar día"
-msgstr "Review day"
-
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 msgid "Revisar el día"
 msgstr "Review the day"
@@ -10088,7 +9625,6 @@ msgid "Revisar permisos"
 msgstr "Check permissions"
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Revisión"
 msgstr "Review"
 
@@ -10158,8 +9694,10 @@ msgid "Sáb"
 msgstr "Sat"
 
 #: src/features/observability/tabs/RecruitmentTab.tsx
-msgid "Sale de la bitácora de las requisiciones: quién las tomó, soltó o reasignó. A quién asignó cada reclutador no se ve: eso se registra en otra bitácora que el Observador no lee. Quien no movió ninguna requisición no aparece."
-msgstr "Comes from the requisitions' log: who took, released or reassigned them. Who each recruiter assigned isn't shown: that's recorded in another log the Observer can't read. Anyone who didn't move a requisition doesn't appear."
+msgid "Sale de la bitácora de las requisiciones (quién las tomó, soltó o reasignó) y del historial de cada candidato nuevo (quién lo dio de alta). A quién asignó cada reclutador no se ve: eso se registra en otra bitácora que el Observador no lee. Quien no movió ninguna requisición ni dio de alta a nadie no aparece."
+msgstr "It comes from the requisitions' log (who took, dropped or reassigned them) and from each new candidate's history (who signed them up). Who each recruiter assigned isn't shown: that's recorded in another log the Observer can't read. Anyone who didn't move a requisition or sign anyone up doesn't appear."
+
+#: src/features/observability/tabs/RecruitmentTab.tsx
 
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
 msgid "Sale del Pool mientras el veto viva; el historial completo queda y solo el Administrador lo levanta."
@@ -10171,7 +9709,6 @@ msgstr "They leave the Pool while the ban is active; the full history stays and 
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 #: src/features/worker/api/punchApi.ts
 #: src/features/worker/pages/PunchPage.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Salida"
 msgstr "Clock out"
 
@@ -10179,7 +9716,6 @@ msgstr "Clock out"
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 #: src/features/worker/api/punchApi.ts
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Salida a lunch"
 msgstr "Out to lunch"
 
@@ -10234,10 +9770,6 @@ msgstr "It is created as a draft. Adjust the rates per position and activate it 
 msgid "Se elabora y se envía con el hotel en Verde — y de ahí no se avanza sin propuesta enviada."
 msgstr "It's written and sent with the hotel in Green — and there's no moving on from there without a proposal sent."
 
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
-msgid "Se elimina el borrador y no se puede recuperar. ¿Seguro?"
-msgstr "The draft is deleted and can't be recovered. Are you sure?"
-
 #. placeholder {0}: item.label
 #. placeholder {0}: pending.item.name
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
@@ -10286,7 +9818,6 @@ msgid "Se puso disponible por su cuenta: no cambia la asignación de arriba."
 msgstr "They marked themselves available on their own — it doesn't change the assignment above."
 
 #: src/features/worker/components/MobileShell.tsx
-#: src/mobile/hotel/HotelShell.tsx
 msgid "Secciones"
 msgstr "Sections"
 
@@ -10343,12 +9874,10 @@ msgid "Semana {rangeLabel}"
 msgstr "Week {rangeLabel}"
 
 #: src/features/timesheet/components/TimesheetViewControls.tsx
-#: src/mobile/hotel/timesheet/TimesheetPage.tsx
 msgid "Semana anterior"
 msgstr "Previous week"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Semana aprobada"
 msgstr "Week approved"
 
@@ -10364,7 +9893,6 @@ msgid "Semana del {0}"
 msgstr "Week of {0}"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Semana enviada a revisión"
 msgstr "Week sent for review"
 
@@ -10373,7 +9901,6 @@ msgid "Semana pasada"
 msgstr "Last week"
 
 #: src/features/timesheet/components/TimesheetViewControls.tsx
-#: src/mobile/hotel/timesheet/TimesheetPage.tsx
 msgid "Semana siguiente"
 msgstr "Next week"
 
@@ -10461,10 +9988,6 @@ msgstr "If your session expires, you pick up on the same screen when you sign ba
 msgid "Sí, activar contrato"
 msgstr "Yes, activate contract"
 
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
-msgid "Sí, autorizar"
-msgstr "Yes, authorize"
-
 #: src/features/onboarding/components/ContactAttemptLog.tsx
 msgid "Sí, borrar"
 msgstr "Yes, delete"
@@ -10501,7 +10024,6 @@ msgid "Sí, eliminar contacto"
 msgstr "Yes, delete contact"
 
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 msgid "Sí, eliminar requisición"
 msgstr "Yes, delete requisition"
 
@@ -10593,7 +10115,6 @@ msgid "Sin aprobación no se paga"
 msgstr "No approval, no pay"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Sin asignación en esta requisición: no hay contra qué capturar marcas"
 msgstr "No assignment on this requisition: there's nothing to record punches against"
 
@@ -10687,7 +10208,6 @@ msgid "sin entrada"
 msgstr "not clocked in"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
-#: src/mobile/hotel/staff/staffParts.tsx
 msgid "Sin entrada"
 msgstr "Not clocked in"
 
@@ -10793,10 +10313,6 @@ msgstr "Without camera permission the QR can't be read. Allow it for this site a
 msgid "Sin permiso de ubicación no se puede ponchar: actívalo en Permisos, en el menú de tu cuenta."
 msgstr "Without location permission you can't punch in: turn it on in Permissions, from your account menu."
 
-#: src/mobile/hotel/staff/StaffPage.tsx
-msgid "Sin personal asignado"
-msgstr "No staff assigned"
-
 #: src/features/timesheet/components/TimesheetDayCell.tsx
 msgid "Sin ponches"
 msgstr "No punches"
@@ -10866,10 +10382,6 @@ msgstr "No exits on record yet. No cycle has gone to Red, Brown or Black."
 #: src/features/admin/pages/MailSettingsPage.tsx
 msgid "Sin salir"
 msgstr "Never sent"
-
-#: src/mobile/hotel/timesheet/TimesheetPage.tsx
-msgid "Sin semanas todavía"
-msgstr "No weeks yet"
 
 #: src/features/clients/components/ClientCardGrid.tsx
 #: src/features/contracts/components/ContractCardGrid.tsx
@@ -11019,7 +10531,6 @@ msgid "Solo el contrato define lo que se paga y se factura"
 msgstr "Only the contract defines what is paid and what is billed"
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Solo el Manager de Área o el Manager General pueden aprobar la semana."
 msgstr "Only the Area Manager or the General Manager can approve the week."
 
@@ -11068,7 +10579,6 @@ msgid "Solo puedes crear requisiciones de tu hotel"
 msgstr "You can only create requisitions for your hotel"
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Solo puedes crear requisiciones de tu hotel."
 msgstr "You can only create requisitions for your hotel."
 
@@ -11077,7 +10587,6 @@ msgid "Solo puedes pedir posiciones de tu departamento"
 msgstr "You can only request positions from your department"
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Solo puedes pedir posiciones de tu departamento. Las de otro departamento las crea su Manager de Área o el Manager General."
 msgstr "You can only request positions from your department. Those for another department are created by its Area Manager or the General Manager."
 
@@ -11086,7 +10595,6 @@ msgid "Solo roles internos de Oranje — las cuentas de los hoteles van en «Per
 msgstr "Oranje's internal roles only — hotel accounts go in “Hotel staff”."
 
 #: src/features/timesheet/components/WorkerWeekSummary.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Solo se aprueba una semana enviada a aprobación."
 msgstr "Only a week sent for approval can be approved."
 
@@ -11330,7 +10838,6 @@ msgstr "report directly to you"
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 #: src/features/worker/pages/Phase3Page.tsx
 #: src/features/worker/pages/ProfilePage.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 #: src/shared/components/PhoneInput.tsx
 msgid "Teléfono"
 msgstr "Phone"
@@ -11362,7 +10869,6 @@ msgid "Teléfono y zona"
 msgstr "Phone and zone"
 
 #: src/features/personnel/components/StandByDialog.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "Temporada baja"
 msgstr "Low season"
 
@@ -11414,7 +10920,6 @@ msgid "Tiempo para aprobar el timesheet"
 msgstr "Time to approve the timesheet"
 
 #: src/features/observability/lib/hotelKpis.ts
-#: src/mobile/hotel/HotelHomePage.tsx
 msgid "Tiempo para autorizar"
 msgstr "Time to authorize"
 
@@ -11453,9 +10958,6 @@ msgstr "Status Light timeline"
 
 #: src/features/timesheet/pages/TimesheetPage.tsx
 #: src/layouts/Sidebar.tsx
-#: src/mobile/hotel/HotelShell.tsx
-#: src/mobile/hotel/timesheet/TimesheetPage.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Timesheet"
 msgstr "Timesheet"
 
@@ -11467,16 +10969,11 @@ msgstr "Global Timesheet"
 msgid "Timesheet Global · Cumplimiento"
 msgstr "Global Timesheet · Compliance"
 
-#: src/mobile/hotel/HotelHomePage.tsx
-msgid "Timesheets por aprobar"
-msgstr "Timesheets to approve"
-
 #: src/features/dashboard/components/HotelDashboard.tsx
 msgid "Timesheets sin aprobar"
 msgstr "Unapproved Timesheets"
 
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Tipo"
 msgstr "Type"
 
@@ -11520,14 +11017,8 @@ msgstr "all"
 
 #: src/features/territory/components/TerritoryZoneChips.tsx
 #: src/features/timesheet/components/TimesheetToolbar.tsx
-#: src/mobile/hotel/requisitions/RequisitionsPage.tsx
-#: src/mobile/hotel/timesheet/TimesheetPage.tsx
 msgid "Todas"
 msgstr "All"
-
-#: src/mobile/hotel/costs/CostWeekPage.tsx
-msgid "Todas las posiciones tienen tarifa."
-msgstr "All positions have a rate."
 
 #: src/features/admin/components/ColaboradorAccountsSection.tsx
 msgid "Todavía nadie tiene correo corporativo asignado."
@@ -11607,10 +11098,6 @@ msgstr "There are no checklist items for this audit yet. Ask the Administrator t
 msgid "Todavía no hay reactivos. Agrega el primero con el botón de arriba."
 msgstr "No checklist items yet. Add the first one with the button above."
 
-#: src/mobile/hotel/costs/CostsPage.tsx
-msgid "Todavía no hay semanas trabajadas."
-msgstr "No weeks worked yet."
-
 #: src/features/onboarding/components/ProposalVersionHistory.tsx
 msgid "Todavía no hay versiones de la propuesta."
 msgstr "No proposal versions yet."
@@ -11632,7 +11119,6 @@ msgid "Todavía se puede corregir y capturar marcas. El Supervisor la envía cua
 msgstr "It can still be corrected and punches can still be recorded. The Supervisor sends it when it's ready."
 
 #: src/features/admin/components/HotelUsersSection.tsx
-#: src/mobile/hotel/HotelHomePage.tsx
 msgid "Todo el hotel"
 msgstr "The whole hotel"
 
@@ -11696,10 +11182,6 @@ msgstr "Take photo"
 #: src/features/observability/lib/people.ts
 msgid "Tomó la requisición"
 msgstr "Took the requisition"
-
-#: src/mobile/hotel/costs/CostsPage.tsx
-msgid "Total de las semanas cerradas"
-msgstr "Total of closed weeks"
 
 #. placeholder {0}: report.teamTotals.open
 #. placeholder {1}: report.teamTotals.converted
@@ -11825,10 +11307,6 @@ msgstr "Your photo"
 msgid "Tu hotel"
 msgstr "Your hotel"
 
-#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
-msgid "Tu hotel poncha con selfie: la app toma la foto en el momento de ponchar y no hace falta QR. Para cambiarlo, pídeselo a Oranje."
-msgstr "Your hotel punches with a selfie: the app takes the photo when punching and no QR is needed. To change it, ask Oranje."
-
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Tu marca quedó registrada"
 msgstr "Your punch was recorded"
@@ -11845,12 +11323,10 @@ msgid "Tú resuelves anomalías y dejas la nota; aprobar las horas es del Manage
 msgstr "You resolve anomalies and leave the note; approving hours is up to the Area Manager or the General Manager."
 
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
-#: src/mobile/hotel/requisitions/RequisitionDetailPage.tsx
 msgid "Tu rol no autoriza requisiciones: lo hacen el Manager de Área, el Manager General o el Inspector de la zona."
 msgstr "Your role can't authorize requisitions: that's done by the Area Manager, the General Manager, or the zone's Inspector."
 
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
-#: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
 msgid "Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área, el Manager General del hotel o el Inspector de su zona."
 msgstr "Your role can't create requisitions: they're created by the Supervisor, the Area Manager, the General Manager, or the Inspector of the zone."
 
@@ -12066,10 +11542,6 @@ msgstr "A clear photo or a PDF. Oranje reviews it and lets you know when it's ve
 msgid "Una persona en accidente laboral no puede vetarse: primero se resuelve su caso, luego se decide."
 msgstr "Someone with a workplace accident can't be banned: their case is resolved first, then it's decided."
 
-#: src/mobile/hotel/costs/costsParts.tsx
-msgid "Una posición no tiene tarifa en el contrato: sus horas no tienen costo."
-msgstr "A position has no rate in the contract: its hours have no cost."
-
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Una posición pertenece a un departamento: elige a cuál."
 msgstr "A position belongs to a department: pick which one."
@@ -12136,7 +11608,6 @@ msgid "Urgente"
 msgstr "Urgent"
 
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
-#: src/mobile/hotel/HotelHomePage.tsx
 msgid "Urgentes"
 msgstr "Urgent"
 
@@ -12192,7 +11663,6 @@ msgid "v{0} · {1}"
 msgstr "v{0} · {1}"
 
 #: src/features/personnel/components/StandByDialog.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "Vacaciones"
 msgstr "Vacation"
 
@@ -12290,6 +11760,7 @@ msgstr "See who has a document (SSN/ITIN) pending verification"
 msgid "Ver revisión"
 msgstr "View review"
 
+#: src/features/timesheet/pages/TimesheetPage.tsx
 #: src/mobile/hotel/HotelHomePage.tsx
 msgid "Ver todas las requisiciones"
 msgstr "See all requisitions"
@@ -12337,11 +11808,8 @@ msgid "Versión {0} · borrador sin enviar"
 msgstr "Version {0} · unsent draft"
 
 #. placeholder {0}: String(punchQr.version)
-#. placeholder {0}: String(qr.version)
 #. placeholder {1}: formatDateTime(punchQr.generatedAt)
-#. placeholder {1}: formatDateTime(qr.generatedAt)
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
-#: src/mobile/hotel/punchQr/HotelPunchQrPage.tsx
 msgid "Versión {0} · generado el {1}"
 msgstr "Version {0} · generated on {1}"
 
@@ -12465,6 +11933,7 @@ msgid "Vista tabla"
 msgstr "Table view"
 
 #: src/layouts/AppShell.tsx
+#: src/mobile/layouts.tsx
 msgid "Volver"
 msgstr "Back"
 
@@ -12533,10 +12002,6 @@ msgstr "and"
 #: src/features/worker/pages/HomePage.tsx
 msgid "Y tu ubicación, para confirmar dónde estás"
 msgstr "And your location, to confirm where you are"
-
-#: src/mobile/hotel/staff/StaffPage.tsx
-msgid "Ya entraron"
-msgstr "Clocked in"
 
 #: src/features/admin/components/userListParts.tsx
 msgid "Ya entró"

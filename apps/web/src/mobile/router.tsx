@@ -1,22 +1,27 @@
 import { type ReactElement } from 'react'
 import { createBrowserRouter, Navigate, useLocation, useParams } from 'react-router'
 
+import { HotelOnly, WithBackBar, WithToaster } from './layouts'
 import { MobileRoleHome } from './MobileRoleHome'
+import { NativePermissionsRoute } from './NativePermissionsRoute'
 import { PermissionsOnLaunch } from './PermissionsOnLaunch'
-import { HOTEL_HOME, UNSUPPORTED_HOME } from './roles'
+import { UNSUPPORTED_HOME } from './roles'
 
 import { RequireSession } from '@/app/RequireSession'
+import { punchQrPrintRoute, staffShellRouteForApp } from '@/app/staffRoutes'
 
 /**
- * El router de la app EMPAQUETADA del Colaborador (Android / iOS con Capacitor).
+ * El router de la app EMPAQUETADA (Android / iOS con Capacitor).
  *
- * Es el mismo árbol de `app/router.tsx` recortado a `/collaborator/*`: aquí no
- * existe el staff, así que no hay `AppShell`, ni sidebar, ni las 25 rutas de
- * los módulos. Eso es justo lo que se busca — el bundle de la app no carga
- * three.js, recharts ni el editor de propuestas, que el Colaborador nunca abre.
+ * El Colaborador tiene su apartado `/collaborator/*`. Los roles del hotel ven
+ * el web TAL CUAL: el mismo `AppShell` (sidebar, header) y las mismas
+ * pantallas, compartidas desde `app/staffRoutes.tsx` — la app las consume, no
+ * las reconstruye. Lo único nativo del hotel es la pantalla de Permisos
+ * (notificaciones). El resto del staff ve la pantalla que le dice que su
+ * trabajo está en el web.
  *
- * NO se importa el `router` del web: aquel monta `AppShell` y arrastraría todo
- * el staff al bundle por más que las rutas fueran inalcanzables.
+ * NO se importa `app/router.tsx`: crearía un segundo router escuchando el
+ * historial.
  */
 
 /**
@@ -66,197 +71,143 @@ export const mobileRouter = createBrowserRouter([
      */
     Component: PermissionsOnLaunch,
     children: [
-      { path: '/collaborator/login', ...loginRoute },
-      { path: '/login', ...loginRoute },
-
       {
-        /* Sin `path`: es una ruta de layout. Sus hijos cuelgan de la raíz igual
-       que antes, pero `/` ya no cae aquí dentro. */
-        Component: RequireSession,
+        /* Login, Colaborador y rol sin app: fuera del shell del web, con sus avisos. */
+        Component: WithToaster,
         children: [
-          /*
-           * `/` reparte por rol: el Colaborador a `/collaborator`, el hotel a
-           * `/hotel`, el resto del staff a la pantalla que le dice que su
-           * trabajo está en el web. Dentro del guard: sin sesión, el guard
-           * manda a `/login` (la puerta única) y el login regresa a `/`.
-           */
-          { index: true, Component: MobileRoleHome },
+          { path: '/collaborator/login', ...loginRoute },
+          { path: '/login', ...loginRoute },
+
           {
-            path: UNSUPPORTED_HOME.slice(1),
-            lazy: async () => {
-              const m = await import('./UnsupportedRolePage')
-              return { Component: m.UnsupportedRolePage }
-            },
-          },
-          {
-            /* El apartado del hotel: Supervisor, Manager de Área y Manager General. */
-            path: HOTEL_HOME.slice(1),
-            lazy: async () => {
-              const m = await import('./hotel/HotelShell')
-              return { Component: m.HotelShell }
-            },
+            /* Sin `path`: es una ruta de layout. Sus hijos cuelgan de la raíz igual
+       que antes, pero `/` ya no cae aquí dentro. */
+            Component: RequireSession,
             children: [
+              /*
+               * `/` reparte por rol: el Colaborador a `/collaborator`, el hotel a
+               * `/hotel`, el resto del staff a la pantalla que le dice que su
+               * trabajo está en el web. Dentro del guard: sin sesión, el guard
+               * manda a `/login` (la puerta única) y el login regresa a `/`.
+               */
+              { index: true, Component: MobileRoleHome },
               {
-                index: true,
+                path: UNSUPPORTED_HOME.slice(1),
                 lazy: async () => {
-                  const m = await import('./hotel/HotelHomePage')
-                  return { Component: m.HotelHomePage }
+                  const m = await import('./UnsupportedRolePage')
+                  return { Component: m.UnsupportedRolePage }
                 },
               },
+              ...LEGACY_PATHS.map(({ from, to }) => ({
+                path: from,
+                element: <LegacyRedirect to={to} />,
+              })),
               {
-                path: 'requisitions',
-                lazy: async () => {
-                  const m = await import('./hotel/requisitions/RequisitionsPage')
-                  return { Component: m.RequisitionsPage }
-                },
-              },
-              {
-                path: 'requisitions/new',
-                lazy: async () => {
-                  const m = await import('./hotel/requisitions/NewRequisitionPage')
-                  return { Component: m.NewRequisitionPage }
-                },
-              },
-              {
-                path: 'timesheet',
-                lazy: async () => {
-                  const m = await import('./hotel/timesheet/TimesheetPage')
-                  return { Component: m.TimesheetPage }
-                },
-              },
-              {
-                path: 'timesheet/:timesheetId',
-                lazy: async () => {
-                  const m = await import('./hotel/timesheet/TimesheetWeekPage')
-                  return { Component: m.TimesheetWeekPage }
-                },
-              },
-              {
-                path: 'costs',
-                lazy: async () => {
-                  const m = await import('./hotel/costs/CostsPage')
-                  return { Component: m.CostsPage }
-                },
-              },
-              {
-                path: 'costs/:weekStart',
-                lazy: async () => {
-                  const m = await import('./hotel/costs/CostWeekPage')
-                  return { Component: m.CostWeekPage }
-                },
-              },
-              {
-                path: 'punch-qr',
-                lazy: async () => {
-                  const m = await import('./hotel/punchQr/HotelPunchQrPage')
-                  return { Component: m.HotelPunchQrPage }
-                },
-              },
-              {
-                path: 'staff',
-                lazy: async () => {
-                  const m = await import('./hotel/staff/StaffPage')
-                  return { Component: m.StaffPage }
-                },
-              },
-              {
-                path: 'staff/:workerId',
-                lazy: async () => {
-                  const m = await import('./hotel/staff/StaffMemberPage')
-                  return { Component: m.StaffMemberPage }
-                },
-              },
-              {
-                path: 'requisitions/:requisitionId',
-                lazy: async () => {
-                  const m = await import('./hotel/requisitions/RequisitionDetailPage')
-                  return { Component: m.RequisitionDetailPage }
-                },
-              },
-            ],
-          },
-          ...LEGACY_PATHS.map(({ from, to }) => ({
-            path: from,
-            element: <LegacyRedirect to={to} />,
-          })),
-          {
-            path: 'collaborator',
-            lazy: async () => {
-              const m = await import('@/features/worker')
-              return { Component: m.MobileShell }
-            },
-            children: [
-              {
-                index: true,
+                path: 'collaborator',
                 lazy: async () => {
                   const m = await import('@/features/worker')
-                  return { Component: m.HomePage }
-                },
-              },
-              {
-                path: 'profile',
-                lazy: async () => {
-                  const m = await import('@/features/worker')
-                  return { Component: m.ProfilePage }
-                },
-              },
-              {
-                path: 'password',
-                lazy: async () => {
-                  const m = await import('@/features/worker')
-                  return { Component: m.PasswordPage }
-                },
-              },
-              {
-                /*
-                 * El candado de Ponchar: sin ubicación precisa, GPS y cámara la
-                 * app no deja entrar (la misma regla que el botón de la pantalla
-                 * nativa de Permisos). Solo existe en este router; el web no lo monta.
-                 */
-                lazy: async () => {
-                  const m = await import('@/features/worker')
-                  return { Component: m.NativePunchGate }
+                  return { Component: m.MobileShell }
                 },
                 children: [
                   {
-                    path: 'punch',
+                    index: true,
                     lazy: async () => {
                       const m = await import('@/features/worker')
-                      return { Component: m.PunchPage }
+                      return { Component: m.HomePage }
                     },
                   },
+                  {
+                    path: 'profile',
+                    lazy: async () => {
+                      const m = await import('@/features/worker')
+                      return { Component: m.ProfilePage }
+                    },
+                  },
+                  {
+                    path: 'password',
+                    lazy: async () => {
+                      const m = await import('@/features/worker')
+                      return { Component: m.PasswordPage }
+                    },
+                  },
+                  {
+                    /*
+                     * El candado de Ponchar: sin ubicación precisa, GPS y cámara la
+                     * app no deja entrar (la misma regla que el botón de la pantalla
+                     * nativa de Permisos). Solo existe en este router; el web no lo monta.
+                     */
+                    lazy: async () => {
+                      const m = await import('@/features/worker')
+                      return { Component: m.NativePunchGate }
+                    },
+                    children: [
+                      {
+                        path: 'punch',
+                        lazy: async () => {
+                          const m = await import('@/features/worker')
+                          return { Component: m.PunchPage }
+                        },
+                      },
+                    ],
+                  },
+                  {
+                    path: 'signup-2',
+                    lazy: async () => {
+                      const m = await import('@/features/worker')
+                      return { Component: m.Phase2Page }
+                    },
+                  },
+                  {
+                    path: 'signup-3',
+                    lazy: async () => {
+                      const m = await import('@/features/worker')
+                      return { Component: m.Phase3Page }
+                    },
+                  },
+                  {
+                    path: 'notifications',
+                    lazy: async () => {
+                      const m = await import('@/features/worker')
+                      return { Component: m.NotificationsPage }
+                    },
+                  },
+                  {
+                    /*
+                     * «Permisos» del menú y los avisos de Ponchar: en la app abre
+                     * la pantalla NATIVA. Sin esta ruta caía en `*` y volvía al Inicio.
+                     */
+                    path: 'permissions',
+                    Component: NativePermissionsRoute,
+                  },
                 ],
-              },
-              {
-                path: 'signup-2',
-                lazy: async () => {
-                  const m = await import('@/features/worker')
-                  return { Component: m.Phase2Page }
-                },
-              },
-              {
-                path: 'signup-3',
-                lazy: async () => {
-                  const m = await import('@/features/worker')
-                  return { Component: m.Phase3Page }
-                },
-              },
-              {
-                path: 'notifications',
-                lazy: async () => {
-                  const m = await import('@/features/worker')
-                  return { Component: m.NotificationsPage }
-                },
               },
             ],
           },
         ],
       },
 
+      {
+        /*
+         * El hotel: el MISMO shell del web con sus MISMAS pantallas (Dashboard,
+         * Requisiciones, Timesheet, Mi Personal, Accidentes, Auditorías…) y la
+         * hoja del QR de ponche. La app no las reconstruye: las consume. El
+         * sidebar filtra por rol igual que en el navegador. Sin la ruta índice
+         * del shell: `/` lo reparte `MobileRoleHome`.
+         */
+        Component: RequireSession,
+        children: [
+          {
+            Component: HotelOnly,
+            children: [
+              { Component: WithBackBar, children: [punchQrPrintRoute] },
+              staffShellRouteForApp,
+            ],
+          },
+        ],
+      },
+
       /*
-       * Cualquier otra ruta del web (las del staff) no existe aquí: a `/`, que
-       * reparte por rol. Último de la lista: React Router prefiere lo
-       * específico, pero el orden lo deja explícito para quien lea.
+       * Cualquier otra ruta: a `/`, que reparte por rol. Último de la lista:
+       * React Router prefiere lo específico, pero el orden lo deja explícito.
        */
       { path: '*', element: <Navigate to="/" replace /> },
     ],

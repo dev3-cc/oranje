@@ -97,6 +97,18 @@ const config: CapacitorConfig = {
      * primero. Ver la nota del README sobre el refresh.
      */
     CapacitorHttp: { enabled: false },
+
+    /*
+     * El teclado encoge la pantalla de la app (`@capacitor/keyboard`).
+     *
+     * Con edge-to-edge (Android 15, ver arriba) el sistema ya NO encoge el
+     * WebView al abrir el teclado: lo dibuja encima. Un diálogo como el de
+     * Nueva requisición dejaba sus campos de abajo y sus botones detrás del
+     * teclado, sin forma de llegar a ellos. `resizeOnFullScreen` hace que el
+     * plugin encoja el WebView en Android; `resize: 'native'` lo encoge en
+     * iOS. Así el contenido se acomoda al espacio libre, como en el navegador.
+     */
+    Keyboard: { resize: 'native', resizeOnFullScreen: true },
   },
 }
 

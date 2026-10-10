@@ -6,6 +6,7 @@ import {
   useGetObserverJournalsQuery,
   useGetObserverPunchesSinceQuery,
   useGetObserverRequisitionsQuery,
+  useGetObserverWorkerHistoriesQuery,
   useGetObserverWorkersQuery,
   useGetStatusDurationsQuery,
 } from '../api/observabilityApi'
@@ -19,7 +20,7 @@ import {
   TruncatedNotice,
   ViewSwitch,
 } from '../components/TabParts'
-import { journalCandidates, recruitmentPeople } from '../lib/people'
+import { journalCandidates, recruitmentPeople, signupCandidates } from '../lib/people'
 import { type Period } from '../lib/period'
 import { dayOneCandidates, dayOneNoShow, recruitmentKpis } from '../lib/recruitmentKpis'
 
@@ -87,8 +88,18 @@ export function RecruitmentTab({
     skip: !requisitions.data || view !== 'people',
   })
 
+  /* Quién dio de alta a cada candidato nuevo: su historial, también solo en «Por persona». */
+  const signupIds = workers.data
+    ? signupCandidates(workers.data.rows, period)
+    : { ids: [], capped: false }
+  const histories = useGetObserverWorkerHistoriesQuery([...signupIds.ids].sort(), {
+    skip: !workers.data || view !== 'people',
+  })
+
   const sources =
-    view === 'people' ? [requisitions, workers, lights, journals] : [requisitions, workers, lights]
+    view === 'people'
+      ? [requisitions, workers, lights, journals, histories]
+      : [requisitions, workers, lights]
   const error = sources.find((source) => source.error)?.error
 
   return (
@@ -122,23 +133,27 @@ export function RecruitmentTab({
                 />
               </>
             ) : (
-              journals.data && (
+              journals.data &&
+              histories.data && (
                 <>
                   <PeopleNotice>
                     <Trans>
-                      Sale de la bitácora de las requisiciones: quién las tomó, soltó o reasignó. A
-                      quién asignó cada reclutador no se ve: eso se registra en otra bitácora que el
-                      Observador no lee. Quien no movió ninguna requisición no aparece.
+                      Sale de la bitácora de las requisiciones (quién las tomó, soltó o reasignó) y
+                      del historial de cada candidato nuevo (quién lo dio de alta). A quién asignó
+                      cada reclutador no se ve: eso se registra en otra bitácora que el Observador
+                      no lee. Quien no movió ninguna requisición ni dio de alta a nadie no aparece.
                     </Trans>
                   </PeopleNotice>
-                  {journalIds.capped && <TruncatedNotice />}
+                  {(journalIds.capped || signupIds.capped) && <TruncatedNotice />}
                   <PeopleView
-                    columns={5}
+                    columns={6}
                     periodLabel={periodLabel}
                     rows={recruitmentPeople({
                       period,
                       requisitions: requisitions.data.rows,
                       journals: journals.data,
+                      workers: workers.data.rows,
+                      histories: histories.data,
                     })}
                   />
                 </>

@@ -10,6 +10,8 @@ import type {
   ProspectApi,
   RequisitionApi,
   RequisitionJournalEntryApi,
+  WorkerApi,
+  WorkerHistoryEntryApi,
 } from '@/shared/types/apiContract.types'
 
 /**
@@ -27,6 +29,7 @@ export type PersonEventKind =
   | 'RECRUITER_LEFT'
   | 'RECRUITER_REASSIGNED'
   | 'REQUISITION_CREATED'
+  | 'WORKER_CREATED'
 
 export const PERSON_EVENT_LABEL: Record<PersonEventKind, MessageDescriptor> = {
   COLD_VISIT: msg`Visita en frío`,
@@ -37,6 +40,7 @@ export const PERSON_EVENT_LABEL: Record<PersonEventKind, MessageDescriptor> = {
   RECRUITER_LEFT: msg`Soltó la requisición`,
   RECRUITER_REASSIGNED: msg`Reasignó la requisición`,
   REQUISITION_CREATED: msg`Creó la requisición`,
+  WORKER_CREATED: msg`Dio de alta al candidato`,
 }
 
 export interface PersonEvent {
@@ -213,8 +217,29 @@ export function journalCandidates(
   }
 }
 
+/** Tope de historiales por consulta: una llamada por candidato dado de alta. */
+export const SIGNUP_MAX_WORKERS = 60
+
+/**
+ * Los candidatos dados de alta en el periodo, los más recientes primero: de
+ * cada uno se pide su historial para saber QUIÉN lo dio de alta.
+ */
+export function signupCandidates(
+  workers: WorkerApi[],
+  period: Period,
+): { ids: string[]; capped: boolean } {
+  const created = workers
+    .filter((worker) => isInPeriod(worker.createdAt, period))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  return {
+    ids: created.slice(0, SIGNUP_MAX_WORKERS).map((worker) => worker.id),
+    capped: created.length > SIGNUP_MAX_WORKERS,
+  }
+}
+
 const RECRUITMENT_METRICS = [
   { id: 'holding', label: msg`Requisiciones a su cargo` },
+  { id: 'signups', label: msg`Candidatos dados de alta` },
   { id: 'joined', label: msg`Tomadas` },
   { id: 'left', label: msg`Soltadas` },
   { id: 'reassigned', label: msg`Reasignadas` },
@@ -232,6 +257,9 @@ export function recruitmentPeople(input: {
   period: Period
   requisitions: RequisitionApi[]
   journals: Record<string, RequisitionJournalEntryApi[]>
+  /** Candidatos dados de alta en el periodo, con su historial de estados. */
+  workers?: WorkerApi[]
+  histories?: Record<string, WorkerHistoryEntryApi[]>
 }): PersonRow[] {
   const { period } = input
   const drafts = new Map<string, Draft>()
@@ -271,6 +299,24 @@ export function recruitmentPeople(input: {
       bump(draft, 'holding')
       bump(draft, 'slotsOpen', Math.max(0, requisition.totalSlots - requisition.filledSlots))
     }
+  }
+
+  /*
+   * Las altas de candidatos. El alta escribe la primera entrada del historial
+   * del colaborador (sin estado de origen) con quien la hizo; el historial trae
+   * su nombre, no su rol: se suma a la fila de la bitácora con el mismo nombre
+   * o abre una nueva.
+   */
+  const workersById = new Map((input.workers ?? []).map((worker) => [worker.id, worker]))
+  for (const [workerId, entries] of Object.entries(input.histories ?? {})) {
+    const worker = workersById.get(workerId)
+    const signup = entries.find((entry) => entry.fromState === null)
+    if (!worker || !signup?.userName || !isInPeriod(signup.occurredAt, period)) continue
+    const draft =
+      [...drafts.values()].find((existing) => existing.name === signup.userName) ??
+      draftOf(drafts, `${signup.userName}|`, signup.userName, null)
+    bump(draft, 'signups')
+    draft.events.push({ at: signup.occurredAt, kind: 'WORKER_CREATED', subject: worker.fullName })
   }
 
   return finish(drafts, RECRUITMENT_METRICS)

@@ -40,4 +40,8 @@
     <string name="perm_hotel_summary_ready">Listo: te avisaremos de lo importante.</string>
     <string name="perm_hotel_summary_missing">Te recomendamos activar las notificaciones. Puedes hacerlo después.</string>
     <string name="perm_continue">Continuar</string>
+    <string name="perm_privacy">Aviso de privacidad</string>
+    <!-- El HTML en `assets/public/` (lo copia `cap sync` del bundle web). -->
+    <string name="perm_privacy_file" translatable="false">privacidad.html</string>
+    <string name="perm_close">Cerrar</string>
 </resources>

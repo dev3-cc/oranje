@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { installNativeApiFetch, toNativeFormData } from './nativeApiFetch'
+import { installNativeApiFetch, MULTIPART, toNativeFormData } from './nativeApiFetch'
 import { homePathFor } from './roles'
 
 const API = 'https://api.example.test/api/v1'
@@ -39,9 +39,9 @@ afterEach(() => {
 describe('homePathFor', () => {
   it('reparte por rol: Colaborador, hotel y el resto', () => {
     expect(homePathFor('ROL-C-01')).toBe('/collaborator')
-    expect(homePathFor('ROL-H-01')).toBe('/hotel')
-    expect(homePathFor('ROL-H-02')).toBe('/hotel')
-    expect(homePathFor('ROL-H-03')).toBe('/hotel')
+    expect(homePathFor('ROL-H-01')).toBe('/dashboard')
+    expect(homePathFor('ROL-H-02')).toBe('/dashboard')
+    expect(homePathFor('ROL-H-03')).toBe('/dashboard')
     expect(homePathFor('ROL-V-01')).toBe('/unsupported')
     expect(homePathFor(undefined)).toBe('/unsupported')
   })
@@ -116,6 +116,30 @@ describe('installNativeApiFetch', () => {
       },
       { key: 'purpose', value: 'PUNCH_PHOTO', type: 'string' },
     ])
+  })
+
+  it('una subida conserva el Content-Type multipart: sin él iOS mandaba el cuerpo vacío', async () => {
+    installBridge('ios')
+    nativePromise.mockResolvedValueOnce({ status: 201, headers: {}, data: '{"data":{}}' })
+    installNativeApiFetch(API)
+
+    /* Cuerpo multipart armado a mano: `File` de jsdom y `Request` de Node no se mezclan. */
+    const boundary = 'xYz'
+    await window.fetch(`${API}/files`, {
+      method: 'POST',
+      headers: { 'content-type': `multipart/form-data; boundary=${boundary}` },
+      body: `--${boundary}\r\nContent-Disposition: form-data; name="purpose"\r\n\r\nWORKER_PHOTO\r\n--${boundary}--\r\n`,
+    })
+
+    const [plugin, method, options] = nativePromise.mock.calls[0] as [
+      string,
+      string,
+      { dataType: string; headers: Record<string, string>; data: unknown },
+    ]
+    expect([plugin, method]).toEqual(['CapacitorHttp', 'request'])
+    expect(options.dataType).toBe('formData')
+    expect(options.headers['content-type']).toBe(MULTIPART)
+    expect(options.data).toEqual([{ key: 'purpose', value: 'WORKER_PHOTO', type: 'string' }])
   })
 
   it('sin respuesta nativa falla como fetch (TypeError)', async () => {
