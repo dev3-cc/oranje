@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="perm_eyebrow">PERMISSIONS</string>
+    <string name="perm_greeting">Hi, %1$s</string>
+    <string name="perm_greeting_anonymous">Hi</string>
+    <string name="perm_summary_ready">You\'re all set to punch.</string>
+    <string name="perm_summary_missing">Before punching, turn on what\'s missing.</string>
+
+    <string name="perm_location_title">Location</string>
+    <string name="perm_location_body">Confirms you\'re at the hotel when you punch. It\'s only used at that moment.</string>
+    <string name="perm_gps_title">Phone GPS</string>
+    <string name="perm_gps_body">With GPS off your phone can\'t tell where you are, even if the app has permission.</string>
+    <string name="perm_camera_title">Camera</string>
+    <string name="perm_camera_body">For your Clock-in and Clock-out photo, and to read the hotel\'s QR code.</string>
+
+    <string name="perm_state_granted">Allowed</string>
+    <string name="perm_state_missing">Not allowed</string>
+    <string name="perm_state_blocked">Blocked</string>
+    <string name="perm_state_approximate">Approximate only</string>
+    <string name="perm_state_on">On</string>
+    <string name="perm_state_off">Off</string>
+
+    <string name="perm_hint_blocked">You denied it before: now it can only be turned on from your phone\'s settings.</string>
+    <string name="perm_hint_approximate">With approximate location the system may think you\'re outside the hotel. Turn on precise location.</string>
+
+    <string name="perm_action_grant">Allow</string>
+    <string name="perm_action_settings">Open settings</string>
+    <string name="perm_action_precise">Use precise location</string>
+    <string name="perm_action_gps">Turn on GPS</string>
+
+    <string name="perm_punch">Punch</string>
+    <string name="perm_punch_locked">Turn on the permissions above to punch.</string>
+    <string name="perm_go_home">Go to Home</string>
+
+    <!-- Hotel profile (Supervisor, Area Manager, General Manager). -->
+    <string name="perm_notifications_title">Notifications</string>
+    <string name="perm_notifications_body">To let you know when a requisition needs your approval, gets filled or changes, and what happens with your staff.</string>
+    <string name="perm_hint_notifications_blocked">You turned them off: turn them on in your phone\'s settings.</string>
+    <string name="perm_hotel_summary_ready">All set: we\'ll let you know what matters.</string>
+    <string name="perm_hotel_summary_missing">We recommend turning on notifications. You can do it later.</string>
+    <string name="perm_continue">Continue</string>
+</resources>

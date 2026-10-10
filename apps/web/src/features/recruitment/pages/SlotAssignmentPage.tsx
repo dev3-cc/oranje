@@ -1,9 +1,10 @@
-import type { I18n } from '@lingui/core'
+import type { I18n, MessageDescriptor } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
 import {
   cn,
   Input,
+  MaterialIcon,
   Select,
   SelectContent,
   SelectItem,
@@ -15,6 +16,7 @@ import {
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 
+import { useCreatePayAdjustmentMutation, useGetPayConceptsQuery } from '../api/payAdjustmentsApi'
 import {
   useCreateAssignmentMutation,
   AL_ATERRIZAR,
@@ -22,7 +24,7 @@ import {
   useGetSlotBoardQuery,
   useReleaseAssignmentMutation,
 } from '../api/selfPickApi'
-import { ASSIGNMENT_TYPE_LABEL } from '../types/selfPick.types'
+import { ASSIGNMENT_TYPE_LABEL, type SettlementEffect } from '../types/selfPick.types'
 
 import mascotaCelebrando from '@/assets/mascota/mascota-celebrando.png'
 import { useGetPositionPayRateQuery } from '@/features/contracts'
@@ -36,8 +38,9 @@ import {
   REQUISITION_STATUS_TOKEN,
   type RequisitionStatus,
 } from '@/shared/constants/requisitionStatus'
+import { useCan } from '@/shared/hooks/useCan'
 import { apiErrorMessage, readApiError } from '@/shared/lib/apiError'
-import { IS_DEV_UI } from '@/shared/lib/devMode'
+import { IS_DEV_OR_STAGING_UI, IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatMoney } from '@/shared/lib/formatters'
 
 const COVERAGE_TOKEN: Record<string, StatusLightToken> = {
@@ -46,6 +49,34 @@ const COVERAGE_TOKEN: Record<string, StatusLightToken> = {
   LIGHT_BLUE: 'st-azul-claro',
   GREEN: 'st-verde',
 }
+
+/** Quién pagó el gasto decide qué hace Contabilidad con el pago del
+    colaborador (Hugo, 2026-10-09): nunca se asume, siempre se elige. */
+const SETTLEMENT_EFFECT_OPTIONS: readonly {
+  value: SettlementEffect
+  icon: string
+  label: MessageDescriptor
+  hint: MessageDescriptor
+}[] = [
+  {
+    value: 'COMPANY_EXPENSE',
+    icon: 'domain',
+    label: msg`Lo pagó Oranje`,
+    hint: msg`Gasto de la empresa: no se le descuenta ni se le suma nada al colaborador.`,
+  },
+  {
+    value: 'REIMBURSE',
+    icon: 'account_balance_wallet',
+    label: msg`Lo pagó el colaborador`,
+    hint: msg`Se le reembolsa: se suma a lo que Contabilidad le paga en su próxima nómina.`,
+  },
+  {
+    value: 'PAYROLL_DEDUCTION',
+    icon: 'remove_circle_outline',
+    label: msg`Lo pagó Oranje, descontárselo`,
+    hint: msg`El colaborador pidió que Oranje lo cubriera: se le resta de su próxima nómina.`,
+  },
+] as const
 
 /** El `i18n` viene del componente (D-36). */
 function assignErrorMessage(error: unknown, i18n: I18n): string {
@@ -95,8 +126,21 @@ function releaseErrorMessage(error: unknown, i18n: I18n): string {
   })
 }
 
+/** El `i18n` viene del componente (D-36). */
+function adjustmentErrorMessage(error: unknown, i18n: I18n): string {
+  return apiErrorMessage(error, {
+    byCode: {
+      SETTLEMENT_EFFECT_REQUIRED: i18n._(msg`Falta decir quién pagó el gasto.`),
+    },
+    fallback: i18n._(
+      msg`La asignación quedó hecha, pero el ajuste/gasto no se pudo pedir. Vuelve a intentarlo.`,
+    ),
+  })
+}
+
 export function SlotAssignmentPage(): ReactNode {
   const { t, i18n } = useLingui()
+  const can = useCan()
   const { requisitionId = '', positionId = '' } = useParams()
 
   const {
@@ -113,7 +157,7 @@ export function SlotAssignmentPage(): ReactNode {
      cotizada — y no bloquea la asignación. */
   const { data: positionPayRate } = useGetPositionPayRateQuery(
     { hotelId: board?.hotelId ?? '', catalogPositionId: board?.catalogPositionId ?? '' },
-    { skip: !board },
+    { skip: !board || !IS_DEV_OR_STAGING_UI },
   )
   const [assign, { isLoading: isSaving, isError: hasFailed, error: saveError }] =
     useCreateAssignmentMutation()
@@ -126,6 +170,46 @@ export function SlotAssignmentPage(): ReactNode {
   const [endDate, setEndDate] = useState('')
   /** Error de la toma silenciosa (ver `submit`); `null` = no aplica o ya pasó. */
   const [joinError, setJoinError] = useState<unknown>(null)
+
+  /* El ajuste de tarifa Y el gasto extra (Uber…) de una EVENTUAL (Hugo,
+     2026-10-08): opcional, solo con `type === 'TEMPORARY'`, y solo si el rol
+     puede pedirlo — lo aprueba el Observador, nunca quien lo pide. Son dos
+     cosas INDEPENDIENTES, no una u otra (Hugo, 2026-10-08): una misma
+     asignación puede llevar las dos, cada una su propia aprobación — por eso
+     el back no tiene UNIQUE sobre `assignmentId`. */
+  const canRequestAdjustment = can('requisitions:request_pay_adjustment')
+  const [createAdjustment, { isLoading: isSavingAdjustment }] = useCreatePayAdjustmentMutation()
+  const { data: payConcepts = [] } = useGetPayConceptsQuery(undefined, {
+    skip: !canRequestAdjustment || type !== 'TEMPORARY',
+  })
+
+  const [wantsRateAdjustment, setWantsRateAdjustment] = useState(false)
+  const [rateAmount, setRateAmount] = useState('')
+  const [rateReason, setRateReason] = useState('')
+  const [rateError, setRateError] = useState<unknown>(null)
+  const [rateRequested, setRateRequested] = useState<string | null>(null)
+
+  const [wantsExpense, setWantsExpense] = useState(false)
+  const [expensePayConceptId, setExpensePayConceptId] = useState('')
+  const [expenseAmount, setExpenseAmount] = useState('')
+  const [expenseReason, setExpenseReason] = useState('')
+  /* Quién lo pagó decide qué hace Contabilidad con el pago del colaborador
+     (Hugo, 2026-10-09): no se asume, cada gasto lo dice. */
+  const [expenseSettlementEffect, setExpenseSettlementEffect] = useState<SettlementEffect | ''>('')
+  const [expenseError, setExpenseError] = useState<unknown>(null)
+  const [expenseRequested, setExpenseRequested] = useState<string | null>(null)
+
+  /* Fija deja de tener sentido pedir un ajuste eventual: se limpian los dos
+     paneles para no pedirlo por error junto a una asignación FIJA. */
+  useEffect(() => {
+    if (type !== 'TEMPORARY') {
+      setWantsRateAdjustment(false)
+      setWantsExpense(false)
+      setExpenseSettlementEffect('')
+      setRateError(null)
+      setExpenseError(null)
+    }
+  }, [type])
 
   /* La posición ya dice desde cuándo la pidió el hotel: se propone esa fecha y
      se puede cambiar. Antes arrancaba vacía y se tecleaba a mano, con el riesgo
@@ -168,16 +252,36 @@ export function SlotAssignmentPage(): ReactNode {
     )
   }
 
+  const rateAmountValue = Number(rateAmount)
+  const isRateFilled =
+    !wantsRateAdjustment || (rateAmount !== '' && rateAmountValue > 0 && rateReason.trim() !== '')
+
+  const expenseAmountValue = Number(expenseAmount)
+  const isExpenseFilled =
+    !wantsExpense ||
+    (expenseAmount !== '' &&
+      expenseAmountValue > 0 &&
+      expenseReason.trim() !== '' &&
+      expensePayConceptId !== '' &&
+      expenseSettlementEffect !== '')
+
   const canSubmit =
     board.nextFreeOrdinal !== null &&
     workerId !== '' &&
     (type !== 'TEMPORARY' || endDate !== '') &&
+    isRateFilled &&
+    isExpenseFilled &&
     !isSaving &&
-    !isJoining
+    !isJoining &&
+    !isSavingAdjustment
 
   async function submit(): Promise<void> {
     if (!canSubmit) return
     setJoinError(null)
+    setRateError(null)
+    setExpenseError(null)
+    setRateRequested(null)
+    setExpenseRequested(null)
     const assignedName = workers.find((worker) => worker.id === workerId)?.fullName
     try {
       /*
@@ -202,7 +306,7 @@ export function SlotAssignmentPage(): ReactNode {
           }
         }
       }
-      await assign({
+      const created = await assign({
         positionId,
         workerId,
         type,
@@ -217,6 +321,49 @@ export function SlotAssignmentPage(): ReactNode {
       setWorkerId('')
       setStartDate('')
       setEndDate('')
+
+      /* El ajuste y el gasto se piden DESPUÉS, cada uno por su cuenta: no
+         existen hasta que la asignación existe, y son dos cosas
+         independientes — pueden ir las dos juntas (Hugo, 2026-10-08). Si uno
+         falla, el otro se intenta igual; la asignación YA quedó hecha, el
+         error de cada uno se muestra aparte. */
+      if (wantsRateAdjustment) {
+        try {
+          await createAdjustment({
+            assignmentId: created.assignment.id,
+            amount: rateAmountValue,
+            reason: rateReason.trim(),
+          }).unwrap()
+          toast.success(t`Ajuste de tarifa pedido: queda pendiente de que lo apruebe el Observador`)
+          setRateRequested(rateAmountValue.toFixed(2))
+          setWantsRateAdjustment(false)
+          setRateAmount('')
+          setRateReason('')
+        } catch (error) {
+          setRateError(error)
+        }
+      }
+
+      if (wantsExpense) {
+        try {
+          await createAdjustment({
+            assignmentId: created.assignment.id,
+            payConceptId: expensePayConceptId,
+            amount: expenseAmountValue,
+            reason: expenseReason.trim(),
+            ...(expenseSettlementEffect ? { settlementEffect: expenseSettlementEffect } : {}),
+          }).unwrap()
+          toast.success(t`Gasto pedido: queda pendiente de que lo apruebe el Observador`)
+          setExpenseRequested(expenseAmountValue.toFixed(2))
+          setWantsExpense(false)
+          setExpenseAmount('')
+          setExpenseReason('')
+          setExpensePayConceptId('')
+          setExpenseSettlementEffect('')
+        } catch (error) {
+          setExpenseError(error)
+        }
+      }
     } catch {
       return
     }
@@ -277,7 +424,10 @@ export function SlotAssignmentPage(): ReactNode {
           <ul className="divide-y divide-line">
             {board.slots.map((slot) => (
               <li key={slot.ordinal} className="py-3">
-                <div className="flex items-center gap-4">
+                {/* `flex-wrap`: con nombre largo + tipo + estado + Liberar no
+                    caben en una sola línea en mobile — antes se salían del
+                    borde en vez de bajar de renglón (Hugo, 2026-10-08). */}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
                   <span
                     className={cn(
                       'flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-bold',
@@ -286,7 +436,7 @@ export function SlotAssignmentPage(): ReactNode {
                   >
                     {slot.ordinal}
                   </span>
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 basis-32">
                     <p className="truncate text-sm font-medium text-ink">
                       {slot.workerName ?? '—'}
                     </p>
@@ -294,37 +444,39 @@ export function SlotAssignmentPage(): ReactNode {
                       <code className="text-[11px] text-ink-4">ordinal {slot.ordinal}</code>
                     )}
                   </div>
-                  {slot.assignmentType !== null && (
-                    <span className="text-xs text-ink-3">
-                      {ASSIGNMENT_TYPE_LABEL[slot.assignmentType] ?? slot.assignmentType}
-                    </span>
-                  )}
-                  <span
-                    className={cn(
-                      'rounded-full px-3 py-1 text-xs font-medium',
-                      slot.workerName === null
-                        ? 'border border-dashed border-o-500 text-o-700'
-                        : 'bg-surface-2 text-ink-2',
+                  <div className="ml-[44px] flex flex-wrap items-center gap-2 sm:ml-0">
+                    {slot.assignmentType !== null && (
+                      <span className="text-xs text-ink-3">
+                        {ASSIGNMENT_TYPE_LABEL[slot.assignmentType] ?? slot.assignmentType}
+                      </span>
                     )}
-                  >
-                    {slot.workerName === null ? t`libre` : t`ocupado`}
-                  </span>
-                  {/* Antes de esto no había forma de deshacer una asignación mal
-                      hecha desde la pantalla: solo por API. */}
-                  {slot.assignmentId !== null && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setReleaseTarget(
-                          releaseTarget === slot.assignmentId ? null : slot.assignmentId,
-                        )
-                        setReleaseReason('')
-                      }}
-                      className="shrink-0 cursor-pointer rounded-md border border-line px-2.5 py-1 text-xs font-medium text-ink-2 transition-colors hover:bg-surface-2"
+                    <span
+                      className={cn(
+                        'rounded-full px-3 py-1 text-xs font-medium',
+                        slot.workerName === null
+                          ? 'border border-dashed border-o-500 text-o-700'
+                          : 'bg-surface-2 text-ink-2',
+                      )}
                     >
-                      <Trans>Liberar</Trans>
-                    </button>
-                  )}
+                      {slot.workerName === null ? t`libre` : t`ocupado`}
+                    </span>
+                    {/* Antes de esto no había forma de deshacer una asignación
+                        mal hecha desde la pantalla: solo por API. */}
+                    {slot.assignmentId !== null && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReleaseTarget(
+                            releaseTarget === slot.assignmentId ? null : slot.assignmentId,
+                          )
+                          setReleaseReason('')
+                        }}
+                        className="shrink-0 cursor-pointer rounded-md border border-line px-2.5 py-1 text-xs font-medium text-ink-2 transition-colors hover:bg-surface-2"
+                      >
+                        <Trans>Liberar</Trans>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {releaseTarget !== null && releaseTarget === slot.assignmentId && (
@@ -508,6 +660,226 @@ export function SlotAssignmentPage(): ReactNode {
                 </p>
               )}
 
+              {type === 'TEMPORARY' && canRequestAdjustment && (
+                <div className="flex flex-col gap-3 rounded-md border border-dashed border-line p-3">
+                  <p className="text-xs text-ink-3">
+                    <Trans>
+                      Opcional, y las dos pueden ir juntas: cada una la aprueba el Observador por
+                      separado antes de que pese en el pago.
+                    </Trans>
+                  </p>
+
+                  {/* ——— Ajuste a la tarifa de esta posición ——— */}
+                  <label className="flex cursor-pointer items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={wantsRateAdjustment}
+                      onChange={(event) => {
+                        setWantsRateAdjustment(event.target.checked)
+                        setRateError(null)
+                      }}
+                      className="mt-0.5"
+                    />
+                    <span className="text-sm text-ink-2">
+                      <Trans>Ajustar la tarifa de esta posición</Trans>
+                    </span>
+                  </label>
+                  {wantsRateAdjustment && (
+                    <div className="flex flex-col gap-3 pl-6">
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-sm text-ink-3">
+                          <Trans>Tarifa acordada</Trans>
+                        </span>
+                        <div className="relative">
+                          <span
+                            aria-hidden
+                            className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-ink-3"
+                          >
+                            $
+                          </span>
+                          <Input
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            value={rateAmount}
+                            onChange={(event) => {
+                              setRateAmount(event.target.value)
+                            }}
+                            placeholder="0.00"
+                            aria-label={t`Tarifa acordada, en dólares`}
+                            className="pl-6"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-sm text-ink-3">
+                          <Trans>Motivo</Trans>
+                        </span>
+                        <Input
+                          value={rateReason}
+                          onChange={(event) => {
+                            setRateReason(event.target.value)
+                          }}
+                          placeholder={t`Por qué esta tarifa…`}
+                          aria-label={t`Motivo del ajuste de tarifa`}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {rateError !== null && (
+                    <p role="alert" className="text-xs text-red">
+                      {adjustmentErrorMessage(rateError, i18n)}
+                    </p>
+                  )}
+                  {rateRequested !== null && (
+                    <p className="rounded-md bg-o-50 px-3 py-2 text-xs text-o-700">
+                      <Trans>
+                        Ajuste de {formatMoney(Number(rateRequested))} pedido: pendiente de
+                        aprobación.
+                      </Trans>
+                    </p>
+                  )}
+
+                  <hr className="border-line" />
+
+                  {/* ——— Gasto extra (Uber…) ——— */}
+                  <label className="flex cursor-pointer items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={wantsExpense}
+                      onChange={(event) => {
+                        setWantsExpense(event.target.checked)
+                        setExpenseError(null)
+                      }}
+                      className="mt-0.5"
+                    />
+                    <span className="text-sm text-ink-2">
+                      <Trans>Agregar un gasto extra (p. ej. Uber)</Trans>
+                    </span>
+                  </label>
+                  {wantsExpense && (
+                    <div className="flex flex-col gap-3 pl-6">
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-sm text-ink-3">
+                          <Trans>Concepto</Trans>
+                        </span>
+                        <Select
+                          {...(expensePayConceptId ? { value: expensePayConceptId } : {})}
+                          onValueChange={setExpensePayConceptId}
+                        >
+                          <SelectTrigger aria-label={t`Concepto del gasto`} className="w-full">
+                            <SelectValue placeholder={t`Elige el concepto…`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {payConcepts.map((concept) => (
+                              <SelectItem key={concept.id} value={concept.id}>
+                                {concept.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {payConcepts.length === 0 && (
+                          <p className="text-xs text-ink-3">
+                            <Trans>
+                              Sin conceptos en el catálogo: pídele al Administrador que agregue uno
+                              en Catálogos.
+                            </Trans>
+                          </p>
+                        )}
+                      </div>
+                      <fieldset className="flex flex-col gap-1.5">
+                        <legend className="text-sm text-ink-3">
+                          <Trans>¿Quién lo pagó?</Trans>
+                        </legend>
+                        <div className="grid grid-cols-1 gap-2">
+                          {SETTLEMENT_EFFECT_OPTIONS.map((option) => (
+                            <label
+                              key={option.value}
+                              className="flex cursor-pointer items-start gap-3 rounded-lg border border-line bg-surface p-3 transition-colors has-[:checked]:border-o-500 has-[:checked]:bg-o-50 hover:bg-surface-2"
+                            >
+                              <input
+                                type="radio"
+                                name="expense-settlement-effect"
+                                value={option.value}
+                                checked={expenseSettlementEffect === option.value}
+                                onChange={() => {
+                                  setExpenseSettlementEffect(option.value)
+                                }}
+                                className="mt-1 accent-o-500"
+                              />
+                              <span className="min-w-0">
+                                <span className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+                                  <MaterialIcon
+                                    name={option.icon}
+                                    className="text-base"
+                                    aria-hidden
+                                  />
+                                  {i18n._(option.label)}
+                                </span>
+                                <span className="block text-xs text-ink-3">
+                                  {i18n._(option.hint)}
+                                </span>
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </fieldset>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-sm text-ink-3">
+                          <Trans>Monto</Trans>
+                        </span>
+                        <div className="relative">
+                          <span
+                            aria-hidden
+                            className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-ink-3"
+                          >
+                            $
+                          </span>
+                          <Input
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            value={expenseAmount}
+                            onChange={(event) => {
+                              setExpenseAmount(event.target.value)
+                            }}
+                            placeholder="0.00"
+                            aria-label={t`Monto del gasto, en dólares`}
+                            className="pl-6"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <span className="text-sm text-ink-3">
+                          <Trans>Motivo</Trans>
+                        </span>
+                        <Input
+                          value={expenseReason}
+                          onChange={(event) => {
+                            setExpenseReason(event.target.value)
+                          }}
+                          placeholder={t`Por qué este gasto…`}
+                          aria-label={t`Motivo del gasto`}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {expenseError !== null && (
+                    <p role="alert" className="text-xs text-red">
+                      {adjustmentErrorMessage(expenseError, i18n)}
+                    </p>
+                  )}
+                  {expenseRequested !== null && (
+                    <p className="rounded-md bg-o-50 px-3 py-2 text-xs text-o-700">
+                      <Trans>
+                        Gasto de {formatMoney(Number(expenseRequested))} pedido: pendiente de
+                        aprobación.
+                      </Trans>
+                    </p>
+                  )}
+                </div>
+              )}
+
               {workerId === '' ? (
                 <p className="text-xs text-ink-3">
                   <Trans>Elige a un colaborador para asignar</Trans>
@@ -524,7 +896,7 @@ export function SlotAssignmentPage(): ReactNode {
                   void submit()
                 }}
               >
-                {isJoining || isSaving ? (
+                {isJoining || isSaving || isSavingAdjustment ? (
                   <Trans>Asignando…</Trans>
                 ) : (
                   <Trans>Asignar colaborador</Trans>

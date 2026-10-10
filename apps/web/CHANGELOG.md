@@ -32,6 +32,314 @@ Reglas:
 
 ---
 
+## 2026-10-07
+
+### 16:59 — Ingresos más intuitivo: línea de tiempo por semana
+
+**Qué:** los dos controles de tiempo (ventana con calendario y selector de semana) se unen en una línea de tiempo: una barra por semana con cuántos ingresaron; se toca una barra o se usan las flechas (también del teclado). Botones «Cuando empezó a ponchar» y «Semana pasada» junto al hotel, título «Semana del…», interruptor «Solo esta semana / Las 12 semanas alrededor», la fila elegida resaltada y clicable en la retención, y «¿Cómo se calcula?» plegado.
+**Por qué:** pedido de Hugo: hacerlo más intuitivo. Había dos nociones de semana distintas y no se veía cuánta gente entraba cada semana.
+**Archivos:** `src/features/observability/components/{CohortTimeline.tsx,CohortsView.tsx,CohortSection.tsx}`; `src/locales/{es,en}/messages.po`.
+
+### 16:43 — Moverse en el tiempo y filtrar por hotel en Ingresos
+
+**Qué:** Ingresos tiene un filtro de hotel (con la semana en que empezó a ponchar) y una ventana de 12 semanas que se mueve: flechas semana a semana, calendario, «Cuando empezó a ponchar» / «Inicio del historial» y «Hoy». Cohortes, retención y totales se calculan sobre esa ventana; las columnas de retención siguen hasta hoy.
+**Por qué:** pedido de Hugo: poder ir, por ejemplo, al momento en que Villa Magna empezó a ponchar. Con un hotel elegido, «ingresó» = primera semana ponchando en ese hotel.
+**Archivos:** `src/features/observability/{lib/cohorts.ts,lib/cohorts.spec.ts,components/CohortsView.tsx,components/CohortSection.tsx}`; `src/locales/{es,en}/messages.po`.
+
+### 16:31 — El desglose de Ingresos siempre se ve
+
+**Qué:** si nadie de la cohorte dejó de trabajar, la sección lo dice en lugar de desaparecer. Los helpers de formato salen de `CohortSection.tsx` a `lib/cohortFormat.ts`.
+**Por qué:** Hugo no veía el desglose: el navegador no recargaba el componente (Fast Refresh no admite un archivo que exporta funciones que no son componentes) y, sin salidas, la sección no aparecía.
+**Archivos:** `src/features/observability/{lib/cohortFormat.ts,components/CohortSection.tsx,components/CohortsView.tsx}`; `src/locales/{es,en}/messages.po`.
+
+### 16:24 — Ingresos por persona, con motivo y quién originó la salida
+
+**Qué:** en «Ingresos» se puede ver una semana o todas las de las últimas 12. La tabla por persona trae su semana de ingreso, semanas trabajadas sobre posibles con su %, qué pasó, el motivo y quién lo originó (hotel, Inspección, Reclutamiento, el colaborador o automático), con filtro Todos / Siguen trabajando / Ya no trabajan. Hay un segundo desglose «Quién originó la salida» con conteo y %.
+**Por qué:** pedido de Hugo: ver tal cual a cada persona de la cohorte, sus motivos y el porcentaje. El historial no trae el rol de quien actuó: el área se deduce de la transición, que solo puede hacer un área; los cambios automáticos no vienen en el historial y su ausencia también lo dice.
+**Archivos:** `src/features/observability/{lib/cohorts.ts,lib/cohorts.spec.ts,components/CohortSection.tsx,components/CohortsView.tsx}`; `src/locales/{es,en}/messages.po`.
+
+### 16:07 — Ingresos y retención de colaboradores en el Observador
+
+**Qué:** la pestaña Colaborador tiene la sub-vista «KPIs / Ingresos». Para la semana de ingreso elegida: cuántos ingresaron, cuántos regresaron el lunes y la semana siguiente, cuántos siguen trabajando, qué pasó con quienes ya no trabajan (según su estado y el motivo del historial) y la lista de personas. Además, la retención por cohorte semanal o mensual y la retención a 1, 4 y 12 semanas.
+**Por qué:** pedido de Hugo: saber qué pasó con los colaboradores que ingresaron y medir la retención. Sale de las semanas de timesheet (solo existen si la persona ponchó), sin endpoint nuevo del back; «ingresó» = su primera semana con ponches.
+**Archivos:** `src/features/observability/{lib/cohorts.ts,lib/cohorts.spec.ts,components/CohortsView.tsx,components/TabParts.tsx,tabs/WorkerTab.tsx,api/observabilityApi.ts}`; `src/locales/{es,en}/messages.po`.
+
+### 13:51 — Vista «Por persona» en los departamentos del Observador
+
+**Qué:** Ventas, Reclutamiento, Inspección y Contabilidad tienen la sub-vista «KPIs / Por persona»: una fila por persona (tabla en escritorio, tarjetas en móvil), de la menos activa a la más activa, y un panel con sus números y su línea de tiempo del periodo. Hotel y Colaborador se quedan solo con KPIs.
+**Por qué:** pedido de Hugo: ver qué hace cada persona de cada departamento, menos Colaborador y sin métricas por persona en Hotel. Ventas sale de prospectos e intentos; Reclutamiento de la bitácora de las requisiciones (solo al abrir la vista); Inspección de las requisiciones asignadas y creadas; Contabilidad solo enseña su aviso. Cada vista dice lo que no puede ver.
+**Archivos:** `src/features/observability/{lib/people.ts,lib/people.spec.ts,components/PeopleView.tsx,components/TabParts.tsx,api/observabilityApi.ts,tabs/SalesTab.tsx,tabs/RecruitmentTab.tsx,tabs/InspectionTab.tsx,pages/ObservabilityPage.tsx}`; `src/locales/{es,en}/messages.po`.
+
+### 13:33 — Rehacer el Observador como KPIs por departamento
+
+**Qué:** las pestañas Semáforos/Ponches/Departamentos se reemplazan por Ventas, Hotel, Reclutamiento, Colaborador, Inspección y Contabilidad, cada una con sus KPIs (30) calculados en el front, una franja «Hoy en el sistema», selector de periodo (esta semana por defecto, mes, 90 días) y metas de ejemplo del tablero maquetado marcadas como tales.
+**Por qué:** pedido de Hugo: construir sin back los KPIs que ya se pueden, por departamento (Guía del Observador). Las metas viven solo en `lib/kpi.ts`; sin meta documentada se muestra «Sin meta»; lo aproximado o histórico se dice en la tarjeta.
+**Archivos:** `src/features/observability/{api/observabilityApi.ts,pages/ObservabilityPage.tsx,lib/*,tabs/*,components/KpiCard.tsx,components/TabParts.tsx}`; se borran `components/{StatusDurationSection,PunchesTable,DepartmentMetricsGrid}.tsx`; `src/locales/{es,en}/messages.po`.
+
+### 11:03 — Costos del hotel en la app, con datos de ejemplo
+
+**Qué:** sección «Costos» (`/hotel/costs`, `/hotel/costs/:weekStart`) y el KPI «Costo de
+esta semana» en el Inicio, para quien tiene `dashboard:read_all` (Manager General) o
+`dashboard:read_department` (Manager de Área). Muestra el costo estimado de la semana
+actual, el total y el promedio de las semanas cerradas (aprobado), una barra por semana
+y el desglose por posición (personas, horas, overtime, tarifa, costo). Donde falta un
+dato dice «Información incompleta» y por qué. Contrato en `costsContract.ts`.
+**Por qué:** el hotel necesita ver cómo va de costos. Los endpoints los construye el
+backend tal cual (`apps/mobile/docs/COSTOS-HOTEL-API.md`); mientras respondan 404, la app
+pinta DATOS DE EJEMPLO (`costsSample.ts`) con un aviso visible de que son ficticios.
+Cualquier otro error es error: no se tapa con el ejemplo. El costo es lo que el hotel
+paga a Oranje (`bill_rate`, overtime con su multiplicador), igual que la factura; nunca el
+`pay_rate` ni el margen. Los montos usan separador de miles: el `formatMoney`
+compartido es para tarifas y no agrupa.
+**Archivos:** `src/mobile/hotel/costs/*`, `src/mobile/hotel/home/WeekCostCard.tsx`,
+`src/mobile/hotel/HotelHomePage.tsx`, `src/mobile/hotel/HotelShell.tsx`,
+`src/mobile/router.tsx`, `src/locales/{es,en}/messages.po`
+
+## 2026-10-06
+
+### 14:22 — El Timesheet de la app abre en «Por aprobar» solo si hay alguna
+
+**Qué:** el filtro inicial del Timesheet del hotel se decide con los datos: quien aprueba
+arranca en «Por aprobar» si hay semanas enviadas; si no, en «Todas».
+**Por qué:** probado con datos reales (Manager General, Villa Magna): con 0 por aprobar y
+6 abiertas, la primera pantalla decía «No hay semanas en este filtro».
+**Archivos:** `src/mobile/hotel/timesheet/TimesheetPage.tsx`
+
+### 14:19 — QR de ponche e invitar cuentas en la app del hotel
+
+**Qué:** «QR de ponche» en el menú del avatar (`hotel:punch_qr`): el QR del hotel en
+grande, con su versión, y «Regenerar» confirmado; si el hotel poncha con selfie, lo dice.
+En el Inicio, la tarjeta «¿Entró alguien nuevo a tu equipo?» (`users:invite_hotel`) con
+el mismo `HotelUserFormDialog` que exporta `features/admin`.
+**Por qué:** fase 6, la última del apartado del hotel. El QR no se descarga como en el web:
+aquel abre una hoja para guardar como PDF y el WebView no descarga archivos. La liga del
+QR se arma con `https://mi.oranjepeople.com` fijo: en iOS el origen de la app es
+`capacitor://` y ese QR no lo abriría ninguna cámara. Las Auditorías no entran: el hotel
+manager no las hace (Hugo).
+**Archivos:** `src/mobile/hotel/punchQr/HotelPunchQrPage.tsx`,
+`src/mobile/hotel/home/InviteAccountCard.tsx`, `src/mobile/hotel/HotelHomePage.tsx`,
+`src/mobile/hotel/HotelShell.tsx`, `src/mobile/router.tsx`,
+`src/locales/{es,en}/messages.po`
+
+### 14:14 — Timesheet del hotel en la app
+
+**Qué:** pestaña «Timesheet» (`timesheet:read_department` o `read_all`) en `/hotel`: la
+semana con navegación (`?week=`), filtros por estado, resumen (horas, por aprobar, días
+con anomalía) y una tarjeta por persona con sus siete días en puntos. El detalle
+(`/hotel/timesheet/:id`) muestra cada día con sus marcas (hora del hotel, manual, fuera
+de geocerca) y las acciones: Revisar día con nota, Agregar marca manual con motivo,
+Enviar semana y Aprobar semana.
+**Por qué:** fase 5. Mismos endpoints y reglas que `features/timesheet` (D-09): revisar y
+enviar con `review_punches` (enviar se bloquea con anomalías sin revisar), marca manual
+con `create_manual_punch` y asignación activa, aprobar con `approve_hours` solo una semana
+enviada. El resumen de arriba es el «Timesheet Global» del Manager General. Mensajes de
+error iguales al web para reusar su traducción.
+**Archivos:** `src/mobile/hotel/timesheet/*`, `src/mobile/router.tsx`,
+`src/mobile/hotel/HotelShell.tsx`, `src/locales/{es,en}/messages.po`
+
+### 14:05 — Mi personal del hotel en la app
+
+**Qué:** pestaña «Mi personal» (`staff:read`) en `/hotel`: resumen de hoy (con turno, ya
+entraron, en Stand-by, accidentados), la plantilla con su semáforo, turno y entrada de
+hoy, y la ficha de cada persona (asistencia y puntualidad de la semana, teléfono,
+contacto de emergencia) con Mandar a Stand-by y Reportar.
+**Por qué:** fase 4. Compone los mismos datos que `features/personnel` (Schedule de la
+semana, timesheets con sus ponches, `/workers`). Stand-by (Rosa) y Reportar (Rojo) son la
+transición del semáforo con motivo obligatorio y nota opcional, solo desde un estado
+operativo y con `staff:set_standby` / `staff:report`; mismos motivos y textos que el web.
+**Archivos:** `src/mobile/hotel/staff/*`, `src/mobile/router.tsx`,
+`src/mobile/hotel/HotelShell.tsx`, `src/locales/{es,en}/messages.po`
+
+### 14:00 — KPIs del hotel en el Inicio de la app
+
+**Qué:** el Inicio de `/hotel` muestra Por autorizar, Abiertas, Urgentes y Lugares por
+cubrir (cada uno lleva a la lista filtrada con `?filter=`), la cobertura de las abiertas,
+el tiempo promedio para autorizar (90 días), lo que falta por departamento y, con
+`timesheet:approve_hours`, los timesheets por aprobar. `computeHotelKpis` con su spec.
+**Por qué:** fase 3. Todo sale de `GET /requisitions` y `GET /timesheets` con el alcance de
+la sesión, sin endpoints nuevos. Urgentes cuenta también los borradores: es lo que más
+urge firmar. Lo que pide datos que el API todavía no agrega (time to fill, puntualidad,
+inasistencias, costo) queda fuera hasta que el backend lo exponga.
+**Archivos:** `src/mobile/hotel/HotelHomePage.tsx`, `src/mobile/hotel/home/*`,
+`src/mobile/hotel/requisitions/requisitionsAppApi.ts`,
+`src/mobile/hotel/requisitions/RequisitionsPage.tsx`, `src/locales/{es,en}/messages.po`
+
+### 13:56 — Mostrar los avisos (`toast`) dentro de la app
+
+**Qué:** `mobile/main.tsx` monta el `Toaster` de `@oranje/ui`.
+**Por qué:** en el web lo monta `AppShell`, que la app no carga: ningún aviso de la app se
+veía. Afectaba también al Colaborador (contraseña, foto, documentos, Mis datos, Inicio).
+**Archivos:** `src/mobile/main.tsx`
+
+### 13:56 — Requisiciones del hotel en la app
+
+**Qué:** pestaña «Requisiciones» en `/hotel`: lista con filtros (Todas, Por autorizar,
+Abiertas, Cubiertas), detalle con posiciones y quién ocupa cada lugar, Autorizar y
+Eliminar con confirmación, y el alta en tres pasos (`/hotel/requisitions/new`). Capa de
+datos propia (`requisitionsAppApi.ts`) sobre los mismos endpoints del web.
+**Por qué:** fase 2 del apartado del hotel. Las reglas son las del web: crear con
+`requisitions:create`; autorizar un borrador con `requisitions:authorize`; eliminar con
+`requisitions:delete_empty` (el borrador, su autor; de Autorizada en adelante, el Manager
+de Área o el General, con motivo). El Supervisor y el Manager de Área piden para su
+departamento; el General lo elige. Los mensajes repiten los del web para reusar su
+traducción. Las reglas de ESLint no dejan importar el interior de
+`features/requisitions`, por eso la capa es propia.
+**Archivos:** `src/mobile/hotel/requisitions/*`, `src/mobile/router.tsx`,
+`src/mobile/hotel/HotelShell.tsx`, `src/locales/{es,en}/messages.po`
+
+### 13:41 — Abrir la pantalla nativa de Permisos en el idioma de la persona
+
+**Qué:** `PermissionsOnLaunch` espera a `/me` y a que su idioma quede aplicado antes de
+abrir la pantalla nativa (Colaborador y hotel).
+**Por qué:** probado en un emulador Android 15 con la cuenta de un Manager General y el
+teléfono en inglés: la pantalla nativa se abría en inglés y, un instante después, la app
+cambiaba al español guardado en la persona (D-36). Mismo fallo para el Colaborador.
+**Archivos:** `src/mobile/PermissionsOnLaunch.tsx`
+
+### 13:31 — Pulir lo visual del login único y del apartado del hotel
+
+**Qué:** revisado en Chromium a 360 y 412 px con el bundle de la app y el API simulado
+(Manager General, Manager de Área, Supervisor en inglés, un rol del staff y el
+Colaborador). Cinco arreglos, todos en `src/mobile`:
+
+- Login: el pie («Oranje People · v0.1.0») ya no se parte a 360 px; la tarjeta usa
+  `p-6` en pantallas angostas.
+- Login: la ayuda «¿Sin acceso?» pasa de `ink-4` a `ink-3`.
+- Hotel: la barra de pestañas no se pinta mientras haya una sola.
+- Hotel: el separador del menú solo aparece junto con «Permisos».
+- «Esta app es para…»: el botón «Cerrar sesión» pasa a 48 px de alto y ancho completo.
+
+**Por qué:** `ink-4` es 2.7:1, solo decorativo según los tokens. Una sola píldora
+naranja a todo lo ancho parecía un botón y no una navegación. El botón quedaba chico
+para el dedo. El reparto por rol se confirmó en los cinco casos, sin bucles.
+**Archivos:** `src/mobile/AppLoginPage.tsx`, `src/mobile/hotel/HotelShell.tsx`,
+`src/mobile/UnsupportedRolePage.tsx`
+
+### 13:24 — Traducir los textos nuevos de la app y recuperar tres perdidos
+
+**Qué:** `lingui extract` sin `--clean`: entradas nuevas del login único, del apartado
+del hotel y de la pantalla para otros roles, con su inglés. Vuelven «Faltan permisos
+para ponchar», «Revisar permisos» y el texto del candado de Ponchar, con la traducción
+que ya tenían.
+**Por qué:** D-36. Las tres de Ponchar desaparecieron del catálogo en el merge de
+«sincroniza el catalogo de i18n» (#191): en la app salían en español aunque estuviera en
+inglés. Solo se agregan entradas; ninguna existente cambia.
+**Archivos:** `src/locales/es/messages.po`, `src/locales/en/messages.po`
+
+### 13:22 — Mandar el API por el HTTP nativo en la app de iOS
+
+**Qué:** `mobile/nativeApiFetch.ts`, instalado en `mobile/main.tsx`: solo en la app de
+iOS y solo hacia `VITE_API_URL`, `fetch` sale por el plugin `CapacitorHttp`; el
+`FormData` se rearma como `formData` (archivos en base64). Con su spec.
+**Por qué:** en iOS el origen es `capacitor://` y la cookie del refresh queda de tercero;
+WKWebView no la guarda y la sesión moría a los 15 minutos. Por el HTTP nativo vive en
+la cookie jar de iOS. No es `CapacitorHttp.enabled` porque ese parche también afecta a
+Android y corrompe el multipart que arma RTK Query. No toca `app/baseApi.ts` ni el web.
+**Archivos:** `src/mobile/nativeApiFetch.ts`, `src/mobile/nativeApiFetch.spec.ts`,
+`src/mobile/main.tsx`
+
+### 13:20 — Abrir la pantalla nativa de Permisos según el rol
+
+**Qué:** `PermissionsOnLaunch` abre el perfil del Colaborador (ubicación, GPS, cámara)
+solo al Colaborador, y el perfil de hotel (notificaciones) al Supervisor, al Manager de
+Área y al Manager General (`mobile/hotel/hotelPermissions.ts`). El resto no ve ninguna.
+**Por qué:** con el hotel dentro de la app, el gerente recibía la pantalla de ponchar.
+Las notificaciones se piden desde ya para cuando lleguen las push; negarlas no bloquea.
+**Archivos:** `src/mobile/PermissionsOnLaunch.tsx`, `src/mobile/hotel/hotelPermissions.ts`
+
+### 13:15 — Un solo login en la app y reparto por rol
+
+**Qué:** `AppLoginPage` (puerta única, textos neutros) en `/login` y
+`/collaborator/login` del router móvil; `/` reparte con `MobileRoleHome`: Colaborador a
+`/collaborator`, hotel a `/hotel` (`HotelShell` + `HotelHomePage`), el resto a
+`/unsupported` (`UnsupportedRolePage`). El comodín va a `/`.
+**Por qué:** el hotel entra a la app. Antes un rol que no fuera Colaborador rebotaba
+entre `/` y `/collaborator` sin fin. El login del web tiene dos puertas que se enlazan
+entre sí; en la app no hay a dónde enlazar, y se repiten sus textos donde aplican para
+reusar la traducción. Nada de esto vive fuera de `src/mobile`.
+**Archivos:** `src/mobile/router.tsx`, `src/mobile/roles.ts`, `src/mobile/MobileRoleHome.tsx`,
+`src/mobile/AppLoginPage.tsx`, `src/mobile/UnsupportedRolePage.tsx`,
+`src/mobile/hotel/HotelShell.tsx`, `src/mobile/hotel/HotelHomePage.tsx`
+
+## 2026-09-28
+
+### 11:28 — Llevar a Inicio al cerrar Permisos con «Ir a Inicio»
+
+**Qué:** `usePermissionsScreen` navega a `/collaborator` cuando la pantalla nativa se
+cierra con `home`; el Atrás de Android ahora devuelve `back` y deja a la persona donde
+estaba. `PermissionsScreenResult.action` suma `'back'`.
+**Por qué:** abierta desde el menú del avatar, «Ir a Inicio» solo cerraba y dejaba a la
+persona en la pantalla de antes (p. ej. Contraseña): el botón no hacía lo que dice.
+Corrige la entrada de las 11:09.
+**Archivos:** `src/features/worker/lib/usePermissionsScreen.ts`,
+`src/features/worker/lib/nativePermissions.ts`
+
+### 11:27 — Detener el lector de QR al cerrarlo (la app quedaba lenta)
+
+**Qué:** en `QrScanner`, el ciclo de lectura revisa una bandera `stopped` después del
+`await detector.detect()`; `onScan` se lee de una ref y deja de ser dependencia del
+efecto; jsQR corre solo sin `BarcodeDetector` (o si este falla), no en cada cuadro además
+de él; al desmontar se suelta el `srcObject` del `<video>`.
+**Por qué:** `cancelAnimationFrame` no alcanzaba al ciclo que estaba esperando a
+`detect()`, y al volver pedía otro cuadro: el lector seguía leyendo para siempre con la
+cámara cerrada. Medido en un moto g 5G (2024) con la app: 12–17 `detect` + jsQR de
+1280×960 por segundo con el lector cerrado, más con cada apertura; toda la app se
+ralentizaba. Además cada render de Ponchar (flecha `onScan` nueva) arrancaba otro ciclo.
+Tras el cambio: 0 por segundo al cerrar, en tres ciclos seguidos.
+**Archivos:** `src/features/worker/components/QrScanner.tsx`
+
+### 11:13 — Traducir los textos de Permisos al inglés
+
+**Qué:** cuatro `msgid` nuevos en los catálogos («Permisos», «Faltan permisos para
+ponchar», «Revisar permisos» y el texto del candado), con su inglés en `en/messages.po`.
+Se extrajo con `lingui extract` sin `--clean`, para no arrastrar al diff la limpieza de
+entradas obsoletas que no son de este cambio.
+**Por qué:** D-36 — todo texto del Colaborador existe en los dos idiomas.
+**Archivos:** `src/locales/es/messages.po`, `src/locales/en/messages.po`
+
+### 11:12 — Agregar «Permisos» al menú del avatar (solo en la app)
+
+**Qué:** en `MobileShell`, entre «Contraseña» y «Mi correo», la opción «Permisos»
+reabre la pantalla nativa. Se pinta solo si `hasNativePermissions()`: en el navegador
+no aparece.
+**Por qué:** el Colaborador tiene que poder volver a la pantalla de Permisos después
+del primer arranque; se pidió en el menú de la flecha del avatar.
+**Archivos:** `src/features/worker/components/MobileShell.tsx`
+
+### 11:11 — Bloquear Ponchar en la app sin ubicación, GPS y cámara
+
+**Qué:** `NativePunchGate`, ruta de layout alrededor de `punch` solo en el router
+móvil: si el nativo dice que falta algo, en lugar de Ponchar muestra un aviso con
+«Revisar permisos». Escucha `permissionsChanged`, así que se abre o se cierra al volver
+de Configuración.
+**Por qué:** «si faltan permisos no deja pasar». El botón de la pantalla nativa ya lo
+cumple; esto cubre los otros caminos (pestaña, deslizar, enlace). El web no lo monta.
+**Archivos:** `src/features/worker/components/NativePunchGate.tsx`,
+`src/mobile/router.tsx`, `src/features/worker/index.ts`
+
+### 11:10 — Abrir la pantalla nativa de Permisos al entrar a la app
+
+**Qué:** `PermissionsOnLaunch`, raíz del router móvil (layout sin `path`): al quedar la
+sesión en `authenticated` abre la pantalla nativa una vez; se rearma al caer a
+`anonymous`. Si se cierra con «Ponchar», navega a `/collaborator/punch`.
+**Por qué:** la pantalla de Permisos es lo primero que ve el Colaborador después del
+login o al abrir la app con sesión. Va fuera de `RequireSession` para ver el cierre de
+sesión, y por estado —no por usuario— para que el refresh de 15 min no la reabra.
+**Archivos:** `src/mobile/PermissionsOnLaunch.tsx`, `src/mobile/router.tsx`
+
+### 11:09 — Crear el puente con la pantalla nativa de Permisos
+
+**Qué:** `lib/nativePermissions.ts` (check, open y el evento `permissionsChanged` del
+plugin `OranjePermissions` de `apps/mobile`) y `lib/usePermissionsScreen.ts` (abre con
+el nombre y el idioma de la persona y lleva a Ponchar si se eligió). Con su spec.
+**Por qué:** los permisos se leen del sistema operativo en nativo y el worker los
+necesita para decidir. Se habla con `window.Capacitor.nativePromise`/`nativeCallback`
+en vez de importar `@capacitor/core`, para no sumar dependencias al web ni tocar el
+`pnpm-lock.yaml`; fuera de la app todo responde `null`.
+**Archivos:** `src/features/worker/lib/nativePermissions.ts`,
+`src/features/worker/lib/nativePermissions.spec.ts`,
+`src/features/worker/lib/usePermissionsScreen.ts`, `src/features/worker/index.ts`
+
 ## 2026-08-13
 
 ### 13:10 — El alta de prospecto pasa a ser un modal

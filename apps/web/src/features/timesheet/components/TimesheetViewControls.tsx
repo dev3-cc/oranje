@@ -7,12 +7,13 @@ import type { ReactNode } from 'react'
 import { neighborWeek, todayIso, weekContaining } from '../lib/weekNavigation'
 
 /** Densidades de los mismos datos, no pantallas distintas. */
-export type TimesheetView = 'HOURS' | 'DAYS' | 'MONTH'
+export type TimesheetView = 'HOURS' | 'DAYS' | 'MONTH' | 'ATTENDANCE'
 
 const VIEWS: ReadonlyArray<{ id: TimesheetView; label: MessageDescriptor }> = [
   { id: 'HOURS', label: msg`Horas` },
   { id: 'DAYS', label: msg`Días` },
   { id: 'MONTH', label: msg`Mes` },
+  { id: 'ATTENDANCE', label: msg`Asistencia` },
 ]
 
 const PILL_CLASS =
