@@ -11,7 +11,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@oranje/ui'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
 import { useApproveTimesheetMutation, useSubmitTimesheetMutation } from '../api/timesheetApi'
@@ -125,6 +125,31 @@ export function WorkerWeekSummary({
   const [submitSheet, { isLoading: isSubmitting }] = useSubmitTimesheetMutation()
   const [approveSheet, { isLoading: isApproving }] = useApproveTimesheetMutation()
   const [actionError, setActionError] = useState<string | null>(null)
+  /* El botón se queda "pegado" entre que la escritura termina y el refetch
+     que invalida trae la fila al día — ahí no hay ningún spinner (Hugo,
+     2026-10-09). Se sigue mostrando ocupado hasta que el estado de ESTA
+     fila de verdad cambie, no solo hasta que la mutación responda. Con
+     salida de emergencia: si en 8s no llegó el refetch, se suelta solo —
+     mejor un botón que vuelve a intentar que uno atorado para siempre. */
+  const [pendingAction, setPendingAction] = useState<'submit' | 'approve' | null>(null)
+  const statusBeforeAction = useRef(row.weekStatus)
+
+  useEffect(() => {
+    if (pendingAction && row.weekStatus !== statusBeforeAction.current) {
+      setPendingAction(null)
+    }
+  }, [row.weekStatus, pendingAction])
+
+  useEffect(() => {
+    if (!pendingAction) return undefined
+    const timeout = window.setTimeout(() => {
+      setPendingAction(null)
+    }, 8000)
+    return () => {
+      window.clearTimeout(timeout)
+    }
+  }, [pendingAction])
+
   const can = useCan()
   /** Aprobar es de los Managers (timesheet:approve_hours); el Supervisor envía y captura. */
   const canApprove = can('timesheet:approve_hours')
@@ -144,8 +169,13 @@ export function WorkerWeekSummary({
   const manualPunchBlock =
     manualPunchBlockDescriptor === null ? null : i18n._(manualPunchBlockDescriptor)
 
+  const isSendingOrSettling = isSubmitting || pendingAction === 'submit'
+  const isApprovingOrSettling = isApproving || pendingAction === 'approve'
+
   async function runAction(action: 'submit' | 'approve'): Promise<void> {
     setActionError(null)
+    statusBeforeAction.current = row.weekStatus
+    setPendingAction(action)
     try {
       if (action === 'submit') {
         await submitSheet(row.timesheetId).unwrap()
@@ -154,8 +184,11 @@ export function WorkerWeekSummary({
         await approveSheet(row.timesheetId).unwrap()
         toast.success(t`Semana aprobada`)
       }
+      // No se limpia `pendingAction` aquí a propósito: sigue ocupado hasta
+      // que la fila refrescada llegue (el `useEffect` de arriba la suelta).
     } catch (error) {
       setActionError(weekActionErrorMessage(error, i18n))
+      setPendingAction(null)
     }
   }
 
@@ -282,17 +315,17 @@ export function WorkerWeekSummary({
               {canSubmit && (
                 <button
                   type="button"
-                  disabled={isSubmitting || submitBlock !== null}
+                  disabled={isSendingOrSettling || submitBlock !== null}
                   title={submitBlock ?? t`Mandar la semana a aprobación del Manager`}
                   onClick={() => {
                     void runAction('submit')
                   }}
                   className={cn(
                     'cursor-pointer rounded-md bg-o-300 shadow-xs px-2 py-1 text-[11px] font-semibold text-ink transition-colors hover:bg-o-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500 disabled:opacity-60',
-                    isSubmitting ? 'disabled:cursor-wait' : 'disabled:cursor-not-allowed',
+                    isSendingOrSettling ? 'disabled:cursor-wait' : 'disabled:cursor-not-allowed',
                   )}
                 >
-                  {isSubmitting ? t`Enviando…` : t`Enviar a revisión`}
+                  {isSendingOrSettling ? t`Enviando…` : t`Enviar a revisión`}
                 </button>
               )}
               {onManualPunch !== undefined && (
@@ -317,13 +350,13 @@ export function WorkerWeekSummary({
               <ApproverTooltip>
                 <button
                   type="button"
-                  disabled={isApproving}
+                  disabled={isApprovingOrSettling}
                   onClick={() => {
                     void runAction('approve')
                   }}
                   className="cursor-pointer rounded-md bg-green px-2 py-1 text-[11px] font-semibold text-ink transition-colors hover:bg-green/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500 disabled:cursor-wait disabled:opacity-60"
                 >
-                  {isApproving ? t`Aprobando…` : t`Aprobar semana`}
+                  {isApprovingOrSettling ? t`Aprobando…` : t`Aprobar semana`}
                 </button>
               </ApproverTooltip>
             ) : (

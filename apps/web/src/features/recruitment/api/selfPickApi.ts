@@ -112,24 +112,21 @@ async function fetchSlotBoard(
   /**
    * Un slot por unidad de `quantity` (demand.slot). El contrato no expone la
    * tabla de slots directa: se reconstruye con las asignaciones ACTIVAS de
-   * esta posición, que traen el ordinal de su slot.
+   * ESTE renglón, que traen el ordinal y la posición de su slot.
+   *
+   * Antes se filtraba con `slot.id.includes(position.id)` —dos uuid distintos,
+   * así que nunca era cierto— y el respaldo tomaba las primeras `filled`
+   * asignaciones de TODA la requisición: una requisición de dos renglones
+   * pintaba en el renglón 1 a quien estaba en el 2, y dejaba su slot ocupado
+   * como libre (Hugo, 2026-10-09). `positionId` ya venía en el repositorio y
+   * solo faltaba exponerlo.
    */
-  const activeByOrdinal = new Map<number, AssignmentApi>()
+  const occupied = new Map<number, AssignmentApi>()
   for (const assignment of assignments) {
-    if (assignment.status === 'ACTIVE' && assignment.slot.id.includes(position.id)) {
-      activeByOrdinal.set(assignment.slot.ordinal, assignment)
+    if (assignment.status === 'ACTIVE' && assignment.slot.positionId === position.id) {
+      occupied.set(assignment.slot.ordinal, assignment)
     }
   }
-  /** Fallback honesto: si los ids de slot no delatan la posición, por conteo. */
-  const occupied =
-    activeByOrdinal.size > 0
-      ? activeByOrdinal
-      : new Map(
-          assignments
-            .filter((item) => item.status === 'ACTIVE')
-            .slice(0, position.filled)
-            .map((item) => [item.slot.ordinal, item] as const),
-        )
 
   const slots: SlotRow[] = Array.from({ length: position.quantity }, (_, index) => {
     const assignment = occupied.get(index + 1)
@@ -203,7 +200,14 @@ export const selfPickApi = baseApi.injectEndpoints({
     getAssignableWorkers: build.query<AssignableWorker[], void>({
       queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
         const bq = fetchWithBQ as FetchWithBQ
-        const result = await fetchAllPages<WorkerApi>(bq, '/workers', { state: 'STRONG_GREEN' })
+        /* Disponible Y sin asignación viva: el semáforo avanza con el primer
+           ponche, así que alguien recién asignado sigue en Verde fuerte y la
+           lista lo ofrecía para que el servidor lo rechazara al guardar
+           (Hugo, 2026-10-09). */
+        const result = await fetchAllPages<WorkerApi>(bq, '/workers', {
+          state: 'STRONG_GREEN',
+          withoutActiveAssignment: 'true',
+        })
         if ('error' in result) return { error: result.error as never }
         const workers = result.data
         return {
@@ -218,8 +222,12 @@ export const selfPickApi = baseApi.injectEndpoints({
       providesTags: [{ type: 'Worker' as const, id: 'LIST' }],
     }),
 
-    createAssignment: build.mutation<unknown, CreateAssignmentRequest>({
+    /* El `id` de la asignación creada: lo necesita el ajuste de pago de la
+       eventual (Hugo, 2026-10-08), que no existe hasta que la asignación
+       existe. Antes el tipo era `unknown` porque nadie lo usaba. */
+    createAssignment: build.mutation<{ assignment: { id: string } }, CreateAssignmentRequest>({
       query: (body) => ({ url: '/assignments', method: 'POST', body }),
+      transformResponse: (res: ApiEnvelope<{ assignment: { id: string } }>) => res.data,
       invalidatesTags: (_res, _err, { positionId }) => [
         { type: 'Requisition' as const, id: 'SELF_PICK' },
         { type: 'Requisition' as const, id: `slots-${positionId}` },

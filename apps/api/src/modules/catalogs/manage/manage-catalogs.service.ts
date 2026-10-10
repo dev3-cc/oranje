@@ -29,6 +29,9 @@ export const MANAGED_CATALOGS = [
   'english-levels',
   'zones',
   'reasons',
+  // Conceptos de pago extra (p. ej. «Uber»), decisión de Hugo del 2026-10-05
+  // (P-CO-07): el gasto de una asignación eventual sale de aquí.
+  'pay-concepts',
 ] as const
 
 export type ManagedCatalog = (typeof MANAGED_CATALOGS)[number]
@@ -86,6 +89,8 @@ export class ManageCatalogsService {
         return this.prisma.zone as unknown as CatalogDelegate
       case 'reasons':
         return this.prisma.statusChangeReason as unknown as CatalogDelegate
+      case 'pay-concepts':
+        return this.prisma.payConcept as unknown as CatalogDelegate
     }
   }
 
@@ -244,7 +249,9 @@ export class ManageCatalogsService {
                 ? 'Un hotel, un colaborador o una asignación de territorio usa esta zona: no se puede eliminar'
                 : catalog === 'reasons'
                   ? 'Ese motivo ya quedó registrado en un cambio de estado: no se puede eliminar'
-                  : 'Hay requisiciones o colaboradores usando esta fila: no se puede eliminar',
+                  : catalog === 'pay-concepts'
+                    ? 'Este concepto ya quedó registrado en un gasto o una tarifa: no se puede eliminar'
+                    : 'Hay requisiciones o colaboradores usando esta fila: no se puede eliminar',
         })
       }
     }

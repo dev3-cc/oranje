@@ -164,8 +164,11 @@ describe('Timesheet de todos los hoteles', () => {
     const observer = rows.filter((row) => row.role === 'ROL-OBS-01').map((row) => row.action)
 
     expect(observer).toEqual(['read_all_hotels'])
-    expect(rows.filter((row) => row.action === 'read_all_hotels').map((row) => row.role)).toEqual([
-      'ROL-OBS-01',
-    ])
+    // La Contadora y el Manager de Contabilidad lo ganaron después (Hugo,
+    // 2026-09-29: "la Contadora verá el Timesheet completo de todos los
+    // hoteles"), con el mismo permiso de solo lectura que el Observador.
+    expect(rows.filter((row) => row.action === 'read_all_hotels').map((row) => row.role)).toEqual(
+      expect.arrayContaining(['ROL-OBS-01', 'ROL-CO-01', 'ROL-CO-02']),
+    )
   })
 })

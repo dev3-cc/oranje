@@ -36,7 +36,7 @@ import {
 } from '@/shared/constants/workerStatus'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
-import { formatTimeIn } from '@/shared/lib/formatters'
+import { formatTimeIn, formatList } from '@/shared/lib/formatters'
 
 /** Las diapositivas del intro; el texto se traduce al pintar con `i18n._()` (D-36). */
 const INTRO_SLIDES: readonly {
@@ -275,11 +275,25 @@ export function HomePage(): ReactNode {
    * hubiera terminado transporte, SSN/ITIN y contacto de emergencia — lo
    * único que de verdad puede llenar desde aquí (Hugo, 2026-09-29).
    */
-  const missingMyPart =
-    profile.transportType === null ||
-    profile.emergencyContact === null ||
-    profile.bloodType === null ||
-    !profile.taxDeadline.hasDocument
+  /*
+   * Y se NOMBRA lo que falta, una por una. Antes el aviso listaba siempre las
+   * mismas tres cosas —transporte, SSN/ITIN y contacto— aunque ya estuvieran
+   * hechas, y ni siquiera mencionaba el tipo de sangre, que también es
+   * obligatorio: quien ya había llenado todo menos ese veía un texto que le
+   * pedía justo lo que ya tenía y nunca sabía qué le faltaba de verdad
+   * (Hugo, 2026-10-09).
+   *
+   * La foto NO está aquí a propósito: no entra en `is_profile_complete` del
+   * servidor, así que no bloquea nada.
+   */
+  const faltantes: string[] = [
+    profile.transportType === null ? t`cómo llegas al trabajo` : null,
+    !profile.taxDeadline.hasDocument ? t`tu SSN o ITIN` : null,
+    profile.emergencyContact === null ? t`tu contacto de emergencia` : null,
+    profile.bloodType === null ? t`tu tipo de sangre` : null,
+  ].filter((campo): campo is string => campo !== null)
+
+  const missingMyPart = faltantes.length > 0
 
   return (
     <div className="flex flex-col gap-5">
@@ -311,8 +325,8 @@ export function HomePage(): ReactNode {
           }
         >
           <Trans>
-            Tu transporte, tu SSN o ITIN y un contacto de emergencia. Con eso Reclutamiento puede
-            validarte y empiezas a recibir turnos.
+            Falta {formatList(faltantes)}. Con eso Reclutamiento puede validarte y empiezas a
+            recibir turnos. Tu foto no hace falta para esto.
           </Trans>
         </NoticeCard>
       )}

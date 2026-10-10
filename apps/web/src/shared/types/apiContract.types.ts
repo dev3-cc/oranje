@@ -281,7 +281,8 @@ export interface AssignmentApi {
   type: string
   status: string
   worker: { id: string; fullName: string }
-  slot: { id: string; ordinal: number }
+  /** `positionId`: la lista llega de toda la requisición, no de un renglón. */
+  slot: { id: string; ordinal: number; positionId: string }
   createdAt: string
 }
 

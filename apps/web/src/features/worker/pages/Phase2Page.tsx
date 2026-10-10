@@ -106,10 +106,16 @@ export function Phase2Page(): ReactNode {
             <h2 className="text-sm font-semibold text-ink">
               <Trans>Tu foto</Trans>
             </h2>
+            {/* Dicho aquí para que nadie crea que la foto es lo que lo tiene
+                detenido: no entra en el perfil completo (Hugo, 2026-10-09). */}
+            <span className="rounded-full bg-surface-2 px-2 py-0.5 text-xs text-ink-3">
+              <Trans>opcional</Trans>
+            </span>
           </div>
           <p className="text-xs text-ink-3">
             <Trans>
-              Si tu Reclutadora no te la tomó en la entrevista, súbela tú. Se guarda al elegirla.
+              Si tu Reclutadora no te la tomó en la entrevista, súbela tú. Se guarda al elegirla. No
+              hace falta para que te validen.
             </Trans>
           </p>
           <PhotoUploader photoUrl={profile?.photoUrl ?? null} />

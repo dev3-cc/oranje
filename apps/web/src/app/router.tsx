@@ -108,6 +108,270 @@ export const router = createBrowserRouter([
         ],
       },
       staffShellRoute,
+      {
+        Component: AppShell,
+        children: [
+          { index: true, Component: RoleHome },
+          {
+            path: 'dashboard',
+            lazy: async () => {
+              const m = await import('@/features/dashboard')
+              return { Component: m.DashboardPage }
+            },
+          },
+          {
+            path: 'users',
+            lazy: async () => {
+              const m = await import('@/features/admin')
+              return { Component: m.UsersPage }
+            },
+          },
+          {
+            path: 'catalogs',
+            lazy: async () => {
+              const m = await import('@/features/admin')
+              return { Component: m.CatalogsPage }
+            },
+          },
+          {
+            path: 'mail-settings',
+            lazy: async () => {
+              const m = await import('@/features/admin')
+              return { Component: m.MailSettingsPage }
+            },
+          },
+          {
+            path: 'corporate-emails',
+            lazy: async () => {
+              const m = await import('@/features/admin')
+              return { Component: m.CorporateEmailPage }
+            },
+          },
+          {
+            path: 'pipeline',
+            handle: FULL_WIDTH,
+            lazy: async () => {
+              const m = await import('@/features/onboarding')
+              return { Component: m.PipelinePage }
+            },
+          },
+          {
+            /* El detalle cuelga de la ruta del tablero: se llega desde una tarjeta. */
+            path: 'pipeline/:prospectId',
+            lazy: async () => {
+              const m = await import('@/features/onboarding')
+              return { Component: m.ProspectDetailPage }
+            },
+          },
+          {
+            /**
+             * La propuesta vive DENTRO del hotel, no en un módulo aparte: su
+             * historial y la creación de versiones cuelgan del prospecto. Clientes
+             * Activos son los mismos hoteles en otro estado del semáforo, así que
+             * apuntarán a esta misma ruta.
+             */
+            path: 'pipeline/:prospectId/proposal',
+            lazy: async () => {
+              const m = await import('@/features/onboarding')
+              return { Component: m.ProposalEditorPage }
+            },
+          },
+          {
+            /* Vista transversal de solo lectura; el editor vive dentro del hotel. */
+            path: 'proposals',
+            lazy: async () => {
+              const m = await import('@/features/onboarding')
+              return { Component: m.ProposalListPage }
+            },
+          },
+          {
+            /* Una versión concreta, en solo lectura. A donde lleva «Ver propuesta». */
+            path: 'proposals/:prospectId/:version',
+            lazy: async () => {
+              const m = await import('@/features/onboarding')
+              return { Component: m.ProposalVersionPage }
+            },
+          },
+          {
+            path: 'conversion',
+            lazy: async () => {
+              const m = await import('@/features/conversion')
+              return { Component: m.ConversionQueuePage }
+            },
+          },
+          {
+            /* La maqueta que llegó es esta: la conversión de un prospecto concreto. */
+            path: 'conversion/:prospectId',
+            lazy: async () => {
+              const m = await import('@/features/conversion')
+              return { Component: m.ConversionPage }
+            },
+          },
+          {
+            path: 'requisitions',
+            lazy: async () => {
+              const m = await import('@/features/requisitions')
+              return { Component: m.RequisitionBoardPage }
+            },
+          },
+          {
+            /**
+             * Va ANTES que `:requisitionId`, que si no se tragaría «authorization»
+             * como si fuera el id de una requisición.
+             */
+            path: 'requisitions/authorization',
+            lazy: async () => {
+              const m = await import('@/features/requisitions')
+              return { Component: m.RequisitionAuthorizationPage }
+            },
+          },
+          {
+            /* El detalle cuelga del tablero: se llega desde el folio de una fila. */
+            path: 'requisitions/:requisitionId',
+            lazy: async () => {
+              const m = await import('@/features/requisitions')
+              return { Component: m.RequisitionDetailPage }
+            },
+          },
+          {
+            path: 'schedule',
+            lazy: async () => {
+              const m = await import('@/features/schedule')
+              return { Component: m.SchedulePage }
+            },
+          },
+          {
+            path: 'timesheet',
+            handle: FULL_WIDTH,
+            lazy: async () => {
+              const m = await import('@/features/timesheet')
+              return { Component: m.TimesheetPage }
+            },
+          },
+          {
+            path: 'timesheet-global',
+            handle: FULL_WIDTH,
+            lazy: async () => {
+              const m = await import('@/features/timesheet')
+              return { Component: m.TimesheetGlobalPage }
+            },
+          },
+          {
+            path: 'collaborator-pool',
+            lazy: async () => {
+              const m = await import('@/features/recruitment')
+              return { Component: m.PoolPage }
+            },
+          },
+          {
+            /* El Expediente cuelga del Pool: se llega desde el nombre de la fila. */
+            path: 'collaborator-pool/:workerId',
+            lazy: async () => {
+              const m = await import('@/features/recruitment')
+              return { Component: m.WorkerDetailPage }
+            },
+          },
+          {
+            path: 'self-pick',
+            lazy: async () => {
+              const m = await import('@/features/recruitment')
+              return { Component: m.SelfPickPage }
+            },
+          },
+          {
+            /* La asignación cuelga de la bolsa: se llega desde una tarjeta. */
+            path: 'self-pick/:requisitionId/:positionId',
+            lazy: async () => {
+              const m = await import('@/features/recruitment')
+              return { Component: m.SlotAssignmentPage }
+            },
+          },
+          {
+            path: 'reports',
+            lazy: async () => {
+              const m = await import('@/features/reports')
+              return { Component: m.ReportsPage }
+            },
+          },
+          {
+            path: 'my-team',
+            lazy: async () => {
+              const m = await import('@/features/team')
+              return { Component: m.TeamPage }
+            },
+          },
+          {
+            path: 'blacklist',
+            lazy: async () => {
+              const m = await import('@/features/recruitment')
+              return { Component: m.BlacklistPage }
+            },
+          },
+          {
+            path: 'active-clients',
+            lazy: async () => {
+              const m = await import('@/features/clients')
+              return { Component: m.ClientPortfolioPage }
+            },
+          },
+          {
+            path: 'contracts',
+            lazy: async () => {
+              const m = await import('@/features/contracts')
+              return { Component: m.ContractListPage }
+            },
+          },
+          {
+            /* El contrato cuelga de la lista: se llega desde el «Abrir» de su fila. */
+            path: 'contracts/:contractId',
+            lazy: async () => {
+              const m = await import('@/features/contracts')
+              return { Component: m.ContractDetailPage }
+            },
+          },
+          ...LEGACY_STAFF_ROUTES,
+          {
+            path: 'my-staff',
+            lazy: async () => {
+              const m = await import('@/features/personnel')
+              return { Component: m.PersonnelPage }
+            },
+          },
+          {
+            path: 'audits',
+            lazy: async () => {
+              const m = await import('@/features/audits')
+              return { Component: m.AuditsPage }
+            },
+          },
+          {
+            path: 'observability',
+            lazy: async () => {
+              const m = await import('@/features/observability')
+              return { Component: m.ObservabilityPage }
+            },
+          },
+          {
+            /* La única pantalla de escritura del Observador (Hugo, 2026-10-08). */
+            path: 'pay-adjustments',
+            lazy: async () => {
+              const m = await import('@/features/observability')
+              return { Component: m.PayAdjustmentsQueuePage }
+            },
+          },
+          {
+            path: 'my-territory',
+            lazy: async () => {
+              const m = await import('@/features/territory')
+              return { Component: m.TerritoryPage }
+            },
+          },
+          ...PENDING_MODULES.map((module) => ({
+            path: module.path,
+            element: <ModulePlaceholder title={module.title} />,
+          })),
+        ],
+      },
     ],
   },
 ])

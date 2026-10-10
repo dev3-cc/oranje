@@ -61,6 +61,9 @@ const ENGLISH: CatalogItemApi[] = [
   { id: 'eng-co', code: 'CONVERSATIONAL', name: 'Conversacional' },
 ]
 
+/** Conceptos de pago extra del ajuste eventual (Hugo, 2026-10-08, P-CO-07). */
+const PAY_CONCEPTS: CatalogItemApi[] = [{ id: 'pc-uber', code: 'UBER', name: 'Uber' }]
+
 // ── Estados de los dos semáforos, como los sirve la API ──────────────────────
 const REQ_STATE: Record<string, StatusRefApi> = {
   APPLE_GREEN: { code: 'APPLE_GREEN', color: 'Verde manzana', name: 'En elaboración' },
@@ -389,7 +392,7 @@ const assignmentsByPosition = new Map<string, AssignmentApi[]>()
           type: 'FIXED',
           status: 'ACTIVE',
           worker: { id: `wrk-seed-${String(occupantIndex)}`, fullName: name },
-          slot: { id: `slot-${position.id}-${String(ordinal)}`, ordinal },
+          slot: { id: `slot-${position.id}-${String(ordinal)}`, ordinal, positionId: position.id },
           createdAt: requisition.createdAt,
         })
       }
@@ -417,6 +420,7 @@ const CATALOG_FIXTURES: Record<string, CatalogItemApi[] | undefined> = {
   positions: POSITIONS,
   'hiring-modalities': MODALITIES,
   'english-levels': ENGLISH,
+  'pay-concepts': PAY_CONCEPTS,
 }
 
 const catalogRoute = (path: string, items: CatalogItemApi[]): MockRoute => ({
@@ -516,6 +520,7 @@ const routes: readonly MockRoute[] = [
   },
   catalogRoute('/catalogs/hiring-modalities', MODALITIES),
   catalogRoute('/catalogs/english-levels', ENGLISH),
+  catalogRoute('/catalogs/pay-concepts', PAY_CONCEPTS),
   {
     method: 'GET',
     path: '/requisitions',
@@ -626,7 +631,11 @@ const routes: readonly MockRoute[] = [
           id: payload.workerId ?? '',
           fullName: mockWorkerNameById(payload.workerId ?? ''),
         },
-        slot: { id: `slot-${position.id}-${String(taken.length + 1)}`, ordinal: taken.length + 1 },
+        slot: {
+          id: `slot-${position.id}-${String(taken.length + 1)}`,
+          ordinal: taken.length + 1,
+          positionId: position.id,
+        },
         createdAt: new Date().toISOString(),
       }
       assignmentsByPosition.set(position.id, [...taken, created])

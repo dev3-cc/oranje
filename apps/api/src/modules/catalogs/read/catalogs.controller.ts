@@ -37,6 +37,11 @@ export class CatalogsController {
     return { data: await this.catalogs.englishLevels() }
   }
 
+  @Get('pay-concepts')
+  async payConcepts(): Promise<{ data: CatalogItem[] }> {
+    return { data: await this.catalogs.payConcepts() }
+  }
+
   @Get('status-lights')
   async statusLights(): Promise<{
     data: Array<{ code: string; name: string; states: StatusLightItem[] }>

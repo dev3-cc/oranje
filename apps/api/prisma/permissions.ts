@@ -545,7 +545,7 @@ const HOTEL: Permission[] = [
     module: 'timesheet',
     action: 'read_all_hotels',
     label: 'Ver el Timesheet de todos los hoteles (solo lectura)',
-    roles: [OBSERVER],
+    roles: [OBSERVER, ACCOUNTANT, ACCOUNTING_MANAGER],
   },
   {
     module: 'timesheet',
@@ -746,6 +746,25 @@ const RECRUITMENT: Permission[] = [
     action: 'read_position_pay',
     label: 'Ver el pago de la posición al asignar un slot',
     roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
+  },
+  // Hugo, 2026-10-08: al llenar un slot EVENTUAL, Reclutamiento puede pedir un
+  // ajuste a la tarifa de esa posición o un gasto extra (p. ej. Uber) — queda
+  // PENDING hasta que lo apruebe el Observador.
+  {
+    module: 'requisitions',
+    action: 'request_pay_adjustment',
+    label: 'Pedir un ajuste de tarifa o un gasto extra al asignar un slot eventual',
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
+  },
+  // Excepción deliberada: el Observador es de puro lectura (ver bloque
+  // OBSERVABILITY más abajo), salvo esto — fuera de la herencia por el mismo
+  // motivo que sus lecturas: nadie más hereda esta capacidad de aprobar.
+  {
+    module: 'requisitions',
+    action: 'approve_pay_adjustment',
+    label: 'Aprobar o rechazar el ajuste/gasto de una asignación eventual (Observador)',
+    roles: [OBSERVER],
+    inherit: false,
   },
   {
     module: 'requisitions',
@@ -1169,7 +1188,7 @@ const ACCOUNTING: Permission[] = [
     module: 'payroll',
     action: 'mark_paid',
     label: 'Registrar el pago',
-    roles: [ACCOUNTING_MANAGER, SYS],
+    roles: [ACCOUNTANT, ACCOUNTING_MANAGER, SYS],
   },
   {
     module: 'payroll',

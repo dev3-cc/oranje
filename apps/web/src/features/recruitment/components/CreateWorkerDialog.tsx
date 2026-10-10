@@ -363,6 +363,11 @@ export function CreateWorkerDialog({
       isCompletePhone(draft.phone) &&
       draft.address.trim() !== '' &&
       draft.zoneId !== '' &&
+      /* La foto es obligatoria al dar de alta (Hugo, 2026-10-09): la toma la
+         Reclutadora en la entrevista. Al EDITAR no se exige — ninguno de los
+         344 que ya existen tiene, y pedirla para corregir un teléfono los
+         dejaría sin poder guardar. El servidor exige lo mismo. */
+      draft.photoPath !== '' &&
       !isLoading
 
   /* Solo el paso 1 (Datos personales) tiene campos obligatorios — 2 y 3 son
@@ -413,7 +418,8 @@ export function CreateWorkerDialog({
           phone: draft.phone.trim(),
           address: draft.address.trim(),
           zoneId: draft.zoneId,
-          ...(draft.photoPath !== '' ? { photoPath: draft.photoPath } : {}),
+          /* En el alta siempre va: `canSubmit` no deja guardar sin ella. */
+          photoPath: draft.photoPath,
           ...(draft.catalogPositionId !== '' ? { catalogPositionId: draft.catalogPositionId } : {}),
           ...(draft.hiringModalityId !== '' ? { hiringModalityId: draft.hiringModalityId } : {}),
           ...(draft.englishLevelId !== '' ? { englishLevelId: draft.englishLevelId } : {}),
