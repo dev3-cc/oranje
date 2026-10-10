@@ -39,10 +39,13 @@ jobs:
       REPOSITORIO: oranje
 
     steps:
-      # fetch-depth 2: en main hay que ver los padres del merge para promover.
+      # Historial completo: en main hay que caminar varios segundos padres
+      # para promover (ver el paso "Promover la imagen probada en staging").
+      # fetch-depth: 2 se quedaba corto en cuanto el enlace a staging tenía
+      # más de un nivel de profundidad (2026-10-10).
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Autenticar contra GCP
         uses: google-github-actions/auth@v2
@@ -83,9 +86,14 @@ jobs:
           DESTINO="${{ vars.GCP_PROJECT_ID }}"
           RUTA_ORIGEN="$REGION-docker.pkg.dev/$ORIGEN/$REPOSITORIO/$SERVICIO"
 
+          # Caminar solo "segundos padres" en cadena se rompe en cuanto un
+          # commit intermedio no es un merge (p. ej. un hotfix lineal
+          # encima de main, como pasó el 2026-10-10): esa rama no tiene
+          # segundo padre y el camino hacia staging se corta ahí aunque
+          # siga siendo ancestro por el primer padre. Se busca en TODOS
+          # los ancestros recientes, no solo en una columna.
           DIGEST=""
-          for CANDIDATO in "${{ github.sha }}" "$(git rev-parse --verify --quiet HEAD^2 || true)"; do
-            [ -z "$CANDIDATO" ] && continue
+          for CANDIDATO in $(git rev-list --max-count=50 "${{ github.sha }}"); do
             DIGEST=$(gcloud artifacts docker images describe \
               "$RUTA_ORIGEN:$CANDIDATO" \
               --format='value(image_summary.digest)' \
@@ -97,7 +105,7 @@ jobs:
           done
 
           if [ -z "$DIGEST" ]; then
-            echo "::error::Ni ${{ github.sha }} ni su padre de staging tienen imagen en staging."
+            echo "::error::Ninguno de los últimos 50 ancestros de ${{ github.sha }} tiene imagen en staging."
             echo "::error::Producción solo promueve lo que ya se probó — no reconstruye."
             exit 1
           fi
