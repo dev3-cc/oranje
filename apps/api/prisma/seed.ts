@@ -4,6 +4,8 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client'
 import { v7 as uuidv7 } from 'uuid'
 
+import { SYSTEM_USER_EMAIL } from '../src/common/constants/system-actor.js'
+
 import { expandRoles, flattenPermissions } from './permissions.js'
 
 /**
@@ -1470,6 +1472,35 @@ async function main(): Promise<void> {
     }
   }
   log(`status_light_transition (Blacklist): ${blacklistTransitions}`)
+
+  /*
+   * La cuenta del Sistema (Hugo, 2026-10-09).
+   *
+   * Lo que el sistema hace solo —cerrar una asignación temporal vencida— deja
+   * rastro en el journal igual que lo que hace una persona, y el journal exige
+   * un actor. Hasta hoy el único usuario con `ROL-SYS-01` era el de las
+   * pruebas de integración, y firmar con él en producción sería mentir sobre
+   * quién actuó.
+   *
+   * Nace INACTIVA y sin cuenta de Firebase: no es una persona, no entra a la
+   * app; existe para poder firmar.
+   */
+  const sistemaRole = await prisma.role.findUniqueOrThrow({
+    where: { code: 'ROL-SYS-01' },
+    select: { id: true },
+  })
+  await prisma.user.upsert({
+    where: { email: SYSTEM_USER_EMAIL },
+    update: { fullName: 'Sistema', roleId: sistemaRole.id, isActive: false },
+    create: {
+      id: uuidv7(),
+      email: SYSTEM_USER_EMAIL,
+      fullName: 'Sistema',
+      roleId: sistemaRole.id,
+      isActive: false,
+    },
+  })
+  log(`identity.user (Sistema): ${SYSTEM_USER_EMAIL}`)
 
   log('')
   log('NOTA: 4 de los 7 semáforos tienen transiciones. Los otros tres —Posiciones,')

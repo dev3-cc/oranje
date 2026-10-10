@@ -200,7 +200,17 @@ describe('PoolPage', () => {
     await user.type(scoped.getByPlaceholderText(/Peachtree/), '88 Auburn Ave, Atlanta')
     await user.click(await scoped.findByLabelText('Zona'))
     await user.click(await screen.findByRole('option', { name: 'Zona Centro' }))
-    expect(goNext).toBeEnabled()
+
+    /* La foto es obligatoria en el alta (Hugo, 2026-10-09): con todo lo demás
+       lleno, «Continuar» sigue apagado hasta que se sube. */
+    expect(goNext).toBeDisabled()
+    await user.upload(
+      scoped.getByLabelText('Foto del colaborador'),
+      new File(['foto'], 'foto.jpg', { type: 'image/jpeg' }),
+    )
+    await waitFor(() => {
+      expect(goNext).toBeEnabled()
+    })
 
     // Paso 2 · Decisiones de Oranje: todo opcional, «Continuar» sigue de largo.
     await user.click(goNext)

@@ -99,6 +99,11 @@ const baseSchema = z.object({
   // Sin ella, publish() no revienta -- solo avisa en el log y no manda nada,
   // el mismo criterio que CPanelService.enabled.
   PUBSUB_TOPIC_NOTIFICATIONS: optionalVar(z.string().min(1)),
+  // El barrido de asignaciones vencidas, que corre un programador de tareas.
+  // Sin ellas, POST /assignments/close-expired responde 401 -- preferible a
+  // que lo dispare cualquiera que conozca la ruta.
+  SCHEDULER_AUDIENCE: optionalVar(z.string().min(1)),
+  SCHEDULER_SERVICE_ACCOUNT: optionalVar(z.string().email()),
   FIREBASE_PROJECT_ID: optionalVar(z.string().min(1)),
   // Solo fuera de Cloud Run: ahi la cuenta va adjunta y firma sola.
   STORAGE_SIGNER_SERVICE_ACCOUNT: optionalVar(z.string().min(1)),
