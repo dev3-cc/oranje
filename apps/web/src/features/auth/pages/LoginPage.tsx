@@ -9,13 +9,14 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router'
 
-import { LoginCollage } from '../components/LoginCollage'
 import { buildLoginSchema, type LoginFormValues } from '../types/login.schema'
 
 import { useAppSelector } from '@/app/hooks'
 import { useCreateSessionMutation } from '@/app/sessionApi'
 import { selectSessionStatus } from '@/app/sessionSlice'
 import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
+import calleAngosta from '@/assets/login/oranje-calle-sm.webp'
+import calleAncha from '@/assets/login/oranje-calle.webp'
 import { LanguageSwitch } from '@/shared/components/LanguageSwitch'
 import { requestPasswordReset, signInWithEmail } from '@/shared/lib/firebase'
 import { readLastRoute } from '@/shared/lib/lastRoute'
@@ -32,63 +33,19 @@ import { readLastRoute } from '@/shared/lib/lastRoute'
  */
 
 /**
- * Hoteles de Estados Unidos para el fondo. Fotos de Unsplash serviéndose de su
- * CDN (hotlink permitido por su licencia). Son decorativas: si alguna cae, el
- * velo y el color de fondo cubren el hueco sin romper nada.
- *
- * ⚠ Si algún día el web sirve con CSP, `images.unsplash.com` necesita entrar
- * a `img-src` (la CSP de D-17 solo abre `maps.googleapis.com`).
+ * Fondo de marca: la pieza del Brandbook con el anuncio Oranje en la calle.
+ * Decorativa (`aria-hidden`). Sustituye al mosaico de fotos de Unsplash, que
+ * dependía de un CDN ajeno y de su licencia.
  */
-const HOTEL_PHOTOS: readonly string[] = [
-  'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=640&q=55',
-  'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=640&q=55',
-  'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=640&q=55',
-  'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=640&q=55',
-  'https://images.unsplash.com/photo-1445019980597-93fa8acb246c?auto=format&fit=crop&w=640&q=55',
-  'https://images.unsplash.com/photo-1564501049412-61c2a3083791?auto=format&fit=crop&w=640&q=55',
-  'https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=640&q=55',
-  'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=640&q=55',
-]
-
-/**
- * Collage de fondo con paneo lento. Decorativo: `aria-hidden`, sin foco.
- *
- * El bucle solo es continuo si el `-50%` del paneo cae EXACTO donde empieza
- * una copia idéntica: por eso son DOS bloques iguales apilados, y cada bloque
- * repite las fotos hasta medir más que cualquier pantalla — sin eso, en
- * monitores altos el collage se acababa y subía un hueco vacío.
- */
-const BACKDROP_REPEATS = 6
-
-function HotelBackdrop(): ReactNode {
-  const block = Array.from({ length: BACKDROP_REPEATS }, () => HOTEL_PHOTOS).flat()
-
+function BrandBackdrop(): ReactNode {
   return (
     <div aria-hidden className="absolute inset-0 overflow-hidden">
-      <motion.div
-        animate={{ y: ['0%', '-50%'] }}
-        transition={{ duration: 240, repeat: Infinity, ease: 'linear' }}
-        className="flex flex-col"
-      >
-        {[0, 1].map((copy) => (
-          <div
-            key={copy}
-            className="grid grid-cols-2 gap-3 px-3 py-1.5 sm:grid-cols-3 lg:grid-cols-4"
-          >
-            {block.map((src, index) => (
-              <img
-                key={`${String(copy)}-${src}-${String(index)}`}
-                src={src}
-                alt=""
-                loading="lazy"
-                className="h-44 w-full rounded-lg object-cover sm:h-52"
-              />
-            ))}
-          </div>
-        ))}
-      </motion.div>
-      {/* Velo cálido: el fondo acompaña, la tarjeta manda. */}
-      <div className="absolute inset-0 bg-gradient-to-b from-surface-2/85 via-surface-2/70 to-surface-2/90 backdrop-blur-[2px]" />
+      <picture>
+        <source media="(max-width: 640px)" srcSet={calleAngosta} />
+        <img src={calleAncha} alt="" className="h-full w-full object-cover object-center" />
+      </picture>
+      {/* Oscurece el lado del formulario y deja respirar el anuncio. */}
+      <div className="absolute inset-0 bg-gradient-to-r from-ink/35 via-ink/20 to-ink/70" />
     </div>
   )
 }
@@ -207,15 +164,14 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
 
   return (
     <main className="relative flex min-h-screen items-center justify-center bg-surface-2 p-4 sm:p-6">
-      <HotelBackdrop />
+      <BrandBackdrop />
 
-      {/* La tarjeta blanca es SOLO el formulario; el collage flota al lado, sobre el mosaico. */}
-      <div className="relative z-10 flex w-full max-w-5xl items-center gap-8 lg:gap-12">
+      <div className="relative z-10 flex w-full max-w-6xl items-center justify-center md:justify-end">
         <motion.div
           initial={{ opacity: 0, y: 24, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          className="relative z-10 flex w-full max-w-md shrink-0 overflow-hidden rounded-2xl border border-white/50 bg-surface/62 shadow-xl backdrop-blur-2xl"
+          className="relative z-10 flex w-full max-w-md shrink-0 overflow-hidden rounded-2xl border border-white/60 bg-surface/95 shadow-2xl backdrop-blur-xl"
         >
           {/* Columna del formulario: 340–400px, como la referencia. */}
           <section className="flex w-full flex-col justify-center gap-8 p-8 sm:p-10">
@@ -481,14 +437,6 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
         </motion.div>
 
         {/* El collage: las fotos del equipo flotando sobre el mosaico, sin tarjeta detrás. */}
-        <motion.aside
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-          className="relative hidden min-h-[600px] flex-1 md:block"
-        >
-          <LoginCollage />
-        </motion.aside>
       </div>
     </main>
   )
