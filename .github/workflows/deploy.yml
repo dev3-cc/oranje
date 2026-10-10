@@ -83,9 +83,15 @@ jobs:
           DESTINO="${{ vars.GCP_PROJECT_ID }}"
           RUTA_ORIGEN="$REGION-docker.pkg.dev/$ORIGEN/$REPOSITORIO/$SERVICIO"
 
+          # Un release a main puede quedar con el enlace a staging a más de
+          # un nivel de profundidad (un merge commit cuyo segundo padre es
+          # OTRO merge commit, no la punta de staging directa — pasó el
+          # 2026-10-10 tras dos intentos de enlazar la historia). Se camina
+          # por los segundos padres, no solo el inmediato.
           DIGEST=""
-          for CANDIDATO in "${{ github.sha }}" "$(git rev-parse --verify --quiet HEAD^2 || true)"; do
-            [ -z "$CANDIDATO" ] && continue
+          CANDIDATO="${{ github.sha }}"
+          for _ in 1 2 3 4 5; do
+            [ -z "$CANDIDATO" ] && break
             DIGEST=$(gcloud artifacts docker images describe \
               "$RUTA_ORIGEN:$CANDIDATO" \
               --format='value(image_summary.digest)' \
@@ -94,10 +100,11 @@ jobs:
               echo "Imagen probada en staging: $CANDIDATO → $DIGEST"
               break
             fi
+            CANDIDATO=$(git rev-parse --verify --quiet "$CANDIDATO^2" 2>/dev/null || true)
           done
 
           if [ -z "$DIGEST" ]; then
-            echo "::error::Ni ${{ github.sha }} ni su padre de staging tienen imagen en staging."
+            echo "::error::Ni ${{ github.sha }} ni los segundos padres de sus últimos 5 merges tienen imagen en staging."
             echo "::error::Producción solo promueve lo que ya se probó — no reconstruye."
             exit 1
           fi
