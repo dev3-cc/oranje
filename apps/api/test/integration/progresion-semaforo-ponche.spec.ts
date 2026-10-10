@@ -26,6 +26,7 @@ let zoneId: string
 const workerIds: string[] = []
 const hotelIds: string[] = []
 const requisitionIds: string[] = []
+const scheduleIds: string[] = []
 const timesheetIds: string[] = []
 
 /** Un día trabajado: una marca manual, que es asistencia igual que el ponche. */
@@ -154,6 +155,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   const pasos: Array<() => Promise<unknown>> = [
+    () => db.scheduleEntry.deleteMany({ where: { scheduleId: { in: scheduleIds } } }),
     () =>
       db.punchMark.deleteMany({ where: { timesheetDay: { timesheetId: { in: timesheetIds } } } }),
     () => db.timesheetDay.deleteMany({ where: { timesheetId: { in: timesheetIds } } }),
@@ -166,6 +168,7 @@ afterAll(async () => {
     () => db.position.deleteMany({ where: { requisitionId: { in: requisitionIds } } }),
     () => db.requisition.deleteMany({ where: { id: { in: requisitionIds } } }),
     () => db.hotel.deleteMany({ where: { id: { in: hotelIds } } }),
+    () => db.schedule.deleteMany({ where: { id: { in: scheduleIds } } }),
     () => db.worker.deleteMany({ where: { id: { in: workerIds } } }),
   ]
   for (const paso of pasos) {
@@ -223,6 +226,84 @@ test('al tercer día pasa a Azul claro y al séptimo a Naranja, un escalón por 
   expect(historia.map((h) => h.toState.code)).toEqual(['APPLE_GREEN', 'LIGHT_BLUE', 'ORANGE'])
   // Sin persona detrás: lo movió el sistema al contar los días.
   expect(historia.every((h) => h.userId === null)).toBe(true)
+})
+
+/** Un turno planeado para un día que ya pasó, sin ningún ponche. */
+async function turnoSinPonchar(assignmentId: string, díasAtrás: number): Promise<void> {
+  const fila = await db.$queryRaw<Array<{ hotelId: string }>>`
+    SELECT r.hotel_id::text AS "hotelId"
+      FROM coverage.assignment a
+      JOIN demand.slot s ON s.id = a.slot_id
+      JOIN demand.position p ON p.id = s.position_id
+      JOIN demand.requisition r ON r.id = p.requisition_id
+     WHERE a.id = ${assignmentId}::uuid`
+  const hotelId = fila[0]?.hotelId
+  if (hotelId === undefined) throw new Error('sin hotel')
+
+  const día = new Date()
+  día.setUTCDate(día.getUTCDate() - díasAtrás)
+  día.setUTCHours(12, 0, 0, 0)
+  const fecha = día.toISOString().slice(0, 10)
+
+  const sc = await db.$queryRaw<Array<{ id: string }>>`
+    INSERT INTO operations.schedule (id, hotel_id, week_start, week_end, created_by)
+    VALUES (${uuidv7()}::uuid, ${hotelId}::uuid,
+            date_trunc('week', ${fecha}::date)::date,
+            date_trunc('week', ${fecha}::date)::date + 6, ${user.id}::uuid)
+    ON CONFLICT (hotel_id, week_start) DO UPDATE SET updated_at = now()
+    RETURNING id::text`
+  const scheduleId = sc[0]?.id
+  if (scheduleId === undefined) throw new Error('sin schedule')
+  scheduleIds.push(scheduleId)
+
+  const trabajador = await db.assignment.findUniqueOrThrow({
+    where: { id: assignmentId },
+    select: { workerId: true },
+  })
+  await db.$executeRaw`
+    INSERT INTO operations.schedule_entry (id, schedule_id, assignment_id, worker_id, work_date, shift_range)
+    VALUES (${uuidv7()}::uuid, ${scheduleId}::uuid, ${assignmentId}::uuid,
+            ${trabajador.workerId}::uuid, ${fecha}::date,
+            tstzrange(${fecha}::date + time '07:00', ${fecha}::date + time '15:00'))`
+}
+
+test('un turno de un día cerrado sin ponche es una inasistencia, y lo pasa a Morado', async () => {
+  const { workerId, assignmentId } = await asignado(`Falta ${String(Date.now())}`)
+  /* La progresión del fijo pide estar en un estado operativo: el día 1 lo
+     deja en Verde manzana, y de ahí sí se puede caer en Morado. */
+  await trabajaEl(assignmentId, 12)
+  expect(await color(workerId)).toBe('APPLE_GREEN')
+
+  await turnoSinPonchar(assignmentId, 10)
+
+  const { registradas } = await timesheets.detectAbsences(200)
+
+  expect(registradas).toBeGreaterThanOrEqual(1)
+  expect(await color(workerId)).toBe('PURPLE')
+
+  const faltas = await db.$queryRaw<Array<{ n: number }>>`
+    SELECT count(*)::int AS n FROM operations.timesheet t
+      JOIN operations.timesheet_day d ON d.timesheet_id = t.id
+     WHERE t.worker_id = ${workerId}::uuid AND d.is_absence`
+  expect(faltas[0]?.n).toBe(1)
+})
+
+test('al volver a ponchar sale de Morado, y la falta NO se borra', async () => {
+  const { workerId, assignmentId } = await asignado(`Vuelve ${String(Date.now())}`)
+  await trabajaEl(assignmentId, 12)
+  await turnoSinPonchar(assignmentId, 10)
+  await timesheets.detectAbsences(200)
+  expect(await color(workerId)).toBe('PURPLE')
+
+  await trabajaEl(assignmentId, 8)
+
+  // Vuelve al estado del que venía, no a uno nuevo.
+  expect(await color(workerId)).toBe('APPLE_GREEN')
+  const faltas = await db.$queryRaw<Array<{ n: number }>>`
+    SELECT count(*)::int AS n FROM operations.timesheet t
+      JOIN operations.timesheet_day d ON d.timesheet_id = t.id
+     WHERE t.worker_id = ${workerId}::uuid AND d.is_absence`
+  expect(faltas[0]?.n).toBe(1)
 })
 
 test('en Café no avanza: el temporal tiene su propio ciclo', async () => {

@@ -92,6 +92,13 @@ export interface DayEntity {
  * El orden importa: se busca por el estado de ORIGEN, así que cada paso solo
  * aplica desde el anterior.
  */
+const MORADO = 'PURPLE'
+/** Los estados desde los que se puede caer en inasistencia. */
+const OPERATIVOS = ['APPLE_GREEN', 'LIGHT_BLUE', 'ORANGE', 'BROWN']
+const LIMITE_INASISTENCIAS = 3
+/** El vault avisa a Reclutamiento desde la SEGUNDA, no desde la tercera. */
+const AVISO_A_RECLUTAMIENTO = 2
+
 const PROGRESION: ReadonlyArray<{ desde: string; hacia: string; días: number }> = [
   { desde: 'STRONG_GREEN', hacia: 'APPLE_GREEN', días: 1 },
   { desde: 'APPLE_GREEN', hacia: 'LIGHT_BLUE', días: 3 },
@@ -397,12 +404,120 @@ export class TimesheetsService {
    * Es «mejor esfuerzo»: el ponche ya quedó registrado y un tropiezo aquí no
    * puede revertirlo. Lo peor que pasa es que el color avance en el siguiente.
    */
+  /**
+   * Las inasistencias: lo único del semáforo que no puede dispararse con un
+   * hecho, porque no hay evento cuando algo NO pasa (Hugo, 2026-10-10).
+   *
+   * Un turno planeado de un día que ya cerró y sin una sola marca es una
+   * falta. Se registra en `is_absence` —la columna existía desde agosto y
+   * nadie la llenaba, y el propio Catálogo de Notificaciones lo señalaba como
+   * el pendiente que impedía mandar el aviso— y el colaborador pasa a Morado,
+   * que es lo que el vault manda.
+   *
+   * Lo que NO hace, por decisión de Hugo: la tercera falta **no veta**. El
+   * vault dice «Blacklist automático», pero un trabajo que se equivoca manda a
+   * alguien a la Blacklist y solo el Administrador la levanta. Avisa y una
+   * persona decide.
+   */
+  async detectAbsences(tope = 500): Promise<{ registradas: number; avisadas: number }> {
+    const candidatos = await this.repo.closedShiftsWithoutPunch(tope)
+    const morado = await this.repo.workerStateByCode(MORADO)
+
+    let registradas = 0
+    let avisadas = 0
+
+    for (const turno of candidatos) {
+      try {
+        await this.repo.markAbsence({
+          scheduleId: turno.scheduleId,
+          workerId: turno.workerId,
+          requisitionId: turno.requisitionId,
+          weekStart: turno.weekStart,
+          weekEnd: turno.weekEnd,
+          workDate: turno.workDate,
+        })
+        registradas += 1
+
+        /* A Morado solo desde un estado operativo: si ya lo movieron, su
+           estado de hoy manda y la falta queda registrada igual. */
+        const actual = await this.repo.workerState(turno.workerId)
+        if (morado && actual && OPERATIVOS.includes(actual.code)) {
+          await this.repo.advanceWorkerState({
+            workerId: turno.workerId,
+            fromStateId: actual.stateId,
+            toStateId: morado.id,
+          })
+        }
+
+        const llevan = await this.repo.absenceCount(turno.workerId)
+        await this.avisarInasistencia(turno, llevan)
+        if (llevan >= AVISO_A_RECLUTAMIENTO) avisadas += 1
+      } catch (error) {
+        this.logger.warn(
+          `No se pudo registrar la inasistencia de ${turno.workerId} el ${turno.workDate.toISOString().slice(0, 10)}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        )
+      }
+    }
+
+    return { registradas, avisadas }
+  }
+
+  /** Al colaborador con su contador; a Reclutamiento desde la segunda. */
+  private async avisarInasistencia(
+    turno: { workerId: string; requisitionId: string },
+    llevan: number,
+  ): Promise<void> {
+    try {
+      await this.notifications.publish({
+        type: 'ABSENCE_RECORDED',
+        title: 'Se registró una inasistencia',
+        body: `No se registró tu entrada: llevas ${String(llevan)} de ${String(LIMITE_INASISTENCIAS)}.`,
+        entity: { type: 'personal.worker', id: turno.workerId },
+        audience: [{ kind: 'WORKER', workerId: turno.workerId }],
+      })
+
+      if (llevan >= AVISO_A_RECLUTAMIENTO) {
+        await this.notifications.publish({
+          type: 'ABSENCE_WARNING',
+          title: 'Un colaborador acumula inasistencias',
+          body: `Lleva ${String(llevan)} de ${String(LIMITE_INASISTENCIAS)}. Al llegar al límite hay que decidir si se veta.`,
+          entity: { type: 'personal.worker', id: turno.workerId },
+          audience: [{ kind: 'REQUISITION_RECRUITERS', requisitionId: turno.requisitionId }],
+        })
+      }
+    } catch {
+      // Mejor esfuerzo: que Pub/Sub no responda no borra la falta registrada.
+    }
+  }
+
   private async advanceWorkerProgress(assignment: AssignmentContext): Promise<void> {
     try {
       const actual = await this.repo.workerState(assignment.workerId)
-      const paso = actual ? PROGRESION.find((p) => p.desde === actual.code) : undefined
+      if (!actual) return
 
-      if (!actual || !paso) return
+      /*
+       * «Morado → estado previo»: el vault dice que el sistema lo detecta
+       * cuando el colaborador VUELVE A PONCHAR y lo regresa de inmediato. No
+       * es una aprobación de nadie, y volver NO borra la falta: esa ya quedó
+       * registrada y sigue contando (Hugo, 2026-10-10).
+       */
+      if (actual.code === MORADO) {
+        const previo = await this.repo.stateBeforePurple(assignment.workerId, actual.stateId)
+        if (previo) {
+          await this.repo.advanceWorkerState({
+            workerId: assignment.workerId,
+            fromStateId: actual.stateId,
+            toStateId: previo.id,
+          })
+        }
+        return
+      }
+
+      const paso = PROGRESION.find((p) => p.desde === actual.code)
+
+      if (!paso) return
 
       const días = await this.repo.workedDays(assignment.workerId, assignment.requisitionId)
       if (días < paso.días) return

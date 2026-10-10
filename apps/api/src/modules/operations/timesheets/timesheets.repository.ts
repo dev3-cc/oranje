@@ -609,6 +609,98 @@ export class TimesheetsRepository {
     return row ? { id: row.id, timesheetId: row.timesheetId, status: row.timesheet.status } : null
   }
   /**
+   * Los turnos planeados de días que YA CERRARON y a los que nadie ponchó.
+   *
+   * Cada fila es una inasistencia candidata. «Ya cerró» se mide en la zona del
+   * hotel y no en UTC: el día no termina a la misma hora en Georgia que en
+   * Cancún, y contar en UTC marcaría faltas de días que todavía no acaban —el
+   * mismo error que costó la ronda de fechas de septiembre—.
+   *
+   * No cuenta a quien está protegido: en Gris el vault dice que las
+   * inasistencias NO cuentan, y en Rosa el hotel mismo lo mandó a descansar.
+   * Negro ya está vetado y Morado ya tiene su falta de ese día.
+   */
+  async closedShiftsWithoutPunch(limit: number): Promise<
+    Array<{
+      assignmentId: string
+      workerId: string
+      requisitionId: string
+      hotelId: string
+      scheduleId: string
+      weekStart: Date
+      weekEnd: Date
+      workDate: Date
+    }>
+  > {
+    return this.prisma.$queryRaw`
+      SELECT a.id::text        AS "assignmentId",
+             a.worker_id::text AS "workerId",
+             r.id::text        AS "requisitionId",
+             h.id::text        AS "hotelId",
+             sc.id::text       AS "scheduleId",
+             sc.week_start     AS "weekStart",
+             sc.week_end       AS "weekEnd",
+             e.work_date       AS "workDate"
+        FROM operations.schedule_entry e
+        JOIN operations.schedule sc ON sc.id = e.schedule_id
+        JOIN commercial.hotel h     ON h.id = sc.hotel_id
+        JOIN coverage.assignment a  ON a.id = e.assignment_id
+        JOIN demand.slot sl         ON sl.id = a.slot_id
+        JOIN demand.position p      ON p.id = sl.position_id
+        JOIN demand.requisition r   ON r.id = p.requisition_id
+        JOIN personal.worker w      ON w.id = a.worker_id
+        JOIN catalogs.status_light_state st
+          ON st.id = w.status_light_state_id AND st.status_light_code = 'WORKER'
+       WHERE e.work_date < (now() AT TIME ZONE h.time_zone)::date
+         AND w.deleted_at IS NULL
+         AND st.code NOT IN ('GRAY', 'PINK', 'BLACK', 'PURPLE')
+         AND NOT EXISTS (
+               SELECT 1
+                 FROM operations.timesheet t
+                 JOIN operations.timesheet_day d ON d.timesheet_id = t.id
+                WHERE t.worker_id = a.worker_id
+                  AND t.requisition_id = r.id
+                  AND d.work_date = e.work_date
+                  AND (d.is_absence OR EXISTS (
+                        SELECT 1 FROM operations.punch_mark pm
+                         WHERE pm.timesheet_day_id = d.id)))
+       ORDER BY e.work_date
+       LIMIT ${limit}`
+  }
+
+  /** De qué estado venía antes de caer en Morado, para devolverlo ahí. */
+  async stateBeforePurple(workerId: string, purpleStateId: string): Promise<{ id: string } | null> {
+    const row = await this.prisma.workerStateHistory.findFirst({
+      where: { workerId, toStateId: purpleStateId },
+      orderBy: { occurredAt: 'desc' },
+      select: { fromStateId: true },
+    })
+    return row?.fromStateId ? { id: row.fromStateId } : null
+  }
+
+  /** Cuántas inasistencias lleva acumuladas, de todas sus requisiciones. */
+  async absenceCount(workerId: string): Promise<number> {
+    const rows = await this.prisma.$queryRaw<Array<{ n: number }>>`
+      SELECT count(*)::int AS n
+        FROM operations.timesheet t
+        JOIN operations.timesheet_day d ON d.timesheet_id = t.id
+       WHERE t.worker_id = ${workerId}::uuid AND d.is_absence`
+    return rows[0]?.n ?? 0
+  }
+
+  /** Marca el día como falta, creándolo si nadie lo había abierto. */
+  async markAbsence(params: EnsureDayParams): Promise<string> {
+    return this.prisma.$transaction(async (tx) => {
+      const { dayId } = await this.ensureDayTx(tx, params)
+      await tx.timesheetDay.update({
+        where: { id: dayId },
+        data: { isAbsence: true, updatedAt: new Date() },
+      })
+      return dayId
+    })
+  }
+
+  /**
    * Cuántos días DISTINTOS lleva ponchados en esta asignación.
    *
    * El timesheet se guarda por semana y requisición, no por asignación, así
