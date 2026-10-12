@@ -715,8 +715,17 @@ const BLACKLIST_TRANSITIONS: Array<{
     reason: true,
     evidence: true,
   })),
-  // La salida. Un solo rol y motivo obligatorio: no es automática.
-  { from: 'BLACK', to: 'WHITE', roles: ['ROL-ADM-01'], reason: true, evidence: false },
+  // La salida. Motivo obligatorio: no es automática. Era solo del
+  // Administrador y Hugo la abrió a Reclutamiento (2026-10-10), los mismos
+  // tres que ponen el veto — se le advirtió que así quien veta se lo puede
+  // levantar y lo eligió con eso enfrente.
+  {
+    from: 'BLACK',
+    to: 'WHITE',
+    roles: ['ROL-ADM-01', 'ROL-R-01', 'ROL-R-02', 'ROL-R-03'],
+    reason: true,
+    evidence: false,
+  },
 ]
 
 // ---------------------------------------------------------------------------
