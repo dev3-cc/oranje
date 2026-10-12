@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "407623682109",
+    "project_id": "oranje-prod",
+    "storage_bucket": "oranje-prod.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:407623682109:android:39730c41e7406054554254",
+        "android_client_info": {
+          "package_name": "com.oranjepeople.colaborador"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8bYoueXH-MYpzVCbl_Z9nwuuPX34NUiU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

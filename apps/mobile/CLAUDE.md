@@ -99,6 +99,39 @@ y la barra de inicio. Es el equivalente de `adjustMarginsForEdgeToEdge` en Andro
 No se usa `viewport-fit=cover` porque el HTML de la app es idéntico al de la web
 (ver `apps/web/index.mobile.html`).
 
+## Avisos push en iOS (2026-10-12, sin probar todavía)
+
+En Android ya funcionan (probado en el emulador contra `oranje-prod`). En iOS el
+código está listo, pero **no se ha compilado**: hace falta Xcode 16+ y un iPhone
+real (el simulador no recibe push de forma fiable).
+
+Qué hay en el proyecto:
+
+- `@capacitor-firebase/messaging` en `package.json`; la lógica vive en
+  `apps/web/src/mobile/nativePush.ts` (registra el token FCM en `POST /devices`).
+- `App/GoogleService-Info.plist` (Firebase `oranje-prod`) en Resources.
+- `App/App.entitlements` con `aps-environment = development` (`CODE_SIGN_ENTITLEMENTS`
+  en Debug y Release). Al archivar, Xcode lo pasa a `production`.
+- `UIBackgroundModes = remote-notification` en `Info.plist`.
+- `AppDelegate.swift` reenvía al plugin el token de APNs y los avisos remotos.
+- La llave APNs (`.p8`) está subida a Firebase › Cloud Messaging. **Nunca va al
+  repo** (`*.p8` está en `.gitignore`).
+
+Para probar en la Mac:
+
+1. `corepack pnpm install`, `corepack pnpm -F @oranje/web build:mobile` y
+   `cap sync ios` (instala los pods de Firebase).
+2. En Xcode, _Signing & Capabilities_: deben aparecer **Push Notifications** y
+   **Background Modes › Remote notifications**. El App ID necesita la capacidad
+   Push Notifications en developer.apple.com.
+3. Correr en el iPhone, entrar, dar permiso de notificaciones en la pantalla de
+   Permisos y mandar la app a segundo plano.
+4. Firebase › Messaging › Nueva campaña › **Enviar mensaje de prueba** al token.
+   El token se ve en el inspector de Safari:
+   `Capacitor.nativePromise('FirebaseMessaging','getToken')`.
+   Con _Custom data_ `entityType = operations.timesheet`, al tocarlo un usuario de
+   hotel debe abrir `/timesheet`.
+
 ## Compilar sin abrir Xcode
 
 Desde la raíz del monorepo, con el iPhone conectado y en Modo de desarrollador:

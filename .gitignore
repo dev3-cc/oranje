@@ -28,3 +28,6 @@ packages/*/coverage/
 # Artefactos de Playwright
 test-results/
 playwright-report/
+
+# Llaves de Apple (APNs, App Store Connect): secretas, nunca al repo.
+*.p8

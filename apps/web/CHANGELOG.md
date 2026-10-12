@@ -32,6 +32,14 @@ Reglas:
 
 ---
 
+## 2026-10-12
+
+### 12:55 — App: avisos push del sistema (Android)
+
+**Qué:** `mobile/nativePush.ts`, instalado desde `mobile/main.tsx`: con sesión, la app pide su token FCM (`@capacitor-firebase/messaging`, en `apps/mobile`) y lo registra en `POST /devices`, una sola vez por usuario y token; si FCM lo rota, lo vuelve a registrar; al cerrar sesión borra el token del teléfono. Tocar un aviso abre su pantalla (`pushRouteFor`: el Colaborador a sus avisos; el hotel a la requisición, al Timesheet, a Mi personal o a su Inicio) y, con la app abierta, se refresca la campana. Canal de Android «avisos».
+**Por qué:** Hugo: los avisos deben llegar como notificaciones del sistema. El API ya los manda por FCM a los dispositivos registrados (`push.service.ts`), pero la app nunca registraba su token. Sin back nuevo. Verificado en el emulador Android con `oranje-prod`: token FCM obtenido y `POST /devices` → 201. El registro doble del arranque (sesión + `tokenReceived` con el mismo token) daba un 500 y quedó evitado. iOS pendiente (`GoogleService-Info.plist`, llave APNs, capacidades en Xcode). Solo app; el web no cambia.
+**Archivos:** `src/mobile/nativePush.ts`, `src/mobile/nativePush.spec.ts`, `src/mobile/main.tsx`.
+
 ## 2026-10-10
 
 ### 11:55 — Router: quitar el shell duplicado que dejó el merge de staging

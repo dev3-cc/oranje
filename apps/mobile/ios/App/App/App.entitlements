@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+	Avisos push (APNs → FCM, `@capacitor-firebase/messaging`). `development` es
+	para compilar desde Xcode; al archivar para TestFlight / App Store, Xcode lo
+	cambia solo a `production`. Requiere la capacidad Push Notifications en el
+	App ID `com.oranjepeople.colaborador`.
+-->
+<plist version="1.0">
+<dict>
+	<key>aps-environment</key>
+	<string>development</string>
+</dict>
+</plist>

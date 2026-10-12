@@ -12,6 +12,7 @@ import { RouterProvider } from 'react-router'
 import { installNativeApiFetch } from './nativeApiFetch'
 import { installNativeDownloads } from './nativeDownloads'
 import { installNativeHotelPhotos } from './nativeHotelPhotos'
+import { installNativePush } from './nativePush'
 import { mobileRouter } from './router'
 
 import { i18n } from '@/app/i18n'
@@ -36,6 +37,12 @@ installNativeHotelPhotos()
 /* «Descargar QR»: la hoja se abre en la app y el PDF va a la hoja de compartir
    del sistema; el WebView no descarga archivos (ver `nativeDownloads.ts`). */
 installNativeDownloads((path) => {
+  void mobileRouter.navigate(path)
+})
+
+/* Avisos push del sistema (FCM): registra el token con la sesión y abre la
+   pantalla del aviso al tocarlo (ver `nativePush.ts`). */
+installNativePush(store, (path) => {
   void mobileRouter.navigate(path)
 })
 

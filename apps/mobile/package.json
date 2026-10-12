@@ -16,6 +16,7 @@
     "build": "pnpm run sync"
   },
   "dependencies": {
+    "@capacitor-firebase/messaging": "^7.5.0",
     "@capacitor/android": "^7.4.4",
     "@capacitor/core": "^7.4.4",
     "@capacitor/filesystem": "^7.1.9",

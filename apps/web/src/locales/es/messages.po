@@ -1467,7 +1467,6 @@ msgstr "Asignar territorio"
 
 #: src/features/personnel/components/WorkerPerformanceRadar.tsx
 #: src/features/timesheet/components/TimesheetViewControls.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
 msgid "Asistencia"
 msgstr "Asistencia"
 
@@ -1665,6 +1664,7 @@ msgstr "Avanzado"
 
 #: src/features/worker/components/MobileShell.tsx
 #: src/features/worker/pages/NotificationsPage.tsx
+#: src/mobile/nativePush.ts
 msgid "Avisos"
 msgstr "Avisos"
 
@@ -5672,8 +5672,8 @@ msgid "Horas"
 msgstr "Horas"
 
 #: src/mobile/hotel/timesheet/TimesheetPage.tsx
-msgid "Horas de la semana"
-msgstr "Horas de la semana"
+#~ msgid "Horas de la semana"
+#~ msgstr "Horas de la semana"
 
 #: src/features/timesheet/components/AttendanceView.tsx
 msgid "Horas extra esta semana"
@@ -6659,8 +6659,8 @@ msgid "Lo que el hotel pidió en esta requisición, renglón por renglón"
 msgstr "Lo que el hotel pidió en esta requisición, renglón por renglón"
 
 #: src/mobile/hotel/HotelHomePage.tsx
-msgid "Lo que falta por departamento"
-msgstr "Lo que falta por departamento"
+#~ msgid "Lo que falta por departamento"
+#~ msgstr "Lo que falta por departamento"
 
 #: src/features/onboarding/components/PlacesAutofillSummary.tsx
 msgid "Lo que Google llenó por ti"
@@ -7094,8 +7094,6 @@ msgstr "motivo"
 #: src/features/recruitment/components/LiftBlacklistDialog.tsx
 #: src/features/recruitment/pages/BlacklistPage.tsx
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
-#: src/mobile/hotel/staff/StaffMemberPage.tsx
-#: src/mobile/hotel/timesheet/TimesheetWeekPage.tsx
 msgid "Motivo"
 msgstr "Motivo"
 
@@ -7482,12 +7480,13 @@ msgstr "No disponible por su estado"
 msgid "No existe, y el contacto principal no tiene correo: agrégaselo para poder crearlo"
 msgstr "No existe, y el contacto principal no tiene correo: agrégaselo para poder crearlo"
 
-#: src/features/timesheet/pages/TimesheetPage.tsx
-msgid "No hay horas en ese periodo"
-msgstr "No hay horas en ese periodo"
 #: src/mobile/hotel/HotelHomePage.tsx
-msgid "No falta nadie en las requisiciones abiertas."
-msgstr "No falta nadie en las requisiciones abiertas."
+#~ msgid "No falta nadie en las requisiciones abiertas."
+#~ msgstr "No falta nadie en las requisiciones abiertas."
+
+#: src/features/timesheet/pages/TimesheetPage.tsx
+#~ msgid "No hay horas en ese periodo"
+#~ msgstr "No hay horas en ese periodo"
 
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "No hay hoteles libres: todos tienen ciclo abierto"
@@ -7624,8 +7623,8 @@ msgid "No se pudieron cargar los ajustes pendientes. Reintenta en unos segundos.
 msgstr "No se pudieron cargar los ajustes pendientes. Reintenta en unos segundos."
 
 #: src/mobile/hotel/requisitions/NewRequisitionPage.tsx
-msgid "No se pudieron cargar los catálogos."
-msgstr "No se pudieron cargar los catálogos."
+#~ msgid "No se pudieron cargar los catálogos."
+#~ msgstr "No se pudieron cargar los catálogos."
 
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "No se pudieron cargar los catálogos. Reintenta en unos segundos."
@@ -8811,8 +8810,8 @@ msgid "Por persona"
 msgstr "Por persona"
 
 #: src/mobile/hotel/costs/CostWeekPage.tsx
-msgid "Por posición"
-msgstr "Por posición"
+#~ msgid "Por posición"
+#~ msgstr "Por posición"
 
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
 msgid "Por qué esta tarifa…"
@@ -9696,8 +9695,6 @@ msgstr "Sáb"
 #: src/features/observability/tabs/RecruitmentTab.tsx
 msgid "Sale de la bitácora de las requisiciones (quién las tomó, soltó o reasignó) y del historial de cada candidato nuevo (quién lo dio de alta). A quién asignó cada reclutador no se ve: eso se registra en otra bitácora que el Observador no lee. Quien no movió ninguna requisición ni dio de alta a nadie no aparece."
 msgstr "Sale de la bitácora de las requisiciones (quién las tomó, soltó o reasignó) y del historial de cada candidato nuevo (quién lo dio de alta). A quién asignó cada reclutador no se ve: eso se registra en otra bitácora que el Observador no lee. Quien no movió ninguna requisición ni dio de alta a nadie no aparece."
-
-#: src/features/observability/tabs/RecruitmentTab.tsx
 
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
 msgid "Sale del Pool mientras el veto viva; el historial completo queda y solo el Administrador lo levanta."
@@ -10746,8 +10743,8 @@ msgid "suma de los días con marcas"
 msgstr "suma de los días con marcas"
 
 #: src/mobile/hotel/costs/CostWeekPage.tsx
-msgid "Suma solo las posiciones con tarifa."
-msgstr "Suma solo las posiciones con tarifa."
+#~ msgid "Suma solo las posiciones con tarifa."
+#~ msgstr "Suma solo las posiciones con tarifa."
 
 #: src/features/admin/types/admin.types.ts
 #: src/shared/constants/roles.ts
@@ -10767,8 +10764,8 @@ msgid "Tablero de Requisiciones"
 msgstr "Tablero de Requisiciones"
 
 #: src/mobile/hotel/costs/CostWeekPage.tsx
-msgid "Tarifa"
-msgstr "Tarifa"
+#~ msgid "Tarifa"
+#~ msgstr "Tarifa"
 
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
 msgid "Tarifa acordada"
@@ -11762,8 +11759,8 @@ msgstr "Ver revisión"
 
 #: src/features/timesheet/pages/TimesheetPage.tsx
 #: src/mobile/hotel/HotelHomePage.tsx
-msgid "Ver todas las requisiciones"
-msgstr "Ver todas las requisiciones"
+#~ msgid "Ver todas las requisiciones"
+#~ msgstr "Ver todas las requisiciones"
 
 #: src/shared/components/DateRangeField.tsx
 msgid "Ver todo el periodo"
