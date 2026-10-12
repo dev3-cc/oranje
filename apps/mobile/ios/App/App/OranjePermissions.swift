@@ -185,6 +185,7 @@ private enum Copy {
         "notifications_title": "Notificaciones",
         "notifications_body": "Para avisarte cuando una requisición necesita tu autorización, se cubre o cambia, y de lo que pasa con tu personal.",
         "hint_notifications_blocked": "Las desactivaste: actívalas en la configuración del teléfono.",
+        "notifications_body_worker": "Para avisarte de tus asignaciones, cambios de horario, tus horas y tus pagos. No hace falta para ponchar.",
         "hotel_summary_ready": "Listo: te avisaremos de lo importante.",
         "hotel_summary_missing": "Te recomendamos activar las notificaciones. Puedes hacerlo después.",
         "continue": "Continuar"
@@ -222,6 +223,7 @@ private enum Copy {
         "notifications_title": "Notifications",
         "notifications_body": "To let you know when a requisition needs your approval, gets filled or changes, and what happens with your staff.",
         "hint_notifications_blocked": "You turned them off: turn them on in your phone's settings.",
+        "notifications_body_worker": "To let you know about your assignments, schedule changes, hours and pay. Not needed to punch.",
         "hotel_summary_ready": "All set: we'll let you know what matters.",
         "hotel_summary_missing": "We recommend turning on notifications. You can do it later.",
         "continue": "Continue"
@@ -368,9 +370,15 @@ final class PermissionsViewController: UIViewController, CLLocationManagerDelega
         locationCard.setup(icon: "location.fill", title: text("location_title"), body: text("location_body"))
         gpsCard.setup(icon: "scope", title: text("gps_title"), body: text("gps_body"))
         cameraCard.setup(icon: "camera.fill", title: text("camera_title"), body: text("camera_body"))
-        notificationsCard.setup(icon: "bell.fill", title: text("notifications_title"), body: text("notifications_body"))
+        notificationsCard.setup(
+            icon: "bell.fill",
+            title: text("notifications_title"),
+            body: text(isHotel ? "notifications_body" : "notifications_body_worker")
+        )
 
-        let cards: [UIView] = isHotel ? [notificationsCard] : [locationCard, gpsCard, cameraCard]
+        /* Notificaciones también en el Colaborador, al final y opcional: no entra
+           en el candado de «Ponchar» (`PermissionsStatus.ready`). */
+        let cards: [UIView] = isHotel ? [notificationsCard] : [locationCard, gpsCard, cameraCard, notificationsCard]
 
         /* El aviso de privacidad, al final de la lista: el mismo HTML que sirve la web. */
         var privacyConfig = UIButton.Configuration.plain()
@@ -542,33 +550,41 @@ final class PermissionsViewController: UIViewController, CLLocationManagerDelega
                             action: text("action_settings"), handler: Self.openAppSettings)
         }
 
+        renderNotificationsCard(updatesSummary: false)
+
         summary.text = text(status.ready ? "summary_ready" : "summary_missing")
         punchLocked.isHidden = status.ready
         punch.isEnabled = status.ready
     }
 
-    /// Perfil de hotel. La autorización de notificaciones se lee asíncrona.
+    /// Perfil de hotel: solo la tarjeta de notificaciones, y «Continuar» siempre habilitado.
     private func renderNotifications() {
         punchLocked.isHidden = true
         punch.isEnabled = true
+        renderNotificationsCard(updatesSummary: true)
+    }
+
+    /// La tarjeta de notificaciones (la autorización se lee asíncrona). En el
+    /// Colaborador no toca el resumen: ese habla del candado de «Ponchar».
+    private func renderNotificationsCard(updatesSummary: Bool) {
         UNUserNotificationCenter.current().getNotificationSettings { [weak self] settings in
             DispatchQueue.main.async {
                 guard let self else { return }
                 switch settings.authorizationStatus {
                 case .authorized, .provisional, .ephemeral:
                     self.notificationsCard.bind(.ok, self.text("state_granted"))
-                    self.summary.text = self.text("hotel_summary_ready")
+                    if updatesSummary { self.summary.text = self.text("hotel_summary_ready") }
                 case .notDetermined:
                     self.notificationsCard.bind(.warn, self.text("state_missing"), action: self.text("action_grant")) { [weak self] in
                         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { _, _ in
                             DispatchQueue.main.async { self?.render() }
                         }
                     }
-                    self.summary.text = self.text("hotel_summary_missing")
+                    if updatesSummary { self.summary.text = self.text("hotel_summary_missing") }
                 default:
                     self.notificationsCard.bind(.error, self.text("state_blocked"), hint: self.text("hint_notifications_blocked"),
                                                 action: self.text("action_settings"), handler: Self.openNotificationSettings)
-                    self.summary.text = self.text("hotel_summary_missing")
+                    if updatesSummary { self.summary.text = self.text("hotel_summary_missing") }
                 }
             }
         }

@@ -126,6 +126,11 @@ public class PermissionsActivity extends AppCompatActivity {
         if (isHotel) {
             setupHotelProfile();
         } else {
+            /* Notificaciones también en el Colaborador, al final y opcional: no
+               entra en el candado de «Ponchar» (`PermissionsStatus.isReady`). */
+            notificationsCard.setVisibility(View.VISIBLE);
+            setupCard(notificationsCard, R.drawable.ic_perm_notifications, R.string.perm_notifications_title,
+                R.string.perm_notifications_body_worker);
             punch.setOnClickListener(view -> {
                 /* Doble candado: el botón ya está deshabilitado, pero se verifica al tocar. */
                 if (PermissionsStatus.isReady(this)) finishWith(ACTION_PUNCH);
@@ -175,6 +180,7 @@ public class PermissionsActivity extends AppCompatActivity {
         renderLocation();
         renderGps();
         renderCamera();
+        renderNotificationsCard();
 
         boolean ready = PermissionsStatus.isReady(this);
         summary.setText(ready ? R.string.perm_summary_ready : R.string.perm_summary_missing);
@@ -229,7 +235,14 @@ public class PermissionsActivity extends AppCompatActivity {
         }
     }
 
+    /** Perfil de hotel: la tarjeta y el resumen hablan solo de notificaciones. */
     private void renderNotifications() {
+        boolean granted = PermissionsStatus.GRANTED.equals(renderNotificationsCard());
+        summary.setText(granted ? R.string.perm_hotel_summary_ready : R.string.perm_hotel_summary_missing);
+    }
+
+    /** La tarjeta de notificaciones; devuelve su estado. En el Colaborador no toca el resumen. */
+    private String renderNotificationsCard() {
         String state = PermissionsStatus.notifications(this);
         switch (state) {
             case PermissionsStatus.GRANTED:
@@ -243,8 +256,7 @@ public class PermissionsActivity extends AppCompatActivity {
                 bind(notificationsCard, Tone.ERROR, R.string.perm_state_blocked, R.string.perm_hint_notifications_blocked,
                     R.string.perm_action_settings, this::openNotificationSettings);
         }
-        boolean granted = PermissionsStatus.GRANTED.equals(state);
-        summary.setText(granted ? R.string.perm_hotel_summary_ready : R.string.perm_hotel_summary_missing);
+        return state;
     }
 
     /** Android 13+ lo pide con el diálogo del sistema; antes de 13 no hay diálogo: a Configuración. */

@@ -36,6 +36,7 @@
     <!-- Perfil de hotel (Supervisor, Manager de Área, Manager General). -->
     <string name="perm_notifications_title">Notificaciones</string>
     <string name="perm_notifications_body">Para avisarte cuando una requisición necesita tu autorización, se cubre o cambia, y de lo que pasa con tu personal.</string>
+    <string name="perm_notifications_body_worker">Para avisarte de tus asignaciones, cambios de horario, tus horas y tus pagos. No hace falta para ponchar.</string>
     <string name="perm_hint_notifications_blocked">Las desactivaste: actívalas en la configuración del teléfono.</string>
     <string name="perm_hotel_summary_ready">Listo: te avisaremos de lo importante.</string>
     <string name="perm_hotel_summary_missing">Te recomendamos activar las notificaciones. Puedes hacerlo después.</string>
