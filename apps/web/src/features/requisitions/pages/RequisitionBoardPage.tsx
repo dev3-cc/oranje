@@ -17,6 +17,7 @@ import { FilterSelect } from '@/shared/components/FilterSelect'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { NoticeCard } from '@/shared/components/NoticeCard'
+import { RefreshControl } from '@/shared/components/RefreshControl'
 import { SearchField } from '@/shared/components/SearchField'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import {
@@ -24,6 +25,7 @@ import {
   REQUISITION_STATUSES,
 } from '@/shared/constants/requisitionStatus'
 import { useCan } from '@/shared/hooks/useCan'
+import { readApiError } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { matchesSearch } from '@/shared/lib/text'
 
@@ -103,7 +105,15 @@ export function RequisitionBoardPage(): ReactNode {
   /** Crear es del hotel (requisitions:create): Reclutamiento consulta el tablero sin el botón. */
   const canCreate = can('requisitions:create')
 
-  const { data: board, isLoading, isError, refetch } = useGetRequisitionBoardQuery()
+  const {
+    data: board,
+    isLoading,
+    isError,
+    error: boardError,
+    refetch,
+    isFetching,
+    fulfilledTimeStamp,
+  } = useGetRequisitionBoardQuery()
 
   const metrics = board?.metrics
   const items = board?.items ?? []
@@ -239,12 +249,23 @@ export function RequisitionBoardPage(): ReactNode {
 
       {isLoading && <TableSkeleton rows={6} columns={6} />}
 
+      {/* Un 403 no es un problema de red: decirlo así manda a la persona a
+          revisar su internet por algo que nunca va a cambiar (Hugo,
+          2026-10-09, entrando como Contadora). */}
       {isError && (
         <LoadError
-          message={t`No se pudo cargar el Tablero de Requisiciones. Revisa tu conexión e inténtalo de nuevo.`}
-          onRetry={() => {
-            void refetch()
-          }}
+          message={
+            readApiError(boardError).status === 403
+              ? t`Tu rol no tiene acceso al Tablero de Requisiciones. Lo ven el hotel que las pide y Reclutamiento.`
+              : t`No se pudo cargar el Tablero de Requisiciones. Revisa tu conexión e inténtalo de nuevo.`
+          }
+          {...(readApiError(boardError).status === 403
+            ? {}
+            : {
+                onRetry: () => {
+                  void refetch()
+                },
+              })}
         />
       )}
 
@@ -266,6 +287,14 @@ export function RequisitionBoardPage(): ReactNode {
             onChange={setStatus}
           />
           <FilterReset activeCount={activeCount} onReset={resetFilters} />
+          <RefreshControl
+            onRefresh={() => {
+              void refetch()
+            }}
+            isFetching={isFetching}
+            fulfilledTimeStamp={fulfilledTimeStamp}
+            label={t`el tablero de Requisiciones`}
+          />
         </div>
       )}
 

@@ -19,6 +19,7 @@ import { useGetMyProfileQuery } from '../api/workerApi'
 import { CameraCapture } from '../components/CameraCapture'
 import { QrScanner } from '../components/QrScanner'
 import { WorkerSkeleton } from '../components/WorkerSkeleton'
+import { hasNativeGeolocation, nativeCurrentPosition } from '../lib/nativeGeolocation'
 import { noShiftMessageOf } from '../lib/noShiftMessage'
 
 import { useUploadFileMutation } from '@/app/filesApi'
@@ -193,8 +194,13 @@ function Stat({ icon, value, label }: { icon: string; value: string; label: stri
   )
 }
 
-/** La posición del teléfono, en promesa. Sin permiso o sin GPS, un error con nombre. */
+/**
+ * La posición del teléfono, en promesa. Sin permiso o sin GPS, un error con nombre.
+ * Dentro de la app va por la vía nativa (ver `nativeGeolocation.ts`): en iOS el
+ * WebView volvía a pedir el permiso. En el navegador, `navigator.geolocation`.
+ */
 function locate(): Promise<{ latitude: number; longitude: number }> {
+  if (hasNativeGeolocation()) return nativeCurrentPosition()
   return new Promise((resolve, reject) => {
     if (!('geolocation' in navigator)) {
       reject(new Error('GEOLOCATION_UNSUPPORTED'))

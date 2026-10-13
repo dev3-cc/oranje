@@ -1,4 +1,5 @@
 import {
+  Logger,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -6,6 +7,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common'
 
+import { SYSTEM_USER_EMAIL } from '../../../common/constants/system-actor.js'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { assignmentStatusLabel } from '../../../common/utils/status-labels.js'
 import { PermissionsService } from '../../identity/index.js'
@@ -30,12 +32,25 @@ const SHORT = 'RED'
 
 const ALMOST_THRESHOLD = 0.25
 
+const WORKER_LIGHT = 'WORKER'
+const BROWN = 'BROWN'
+const ORANGE = 'ORANGE'
+const STRONG_GREEN = 'STRONG_GREEN'
+/** Los dos orígenes que el vault admite hacia Café. */
+const PUEDEN_IR_A_CAFE = ['STRONG_GREEN', 'YELLOW']
+
 export interface AssignmentEntity {
   id: string
   type: string
   status: string
   worker: { id: string; fullName: string }
-  slot: { id: string; ordinal: number }
+  /**
+   * `positionId` viaja a propósito: `GET /requisitions/:id/assignments` las
+   * devuelve de TODA la requisición, y sin él quien las consume no puede saber
+   * de qué renglón es cada una. El tablero de slots lo adivinaba y mezclaba
+   * renglones (Hugo, 2026-10-09).
+   */
+  slot: { id: string; ordinal: number; positionId: string }
   createdAt: string
 }
 
@@ -47,6 +62,8 @@ export interface AssignmentResult {
 
 @Injectable()
 export class AssignmentsService {
+  private readonly logger = new Logger(AssignmentsService.name)
+
   constructor(
     private readonly repo: AssignmentsRepository,
     private readonly permissions: PermissionsService,
@@ -114,6 +131,12 @@ export class AssignmentsService {
       })
     }
 
+    /* Lo que ya terminó no la ocupa. Se cierra aquí y no solo en el barrido
+       para que el rechazo y la lista de asignables digan lo mismo: la lista
+       descarta las vencidas, y sin esto el servidor rechazaría a alguien que
+       la pantalla acaba de ofrecer (Hugo, 2026-10-09). */
+    await this.closeExpired(10, dto.workerId)
+
     if (await this.repo.activeAssignmentOf(dto.workerId)) {
       throw new ConflictException({
         code: 'WORKER_ALREADY_ASSIGNED',
@@ -121,14 +144,7 @@ export class AssignmentsService {
       })
     }
 
-    const slot = await this.repo.freeSlot(dto.positionId)
-
-    if (!slot) {
-      throw new UnprocessableEntityException({
-        code: 'POSITION_FULL',
-        message: 'Esta posición ya no tiene lugares libres',
-      })
-    }
+    const slot = await this.resolveSlot(dto.positionId, dto.slotOrdinal)
 
     const coverage = await this.coverageAfter(position.requisitionId, dto.positionId, 1)
     const coverageState = await this.stateOf(COVERAGE_LIGHT, coverage.positionCode)
@@ -137,7 +153,20 @@ export class AssignmentsService {
     const requisitionState = closes ? await this.stateOf(REQUISITION_LIGHT, FULLY_COVERED) : null
     const startDate = dto.startDate ?? new Date()
 
+    /*
+     * El semáforo del colaborador: la temporal lo pasa a Café al asignar
+     * (Semáforo del Colaborador: `Verde fuerte / Amarillo -> Café`). La fija
+     * NO se mueve aquí — el vault la mueve a Verde manzana cuando la persona
+     * ASISTE el día 1, que es otro hecho.
+     *
+     * Solo desde Verde fuerte o Amarillo: si está en otro estado, alguien lo
+     * puso ahí por una razón y la asignación no lo pisa (mismo criterio que el
+     * cierre del accidente).
+     */
+    const workerState = await this.brownTransition(dto.workerId, dto.type)
+
     const row = await this.repo.assign({
+      workerState,
       slotId: slot.id,
       workerId: dto.workerId,
       type: dto.type,
@@ -208,7 +237,140 @@ export class AssignmentsService {
     }
   }
 
-  async release(id: string, reason: string, user: AuthenticatedUser): Promise<AssignmentEntity> {
+  /**
+   * De Café al estado del que vino, al terminar la asignación.
+   *
+   * Solo si HOY está en Café: si alguien ya lo movió —a Rojo, a Gris, a la
+   * Blacklist— el cierre de la asignación no le pisa su estado.
+   */
+  private async returnFromBrown(
+    workerId: string,
+  ): Promise<{ workerId: string; fromStateId: string; toStateId: string } | null> {
+    const actual = await this.repo.workerState(workerId)
+    if (!actual) return null
+
+    /*
+     * Naranja → Verde fuerte, «queda libre»: el final de una asignación FIJA.
+     * Está sembrada a nombre del Sistema y tampoco la disparaba nadie, así que
+     * quien terminaba un fijo se quedaba en Naranja para siempre (Hugo,
+     * 2026-10-09).
+     */
+    if (actual.code === ORANGE) {
+      const disponible = await this.repo.stateByCode(WORKER_LIGHT, STRONG_GREEN)
+      return disponible ? { workerId, fromStateId: actual.stateId, toStateId: disponible.id } : null
+    }
+
+    if (actual.code !== BROWN) return null
+
+    const previo = await this.repo.stateBeforeBrown(workerId, actual.stateId)
+    /* Sin historia de dónde venía, vuelve a Disponible: es el estado neutro de
+       quien no tiene asignación, y dejarlo en Café sería peor. */
+    const destino = previo ?? (await this.repo.stateByCode(WORKER_LIGHT, STRONG_GREEN))
+    if (!destino) return null
+
+    return { workerId, fromStateId: actual.stateId, toStateId: destino.id }
+  }
+
+  /** De Verde fuerte o Amarillo a Café, solo para la temporal. */
+  private async brownTransition(
+    workerId: string,
+    type: string,
+  ): Promise<{ fromStateId: string; toStateId: string } | null> {
+    if (type !== 'TEMPORARY') return null
+
+    const actual = await this.repo.workerState(workerId)
+    if (!actual || !PUEDEN_IR_A_CAFE.includes(actual.code)) return null
+
+    const café = await this.repo.stateByCode(WORKER_LIGHT, BROWN)
+    if (!café) return null
+
+    return { fromStateId: actual.stateId, toStateId: café.id }
+  }
+
+  /**
+   * Cierra las asignaciones temporales a las que se les acabaron los días.
+   *
+   * El vault dice que la temporal «se cierra automáticamente al vencer esos
+   * días», y hasta hoy no lo hacía nadie: quedaban ACTIVE para siempre, su
+   * slot seguía ocupado y la persona no volvía a aparecer como asignable
+   * (Hugo, 2026-10-09; en la base de dev había tres de junio y septiembre).
+   *
+   * Va una por una con el mismo `release()` de siempre —libera el slot,
+   * recalcula la cobertura, deja rastro y avisa— y no en un solo UPDATE: así
+   * no hay dos caminos que puedan separarse. Si una falla, las demás siguen:
+   * una requisición ya cerrada no debe impedir que se limpien las otras.
+   *
+   * `tope` existe para que una base con años de rezago no intente cerrarlas
+   * todas en una llamada; la siguiente corrida toma las que queden.
+   */
+  async closeExpired(
+    tope = 200,
+    /** Solo las de esta persona; sin él, todas las de la base. */
+    workerId?: string,
+  ): Promise<{ cerradas: number; fallidas: number }> {
+    const actor = await this.repo.systemActor(SYSTEM_USER_EMAIL)
+
+    if (!actor) {
+      throw new NotFoundException({
+        code: 'SYSTEM_ACTOR_MISSING',
+        message: `Falta la cuenta del sistema (${SYSTEM_USER_EMAIL}): córrele el seed`,
+      })
+    }
+
+    const user: AuthenticatedUser = {
+      id: actor.id,
+      roleCode: actor.roleCode,
+      hotelId: null,
+      departmentId: null,
+    }
+    const vencidas = await this.repo.expiredActive(tope, workerId)
+    let cerradas = 0
+    const fallidas: string[] = []
+
+    const RAZÓN = 'Terminó el plazo de la asignación temporal'
+
+    for (const { id } of vencidas) {
+      try {
+        await this.release(id, RAZÓN, user, 'CLOSED')
+        cerradas += 1
+      } catch (error) {
+        /*
+         * Una requisición ya cerrada no se reabre, y `release` lo impide bien
+         * —recalcula la cobertura—. Pero la persona SÍ tiene que quedar libre:
+         * su plazo terminó. Se cierra solo la asignación y la requisición se
+         * queda como está (Hugo, 2026-10-09; en dev había dos así, de junio,
+         * que de otro modo quedaban ocupadas para siempre).
+         */
+        if (esRequisiciónCerrada(error)) {
+          const fila = await this.repo.byId(id)
+          await this.repo.closeAssignmentOnly({
+            assignmentId: id,
+            reason: RAZÓN,
+            userId: user.id,
+            roleCode: user.roleCode,
+            workerState: fila ? await this.returnFromBrown(fila.worker.id) : null,
+          })
+          cerradas += 1
+          continue
+        }
+        fallidas.push(`${id}: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
+
+    if (fallidas.length > 0) {
+      this.logger.warn(`Asignaciones vencidas que no se pudieron cerrar: ${fallidas.join(' · ')}`)
+    }
+
+    return { cerradas, fallidas: fallidas.length }
+  }
+
+  async release(
+    id: string,
+    reason: string,
+    user: AuthenticatedUser,
+    /** `CLOSED` solo lo usa el cierre automático: se acabaron los días. */
+    status: 'CANCELLED' | 'CLOSED' = 'CANCELLED',
+  ): Promise<AssignmentEntity> {
     const row = await this.repo.byId(id)
 
     if (!row) {
@@ -244,7 +406,13 @@ export class AssignmentsService {
     const coverage = await this.coverageAfter(position.requisitionId, row.slot.positionId, -1)
     const coverageState = await this.stateOf(COVERAGE_LIGHT, coverage.positionCode)
 
+    /* De Café de vuelta a donde estaba. La transición sembrada tiene destino
+       NULO a propósito —«vuelve al estado previo»—, así que el destino lo dice
+       la historia: Amarillo si venía de descanso, Verde fuerte si no. */
+    const workerState = await this.returnFromBrown(row.worker.id)
+
     await this.repo.release({
+      workerState,
       assignmentId: id,
       slotId: row.slot.id,
       positionId: row.slot.positionId,
@@ -252,6 +420,8 @@ export class AssignmentsService {
       reason,
       userId: user.id,
       roleCode: user.roleCode,
+      status,
+      eventType: status === 'CLOSED' ? 'ASSIGNMENT_CLOSED' : 'ASSIGNMENT_RELEASED',
     })
 
     // WORKER_TEMP_ENDED: solo la temporal se avisa — la fija termina cuando el
@@ -294,6 +464,45 @@ export class AssignmentsService {
     }
   }
 
+  /**
+   * El lugar que se va a ocupar: el que eligieron, o el primero libre.
+   *
+   * Que siga libre lo sostiene la base (`ux_slot_active_assignment`); mirarlo
+   * aquí solo sirve para dar un mensaje que se entienda en vez del error del
+   * motor, y no sustituye a la restricción: entre este SELECT y el INSERT cabe
+   * otra Reclutadora (RR-15).
+   */
+  private async resolveSlot(
+    positionId: string,
+    ordinal: number | undefined,
+  ): Promise<{ id: string; ordinal: number }> {
+    if (ordinal === undefined) {
+      const libre = await this.repo.freeSlot(positionId)
+      if (!libre) {
+        throw new UnprocessableEntityException({
+          code: 'POSITION_FULL',
+          message: 'Esta posición ya no tiene lugares libres',
+        })
+      }
+      return libre
+    }
+
+    const slot = await this.repo.slotAt(positionId, ordinal)
+    if (!slot) {
+      throw new UnprocessableEntityException({
+        code: 'SLOT_NOT_IN_POSITION',
+        message: `Esta posición no tiene un lugar ${String(ordinal)}`,
+      })
+    }
+    if (slot.status !== 'free') {
+      throw new ConflictException({
+        code: 'SLOT_TAKEN',
+        message: `El lugar ${String(ordinal)} ya está ocupado`,
+      })
+    }
+    return { id: slot.id, ordinal: slot.ordinal }
+  }
+
   private async stateOf(light: string, code: string): Promise<{ id: string }> {
     const state = await this.repo.stateByCode(light, code)
 
@@ -318,13 +527,19 @@ export function coverageCode(taken: number, quantity: number): string {
   return missing <= ALMOST_THRESHOLD ? ALMOST : SHORT
 }
 
+/** El rechazo de `release` cuando la requisición ya cerró, por su código. */
+function esRequisiciónCerrada(error: unknown): boolean {
+  const response = (error as { response?: { code?: string } } | undefined)?.response
+  return response?.code === 'REQUISITION_CLOSED'
+}
+
 function toEntity(row: AssignmentRow): AssignmentEntity {
   return {
     id: row.id,
     type: row.type,
     status: row.status,
     worker: row.worker,
-    slot: { id: row.slot.id, ordinal: row.slot.ordinal },
+    slot: { id: row.slot.id, ordinal: row.slot.ordinal, positionId: row.slot.positionId },
     createdAt: row.createdAt.toISOString(),
   }
 }

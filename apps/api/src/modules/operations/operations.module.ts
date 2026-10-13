@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common'
 
+import { SchedulerTokenService } from '../../common/security/scheduler-token.service.js'
 import { IdentityModule } from '../identity/index.js'
 import { NotificationsModule } from '../notifications/index.js'
 
@@ -13,7 +14,13 @@ import { TimesheetsService } from './timesheets/timesheets.service.js'
 @Module({
   imports: [IdentityModule, NotificationsModule],
   controllers: [SchedulesController, TimesheetsController],
-  providers: [SchedulesService, SchedulesRepository, TimesheetsService, TimesheetsRepository],
+  providers: [
+    SchedulesService,
+    SchedulesRepository,
+    TimesheetsService,
+    TimesheetsRepository,
+    SchedulerTokenService,
+  ],
   exports: [SchedulesService, TimesheetsService],
 })
 export class OperationsModule {}

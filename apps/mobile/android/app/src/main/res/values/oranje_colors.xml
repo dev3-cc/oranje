@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Espejo de packages/ui/src/styles/tokens.css: los mismos nombres y valores
+    que usa el worker en el WebView. Si un token cambia allá, cambia aquí.
+-->
+<resources>
+    <color name="o_50">#FFF6E8</color>
+    <color name="o_200">#FFD9B3</color>
+    <color name="o_300">#FFA64D</color>
+    <color name="o_400">#FF9933</color>
+    <color name="o_500">#FF8000</color>
+    <color name="o_700">#C85F00</color>
+
+    <color name="bg">#F6F4F1</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_2">#FBFAF8</color>
+    <color name="line">#E3DDD5</color>
+    <color name="ink">#1A1108</color>
+    <color name="ink_2">#4A3F35</color>
+    <color name="ink_3">#7A6D60</color>
+
+    <color name="green">#1FA84A</color>
+    <color name="red">#E11919</color>
+    <color name="yellow">#FFD500</color>
+
+    <!-- Fondos de los chips de estado: el color semántico con transparencia,
+         como el `bg-green/15` del web. -->
+    <color name="green_soft">#261FA84A</color>
+    <color name="yellow_soft">#40FFD500</color>
+    <color name="red_soft">#1FE11919</color>
+</resources>

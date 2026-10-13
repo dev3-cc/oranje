@@ -4,6 +4,7 @@ import {
   Delete,
   ForbiddenException,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
@@ -14,8 +15,9 @@ import {
   Query,
 } from '@nestjs/common'
 
-import { CurrentUser, Requires } from '../../../common/decorators/index.js'
+import { CurrentUser, Public, Requires } from '../../../common/decorators/index.js'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { SchedulerTokenService } from '../../../common/security/scheduler-token.service.js'
 import { PermissionsService } from '../../identity/index.js'
 
 import { CorrectPunchDto, CreateManualPunchDto, CreatePunchDto } from './dto/create-punch.dto.js'
@@ -43,7 +45,27 @@ export class TimesheetsController {
   constructor(
     private readonly timesheets: TimesheetsService,
     private readonly permissions: PermissionsService,
+    private readonly schedulerTokens: SchedulerTokenService,
   ) {}
+
+  /**
+   * La detección de inasistencias, que corre el programador de tareas.
+   *
+   * No hay sesión: lo autentica el token OIDC de Google, igual que el barrido
+   * de asignaciones vencidas y el consumidor de eventos. Es lo único del
+   * semáforo que no se puede disparar con un hecho, porque no hay evento
+   * cuando algo NO pasa (Hugo, 2026-10-10).
+   */
+  @Public()
+  @Post('timesheets/detect-absences/scheduled')
+  @HttpCode(HttpStatus.OK)
+  async detectAbsences(
+    @Headers('authorization') authorization: string | undefined,
+  ): Promise<{ data: { registradas: number; avisadas: number } }> {
+    await this.schedulerTokens.verify(authorization)
+
+    return { data: await this.timesheets.detectAbsences() }
+  }
 
   @Get('timesheets')
   async list(
@@ -52,7 +74,12 @@ export class TimesheetsController {
   ): Promise<{ data: TimesheetListEntity[] }> {
     const allHotels = await this.readScope(user)
 
-    return { data: await this.timesheets.list(user, query, allHotels) }
+    return {
+      data: await this.timesheets.list(user, query, allHotels, {
+        from: query.from,
+        to: query.to,
+      }),
+    }
   }
 
   // Antes que `:id`, o Nest lee "me" como un uuid.

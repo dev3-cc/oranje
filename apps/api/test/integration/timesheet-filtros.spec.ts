@@ -2,6 +2,7 @@ import { ForbiddenException } from '@nestjs/common'
 import { v7 as uuidv7 } from 'uuid'
 
 import type { AuthenticatedUser } from '../../src/common/decorators/index.js'
+import { SchedulerTokenService } from '../../src/common/security/scheduler-token.service.js'
 import type { PrismaService } from '../../src/infra/prisma/index.js'
 import { PermissionsService } from '../../src/modules/identity/auth/permissions.service.js'
 import type { ListTimesheetsDto } from '../../src/modules/operations/timesheets/dto/list-timesheets.dto.js'
@@ -23,7 +24,8 @@ const prisma = db as unknown as PrismaService
 const notifications = { publish: (): Promise<void> => Promise.resolve() } as never
 const service = new TimesheetsService(new TimesheetsRepository(prisma), notifications)
 const permissions = new PermissionsService(prisma)
-const controller = new TimesheetsController(service, permissions)
+const schedulerTokens = new SchedulerTokenService({ get: () => undefined } as never)
+const controller = new TimesheetsController(service, permissions, schedulerTokens)
 
 const WEEK_1 = '2027-08-02'
 const WEEK_2 = '2027-08-09'

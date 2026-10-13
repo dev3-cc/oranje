@@ -50,7 +50,9 @@ export function TimesheetGlobalPage(): ReactNode {
     filters.search.trim() !== '' ||
     filters.requisitionNumber !== ANY_VALUE ||
     filters.status !== ANY_VALUE ||
-    filters.hotelName !== ANY_VALUE
+    filters.hotelName !== ANY_VALUE ||
+    filters.from !== '' ||
+    filters.to !== ''
 
   return (
     <div className="flex flex-col gap-6">
@@ -133,7 +135,7 @@ export function TimesheetGlobalPage(): ReactNode {
                     className="px-4 py-8 text-center text-sm text-ink-3"
                   >
                     {hasFilters
-                      ? t`Nadie coincide con esos filtros. Cambia el nombre, la requisición, el estado o el hotel.`
+                      ? t`Nadie coincide con esos filtros. Cambia el nombre, la requisición, el estado, el hotel o el periodo.`
                       : t`Nadie tiene Timesheet esta semana. Las filas aparecen cuando los Supervisores registran horas.`}
                   </TableCell>
                 </TableRow>

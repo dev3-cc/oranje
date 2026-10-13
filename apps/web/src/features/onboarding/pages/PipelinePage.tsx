@@ -21,6 +21,7 @@ import { FilterReset } from '@/shared/components/FilterReset'
 import { FilterSelect } from '@/shared/components/FilterSelect'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
+import { RefreshControl } from '@/shared/components/RefreshControl'
 import {
   ONBOARDING_TRANSITIONS,
   PIPELINE_COLUMNS,
@@ -55,7 +56,14 @@ export function PipelinePage(): ReactNode {
     usePipelineFilters()
   const { data: session } = useGetSessionQuery()
   const { data: zones = [] } = useGetZonesQuery()
-  const { data: board, isLoading, isError, refetch } = useGetPipelineBoardQuery(filters)
+  const {
+    data: board,
+    isLoading,
+    isError,
+    refetch,
+    isFetching,
+    fulfilledTimeStamp,
+  } = useGetPipelineBoardQuery(filters)
 
   const canFilterOwner = session !== undefined && session.roleId !== BD_ROLE
   const zoneOptions = zones.map((zone) => ({
@@ -237,6 +245,14 @@ export function PipelinePage(): ReactNode {
           <Trans>Sin actividad 7+ días</Trans>
         </button>
         <FilterReset activeCount={activeCount} onReset={reset} />
+        <RefreshControl
+          onRefresh={() => {
+            void refetch()
+          }}
+          isFetching={isFetching}
+          fulfilledTimeStamp={fulfilledTimeStamp}
+          label={t`el Pipeline`}
+        />
       </div>
 
       {isError && (

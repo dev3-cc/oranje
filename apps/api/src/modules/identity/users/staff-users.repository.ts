@@ -30,8 +30,15 @@ export type StaffUserRow = Prisma.UserGetPayload<{ select: typeof SELECT }>
  * `hotel_id` nulo (huecos de datos: el Colaborador nunca lleva hotel propio;
  * cuentas de Hotel de pruebas de integración sin limpiar) se colaban en esta
  * lista aunque el propio formulario nunca dejara crearlas desde aquí.
+ *
+ * `ROL-SYS-01` se suma por lo mismo (Hugo, 2026-10-10): la cuenta del sistema
+ * —la que firma lo que ocurre sin que nadie lo pida, como cerrar una
+ * asignación temporal vencida— no es una persona. Salía en la pestaña de
+ * Inactivos como un empleado más y el Administrador podía reactivarla o
+ * cambiarle el rol, y con eso el rastro del journal dejaría de decir la
+ * verdad sobre quién cerró cada asignación.
  */
-const NON_STAFF_ROLE_CODES = ['ROL-C-01', 'ROL-H-01', 'ROL-H-02', 'ROL-H-03']
+const NON_STAFF_ROLE_CODES = ['ROL-C-01', 'ROL-H-01', 'ROL-H-02', 'ROL-H-03', 'ROL-SYS-01']
 
 @Injectable()
 export class StaffUsersRepository {

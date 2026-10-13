@@ -1,3 +1,5 @@
+import { hasNativeGeolocation, requestNativeLocationPermission } from './nativeGeolocation'
+
 /**
  * Cámara y ubicación, en un solo lugar: pedirlas (dispara el diálogo nativo
  * del navegador) y consultar qué contestó la persona la última vez, sin
@@ -27,6 +29,8 @@ export async function requestCameraPermission(): Promise<DevicePermissionState> 
 }
 
 export function requestLocationPermission(): Promise<DevicePermissionState> {
+  /* En la app, el permiso de la app (el WebView de iOS pediría el suyo aparte). */
+  if (hasNativeGeolocation()) return requestNativeLocationPermission()
   return new Promise((resolve) => {
     if (!('geolocation' in navigator)) {
       resolve('unsupported')
