@@ -29,6 +29,7 @@ function makeRow(overrides: Partial<TimesheetRow>): TimesheetRow {
     workerId: 'wrk-1',
     workerName: 'Ana Rivera Gómez',
     jobTitle: 'Housekeeper',
+    photoUrl: null,
     hotelName: 'Hotel Las Palmas',
     weekStatus: 'OPEN',
     totalHours: 34,

@@ -6,6 +6,8 @@ import { useState, type ReactNode } from 'react'
 
 import { useGetTimesheetWeekQuery } from '../api/timesheetApi'
 import { TimesheetToolbar } from '../components/TimesheetToolbar'
+import { WeekNavigator } from '../components/TimesheetViewControls'
+import { resolveWeek } from '../lib/weekNavigation'
 import { ANY_VALUE, EMPTY_TIMESHEET_FILTERS, type TimesheetFilters } from '../types/timesheet.types'
 
 import { LoadError } from '@/shared/components/LoadError'
@@ -13,21 +15,12 @@ import { MetricCard } from '@/shared/components/MetricCard'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import {
   DEFAULT_COLUMN_WIDTH,
-  TIMESHEET_WEEK_STATUS_LABEL,
-  type TimesheetWeekStatus,
+  WEEK_STATUS_LABEL_WITH_VIRTUAL,
 } from '@/shared/constants/timesheetStatus'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatHours, formatWeekRange } from '@/shared/lib/formatters'
 
-const HEADERS: readonly MessageDescriptor[] = [
-  msg`Colaborador`,
-  msg`Semana`,
-  msg`Reales`,
-  msg`Contractuales`,
-  msg`Diferencia`,
-  msg`Cumplimiento`,
-  msg`Indicador`,
-]
+const HEADERS: readonly MessageDescriptor[] = [msg`Colaborador`, msg`Semana`, msg`Reales`]
 
 export function TimesheetGlobalPage(): ReactNode {
   const { t, i18n } = useLingui()
@@ -46,6 +39,15 @@ export function TimesheetGlobalPage(): ReactNode {
     week && week.days.length > 0
       ? formatWeekRange(week.days[0] ?? '', week.days[week.days.length - 1] ?? '')
       : ''
+  /* Sin esto, esta pantalla se quedaba fija en la semana más reciente: no
+     había forma de ver una semana pasada (Hugo, 2026-10-13). Mismo
+     navegador que ya usa Asistencia, sobre las mismas semanas de
+     `fetchWeek` — nunca se desincroniza con la tabla de abajo. */
+  const availableWeeks = week?.availableWeeks ?? []
+  const selectedWeek = resolveWeek(availableWeeks, filters.weekStart)
+  function selectWeek(target: string): void {
+    setFilters((previous) => ({ ...previous, weekStart: target }))
+  }
   const hasFilters =
     filters.search.trim() !== '' ||
     filters.requisitionNumber !== ANY_VALUE ||
@@ -63,6 +65,15 @@ export function TimesheetGlobalPage(): ReactNode {
           <Trans>El Manager General ve todos los departamentos</Trans>
           {IS_DEV_UI ? ' (D-09)' : ''}
         </p>
+        {selectedWeek !== null && (
+          <div className="mt-3">
+            <WeekNavigator
+              weekStart={selectedWeek}
+              availableWeeks={availableWeeks}
+              onSelect={selectWeek}
+            />
+          </div>
+        )}
       </header>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
@@ -111,7 +122,7 @@ export function TimesheetGlobalPage(): ReactNode {
         <TableSkeleton rows={6} columns={7} />
       ) : (
         <div className="rounded-lg border border-line bg-surface">
-          <Table className="min-w-[64rem] text-left">
+          <Table className="min-w-[32rem] text-left">
             <TableHeader>
               <TableRow className="border-line">
                 {HEADERS.map((header) => (
@@ -144,17 +155,11 @@ export function TimesheetGlobalPage(): ReactNode {
                     {row.workerName}
                   </TableCell>
                   <TableCell className="px-4 py-3 text-sm text-ink-3">
-                    {TIMESHEET_WEEK_STATUS_LABEL[row.weekStatus as TimesheetWeekStatus] ??
-                      row.weekStatus}
+                    {WEEK_STATUS_LABEL_WITH_VIRTUAL[row.weekStatus] ?? row.weekStatus}
                   </TableCell>
                   <TableCell className="px-4 py-3 text-sm font-semibold text-ink">
                     {formatHours(row.totalHours)}
                   </TableCell>
-                  {}
-                  <TableCell className="px-4 py-3 text-sm text-ink-4">—</TableCell>
-                  <TableCell className="px-4 py-3 text-sm text-ink-4">—</TableCell>
-                  <TableCell className="px-4 py-3 text-sm text-ink-4">—</TableCell>
-                  <TableCell className="px-4 py-3 text-sm text-ink-4">—</TableCell>
                 </TableRow>
               ))}
             </TableBody>

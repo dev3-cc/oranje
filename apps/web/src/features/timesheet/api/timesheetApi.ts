@@ -1,7 +1,7 @@
 import { i18n } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 
-import { addDaysIso, resolveWeek } from '../lib/weekNavigation'
+import { addDaysIso, resolveWeek, todayIso } from '../lib/weekNavigation'
 import {
   ANY_VALUE,
   type ReviewDayRequest,
@@ -19,6 +19,7 @@ import {
 import { registerTimesheetMocks } from './timesheetMocks'
 
 import { baseApi } from '@/app/baseApi'
+import { NO_TIMESHEET_STATUS } from '@/shared/constants/timesheetStatus'
 import type { TimesheetStatus } from '@/shared/constants/timesheetStatus'
 import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import { formatTimeIn, todayIn } from '@/shared/lib/formatters'
@@ -45,6 +46,14 @@ type FetchWithBQ = (
 ) => Promise<{ data?: unknown; error?: unknown }>
 
 const MS_PER_DAY = 86_400_000
+
+/** El lunes de la semana que contiene a hoy — para que siempre haya una
+    semana navegable aunque nadie haya ponchado nunca (Hugo, 2026-10-13). */
+function currentWeekMonday(): string {
+  const today = todayIso()
+  const dow = new Date(`${today}T00:00:00Z`).getUTCDay()
+  return addDaysIso(today, dow === 0 ? -6 : 1 - dow)
+}
 
 /**
  * La hora del ponche en la zona horaria del HOTEL, no la del navegador que la
@@ -125,6 +134,33 @@ function dayStatus(day: TimesheetDayApi): TimesheetStatus {
   return 'PENDING'
 }
 
+/**
+ * Día sintetizado para quien tiene asignación ACTIVA pero ningún timesheet
+ * esta semana — no hay fila real de `operations.timesheet_day` que convertir
+ * (Hugo, 2026-10-13: "deberían aparecer todos... no sabemos si no ponchó en
+ * toda la semana"). `weekStatus: 'NO_TIMESHEET'` en la fila ya impide
+ * enviarlo o aprobarlo; aquí solo se enseña un día vacío, no se inventa hora.
+ */
+function emptyEntry(date: string, requisitionRef: string): TimesheetEntry {
+  return {
+    id: `virtual:${date}`,
+    date,
+    status: 'PENDING',
+    hours: null,
+    startTime: null,
+    endTime: null,
+    requisitionNumber: requisitionRef,
+    punch: 'NO_SHIFT',
+    hasAnomaly: false,
+    continuesNextDay: false,
+    continuesFromPreviousDay: false,
+    isAbsence: false,
+    reviewNote: null,
+    dayStatus: null,
+    punches: [],
+  }
+}
+
 export function toEntry(
   day: TimesheetDayApi,
   requisitionRef: string,
@@ -168,12 +204,16 @@ async function fetchWeek(
   fetchWithBQ: FetchWithBQ,
   filters: TimesheetFilters,
 ): Promise<{ data: TimesheetWeek } | { error: unknown }> {
-  const [listRes, meRes, requisitionIndex] = await Promise.all([
+  const [listRes, meRes, workersRes, requisitionIndex] = await Promise.all([
     fetchWithBQ({
       url: '/timesheets',
       params: { ...(filters.status !== ANY_VALUE ? { status: filters.status } : {}) },
     }),
     fetchWithBQ('/me'),
+    /* `GET /timesheets/:id` no trae foto ni puesto del colaborador (D-28):
+       se compone con `/workers`, igual que ya hace la cinta continua
+       (`fetchTimeline`) — si falla, la fila degrada con fallbacks (D-30). */
+    fetchAllPages<WorkerApi>(fetchWithBQ, '/workers'),
     fetchRequisitionIndex(fetchWithBQ),
   ])
   if (listRes.error) return { error: listRes.error }
@@ -183,30 +223,32 @@ async function fetchWeek(
   const me = (meRes.data as ApiEnvelope<{ hotel: { name: string } | null }>).data
   const fallbackHotel = me.hotel?.name ?? '—'
 
-  if (timesheets.length === 0) {
-    return {
-      data: {
-        days: [],
-        rows: [],
-        requisitionNumbers: [],
-        hotelNames: [],
-        weekStart: '',
-        availableWeeks: [],
-      },
-    }
+  /* Sin `GET /timesheets/:id` ni `/workers`: un colaborador que nunca
+     ponchó en toda la semana no tiene fila de timesheet (se crea solo al
+     primer ponche), así que antes desaparecía — no se sabía que faltó
+     (Hugo, 2026-10-13). Si `/workers` falla (403, p. ej. Contabilidad en
+     Timesheet Global, que no tiene `staff:read`), degrada a lo de siempre:
+     ningún colaborador sin marcas se pierde por eso, solo no se completa. */
+  const workers: WorkerApi[] = 'error' in workersRes ? [] : workersRes.data
+  const workerInfo = new Map<string, { photoUrl: string | null; jobTitle: string }>()
+  for (const worker of workers) {
+    workerInfo.set(worker.id, {
+      photoUrl: worker.photoUrl,
+      jobTitle: worker.position?.name ?? '—',
+    })
   }
 
   /**
    * La pantalla es UNA semana. Las disponibles salen de lo que llegó (el
-   * contrato no pagina por fecha) y se enseña la pedida o, sin petición
-   * válida, la más reciente.
+   * contrato no pagina por fecha) más la semana en curso, para que siempre
+   * haya algo que ver aunque nadie haya ponchado todavía esta semana.
    */
-  const availableWeeks = [...new Set(timesheets.map((sheet) => sheet.weekStart))].sort()
+  const availableWeeks = [
+    ...new Set([...timesheets.map((sheet) => sheet.weekStart), currentWeekMonday()]),
+  ].sort()
   const weekStart = resolveWeek(availableWeeks, filters.weekStart) as string
   const ofWeek = timesheets.filter((sheet) => sheet.weekStart === weekStart)
-  const days = Array.from({ length: 7 }, (_item, index) =>
-    new Date(new Date(weekStart).getTime() + index * MS_PER_DAY).toISOString().slice(0, 10),
-  )
+  const days = Array.from({ length: 7 }, (_item, index) => addDaysIso(weekStart, index))
 
   /** Días y marcas viven en el detalle: se piden en paralelo (D-28). */
   const details = await Promise.all(ofWeek.map((sheet) => fetchWithBQ(`/timesheets/${sheet.id}`)))
@@ -226,7 +268,8 @@ async function fetchWeek(
       assignment: detail.assignment,
       workerId: detail.worker.id,
       workerName: detail.worker.fullName,
-      jobTitle: '—',
+      jobTitle: workerInfo.get(detail.worker.id)?.jobTitle ?? '—',
+      photoUrl: workerInfo.get(detail.worker.id)?.photoUrl ?? null,
       hotelName: requisitionIndex.get(detail.requisitionId)?.hotelName ?? fallbackHotel,
       weekStatus: detail.status,
       totalHours: Math.round(((detail.totals?.netMinutes ?? 0) / 60) * 100) / 100,
@@ -240,6 +283,32 @@ async function fetchWeek(
         return Number.isFinite(minutes) ? Math.round((minutes / 60) * 100) / 100 : null
       })(),
       entries: (detail.days ?? []).map((day) => toEntry(day, requisitionRef, hotelTimeZone)),
+    })
+  }
+
+  /* Quien está asignado (ACTIVE) pero no tiene fila esta semana: sin esto
+     no hay forma de saber que alguien no ponchó NI UN SOLO día — nunca
+     aparecía (Hugo, 2026-10-13). Sin asignación activa no hay de quién
+     esperar horas esta semana, así que no se le inventa una fila. */
+  const coveredWorkerIds = new Set(rows.map((row) => row.workerId))
+  for (const worker of workers) {
+    if (coveredWorkerIds.has(worker.id) || worker.assignment === null) continue
+    const { requisitionId, hotelName } = worker.assignment
+    const requisitionRef = requisitionRefOf(requisitionIndex, requisitionId)
+    rows.push({
+      timesheetId: `virtual:${worker.id}:${weekStart}`,
+      requisitionId,
+      workerId: worker.id,
+      workerName: worker.fullName,
+      jobTitle: worker.position?.name ?? '—',
+      photoUrl: worker.photoUrl,
+      hotelName: requisitionIndex.get(requisitionId)?.hotelName ?? hotelName,
+      /* No hay timesheet real: nada que enviar ni aprobar todavía. */
+      weekStatus: NO_TIMESHEET_STATUS,
+      totalHours: 0,
+      targetHours: null,
+      overtimeHours: null,
+      entries: days.map((date) => emptyEntry(date, requisitionRef)),
     })
   }
 
@@ -314,19 +383,13 @@ async function fetchTimeline(
     }
   }
 
-  if (timesheets.length === 0) {
-    return {
-      data: {
-        days: [],
-        rows: [],
-        availableWeeks: [],
-        requisitionNumbers: [],
-        hotelNames: [],
-      },
-    }
-  }
-
-  const availableWeeks = [...new Set(timesheets.map((sheet) => sheet.weekStart))].sort()
+  /* Mismo lunes que `fetchWeek` (Hugo, 2026-10-13): si solo uno de los dos
+     incluyera la semana en curso, `TimesheetPage` —que arma su navegador de
+     esta cinta cuando ya cargó, y de `fetchWeek` mientras tanto— mostraría
+     un encabezado y una tabla de semanas distintas sin que nada avisara. */
+  const availableWeeks = [
+    ...new Set([...timesheets.map((sheet) => sheet.weekStart), currentWeekMonday()]),
+  ].sort()
   const firstWeek = availableWeeks[0] as string
   const lastWeek = availableWeeks[availableWeeks.length - 1] as string
   const totalDays =

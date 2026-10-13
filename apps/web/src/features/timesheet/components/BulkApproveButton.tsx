@@ -27,6 +27,9 @@ export function BulkApproveButton({ rows }: { rows: TimesheetRow[] }): ReactNode
   const canApprove = can('timesheet:approve_hours')
   const eligible = rows.filter(
     (row) =>
+      // Fila sintetizada (quien no ponchó ni un día): sin timesheet real no
+      // hay nada que enviar ni aprobar (Hugo, 2026-10-13).
+      row.weekStatus !== 'NO_TIMESHEET' &&
       row.weekStatus !== 'APPROVED' &&
       (row.weekStatus !== 'OPEN' || row.entries.every((entry) => !entry.hasAnomaly)),
   )

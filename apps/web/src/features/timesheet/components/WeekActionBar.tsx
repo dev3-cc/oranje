@@ -325,6 +325,14 @@ export function WeekActionBar({
             <Trans>Aprobada y enviada a Oranje</Trans>
           </span>
         )}
+        {/* Fila sintetizada para que no desaparezca quien no ponchó ni un
+            día (Hugo, 2026-10-13): sin timesheet real, nada que enviar ni
+            aprobar — y nada que capturar desde aquí tampoco. */}
+        {row.weekStatus === 'NO_TIMESHEET' && (
+          <span className="max-w-full truncate rounded-md border border-dashed border-line px-2.5 py-1.5 text-xs text-ink-3">
+            <Trans>Sin Timesheet esta semana — no registró ni una marca</Trans>
+          </span>
+        )}
       </div>
 
       {actionError !== null && (

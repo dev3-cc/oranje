@@ -37,6 +37,7 @@ function row(overrides: Partial<TimesheetRow> = {}): TimesheetRow {
     workerId: 'w-1',
     workerName: 'Rosa Prueba',
     jobTitle: 'Camarista',
+    photoUrl: null,
     hotelName: 'Hotel Xcaret',
     weekStatus: 'OPEN',
     totalHours: 8.5,

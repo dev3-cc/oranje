@@ -719,10 +719,6 @@ msgstr "{quantity, plural, one {# slot libre} other {# slots libres}}"
 msgid "{reason}: revisa la fecha de nacimiento."
 msgstr "{reason}: revisa la fecha de nacimiento."
 
-#: src/features/personnel/pages/PersonnelPage.tsx
-msgid "{shift} · entró {clockIn}"
-msgstr "{shift} · entró {clockIn}"
-
 #: src/features/requisitions/components/RequisitionSummaryStrip.tsx
 msgid "{slotCount} · {occupiedCount} ocupados"
 msgstr "{slotCount} · {occupiedCount} ocupados"
@@ -2741,10 +2737,6 @@ msgstr "Continúa al día siguiente"
 msgid "Continuar"
 msgstr "Continuar"
 
-#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
-msgid "Contractuales"
-msgstr "Contractuales"
-
 #: src/features/admin/components/UserFormDialog.tsx
 #: src/features/auth/pages/LoginPage.tsx
 #: src/features/worker/components/MobileShell.tsx
@@ -3180,10 +3172,6 @@ msgstr "Cumple"
 msgid "Cumple, No o N/A por reactivo. El score es un promedio ponderado — N/A no cuenta ni pesa, y el peso lo define el Administrador."
 msgstr "Cumple, No o N/A por reactivo. El score es un promedio ponderado — N/A no cuenta ni pesa, y el peso lo define el Administrador."
 
-#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
-msgid "Cumplimiento"
-msgstr "Cumplimiento"
-
 #: src/shared/constants/roles.ts
 msgid "Customer Service Manager"
 msgstr "Customer Service Manager"
@@ -3362,14 +3350,6 @@ msgstr "Desactivar contacto"
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 msgid "desbloquearlo es del BDC."
 msgstr "desbloquearlo es del BDC."
-
-#: src/features/personnel/pages/PersonnelPage.tsx
-msgid "Descansa"
-msgstr "Descansa"
-
-#: src/features/personnel/pages/PersonnelPage.tsx
-msgid "Descansa hoy"
-msgstr "Descansa hoy"
 
 #: src/features/timesheet/components/AttendanceView.tsx
 msgid "Descanso"
@@ -3557,10 +3537,6 @@ msgstr "Días sin anomalía"
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Días sin ponches"
 msgstr "Días sin ponches"
-
-#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
-msgid "Diferencia"
-msgstr "Diferencia"
 
 #: src/features/onboarding/components/HotelDataCard.tsx
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
@@ -4706,6 +4682,11 @@ msgstr "Entrada, salida al lunch, regreso y salida. El botón siempre sabe cuál
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Entre <0>Oranje</0> y <1>{0}</1>"
 msgstr "Entre <0>Oranje</0> y <1>{0}</1>"
+
+#. placeholder {0}: timeOf(row.clockInAt, timeZone)
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Entró {0}"
+msgstr "Entró {0}"
 
 #: src/features/onboarding/components/ProposalVersionHistory.tsx
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
@@ -6074,10 +6055,6 @@ msgstr "Indefinido"
 #: src/features/onboarding/components/RegisterAttemptDialog.tsx
 msgid "Indica cuándo ocurrió el intento"
 msgstr "Indica cuándo ocurrió el intento"
-
-#: src/features/timesheet/pages/TimesheetGlobalPage.tsx
-msgid "Indicador"
-msgstr "Indicador"
 
 #: src/features/personnel/pages/PersonnelPage.tsx
 #: src/features/recruitment/components/PoolFilters.tsx
@@ -7774,6 +7751,10 @@ msgstr "No pasó la revisión."
 #: src/features/auth/pages/LoginPage.tsx
 msgid "No pudimos conectar con Oranje. Revisa tu conexión e inténtalo en un momento."
 msgstr "No pudimos conectar con Oranje. Revisa tu conexión e inténtalo en un momento."
+
+#: src/features/timesheet/components/WorkerWeekSummary.tsx
+msgid "No registró ni una marca esta semana: no hay timesheet que enviar ni aprobar."
+msgstr "No registró ni una marca esta semana: no hay timesheet que enviar ni aprobar."
 
 #: src/shared/constants/workerStatus.ts
 msgid "No regresó"
@@ -10215,7 +10196,7 @@ msgstr "Semana anterior"
 msgid "Semana aprobada"
 msgstr "Semana aprobada"
 
-#. placeholder {0}: formatDate(selectedWeek)
+#. placeholder {0}: formatWeekRange(selectedWeek, addDaysIso(selectedWeek, 6))
 #: src/features/timesheet/components/AttendanceView.tsx
 msgid "Semana del {0}"
 msgstr "Semana del {0}"
@@ -10511,14 +10492,6 @@ msgstr "Sin departamento, esta cuenta ve y pide personal de TODOS los departamen
 msgid "Sin dirección todavía"
 msgstr "Sin dirección todavía"
 
-#: src/features/personnel/pages/PersonnelPage.tsx
-msgid "sin entrada"
-msgstr "sin entrada"
-
-#: src/features/personnel/pages/PersonnelPage.tsx
-msgid "Sin entrada"
-msgstr "Sin entrada"
-
 #: src/features/timesheet/components/AttendanceView.tsx
 msgid "Sin entrada registrada"
 msgstr "Sin entrada registrada"
@@ -10604,6 +10577,10 @@ msgstr "Sin marcas · marcar"
 msgid "Sin marcas esta semana."
 msgstr "Sin marcas esta semana."
 
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Sin marcas hoy"
+msgstr "Sin marcas hoy"
+
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 msgid "Sin marcas registradas todavía."
 msgstr "Sin marcas registradas todavía."
@@ -10635,6 +10612,10 @@ msgstr "Sin permiso de cámara no se puede leer el QR. Permítelo para este siti
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Sin permiso de ubicación no se puede ponchar: actívalo en Permisos, en el menú de tu cuenta."
 msgstr "Sin permiso de ubicación no se puede ponchar: actívalo en Permisos, en el menú de tu cuenta."
+
+#: src/features/personnel/pages/PersonnelPage.tsx
+msgid "Sin ponche hoy"
+msgstr "Sin ponche hoy"
 
 #: src/features/timesheet/components/TimesheetDayCell.tsx
 msgid "Sin ponches"
@@ -10731,9 +10712,17 @@ msgstr "Sin tarifas no se puede activar: agrega la primera con «Editar tarifas�
 msgid "sin territorio asignado todavía"
 msgstr "sin territorio asignado todavía"
 
+#: src/shared/constants/timesheetStatus.ts
+msgid "Sin Timesheet"
+msgstr "Sin Timesheet"
+
 #: src/features/timesheet/components/TimesheetGrid.tsx
 msgid "Sin timesheet esta semana"
 msgstr "Sin timesheet esta semana"
+
+#: src/features/timesheet/components/WeekActionBar.tsx
+msgid "Sin Timesheet esta semana — no registró ni una marca"
+msgstr "Sin Timesheet esta semana — no registró ni una marca"
 
 #: src/features/timesheet/components/AttendanceView.tsx
 msgid "Sin Timesheets esta semana."
@@ -11267,10 +11256,6 @@ msgstr "Tiene al menos una posición cotizada"
 msgid "Tiene colaboradores asignados: libera las asignaciones antes de eliminarla."
 msgstr "Tiene colaboradores asignados: libera las asignaciones antes de eliminarla."
 
-#: src/features/personnel/pages/PersonnelPage.tsx
-msgid "Tiene turno hoy y no ha marcado entrada. Contáctalo — su teléfono está aquí arriba — y si el ponche falló, captura la<0> marca manual</0> desde el Timesheet."
-msgstr "Tiene turno hoy y no ha marcado entrada. Contáctalo — su teléfono está aquí arriba — y si el ponche falló, captura la<0> marca manual</0> desde el Timesheet."
-
 #: src/features/recruitment/components/DeleteWorkerDialog.tsx
 msgid "Tiene una asignación activa en un hotel: primero hay que terminarla o reasignarla."
 msgstr "Tiene una asignación activa en un hotel: primero hay que terminarla o reasignarla."
@@ -11721,10 +11706,6 @@ msgstr "Turno {scheduled}"
 #: src/features/schedule/components/AddShiftDialog.tsx
 msgid "Turno agregado"
 msgstr "Turno agregado"
-
-#: src/features/personnel/pages/PersonnelPage.tsx
-msgid "Turno de hoy"
-msgstr "Turno de hoy"
 
 #: src/features/schedule/pages/SchedulePage.tsx
 #: src/features/timesheet/components/TimesheetHoursView.tsx

@@ -73,6 +73,8 @@ export interface TimesheetRow {
   workerName: string
   /** El contrato aún no expone el puesto: raya, no un dato inventado. */
   jobTitle: string
+  /** Foto del colaborador (de `/workers`, D-28); `null` honesto si no hay. */
+  photoUrl: string | null
   hotelName: string
   /** Estado de la SEMANA: abierta, enviada o aprobada (D-09). */
   weekStatus: string

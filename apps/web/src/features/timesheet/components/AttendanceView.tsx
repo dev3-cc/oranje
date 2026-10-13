@@ -38,7 +38,12 @@ import { Button as MovingBorderBox } from '@/shared/components/MovingBorder'
 import { PUNCH_STATE_LABEL, type PunchState } from '@/shared/constants/timesheetStatus'
 import { useCan } from '@/shared/hooks/useCan'
 import { rosterDetailClass, rosterListClass, useListDetail } from '@/shared/hooks/useListDetail'
-import { formatDate, formatDayMonth, formatHours, formatWeekday } from '@/shared/lib/formatters'
+import {
+  formatDayMonth,
+  formatHours,
+  formatWeekday,
+  formatWeekRange,
+} from '@/shared/lib/formatters'
 
 /** El mismo texto que ya usa `ReviewDayDialog` por cada marca del ponche. */
 const PUNCH_TYPE_LABEL: Record<string, MessageDescriptor> = {
@@ -363,12 +368,23 @@ function WorkerListItem({
           )}
         >
           <span className="relative inline-flex shrink-0">
-            <span
-              aria-hidden
-              className="flex size-11 items-center justify-center rounded-xl bg-o-500 text-sm font-bold text-ink ring-1 ring-line"
-            >
-              {row.workerName.charAt(0)}
-            </span>
+            {row.photoUrl ? (
+              <img
+                src={row.photoUrl}
+                alt=""
+                className="size-11 rounded-xl object-cover ring-1 ring-line"
+                onError={(event) => {
+                  event.currentTarget.style.display = 'none'
+                }}
+              />
+            ) : (
+              <span
+                aria-hidden
+                className="flex size-11 items-center justify-center rounded-xl bg-o-500 text-sm font-bold text-ink ring-1 ring-line"
+              >
+                {row.workerName.charAt(0)}
+              </span>
+            )}
             <span
               aria-hidden
               className={cn(
@@ -444,7 +460,12 @@ function AttendanceDetail({
           a la tabla de días de abajo — es ahí donde se revisan las horas
           antes de decidir (Hugo, 2026-10-10: "que el botón esté en la
           tabla"). Un solo botón, no dos copias repitiendo la misma acción. */}
-      <WorkerWeekSummary row={row} onManualPunch={onManualPunch} showActions={false} />
+      <WorkerWeekSummary
+        row={row}
+        photoUrl={row.photoUrl}
+        onManualPunch={onManualPunch}
+        showActions={false}
+      />
 
       {isCurrentWeek && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-2.5">
@@ -493,7 +514,7 @@ function AttendanceDetail({
         <div className="overflow-hidden rounded-lg border border-line bg-surface">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
             <h2 className="text-lg font-semibold text-ink">
-              <Trans>Semana del {formatDate(selectedWeek)}</Trans>
+              <Trans>Semana del {formatWeekRange(selectedWeek, addDaysIso(selectedWeek, 6))}</Trans>
             </h2>
             {/* Sin marca manual aquí: con el lápiz de "Corregir" en cada
                 celda de la tabla ya se edita directamente (Hugo,

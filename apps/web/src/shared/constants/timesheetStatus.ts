@@ -67,6 +67,31 @@ export const TIMESHEET_WEEK_STATUS_TOKEN: Record<TimesheetWeekStatus, StatusLigh
   APPROVED: 'st-verde',
 }
 
+/**
+ * Sentinel de FRONT: una fila sintetizada para quien tiene asignación ACTIVA
+ * pero ningún timesheet esta semana — nunca ponchó ni un día (Hugo,
+ * 2026-10-13). No vive en `operations.timesheet.status` ni se manda jamás
+ * como filtro al servidor — por eso vive aparte de `TIMESHEET_WEEK_STATUSES`,
+ * que sí es el enum real que entiende `GET /timesheets?status=`.
+ */
+export const NO_TIMESHEET_STATUS = 'NO_TIMESHEET'
+
+const VIRTUAL_WEEK_STATUS_MESSAGE = {
+  [NO_TIMESHEET_STATUS]: msg`Sin Timesheet`,
+}
+
+/** Las tres etiquetas reales + el sentinel, para los sitios que pintan
+    `weekStatus` sin saber si la fila es real o sintetizada. */
+export const WEEK_STATUS_LABEL_WITH_VIRTUAL: Record<string, string> = {
+  ...TIMESHEET_WEEK_STATUS_LABEL,
+  ...labelMap(VIRTUAL_WEEK_STATUS_MESSAGE),
+}
+
+export const WEEK_STATUS_TOKEN_WITH_VIRTUAL: Record<string, StatusLightToken> = {
+  ...TIMESHEET_WEEK_STATUS_TOKEN,
+  [NO_TIMESHEET_STATUS]: 'st-gris',
+}
+
 export const PUNCH_STATES = ['COMPLETE', 'IN_PROGRESS', 'INCOMPLETE', 'NO_SHIFT'] as const
 
 export type PunchState = (typeof PUNCH_STATES)[number]
