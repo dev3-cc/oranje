@@ -68,6 +68,15 @@ export interface HotelApi {
   generalPhone: string | null
   timeZone: string
   geofenceRadiusM: number | null
+  /**
+   * Datos contables (Hugo, 2026-10-07): el cierre de semana y el pago de
+   * horas extra, capturados al dar de alta el hotel. `null` solo en los
+   * hoteles que nacieron antes de esta captura; el Contrato los hereda de
+   * aquí y ya no los vuelve a pedir.
+   */
+  weekStartDay: number | null
+  weekEndDay: number | null
+  overtimePayMultiplier: number | null
   address: string | null
   placeId: string | null
   photoUrl: string | null
@@ -298,46 +307,112 @@ export interface ParticipationResultApi {
   participants: ParticipantApi[]
 }
 
-/** `personal.worker` + `vw_worker` como lo sirve la API (`GET /workers[/:id]`). */
+/**
+ * `personal.worker` + `vw_worker` como lo sirve la API (`GET /workers[/:id]`,
+ * `POST /workers/:id/transitions`).
+ *
+ * Dos lectores, dos fichas (Hugo, 2026-10-12): Reclutamiento
+ * (`recruitment:search_candidates`) y el propio colaborador (self-service)
+ * ven la ficha COMPLETA; el Hotel (`staff:read`/`staff:read_history`) ve solo
+ * "lo básico" — los campos marcados `?` abajo no viajan para ese alcance.
+ * Mismo patrón que `payPreview` en `TimesheetApi`: degradar sin romper
+ * (D-30), optativo en vez de una unión de dos interfaces. El discriminador en
+ * tiempo de ejecución es `state` (solo la ficha completa lo trae) — ver
+ * `isFullWorkerApi`/`FullWorkerApi`.
+ */
 export interface WorkerApi {
   id: string
   fullName: string
   /** La foto se captura en la app móvil (Fase 2); no integra el perfil completo. */
   photoUrl: string | null
-  birthDate: string
-  age: number
+  /** Solo ficha completa. */
+  birthDate?: string
+  /** Solo ficha completa. */
+  age?: number
   gender: string
-  phone: string
-  address: string
-  zone: CatalogItemApi
+  /** Solo ficha completa: el teléfono PERSONAL del colaborador (el de su
+      contacto de emergencia sigue viajando siempre, es otro campo). */
+  phone?: string
+  /** Solo ficha completa. */
+  address?: string
+  /** Solo ficha completa. */
+  zone?: CatalogItemApi
   position: CatalogItemApi | null
   englishLevel: CatalogItemApi | null
   hiringModality: CatalogItemApi | null
-  experienceLevel: string | null
+  /** Solo ficha completa. */
+  experienceLevel?: string | null
   transportType: string | null
   emergencyContact: { name: string; phone: string; relationship: string } | null
-  bloodType: string | null
-  state: StatusRefApi
-  isProfileComplete: boolean
-  /** Si se le validó con el expediente a medias, hasta cuándo puede completarlo; null si no aplica. */
-  profileDueAt: string | null
-  hasTaxId: boolean
-  /** Hay un documento SSN/ITIN cargado (verificado o no) — a diferencia de `hasTaxId` (D-27). */
-  hasTaxDocument: boolean
-  /** Cargado y todavía sin revisar (Pool: badge/filtro "con documento pendiente"). */
-  hasPendingDocument: boolean
-  hasAccount: boolean
-  /** El correo con el que entra hoy; null sin cuenta todavía (Blanco recién nacido). */
-  email: string | null
-  isBlacklisted: boolean
-  createdAt: string
-  /** Dónde está trabajando hoy (asignación ACTIVA más reciente); null sin ninguna. */
+  /** Solo ficha completa. */
+  bloodType?: string | null
+  medicalNotes: string | null
+  /** Solo ficha completa: el semáforo del colaborador. */
+  state?: StatusRefApi
+  /** Solo ficha completa. */
+  isProfileComplete?: boolean
+  /** Solo ficha completa. Si se le validó con el expediente a medias, hasta
+      cuándo puede completarlo; null si no aplica. */
+  profileDueAt?: string | null
+  /** Solo ficha completa. */
+  hasTaxId?: boolean
+  /** Solo ficha completa. Hay un documento SSN/ITIN cargado (verificado o
+      no) — a diferencia de `hasTaxId` (D-27). */
+  hasTaxDocument?: boolean
+  /** Solo ficha completa. Cargado y todavía sin revisar (Pool: badge/filtro
+      "con documento pendiente"). */
+  hasPendingDocument?: boolean
+  /** Solo ficha completa. */
+  hasAccount?: boolean
+  /** Solo ficha completa. El correo con el que entra hoy; null sin cuenta
+      todavía (Blanco recién nacido). */
+  email?: string | null
+  /** Solo ficha completa. */
+  isBlacklisted?: boolean
+  /** Solo ficha completa. */
+  createdAt?: string
+  /** Dónde está trabajando hoy (asignación ACTIVA más reciente); null sin
+      ninguna. Viaja en las dos fichas: es justo lo que Mi Personal necesita
+      mostrar sin ver el resto del expediente. */
   assignment: {
     requisitionId: string
     requisitionNumber: string
     hotelId: string
     hotelName: string
   } | null
+}
+
+/** Las propiedades que solo trae la ficha completa de `WorkerApi` (ver arriba). */
+type WorkerFullOnlyKey =
+  | 'birthDate'
+  | 'age'
+  | 'phone'
+  | 'address'
+  | 'zone'
+  | 'experienceLevel'
+  | 'bloodType'
+  | 'state'
+  | 'isProfileComplete'
+  | 'profileDueAt'
+  | 'hasTaxId'
+  | 'hasTaxDocument'
+  | 'hasPendingDocument'
+  | 'hasAccount'
+  | 'email'
+  | 'isBlacklisted'
+  | 'createdAt'
+
+/** `WorkerApi` con la ficha completa garantizada (Reclutamiento / self-service). */
+export type FullWorkerApi = WorkerApi & Required<Pick<WorkerApi, WorkerFullOnlyKey>>
+
+/**
+ * ¿Esta respuesta de `/workers` trae la ficha completa, o solo "lo básico"
+ * que ve el Hotel? `state` es el único campo de la ficha completa que no
+ * tiene otro uso posible como discriminador (los demás pueden ser `null` en
+ * la ficha completa también), así que decide su presencia.
+ */
+export function isFullWorkerApi(worker: WorkerApi): worker is FullWorkerApi {
+  return worker.state !== undefined
 }
 
 /** Una fila de `GET /workers/:id/history` — `personal.worker_state_history`. */
@@ -397,7 +472,13 @@ export interface TimesheetDayApi {
   overtimeMinutes: number
   isAbsence: boolean
   hasAnomaly: boolean
+  /** Turno nocturno emparejado con el día siguiente/anterior (2026-10-12):
+      exactamente uno puede ser `true`, nunca los dos. */
+  continuesNextDay: boolean
+  continuesFromPreviousDay: boolean
   reviewNote: string | null
+  /** Con qué se marcó un día sin ponches (Descanso, OFF…); `null` = sin marcar. */
+  dayStatus: { code: string; name: string } | null
   punches: TimesheetPunchApi[]
 }
 
@@ -418,6 +499,26 @@ export interface TimesheetApi {
   assignment?: { status: 'ACTIVE' | 'CLOSED' | 'CANCELLED'; endsOn: string | null } | null
   days?: TimesheetDayApi[]
   totals?: { grossMinutes: number; netMinutes: number; overtimeMinutes: number }
+  /** Solo en `GET /timesheets` (el listado): de qué hotel y qué requisición. */
+  hotel?: { id: string; name: string }
+  requisitionFolio?: string
+  /**
+   * Solo con `timesheet:read_all_hotels` (Contabilidad, el Observador): lo
+   * que se le pagaría hoy a esta hoja, calculado en vivo (D-10: 40 h por
+   * requisición). `payRate`/`overtimeMultiplier`/`subtotal` en `null` cuando
+   * no hay contrato ni tarifa interna que resolver — no se inventa un pago.
+   */
+  payPreview?: {
+    regularMinutes: number
+    overtimeMinutes: number
+    payRate: string | null
+    isInternalRate: boolean
+    overtimeMultiplier: number | null
+    subtotal: string | null
+    /** Si Contabilidad corrigió tarifa y/o reparto de horas (2026-10-08). */
+    isOverridden: boolean
+    overrideReason: string | null
+  }
 }
 
 /** `coverage.blacklist_entry` como lo sirve la API (`GET /blacklist`). */

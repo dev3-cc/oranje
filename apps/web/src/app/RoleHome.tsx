@@ -6,6 +6,9 @@ import { selectSessionUser } from './sessionSlice'
 
 import { WORKER_ROLE } from '@/shared/constants/roles'
 
+/** Contabilidad no tiene tablero propio: su inicio es el Consolidado. */
+const ACCOUNTING_ROLES = ['ROL-CO-01', 'ROL-CO-02']
+
 /**
  * El `/` de cada rol: el Colaborador (ROL-C-01) vive en `/collaborator`, el
  * staff arranca en el Dashboard. Sin usuario todavía no se decide (el guard
@@ -14,5 +17,9 @@ import { WORKER_ROLE } from '@/shared/constants/roles'
 export function RoleHome(): ReactNode {
   const user = useAppSelector(selectSessionUser)
   if (!user) return null
-  return <Navigate to={user.roleId === WORKER_ROLE ? '/collaborator' : '/dashboard'} replace />
+  if (user.roleId === WORKER_ROLE) return <Navigate to="/collaborator" replace />
+  if (ACCOUNTING_ROLES.includes(user.roleId)) {
+    return <Navigate to="/accounting/consolidations" replace />
+  }
+  return <Navigate to="/dashboard" replace />
 }

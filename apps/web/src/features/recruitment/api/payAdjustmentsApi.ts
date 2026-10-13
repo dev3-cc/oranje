@@ -61,6 +61,20 @@ export const payAdjustmentsApi = baseApi.injectEndpoints({
       transformResponse: (res: ApiEnvelope<PayAdjustment>) => res.data,
       invalidatesTags: [{ type: 'PayAdjustment' as const, id: 'PENDING' }],
     }),
+
+    /** La cola de Contabilidad: aprobados por el Observador, sin decidir
+        todavía si pesan en la nómina (Hugo, 2026-10-09). */
+    getApprovedPendingInclusion: build.query<PayAdjustment[], void>({
+      query: () => '/pay-adjustments/approved-pending-inclusion',
+      transformResponse: (res: ApiEnvelope<PayAdjustment[]>) => res.data,
+      providesTags: [{ type: 'PayAdjustment' as const, id: 'APPROVED_PENDING_INCLUSION' }],
+    }),
+
+    includePayAdjustment: build.mutation<PayAdjustment, { id: string }>({
+      query: ({ id }) => ({ url: `/pay-adjustments/${id}/include`, method: 'POST' }),
+      transformResponse: (res: ApiEnvelope<PayAdjustment>) => res.data,
+      invalidatesTags: [{ type: 'PayAdjustment' as const, id: 'APPROVED_PENDING_INCLUSION' }],
+    }),
   }),
 })
 
@@ -70,4 +84,6 @@ export const {
   useGetPendingPayAdjustmentsQuery,
   useApprovePayAdjustmentMutation,
   useRejectPayAdjustmentMutation,
+  useGetApprovedPendingInclusionQuery,
+  useIncludePayAdjustmentMutation,
 } = payAdjustmentsApi

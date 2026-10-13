@@ -46,8 +46,22 @@ export class ContractsService {
   ) {}
 
   async create(dto: CreateContractDto, user: AuthenticatedUser): Promise<ContractEntity> {
-    if (!(await this.repo.hotelExists(dto.hotelId))) {
+    const hotelAccounting = await this.repo.hotelAccounting(dto.hotelId)
+
+    if (!hotelAccounting) {
       throw new NotFoundException({ code: 'HOTEL_NOT_FOUND', message: 'El hotel no existe' })
+    }
+
+    if (
+      hotelAccounting.weekStartDay === null ||
+      hotelAccounting.weekEndDay === null ||
+      hotelAccounting.overtimePayMultiplier === null
+    ) {
+      throw new UnprocessableEntityException({
+        code: 'HOTEL_MISSING_ACCOUNTING_DATA',
+        message:
+          'Completa los datos contables del hotel (cierre de semana y pago de horas extra) antes de crear su contrato',
+      })
     }
 
     if (dto.validTo && dto.validTo <= dto.validFrom) {
@@ -57,14 +71,9 @@ export class ContractsService {
       })
     }
 
-    if (dto.weekStartDay === dto.weekEndDay) {
-      throw new UnprocessableEntityException({
-        code: 'WEEK_INVALID',
-        message: 'La semana no puede empezar y terminar el mismo día',
-      })
-    }
+    const overtimePayMultiplier = Number(hotelAccounting.overtimePayMultiplier)
 
-    this.assertMargins(dto)
+    this.assertMargins(dto, overtimePayMultiplier)
     await this.assertPositions(dto)
 
     const id = await this.repo.create({
@@ -73,10 +82,10 @@ export class ContractsService {
       prospectId: dto.prospectId ?? null,
       validFrom: dto.validFrom,
       validTo: dto.validTo ?? null,
-      weekStartDay: dto.weekStartDay,
-      weekEndDay: dto.weekEndDay,
+      weekStartDay: hotelAccounting.weekStartDay,
+      weekEndDay: hotelAccounting.weekEndDay,
       overtimeBillMultiplier: dto.overtimeBillMultiplier,
-      overtimePayMultiplier: dto.overtimePayMultiplier,
+      overtimePayMultiplier,
       holidayBillMultiplier: dto.holidayBillMultiplier,
       holidayPayMultiplier: dto.holidayPayMultiplier,
       deductsMeals: dto.deductsMeals,
@@ -267,8 +276,8 @@ export class ContractsService {
     return this.get(id)
   }
 
-  private assertMargins(dto: CreateContractDto): void {
-    if (dto.overtimeBillMultiplier < dto.overtimePayMultiplier) {
+  private assertMargins(dto: CreateContractDto, overtimePayMultiplier: number): void {
+    if (dto.overtimeBillMultiplier < overtimePayMultiplier) {
       throw new UnprocessableEntityException({
         code: 'OVERTIME_MARGIN_NEGATIVE',
         message: 'El hotel no puede pagar menos recargo de overtime que el colaborador',

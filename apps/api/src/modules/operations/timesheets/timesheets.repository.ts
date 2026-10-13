@@ -30,7 +30,12 @@ export interface DayRow {
   actualLunchMinutes: number | null
   isAbsence: boolean
   hasAnomaly: boolean
+  /** Turno nocturno emparejado con el siguiente/anterior día — ver D-?? en el
+      Prisma schema (`TimesheetDay.continuesNextDay`). */
+  continuesNextDay: boolean
+  continuesFromPreviousDay: boolean
   reviewNote: string | null
+  dayStatus: { code: string; name: string } | null
 }
 
 export interface PunchRow {
@@ -53,6 +58,33 @@ export interface TimesheetRow {
   requisitionId: string
   /** La asignación que respalda al timesheet (ver `ASSIGNMENT_OF_TIMESHEET`). */
   assignment: { status: string; endsOn: string | null } | null
+}
+
+/** Una fila del listado: el hotel y el folio de la requisición, para la pantalla. */
+export interface TimesheetListRow extends TimesheetRow {
+  hotel: { id: string; name: string }
+  requisitionFolio: string
+}
+
+/**
+ * Lo que se le pagaría a esta hoja hoy, calculado en vivo (nada se guarda
+ * aquí): mismas 40 h por requisición y la misma cascada de tarifa que usa la
+ * corrida de pago real (`PaymentRunsRepository`), para que la vista previa de
+ * Contabilidad y el consolidado final nunca se contradigan.
+ */
+export interface TimesheetPayPreview {
+  timesheetId: string
+  regularMinutes: number
+  overtimeMinutes: number
+  /** `null` = sin tarifa resuelta (sin contrato ni rate interno): no se puede estimar. */
+  payRate: string | null
+  isInternalRate: boolean
+  /** El multiplicador que se aplicaría a las horas extra; `null` junto con `payRate`. */
+  overtimeMultiplier: number | null
+  subtotal: string | null
+  /** Si Contabilidad corrigió tarifa y/o reparto de horas (2026-10-08). */
+  isOverridden: boolean
+  overrideReason: string | null
 }
 
 // La asignación de ESTA persona en ESTA requisición. El timesheet no la guarda
@@ -260,6 +292,38 @@ export class TimesheetsRepository {
     })
   }
 
+  async dayStatusExists(id: string): Promise<boolean> {
+    return (
+      (await this.prisma.timesheetDayStatus.findUnique({ where: { id }, select: { id: true } })) !==
+      null
+    )
+  }
+
+  /** Crea el día si no existe (como un ponche lo haría) y le pone el estado;
+      `null` lo quita. */
+  async setDayStatus(params: {
+    timesheetId: string
+    workDate: Date
+    dayStatusId: string | null
+  }): Promise<string> {
+    const day = await this.prisma.timesheetDay.upsert({
+      where: {
+        timesheetId_workDate: { timesheetId: params.timesheetId, workDate: params.workDate },
+      },
+      update: { dayStatusId: params.dayStatusId },
+      create: {
+        id: uuidv7(),
+        timesheetId: params.timesheetId,
+        workDate: params.workDate,
+        grossMinutes: 0,
+        dayStatusId: params.dayStatusId,
+      },
+      select: { id: true },
+    })
+
+    return day.id
+  }
+
   // La misma lógica de find-or-create que antes vivía en `ensureDay`, pero
   // corriendo DENTRO de la transacción del caller (addPunch/addManualPunch) en
   // vez de en la suya propia — así crear el día y registrar la marca son un
@@ -423,31 +487,154 @@ export class TimesheetsRepository {
     return { id, dayId }
   }
 
-  async recalcDay(dayId: string, grossMinutes: number, hasAnomaly: boolean): Promise<void> {
+  async recalcDay(
+    dayId: string,
+    grossMinutes: number,
+    hasAnomaly: boolean,
+    overnight: { continuesNextDay: boolean; continuesFromPreviousDay: boolean },
+  ): Promise<void> {
     await this.prisma.timesheetDay.update({
       where: { id: dayId },
-      data: { grossMinutes, hasAnomaly },
+      data: {
+        grossMinutes,
+        hasAnomaly,
+        continuesNextDay: overnight.continuesNextDay,
+        continuesFromPreviousDay: overnight.continuesFromPreviousDay,
+      },
+    })
+  }
+
+  /** Lo mínimo para buscar el día ANTERIOR del mismo Timesheet al emparejar
+      un turno nocturno (D-?? — ver el Prisma schema). */
+  async dayForPairing(dayId: string): Promise<{ timesheetId: string; workDate: Date } | null> {
+    return this.prisma.timesheetDay.findUnique({
+      where: { id: dayId },
+      select: { timesheetId: true, workDate: true },
+    })
+  }
+
+  /** Lo que `correctPunch` necesita saber ANTES de tocar nada: a qué día,
+      timesheet y departamento pertenece, si ese timesheet sigue editable, y
+      la hora que tenía — para el "antes" del journal. */
+  async punchContext(punchId: string): Promise<{
+    dayId: string
+    status: string
+    departmentId: string | null
+    hotelId: string
+    type: string
+    previousOccurredAt: Date
+    workerId: string
+  } | null> {
+    const rows = await this.prisma.$queryRaw<
+      Array<{
+        dayId: string
+        status: string
+        departmentId: string | null
+        hotelId: string
+        type: string
+        previousOccurredAt: Date
+        workerId: string
+      }>
+    >`
+      SELECT pm.timesheet_day_id AS "dayId",
+             pm.type,
+             pm.server_at        AS "previousOccurredAt",
+             t.status,
+             t.worker_id         AS "workerId",
+             r.hotel_id          AS "hotelId",
+             (SELECT p.hotel_department_id
+                FROM demand."position" p
+               WHERE p.requisition_id = t.requisition_id
+               LIMIT 1) AS "departmentId"
+        FROM operations.punch_mark pm
+        JOIN operations.timesheet_day td ON td.id = pm.timesheet_day_id
+        JOIN operations.timesheet t      ON t.id = td.timesheet_id
+        JOIN demand.requisition r        ON r.id = t.requisition_id
+       WHERE pm.id = ${punchId}::uuid`
+
+    return rows[0] ?? null
+  }
+
+  /** La marca YA existe (a diferencia de `addManualPunch`, que la crea):
+      corregir es un UPDATE, no otro INSERT — el día solo admite una marca
+      por tipo (`ux_punch_day_type`), así que una segunda fila del mismo
+      tipo chocaría con esa restricción en vez de corregir nada. Queda
+      marcada como manual: una vez que una persona reescribió la hora, ya
+      no es honesto seguir presentándola como lo que reportó el reloj. */
+  async correctPunch(params: {
+    punchId: string
+    type: string
+    occurredAt: Date
+    reason: string
+    previousOccurredAt: Date
+    userId: string
+    roleCode: string
+  }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.punchMark.update({
+        where: { id: params.punchId },
+        data: {
+          serverAt: params.occurredAt,
+          isManual: true,
+          registeredBy: params.userId,
+          manualReason: params.reason,
+        },
+      })
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'operations.punch_mark',
+          entityId: params.punchId,
+          eventType: 'PUNCH_CORRECTED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: {
+            type: params.type,
+            previousOccurredAt: params.previousOccurredAt.toISOString(),
+            occurredAt: params.occurredAt.toISOString(),
+            reason: params.reason,
+          },
+        },
+      })
     })
   }
 
   async days(timesheetId: string): Promise<DayRow[]> {
-    return this.prisma.$queryRaw<DayRow[]>`
-      SELECT id,
-             work_date                 AS "workDate",
-             gross_minutes             AS "grossMinutes",
-             lunch_deduction_minutes   AS "lunchDeductionMinutes",
-             overtime_minutes          AS "overtimeMinutes",
-             net_minutes               AS "netMinutes",
-             actual_lunch_minutes      AS "actualLunchMinutes",
-             is_absence                AS "isAbsence",
-             has_anomaly               AS "hasAnomaly",
-             review_note               AS "reviewNote"
-        FROM operations.vw_timesheet_day
-       WHERE timesheet_id = ${timesheetId}::uuid
-       ORDER BY work_date`
+    const rows = await this.prisma.$queryRaw<
+      Array<
+        Omit<DayRow, 'dayStatus'> & { dayStatusCode: string | null; dayStatusName: string | null }
+      >
+    >`
+      SELECT v.id,
+             v.work_date                 AS "workDate",
+             v.gross_minutes             AS "grossMinutes",
+             v.lunch_deduction_minutes   AS "lunchDeductionMinutes",
+             v.overtime_minutes          AS "overtimeMinutes",
+             v.net_minutes               AS "netMinutes",
+             v.actual_lunch_minutes      AS "actualLunchMinutes",
+             v.is_absence                AS "isAbsence",
+             v.has_anomaly               AS "hasAnomaly",
+             v.continues_next_day          AS "continuesNextDay",
+             v.continues_from_previous_day AS "continuesFromPreviousDay",
+             v.review_note               AS "reviewNote",
+             ds.code                     AS "dayStatusCode",
+             ds.name                     AS "dayStatusName"
+        FROM operations.vw_timesheet_day v
+        LEFT JOIN catalogs.timesheet_day_status ds ON ds.id = v.day_status_id
+       WHERE v.timesheet_id = ${timesheetId}::uuid
+       ORDER BY v.work_date`
+
+    return rows.map(({ dayStatusCode, dayStatusName, ...rest }) => ({
+      ...rest,
+      dayStatus:
+        dayStatusCode && dayStatusName ? { code: dayStatusCode, name: dayStatusName } : null,
+    }))
   }
 
-  async timesheet(id: string): Promise<(TimesheetRow & { departmentId: string | null }) | null> {
+  async timesheet(
+    id: string,
+  ): Promise<(TimesheetRow & { departmentId: string | null; hotelId: string }) | null> {
     const rows = await this.prisma.$queryRaw<
       Array<TimesheetRow & { departmentId: string | null; hotelId: string; workerName: string }>
     >`
@@ -491,31 +678,187 @@ export class TimesheetsRepository {
   }
 
   async listAll(params: {
+    /** Alcance del permiso: el hotel de quien pregunta, o `null` = todos. */
+    scopeHotelId: string | null
+    /** Filtro de la pantalla. Se suma al alcance; nunca lo amplía. */
     hotelId: string | null
+    weekStart: string | null
     departmentId: string | null
     status?: string | undefined
     limit: number
-  }): Promise<TimesheetRow[]> {
-    return this.prisma.$queryRaw<TimesheetRow[]>`
+    /** Una hoja puntual, sin importar hotel/semana/estado (la usa `one()` tras corregir). */
+    timesheetId?: string | undefined
+  }): Promise<TimesheetListRow[]> {
+    return this.prisma.$queryRaw<TimesheetListRow[]>`
       SELECT t.id,
              t.week_start AS "weekStart",
              t.week_end   AS "weekEnd",
              t.status,
              t.approved_at AS "approvedAt",
              t.requisition_id AS "requisitionId",
+             r.number     AS "requisitionFolio",
+             jsonb_build_object('id', h.id, 'name', h.name) AS hotel,
              jsonb_build_object('id', w.id, 'fullName', w.full_name) AS worker,
              ${ASSIGNMENT_OF_TIMESHEET}
         FROM operations.timesheet t
         JOIN personal.worker w    ON w.id = t.worker_id
         JOIN demand.requisition r ON r.id = t.requisition_id
-       WHERE (${params.hotelId}::uuid IS NULL OR r.hotel_id = ${params.hotelId}::uuid)
+        JOIN commercial.hotel h   ON h.id = r.hotel_id
+       WHERE (${params.scopeHotelId}::uuid IS NULL OR r.hotel_id = ${params.scopeHotelId}::uuid)
+         AND (${params.hotelId}::uuid IS NULL OR r.hotel_id = ${params.hotelId}::uuid)
+         AND (${params.weekStart}::date IS NULL OR t.week_start = ${params.weekStart}::date)
          AND (${params.status}::text IS NULL OR t.status = ${params.status}::text)
+         AND (${params.timesheetId ?? null}::uuid IS NULL OR t.id = ${params.timesheetId ?? null}::uuid)
          AND (${params.departmentId}::uuid IS NULL OR EXISTS (
                SELECT 1 FROM demand."position" p
                 WHERE p.requisition_id = t.requisition_id
                   AND p.hotel_department_id = ${params.departmentId}::uuid))
        ORDER BY t.week_start DESC
        LIMIT ${params.limit}`
+  }
+
+  /**
+   * Vista previa de pago para un lote de hojas, calculada en vivo — nada se
+   * guarda ni se modifica aquí. Replica la misma cascada de tarifa y el
+   * mismo corte de 40 h por requisición que `PaymentRunsRepository.generate`
+   * (la misma cifra, 2400, vive también ahí: ver su comentario sobre D-10).
+   * Pensada para que Contabilidad vea en el Timesheet, antes de la corrida
+   * del miércoles, cuánto se le pagaría a cada hoja.
+   */
+  async payPreview(timesheetIds: string[]): Promise<TimesheetPayPreview[]> {
+    if (timesheetIds.length === 0) return []
+
+    return this.prisma.$queryRaw<TimesheetPayPreview[]>`
+      WITH horas AS (
+        SELECT t.id AS timesheet_id,
+               t.worker_id,
+               r.hotel_id,
+               pos.catalog_position_id,
+               coalesce(sum(v.net_minutes), 0)::int AS total_minutes
+          FROM operations.timesheet t
+          JOIN demand.requisition r ON r.id = t.requisition_id
+          LEFT JOIN operations.timesheet_day d        ON d.timesheet_id = t.id
+          LEFT JOIN operations.vw_timesheet_day v      ON v.id = d.id
+          JOIN LATERAL (
+            SELECT p.catalog_position_id
+              FROM demand."position" p
+             WHERE p.requisition_id = t.requisition_id
+               AND p.deleted_at IS NULL
+             ORDER BY EXISTS (
+                        SELECT 1
+                          FROM coverage.assignment a
+                          JOIN demand.slot s ON s.id = a.slot_id
+                         WHERE s.position_id = p.id
+                           AND a.worker_id = t.worker_id
+                      ) DESC,
+                      p.line_number
+             LIMIT 1
+          ) pos ON true
+         WHERE t.id = ANY(${timesheetIds}::uuid[])
+         GROUP BY t.id, t.worker_id, r.hotel_id, pos.catalog_position_id
+      ),
+      tarifas AS (
+        SELECT h.*,
+               LEAST(h.total_minutes, 2400)::int        AS computed_regular_minutes,
+               GREATEST(h.total_minutes - 2400, 0)::int AS computed_overtime_minutes,
+               COALESCE(wr.rate, cr.pay_rate) AS computed_pay_rate,
+               (wr.rate IS NOT NULL)          AS is_internal,
+               COALESCE(ct.overtime_pay_multiplier, hot.overtime_pay_multiplier, 0) AS ot_multiplier,
+               ov.regular_minutes  AS override_regular_minutes,
+               ov.overtime_minutes AS override_overtime_minutes,
+               ov.pay_rate         AS override_pay_rate,
+               ov.reason           AS override_reason
+          FROM horas h
+          LEFT JOIN personal.worker_rate wr
+                 ON wr.worker_id = h.worker_id
+                AND wr.valid_to IS NULL
+                AND wr.pay_concept_id IS NULL
+                AND (wr.catalog_position_id = h.catalog_position_id
+                     OR wr.catalog_position_id IS NULL)
+          LEFT JOIN commercial.contract ct
+                 ON ct.hotel_id = h.hotel_id AND ct.status = 'ACTIVE'
+          LEFT JOIN commercial.contract_rate cr
+                 ON cr.contract_id = ct.id
+                AND cr.catalog_position_id = h.catalog_position_id
+          LEFT JOIN commercial.hotel hot
+                 ON hot.id = h.hotel_id
+          -- La corrección de Contabilidad (Hugo, 2026-10-08) pisa tarifa y
+          -- reparto de horas; el multiplicador sigue siendo el del hotel.
+          LEFT JOIN settlement.timesheet_pay_override ov
+                 ON ov.timesheet_id = h.timesheet_id
+      ),
+      efectivo AS (
+        SELECT timesheet_id,
+               COALESCE(override_regular_minutes, computed_regular_minutes)   AS regular_minutes,
+               COALESCE(override_overtime_minutes, computed_overtime_minutes) AS overtime_minutes,
+               COALESCE(override_pay_rate, computed_pay_rate)                 AS pay_rate,
+               is_internal,
+               ot_multiplier,
+               (override_pay_rate IS NOT NULL) AS is_overridden,
+               override_reason
+          FROM tarifas
+      )
+      SELECT timesheet_id     AS "timesheetId",
+             regular_minutes  AS "regularMinutes",
+             overtime_minutes AS "overtimeMinutes",
+             pay_rate::text   AS "payRate",
+             is_internal      AS "isInternalRate",
+             CASE WHEN pay_rate IS NULL THEN NULL ELSE ot_multiplier::float END AS "overtimeMultiplier",
+             CASE WHEN pay_rate IS NULL THEN NULL
+                  ELSE round((regular_minutes / 60.0) * pay_rate
+                           + (overtime_minutes / 60.0) * pay_rate * ot_multiplier, 2)::text
+             END AS subtotal,
+             is_overridden AS "isOverridden",
+             override_reason AS "overrideReason"
+        FROM efectivo`
+  }
+
+  /**
+   * Corrección de Contabilidad sobre la vista previa (Hugo, 2026-10-08): una
+   * sola vigente por hoja, se reescribe la misma fila. El subtotal se calcula
+   * aquí con el multiplicador YA resuelto, solo para mostrarlo — la corrida
+   * real (`PaymentRunsRepository`) lo vuelve a calcular con el multiplicador
+   * vigente al momento de pagar, nunca confía en este valor guardado.
+   */
+  async setPayOverride(params: {
+    timesheetId: string
+    regularMinutes: number
+    overtimeMinutes: number
+    payRate: number
+    reason: string
+    userId: string
+  }): Promise<void> {
+    await this.prisma.$executeRaw`
+      WITH mult AS (
+        SELECT COALESCE(ct.overtime_pay_multiplier, hot.overtime_pay_multiplier, 0) AS ot_multiplier
+          FROM operations.timesheet t
+          JOIN demand.requisition r ON r.id = t.requisition_id
+          LEFT JOIN commercial.contract ct ON ct.hotel_id = r.hotel_id AND ct.status = 'ACTIVE'
+          LEFT JOIN commercial.hotel hot   ON hot.id = r.hotel_id
+         WHERE t.id = ${params.timesheetId}::uuid
+      )
+      INSERT INTO settlement.timesheet_pay_override
+        (id, timesheet_id, regular_minutes, overtime_minutes, pay_rate, subtotal, reason, created_by)
+      SELECT gen_random_uuid(), ${params.timesheetId}::uuid,
+             ${params.regularMinutes}, ${params.overtimeMinutes}, ${params.payRate}::numeric,
+             round((${params.regularMinutes}::numeric / 60) * ${params.payRate}::numeric
+                 + (${params.overtimeMinutes}::numeric / 60) * ${params.payRate}::numeric * mult.ot_multiplier, 2),
+             ${params.reason}, ${params.userId}::uuid
+        FROM mult
+      ON CONFLICT (timesheet_id) DO UPDATE
+        SET regular_minutes  = EXCLUDED.regular_minutes,
+            overtime_minutes = EXCLUDED.overtime_minutes,
+            pay_rate         = EXCLUDED.pay_rate,
+            subtotal         = EXCLUDED.subtotal,
+            reason           = EXCLUDED.reason,
+            updated_by       = EXCLUDED.created_by,
+            updated_at       = now()`
+  }
+
+  /** Vuelve a lo calculado: borra la corrección, no la deja en cero. */
+  async deletePayOverride(timesheetId: string): Promise<void> {
+    await this.prisma.$executeRaw`
+      DELETE FROM settlement.timesheet_pay_override WHERE timesheet_id = ${timesheetId}::uuid`
   }
 
   async setStatus(params: {

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common'
+import { Prisma } from '@prisma/client'
 import { v7 as uuidv7 } from 'uuid'
 
 import { PrismaService } from '../../../infra/prisma/index.js'
@@ -57,8 +58,21 @@ const BASE = `
 export class ContractsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async hotelExists(id: string): Promise<boolean> {
-    return (await this.prisma.hotel.count({ where: { id } })) > 0
+  /**
+   * Lo que el contrato HEREDA del hotel: el cierre de semana y el recargo de
+   * overtime pagado se capturan al dar de alta el hotel (Datos contables) y
+   * ya no se vuelven a pedir aquí (Hugo, 2026-10-07). `null` en el hotel es
+   * honesto en los que nacieron antes de esta captura.
+   */
+  async hotelAccounting(id: string): Promise<{
+    weekStartDay: number | null
+    weekEndDay: number | null
+    overtimePayMultiplier: Prisma.Decimal | null
+  } | null> {
+    return this.prisma.hotel.findUnique({
+      where: { id },
+      select: { weekStartDay: true, weekEndDay: true, overtimePayMultiplier: true },
+    })
   }
 
   async positionsExist(ids: string[]): Promise<Set<string>> {

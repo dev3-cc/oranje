@@ -1,14 +1,20 @@
-import { Trans } from '@lingui/react/macro'
+import { Trans, useLingui } from '@lingui/react/macro'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
-import { useGetDepartmentMetricsQuery, useGetStatusDurationsQuery } from '../api/observabilityApi'
+import {
+  useGetApprovalTimelinessQuery,
+  useGetDepartmentMetricsQuery,
+  useGetStatusDurationsQuery,
+} from '../api/observabilityApi'
 import { DepartmentMetricsGrid } from '../components/DepartmentMetricsGrid'
 import { PunchesTable } from '../components/PunchesTable'
 import { StatusDurationSection } from '../components/StatusDurationSection'
 
 import fotoEquipo from '@/assets/ilustrations/observador-equipo.webp'
+import { ApprovalTimelinessPanel } from '@/shared/components/ApprovalTimelinessPanel'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { LoadError } from '@/shared/components/LoadError'
 
 /**
  * Observador (`ROL-OBS-01`): transversal, de solo lectura. Ve los 9 semáforos
@@ -17,8 +23,10 @@ import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
  * las métricas de los 7 departamentos.
  */
 export function ObservabilityPage(): ReactNode {
+  const { t } = useLingui()
   const { data: lights, isLoading: isLoadingLights } = useGetStatusDurationsQuery()
   const { data: departments, isLoading: isLoadingDepartments } = useGetDepartmentMetricsQuery()
+  const timeliness = useGetApprovalTimelinessQuery()
 
   return (
     <div className="space-y-6">
@@ -57,6 +65,9 @@ export function ObservabilityPage(): ReactNode {
           <TabsTrigger value="departments">
             <Trans>Departamentos</Trans>
           </TabsTrigger>
+          <TabsTrigger value="timeliness">
+            <Trans>Aprobación de ponches</Trans>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="status" className="space-y-4">
@@ -81,6 +92,18 @@ export function ObservabilityPage(): ReactNode {
           ) : (
             <DepartmentMetricsGrid metrics={departments ?? []} />
           )}
+        </TabsContent>
+
+        <TabsContent value="timeliness">
+          {timeliness.isError && (
+            <LoadError
+              message={t`No se pudo calcular la aprobación oportuna. Reintenta en unos segundos.`}
+              onRetry={() => {
+                void timeliness.refetch()
+              }}
+            />
+          )}
+          {timeliness.data && <ApprovalTimelinessPanel data={timeliness.data} />}
         </TabsContent>
       </Tabs>
     </div>

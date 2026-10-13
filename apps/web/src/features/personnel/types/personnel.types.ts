@@ -27,7 +27,13 @@ export interface PersonnelRow {
   photoUrl: string | null
   phone: string
   positionName: string
-  stateCode: string
+  /**
+   * `null` cuando `/workers` sirvió "lo básico" en vez de la ficha completa
+   * (Hugo, 2026-10-12: el Hotel ya no ve el semáforo) — no debería pasar en
+   * Mi Personal mismo (es `staff:read`, justo el alcance reducido), así que
+   * HOY esto es casi siempre `null`; ver el hallazgo en la bitácora.
+   */
+  stateCode: string | null
   /** Turno de HOY del Schedule; `null` = descansa (o su estado lo explica). */
   shift: { startsAt: string; endsAt: string } | null
   /**
@@ -49,7 +55,8 @@ export interface PersonnelRow {
   presentationAudit: { score: number; auditedAt: string } | null
   /** Su ficha personal, tal cual la sirve /workers (alcance staff:read). */
   personal: {
-    age: number
+    /** `null` si /workers no trajo la ficha completa (ver `stateCode`). */
+    age: number | null
     gender: string
     zoneName: string
     englishLevel: string | null
@@ -62,7 +69,6 @@ export interface PersonnelRow {
 
 export interface PersonnelBoard {
   rows: PersonnelRow[]
-  assignedToday: number
   clockedInToday: number
   inStandBy: number
   inAccident: number

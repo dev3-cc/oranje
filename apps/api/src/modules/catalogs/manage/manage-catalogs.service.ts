@@ -32,6 +32,8 @@ export const MANAGED_CATALOGS = [
   // Conceptos de pago extra (p. ej. «Uber»), decisión de Hugo del 2026-10-05
   // (P-CO-07): el gasto de una asignación eventual sale de aquí.
   'pay-concepts',
+  // Con qué se marca un día del Timesheet sin ponches (Hugo, 2026-10-12).
+  'timesheet-day-statuses',
 ] as const
 
 export type ManagedCatalog = (typeof MANAGED_CATALOGS)[number]
@@ -91,6 +93,8 @@ export class ManageCatalogsService {
         return this.prisma.statusChangeReason as unknown as CatalogDelegate
       case 'pay-concepts':
         return this.prisma.payConcept as unknown as CatalogDelegate
+      case 'timesheet-day-statuses':
+        return this.prisma.timesheetDayStatus as unknown as CatalogDelegate
     }
   }
 

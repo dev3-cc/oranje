@@ -20,6 +20,7 @@ export interface WorkerRow {
   emergencyContactPhone: string | null
   emergencyContactRelationship: string | null
   bloodType: string | null
+  medicalNotes: string | null
   isProfileComplete: boolean
   hasTaxId: boolean
   /// Hay un documento SSN/ITIN cargado (verificado o no) — distinto de
@@ -79,6 +80,7 @@ const BASE = `
          w.emergency_contact_phone        AS "emergencyContactPhone",
          w.emergency_contact_relationship AS "emergencyContactRelationship",
          w.blood_type          AS "bloodType",
+         w.medical_notes       AS "medicalNotes",
          w.is_profile_complete AS "isProfileComplete",
          w.profile_due_at      AS "profileDueAt",
          w.has_tax_id          AS "hasTaxId",

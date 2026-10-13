@@ -313,16 +313,19 @@ export interface ContractFormOptions {
   positions: Array<{ id: string; name: string }>
 }
 
-/** El cuerpo de `POST /contracts`, transcrito del DTO real (`contract.dto.ts`). */
+/**
+ * El cuerpo de `POST /contracts`, transcrito del DTO real (`contract.dto.ts`).
+ * `weekStartDay`/`weekEndDay`/`overtimePayMultiplier` NO viajan aquí: el
+ * contrato los hereda del Hotel (Datos contables, capturados al dar de alta)
+ * y el back responde 422 `HOTEL_MISSING_ACCOUNTING_DATA` si el hotel no los
+ * tiene (Hugo, 2026-10-07).
+ */
 export interface CreateContractRequest {
   hotelId: string
   prospectId?: string
   validFrom: string
   validTo?: string
-  weekStartDay: number
-  weekEndDay: number
   overtimeBillMultiplier: number
-  overtimePayMultiplier: number
   holidayBillMultiplier: number
   holidayPayMultiplier: number
   deductsMeals: boolean

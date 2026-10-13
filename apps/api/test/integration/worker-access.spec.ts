@@ -209,6 +209,10 @@ test('validar con el expediente a medias exige confirmarlo y abre 1 día para co
     recruiter,
   )
 
+  // `isProfileComplete` solo existe en la ficha completa de Reclutamiento —
+  // `state` ya no basta para distinguir, `WorkerStaffEntity` también lo trae.
+  if (!('isProfileComplete' in validated))
+    throw new Error('Reclutamiento debe ver la ficha completa')
   expect(validated.state.code).toBe('STRONG_GREEN')
   expect(validated.isProfileComplete).toBe(false)
   const dueAt = new Date(validated.profileDueAt as string)
@@ -315,5 +319,6 @@ test('encender Amarillo es autoservicio del propio Colaborador, no el "cambiar e
   // El autoservicio (lo que usa `POST /workers/me/availability`) sí lo deja:
   // decide la tabla de transiciones, no un guard de staff.
   const activated = await workers.changeState(workerId, { toState: 'YELLOW' }, colaborador, true)
+  if (!('state' in activated)) throw new Error('selfService debe ver la ficha completa')
   expect(activated.state.code).toBe('YELLOW')
 })

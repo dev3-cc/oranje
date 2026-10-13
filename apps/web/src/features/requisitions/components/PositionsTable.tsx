@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, cn } fro
 import type { ReactNode } from 'react'
 
 import type { RequisitionPosition } from '../types/requisition.types'
+import { isCoverageComplete } from '../utils/coverage'
 
 import { CoverageBadge } from './CoverageBadge'
 import { UrgencyChip } from './UrgencyChip'
@@ -98,6 +99,7 @@ export function PositionsTable({
                     urgency={position.urgency}
                     startDate={position.startDate}
                     authorizedAt={authorizedAt}
+                    coverageComplete={isCoverageComplete(position.coverage)}
                   />
                 </TableCell>
 

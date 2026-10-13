@@ -121,6 +121,10 @@ export interface PayAdjustment {
   approvedBy: { id: string; fullName: string } | null
   approvedAt: string | null
   rejectionReason: string | null
+  /** Que el Observador apruebe no lo mete a la nómina: esto es lo que lo
+      mete de verdad, y lo decide Contabilidad (Hugo, 2026-10-09). */
+  includedBy: { id: string; fullName: string } | null
+  includedAt: string | null
   worker: { id: string; fullName: string }
   hotelName: string
   requisitionNumber: string

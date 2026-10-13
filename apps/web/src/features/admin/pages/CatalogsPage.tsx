@@ -122,6 +122,12 @@ const TAB_CONFIG: Record<ManagedCatalog, TabConfig> = {
     noun: msg`concepto de pago`,
     searchPlaceholder: msg`Nombre del concepto, p. ej. Uber…`,
   },
+  'timesheet-day-statuses': {
+    label: msg`Días sin ponches`,
+    pick: (data) => data.timesheetDayStatuses,
+    noun: msg`estado`,
+    searchPlaceholder: msg`Nombre del estado, p. ej. Descanso…`,
+  },
 }
 
 /**

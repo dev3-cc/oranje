@@ -38,6 +38,8 @@ const routes: readonly MockRoute[] = [
         approvedBy: null,
         approvedAt: null,
         rejectionReason: null,
+        includedBy: null,
+        includedAt: null,
         worker: { id: 'mock-worker', fullName: 'Colaborador de prueba' },
         hotelName: 'Hotel de prueba',
         requisitionNumber: 'MOCK-0001',
@@ -79,6 +81,26 @@ const routes: readonly MockRoute[] = [
       return { data: { ...row } }
     },
   },
+  {
+    method: 'GET',
+    path: '/pay-adjustments/approved-pending-inclusion',
+    resolve: (): ApiEnvelope<PayAdjustment[]> => ({
+      data: adjustments
+        .filter((row) => row.status === 'APPROVED' && row.includedAt === null)
+        .map((row) => ({ ...row })),
+    }),
+  },
+  {
+    method: 'POST',
+    path: '/pay-adjustments/:id/include',
+    resolve: ({ params }): ApiEnvelope<PayAdjustment> => {
+      const row = adjustments.find((item) => item.id === params['id'])
+      if (!row) throw new Error('Ese ajuste no existe')
+      row.includedBy = { id: 'mock-accountant', fullName: 'Contadora de prueba' }
+      row.includedAt = new Date().toISOString()
+      return { data: { ...row } }
+    },
+  },
 ]
 
 let areRoutesRegistered = false
@@ -105,6 +127,8 @@ export function seedPendingPayAdjustment(overrides: Partial<PayAdjustment> = {})
     approvedBy: null,
     approvedAt: null,
     rejectionReason: null,
+    includedBy: null,
+    includedAt: null,
     worker: { id: 'mock-worker', fullName: 'Colaborador de prueba' },
     hotelName: 'Hotel de prueba',
     requisitionNumber: 'MOCK-0001',
@@ -112,4 +136,16 @@ export function seedPendingPayAdjustment(overrides: Partial<PayAdjustment> = {})
   }
   adjustments.push(row)
   return row
+}
+
+/** Para pruebas: deja un ajuste APROBADO y sin incluir, listo para Contabilidad. */
+export function seedApprovedPendingInclusion(
+  overrides: Partial<PayAdjustment> = {},
+): PayAdjustment {
+  return seedPendingPayAdjustment({
+    status: 'APPROVED',
+    approvedBy: { id: 'mock-observer', fullName: 'Observador de prueba' },
+    approvedAt: new Date().toISOString(),
+    ...overrides,
+  })
 }

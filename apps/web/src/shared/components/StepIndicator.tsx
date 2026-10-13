@@ -19,7 +19,7 @@ export function StepIndicator({
   allowAnyStep?: boolean
 }): ReactNode {
   return (
-    <ol className="flex items-center gap-2">
+    <ol className="flex items-center gap-2 overflow-x-auto pb-0.5">
       {steps.map(({ step, label }, index) => {
         const isDone = step < current
         const canGo = isDone || allowAnyStep

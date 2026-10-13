@@ -168,6 +168,11 @@ export const onboardingApi = baseApi.injectEndpoints({
               name: request.hotel.name,
               zoneId: request.hotel.zoneId,
               timeZone: request.hotel.timeZone,
+              // Datos contables (Hugo, 2026-10-07): requeridos al dar de alta
+              // un hotel nuevo, igual que name/zoneId/timeZone.
+              weekStartDay: request.hotel.weekStartDay,
+              weekEndDay: request.hotel.weekEndDay,
+              overtimePayMultiplier: request.hotel.overtimePayMultiplier,
               ...(request.hotel.generalPhone ? { generalPhone: request.hotel.generalPhone } : {}),
               ...(request.hotel.geofenceMeters
                 ? { geofenceRadiusM: request.hotel.geofenceMeters }
@@ -204,6 +209,17 @@ export const onboardingApi = baseApi.injectEndpoints({
             ...(request.hotel.address ? { address: request.hotel.address } : {}),
             ...(request.hotel.placeId ? { placeId: request.hotel.placeId } : {}),
             ...(request.hotel.punchMethod ? { punchMethod: request.hotel.punchMethod } : {}),
+            // `0` es Domingo: un día válido, no "sin valor". `!== undefined`
+            // y no truthy — el hotel registrado puede ya tenerlos capturados.
+            ...(request.hotel.weekStartDay !== undefined
+              ? { weekStartDay: request.hotel.weekStartDay }
+              : {}),
+            ...(request.hotel.weekEndDay !== undefined
+              ? { weekEndDay: request.hotel.weekEndDay }
+              : {}),
+            ...(request.hotel.overtimePayMultiplier !== undefined
+              ? { overtimePayMultiplier: request.hotel.overtimePayMultiplier }
+              : {}),
             ...(request.hotel.location
               ? {
                   latitude: request.hotel.location.lat,
@@ -449,6 +465,17 @@ export const onboardingApi = baseApi.injectEndpoints({
             ...(request.hotel.address ? { address: request.hotel.address } : {}),
             ...(request.hotel.placeId ? { placeId: request.hotel.placeId } : {}),
             ...(request.hotel.punchMethod ? { punchMethod: request.hotel.punchMethod } : {}),
+            // Datos contables: se editan igual que cualquier otro dato del
+            // hotel. `!== undefined` y no truthy porque 0 (Domingo) es válido.
+            ...(request.hotel.weekStartDay !== undefined
+              ? { weekStartDay: request.hotel.weekStartDay }
+              : {}),
+            ...(request.hotel.weekEndDay !== undefined
+              ? { weekEndDay: request.hotel.weekEndDay }
+              : {}),
+            ...(request.hotel.overtimePayMultiplier !== undefined
+              ? { overtimePayMultiplier: request.hotel.overtimePayMultiplier }
+              : {}),
             ...(request.hotel.location
               ? {
                   latitude: request.hotel.location.lat,

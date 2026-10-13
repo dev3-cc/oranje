@@ -15,7 +15,8 @@ import { registerPoolMocks } from './poolMocks'
 import { baseApi } from '@/app/baseApi'
 import type { WorkerStatus } from '@/shared/constants/workerStatus'
 import { fetchAllPages } from '@/shared/lib/fetchAllPages'
-import type { ApiEnvelope, CatalogItemApi, WorkerApi } from '@/shared/types/apiContract.types'
+import type { ApiEnvelope, CatalogItemApi, FullWorkerApi } from '@/shared/types/apiContract.types'
+import { isFullWorkerApi, type WorkerApi } from '@/shared/types/apiContract.types'
 
 registerPoolMocks()
 
@@ -23,7 +24,8 @@ type FetchWithBQ = (
   args: string | { url: string; params?: Record<string, unknown> },
 ) => Promise<{ data?: unknown; error?: unknown }>
 
-function toPoolWorker(worker: WorkerApi): PoolWorker {
+/** El Pool es de Reclutamiento (`recruitment:search_candidates`): siempre ficha completa. */
+function toPoolWorker(worker: FullWorkerApi): PoolWorker {
   return {
     id: worker.id,
     fullName: worker.fullName,
@@ -65,12 +67,16 @@ async function fetchPool(
   })
   if ('error' in listRes) return { error: listRes.error }
 
-  const workers = listRes.data.filter(
-    (worker) =>
-      (filters.hiringModalityId === ANY_VALUE ||
-        worker.hiringModality?.id === filters.hiringModalityId) &&
-      (filters.hasPendingDocument !== PENDING_VALUE || worker.hasPendingDocument),
-  )
+  /* Defensivo (D-30): el Pool siempre debería traer la ficha completa de
+     Reclutamiento, pero una fila sin `state` no se pinta a medias. */
+  const workers = listRes.data
+    .filter(isFullWorkerApi)
+    .filter(
+      (worker) =>
+        (filters.hiringModalityId === ANY_VALUE ||
+          worker.hiringModality?.id === filters.hiringModalityId) &&
+        (filters.hasPendingDocument !== PENDING_VALUE || worker.hasPendingDocument),
+    )
 
   return {
     data: {

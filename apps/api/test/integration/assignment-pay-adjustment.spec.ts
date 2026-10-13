@@ -40,6 +40,10 @@ function observer(): AuthenticatedUser {
   return { id: actorId, roleCode: 'ROL-OBS-01', hotelId: null, departmentId: null }
 }
 
+function accountant(): AuthenticatedUser {
+  return { id: actorId, roleCode: 'ROL-CO-01', hotelId: null, departmentId: null }
+}
+
 /** Un slot ocupado por una asignación, FIJA o EVENTUAL según `type`. */
 async function makeAssignment(params: {
   requisitionId: string
@@ -312,5 +316,66 @@ describe('ajuste/gasto de una asignación eventual', () => {
       trackAdjustment(created.id)
       expect(created.settlementEffect).toBe(effect)
     }
+  })
+
+  it('que el Observador lo apruebe no lo mete a la nómina: Contabilidad decide aparte', async () => {
+    const base = await lookups()
+    const hotelId = await makeHotel(reg, {
+      label: 'AdjustmentInclude',
+      zoneId: base.zoneId,
+      timeZone: 'America/Cancun',
+    })
+    const requisitionId = await makeRequisition(reg, {
+      hotelId,
+      positionId: base.positionId,
+      modalityId: base.modalityId,
+      departmentId: base.departmentId,
+      coverageStateId: base.coverageStateId,
+      reqStateId: base.reqStateId,
+      startDate: '2025-06-02',
+    })
+    const workerId = await makeWorker(reg, {
+      zoneId: base.zoneId,
+      workerStateId: base.workerStateId,
+      actorId,
+      label: 'AdjustmentInclude',
+    })
+    workers.push(workerId)
+    const assignmentId = await makeAssignment({
+      requisitionId,
+      workerId,
+      type: 'TEMPORARY',
+      startDate: '2025-06-02',
+    })
+
+    const created = await payAdjustments.create(
+      assignmentId,
+      { amount: 3, reason: 'ajuste de tarifa, para incluir' },
+      recruiter(),
+    )
+    trackAdjustment(created.id)
+
+    // PENDING: Contabilidad no puede incluirlo todavía.
+    await expect(payAdjustments.include(created.id, accountant())).rejects.toMatchObject({
+      response: { code: 'PAY_ADJUSTMENT_NOT_APPROVED' },
+    })
+
+    await payAdjustments.approve(created.id, observer())
+
+    // Aprobado, pero AÚN no incluido: no aparece en la cola de Contabilidad... hasta que lo está.
+    const antes = await payAdjustments.approvedPendingInclusion()
+    expect(antes.map((row) => row.id)).toContain(created.id)
+
+    const included = await payAdjustments.include(created.id, accountant())
+    expect(included.includedBy).toMatchObject({ id: actorId })
+    expect(included.includedAt).not.toBeNull()
+
+    // Ya incluido: sale de la cola, y no se puede incluir dos veces.
+    const despues = await payAdjustments.approvedPendingInclusion()
+    expect(despues.map((row) => row.id)).not.toContain(created.id)
+
+    await expect(payAdjustments.include(created.id, accountant())).rejects.toMatchObject({
+      response: { code: 'PAY_ADJUSTMENT_ALREADY_INCLUDED' },
+    })
   })
 })

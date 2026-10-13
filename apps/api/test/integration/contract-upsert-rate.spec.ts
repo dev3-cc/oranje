@@ -76,10 +76,7 @@ test('setRate no truena al repetir la misma posición: actualiza, no duplica', a
     {
       hotelId,
       validFrom: new Date(),
-      weekStartDay: 1,
-      weekEndDay: 0,
       overtimeBillMultiplier: 1.5,
-      overtimePayMultiplier: 1,
       holidayBillMultiplier: 2,
       holidayPayMultiplier: 1,
       deductsMeals: false,

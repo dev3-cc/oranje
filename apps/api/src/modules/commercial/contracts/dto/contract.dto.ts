@@ -20,10 +20,10 @@ export const createContractSchema = z.object({
   prospectId: z.uuid().optional(),
   validFrom: z.coerce.date(),
   validTo: z.coerce.date().optional(),
-  weekStartDay: z.number().int().min(0).max(6).default(1),
-  weekEndDay: z.number().int().min(0).max(6).default(0),
+  // weekStartDay/weekEndDay/overtimePayMultiplier NO se piden aquí: el
+  // contrato los hereda del Hotel (datos contables capturados al dar de
+  // alta) y no los vuelve a preguntar (decisión de Hugo, 2026-10-07).
   overtimeBillMultiplier: multiplier.default(1.5),
-  overtimePayMultiplier: multiplier.default(1),
   holidayBillMultiplier: multiplier.default(2),
   holidayPayMultiplier: multiplier.default(1),
   deductsMeals: z.boolean().default(false),

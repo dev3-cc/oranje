@@ -90,3 +90,80 @@
   z-index: 60;
   pointer-events: auto;
 }
+
+/*
+ * driver.js (tour guiado, 2026-10-12): se pinta directo en <body>, fuera de
+ * cualquier componente de React, así que se retema igual que `.pac-container`.
+ */
+.driver-popover.oranje-driver-popover {
+  max-width: 320px;
+  border-radius: 18px;
+  padding: 20px;
+  background-color: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 10px 30px rgba(26, 17, 8, 0.18);
+}
+
+.oranje-driver-popover .driver-popover-arrow-side-bottom {
+  border-top-color: var(--surface);
+}
+.oranje-driver-popover .driver-popover-arrow-side-top {
+  border-bottom-color: var(--surface);
+}
+.oranje-driver-popover .driver-popover-arrow-side-left {
+  border-right-color: var(--surface);
+}
+.oranje-driver-popover .driver-popover-arrow-side-right {
+  border-left-color: var(--surface);
+}
+
+.oranje-driver-character {
+  display: block;
+  height: 88px;
+  width: auto;
+  margin: 0 auto 8px;
+}
+
+.oranje-driver-popover .driver-popover-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.oranje-driver-popover .driver-popover-description {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.oranje-driver-popover .driver-popover-footer-btn {
+  border-radius: 8px;
+  border-color: var(--line);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.oranje-driver-popover .driver-popover-footer-btn:hover,
+.oranje-driver-popover .driver-popover-footer-btn:focus {
+  background-color: var(--surface-2);
+}
+
+/* Mismo par que el botón primario del resto de la app (D-17 regla 1). */
+.oranje-driver-popover .driver-popover-next-btn {
+  background-color: var(--o-300);
+  border-color: var(--o-300);
+  color: var(--ink);
+}
+
+.oranje-driver-popover .driver-popover-next-btn:hover,
+.oranje-driver-popover .driver-popover-next-btn:focus {
+  background-color: var(--o-400);
+}
+
+.oranje-driver-popover .driver-popover-close-btn {
+  color: var(--ink-4);
+}
+.oranje-driver-popover .driver-popover-close-btn:hover,
+.oranje-driver-popover .driver-popover-close-btn:focus {
+  color: var(--ink-2);
+}

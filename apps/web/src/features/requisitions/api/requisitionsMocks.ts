@@ -64,6 +64,14 @@ const ENGLISH: CatalogItemApi[] = [
 /** Conceptos de pago extra del ajuste eventual (Hugo, 2026-10-08, P-CO-07). */
 const PAY_CONCEPTS: CatalogItemApi[] = [{ id: 'pc-uber', code: 'UBER', name: 'Uber' }]
 
+/** Con qué se marca un día del Timesheet sin ponches (Hugo, 2026-10-12).
+    Exportado: `timesheetMocks.ts` lo usa para resolver `dayStatusId` al
+    marcar un día, sin duplicar la lista. */
+export const TIMESHEET_DAY_STATUSES: CatalogItemApi[] = [
+  { id: 'tds-rest', code: 'REST', name: 'Descanso' },
+  { id: 'tds-off', code: 'OFF', name: 'OFF' },
+]
+
 // ── Estados de los dos semáforos, como los sirve la API ──────────────────────
 const REQ_STATE: Record<string, StatusRefApi> = {
   APPLE_GREEN: { code: 'APPLE_GREEN', color: 'Verde manzana', name: 'En elaboración' },
@@ -421,6 +429,7 @@ const CATALOG_FIXTURES: Record<string, CatalogItemApi[] | undefined> = {
   'hiring-modalities': MODALITIES,
   'english-levels': ENGLISH,
   'pay-concepts': PAY_CONCEPTS,
+  'timesheet-day-statuses': TIMESHEET_DAY_STATUSES,
 }
 
 const catalogRoute = (path: string, items: CatalogItemApi[]): MockRoute => ({
@@ -521,6 +530,7 @@ const routes: readonly MockRoute[] = [
   catalogRoute('/catalogs/hiring-modalities', MODALITIES),
   catalogRoute('/catalogs/english-levels', ENGLISH),
   catalogRoute('/catalogs/pay-concepts', PAY_CONCEPTS),
+  catalogRoute('/catalogs/timesheet-day-statuses', TIMESHEET_DAY_STATUSES),
   {
     method: 'GET',
     path: '/requisitions',

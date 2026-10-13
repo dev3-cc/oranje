@@ -1,5 +1,13 @@
 import { Trans, useLingui } from '@lingui/react/macro'
-import { cn, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@oranje/ui'
+import {
+  cn,
+  MaterialIcon,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@oranje/ui'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { useGetTimesheetWeekQuery } from '../api/timesheetApi'
@@ -42,6 +50,12 @@ export function TimesheetToolbar({
   onColumnWidthChange: (width: number) => void
 }): ReactNode {
   const { t } = useLingui()
+  /* En móvil los cuatro controles apilados ocupaban la pantalla entera antes
+     de ver un solo dato (Hugo, 2026-10-12, con captura). Mismo patrón que
+     Contratos: un botón «Filtrar» los oculta, y con un filtro puesto se
+     quedan abiertos para poder quitarlo — en escritorio (`lg+`) siguen en
+     una sola fila, sin tocar nada. */
+  const [isFiltersOpen, setFiltersOpen] = useState(false)
   const update =
     <K extends keyof Filters>(key: K) =>
     (value: string): void => {
@@ -84,6 +98,10 @@ export function TimesheetToolbar({
       (value) => value !== ANY_VALUE,
     ).length
 
+  /* Abiertos si se tocó el botón O ya hay algo puesto — igual que Contratos:
+     con un filtro activo, no se puede esconder sin antes quitarlo. */
+  const showFiltersOnMobile = isFiltersOpen || activeFilters > 0
+
   const resetFilters = (): void => {
     setDraft('')
     onChange({
@@ -98,7 +116,39 @@ export function TimesheetToolbar({
   return (
     /* Los filtros viven en su propia tarjeta: una franja, no piezas sueltas. */
     <div className="flex flex-wrap items-end justify-between gap-x-5 gap-y-3 rounded-xl border border-line bg-surface px-4 py-3">
-      <div className="flex flex-wrap items-end gap-3">
+      {/* Solo en móvil: en escritorio los cuatro controles ya caben en una
+          fila y este botón no hace falta. */}
+      <button
+        type="button"
+        aria-expanded={showFiltersOnMobile}
+        onClick={() => {
+          setFiltersOpen((open) => !open)
+        }}
+        className="flex w-full cursor-pointer items-center justify-between gap-2 text-sm font-semibold text-ink lg:hidden"
+      >
+        <span className="flex items-center gap-1.5">
+          <MaterialIcon name="filter_list" className="text-base" aria-hidden />
+          <Trans>Filtrar</Trans>
+          {activeFilters > 0 && (
+            <span className="flex size-5 items-center justify-center rounded-full bg-o-500 text-xs font-bold text-ink">
+              {activeFilters}
+            </span>
+          )}
+        </span>
+        <MaterialIcon
+          name={showFiltersOnMobile ? 'expand_less' : 'expand_more'}
+          className="text-xl text-ink-3"
+          aria-hidden
+        />
+      </button>
+
+      <div
+        className={cn(
+          'flex-wrap items-end gap-3',
+          showFiltersOnMobile ? 'flex' : 'hidden',
+          'lg:flex',
+        )}
+      >
         <SearchField
           isSearching={isSearching}
           value={draft}

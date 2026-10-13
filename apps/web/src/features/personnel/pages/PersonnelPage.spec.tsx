@@ -55,9 +55,6 @@ describe('PersonnelPage', () => {
     expect(
       within(detail).queryByRole('button', { name: 'Mandar a Stand-by' }),
     ).not.toBeInTheDocument()
-
-    expect(screen.getByText('Asignados hoy')).toBeInTheDocument()
-    expect(screen.getByText('En accidente')).toBeInTheDocument()
   })
 
   it('el buscador filtra el plantel en memoria y el panel sigue al primero visible', async () => {

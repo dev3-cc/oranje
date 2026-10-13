@@ -135,7 +135,7 @@ describe('Timesheet de todos los hoteles', () => {
       departmentId: null,
     } as AuthenticatedUser
 
-    const ids = (await timesheets.list(observer, undefined, true)).map((sheet) => sheet.id)
+    const ids = (await timesheets.list(observer, {}, true)).map((sheet) => sheet.id)
 
     expect(ids).toEqual(expect.arrayContaining(sheets))
   })
@@ -148,13 +148,13 @@ describe('Timesheet de todos los hoteles', () => {
       departmentId: null,
     } as AuthenticatedUser
 
-    const ids = (await timesheets.list(manager, undefined, false)).map((sheet) => sheet.id)
+    const ids = (await timesheets.list(manager, {}, false)).map((sheet) => sheet.id)
 
     expect(ids).toContain(sheets[0])
     expect(ids).not.toContain(sheets[1])
   })
 
-  it('el Observador lo tiene sembrado, sin ninguna escritura del Timesheet, y el hotel no lo hereda', async () => {
+  it('todos los hoteles lo tienen el Observador y los dos roles de Contabilidad, y nadie más', async () => {
     const rows = await prisma.$queryRaw<Array<{ role: string; action: string }>>`
       SELECT r.code AS role, rp.action
         FROM identity.role_permission rp
@@ -164,8 +164,13 @@ describe('Timesheet de todos los hoteles', () => {
     const observer = rows.filter((row) => row.role === 'ROL-OBS-01').map((row) => row.action)
 
     expect(observer).toEqual(['read_all_hotels'])
-    expect(rows.filter((row) => row.action === 'read_all_hotels').map((row) => row.role)).toEqual([
-      'ROL-OBS-01',
-    ])
+    // Decisión de Hugo: la Contadora y el Manager de Contabilidad leen el
+    // Timesheet completo; el de hotel nunca lo hereda.
+    expect(
+      rows
+        .filter((row) => row.action === 'read_all_hotels')
+        .map((row) => row.role)
+        .sort(),
+    ).toEqual(['ROL-CO-01', 'ROL-CO-02', 'ROL-OBS-01'])
   })
 })

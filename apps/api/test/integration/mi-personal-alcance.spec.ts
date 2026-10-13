@@ -221,12 +221,19 @@ describe('mandar a Stand-by', () => {
     await asignar(workerId, hotelId)
 
     // Stand-by exige motivo: el semáforo lo pide y el catálogo lo tiene.
+    // La respuesta al Supervisor SÍ trae `.state` (Mi Personal necesita el
+    // color para el punto de la fila y para decidir si Stand-by/Reportar
+    // siguen cabiendo) pero NO el resto del expediente — eso sigue siendo
+    // solo de Reclutamiento, en `getScoped` (Hugo, 2026-10-12).
     const entity = await workers.changeState(
       workerId,
       { toState: 'PINK', reasonCode: 'VACATION' },
       supervisor,
     )
-
+    expect(entity.id).toBe(workerId)
+    expect('state' in entity).toBe(true)
+    expect('isProfileComplete' in entity).toBe(false)
+    if (!('state' in entity)) throw new Error('unreachable')
     expect(entity.state.code).toBe('PINK')
   })
 
@@ -250,13 +257,18 @@ describe('mandar a Stand-by', () => {
     await asignar(workerId, hotelId)
 
     // `staff:report` existía sembrado y con transición real desde 2026-08 —
-    // el servicio nunca lo consultaba (ver `assertCanChangeState`).
+    // el servicio nunca lo consultaba (ver `assertCanChangeState`). La
+    // respuesta al Supervisor trae `.state` (igual que Stand-by, arriba)
+    // pero no el resto del expediente (Hugo, 2026-10-12).
     const entity = await workers.changeState(
       workerId,
       { toState: 'RED', reasonCode: 'SERIOUS_MISCONDUCT' },
       supervisor,
     )
-
+    expect(entity.id).toBe(workerId)
+    expect('state' in entity).toBe(true)
+    expect('isProfileComplete' in entity).toBe(false)
+    if (!('state' in entity)) throw new Error('unreachable')
     expect(entity.state.code).toBe('RED')
   })
 

@@ -9,6 +9,7 @@ import {
   type MailSettings,
   type MailTransport,
 } from '../api/mailSettingsApi'
+import { PaymentLimitsSection } from '../components/PaymentLimitsSection'
 
 import personajeConfiguracion from '@/assets/ilustrations/personaje-configuracion.svg'
 import { LoadError } from '@/shared/components/LoadError'
@@ -138,6 +139,8 @@ export function MailSettingsPage(): ReactNode {
               </p>
             )}
           </section>
+
+          <PaymentLimitsSection />
 
           <UltimosEnvios rows={data.recent} />
         </>

@@ -2,6 +2,7 @@ import type { DepartmentMetric, Punch, StatusLightSummary } from '../types/obser
 
 import { baseApi } from '@/app/baseApi'
 import type { ApiEnvelope, PaginatedEnvelope } from '@/shared/types/apiContract.types'
+import type { ApprovalTimeliness } from '@/shared/types/approvalTimeliness.types'
 
 /**
  * Observador (`ROL-OBS-01`, Roles del Sistema.md 2026-09-21): transversal, de
@@ -33,8 +34,18 @@ export const observabilityApi = baseApi.injectEndpoints({
       query: () => '/observability/department-metrics',
       transformResponse: (raw: ApiEnvelope<DepartmentMetric[]>) => raw.data,
     }),
+
+    /** KPI 4 (Aprobación oportuna de ponches). Misma fuente que Contabilidad. */
+    getApprovalTimeliness: build.query<ApprovalTimeliness, void>({
+      query: () => '/observability/approval-timeliness',
+      transformResponse: (raw: ApiEnvelope<ApprovalTimeliness>) => raw.data,
+    }),
   }),
 })
 
-export const { useGetStatusDurationsQuery, useGetPunchesQuery, useGetDepartmentMetricsQuery } =
-  observabilityApi
+export const {
+  useGetStatusDurationsQuery,
+  useGetPunchesQuery,
+  useGetDepartmentMetricsQuery,
+  useGetApprovalTimelinessQuery,
+} = observabilityApi

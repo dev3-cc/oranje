@@ -54,10 +54,20 @@ const HOTEL = [SUPERVISOR, MGR_AREA, MGR_GENERAL] as const
    (`accident:read|medical_follow_up|close` del Inspector): sin mapa veía
    los 20 módulos y todos le respondían 403 menos Accidentes. */
 const INSPECCION = [INSPECTOR, COORDINADOR_INSPECCION] as const
+/* Contabilidad (Flujo de Nómina): la Contadora valida, el Manager autoriza y libera. */
+const CONTADORA = 'ROL-CO-01'
+const MGR_CONTABILIDAD = 'ROL-CO-02'
+const CONTABILIDAD = [CONTADORA, MGR_CONTABILIDAD] as const
 
 const STAFF = [...VENTAS, ...RECLUTAMIENTO, ...HOTEL] as const
 
-const MAPPED_ROLES: ReadonlySet<string> = new Set([...STAFF, ...INSPECCION, ADMIN, OBSERVADOR])
+const MAPPED_ROLES: ReadonlySet<string> = new Set([
+  ...STAFF,
+  ...INSPECCION,
+  ...CONTABILIDAD,
+  ADMIN,
+  OBSERVADOR,
+])
 
 const MODULES: NavModule[] = [
   { label: msg`Dashboard`, to: '/dashboard', icon: 'space_dashboard', roles: STAFF },
@@ -141,6 +151,57 @@ const MODULES: NavModule[] = [
     roles: [MGR_GENERAL],
   },
   { label: msg`Mi Personal`, to: '/my-staff', icon: 'badge', roles: HOTEL },
+  {
+    label: msg`Consolidado Semanal`,
+    to: '/accounting/consolidations',
+    icon: 'payments',
+    roles: CONTABILIDAD,
+  },
+  {
+    label: msg`Semanas sin aprobar`,
+    to: '/accounting/pending-approvals',
+    icon: 'pending_actions',
+    roles: CONTABILIDAD,
+  },
+  {
+    label: msg`Factura al Hotel`,
+    to: '/accounting/invoices',
+    icon: 'receipt_long',
+    roles: CONTABILIDAD,
+  },
+  /* Mismo /timesheet del Hotel, no uno aparte (Hugo, 2026-10-10: "no la
+     tabla, todo" — la pantalla ya resuelve sola lectura con los permisos
+     reales de Contabilidad, read_all_hotels y sin ninguno de escritura). */
+  {
+    label: msg`Timesheet de todos los hoteles`,
+    to: '/timesheet',
+    icon: 'fact_check',
+    roles: CONTABILIDAD,
+  },
+  {
+    label: msg`Pre-Payroll`,
+    to: '/accounting/pre-payroll',
+    icon: 'calculate',
+    roles: CONTABILIDAD,
+  },
+  {
+    label: msg`Deducciones`,
+    to: '/accounting/deductions',
+    icon: 'remove_circle',
+    roles: CONTABILIDAD,
+  },
+  {
+    label: msg`Vacaciones`,
+    to: '/accounting/vacations',
+    icon: 'beach_access',
+    roles: CONTABILIDAD,
+  },
+  {
+    label: msg`Ajustes a incluir`,
+    to: '/accounting/pay-adjustments',
+    icon: 'playlist_add_check',
+    roles: CONTABILIDAD,
+  },
   { label: msg`Accidentes`, to: '/accidents', icon: 'report', roles: [...HOTEL, ...INSPECCION] },
   /* Auditar es del Supervisor y, desde el 2026-09-24, del Inspector (sus
      hoteles de zona) — ninguno de sus jefes lo ve (fuera de la herencia por
