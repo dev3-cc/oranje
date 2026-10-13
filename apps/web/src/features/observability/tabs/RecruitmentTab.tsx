@@ -8,7 +8,6 @@ import {
   useGetObserverRequisitionsQuery,
   useGetObserverWorkerHistoriesQuery,
   useGetObserverWorkersQuery,
-  useGetStatusDurationsQuery,
 } from '../api/observabilityApi'
 import { KpiGrid } from '../components/KpiCard'
 import { PeopleNotice, PeopleView } from '../components/PeopleView'
@@ -23,6 +22,7 @@ import {
 import { journalCandidates, recruitmentPeople, signupCandidates } from '../lib/people'
 import { type Period } from '../lib/period'
 import { dayOneCandidates, dayOneNoShow, recruitmentKpis } from '../lib/recruitmentKpis'
+import { recruitmentTimes } from '../lib/recruitmentTiming'
 
 import {
   URGENCY_LABEL,
@@ -59,7 +59,6 @@ export function RecruitmentTab({
   const [view, setView] = useState<DepartmentView>('kpis')
   const requisitions = useGetObserverRequisitionsQuery()
   const workers = useGetObserverWorkersQuery()
-  const lights = useGetStatusDurationsQuery()
   const punches = useGetObserverPunchesSinceQuery(period.from.toISOString())
 
   const candidates = requisitions.data ? dayOneCandidates(requisitions.data.rows, period) : []
@@ -80,13 +79,28 @@ export function RecruitmentTab({
         )
       : null
 
-  /* La bitácora es una llamada por requisición: solo se pide al abrir «Por persona». */
+  /*
+   * Bitácora y asignaciones de las requisiciones que se llenan o se movieron en
+   * el periodo (una llamada por requisición, con tope): de ahí salen los
+   * tiempos — de autorizada a tomada, a cubierta y a cada persona — para los
+   * KPIs y para «Por persona».
+   */
   const journalIds = requisitions.data
     ? journalCandidates(requisitions.data.rows, period)
     : { ids: [], capped: false }
-  const journals = useGetObserverJournalsQuery([...journalIds.ids].sort(), {
-    skip: !requisitions.data || view !== 'people',
+  const sortedJournalIds = [...journalIds.ids].sort()
+  const journals = useGetObserverJournalsQuery(sortedJournalIds, { skip: !requisitions.data })
+  const timingAssignments = useGetObserverAssignmentsQuery(sortedJournalIds, {
+    skip: !requisitions.data,
   })
+  const timing =
+    requisitions.data && journals.data && timingAssignments.data
+      ? {
+          requisitions: requisitions.data.rows,
+          journals: journals.data,
+          assignments: timingAssignments.data,
+        }
+      : null
 
   /* Quién dio de alta a cada candidato nuevo: su historial, también solo en «Por persona». */
   const signupIds = workers.data
@@ -96,10 +110,11 @@ export function RecruitmentTab({
     skip: !workers.data || view !== 'people',
   })
 
+  /* Los tiempos no bloquean los KPIs: mientras cargan, sus tarjetas dicen «Sin datos». */
   const sources =
     view === 'people'
-      ? [requisitions, workers, lights, journals, histories]
-      : [requisitions, workers, lights]
+      ? [requisitions, workers, journals, timingAssignments, histories]
+      : [requisitions, workers]
   const error = sources.find((source) => source.error)?.error
 
   return (
@@ -111,7 +126,7 @@ export function RecruitmentTab({
         onRetry={() => {
           for (const source of sources) if (source.error) void source.refetch()
         }}
-        cards={5}
+        cards={8}
       >
         {requisitions.data && workers.data && (
           <>
@@ -127,31 +142,35 @@ export function RecruitmentTab({
                     period,
                     requisitions: requisitions.data.rows,
                     workers: workers.data.rows,
-                    requisitionLight: lights.data?.find((light) => light.code === 'REQUISITION'),
+                    times: timing ? recruitmentTimes(timing, period) : null,
                     dayOne,
                   })}
                 />
               </>
             ) : (
               journals.data &&
+              timingAssignments.data &&
               histories.data && (
                 <>
                   <PeopleNotice>
                     <Trans>
-                      Sale de la bitácora de las requisiciones (quién las tomó, soltó o reasignó) y
-                      del historial de cada candidato nuevo (quién lo dio de alta). A quién asignó
-                      cada reclutador no se ve: eso se registra en otra bitácora que el Observador
-                      no lee. Quien no movió ninguna requisición ni dio de alta a nadie no aparece.
+                      Sale de la bitácora de las requisiciones (quién las tomó, soltó o reasignó),
+                      de sus asignaciones y del historial de cada candidato nuevo (quién lo dio de
+                      alta). Quién hizo cada asignación no se ve: a cada reclutadora se le cuentan
+                      las personas asignadas mientras tenía la requisición, y si eran varias, a
+                      todas (por eso «aprox.»). Quien no movió ninguna requisición ni dio de alta a
+                      nadie no aparece.
                     </Trans>
                   </PeopleNotice>
                   {(journalIds.capped || signupIds.capped) && <TruncatedNotice />}
                   <PeopleView
-                    columns={6}
+                    columns={7}
                     periodLabel={periodLabel}
                     rows={recruitmentPeople({
                       period,
                       requisitions: requisitions.data.rows,
                       journals: journals.data,
+                      assignments: timingAssignments.data,
                       workers: workers.data.rows,
                       histories: histories.data,
                     })}

@@ -32,6 +32,14 @@ Reglas:
 
 ---
 
+## 2026-10-13
+
+### 10:26 — Observador: tiempos de Reclutamiento, del departamento y por reclutadora
+
+**Qué:** `lib/recruitmentTiming.ts` calcula, con la requisición (`authorizedAt`, lugares), su bitácora (tomada/soltada) y sus asignaciones: tiempo de atención (de autorizada a tomada), tiempo a cubierta al 100% y tiempo por persona (de tomada a cada asignación). En KPIs: nuevos «Tiempo de atención» y «Tiempo por persona», y «Time-to-fill» pasa a ser el tiempo real de cada requisición en el periodo (antes: promedio en Autorizada + promedio en En proceso, de todo el histórico). En «Por persona»: «Tiempo en tomarlas», «Tiempo por persona» y «Personas asignadas (aprox.)»; las métricas aceptan promedios en horas/días y «—» sin muestras. La bitácora y las asignaciones de las requisiciones que se llenan o se movieron en el periodo (tope de 60) se piden también en KPIs.
+**Por qué:** Hugo: ver cuánto tardan las reclutadoras en atender las requisiciones y en conseguir a las personas, sin tocar el back. Las asignaciones no dicen quién las hizo: a cada reclutadora se le cuentan las del tiempo en que tenía la requisición (si eran varias, a todas), por eso «aprox.». El dato exacto necesita que el API exponga quién hizo cada asignación.
+**Archivos:** `src/features/observability/lib/recruitmentTiming.ts`, `src/features/observability/lib/recruitmentTiming.spec.ts`, `src/features/observability/lib/recruitmentKpis.ts`, `src/features/observability/lib/kpi.ts`, `src/features/observability/lib/kpis.spec.ts`, `src/features/observability/lib/people.ts`, `src/features/observability/lib/people.spec.ts`, `src/features/observability/components/PeopleView.tsx`, `src/features/observability/tabs/RecruitmentTab.tsx`, `src/locales/es/messages.po`, `src/locales/en/messages.po`.
+
 ## 2026-10-12
 
 ### 12:55 — App: avisos push del sistema (Android)

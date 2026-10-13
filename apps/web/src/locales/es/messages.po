@@ -3143,6 +3143,14 @@ msgstr "de abrir el ciclo a convertir"
 msgid "De aquí salen la nómina y la factura"
 msgstr "De aquí salen la nómina y la factura"
 
+#: src/features/observability/lib/recruitmentKpis.ts
+msgid "De autorizada a cubierta al 100%, en las que se cubrieron en el periodo."
+msgstr "De autorizada a cubierta al 100%, en las que se cubrieron en el periodo."
+
+#: src/features/observability/lib/recruitmentKpis.ts
+msgid "De autorizada a que una reclutadora la toma, en las autorizadas en el periodo."
+msgstr "De autorizada a que una reclutadora la toma, en las autorizadas en el periodo."
+
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "De baja — ya no puede entrar"
@@ -3151,6 +3159,10 @@ msgstr "De baja — ya no puede entrar"
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "De Gris a Naranja"
 msgstr "De Gris a Naranja"
+
+#: src/features/observability/lib/recruitmentKpis.ts
+msgid "De que la reclutadora toma la requisición a cada persona asignada, en el periodo."
+msgstr "De que la reclutadora toma la requisición a cada persona asignada, en el periodo."
 
 #: src/features/observability/lib/hotelKpis.ts
 msgid "De que se crea la requisición a que el hotel la autoriza, de las autorizadas en el periodo."
@@ -8652,6 +8664,10 @@ msgstr "Personal Oranje"
 msgid "Personas"
 msgstr "Personas"
 
+#: src/features/observability/lib/people.ts
+msgid "Personas asignadas (aprox.)"
+msgstr "Personas asignadas (aprox.)"
+
 #: src/features/observability/lib/recruitmentKpis.ts
 msgid "Personas asignadas que no ponchan su primer día, con el primer día en el periodo."
 msgstr "Personas asignadas que no ponchan su primer día, con el primer día en el periodo."
@@ -8973,8 +8989,6 @@ msgid "Promedio de la apertura del ciclo a su cierre, de todo el histórico."
 msgstr "Promedio de la apertura del ciclo a su cierre, de todo el histórico."
 
 #: src/features/observability/lib/recruitmentKpis.ts
-msgid "Promedio en Autorizada más promedio en En proceso, de todo el histórico."
-msgstr "Promedio en Autorizada más promedio en En proceso, de todo el histórico."
 
 #: src/features/observability/lib/hotelKpis.ts
 msgid "Promedio que un colaborador pasa en Stand-by, de todo el histórico."
@@ -9693,8 +9707,10 @@ msgid "Sáb"
 msgstr "Sáb"
 
 #: src/features/observability/tabs/RecruitmentTab.tsx
-msgid "Sale de la bitácora de las requisiciones (quién las tomó, soltó o reasignó) y del historial de cada candidato nuevo (quién lo dio de alta). A quién asignó cada reclutador no se ve: eso se registra en otra bitácora que el Observador no lee. Quien no movió ninguna requisición ni dio de alta a nadie no aparece."
-msgstr "Sale de la bitácora de las requisiciones (quién las tomó, soltó o reasignó) y del historial de cada candidato nuevo (quién lo dio de alta). A quién asignó cada reclutador no se ve: eso se registra en otra bitácora que el Observador no lee. Quien no movió ninguna requisición ni dio de alta a nadie no aparece."
+
+#: src/features/observability/tabs/RecruitmentTab.tsx
+msgid "Sale de la bitácora de las requisiciones (quién las tomó, soltó o reasignó), de sus asignaciones y del historial de cada candidato nuevo (quién lo dio de alta). Quién hizo cada asignación no se ve: a cada reclutadora se le cuentan las personas asignadas mientras tenía la requisición, y si eran varias, a todas (por eso «aprox.»). Quien no movió ninguna requisición ni dio de alta a nadie no aparece."
+msgstr "Sale de la bitácora de las requisiciones (quién las tomó, soltó o reasignó), de sus asignaciones y del historial de cada candidato nuevo (quién lo dio de alta). Quién hizo cada asignación no se ve: a cada reclutadora se le cuentan las personas asignadas mientras tenía la requisición, y si eran varias, a todas (por eso «aprox.»). Quien no movió ninguna requisición ni dio de alta a nadie no aparece."
 
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
 msgid "Sale del Pool mientras el veto viva; el historial completo queda y solo el Administrador lo levanta."
@@ -10904,9 +10920,17 @@ msgstr "Texto del reactivo, p. ej. Uniforme…"
 msgid "Tiempo completo"
 msgstr "Tiempo completo"
 
+#: src/features/observability/lib/recruitmentKpis.ts
+msgid "Tiempo de atención"
+msgstr "Tiempo de atención"
+
 #: src/features/observability/lib/hotelKpis.ts
 msgid "Tiempo en Stand-by"
 msgstr "Tiempo en Stand-by"
+
+#: src/features/observability/lib/people.ts
+msgid "Tiempo en tomarlas"
+msgstr "Tiempo en tomarlas"
 
 #: src/features/contracts/components/ActivateContractDialog.tsx
 msgid "Tiempo extra"
@@ -10923,6 +10947,11 @@ msgstr "Tiempo para autorizar"
 #: src/features/reports/pages/ReportsPage.tsx
 msgid "Tiempo por color del semáforo"
 msgstr "Tiempo por color del semáforo"
+
+#: src/features/observability/lib/people.ts
+#: src/features/observability/lib/recruitmentKpis.ts
+msgid "Tiempo por persona"
+msgstr "Tiempo por persona"
 
 #: src/features/dashboard/components/ActivityCards.tsx
 msgid "Tiempo promedio"

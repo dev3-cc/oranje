@@ -30,6 +30,8 @@ export type KpiId =
   | 'recruitmentFillRate'
   | 'recruitmentUrgentOpen'
   | 'recruitmentTimeToFill'
+  | 'recruitmentAttention'
+  | 'recruitmentTimePerPerson'
   | 'recruitmentPoolIntake'
   | 'recruitmentNoShow'
   // Colaborador

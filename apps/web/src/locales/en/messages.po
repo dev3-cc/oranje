@@ -3143,6 +3143,14 @@ msgstr "from opening the cycle to converting"
 msgid "De aquí salen la nómina y la factura"
 msgstr "Payroll and invoicing come from here"
 
+#: src/features/observability/lib/recruitmentKpis.ts
+msgid "De autorizada a cubierta al 100%, en las que se cubrieron en el periodo."
+msgstr "From authorized to 100% filled, for those filled in the period."
+
+#: src/features/observability/lib/recruitmentKpis.ts
+msgid "De autorizada a que una reclutadora la toma, en las autorizadas en el periodo."
+msgstr "From authorized to a recruiter taking it, for those authorized in the period."
+
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "De baja — ya no puede entrar"
@@ -3151,6 +3159,10 @@ msgstr "Deactivated — can no longer sign in"
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "De Gris a Naranja"
 msgstr "From Gray to Orange"
+
+#: src/features/observability/lib/recruitmentKpis.ts
+msgid "De que la reclutadora toma la requisición a cada persona asignada, en el periodo."
+msgstr "From the recruiter taking the requisition to each person assigned, in the period."
 
 #: src/features/observability/lib/hotelKpis.ts
 msgid "De que se crea la requisición a que el hotel la autoriza, de las autorizadas en el periodo."
@@ -8652,6 +8664,10 @@ msgstr "Oranje staff"
 msgid "Personas"
 msgstr "People"
 
+#: src/features/observability/lib/people.ts
+msgid "Personas asignadas (aprox.)"
+msgstr "People assigned (approx.)"
+
 #: src/features/observability/lib/recruitmentKpis.ts
 msgid "Personas asignadas que no ponchan su primer día, con el primer día en el periodo."
 msgstr "Assigned people who don't punch in on their first day, with that first day in the period."
@@ -8973,8 +8989,6 @@ msgid "Promedio de la apertura del ciclo a su cierre, de todo el histórico."
 msgstr "Average from opening a cycle to closing it, all time."
 
 #: src/features/observability/lib/recruitmentKpis.ts
-msgid "Promedio en Autorizada más promedio en En proceso, de todo el histórico."
-msgstr "Average time in Authorized plus average in In progress, all time."
 
 #: src/features/observability/lib/hotelKpis.ts
 msgid "Promedio que un colaborador pasa en Stand-by, de todo el histórico."
@@ -9693,8 +9707,10 @@ msgid "Sáb"
 msgstr "Sat"
 
 #: src/features/observability/tabs/RecruitmentTab.tsx
-msgid "Sale de la bitácora de las requisiciones (quién las tomó, soltó o reasignó) y del historial de cada candidato nuevo (quién lo dio de alta). A quién asignó cada reclutador no se ve: eso se registra en otra bitácora que el Observador no lee. Quien no movió ninguna requisición ni dio de alta a nadie no aparece."
-msgstr "It comes from the requisitions' log (who took, dropped or reassigned them) and from each new candidate's history (who signed them up). Who each recruiter assigned isn't shown: that's recorded in another log the Observer can't read. Anyone who didn't move a requisition or sign anyone up doesn't appear."
+
+#: src/features/observability/tabs/RecruitmentTab.tsx
+msgid "Sale de la bitácora de las requisiciones (quién las tomó, soltó o reasignó), de sus asignaciones y del historial de cada candidato nuevo (quién lo dio de alta). Quién hizo cada asignación no se ve: a cada reclutadora se le cuentan las personas asignadas mientras tenía la requisición, y si eran varias, a todas (por eso «aprox.»). Quien no movió ninguna requisición ni dio de alta a nadie no aparece."
+msgstr "It comes from the requisitions' log (who took, dropped or reassigned them), their assignments and each new candidate's history (who signed them up). Who made each assignment isn't shown: each recruiter is credited with the people assigned while she had the requisition, and if several had it, all of them are (hence \"approx.\"). Anyone who didn't move a requisition or sign anyone up doesn't appear."
 
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
 msgid "Sale del Pool mientras el veto viva; el historial completo queda y solo el Administrador lo levanta."
@@ -10904,9 +10920,17 @@ msgstr "Checklist item text, e.g. Uniform…"
 msgid "Tiempo completo"
 msgstr "Full-time"
 
+#: src/features/observability/lib/recruitmentKpis.ts
+msgid "Tiempo de atención"
+msgstr "Response time"
+
 #: src/features/observability/lib/hotelKpis.ts
 msgid "Tiempo en Stand-by"
 msgstr "Time in Stand-by"
+
+#: src/features/observability/lib/people.ts
+msgid "Tiempo en tomarlas"
+msgstr "Time to take them"
 
 #: src/features/contracts/components/ActivateContractDialog.tsx
 msgid "Tiempo extra"
@@ -10923,6 +10947,11 @@ msgstr "Time to authorize"
 #: src/features/reports/pages/ReportsPage.tsx
 msgid "Tiempo por color del semáforo"
 msgstr "Time per Status Light color"
+
+#: src/features/observability/lib/people.ts
+#: src/features/observability/lib/recruitmentKpis.ts
+msgid "Tiempo por persona"
+msgstr "Time per person"
 
 #: src/features/dashboard/components/ActivityCards.tsx
 msgid "Tiempo promedio"

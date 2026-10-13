@@ -3,9 +3,11 @@ import { msg } from '@lingui/core/macro'
 
 import { firstStartDate } from './hotelKpis'
 import { daysAgo, isInPeriod, type Period } from './period'
+import { recruiterTimes } from './recruitmentTiming'
 import { STALE_DAYS } from './salesKpis'
 
 import type {
+  AssignmentApi,
   ContactAttemptApi,
   ProspectApi,
   RequisitionApi,
@@ -54,7 +56,17 @@ export interface PersonEvent {
 
 export interface PersonMetric {
   label: MessageDescriptor
-  value: number
+  /** `null` = no hay con qué calcularlo (un promedio sin muestras). */
+  value: number | null
+  /** Sin `format` es un conteo; `hours`/`days` son promedios de tiempo. */
+  format?: 'hours' | 'days'
+}
+
+/** Una columna de la tabla: un conteo, o el promedio de unas muestras (`average`). */
+interface MetricSpec {
+  id: string
+  label: MessageDescriptor
+  average?: 'hours' | 'days'
 }
 
 export interface PersonRow {
@@ -75,6 +87,8 @@ interface Draft {
   name: string
   roleCode: string | null
   counts: Map<string, number>
+  /** Muestras para las columnas que son promedio. */
+  samples: Map<string, number[]>
   events: PersonEvent[]
 }
 
@@ -86,7 +100,7 @@ function draftOf(
 ): Draft {
   const existing = map.get(key)
   if (existing) return existing
-  const draft: Draft = { key, name, roleCode, counts: new Map(), events: [] }
+  const draft: Draft = { key, name, roleCode, counts: new Map(), samples: new Map(), events: [] }
   map.set(key, draft)
   return draft
 }
@@ -95,10 +109,22 @@ function bump(draft: Draft, metric: string, by = 1): void {
   draft.counts.set(metric, (draft.counts.get(metric) ?? 0) + by)
 }
 
-function finish(
-  drafts: Map<string, Draft>,
-  metrics: Array<{ id: string; label: MessageDescriptor }>,
-): PersonRow[] {
+function sample(draft: Draft, metric: string, values: number[]): void {
+  draft.samples.set(metric, [...(draft.samples.get(metric) ?? []), ...values])
+}
+
+function metricOf(draft: Draft, spec: MetricSpec): PersonMetric {
+  if (!spec.average) return { label: spec.label, value: draft.counts.get(spec.id) ?? 0 }
+  const values = draft.samples.get(spec.id) ?? []
+  return {
+    label: spec.label,
+    format: spec.average,
+    value:
+      values.length === 0 ? null : values.reduce((sum, value) => sum + value, 0) / values.length,
+  }
+}
+
+function finish(drafts: Map<string, Draft>, metrics: MetricSpec[]): PersonRow[] {
   return [...drafts.values()]
     .map((draft) => {
       const events = [...draft.events].sort((a, b) => b.at.localeCompare(a.at))
@@ -106,7 +132,7 @@ function finish(
         key: draft.key,
         name: draft.name,
         roleCode: draft.roleCode,
-        metrics: metrics.map(({ id, label }) => ({ label, value: draft.counts.get(id) ?? 0 })),
+        metrics: metrics.map((spec) => metricOf(draft, spec)),
         lastActivityAt: events[0]?.at ?? null,
         events,
       }
@@ -237,9 +263,12 @@ export function signupCandidates(
   }
 }
 
-const RECRUITMENT_METRICS = [
+const RECRUITMENT_METRICS: MetricSpec[] = [
   { id: 'holding', label: msg`Requisiciones a su cargo` },
   { id: 'signups', label: msg`Candidatos dados de alta` },
+  { id: 'attention', label: msg`Tiempo en tomarlas`, average: 'hours' },
+  { id: 'perPerson', label: msg`Tiempo por persona`, average: 'days' },
+  { id: 'assigned', label: msg`Personas asignadas (aprox.)` },
   { id: 'joined', label: msg`Tomadas` },
   { id: 'left', label: msg`Soltadas` },
   { id: 'reassigned', label: msg`Reasignadas` },
@@ -260,6 +289,8 @@ export function recruitmentPeople(input: {
   /** Candidatos dados de alta en el periodo, con su historial de estados. */
   workers?: WorkerApi[]
   histories?: Record<string, WorkerHistoryEntryApi[]>
+  /** Asignaciones de las mismas requisiciones: los tiempos (ver `recruitmentTiming.ts`). */
+  assignments?: Record<string, AssignmentApi[]>
 }): PersonRow[] {
   const { period } = input
   const drafts = new Map<string, Draft>()
@@ -317,6 +348,31 @@ export function recruitmentPeople(input: {
       draftOf(drafts, `${signup.userName}|`, signup.userName, null)
     bump(draft, 'signups')
     draft.events.push({ at: signup.occurredAt, kind: 'WORKER_CREATED', subject: worker.fullName })
+  }
+
+  /*
+   * Los tiempos de cada reclutadora: cuánto tardó en tomar lo autorizado y
+   * cuánto, desde que la tomó, a cada persona asignada mientras la tenía. Las
+   * asignaciones no dicen quién las hizo: si varias tenían la requisición, la
+   * persona cuenta para cada una (de ahí «aprox.»).
+   */
+  if (input.assignments) {
+    const times = recruiterTimes(
+      {
+        requisitions: input.requisitions,
+        journals: input.journals,
+        assignments: input.assignments,
+      },
+      period,
+    )
+    for (const [name, recruiter] of times) {
+      const draft =
+        [...drafts.values()].find((existing) => existing.name === name) ??
+        draftOf(drafts, `${name}|`, name, null)
+      sample(draft, 'attention', recruiter.attentionHours)
+      sample(draft, 'perPerson', recruiter.perPersonDays)
+      bump(draft, 'assigned', recruiter.perPersonDays.length)
+    }
   }
 
   return finish(drafts, RECRUITMENT_METRICS)

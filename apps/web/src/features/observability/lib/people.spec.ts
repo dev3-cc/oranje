@@ -10,9 +10,9 @@ const WEEK = periodOf('week', NOW)
 const at = (day: number, hour = 9): string => new Date(2026, 9, day, hour).toISOString()
 
 const metric = (
-  row: { metrics: Array<{ label: { message?: string }; value: number }> },
+  row: { metrics: Array<{ label: { message?: string }; value: number | null }> },
   name: string,
-): number | undefined => row.metrics.find((item) => item.label.message === name)?.value
+): number | null | undefined => row.metrics.find((item) => item.label.message === name)?.value
 
 describe('Ventas por persona', () => {
   const prospects = [

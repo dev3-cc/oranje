@@ -165,7 +165,7 @@ describe('Reclutamiento', () => {
         requisition({ start: '2026-10-06', state: { code: 'PURPLE' } as never }),
       ],
       workers: [{ createdAt: at(6) }, { createdAt: at(1) }] as WorkerApi[],
-      requisitionLight: undefined,
+      times: null,
       dayOne: null,
     })
     expect(kpi(list, 'recruitmentFillRate')).toMatchObject({ value: 0.75 })

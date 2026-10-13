@@ -1,11 +1,11 @@
 import { msg } from '@lingui/core/macro'
 
-import type { Punch, StatusLightSummary } from '../types/observability.types'
+import type { Punch } from '../types/observability.types'
 
 import { firstStartDate } from './hotelKpis'
 import { type Kpi, ratioOf } from './kpi'
 import { dayIso, isInPeriod, localDay, type Period } from './period'
-import { stateAvgHours } from './statusLights'
+import type { RecruitmentTimes } from './recruitmentTiming'
 
 import type { AssignmentApi, RequisitionApi, WorkerApi } from '@/shared/types/apiContract.types'
 
@@ -89,7 +89,8 @@ export interface RecruitmentInput {
   period: Period
   requisitions: RequisitionApi[]
   workers: WorkerApi[]
-  requisitionLight: StatusLightSummary | undefined
+  /** Tiempos de las requisiciones con bitácora y asignaciones; `null` mientras cargan. */
+  times: RecruitmentTimes | null
   /** `null` mientras se calcula o si falló: la tarjeta lo dice. */
   dayOne: { expected: number; noShows: number } | null
 }
@@ -112,12 +113,8 @@ export function recruitmentKpis(input: RecruitmentInput): Kpi[] {
     .flatMap((requisition) => requisition.positions)
     .filter((position) => position.urgency?.code === 'RED' && position.filled < position.quantity)
 
-  const authorizedHours = stateAvgHours(input.requisitionLight, 'GREEN')
-  const inProcessHours = stateAvgHours(input.requisitionLight, 'YELLOW')
-  const timeToFillHours =
-    authorizedHours === null && inProcessHours === null
-      ? null
-      : (authorizedHours ?? 0) + (inProcessHours ?? 0)
+  const { times } = input
+  const noData = { value: null, empty: 'NO_DATA' as const }
 
   const intake = input.workers.filter((worker) => isInPeriod(worker.createdAt, period))
 
@@ -158,14 +155,31 @@ export function recruitmentKpis(input: RecruitmentInput): Kpi[] {
       value: urgentOpen.length,
     },
     {
+      id: 'recruitmentAttention',
+      label: msg`Tiempo de atención`,
+      hint: msg`De autorizada a que una reclutadora la toma, en las autorizadas en el periodo.`,
+      format: 'hours',
+      scope: 'PERIOD',
+      ...(times && times.attentionHours !== null ? { value: times.attentionHours } : noData),
+    },
+    {
+      /* Antes: promedio en Autorizada + promedio en En proceso, de todo el
+         histórico. Ahora el tiempo real de cada requisición, en el periodo. */
       id: 'recruitmentTimeToFill',
       label: msg`Time-to-fill`,
-      hint: msg`Promedio en Autorizada más promedio en En proceso, de todo el histórico.`,
+      hint: msg`De autorizada a cubierta al 100%, en las que se cubrieron en el periodo.`,
       format: 'days',
-      scope: 'ALL_TIME',
-      value: timeToFillHours === null ? null : timeToFillHours / 24,
-      ...(timeToFillHours === null ? { empty: 'NO_DATA' as const } : {}),
+      scope: 'PERIOD',
       approximate: true,
+      ...(times && times.fillDays !== null ? { value: times.fillDays } : noData),
+    },
+    {
+      id: 'recruitmentTimePerPerson',
+      label: msg`Tiempo por persona`,
+      hint: msg`De que la reclutadora toma la requisición a cada persona asignada, en el periodo.`,
+      format: 'days',
+      scope: 'PERIOD',
+      ...(times && times.perPersonDays !== null ? { value: times.perPersonDays } : noData),
     },
   ]
 }

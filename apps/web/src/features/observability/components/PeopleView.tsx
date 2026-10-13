@@ -10,14 +10,14 @@ import {
 } from '@oranje/ui'
 import { type ReactNode, useState } from 'react'
 
-import { PERSON_EVENT_LABEL, type PersonRow } from '../lib/people'
+import { PERSON_EVENT_LABEL, type PersonMetric, type PersonRow } from '../lib/people'
 
 import {
   CONTACT_ATTEMPT_OUTCOME_LABEL,
   type ContactAttemptOutcome,
 } from '@/shared/constants/contactAttempt'
 import { roleLabelOf } from '@/shared/constants/roles'
-import { formatDayMonthTime } from '@/shared/lib/formatters'
+import { formatDayMonthTime, formatDurationHuman } from '@/shared/lib/formatters'
 
 /** Aviso de lo que esta vista no puede ver. */
 export function PeopleNotice({ children }: { children: ReactNode }): ReactNode {
@@ -30,6 +30,14 @@ export function PeopleNotice({ children }: { children: ReactNode }): ReactNode {
       <span>{children}</span>
     </p>
   )
+}
+
+/** Un conteo tal cual; un promedio de tiempo en horas o días; sin muestras, una raya. */
+function metricText(metric: PersonMetric): string {
+  if (metric.value === null) return '—'
+  if (metric.format === 'hours') return formatDurationHuman(metric.value)
+  if (metric.format === 'days') return formatDurationHuman(metric.value * 24)
+  return String(metric.value)
 }
 
 function LastActivity({ at }: { at: string | null }): ReactNode {
@@ -116,10 +124,12 @@ export function PeopleView({
                     key={metric.label.id}
                     className={cn(
                       'px-3 py-3 text-right tabular-nums',
-                      metric.value === 0 ? 'text-ink-3' : 'font-medium text-ink',
+                      metric.value === 0 || metric.value === null
+                        ? 'text-ink-3'
+                        : 'font-medium text-ink',
                     )}
                   >
-                    {metric.value}
+                    {metricText(metric)}
                   </td>
                 ))}
                 <td className="px-4 py-3">
@@ -155,7 +165,7 @@ export function PeopleView({
                 {row.metrics.slice(0, Math.min(columns, 3)).map((metric) => (
                   <div key={metric.label.id}>
                     <dt className="text-xs text-ink-3">{i18n._(metric.label)}</dt>
-                    <dd className="font-semibold text-ink tabular-nums">{metric.value}</dd>
+                    <dd className="font-semibold text-ink tabular-nums">{metricText(metric)}</dd>
                   </div>
                 ))}
               </dl>
@@ -191,7 +201,9 @@ export function PeopleView({
                       className="rounded-xl border border-line bg-surface-2 p-3"
                     >
                       <dt className="text-xs text-ink-3">{i18n._(metric.label)}</dt>
-                      <dd className="text-xl font-bold text-ink tabular-nums">{metric.value}</dd>
+                      <dd className="text-xl font-bold text-ink tabular-nums">
+                        {metricText(metric)}
+                      </dd>
                     </div>
                   ))}
                 </dl>
