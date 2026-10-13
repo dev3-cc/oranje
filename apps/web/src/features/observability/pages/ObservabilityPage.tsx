@@ -2,6 +2,7 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@oranje/ui'
 import { type ReactNode, useMemo, useState } from 'react'
 
+import { useGetApprovalTimelinessQuery } from '../api/observabilityApi'
 import { PeriodSelector } from '../components/TabParts'
 import { PERIOD_LABEL, type PeriodKey, periodOf } from '../lib/period'
 import { HotelTab } from '../tabs/HotelTab'
@@ -11,6 +12,8 @@ import { SalesTab } from '../tabs/SalesTab'
 import { WorkerTab } from '../tabs/WorkerTab'
 
 import fotoEquipo from '@/assets/ilustrations/observador-equipo.webp'
+import { ApprovalTimelinessPanel } from '@/shared/components/ApprovalTimelinessPanel'
+import { LoadError } from '@/shared/components/LoadError'
 
 /**
  * Observador (`ROL-OBS-01`): transversal, de solo lectura. Una pestaña por
@@ -19,10 +22,11 @@ import fotoEquipo from '@/assets/ilustrations/observador-equipo.webp'
  * tablero maquetado y se marcan como de ejemplo; viven en `lib/kpi.ts`.
  */
 export function ObservabilityPage(): ReactNode {
-  const { i18n } = useLingui()
+  const { t, i18n } = useLingui()
   const [periodKey, setPeriodKey] = useState<PeriodKey>('week')
   const period = useMemo(() => periodOf(periodKey), [periodKey])
   const periodLabel = i18n._(PERIOD_LABEL[periodKey])
+  const timeliness = useGetApprovalTimelinessQuery()
 
   return (
     <div className="space-y-6">
@@ -72,6 +76,9 @@ export function ObservabilityPage(): ReactNode {
               <TabsTrigger value="accounting">
                 <Trans>Contabilidad</Trans>
               </TabsTrigger>
+              <TabsTrigger value="timeliness">
+                <Trans>Aprobación de ponches</Trans>
+              </TabsTrigger>
             </TabsList>
           </div>
           <PeriodSelector value={periodKey} onChange={setPeriodKey} />
@@ -99,6 +106,18 @@ export function ObservabilityPage(): ReactNode {
         </TabsContent>
         <TabsContent value="accounting">
           <AccountingTab />
+        </TabsContent>
+
+        <TabsContent value="timeliness">
+          {timeliness.isError && (
+            <LoadError
+              message={t`No se pudo calcular la aprobación oportuna. Reintenta en unos segundos.`}
+              onRetry={() => {
+                void timeliness.refetch()
+              }}
+            />
+          )}
+          {timeliness.data && <ApprovalTimelinessPanel data={timeliness.data} />}
         </TabsContent>
       </Tabs>
     </div>

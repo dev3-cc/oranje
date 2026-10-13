@@ -12,7 +12,7 @@ import {
   retentionTable,
 } from './cohorts'
 
-import type { TimesheetApi, WorkerApi } from '@/shared/types/apiContract.types'
+import type { FullWorkerApi, TimesheetApi } from '@/shared/types/apiContract.types'
 
 const CURRENT = '2026-10-05' // lunes
 
@@ -57,7 +57,7 @@ describe('cohorte de ingreso', () => {
   const workers = new Map([
     ['a', { id: 'a', state: { code: 'APPLE_GREEN' } }],
     ['b', { id: 'b', state: { code: 'PINK' } }],
-  ]) as unknown as Map<string, WorkerApi>
+  ]) as unknown as Map<string, FullWorkerApi>
 
   it('cuenta solo a quien trabajó por primera vez esa semana', () => {
     const detail = cohortDetail(presence, [lastWeek], CURRENT, workers)

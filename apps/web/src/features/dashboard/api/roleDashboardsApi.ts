@@ -13,6 +13,7 @@ import type {
   TimesheetApi,
   WorkerApi,
 } from '@/shared/types/apiContract.types'
+import { isFullWorkerApi } from '@/shared/types/apiContract.types'
 
 type FetchWithBQ = (
   args: string | { url: string; params?: Record<string, unknown> },
@@ -65,6 +66,10 @@ async function fetchRecruitmentOverview(
 
   const workers = workersRes.data
   const requisitions = requisitionsRes.data
+  /* Este dashboard es de Reclutamiento (`recruitment:search_candidates`):
+     siempre ficha completa. El filtro es defensivo, no esperado en la
+     práctica (D-30). */
+  const fullWorkers = workers.filter(isFullWorkerApi)
 
   const queue = requisitions.filter(
     (row) => row.state.code === QUEUE_OPEN || row.state.code === QUEUE_IN_PROGRESS,
@@ -73,9 +78,10 @@ async function fetchRecruitmentOverview(
   return {
     data: {
       poolTotal: workers.length,
-      poolAvailable: workers.filter((worker) => worker.state.code === POOL_AVAILABLE).length,
-      poolPendingValidation: workers.filter((worker) => worker.state.code === POOL_PENDING).length,
-      poolByState: countStates(workers.map((worker) => worker.state)),
+      poolAvailable: fullWorkers.filter((worker) => worker.state.code === POOL_AVAILABLE).length,
+      poolPendingValidation: fullWorkers.filter((worker) => worker.state.code === POOL_PENDING)
+        .length,
+      poolByState: countStates(fullWorkers.map((worker) => worker.state)),
       queueOpen: queue.filter((row) => row.state.code === QUEUE_OPEN).length,
       queueInProgress: queue.filter((row) => row.state.code === QUEUE_IN_PROGRESS).length,
       queue: queue.slice(0, LIST_LIMIT).map(toDashboardRequisition),

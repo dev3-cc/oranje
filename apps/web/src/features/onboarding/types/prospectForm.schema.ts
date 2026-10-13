@@ -51,6 +51,14 @@ export function buildProspectFormSchema(i18n: I18n) {
       address: z.string(),
       generalPhone: z.string(),
 
+      /**
+       * Datos contables (Hugo, 2026-10-07): el día en que cierra la semana
+       * del hotel. El día de fin se deriva (7 días exactos) y no es parte del
+       * formulario.
+       */
+      weekStartDay: z.number().int().min(0).max(6),
+      overtimePayMultiplier: z.union([z.literal(0), z.literal(1.5)]),
+
       location: z
         .object({ lat: z.number(), lng: z.number() })
         .nullable()

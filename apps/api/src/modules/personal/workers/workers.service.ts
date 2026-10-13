@@ -19,7 +19,11 @@ import type {
   QueryWorkersDto,
   UpdateWorkerDto,
 } from './dto/create-worker.dto.js'
-import type { WorkerEntity } from './entities/worker.entity.js'
+import type {
+  WorkerBasicEntity,
+  WorkerEntity,
+  WorkerStaffEntity,
+} from './entities/worker.entity.js'
 import { WorkerRow, WorkersRepository } from './workers.repository.js'
 
 const PENDING_VALIDATION = 'WHITE'
@@ -36,7 +40,12 @@ const REPORTED = 'RED'
 const MIN_AGE = 18
 
 export interface WorkerBoard {
-  data: WorkerEntity[]
+  /** Reclutamiento ve `WorkerEntity` completo (el Pool); Hotel ve
+      `WorkerStaffEntity` (Mi Personal, con el color del semáforo para el
+      punto de la fila y Stand-by/Reportar — D-?? , Hugo 2026-10-12). El
+      expediente de UNO solo (`getScoped`) es más estrecho todavía: ahí sí
+      se acota a `WorkerBasicEntity`, sin `state`. */
+  data: Array<WorkerEntity | WorkerStaffEntity>
   meta: { page: number; limit: number; total: number; totalPages: number }
 }
 
@@ -119,7 +128,7 @@ export class WorkersService {
     const photos = await this.signPhotos(rows)
 
     return {
-      data: rows.map((row) => toEntity(row, photos)),
+      data: rows.map((row) => (seesPool ? toEntity(row, photos) : toStaffEntity(row, photos))),
       meta: {
         page: query.page,
         limit: query.limit,
@@ -136,10 +145,12 @@ export class WorkersService {
    * Sin `@Requires` en la ruta: dos permisos válidos con alcances distintos, el
    * mismo patrón que requisiciones y territorio.
    */
-  async getScoped(id: string, user: AuthenticatedUser): Promise<WorkerEntity> {
-    await this.assertCanSee(id, user)
+  async getScoped(id: string, user: AuthenticatedUser): Promise<WorkerEntity | WorkerBasicEntity> {
+    const seesPool = await this.assertCanSee(id, user)
+    const row = await this.worker(id)
+    const photos = await this.signPhotos([row])
 
-    return this.get(id)
+    return seesPool ? toEntity(row, photos) : toBasicEntity(row, photos)
   }
 
   /**
@@ -201,9 +212,12 @@ export class WorkersService {
     }
   }
 
-  private async assertCanSee(id: string, user: AuthenticatedUser): Promise<void> {
+  /** `true` = Reclutamiento, ve la ficha completa; `false` = Hotel, ve solo
+      `WorkerBasicEntity` (Hugo, 2026-10-12: "no debería poder ver toda la
+      info... solo información básica"). */
+  private async assertCanSee(id: string, user: AuthenticatedUser): Promise<boolean> {
     if (await this.permissions.can(user.roleCode, 'recruitment', 'search_candidates')) {
-      return
+      return true
     }
 
     const seesStaff = await this.permissions.can(user.roleCode, 'staff', 'read_history')
@@ -221,6 +235,8 @@ export class WorkersService {
         message: 'Este colaborador no está asignado a tu hotel',
       })
     }
+
+    return false
   }
 
   async get(id: string): Promise<WorkerEntity> {
@@ -303,7 +319,7 @@ export class WorkersService {
     dto: ChangeStateDto,
     user: AuthenticatedUser,
     selfService = false,
-  ): Promise<WorkerEntity> {
+  ): Promise<WorkerEntity | WorkerStaffEntity> {
     await this.assertCanChangeState(id, dto.toState, user, selfService)
 
     const worker = await this.worker(id)
@@ -397,7 +413,20 @@ export class WorkersService {
 
     await this.notifyStateChange(id, worker, current.code, dto.toState, user)
 
-    return this.get(id)
+    // `staff:set_standby`/`staff:report` son del Hotel: la respuesta a su
+    // propia acción tampoco debe traer el expediente completo — pero SÍ
+    // necesita saber en qué quedó el semáforo (acaba de moverlo), así que
+    // es `WorkerStaffEntity`, no `WorkerBasicEntity` (ver nota del mismo día
+    // en `list()`: Mi Personal necesita el color para el punto de la fila y
+    // para decidir si Stand-by/Reportar siguen cabiendo). El autoservicio
+    // (`selfService`) es OTRO caso: el Colaborador viendo SU PROPIO perfil
+    // siempre es la ficha completa, no hay nada que acotarle.
+    const seesPool =
+      selfService || (await this.permissions.can(user.roleCode, 'recruitment', 'search_candidates'))
+    const row = await this.worker(id)
+    const photos = await this.signPhotos([row])
+
+    return seesPool ? toEntity(row, photos) : toStaffEntity(row, photos)
   }
 
   /**
@@ -680,6 +709,7 @@ function toEntity(row: WorkerRow, photos: Map<string, string>): WorkerEntity {
           }
         : null,
     bloodType: row.bloodType,
+    medicalNotes: row.medicalNotes,
     state: row.state,
     isProfileComplete: row.isProfileComplete,
     profileDueAt: row.profileDueAt?.toISOString() ?? null,
@@ -692,4 +722,31 @@ function toEntity(row: WorkerRow, photos: Map<string, string>): WorkerEntity {
     createdAt: new Date(row.createdAt).toISOString(),
     assignment: row.assignment,
   }
+}
+
+function toBasicEntity(row: WorkerRow, photos: Map<string, string>): WorkerBasicEntity {
+  return {
+    id: row.id,
+    fullName: row.fullName,
+    gender: row.gender,
+    photoUrl: row.photoPath ? (photos.get(row.photoPath) ?? null) : null,
+    position: row.position,
+    englishLevel: row.englishLevel,
+    hiringModality: row.hiringModality,
+    transportType: row.transportType,
+    emergencyContact:
+      row.emergencyContactName && row.emergencyContactPhone && row.emergencyContactRelationship
+        ? {
+            name: row.emergencyContactName,
+            phone: row.emergencyContactPhone,
+            relationship: row.emergencyContactRelationship,
+          }
+        : null,
+    medicalNotes: row.medicalNotes,
+    assignment: row.assignment,
+  }
+}
+
+function toStaffEntity(row: WorkerRow, photos: Map<string, string>): WorkerStaffEntity {
+  return { ...toBasicEntity(row, photos), state: row.state }
 }

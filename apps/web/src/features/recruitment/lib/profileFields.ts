@@ -64,7 +64,11 @@ export type Readiness =
  *   confunde, así que el anillo no opina.
  */
 export function assignmentReadiness(worker: WorkerApi): Readiness {
-  const state = worker.state.code
+  /* Sin ficha completa (Hotel, D-30) no hay semáforo que leer: no se opina,
+     igual que en Stand-by/Gris/vetado. En la práctica esto solo se invoca
+     con la ficha completa (Pool, expediente). */
+  const state = worker.state?.code
+  if (state === undefined) return { kind: 'out' }
 
   if (OUT_STATES.includes(state)) return { kind: 'out' }
   if (READY_STATES.includes(state)) return { kind: 'ready' }

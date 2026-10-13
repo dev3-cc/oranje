@@ -18,6 +18,7 @@
 		7A1C0E5B2F9D4C1A00000002 /* OranjePermissions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0E5B2F9D4C1A00000001 /* OranjePermissions.swift */; };
 		7A1C0E5B2F9D4C1A00000006 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A1C0E5B2F9D4C1A00000005 /* SceneDelegate.swift */; };
 		7A1C0E5B2F9D4C1A00000004 /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = 7A1C0E5B2F9D4C1A00000003 /* Fonts */; };
+		7A1C0E5B2F9D4C1A00000008 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 7A1C0E5B2F9D4C1A00000007 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +37,7 @@
 		7A1C0E5B2F9D4C1A00000001 /* OranjePermissions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OranjePermissions.swift; sourceTree = "<group>"; };
 		7A1C0E5B2F9D4C1A00000005 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		7A1C0E5B2F9D4C1A00000003 /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Fonts; sourceTree = "<group>"; };
+		7A1C0E5B2F9D4C1A00000007 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -90,6 +92,7 @@
 				2FAD9762203C412B000D30F8 /* config.xml */,
 				50B271D01FEDC1A000F3C39B /* public */,
 				7A1C0E5B2F9D4C1A00000003 /* Fonts */,
+				7A1C0E5B2F9D4C1A00000007 /* PrivacyInfo.xcprivacy */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -173,6 +176,7 @@
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
 				7A1C0E5B2F9D4C1A00000004 /* Fonts in Resources */,
+				7A1C0E5B2F9D4C1A00000008 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

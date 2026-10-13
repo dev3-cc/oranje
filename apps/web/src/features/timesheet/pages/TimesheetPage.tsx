@@ -8,26 +8,24 @@ import {
   useGetTimesheetWeekQuery,
 } from '../api/timesheetApi'
 import { AttendanceView } from '../components/AttendanceView'
+import { CorrectPunchDialog } from '../components/CorrectPunchDialog'
 import { ManualPunchDialog } from '../components/ManualPunchDialog'
 import { ReviewDayDialog } from '../components/ReviewDayDialog'
 import { TimesheetGrid } from '../components/TimesheetGrid'
 import { TimesheetHoursView } from '../components/TimesheetHoursView'
 import { TimesheetMonthView } from '../components/TimesheetMonthView'
 import { TimesheetToolbar } from '../components/TimesheetToolbar'
-import {
-  TimesheetViewToggle,
-  WeekNavigator,
-  type TimesheetView,
-} from '../components/TimesheetViewControls'
+import { WeekNavigator, type TimesheetView } from '../components/TimesheetViewControls'
 import { WeekSlider } from '../components/WeekSlider'
 import { addDaysIso, resolveWeek } from '../lib/weekNavigation'
 import {
   ANY_VALUE,
   EMPTY_TIMESHEET_FILTERS,
+  type ManualPunchTarget,
   type ReviewContext,
   type TimesheetEntry,
   type TimesheetFilters,
-  type TimesheetRow,
+  type TimesheetPunch,
 } from '../types/timesheet.types'
 
 import personajeManager from '@/assets/ilustrations/personaje-manager.svg'
@@ -57,8 +55,10 @@ export function TimesheetPage(): ReactNode {
   const { t } = useLingui()
   const [filters, setFilters] = useState<TimesheetFilters>(EMPTY_TIMESHEET_FILTERS)
   const [columnWidth, setColumnWidth] = useState<number>(DEFAULT_COLUMN_WIDTH)
-  /** Densidad de la semana: la rejilla de chips o el lienzo de horas. */
-  const [view, setView] = useState<TimesheetView>('DAYS')
+  /** Densidad de la semana: la rejilla de chips o el lienzo de horas. Entra
+      por Asistencia — es la que responde "¿quién está hoy?" de un vistazo
+      (Hugo, 2026-10-10). */
+  const [view, setView] = useState<TimesheetView>('ATTENDANCE')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   /** El día abierto en Revisión (maqueta del Supervisor); `null` = cerrado. */
   const [review, setReview] = useState<{
@@ -66,15 +66,19 @@ export function TimesheetPage(): ReactNode {
     workerName: string
     context: ReviewContext | null
     /** Con qué abrir Marca manual si la piden desde aquí mismo. */
-    manualPunchTarget: Pick<TimesheetRow, 'requisitionId' | 'workerId' | 'workerName'>
+    manualPunchTarget: ManualPunchTarget
   } | null>(null)
   /** La fila con el diálogo de marca manual abierto; `null` = cerrado. */
-  const [manualPunchRow, setManualPunchRow] = useState<Pick<
-    TimesheetRow,
-    'requisitionId' | 'workerId' | 'workerName'
-  > | null>(null)
+  const [manualPunchRow, setManualPunchRow] = useState<ManualPunchTarget | null>(null)
   /** El día a precargar cuando Marca manual se abrió desde Revisión del día. */
   const [manualPunchInitialDate, setManualPunchInitialDate] = useState<string | null>(null)
+  /** La marca abierta en Corregir; `null` = cerrado. Distinto de Marca manual:
+      esta edita una que YA existe (Hugo, 2026-10-10). */
+  const [correctPunchTarget, setCorrectPunchTarget] = useState<{
+    punch: TimesheetPunch
+    date: string
+    workerName: string
+  } | null>(null)
 
   const can = useCan()
   /** Pagar es de Contabilidad (doble firma del Flujo de Nómina), no del Hotel. */
@@ -82,9 +86,12 @@ export function TimesheetPage(): ReactNode {
   /** Lo que el permiso no autoriza no se dibuja: el Observador solo lee. */
   const canReview = can('timesheet:review_punches')
   const canManualPunch = can('timesheet:create_manual_punch')
+  /** Corregir una marca ya registrada: Manager de Área/General, sembrado
+      desde el 2026-09-29 y conectado hoy (Hugo, 2026-10-10). */
+  const canCorrectPunch = can('timesheet:correct_punch')
   const seesAllHotels = can('timesheet:read_all_hotels')
 
-  const { data: week, isLoading, isError, refetch } = useGetTimesheetWeekQuery(filters)
+  const { data: week, isLoading, isFetching, isError, refetch } = useGetTimesheetWeekQuery(filters)
   /**
    * La CINTA para la vista Días: todas las semanas de una vez. `weekStart` va
    * fijo en ALL para que navegar NO cambie la llave de caché — moverse de
@@ -176,7 +183,11 @@ export function TimesheetPage(): ReactNode {
                 availableWeeks={availableWeeks}
                 onSelect={selectWeek}
               />
-              <TimesheetViewToggle view={view} onChange={setView} />
+              {/* Horas/Días/Mes se ocultan por ahora (Hugo, 2026-10-10):
+                  "vamos a ir mejorándolo" — la pantalla se queda solo en
+                  Asistencia mientras se trabaja esa densidad. `view` ya
+                  nace en 'ATTENDANCE' y nada más la cambia, así que basta
+                  con no dibujar el selector — no se borró nada. */}
             </div>
           )}
         </div>
@@ -214,8 +225,13 @@ export function TimesheetPage(): ReactNode {
           </NoticeCard>
         )}
 
-      {/* La leyenda de los estados del día: el color nunca habla solo. */}
-      {week && week.rows.length > 0 && view !== 'MONTH' && (
+      {/* La leyenda de los estados del día: solo aplica a Horas/Días, que
+          hoy están ocultas (Hugo, 2026-10-10); en Asistencia no hay ningún
+          punto de color que explicar (Hugo, 2026-10-12: "¿ya no se
+          necesita?" — correcto, quedó huérfana al quitar la columna
+          Estado). Se deja condicionada, no se borra, para cuando esas
+          vistas vuelvan. */}
+      {week && week.rows.length > 0 && (view === 'DAYS' || view === 'HOURS') && (
         <div className="-mt-2 flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
           {TIMESHEET_STATUSES.map((status) => (
             <span key={status} className="inline-flex items-center gap-1.5 text-xs text-ink-3">
@@ -287,7 +303,11 @@ export function TimesheetPage(): ReactNode {
         />
       )}
 
-      {isLoading && !week ? (
+      {isLoading || isFetching ? (
+        /* Antes solo se veía la primera vez (`isLoading && !week`): cambiar
+           el filtro "Estado" (el único que va al servidor) dejaba la tabla
+           vieja quieta mientras llegaba la nueva, sin ningún aviso (Hugo,
+           2026-10-12). */
         <TableSkeleton rows={7} columns={8} />
       ) : (
         selectedWeek !== null &&
@@ -349,7 +369,22 @@ export function TimesheetPage(): ReactNode {
                 <TableSkeleton rows={5} columns={7} />
               ))}
             {view === 'ATTENDANCE' && selectedWeek !== null && (
-              <AttendanceView rows={week.rows} selectedWeek={selectedWeek} />
+              <AttendanceView
+                rows={week.rows}
+                selectedWeek={selectedWeek}
+                onReview={(entry, workerName, context, manualPunchTarget) => {
+                  setReview({ entry, workerName, context: context ?? null, manualPunchTarget })
+                }}
+                onManualPunch={
+                  canManualPunch
+                    ? (row) => {
+                        setManualPunchRow(row)
+                        setManualPunchInitialDate(null)
+                      }
+                    : undefined
+                }
+                onCorrectPunch={canCorrectPunch ? setCorrectPunchTarget : undefined}
+              />
             )}
           </WeekSlider>
         )
@@ -378,8 +413,28 @@ export function TimesheetPage(): ReactNode {
               }
             : undefined
         }
+        onCorrectPunch={
+          review && canCorrectPunch
+            ? (punch) => {
+                setCorrectPunchTarget({
+                  punch,
+                  date: review.entry.date,
+                  workerName: review.workerName,
+                })
+                setReview(null)
+              }
+            : undefined
+        }
         onClose={() => {
           setReview(null)
+        }}
+      />
+
+      <CorrectPunchDialog
+        target={correctPunchTarget}
+        workerName={correctPunchTarget?.workerName ?? ''}
+        onClose={() => {
+          setCorrectPunchTarget(null)
         }}
       />
     </div>

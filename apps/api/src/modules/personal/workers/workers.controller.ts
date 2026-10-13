@@ -25,7 +25,11 @@ import {
   RequestMoveDto,
   UpdateWorkerDto,
 } from './dto/create-worker.dto.js'
-import type { WorkerEntity } from './entities/worker.entity.js'
+import type {
+  WorkerBasicEntity,
+  WorkerEntity,
+  WorkerStaffEntity,
+} from './entities/worker.entity.js'
 import { WorkerAccessService } from './worker-access.service.js'
 import type { WorkerAccessCredential } from './worker-access.service.js'
 import { TransitionOption, WorkerBoard, WorkersService } from './workers.service.js'
@@ -70,7 +74,7 @@ export class WorkersController {
   async get(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<{ data: WorkerEntity }> {
+  ): Promise<{ data: WorkerEntity | WorkerBasicEntity }> {
     return { data: await this.workers.getScoped(id, user) }
   }
 
@@ -160,7 +164,7 @@ export class WorkersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ChangeStateDto,
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<{ data: WorkerEntity }> {
+  ): Promise<{ data: WorkerEntity | WorkerStaffEntity }> {
     return { data: await this.workers.changeState(id, dto, user) }
   }
 

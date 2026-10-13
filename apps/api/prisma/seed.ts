@@ -91,6 +91,13 @@ const ENGLISH_LEVELS = [
   { code: 'CONVERSATIONAL', name: 'Conversacional', order: 4 },
 ]
 
+// Con qué se marca un día del Timesheet sin ponches, antes de aprobar
+// (Hugo, 2026-10-12). El Administrador agrega más desde /catalogos.
+const TIMESHEET_DAY_STATUSES = [
+  { code: 'REST', name: 'Descanso' },
+  { code: 'OFF', name: 'OFF' },
+]
+
 /// Contenido inicial de las dos auditorías del Supervisor. `weight = 1` para
 /// todos (el DEFAULT de la columna): el Administrador los diferencia después
 /// desde `/catalogs/audit-checklist-items`. `ordinal` empieza en 1 DENTRO de
@@ -715,8 +722,17 @@ const BLACKLIST_TRANSITIONS: Array<{
     reason: true,
     evidence: true,
   })),
-  // La salida. Un solo rol y motivo obligatorio: no es automática.
-  { from: 'BLACK', to: 'WHITE', roles: ['ROL-ADM-01'], reason: true, evidence: false },
+  // La salida. Motivo obligatorio: no es automática. Era solo del
+  // Administrador y Hugo la abrió a Reclutamiento (2026-10-10), los mismos
+  // tres que ponen el veto — se le advirtió que así quien veta se lo puede
+  // levantar y lo eligió con eso enfrente.
+  {
+    from: 'BLACK',
+    to: 'WHITE',
+    roles: ['ROL-ADM-01', 'ROL-R-01', 'ROL-R-02', 'ROL-R-03'],
+    reason: true,
+    evidence: false,
+  },
 ]
 
 // ---------------------------------------------------------------------------
@@ -1225,6 +1241,15 @@ async function main(): Promise<void> {
     })
   }
   log(`english_level: ${ENGLISH_LEVELS.length}`)
+
+  for (const s of TIMESHEET_DAY_STATUSES) {
+    await prisma.timesheetDayStatus.upsert({
+      where: { code: s.code },
+      update: { name: s.name },
+      create: { id: uuidv7(), code: s.code, name: s.name },
+    })
+  }
+  log(`timesheet_day_status: ${TIMESHEET_DAY_STATUSES.length}`)
 
   for (const item of AUDIT_CHECKLIST_ITEMS) {
     await prisma.auditChecklistItem.upsert({

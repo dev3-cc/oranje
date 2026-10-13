@@ -2,8 +2,8 @@ import type { MessageDescriptor } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 
 import type {
+  FullWorkerApi,
   TimesheetApi,
-  WorkerApi,
   WorkerHistoryEntryApi,
 } from '@/shared/types/apiContract.types'
 
@@ -287,7 +287,7 @@ export function cohortDetail(
   presence: Map<string, WorkerPresence>,
   weeks: string[],
   currentWeek: string,
-  workers: Map<string, WorkerApi>,
+  workers: Map<string, FullWorkerApi>,
 ): CohortDetail {
   const cohortWeeks = new Set(weeks)
   const previousWeek = addWeeks(currentWeek, -1)

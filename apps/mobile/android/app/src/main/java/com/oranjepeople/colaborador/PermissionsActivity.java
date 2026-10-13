@@ -8,7 +8,9 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.graphics.Paint;
 import android.view.View;
+import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -19,6 +21,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -129,6 +132,10 @@ public class PermissionsActivity extends AppCompatActivity {
             });
             findViewById(R.id.perm_go_home).setOnClickListener(view -> finishWith(ACTION_HOME));
         }
+        TextView privacy = findViewById(R.id.perm_privacy);
+        privacy.setPaintFlags(privacy.getPaintFlags() | Paint.UNDERLINE_TEXT_FLAG);
+        privacy.setOnClickListener(view -> openPrivacy());
+
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
@@ -277,6 +284,16 @@ public class PermissionsActivity extends AppCompatActivity {
         Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", getPackageName(), null));
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
+    }
+
+    /** El aviso de privacidad empaquetado, en un diálogo. Sin JavaScript: es texto. */
+    private void openPrivacy() {
+        WebView webView = new WebView(this);
+        webView.loadUrl("file:///android_asset/public/" + getString(R.string.perm_privacy_file));
+        new AlertDialog.Builder(this)
+            .setView(webView)
+            .setPositiveButton(R.string.perm_close, null)
+            .show();
     }
 
     private void finishWith(String action) {

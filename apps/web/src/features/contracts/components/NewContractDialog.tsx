@@ -25,11 +25,9 @@ import { Button } from '@/shared/components/Button'
 import { DateField } from '@/shared/components/DateField'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
-import { WEEK_DAY_COUNT } from '@/shared/constants/contractStatus'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
-import { weekdayName } from '@/shared/lib/formatters'
 
 /** Una fila de tarifa del borrador; los montos van como cadena (Estándares §3). */
 export interface RateDraft {
@@ -51,8 +49,8 @@ const INTRO_SLIDES: readonly {
   },
   {
     image: personajeCronograma,
-    title: msg`Vigencia y semana laboral`,
-    text: msg`Las fechas de vigencia y el corte semanal que definas aquí mandan después en la nómina y en la factura.`,
+    title: msg`Vigencia`,
+    text: msg`Las fechas de vigencia que definas aquí mandan después en la nómina y en la factura. El corte semanal y el recargo de overtime ya los trae el hotel de sus datos contables.`,
   },
   {
     image: personajePago,
@@ -82,7 +80,9 @@ function saveErrorMessage(error: unknown, i18n: I18n): string {
         msg`Hay una tarifa cotizada por debajo del costo: lo que se factura no puede ser menor a lo que se paga.`,
       ),
       VALIDITY_BACKWARDS: i18n._(msg`La fecha de fin tiene que ser posterior al inicio.`),
-      WEEK_INVALID: i18n._(msg`La semana de nómina no puede empezar y terminar el mismo día.`),
+      HOTEL_MISSING_ACCOUNTING_DATA: i18n._(
+        msg`Este hotel no tiene sus datos contables capturados (cierre de semana y pago de horas extra): complétalos en su ficha antes de crear el contrato.`,
+      ),
     },
     fallback: i18n._(msg`No se pudo crear el contrato. Revisa los datos e inténtalo de nuevo.`),
   })
@@ -118,7 +118,6 @@ export function NewContractDialog({
   const [hotelId, setHotelId] = useState(hotel?.id ?? '')
   const [validFrom, setValidFrom] = useState('')
   const [validTo, setValidTo] = useState('')
-  const [weekStartDay, setWeekStartDay] = useState(1)
   const [rateRows, setRateRows] = useState<RateDraft[]>([EMPTY_RATE])
 
   const { isIntroOpen: showIntro, dismissIntro } = useIntroSeen('new-contract')
@@ -134,7 +133,6 @@ export function NewContractDialog({
     setHotelId(hotel?.id ?? '')
     setValidFrom('')
     setValidTo('')
-    setWeekStartDay(1)
     /* Las tarifas llegan de la propuesta que el hotel aceptó: se revisan y se
        ajustan si hubo negociación, pero no se vuelven a teclear. */
     setRateRows(initialRates && initialRates.length > 0 ? initialRates : [EMPTY_RATE])
@@ -160,11 +158,7 @@ export function NewContractDialog({
         hotelId,
         validFrom,
         ...(validTo !== '' ? { validTo } : {}),
-        weekStartDay,
-        /** La semana termina el día anterior al que empieza: 7 días exactos. */
-        weekEndDay: (weekStartDay + 6) % 7,
         overtimeBillMultiplier: 1.5,
-        overtimePayMultiplier: 1,
         holidayBillMultiplier: 2,
         holidayPayMultiplier: 1,
         deductsMeals: false,
@@ -295,10 +289,12 @@ export function NewContractDialog({
                 </label>
               )}
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {/* Calendario de shadcn y no `input[type=date]`: dentro de un
                 Dialog de Radix el selector nativo se cierra solo (mismo fix que
-                el alta de requisición). */}
+                el alta de requisición). El corte semanal y el recargo de
+                overtime ya NO se piden aquí: el contrato los hereda del hotel
+                (Datos contables, Hugo 2026-10-07). */}
                 <div className="flex flex-col gap-1.5">
                   <span className="text-sm font-medium text-ink-2">
                     <Trans>Vigente desde</Trans>
@@ -320,28 +316,6 @@ export function NewContractDialog({
                     aria-label={t`Vigente hasta`}
                   />
                 </div>
-                <label className="flex flex-col gap-1.5">
-                  <span className="text-sm font-medium text-ink-2">
-                    <Trans>La semana de nómina empieza en</Trans>
-                  </span>
-                  <Select
-                    value={String(weekStartDay)}
-                    onValueChange={(value) => {
-                      setWeekStartDay(Number(value))
-                    }}
-                  >
-                    <SelectTrigger aria-label={t`Inicio de la semana de nómina`} className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({ length: WEEK_DAY_COUNT }, (_unused, index) => (
-                        <SelectItem key={index} value={String(index)}>
-                          {weekdayName(index)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </label>
               </div>
 
               <div className="flex flex-col gap-2">

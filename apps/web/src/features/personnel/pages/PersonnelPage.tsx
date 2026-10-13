@@ -18,6 +18,7 @@ import { BackToListButton } from '@/shared/components/BackToListButton'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { FoldText } from '@/shared/components/FoldText'
 import { HotelPhotoBackdrop } from '@/shared/components/HotelPhotoBackdrop'
+import { ListItemViewHint } from '@/shared/components/ListItemViewHint'
 import { LoadError } from '@/shared/components/LoadError'
 import { MagicCard } from '@/shared/components/MagicCard'
 import { MetricCard } from '@/shared/components/MetricCard'
@@ -47,6 +48,10 @@ const NO_SHIFT_LABEL: Record<string, MessageDescriptor> = {
 }
 
 const MS_PER_DAY = 86_400_000
+
+/** `false`: las tarjetas de métricas se ocultan por ahora (Hugo, 2026-10-12)
+    — el código se queda listo por si se retoman. */
+const SHOW_METRICS = false
 
 /**
  * "92% · hace 3 días" — el score y cuándo, en una sola línea (mismo criterio
@@ -87,7 +92,11 @@ function statusToken(row: PersonnelRow): keyof typeof statusLight {
 
 /** Turno sin entrada = alerta — salvo pausado/protegido: ahí es lo esperado. */
 function hasMissingEntry(row: PersonnelRow): boolean {
-  return row.shift !== null && row.clockInAt === null && !(row.stateCode in NO_SHIFT_LABEL)
+  return (
+    row.shift !== null &&
+    row.clockInAt === null &&
+    !(row.stateCode !== null && row.stateCode in NO_SHIFT_LABEL)
+  )
 }
 
 /**
@@ -125,7 +134,7 @@ function WorkerAvatar({ row, className }: { row: PersonnelRow; className: string
 function rowSubtitle(row: PersonnelRow, i18n: I18n, timeZone: string | undefined): string {
   /* Rosa/Gris mandan sobre el turno: un pausado o protegido no debe leerse
      como si fuera a trabajar. */
-  const paused = NO_SHIFT_LABEL[row.stateCode]
+  const paused = row.stateCode === null ? undefined : NO_SHIFT_LABEL[row.stateCode]
   if (paused !== undefined) return i18n._(paused)
   if (!row.shift) return i18n._(msg`Descansa hoy`)
   const shift = `${timeOf(row.shift.startsAt, timeZone)}–${timeOf(row.shift.endsAt, timeZone)}`
@@ -181,6 +190,7 @@ function WorkerRow({
             className="size-2.5 shrink-0 rounded-full"
             style={{ backgroundColor: statusLight[statusToken(row)] }}
           />
+          <ListItemViewHint />
         </button>
       </MagicCard>
     </li>
@@ -254,7 +264,7 @@ function WorkerDetail({
   /* Auditar es solo del Supervisor: a sus Managers no se les enseña el score. */
   const canReadAudits = can('audits:read')
   const missingEntry = hasMissingEntry(row)
-  const paused = NO_SHIFT_LABEL[row.stateCode]
+  const paused = row.stateCode === null ? undefined : NO_SHIFT_LABEL[row.stateCode]
   return (
     /* Detalle fijo mientras la lista baja (lista-detalle, como la Cartera y el Pool). */
     <article
@@ -282,15 +292,19 @@ function WorkerDetail({
               <div>
                 <h2 className="text-2xl font-bold text-white">{row.fullName}</h2>
                 <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                  {/* El estado, con su punto de color: el color nunca solo. */}
-                  <Pill>
-                    <span
-                      aria-hidden
-                      className="size-2 rounded-full ring-1 ring-white/40"
-                      style={{ backgroundColor: statusLight[statusToken(row)] }}
-                    />
-                    {workerStatusChipLabel(row.stateCode as WorkerStatus)}
-                  </Pill>
+                  {/* El estado, con su punto de color: el color nunca solo.
+                      Sin ficha completa (Hotel, D-30) no hay semáforo que
+                      pintar: la pastilla no aparece en vez de mentir. */}
+                  {row.stateCode !== null && (
+                    <Pill>
+                      <span
+                        aria-hidden
+                        className="size-2 rounded-full ring-1 ring-white/40"
+                        style={{ backgroundColor: statusLight[statusToken(row)] }}
+                      />
+                      {workerStatusChipLabel(row.stateCode as WorkerStatus)}
+                    </Pill>
+                  )}
                   {row.positionName === '—' ? (
                     <Pill className="border border-dashed border-white/40 bg-ink/25 text-white/80">
                       <Trans>Sin posición asignada</Trans>
@@ -432,7 +446,10 @@ function WorkerDetail({
             <Trans>Sus datos</Trans>
           </p>
           <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
-            <PersonalField label={t`Edad`} value={t`${row.personal.age} años`} />
+            <PersonalField
+              label={t`Edad`}
+              value={row.personal.age === null ? '—' : t`${row.personal.age} años`}
+            />
             <PersonalField
               label={t`Género`}
               value={GENDER_LABEL[row.personal.gender] ?? row.personal.gender}
@@ -528,33 +545,29 @@ export function PersonnelPage(): ReactNode {
         </p>
       </header>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <MetricCard
-          value={String(board.assignedToday)}
-          label={t`Asignados hoy`}
-          foot={t`con turno del Schedule`}
-          icon="groups"
-        />
-        <MetricCard
-          value={String(board.clockedInToday)}
-          label={t`Con entrada registrada`}
-          foot={t`ya marcaron hoy`}
-          icon="login"
-        />
-        <MetricCard
-          value={String(board.inStandBy)}
-          label={t`En Stand-by`}
-          foot={t`pausa temporal (Rosa)`}
-          icon="pause_circle"
-        />
-        <MetricCard
-          value={String(board.inAccident)}
-          label={t`En accidente`}
-          foot={IS_DEV_UI ? 'protegido (Gris) · D-27' : t`protegido (Gris)`}
-          icon="medical_services"
-          tone={board.inAccident > 0 ? 'danger' : 'brand'}
-        />
-      </div>
+      {SHOW_METRICS && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <MetricCard
+            value={String(board.clockedInToday)}
+            label={t`Con entrada registrada`}
+            foot={t`ya marcaron hoy`}
+            icon="login"
+          />
+          <MetricCard
+            value={String(board.inStandBy)}
+            label={t`En Stand-by`}
+            foot={t`pausa temporal (Rosa)`}
+            icon="pause_circle"
+          />
+          <MetricCard
+            value={String(board.inAccident)}
+            label={t`En accidente`}
+            foot={IS_DEV_UI ? 'protegido (Gris) · D-27' : t`protegido (Gris)`}
+            icon="medical_services"
+            tone={board.inAccident > 0 ? 'danger' : 'brand'}
+          />
+        </div>
+      )}
 
       {board.rows.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-line px-6 py-12 text-center">

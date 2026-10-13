@@ -106,6 +106,9 @@ export const searchApi = baseApi.injectEndpoints({
                   to: `/requisitions/${requisition.id}`,
                 }))
 
+        /* El Hotel (`staff:read`) también puede buscar aquí, pero solo recibe
+           "lo básico" (Hugo, 2026-10-12): sin `state`, el subtítulo se queda
+           sin ese dato en vez de tronar (D-30). */
         const workers = workersRes.error
           ? []
           : (workersRes.data as PaginatedEnvelope<WorkerApi>).data
@@ -114,7 +117,7 @@ export const searchApi = baseApi.injectEndpoints({
                 id: worker.id,
                 kind: 'worker',
                 title: worker.fullName,
-                subtitle: `Colaborador · ${worker.position?.name ?? 'Sin posición'} · ${worker.state.name}`,
+                subtitle: `Colaborador · ${worker.position?.name ?? 'Sin posición'}${worker.state ? ` · ${worker.state.name}` : ''}`,
                 to: `/collaborator-pool/${worker.id}`,
               }))
 

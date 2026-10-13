@@ -179,12 +179,15 @@ export class MeService {
   // puede no es este metodo: es la tabla de transiciones, que ya trae las tres
   // de origen (Verde fuerte, Naranja y Rosa) autorizadas a ROL-C-01.
   async setAvailable(user: AuthenticatedUser): Promise<WorkerEntity> {
+    // `selfService=true` siempre devuelve la ficha completa (es SU propio
+    // perfil, no el de alguien más) — el tipo de unión es por el caso
+    // Hotel/Reclutamiento de `changeState`, que aquí no aplica.
     return this.workers.changeState(
       await this.workerId(user),
       { toState: AVAILABLE_VOLUNTARY },
       user,
       true,
-    )
+    ) as Promise<WorkerEntity>
   }
 
   private async workerId(user: AuthenticatedUser): Promise<string> {

@@ -6,10 +6,10 @@ import { useContext, useEffect, useMemo, useState, type CSSProperties, type Reac
 
 import { addDaysIso, todayIso } from '../lib/weekNavigation'
 import type {
+  ManualPunchTarget,
   ReviewContext,
   TimelineRow,
   TimesheetEntry,
-  TimesheetRow,
   TimesheetTimeline,
 } from '../types/timesheet.types'
 
@@ -182,7 +182,7 @@ export function TimesheetHoursView({
     entry: TimesheetEntry,
     workerName: string,
     context: ReviewContext | undefined,
-    manualPunchTarget: Pick<TimesheetRow, 'requisitionId' | 'workerId' | 'workerName'>,
+    manualPunchTarget: ManualPunchTarget,
   ) => void
 }): ReactNode {
   const { t } = useLingui()
@@ -652,6 +652,7 @@ export function TimesheetHoursView({
                           requisitionId: row.requisitionId,
                           workerId: row.workerId,
                           workerName: row.workerName,
+                          entries: row.entries,
                         })
                       }}
                     >

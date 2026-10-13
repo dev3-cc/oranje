@@ -20,10 +20,10 @@ import { type Period } from '../lib/period'
 import { workerKpis } from '../lib/workerKpis'
 
 import { WORKER_STATUS_LABEL, WORKER_STATUSES } from '@/shared/constants/workerStatus'
-import type { WorkerApi } from '@/shared/types/apiContract.types'
+import type { FullWorkerApi } from '@/shared/types/apiContract.types'
 
 /** Salud del Pool: colaboradores por estado, en el orden del semáforo. */
-function poolByState(workers: WorkerApi[]): SnapshotItem[] {
+function poolByState(workers: FullWorkerApi[]): SnapshotItem[] {
   return WORKER_STATUSES.flatMap((code) => {
     const count = workers.filter((worker) => worker.state.code === code).length
     return count ? [{ key: code, label: WORKER_STATUS_LABEL[code], count }] : []

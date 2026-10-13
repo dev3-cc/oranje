@@ -24,6 +24,7 @@ import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import { formatTimeIn, todayIn } from '@/shared/lib/formatters'
 import type {
   ApiEnvelope,
+  CatalogItemApi,
   TimesheetApi,
   TimesheetDayApi,
   TimesheetPunchApi,
@@ -54,8 +55,12 @@ function timeOf(iso: string, timeZone: string | undefined): string {
   return formatTimeIn(iso, timeZone)
 }
 
-/** Lo que el Timesheet necesita saber de cada requisición: folio y hotel. */
-interface RequisitionRefInfo {
+/**
+ * Lo que el Timesheet necesita saber de cada requisición: folio y hotel.
+ * Exportado para Contabilidad (`settlementApi.ts`), que arma su propia cinta
+ * de días con esta misma pieza en vez de tocar la del staff (Hugo, 2026-10-08).
+ */
+export interface RequisitionRefInfo {
   number: string
   hotelName: string
   hotelPhotoUrl: string | null
@@ -67,7 +72,7 @@ interface RequisitionRefInfo {
  * a fallos: sin él, el folio cae al id recortado y el hotel al de `/me`
  * (criterio D-30 — un dato de adorno no tumba la pantalla).
  */
-async function fetchRequisitionIndex(
+export async function fetchRequisitionIndex(
   fetchWithBQ: FetchWithBQ,
 ): Promise<Map<string, RequisitionRefInfo>> {
   const index = new Map<string, RequisitionRefInfo>()
@@ -94,7 +99,10 @@ async function fetchRequisitionIndex(
 }
 
 /** El folio REAL si el índice lo tiene; si no, el id recortado (fallback honesto). */
-function requisitionRefOf(index: Map<string, RequisitionRefInfo>, requisitionId: string): string {
+export function requisitionRefOf(
+  index: Map<string, RequisitionRefInfo>,
+  requisitionId: string,
+): string {
   return index.get(requisitionId)?.number ?? `req ${requisitionId.slice(0, 8)}`
 }
 
@@ -117,7 +125,7 @@ function dayStatus(day: TimesheetDayApi): TimesheetStatus {
   return 'PENDING'
 }
 
-function toEntry(
+export function toEntry(
   day: TimesheetDayApi,
   requisitionRef: string,
   hotelTimeZone: string | undefined,
@@ -147,8 +155,11 @@ function toEntry(
             ? 'IN_PROGRESS'
             : 'INCOMPLETE',
     hasAnomaly: day.hasAnomaly,
+    continuesNextDay: day.continuesNextDay,
+    continuesFromPreviousDay: day.continuesFromPreviousDay,
     isAbsence: day.isAbsence,
     reviewNote: day.reviewNote,
+    dayStatus: day.dayStatus,
     punches,
   }
 }
@@ -265,6 +276,14 @@ async function fetchWeek(
       weekStatus: detail.status,
       totalHours: Math.round(((detail.totals?.netMinutes ?? 0) / 60) * 100) / 100,
       targetHours: null,
+      /* `Number(...)` en vez de leer el campo directo: en producción llegó
+         `NaNh` a pantalla (Hugo, 2026-10-12) — el contrato promete un
+         `number`, pero no se puede confiar en que siempre llegue uno. Mejor
+         "—" honesto que una cifra rota. */
+      overtimeHours: (() => {
+        const minutes = Number(detail.totals?.overtimeMinutes)
+        return Number.isFinite(minutes) ? Math.round((minutes / 60) * 100) / 100 : null
+      })(),
       entries: (detail.days ?? []).map((day) => toEntry(day, requisitionRef, hotelTimeZone)),
     })
   }
@@ -605,6 +624,69 @@ export const timesheetApi = baseApi.injectEndpoints({
       },
       invalidatesTags: [{ type: 'Timesheet' as const, id: 'LIST' }],
     }),
+
+    /**
+     * Corregir una marca YA registrada — distinto de `createManualPunch`,
+     * que captura la que falta. `timesheet:correct_punch`, del Manager de
+     * Área/General (Hugo, 2026-10-10).
+     */
+    correctPunch: build.mutation<unknown, CorrectPunchRequest>({
+      query: (request) => ({
+        url: `/punches/${request.punchId}`,
+        method: 'PATCH',
+        body: { occurredAt: request.occurredAt, reason: request.reason },
+      }),
+      invalidatesTags: [{ type: 'Timesheet' as const, id: 'LIST' }],
+    }),
+
+    /** Catálogo del Administrador: Descanso, OFF… para marcar un día sin
+        ponches antes de aprobar (Hugo, 2026-10-12). */
+    getTimesheetDayStatuses: build.query<CatalogItemApi[], void>({
+      query: () => '/catalogs/timesheet-day-statuses',
+      transformResponse: (res: ApiEnvelope<CatalogItemApi[]>) => res.data,
+      providesTags: [{ type: 'Catalog' as const, id: 'TIMESHEET_DAY_STATUSES' }],
+    }),
+
+    /**
+     * `dayStatusId: null` quita la marca — el día vuelve a "sin marcar". Sin
+     * `invalidatesTags`: eso recargaba la TABLA entera (`getTimesheetWeek`
+     * compone 1 + N llamadas) y de paso perdía a quién tenías seleccionado en
+     * la lista — Hugo, 2026-10-12: "debería recargar el campo, no toda la
+     * tabla". Se parchea el caché en el lugar: solo ese día, de esa fila.
+     */
+    setTimesheetDayStatus: build.mutation<
+      TimesheetDayApi,
+      { timesheetId: string; workDate: string; dayStatusId: string | null }
+    >({
+      query: ({ timesheetId, ...body }) => ({
+        url: `/timesheets/${timesheetId}/day-status`,
+        method: 'PUT',
+        body,
+      }),
+      transformResponse: (res: ApiEnvelope<TimesheetDayApi>) => res.data,
+      onQueryStarted: async (arg, lifecycleApi) => {
+        const { dispatch, queryFulfilled } = lifecycleApi
+        const day = await queryFulfilled.then(
+          (res) => res.data,
+          () => null,
+        )
+        if (!day) return
+
+        const cachedArgs = timesheetApi.util.selectCachedArgsForQuery(
+          lifecycleApi.getState(),
+          'getTimesheetWeek',
+        )
+        for (const cachedArg of cachedArgs) {
+          dispatch(
+            timesheetApi.util.updateQueryData('getTimesheetWeek', cachedArg, (draft) => {
+              const row = draft.rows.find((r) => r.timesheetId === arg.timesheetId)
+              const entry = row?.entries.find((e) => e.date === arg.workDate)
+              if (entry) entry.dayStatus = day.dayStatus
+            }),
+          )
+        }
+      },
+    }),
   }),
 })
 
@@ -619,6 +701,13 @@ export interface ManualPunchRequest {
   reason: string
 }
 
+export interface CorrectPunchRequest {
+  punchId: string
+  /** ISO completo: la hora real, corrigiendo lo que ya se había registrado. */
+  occurredAt: string
+  reason: string
+}
+
 export const {
   useGetTimesheetWeekQuery,
   useGetTimesheetTimelineQuery,
@@ -627,4 +716,7 @@ export const {
   useSubmitTimesheetMutation,
   useApproveTimesheetMutation,
   useCreateManualPunchMutation,
+  useCorrectPunchMutation,
+  useGetTimesheetDayStatusesQuery,
+  useSetTimesheetDayStatusMutation,
 } = timesheetApi

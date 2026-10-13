@@ -39,4 +39,7 @@
     <string name="perm_hotel_summary_ready">All set: we\'ll let you know what matters.</string>
     <string name="perm_hotel_summary_missing">We recommend turning on notifications. You can do it later.</string>
     <string name="perm_continue">Continue</string>
+    <string name="perm_privacy">Privacy notice</string>
+    <string name="perm_privacy_file" translatable="false">privacy.html</string>
+    <string name="perm_close">Close</string>
 </resources>

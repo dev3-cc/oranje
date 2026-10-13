@@ -19,6 +19,34 @@ export interface TemplateData {
   /** Las de gerencia nombran el puesto: es lo que las distingue. */
   'management-invitation': { name: string; link: string; roleName: string }
   'management-password-reset': { name: string; link: string; roleName: string }
+  /**
+   * Estado de las horas de una semana cerrada, para el Supervisor y el Manager
+   * de Área de un hotel. Sale siempre el sábado, con o sin pendientes.
+   * Los conteos son hojas de horas (un renglón por colaborador y requisición).
+   */
+  'hours-week-status': {
+    name: string
+    hotelName: string
+    /** Lunes y domingo de la semana cerrada, `AAAA-MM-DD`. */
+    weekStart: string
+    weekEnd: string
+    approved: number
+    pending: number
+  }
+  /**
+   * Factura al hotel (BORRADOR: sin envío todavía; decisión pendiente de Hugo).
+   * Los textos llegan ya formateados: la plantilla no decide fechas ni monedas.
+   * El PDF se adjuntaría fuera de esta plantilla; hoy no hay generador.
+   */
+  'invoice-to-hotel': {
+    name: string
+    hotelName: string
+    folio: string
+    /** Periodo legible, p. ej. «28 sep – 4 oct 2026». */
+    periodLabel: string
+    /** Total con moneda, ya formateado, p. ej. «$1,400.00». */
+    totalLabel: string
+  }
 }
 
 /**
@@ -205,11 +233,112 @@ const managementPasswordReset: Template<'management-password-reset'> = {
         },
 }
 
+/** «6 – 12 oct 2026», en el idioma de la persona, sin cambiar de zona: son fechas, no instantes. */
+const rangeLabel = (locale: Locale, weekStart: string, weekEnd: string): string => {
+  const format = new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'es-MX', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+  const at = (day: string): string => format.format(new Date(`${day}T00:00:00Z`))
+
+  return `${at(weekStart)} – ${at(weekEnd)}`
+}
+
+const hoursWeekStatus: Template<'hours-week-status'> = {
+  firebaseFallback: null,
+  build: (locale, data) => {
+    const range = rangeLabel(locale, data.weekStart, data.weekEnd)
+    const { approved, pending } = data
+
+    if (locale === 'en') {
+      const summary =
+        approved + pending === 0
+          ? 'No timesheets were recorded for this week.'
+          : pending === 0
+            ? `All ${approved} timesheet${approved === 1 ? '' : 's'} for this week ${approved === 1 ? 'is' : 'are'} approved.`
+            : `${approved} approved and ${pending} still waiting for approval. Hours that are not approved in time are not part of this week’s payment.`
+
+      return {
+        subject: `Hours for ${range} at ${data.hotelName}`,
+        heading: `Hours for ${range}`,
+        preheader:
+          pending === 0
+            ? 'Every timesheet for the week is approved.'
+            : `${pending} timesheet${pending === 1 ? '' : 's'} still need approval.`,
+        paragraphs: [greeting(locale, data.name), `${data.hotelName}: ${summary}`],
+        footnote:
+          'You are receiving this email because your Oranje account is responsible for hours at this hotel. It goes out every Saturday, even when nothing is pending.',
+      }
+    }
+
+    const summary =
+      approved + pending === 0
+        ? 'No se registró ninguna hoja de horas en esta semana.'
+        : pending === 0
+          ? `Las ${approved} ${approved === 1 ? 'hoja de horas de esta semana ya está aprobada' : 'hojas de horas de esta semana ya están aprobadas'}.`
+          : `${approved} ${approved === 1 ? 'aprobada' : 'aprobadas'} y ${pending} sin aprobar. Lo que no se apruebe a tiempo no entra al pago de esta semana.`
+
+    return {
+      subject: `Horas de ${range} en ${data.hotelName}`,
+      heading: `Horas de ${range}`,
+      preheader:
+        pending === 0
+          ? 'Todas las hojas de horas de la semana están aprobadas.'
+          : `Quedan ${pending} ${pending === 1 ? 'hoja de horas' : 'hojas de horas'} por aprobar.`,
+      paragraphs: [greeting(locale, data.name), `${data.hotelName}: ${summary}`],
+      footnote:
+        'Recibes este correo porque tu cuenta de Oranje responde por las horas de este hotel. Sale cada sábado, aunque no haya pendientes.',
+    }
+  },
+}
+
+/**
+ * BORRADOR · no enviar sin aprobación de Hugo. Factura al hotel: el correo de
+ * la factura emitida, con el PDF adjunto. Sin Firebase de respaldo: Firebase
+ * solo manda sus propios correos, así que si el SMTP falla el envío queda
+ * registrado para reintentarlo.
+ */
+const invoiceToHotel: Template<'invoice-to-hotel'> = {
+  firebaseFallback: null,
+  build: (locale, data) =>
+    locale === 'en'
+      ? {
+          subject: `Oranje invoice ${data.folio}`,
+          heading: `Your invoice ${data.folio}`,
+          preheader: `Invoice ${data.folio} for ${data.periodLabel} is attached as a PDF.`,
+          paragraphs: [
+            greeting(locale, data.name),
+            `Attached is invoice ${data.folio} for ${data.hotelName}, covering ${data.periodLabel}, for a total of ${data.totalLabel}.`,
+            'The PDF shows the detail by collaborator and position, with the hours and the bill rate applied.',
+            'Questions about the invoice? Reply to this email and your Oranje contact will answer.',
+          ],
+          footnote:
+            'You are receiving this email because Oranje bills your hotel. If you are not the right person for your hotel’s invoices, reply and let us know.',
+        }
+      : {
+          subject: `Factura ${data.folio} de Oranje`,
+          heading: `Tu factura ${data.folio}`,
+          preheader: `La factura ${data.folio} de ${data.periodLabel} va adjunta en PDF.`,
+          paragraphs: [
+            greeting(locale, data.name),
+            `Adjuntamos la factura ${data.folio} de ${data.hotelName}, del periodo ${data.periodLabel}, por un total de ${data.totalLabel}.`,
+            'El PDF trae el detalle por colaborador y puesto, con las horas y la tarifa aplicada.',
+            '¿Tienes dudas sobre la factura? Responde a este correo y tu contacto en Oranje te contesta.',
+          ],
+          footnote:
+            'Recibes este correo porque Oranje factura los servicios de tu hotel. Si no eres la persona indicada para las facturas de tu hotel, responde y avísanos.',
+        },
+}
+
 const TEMPLATES = {
   'account-invitation': accountInvitation,
   'password-reset': passwordReset,
   'management-invitation': managementInvitation,
   'management-password-reset': managementPasswordReset,
+  'invoice-to-hotel': invoiceToHotel,
+  'hours-week-status': hoursWeekStatus,
 } satisfies { [K in TemplateName]: Template<K> }
 
 export const firebaseFallbackOf = (template: TemplateName): 'PASSWORD_RESET' | null =>

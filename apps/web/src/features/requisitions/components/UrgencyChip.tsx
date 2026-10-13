@@ -41,6 +41,7 @@ export function UrgencyChip({
   startDate,
   authorizedAt,
   variant = 'badge',
+  coverageComplete = false,
 }: {
   urgency: UrgencyLevel
   /** Fecha de inicio de la posición (o la más próxima de la requisición). */
@@ -48,11 +49,18 @@ export function UrgencyChip({
   authorizedAt: string | null
   /** `inline`: punto + texto sin píldora, para celdas de tabla. */
   variant?: 'badge' | 'inline'
+  /** Ya no queda ningún slot libre: la urgencia deja de ser la pregunta —
+      ya no hay nada que apurar (Hugo, 2026-10-12). Se neutraliza aquí y no
+      se apaga en el servidor: el color rojo/amarillo/verde que se calculó
+      al autorizar sigue siendo un hecho histórico, solo deja de mostrarse. */
+  coverageComplete?: boolean
 }): ReactNode {
   const { t } = useLingui()
   const [isOpen, setIsOpen] = useState(false)
-  const label = URGENCY_LABEL[urgency]
-  const hint = URGENCY_HINT[urgency]
+  const label = coverageComplete ? t`Ya no aplica` : URGENCY_LABEL[urgency]
+  const hint = coverageComplete
+    ? t`Esta posición ya está cubierta: no importa cuánto falte para que inicie.`
+    : URGENCY_HINT[urgency]
   const ahead = startDate ? daysUntil(startDate) : null
   const since = authorizedAt ? daysSince(authorizedAt) : null
 
@@ -63,6 +71,8 @@ export function UrgencyChip({
     event.stopPropagation()
     setIsOpen((open) => !open)
   }
+
+  const token = coverageComplete ? 'st-gris' : URGENCY_TOKEN[urgency]
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -77,12 +87,12 @@ export function UrgencyChip({
           )}
         >
           {variant === 'badge' ? (
-            <StatusLightSoftBadge token={URGENCY_TOKEN[urgency]} label={label} />
+            <StatusLightSoftBadge token={token} label={label} />
           ) : (
             <>
               <span
                 className="size-2 shrink-0 rounded-full"
-                style={{ backgroundColor: statusLight[URGENCY_TOKEN[urgency]] }}
+                style={{ backgroundColor: statusLight[token] }}
                 aria-hidden
               />
               {label}
