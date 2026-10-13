@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
   Headers,
@@ -8,7 +9,9 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
+  Put,
   Query,
 } from '@nestjs/common'
 
@@ -17,9 +20,18 @@ import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { SchedulerTokenService } from '../../../common/security/scheduler-token.service.js'
 import { PermissionsService } from '../../identity/index.js'
 
-import { CreateManualPunchDto, CreatePunchDto } from './dto/create-punch.dto.js'
+import { CorrectPunchDto, CreateManualPunchDto, CreatePunchDto } from './dto/create-punch.dto.js'
+import { SetDayStatusDto } from './dto/day-status.dto.js'
+import { ListTimesheetsDto } from './dto/list-timesheets.dto.js'
+import { SetPayOverrideDto } from './dto/pay-override.dto.js'
 import { ReviewDayDto } from './dto/review-day.dto.js'
-import { DayEntity, PunchResult, TimesheetEntity, TimesheetsService } from './timesheets.service.js'
+import {
+  DayEntity,
+  PunchResult,
+  TimesheetEntity,
+  TimesheetListEntity,
+  TimesheetsService,
+} from './timesheets.service.js'
 
 /**
  * Leer el Timesheet lo pueden dos alcances: el del hotel (`read_department`,
@@ -58,15 +70,16 @@ export class TimesheetsController {
   @Get('timesheets')
   async list(
     @CurrentUser() user: AuthenticatedUser,
-    @Query('status') status?: string,
-    /* El periodo acota en la consulta, no después: así el tope del listado
-       no se alcanza por el paso del tiempo (Hugo, 2026-10-05). */
-    @Query('from') from?: string,
-    @Query('to') to?: string,
-  ): Promise<{ data: TimesheetEntity[] }> {
+    @Query() query: ListTimesheetsDto,
+  ): Promise<{ data: TimesheetListEntity[] }> {
     const allHotels = await this.readScope(user)
 
-    return { data: await this.timesheets.list(user, status, allHotels, { from, to }) }
+    return {
+      data: await this.timesheets.list(user, query, allHotels, {
+        from: query.from,
+        to: query.to,
+      }),
+    }
   }
 
   // Antes que `:id`, o Nest lee "me" como un uuid.
@@ -81,9 +94,9 @@ export class TimesheetsController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: TimesheetEntity }> {
-    await this.readScope(user)
+    const allHotels = await this.readScope(user)
 
-    return { data: await this.timesheets.get(id) }
+    return { data: await this.timesheets.getScoped(id, user, allHotels) }
   }
 
   @Requires('timesheet', 'punch')
@@ -106,6 +119,17 @@ export class TimesheetsController {
     return { data: await this.timesheets.manualPunch(dto, user) }
   }
 
+  @Requires('timesheet', 'correct_punch')
+  @Patch('punches/:id')
+  @HttpCode(HttpStatus.OK)
+  async correctPunch(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CorrectPunchDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: PunchResult }> {
+    return { data: await this.timesheets.correctPunch(id, dto, user) }
+  }
+
   @Requires('timesheet', 'review_punches')
   @Post('timesheet-days/:id/review')
   @HttpCode(HttpStatus.OK)
@@ -115,6 +139,32 @@ export class TimesheetsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: DayEntity }> {
     return { data: await this.timesheets.reviewDay(id, dto.note, user) }
+  }
+
+  /**
+   * Sin Schedule, un día sin ponches no tiene fila: con qué se marca
+   * (Descanso, OFF…) antes de enviar la semana — mismo alcance que corregir
+   * una marca (Hugo, 2026-10-12).
+   */
+  @Requires('timesheet', 'review_punches')
+  @Put('timesheets/:id/day-status')
+  @HttpCode(HttpStatus.OK)
+  async setDayStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SetDayStatusDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: DayEntity }> {
+    const allHotels = await this.readScope(user)
+
+    return {
+      data: await this.timesheets.setDayStatus(
+        id,
+        new Date(`${dto.workDate}T00:00:00Z`),
+        dto.dayStatusId,
+        user,
+        allHotels,
+      ),
+    }
   }
 
   @Requires('timesheet', 'review_punches')
@@ -135,6 +185,31 @@ export class TimesheetsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: TimesheetEntity }> {
     return { data: await this.timesheets.approve(id, user) }
+  }
+
+  /**
+   * Corrección de Contabilidad sobre la vista previa de pago (Hugo,
+   * 2026-10-08): tarifa y reparto de horas. El mismo permiso que prepara la
+   * corrida, `payroll:generate` — Contadora y Manager de Contabilidad.
+   */
+  @Requires('payroll', 'generate')
+  @Put('timesheets/:id/pay-override')
+  @HttpCode(HttpStatus.OK)
+  async setPayOverride(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SetPayOverrideDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: TimesheetListEntity }> {
+    return { data: await this.timesheets.setPayOverride(id, dto, user) }
+  }
+
+  @Requires('payroll', 'generate')
+  @Delete('timesheets/:id/pay-override')
+  @HttpCode(HttpStatus.OK)
+  async clearPayOverride(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<{ data: TimesheetListEntity }> {
+    return { data: await this.timesheets.clearPayOverride(id) }
   }
 
   /** `true` = todos los hoteles; `false` = el hotel de quien pregunta. */

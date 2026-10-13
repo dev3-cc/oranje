@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common'
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common'
 import { v7 as uuidv7 } from 'uuid'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
@@ -76,6 +81,7 @@ export class HotelsService {
   async create(dto: CreateHotelDto, userId: string): Promise<HotelEntity> {
     await this.assertZone(dto.zoneId)
     await this.assertNameAvailable(dto.name)
+    this.assertWeekValid(dto.weekStartDay, dto.weekEndDay)
 
     const row = await this.repo.create(dto, userId)
 
@@ -122,6 +128,13 @@ export class HotelsService {
 
     if (dto.name !== undefined) {
       await this.assertNameAvailable(dto.name, id)
+    }
+
+    if (dto.weekStartDay !== undefined || dto.weekEndDay !== undefined) {
+      this.assertWeekValid(
+        dto.weekStartDay ?? current.weekStartDay,
+        dto.weekEndDay ?? current.weekEndDay,
+      )
     }
 
     if (dto.latitude !== undefined && dto.longitude !== undefined) {
@@ -266,6 +279,19 @@ export class HotelsService {
     }
   }
 
+  // Mismo criterio que ya usa el Contrato (contracts.service.ts): la semana
+  // no puede empezar y terminar el mismo día. `null` no se evalúa aquí: en
+  // update() ya se resolvió a un valor real antes de llamar esto, o no se
+  // llama si ninguno de los dos cambió.
+  private assertWeekValid(weekStartDay: number | null, weekEndDay: number | null): void {
+    if (weekStartDay !== null && weekStartDay === weekEndDay) {
+      throw new UnprocessableEntityException({
+        code: 'WEEK_INVALID',
+        message: 'La semana no puede empezar y terminar el mismo día',
+      })
+    }
+  }
+
   // `excludeId` es el propio hotel al editar: sin esto, guardar sin tocar el
   // nombre (o con un nombre que solo cambió en espacios/acentos al volver del
   // formulario) choca contra sí mismo y HOTEL_NAME_TAKEN sale falso.
@@ -286,6 +312,10 @@ function toEntity(row: HotelRow): HotelEntity {
     generalPhone: row.generalPhone,
     timeZone: row.timeZone,
     geofenceRadiusM: row.geofenceRadiusM,
+    weekStartDay: row.weekStartDay,
+    weekEndDay: row.weekEndDay,
+    overtimePayMultiplier:
+      row.overtimePayMultiplier === null ? null : Number(row.overtimePayMultiplier),
     address: row.address,
     placeId: row.placeId,
     photoUrl: null,

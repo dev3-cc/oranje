@@ -121,6 +121,14 @@ export interface HotelData {
   location: GeoPoint | null
   /** Foto del hotel según Places; `null` en hoteles capturados sin ella. */
   photoUrl: string | null
+  /**
+   * Datos contables del hotel (Hugo, 2026-10-07): el Contrato los hereda de
+   * aquí y no los vuelve a pedir. `null` solo en hoteles que nacieron antes
+   * de esta captura.
+   */
+  weekStartDay: number | null
+  weekEndDay: number | null
+  overtimePayMultiplier: number | null
   /** `null` mientras el prospecto no se convierte en cliente activo. */
   activatedAsClientAt: string | null
 }
@@ -148,6 +156,15 @@ export interface HotelPayload {
   geofenceMeters: number
   /** Selfie por defecto; QR para los hoteles que no permiten tomar fotos. */
   punchMethod?: 'SELFIE' | 'QR'
+  /**
+   * Datos contables (Hugo, 2026-10-07): el día en que cierra la semana del
+   * hotel y el recargo de overtime pagado. REQUERIDOS al dar de alta un
+   * hotel nuevo; opcionales al reusar o editar uno ya registrado, porque
+   * puede que ya los tenga capturados.
+   */
+  weekStartDay?: number
+  weekEndDay?: number
+  overtimePayMultiplier?: 0 | 1.5
 }
 
 /** El primer contacto del hotel, `commercial.hotel_contact`. */

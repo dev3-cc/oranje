@@ -16,8 +16,11 @@ function entry(overrides: Partial<TimesheetEntry> = {}): TimesheetEntry {
     requisitionNumber: null,
     punch: 'NO_SHIFT',
     hasAnomaly: false,
+    continuesNextDay: false,
+    continuesFromPreviousDay: false,
     isAbsence: false,
     reviewNote: null,
+    dayStatus: null,
     punches: [],
     ...overrides,
   }

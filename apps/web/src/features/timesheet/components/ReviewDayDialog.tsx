@@ -5,7 +5,7 @@ import { Alert, AlertDescription, MaterialIcon, statusLight, toast } from '@oran
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { useReviewTimesheetDayMutation } from '../api/timesheetApi'
-import type { ReviewContext, TimesheetEntry } from '../types/timesheet.types'
+import type { ReviewContext, TimesheetEntry, TimesheetPunch } from '../types/timesheet.types'
 
 import personajeAyuda from '@/assets/ilustrations/personaje-ayuda.svg'
 import personajeCronograma from '@/assets/ilustrations/personaje-cronograma.svg'
@@ -62,6 +62,7 @@ export function ReviewDayDialog({
   workerName,
   context = null,
   onManualPunch,
+  onCorrectPunch,
   readOnly = false,
   onClose,
 }: {
@@ -71,6 +72,10 @@ export function ReviewDayDialog({
   context?: ReviewContext | null
   /** Abre Marca manual para este mismo día; `undefined` = el botón no se dibuja. */
   onManualPunch?: (() => void) | undefined
+  /** Corregir UNA marca ya registrada (Manager de Área/General);
+      `undefined` = el ícono no se dibuja — lo que el permiso no autoriza no
+      se dibuja. */
+  onCorrectPunch?: ((punch: TimesheetPunch) => void) | undefined
   /** Quien no revisa (el Observador) ve el día y su nota, sin nada que guardar. */
   readOnly?: boolean
   onClose: () => void
@@ -284,7 +289,7 @@ export function ReviewDayDialog({
                   return (
                     <li
                       key={punch.id}
-                      className="grid grid-cols-[7rem_1fr_auto] items-center gap-3 rounded-md bg-surface-2 px-3 py-2 text-sm"
+                      className="grid grid-cols-[7rem_1fr_auto_auto] items-center gap-3 rounded-md bg-surface-2 px-3 py-2 text-sm"
                     >
                       <span className="font-semibold text-ink">
                         {typeLabel ? i18n._(typeLabel) : punch.type}
@@ -311,6 +316,19 @@ export function ReviewDayDialog({
                         </span>
                       ) : (
                         <span className="text-xs font-semibold text-ink-2">{punch.serverTime}</span>
+                      )}
+                      {onCorrectPunch && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onCorrectPunch(punch)
+                          }}
+                          aria-label={t`Corregir esta marca`}
+                          title={t`Corregir esta marca`}
+                          className="cursor-pointer rounded p-1 text-ink-4 hover:bg-surface hover:text-ink-2"
+                        >
+                          <MaterialIcon name="edit" className="text-base" aria-hidden />
+                        </button>
                       )}
                     </li>
                   )

@@ -17,6 +17,13 @@ export const createHotelSchema = z.object({
   // Cómo se poncha en este hotel. Por defecto Selfie; QR para los hoteles que
   // no permiten tomar fotos. Al pasar a QR el servidor genera el código.
   punchMethod: z.enum(['SELFIE', 'QR']).optional(),
+  // Datos contables (Hugo, 2026-10-07): se capturan al dar de alta y el
+  // Contrato los hereda de aquí sin volver a pedirlos. REQUERIDOS, sin
+  // default: no se inventa un cierre de semana ni un recargo de overtime.
+  weekStartDay: z.number().int().min(0).max(6),
+  weekEndDay: z.number().int().min(0).max(6),
+  // 0 = no paga horas extra; 1.5 = tiempo y medio (Hugo, 2026-10-07).
+  overtimePayMultiplier: z.union([z.literal(0), z.literal(1.5)]),
 })
 
 export class CreateHotelDto extends createZodDto(createHotelSchema) {}

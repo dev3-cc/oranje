@@ -12,6 +12,7 @@ import { matchesSearch } from '@/shared/lib/text'
 import type {
   ApiEnvelope,
   CatalogItemApi,
+  FullWorkerApi,
   PaginatedEnvelope,
   StatusRefApi,
   WorkerApi,
@@ -77,7 +78,7 @@ function buildWorker(input: {
   hasPendingDocument?: boolean
   email?: string
   assignment?: WorkerApi['assignment']
-}): WorkerApi {
+}): FullWorkerApi {
   workerSequence += 1
   return {
     id: `wrk-${String(workerSequence).padStart(4, '0')}`,
@@ -97,6 +98,7 @@ function buildWorker(input: {
     transportType: 'PUBLIC',
     emergencyContact: null,
     bloodType: 'O_POS',
+    medicalNotes: null,
     state: STATE[input.state] ?? (STATE.WHITE as StatusRefApi),
     isProfileComplete: input.isProfileComplete ?? true,
     profileDueAt: null,
@@ -112,7 +114,7 @@ function buildWorker(input: {
   }
 }
 
-const workers: WorkerApi[] = [
+const workers: FullWorkerApi[] = [
   buildWorker({
     fullName: 'Ana Rivera Gómez',
     age: 29,

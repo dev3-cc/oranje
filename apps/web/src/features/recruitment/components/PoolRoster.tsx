@@ -16,6 +16,7 @@ import { ProfileProgressAvatar } from './ProfileProgressAvatar'
 import { BackToListButton } from '@/shared/components/BackToListButton'
 import { Button, buttonClass } from '@/shared/components/Button'
 import { CautionPill } from '@/shared/components/CautionPill'
+import { ListItemViewHint } from '@/shared/components/ListItemViewHint'
 import { MagicCard } from '@/shared/components/MagicCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { workerStatusChipLabel, WORKER_STATUS_TOKEN } from '@/shared/constants/workerStatus'
@@ -147,6 +148,7 @@ export function PoolRoster({
                   className="size-2.5 shrink-0 rounded-full"
                   style={{ backgroundColor: statusLight[WORKER_STATUS_TOKEN[worker.status]] }}
                 />
+                <ListItemViewHint />
               </button>
             </MagicCard>
           </li>

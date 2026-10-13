@@ -25,6 +25,9 @@ const PROSPECT: ProspectDetail = {
     geofenceMeters: 150,
     location: { lat: 21.1619, lng: -86.8515 },
     photoUrl: null,
+    weekStartDay: 1,
+    weekEndDay: 0,
+    overtimePayMultiplier: 1.5,
     activatedAsClientAt: null,
     id: 'hotel-spec',
     punchMethod: 'SELFIE',
@@ -111,7 +114,13 @@ describe('ProspectFormDialog', () => {
     expect(await screen.findByLabelText('Nombre')).toHaveValue('Marta Solís')
     expect(screen.getByLabelText('Puesto')).toHaveValue('Gerente de Compras')
 
-    // Paso 4: el ciclo, con el botón de guardar al final.
+    // Paso 4: los datos contables, prellenados desde el hotel.
+    await user.click(screen.getByRole('button', { name: 'Continuar' }))
+    expect(await screen.findByLabelText('La semana del hotel empieza en')).toHaveTextContent(
+      'Lunes',
+    )
+
+    // Paso 5: el ciclo, con el botón de guardar al final.
     await user.click(screen.getByRole('button', { name: 'Continuar' }))
     expect(await screen.findByLabelText('Qué necesita')).toHaveValue('2 camaristas y 1 houseman')
     // El botón de guardar llega apagado y se arma 350 ms después: un doble
@@ -122,7 +131,9 @@ describe('ProspectFormDialog', () => {
       expect(save).toBeEnabled()
     })
 
-    // Atrás regresa sin perder lo escrito.
+    // Atrás regresa sin perder lo escrito (dos pasos: el ciclo → datos
+    // contables → contacto).
+    await user.click(screen.getByRole('button', { name: 'Atrás' }))
     await user.click(screen.getByRole('button', { name: 'Atrás' }))
     expect(await screen.findByLabelText('Nombre')).toHaveValue('Marta Solís')
   })

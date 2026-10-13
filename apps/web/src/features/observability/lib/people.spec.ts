@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { inspectionPeople, recruitmentPeople, salesPeople } from './people'
 import { periodOf } from './period'
 
-import type { ProspectApi, RequisitionApi, WorkerApi } from '@/shared/types/apiContract.types'
+import type { FullWorkerApi, ProspectApi, RequisitionApi } from '@/shared/types/apiContract.types'
 
 const NOW = new Date(2026, 9, 7, 15, 0, 0)
 const WEEK = periodOf('week', NOW)
@@ -149,7 +149,7 @@ describe('Reclutamiento por persona', () => {
       { id: 'w1', fullName: 'Luis Pérez', createdAt: at(5) },
       { id: 'w2', fullName: 'Eva Ruiz', createdAt: at(6) },
       { id: 'w3', fullName: 'Viejo', createdAt: at(1) },
-    ] as WorkerApi[]
+    ] as FullWorkerApi[]
     const signup = (id: string, userName: string, day: number) => [
       {
         id: `${id}-b`,

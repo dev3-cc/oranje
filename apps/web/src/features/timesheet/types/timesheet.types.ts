@@ -40,8 +40,14 @@ export interface TimesheetEntry {
   requisitionNumber: string | null
   punch: PunchState
   hasAnomaly: boolean
+  /** Turno nocturno emparejado con el día siguiente/anterior (2026-10-12):
+      exactamente uno puede ser `true`, nunca los dos. */
+  continuesNextDay: boolean
+  continuesFromPreviousDay: boolean
   isAbsence: boolean
   reviewNote: string | null
+  /** Con qué se marcó un día sin ponches (Descanso, OFF…); `null` = sin marcar. */
+  dayStatus: { code: string; name: string } | null
   punches: TimesheetPunch[]
 }
 
@@ -74,6 +80,11 @@ export interface TimesheetRow {
   totalHours: number
   /** `null`: las horas contractuales aún no viajan en el contrato. */
   targetHours: number | null
+  /** Horas extra REALES de la semana (D-10: corte de 40 h por requisición,
+      ya calculado por el servidor en `totals.overtimeMinutes`) — no se
+      deriva de `targetHours`, que no existe todavía. `null` solo cuando el
+      detalle no trajo `totals` (p. ej. en la cinta de Días). */
+  overtimeHours: number | null
   entries: TimesheetEntry[]
 }
 
@@ -128,6 +139,17 @@ export interface ReviewContext {
   hotelName: string | null
   hotelPhotoUrl: string | null
 }
+
+/**
+ * Con qué abrir Marca manual. Lleva `entries` (no solo la identidad) para
+ * que el diálogo sepa, del día que se elija ahí dentro, qué ya está
+ * marcado — y proponga la marca que sigue en vez de asumir siempre Entrada
+ * (Hugo, 2026-10-10).
+ */
+export type ManualPunchTarget = Pick<
+  TimesheetRow,
+  'requisitionId' | 'workerId' | 'workerName' | 'entries'
+>
 
 export interface ReviewDayRequest {
   dayId: string

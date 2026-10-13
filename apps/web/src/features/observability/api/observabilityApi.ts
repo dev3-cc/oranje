@@ -7,15 +7,16 @@ import type {
   ApiEnvelope,
   AssignmentApi,
   ContactAttemptApi,
+  FullWorkerApi,
   HotelApi,
   PaginatedEnvelope,
   ProspectApi,
   RequisitionApi,
   RequisitionJournalEntryApi,
   TimesheetApi,
-  WorkerApi,
   WorkerHistoryEntryApi,
 } from '@/shared/types/apiContract.types'
+import type { ApprovalTimeliness } from '@/shared/types/approvalTimeliness.types'
 
 /** `fetchWithBQ` de un `queryFn`: el tipo exacto no está exportado por RTK. */
 type FetchWithBQ = (
@@ -91,6 +92,12 @@ export const observabilityApi = baseApi.injectEndpoints({
       transformResponse: (raw: ApiEnvelope<DepartmentMetric[]>) => raw.data,
     }),
 
+    /** KPI 4 (Aprobación oportuna de ponches). Misma fuente que Contabilidad. */
+    getApprovalTimeliness: build.query<ApprovalTimeliness, void>({
+      query: () => '/observability/approval-timeliness',
+      transformResponse: (raw: ApiEnvelope<ApprovalTimeliness>) => raw.data,
+    }),
+
     /** Con los cerrados: la conversión y la pérdida se miden sobre ciclos terminados. */
     getObserverProspects: build.query<Listed<ProspectApi>, void>({
       async queryFn(_arg, _api, _extra, baseQuery) {
@@ -121,10 +128,13 @@ export const observabilityApi = baseApi.injectEndpoints({
       },
     }),
 
-    getObserverWorkers: build.query<Listed<WorkerApi>, void>({
+    /* `recruitment:search_candidates` (que el Observador tiene) es lo que
+       decide la ficha completa en el back (`isFullWorkerApi`): sus workers
+       siempre traen `state`. */
+    getObserverWorkers: build.query<Listed<FullWorkerApi>, void>({
       async queryFn(_arg, _api, _extra, baseQuery) {
         const fetchWithBQ = baseQuery as FetchWithBQ
-        const res = await fetchAllPages<WorkerApi>(fetchWithBQ, '/workers')
+        const res = await fetchAllPages<FullWorkerApi>(fetchWithBQ, '/workers')
         return 'error' in res ? { error: res.error as never } : { data: listed(res.data) }
       },
     }),
@@ -286,6 +296,7 @@ export const observabilityApi = baseApi.injectEndpoints({
 export const {
   useGetStatusDurationsQuery,
   useGetDepartmentMetricsQuery,
+  useGetApprovalTimelinessQuery,
   useGetObserverProspectsQuery,
   useGetObserverClientHotelsQuery,
   useGetObserverRequisitionsQuery,

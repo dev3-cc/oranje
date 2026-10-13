@@ -44,7 +44,7 @@ import {
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
-import type { WorkerApi } from '@/shared/types/apiContract.types'
+import { isFullWorkerApi, type WorkerApi } from '@/shared/types/apiContract.types'
 
 const UNSET = 'UNSET'
 
@@ -307,7 +307,10 @@ export function CreateWorkerDialog({
    * nacimiento, pero le pasaba a cualquier campo (Hugo, 2026-10-01).
    */
   useEffect(() => {
-    if (!isOpen || !editing) return
+    /* Editar es `recruitment:update_worker` — Reclutamiento, siempre ficha
+       completa. El guard es defensivo (D-30): sin ella no hay con qué
+       llenar el borrador. */
+    if (!isOpen || !editing || !isFullWorkerApi(editing)) return
     setDraft({
       fullName: editing.fullName,
       birthDate: editing.birthDate.slice(0, 10),

@@ -222,8 +222,10 @@ const STAFF_CHILDREN: RouteObject[] = [
     },
   },
   {
+    /* Horas/Días/Mes están ocultas desde 2026-10-10 (la pantalla vive en
+       Asistencia, un roster lista-detalle, no la cinta ancha): ya no
+       necesita el ancho completo (Hugo, 2026-10-12). */
     path: 'timesheet',
-    handle: FULL_WIDTH,
     lazy: async () => {
       const m = await import('@/features/timesheet')
       return { Component: m.TimesheetPage }
@@ -235,6 +237,78 @@ const STAFF_CHILDREN: RouteObject[] = [
     lazy: async () => {
       const m = await import('@/features/timesheet')
       return { Component: m.TimesheetGlobalPage }
+    },
+  },
+  /* Contabilidad (ROL-CO-01 Contadora, ROL-CO-02 Manager). Ver features/accounting. */
+  {
+    path: 'accounting/consolidations',
+    lazy: async () => {
+      const m = await import('@/features/accounting')
+      return { Component: m.ConsolidationsPage }
+    },
+  },
+  {
+    path: 'accounting/consolidations/:consolidationId',
+    lazy: async () => {
+      const m = await import('@/features/accounting')
+      return { Component: m.ConsolidationDetailPage }
+    },
+  },
+  {
+    path: 'accounting/invoices',
+    lazy: async () => {
+      const m = await import('@/features/accounting')
+      return { Component: m.InvoicesPage }
+    },
+  },
+  {
+    path: 'accounting/invoices/:invoiceId',
+    lazy: async () => {
+      const m = await import('@/features/accounting')
+      return { Component: m.InvoiceDetailPage }
+    },
+  },
+  {
+    path: 'accounting/timesheets',
+    handle: FULL_WIDTH,
+    lazy: async () => {
+      const m = await import('@/features/accounting')
+      return { Component: m.AccountingTimesheetPage }
+    },
+  },
+  {
+    path: 'accounting/pending-approvals',
+    lazy: async () => {
+      const m = await import('@/features/accounting')
+      return { Component: m.PendingApprovalsPage }
+    },
+  },
+  {
+    path: 'accounting/pre-payroll',
+    lazy: async () => {
+      const m = await import('@/features/accounting')
+      return { Component: m.PrePayrollPage }
+    },
+  },
+  {
+    path: 'accounting/deductions',
+    lazy: async () => {
+      const m = await import('@/features/accounting')
+      return { Component: m.DeductionsPage }
+    },
+  },
+  {
+    path: 'accounting/vacations',
+    lazy: async () => {
+      const m = await import('@/features/accounting')
+      return { Component: m.VacationsPage }
+    },
+  },
+  {
+    path: 'accounting/pay-adjustments',
+    lazy: async () => {
+      const m = await import('@/features/accounting')
+      return { Component: m.PayAdjustmentsInclusionPage }
     },
   },
   {

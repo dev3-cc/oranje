@@ -434,6 +434,14 @@ model Hotel {
   punchQrVersion     Int       @default(0) @map("punch_qr_version")
   punchQrGeneratedAt DateTime? @map("punch_qr_generated_at") @db.Timestamptz(6)
 
+  /// Día de la semana (0-6) en que empieza/cierra la semana de nómina de este
+  /// hotel. El Contrato lo hereda sin volver a pedirlo (Hugo, 2026-10-07).
+  weekStartDay Int? @map("week_start_day") @db.SmallInt
+  weekEndDay   Int? @map("week_end_day") @db.SmallInt
+  /// 0 = no paga horas extra; 1.5 = tiempo y medio. Corregido el mismo día:
+  /// "Regular" es que no se paga, no que se paga igual (ck_hotel_overtime_multiplier).
+  overtimePayMultiplier Decimal? @map("overtime_pay_multiplier") @db.Decimal(4, 2)
+
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
   createdBy String?   @map("created_by") @db.Uuid
@@ -740,6 +748,25 @@ model PayConcept {
 
   @@id([id])
   @@map("pay_concept")
+  @@schema("catalogs")
+}
+
+/// Con que se marca un dia del Timesheet sin ponches, antes de enviar la
+/// semana a aprobacion. Sin Schedule (beta "Ponche por Horario" apagada,
+/// 2026-09-23) nada mas dice si un dia vacio fue descanso o permiso.
+/// Catalogo del Administrador; decision de Hugo, 2026-10-12.
+model TimesheetDayStatus {
+  id   String @db.Uuid
+  code String @unique @db.Text
+  name String @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  timesheetDays TimesheetDay[]
+
+  @@id([id])
+  @@map("timesheet_day_status")
   @@schema("catalogs")
 }
 
@@ -1464,15 +1491,32 @@ model TimesheetDay {
   /// El Supervisor REVISA por jornada —resuelve anomalos y registra manuales—
   /// pero NO aprueba. La aprobacion vive en el timesheet.
   hasAnomaly Boolean   @default(false) @map("has_anomaly")
+
+  /// El dia se guarda por fecha calendario de CADA marca (D-08), asi que un
+  /// turno que cruza medianoche queda partido en dos dias: este trae la
+  /// entrada sin su salida, y el siguiente trae la salida sin su entrada.
+  /// Cuando el hueco entre las dos es creible (<=16h) se emparejan solos y
+  /// las horas se reparten entre los dos — ninguno queda en hasAnomaly=true
+  /// por eso (Hugo, 2026-10-12). Exactamente uno de los dos puede ser true
+  /// a la vez; los dos false es un dia normal o una anomalia real sin pareja.
+  continuesNextDay         Boolean @default(false) @map("continues_next_day")
+  continuesFromPreviousDay Boolean @default(false) @map("continues_from_previous_day")
+
   reviewNote String?   @map("review_note") @db.Text
   reviewedBy String?   @map("reviewed_by") @db.Uuid
   reviewedAt DateTime? @map("reviewed_at") @db.Timestamptz(6)
 
+  /// NULO = el dia tiene ponches, o todavia no se marco. Con un estado puesto
+  /// (Descanso, OFF...) el dia puede enviarse a aprobacion sin una sola marca
+  /// (Hugo, 2026-10-12).
+  dayStatusId String? @map("day_status_id") @db.Uuid
+
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
 
-  timesheet      Timesheet @relation(fields: [timesheetId], references: [id], onDelete: Restrict)
-  reviewedByUser User?     @relation("timesheetDayReviewedBy", fields: [reviewedBy], references: [id], onDelete: Restrict)
+  timesheet      Timesheet           @relation(fields: [timesheetId], references: [id], onDelete: Restrict)
+  reviewedByUser User?               @relation("timesheetDayReviewedBy", fields: [reviewedBy], references: [id], onDelete: Restrict)
+  dayStatus      TimesheetDayStatus? @relation(fields: [dayStatusId], references: [id], onDelete: Restrict)
 
   punchMarks PunchMark[]
 

@@ -2,6 +2,7 @@ import { plural } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { MaterialIcon } from '@oranje/ui'
 import { useMemo, useState, type ReactNode } from 'react'
+import { Navigate } from 'react-router'
 
 import { useGetPoolOptionsQuery, useGetWorkerPoolQuery } from '../api/poolApi'
 import { CreateAccessDialog } from '../components/CreateAccessDialog'
@@ -34,6 +35,13 @@ export function PoolPage(): ReactNode {
   const can = useCan()
   /** El alta es de Reclutamiento (recruitment:create_worker); Hotel solo consulta. */
   const canCreate = can('recruitment:create_worker')
+  /* El Pool entero es de Reclutamiento. El Hotel ve a SU personal en Mi
+     Personal (ficha básica, `staff:read`) — nunca el Pool completo, aunque
+     solo sea de lectura: ni la lista ni el título ni el texto de desarrollo
+     deberían pintarse antes de que el permiso lo rechace (Hugo, 2026-10-12,
+     con captura del error que sí se veía). Antes solo el Sidebar lo
+     escondía; la ruta en sí quedaba alcanzable escribiendo la URL. */
+  const canBrowsePool = can('recruitment:search_candidates')
 
   /** El nombre va al servidor: se espera a que se deje de teclear; las píldoras aplican al instante. */
   const search = useDebounce(filters.search)
@@ -46,22 +54,24 @@ export function PoolPage(): ReactNode {
     isError,
     refetch,
     fulfilledTimeStamp,
-  } = useGetWorkerPoolQuery(appliedFilters)
+  } = useGetWorkerPoolQuery(appliedFilters, { skip: !canBrowsePool })
   /** Cualquier filtro o texto fuera de su valor «todos». */
   const isFiltered =
     filters.search.trim() !== '' ||
     Object.entries(filters).some(([key, value]) => key !== 'search' && value !== ANY_VALUE)
-  const { data: options } = useGetPoolOptionsQuery()
+  const { data: options } = useGetPoolOptionsQuery(undefined, { skip: !canBrowsePool })
 
   /* Cuántos tienen SSN/ITIN sin revisar EN TODO EL POOL, sin importar qué
      filtro esté activo: antes solo se sabía abriendo el desplegable
      «Documento» a ciegas — Hugo pidió verlo sin tener que pensar en
      filtrar (2026-10-02). */
-  const { data: pendingDocsPool } = useGetWorkerPoolQuery({
-    ...EMPTY_POOL_FILTERS,
-    hasPendingDocument: PENDING_VALUE,
-  })
+  const { data: pendingDocsPool } = useGetWorkerPoolQuery(
+    { ...EMPTY_POOL_FILTERS, hasPendingDocument: PENDING_VALUE },
+    { skip: !canBrowsePool },
+  )
   const pendingDocsCount = pendingDocsPool?.total ?? 0
+
+  if (!canBrowsePool) return <Navigate to="/" replace />
 
   return (
     <div className="flex flex-col gap-6">

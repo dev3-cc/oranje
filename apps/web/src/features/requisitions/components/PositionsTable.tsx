@@ -7,6 +7,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 
 import type { RequisitionPosition } from '../types/requisition.types'
+import { isCoverageComplete } from '../utils/coverage'
 
 import { CoverageBadge } from './CoverageBadge'
 import { UrgencyChip } from './UrgencyChip'
@@ -133,6 +134,7 @@ export function PositionsTable({
                     urgency={position.urgency}
                     startDate={position.startDate}
                     authorizedAt={authorizedAt}
+                    coverageComplete={isCoverageComplete(position.coverage)}
                   />
                 </TableCell>
 

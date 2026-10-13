@@ -10,7 +10,18 @@ import { store } from '@/app/store'
 
 const SLOW = { timeout: 4000 }
 
-function renderTimesheet(): void {
+/**
+ * Este archivo prueba la densidad Días — la página ahora entra por Asistencia
+ * (Hugo, 2026-10-10), así que cada prueba cambia de vista antes de aserto.
+ * Asistencia tiene su propio spec (`AttendanceView.spec.tsx`).
+ *
+ * `describe.skip`: Horas/Días/Mes se ocultaron de la UI el mismo día
+ * ("por el momento solo mostremos Asistencia, vamos a ir mejorándolo") —
+ * sin el selector no hay cómo llegar a Días desde la pantalla. El código
+ * de la vista sigue ahí, solo sin entrada; se reactiva este archivo
+ * cuando el selector vuelva.
+ */
+async function renderTimesheet(): Promise<void> {
   render(
     <Provider store={store}>
       {/* El badge de requisición es un Link: la página necesita un Router. */}
@@ -19,11 +30,13 @@ function renderTimesheet(): void {
       </MemoryRouter>
     </Provider>,
   )
+  const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'Días' }))
 }
 
-describe('TimesheetPage', () => {
+describe.skip('TimesheetPage', () => {
   it('el título dice la misma semana que las columnas', async () => {
-    renderTimesheet()
+    await renderTimesheet()
 
     expect(await screen.findByText(/^Semana /)).toBeInTheDocument()
     // La cinta continua trae un «Lun» por cada semana cargada.
@@ -32,7 +45,7 @@ describe('TimesheetPage', () => {
   })
 
   it('los totales de la fila los manda el backend, no las celdas visibles', async () => {
-    renderTimesheet()
+    await renderTimesheet()
 
     // La página dibuja dos variantes (móvil + escritorio): puede haber duplicados.
     expect((await screen.findAllByText('Ana Rivera Gómez')).length).toBeGreaterThan(0)
@@ -40,7 +53,7 @@ describe('TimesheetPage', () => {
   })
 
   it('la fila enseña el estado de la SEMANA: abierta, enviada o aprobada', async () => {
-    renderTimesheet()
+    await renderTimesheet()
 
     expect((await screen.findAllByText('Abierta')).length).toBeGreaterThan(0)
     expect(screen.getAllByText('Enviada a aprobación').length).toBeGreaterThan(0)
@@ -48,7 +61,7 @@ describe('TimesheetPage', () => {
   })
 
   it('una ausencia dice guion, que no es lo mismo que cero horas', async () => {
-    renderTimesheet()
+    await renderTimesheet()
 
     // La FILA de escritorio es el ancestro con borde inferior (tarjeta + celdas);
     // la variante móvil duplica el nombre, así que se busca la que lo tiene.
@@ -60,7 +73,7 @@ describe('TimesheetPage', () => {
 
   it('el día con anomalía se ve Observado y abre la Revisión del día', async () => {
     const user = userEvent.setup()
-    renderTimesheet()
+    await renderTimesheet()
 
     // «Observado» vive también en la leyenda: el del día es el que está en un botón.
     const chips = await screen.findAllByText('Observado')
@@ -88,7 +101,7 @@ describe('TimesheetPage', () => {
 
   it('elegir días arma un resumen con su requisición', async () => {
     const user = userEvent.setup()
-    renderTimesheet()
+    await renderTimesheet()
 
     const checkboxes = await screen.findAllByLabelText(/^Seleccionar /)
     await user.click(checkboxes[0] as HTMLElement)
@@ -102,7 +115,7 @@ describe('TimesheetPage', () => {
 
   it('el filtro de estado de la semana va al servidor', async () => {
     const user = userEvent.setup()
-    renderTimesheet()
+    await renderTimesheet()
 
     await screen.findAllByText('Julia Mendoza')
     await user.click(screen.getByLabelText('Estado'))

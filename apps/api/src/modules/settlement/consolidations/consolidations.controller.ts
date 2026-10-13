@@ -14,7 +14,7 @@ import { CurrentUser, Requires } from '../../../common/decorators/index.js'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 
 import { ConsolidationEntity, ConsolidationsService, MyPayment } from './consolidations.service.js'
-import { CreateDeductionDto, GenerateDto } from './dto/generate.dto.js'
+import { CreateDeductionDto } from './dto/deduction.dto.js'
 
 @Controller('consolidations')
 export class ConsolidationsController {
@@ -42,16 +42,6 @@ export class ConsolidationsController {
   @Get(':id')
   async get(@Param('id', ParseUUIDPipe) id: string): Promise<{ data: ConsolidationEntity }> {
     return { data: await this.consolidations.get(id) }
-  }
-
-  @Requires('payroll', 'generate')
-  @Post('generate')
-  @HttpCode(HttpStatus.CREATED)
-  async generate(
-    @Body() dto: GenerateDto,
-    @CurrentUser() user: AuthenticatedUser,
-  ): Promise<{ data: { created: number } }> {
-    return { data: await this.consolidations.generate(dto, user) }
   }
 
   @Requires('payroll', 'manage_deductions')

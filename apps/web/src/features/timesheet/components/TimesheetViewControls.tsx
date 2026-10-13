@@ -1,15 +1,18 @@
 import type { MessageDescriptor } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
-import { Trans, useLingui } from '@lingui/react/macro'
+import { useLingui } from '@lingui/react/macro'
 import { cn, MaterialIcon } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
-import { neighborWeek, todayIso, weekContaining } from '../lib/weekNavigation'
+import { addDaysIso, neighborWeek, todayIso, weekContaining } from '../lib/weekNavigation'
+
+import { formatWeekRange } from '@/shared/lib/formatters'
 
 /** Densidades de los mismos datos, no pantallas distintas. */
 export type TimesheetView = 'HOURS' | 'DAYS' | 'MONTH' | 'ATTENDANCE'
 
 const VIEWS: ReadonlyArray<{ id: TimesheetView; label: MessageDescriptor }> = [
+  { id: 'ATTENDANCE', label: msg`Asistencia` },
   { id: 'HOURS', label: msg`Horas` },
   { id: 'DAYS', label: msg`Días` },
   { id: 'MONTH', label: msg`Mes` },
@@ -72,6 +75,11 @@ export function WeekNavigator({
   const previous = neighborWeek(availableWeeks, weekStart, -1)
   const next = neighborWeek(availableWeeks, weekStart, 1)
   const currentWeek = weekContaining(availableWeeks, todayIso())
+  const isCurrentWeek = currentWeek === weekStart
+  /* El botón del medio decía "Hoy" aunque la semana en pantalla fuera otra —
+     mismo defecto que el badge "Hoy" del detalle (Hugo, 2026-10-12): si no
+     es la semana actual, enseña SU rango, no una palabra que ya no aplica. */
+  const middleLabel = isCurrentWeek ? t`Hoy` : formatWeekRange(weekStart, addDaysIso(weekStart, 6))
 
   const arrowClass =
     'flex size-9 cursor-pointer items-center justify-center rounded-lg border border-line bg-surface text-ink-2 hover:bg-surface-2 disabled:cursor-not-allowed disabled:text-ink-4 disabled:hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500'
@@ -93,14 +101,14 @@ export function WeekNavigator({
 
       <button
         type="button"
-        title={t`Ir a la semana actual`}
-        disabled={currentWeek === null || currentWeek === weekStart}
+        title={isCurrentWeek ? t`Estás en la semana actual` : t`Ir a la semana actual`}
+        disabled={currentWeek === null || isCurrentWeek}
         onClick={() => {
           if (currentWeek) onSelect(currentWeek)
         }}
-        className="cursor-pointer rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-semibold text-ink hover:bg-surface-2 disabled:cursor-not-allowed disabled:text-ink-4 disabled:hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
+        className="cursor-pointer rounded-lg border border-line bg-surface px-3 py-1.5 text-sm font-semibold whitespace-nowrap text-ink hover:bg-surface-2 disabled:cursor-not-allowed disabled:text-ink-4 disabled:hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
       >
-        <Trans>Hoy</Trans>
+        {middleLabel}
       </button>
 
       <button

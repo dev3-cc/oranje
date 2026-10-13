@@ -26,6 +26,7 @@ import type {
   RequisitionApi,
   WorkerApi,
 } from '@/shared/types/apiContract.types'
+import { isFullWorkerApi } from '@/shared/types/apiContract.types'
 
 /**
  * La Bolsa Self-Pick COMPONE el contrato real (D-28): `GET /requisitions`
@@ -209,7 +210,9 @@ export const selfPickApi = baseApi.injectEndpoints({
           withoutActiveAssignment: 'true',
         })
         if ('error' in result) return { error: result.error as never }
-        const workers = result.data
+        /* Self-Pick es de Reclutamiento: siempre ficha completa. El filtro
+           es defensivo (D-30), no esperado en la práctica. */
+        const workers = result.data.filter(isFullWorkerApi)
         return {
           data: workers.map((worker) => ({
             id: worker.id,

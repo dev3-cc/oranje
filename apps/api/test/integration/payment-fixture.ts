@@ -307,6 +307,13 @@ export async function cleanup(reg: Registry, workerIds: string[]): Promise<void>
       'DELETE FROM settlement.consolidation WHERE worker_id = ANY($1::uuid[])',
       workerIds,
     )
+    // El semáforo del colaborador (día de descanso, turno nocturno, corregir
+    // marca…) deja su propia fila de historia, nunca registrada en `reg.rows`
+    // porque la escribe el servicio, no la prueba.
+    await db.$executeRawUnsafe(
+      'DELETE FROM personal.worker_state_history WHERE worker_id = ANY($1::uuid[])',
+      workerIds,
+    )
   }
 
   for (const row of [...reg.rows].reverse()) {

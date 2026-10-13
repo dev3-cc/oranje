@@ -5,6 +5,11 @@ import { PrismaService } from '../prisma/index.js'
 /** Lo que se puede ajustar sin desplegar. La lista es cerrada a propósito. */
 export const SETTING_KEYS = {
   mailTransport: 'mail.transport',
+  /** Límites de pago y aprobación, HH:mm en la zona del hotel. Días fijos por el ciclo. */
+  paymentApprovalDeadline: 'payment.approval_deadline',
+  paymentCut: 'payment.cut',
+  paymentEmergencySend: 'payment.emergency_send',
+  hoursSaturdayNotice: 'hours.saturday_notice',
 } as const
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS]

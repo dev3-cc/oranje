@@ -6,14 +6,20 @@ import { labelMap } from '@/shared/lib/i18nLabels'
 /**
  * Estado de revisión del DÍA. Se DERIVA de `operations.timesheet_day`:
  * `has_anomaly` sin resolver → Observado; `review_note` escrita → Revisado;
- * lo demás → Pendiente. No es columna propia: es la lectura de esas dos.
+ * lo demás → Sin revisar. No es columna propia: es la lectura de esas dos.
+ *
+ * «Pendiente» se descartó para este estado (Hugo, 2026-10-12): la semana
+ * tiene su PROPIO «pendiente de aprobación» (otro semáforo, abajo), y las
+ * dos palabras iguales en la misma pantalla leían como si un día "pendiente"
+ * bloqueara la semana ya "Aprobada" — no es así, son dos cosas que no se
+ * tocan. "Sin revisar" no se confunde con eso.
  */
 export const TIMESHEET_STATUSES = ['PENDING', 'OBSERVED', 'REVIEWED'] as const
 
 export type TimesheetStatus = (typeof TIMESHEET_STATUSES)[number]
 
 const TIMESHEET_STATUS_MESSAGE = {
-  PENDING: msg`Pendiente`,
+  PENDING: msg`Sin revisar`,
   OBSERVED: msg`Observado`,
   REVIEWED: msg`Revisado`,
 }

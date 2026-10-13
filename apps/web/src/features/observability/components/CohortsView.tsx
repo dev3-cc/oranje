@@ -21,7 +21,7 @@ import { CohortTimeline } from './CohortTimeline'
 import { TruncatedNotice } from './TabParts'
 
 import { formatPercent } from '@/shared/lib/formatters'
-import type { RequisitionApi, TimesheetApi, WorkerApi } from '@/shared/types/apiContract.types'
+import type { FullWorkerApi, RequisitionApi, TimesheetApi } from '@/shared/types/apiContract.types'
 
 /** El ancho de la ventana de tiempo, en semanas. */
 const WINDOW_WEEKS = 12
@@ -40,7 +40,7 @@ export function CohortsView({
 }: {
   timesheets: TimesheetApi[]
   truncated: boolean
-  workers: WorkerApi[]
+  workers: FullWorkerApi[]
   requisitions: RequisitionApi[]
 }): ReactNode {
   const { i18n, t } = useLingui()

@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common'
 
 import { PrismaService } from '../../infra/prisma/index.js'
 
+import { pendingTimesheetStatus } from './approval-timeliness/approval-timeliness.repository.js'
+
 export interface StateDurationRow {
   code: string
   name: string
@@ -267,8 +269,25 @@ export class ObservabilityRepository {
        ORDER BY sls.display_order`
   }
 
+  /**
+   * Semanas de hotel con horas sin aprobar de semanas ya cerradas: exactamente
+   * lo que muestra la lista de Contabilidad (un renglón por hotel y semana).
+   * Misma condición de pendiente y mismo cierre que `PendingApprovalsRepository`.
+   */
   async hotelPendingApprovalWeeks(): Promise<number> {
-    return this.prisma.timesheet.count({ where: { status: 'PENDING_APPROVAL' } })
+    const rows = await this.prisma.$queryRaw<Array<{ total: number }>>`
+      SELECT count(*)::int AS total
+        FROM (
+          SELECT r.hotel_id, t.week_start
+            FROM operations.timesheet t
+            JOIN demand.requisition r ON r.id = t.requisition_id
+            JOIN commercial.hotel h   ON h.id = r.hotel_id
+           WHERE ${pendingTimesheetStatus('t.status')}
+             AND ((t.week_end + 1)::timestamp AT TIME ZONE h.time_zone) <= now()
+           GROUP BY r.hotel_id, t.week_start
+        ) semanas`
+
+    return rows[0]?.total ?? 0
   }
 
   // Ventas: prospectos por estado del Semáforo Onboarding.

@@ -11,9 +11,9 @@ import { groupShifts, isComplete, lunchMinutes, workerKpis } from './workerKpis'
 
 import type {
   AssignmentApi,
+  FullWorkerApi,
   ProspectApi,
   RequisitionApi,
-  WorkerApi,
 } from '@/shared/types/apiContract.types'
 
 /* Miércoles 7 de octubre de 2026, 15:00 local: la semana empezó el lunes 5. */
@@ -164,7 +164,7 @@ describe('Reclutamiento', () => {
         requisition({ start: '2026-10-20', totalSlots: 10, filledSlots: 0 }),
         requisition({ start: '2026-10-06', state: { code: 'PURPLE' } as never }),
       ],
-      workers: [{ createdAt: at(6) }, { createdAt: at(1) }] as WorkerApi[],
+      workers: [{ createdAt: at(6) }, { createdAt: at(1) }] as FullWorkerApi[],
       requisitionLight: undefined,
       dayOne: null,
     })
@@ -221,7 +221,7 @@ describe('Colaborador', () => {
       workers: [
         { state: { code: 'BLACK' }, isProfileComplete: true },
         { state: { code: 'GREEN' }, isProfileComplete: false },
-      ] as WorkerApi[],
+      ] as FullWorkerApi[],
     })
     expect(kpi(list, 'workerCompleteShifts')).toMatchObject({ ratio: { part: 1, whole: 2 } })
     expect(kpi(list, 'workerShiftsInProgress').value).toBe(1)

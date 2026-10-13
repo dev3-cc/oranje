@@ -55,6 +55,7 @@ import { useCan } from '@/shared/hooks/useCan'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate } from '@/shared/lib/formatters'
+import { isFullWorkerApi, type WorkerApi } from '@/shared/types/apiContract.types'
 
 /** Se traduce al pintar con `i18n._()` (D-36). */
 const DOCUMENT_TYPE_LABEL: Record<string, MessageDescriptor> = {
@@ -98,6 +99,174 @@ function Field({
           <code className="block text-[11px] leading-snug break-words text-ink-4">{foot}</code>
         )}
       </span>
+    </div>
+  )
+}
+
+/** Las iniciales para el avatar sin foto: primera letra de hasta dos palabras. */
+function initialsOf(fullName: string): string {
+  return fullName
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => word.charAt(0))
+    .join('')
+    .toUpperCase()
+}
+
+/**
+ * Lo que ve el Hotel (Supervisor, Manager de Área, Manager General) de un
+ * colaborador que tiene asignado: "lo básico" (Hugo, 2026-10-12) — nunca el
+ * expediente completo que lleva Reclutamiento. Es su propia ficha, más
+ * sencilla a propósito, no la ficha completa con huecos: con el semáforo, la
+ * fecha de nacimiento, los documentos, la Blacklist y el historial fuera, la
+ * ficha completa se vería rota a medias.
+ */
+function BasicWorkerDetail({ worker }: { worker: WorkerApi }): ReactNode {
+  const { t } = useLingui()
+
+  const basicFields = [
+    {
+      label: t`Género`,
+      value: GENDER_LABEL[worker.gender] ?? worker.gender,
+      foot: 'gender',
+      icon: 'face',
+    },
+    {
+      label: t`Posición`,
+      value: worker.position?.name ?? '—',
+      foot: 'catalog_position_id',
+      icon: 'badge',
+    },
+    {
+      label: t`Inglés`,
+      value: worker.englishLevel?.name ?? '—',
+      foot: 'english_level_id',
+      icon: 'translate',
+    },
+    {
+      label: t`Modalidad`,
+      value: worker.hiringModality?.name ?? '—',
+      foot: 'hiring_modality_id',
+      icon: 'work',
+    },
+    {
+      label: t`Transporte`,
+      value:
+        worker.transportType === null
+          ? '—'
+          : (TRANSPORT_LABEL[worker.transportType] ?? worker.transportType),
+      foot: 'transport_type',
+      icon: 'commute',
+    },
+  ]
+
+  const emergencyFields = [
+    {
+      label: t`Contacto de emergencia`,
+      value: worker.emergencyContact?.name ?? '—',
+      foot: 'emergency_contact_name',
+      icon: 'contact_phone',
+    },
+    {
+      label: t`Teléfono de emergencia`,
+      value: worker.emergencyContact?.phone ?? '—',
+      foot: 'emergency_contact_phone',
+      icon: 'call',
+    },
+    {
+      label: t`Parentesco`,
+      value:
+        worker.emergencyContact === null
+          ? '—'
+          : (RELATIONSHIP_LABEL[worker.emergencyContact.relationship] ??
+            worker.emergencyContact.relationship),
+      foot: 'emergency_contact_relationship',
+      icon: 'group',
+    },
+  ]
+
+  return (
+    <div className="flex flex-col gap-6">
+      <nav aria-label={t`Ruta`} className="flex items-center gap-2 text-sm text-ink-3">
+        <Link to="/collaborator-pool" className="hover:text-o-700">
+          <Trans>Pool de Colaboradores</Trans>
+        </Link>
+        <span aria-hidden>/</span>
+        <span className="font-semibold text-ink-2">{worker.fullName}</span>
+      </nav>
+
+      <header className="overflow-hidden rounded-xl border border-line bg-surface">
+        <div aria-hidden className="h-24 bg-gradient-to-r from-o-500/35 via-o-50 to-o-500/15" />
+        <div className="flex flex-wrap items-start gap-4 px-6 pb-5">
+          {/* Sin anillo de semáforo: ese dato no viaja hasta aquí (Hugo, 2026-10-12). */}
+          {worker.photoUrl ? (
+            <img
+              src={worker.photoUrl}
+              alt=""
+              aria-hidden
+              className="-mt-10 size-20 shrink-0 rounded-full border-2 border-surface object-cover"
+            />
+          ) : (
+            <span
+              aria-hidden
+              className="-mt-10 flex size-20 shrink-0 items-center justify-center rounded-full border-2 border-surface bg-o-50 text-xl font-semibold text-o-700"
+            >
+              {initialsOf(worker.fullName)}
+            </span>
+          )}
+          <div>
+            <h1 className="text-2xl font-bold text-ink">{worker.fullName}</h1>
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-3">
+              <span className="inline-flex items-center gap-1.5">
+                <MaterialIcon name="badge" className="text-base" aria-hidden />
+                {worker.position?.name ?? t`Sin posición`}
+              </span>
+              {worker.assignment && (
+                <span className="inline-flex items-center gap-1.5">
+                  <MaterialIcon name="apartment" className="text-base" aria-hidden />
+                  {worker.assignment.hotelName}
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <NoticeCard
+        image={personajeTalento}
+        title={t`Esto es lo que ves desde el Hotel`}
+        role="status"
+      >
+        <Trans>
+          Aquí ves lo básico de quien tienes asignado: sus datos de contacto y dónde trabaja. El
+          semáforo, los documentos y el historial completo los lleva Reclutamiento.
+        </Trans>
+      </NoticeCard>
+
+      <SectionCard title={t`Datos básicos`}>
+        <div className="@container">
+          <div className="grid gap-x-6 gap-y-4 @md:grid-cols-2 @2xl:grid-cols-3">
+            {basicFields.map((field) => (
+              <Field key={field.foot} {...field} />
+            ))}
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard title={t`Contacto de emergencia`}>
+        <div className="@container">
+          <div className="grid gap-x-6 gap-y-4 @md:grid-cols-2 @2xl:grid-cols-3">
+            {emergencyFields.map((field) => (
+              <Field key={field.foot} {...field} />
+            ))}
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard title={t`Notas médicas`}>
+        <p className="text-sm text-ink-2">{worker.medicalNotes ?? t`Sin notas registradas.`}</p>
+      </SectionCard>
     </div>
   )
 }
@@ -227,6 +396,13 @@ export function WorkerDetailPage(): ReactNode {
     )
   }
 
+  /* El Hotel (`staff:read_history`) ve solo "lo básico" de quien tiene
+     asignado (Hugo, 2026-10-12): sin `state` no hay ficha completa que
+     pintar — de aquí en adelante `worker` está narrowed a `FullWorkerApi`. */
+  if (!isFullWorkerApi(worker)) {
+    return <BasicWorkerDetail worker={worker} />
+  }
+
   const status = worker.state.code as WorkerStatus
   const statusLabel = workerStatusChipLabel(status)
 
@@ -329,8 +505,8 @@ export function WorkerDetailPage(): ReactNode {
     },
     {
       label: t`Notas médicas`,
-      value: '—',
-      foot: 'medical_notes · el contrato de /workers/:id no la expone',
+      value: worker.medicalNotes ?? '—',
+      foot: 'medical_notes',
       icon: 'medical_services',
     },
   ]

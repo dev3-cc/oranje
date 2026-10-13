@@ -1,6 +1,7 @@
 import '@fontsource-variable/montserrat'
 import 'material-icons/iconfont/round.css'
 import 'material-icons/iconfont/outlined.css'
+import 'driver.js/dist/driver.css'
 import './styles/globals.css'
 
 import { StrictMode } from 'react'

@@ -7,10 +7,10 @@ import { STALE_DAYS } from './salesKpis'
 
 import type {
   ContactAttemptApi,
+  FullWorkerApi,
   ProspectApi,
   RequisitionApi,
   RequisitionJournalEntryApi,
-  WorkerApi,
   WorkerHistoryEntryApi,
 } from '@/shared/types/apiContract.types'
 
@@ -225,7 +225,7 @@ export const SIGNUP_MAX_WORKERS = 60
  * cada uno se pide su historial para saber QUIÉN lo dio de alta.
  */
 export function signupCandidates(
-  workers: WorkerApi[],
+  workers: FullWorkerApi[],
   period: Period,
 ): { ids: string[]; capped: boolean } {
   const created = workers
@@ -258,7 +258,7 @@ export function recruitmentPeople(input: {
   requisitions: RequisitionApi[]
   journals: Record<string, RequisitionJournalEntryApi[]>
   /** Candidatos dados de alta en el periodo, con su historial de estados. */
-  workers?: WorkerApi[]
+  workers?: FullWorkerApi[]
   histories?: Record<string, WorkerHistoryEntryApi[]>
 }): PersonRow[] {
   const { period } = input

@@ -137,6 +137,11 @@ export function adaptRegisteredHotel(hotel: HotelApi): RegisteredHotel {
     address: hotel.address ?? '',
     location: locationOf(hotel),
     photoUrl: hotel.photoUrl,
+    ...(hotel.weekStartDay !== null ? { weekStartDay: hotel.weekStartDay } : {}),
+    ...(hotel.weekEndDay !== null ? { weekEndDay: hotel.weekEndDay } : {}),
+    ...(hotel.overtimePayMultiplier !== null
+      ? { overtimePayMultiplier: hotel.overtimePayMultiplier as 0 | 1.5 }
+      : {}),
   }
 }
 
@@ -170,6 +175,9 @@ export function adaptProspectDetail(
       geofenceMeters: hotel.geofenceRadiusM ?? 0,
       location: locationOf(hotel),
       photoUrl: hotel.photoUrl,
+      weekStartDay: hotel.weekStartDay,
+      weekEndDay: hotel.weekEndDay,
+      overtimePayMultiplier: hotel.overtimePayMultiplier,
       activatedAsClientAt: hotel.activatedAt,
     },
     needDescription: prospect.needDescription ?? '',

@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 import type { AuthorizationRequest } from '../types/requisition.types'
 
 import { HotelThumbnail } from '@/shared/components/HotelThumbnail'
+import { ListItemViewHint } from '@/shared/components/ListItemViewHint'
 import { MagicCard } from '@/shared/components/MagicCard'
 import { SectionCard } from '@/shared/components/SectionCard'
 
@@ -97,6 +98,7 @@ export function AuthorizationQueueList({
                           {describeStart(item.startsInDays)}
                         </p>
                       </div>
+                      <ListItemViewHint breakpoint="xl" />
                     </div>
                   </button>
                 </MagicCard>

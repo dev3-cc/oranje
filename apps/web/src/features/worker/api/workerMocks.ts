@@ -32,6 +32,7 @@ export const profile: MyProfile = {
   transportType: null,
   emergencyContact: null,
   bloodType: null,
+  medicalNotes: null,
   state: { code: 'WHITE', color: 'Blanco', name: 'Pre-asignación' },
   isProfileComplete: false,
   profileDueAt: null,

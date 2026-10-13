@@ -15,6 +15,7 @@ import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { FoldText } from '@/shared/components/FoldText'
 import { HotelThumbnail } from '@/shared/components/HotelThumbnail'
+import { ListItemViewHint } from '@/shared/components/ListItemViewHint'
 import { LoadError } from '@/shared/components/LoadError'
 import { MagicCard } from '@/shared/components/MagicCard'
 import { MetricCard } from '@/shared/components/MetricCard'
@@ -99,6 +100,7 @@ function MemberRow({
           <span className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-xs font-semibold text-ink-2">
             <Trans>{member.quarterConversions} conv.</Trans>
           </span>
+          <ListItemViewHint />
         </button>
       </MagicCard>
     </li>
