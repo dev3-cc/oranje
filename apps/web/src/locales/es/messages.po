@@ -2753,10 +2753,6 @@ msgstr "con contrato vigente"
 msgid "Con Ctrl/⌘ K abres la búsqueda desde cualquier pantalla."
 msgstr "Con Ctrl/⌘ K abres la búsqueda desde cualquier pantalla."
 
-#: src/features/worker/pages/PunchPage.tsx
-msgid "con el QR del acceso ya leído"
-msgstr "con el QR del acceso ya leído"
-
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "Con entrada registrada"
 msgstr "Con entrada registrada"

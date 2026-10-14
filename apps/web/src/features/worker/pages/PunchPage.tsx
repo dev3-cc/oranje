@@ -305,12 +305,35 @@ export function PunchPage(): ReactNode {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [isCameraOpen, setCameraOpen] = useState(false)
   const [isScannerOpen, setScannerOpen] = useState(false)
-  /* El QR del acceso escaneado con la cámara del teléfono abre esta pantalla
-     con el código en la liga: se usa al tocar Ponchar sin abrir el lector.
-     Si el servidor lo rechaza (hoja vieja), se suelta y el siguiente toque
-     abre el lector. */
-  const [searchParams] = useSearchParams()
-  const [linkedQr, setLinkedQr] = useState<string | null>(() => searchParams.get(PUNCH_QR_PARAM))
+  /* CADA MARCA CON EVIDENCIA ABRE EL LECTOR. Sin excepción, y sin importar
+     cómo se llegó a esta pantalla (decisión de Hugo, 2026-10-14).
+
+     El QR impreso en el acceso sigue abriendo la app aquí —para eso se
+     escanea con la cámara del teléfono— pero el código que trae en la liga
+     YA NO PONCHA: solo sirve para aterrizar en esta pantalla.
+
+     Antes el código de la liga se guardaba toda la jornada y se reusaba, así
+     que la Salida se registraba con el QR leído en la Entrada y el QR dejaba
+     de probar que la persona seguía en el hotel al salir. Y dos personas del
+     mismo hotel veían cosas distintas: a quien abrió la app escaneando la
+     hoja nunca se le volvía a pedir, a quien entró por el menú sí.
+
+     El código se borra de la liga al entrar: es el secreto del hotel y no
+     tiene por qué quedarse en el historial del navegador, ni viajar si
+     alguien comparte la dirección. */
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  useEffect(() => {
+    if (!searchParams.has(PUNCH_QR_PARAM)) return
+    setSearchParams(
+      (actuales) => {
+        const limpios = new URLSearchParams(actuales)
+        limpios.delete(PUNCH_QR_PARAM)
+        return limpios
+      },
+      { replace: true },
+    )
+  }, [searchParams, setSearchParams])
   const [isOnline, setIsOnline] = useState(() => navigator.onLine)
 
   useEffect(() => {
@@ -421,7 +444,6 @@ export function PunchPage(): ReactNode {
       setFailure(punchErrorMessage(error, i18n))
       setFailureNeedsPermission(error instanceof Error && error.message === 'GEOLOCATION_DENIED')
       const code = readApiError(error).code
-      if (code === 'QR_INVALID') setLinkedQr(null)
       setPhase(code === 'OUTSIDE_GEOFENCE' ? 'outside' : 'error')
       window.setTimeout(backToIdle, OUTCOME_VISIBLE_MS)
     }
@@ -430,10 +452,6 @@ export function PunchPage(): ReactNode {
   function onTap(): void {
     if (!canPunch) return
     if (needsQr) {
-      if (linkedQr !== null) {
-        void submit(null, linkedQr)
-        return
-      }
       setScannerOpen(true)
       return
     }
@@ -635,11 +653,7 @@ export function PunchPage(): ReactNode {
                   )}
                   {needsQr && !isBusy && (
                     <span className="text-[11px] text-ink-3">
-                      {linkedQr !== null ? (
-                        <Trans>con el QR del acceso ya leído</Trans>
-                      ) : (
-                        <Trans>escaneando el QR del acceso</Trans>
-                      )}
+                      <Trans>escaneando el QR del acceso</Trans>
                     </span>
                   )}
                 </>
