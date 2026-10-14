@@ -2753,10 +2753,6 @@ msgstr "with an active Contract"
 msgid "Con Ctrl/⌘ K abres la búsqueda desde cualquier pantalla."
 msgstr "Ctrl/⌘ K opens search from any screen."
 
-#: src/features/worker/pages/PunchPage.tsx
-msgid "con el QR del acceso ya leído"
-msgstr "with the entrance QR already read"
-
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "Con entrada registrada"
 msgstr "Clocked in"
