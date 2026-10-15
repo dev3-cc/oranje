@@ -54,6 +54,7 @@ export interface TimesheetRow {
   weekEnd: Date
   status: string
   approvedAt: Date | null
+  approvedBy: { id: string; fullName: string } | null
   worker: { id: string; fullName: string }
   requisitionId: string
   /** La asignación que respalda al timesheet (ver `ASSIGNMENT_OF_TIMESHEET`). */
@@ -81,10 +82,20 @@ export interface TimesheetPayPreview {
   isInternalRate: boolean
   /** El multiplicador que se aplicaría a las horas extra; `null` junto con `payRate`. */
   overtimeMultiplier: number | null
+  /** Bruto: horas + reembolsos YA incluidos. `null` sin tarifa resuelta. */
   subtotal: string | null
+  /** Descuentos YA incluidos (gastos que Oranje paga y le descuenta). */
+  deductionAmount: string
+  /** `subtotal - deductionAmount`; `null` cuando `subtotal` también lo es. */
+  netAmount: string | null
   /** Si Contabilidad corrigió tarifa y/o reparto de horas (2026-10-08). */
   isOverridden: boolean
   overrideReason: string | null
+  /** Lo que el hotel paga a Oranje por esta hoja — SIEMPRE del contrato,
+      nunca de un rate interno (Hugo, 2026-10-14: "pay rate y bill, lado a
+      lado"). `null` sin contrato ni tarifa para esa posición. */
+  billRate: string | null
+  billSubtotal: string | null
 }
 
 // La asignación de ESTA persona en ESTA requisición. El timesheet no la guarda
@@ -104,6 +115,14 @@ const ASSIGNMENT_OF_TIMESHEET = Prisma.sql`
       AND p.requisition_id = t.requisition_id
     ORDER BY (a.status = 'ACTIVE') DESC, upper(a.validity) DESC NULLS FIRST
     LIMIT 1) AS assignment`
+
+// Quién aprobó, no solo cuándo (Hugo, 2026-10-14: "un tooltip de quién fue").
+// `approved_by` es la única firma que la tabla guarda — no hay quién envió,
+// el `status` pasa a PENDING_APPROVAL sin registrar actor.
+const APPROVED_BY_OF_TIMESHEET = Prisma.sql`
+  (SELECT jsonb_build_object('id', au.id, 'fullName', au.full_name)
+     FROM identity."user" au
+    WHERE au.id = t.approved_by) AS "approvedBy"`
 
 // Lo que hace falta para crear el timesheet/día si todavía no existen — se
 // resuelve ANTES de validar (lectura), y solo se usa DENTRO de la transacción
@@ -250,17 +269,23 @@ export class TimesheetsRepository {
     return rows[0]?.inside ?? null
   }
 
+  // El dia se lee en la zona del HOTEL, no en UTC — el mismo criterio con el
+  // que `ensureSchedule` calcula `week_start`/`week_end` al crear. Compararlo
+  // contra la fecha UTC cruda (como hacia antes) rompia el primer ponche de
+  // un lunes en cualquier hotel detras de UTC: medianoche UTC del lunes cae
+  // en domingo en hora local, `date_trunc('week', ...)` trunca a la semana
+  // ANTERIOR al crear, y la busqueda con la fecha UTC nunca la encontraba
+  // (Hugo, 2026-10-14, reproducido en vivo con Fairfield/America-New_York).
   async scheduleOf(
     hotelId: string,
     workDate: Date,
   ): Promise<{ id: string; weekStart: Date; weekEnd: Date } | null> {
-    const day = workDate.toISOString().slice(0, 10)
-
     const rows = await this.prisma.$queryRaw<Array<{ id: string; weekStart: Date; weekEnd: Date }>>`
-      SELECT id, week_start AS "weekStart", week_end AS "weekEnd"
-        FROM operations.schedule
-       WHERE hotel_id = ${hotelId}::uuid
-         AND ${day}::date BETWEEN week_start AND week_end
+      SELECT s.id, s.week_start AS "weekStart", s.week_end AS "weekEnd"
+        FROM operations.schedule s
+        JOIN commercial.hotel h ON h.id = s.hotel_id
+       WHERE s.hotel_id = ${hotelId}::uuid
+         AND (${workDate}::timestamptz AT TIME ZONE h.time_zone)::date BETWEEN s.week_start AND s.week_end
        LIMIT 1`
 
     return rows[0] ?? null
@@ -487,21 +512,36 @@ export class TimesheetsRepository {
     return { id, dayId }
   }
 
+  /**
+   * El lonche se recalcula en cada marca, junto con el bruto: no es un valor
+   * fijo (Hugo, 2026-10-14). Con `hotel.pays_lunch`, nunca se resta nada —
+   * las horas quedan completas. Sin él, se resta solo si el turno llega a
+   * 6.5 h (390 min); menos que eso, el turno no alcanza a necesitar el
+   * descanso y no se resta nada — antes eran 30 min fijos para cualquier
+   * duración.
+   */
   async recalcDay(
     dayId: string,
     grossMinutes: number,
     hasAnomaly: boolean,
     overnight: { continuesNextDay: boolean; continuesFromPreviousDay: boolean },
   ): Promise<void> {
-    await this.prisma.timesheetDay.update({
-      where: { id: dayId },
-      data: {
-        grossMinutes,
-        hasAnomaly,
-        continuesNextDay: overnight.continuesNextDay,
-        continuesFromPreviousDay: overnight.continuesFromPreviousDay,
-      },
-    })
+    await this.prisma.$executeRaw`
+      UPDATE operations.timesheet_day d
+         SET gross_minutes = ${grossMinutes},
+             has_anomaly = ${hasAnomaly},
+             continues_next_day = ${overnight.continuesNextDay},
+             continues_from_previous_day = ${overnight.continuesFromPreviousDay},
+             lunch_deduction_minutes = CASE
+               WHEN h.pays_lunch THEN 0
+               WHEN ${grossMinutes}::int >= 390 THEN 30
+               ELSE 0
+             END
+        FROM operations.timesheet t
+        JOIN demand.requisition r ON r.id = t.requisition_id
+        JOIN commercial.hotel h   ON h.id = r.hotel_id
+       WHERE d.id = ${dayId}::uuid
+         AND t.id = d.timesheet_id`
   }
 
   /** Lo mínimo para buscar el día ANTERIOR del mismo Timesheet al emparejar
@@ -648,6 +688,7 @@ export class TimesheetsRepository {
              w.full_name      AS "workerName",
              jsonb_build_object('id', w.id, 'fullName', w.full_name) AS worker,
              ${ASSIGNMENT_OF_TIMESHEET},
+             ${APPROVED_BY_OF_TIMESHEET},
              (SELECT p.hotel_department_id
                 FROM demand."position" p
                WHERE p.requisition_id = t.requisition_id
@@ -669,7 +710,8 @@ export class TimesheetsRepository {
              t.approved_at AS "approvedAt",
              t.requisition_id AS "requisitionId",
              jsonb_build_object('id', w.id, 'fullName', w.full_name) AS worker,
-             ${ASSIGNMENT_OF_TIMESHEET}
+             ${ASSIGNMENT_OF_TIMESHEET},
+             ${APPROVED_BY_OF_TIMESHEET}
         FROM operations.timesheet t
         JOIN personal.worker w ON w.id = t.worker_id
        WHERE t.worker_id = ${workerId}::uuid
@@ -699,7 +741,8 @@ export class TimesheetsRepository {
              r.number     AS "requisitionFolio",
              jsonb_build_object('id', h.id, 'name', h.name) AS hotel,
              jsonb_build_object('id', w.id, 'fullName', w.full_name) AS worker,
-             ${ASSIGNMENT_OF_TIMESHEET}
+             ${ASSIGNMENT_OF_TIMESHEET},
+             ${APPROVED_BY_OF_TIMESHEET}
         FROM operations.timesheet t
         JOIN personal.worker w    ON w.id = t.worker_id
         JOIN demand.requisition r ON r.id = t.requisition_id
@@ -719,11 +762,15 @@ export class TimesheetsRepository {
 
   /**
    * Vista previa de pago para un lote de hojas, calculada en vivo — nada se
-   * guarda ni se modifica aquí. Replica la misma cascada de tarifa y el
-   * mismo corte de 40 h por requisición que `PaymentRunsRepository.generate`
-   * (la misma cifra, 2400, vive también ahí: ver su comentario sobre D-10).
-   * Pensada para que Contabilidad vea en el Timesheet, antes de la corrida
-   * del miércoles, cuánto se le pagaría a cada hoja.
+   * guarda ni se modifica aquí. Replica la misma cascada de tarifa, el mismo
+   * corte de 40 h por requisición y los mismos ajustes/gastos YA incluidos
+   * que PaymentRunsRepository.generate (la misma cifra, 2400, vive también
+   * ahí: ver su comentario sobre D-10) — para que la vista previa de
+   * Contabilidad y el consolidado final nunca se contradigan. Los
+   * aprobados-sin-incluir (Hugo, 2026-10-14: "sea opcional sumarlo") se
+   * resuelven aparte, con `GET /pay-adjustments/approved-pending-inclusion`
+   * (la misma cola que ya usa «Ajustes a incluir»): no se duplica la lógica
+   * de emparejar asignación↔semana en dos lugares.
    */
   async payPreview(timesheetIds: string[]): Promise<TimesheetPayPreview[]> {
     if (timesheetIds.length === 0) return []
@@ -732,6 +779,9 @@ export class TimesheetsRepository {
       WITH horas AS (
         SELECT t.id AS timesheet_id,
                t.worker_id,
+               t.requisition_id,
+               t.week_start,
+               t.week_end,
                r.hotel_id,
                pos.catalog_position_id,
                coalesce(sum(v.net_minutes), 0)::int AS total_minutes
@@ -755,20 +805,82 @@ export class TimesheetsRepository {
              LIMIT 1
           ) pos ON true
          WHERE t.id = ANY(${timesheetIds}::uuid[])
-         GROUP BY t.id, t.worker_id, r.hotel_id, pos.catalog_position_id
+         GROUP BY t.id, t.worker_id, t.requisition_id, t.week_start, t.week_end,
+                  r.hotel_id, pos.catalog_position_id
+      ),
+      -- La asignación EVENTUAL de esta persona en esta posición, vigente en
+      -- la semana de la hoja: mismo criterio que PaymentRunsRepository, no
+      -- se adivina aparte (Hugo, 2026-10-09: "una eventual que cambia de
+      -- tramo no debe heredar el ajuste de un tramo distinto").
+      ajuste_asignacion AS (
+        SELECT h.timesheet_id,
+               (SELECT a.id
+                  FROM coverage.assignment a
+                  JOIN demand.slot s       ON s.id = a.slot_id
+                  JOIN demand."position" p ON p.id = s.position_id
+                 WHERE a.worker_id = h.worker_id
+                   AND p.requisition_id = h.requisition_id
+                   AND a.type = 'TEMPORARY'
+                   AND a.validity && daterange(h.week_start, h.week_end, '[]')
+                 ORDER BY a.validity DESC
+                 LIMIT 1) AS assignment_id
+          FROM horas h
+      ),
+      ajuste_tarifa AS (
+        SELECT DISTINCT ON (aa.timesheet_id)
+               aa.timesheet_id, pa.amount AS adj_rate
+          FROM ajuste_asignacion aa
+          JOIN coverage.assignment_pay_adjustment pa
+            ON pa.assignment_id = aa.assignment_id
+           AND pa.pay_concept_id IS NULL
+           AND pa.status = 'APPROVED'
+           AND pa.included_at IS NOT NULL
+           AND pa.applied_at IS NULL
+         ORDER BY aa.timesheet_id, pa.included_at DESC
+      ),
+      ajuste_reembolso AS (
+        SELECT aa.timesheet_id, COALESCE(sum(pa.amount), 0) AS adj_reimburse
+          FROM ajuste_asignacion aa
+          JOIN coverage.assignment_pay_adjustment pa
+            ON pa.assignment_id = aa.assignment_id
+           AND pa.pay_concept_id IS NOT NULL
+           AND pa.settlement_effect = 'REIMBURSE'
+           AND pa.status = 'APPROVED'
+           AND pa.included_at IS NOT NULL
+           AND pa.applied_at IS NULL
+         GROUP BY aa.timesheet_id
+      ),
+      ajuste_descuento AS (
+        SELECT aa.timesheet_id, COALESCE(sum(pa.amount), 0) AS adj_deduction
+          FROM ajuste_asignacion aa
+          JOIN coverage.assignment_pay_adjustment pa
+            ON pa.assignment_id = aa.assignment_id
+           AND pa.settlement_effect = 'PAYROLL_DEDUCTION'
+           AND pa.status = 'APPROVED'
+           AND pa.included_at IS NOT NULL
+           AND pa.applied_at IS NULL
+         GROUP BY aa.timesheet_id
       ),
       tarifas AS (
         SELECT h.*,
                LEAST(h.total_minutes, 2400)::int        AS computed_regular_minutes,
                GREATEST(h.total_minutes - 2400, 0)::int AS computed_overtime_minutes,
-               COALESCE(wr.rate, cr.pay_rate) AS computed_pay_rate,
-               (wr.rate IS NOT NULL)          AS is_internal,
+               COALESCE(at.adj_rate, wr.rate, cr.pay_rate) AS computed_pay_rate,
+               (at.adj_rate IS NULL AND wr.rate IS NOT NULL) AS is_internal,
+               -- SIEMPRE del contrato: no hay "bill rate interno" como sí lo
+               -- hay del lado del pago — es lo que el hotel paga a Oranje.
+               cr.bill_rate AS bill_rate,
                COALESCE(ct.overtime_pay_multiplier, hot.overtime_pay_multiplier, 0) AS ot_multiplier,
+               ar.adj_reimburse,
+               ad.adj_deduction,
                ov.regular_minutes  AS override_regular_minutes,
                ov.overtime_minutes AS override_overtime_minutes,
                ov.pay_rate         AS override_pay_rate,
                ov.reason           AS override_reason
           FROM horas h
+          LEFT JOIN ajuste_tarifa at    ON at.timesheet_id = h.timesheet_id
+          LEFT JOIN ajuste_reembolso ar ON ar.timesheet_id = h.timesheet_id
+          LEFT JOIN ajuste_descuento ad ON ad.timesheet_id = h.timesheet_id
           LEFT JOIN personal.worker_rate wr
                  ON wr.worker_id = h.worker_id
                 AND wr.valid_to IS NULL
@@ -793,12 +905,15 @@ export class TimesheetsRepository {
                COALESCE(override_overtime_minutes, computed_overtime_minutes) AS overtime_minutes,
                COALESCE(override_pay_rate, computed_pay_rate)                 AS pay_rate,
                is_internal,
+               bill_rate,
                ot_multiplier,
+               adj_reimburse,
+               adj_deduction,
                (override_pay_rate IS NOT NULL) AS is_overridden,
                override_reason
           FROM tarifas
       )
-      SELECT timesheet_id     AS "timesheetId",
+      SELECT e.timesheet_id   AS "timesheetId",
              regular_minutes  AS "regularMinutes",
              overtime_minutes AS "overtimeMinutes",
              pay_rate::text   AS "payRate",
@@ -806,11 +921,23 @@ export class TimesheetsRepository {
              CASE WHEN pay_rate IS NULL THEN NULL ELSE ot_multiplier::float END AS "overtimeMultiplier",
              CASE WHEN pay_rate IS NULL THEN NULL
                   ELSE round((regular_minutes / 60.0) * pay_rate
-                           + (overtime_minutes / 60.0) * pay_rate * ot_multiplier, 2)::text
+                           + (overtime_minutes / 60.0) * pay_rate * ot_multiplier
+                           + COALESCE(adj_reimburse, 0), 2)::text
              END AS subtotal,
-             is_overridden AS "isOverridden",
-             override_reason AS "overrideReason"
-        FROM efectivo`
+             COALESCE(adj_deduction, 0)::text AS "deductionAmount",
+             CASE WHEN pay_rate IS NULL THEN NULL
+                  ELSE round((regular_minutes / 60.0) * pay_rate
+                           + (overtime_minutes / 60.0) * pay_rate * ot_multiplier
+                           + COALESCE(adj_reimburse, 0) - COALESCE(adj_deduction, 0), 2)::text
+             END AS "netAmount",
+             is_overridden    AS "isOverridden",
+             override_reason  AS "overrideReason",
+             bill_rate::text  AS "billRate",
+             CASE WHEN bill_rate IS NULL THEN NULL
+                  ELSE round((regular_minutes / 60.0) * bill_rate
+                           + (overtime_minutes / 60.0) * bill_rate * ot_multiplier, 2)::text
+             END AS "billSubtotal"
+        FROM efectivo e`
   }
 
   /**

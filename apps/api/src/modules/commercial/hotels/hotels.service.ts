@@ -143,6 +143,16 @@ export class HotelsService {
 
     await this.repo.update(id, dto, userId)
 
+    // El descuento de lonche de un día ya ponchado queda escrito ahí —
+    // mover la casilla no lo toca por sí sola (D-33 solo corre al PONCHAR).
+    // Lo que SÍ se corrige de golpe son los días que todavía se pueden
+    // tocar: una hoja ENVIADA o APROBADA queda intacta, igual que una
+    // corrección manual (Hugo, 2026-10-15: "sí, recalcular los días
+    // abiertos... lo ya enviado o aprobado queda intacto").
+    if (dto.paysLunch !== undefined && dto.paysLunch !== current.paysLunch) {
+      await this.repo.recalcLunchForOpenDays(id, dto.paysLunch)
+    }
+
     if (dto.placeId !== undefined && dto.placeId !== current.placeId) {
       await this.resolvePhoto(id, dto.placeId, null)
     }
@@ -316,6 +326,7 @@ function toEntity(row: HotelRow): HotelEntity {
     weekEndDay: row.weekEndDay,
     overtimePayMultiplier:
       row.overtimePayMultiplier === null ? null : Number(row.overtimePayMultiplier),
+    paysLunch: row.paysLunch,
     address: row.address,
     placeId: row.placeId,
     photoUrl: null,

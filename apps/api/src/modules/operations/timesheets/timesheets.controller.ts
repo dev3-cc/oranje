@@ -51,8 +51,10 @@ export class TimesheetsController {
     @Query() query: ListTimesheetsDto,
   ): Promise<{ data: TimesheetListEntity[] }> {
     const allHotels = await this.readScope(user)
+    const rows = await this.timesheets.list(user, query, allHotels)
+    const canViewMargin = await this.permissions.can(user.roleCode, 'payroll', 'view_margin')
 
-    return { data: await this.timesheets.list(user, query, allHotels) }
+    return { data: canViewMargin ? rows : rows.map((row) => stripMargin(row)) }
   }
 
   // Antes que `:id`, o Nest lee "me" como un uuid.
@@ -68,8 +70,10 @@ export class TimesheetsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: TimesheetEntity }> {
     const allHotels = await this.readScope(user)
+    const sheet = await this.timesheets.getScoped(id, user, allHotels)
+    const canViewMargin = await this.permissions.can(user.roleCode, 'payroll', 'view_margin')
 
-    return { data: await this.timesheets.getScoped(id, user, allHotels) }
+    return { data: canViewMargin ? sheet : stripMargin(sheet) }
   }
 
   @Requires('timesheet', 'punch')
@@ -200,5 +204,22 @@ export class TimesheetsController {
     }
 
     return allHotels
+  }
+}
+
+/**
+ * Lo que se le cobra al hotel (y por tanto el margen de Oranje) es del
+ * Manager de Contabilidad, no de la Contadora (Hugo, 2026-10-15: "esto solo
+ * muéstraselo al jefe de Contabilidad"). Se recorta aquí, después del
+ * servicio — más seguro que confiar en que el front no lo pinte: sin esto,
+ * el número viajaba igual en la respuesta aunque la pantalla lo escondiera.
+ */
+function stripMargin<
+  T extends { payPreview?: { billRate: string | null; billSubtotal: string | null } | undefined },
+>(entity: T): T {
+  if (!entity.payPreview) return entity
+  return {
+    ...entity,
+    payPreview: { ...entity.payPreview, billRate: null, billSubtotal: null },
   }
 }

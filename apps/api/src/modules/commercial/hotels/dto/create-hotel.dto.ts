@@ -24,6 +24,11 @@ export const createHotelSchema = z.object({
   weekEndDay: z.number().int().min(0).max(6),
   // 0 = no paga horas extra; 1.5 = tiempo y medio (Hugo, 2026-10-07).
   overtimePayMultiplier: z.union([z.literal(0), z.literal(1.5)]),
+  // `true`: el hotel paga el lonche, las horas quedan completas. Opcional
+  // (la base ya parte en `false`, el de hoy) — a diferencia de los otros
+  // datos contables, Contabilidad lo ajusta después desde el Timesheet, no
+  // hace falta decidirlo al dar de alta (Hugo, 2026-10-14).
+  paysLunch: z.boolean().optional(),
 })
 
 export class CreateHotelDto extends createZodDto(createHotelSchema) {}

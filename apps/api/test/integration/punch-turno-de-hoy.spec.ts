@@ -368,6 +368,50 @@ describe('ponchar sin conocer la asignación', () => {
   })
 })
 
+describe('ensureSchedule respeta la zona horaria del hotel', () => {
+  it('la primera marca manual de un LUNES no truena en un hotel detrás de UTC', async () => {
+    const t = await turnoDeHoy(`punch-lunes-${Date.now()}`)
+
+    // `workDate` llega como fecha pura ("AAAA-MM-DD") y Zod la coacciona a
+    // medianoche UTC — en América/Cancún (UTC-5) eso es la noche del DOMINGO
+    // anterior. `date_trunc('week', ...)` truncaba a la semana pasada al
+    // crear el Schedule, pero `scheduleOf` lo buscaba después con la fecha
+    // UTC cruda: nunca coincidían y el segundo intento de `ensureSchedule`
+    // lanzaba "No se pudo abrir la semana del Schedule" (Hugo, 2026-10-14,
+    // reproducido en vivo con Fairfield/America-New_York al dar la primera
+    // marca a alguien que nunca había ponchado).
+    const hoy = new Date()
+    const proximoLunes = new Date(hoy)
+    proximoLunes.setUTCDate(hoy.getUTCDate() + ((8 - hoy.getUTCDay()) % 7 || 7))
+    const lunesIso = proximoLunes.toISOString().slice(0, 10)
+
+    const result = await timesheets.manualPunch(
+      {
+        assignmentId: t.assignmentId,
+        type: 'CLOCK_IN',
+        workDate: new Date(`${lunesIso}T00:00:00.000Z`),
+        occurredAt: new Date(`${lunesIso}T09:00:00.000Z`),
+        reason: 'Prueba de regresión: primer ponche de un lunes',
+      } as never,
+      t.user,
+    )
+
+    expect(result).toBeTruthy()
+
+    const day = await db.timesheetDay.findFirstOrThrow({
+      where: { timesheet: { workerId: t.workerId } },
+      select: { workDate: true },
+    })
+    expect(day.workDate.toISOString().slice(0, 10)).toBe(lunesIso)
+
+    const schedule = await db.schedule.findFirstOrThrow({
+      where: { hotelId: t.hotelId, weekStart: new Date(`${lunesIso}T00:00:00.000Z`) },
+      select: { id: true },
+    })
+    schedulesCreated.push(schedule.id)
+  })
+})
+
 describe('el turno propio trae con qué pintar el Inicio', () => {
   it('lleva assignmentId y la foto del hotel cuando hay photo_ref', async () => {
     const t = await turnoDeHoy(`sched-foto-${Date.now()}`, 'places/ChIJabc/photos/AXYZ')

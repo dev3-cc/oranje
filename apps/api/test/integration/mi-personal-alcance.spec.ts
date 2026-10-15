@@ -292,6 +292,37 @@ describe('mandar a Stand-by', () => {
   })
 })
 
+describe('listar colaboradores de todos los hoteles (Contabilidad)', () => {
+  it('la Contadora ve colaboradores de DOS hoteles distintos, sin acotar', async () => {
+    const hotelA = await hotel()
+    const hotelB = await hotel()
+    const workerA = await colaborador('ORANGE')
+    const workerB = await colaborador('ORANGE')
+    await asignar(workerA, hotelA)
+    await asignar(workerB, hotelB)
+
+    const contadora = await usuario('ROL-CO-01', null)
+    const board = await workers.list(
+      { page: 1, limit: 100, onlyAvailable: false, hasPendingDocument: false },
+      contadora,
+    )
+
+    const ids = board.data.map((row) => row.id)
+    expect(ids).toEqual(expect.arrayContaining([workerA, workerB]))
+  })
+
+  it('un rol sin ninguno de los tres permisos no lista nada', async () => {
+    const colaboradorUsuario = await usuario('ROL-C-01', null)
+
+    await expect(
+      workers.list(
+        { page: 1, limit: 20, onlyAvailable: false, hasPendingDocument: false },
+        colaboradorUsuario,
+      ),
+    ).rejects.toMatchObject({ response: { code: 'FORBIDDEN' } })
+  })
+})
+
 describe('la Matriz sostiene los dos caminos', () => {
   it('los tres roles de Hotel tienen set_standby y read_history', async () => {
     const permissions = new PermissionsService(prisma)
