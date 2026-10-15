@@ -1,9 +1,11 @@
 /**
  * El clausulado del acuerdo de servicio, transcrito del machote real que
- * Oranje firma con sus hoteles (Strategic Deployment, LLC — Service Agreement,
- * recibido de Hugo el 2026-09-22, reemplaza el machote anterior de Courtyard
- * & Fairfield Lithia Springs). Vive aparte del componente porque son
- * doscientas líneas de prosa legal que no cambian nunca.
+ * Oranje firma con sus hoteles (ORANGE SOLUTIONS & OPERATIONS, LLC — Service
+ * Agreement, recibido de Hugo el 2026-10-14 como "ORANGE SOLUTIONS Service
+ * Agreement MACHOTE 2.docx"; reemplaza el machote anterior de Strategic
+ * Deployment, LLC del 2026-09-22 — mismo clausulado, cuatro cláusulas
+ * reescritas: 2(c), 3(e), 14(b) y 17(d)). Vive aparte del componente porque
+ * son doscientas líneas de prosa legal que no cambian nunca.
  *
  * Va en INGLÉS a propósito: es el documento que firma un hotel en Georgia y la
  * ley aplicable es la de ese estado (cláusula 17). Traducirlo cambiaría el
@@ -31,7 +33,7 @@ export const CONTRACT_CLAUSES: ContractClause[] = [
     paragraphs: [
       '(a) Company engages Service Provider to furnish personnel and related staffing services described in Exhibit A. Personnel supplied by Service Provider remain employees of Service Provider.',
       '(b) Service Provider is responsible for payroll administration, payroll taxes, workers’ compensation coverage, general liability coverage, I-9 compliance, and other employer obligations applicable to its employees, subject to applicable law.',
-      '(c) Service Provider will provide general employment and safety-program orientation. Company is responsible for property-specific training, task direction, daily supervision, workplace safety, security, equipment, chemicals, tools, premises conditions, and property-specific procedures.',
+      '(c) Company shall be solely and exclusively responsible, as between the Parties, for all job-specific and property-specific training and for assigning, directing, managing, monitoring, and supervising the daily work activities and on-site performance of personnel assigned by Service Provider. This includes work assignments, daily schedules and breaks, operational instructions, productivity expectations, quality standards, performance feedback, workplace procedures, safe use of equipment, tools and chemicals, and compliance with property-specific policies. Company shall provide qualified on-site management and supervisory personnel to exercise such operational control. Service Provider shall not be required to provide on-site supervisors or manage the day-to-day performance of assigned personnel. Service Provider retains responsibility for its own employment administration, general orientation, legally required employer duties, and personnel decisions within its authority, and may coordinate with Company regarding performance concerns, complaints, replacements, safety, and employee incidents. Nothing in this allocation relieves either Party of duties imposed by applicable law or liability for its own acts or omissions.',
       '(d) Company shall maintain a workplace compliant with applicable safety and employment laws, disclose known hazards, provide appropriate equipment and protective measures, and promptly report injuries, accidents, complaints, or incidents involving assigned personnel.',
       '(e) Company shall not discriminate against, harass, retaliate against, or permit unlawful treatment of assigned personnel and shall cooperate with Service Provider in investigating complaints or incidents.',
     ],
@@ -43,7 +45,8 @@ export const CONTRACT_CLAUSES: ContractClause[] = [
       '(b) Company shall review weekly time records promptly. Any objection to hours must be delivered in writing, with reasonable detail, within three (3) business days after receipt. If no timely objection is received, the time record is deemed accepted for billing purposes.',
       '(c) Any invoice dispute must be submitted in writing within five (5) business days after receipt and identify the specific disputed amount and basis. Amounts not timely disputed are deemed accepted. Company shall timely pay all undisputed amounts.',
       '(d) A one-time late charge of five percent (5%) of the unpaid balance will be assessed on the thirty-fifth (35th) day after the invoice date. Interest will also accrue at one and one-half percent (1.5%) per month, or the maximum lawful rate if lower, from the invoice date until paid in full.',
-      '(e) Company shall reimburse reasonable collection costs, arbitration or court costs, and reasonable attorneys’ fees incurred to collect overdue undisputed amounts, to the extent permitted by law.',
+      '(e) In the event Company fails to pay any amount due under this Agreement, Company shall be responsible for and shall reimburse Service Provider for all reasonable costs and expenses incurred in connection with the collection or enforcement of such unpaid amounts, including, without limitation, attorneys’ fees, legal expenses, collection agency fees, court costs, filing fees, mediation expenses, arbitration fees, and enforcement expenses, whether incurred before or after the commencement of formal legal proceedings, to the fullest extent permitted by applicable law.',
+      'Company’s obligation to reimburse such costs and expenses shall survive the expiration or termination of this Agreement and shall be in addition to any outstanding principal, applicable late fees, interest, and other amounts owed to Service Provider.',
       '(f) If an undisputed invoice remains unpaid more than five (5) days after its due date, Service Provider may suspend some or all Services upon written notice, without liability and without such suspension constituting breach. Suspension does not waive Company’s payment obligations.',
       '(g) Upon expiration or termination for any reason, all outstanding invoices, accrued charges, approved but unbilled hours, late fees, interest, and other amounts owed become immediately due and payable.',
     ],
@@ -135,7 +138,7 @@ export const CONTRACT_CLAUSES: ContractClause[] = [
     title: 'INDEPENDENT CONTRACTOR RELATIONSHIP',
     paragraphs: [
       '(a) Service Provider is an independent contractor. Nothing creates a partnership, joint venture, agency, or employer-employee relationship between Company and Service Provider.',
-      '(b) Assigned personnel remain employees of Service Provider for payroll and employment-administration purposes, while Company retains responsibility for property-specific direction and supervision as stated in Section 2.',
+      '(b) Assigned personnel remain employees of Service Provider for payroll and employment-administration purposes. As between the Parties, Company has sole responsibility for job-specific and property-specific training and the direction, management, and daily supervision of on-site work activities, as provided in Section 2(c), without limiting either Party’s nonwaivable legal duties',
     ],
   },
   {
@@ -157,7 +160,9 @@ export const CONTRACT_CLAUSES: ContractClause[] = [
       '(a) This Agreement is governed by the laws of the State of Georgia, without regard to conflict-of-law principles.',
       '(b) The Parties shall first use good-faith direct negotiation. If unresolved, they shall participate in non-binding mediation in Atlanta, Georgia, with a mutually selected mediator or through the American Arbitration Association (“AAA”).',
       '(c) If mediation does not resolve the dispute, it shall be finally settled by binding arbitration in Atlanta, Georgia under the AAA Commercial Arbitration Rules then in effect, unless the Parties agree otherwise in writing.',
-      '(d) The prevailing Party in arbitration or other permitted legal proceedings shall be entitled to recover reasonable attorneys’ fees and costs to the extent permitted by law. The arbitrator shall determine prevailing-party status and allocation of arbitration costs.',
+      '(d) Attorneys’ Fees, Collection Costs, and Enforcement Expenses. In the event Company fails to pay any amount due under this Agreement, Company shall be solely responsible for all reasonable attorneys’ fees, legal expenses, collection agency fees, court costs, arbitration fees, mediation expenses, filing fees, and other costs incurred by Service Provider in collecting or enforcing payment of such amounts, whether through informal collection efforts, negotiation, mediation, arbitration, litigation, or enforcement of a judgment or arbitration award.',
+      'Such expenses shall be recoverable in addition to the outstanding principal, late fees, accrued interest, and any other amounts owed under this Agreement, to the fullest extent permitted by applicable law.',
+      'For disputes unrelated to Company’s payment obligations, the prevailing Party shall be entitled to recover reasonable attorneys’ fees and costs to the extent permitted by applicable law.',
     ],
   },
   {

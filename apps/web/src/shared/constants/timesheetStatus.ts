@@ -6,14 +6,20 @@ import { labelMap } from '@/shared/lib/i18nLabels'
 /**
  * Estado de revisión del DÍA. Se DERIVA de `operations.timesheet_day`:
  * `has_anomaly` sin resolver → Observado; `review_note` escrita → Revisado;
- * lo demás → Pendiente. No es columna propia: es la lectura de esas dos.
+ * lo demás → Sin revisar. No es columna propia: es la lectura de esas dos.
+ *
+ * «Pendiente» se descartó para este estado (Hugo, 2026-10-12): la semana
+ * tiene su PROPIO «pendiente de aprobación» (otro semáforo, abajo), y las
+ * dos palabras iguales en la misma pantalla leían como si un día "pendiente"
+ * bloqueara la semana ya "Aprobada" — no es así, son dos cosas que no se
+ * tocan. "Sin revisar" no se confunde con eso.
  */
 export const TIMESHEET_STATUSES = ['PENDING', 'OBSERVED', 'REVIEWED'] as const
 
 export type TimesheetStatus = (typeof TIMESHEET_STATUSES)[number]
 
 const TIMESHEET_STATUS_MESSAGE = {
-  PENDING: msg`Pendiente`,
+  PENDING: msg`Sin revisar`,
   OBSERVED: msg`Observado`,
   REVIEWED: msg`Revisado`,
 }
@@ -59,6 +65,31 @@ export const TIMESHEET_WEEK_STATUS_TOKEN: Record<TimesheetWeekStatus, StatusLigh
   OPEN: 'st-gris',
   PENDING_APPROVAL: 'st-naranja',
   APPROVED: 'st-verde',
+}
+
+/**
+ * Sentinel de FRONT: una fila sintetizada para quien tiene asignación ACTIVA
+ * pero ningún timesheet esta semana — nunca ponchó ni un día (Hugo,
+ * 2026-10-13). No vive en `operations.timesheet.status` ni se manda jamás
+ * como filtro al servidor — por eso vive aparte de `TIMESHEET_WEEK_STATUSES`,
+ * que sí es el enum real que entiende `GET /timesheets?status=`.
+ */
+export const NO_TIMESHEET_STATUS = 'NO_TIMESHEET'
+
+const VIRTUAL_WEEK_STATUS_MESSAGE = {
+  [NO_TIMESHEET_STATUS]: msg`Sin Timesheet`,
+}
+
+/** Las tres etiquetas reales + el sentinel, para los sitios que pintan
+    `weekStatus` sin saber si la fila es real o sintetizada. */
+export const WEEK_STATUS_LABEL_WITH_VIRTUAL: Record<string, string> = {
+  ...TIMESHEET_WEEK_STATUS_LABEL,
+  ...labelMap(VIRTUAL_WEEK_STATUS_MESSAGE),
+}
+
+export const WEEK_STATUS_TOKEN_WITH_VIRTUAL: Record<string, StatusLightToken> = {
+  ...TIMESHEET_WEEK_STATUS_TOKEN,
+  [NO_TIMESHEET_STATUS]: 'st-gris',
 }
 
 export const PUNCH_STATES = ['COMPLETE', 'IN_PROGRESS', 'INCOMPLETE', 'NO_SHIFT'] as const

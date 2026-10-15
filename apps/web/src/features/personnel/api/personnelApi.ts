@@ -166,14 +166,6 @@ async function fetchBoard(
   const today = todayIso()
   const workerById = new Map(workers.map((worker) => [worker.id, worker]))
 
-  /** El turno de HOY por persona (el primero, si tuviera dos). */
-  const shiftByWorker = new Map<string, ScheduleEntryApi>()
-  for (const entry of entries) {
-    if (entry.workDate === today && !shiftByWorker.has(entry.worker.id)) {
-      shiftByWorker.set(entry.worker.id, entry)
-    }
-  }
-
   /** La última Auditoría de Presentación Personal por colaborador (`GET /audits` ya llega ordenado por fecha, más reciente primero). */
   const presentationByWorker = new Map<string, { score: number; auditedAt: string }>()
   for (const audit of audits) {
@@ -191,41 +183,50 @@ async function fetchBoard(
   }
 
   /**
-   * El plantel: quien tiene turno esta semana, MÁS quien está en Stand-by o
-   * accidentado — el GRIS protege y se ve aunque hoy no esté programado.
+   * El plantel: TODO el que `GET /workers` ya trae — acotado por el back a
+   * asignación ACTIVA en tu hotel (`staff:read`). Antes el roster partía de
+   * `entries` (los turnos del Schedule de la semana) y solo sumaba PINK/GRAY
+   * aparte; con la beta "Ponche por Horario" (2026-09-23) nadie planea
+   * turnos a mano, `entries` llega vacío casi siempre, y el plantel entero se
+   * veía vacío aunque el hotel tuviera asignados reales (Hugo, 2026-10-12:
+   * "no veo personal que sí veo en el timesheet"). `entries` se sigue usando
+   * abajo solo para saber si hoy tiene turno, no para decidir quién aparece.
+   *
+   * `worker.state` SÍ viaja aquí (2026-10-12): Mi Personal lo necesita para
+   * el punto de color de la fila y para decidir si caben Stand-by/Reportar
+   * — `GET /workers` le da a Hotel `WorkerStaffEntity` (básica + color del
+   * semáforo), distinto del expediente de uno solo (`getScoped`, sin
+   * `state`), que es donde de verdad se acotó lo que Hotel no debe ver.
    */
-  const rosterIds = new Set<string>(entries.map((entry) => entry.worker.id))
-  for (const worker of workers) {
-    if (worker.state.code === 'PINK' || worker.state.code === 'GRAY') rosterIds.add(worker.id)
-  }
+  const rosterIds = new Set<string>(workers.map((worker) => worker.id))
 
   const rows: PersonnelRow[] = [...rosterIds]
     .map((workerId): PersonnelRow | null => {
       const worker = workerById.get(workerId)
       if (!worker) return null
-      const shift = shiftByWorker.get(workerId)
+      const stateCode = worker.state?.code ?? null
       return {
         workerId,
         fullName: worker.fullName,
         photoUrl: worker.photoUrl,
-        phone: worker.phone,
+        /** Vacío = "sin teléfono visible", mismo criterio que ya usa la ficha. */
+        phone: worker.phone ?? '',
         positionName: worker.position?.name ?? '—',
-        stateCode: worker.state.code,
-        shift: shift ? { startsAt: shift.startsAt, endsAt: shift.endsAt } : null,
+        stateCode,
         hotelTimeZone: schedule?.hotel.timeZone,
         clockInAt: clockInByWorker.get(workerId) ?? null,
-        canStandBy: OPERATIONAL_STATES.has(worker.state.code),
-        canReport: OPERATIONAL_STATES.has(worker.state.code),
+        canStandBy: stateCode !== null && OPERATIONAL_STATES.has(stateCode),
+        canReport: stateCode !== null && OPERATIONAL_STATES.has(stateCode),
         performance: performanceOf(workerId, entries, timesheets, today),
         presentationAudit: presentationByWorker.get(workerId) ?? null,
         personal: {
-          age: worker.age,
+          age: worker.age ?? null,
           gender: worker.gender,
-          zoneName: worker.zone.name,
+          zoneName: worker.zone?.name ?? '—',
           englishLevel: worker.englishLevel?.name ?? null,
           hiringModality: worker.hiringModality?.name ?? null,
           transportType: worker.transportType,
-          bloodType: worker.bloodType,
+          bloodType: worker.bloodType ?? null,
           emergencyContact: worker.emergencyContact,
         },
       }
@@ -236,7 +237,6 @@ async function fetchBoard(
   return {
     data: {
       rows,
-      assignedToday: rows.filter((row) => row.shift !== null).length,
       clockedInToday: rows.filter((row) => row.clockInAt !== null).length,
       inStandBy: rows.filter((row) => row.stateCode === 'PINK').length,
       inAccident: rows.filter((row) => row.stateCode === 'GRAY').length,

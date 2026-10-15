@@ -76,6 +76,22 @@ export class CatalogsService {
     })
   }
 
+  /** Conceptos de pago extra (p. ej. «Uber»), P-CO-07. Abierto a toda sesión como el resto. */
+  async payConcepts(): Promise<CatalogItem[]> {
+    return this.prisma.payConcept.findMany({
+      select: { id: true, code: true, name: true },
+      orderBy: { name: 'asc' },
+    })
+  }
+
+  /** Con qué se marca un día del Timesheet sin ponches (Hugo, 2026-10-12). */
+  async timesheetDayStatuses(): Promise<CatalogItem[]> {
+    return this.prisma.timesheetDayStatus.findMany({
+      select: { id: true, code: true, name: true },
+      orderBy: { name: 'asc' },
+    })
+  }
+
   async statusLights(): Promise<Array<{ code: string; name: string; states: StatusLightItem[] }>> {
     const lights = await this.prisma.statusLight.findMany({
       select: {

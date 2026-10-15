@@ -1,7 +1,10 @@
 /* Solo `/me` es ajeno: lo registra la sesión. Con mocks apagados, no-op. */
 import '@/app/sessionApi'
 // eslint-disable-next-line no-restricted-imports
-import { registerRequisitionsMocks } from '@/features/requisitions/api/requisitionsMocks'
+import {
+  registerRequisitionsMocks,
+  TIMESHEET_DAY_STATUSES,
+} from '@/features/requisitions/api/requisitionsMocks'
 import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
 import type {
   ApiEnvelope,
@@ -73,7 +76,10 @@ function fullDay(input: {
     overtimeMinutes: 0,
     isAbsence: false,
     hasAnomaly: input.hasAnomaly ?? false,
+    continuesNextDay: false,
+    continuesFromPreviousDay: false,
     reviewNote: input.reviewNote ?? null,
+    dayStatus: null,
     punches: [
       punch({ type: 'CLOCK_IN', time: '07:00', date }),
       punch({ type: 'LUNCH_OUT', time: '12:30', date }),
@@ -95,7 +101,32 @@ function absenceDay(offset: number): TimesheetDayApi {
     overtimeMinutes: 0,
     isAbsence: true,
     hasAnomaly: false,
+    continuesNextDay: false,
+    continuesFromPreviousDay: false,
     reviewNote: null,
+    dayStatus: null,
+    punches: [],
+  }
+}
+
+/** Sin Schedule, un día sin ponches no deja fila hasta que alguien lo marca
+    (2026-10-12): el mock lo imita con un día vacío y `dayStatus: null`. */
+function emptyDay(offset: number): TimesheetDayApi {
+  daySequence += 1
+  return {
+    id: `tsd-${String(daySequence).padStart(4, '0')}`,
+    workDate: dayIso(offset),
+    grossMinutes: 0,
+    netMinutes: 0,
+    lunchDeductionMinutes: 0,
+    actualLunchMinutes: null,
+    overtimeMinutes: 0,
+    isAbsence: false,
+    hasAnomaly: false,
+    continuesNextDay: false,
+    continuesFromPreviousDay: false,
+    reviewNote: null,
+    dayStatus: null,
     punches: [],
   }
 }
@@ -131,6 +162,10 @@ const timesheets: StoredTimesheet[] = [
       /** La anomalía de la maqueta: salió fuera de la geocerca. */
       fullDay({ offset: 2, hasAnomaly: true, outOfFence: true }),
       fullDay({ offset: 3 }),
+      /** Sin ponches: así se ve el selector de Descanso/OFF (2026-10-12). */
+      emptyDay(4),
+      emptyDay(5),
+      emptyDay(6),
     ],
   },
   {
@@ -201,6 +236,49 @@ const routes: readonly MockRoute[] = [
     },
   },
   {
+    method: 'PUT',
+    path: '/timesheets/:timesheetId/pay-override',
+    resolve: ({ params, body }): ApiEnvelope<TimesheetApi> => {
+      const found = timesheets.find((sheet) => sheet.id === params.timesheetId)
+      if (!found) throw new Error('TIMESHEET_NOT_FOUND')
+      const dto = body as {
+        regularMinutes: number
+        overtimeMinutes: number
+        payRate: number
+        reason: string
+      }
+      const multiplier = found.payPreview?.overtimeMultiplier ?? 1.5
+      const subtotal =
+        (dto.regularMinutes / 60) * dto.payRate +
+        (dto.overtimeMinutes / 60) * dto.payRate * multiplier
+      found.payPreview = {
+        regularMinutes: dto.regularMinutes,
+        overtimeMinutes: dto.overtimeMinutes,
+        payRate: dto.payRate.toFixed(2),
+        isInternalRate: false,
+        overtimeMultiplier: multiplier,
+        subtotal: subtotal.toFixed(2),
+        deductionAmount: '0.00',
+        netAmount: subtotal.toFixed(2),
+        isOverridden: true,
+        overrideReason: dto.reason,
+        billRate: found.payPreview?.billRate ?? null,
+        billSubtotal: found.payPreview?.billSubtotal ?? null,
+      }
+      return { data: { ...found, totals: totalsOf(found.days) } }
+    },
+  },
+  {
+    method: 'DELETE',
+    path: '/timesheets/:timesheetId/pay-override',
+    resolve: ({ params }): ApiEnvelope<TimesheetApi> => {
+      const found = timesheets.find((sheet) => sheet.id === params.timesheetId)
+      if (!found) throw new Error('TIMESHEET_NOT_FOUND')
+      delete found.payPreview
+      return { data: { ...found, totals: totalsOf(found.days) } }
+    },
+  },
+  {
     method: 'POST',
     path: '/timesheet-days/:dayId/review',
     resolve: ({ params, body }): ApiEnvelope<TimesheetDayApi> => {
@@ -225,6 +303,9 @@ const routes: readonly MockRoute[] = [
       if (!found) throw new Error('TIMESHEET_NOT_FOUND')
       if (found.status !== 'OPEN') throw new Error('TIMESHEET_NOT_OPEN')
       if (found.days.some((day) => day.hasAnomaly)) throw new Error('ANOMALIES_PENDING')
+      if (found.days.some((day) => day.punches.length === 0 && day.dayStatus === null)) {
+        throw new Error('DAYS_WITHOUT_STATUS')
+      }
       found.status = 'PENDING_APPROVAL'
       return { data: { ...found } }
     },
@@ -246,6 +327,49 @@ const routes: readonly MockRoute[] = [
     path: '/punches/manual',
     /** El mock solo confirma: el grid recarga del store y la marca no se simula. */
     resolve: (): { data: null } => ({ data: null }),
+  },
+  {
+    method: 'PATCH',
+    path: '/punches/:punchId',
+    /** Igual que la manual: el mock solo confirma, no simula la hora corregida. */
+    resolve: (): { data: null } => ({ data: null }),
+  },
+  {
+    method: 'PUT',
+    path: '/timesheets/:timesheetId/day-status',
+    resolve: ({ params, body }): ApiEnvelope<TimesheetDayApi> => {
+      const found = timesheets.find((sheet) => sheet.id === params.timesheetId)
+      if (!found) throw new Error('TIMESHEET_NOT_FOUND')
+      const dto = body as { workDate: string; dayStatusId: string | null }
+      let day = found.days.find((item) => item.workDate === dto.workDate)
+      if (!day) {
+        daySequence += 1
+        day = {
+          id: `tsd-${String(daySequence).padStart(4, '0')}`,
+          workDate: dto.workDate,
+          grossMinutes: 0,
+          netMinutes: 0,
+          lunchDeductionMinutes: 0,
+          actualLunchMinutes: null,
+          overtimeMinutes: 0,
+          isAbsence: false,
+          hasAnomaly: false,
+          continuesNextDay: false,
+          continuesFromPreviousDay: false,
+          reviewNote: null,
+          dayStatus: null,
+          punches: [],
+        }
+        found.days.push(day)
+      } else if (day.punches.length > 0) {
+        throw new Error('DAY_HAS_PUNCHES')
+      }
+      const status = dto.dayStatusId
+        ? (TIMESHEET_DAY_STATUSES.find((item) => item.id === dto.dayStatusId) ?? null)
+        : null
+      day.dayStatus = status && { code: status.code, name: status.name }
+      return { data: day }
+    },
   },
 ]
 

@@ -32,6 +32,7 @@ export const profile: MyProfile = {
   transportType: null,
   emergencyContact: null,
   bloodType: null,
+  medicalNotes: null,
   state: { code: 'WHITE', color: 'Blanco', name: 'Pre-asignación' },
   isProfileComplete: false,
   profileDueAt: null,
@@ -141,6 +142,13 @@ const todayPunches: Array<{
   manualReason: string | null
 }> = []
 
+/**
+ * El método de ponche del hotel simulado. Por omisión Selfie, como estaba:
+ * así ninguna prueba existente cambia. Una prueba que necesite el camino del
+ * QR lo pone en 'QR' y lo regresa al terminar.
+ */
+export const hotelSimulado: { punchMethod: 'SELFIE' | 'QR' } = { punchMethod: 'SELFIE' }
+
 const routes: readonly MockRoute[] = [
   {
     method: 'GET',
@@ -155,7 +163,7 @@ const routes: readonly MockRoute[] = [
           hotel: 'Hotel Puerto Real',
           hotelPhotoUrl: 'https://picsum.photos/seed/oranje-hotel/900/600',
           hotelTimeZone: 'America/Cancun',
-          hotelPunchMethod: 'SELFIE',
+          hotelPunchMethod: hotelSimulado.punchMethod,
           position: 'Housekeeper',
           assignmentId: 'asg-mock-1',
         },
@@ -190,9 +198,17 @@ const routes: readonly MockRoute[] = [
     method: 'POST',
     path: '/punches',
     resolve: ({ body }): ApiEnvelope<unknown> => {
-      const dto = body as { type: string; photoPath?: string }
-      if (['CLOCK_IN', 'CLOCK_OUT'].includes(dto.type) && !dto.photoPath) {
-        throw new Error('PHOTO_REQUIRED')
+      const dto = body as { type: string; photoPath?: string; qrCode?: string }
+      /* La misma exigencia que el servidor (`assertEvidence`): Entrada y
+         Salida llevan evidencia, y CUÁL depende del hotel. Un mock más
+         permisivo que el back es justo lo que deja pasar un defecto sin que
+         ninguna prueba lo note. */
+      if (['CLOCK_IN', 'CLOCK_OUT'].includes(dto.type)) {
+        if (hotelSimulado.punchMethod === 'QR') {
+          if (!dto.qrCode) throw new Error('QR_REQUIRED')
+        } else if (!dto.photoPath) {
+          throw new Error('PHOTO_REQUIRED')
+        }
       }
       const mark = {
         id: `punch-${String(todayPunches.length + 1)}`,
@@ -325,6 +341,16 @@ const routes: readonly MockRoute[] = [
 ]
 
 let areRoutesRegistered = false
+
+/**
+ * Borra las marcas del día simulado. Las rutas viven en el módulo, así que un
+ * spec que poncha le deja la Entrada puesta al siguiente y la «marca que
+ * sigue» ya no es la misma: sin esto los specs del ponche dejan de ser
+ * independientes y el que corre segundo falla por el que corrió primero.
+ */
+export function limpiarPonchesSimulados(): void {
+  todayPunches.length = 0
+}
 
 export function registerWorkerMocks(): void {
   if (areRoutesRegistered) return

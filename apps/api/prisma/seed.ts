@@ -4,6 +4,8 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client'
 import { v7 as uuidv7 } from 'uuid'
 
+import { SYSTEM_USER_EMAIL } from '../src/common/constants/system-actor.js'
+
 import { expandRoles, flattenPermissions } from './permissions.js'
 
 /**
@@ -87,6 +89,13 @@ const ENGLISH_LEVELS = [
   { code: 'INTERMEDIATE', name: 'Intermedio', order: 2 },
   { code: 'ADVANCED', name: 'Avanzado', order: 3 },
   { code: 'CONVERSATIONAL', name: 'Conversacional', order: 4 },
+]
+
+// Con qué se marca un día del Timesheet sin ponches, antes de aprobar
+// (Hugo, 2026-10-12). El Administrador agrega más desde /catalogos.
+const TIMESHEET_DAY_STATUSES = [
+  { code: 'REST', name: 'Descanso' },
+  { code: 'OFF', name: 'OFF' },
 ]
 
 /// Contenido inicial de las dos auditorías del Supervisor. `weight = 1` para
@@ -713,8 +722,17 @@ const BLACKLIST_TRANSITIONS: Array<{
     reason: true,
     evidence: true,
   })),
-  // La salida. Un solo rol y motivo obligatorio: no es automática.
-  { from: 'BLACK', to: 'WHITE', roles: ['ROL-ADM-01'], reason: true, evidence: false },
+  // La salida. Motivo obligatorio: no es automática. Era solo del
+  // Administrador y Hugo la abrió a Reclutamiento (2026-10-10), los mismos
+  // tres que ponen el veto — se le advirtió que así quien veta se lo puede
+  // levantar y lo eligió con eso enfrente.
+  {
+    from: 'BLACK',
+    to: 'WHITE',
+    roles: ['ROL-ADM-01', 'ROL-R-01', 'ROL-R-02', 'ROL-R-03'],
+    reason: true,
+    evidence: false,
+  },
 ]
 
 // ---------------------------------------------------------------------------
@@ -1224,6 +1242,15 @@ async function main(): Promise<void> {
   }
   log(`english_level: ${ENGLISH_LEVELS.length}`)
 
+  for (const s of TIMESHEET_DAY_STATUSES) {
+    await prisma.timesheetDayStatus.upsert({
+      where: { code: s.code },
+      update: { name: s.name },
+      create: { id: uuidv7(), code: s.code, name: s.name },
+    })
+  }
+  log(`timesheet_day_status: ${TIMESHEET_DAY_STATUSES.length}`)
+
   for (const item of AUDIT_CHECKLIST_ITEMS) {
     await prisma.auditChecklistItem.upsert({
       where: { auditType_code: { auditType: item.auditType, code: item.code } },
@@ -1470,6 +1497,35 @@ async function main(): Promise<void> {
     }
   }
   log(`status_light_transition (Blacklist): ${blacklistTransitions}`)
+
+  /*
+   * La cuenta del Sistema (Hugo, 2026-10-09).
+   *
+   * Lo que el sistema hace solo —cerrar una asignación temporal vencida— deja
+   * rastro en el journal igual que lo que hace una persona, y el journal exige
+   * un actor. Hasta hoy el único usuario con `ROL-SYS-01` era el de las
+   * pruebas de integración, y firmar con él en producción sería mentir sobre
+   * quién actuó.
+   *
+   * Nace INACTIVA y sin cuenta de Firebase: no es una persona, no entra a la
+   * app; existe para poder firmar.
+   */
+  const sistemaRole = await prisma.role.findUniqueOrThrow({
+    where: { code: 'ROL-SYS-01' },
+    select: { id: true },
+  })
+  await prisma.user.upsert({
+    where: { email: SYSTEM_USER_EMAIL },
+    update: { fullName: 'Sistema', roleId: sistemaRole.id, isActive: false },
+    create: {
+      id: uuidv7(),
+      email: SYSTEM_USER_EMAIL,
+      fullName: 'Sistema',
+      roleId: sistemaRole.id,
+      isActive: false,
+    },
+  })
+  log(`identity.user (Sistema): ${SYSTEM_USER_EMAIL}`)
 
   log('')
   log('NOTA: 4 de los 7 semáforos tienen transiciones. Los otros tres —Posiciones,')

@@ -50,7 +50,17 @@ export const createWorkerSchema = z.object({
   phone: z.string().trim().min(7).max(32),
   address: z.string().trim().min(1).max(300),
   zoneId: z.uuid(),
-  photoPath: photoPath.optional(),
+  /**
+   * Obligatoria al dar de alta (Hugo, 2026-10-09). La toma la Reclutadora en
+   * la entrevista, que es donde el vault la pone.
+   *
+   * Solo aquí: `is_profile_complete` NO la incluye y se queda igual. Si
+   * contara, los 344 colaboradores que ya existen —ninguno tiene foto, todos
+   * vienen de la migración— quedarían incompletos de golpe y a los tres días
+   * perderían el acceso a la app. Obligatoria para los que nacen de hoy en
+   * adelante; a los de antes no se les quita nada.
+   */
+  photoPath,
 
   catalogPositionId: z.uuid().optional(),
   hiringModalityId: z.uuid().optional(),
@@ -108,6 +118,14 @@ export const queryWorkersSchema = z.object({
   /** Con un SSN/ITIN cargado y sin revisar — Reclutamiento no lo ve hasta
       abrir el expediente uno por uno (Hugo, 2026-09-30). */
   hasPendingDocument: z.coerce.boolean().default(false),
+  /**
+   * Fuera quien ya trabaja en otra parte. El Verde fuerte NO lo dice: el
+   * semáforo avanza con el primer ponche, así que entre asignar y ponchar la
+   * persona sigue viéndose Disponible. Sin esto la pantalla de asignación la
+   * ofrece y `POST /assignments` la rechaza con `WORKER_ALREADY_ASSIGNED`
+   * después de llenar el formulario (Hugo, 2026-10-09).
+   */
+  withoutActiveAssignment: z.coerce.boolean().default(false),
 })
 
 export class QueryWorkersDto extends createZodDto(queryWorkersSchema) {}

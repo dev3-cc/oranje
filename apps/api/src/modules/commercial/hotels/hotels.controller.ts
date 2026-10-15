@@ -18,6 +18,7 @@ import { PermissionsService } from '../../identity/index.js'
 
 import { CreateHotelDto } from './dto/create-hotel.dto.js'
 import { QueryHotelsDto } from './dto/query-hotels.dto.js'
+import { SetPaysLunchDto } from './dto/set-pays-lunch.dto.js'
 import { UpdateHotelDto } from './dto/update-hotel.dto.js'
 import type { HotelEntity } from './entities/hotel.entity.js'
 import { HotelsService, Paginated, PunchQrEntity } from './hotels.service.js'
@@ -147,5 +148,44 @@ export class HotelsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: HotelEntity }> {
     return { data: await this.hotels.update(id, dto, user.id) }
+  }
+
+  /**
+   * Dato de nómina, no de perfil comercial — por eso su propio permiso en
+   * vez de `pipeline:read`/`users:manage_hotel` (Hugo, 2026-10-14):
+   * Contabilidad no alcanza `GET /hotels/:id` (es de Ventas/Administración),
+   * así que necesita su propia puerta angosta para leer y escribir esto.
+   */
+  @Requires('payroll', 'generate')
+  @Get(':id/pays-lunch')
+  async getPaysLunch(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<{ data: { paysLunch: boolean } }> {
+    const hotel = await this.hotels.get(id)
+    return { data: { paysLunch: hotel.paysLunch } }
+  }
+
+  @Requires('payroll', 'generate')
+  @Patch(':id/pays-lunch')
+  async setPaysLunch(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SetPaysLunchDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: HotelEntity }> {
+    return { data: await this.hotels.update(id, { paysLunch: dto.paysLunch }, user.id) }
+  }
+
+  /**
+   * Nombre y foto, lo mínimo para el "lado a lado" de Contabilidad (Hugo,
+   * 2026-10-14: "la imagen del hotel a un lado") — mismo motivo que
+   * `pays-lunch`: `GET /hotels/:id` no la alcanza.
+   */
+  @Requires('payroll', 'generate')
+  @Get(':id/card')
+  async getCard(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<{ data: { name: string; photoUrl: string | null } }> {
+    const hotel = await this.hotels.get(id)
+    return { data: { name: hotel.name, photoUrl: hotel.photoUrl } }
   }
 }

@@ -5,7 +5,7 @@ import type { Punch } from '../types/observability.types'
 import { type Kpi, ratioOf } from './kpi'
 import { isInPeriod, localDay, type Period } from './period'
 
-import type { WorkerApi } from '@/shared/types/apiContract.types'
+import type { FullWorkerApi } from '@/shared/types/apiContract.types'
 
 const SHORT_LUNCH_MIN = 15
 const LONG_LUNCH_MIN = 30
@@ -74,7 +74,7 @@ export interface WorkerInput {
   period: Period
   /** Solo los del periodo. */
   punches: Punch[]
-  workers: WorkerApi[]
+  workers: FullWorkerApi[]
 }
 
 export function workerKpis(input: WorkerInput): Kpi[] {

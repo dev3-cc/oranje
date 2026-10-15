@@ -1,4 +1,4 @@
-import type { WorkerApi } from '@/shared/types/apiContract.types'
+import type { FullWorkerApi } from '@/shared/types/apiContract.types'
 
 /**
  * Formas del apartado del Colaborador, transcritas del contrato REAL
@@ -60,8 +60,12 @@ export interface AccessDeadlinesApi {
   profile: AccessDeadlineApi
 }
 
-/** `GET /workers/me`: mi expediente completo (misma entidad que /workers/:id) + los plazos. */
-export type MyProfile = WorkerApi & {
+/**
+ * `GET /workers/me`: mi expediente completo (misma entidad que
+ * `/workers/:id`, siempre la ficha completa — self-service, D-30) + los
+ * plazos.
+ */
+export type MyProfile = FullWorkerApi & {
   taxDeadline: TaxDeadlineApi
   /** Opcional en el tipo a propósito: un API sin este campo no debe tumbar la app. */
   accessDeadlines?: AccessDeadlinesApi

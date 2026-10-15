@@ -37,6 +37,16 @@ export class CatalogsController {
     return { data: await this.catalogs.englishLevels() }
   }
 
+  @Get('pay-concepts')
+  async payConcepts(): Promise<{ data: CatalogItem[] }> {
+    return { data: await this.catalogs.payConcepts() }
+  }
+
+  @Get('timesheet-day-statuses')
+  async timesheetDayStatuses(): Promise<{ data: CatalogItem[] }> {
+    return { data: await this.catalogs.timesheetDayStatuses() }
+  }
+
   @Get('status-lights')
   async statusLights(): Promise<{
     data: Array<{ code: string; name: string; states: StatusLightItem[] }>

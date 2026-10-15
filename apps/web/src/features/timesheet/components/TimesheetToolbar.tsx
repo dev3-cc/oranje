@@ -1,5 +1,13 @@
 import { Trans, useLingui } from '@lingui/react/macro'
-import { cn, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@oranje/ui'
+import {
+  cn,
+  MaterialIcon,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@oranje/ui'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 
 import { useGetTimesheetWeekQuery } from '../api/timesheetApi'
@@ -30,6 +38,7 @@ export function TimesheetToolbar({
   hotelNames,
   columnWidth,
   showZoom = true,
+  hideHotelFilter = false,
   onChange,
   onColumnWidthChange,
 }: {
@@ -39,10 +48,19 @@ export function TimesheetToolbar({
   columnWidth: number
   /** El zoom es un concepto de la vista Días: en Horas y Mes no se enseña. */
   showZoom?: boolean
+  /** `true` cuando la página ya puso su propio filtro de Hotel más arriba,
+      junto al navegador de semana (Hugo, 2026-10-14): uno solo, no dos. */
+  hideHotelFilter?: boolean
   onChange: (filters: Filters) => void
   onColumnWidthChange: (width: number) => void
 }): ReactNode {
   const { t } = useLingui()
+  /* En móvil los cuatro controles apilados ocupaban la pantalla entera antes
+     de ver un solo dato (Hugo, 2026-10-12, con captura). Mismo patrón que
+     Contratos: un botón «Filtrar» los oculta, y con un filtro puesto se
+     quedan abiertos para poder quitarlo — en escritorio (`lg+`) siguen en
+     una sola fila, sin tocar nada. */
+  const [isFiltersOpen, setFiltersOpen] = useState(false)
   const update =
     <K extends keyof Filters>(key: K) =>
     (value: string): void => {
@@ -88,6 +106,10 @@ export function TimesheetToolbar({
       (value) => value !== ANY_VALUE,
     ).length
 
+  /* Abiertos si se tocó el botón O ya hay algo puesto — igual que Contratos:
+     con un filtro activo, no se puede esconder sin antes quitarlo. */
+  const showFiltersOnMobile = isFiltersOpen || activeFilters > 0
+
   const resetFilters = (): void => {
     setDraft('')
     onChange({
@@ -104,14 +126,50 @@ export function TimesheetToolbar({
   return (
     /* Los filtros viven en su propia tarjeta: una franja, no piezas sueltas. */
     <div className="flex flex-wrap items-end justify-between gap-x-5 gap-y-3 rounded-xl border border-line bg-surface px-4 py-3">
-      <div className="flex flex-wrap items-end gap-3">
+      {/* Solo en móvil: en escritorio los cuatro controles ya caben en una
+          fila y este botón no hace falta. */}
+      <button
+        type="button"
+        aria-expanded={showFiltersOnMobile}
+        onClick={() => {
+          setFiltersOpen((open) => !open)
+        }}
+        className="flex w-full cursor-pointer items-center justify-between gap-2 text-sm font-semibold text-ink lg:hidden"
+      >
+        <span className="flex items-center gap-1.5">
+          <MaterialIcon name="filter_list" className="text-base" aria-hidden />
+          <Trans>Filtrar</Trans>
+          {activeFilters > 0 && (
+            <span className="flex size-5 items-center justify-center rounded-full bg-o-500 text-xs font-bold text-ink">
+              {activeFilters}
+            </span>
+          )}
+        </span>
+        <MaterialIcon
+          name={showFiltersOnMobile ? 'expand_less' : 'expand_more'}
+          className="text-xl text-ink-3"
+          aria-hidden
+        />
+      </button>
+
+      <div
+        className={cn(
+          'flex-wrap items-end gap-3',
+          showFiltersOnMobile ? 'flex' : 'hidden',
+          'lg:flex',
+        )}
+      >
         <SearchField
           isSearching={isSearching}
           value={draft}
           onChange={setDraft}
           label={t`Buscar colaborador`}
           placeholder={t`Nombre del colaborador, p. ej. Ana Rivera…`}
-          className="flex-1"
+          /* `min-w-0`: el `min-w-60` de base no se encoge dentro del
+             acordeón «Filtrar» en móvil y el campo se desbordaba del panel
+             (Hugo, 2026-10-14, con captura). En escritorio sigue ocupando
+             todo lo que sobra, por el `flex-1`. */
+          className="min-w-0 flex-1"
         />
 
         <LabeledControl label={t`Requisición`}>
@@ -150,23 +208,25 @@ export function TimesheetToolbar({
           </Select>
         </LabeledControl>
 
-        <LabeledControl label={t`Hotel`}>
-          <Select value={filters.hotelName} onValueChange={update('hotelName')}>
-            <SelectTrigger aria-label={t`Hotel`} className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">
-                <Trans>Todos los hoteles</Trans>
-              </SelectItem>
-              {hotelNames.map((hotel) => (
-                <SelectItem key={hotel} value={hotel}>
-                  {hotel}
+        {!hideHotelFilter && (
+          <LabeledControl label={t`Hotel`}>
+            <Select value={filters.hotelName} onValueChange={update('hotelName')}>
+              <SelectTrigger aria-label={t`Hotel`} className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">
+                  <Trans>Todos los hoteles</Trans>
                 </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </LabeledControl>
+                {hotelNames.map((hotel) => (
+                  <SelectItem key={hotel} value={hotel}>
+                    {hotel}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </LabeledControl>
+        )}
 
         <LabeledControl label={t`Periodo`}>
           <DateRangeField

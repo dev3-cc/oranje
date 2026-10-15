@@ -38,3 +38,13 @@ export const createManualPunchSchema = z.object({
 })
 
 export class CreateManualPunchDto extends createZodDto(createManualPunchSchema) {}
+
+// Corregir ≠ capturar la que falta (CreateManualPunchDto): aquí la marca ya
+// existe y se le cambia la hora — es `timesheet:correct_punch`, del Manager
+// de Área/General, no del Supervisor (Hugo, 2026-10-10).
+export const correctPunchSchema = z.object({
+  occurredAt: z.coerce.date(),
+  reason: z.string().trim().min(1).max(500),
+})
+
+export class CorrectPunchDto extends createZodDto(correctPunchSchema) {}

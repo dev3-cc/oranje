@@ -22,14 +22,16 @@ function renderPersonnel(): void {
 }
 
 /**
- * El plantel se compone de tres contratos: el Schedule pone el turno de HOY
- * (Ana, Luis y Julia están programados), el Pool pone el semáforo (Rogelio en
- * GRIS entra aunque no tenga turno) y el Timesheet las marcas. El layout es
- * lista-detalle (el patrón de Mi Equipo del BDC): la fila resume, el panel
- * profundiza.
+ * El plantel se compone de tres contratos: `GET /workers` pone a quién se ve
+ * (asignación ACTIVA en el hotel), el Pool pone el semáforo (Rogelio en GRIS
+ * entra aunque hoy no haya ponchado) y el Timesheet las marcas — "Turno de
+ * hoy" del Schedule se quitó (Hugo, 2026-10-13): sin Schedule (beta
+ * apagada, 2026-09-23) no hay turno que leer, solo si ya ponchó. El layout
+ * es lista-detalle (el patrón de Mi Equipo del BDC): la fila resume, el
+ * panel profundiza.
  */
 describe('PersonnelPage', () => {
-  it('el plantel cruza turno y semáforo: programados de hoy + el protegido', async () => {
+  it('el plantel cruza marcas y semáforo: quien ponchó hoy + el protegido', async () => {
     renderPersonnel()
     const user = userEvent.setup()
 
@@ -38,8 +40,8 @@ describe('PersonnelPage', () => {
     const anaRow = (await screen.findAllByText('Ana Rivera Gómez', undefined, SLOW))
       .map((node) => node.closest('li'))
       .find(Boolean) as HTMLElement
-    // Ana tiene turno hoy (07:00–15:30, sembrado al día de hoy a propósito).
-    expect(within(anaRow).getByText(/07:00–15:30/)).toBeInTheDocument()
+    // Ana ya ponchó entrada hoy (sembrado a propósito).
+    expect(within(anaRow).getByText(/^Entró/)).toBeInTheDocument()
 
     // Rogelio no está programado, pero el GRIS protege y SE VE en la lista.
     const grayRow = screen
@@ -55,9 +57,6 @@ describe('PersonnelPage', () => {
     expect(
       within(detail).queryByRole('button', { name: 'Mandar a Stand-by' }),
     ).not.toBeInTheDocument()
-
-    expect(screen.getByText('Asignados hoy')).toBeInTheDocument()
-    expect(screen.getByText('En accidente')).toBeInTheDocument()
   })
 
   it('el buscador filtra el plantel en memoria y el panel sigue al primero visible', async () => {

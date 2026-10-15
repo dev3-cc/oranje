@@ -545,7 +545,7 @@ const HOTEL: Permission[] = [
     module: 'timesheet',
     action: 'read_all_hotels',
     label: 'Ver el Timesheet de todos los hoteles (solo lectura)',
-    roles: [OBSERVER],
+    roles: [OBSERVER, ACCOUNTANT, ACCOUNTING_MANAGER],
   },
   {
     module: 'timesheet',
@@ -592,6 +592,17 @@ const HOTEL: Permission[] = [
     action: 'read',
     label: 'Ver colaboradores asignados',
     roles: [SUPERVISOR, GA, GG, SYS],
+  },
+  /* Contabilidad ve el Timesheet de todos los hoteles (`timesheet:read_all_hotels`)
+     y necesita este mismo alcance aquí: sin hotel propio, `staff:read` no le
+     sirve (exige `hotelId`, D-09). Mismo patrón que `timesheet:read_all_hotels` —
+     propio y no `read_all`, que ya significa algo distinto en otro lado
+     (Hugo, 2026-10-14: sin esto, quien no ponchó desaparecía para ella). */
+  {
+    module: 'staff',
+    action: 'read_all_hotels',
+    label: 'Ver colaboradores de todos los hoteles (solo lectura)',
+    roles: [ACCOUNTANT, ACCOUNTING_MANAGER],
   },
   {
     module: 'staff',
@@ -746,6 +757,25 @@ const RECRUITMENT: Permission[] = [
     action: 'read_position_pay',
     label: 'Ver el pago de la posición al asignar un slot',
     roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
+  },
+  // Hugo, 2026-10-08: al llenar un slot EVENTUAL, Reclutamiento puede pedir un
+  // ajuste a la tarifa de esa posición o un gasto extra (p. ej. Uber) — queda
+  // PENDING hasta que lo apruebe el Observador.
+  {
+    module: 'requisitions',
+    action: 'request_pay_adjustment',
+    label: 'Pedir un ajuste de tarifa o un gasto extra al asignar un slot eventual',
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
+  },
+  // Excepción deliberada: el Observador es de puro lectura (ver bloque
+  // OBSERVABILITY más abajo), salvo esto — fuera de la herencia por el mismo
+  // motivo que sus lecturas: nadie más hereda esta capacidad de aprobar.
+  {
+    module: 'requisitions',
+    action: 'approve_pay_adjustment',
+    label: 'Aprobar o rechazar el ajuste/gasto de una asignación eventual (Observador)',
+    roles: [OBSERVER],
+    inherit: false,
   },
   {
     module: 'requisitions',
@@ -1065,17 +1095,21 @@ const RECRUITMENT: Permission[] = [
 // Contadora valida, el Manager de Contabilidad autoriza —, y coinciden con las
 // dos firmas que ck_consolidation_signatures ya exige en la base.
 // ---------------------------------------------------------------------------
-// El levantamiento del veto no esta en la matriz de Reclutamiento: el propio
-// encabezado explica que «Remover de Blacklist» quedo fuera por ser del
-// Administrador, que no es rol de ese departamento. La fila se deriva de
-// `Core/Modulos/Blacklist` —«solo por un perfil de Administrador», 2026-08-13— y
-// coincide con la unica transicion BLACK -> WHITE sembrada, autorizada a ROL-ADM-01.
+// Levantar el veto: el Administrador y los tres roles de Reclutamiento.
+//
+// Era solo del Administrador —«solo por un perfil de Administrador»,
+// `Core/Modulos/Blacklist`, 2026-08-13— y Hugo lo abrio a Reclutamiento el
+// 2026-10-10. Se le planteo que, como Reclutamiento es quien PONE el veto,
+// dejar que la misma Reclutadora lo levante quita el segundo par de ojos; con
+// eso enfrente eligio los tres. La transicion BLACK -> WHITE se siembra con
+// los mismos cuatro, para que el permiso y el semaforo no digan cosas
+// distintas.
 const ADMINISTRATION: Permission[] = [
   {
     module: 'blacklist',
     action: 'lift',
     label: 'Remover de Blacklist',
-    roles: [ADMIN],
+    roles: [ADMIN, RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER],
   },
 ]
 
@@ -1169,13 +1203,22 @@ const ACCOUNTING: Permission[] = [
     module: 'payroll',
     action: 'mark_paid',
     label: 'Registrar el pago',
-    roles: [ACCOUNTING_MANAGER, SYS],
+    roles: [ACCOUNTANT, ACCOUNTING_MANAGER, SYS],
   },
   {
     module: 'payroll',
     action: 'manage_deductions',
     label: 'Aplicar y reembolsar deducciones',
     roles: [ACCOUNTANT, ACCOUNTING_MANAGER],
+  },
+  {
+    // Lo que se le cobra al hotel (y por tanto el margen de Oranje) solo lo
+    // ve el Manager — la Contadora opera la nómina sin ese dato (Hugo,
+    // 2026-10-15: "esto solo muéstraselo al jefe de Contabilidad").
+    module: 'payroll',
+    action: 'view_margin',
+    label: 'Ver lo que se le cobra al hotel (margen) en el Timesheet',
+    roles: [ACCOUNTING_MANAGER],
   },
 ]
 

@@ -71,6 +71,8 @@ export interface SlotBoard {
 /** Lo que `POST /assignments` pide, con los nombres del DTO real. */
 export interface CreateAssignmentRequest {
   positionId: string
+  /** Qué lugar; sin él, el servidor toma el primero libre. */
+  slotOrdinal?: number
   workerId: string
   type: 'FIXED' | 'TEMPORARY'
   startDate?: string
@@ -91,4 +93,49 @@ export interface AssignableWorker {
   fullName: string
   zoneName: string
   stateCode: string
+}
+
+/**
+ * Solo del GASTO (`payConcept` con valor): quién lo pagó decide qué hace
+ * Contabilidad con el pago del colaborador (Hugo, 2026-10-09).
+ * REIMBURSE = el colaborador lo pagó, se le suma a su nómina ·
+ * COMPANY_EXPENSE = lo pagó Oranje, no le toca nada a su pago ·
+ * PAYROLL_DEDUCTION = lo pagó Oranje pero se lo descuenta, a petición suya.
+ */
+export type SettlementEffect = 'REIMBURSE' | 'COMPANY_EXPENSE' | 'PAYROLL_DEDUCTION'
+
+/**
+ * El ajuste de tarifa o el gasto extra (p. ej. «Uber») de una asignación
+ * EVENTUAL (Hugo, 2026-10-08): Reclutamiento lo pide al llenar el slot, solo
+ * el Observador lo aprueba o lo rechaza, y mientras está PENDING no pesa en
+ * nada. `payConcept` ausente = ajuste del rate llano de la posición.
+ */
+export interface PayAdjustment {
+  id: string
+  assignmentId: string
+  amount: string
+  reason: string
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  settlementEffect: SettlementEffect | null
+  payConcept: { id: string; code: string; name: string } | null
+  requestedBy: { id: string; fullName: string }
+  requestedAt: string
+  approvedBy: { id: string; fullName: string } | null
+  approvedAt: string | null
+  rejectionReason: string | null
+  /** Que el Observador apruebe no lo mete a la nómina: esto es lo que lo
+      mete de verdad, y lo decide Contabilidad (Hugo, 2026-10-09). */
+  includedBy: { id: string; fullName: string } | null
+  includedAt: string | null
+  worker: { id: string; fullName: string }
+  hotelName: string
+  requisitionNumber: string
+}
+
+export interface CreatePayAdjustmentRequest {
+  assignmentId: string
+  payConceptId?: string
+  amount: number
+  reason: string
+  settlementEffect?: SettlementEffect
 }

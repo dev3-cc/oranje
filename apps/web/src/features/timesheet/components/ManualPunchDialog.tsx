@@ -14,8 +14,9 @@ import {
 import { useEffect, useState, type ReactNode } from 'react'
 
 import { useCreateManualPunchMutation } from '../api/timesheetApi'
-import type { TimesheetRow } from '../types/timesheet.types'
+import type { ManualPunchTarget } from '../types/timesheet.types'
 
+import personajeCronograma from '@/assets/ilustrations/personaje-cronograma.svg'
 import personajeDashboard from '@/assets/ilustrations/personaje-dashboard.svg'
 import personajeEncuesta from '@/assets/ilustrations/personaje-encuesta.svg'
 import personajeErrorTecnico from '@/assets/ilustrations/personaje-error-tecnico.svg'
@@ -32,6 +33,25 @@ const PUNCH_TYPE_LABEL: Record<string, MessageDescriptor> = {
   LUNCH_OUT: msg`Salida a lunch`,
   LUNCH_IN: msg`Regreso de lunch`,
   CLOCK_OUT: msg`Salida`,
+}
+
+/** El orden real del ponche (D-21): de ahí sale cuál sigue. */
+const PUNCH_ORDER = ['CLOCK_IN', 'LUNCH_OUT', 'LUNCH_IN', 'CLOCK_OUT'] as const
+
+/**
+ * El tipo que sigue, según lo que ya está marcado ESE día — no siempre
+ * Entrada, que es lo que el selector proponía antes sin importar si ya
+ * había marcas (Hugo, 2026-10-10: "la gente piensa que en automático se
+ * pone el que falta"). Si ya están las cuatro, se propone la última
+ * (Salida): no hay quinta marca que capturar.
+ */
+function nextExpectedType(
+  entries: ManualPunchTarget['entries'],
+  workDate: string,
+): (typeof PUNCH_ORDER)[number] {
+  const entry = entries.find((item) => item.date === workDate)
+  const already = new Set(entry?.punches.map((punch) => punch.type) ?? [])
+  return PUNCH_ORDER.find((type) => !already.has(type)) ?? 'CLOCK_OUT'
 }
 
 /**
@@ -75,6 +95,9 @@ function manualPunchErrorMessage(error: unknown, i18n: I18n, workDate: string): 
       PUNCH_ALREADY_REGISTERED: i18n._(
         msg`Esa marca ya quedó registrada el ${formatDayMonth(workDate)}.`,
       ),
+      TIMESHEET_ALREADY_SENT: i18n._(
+        msg`La semana ya se envió a aprobación: no admite más cambios. Si algo quedó mal, comunícate con Oranje.`,
+      ),
     },
     fallback: i18n._(msg`No se pudo registrar la marca. Inténtalo de nuevo.`),
   })
@@ -85,7 +108,7 @@ export function ManualPunchDialog({
   initialDate = null,
   onClose,
 }: {
-  row: Pick<TimesheetRow, 'requisitionId' | 'workerId' | 'workerName'> | null
+  row: ManualPunchTarget | null
   /** Precarga el día cuando se abre desde la Revisión de un día puntual. */
   initialDate?: string | null
   onClose: () => void
@@ -93,6 +116,11 @@ export function ManualPunchDialog({
   const { t, i18n } = useLingui()
   const isOpen = row !== null
   const [createPunch, { isLoading, isError, error }] = useCreateManualPunchMutation()
+  /* Entre que la marca ya se escribió y la cuadrícula de atrás la refleja
+     hay un hueco sin ningún indicador — se ve como que el ponche "no pasó"
+     (Hugo, 2026-10-09). El diálogo se queda abierto, ocupado, ese ratito más
+     en vez de cerrarse al instante y dejar la cuadrícula vieja a la vista. */
+  const [isSyncing, setIsSyncing] = useState(false)
 
   const [workDate, setWorkDate] = useState('')
   const [time, setTime] = useState('')
@@ -105,11 +133,24 @@ export function ManualPunchDialog({
     if (!isOpen) return
     setWorkDate(initialDate ?? '')
     setTime('')
-    setType('CLOCK_IN')
     setReason('')
+    setIsSyncing(false)
   }, [isOpen, initialDate])
 
-  const canSubmit = workDate !== '' && time !== '' && reason.trim() !== '' && !isLoading
+  /* La marca que se propone depende de lo que YA está marcado ese día, no
+     de cuándo se abrió el diálogo — si el día cambia (el que abrió sin
+     precargar uno, o lo corrigen a mano), se recalcula. Sigue siendo una
+     propuesta: elegir otro tipo a mano no se pisa hasta que cambie la
+     fecha de nuevo. */
+  useEffect(() => {
+    if (!isOpen || !row) return
+    setType(nextExpectedType(row.entries, workDate))
+  }, [isOpen, row, workDate])
+
+  const typeLabel = PUNCH_TYPE_LABEL[type]
+
+  const canSubmit =
+    workDate !== '' && time !== '' && reason.trim() !== '' && !isLoading && !isSyncing
 
   async function submit(): Promise<void> {
     if (!canSubmit || !row) return
@@ -123,7 +164,15 @@ export function ManualPunchDialog({
         reason: reason.trim(),
       }).unwrap()
       toast.success(t`Marca manual registrada`)
-      onClose()
+      /* La escritura ya terminó; la cuadrícula de atrás todavía no se
+         refrescó (el refetch que dispara la invalidación es aparte y no es
+         awaitable desde aquí). Un respiro breve, mostrado como tal, en vez
+         de cerrar y dejarla vieja a la vista un rato sin avisar. */
+      setIsSyncing(true)
+      window.setTimeout(() => {
+        setIsSyncing(false)
+        onClose()
+      }, 600)
     } catch {
       return
     }
@@ -156,6 +205,23 @@ export function ManualPunchDialog({
             <p role="alert" className="text-sm text-red">
               {manualPunchErrorMessage(error, i18n, workDate)}
             </p>
+          )}
+
+          {/* El selector de abajo SIEMPRE abría en «Entrada», aunque ese día
+              ya tuviera entrada y hasta el regreso de lunch — la gente
+              asumía que proponía la que faltaba y no era cierto (Hugo,
+              2026-10-10). Ahora sí la propone, y esto lo dice en voz alta en
+              vez de dejar que el selector cambie solo sin explicación. */}
+          {workDate !== '' && (
+            <div className="flex items-center gap-3 rounded-lg border border-line bg-surface-2 p-3">
+              <img src={personajeCronograma} alt="" className="size-12 shrink-0" aria-hidden />
+              <p className="text-sm text-ink-2">
+                <Trans>Vas a marcar:</Trans>{' '}
+                <span className="font-semibold text-ink">
+                  {typeLabel ? i18n._(typeLabel) : type}
+                </span>
+              </p>
+            </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
@@ -216,7 +282,7 @@ export function ManualPunchDialog({
           </label>
 
           <div className="flex justify-end gap-3 border-t border-line pt-4">
-            <Button variant="secondary" onClick={onClose}>
+            <Button variant="secondary" disabled={isSyncing} onClick={onClose}>
               <Trans>Cancelar</Trans>
             </Button>
             <Button
@@ -226,7 +292,7 @@ export function ManualPunchDialog({
                 void submit()
               }}
             >
-              {isLoading ? t`Registrando…` : t`Registrar marca`}
+              {isSyncing ? t`Actualizando…` : isLoading ? t`Registrando…` : t`Registrar marca`}
             </Button>
           </div>
         </div>

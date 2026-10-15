@@ -4,6 +4,15 @@ export interface HotelEntity {
   generalPhone: string | null
   timeZone: string
   geofenceRadiusM: number | null
+  /// Día en que cierra la semana del hotel (0=domingo..6=sábado). `null` en los
+  /// hoteles que nacieron antes de capturar estos datos (Hugo, 2026-10-07).
+  weekStartDay: number | null
+  weekEndDay: number | null
+  /// 1.0 = Regular (sin premio) o 1.5 = Tiempo y medio. `null` sin capturar.
+  overtimePayMultiplier: number | null
+  /// `true`: el hotel paga el lonche, las horas quedan completas (Hugo,
+  /// 2026-10-14). `false` (default): se resta solo con turno de 6.5 h o más.
+  paysLunch: boolean
   address: string | null
   placeId: string | null
   /// URL de media compuesta al leer, no lo que se guarda. Null si el hotel no

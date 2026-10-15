@@ -221,12 +221,19 @@ describe('mandar a Stand-by', () => {
     await asignar(workerId, hotelId)
 
     // Stand-by exige motivo: el semáforo lo pide y el catálogo lo tiene.
+    // La respuesta al Supervisor SÍ trae `.state` (Mi Personal necesita el
+    // color para el punto de la fila y para decidir si Stand-by/Reportar
+    // siguen cabiendo) pero NO el resto del expediente — eso sigue siendo
+    // solo de Reclutamiento, en `getScoped` (Hugo, 2026-10-12).
     const entity = await workers.changeState(
       workerId,
       { toState: 'PINK', reasonCode: 'VACATION' },
       supervisor,
     )
-
+    expect(entity.id).toBe(workerId)
+    expect('state' in entity).toBe(true)
+    expect('isProfileComplete' in entity).toBe(false)
+    if (!('state' in entity)) throw new Error('unreachable')
     expect(entity.state.code).toBe('PINK')
   })
 
@@ -250,13 +257,18 @@ describe('mandar a Stand-by', () => {
     await asignar(workerId, hotelId)
 
     // `staff:report` existía sembrado y con transición real desde 2026-08 —
-    // el servicio nunca lo consultaba (ver `assertCanChangeState`).
+    // el servicio nunca lo consultaba (ver `assertCanChangeState`). La
+    // respuesta al Supervisor trae `.state` (igual que Stand-by, arriba)
+    // pero no el resto del expediente (Hugo, 2026-10-12).
     const entity = await workers.changeState(
       workerId,
       { toState: 'RED', reasonCode: 'SERIOUS_MISCONDUCT' },
       supervisor,
     )
-
+    expect(entity.id).toBe(workerId)
+    expect('state' in entity).toBe(true)
+    expect('isProfileComplete' in entity).toBe(false)
+    if (!('state' in entity)) throw new Error('unreachable')
     expect(entity.state.code).toBe('RED')
   })
 
@@ -276,6 +288,49 @@ describe('mandar a Stand-by', () => {
 
     await expect(
       workers.changeState(workerId, { toState: 'PINK', reasonCode: 'VACATION' }, contadora),
+    ).rejects.toMatchObject({ response: { code: 'FORBIDDEN' } })
+  })
+})
+
+describe('listar colaboradores de todos los hoteles (Contabilidad)', () => {
+  it('la Contadora ve colaboradores de DOS hoteles distintos, sin acotar', async () => {
+    const hotelA = await hotel()
+    const hotelB = await hotel()
+    const workerA = await colaborador('ORANGE')
+    const workerB = await colaborador('ORANGE')
+    await asignar(workerA, hotelA)
+    await asignar(workerB, hotelB)
+
+    const contadora = await usuario('ROL-CO-01', null)
+    const board = await workers.list(
+      {
+        page: 1,
+        limit: 100,
+        onlyAvailable: false,
+        hasPendingDocument: false,
+        withoutActiveAssignment: false,
+      },
+      contadora,
+    )
+
+    const ids = board.data.map((row) => row.id)
+    expect(ids).toEqual(expect.arrayContaining([workerA, workerB]))
+  })
+
+  it('un rol sin ninguno de los tres permisos no lista nada', async () => {
+    const colaboradorUsuario = await usuario('ROL-C-01', null)
+
+    await expect(
+      workers.list(
+        {
+          page: 1,
+          limit: 20,
+          onlyAvailable: false,
+          hasPendingDocument: false,
+          withoutActiveAssignment: false,
+        },
+        colaboradorUsuario,
+      ),
     ).rejects.toMatchObject({ response: { code: 'FORBIDDEN' } })
   })
 })

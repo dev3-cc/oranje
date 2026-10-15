@@ -28,8 +28,14 @@ export interface TimesheetEntry {
   /** ISO sin hora. Es la columna del día en la que cae. */
   date: string
   status: TimesheetStatus
-  /** Horas NETAS (tras el lunch fijo de 30 min, D-21). `null` = ausencia. */
+  /** Horas NETAS — ya con el lunch restado si el hotel no lo paga (D-33,
+      2026-10-14: antes era fijo 30 min para todos, D-21 quedó superada).
+      `null` = ausencia. */
   hours: number | null
+  /** Minutos de lunch restados ESE día; 0 si el hotel lo paga o si no llegó
+      a las 6.5 h que lo activan. Para mostrar el descuento, no solo el neto
+      (Hugo, 2026-10-15: "pon -media hora en el timesheet"). */
+  lunchDeductionMinutes: number
   /** `HH:mm` del servidor. `null` mientras falte la marca. */
   startTime: string | null
   endTime: string | null
@@ -40,8 +46,14 @@ export interface TimesheetEntry {
   requisitionNumber: string | null
   punch: PunchState
   hasAnomaly: boolean
+  /** Turno nocturno emparejado con el día siguiente/anterior (2026-10-12):
+      exactamente uno puede ser `true`, nunca los dos. */
+  continuesNextDay: boolean
+  continuesFromPreviousDay: boolean
   isAbsence: boolean
   reviewNote: string | null
+  /** Con qué se marcó un día sin ponches (Descanso, OFF…); `null` = sin marcar. */
+  dayStatus: { code: string; name: string } | null
   punches: TimesheetPunch[]
 }
 
@@ -57,6 +69,34 @@ export interface TimesheetAssignment {
   endsOn: string | null
 }
 
+/**
+ * Lo que se le pagaría HOY a esta hoja, en vivo (D-10: 40 h por requisición).
+ * Solo viaja con `timesheet:read_all_hotels` (Contabilidad, el Observador).
+ * `subtotal` en `null` cuando no hay contrato ni tarifa interna que
+ * resolver — nunca se inventa un pago (Hugo, 2026-10-14: "qué pasa cuando
+ * no tenemos contrato, deberíamos mostrar que el contrato no está listo").
+ */
+export interface TimesheetPayPreview {
+  regularMinutes: number
+  overtimeMinutes: number
+  payRate: string | null
+  isInternalRate: boolean
+  overtimeMultiplier: number | null
+  /** Bruto: horas + reembolsos YA incluidos (Hugo, 2026-10-09: ajustes/gastos). */
+  subtotal: string | null
+  /** Descuentos YA incluidos (gastos que Oranje cubrió y le descuenta). */
+  deductionAmount: string
+  /** `subtotal - deductionAmount`; `null` cuando `subtotal` también lo es. */
+  netAmount: string | null
+  isOverridden: boolean
+  overrideReason: string | null
+  /** Lo que el hotel paga a Oranje por esta hoja — SIEMPRE del contrato
+      (Hugo, 2026-10-14: "pay rate y bill, lado a lado"). `null` sin
+      contrato ni tarifa para esa posición. */
+  billRate: string | null
+  billSubtotal: string | null
+}
+
 export interface TimesheetRow {
   /** El id del TIMESHEET (semana × persona × requisición): contra él se envía/aprueba. */
   timesheetId: string
@@ -67,14 +107,26 @@ export interface TimesheetRow {
   workerName: string
   /** El contrato aún no expone el puesto: raya, no un dato inventado. */
   jobTitle: string
+  /** Foto del colaborador (de `/workers`, D-28); `null` honesto si no hay. */
+  photoUrl: string | null
   hotelName: string
+  /** `undefined`/`null` cuando el listado no trajo el hotel (fila sintética,
+      sin timesheet real). Para el interruptor de lonche (Hugo, 2026-10-14). */
+  hotelId?: string | null | undefined
   /** Estado de la SEMANA: abierta, enviada o aprobada (D-09). */
   weekStatus: string
   /** Horas netas de la semana, sumadas por el backend (`totals`). */
   totalHours: number
   /** `null`: las horas contractuales aún no viajan en el contrato. */
   targetHours: number | null
+  /** Horas extra REALES de la semana (D-10: corte de 40 h por requisición,
+      ya calculado por el servidor en `totals.overtimeMinutes`) — no se
+      deriva de `targetHours`, que no existe todavía. `null` solo cuando el
+      detalle no trajo `totals` (p. ej. en la cinta de Días). */
+  overtimeHours: number | null
   entries: TimesheetEntry[]
+  /** `undefined` sin acceso de Contabilidad al pago; `null` el back no lo mandó. */
+  payPreview?: TimesheetPayPreview | null | undefined
 }
 
 export interface TimesheetWeek {
@@ -128,6 +180,17 @@ export interface ReviewContext {
   hotelName: string | null
   hotelPhotoUrl: string | null
 }
+
+/**
+ * Con qué abrir Marca manual. Lleva `entries` (no solo la identidad) para
+ * que el diálogo sepa, del día que se elija ahí dentro, qué ya está
+ * marcado — y proponga la marca que sigue en vez de asumir siempre Entrada
+ * (Hugo, 2026-10-10).
+ */
+export type ManualPunchTarget = Pick<
+  TimesheetRow,
+  'requisitionId' | 'workerId' | 'workerName' | 'entries'
+>
 
 export interface ReviewDayRequest {
   dayId: string

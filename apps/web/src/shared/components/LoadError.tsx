@@ -11,7 +11,12 @@ export function LoadError({
   onRetry,
 }: {
   message: string
-  onRetry: () => void
+  /**
+   * Sin esto no hay botón: reintentar solo sirve cuando el siguiente intento
+   * puede salir distinto. Un 403 no cambia por volver a cargar, y ofrecerlo
+   * manda a la persona a insistir contra una puerta cerrada (Hugo, 2026-10-09).
+   */
+  onRetry?: () => void
 }): ReactNode {
   return (
     <Alert
@@ -20,9 +25,11 @@ export function LoadError({
     >
       <img src={personajeErrorTecnico} alt="" aria-hidden className="h-32 w-auto" />
       <AlertDescription className="justify-items-center">{message}</AlertDescription>
-      <Button variant="secondary" onClick={onRetry}>
-        <Trans>Volver a cargar</Trans>
-      </Button>
+      {onRetry !== undefined && (
+        <Button variant="secondary" onClick={onRetry}>
+          <Trans>Volver a cargar</Trans>
+        </Button>
+      )}
     </Alert>
   )
 }

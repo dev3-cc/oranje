@@ -24,7 +24,7 @@ import { localDay } from '../lib/period'
 
 import { WORKER_STATUS_LABEL, type WorkerStatus } from '@/shared/constants/workerStatus'
 import { formatDayMonthTime } from '@/shared/lib/formatters'
-import type { WorkerApi } from '@/shared/types/apiContract.types'
+import type { FullWorkerApi } from '@/shared/types/apiContract.types'
 
 /** Historiales por consulta: uno por persona que ya no trabaja. */
 const MAX_HISTORIES = 300
@@ -112,7 +112,7 @@ export function CohortSection({
 }: {
   presence: Map<string, WorkerPresence>
   currentWeek: string
-  workers: Map<string, WorkerApi>
+  workers: Map<string, FullWorkerApi>
   selected: string
   /** Las 12 semanas alrededor de la elegida. */
   band: string[]

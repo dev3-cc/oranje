@@ -13,14 +13,18 @@ import { WorkerPerformanceRadar } from '../components/WorkerPerformanceRadar'
 import type { PersonnelRow } from '../types/personnel.types'
 
 import { useGetSessionQuery } from '@/app/sessionApi'
+import personajeTalento from '@/assets/ilustrations/personaje-talento.svg'
 import mascotaSaludando from '@/assets/mascota/mascota-saludando.png'
 import { BackToListButton } from '@/shared/components/BackToListButton'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { FoldText } from '@/shared/components/FoldText'
+import { GuidedTour, type TourStep } from '@/shared/components/GuidedTour'
 import { HotelPhotoBackdrop } from '@/shared/components/HotelPhotoBackdrop'
+import { ListItemViewHint } from '@/shared/components/ListItemViewHint'
 import { LoadError } from '@/shared/components/LoadError'
 import { MagicCard } from '@/shared/components/MagicCard'
 import { MetricCard } from '@/shared/components/MetricCard'
+import { ReloadButton } from '@/shared/components/ReloadButton'
 import { SearchField } from '@/shared/components/SearchField'
 import {
   BLOOD_LABEL,
@@ -47,6 +51,10 @@ const NO_SHIFT_LABEL: Record<string, MessageDescriptor> = {
 }
 
 const MS_PER_DAY = 86_400_000
+
+/** `false`: las tarjetas de métricas se ocultan por ahora (Hugo, 2026-10-12)
+    — el código se queda listo por si se retoman. */
+const SHOW_METRICS = false
 
 /**
  * "92% · hace 3 días" — el score y cuándo, en una sola línea (mismo criterio
@@ -85,11 +93,6 @@ function statusToken(row: PersonnelRow): keyof typeof statusLight {
   return WORKER_STATUS_TOKEN[row.stateCode as WorkerStatus] ?? 'st-blanco'
 }
 
-/** Turno sin entrada = alerta — salvo pausado/protegido: ahí es lo esperado. */
-function hasMissingEntry(row: PersonnelRow): boolean {
-  return row.shift !== null && row.clockInAt === null && !(row.stateCode in NO_SHIFT_LABEL)
-}
-
 /**
  * La cara con el semáforo como ANILLO — el lenguaje del Perfil del
  * Colaborador: el estado abraza a la persona, no vive en otra columna.
@@ -121,16 +124,19 @@ function WorkerAvatar({ row, className }: { row: PersonnelRow; className: string
   )
 }
 
-/** Qué dice la fila de la izquierda debajo del nombre: turno y marca, en corto. El `i18n` viene del componente (D-36). */
+/**
+ * Qué dice la fila de la izquierda debajo del nombre: la marca, en corto. El
+ * `i18n` viene del componente (D-36). Sin Schedule (beta "Ponche por
+ * Horario" apagada, 2026-09-23) no hay turno que leer — "Descansa hoy" se lo
+ * inventaba a todos por igual (Hugo, 2026-10-13); ahora solo dice lo que de
+ * verdad se sabe: si ya ponchó o no.
+ */
 function rowSubtitle(row: PersonnelRow, i18n: I18n, timeZone: string | undefined): string {
-  /* Rosa/Gris mandan sobre el turno: un pausado o protegido no debe leerse
-     como si fuera a trabajar. */
-  const paused = NO_SHIFT_LABEL[row.stateCode]
+  /* Rosa/Gris mandan: un pausado o protegido no debe leerse como si fuera a trabajar. */
+  const paused = row.stateCode === null ? undefined : NO_SHIFT_LABEL[row.stateCode]
   if (paused !== undefined) return i18n._(paused)
-  if (!row.shift) return i18n._(msg`Descansa hoy`)
-  const shift = `${timeOf(row.shift.startsAt, timeZone)}–${timeOf(row.shift.endsAt, timeZone)}`
-  const clockIn = row.clockInAt ? timeOf(row.clockInAt, timeZone) : null
-  return clockIn !== null ? i18n._(msg`${shift} · entró ${clockIn}`) : shift
+  if (!row.clockInAt) return i18n._(msg`Sin marcas hoy`)
+  return i18n._(msg`Entró ${timeOf(row.clockInAt, timeZone)}`)
 }
 
 /** La fila de la lista izquierda: quién es y cómo viene su día, de un vistazo. */
@@ -146,8 +152,7 @@ function WorkerRow({
   /** La zona del hotel: el turno se lee donde ocurre. */
   hotelTimeZone: string | undefined
 }): ReactNode {
-  const { t, i18n } = useLingui()
-  const missingEntry = hasMissingEntry(row)
+  const { i18n } = useLingui()
   return (
     <li>
       {/* Magic Bento (reactbits): la fila avisa al pasar; se apaga sola en táctil y reduced motion. */}
@@ -165,14 +170,8 @@ function WorkerRow({
           <WorkerAvatar row={row} className="size-11 text-sm" />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-semibold text-ink">{row.fullName}</span>
-            <span
-              className={cn(
-                'block text-xs',
-                missingEntry ? 'font-semibold text-red' : 'text-ink-3',
-              )}
-            >
+            <span className="block text-xs text-ink-3">
               {rowSubtitle(row, i18n, row.hotelTimeZone ?? hotelTimeZone)}
-              {missingEntry && ` · ${t`sin entrada`}`}
             </span>
           </span>
           {/* El punto del semáforo también aquí: el anillo nunca habla solo. */}
@@ -181,6 +180,7 @@ function WorkerRow({
             className="size-2.5 shrink-0 rounded-full"
             style={{ backgroundColor: statusLight[statusToken(row)] }}
           />
+          <ListItemViewHint />
         </button>
       </MagicCard>
     </li>
@@ -253,8 +253,7 @@ function WorkerDetail({
   const can = useCan()
   /* Auditar es solo del Supervisor: a sus Managers no se les enseña el score. */
   const canReadAudits = can('audits:read')
-  const missingEntry = hasMissingEntry(row)
-  const paused = NO_SHIFT_LABEL[row.stateCode]
+  const paused = row.stateCode === null ? undefined : NO_SHIFT_LABEL[row.stateCode]
   return (
     /* Detalle fijo mientras la lista baja (lista-detalle, como la Cartera y el Pool). */
     <article
@@ -282,15 +281,19 @@ function WorkerDetail({
               <div>
                 <h2 className="text-2xl font-bold text-white">{row.fullName}</h2>
                 <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                  {/* El estado, con su punto de color: el color nunca solo. */}
-                  <Pill>
-                    <span
-                      aria-hidden
-                      className="size-2 rounded-full ring-1 ring-white/40"
-                      style={{ backgroundColor: statusLight[statusToken(row)] }}
-                    />
-                    {workerStatusChipLabel(row.stateCode as WorkerStatus)}
-                  </Pill>
+                  {/* El estado, con su punto de color: el color nunca solo.
+                      Sin ficha completa (Hotel, D-30) no hay semáforo que
+                      pintar: la pastilla no aparece en vez de mentir. */}
+                  {row.stateCode !== null && (
+                    <Pill>
+                      <span
+                        aria-hidden
+                        className="size-2 rounded-full ring-1 ring-white/40"
+                        style={{ backgroundColor: statusLight[statusToken(row)] }}
+                      />
+                      {workerStatusChipLabel(row.stateCode as WorkerStatus)}
+                    </Pill>
+                  )}
                   {row.positionName === '—' ? (
                     <Pill className="border border-dashed border-white/40 bg-ink/25 text-white/80">
                       <Trans>Sin posición asignada</Trans>
@@ -311,7 +314,7 @@ function WorkerDetail({
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2" data-tour="staff-actions">
               {row.canStandBy && (
                 <button
                   type="button"
@@ -351,26 +354,19 @@ function WorkerDetail({
         {/* El semáforo NO se repite aquí: ya abraza al avatar y habla en la
             pastilla junto al nombre. */}
         <div className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-lg bg-surface-2 p-4 sm:grid-cols-3">
-          <Metric
-            label={t`Turno de hoy`}
-            value={
-              paused !== undefined
-                ? i18n._(paused)
-                : row.shift
-                  ? `${timeOf(row.shift.startsAt, row.hotelTimeZone ?? hotel?.timeZone)}–${timeOf(row.shift.endsAt, row.hotelTimeZone ?? hotel?.timeZone)}`
-                  : t`Descansa`
-            }
-          />
+          {/* "Turno de hoy" se quitó (Hugo, 2026-10-13): sin Schedule (beta
+              "Ponche por Horario" apagada, 2026-09-23) no hay turno que
+              consultar — decía "Descansa" para todos por igual, algo que no
+              se sabía de verdad. Lo único real es si ya ponchó. */}
           <Metric
             label={t`Entrada de hoy`}
             value={
-              row.clockInAt
-                ? timeOf(row.clockInAt, row.hotelTimeZone ?? hotel?.timeZone)
-                : row.shift
-                  ? t`Sin entrada`
-                  : '—'
+              paused !== undefined
+                ? i18n._(paused)
+                : row.clockInAt
+                  ? timeOf(row.clockInAt, row.hotelTimeZone ?? hotel?.timeZone)
+                  : t`Sin ponche hoy`
             }
-            {...(missingEntry ? { tone: 'alert' as const } : {})}
           />
           {canReadAudits && (
             <Metric
@@ -407,16 +403,6 @@ function WorkerDetail({
           </div>
         </div>
 
-        {missingEntry && (
-          <p className="rounded-md bg-red/10 px-4 py-3 text-sm text-ink-2">
-            <Trans>
-              Tiene turno hoy y no ha marcado entrada. Contáctalo — su teléfono está aquí arriba — y
-              si el ponche falló, captura la
-              <span className="font-semibold"> marca manual</span> desde el Timesheet.
-            </Trans>
-          </p>
-        )}
-
         {/* La semana medida en hechos + el puente al celular. */}
         <div className="flex flex-col gap-4 sm:flex-row">
           <div className="min-w-0 flex-1">
@@ -432,7 +418,10 @@ function WorkerDetail({
             <Trans>Sus datos</Trans>
           </p>
           <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
-            <PersonalField label={t`Edad`} value={t`${row.personal.age} años`} />
+            <PersonalField
+              label={t`Edad`}
+              value={row.personal.age === null ? '—' : t`${row.personal.age} años`}
+            />
             <PersonalField
               label={t`Género`}
               value={GENDER_LABEL[row.personal.gender] ?? row.personal.gender}
@@ -481,7 +470,31 @@ function WorkerDetail({
  */
 export function PersonnelPage(): ReactNode {
   const { t } = useLingui()
-  const { data: board, isLoading, isError, refetch } = useGetPersonnelBoardQuery()
+  const { data: board, isLoading, isFetching, isError, refetch } = useGetPersonnelBoardQuery()
+  /* El recorrido se reabre desde «Ver el recorrido»; `GuidedTour` entrega su
+     disparador al montar. */
+  const [startTour, setStartTour] = useState<() => void>(() => () => undefined)
+
+  /* Lo que la persona HACE aquí, en sus palabras. Los pasos cuyo control no
+     se dibuja —un Supervisor sin nadie en Stand-by, o un plantel vacío— se
+     caen solos. */
+  const pasos: readonly TourStep[] = [
+    {
+      anchor: 'staff-metrics',
+      title: t`Tu plantel de un vistazo`,
+      description: t`Cuántos ya marcaron entrada hoy, cuántos están en pausa y cuántos protegidos por un accidente.`,
+    },
+    {
+      anchor: 'staff-roster',
+      title: t`Tu gente y su color`,
+      description: t`Cada persona trae su estado del Semáforo. Búscala por nombre y tócala para ver su detalle del día.`,
+    },
+    {
+      anchor: 'staff-actions',
+      title: t`Lo que puedes hacer con cada uno`,
+      description: t`«Stand-by» es una pausa temporal y la compartes con el Manager de Área. «Reportar» abre una incidencia que revisa Inspección. «Ver perfil» te lleva a su expediente.`,
+    },
+  ]
   /** El hotel del Supervisor: nombre de /me, foto compuesta de /hotels/:id. */
   const { data: session } = useGetSessionQuery()
   const hotelId = session?.hotel?.id ?? ''
@@ -516,45 +529,57 @@ export function PersonnelPage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight text-ink">
-          <FoldText text={t`Mi Personal`} />
-        </h1>
-        <p className="mt-1.5 text-sm text-ink-3">
-          <Trans>
-            Los colaboradores asignados a tus requisiciones, con su estado en el Semáforo. El
-            Stand-by (Rosa) lo compartes con el Manager de Área.
-          </Trans>
-        </p>
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
+            <FoldText text={t`Mi Personal`} />
+          </h1>
+          <p className="mt-1.5 text-sm text-ink-3">
+            <Trans>
+              Los colaboradores asignados a tus requisiciones, con su estado en el Semáforo. El
+              Stand-by (Rosa) lo compartes con el Manager de Área.
+            </Trans>
+            {' · '}
+            <button
+              type="button"
+              onClick={startTour}
+              className="cursor-pointer font-medium text-o-700 hover:underline"
+            >
+              <Trans>Ver el recorrido</Trans>
+            </button>
+          </p>
+        </div>
+        <ReloadButton
+          onReload={() => {
+            void refetch()
+          }}
+          isReloading={isFetching}
+        />
       </header>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <MetricCard
-          value={String(board.assignedToday)}
-          label={t`Asignados hoy`}
-          foot={t`con turno del Schedule`}
-          icon="groups"
-        />
-        <MetricCard
-          value={String(board.clockedInToday)}
-          label={t`Con entrada registrada`}
-          foot={t`ya marcaron hoy`}
-          icon="login"
-        />
-        <MetricCard
-          value={String(board.inStandBy)}
-          label={t`En Stand-by`}
-          foot={t`pausa temporal (Rosa)`}
-          icon="pause_circle"
-        />
-        <MetricCard
-          value={String(board.inAccident)}
-          label={t`En accidente`}
-          foot={IS_DEV_UI ? 'protegido (Gris) · D-27' : t`protegido (Gris)`}
-          icon="medical_services"
-          tone={board.inAccident > 0 ? 'danger' : 'brand'}
-        />
-      </div>
+      {SHOW_METRICS && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3" data-tour="staff-metrics">
+          <MetricCard
+            value={String(board.clockedInToday)}
+            label={t`Con entrada registrada`}
+            foot={t`ya marcaron hoy`}
+            icon="login"
+          />
+          <MetricCard
+            value={String(board.inStandBy)}
+            label={t`En Stand-by`}
+            foot={t`pausa temporal (Rosa)`}
+            icon="pause_circle"
+          />
+          <MetricCard
+            value={String(board.inAccident)}
+            label={t`En accidente`}
+            foot={IS_DEV_UI ? 'protegido (Gris) · D-27' : t`protegido (Gris)`}
+            icon="medical_services"
+            tone={board.inAccident > 0 ? 'danger' : 'brand'}
+          />
+        </div>
+      )}
 
       {board.rows.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-line px-6 py-12 text-center">
@@ -572,7 +597,10 @@ export function PersonnelPage(): ReactNode {
       ) : (
         /* Lista a la izquierda, detalle a la derecha: siempre hay uno elegido. */
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[300px_1fr]">
-          <div className={cn('flex-col gap-3', rosterListClass(showDetailOnMobile))}>
+          <div
+            className={cn('flex-col gap-3', rosterListClass(showDetailOnMobile))}
+            data-tour="staff-roster"
+          >
             <SearchField
               value={search}
               onChange={setSearch}
@@ -654,6 +682,18 @@ export function PersonnelPage(): ReactNode {
           }}
         />
       )}
+
+      {/* `isReady` espera al plantel: sin filas no hay lista ni acciones a las
+          que apuntar, y el recorrido quedaría señalando el vacío. */}
+      <GuidedTour
+        storageKey="my-staff-tour"
+        steps={pasos}
+        character={personajeTalento}
+        isReady={board !== undefined && board.rows.length > 0}
+        onReady={(start) => {
+          setStartTour(() => start)
+        }}
+      />
     </div>
   )
 }

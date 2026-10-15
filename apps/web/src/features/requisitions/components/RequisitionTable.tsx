@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
 
 import type { RequisitionRow } from '../types/requisition.types'
+import { isCoverageComplete } from '../utils/coverage'
 
 import { CoverageBar } from './CoverageBar'
 import { UrgencyChip } from './UrgencyChip'
@@ -105,8 +106,11 @@ export function RequisitionTable({ items }: { items: RequisitionRow[] }): ReactN
                     startDate={item.startDate}
                     authorizedAt={item.authorizedAt}
                     variant="inline"
+                    coverageComplete={isCoverageComplete(item.coverage)}
                   />
-                  <span className="text-xs text-ink-4">· {URGENCY_HINT[item.urgency]}</span>
+                  {!isCoverageComplete(item.coverage) && (
+                    <span className="text-xs text-ink-4">· {URGENCY_HINT[item.urgency]}</span>
+                  )}
                 </span>
               </TableCell>
 

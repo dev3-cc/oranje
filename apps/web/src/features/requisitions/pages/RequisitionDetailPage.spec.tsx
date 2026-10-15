@@ -51,8 +51,11 @@ describe('RequisitionDetailPage', () => {
     expect(await screen.findByText('Parcial 1/4')).toBeInTheDocument()
     expect(screen.getByText('Cubierta 2/2')).toBeInTheDocument()
 
+    // La parcial sí urge; la ya cubierta deja de mostrar su urgencia vieja —
+    // no hay nada que apurar en una posición sin slots libres (Hugo, 2026-10-12).
     expect(screen.getByText('Urgente')).toBeInTheDocument()
-    expect(screen.getByText('Medio')).toBeInTheDocument()
+    expect(screen.queryByText('Medio')).not.toBeInTheDocument()
+    expect(screen.getByText('Ya no aplica')).toBeInTheDocument()
     expect(screen.getAllByText('Tiempo completo').length).toBeGreaterThan(0)
   })
 

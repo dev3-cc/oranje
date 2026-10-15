@@ -1,5 +1,5 @@
-import { useLingui } from '@lingui/react/macro'
-import { Suspense, lazy, type ReactNode } from 'react'
+import { Trans, useLingui } from '@lingui/react/macro'
+import { Suspense, lazy, useState, type ReactNode } from 'react'
 
 import { useGetHotelOverviewQuery } from '../api/roleDashboardsApi'
 
@@ -12,8 +12,10 @@ const DashboardGlobe = lazy(() =>
   import('./DashboardGlobe').then((module) => ({ default: module.DashboardGlobe })),
 )
 
+import personajeDashboard from '@/assets/ilustrations/personaje-dashboard.svg'
 import { HotelPunchQrPanel } from '@/features/onboarding'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
+import { GuidedTour, type TourStep } from '@/shared/components/GuidedTour'
 import { LoadError } from '@/shared/components/LoadError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import type { SessionUser } from '@/shared/types/session.types'
@@ -21,6 +23,28 @@ import type { SessionUser } from '@/shared/types/session.types'
 export function HotelDashboard({ session }: { session: SessionUser }): ReactNode {
   const { t } = useLingui()
   const { data: overview, isLoading, isError, refetch } = useGetHotelOverviewQuery()
+  /* El recorrido se reabre desde «Ver el recorrido». */
+  const [startTour, setStartTour] = useState<() => void>(() => () => undefined)
+
+  /* Para una cuenta recién creada del hotel: qué es cada número y a dónde ir
+     desde aquí. */
+  const pasos: readonly TourStep[] = [
+    {
+      anchor: 'hotel-stats',
+      title: t`Tus cuatro números`,
+      description: t`Cuántas requisiciones tienes trabajándose, cuántas esperan firma, cuántas ya se cubrieron y cuántas semanas de horas siguen sin aprobar — esas últimas no se pagan hasta que alguien las apruebe.`,
+    },
+    {
+      anchor: 'hotel-punch',
+      title: t`Cómo poncha tu gente`,
+      description: t`Tu hotel usa selfie o el QR del acceso. Si usa QR, desde aquí imprimes la hoja que se pega en la entrada, y puedes regenerarla si se filtró.`,
+    },
+    {
+      anchor: 'hotel-requisitions',
+      title: t`Tus requisiciones recientes`,
+      description: t`Con su cobertura. Toca una para abrirla y ver puesto por puesto quién la está cubriendo.`,
+    },
+  ]
 
   if (isLoading) {
     return <CardGridSkeleton cards={6} className="grid-cols-1 md:grid-cols-2 xl:grid-cols-3" />
@@ -50,7 +74,18 @@ export function HotelDashboard({ session }: { session: SessionUser }): ReactNode
 
       <InviteHotelAccountCard session={session} />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <p className="text-sm text-ink-3">
+        <Trans>¿Primera vez aquí?</Trans>{' '}
+        <button
+          type="button"
+          onClick={startTour}
+          className="cursor-pointer font-medium text-o-700 hover:underline"
+        >
+          <Trans>Ver el recorrido</Trans>
+        </button>
+      </p>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" data-tour="hotel-stats">
         <StatTile
           value={String(overview.openRequisitions)}
           label={t`Requisiciones abiertas`}
@@ -83,13 +118,30 @@ export function HotelDashboard({ session }: { session: SessionUser }): ReactNode
 
       {/* Cómo se poncha en SU hotel y, con QR, la hoja para imprimir: el
           Supervisor y los Managers no pasan por el Pipeline. */}
-      {session.hotel && <HotelPunchQrPanel hotelId={session.hotel.id} />}
+      {session.hotel && (
+        <div data-tour="hotel-punch">
+          <HotelPunchQrPanel hotelId={session.hotel.id} />
+        </div>
+      )}
 
-      <RequisitionMiniList
-        title={t`Requisiciones del hotel`}
-        subtitle={t`Las más recientes, con su cobertura`}
-        requisitions={overview.requisitions}
-        emptyLabel={t`Este hotel no tiene requisiciones todavía.`}
+      <div data-tour="hotel-requisitions">
+        <RequisitionMiniList
+          title={t`Requisiciones del hotel`}
+          subtitle={t`Las más recientes, con su cobertura`}
+          requisitions={overview.requisitions}
+          emptyLabel={t`Este hotel no tiene requisiciones todavía.`}
+        />
+      </div>
+
+      {/* Es la primera pantalla que ve una cuenta nueva del hotel, y los
+          gerentes rotan: aquí el recorrido es lo que orienta. */}
+      <GuidedTour
+        storageKey="hotel-dashboard-tour"
+        steps={pasos}
+        character={personajeDashboard}
+        onReady={(start) => {
+          setStartTour(() => start)
+        }}
       />
     </div>
   )

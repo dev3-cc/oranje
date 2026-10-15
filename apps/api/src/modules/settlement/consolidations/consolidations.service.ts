@@ -10,7 +10,7 @@ import {
   DeductionRow,
   DetailRow,
 } from './consolidations.repository.js'
-import type { CreateDeductionDto, GenerateDto } from './dto/generate.dto.js'
+import type { CreateDeductionDto } from './dto/deduction.dto.js'
 
 const DRAFT = 'DRAFT'
 const VALIDATED = 'VALIDATED'
@@ -20,9 +20,13 @@ const PAID = 'PAID'
 export interface ConsolidationEntity {
   id: string
   worker: { id: string; fullName: string }
+  /** Un consolidado es de UN hotel: quien trabaja en dos recibe dos (P-CO-12). */
+  hotel: { id: string; name: string }
   weekStart: string
   weekEnd: string
   status: string
+  /** REGULAR: corte del miércoles. EMERGENCY: horas aprobadas después del corte. */
+  runKind: string
   grossAmount: string
   deductionAmount: string
   netAmount: string
@@ -73,26 +77,6 @@ export class ConsolidationsService {
       hotels: row.hotels,
       hours: Math.round((row.minutes / 60) * 100) / 100,
     }))
-  }
-
-  async generate(dto: GenerateDto, user: AuthenticatedUser): Promise<{ created: number }> {
-    if (dto.weekStart.getUTCDay() !== 1) {
-      throw new ConflictException({
-        code: 'WEEK_MUST_START_MONDAY',
-        message: 'La semana de nómina empieza en lunes',
-      })
-    }
-
-    if ((await this.repo.pendingWeeks(dto.weekStart)) === 0) {
-      throw new ConflictException({
-        code: 'NO_APPROVED_HOURS',
-        message: 'Esa semana no tiene un solo Timesheet aprobado',
-      })
-    }
-
-    const created = await this.repo.generate({ weekStart: dto.weekStart, userId: user.id })
-
-    return { created: created.length }
   }
 
   async list(weekStart?: Date, status?: string): Promise<ConsolidationEntity[]> {
@@ -232,9 +216,11 @@ function toEntity(row: ConsolidationRow): ConsolidationEntity {
   return {
     id: row.id,
     worker: row.worker,
+    hotel: row.hotel,
     weekStart: new Date(row.weekStart).toISOString().slice(0, 10),
     weekEnd: new Date(row.weekEnd).toISOString().slice(0, 10),
     status: row.status,
+    runKind: row.runKind,
     grossAmount: row.grossAmount,
     deductionAmount: row.deductionAmount,
     netAmount: row.netAmount,

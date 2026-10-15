@@ -11,7 +11,8 @@ import { WORKER_ROLE } from '@/shared/constants/roles'
 export const HOTEL_ROLES: ReadonlySet<string> = new Set(['ROL-H-01', 'ROL-H-02', 'ROL-H-03'])
 
 export const WORKER_HOME = '/collaborator'
-export const HOTEL_HOME = '/hotel'
+/** El hotel arranca en el Dashboard del web, igual que en el navegador. */
+export const HOTEL_HOME = '/dashboard'
 export const UNSUPPORTED_HOME = '/unsupported'
 
 export function isHotelRole(roleId: string | undefined): boolean {

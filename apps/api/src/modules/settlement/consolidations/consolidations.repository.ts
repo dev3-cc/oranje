@@ -8,6 +8,7 @@ export interface ConsolidationRow {
   weekStart: Date
   weekEnd: Date
   status: string
+  runKind: string
   grossAmount: string
   deductionAmount: string
   netAmount: string
@@ -15,6 +16,7 @@ export interface ConsolidationRow {
   authorizedAt: Date | null
   paidAt: Date | null
   worker: { id: string; fullName: string }
+  hotel: { id: string; name: string }
 }
 
 export interface DetailRow {
@@ -84,129 +86,24 @@ export class ConsolidationsRepository {
        LIMIT 52`
   }
 
-  async pendingWeeks(weekStart: Date): Promise<number> {
-    const day = weekStart.toISOString().slice(0, 10)
-
-    const rows = await this.prisma.$queryRaw<Array<{ total: bigint }>>`
-      SELECT count(*) AS total
-        FROM operations.timesheet
-       WHERE week_start = ${day}::date
-         AND status = 'APPROVED'`
-
-    return Number(rows[0]?.total ?? 0)
-  }
-
-  async generate(params: {
-    weekStart: Date
-    userId: string
-  }): Promise<Array<{ id: string; workerId: string }>> {
-    const day = params.weekStart.toISOString().slice(0, 10)
-
-    return this.prisma.$transaction(async (tx) => {
-      const created = await tx.$queryRaw<Array<{ id: string; workerId: string }>>`
-        WITH horas AS (
-          SELECT t.id            AS timesheet_id,
-                 t.worker_id,
-                 t.week_start,
-                 t.week_end,
-                 t.requisition_id,
-                 r.hotel_id,
-                 p.catalog_position_id,
-                 sum(v.net_minutes)::int      AS regular_minutes,
-                 sum(d.overtime_minutes)::int AS overtime_minutes
-            FROM operations.timesheet t
-            JOIN operations.timesheet_day d   ON d.timesheet_id = t.id
-            JOIN operations.vw_timesheet_day v ON v.id = d.id
-            JOIN demand.requisition r         ON r.id = t.requisition_id
-            JOIN demand."position" p          ON p.requisition_id = r.id AND p.deleted_at IS NULL
-           WHERE t.week_start = ${day}::date
-             AND t.status = 'APPROVED'
-             AND NOT EXISTS (
-                   SELECT 1 FROM settlement.consolidation c
-                    WHERE c.worker_id = t.worker_id AND c.week_start = t.week_start)
-           GROUP BY t.id, t.worker_id, t.week_start, t.week_end, t.requisition_id,
-                    r.hotel_id, p.catalog_position_id
-        ),
-        tarifas AS (
-          SELECT h.*,
-                 COALESCE(wr.rate, cr.pay_rate)            AS pay_rate,
-                 (wr.rate IS NOT NULL)                     AS is_internal,
-                 COALESCE(ct.overtime_pay_multiplier, 1.0) AS ot_multiplier
-            FROM horas h
-            LEFT JOIN personal.worker_rate wr
-                   ON wr.worker_id = h.worker_id
-                  AND wr.valid_to IS NULL
-                  AND (wr.catalog_position_id = h.catalog_position_id
-                       OR wr.catalog_position_id IS NULL)
-            LEFT JOIN commercial.contract ct
-                   ON ct.hotel_id = h.hotel_id AND ct.status = 'ACTIVE'
-            LEFT JOIN commercial.contract_rate cr
-                   ON cr.contract_id = ct.id
-                  AND cr.catalog_position_id = h.catalog_position_id
-        ),
-        montos AS (
-          SELECT *,
-                 round(
-                   (regular_minutes  / 60.0) * pay_rate
-                 + (overtime_minutes / 60.0) * pay_rate * ot_multiplier
-                 , 2) AS subtotal
-            FROM tarifas
-           WHERE pay_rate IS NOT NULL
-        ),
-        cabeza AS (
-          INSERT INTO settlement.consolidation
-            (id, worker_id, week_start, week_end, gross_amount, deduction_amount, net_amount)
-          SELECT gen_random_uuid(), worker_id, week_start, max(week_end),
-                 sum(subtotal), 0, sum(subtotal)
-            FROM montos
-           GROUP BY worker_id, week_start
-          RETURNING id, worker_id, week_start
-        )
-        INSERT INTO settlement.consolidation_detail
-          (id, consolidation_id, requisition_id, hotel_id, catalog_position_id,
-           regular_minutes, overtime_minutes, pay_rate_applied,
-           overtime_multiplier_applied, is_internal_rate, subtotal)
-        SELECT gen_random_uuid(), c.id, m.requisition_id, m.hotel_id, m.catalog_position_id,
-               m.regular_minutes, m.overtime_minutes, m.pay_rate,
-               m.ot_multiplier, m.is_internal, m.subtotal
-          FROM montos m
-          JOIN cabeza c ON c.worker_id = m.worker_id AND c.week_start = m.week_start
-        RETURNING consolidation_id AS "id", (SELECT ''::text) AS "workerId"`
-
-      const ids = [...new Set(created.map((r) => r.id))]
-
-      for (const id of ids) {
-        await tx.journalEntry.create({
-          data: {
-            id: uuidv7(),
-            entityType: 'settlement.consolidation',
-            entityId: id,
-            eventType: 'CONSOLIDATION_GENERATED',
-            actorUserId: params.userId,
-            payload: { weekStart: day },
-          },
-        })
-      }
-
-      return ids.map((id) => ({ id, workerId: '' }))
-    })
-  }
-
   async byId(id: string): Promise<ConsolidationRow | null> {
     const rows = await this.prisma.$queryRaw<ConsolidationRow[]>`
       SELECT c.id,
              c.week_start        AS "weekStart",
              c.week_end          AS "weekEnd",
              c.status,
+             c.run_kind         AS "runKind",
              c.gross_amount::text     AS "grossAmount",
              c.deduction_amount::text AS "deductionAmount",
              c.net_amount::text       AS "netAmount",
              c.validated_at  AS "validatedAt",
              c.authorized_at AS "authorizedAt",
              c.paid_at       AS "paidAt",
-             jsonb_build_object('id', w.id, 'fullName', w.full_name) AS worker
+             jsonb_build_object('id', w.id, 'fullName', w.full_name) AS worker,
+             jsonb_build_object('id', h.id, 'name', h.name) AS hotel
         FROM settlement.consolidation c
         JOIN personal.worker w ON w.id = c.worker_id
+        JOIN commercial.hotel h ON h.id = c.hotel_id
        WHERE c.id = ${id}::uuid`
 
     return rows[0] ?? null
@@ -220,18 +117,21 @@ export class ConsolidationsRepository {
              c.week_start        AS "weekStart",
              c.week_end          AS "weekEnd",
              c.status,
+             c.run_kind         AS "runKind",
              c.gross_amount::text     AS "grossAmount",
              c.deduction_amount::text AS "deductionAmount",
              c.net_amount::text       AS "netAmount",
              c.validated_at  AS "validatedAt",
              c.authorized_at AS "authorizedAt",
              c.paid_at       AS "paidAt",
-             jsonb_build_object('id', w.id, 'fullName', w.full_name) AS worker
+             jsonb_build_object('id', w.id, 'fullName', w.full_name) AS worker,
+             jsonb_build_object('id', h.id, 'name', h.name) AS hotel
         FROM settlement.consolidation c
         JOIN personal.worker w ON w.id = c.worker_id
+        JOIN commercial.hotel h ON h.id = c.hotel_id
        WHERE (${day}::date IS NULL OR c.week_start = ${day}::date)
          AND (${status}::text IS NULL OR c.status = ${status}::text)
-       ORDER BY c.week_start DESC, w.full_name
+       ORDER BY c.week_start DESC, w.full_name, h.name
        LIMIT 200`
   }
 

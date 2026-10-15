@@ -4,6 +4,7 @@ import CoreLocation
 import CoreText
 import UIKit
 import UserNotifications
+import WebKit
 
 /*
  * La pantalla NATIVA de Permisos de la app del Colaborador, en iOS. Es el
@@ -178,6 +179,9 @@ private enum Copy {
         "punch": "Ponchar",
         "punch_locked": "Activa los permisos de arriba para poder ponchar.",
         "go_home": "Ir a Inicio",
+        "privacy": "Aviso de privacidad",
+        "privacy_file": "privacidad",
+        "close": "Cerrar",
         "notifications_title": "Notificaciones",
         "notifications_body": "Para avisarte cuando una requisición necesita tu autorización, se cubre o cambia, y de lo que pasa con tu personal.",
         "hint_notifications_blocked": "Las desactivaste: actívalas en la configuración del teléfono.",
@@ -212,6 +216,9 @@ private enum Copy {
         "punch": "Punch",
         "punch_locked": "Turn on the permissions above to punch.",
         "go_home": "Go to Home",
+        "privacy": "Privacy notice",
+        "privacy_file": "privacy",
+        "close": "Close",
         "notifications_title": "Notifications",
         "notifications_body": "To let you know when a requisition needs your approval, gets filled or changes, and what happens with your staff.",
         "hint_notifications_blocked": "You turned them off: turn them on in your phone's settings.",
@@ -364,7 +371,18 @@ final class PermissionsViewController: UIViewController, CLLocationManagerDelega
         notificationsCard.setup(icon: "bell.fill", title: text("notifications_title"), body: text("notifications_body"))
 
         let cards: [UIView] = isHotel ? [notificationsCard] : [locationCard, gpsCard, cameraCard]
-        let content = UIStackView(arrangedSubviews: [eyebrow, greeting, summary] + cards)
+
+        /* El aviso de privacidad, al final de la lista: el mismo HTML que sirve la web. */
+        var privacyConfig = UIButton.Configuration.plain()
+        privacyConfig.baseForegroundColor = Palette.o700
+        privacyConfig.attributedTitle = AttributedString(
+            text("privacy"),
+            attributes: AttributeContainer([.font: Montserrat.font(600, 14), .underlineStyle: NSUnderlineStyle.single.rawValue])
+        )
+        let privacy = UIButton(configuration: privacyConfig)
+        privacy.addAction(UIAction { [weak self] _ in self?.openPrivacy() }, for: .touchUpInside)
+
+        let content = UIStackView(arrangedSubviews: [eyebrow, greeting, summary] + cards + [privacy])
         content.axis = .vertical
         content.spacing = 12
         content.setCustomSpacing(6, after: eyebrow)
@@ -437,6 +455,17 @@ final class PermissionsViewController: UIViewController, CLLocationManagerDelega
             page.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             page.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
         ])
+    }
+
+    /** El aviso de privacidad empaquetado (`public/privacidad.html` del bundle web), en una hoja con «Cerrar». */
+    private func openPrivacy() {
+        guard let url = Bundle.main.url(forResource: text("privacy_file"), withExtension: "html", subdirectory: "public") else { return }
+        let viewer = PrivacyViewController(url: url)
+        viewer.title = text("privacy")
+        viewer.navigationItem.rightBarButtonItem = UIBarButtonItem(
+            title: text("close"), primaryAction: UIAction { [weak viewer] _ in viewer?.dismiss(animated: true) }
+        )
+        present(UINavigationController(rootViewController: viewer), animated: true)
     }
 
     private func label(_ string: String, _ font: UIFont, _ color: UIColor) -> UILabel {
@@ -577,6 +606,27 @@ final class PermissionsViewController: UIViewController, CLLocationManagerDelega
 
 /// Una tarjeta de permiso: icono, qué es, su estado (chip) y, si falta, qué
 /// hacer. Mismo diseño que `item_permission_card.xml` en Android.
+/** Muestra un HTML local (el aviso de privacidad). Sin JavaScript: es texto. */
+private final class PrivacyViewController: UIViewController {
+    private let url: URL
+
+    init(url: URL) {
+        self.url = url
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) no se usa") }
+
+    override func loadView() {
+        let configuration = WKWebViewConfiguration()
+        configuration.defaultWebpagePreferences.allowsContentJavaScript = false
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.backgroundColor = Palette.surface
+        webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
+        view = webView
+    }
+}
+
 private final class PermissionCard: UIView {
     enum Tone { case ok, warn, error }
 

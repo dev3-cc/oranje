@@ -2,7 +2,7 @@ import { useLingui } from '@lingui/react'
 import { useEffect, useRef, type ReactNode } from 'react'
 import { Outlet } from 'react-router'
 
-import { hasHotelPermissionsScreen, useHotelPermissionsScreen } from './hotel/hotelPermissions'
+import { hasHotelPermissionsScreen, useHotelPermissionsScreen } from './hotelPermissions'
 import { isHotelRole, isWorkerRole } from './roles'
 
 import { useAppSelector } from '@/app/hooks'

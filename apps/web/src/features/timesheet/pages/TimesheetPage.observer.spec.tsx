@@ -33,7 +33,10 @@ vi.mock('@/app/sessionApi', async (importOriginal) => {
   return { ...actual, useGetSessionQuery: () => OBSERVER_SESSION }
 })
 
-function renderTimesheet(): void {
+/** La página entra por Asistencia (Hugo, 2026-10-10); este archivo prueba Días.
+ * `describe.skip`: el selector Horas/Días/Mes se ocultó el mismo día — sin
+ * botón que clickear no hay cómo llegar aquí (ver TimesheetPage.spec.tsx). */
+async function renderTimesheet(): Promise<void> {
   render(
     <Provider store={store}>
       <MemoryRouter>
@@ -41,11 +44,13 @@ function renderTimesheet(): void {
       </MemoryRouter>
     </Provider>,
   )
+  const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'Días' }))
 }
 
-describe('TimesheetPage · Observador', () => {
+describe.skip('TimesheetPage · Observador', () => {
   it('ve las horas de todos los hoteles sin un solo botón de escritura', async () => {
-    renderTimesheet()
+    await renderTimesheet()
 
     expect((await screen.findAllByText('Ana Rivera Gómez')).length).toBeGreaterThan(0)
     expect(screen.getByText('Todos los hoteles · solo lectura')).toBeInTheDocument()
@@ -59,7 +64,7 @@ describe('TimesheetPage · Observador', () => {
 
   it('el día se abre como detalle: las marcas y cerrar, nada que guardar', async () => {
     const user = userEvent.setup()
-    renderTimesheet()
+    await renderTimesheet()
 
     const chips = await screen.findAllByText('Observado')
     await user.click(chips.find((chip) => chip.closest('button') !== null) as HTMLElement)

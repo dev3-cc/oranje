@@ -308,6 +308,9 @@ const details = new Map<string, ProspectDetail>([
         geofenceMeters: 150,
         location: { lat: 21.1619, lng: -86.8515 },
         photoUrl: null,
+        weekStartDay: 1,
+        weekEndDay: 0,
+        overtimePayMultiplier: 1.5,
         activatedAsClientAt: null,
         id: 'hotel-fixture-1',
         punchMethod: 'SELFIE',
@@ -503,6 +506,9 @@ function buildDetailFromSummary(summary: ProspectSummary): ProspectDetail {
       geofenceMeters: 150,
       location: ZONE_ANCHOR[zoneIdFromLabel(summary.zone)] ?? ZONE_ANCHOR.centro!,
       photoUrl: null,
+      weekStartDay: 1,
+      weekEndDay: 0,
+      overtimePayMultiplier: 1.5,
       activatedAsClientAt: summary.status === 'ORANGE' ? cycleStartedAt : null,
       id: 'hotel-fixture-2',
       punchMethod: 'SELFIE',
@@ -625,6 +631,9 @@ function toHotelApi(detail: ProspectDetail): HotelApi {
     generalPhone: detail.hotel.generalPhone || null,
     timeZone: detail.hotel.timeZone,
     geofenceRadiusM: detail.hotel.geofenceMeters || null,
+    weekStartDay: detail.hotel.weekStartDay,
+    weekEndDay: detail.hotel.weekEndDay,
+    overtimePayMultiplier: detail.hotel.overtimePayMultiplier,
     address: detail.hotel.address || null,
     placeId: null,
     photoUrl: detail.hotel.photoUrl ?? null,
@@ -651,6 +660,9 @@ function registeredToHotelApi(hotel: RegisteredHotel): HotelApi {
     generalPhone: hotel.generalPhone || null,
     timeZone: hotel.timeZone,
     geofenceRadiusM: hotel.geofenceMeters || null,
+    weekStartDay: hotel.weekStartDay ?? 1,
+    weekEndDay: hotel.weekEndDay ?? 0,
+    overtimePayMultiplier: hotel.overtimePayMultiplier ?? 1.5,
     address: hotel.address || null,
     placeId: null,
     photoUrl: hotel.photoUrl ?? null,
@@ -830,6 +842,9 @@ interface CreateHotelBody {
   photoUrl?: string
   latitude?: number
   longitude?: number
+  weekStartDay?: number
+  weekEndDay?: number
+  overtimePayMultiplier?: 0 | 1.5
 }
 
 function createHotel(body: unknown): HotelApi {
@@ -838,6 +853,13 @@ function createHotel(body: unknown): HotelApi {
 
   if (!payload.name || !payload.timeZone) throw new Error('Faltan datos del hotel')
   if (!zone) throw new Error('La zona no existe en el catálogo')
+  if (
+    payload.weekStartDay === undefined ||
+    payload.weekEndDay === undefined ||
+    payload.overtimePayMultiplier === undefined
+  ) {
+    throw new Error('Faltan los datos contables del hotel')
+  }
 
   hotelSequence += 1
   const hotel: RegisteredHotel = {
@@ -854,6 +876,9 @@ function createHotel(body: unknown): HotelApi {
         ? { lat: payload.latitude, lng: payload.longitude }
         : null,
     geofenceMeters: payload.geofenceRadiusM ?? 0,
+    weekStartDay: payload.weekStartDay,
+    weekEndDay: payload.weekEndDay,
+    overtimePayMultiplier: payload.overtimePayMultiplier,
   }
   hotelsWithoutCycle.push(hotel)
   return registeredToHotelApi(hotel)
@@ -883,6 +908,9 @@ function patchHotel(hotelId: string, body: unknown): HotelApi {
           payload.latitude !== undefined && payload.longitude !== undefined
             ? { lat: payload.latitude, lng: payload.longitude }
             : detail.hotel.location,
+        weekStartDay: payload.weekStartDay ?? detail.hotel.weekStartDay,
+        weekEndDay: payload.weekEndDay ?? detail.hotel.weekEndDay,
+        overtimePayMultiplier: payload.overtimePayMultiplier ?? detail.hotel.overtimePayMultiplier,
       },
     }
     details.set(prospectId, updated)
@@ -900,6 +928,11 @@ function patchHotel(hotelId: string, body: unknown): HotelApi {
   hotel.timeZone = payload.timeZone ?? hotel.timeZone
   hotel.generalPhone = payload.generalPhone ?? hotel.generalPhone
   hotel.geofenceMeters = payload.geofenceRadiusM ?? hotel.geofenceMeters
+  if (payload.weekStartDay !== undefined) hotel.weekStartDay = payload.weekStartDay
+  if (payload.weekEndDay !== undefined) hotel.weekEndDay = payload.weekEndDay
+  if (payload.overtimePayMultiplier !== undefined) {
+    hotel.overtimePayMultiplier = payload.overtimePayMultiplier
+  }
   if (zone) {
     hotel.zoneId = zone.id
     hotel.zone = zone.label
@@ -990,6 +1023,9 @@ function createProspect(body: unknown): ProspectApi {
       geofenceMeters: registered.geofenceMeters,
       location: registered.location,
       photoUrl: registered.photoUrl ?? null,
+      weekStartDay: registered.weekStartDay ?? 1,
+      weekEndDay: registered.weekEndDay ?? 0,
+      overtimePayMultiplier: registered.overtimePayMultiplier ?? 1.5,
       activatedAsClientAt: null,
       id: 'hotel-fixture-3',
       punchMethod: 'SELFIE',

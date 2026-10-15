@@ -19,8 +19,14 @@ export interface CoverageDescription {
   percent: number
 }
 
+/** Ya no queda ningún slot libre — a partir de aquí la urgencia dejó de
+    importar: nada que cubrir, nada que apurar (Hugo, 2026-10-12). */
+export function isCoverageComplete(coverage: RequisitionCoverage): boolean {
+  return coverage.total > 0 && coverage.filled >= coverage.total
+}
+
 export function describeCoverage(coverage: RequisitionCoverage): CoverageDescription {
-  const isComplete = coverage.total > 0 && coverage.filled >= coverage.total
+  const isComplete = isCoverageComplete(coverage)
   const isEmpty = coverage.filled === 0
   const percent = coverage.total > 0 ? (coverage.filled / coverage.total) * 100 : 0
 

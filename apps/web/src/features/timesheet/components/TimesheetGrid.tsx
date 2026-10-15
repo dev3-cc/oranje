@@ -5,6 +5,7 @@ import { useContext, useState, type ReactNode } from 'react'
 
 import { todayIso } from '../lib/weekNavigation'
 import type {
+  ManualPunchTarget,
   ReviewContext,
   TimelineRow,
   TimesheetEntry,
@@ -42,10 +43,12 @@ function summaryOf(
     workerId: row.workerId,
     workerName: row.workerName,
     jobTitle: row.jobTitle,
+    photoUrl: row.photoUrl,
     hotelName: row.hotelName,
     weekStatus: summary.weekStatus,
     totalHours: summary.totalHours,
     targetHours: null,
+    overtimeHours: null,
     entries: row.entries.filter((entry) => weekDays.includes(entry.date)),
   }
 }
@@ -130,7 +133,7 @@ export function TimesheetGrid({
     entry: TimesheetEntry,
     workerName: string,
     context: ReviewContext | undefined,
-    manualPunchTarget: Pick<TimesheetRow, 'requisitionId' | 'workerId' | 'workerName'>,
+    manualPunchTarget: ManualPunchTarget,
   ) => void
   /** `undefined` = quien mira no captura marcas: el botón no se dibuja. */
   onManualPunch?: ((row: TimesheetRow) => void) | undefined
@@ -240,6 +243,7 @@ export function TimesheetGrid({
                                 requisitionId: row.requisitionId,
                                 workerId: row.workerId,
                                 workerName: row.workerName,
+                                entries: row.entries,
                               },
                             )
                           }}
@@ -464,6 +468,7 @@ export function TimesheetGrid({
                                         requisitionId: row.requisitionId,
                                         workerId: row.workerId,
                                         workerName: row.workerName,
+                                        entries: row.entries,
                                       },
                                     )
                                   }}

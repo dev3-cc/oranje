@@ -81,7 +81,127 @@ export class AssignmentsRepository {
     })
   }
 
-  async worker(id: string): Promise<{ id: string; fullName: string; deletedAt: Date | null } | null> {
+  /** El lugar N de una posición, para validar el que eligieron. */
+  async slotAt(
+    positionId: string,
+    ordinal: number,
+  ): Promise<{ id: string; ordinal: number; status: string } | null> {
+    return this.prisma.slot.findFirst({
+      where: { positionId, ordinal },
+      select: { id: true, ordinal: true, status: true },
+    })
+  }
+
+  /**
+   * Cierra SOLO la asignación, sin tocar el slot ni la cobertura.
+   *
+   * Para las vencidas de una requisición que ya cerró: la persona tiene que
+   * quedar libre —su plazo terminó— pero la requisición es historia y no se
+   * reabre, así que su cobertura y sus slots se quedan como quedaron.
+   */
+  async closeAssignmentOnly(params: {
+    assignmentId: string
+    reason: string
+    userId: string
+    roleCode: string
+    /** La persona vuelve a su estado igual: la requisición es lo que no se toca. */
+    workerState?: { workerId: string; fromStateId: string; toStateId: string } | null
+  }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.assignment.update({
+        where: { id: params.assignmentId },
+        data: { status: 'CLOSED', closedReason: params.reason, updatedAt: new Date() },
+      })
+
+      if (params.workerState) {
+        await tx.worker.update({
+          where: { id: params.workerState.workerId },
+          data: { statusLightStateId: params.workerState.toStateId, updatedAt: new Date() },
+        })
+        await tx.workerStateHistory.create({
+          data: {
+            id: uuidv7(),
+            workerId: params.workerState.workerId,
+            fromStateId: params.workerState.fromStateId,
+            toStateId: params.workerState.toStateId,
+            statusLightCode: 'WORKER',
+            userId: params.userId,
+          },
+        })
+      }
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'coverage.assignment',
+          entityId: params.assignmentId,
+          eventType: 'ASSIGNMENT_CLOSED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: { reason: params.reason, requisitionClosed: true },
+        },
+      })
+    })
+  }
+
+  /** En qué estado del semáforo está hoy el colaborador. */
+  async workerState(workerId: string): Promise<{ stateId: string; code: string } | null> {
+    const row = await this.prisma.worker.findUnique({
+      where: { id: workerId },
+      select: { statusLightStateId: true, statusState: { select: { code: true } } },
+    })
+    return row ? { stateId: row.statusLightStateId, code: row.statusState.code } : null
+  }
+
+  /**
+   * De qué estado venía antes de entrar a Café.
+   *
+   * La transición `BROWN -> (estado previo)` está sembrada con destino nulo a
+   * propósito: el vault dice que al vencer vuelve a `Amarillo` si sigue en
+   * descanso y a `Verde fuerte` si ya no. Quién fue ese «antes» lo dice la
+   * historia, no una regla.
+   */
+  async stateBeforeBrown(workerId: string, brownStateId: string): Promise<{ id: string } | null> {
+    const row = await this.prisma.workerStateHistory.findFirst({
+      where: { workerId, toStateId: brownStateId },
+      orderBy: { occurredAt: 'desc' },
+      select: { fromStateId: true },
+    })
+    /* `fromStateId` es nulable: el primer renglón de la historia nace sin
+       origen. Si no hay de dónde volver, quien llame decide. */
+    return row?.fromStateId ? { id: row.fromStateId } : null
+  }
+
+  /** La cuenta con la que firma el sistema; la siembra el seed. */
+  async systemActor(email: string): Promise<{ id: string; roleCode: string } | null> {
+    const row = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, role: { select: { code: true } } },
+    })
+    return row ? { id: row.id, roleCode: row.role.code } : null
+  }
+
+  /**
+   * Las temporales que ya cumplieron sus días y siguen ACTIVE.
+   *
+   * `upper(validity)` es exclusivo —`daterange` lo normaliza a `[inicio, fin)`—
+   * así que `<= current_date` significa «su último día ya pasó», no «termina
+   * hoy»: una asignación que corre hasta hoy todavía cuenta.
+   */
+  async expiredActive(limit: number, workerId?: string): Promise<Array<{ id: string }>> {
+    return this.prisma.$queryRaw<Array<{ id: string }>>`
+      SELECT a.id::text
+        FROM coverage.assignment a
+       WHERE a.status = 'ACTIVE'
+         AND upper(a.validity) IS NOT NULL
+         AND upper(a.validity) <= current_date
+         AND (${workerId ?? null}::uuid IS NULL OR a.worker_id = ${workerId ?? null}::uuid)
+       ORDER BY upper(a.validity)
+       LIMIT ${limit}`
+  }
+
+  async worker(
+    id: string,
+  ): Promise<{ id: string; fullName: string; deletedAt: Date | null } | null> {
     return this.prisma.worker.findUnique({
       where: { id },
       select: { id: true, fullName: true, deletedAt: true },
@@ -127,7 +247,9 @@ export class AssignmentsRepository {
     return row?.hotelId ?? null
   }
 
-  async coverageOf(requisitionId: string): Promise<
+  async coverageOf(
+    requisitionId: string,
+  ): Promise<
     Array<{ positionId: string; quantity: number; taken: number; coverageStateId: string }>
   > {
     const rows = await this.prisma.position.findMany({
@@ -168,6 +290,12 @@ export class AssignmentsRepository {
     fromRequisitionStateId: string
     userId: string
     roleCode: string
+    /**
+     * A qué estado pasa el colaborador y desde cuál. `null` = no se toca.
+     * Solo la temporal mueve el semáforo al asignar: la fija espera al día 1
+     * (Semáforo del Colaborador).
+     */
+    workerState: { fromStateId: string; toStateId: string } | null
   }): Promise<AssignmentRow> {
     const id = uuidv7()
     const upper = params.endDate ? params.endDate.toISOString().slice(0, 10) : null
@@ -190,6 +318,26 @@ export class AssignmentsRepository {
         where: { id: params.slotId },
         data: { status: 'taken', updatedAt: new Date() },
       })
+
+      /* El semáforo del colaborador va en la MISMA transacción que la
+         asignación: son el mismo hecho, y que uno pueda quedar sin el otro
+         deja a alguien en Café sin asignación o al revés. */
+      if (params.workerState) {
+        await tx.worker.update({
+          where: { id: params.workerId },
+          data: { statusLightStateId: params.workerState.toStateId, updatedAt: new Date() },
+        })
+        await tx.workerStateHistory.create({
+          data: {
+            id: uuidv7(),
+            workerId: params.workerId,
+            fromStateId: params.workerState.fromStateId,
+            toStateId: params.workerState.toStateId,
+            statusLightCode: 'WORKER',
+            userId: params.userId,
+          },
+        })
+      }
 
       await tx.position.update({
         where: { id: params.positionId },
@@ -251,11 +399,24 @@ export class AssignmentsRepository {
     reason: string
     userId: string
     roleCode: string
+    /**
+     * `CANCELLED` la soltó una persona antes de tiempo; `CLOSED` se le acabaron
+     * los días. El `CHECK` distingue los dos desde la primera migración y hasta
+     * hoy nadie escribía `CLOSED`, porque nada cerraba solo.
+     */
+    status?: 'CANCELLED' | 'CLOSED'
+    eventType?: 'ASSIGNMENT_RELEASED' | 'ASSIGNMENT_CLOSED'
+    /** A dónde vuelve el colaborador; `null` = su semáforo no se toca. */
+    workerState?: { workerId: string; fromStateId: string; toStateId: string } | null
   }): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       await tx.assignment.update({
         where: { id: params.assignmentId },
-        data: { status: 'CANCELLED', closedReason: params.reason, updatedAt: new Date() },
+        data: {
+          status: params.status ?? 'CANCELLED',
+          closedReason: params.reason,
+          updatedAt: new Date(),
+        },
       })
 
       await tx.slot.update({
@@ -272,12 +433,29 @@ export class AssignmentsRepository {
         },
       })
 
+      if (params.workerState) {
+        await tx.worker.update({
+          where: { id: params.workerState.workerId },
+          data: { statusLightStateId: params.workerState.toStateId, updatedAt: new Date() },
+        })
+        await tx.workerStateHistory.create({
+          data: {
+            id: uuidv7(),
+            workerId: params.workerState.workerId,
+            fromStateId: params.workerState.fromStateId,
+            toStateId: params.workerState.toStateId,
+            statusLightCode: 'WORKER',
+            userId: params.userId,
+          },
+        })
+      }
+
       await tx.journalEntry.create({
         data: {
           id: uuidv7(),
           entityType: 'coverage.assignment',
           entityId: params.assignmentId,
-          eventType: 'ASSIGNMENT_RELEASED',
+          eventType: params.eventType ?? 'ASSIGNMENT_RELEASED',
           actorUserId: params.userId,
           actorRole: params.roleCode,
           payload: { reason: params.reason },

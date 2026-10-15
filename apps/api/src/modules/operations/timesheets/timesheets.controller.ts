@@ -1,23 +1,37 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
+  Put,
   Query,
 } from '@nestjs/common'
 
-import { CurrentUser, Requires } from '../../../common/decorators/index.js'
+import { CurrentUser, Public, Requires } from '../../../common/decorators/index.js'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { SchedulerTokenService } from '../../../common/security/scheduler-token.service.js'
 import { PermissionsService } from '../../identity/index.js'
 
-import { CreateManualPunchDto, CreatePunchDto } from './dto/create-punch.dto.js'
+import { CorrectPunchDto, CreateManualPunchDto, CreatePunchDto } from './dto/create-punch.dto.js'
+import { SetDayStatusDto } from './dto/day-status.dto.js'
+import { ListTimesheetsDto } from './dto/list-timesheets.dto.js'
+import { SetPayOverrideDto } from './dto/pay-override.dto.js'
 import { ReviewDayDto } from './dto/review-day.dto.js'
-import { DayEntity, PunchResult, TimesheetEntity, TimesheetsService } from './timesheets.service.js'
+import {
+  DayEntity,
+  PunchResult,
+  TimesheetEntity,
+  TimesheetListEntity,
+  TimesheetsService,
+} from './timesheets.service.js'
 
 /**
  * Leer el Timesheet lo pueden dos alcances: el del hotel (`read_department`,
@@ -31,20 +45,41 @@ export class TimesheetsController {
   constructor(
     private readonly timesheets: TimesheetsService,
     private readonly permissions: PermissionsService,
+    private readonly schedulerTokens: SchedulerTokenService,
   ) {}
+
+  /**
+   * La detección de inasistencias, que corre el programador de tareas.
+   *
+   * No hay sesión: lo autentica el token OIDC de Google, igual que el barrido
+   * de asignaciones vencidas y el consumidor de eventos. Es lo único del
+   * semáforo que no se puede disparar con un hecho, porque no hay evento
+   * cuando algo NO pasa (Hugo, 2026-10-10).
+   */
+  @Public()
+  @Post('timesheets/detect-absences/scheduled')
+  @HttpCode(HttpStatus.OK)
+  async detectAbsences(
+    @Headers('authorization') authorization: string | undefined,
+  ): Promise<{ data: { registradas: number; avisadas: number } }> {
+    await this.schedulerTokens.verify(authorization)
+
+    return { data: await this.timesheets.detectAbsences() }
+  }
 
   @Get('timesheets')
   async list(
     @CurrentUser() user: AuthenticatedUser,
-    @Query('status') status?: string,
-    /* El periodo acota en la consulta, no después: así el tope del listado
-       no se alcanza por el paso del tiempo (Hugo, 2026-10-05). */
-    @Query('from') from?: string,
-    @Query('to') to?: string,
-  ): Promise<{ data: TimesheetEntity[] }> {
+    @Query() query: ListTimesheetsDto,
+  ): Promise<{ data: TimesheetListEntity[] }> {
     const allHotels = await this.readScope(user)
+    const rows = await this.timesheets.list(user, query, allHotels, {
+      from: query.from,
+      to: query.to,
+    })
+    const canViewMargin = await this.permissions.can(user.roleCode, 'payroll', 'view_margin')
 
-    return { data: await this.timesheets.list(user, status, allHotels, { from, to }) }
+    return { data: canViewMargin ? rows : rows.map((row) => stripMargin(row)) }
   }
 
   // Antes que `:id`, o Nest lee "me" como un uuid.
@@ -59,9 +94,11 @@ export class TimesheetsController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: TimesheetEntity }> {
-    await this.readScope(user)
+    const allHotels = await this.readScope(user)
+    const sheet = await this.timesheets.getScoped(id, user, allHotels)
+    const canViewMargin = await this.permissions.can(user.roleCode, 'payroll', 'view_margin')
 
-    return { data: await this.timesheets.get(id) }
+    return { data: canViewMargin ? sheet : stripMargin(sheet) }
   }
 
   @Requires('timesheet', 'punch')
@@ -84,6 +121,17 @@ export class TimesheetsController {
     return { data: await this.timesheets.manualPunch(dto, user) }
   }
 
+  @Requires('timesheet', 'correct_punch')
+  @Patch('punches/:id')
+  @HttpCode(HttpStatus.OK)
+  async correctPunch(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: CorrectPunchDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: PunchResult }> {
+    return { data: await this.timesheets.correctPunch(id, dto, user) }
+  }
+
   @Requires('timesheet', 'review_punches')
   @Post('timesheet-days/:id/review')
   @HttpCode(HttpStatus.OK)
@@ -93,6 +141,32 @@ export class TimesheetsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: DayEntity }> {
     return { data: await this.timesheets.reviewDay(id, dto.note, user) }
+  }
+
+  /**
+   * Sin Schedule, un día sin ponches no tiene fila: con qué se marca
+   * (Descanso, OFF…) antes de enviar la semana — mismo alcance que corregir
+   * una marca (Hugo, 2026-10-12).
+   */
+  @Requires('timesheet', 'review_punches')
+  @Put('timesheets/:id/day-status')
+  @HttpCode(HttpStatus.OK)
+  async setDayStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SetDayStatusDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: DayEntity }> {
+    const allHotels = await this.readScope(user)
+
+    return {
+      data: await this.timesheets.setDayStatus(
+        id,
+        new Date(`${dto.workDate}T00:00:00Z`),
+        dto.dayStatusId,
+        user,
+        allHotels,
+      ),
+    }
   }
 
   @Requires('timesheet', 'review_punches')
@@ -115,6 +189,31 @@ export class TimesheetsController {
     return { data: await this.timesheets.approve(id, user) }
   }
 
+  /**
+   * Corrección de Contabilidad sobre la vista previa de pago (Hugo,
+   * 2026-10-08): tarifa y reparto de horas. El mismo permiso que prepara la
+   * corrida, `payroll:generate` — Contadora y Manager de Contabilidad.
+   */
+  @Requires('payroll', 'generate')
+  @Put('timesheets/:id/pay-override')
+  @HttpCode(HttpStatus.OK)
+  async setPayOverride(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SetPayOverrideDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: TimesheetListEntity }> {
+    return { data: await this.timesheets.setPayOverride(id, dto, user) }
+  }
+
+  @Requires('payroll', 'generate')
+  @Delete('timesheets/:id/pay-override')
+  @HttpCode(HttpStatus.OK)
+  async clearPayOverride(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<{ data: TimesheetListEntity }> {
+    return { data: await this.timesheets.clearPayOverride(id) }
+  }
+
   /** `true` = todos los hoteles; `false` = el hotel de quien pregunta. */
   private async readScope(user: AuthenticatedUser): Promise<boolean> {
     const [allHotels, ownHotel] = await Promise.all([
@@ -130,5 +229,22 @@ export class TimesheetsController {
     }
 
     return allHotels
+  }
+}
+
+/**
+ * Lo que se le cobra al hotel (y por tanto el margen de Oranje) es del
+ * Manager de Contabilidad, no de la Contadora (Hugo, 2026-10-15: "esto solo
+ * muéstraselo al jefe de Contabilidad"). Se recorta aquí, después del
+ * servicio — más seguro que confiar en que el front no lo pinte: sin esto,
+ * el número viajaba igual en la respuesta aunque la pantalla lo escondiera.
+ */
+function stripMargin<
+  T extends { payPreview?: { billRate: string | null; billSubtotal: string | null } | undefined },
+>(entity: T): T {
+  if (!entity.payPreview) return entity
+  return {
+    ...entity,
+    payPreview: { ...entity.payPreview, billRate: null, billSubtotal: null },
   }
 }

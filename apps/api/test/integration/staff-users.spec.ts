@@ -538,4 +538,41 @@ describe('el idioma se elige en el alta', () => {
     })
     expect(fila.locale).toBe('es')
   })
+
+  /**
+   * La cuenta del Sistema no es una persona (Hugo, 2026-10-10): firma lo que
+   * ocurre sin que nadie lo pida. Salía en Usuarios como un empleado más y el
+   * Administrador podía reactivarla o pasarle el rol a alguien real, con lo
+   * que el journal dejaría de decir la verdad sobre quién actuó.
+   */
+  it('el rol Sistema no se puede dar de alta ni asignar a una persona', async () => {
+    await expect(
+      service.create(
+        dto({ email: `sys-${String(Date.now())}@oranje.local`, roleCode: 'ROL-SYS-01' }),
+        auth,
+      ),
+    ).rejects.toThrow(UnprocessableEntityException)
+
+    const persona = await service.create(
+      dto({ email: `sys-edit-${String(Date.now())}@oranje.local` }),
+      auth,
+    )
+    created.push(persona.id)
+
+    await expect(service.update(persona.id, { roleCode: 'ROL-SYS-01' }, auth)).rejects.toThrow(
+      UnprocessableEntityException,
+    )
+  })
+
+  it('la cuenta del Sistema no aparece en la lista de personal', async () => {
+    const repo = new StaffUsersRepository(db as unknown as PrismaService)
+    const { rows } = await repo.findMany({
+      page: 1,
+      limit: 100,
+      includeInactive: true,
+      search: 'sistema@oranjepeople.com',
+    })
+
+    expect(rows).toHaveLength(0)
+  })
 })

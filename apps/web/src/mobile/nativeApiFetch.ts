@@ -41,6 +41,9 @@ type NativeFormEntry =
   | { key: string; value: string; type: 'string' }
   | { key: string; value: string; type: 'base64File'; contentType: string; fileName: string }
 
+/** El `Content-Type` de una subida; el boundary lo pone el lado nativo. */
+export const MULTIPART = 'multipart/form-data'
+
 /** Para diagnosticar en Android: `localStorage['oranje.nativeApiFetch'] = 'on'`. */
 const FORCE_FLAG = 'oranje.nativeApiFetch'
 
@@ -82,8 +85,13 @@ async function nativeFetch(cap: CapacitorBridge, request: Request): Promise<Resp
     if (contentType.includes('multipart/form-data')) {
       data = await toNativeFormData(await request.formData())
       dataType = 'formData'
-      /* El lado nativo arma su propio boundary; el del navegador ya no sirve. */
-      delete headers['content-type']
+      /*
+       * Sin boundary: el lado nativo arma el suyo y corrige el encabezado
+       * (`overrideContentType`). NO se borra: `setRequestBody` solo arma el
+       * cuerpo si hay `Content-Type`, y sin él la subida salía VACÍA (el API
+       * respondía «Los datos enviados no son válidos»).
+       */
+      headers['content-type'] = MULTIPART
     } else {
       const text = await request.text()
       if (text) data = text

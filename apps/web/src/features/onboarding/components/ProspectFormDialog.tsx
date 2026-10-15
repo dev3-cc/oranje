@@ -49,6 +49,7 @@ import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { StepIndicator } from '@/shared/components/StepIndicator'
+import { WEEK_DAY_COUNT } from '@/shared/constants/contractStatus'
 import {
   ONBOARDING_STATUS_DESCRIPTION,
   ONBOARDING_STATUS_LABEL,
@@ -58,6 +59,7 @@ import {
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
+import { weekdayName } from '@/shared/lib/formatters'
 
 const FORM_ID = 'prospect-form'
 
@@ -171,7 +173,7 @@ function SectionTitle({ children, schema }: { children: ReactNode; schema?: stri
   )
 }
 
-type WizardStep = 1 | 2 | 3 | 4
+type WizardStep = 1 | 2 | 3 | 4 | 5
 
 /** Las dos evidencias de presencia que el vault admite; el resto es del back. */
 const PUNCH_METHOD_OPTIONS: readonly {
@@ -194,18 +196,41 @@ const PUNCH_METHOD_OPTIONS: readonly {
   },
 ] as const
 
+/**
+ * Pago de horas extra (Hugo, 2026-10-07): se captura una vez, al dar de alta
+ * el hotel, y el Contrato lo hereda sin volver a preguntarlo.
+ */
+const OVERTIME_OPTIONS: readonly {
+  value: 0 | 1.5
+  label: MessageDescriptor
+  hint: MessageDescriptor
+}[] = [
+  {
+    value: 1.5,
+    label: msg`Tiempo y medio`,
+    hint: msg`La hora extra se paga 1.5 veces la hora normal.`,
+  },
+  {
+    value: 0,
+    label: msg`No paga horas extra`,
+    hint: msg`Las horas que pasan de 40 a la semana no se le pagan al colaborador en este hotel.`,
+  },
+] as const
+
 const WIZARD_STEPS: Array<{ step: WizardStep; label: MessageDescriptor }> = [
   { step: 1, label: msg`El edificio` },
   { step: 2, label: msg`Ubicación` },
   { step: 3, label: msg`Primer contacto` },
-  { step: 4, label: msg`El ciclo` },
+  { step: 4, label: msg`Datos contables` },
+  { step: 5, label: msg`El ciclo` },
 ]
 
 const STEP_FIELDS: Record<WizardStep, Array<keyof ProspectFormValues>> = {
   1: ['hotelSource', 'existingHotelId', 'hotelName', 'zoneId', 'timeZone', 'punchMethod'],
   2: ['location', 'geofenceMeters'],
   3: ['contactFullName', 'contactEmail'],
-  4: ['ownerUserId'],
+  4: ['weekStartDay', 'overtimePayMultiplier'],
+  5: ['ownerUserId'],
 }
 
 export interface ProspectFormDialogProps {
@@ -254,6 +279,8 @@ export function ProspectFormDialog({
     location: prospect?.hotel.location ?? null,
     placeLocation: null,
     geofenceMeters: prospect?.hotel.geofenceMeters ?? 150,
+    weekStartDay: prospect?.hotel.weekStartDay ?? 1,
+    overtimePayMultiplier: (prospect?.hotel.overtimePayMultiplier ?? 1.5) as 0 | 1.5,
     contactFullName: primaryContact?.name ?? '',
     contactJobTitle: primaryContact?.role ?? '',
     contactPhone: primaryContact?.phone ?? '',
@@ -307,7 +334,7 @@ export function ProspectFormDialog({
 
   async function goNext(): Promise<void> {
     const isStepValid = await trigger(STEP_FIELDS[step])
-    if (isStepValid && step < 4) setStep((step + 1) as WizardStep)
+    if (isStepValid && step < 5) setStep((step + 1) as WizardStep)
   }
 
   /* «Crear prospecto» se arma 350 ms después de llegar al último paso: un
@@ -316,7 +343,7 @@ export function ProspectFormDialog({
      sin que nadie lo pidiera. Un modal nunca se cierra solo. */
   const [isSubmitArmed, setIsSubmitArmed] = useState(false)
   useEffect(() => {
-    if (step !== 4) {
+    if (step !== 5) {
       setIsSubmitArmed(false)
       return
     }
@@ -355,6 +382,13 @@ export function ProspectFormDialog({
     setValue('generalPhone', hotel.generalPhone)
     setValue('location', hotel.location, { shouldValidate: true })
     setValue('geofenceMeters', hotel.geofenceMeters)
+    // Si el hotel registrado ya tiene sus datos contables, se respetan; si
+    // no (uno viejo, de antes de esta captura), quedan los valores por
+    // defecto del paso y la persona los confirma.
+    if (hotel.weekStartDay !== undefined) setValue('weekStartDay', hotel.weekStartDay)
+    if (hotel.overtimePayMultiplier !== undefined) {
+      setValue('overtimePayMultiplier', hotel.overtimePayMultiplier)
+    }
   }
 
   async function onSubmit(form: ProspectFormValues): Promise<void> {
@@ -370,6 +404,10 @@ export function ProspectFormDialog({
       geofenceMeters: form.geofenceMeters,
       placeId,
       punchMethod: form.punchMethod,
+      weekStartDay: form.weekStartDay,
+      /** La semana termina el día anterior al que empieza: 7 días exactos. */
+      weekEndDay: (form.weekStartDay + 6) % 7,
+      overtimePayMultiplier: form.overtimePayMultiplier,
     }
     const contact = {
       fullName: form.contactFullName,
@@ -447,10 +485,10 @@ export function ProspectFormDialog({
             const target = event.target as HTMLElement
             if (target.tagName === 'TEXTAREA' || target.tagName === 'BUTTON') return
             event.preventDefault()
-            if (step < 4) void goNext()
+            if (step < 5) void goNext()
           }}
           onSubmit={(event) => {
-            if (step < 4) {
+            if (step < 5) {
               event.preventDefault()
               void goNext()
               return
@@ -802,9 +840,9 @@ export function ProspectFormDialog({
                           </p>
                           <p className="mt-1 text-sm leading-relaxed text-ink-2">
                             <Trans>
-                              Google devuelve el centro del lugar, que casi nunca es por donde entra
-                              el colaborador. Arrástralo en el mapa a la entrada real: unos metros
-                              de más rechazan ponches legítimos.
+                              Es el punto que usa el ponche para medir la distancia. Arrástralo a la
+                              entrada real del hotel para tener mejor precisión: unos metros de más
+                              rechazan ponches legítimos.
                             </Trans>
                           </p>
                         </div>
@@ -890,6 +928,88 @@ export function ProspectFormDialog({
                     )}
 
                     {step === 4 && (
+                      <>
+                        <SectionTitle schema="commercial.hotel">
+                          <Trans>Datos contables</Trans>
+                        </SectionTitle>
+                        <p className="-mt-2 text-sm leading-relaxed text-ink-3">
+                          <Trans>
+                            Se capturan una sola vez, aquí: cuando el hotel firme su contrato, lo
+                            hereda de aquí y no se vuelve a preguntar.
+                          </Trans>
+                        </p>
+
+                        <Field
+                          label={t`La semana del hotel empieza en`}
+                          htmlFor="weekStartDay"
+                          isRequired
+                          column="week_start_day · week_end_day se deriva (7 días exactos)"
+                          note={t`Termina el ${weekdayName((values.weekStartDay + 6) % 7)}.`}
+                        >
+                          <Controller
+                            control={control}
+                            name="weekStartDay"
+                            render={({ field }) => (
+                              <Select
+                                value={String(field.value)}
+                                onValueChange={(value) => {
+                                  field.onChange(Number(value))
+                                }}
+                              >
+                                <SelectTrigger id="weekStartDay" className="w-full">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {Array.from({ length: WEEK_DAY_COUNT }, (_unused, index) => (
+                                    <SelectItem key={index} value={String(index)}>
+                                      {weekdayName(index)}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                        </Field>
+
+                        <Field
+                          label={t`Pago de horas extra`}
+                          isRequired
+                          column="overtime_pay_multiplier"
+                          error={formState.errors.overtimePayMultiplier?.message}
+                        >
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            {OVERTIME_OPTIONS.map((option) => (
+                              <label
+                                key={option.value}
+                                className="flex cursor-pointer items-start gap-3 rounded-lg border border-line bg-surface p-3 transition-colors has-[:checked]:border-o-500 has-[:checked]:bg-o-50 hover:bg-surface-2"
+                              >
+                                <input
+                                  type="radio"
+                                  value={option.value}
+                                  checked={values.overtimePayMultiplier === option.value}
+                                  onChange={() => {
+                                    setValue('overtimePayMultiplier', option.value, {
+                                      shouldValidate: true,
+                                    })
+                                  }}
+                                  className="mt-1 accent-o-500"
+                                />
+                                <span className="min-w-0">
+                                  <span className="text-sm font-semibold text-ink">
+                                    {i18n._(option.label)}
+                                  </span>
+                                  <span className="block text-xs text-ink-3">
+                                    {i18n._(option.hint)}
+                                  </span>
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        </Field>
+                      </>
+                    )}
+
+                    {step === 5 && (
                       <>
                         <section className="flex flex-col gap-4 rounded-lg border border-line bg-surface p-4">
                           <SectionTitle schema="commercial.prospect">
@@ -986,7 +1106,7 @@ export function ProspectFormDialog({
                     <Trans>Atrás</Trans>
                   </Button>
                 )}
-                {step < 4 ? (
+                {step < 5 ? (
                   <Button
                     variant="primary"
                     type="button"

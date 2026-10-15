@@ -20,6 +20,7 @@ export interface WorkerRow {
   emergencyContactPhone: string | null
   emergencyContactRelationship: string | null
   bloodType: string | null
+  medicalNotes: string | null
   isProfileComplete: boolean
   hasTaxId: boolean
   /// Hay un documento SSN/ITIN cargado (verificado o no) — distinto de
@@ -62,6 +63,7 @@ export interface WorkerFilter {
   search?: string | undefined
   onlyAvailable: boolean
   hasPendingDocument: boolean
+  withoutActiveAssignment: boolean
 }
 
 const BASE = `
@@ -79,6 +81,7 @@ const BASE = `
          w.emergency_contact_phone        AS "emergencyContactPhone",
          w.emergency_contact_relationship AS "emergencyContactRelationship",
          w.blood_type          AS "bloodType",
+         w.medical_notes       AS "medicalNotes",
          w.is_profile_complete AS "isProfileComplete",
          w.profile_due_at      AS "profileDueAt",
          w.has_tax_id          AS "hasTaxId",
@@ -361,6 +364,24 @@ export class WorkersRepository {
 
     if (filter.hasPendingDocument) {
       where.push(`w.has_pending_tax_document`)
+    }
+
+    /*
+     * Misma condición que rechaza `AssignmentsService.create`: una asignación
+     * viva. Se escribe aquí y no se deduce del semáforo porque el semáforo no
+     * se mueve al asignar.
+     *
+     * «Viva» incluye la fecha: una temporal cuyo último día ya pasó no ocupa a
+     * nadie, aunque siga marcada ACTIVE porque todavía no la cerró el barrido
+     * —`upper(validity)` es exclusivo, así que `> current_date` deja dentro a
+     * la que corre hasta hoy—. Sin esta condición el filtro escondía para
+     * siempre a quien terminó en junio (Hugo, 2026-10-09).
+     */
+    if (filter.withoutActiveAssignment) {
+      where.push(`NOT EXISTS (SELECT 1 FROM coverage.assignment a
+                               WHERE a.worker_id = w.id AND a.status = 'ACTIVE'
+                                 AND (upper(a.validity) IS NULL
+                                      OR upper(a.validity) > current_date))`)
     }
 
     const filtro = where.length > 0 ? ` AND ${where.join(' AND ')}` : ''
