@@ -11,6 +11,7 @@ import { AuthorizationResolutionForm } from '../components/AuthorizationResoluti
 
 import personajeManager from '@/assets/ilustrations/personaje-manager.svg'
 import { BackToListButton } from '@/shared/components/BackToListButton'
+import { GuidedTour, type TourStep } from '@/shared/components/GuidedTour'
 import { LoadError } from '@/shared/components/LoadError'
 import { NoticeCard } from '@/shared/components/NoticeCard'
 import { SearchField } from '@/shared/components/SearchField'
@@ -39,6 +40,23 @@ export function RequisitionAuthorizationPage(): ReactNode {
   /** Por folio u hotel, EN MEMORIA: la cola ya está cargada entera. */
   const [search, setSearch] = useState('')
   const can = useCan()
+  /* El recorrido se reabre desde «Ver el recorrido». */
+  const [startTour, setStartTour] = useState<() => void>(() => () => undefined)
+
+  /* Lo que la firma DISPARA, que es lo que nadie adivina: el reloj de la
+     urgencia arranca aquí, no cuando se creó. */
+  const pasos: readonly TourStep[] = [
+    {
+      anchor: 'authz-queue',
+      title: t`Lo que espera tu firma`,
+      description: t`Cada una con cuánto lleva esperando y cuándo empieza el puesto. Tócala para revisarla.`,
+    },
+    {
+      anchor: 'authz-detail',
+      title: t`Revisa antes de firmar`,
+      description: t`Quién la pidió, de qué departamento y qué puestos trae. Autorizar la manda a Reclutamiento y arranca el reloj de la urgencia; devolverla con observaciones la regresa a quien la escribió.`,
+    },
+  ]
   const { showDetailOnMobile, select, backToList } = useListDetail()
   /** Firmar es de los Managers (requisitions:authorize); los demás solo consultan la cola. */
   const canAuthorize = can('requisitions:authorize')
@@ -92,6 +110,14 @@ export function RequisitionAuthorizationPage(): ReactNode {
         <span className="font-semibold text-ink-2">
           <Trans>Autorización de Requisición</Trans>
         </span>
+        <span aria-hidden>·</span>
+        <button
+          type="button"
+          onClick={startTour}
+          className="cursor-pointer font-medium text-o-700 hover:underline"
+        >
+          <Trans>Ver el recorrido</Trans>
+        </button>
       </nav>
 
       <header>
@@ -104,7 +130,10 @@ export function RequisitionAuthorizationPage(): ReactNode {
       </header>
 
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-3">
-        <div className={cn('flex-col gap-4', rosterListClass(showDetailOnMobile, 'xl'))}>
+        <div
+          className={cn('flex-col gap-4', rosterListClass(showDetailOnMobile, 'xl'))}
+          data-tour="authz-queue"
+        >
           {queue.items.length > 0 && (
             <SearchField
               value={search}
@@ -138,7 +167,7 @@ export function RequisitionAuthorizationPage(): ReactNode {
             )}
           >
             <BackToListButton onClick={backToList} breakpoint="xl" />
-            <section className="rounded-lg border border-line bg-surface">
+            <section className="rounded-lg border border-line bg-surface" data-tour="authz-detail">
               <div className="flex flex-wrap items-start justify-between gap-3 p-6">
                 <div className="min-w-0">
                   <h2 className="text-2xl font-bold tracking-tight text-ink">{selected.number}</h2>
@@ -183,6 +212,18 @@ export function RequisitionAuthorizationPage(): ReactNode {
           </p>
         )}
       </div>
+
+      {/* Con la cola vacía no hay nada que señalar, y eso es lo normal cuando
+          el Manager está al día. */}
+      <GuidedTour
+        storageKey="requisition-authorization-tour"
+        steps={pasos}
+        character={personajeManager}
+        isReady={queue.items.length > 0}
+        onReady={(start) => {
+          setStartTour(() => start)
+        }}
+      />
     </div>
   )
 }
