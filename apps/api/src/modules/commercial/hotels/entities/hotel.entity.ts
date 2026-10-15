@@ -10,6 +10,9 @@ export interface HotelEntity {
   weekEndDay: number | null
   /// 1.0 = Regular (sin premio) o 1.5 = Tiempo y medio. `null` sin capturar.
   overtimePayMultiplier: number | null
+  /// `true`: el hotel paga el lonche, las horas quedan completas (Hugo,
+  /// 2026-10-14). `false` (default): se resta solo con turno de 6.5 h o más.
+  paysLunch: boolean
   address: string | null
   placeId: string | null
   /// URL de media compuesta al leer, no lo que se guarda. Null si el hotel no

@@ -593,6 +593,17 @@ const HOTEL: Permission[] = [
     label: 'Ver colaboradores asignados',
     roles: [SUPERVISOR, GA, GG, SYS],
   },
+  /* Contabilidad ve el Timesheet de todos los hoteles (`timesheet:read_all_hotels`)
+     y necesita este mismo alcance aquí: sin hotel propio, `staff:read` no le
+     sirve (exige `hotelId`, D-09). Mismo patrón que `timesheet:read_all_hotels` —
+     propio y no `read_all`, que ya significa algo distinto en otro lado
+     (Hugo, 2026-10-14: sin esto, quien no ponchó desaparecía para ella). */
+  {
+    module: 'staff',
+    action: 'read_all_hotels',
+    label: 'Ver colaboradores de todos los hoteles (solo lectura)',
+    roles: [ACCOUNTANT, ACCOUNTING_MANAGER],
+  },
   {
     module: 'staff',
     action: 'set_standby',
@@ -1199,6 +1210,15 @@ const ACCOUNTING: Permission[] = [
     action: 'manage_deductions',
     label: 'Aplicar y reembolsar deducciones',
     roles: [ACCOUNTANT, ACCOUNTING_MANAGER],
+  },
+  {
+    // Lo que se le cobra al hotel (y por tanto el margen de Oranje) solo lo
+    // ve el Manager — la Contadora opera la nómina sin ese dato (Hugo,
+    // 2026-10-15: "esto solo muéstraselo al jefe de Contabilidad").
+    module: 'payroll',
+    action: 'view_margin',
+    label: 'Ver lo que se le cobra al hotel (margen) en el Timesheet',
+    roles: [ACCOUNTING_MANAGER],
   },
 ]
 

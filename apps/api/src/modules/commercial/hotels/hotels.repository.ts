@@ -21,6 +21,7 @@ const SELECT = {
   weekStartDay: true,
   weekEndDay: true,
   overtimePayMultiplier: true,
+  paysLunch: true,
   activatedAt: true,
   punchMethod: true,
   punchQrVersion: true,
@@ -118,6 +119,29 @@ export class HotelsRepository {
        WHERE id = ${id}::uuid`
   }
 
+  /**
+   * Al mover "paga lonche", los días que TODAVÍA se pueden tocar se
+   * recalculan de una vez — misma fórmula que `recalcDay()` al ponchar
+   * (390 min = 6.5 h). Solo `OPEN`: una hoja enviada o aprobada no se
+   * toca, igual que una corrección manual (Hugo, 2026-10-15). Un día sin
+   * marcas (gross_minutes = 0) no cambia nada visible, pero igual entra —
+   * más simple que excluirlo y el resultado es el mismo.
+   */
+  async recalcLunchForOpenDays(hotelId: string, paysLunch: boolean): Promise<void> {
+    await this.prisma.$executeRaw`
+      UPDATE operations.timesheet_day d
+         SET lunch_deduction_minutes = CASE
+               WHEN ${paysLunch} THEN 0
+               WHEN d.gross_minutes >= 390 THEN 30
+               ELSE 0
+             END
+        FROM operations.timesheet t
+        JOIN demand.requisition r ON r.id = t.requisition_id
+       WHERE d.timesheet_id = t.id
+         AND r.hotel_id = ${hotelId}::uuid
+         AND t.status = 'OPEN'`
+  }
+
   async findByName(name: string, excludeId?: string): Promise<{ id: string } | null> {
     return this.prisma.hotel.findFirst({
       where: {
@@ -146,6 +170,7 @@ export class HotelsRepository {
         weekStartDay: data.weekStartDay,
         weekEndDay: data.weekEndDay,
         overtimePayMultiplier: data.overtimePayMultiplier,
+        ...(data.paysLunch !== undefined ? { paysLunch: data.paysLunch } : {}),
         createdBy: userId,
         updatedBy: userId,
       },
@@ -178,6 +203,7 @@ export class HotelsRepository {
         ...(data.overtimePayMultiplier !== undefined
           ? { overtimePayMultiplier: data.overtimePayMultiplier }
           : {}),
+        ...(data.paysLunch !== undefined ? { paysLunch: data.paysLunch } : {}),
         updatedBy: userId,
       },
       select: SELECT,

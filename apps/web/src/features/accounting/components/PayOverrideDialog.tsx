@@ -155,6 +155,15 @@ export function PayOverrideDialog({
             }}
             aria-label={t`Horas regulares`}
           />
+          {/* Mismo criterio que Motivo: si bloquea Guardar, se dice por qué
+              — ninguno de los tres campos lo decía (Hugo, 2026-10-15:
+              "revisa que esté controlado los mensajes que no dejen activar
+              el botón"). */}
+          {regularHours.trim().length > 0 && !(Number.isFinite(regular) && regular >= 0) && (
+            <p className="text-xs text-red">
+              <Trans>Un número válido, 0 o más.</Trans>
+            </p>
+          )}
         </label>
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-medium text-ink-3">
@@ -168,6 +177,11 @@ export function PayOverrideDialog({
             }}
             aria-label={t`Horas extra`}
           />
+          {overtimeHours.trim().length > 0 && !(Number.isFinite(overtime) && overtime >= 0) && (
+            <p className="text-xs text-red">
+              <Trans>Un número válido, 0 o más.</Trans>
+            </p>
+          )}
         </label>
       </div>
 
@@ -184,12 +198,18 @@ export function PayOverrideDialog({
           }}
           aria-label={t`Tarifa por hora`}
         />
+        {payRate.trim().length > 0 && !(Number.isFinite(rate) && rate > 0) && (
+          <p className="text-xs text-red">
+            <Trans>Un número mayor a 0.</Trans>
+          </p>
+        )}
       </label>
 
       <label className="flex flex-col gap-1.5">
         <span className="text-xs font-medium text-ink-3">
           <Trans>
-            Motivo <span className="font-normal text-ink-4">(obligatorio)</span>
+            Motivo{' '}
+            <span className="font-normal text-ink-4">(obligatorio, mínimo 4 caracteres)</span>
           </Trans>
         </span>
         <textarea
@@ -201,6 +221,15 @@ export function PayOverrideDialog({
           placeholder={t`Por qué se corrige — p. ej. «El contrato traía la tarifa vieja.»`}
           className="rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none"
         />
+        {/* Sin esto, "Guardar corrección" se quedaba apagado sin decir por
+            qué — se veía como que no dejaba corregir (Hugo, 2026-10-15: "no
+            deja corregir pago de Diego"); era el motivo demasiado corto
+            ("ok", 2 letras), nunca un error del formulario. */}
+        {reason.trim().length > 0 && reason.trim().length < 4 && (
+          <p className="text-xs text-red">
+            <Trans>Escribe al menos 4 caracteres para poder guardar.</Trans>
+          </p>
+        )}
       </label>
 
       {isSaveError && (

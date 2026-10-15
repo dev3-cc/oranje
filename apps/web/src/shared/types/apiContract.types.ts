@@ -516,9 +516,17 @@ export interface TimesheetApi {
     isInternalRate: boolean
     overtimeMultiplier: number | null
     subtotal: string | null
+    /** Descuentos de ajustes/gastos ya incluidos (Hugo, 2026-10-14). */
+    deductionAmount: string
+    /** `subtotal - deductionAmount`; `null` cuando `subtotal` también lo es. */
+    netAmount: string | null
     /** Si Contabilidad corrigió tarifa y/o reparto de horas (2026-10-08). */
     isOverridden: boolean
     overrideReason: string | null
+    /** Lo que el hotel paga a Oranje por esta hoja, siempre del contrato
+        (Hugo, 2026-10-14). `null` sin contrato ni tarifa para esa posición. */
+    billRate: string | null
+    billSubtotal: string | null
   }
 }
 

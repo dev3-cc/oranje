@@ -64,7 +64,7 @@ export class PaymentRunsService {
   ) {}
 
   async run(
-    params: { weekStart: string; slot: PaymentSlot; hotelId?: string | undefined },
+    params: { weekStart: string; slot: PaymentSlot; hotelId: string },
     user: AuthenticatedUser,
     now: Date = new Date(),
   ): Promise<PaymentRunResult> {

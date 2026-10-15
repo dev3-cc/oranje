@@ -22,6 +22,7 @@ import { FilterSelect } from '@/shared/components/FilterSelect'
 import { LoadError } from '@/shared/components/LoadError'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
+import { ReloadButton } from '@/shared/components/ReloadButton'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
@@ -64,7 +65,7 @@ export function InvoicesPage(): ReactNode {
   const [status, setStatus] = useState<string>(ANY)
   const { isIntroOpen, dismissIntro, reopenIntro } = useIntroSeen('facturas')
 
-  const { data, isLoading, isError, refetch } = useGetInvoicesQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useGetInvoicesQuery({
     ...(hotelId !== ANY ? { hotelId } : {}),
     ...(status !== ANY ? { status } : {}),
   })
@@ -86,13 +87,21 @@ export function InvoicesPage(): ReactNode {
             </Trans>
           </p>
         </div>
-        <button
-          type="button"
-          onClick={reopenIntro}
-          className="cursor-pointer rounded-md px-2 py-1 text-xs font-semibold whitespace-nowrap text-o-700 hover:bg-o-50"
-        >
-          <Trans>¿Cómo funciona?</Trans>
-        </button>
+        <div className="flex items-center gap-2">
+          <ReloadButton
+            onReload={() => {
+              void refetch()
+            }}
+            isReloading={isFetching}
+          />
+          <button
+            type="button"
+            onClick={reopenIntro}
+            className="cursor-pointer rounded-md px-2 py-1 text-xs font-semibold whitespace-nowrap text-o-700 hover:bg-o-50"
+          >
+            <Trans>¿Cómo funciona?</Trans>
+          </button>
+        </div>
       </header>
 
       <Modal

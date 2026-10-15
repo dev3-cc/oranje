@@ -74,7 +74,10 @@ async function bareWorker(etiqueta: string): Promise<string> {
   return worker.id
 }
 
-async function withActiveAssignment(etiqueta: string): Promise<string> {
+async function withActiveAssignment(
+  etiqueta: string,
+  requisitionState = 'APPLE_GREEN',
+): Promise<string> {
   const workerId = await bareWorker(etiqueta)
 
   const hotel = await db.hotel.create({
@@ -91,7 +94,7 @@ async function withActiveAssignment(etiqueta: string): Promise<string> {
   hotelIds.push(hotel.id)
 
   const reqState = await db.statusLightState.findFirstOrThrow({
-    where: { code: 'APPLE_GREEN', statusLightCode: 'REQUISITION' },
+    where: { code: requisitionState, statusLightCode: 'REQUISITION' },
     select: { id: true },
   })
   const department = await db.hotelDepartment.findFirstOrThrow({ select: { id: true } })
@@ -192,6 +195,28 @@ test('con una asignación ACTIVA, liberarla primero SÍ permite eliminar', async
   expect(row.deletedAt).not.toBeNull()
   const active = await db.assignment.count({ where: { workerId: id, status: 'ACTIVE' } })
   expect(active).toBe(0)
+})
+
+test('con la requisición ya cerrada, eliminar al colaborador igual lo saca (Hugo, 2026-10-08)', async () => {
+  const id = await withActiveAssignment(`Cerrada ${String(Date.now())}`, 'LIGHT_BLUE')
+
+  // La vía real es la del controlador: libera primero y elimina después.
+  await assignments.releaseAllOf(id, 'Colaborador eliminado del Pool', user)
+  await workers.delete(id, user)
+
+  const row = await db.worker.findUniqueOrThrow({ where: { id }, select: { deletedAt: true } })
+  expect(row.deletedAt).not.toBeNull()
+  expect(await db.assignment.count({ where: { workerId: id, status: 'ACTIVE' } })).toBe(0)
+})
+
+test('soltar a mano una asignación de requisición cerrada se sigue rechazando', async () => {
+  const id = await withActiveAssignment(`A mano ${String(Date.now())}`, 'LIGHT_BLUE')
+  const row = await db.assignment.findFirstOrThrow({
+    where: { workerId: id, status: 'ACTIVE' },
+    select: { id: true },
+  })
+
+  await expect(assignments.release(row.id, 'a mano', user)).rejects.toThrow(ConflictException)
 })
 
 test('la Reclutadora edita el expediente completo, incluida la fecha de nacimiento y el género (Hugo, 2026-09-22)', async () => {

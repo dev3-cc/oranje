@@ -21,6 +21,7 @@ function makeEntry(overrides: Partial<TimesheetEntry>): TimesheetEntry {
     date: '2026-06-01',
     status: 'PENDING',
     hours: null,
+    lunchDeductionMinutes: 0,
     startTime: null,
     endTime: null,
     requisitionNumber: 'REQ-0001',

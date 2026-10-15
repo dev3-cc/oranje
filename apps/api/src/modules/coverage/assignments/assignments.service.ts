@@ -9,7 +9,10 @@ import {
 
 import { SYSTEM_USER_EMAIL } from '../../../common/constants/system-actor.js'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
-import { assignmentStatusLabel } from '../../../common/utils/status-labels.js'
+import {
+  assignmentStatusLabel,
+  requisitionStateLabel,
+} from '../../../common/utils/status-labels.js'
 import { PermissionsService } from '../../identity/index.js'
 import { NotificationPublisherService } from '../../notifications/index.js'
 
@@ -230,10 +233,15 @@ export class AssignmentsService {
   // de una — RR-05 solo prohíbe horas que chocan) antes de eliminarlo, cada
   // una con el mismo `release()` de siempre, así que la cobertura del slot se
   // recalcula igual que si alguien la hubiera soltado a mano.
+  /**
+   * Eliminar a alguien del Pool libera TODAS sus asignaciones, incluso las de
+   * requisiciones ya cerradas: ahí no queda nadie a quien soltar a mano y, sin
+   * esto, un colaborador cuya requisición cerró no se podría eliminar nunca.
+   */
   async releaseAllOf(workerId: string, reason: string, user: AuthenticatedUser): Promise<void> {
     const ids = await this.repo.activeAssignmentIdsOf(workerId)
     for (const id of ids) {
-      await this.release(id, reason, user)
+      await this.release(id, reason, user, { onClosedRequisition: 'keep' })
     }
   }
 
@@ -331,7 +339,7 @@ export class AssignmentsService {
 
     for (const { id } of vencidas) {
       try {
-        await this.release(id, RAZÓN, user, 'CLOSED')
+        await this.release(id, RAZÓN, user, { status: 'CLOSED' })
         cerradas += 1
       } catch (error) {
         /*
@@ -368,9 +376,14 @@ export class AssignmentsService {
     id: string,
     reason: string,
     user: AuthenticatedUser,
-    /** `CLOSED` solo lo usa el cierre automático: se acabaron los días. */
-    status: 'CANCELLED' | 'CLOSED' = 'CANCELLED',
+    options: {
+      /** `keep` lo usa `releaseAllOf`: liberar sin reabrir una requisición cerrada. */
+      onClosedRequisition?: 'reject' | 'keep'
+      /** `CLOSED` solo lo usa el cierre automático: se acabaron los días. */
+      status?: 'CANCELLED' | 'CLOSED'
+    } = {},
   ): Promise<AssignmentEntity> {
+    const status = options.status ?? 'CANCELLED'
     const row = await this.repo.byId(id)
 
     if (!row) {
@@ -396,15 +409,25 @@ export class AssignmentsService {
       })
     }
 
-    if (CLOSED_STATES.includes(position.requisitionState)) {
+    const closed = CLOSED_STATES.includes(position.requisitionState)
+
+    if (closed && options.onClosedRequisition !== 'keep') {
       throw new ConflictException({
         code: 'REQUISITION_CLOSED',
-        message: `La requisición cerró en ${position.requisitionState} y no vuelve a abrirse`,
+        message: `La requisición cerró como ${requisitionStateLabel(position.requisitionState)} y no vuelve a abrirse`,
       })
     }
 
-    const coverage = await this.coverageAfter(position.requisitionId, row.slot.positionId, -1)
-    const coverageState = await this.stateOf(COVERAGE_LIGHT, coverage.positionCode)
+    // Una requisición cerrada no reabre su cobertura: la asignación termina y
+    // el semáforo se queda donde está.
+    const coverageStateId = closed
+      ? position.coverageStateId
+      : (
+          await this.stateOf(
+            COVERAGE_LIGHT,
+            (await this.coverageAfter(position.requisitionId, row.slot.positionId, -1)).positionCode,
+          )
+        ).id
 
     /* De Café de vuelta a donde estaba. La transición sembrada tiene destino
        NULO a propósito —«vuelve al estado previo»—, así que el destino lo dice
@@ -416,7 +439,7 @@ export class AssignmentsService {
       assignmentId: id,
       slotId: row.slot.id,
       positionId: row.slot.positionId,
-      coverageStateId: coverageState.id,
+      coverageStateId,
       reason,
       userId: user.id,
       roleCode: user.roleCode,

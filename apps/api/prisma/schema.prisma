@@ -441,6 +441,12 @@ model Hotel {
   /// 0 = no paga horas extra; 1.5 = tiempo y medio. Corregido el mismo día:
   /// "Regular" es que no se paga, no que se paga igual (ck_hotel_overtime_multiplier).
   overtimePayMultiplier Decimal? @map("overtime_pay_multiplier") @db.Decimal(4, 2)
+  /// `true`: el hotel paga el lonche, las horas quedan completas, nunca se
+  /// resta nada. `false` (default): se restan 30 min SOLO si el turno llega
+  /// a 6.5 h (390 min); menos que eso, nada que restar — el turno no alcanza
+  /// a necesitar un descanso (Hugo, 2026-10-14). Antes era fijo en 30 min
+  /// para todos, sin este piso.
+  paysLunch Boolean @default(false) @map("pays_lunch")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)

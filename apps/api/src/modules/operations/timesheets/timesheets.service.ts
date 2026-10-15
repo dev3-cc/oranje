@@ -64,6 +64,7 @@ export interface TimesheetEntity {
   weekEnd: string
   status: string
   approvedAt: string | null
+  approvedBy: { id: string; fullName: string } | null
   /**
    * La asignación que respalda estas horas. `ACTIVE` admite marcas; `CLOSED`
    * o `CANCELLED` son historia (se aprueban y pagan, pero ya no se captura);
@@ -72,18 +73,18 @@ export interface TimesheetEntity {
   assignment: { status: 'ACTIVE' | 'CLOSED' | 'CANCELLED'; endsOn: string | null } | null
   days?: DayEntity[]
   totals?: { grossMinutes: number; netMinutes: number; overtimeMinutes: number }
-}
-
-/** Una fila del listado de Timesheets: además, de qué hotel y qué requisición son. */
-export interface TimesheetListEntity extends TimesheetEntity {
-  hotel: { id: string; name: string }
-  requisitionFolio: string
   /**
    * Solo con `timesheet:read_all_hotels` (Contabilidad, el Observador): lo
    * que se le pagaría a esta hoja hoy. Quien solo ve su hotel no recibe esta
    * cifra — es dato de sueldo, no de operación del día a día.
    */
   payPreview?: TimesheetPayPreview | undefined
+}
+
+/** Una fila del listado de Timesheets: además, de qué hotel y qué requisición son. */
+export interface TimesheetListEntity extends TimesheetEntity {
+  hotel: { id: string; name: string }
+  requisitionFolio: string
 }
 
 /** Filtros del listado. Todos opcionales; el alcance lo pone el permiso. */
@@ -215,7 +216,17 @@ export class TimesheetsService {
       })
     }
 
-    const { dayId, status, ensure } = await this.openDay(assignment, dto.workDate, user.id)
+    // `dto.workDate` es una fecha-calendario pura ("qué día", elegido por
+    // quien captura la marca) que Zod ya coacciona a medianoche UTC — NO es
+    // un instante real como el `now()` del ponche normal. `openDay` convierte
+    // ese parámetro con `AT TIME ZONE` para decidir la semana del Schedule, y
+    // medianoche UTC de un lunes cae en domingo en cualquier hotel detrás de
+    // UTC: el Schedule (y el Timesheet que hereda su semana) se abría en la
+    // semana ANTERIOR a la marcada (Hugo, 2026-10-14, reproducido en vivo).
+    // Mediodía UTC es el mismo día-calendario para cualquier huso horario
+    // real (UTC-12 a UTC+14), así que la conversión ya no cruza de día.
+    const workDateAtNoon = new Date(`${dto.workDate.toISOString().slice(0, 10)}T12:00:00.000Z`)
+    const { dayId, status, ensure } = await this.openDay(assignment, workDateAtNoon, user.id)
 
     this.assertEditable(status, true)
 
@@ -454,7 +465,7 @@ export class TimesheetsService {
 
     this.assertInScope(sheet, user, allHotels)
 
-    return this.get(id)
+    return this.get(id, allHotels)
   }
 
   private assertInScope(
@@ -529,9 +540,15 @@ export class TimesheetsService {
     )
   }
 
-  async get(id: string): Promise<TimesheetEntity> {
+  // `allHotels` lo decide quien llama (`getScoped`), nunca se infiere aquí:
+  // es dato de sueldo, igual que en `list()` (Hugo, 2026-10-14: "¿estamos
+  // consumiendo los datos del contrato?" — se consumen, pero `get()` nunca
+  // los pedía; `GET /timesheets/:id` es justo lo que arma el detalle de
+  // cada fila en la pantalla).
+  async get(id: string, allHotels = false): Promise<TimesheetEntity> {
     const sheet = await this.timesheet(id)
     const days = await this.repo.days(id)
+    const preview = allHotels ? (await this.repo.payPreview([id]))[0] : undefined
 
     const detailed = await Promise.all(
       days.map(async (d) => toDay(d, await this.repo.punches(d.id))),
@@ -570,6 +587,7 @@ export class TimesheetsService {
         netMinutes: days.reduce((t, d) => t + d.netMinutes, 0),
         overtimeMinutes: days.reduce((t, d) => t + d.overtimeMinutes, 0),
       },
+      payPreview: preview,
     }
   }
 
@@ -1209,6 +1227,7 @@ function toTimesheet(row: TimesheetRow): TimesheetEntity {
     weekEnd: new Date(row.weekEnd).toISOString().slice(0, 10),
     status: row.status,
     approvedAt: row.approvedAt ? new Date(row.approvedAt).toISOString() : null,
+    approvedBy: row.approvedBy,
     assignment: row.assignment
       ? {
           status: row.assignment.status as 'ACTIVE' | 'CLOSED' | 'CANCELLED',

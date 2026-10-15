@@ -1,14 +1,18 @@
+import type { MessageDescriptor } from '@lingui/core'
+import { msg } from '@lingui/core/macro'
 import { Plural, Trans, useLingui } from '@lingui/react/macro'
-import { MaterialIcon, statusLight } from '@oranje/ui'
-import { useMemo, useState, type ReactNode } from 'react'
+import { MaterialIcon, statusLight, toast } from '@oranje/ui'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 
 import {
+  filterTimesheetRows,
   useGetTimesheetMonthQuery,
   useGetTimesheetTimelineQuery,
   useGetTimesheetWeekQuery,
 } from '../api/timesheetApi'
 import { AttendanceView } from '../components/AttendanceView'
 import { CorrectPunchDialog } from '../components/CorrectPunchDialog'
+import { HotelPaysLunchToggle } from '../components/HotelPaysLunchToggle'
 import { ManualPunchDialog } from '../components/ManualPunchDialog'
 import { ReviewDayDialog } from '../components/ReviewDayDialog'
 import { TimesheetGrid } from '../components/TimesheetGrid'
@@ -28,12 +32,32 @@ import {
   type TimesheetPunch,
 } from '../types/timesheet.types'
 
+import personajeContabilidad from '@/assets/ilustrations/personaje-contabilidad.svg'
 import personajeManager from '@/assets/ilustrations/personaje-manager.svg'
+import personajePagoProcesado from '@/assets/ilustrations/personaje-pago-procesado.svg'
 import fotoEquipo from '@/assets/ilustrations/timesheet-equipo.webp'
+import { PayOverrideDialog, type PayOverrideTarget } from '@/features/accounting'
+// Dato de nómina del hotel: lo lee y lo escribe Contabilidad desde aquí
+// mismo (Hugo, 2026-10-14), no desde el perfil del hotel (que no alcanza).
+// eslint-disable-next-line no-restricted-imports
+import {
+  useGetAccountingTimesheetsQuery,
+  useGetHotelPaysLunchQuery,
+  useSetHotelPaysLunchMutation,
+} from '@/features/accounting/api/settlementApi'
+// Contabilidad genera el Consolidado desde aquí mismo, junto al filtro de
+// Hotel — no es un botón de aprobación del hotel (Hugo, 2026-10-14).
+// eslint-disable-next-line no-restricted-imports
+import { GeneratePaymentRunButton } from '@/features/accounting/components/GeneratePaymentRunButton'
+import { useGetApprovedPendingInclusionQuery } from '@/features/recruitment'
 import { Button } from '@/shared/components/Button'
+import { FilterSelect } from '@/shared/components/FilterSelect'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
+import { Modal } from '@/shared/components/Modal'
 import { NoticeCard } from '@/shared/components/NoticeCard'
+import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
+import { ReloadButton } from '@/shared/components/ReloadButton'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import {
   DEFAULT_COLUMN_WIDTH,
@@ -42,7 +66,37 @@ import {
   TIMESHEET_STATUSES,
 } from '@/shared/constants/timesheetStatus'
 import { useCan } from '@/shared/hooks/useCan'
+import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
+import { apiErrorMessage } from '@/shared/lib/apiError'
 import { formatWeekRange } from '@/shared/lib/formatters'
+
+/**
+ * Solo para quien ve todos los hoteles (Contabilidad, el Observador): el
+ * Supervisor y los Managers ya conocen esta pantalla, así que no les toca
+ * (Hugo, 2026-10-14: "créale onboarding también a Contabilidad"). El texto
+ * se traduce al pintar con `i18n._()` (D-36), como el resto de los intros.
+ */
+const ACCOUNTING_INTRO_SLIDES: readonly {
+  image: string
+  title: MessageDescriptor
+  text: MessageDescriptor
+}[] = [
+  {
+    image: personajeContabilidad,
+    title: msg`El mismo Timesheet del hotel, de todos a la vez`,
+    text: msg`Solo lectura: las horas se capturan y revisan en cada hotel. Aquí ves el semáforo de la semana de todos — filtra por Hotel para quedarte en uno solo.`,
+  },
+  {
+    image: personajePagoProcesado,
+    title: msg`«Aprobada y enviada a Oranje» es del hotel, no tuya`,
+    text: msg`Te dice que esa semana ya está lista para el Consolidado — no es un botón, es el estado que dejó el Manager al aprobarla.`,
+  },
+  {
+    image: personajeContabilidad,
+    title: msg`Generar Consolidado es tu botón`,
+    text: msg`Corre el corte de todos los hoteles con horas aprobadas esa semana. Es idempotente: repetirlo no duplica nada de lo que ya quedó en un Consolidado.`,
+  },
+]
 
 /**
  * Timesheet semanal: qué marcó cada persona y en qué punto va su revisión.
@@ -52,7 +106,8 @@ import { formatWeekRange } from '@/shared/lib/formatters'
  * el chip «Pagar N» de cada renglón.
  */
 export function TimesheetPage(): ReactNode {
-  const { t } = useLingui()
+  const { t, i18n } = useLingui()
+  const { isIntroOpen, dismissIntro, reopenIntro } = useIntroSeen('timesheet-contabilidad-global')
   const [filters, setFilters] = useState<TimesheetFilters>(EMPTY_TIMESHEET_FILTERS)
   const [columnWidth, setColumnWidth] = useState<number>(DEFAULT_COLUMN_WIDTH)
   /** Densidad de la semana: la rejilla de chips o el lienzo de horas. Entra
@@ -72,6 +127,8 @@ export function TimesheetPage(): ReactNode {
   const [manualPunchRow, setManualPunchRow] = useState<ManualPunchTarget | null>(null)
   /** El día a precargar cuando Marca manual se abrió desde Revisión del día. */
   const [manualPunchInitialDate, setManualPunchInitialDate] = useState<string | null>(null)
+  /** La hoja con la corrección de pago abierta; `null` = cerrado. */
+  const [overrideTarget, setOverrideTarget] = useState<PayOverrideTarget | null>(null)
   /** La marca abierta en Corregir; `null` = cerrado. Distinto de Marca manual:
       esta edita una que YA existe (Hugo, 2026-10-10). */
   const [correctPunchTarget, setCorrectPunchTarget] = useState<{
@@ -90,8 +147,15 @@ export function TimesheetPage(): ReactNode {
       desde el 2026-09-29 y conectado hoy (Hugo, 2026-10-10). */
   const canCorrectPunch = can('timesheet:correct_punch')
   const seesAllHotels = can('timesheet:read_all_hotels')
+  /** Incluir un ajuste/gasto en la nómina es de Contabilidad, no de
+      `read_all_hotels` a secas: el Observador ve todos los hoteles pero no
+      puede incluir nada (Hugo, 2026-10-14). */
+  const canIncludeAdjustments = can('payroll:generate')
 
   const { data: week, isLoading, isFetching, isError, refetch } = useGetTimesheetWeekQuery(filters)
+  const { data: pendingAdjustments = [] } = useGetApprovedPendingInclusionQuery(undefined, {
+    skip: !canIncludeAdjustments,
+  })
   /**
    * La CINTA para la vista Días: todas las semanas de una vez. `weekStart` va
    * fijo en ALL para que navegar NO cambie la llave de caché — moverse de
@@ -104,6 +168,95 @@ export function TimesheetPage(): ReactNode {
   const availableWeeks = timeline?.availableWeeks ?? week?.availableWeeks ?? []
   /** La semana en la ventana: la pedida si existe; si no, la más reciente. */
   const selectedWeek = resolveWeek(availableWeeks, filters.weekStart)
+  /**
+   * `week.rows` ya NO viene filtrada por hotel/búsqueda/requisición (ver
+   * `getTimesheetWeek` en `timesheetApi.ts`): elegir un hotel dejó de
+   * disparar la red entera, así que ahora quien pinta filtra.
+   */
+  const visibleRows = useMemo(() => filterTimesheetRows(week?.rows ?? [], filters), [week, filters])
+  /** De cualquier fila de ESE hotel con timesheet real: basta con una para
+      saber el id (D-28). Ajena a la búsqueda/requisición a propósito — no
+      queremos perder la casilla de lonche solo porque además escribiste
+      algo en el buscador. */
+  const selectedHotelId =
+    filters.hotelName === ANY_VALUE
+      ? null
+      : ((week?.rows ?? []).find(
+          (row) => row.hotelName === filters.hotelName && row.hotelId !== null,
+        )?.hotelId ?? null)
+
+  /** Todas las hojas del hotel, SIN acotar a la semana en pantalla — de ahí
+      salen dos cosas que "Cerrar semana" necesita saber ANTES de abrirse,
+      no después (Hugo, 2026-10-15: "para qué abrir el modal si no se
+      puede"): quién de ESTA semana le falta aprobar, y qué semanas
+      ANTERIORES se quedaron atrás sin aprobar del todo. */
+  const { data: hotelTimesheets } = useGetAccountingTimesheetsQuery(
+    { hotelId: selectedHotelId ?? '' },
+    { skip: !selectedHotelId || !canIncludeAdjustments },
+  )
+  const blockedThisWeek = (hotelTimesheets ?? []).filter(
+    (sheet) => sheet.weekStart === selectedWeek && sheet.status !== 'APPROVED',
+  )
+  /** Una sola semana puede traer dos hojas sin aprobar del mismo colaborador
+      (dos requisiciones) — un nombre repetido confundiría más que ayudar.
+      El estado viaja con el nombre: "Cerrar semana" lo usa para decir POR
+      QUÉ está desactivado, no solo QUIÉN falta. */
+  const blocked = [
+    ...new Map(
+      blockedThisWeek.map((sheet) => [
+        sheet.worker.fullName,
+        { name: sheet.worker.fullName, status: sheet.status as 'OPEN' | 'PENDING_APPROVAL' },
+      ]),
+    ).values(),
+  ]
+  const overdueWeeks = useMemo(() => {
+    const byWeek = new Map<string, number>()
+    for (const sheet of hotelTimesheets ?? []) {
+      if (sheet.status === 'APPROVED' || sheet.weekStart === selectedWeek) continue
+      if (selectedWeek !== null && sheet.weekStart >= selectedWeek) continue
+      byWeek.set(sheet.weekStart, (byWeek.get(sheet.weekStart) ?? 0) + 1)
+    }
+    return [...byWeek.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([weekStart, count]) => ({ weekStart, count }))
+  }, [hotelTimesheets, selectedWeek])
+
+  /** El interruptor de lonche vive aquí, no dentro del componente — así
+      `isSavingLunch` se puede combinar con el `isFetching` del Timesheet
+      para avisarle a la tabla cuándo poner SU propio skeleton acotado, sin
+      repetir la consulta en dos componentes (Hugo, 2026-10-15: "no que se
+      ponga en toda la tabla el skeleton"). */
+  const { data: paysLunch, isFetching: isFetchingPaysLunch } = useGetHotelPaysLunchQuery(
+    selectedHotelId ?? '',
+    { skip: !selectedHotelId || !canIncludeAdjustments },
+  )
+  const [setPaysLunch, { isLoading: isSavingLunch }] = useSetHotelPaysLunchMutation()
+  /* `isFetching` de /timesheets sube por CUALQUIER refetch (cambiar de
+     semana, de estado…), no solo por el lonche — esta bandera acota el
+     "se está recalculando" a la ventana real: desde que se toca el
+     interruptor hasta que ese mismo refetch termina, ni un segundo más ni
+     uno de más por otra razón. */
+  const [lunchJustToggled, setLunchJustToggled] = useState(false)
+  useEffect(() => {
+    if (lunchJustToggled && !isSavingLunch && !isFetching) setLunchJustToggled(false)
+  }, [lunchJustToggled, isSavingLunch, isFetching])
+  const isRecalculatingLunch = isSavingLunch || (lunchJustToggled && isFetching)
+
+  async function toggleLunch(next: boolean): Promise<void> {
+    if (!selectedHotelId) return
+    setLunchJustToggled(true)
+    try {
+      await setPaysLunch({ hotelId: selectedHotelId, paysLunch: next }).unwrap()
+      toast.success(
+        next
+          ? t`El hotel paga el lonche: las horas quedan completas.`
+          : t`El hotel no paga el lonche: se resta media hora con 6.5 h o más.`,
+      )
+    } catch (error) {
+      setLunchJustToggled(false)
+      toast.error(apiErrorMessage(error, { fallback: t`No se pudo guardar. Inténtalo de nuevo.` }))
+    }
+  }
 
   function toggle(entryId: string): void {
     setSelectedIds((previous) => {
@@ -117,7 +270,7 @@ export function TimesheetPage(): ReactNode {
   /** De qué requisiciones son los días elegidos. Es lo que resume la selección.
       Se busca en la CINTA: un día elegido puede ser de una semana vecina. */
   const selection = useMemo(() => {
-    const entries = (timeline?.rows ?? week?.rows ?? []).flatMap((row) =>
+    const entries = (timeline?.rows ?? visibleRows).flatMap((row) =>
       row.entries.filter((entry) => selectedIds.has(entry.id)),
     )
 
@@ -129,7 +282,7 @@ export function TimesheetPage(): ReactNode {
       withoutRequisition: entries.length - withRequisition.length,
       numbers,
     }
-  }, [timeline, week, selectedIds])
+  }, [timeline, visibleRows, selectedIds])
 
   /** El rango sale de la semana en la ventana: navega al instante con la cinta. */
   const rangeLabel =
@@ -168,12 +321,76 @@ export function TimesheetPage(): ReactNode {
                 <Trans>Semana {rangeLabel}</Trans>
               </p>
             )}
+            <ReloadButton
+              onReload={() => {
+                void refetch()
+              }}
+              isReloading={isFetching}
+            />
           </div>
           {seesAllHotels && (
-            <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm text-ink-3">
-              <MaterialIcon name="visibility" className="text-base" aria-hidden />
-              <Trans>Todos los hoteles · solo lectura</Trans>
+            <p className="mt-1.5 flex flex-wrap items-center gap-3 text-sm text-ink-3">
+              <span className="inline-flex items-center gap-1.5">
+                <MaterialIcon name="visibility" className="text-base" aria-hidden />
+                {/* Dice lo que de verdad se está viendo — antes decía
+                    "Todos los hoteles" sin importar el filtro de abajo, y
+                    con un hotel elegido parecía contradecirlo (Hugo,
+                    2026-10-14: "¿ya estoy visualizando uno, o son todos?"). */}
+                {filters.hotelName !== ANY_VALUE ? (
+                  <Trans>Viendo {filters.hotelName} · solo lectura</Trans>
+                ) : (
+                  <Trans>Viendo todos los hoteles · solo lectura</Trans>
+                )}
+              </span>
+              <button
+                type="button"
+                onClick={reopenIntro}
+                className="cursor-pointer rounded-md px-2 py-0.5 text-xs font-semibold whitespace-nowrap text-o-700 hover:bg-o-50"
+              >
+                <Trans>¿Cómo funciona?</Trans>
+              </button>
             </p>
+          )}
+
+          {/* Para Contabilidad el hotel manda, la semana es dentro de él —
+              se mueven por hotel y por sus semanas, no al revés (Hugo,
+              2026-10-14). Va primero y más grande; el resto cuelga de ahí. */}
+          {seesAllHotels && (
+            <div className="mt-4 flex flex-wrap items-center gap-4">
+              <FilterSelect
+                label={t`Hotel`}
+                anyLabel={t`Todos los hoteles`}
+                value={filters.hotelName}
+                anyValue={ANY_VALUE}
+                options={(week?.hotelNames ?? []).map((hotel) => ({
+                  value: hotel,
+                  label: hotel,
+                }))}
+                onChange={(value) => {
+                  setFilters((previous) => ({ ...previous, hotelName: value }))
+                }}
+                icon="apartment"
+                className="py-3 pr-4 text-base font-semibold"
+              />
+              {/* Es un dato de UN hotel, no un filtro — con "Todos" no hay
+                  uno solo que marcar (Hugo, 2026-10-14). Con un hotel
+                  elegido, el interruptor real; si no, la pista de por qué
+                  no está — para que no parezca que no pasó nada. */}
+              {canIncludeAdjustments &&
+                (filters.hotelName !== ANY_VALUE && selectedHotelId ? (
+                  <HotelPaysLunchToggle
+                    checked={paysLunch ?? false}
+                    isSaving={isSavingLunch || isFetchingPaysLunch}
+                    onToggle={(next) => {
+                      void toggleLunch(next)
+                    }}
+                  />
+                ) : (
+                  <span className="text-xs text-ink-4">
+                    <Trans>Elige un hotel para ajustar si paga el lonche</Trans>
+                  </span>
+                ))}
+            </div>
           )}
 
           {selectedWeek !== null && (
@@ -183,11 +400,62 @@ export function TimesheetPage(): ReactNode {
                 availableWeeks={availableWeeks}
                 onSelect={selectWeek}
               />
+              {/* A simple vista, sin entrar a cada persona — si TODAS las
+                  hojas de este hotel esta semana ya están aprobadas (Hugo,
+                  2026-10-15: "con una palomita si la semana que estamos
+                  viendo ya se aprobó"). Mismos datos que ya usa "Cerrar
+                  semana" y el aviso de atrasadas — nada nuevo que pedir. */}
+              {selectedHotelId !== null &&
+                blocked.length === 0 &&
+                (hotelTimesheets ?? []).some((sheet) => sheet.weekStart === selectedWeek) && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-green/10 px-3 py-1 text-xs font-semibold text-green">
+                    <MaterialIcon name="check_circle" className="text-sm" aria-hidden />
+                    <Trans>Semana aprobada</Trans>
+                  </span>
+                )}
               {/* Horas/Días/Mes se ocultan por ahora (Hugo, 2026-10-10):
                   "vamos a ir mejorándolo" — la pantalla se queda solo en
                   Asistencia mientras se trabaja esa densidad. `view` ya
                   nace en 'ATTENDANCE' y nada más la cambia, así que basta
                   con no dibujar el selector — no se borró nada. */}
+              {/* El botón de Contabilidad, no del hotel: aquí no hay nada
+                  que aprobar, hay una semana que cerrar — de ESTE hotel, el
+                  mismo que elegiste arriba (Hugo, 2026-10-14: "la imagen
+                  del hotel a un lado" — solo hay una foto que mostrar si es
+                  un hotel a la vez). */}
+              {seesAllHotels && selectedWeek !== null && (
+                <GeneratePaymentRunButton
+                  weekStart={selectedWeek}
+                  hotelId={selectedHotelId}
+                  hotelName={filters.hotelName !== ANY_VALUE ? filters.hotelName : null}
+                  blocked={blocked}
+                />
+              )}
+            </div>
+          )}
+
+          {/* Semanas atrasadas de ESTE hotel: sin esto, no había forma de
+              saber que una semana vieja se quedó sin cerrar salvo
+              navegándolas una por una (Hugo, 2026-10-15: "cómo se muestra
+              las semanas atrasadas"). Clic lleva directo a esa semana. */}
+          {selectedHotelId !== null && overdueWeeks.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg bg-yellow/15 px-3 py-2 text-xs text-ink-2">
+              <MaterialIcon name="history_toggle_off" className="text-sm text-yellow" aria-hidden />
+              <span>
+                <Trans>{filters.hotelName} tiene semanas atrasadas sin aprobar:</Trans>
+              </span>
+              {overdueWeeks.map(({ weekStart, count }) => (
+                <button
+                  key={weekStart}
+                  type="button"
+                  onClick={() => {
+                    selectWeek(weekStart)
+                  }}
+                  className="cursor-pointer rounded-full border border-yellow/40 bg-surface px-2 py-0.5 font-semibold text-ink underline-offset-2 hover:underline"
+                >
+                  {formatWeekRange(weekStart, addDaysIso(weekStart, 6))} · {count}
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -199,12 +467,32 @@ export function TimesheetPage(): ReactNode {
         />
       </header>
 
+      {seesAllHotels && (
+        <Modal
+          isOpen={isIntroOpen}
+          onClose={dismissIntro}
+          title={t`Cómo funciona este Timesheet para Contabilidad`}
+          chromeless
+        >
+          <OnboardingIntro
+            slides={ACCOUNTING_INTRO_SLIDES.map((slide) => ({
+              image: slide.image,
+              title: i18n._(slide.title),
+              text: i18n._(slide.text),
+            }))}
+            startLabel={t`Entendido`}
+            onDone={dismissIntro}
+          />
+        </Modal>
+      )}
+
       <TimesheetToolbar
         filters={filters}
         requisitionNumbers={week?.requisitionNumbers ?? []}
         hotelNames={week?.hotelNames ?? []}
         columnWidth={columnWidth}
         showZoom={view === 'DAYS'}
+        hideHotelFilter
         onChange={setFilters}
         onColumnWidthChange={setColumnWidth}
       />
@@ -212,7 +500,7 @@ export function TimesheetPage(): ReactNode {
       {/* Quién sigue: el Supervisor envía, el Manager aprueba (D-09). */}
       {week &&
         !can('timesheet:approve_hours') &&
-        week.rows.some((row) => row.weekStatus === 'PENDING_APPROVAL') && (
+        visibleRows.some((row) => row.weekStatus === 'PENDING_APPROVAL') && (
           <NoticeCard
             image={personajeManager}
             title={t`La aprobación es del Manager`}
@@ -231,7 +519,7 @@ export function TimesheetPage(): ReactNode {
           necesita?" — correcto, quedó huérfana al quitar la columna
           Estado). Se deja condicionada, no se borra, para cuando esas
           vistas vuelvan. */}
-      {week && week.rows.length > 0 && (view === 'DAYS' || view === 'HOURS') && (
+      {week && visibleRows.length > 0 && (view === 'DAYS' || view === 'HOURS') && (
         <div className="-mt-2 flex flex-wrap items-center justify-end gap-x-4 gap-y-1">
           {TIMESHEET_STATUSES.map((status) => (
             <span key={status} className="inline-flex items-center gap-1.5 text-xs text-ink-3">
@@ -303,11 +591,14 @@ export function TimesheetPage(): ReactNode {
         />
       )}
 
-      {isLoading || isFetching ? (
+      {isLoading || (isFetching && !isRecalculatingLunch) ? (
         /* Antes solo se veía la primera vez (`isLoading && !week`): cambiar
            el filtro "Estado" (el único que va al servidor) dejaba la tabla
            vieja quieta mientras llegaba la nueva, sin ningún aviso (Hugo,
-           2026-10-12). */
+           2026-10-12). `!isRecalculatingLunch`: ESE refetch ya tiene su
+           propio skeleton acotado adentro de Asistencia — mostrar además
+           este de página completa sería tapar justo lo que se quería ver
+           cambiar (Hugo, 2026-10-15). */
         <TableSkeleton rows={7} columns={8} />
       ) : (
         selectedWeek !== null &&
@@ -370,8 +661,11 @@ export function TimesheetPage(): ReactNode {
               ))}
             {view === 'ATTENDANCE' && selectedWeek !== null && (
               <AttendanceView
-                rows={week.rows}
+                rows={visibleRows}
                 selectedWeek={selectedWeek}
+                pendingAdjustments={pendingAdjustments}
+                isRecalculatingLunch={isRecalculatingLunch}
+                onCorrectOvertime={canIncludeAdjustments ? setOverrideTarget : undefined}
                 onReview={(entry, workerName, context, manualPunchTarget) => {
                   setReview({ entry, workerName, context: context ?? null, manualPunchTarget })
                 }}
@@ -396,6 +690,13 @@ export function TimesheetPage(): ReactNode {
         onClose={() => {
           setManualPunchRow(null)
           setManualPunchInitialDate(null)
+        }}
+      />
+
+      <PayOverrideDialog
+        target={overrideTarget}
+        onClose={() => {
+          setOverrideTarget(null)
         }}
       />
 

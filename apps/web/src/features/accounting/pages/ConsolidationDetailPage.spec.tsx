@@ -80,13 +80,37 @@ describe('ConsolidationDetailPage', () => {
     expect(screen.queryByRole('button', { name: 'Registrar pago' })).not.toBeInTheDocument()
   })
 
-  it('el Manager registra el pago de un autorizado y la acción desaparece', async () => {
+  // Orden a propósito: el fixture AUTHORIZED es único y compartido — cancelar
+  // (no muta) corre antes que confirmar (terminal, lo deja en PAID).
+  it('registrar pago se puede cancelar sin disparar el pago', async () => {
     const user = userEvent.setup()
     session.permissions = ['payroll.read', 'payroll.mark_paid']
     renderDetail(AUTHORIZED)
 
     await user.click(await screen.findByRole('button', { name: 'Registrar pago' }))
+    const dialog = await screen.findByRole('dialog')
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }))
 
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    // Sigue ahí: cancelar no registró nada.
+    expect(screen.getByRole('button', { name: 'Registrar pago' })).toBeInTheDocument()
+  })
+
+  it('registrar pago exige confirmar en el modal antes de disparar la mutación', async () => {
+    const user = userEvent.setup()
+    session.permissions = ['payroll.read', 'payroll.mark_paid']
+    renderDetail(AUTHORIZED)
+
+    // El clic abre el modal; es terminal y no se dispara solo (Hugo, 2026-10-13).
+    await user.click(await screen.findByRole('button', { name: 'Registrar pago' }))
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByText(/No se puede deshacer/)).toBeInTheDocument()
+
+    await user.click(within(dialog).getByRole('button', { name: 'Sí, registrar pago' }))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
     await waitFor(() =>
       expect(screen.queryByRole('button', { name: 'Registrar pago' })).not.toBeInTheDocument(),
     )
