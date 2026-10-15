@@ -275,6 +275,9 @@ const TIMELINESS: ApprovalTimeliness = {
   ],
 }
 
+/** Mock en memoria, por id de hotel: parte en `false` como la base real. */
+const PAYS_LUNCH = new Map<string, boolean>()
+
 export function registerSettlementMocks(): void {
   registerMockRoutes([
     {
@@ -330,6 +333,49 @@ export function registerSettlementMocks(): void {
       method: 'POST',
       path: '/consolidations/:id/pay',
       resolve: (request) => moveConsolidation(request, 'AUTHORIZED', 'PAID', 'paidAt'),
+    },
+    {
+      method: 'POST',
+      path: '/payment-runs',
+      /* El mock no sintetiza Consolidados nuevos a partir de horas
+         aprobadas (eso es del API real): solo deja probar que el botón
+         llama y el modal se cierra (Hugo, 2026-10-14). */
+      resolve: ({ body }) => {
+        const { weekStart, slot } = body as { weekStart: string; slot: string }
+        return {
+          data: {
+            weekStart,
+            slot,
+            hotels: [] as Array<{
+              hotelId: string
+              hotelName: string
+              status: string
+              created: number
+              topped: number
+              blocked: number
+            }>,
+          },
+        }
+      },
+    },
+    {
+      method: 'GET',
+      path: '/hotels/:id/pays-lunch',
+      resolve: ({ params }) => ({ data: { paysLunch: PAYS_LUNCH.get(params.id ?? '') ?? false } }),
+    },
+    {
+      method: 'PATCH',
+      path: '/hotels/:id/pays-lunch',
+      resolve: ({ params, body }) => {
+        const { paysLunch } = body as { paysLunch: boolean }
+        PAYS_LUNCH.set(params.id ?? '', paysLunch)
+        return { data: { paysLunch } }
+      },
+    },
+    {
+      method: 'GET',
+      path: '/hotels/:id/card',
+      resolve: () => ({ data: { name: 'Fairfield by Marriott Inn & Suites', photoUrl: null } }),
     },
     {
       method: 'GET',

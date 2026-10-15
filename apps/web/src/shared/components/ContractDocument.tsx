@@ -20,17 +20,18 @@ export interface DocumentTerms {
 
 /**
  * El prestador del servicio en todos los acuerdos: la entidad legal que
- * factura y emplea, no la marca (Hugo, 2026-09-22, trajo el machote real de
- * Strategic Deployment, LLC — reemplaza el nombre y la dirección anteriores).
+ * factura y emplea, no la marca (Hugo, 2026-10-14, trajo el machote real de
+ * ORANGE SOLUTIONS & OPERATIONS, LLC — reemplaza a Strategic Deployment, LLC
+ * del 2026-09-22; la dirección no cambió).
  */
-const PROVIDER = 'Strategic Deployment, LLC'
-const PROVIDER_ADDRESS = '730 Peachtree St NE, Suite 570, Atlanta, GA 30308'
+export const PROVIDER = 'ORANGE SOLUTIONS & OPERATIONS, LLC'
+export const PROVIDER_ADDRESS = '730 Peachtree St NE, Suite 570, Atlanta, GA 30308'
 
 /**
  * El encabezado del Exhibit «A»: el MISMO texto para todos los hoteles (lo
  * confirmó Hugo), así que vive en la plantilla y no como dato por propuesta.
- * Transcrito del machote real (Strategic Deployment, LLC), en inglés como el
- * resto del documento.
+ * Transcrito del machote real (ORANGE SOLUTIONS & OPERATIONS, LLC), en inglés
+ * como el resto del documento.
  */
 const EXHIBIT_HEADER =
   `All personnel furnished under the Agreement are employees of ${PROVIDER}. Service Provider ` +

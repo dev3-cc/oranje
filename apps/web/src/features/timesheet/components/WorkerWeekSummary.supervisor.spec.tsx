@@ -41,6 +41,7 @@ function row(overrides: Partial<TimesheetRow> = {}): TimesheetRow {
     date: '2026-08-31',
     status: 'PENDING',
     hours: 8.5,
+    lunchDeductionMinutes: 0,
     startTime: '07:00',
     endTime: '16:00',
     requisitionNumber: '202608181919BZ',

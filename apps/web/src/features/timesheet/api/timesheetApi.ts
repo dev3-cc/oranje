@@ -47,6 +47,33 @@ type FetchWithBQ = (
 
 const MS_PER_DAY = 86_400_000
 
+/**
+ * `/workers`, `/requisitions` y `/me` no cambian por mover una casilla — pero
+ * `fetchWeek`/`fetchTimeline` los piden de cero en CADA refetch (incluido el
+ * que dispara "paga lonche" al invalidar todo el Timesheet), y `/workers`
+ * pagina cientos de filas: ahí vivía la tardanza que Hugo reportó (2026-10-15,
+ * "por qué tarda en recalcular"), no en el PATCH del hotel, que responde en
+ * ~2s. Memoria de módulo con una ventana corta — se pierde sola al recargar
+ * la pestaña — para que un recálculo por lonche reuse lo que acaba de pedir
+ * el mismo Timesheet, sin inventar una capa de caché nueva para todo el app.
+ */
+const SHARED_FETCH_TTL_MS = 20_000
+const sharedFetchCache = new Map<string, { expiresAt: number; promise: Promise<unknown> }>()
+
+async function withSharedFetchCache<T>(key: string, load: () => Promise<T>): Promise<T> {
+  const cached = sharedFetchCache.get(key)
+  if (cached && cached.expiresAt > Date.now()) return cached.promise as Promise<T>
+
+  const promise = load()
+  sharedFetchCache.set(key, { expiresAt: Date.now() + SHARED_FETCH_TTL_MS, promise })
+  // Una carga que falla no debe quedar "cacheada" bloqueando los próximos
+  // 20s — el siguiente intento vuelve a pedir de verdad.
+  promise.catch(() => {
+    sharedFetchCache.delete(key)
+  })
+  return promise
+}
+
 /** El lunes de la semana que contiene a hoy — para que siempre haya una
     semana navegable aunque nadie haya ponchado nunca (Hugo, 2026-10-13). */
 function currentWeekMonday(): string {
@@ -147,6 +174,7 @@ function emptyEntry(date: string, requisitionRef: string): TimesheetEntry {
     date,
     status: 'PENDING',
     hours: null,
+    lunchDeductionMinutes: 0,
     startTime: null,
     endTime: null,
     requisitionNumber: requisitionRef,
@@ -179,6 +207,7 @@ export function toEntry(
     date: day.workDate,
     status: dayStatus(day),
     hours: day.isAbsence ? null : Math.round((day.netMinutes / 60) * 100) / 100,
+    lunchDeductionMinutes: day.lunchDeductionMinutes,
     startTime: clockIn?.serverTime ?? null,
     endTime: clockOut?.serverTime ?? null,
     requisitionNumber: requisitionRef,
@@ -209,12 +238,17 @@ async function fetchWeek(
       url: '/timesheets',
       params: { ...(filters.status !== ANY_VALUE ? { status: filters.status } : {}) },
     }),
-    fetchWithBQ('/me'),
+    withSharedFetchCache('timesheet:me', () => fetchWithBQ('/me')),
     /* `GET /timesheets/:id` no trae foto ni puesto del colaborador (D-28):
        se compone con `/workers`, igual que ya hace la cinta continua
-       (`fetchTimeline`) — si falla, la fila degrada con fallbacks (D-30). */
-    fetchAllPages<WorkerApi>(fetchWithBQ, '/workers'),
-    fetchRequisitionIndex(fetchWithBQ),
+       (`fetchTimeline`) — si falla, la fila degrada con fallbacks (D-30).
+       Ninguno de los tres cambia porque un hotel prenda/apague el lonche —
+       con caché compartida de 20s, ese recálculo no vuelve a paginar a
+       todo el personal (Hugo, 2026-10-15). */
+    withSharedFetchCache('timesheet:workers', () =>
+      fetchAllPages<WorkerApi>(fetchWithBQ, '/workers'),
+    ),
+    withSharedFetchCache('timesheet:requisitions', () => fetchRequisitionIndex(fetchWithBQ)),
   ])
   if (listRes.error) return { error: listRes.error }
   if (meRes.error) return { error: meRes.error }
@@ -270,7 +304,16 @@ async function fetchWeek(
       workerName: detail.worker.fullName,
       jobTitle: workerInfo.get(detail.worker.id)?.jobTitle ?? '—',
       photoUrl: workerInfo.get(detail.worker.id)?.photoUrl ?? null,
-      hotelName: requisitionIndex.get(detail.requisitionId)?.hotelName ?? fallbackHotel,
+      /* `sheet.hotel` ya viene en el LISTADO (`GET /timesheets`), sin pasar
+         por `/requisitions` — que Contabilidad y el Observador no pueden
+         leer (403: sus permisos son `read_own`/`read_all` de Hotel y
+         Reclutamiento, ninguno el suyo). Antes esta fila caía siempre al
+         fallback para esos dos roles, y con un hotel elegido en el filtro
+         desaparecía del todo: no tenía con qué calzar (Hugo, 2026-10-14,
+         "ya lo elegí y no sale"). */
+      hotelName:
+        sheet.hotel?.name ?? requisitionIndex.get(detail.requisitionId)?.hotelName ?? fallbackHotel,
+      hotelId: sheet.hotel?.id ?? null,
       weekStatus: detail.status,
       totalHours: Math.round(((detail.totals?.netMinutes ?? 0) / 60) * 100) / 100,
       targetHours: null,
@@ -283,6 +326,7 @@ async function fetchWeek(
         return Number.isFinite(minutes) ? Math.round((minutes / 60) * 100) / 100 : null
       })(),
       entries: (detail.days ?? []).map((day) => toEntry(day, requisitionRef, hotelTimeZone)),
+      payPreview: detail.payPreview,
     })
   }
 
@@ -303,6 +347,9 @@ async function fetchWeek(
       jobTitle: worker.position?.name ?? '—',
       photoUrl: worker.photoUrl,
       hotelName: requisitionIndex.get(requisitionId)?.hotelName ?? hotelName,
+      /* Sin timesheet real no llega por `/timesheets`: sin id de hotel por
+         aquí. Cualquier otra fila del mismo hotel ya lo trae. */
+      hotelId: null,
       /* No hay timesheet real: nada que enviar ni aprobar todavía. */
       weekStatus: NO_TIMESHEET_STATUS,
       totalHours: 0,
@@ -316,7 +363,34 @@ async function fetchWeek(
     ...new Set(rows.flatMap((row) => row.entries.map((entry) => entry.requisitionNumber ?? ''))),
   ].filter(Boolean)
 
-  const visible = rows.filter((row) => {
+  /* Búsqueda, requisición y hotel NUNCA viajan al servidor (solo `status`
+     lo hace, arriba) — filtrar aquí adentro los dejaba atados a la LLAVE de
+     caché de la consulta (ver `serializeQueryArgs`), así que elegir un hotel
+     repetía TODO el trabajo de arriba (/timesheets, /me, las páginas de
+     /workers) para, al final, aplicar un filtro que no necesitaba ni un solo
+     byte nuevo del servidor (Hugo, 2026-10-14, "por qué tarda en cargar").
+     Ahora se devuelven TODAS las filas sin filtrar; filtrarlas es trabajo
+     de quien las pinta (`TimesheetPage`/`TimesheetGlobalPage`). */
+  return {
+    data: {
+      days,
+      rows,
+      requisitionNumbers,
+      hotelNames: [...new Set(rows.map((row) => row.hotelName))].filter((name) => name !== '—'),
+      weekStart,
+      availableWeeks,
+    },
+  }
+}
+
+/** Misma búsqueda/requisición/hotel que antes vivía dentro de `fetchWeek`,
+    ahora aplicada por quien consume `TimesheetWeek.rows` — así cambiar un
+    filtro cliente no dispara una red nueva (ver el comentario de arriba). */
+export function filterTimesheetRows(
+  rows: TimesheetRow[],
+  filters: Pick<TimesheetFilters, 'search' | 'requisitionNumber' | 'hotelName'>,
+): TimesheetRow[] {
+  return rows.filter((row) => {
     if (filters.search && !row.workerName.toLowerCase().includes(filters.search.toLowerCase())) {
       return false
     }
@@ -329,17 +403,6 @@ async function fetchWeek(
     if (filters.hotelName !== ANY_VALUE && row.hotelName !== filters.hotelName) return false
     return true
   })
-
-  return {
-    data: {
-      days,
-      rows: visible,
-      requisitionNumbers,
-      hotelNames: [...new Set(rows.map((row) => row.hotelName))].filter((name) => name !== '—'),
-      weekStart,
-      availableWeeks,
-    },
-  }
 }
 
 /**
@@ -359,12 +422,16 @@ async function fetchTimeline(
       url: '/timesheets',
       params: { ...(filters.status !== ANY_VALUE ? { status: filters.status } : {}) },
     }),
-    fetchWithBQ('/me'),
+    withSharedFetchCache('timesheet:me', () => fetchWithBQ('/me')),
     /* Composición D-28: `/workers` trae la foto Y el puesto de la persona; el
        índice de requisiciones trae folio real y hotel (nombre + foto, D-34).
-       Si algo de esto falla, la fila degrada con fallbacks (criterio D-30). */
-    fetchAllPages<WorkerApi>(fetchWithBQ, '/workers'),
-    fetchRequisitionIndex(fetchWithBQ),
+       Si algo de esto falla, la fila degrada con fallbacks (criterio D-30).
+       Misma caché compartida que `fetchWeek` — mismos tres recursos, mismo
+       motivo para no repetirlos. */
+    withSharedFetchCache('timesheet:workers', () =>
+      fetchAllPages<WorkerApi>(fetchWithBQ, '/workers'),
+    ),
+    withSharedFetchCache('timesheet:requisitions', () => fetchRequisitionIndex(fetchWithBQ)),
   ])
   if (listRes.error) return { error: listRes.error }
   if (meRes.error) return { error: meRes.error }
@@ -484,7 +551,7 @@ async function fetchMonth(
       url: '/timesheets',
       params: { ...(filters.status !== ANY_VALUE ? { status: filters.status } : {}) },
     }),
-    fetchRequisitionIndex(fetchWithBQ),
+    withSharedFetchCache('timesheet:requisitions', () => fetchRequisitionIndex(fetchWithBQ)),
   ])
   if (listRes.error) return { error: listRes.error }
 
@@ -552,6 +619,12 @@ export const timesheetApi = baseApi.injectEndpoints({
         const result = await fetchWeek(fetchWithBQ as FetchWithBQ, filters)
         return 'error' in result ? { error: result.error as never } : { data: result.data }
       },
+      /* `search`/`requisitionNumber`/`hotelName` no afectan lo que se pide
+         (solo `status` sí, dentro de `fetchWeek`): que formaran parte de la
+         llave de caché hacía que elegir un hotel disparara la MISMA red
+         pesada de cero (Hugo, 2026-10-14). Misma semana y mismo estado =
+         mismos datos; filtrarlos es cosa de quien los pinta. */
+      serializeQueryArgs: ({ queryArgs }) => `${queryArgs.weekStart}|${queryArgs.status}`,
       providesTags: [{ type: 'Timesheet' as const, id: 'LIST' }],
     }),
 

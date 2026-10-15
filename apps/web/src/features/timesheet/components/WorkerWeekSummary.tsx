@@ -112,7 +112,12 @@ export function WorkerWeekSummary({
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-bold text-ink">{row.workerName}</p>
             <p className="truncate text-xs text-ink-3">
-              {row.jobTitle} · {row.hotelName}
+              {/* "— · Fairfield..." se leía roto cuando el puesto no está en
+                  el catálogo (Hugo, 2026-10-15: "no se ven bien en
+                  detalles") — el guion de "sin dato" no pinta bien como
+                  prefijo de otra cosa. Sin puesto, solo el hotel. */}
+              {row.jobTitle !== '—' ? `${row.jobTitle} · ` : ''}
+              {row.hotelName}
             </p>
           </div>
         </div>

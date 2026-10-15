@@ -73,6 +73,29 @@ export interface ClientHotelOption {
   name: string
 }
 
+export interface GeneratePaymentRunRequest {
+  /** Lunes de la semana cerrada, `AAAA-MM-DD`. */
+  weekStart: string
+  slot: 'WEDNESDAY_CUT' | 'THURSDAY_EMERGENCY'
+  /** Sin él: todos los hoteles con horas aprobadas esa semana. */
+  hotelId?: string
+}
+
+export interface PaymentRunHotel {
+  hotelId: string
+  hotelName: string
+  status: 'RAN' | 'NOT_DUE'
+  created: number
+  topped: number
+  blocked: number
+}
+
+export interface PaymentRunResult {
+  weekStart: string
+  slot: 'WEDNESDAY_CUT' | 'THURSDAY_EMERGENCY'
+  hotels: PaymentRunHotel[]
+}
+
 /** Sin claves vacías: la API no distingue `status=""` de no mandarlo. */
 function compact(params: Record<string, string | undefined>): Record<string, string> {
   const out: Record<string, string> = {}
@@ -130,6 +153,18 @@ export const settlementApi = baseApi.injectEndpoints({
       ],
     }),
 
+    /**
+     * La corrida de pago: nace el Consolidado de cada hotel con horas
+     * aprobadas esa semana. Contabilidad la dispara a mano (Hugo, 2026-10-14:
+     * "ellos deben tener otros botones" — no aprueban, generan). Idempotente:
+     * lo que ya está en un consolidado no vuelve a entrar.
+     */
+    generatePaymentRun: build.mutation<PaymentRunResult, GeneratePaymentRunRequest>({
+      query: (body) => ({ url: '/payment-runs', method: 'POST', body }),
+      transformResponse: (raw: ApiEnvelope<PaymentRunResult>) => raw.data,
+      invalidatesTags: [CONSOLIDATION_TAG],
+    }),
+
     getInvoices: build.query<InvoiceRow[], InvoiceFilters | void>({
       query: (filters) => ({
         url: '/invoices',
@@ -162,6 +197,38 @@ export const settlementApi = baseApi.injectEndpoints({
       query: (id) => ({ url: `/invoices/${id}/pay`, method: 'POST' }),
       transformResponse: (raw: ApiEnvelope<InvoiceDetailed>) => raw.data,
       invalidatesTags: (_res, _err, id) => [INVOICE_TAG, { type: 'Invoice' as const, id }],
+    }),
+
+    /**
+     * Dato de nómina del hotel, no de su perfil comercial (Hugo, 2026-10-14):
+     * Contabilidad no alcanza `GET /hotels/:id` (es de Ventas/Administración),
+     * así que esta es su propia puerta — solo lee/escribe si paga el lonche.
+     */
+    getHotelPaysLunch: build.query<boolean, string>({
+      query: (hotelId) => `/hotels/${hotelId}/pays-lunch`,
+      transformResponse: (raw: ApiEnvelope<{ paysLunch: boolean }>) => raw.data.paysLunch,
+      providesTags: (_res, _err, hotelId) => [{ type: 'Hotel' as const, id: hotelId }],
+    }),
+
+    setHotelPaysLunch: build.mutation<boolean, { hotelId: string; paysLunch: boolean }>({
+      query: ({ hotelId, paysLunch }) => ({
+        url: `/hotels/${hotelId}/pays-lunch`,
+        method: 'PATCH',
+        body: { paysLunch },
+      }),
+      transformResponse: (raw: ApiEnvelope<{ paysLunch: boolean }>) => raw.data.paysLunch,
+      invalidatesTags: (_res, _err, { hotelId }) => [
+        { type: 'Hotel' as const, id: hotelId },
+        TIMESHEET_LIST_TAG,
+      ],
+    }),
+
+    /** Nombre y foto del hotel para Contabilidad — `GET /hotels/:id` no la
+        alcanza, mismo motivo que `getHotelPaysLunch`. */
+    getHotelCardForAccounting: build.query<{ name: string; photoUrl: string | null }, string>({
+      query: (hotelId) => `/hotels/${hotelId}/card`,
+      transformResponse: (raw: ApiEnvelope<{ name: string; photoUrl: string | null }>) => raw.data,
+      providesTags: (_res, _err, hotelId) => [{ type: 'Hotel' as const, id: hotelId }],
     }),
 
     /** Hoteles cliente para el filtro de facturas (`/hotels` ya viene paginado). */
@@ -316,11 +383,15 @@ export const {
   useValidateConsolidationMutation,
   useAuthorizeConsolidationMutation,
   usePayConsolidationMutation,
+  useGeneratePaymentRunMutation,
   useGetInvoicesQuery,
   useGetInvoiceQuery,
   useApproveInvoiceMutation,
   useMarkInvoiceSentMutation,
   usePayInvoiceMutation,
+  useGetHotelPaysLunchQuery,
+  useSetHotelPaysLunchMutation,
+  useGetHotelCardForAccountingQuery,
   useGetClientHotelOptionsQuery,
   useGetAccountingTimesheetsQuery,
   useGetAccountingTimesheetTimelineQuery,

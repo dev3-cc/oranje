@@ -37,6 +37,7 @@ export function TimesheetToolbar({
   hotelNames,
   columnWidth,
   showZoom = true,
+  hideHotelFilter = false,
   onChange,
   onColumnWidthChange,
 }: {
@@ -46,6 +47,9 @@ export function TimesheetToolbar({
   columnWidth: number
   /** El zoom es un concepto de la vista Días: en Horas y Mes no se enseña. */
   showZoom?: boolean
+  /** `true` cuando la página ya puso su propio filtro de Hotel más arriba,
+      junto al navegador de semana (Hugo, 2026-10-14): uno solo, no dos. */
+  hideHotelFilter?: boolean
   onChange: (filters: Filters) => void
   onColumnWidthChange: (width: number) => void
 }): ReactNode {
@@ -155,7 +159,11 @@ export function TimesheetToolbar({
           onChange={setDraft}
           label={t`Buscar colaborador`}
           placeholder={t`Nombre del colaborador, p. ej. Ana Rivera…`}
-          className="flex-1"
+          /* `min-w-0`: el `min-w-60` de base no se encoge dentro del
+             acordeón «Filtrar» en móvil y el campo se desbordaba del panel
+             (Hugo, 2026-10-14, con captura). En escritorio sigue ocupando
+             todo lo que sobra, por el `flex-1`. */
+          className="min-w-0 flex-1"
         />
 
         <LabeledControl label={t`Requisición`}>
@@ -194,23 +202,25 @@ export function TimesheetToolbar({
           </Select>
         </LabeledControl>
 
-        <LabeledControl label={t`Hotel`}>
-          <Select value={filters.hotelName} onValueChange={update('hotelName')}>
-            <SelectTrigger aria-label={t`Hotel`} className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">
-                <Trans>Todos los hoteles</Trans>
-              </SelectItem>
-              {hotelNames.map((hotel) => (
-                <SelectItem key={hotel} value={hotel}>
-                  {hotel}
+        {!hideHotelFilter && (
+          <LabeledControl label={t`Hotel`}>
+            <Select value={filters.hotelName} onValueChange={update('hotelName')}>
+              <SelectTrigger aria-label={t`Hotel`} className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">
+                  <Trans>Todos los hoteles</Trans>
                 </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </LabeledControl>
+                {hotelNames.map((hotel) => (
+                  <SelectItem key={hotel} value={hotel}>
+                    {hotel}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </LabeledControl>
+        )}
 
         <FilterReset activeCount={activeFilters} onReset={resetFilters} />
       </div>

@@ -4,7 +4,7 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
-import { useGetTimesheetWeekQuery } from '../api/timesheetApi'
+import { filterTimesheetRows, useGetTimesheetWeekQuery } from '../api/timesheetApi'
 import { TimesheetToolbar } from '../components/TimesheetToolbar'
 import { WeekNavigator } from '../components/TimesheetViewControls'
 import { resolveWeek } from '../lib/weekNavigation'
@@ -34,7 +34,9 @@ export function TimesheetGlobalPage(): ReactNode {
 
   const { data: week, isLoading, isError, refetch } = useGetTimesheetWeekQuery(filters)
 
-  const rows = week?.rows ?? []
+  /* `week.rows` ya no viene filtrada por hotel/búsqueda/requisición — filtrar
+     eso dejó de pedir red (ver `getTimesheetWeek` en `timesheetApi.ts`). */
+  const rows = filterTimesheetRows(week?.rows ?? [], filters)
   const rangeLabel =
     week && week.days.length > 0
       ? formatWeekRange(week.days[0] ?? '', week.days[week.days.length - 1] ?? '')

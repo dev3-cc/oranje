@@ -27,6 +27,7 @@ import { LoadError } from '@/shared/components/LoadError'
 import { MetricCard } from '@/shared/components/MetricCard'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
+import { ReloadButton } from '@/shared/components/ReloadButton'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { DEFAULT_COLUMN_WIDTH, TIMESHEET_WEEK_STATUSES } from '@/shared/constants/timesheetStatus'
 import { TIMESHEET_WEEK_STATUS_LABEL } from '@/shared/constants/timesheetStatus'
@@ -79,7 +80,7 @@ export function AccountingTimesheetPage(): ReactNode {
   const { isIntroOpen, dismissIntro, reopenIntro } = useIntroSeen('timesheet-contabilidad')
 
   const { data: hotels } = useGetClientHotelOptionsQuery(undefined, { skip: !canReadAll })
-  const { data, isLoading, isError, refetch } = useGetAccountingTimesheetTimelineQuery(
+  const { data, isLoading, isFetching, isError, refetch } = useGetAccountingTimesheetTimelineQuery(
     { ...(status !== ANY ? { status } : {}) },
     { skip: !canReadAll },
   )
@@ -143,13 +144,21 @@ export function AccountingTimesheetPage(): ReactNode {
             <Trans>Solo lectura. Las horas se revisan en cada hotel; aquí solo se consultan.</Trans>
           </p>
         </div>
-        <button
-          type="button"
-          onClick={reopenIntro}
-          className="cursor-pointer rounded-md px-2 py-1 text-xs font-semibold whitespace-nowrap text-o-700 hover:bg-o-50"
-        >
-          <Trans>¿Cómo funciona?</Trans>
-        </button>
+        <div className="flex items-center gap-2">
+          <ReloadButton
+            onReload={() => {
+              void refetch()
+            }}
+            isReloading={isFetching}
+          />
+          <button
+            type="button"
+            onClick={reopenIntro}
+            className="cursor-pointer rounded-md px-2 py-1 text-xs font-semibold whitespace-nowrap text-o-700 hover:bg-o-50"
+          >
+            <Trans>¿Cómo funciona?</Trans>
+          </button>
+        </div>
       </header>
 
       <Modal

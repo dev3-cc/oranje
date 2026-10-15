@@ -22,6 +22,7 @@ import { ListItemViewHint } from '@/shared/components/ListItemViewHint'
 import { LoadError } from '@/shared/components/LoadError'
 import { MagicCard } from '@/shared/components/MagicCard'
 import { MetricCard } from '@/shared/components/MetricCard'
+import { ReloadButton } from '@/shared/components/ReloadButton'
 import { SearchField } from '@/shared/components/SearchField'
 import {
   BLOOD_LABEL,
@@ -467,7 +468,7 @@ function WorkerDetail({
  */
 export function PersonnelPage(): ReactNode {
   const { t } = useLingui()
-  const { data: board, isLoading, isError, refetch } = useGetPersonnelBoardQuery()
+  const { data: board, isLoading, isFetching, isError, refetch } = useGetPersonnelBoardQuery()
   /** El hotel del Supervisor: nombre de /me, foto compuesta de /hotels/:id. */
   const { data: session } = useGetSessionQuery()
   const hotelId = session?.hotel?.id ?? ''
@@ -502,16 +503,24 @@ export function PersonnelPage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight text-ink">
-          <FoldText text={t`Mi Personal`} />
-        </h1>
-        <p className="mt-1.5 text-sm text-ink-3">
-          <Trans>
-            Los colaboradores asignados a tus requisiciones, con su estado en el Semáforo. El
-            Stand-by (Rosa) lo compartes con el Manager de Área.
-          </Trans>
-        </p>
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-ink">
+            <FoldText text={t`Mi Personal`} />
+          </h1>
+          <p className="mt-1.5 text-sm text-ink-3">
+            <Trans>
+              Los colaboradores asignados a tus requisiciones, con su estado en el Semáforo. El
+              Stand-by (Rosa) lo compartes con el Manager de Área.
+            </Trans>
+          </p>
+        </div>
+        <ReloadButton
+          onReload={() => {
+            void refetch()
+          }}
+          isReloading={isFetching}
+        />
       </header>
 
       {SHOW_METRICS && (

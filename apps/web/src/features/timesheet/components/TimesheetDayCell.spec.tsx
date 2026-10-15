@@ -11,6 +11,7 @@ function entry(overrides: Partial<TimesheetEntry> = {}): TimesheetEntry {
     date: '2026-09-25',
     status: 'PENDING',
     hours: 2.8,
+    lunchDeductionMinutes: 0,
     startTime: null,
     endTime: null,
     requisitionNumber: null,

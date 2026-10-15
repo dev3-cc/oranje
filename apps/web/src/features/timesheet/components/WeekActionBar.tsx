@@ -17,6 +17,7 @@ import type { TimesheetRow } from '../types/timesheet.types'
 
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
+import { NO_TIMESHEET_STATUS } from '@/shared/constants/timesheetStatus'
 import { useCan } from '@/shared/hooks/useCan'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { formatDate } from '@/shared/lib/formatters'
@@ -167,6 +168,10 @@ export function WeekActionBar({
   const can = useCan()
   /** Aprobar es de los Managers (timesheet:approve_hours); el Supervisor envía y captura. */
   const canApprove = can('timesheet:approve_hours')
+  /** Contabilidad ve TODOS los hoteles, no el suyo — "enviada a Oranje" no
+      tiene sentido desde su lado, porque Oranje es ella misma (Hugo,
+      2026-10-15: "cambia este texto a que el hotel ya aprobó esa semana"). */
+  const seesAllHotels = can('timesheet:read_all_hotels')
   /** Enviar es de quien revisa; el Observador solo lee y no ve el botón. */
   const canSubmit = can('timesheet:review_punches')
 
@@ -280,23 +285,28 @@ export function WeekActionBar({
                     {isSendingOrSettling ? t`Enviando…` : t`Enviar a revisión`}
                   </button>
                 )}
-            {onManualPunch !== undefined && (
-              <button
-                type="button"
-                disabled={manualPunchBlock !== null}
-                title={
-                  manualPunchBlock ?? t`Capturar una marca que el ponche no registró, con motivo`
-                }
-                onClick={() => {
-                  onManualPunch(row)
-                }}
-                className="cursor-pointer rounded-md border border-line px-2.5 py-1.5 text-xs font-medium text-ink-2 transition-colors hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <Trans>Marca manual</Trans>
-              </button>
-            )}
           </>
         )}
+        {/* Sin timesheet real todavía (nunca ponchó): no hay Enviar/Aprobar
+            que ofrecer, pero SÍ se puede capturar su primera marca — el
+            timesheet nace solo con la primera marca, real o manual (Hugo,
+            2026-10-14, encontrado probando el flujo en vivo). */}
+        {(row.weekStatus === 'OPEN' || row.weekStatus === NO_TIMESHEET_STATUS) &&
+          onManualPunch !== undefined && (
+            <button
+              type="button"
+              disabled={manualPunchBlock !== null}
+              title={
+                manualPunchBlock ?? t`Capturar una marca que el ponche no registró, con motivo`
+              }
+              onClick={() => {
+                onManualPunch(row)
+              }}
+              className="cursor-pointer rounded-md border border-line px-2.5 py-1.5 text-xs font-medium text-ink-2 transition-colors hover:bg-surface-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Trans>Marca manual</Trans>
+            </button>
+          )}
         {row.weekStatus === 'PENDING_APPROVAL' &&
           (canApprove ? (
             <ApproverTooltip>
@@ -322,7 +332,11 @@ export function WeekActionBar({
         {row.weekStatus === 'APPROVED' && (
           <span className="inline-flex items-center gap-1.5 rounded-md bg-green/10 px-3 py-1.5 text-sm font-semibold text-green">
             <MaterialIcon name="check_circle" className="text-base" aria-hidden />
-            <Trans>Aprobada y enviada a Oranje</Trans>
+            {seesAllHotels ? (
+              <Trans>El hotel ya aprobó esta semana</Trans>
+            ) : (
+              <Trans>Aprobada y enviada a Oranje</Trans>
+            )}
           </span>
         )}
         {/* Fila sintetizada para que no desaparezca quien no ponchó ni un

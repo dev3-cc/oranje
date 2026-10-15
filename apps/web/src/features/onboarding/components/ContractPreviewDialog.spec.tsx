@@ -102,7 +102,9 @@ describe('ContractPreviewDialog', () => {
 
     const printable = within(printRoot)
     expect(printable.getByText('Exhibit “A” - Rates and Staffing Terms')).toBeInTheDocument()
-    expect(printable.getByText(/employees of Strategic Deployment, LLC/)).toBeInTheDocument()
+    expect(
+      printable.getByText(/employees of ORANGE SOLUTIONS & OPERATIONS, LLC/),
+    ).toBeInTheDocument()
     expect(
       printable.getByText(/Employee screening will be performed in accordance with Section 13/),
     ).toBeInTheDocument()
