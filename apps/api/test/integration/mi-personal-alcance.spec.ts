@@ -303,7 +303,13 @@ describe('listar colaboradores de todos los hoteles (Contabilidad)', () => {
 
     const contadora = await usuario('ROL-CO-01', null)
     const board = await workers.list(
-      { page: 1, limit: 100, onlyAvailable: false, hasPendingDocument: false },
+      {
+        page: 1,
+        limit: 100,
+        onlyAvailable: false,
+        hasPendingDocument: false,
+        withoutActiveAssignment: false,
+      },
       contadora,
     )
 
@@ -316,7 +322,13 @@ describe('listar colaboradores de todos los hoteles (Contabilidad)', () => {
 
     await expect(
       workers.list(
-        { page: 1, limit: 20, onlyAvailable: false, hasPendingDocument: false },
+        {
+          page: 1,
+          limit: 20,
+          onlyAvailable: false,
+          hasPendingDocument: false,
+          withoutActiveAssignment: false,
+        },
         colaboradorUsuario,
       ),
     ).rejects.toMatchObject({ response: { code: 'FORBIDDEN' } })
