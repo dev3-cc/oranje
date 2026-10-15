@@ -1,7 +1,7 @@
 import type { MessageDescriptor } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 import { Plural, Trans, useLingui } from '@lingui/react/macro'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import { useGetAuditableHotelsQuery } from '../api/auditsApi'
 import { AuditHistoryList } from '../components/AuditHistoryList'
@@ -12,6 +12,7 @@ import personajeComencemos from '@/assets/ilustrations/personaje-comencemos.svg'
 import personajeConfiguracion from '@/assets/ilustrations/personaje-configuracion.svg'
 import personajeEncuesta from '@/assets/ilustrations/personaje-encuesta.svg'
 import { FoldText } from '@/shared/components/FoldText'
+import { GuidedTour, type TourStep } from '@/shared/components/GuidedTour'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
 import { ZonePill } from '@/shared/components/ZonePill'
@@ -58,6 +59,25 @@ export function AuditsPage(): ReactNode {
   const { data: session } = useGetSessionQuery()
   const hotelId = session?.hotel?.id ?? ''
   const hotelName = session?.hotel?.name ?? ''
+  /* El recorrido se reabre desde «Ver el recorrido»; `GuidedTour` entrega su
+     disparador al montar. */
+  const [startTour, setStartTour] = useState<() => void>(() => () => undefined)
+
+  /* El recorrido NO repite lo que ya dice el modal de «¿Cómo funciona?»: ahí
+     se explica qué son las dos auditorías y que no mueven ningún semáforo;
+     aquí se señala dónde se toca. */
+  const pasos: readonly TourStep[] = [
+    {
+      anchor: 'audit-card',
+      title: t`Desde aquí auditas`,
+      description: t`Dos caminos: el ambiente del hotel se contesta de una, y la de personal te deja elegir a quién — arriba salen primero los que llevan más tiempo sin auditarse.`,
+    },
+    {
+      anchor: 'audit-history',
+      title: t`Lo que ya auditaste`,
+      description: t`Cada auditoría queda con su calificación y su fecha. Si te equivocaste en un reactivo, desde aquí la corriges: no se borra, se corrige.`,
+    },
+  ]
 
   /* El Inspector no tiene UN hotel (Supervisor sí): audita los de su zona.
      La consulta se salta a propósito para todos los demás roles, que ya
@@ -98,14 +118,26 @@ export function AuditsPage(): ReactNode {
           >
             <Trans>¿Cómo funciona?</Trans>
           </button>
+          {' · '}
+          {/* Dos cosas distintas a propósito: «¿Cómo funciona?» explica el
+              concepto en un modal, el recorrido señala dónde se toca. */}
+          <button
+            type="button"
+            onClick={startTour}
+            className="cursor-pointer font-medium text-o-700 hover:underline"
+          >
+            <Trans>Ver el recorrido</Trans>
+          </button>
         </p>
       </header>
 
       {hotelId !== '' ? (
         <>
-          <AuditHotelCard hotelId={hotelId} hotelName={hotelName} canCreate={canCreate} />
+          <div data-tour="audit-card">
+            <AuditHotelCard hotelId={hotelId} hotelName={hotelName} canCreate={canCreate} />
+          </div>
 
-          <section className="flex flex-col gap-3">
+          <section className="flex flex-col gap-3" data-tour="audit-history">
             <h2 className="text-lg font-semibold text-ink">
               <Trans>Historial</Trans>
             </h2>
@@ -172,6 +204,19 @@ export function AuditsPage(): ReactNode {
           onDone={dismissIntro}
         />
       </Modal>
+
+      {/* El recorrido espera a que el intro se cierre: con el modal abierto,
+          Radix pone `aria-hidden` en el resto y el recorrido apuntaría a algo
+          que nadie puede ver ni tocar. */}
+      <GuidedTour
+        storageKey="audits-tour"
+        steps={pasos}
+        character={personajeEncuesta}
+        isReady={!isIntroOpen && hotelId !== ''}
+        onReady={(start) => {
+          setStartTour(() => start)
+        }}
+      />
     </div>
   )
 }

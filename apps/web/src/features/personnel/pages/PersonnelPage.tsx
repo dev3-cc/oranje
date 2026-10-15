@@ -13,10 +13,12 @@ import { WorkerPerformanceRadar } from '../components/WorkerPerformanceRadar'
 import type { PersonnelRow } from '../types/personnel.types'
 
 import { useGetSessionQuery } from '@/app/sessionApi'
+import personajeTalento from '@/assets/ilustrations/personaje-talento.svg'
 import mascotaSaludando from '@/assets/mascota/mascota-saludando.png'
 import { BackToListButton } from '@/shared/components/BackToListButton'
 import { CardGridSkeleton } from '@/shared/components/CardGridSkeleton'
 import { FoldText } from '@/shared/components/FoldText'
+import { GuidedTour, type TourStep } from '@/shared/components/GuidedTour'
 import { HotelPhotoBackdrop } from '@/shared/components/HotelPhotoBackdrop'
 import { ListItemViewHint } from '@/shared/components/ListItemViewHint'
 import { LoadError } from '@/shared/components/LoadError'
@@ -325,7 +327,7 @@ function WorkerDetail({
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2" data-tour="staff-actions">
               {row.canStandBy && (
                 <button
                   type="button"
@@ -499,6 +501,30 @@ function WorkerDetail({
 export function PersonnelPage(): ReactNode {
   const { t } = useLingui()
   const { data: board, isLoading, isError, refetch } = useGetPersonnelBoardQuery()
+  /* El recorrido se reabre desde «Ver el recorrido»; `GuidedTour` entrega su
+     disparador al montar. */
+  const [startTour, setStartTour] = useState<() => void>(() => () => undefined)
+
+  /* Lo que la persona HACE aquí, en sus palabras. Los pasos cuyo control no
+     se dibuja —un Supervisor sin nadie en Stand-by, o un plantel vacío— se
+     caen solos. */
+  const pasos: readonly TourStep[] = [
+    {
+      anchor: 'staff-metrics',
+      title: t`Tu plantel de un vistazo`,
+      description: t`Cuántos ya marcaron entrada hoy, cuántos están en pausa y cuántos protegidos por un accidente.`,
+    },
+    {
+      anchor: 'staff-roster',
+      title: t`Tu gente y su color`,
+      description: t`Cada persona trae su estado del Semáforo. Búscala por nombre y tócala para ver su detalle del día.`,
+    },
+    {
+      anchor: 'staff-actions',
+      title: t`Lo que puedes hacer con cada uno`,
+      description: t`«Stand-by» es una pausa temporal y la compartes con el Manager de Área. «Reportar» abre una incidencia que revisa Inspección. «Ver perfil» te lleva a su expediente.`,
+    },
+  ]
   /** El hotel del Supervisor: nombre de /me, foto compuesta de /hotels/:id. */
   const { data: session } = useGetSessionQuery()
   const hotelId = session?.hotel?.id ?? ''
@@ -542,11 +568,19 @@ export function PersonnelPage(): ReactNode {
             Los colaboradores asignados a tus requisiciones, con su estado en el Semáforo. El
             Stand-by (Rosa) lo compartes con el Manager de Área.
           </Trans>
+          {' · '}
+          <button
+            type="button"
+            onClick={startTour}
+            className="cursor-pointer font-medium text-o-700 hover:underline"
+          >
+            <Trans>Ver el recorrido</Trans>
+          </button>
         </p>
       </header>
 
       {SHOW_METRICS && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3" data-tour="staff-metrics">
           <MetricCard
             value={String(board.clockedInToday)}
             label={t`Con entrada registrada`}
@@ -585,7 +619,10 @@ export function PersonnelPage(): ReactNode {
       ) : (
         /* Lista a la izquierda, detalle a la derecha: siempre hay uno elegido. */
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[300px_1fr]">
-          <div className={cn('flex-col gap-3', rosterListClass(showDetailOnMobile))}>
+          <div
+            className={cn('flex-col gap-3', rosterListClass(showDetailOnMobile))}
+            data-tour="staff-roster"
+          >
             <SearchField
               value={search}
               onChange={setSearch}
@@ -667,6 +704,18 @@ export function PersonnelPage(): ReactNode {
           }}
         />
       )}
+
+      {/* `isReady` espera al plantel: sin filas no hay lista ni acciones a las
+          que apuntar, y el recorrido quedaría señalando el vacío. */}
+      <GuidedTour
+        storageKey="my-staff-tour"
+        steps={pasos}
+        character={personajeTalento}
+        isReady={board !== undefined && board.rows.length > 0}
+        onReady={(start) => {
+          setStartTour(() => start)
+        }}
+      />
     </div>
   )
 }
