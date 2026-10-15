@@ -827,8 +827,12 @@ const RECRUITMENT: Permission[] = [
        real de Requisiciones. Seguro de reutilizar: `hotelId=null` hace que
        `list()`/`get()` no filtren por hotel, el mismo criterio que
        Reclutamiento — no repite el hueco de PR #89 porque aquí las DOS
-       lecturas de `hotelId=null` significan lo mismo: "todos los hoteles". */
-    roles: [GROUP_LEAD, RECRUITMENT_MANAGER, SYS, OBSERVER],
+       lecturas de `hotelId=null` significan lo mismo: "todos los hoteles".
+       Contabilidad entra por el mismo motivo que el Observador: el Timesheet
+       de todos los hoteles enlaza a su requisición (`/requisitions/:id`) y
+       sin esto el enlace daba "No se encontró la requisición" — ni 404 ni
+       403 reales, el 403 se traduce igual (Hugo, 2026-10-15, en vivo). */
+    roles: [GROUP_LEAD, RECRUITMENT_MANAGER, SYS, OBSERVER, ACCOUNTANT, ACCOUNTING_MANAGER],
   },
   {
     module: 'requisitions',
