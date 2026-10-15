@@ -57,13 +57,26 @@ export function QrScanner({
       }
     }
     void start()
+    const video = videoRef.current
     return () => {
       cancelled = true
       streamRef.current?.getTracks().forEach((track) => {
         track.stop()
       })
+      /* Suelta el stream del <video> para que el decodificador se libere ya. */
+      if (video) video.srcObject = null
     }
   }, [])
+
+  /*
+   * `onScan` llega como flecha nueva en cada render de Ponchar. Si fuera
+   * dependencia del efecto de lectura, cada render reiniciaría el ciclo; se
+   * lee desde una ref y el ciclo vive lo que vive el lector.
+   */
+  const onScanRef = useRef(onScan)
+  useEffect(() => {
+    onScanRef.current = onScan
+  }, [onScan])
 
   useEffect(() => {
     if (!isReady) return
@@ -71,32 +84,49 @@ export function QrScanner({
     if (!video) return
     const canvas = document.createElement('canvas')
     const context = canvas.getContext('2d', { willReadFrequently: true })
-    const detector = createDetector()
+    let detector = createDetector()
     let frame = 0
+    /*
+     * El ciclo es asíncrono: `cancelAnimationFrame` solo cancela el cuadro que
+     * está EN COLA, no el que está esperando a `detector.detect()`. Al volver
+     * de ese `await`, sin esta bandera, el ciclo pedía otro cuadro y seguía
+     * leyendo para siempre con el lector ya cerrado —un `detect` y un jsQR de
+     * 1280×960 por cuadro, uno más cada vez que se abría—: la app entera se
+     * ponía lenta después de usar la cámara.
+     */
+    let stopped = false
 
     const finish = (code: string): void => {
       if (doneRef.current) return
       doneRef.current = true
-      onScan(code)
+      onScanRef.current(code)
+    }
+
+    const next = (): void => {
+      if (!stopped) frame = window.requestAnimationFrame(() => void tick())
     }
 
     const tick = async (): Promise<void> => {
+      if (stopped) return
       if (doneRef.current || video.readyState < HTMLMediaElement.HAVE_ENOUGH_DATA) {
-        frame = window.requestAnimationFrame(() => void tick())
+        next()
         return
       }
       if (detector) {
         try {
           const found = await detector.detect(video)
+          if (stopped) return
           const value = found[0]?.rawValue
-          if (value) {
-            finish(value)
-            return
-          }
+          if (value) finish(value)
+          else next()
+          return
         } catch {
-          /* el detector nativo falló: jsQR abajo sigue leyendo */
+          /* El detector nativo falló: de aquí en adelante lee jsQR. */
+          detector = null
         }
       }
+      /* jsQR solo cuando no hay detector nativo (Safari) o ya falló: correr
+         los dos en cada cuadro duplicaba el trabajo sin leer más códigos. */
       if (context) {
         canvas.width = video.videoWidth
         canvas.height = video.videoHeight
@@ -110,13 +140,14 @@ export function QrScanner({
           return
         }
       }
-      frame = window.requestAnimationFrame(() => void tick())
+      next()
     }
-    frame = window.requestAnimationFrame(() => void tick())
+    next()
     return () => {
+      stopped = true
       window.cancelAnimationFrame(frame)
     }
-  }, [isReady, onScan])
+  }, [isReady])
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-ink text-white">

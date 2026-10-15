@@ -71,6 +71,8 @@ export interface SlotBoard {
 /** Lo que `POST /assignments` pide, con los nombres del DTO real. */
 export interface CreateAssignmentRequest {
   positionId: string
+  /** Qué lugar; sin él, el servidor toma el primero libre. */
+  slotOrdinal?: number
   workerId: string
   type: 'FIXED' | 'TEMPORARY'
   startDate?: string

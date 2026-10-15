@@ -26,8 +26,31 @@ const prisma = db as unknown as PrismaService
 const repo = new ObservabilityRepository(prisma)
 const list = new PendingApprovalsService(new PendingApprovalsRepository(prisma))
 
+const DAY_MS = 86_400_000
+
+/** AAAA-MM-DD de una fecha, en UTC. */
+function iso(date: Date): string {
+  return date.toISOString().slice(0, 10)
+}
+
+/**
+ * El lunes de la PRÓXIMA semana: nunca cerrada todavía, sin importar qué día
+ * sea hoy cuando corra la prueba — un literal fijo (`2026-10-05`) se quedaba
+ * viejo en cuanto pasaba esa fecha y la semana "en curso" de ayer pasaba a
+ * estar cerrada hoy (la misma lección de fijar el reloj, no la fecha).
+ */
+function nextMonday(): Date {
+  const today = new Date(
+    Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()),
+  )
+  const daysUntilNextMonday = ((8 - today.getUTCDay()) % 7) + 7
+  return new Date(today.getTime() + daysUntilNextMonday * DAY_MS)
+}
+
 const CLOSED_WEEK = '2025-03-03' // lunes; cerró el domingo 9 de marzo de 2025
-const OPEN_WEEK = '2026-10-05' // lunes de la semana en curso (no cerrada aún)
+const OPEN_WEEK_DATE = nextMonday()
+const OPEN_WEEK = iso(OPEN_WEEK_DATE) // lunes de una semana futura: no cerrada todavía
+const OPEN_WEEK_END = iso(new Date(OPEN_WEEK_DATE.getTime() + 6 * DAY_MS))
 const reg: Registry = { rows: [] }
 const workers: string[] = []
 
@@ -101,7 +124,7 @@ describe('observabilidad cuenta lo que cuenta la lista de Contabilidad', () => {
     const schedOpen = await makeSchedule(reg, {
       hotelId,
       weekStart: OPEN_WEEK,
-      weekEnd: '2026-10-11',
+      weekEnd: OPEN_WEEK_END,
       actorId,
     })
 
@@ -141,7 +164,7 @@ describe('observabilidad cuenta lo que cuenta la lista de Contabilidad', () => {
       workerId: w4,
       requisitionId: reqOpen,
       weekStart: OPEN_WEEK,
-      weekEnd: '2026-10-11',
+      weekEnd: OPEN_WEEK_END,
       status: 'OPEN',
       actorId,
     })

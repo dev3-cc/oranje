@@ -39,10 +39,13 @@ jobs:
       REPOSITORIO: oranje
 
     steps:
-      # fetch-depth 2: en main hay que ver los padres del merge para promover.
+      # Historial completo: en main hay que caminar varios segundos padres
+      # para promover (ver el paso "Promover la imagen probada en staging").
+      # fetch-depth: 2 se quedaba corto en cuanto el enlace a staging tenía
+      # más de un nivel de profundidad (2026-10-10).
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Autenticar contra GCP
         uses: google-github-actions/auth@v2
@@ -51,7 +54,16 @@ jobs:
           workload_identity_provider: ${{ vars.WIF_PROVIDER }}
           service_account: ${{ vars.DEPLOY_SERVICE_ACCOUNT }}
 
-      - uses: google-github-actions/setup-gcloud@v2
+      # No se instala gcloud: la imagen del runner ya lo trae, y
+      # `auth` deja las credenciales en CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE,
+      # que el gcloud preinstalado respeta. setup-gcloud tardaba ~20s en cada
+      # despliegue reinstalando lo que ya estaba.
+      #
+      # El precio: la version de gcloud pasa a ser la que traiga la imagen del
+      # runner, que GitHub actualiza sin avisar. Si algun dia un flag deja de
+      # existir, el despliegue se cae en rojo y Cloud Run sigue sirviendo la
+      # revision anterior — entonces toca volver a poner setup-gcloud con la
+      # version fijada.
 
       - name: Nombre de la imagen
         id: imagen
@@ -83,13 +95,26 @@ jobs:
           DESTINO="${{ vars.GCP_PROJECT_ID }}"
           RUTA_ORIGEN="$REGION-docker.pkg.dev/$ORIGEN/$REPOSITORIO/$SERVICIO"
 
+          # Caminar solo "segundos padres" en cadena se rompe en cuanto un
+          # commit intermedio no es un merge (p. ej. un hotfix lineal
+          # encima de main, como pasó el 2026-10-10): esa rama no tiene
+          # segundo padre y el camino hacia staging se corta ahí aunque
+          # siga siendo ancestro por el primer padre. Se busca en TODOS
+          # los ancestros recientes, no solo en una columna.
+          #
+          # El cruce se hace AQUÍ, con una sola llamada: se traen los tags
+          # del repositorio de staging (163 hoy, ~2s) y se busca el primer
+          # ancestro que tenga uno. Antes se preguntaba por cada candidato
+          # por separado y cada pregunta era un viaje a la red: ~38s en
+          # llegar al que servía.
+          TAGS=$(mktemp)
+          gcloud artifacts docker tags list "$RUTA_ORIGEN" \
+            --format='value(tag,version)' \
+            --project "$ORIGEN" > "$TAGS"
+
           DIGEST=""
-          for CANDIDATO in "${{ github.sha }}" "$(git rev-parse --verify --quiet HEAD^2 || true)"; do
-            [ -z "$CANDIDATO" ] && continue
-            DIGEST=$(gcloud artifacts docker images describe \
-              "$RUTA_ORIGEN:$CANDIDATO" \
-              --format='value(image_summary.digest)' \
-              --project "$ORIGEN" 2>/dev/null || true)
+          for CANDIDATO in $(git rev-list --max-count=50 "${{ github.sha }}"); do
+            DIGEST=$(awk -v c="$CANDIDATO" '$1 == c { print $2; exit }' "$TAGS")
             if [ -n "$DIGEST" ]; then
               echo "Imagen probada en staging: $CANDIDATO → $DIGEST"
               break
@@ -97,7 +122,7 @@ jobs:
           done
 
           if [ -z "$DIGEST" ]; then
-            echo "::error::Ni ${{ github.sha }} ni su padre de staging tienen imagen en staging."
+            echo "::error::Ninguno de los últimos 50 ancestros de ${{ github.sha }} tiene imagen en staging."
             echo "::error::Producción solo promueve lo que ya se probó — no reconstruye."
             exit 1
           fi
@@ -107,6 +132,74 @@ jobs:
             "$REGION-docker.pkg.dev/$DESTINO/$REPOSITORIO/$SERVICIO:${{ github.sha }}" \
             --quiet
 
+      # El paso más caro del despliegue y el que casi nunca tiene algo que
+      # hacer: de los últimos 40 commits de staging solo 2 tocaron
+      # `prisma/migrations`, y el job tarda entre 2 y 4 minutos levantándose
+      # para no aplicar nada (medido: 256s el 2026-10-12, más que construir
+      # la imagen).
+      #
+      # Se compara lo que está SIRVIENDO contra este commit, y de qué commit
+      # salió lo que sirve lo dice la etiqueta `commit-sha` que el propio
+      # despliegue le pone a la revisión (ver el paso de Cloud Run).
+      #
+      # EL SEGURO ES CORRERLAS. Cualquier duda —no hay servicio todavía, la
+      # revisión no trae la etiqueta, el commit no está en el historial,
+      # falla gcloud— y se corren: equivocarse hacia «córrelas» cuesta
+      # minutos; hacia «sáltalas» deja una revisión nueva hablándole a una
+      # base sin migrar.
+      #
+      # Saltar es seguro aunque la revisión que sirve esté atrasada: si un
+      # despliegue aplicó migraciones y luego falló al servir, las
+      # migraciones ya están puestas y `migrate deploy` es idempotente.
+      - name: ¿Hay migraciones nuevas?
+        id: migraciones
+        run: |
+          # De dónde sale el commit que sirve: de la etiqueta `commit-sha`
+          # que este mismo workflow le pone a cada revisión. NO del tag de la
+          # imagen: Cloud Run resuelve el tag a digest al desplegar y guarda
+          # `...@sha256:...`, que es el digest de la imagen y no un commit de
+          # git (verificado el 2026-10-12 contra los dos ambientes).
+          #
+          # Las revisiones anteriores a este cambio no tienen la etiqueta, así
+          # que el primer despliegue corre las migraciones y a partir del
+          # siguiente ya hay con qué comparar.
+          SIRVIENDO=""
+          REV=$(gcloud run services describe "$SERVICIO" \
+            --region "$REGION" --project "${{ vars.GCP_PROJECT_ID }}" \
+            --format='value(status.traffic[0].revisionName)' 2>/dev/null || true)
+          if [ -n "$REV" ]; then
+            SIRVIENDO=$(gcloud run revisions describe "$REV" \
+              --region "$REGION" --project "${{ vars.GCP_PROJECT_ID }}" \
+              --format='value(metadata.labels["commit-sha"])' 2>/dev/null || true)
+          fi
+
+          DECISION="si"
+          if [ -z "$SIRVIENDO" ]; then
+            RAZON="la revisión que sirve no dice de qué commit salió"
+          elif ! git cat-file -e "${SIRVIENDO}^{commit}" 2>/dev/null; then
+            RAZON="el commit que sirve ($SIRVIENDO) no está en este historial"
+          elif git diff --quiet "$SIRVIENDO" "${{ github.sha }}" -- apps/api/prisma/migrations; then
+            DECISION="no"
+            RAZON="ningún archivo de prisma/migrations cambió desde $SIRVIENDO"
+          else
+            RAZON="hay cambios en prisma/migrations desde $SIRVIENDO"
+            git diff --name-only "$SIRVIENDO" "${{ github.sha }}" -- apps/api/prisma/migrations
+          fi
+
+          echo "correr=$DECISION" >> "$GITHUB_OUTPUT"
+          echo "Correr migraciones: $DECISION — $RAZON"
+
+          # En producción todavía se corren siempre: la decisión se imprime
+          # para poder comprobar en los logs que habría acertado, antes de
+          # dejarla apagar el paso (Hugo, 2026-10-12: «probado en staging
+          # antes de tocar producción»). Cuando varios despliegues de
+          # producción muestren «habría saltado» y las migraciones no tenían
+          # nada, quitar este bloque y la condición de rama del paso
+          # siguiente.
+          if [ "${{ github.ref_name }}" = "main" ] && [ "$DECISION" = "no" ]; then
+            echo "::notice::En producción se corren igual por ahora. Habría saltado: $RAZON"
+          fi
+
       # Antes de la revisión nueva y con el usuario dueño del esquema. Expandir y
       # contraer (BD §8) mantiene vivo al código viejo durante el despliegue.
       #
@@ -115,6 +208,7 @@ jobs:
       # Sin reintentos: una migración que falla no mejora al repetirla, y cada
       # intento tarda minutos.
       - name: Migraciones
+        if: github.ref_name == 'main' || steps.migraciones.outputs.correr == 'si'
         run: |
           gcloud run jobs deploy "$SERVICIO-migrate" \
             --image "$REGION-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/$REPOSITORIO/$SERVICIO:${{ github.sha }}" \
@@ -171,8 +265,9 @@ jobs:
             --project "${{ vars.GCP_PROJECT_ID }}" \
             --service-account "${{ vars.RUNTIME_SERVICE_ACCOUNT }}" \
             --set-cloudsql-instances "${{ vars.CLOUDSQL_INSTANCE }}" \
-            --set-env-vars "^|^APP_ENV=${{ vars.APP_ENV }}|NODE_ENV=production|AUTH_ISSUER_URL=${{ vars.AUTH_ISSUER_URL }}|AUTH_AUDIENCE=${{ vars.AUTH_AUDIENCE }}|CORS_ORIGINS=${{ vars.CORS_ORIGINS }}|COOKIE_SAME_SITE=${{ vars.COOKIE_SAME_SITE }}|STORAGE_BUCKET=${{ vars.STORAGE_BUCKET }}|COOKIE_SECURE=true|LOG_LEVEL=info|GOOGLE_MAPS_BROWSER_KEY=${{ vars.GOOGLE_MAPS_BROWSER_KEY }}|FIREBASE_PROJECT_ID=${{ vars.FIREBASE_PROJECT_ID }}|CPANEL_HOST=${{ vars.CPANEL_HOST }}|CPANEL_DOMAIN=${{ vars.CPANEL_DOMAIN }}|PUBSUB_TOPIC_NOTIFICATIONS=${{ vars.PUBSUB_TOPIC_NOTIFICATIONS }}|PUBSUB_AUDIENCE=${{ vars.PUBSUB_AUDIENCE }}|PUBSUB_SERVICE_ACCOUNT=${{ vars.PUBSUB_SERVICE_ACCOUNT }}|MAIL_SMTP_HOST=${{ vars.MAIL_SMTP_HOST }}|MAIL_SMTP_PORT=${{ vars.MAIL_SMTP_PORT }}|MAIL_SMTP_USER=${{ vars.MAIL_SMTP_USER }}|MAIL_FROM_NAME=${{ vars.MAIL_FROM_NAME }}|MAIL_FROM_EMAIL=${{ vars.MAIL_FROM_EMAIL }}" \
+            --set-env-vars "^|^APP_ENV=${{ vars.APP_ENV }}|NODE_ENV=production|AUTH_ISSUER_URL=${{ vars.AUTH_ISSUER_URL }}|AUTH_AUDIENCE=${{ vars.AUTH_AUDIENCE }}|CORS_ORIGINS=${{ vars.CORS_ORIGINS }}|COOKIE_SAME_SITE=${{ vars.COOKIE_SAME_SITE }}|STORAGE_BUCKET=${{ vars.STORAGE_BUCKET }}|COOKIE_SECURE=true|LOG_LEVEL=info|GOOGLE_MAPS_BROWSER_KEY=${{ vars.GOOGLE_MAPS_BROWSER_KEY }}|FIREBASE_PROJECT_ID=${{ vars.FIREBASE_PROJECT_ID }}|CPANEL_HOST=${{ vars.CPANEL_HOST }}|CPANEL_DOMAIN=${{ vars.CPANEL_DOMAIN }}|PUBSUB_TOPIC_NOTIFICATIONS=${{ vars.PUBSUB_TOPIC_NOTIFICATIONS }}|PUBSUB_AUDIENCE=${{ vars.PUBSUB_AUDIENCE }}|PUBSUB_SERVICE_ACCOUNT=${{ vars.PUBSUB_SERVICE_ACCOUNT }}|SCHEDULER_AUDIENCE=${{ vars.SCHEDULER_AUDIENCE }}|SCHEDULER_SERVICE_ACCOUNT=${{ vars.SCHEDULER_SERVICE_ACCOUNT }}|MAIL_SMTP_HOST=${{ vars.MAIL_SMTP_HOST }}|MAIL_SMTP_PORT=${{ vars.MAIL_SMTP_PORT }}|MAIL_SMTP_USER=${{ vars.MAIL_SMTP_USER }}|MAIL_FROM_NAME=${{ vars.MAIL_FROM_NAME }}|MAIL_FROM_EMAIL=${{ vars.MAIL_FROM_EMAIL }}" \
             --set-secrets "DATABASE_URL=oranje-database-url:latest,JWT_PRIVATE_KEY=oranje-jwt-private-key:latest,JWT_PUBLIC_KEY=oranje-jwt-public-key:latest,GOOGLE_PLACES_API_KEY=oranje-places-api-key:latest,CPANEL_API_TOKEN=oranje-cpanel-api-token:latest,MAIL_SMTP_PASSWORD=oranje-mail-smtp-password:latest" \
+            --update-labels "commit-sha=${{ github.sha }}" \
             --min-instances "${{ vars.MIN_INSTANCES }}" \
             --max-instances "${{ vars.MAX_INSTANCES }}" \
             ${{ steps.acceso.outputs.flag }} \

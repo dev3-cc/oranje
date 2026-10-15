@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- La pantalla de Permisos: clara siempre, como el worker (no sigue el modo oscuro). -->
+    <style name="OranjePermissions" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowBackground">@color/surface</item>
+        <item name="colorPrimary">@color/o_500</item>
+        <item name="colorAccent">@color/o_500</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+    </style>
+
+    <style name="OranjeButton" parent="Widget.AppCompat.Button.Borderless">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:fontFamily">@font/montserrat_600</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">@color/ink</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:minHeight">48dp</item>
+    </style>
+</resources>

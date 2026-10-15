@@ -3,6 +3,10 @@ dist/
 build/
 .turbo/
 
+# El bundle del Colaborador para la app (apps/mobile lo empaqueta). `dist/` a
+# secas no lo cubre: son nombres de carpeta distintos.
+dist-mobile/
+
 # El reporte de jest, no el modulo de negocio: `coverage/` a secas se comia
 # apps/api/src/modules/coverage, que es uno de los diez modulos de D-01.
 /coverage/

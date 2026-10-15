@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:mobile": "tsc --noEmit && vite build --config vite.config.mobile.ts",
     "preview": "vite preview",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",

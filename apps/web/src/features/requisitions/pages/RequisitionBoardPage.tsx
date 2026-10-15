@@ -9,14 +9,17 @@ import { RequisitionCardList } from '../components/RequisitionCardList'
 
 import { useGetSessionQuery } from '@/app/sessionApi'
 import personajeContratacion from '@/assets/ilustrations/personaje-contratacion.svg'
+import personajeManager from '@/assets/ilustrations/personaje-manager.svg'
 import fotoEquipo from '@/assets/ilustrations/requisiciones-equipo.webp'
 import { Button } from '@/shared/components/Button'
 import { EmptyState } from '@/shared/components/EmptyState'
 import { FilterReset } from '@/shared/components/FilterReset'
 import { FilterSelect } from '@/shared/components/FilterSelect'
 import { FoldText } from '@/shared/components/FoldText'
+import { GuidedTour, type TourStep } from '@/shared/components/GuidedTour'
 import { LoadError } from '@/shared/components/LoadError'
 import { NoticeCard } from '@/shared/components/NoticeCard'
+import { RefreshControl } from '@/shared/components/RefreshControl'
 import { SearchField } from '@/shared/components/SearchField'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import {
@@ -24,6 +27,7 @@ import {
   REQUISITION_STATUSES,
 } from '@/shared/constants/requisitionStatus'
 import { useCan } from '@/shared/hooks/useCan'
+import { readApiError } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { matchesSearch } from '@/shared/lib/text'
 
@@ -102,8 +106,46 @@ export function RequisitionBoardPage(): ReactNode {
   const can = useCan()
   /** Crear es del hotel (requisitions:create): Reclutamiento consulta el tablero sin el botón. */
   const canCreate = can('requisitions:create')
+  /* El recorrido se reabre desde «Ver el recorrido»; `GuidedTour` entrega su
+     disparador cuando monta. */
+  const [startTour, setStartTour] = useState<() => void>(() => () => undefined)
 
-  const { data: board, isLoading, isError, refetch } = useGetRequisitionBoardQuery()
+  /* Texto escrito para quien trabaja en el hotel, no para quien programa: qué
+     hace aquí, no cómo se llama el módulo. Los pasos que apuntan a un control
+     que su rol no ve se caen solos (un Supervisor no tiene «Crear» si no le
+     toca). */
+  const pasos: readonly TourStep[] = [
+    {
+      anchor: 'board-metrics',
+      title: t`Cómo va tu demanda`,
+      description: t`De un golpe: cuántas tienes abiertas, cuántas esperan firma y cuántas empiezan en menos de 3 días. Toca «Por autorizar» y vas directo a firmarlas.`,
+    },
+    {
+      anchor: 'board-create',
+      title: t`Pide personal desde aquí`,
+      description: t`Dices qué puesto necesitas, cuántas personas y desde cuándo. Queda en Borrador: a Reclutamiento no le llega hasta que el Manager la autoriza.`,
+    },
+    {
+      anchor: 'board-filters',
+      title: t`Para encontrar una en segundos`,
+      description: t`Busca por folio o por hotel, o filtra por estado. «Quitar filtros» te devuelve el tablero completo.`,
+    },
+    {
+      anchor: 'board-list',
+      title: t`El color te dice la prisa`,
+      description: t`Cada tarjeta trae su urgencia y cuánto lleva cubierto. Toca el color y te dice desde cuándo corre y cuándo empieza el puesto.`,
+    },
+  ]
+
+  const {
+    data: board,
+    isLoading,
+    isError,
+    error: boardError,
+    refetch,
+    isFetching,
+    fulfilledTimeStamp,
+  } = useGetRequisitionBoardQuery()
 
   const metrics = board?.metrics
   const items = board?.items ?? []
@@ -166,13 +208,31 @@ export function RequisitionBoardPage(): ReactNode {
           <h1 className="text-3xl font-bold tracking-tight text-ink">
             <FoldText text={t`Requisiciones`} />
           </h1>
-          <p className="mt-1.5 max-w-xl text-sm text-ink-3">
-            {isLoading || !metrics
-              ? t`Cargando requisiciones…`
-              : t`${metrics.openCount} abiertas · ${metrics.awaitingAuthorization} esperan autorización · ${metrics.urgentCount} urgentes`}
-          </p>
+          {/* El enlace va FUERA del párrafo de las cifras, no dentro: metido
+              ahí partía el texto en varios nodos y la prueba que comprueba
+              que las cifras vienen del backend dejaba de encontrarlo. Se ve
+              igual —los dos son inline— y la aserción sigue siendo válida. */}
+          <div className="mt-1.5 flex max-w-xl flex-wrap items-baseline gap-x-1.5 text-sm text-ink-3">
+            <p>
+              {isLoading || !metrics
+                ? t`Cargando requisiciones…`
+                : t`${metrics.openCount} abiertas · ${metrics.awaitingAuthorization} esperan autorización · ${metrics.urgentCount} urgentes`}
+            </p>
+            {metrics && (
+              <>
+                <span aria-hidden>·</span>
+                <button
+                  type="button"
+                  onClick={startTour}
+                  className="cursor-pointer font-medium text-o-700 hover:underline"
+                >
+                  <Trans>Ver el recorrido</Trans>
+                </button>
+              </>
+            )}
+          </div>
           {metrics && (
-            <div className="mt-4 flex flex-wrap items-center gap-2">
+            <div className="mt-4 flex flex-wrap items-center gap-2" data-tour="board-metrics">
               <StatBadge
                 icon="assignment"
                 value={metrics.openCount}
@@ -202,7 +262,7 @@ export function RequisitionBoardPage(): ReactNode {
             </div>
           )}
           {canCreate && (
-            <div className="mt-4">
+            <div className="mt-4" data-tour="board-create">
               <Button
                 variant="primary"
                 onClick={() => {
@@ -239,17 +299,28 @@ export function RequisitionBoardPage(): ReactNode {
 
       {isLoading && <TableSkeleton rows={6} columns={6} />}
 
+      {/* Un 403 no es un problema de red: decirlo así manda a la persona a
+          revisar su internet por algo que nunca va a cambiar (Hugo,
+          2026-10-09, entrando como Contadora). */}
       {isError && (
         <LoadError
-          message={t`No se pudo cargar el Tablero de Requisiciones. Revisa tu conexión e inténtalo de nuevo.`}
-          onRetry={() => {
-            void refetch()
-          }}
+          message={
+            readApiError(boardError).status === 403
+              ? t`Tu rol no tiene acceso al Tablero de Requisiciones. Lo ven el hotel que las pide y Reclutamiento.`
+              : t`No se pudo cargar el Tablero de Requisiciones. Revisa tu conexión e inténtalo de nuevo.`
+          }
+          {...(readApiError(boardError).status === 403
+            ? {}
+            : {
+                onRetry: () => {
+                  void refetch()
+                },
+              })}
         />
       )}
 
       {board && items.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3" data-tour="board-filters">
           <SearchField
             value={search}
             onChange={setSearch}
@@ -266,6 +337,14 @@ export function RequisitionBoardPage(): ReactNode {
             onChange={setStatus}
           />
           <FilterReset activeCount={activeCount} onReset={resetFilters} />
+          <RefreshControl
+            onRefresh={() => {
+              void refetch()
+            }}
+            isFetching={isFetching}
+            fulfilledTimeStamp={fulfilledTimeStamp}
+            label={t`el tablero de Requisiciones`}
+          />
         </div>
       )}
 
@@ -276,13 +355,27 @@ export function RequisitionBoardPage(): ReactNode {
             text={t`Cambia el estado o la búsqueda, o quítalos con «Quitar filtros» para volver a ver el tablero completo.`}
           />
         ) : (
-          <RequisitionCardList items={visibleItems} />
+          <div data-tour="board-list">
+            <RequisitionCardList items={visibleItems} />
+          </div>
         ))}
 
       <NewRequisitionDialog
         isOpen={isNewOpen}
         onClose={() => {
           setIsNewOpen(false)
+        }}
+      />
+
+      {/* `isReady` espera a que el tablero haya cargado: un recorrido sobre el
+          esqueleto apuntaría a controles que todavía no existen. */}
+      <GuidedTour
+        storageKey="requisition-board-tour"
+        steps={pasos}
+        character={personajeManager}
+        isReady={board !== undefined && !isLoading}
+        onReady={(start) => {
+          setStartTour(() => start)
         }}
       />
     </div>

@@ -69,6 +69,32 @@ describe('la Bolsa Self-Pick', () => {
     expect(screen.queryByRole('button', { name: /Quitar filtros/ })).not.toBeInTheDocument()
   })
 
+  it('se puede elegir OTRO lugar libre y es el que se manda (Hugo, 2026-10-09)', async () => {
+    renderSelfPick()
+    const user = userEvent.setup()
+
+    const folio = await screen.findByText('202608120930·K7', undefined, SLOW)
+    await user.click(folio.closest('a') as HTMLElement)
+
+    await screen.findByText('Asignación de slot', undefined, SLOW)
+
+    /* Sin fijar el número: el fixture es compartido y las pruebas anteriores
+       ya ocuparon slots, así que cuál es el primero libre depende del orden. */
+    const [otro] = screen.getAllByRole('button', { name: /Llenar el slot \d+ en vez de este/ })
+    if (otro === undefined) throw new Error('el renglón debe tener otro lugar libre que elegir')
+    const elegido = /slot (\d+)/.exec(otro.textContent ?? '')?.[1]
+    expect(elegido).toBeDefined()
+
+    await user.click(otro)
+
+    // El panel y el resaltado siguen al elegido, no al primero libre.
+    expect(screen.getByText(`Asignar al slot ${String(elegido)}`)).toBeInTheDocument()
+    expect(screen.getByText('se llena ahora')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: `Llenar el slot ${String(elegido)} en vez de este` }),
+    ).toBeNull()
+  })
+
   it('tomar un slot: los ocupados se ven, el libre se asigna y RR-15 avanza el formulario', async () => {
     renderSelfPick()
     const user = userEvent.setup()
@@ -80,7 +106,9 @@ describe('la Bolsa Self-Pick', () => {
     expect(screen.getByText(/renglón 1 · Housekeeper/)).toBeInTheDocument()
     expect(await screen.findByText('María Sandoval', undefined, SLOW)).toBeInTheDocument()
     expect(screen.getAllByText('ocupado')).toHaveLength(4)
-    expect(screen.getAllByText('libre')).toHaveLength(2)
+    // Uno de los libres se llena ahora; el otro se puede elegir (Hugo, 2026-10-09).
+    expect(screen.getByText('se llena ahora')).toBeInTheDocument()
+    expect(screen.getAllByText('libre · elegir')).toHaveLength(1)
     expect(screen.getByText('Asignar al slot 5')).toBeInTheDocument()
 
     const assignButton = screen.getByRole('button', { name: 'Asignar colaborador' })
@@ -136,7 +164,8 @@ describe('la Bolsa Self-Pick', () => {
     await user.click(folio.closest('a') as HTMLElement)
     expect(await screen.findByText('ocupado', undefined, SLOW)).toBeInTheDocument()
     expect(screen.getAllByText('ocupado')).toHaveLength(1)
-    expect(screen.getAllByText('libre')).toHaveLength(3)
+    expect(screen.getByText('se llena ahora')).toBeInTheDocument()
+    expect(screen.getAllByText('libre · elegir')).toHaveLength(2)
 
     const liberar = screen.getByRole('button', { name: 'Liberar' })
     await user.click(liberar)
@@ -152,7 +181,7 @@ describe('la Bolsa Self-Pick', () => {
     await user.click(confirmButton)
 
     await waitFor(() => {
-      expect(screen.getAllByText('libre')).toHaveLength(4)
+      expect(screen.getAllByText('libre · elegir')).toHaveLength(3)
     }, SLOW)
     expect(screen.queryByText('ocupado')).not.toBeInTheDocument()
   })

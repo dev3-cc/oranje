@@ -16,6 +16,7 @@ const VIEWS: ReadonlyArray<{ id: TimesheetView; label: MessageDescriptor }> = [
   { id: 'HOURS', label: msg`Horas` },
   { id: 'DAYS', label: msg`Días` },
   { id: 'MONTH', label: msg`Mes` },
+  { id: 'ATTENDANCE', label: msg`Asistencia` },
 ]
 
 const PILL_CLASS =

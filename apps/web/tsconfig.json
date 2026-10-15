@@ -18,6 +18,9 @@
     "src/**/*.tsx",
     "e2e/**/*.ts",
     "vite.config.ts",
+    /* El build de la app del Colaborador (apps/mobile lo empaqueta). Sin esta
+       línea el archivo existe pero nadie lo revisa. */
+    "vite.config.mobile.ts",
     "vitest.config.ts",
     "playwright.config.ts"
   ]

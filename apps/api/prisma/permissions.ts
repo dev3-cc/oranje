@@ -1095,17 +1095,21 @@ const RECRUITMENT: Permission[] = [
 // Contadora valida, el Manager de Contabilidad autoriza —, y coinciden con las
 // dos firmas que ck_consolidation_signatures ya exige en la base.
 // ---------------------------------------------------------------------------
-// El levantamiento del veto no esta en la matriz de Reclutamiento: el propio
-// encabezado explica que «Remover de Blacklist» quedo fuera por ser del
-// Administrador, que no es rol de ese departamento. La fila se deriva de
-// `Core/Modulos/Blacklist` —«solo por un perfil de Administrador», 2026-08-13— y
-// coincide con la unica transicion BLACK -> WHITE sembrada, autorizada a ROL-ADM-01.
+// Levantar el veto: el Administrador y los tres roles de Reclutamiento.
+//
+// Era solo del Administrador —«solo por un perfil de Administrador»,
+// `Core/Modulos/Blacklist`, 2026-08-13— y Hugo lo abrio a Reclutamiento el
+// 2026-10-10. Se le planteo que, como Reclutamiento es quien PONE el veto,
+// dejar que la misma Reclutadora lo levante quita el segundo par de ojos; con
+// eso enfrente eligio los tres. La transicion BLACK -> WHITE se siembra con
+// los mismos cuatro, para que el permiso y el semaforo no digan cosas
+// distintas.
 const ADMINISTRATION: Permission[] = [
   {
     module: 'blacklist',
     action: 'lift',
     label: 'Remover de Blacklist',
-    roles: [ADMIN],
+    roles: [ADMIN, RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER],
   },
 ]
 

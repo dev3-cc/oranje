@@ -14,6 +14,10 @@ export const listTimesheetsSchema = z.object({
     .refine(isMonday, { message: 'Debe ser un lunes en formato AAAA-MM-DD' })
     .optional(),
   hotelId: z.uuid().optional(),
+  // El periodo acota en la consulta, no después (Hugo, 2026-10-05): el tope
+  // del listado no se alcanza por el simple paso del tiempo.
+  from: z.iso.date().optional(),
+  to: z.iso.date().optional(),
 })
 
 export class ListTimesheetsDto extends createZodDto(listTimesheetsSchema) {}

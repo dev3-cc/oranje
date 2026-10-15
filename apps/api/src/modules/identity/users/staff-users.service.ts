@@ -68,6 +68,10 @@ function invitationError(code: string): InvitationErrorCode {
  *    de uso, sin cambio forzado. Jamás se persiste ni se registra: al journal
  *    va solo `credentialOrigin`, a los logs nada, la respuesta no la regresa.
  */
+
+/** No es una persona: la siembra el seed y firma lo que hace el sistema solo. */
+const SYSTEM_ROLE = 'ROL-SYS-01'
+
 @Injectable()
 export class StaffUsersService {
   private readonly logger = new Logger(StaffUsersService.name)
@@ -388,6 +392,22 @@ export class StaffUsersService {
       throw new UnprocessableEntityException({
         code: 'USE_HOTEL_USERS',
         message: `${roleCode} es un rol del hotel: su alta es POST /hotels/:hotelId/users`,
+      })
+    }
+
+    /*
+     * El Sistema no es una persona (Hugo, 2026-10-10): es la cuenta con la que
+     * firma lo que ocurre sin que nadie lo pida, como cerrar una asignación
+     * temporal vencida.
+     *
+     * Vale igual para crear y para editar, que pasan las dos por aquí: sin
+     * esto se le podía cambiar el rol a una persona real y el journal pasaría
+     * a decir que «el sistema» hizo lo que hizo ella.
+     */
+    if (roleCode === SYSTEM_ROLE) {
+      throw new UnprocessableEntityException({
+        code: 'SYSTEM_ROLE_NOT_ASSIGNABLE',
+        message: 'El rol Sistema no es de una persona: lo usa el propio sistema para firmar',
       })
     }
 

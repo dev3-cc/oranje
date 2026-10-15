@@ -23,6 +23,7 @@ import personajeManager from '@/assets/ilustrations/personaje-manager.svg'
 import personajeTalento from '@/assets/ilustrations/personaje-talento.svg'
 import { Button, buttonClass } from '@/shared/components/Button'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
+import { GuidedTour, type TourStep } from '@/shared/components/GuidedTour'
 import { HotelPhotoBackdrop } from '@/shared/components/HotelPhotoBackdrop'
 import { NoticeCard } from '@/shared/components/NoticeCard'
 import {
@@ -74,6 +75,28 @@ export function RequisitionDetailPage(): ReactNode {
   const { data: session } = useGetSessionQuery()
   const [deleteRequisition, { isLoading: isDeleting }] = useDeleteRequisitionMutation()
   const [isDeleteArmed, setDeleteArmed] = useState(false)
+  /* El recorrido se reabre desde «Ver el recorrido»; `GuidedTour` entrega su
+     disparador al montar. */
+  const [startTour, setStartTour] = useState<() => void>(() => () => undefined)
+
+  /* Texto para quien pide y firma personal, no para quien programa. */
+  const pasos: readonly TourStep[] = [
+    {
+      anchor: 'detail-summary',
+      title: t`Cómo va esta requisición`,
+      description: t`Su folio, en qué estado está y cuántos lugares llevas cubiertos de los que pediste.`,
+    },
+    {
+      anchor: 'detail-positions',
+      title: t`Puesto por puesto`,
+      description: t`Cada puesto con sus lugares. Donde dice «Sin asignar» puedes tocar para llenarlo, y si ya está ocupado te lleva al perfil de quien lo cubre.`,
+    },
+    {
+      anchor: 'detail-actions',
+      title: t`Lo que puedes hacer`,
+      description: t`«Ver bitácora» te dice quién la movió y cuándo. El resto de los botones cambia según dónde esté: firmarla, cubrirla o eliminarla con motivo.`,
+    },
+  ]
   const [deleteReason, setDeleteReason] = useState('')
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [selectedPositionId, setSelectedPositionId] = useState<string | null>(null)
@@ -189,6 +212,14 @@ export function RequisitionDetailPage(): ReactNode {
         <span className="font-semibold text-ink-2">
           <Trans>Detalle de Requisición</Trans>
         </span>
+        <span aria-hidden>·</span>
+        <button
+          type="button"
+          onClick={startTour}
+          className="cursor-pointer font-medium text-o-700 hover:underline"
+        >
+          <Trans>Ver el recorrido</Trans>
+        </button>
       </nav>
 
       <header className="flex flex-col gap-4">
@@ -224,7 +255,7 @@ export function RequisitionDetailPage(): ReactNode {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-end gap-3">
+        <div className="flex flex-wrap items-center justify-end gap-3" data-tour="detail-actions">
           <Button
             variant="secondary"
             onClick={() => {
@@ -434,17 +465,32 @@ export function RequisitionDetailPage(): ReactNode {
         </p>
       )}
 
-      <RequisitionSummaryStrip detail={detail} />
+      <div data-tour="detail-summary">
+        <RequisitionSummaryStrip detail={detail} />
+      </div>
 
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-3">
-        <div className="flex flex-col gap-6 xl:col-span-2">
+        <div className="flex flex-col gap-6 xl:col-span-2" data-tour="detail-positions">
           <PositionsTable
             positions={detail.positions}
             authorizedAt={detail.authorizedAt}
             selectedId={selectedPosition?.id ?? ''}
             onSelect={setSelectedPositionId}
+            requisitionId={requisitionId}
+            canAssign={canParticipate && isOpenState}
           />
-          {selectedPosition && <SlotList position={selectedPosition} />}
+          {selectedPosition && (
+            <SlotList
+              position={selectedPosition}
+              requisitionId={requisitionId}
+              canAssign={canParticipate && isOpenState}
+              assignHint={
+                canParticipate
+                  ? t`Para llenar un slot, la requisición tiene que estar autorizada y en proceso. Ahora está en ${REQUISITION_STATUS_LABEL[detail.status]}.`
+                  : t`Llenar un slot es de Reclutamiento: la Reclutadora, su Líder de Grupo o el Manager de Reclutamiento.`
+              }
+            />
+          )}
         </div>
 
         {/* Se ocultó el 2026-09-15 y volvió a pedido de Hugo (2026-09-21):
@@ -460,6 +506,18 @@ export function RequisitionDetailPage(): ReactNode {
           }}
         />
       )}
+
+      {/* Lo que se señala depende de dónde esté la requisición y de quién
+          mire: los pasos cuyo control no se dibuja se caen solos. */}
+      <GuidedTour
+        storageKey="requisition-detail-tour"
+        steps={pasos}
+        character={personajeManager}
+        isReady={detail !== undefined}
+        onReady={(start) => {
+          setStartTour(() => start)
+        }}
+      />
     </div>
   )
 }
