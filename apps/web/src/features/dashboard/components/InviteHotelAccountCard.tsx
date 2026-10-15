@@ -32,18 +32,25 @@ export function InviteHotelAccountCard({ session }: { session: SessionUser }): R
       <section className="flex flex-wrap items-center gap-4 rounded-[18px] border border-line bg-surface p-5">
         <MaterialIcon name="person_add" className="text-o-700" />
         <span className="min-w-0 flex-1">
+          {/* Nombra los puestos en vez de decir «tu equipo»: un gerente de
+              hotel lee «equipo» y piensa en SU gente, que son los
+              colaboradores de Oranje — y esos no se invitan aquí, los asigna
+              Reclutamiento. Hugo lo pidió al verlo en pantalla (2026-10-15):
+              «es su reemplazo de la persona, no vaya a pensar que
+              colaboradores». */}
           <span className="block text-sm font-semibold text-ink">
-            <Trans>¿Entró alguien nuevo a tu equipo?</Trans>
+            <Trans>¿Entró un Supervisor o un gerente nuevo?</Trans>
           </span>
           <span className="block text-xs text-ink-3">
             <Trans>
-              Invítalo desde aquí y le llega su acceso. Un gerente nuevo lo confirma Oranje antes de
-              que pueda entrar.
+              Dale su acceso al sistema desde aquí: es para quien trabaja en tu hotel con cuenta
+              propia, no para los colaboradores que te asigna Oranje. Si es gerente, Oranje lo
+              confirma antes de que pueda entrar.
             </Trans>
           </span>
         </span>
         <Button variant="primary" onClick={(): void => setIsOpen(true)}>
-          {t`Invitar cuenta`}
+          {t`Dar acceso`}
         </Button>
       </section>
 
