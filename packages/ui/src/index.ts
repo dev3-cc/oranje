@@ -23,6 +23,7 @@ export { Input } from './components/ui/input'
 export { Textarea } from './components/ui/textarea'
 export { Label } from './components/ui/label'
 export { Checkbox } from './components/ui/checkbox'
+export { Switch } from './components/ui/switch'
 export { Slider } from './components/ui/slider'
 export {
   Select,

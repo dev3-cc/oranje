@@ -1,6 +1,8 @@
 import { useLingui } from '@lingui/react/macro'
 import { cn, Input, MaterialIcon, Spinner } from '@oranje/ui'
-import { useEffect, useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
+
+import { useDelayedFlag } from '@/shared/hooks/useDelayedFlag'
 
 /**
  * El buscador de la casa. Una sola forma para todo el sistema (auditoría de
@@ -80,22 +82,4 @@ export function SearchField({
       )}
     </div>
   )
-}
-
-/** `true` solo cuando `flag` lleva más de `delayMs` encendida; se apaga al instante. */
-function useDelayedFlag(flag: boolean, delayMs: number): boolean {
-  const [delayed, setDelayed] = useState(false)
-  useEffect(() => {
-    if (!flag) {
-      setDelayed(false)
-      return
-    }
-    const timer = setTimeout(() => {
-      setDelayed(true)
-    }, delayMs)
-    return () => {
-      clearTimeout(timer)
-    }
-  }, [flag, delayMs])
-  return delayed
 }

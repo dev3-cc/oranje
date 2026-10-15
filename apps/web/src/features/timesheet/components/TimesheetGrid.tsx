@@ -43,6 +43,7 @@ function summaryOf(
     workerId: row.workerId,
     workerName: row.workerName,
     jobTitle: row.jobTitle,
+    photoUrl: row.photoUrl,
     hotelName: row.hotelName,
     weekStatus: summary.weekStatus,
     totalHours: summary.totalHours,

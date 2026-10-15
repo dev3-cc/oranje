@@ -58,9 +58,9 @@ export function TimesheetViewToggle({
 }
 
 /**
- * ‹ · Hoy · ›. Camina por las semanas CON datos: un vecino sin timesheet no
- * existe, y el botón lo dice deshabilitándose en vez de llevar a una semana
- * vacía.
+ * ‹ · rango · ›. Camina por las semanas CON datos: un vecino sin timesheet
+ * no existe, y el botón lo dice deshabilitándose en vez de llevar a una
+ * semana vacía.
  */
 export function WeekNavigator({
   weekStart,
@@ -76,10 +76,12 @@ export function WeekNavigator({
   const next = neighborWeek(availableWeeks, weekStart, 1)
   const currentWeek = weekContaining(availableWeeks, todayIso())
   const isCurrentWeek = currentWeek === weekStart
-  /* El botón del medio decía "Hoy" aunque la semana en pantalla fuera otra —
-     mismo defecto que el badge "Hoy" del detalle (Hugo, 2026-10-12): si no
-     es la semana actual, enseña SU rango, no una palabra que ya no aplica. */
-  const middleLabel = isCurrentWeek ? t`Hoy` : formatWeekRange(weekStart, addDaysIso(weekStart, 6))
+  /* El botón del medio YA NO dice "Hoy" (Hugo, 2026-10-15): "hoy" es el día
+     del navegador de quien mira, y Contabilidad y el personal del hotel ven
+     semanas de hoteles con su propia zona y su propio día de inicio de
+     semana — la palabra podía no corresponder a la semana real del hotel.
+     Siempre el rango, nunca una palabra que dependa de dónde está quien mira. */
+  const middleLabel = formatWeekRange(weekStart, addDaysIso(weekStart, 6))
 
   const arrowClass =
     'flex size-9 cursor-pointer items-center justify-center rounded-lg border border-line bg-surface text-ink-2 hover:bg-surface-2 disabled:cursor-not-allowed disabled:text-ink-4 disabled:hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500'

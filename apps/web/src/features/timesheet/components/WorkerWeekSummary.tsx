@@ -18,9 +18,9 @@ import { WeekActionBar } from './WeekActionBar'
 
 import { MagicCard } from '@/shared/components/MagicCard'
 import {
-  TIMESHEET_WEEK_STATUS_LABEL,
-  TIMESHEET_WEEK_STATUS_TOKEN,
-  type TimesheetWeekStatus,
+  NO_TIMESHEET_STATUS,
+  WEEK_STATUS_LABEL_WITH_VIRTUAL,
+  WEEK_STATUS_TOKEN_WITH_VIRTUAL,
 } from '@/shared/constants/timesheetStatus'
 import { formatHours } from '@/shared/lib/formatters'
 
@@ -28,10 +28,11 @@ import { formatHours } from '@/shared/lib/formatters'
  * «Quién sigue» de la pastilla (mismo patrón que el resto del proyecto): la
  * palabra sola no dice si a la persona le toca actuar o esperar.
  */
-const WEEK_STATUS_DETAIL: Record<TimesheetWeekStatus, MessageDescriptor> = {
+const WEEK_STATUS_DETAIL: Record<string, MessageDescriptor> = {
   OPEN: msg`Todavía se puede corregir y capturar marcas. El Supervisor la envía cuando esté lista.`,
   PENDING_APPROVAL: msg`El Supervisor ya la envió; ya no se puede editar. Falta que un Manager la apruebe.`,
   APPROVED: msg`Un Manager ya la aprobó. Sigue el pago y la factura del hotel.`,
+  [NO_TIMESHEET_STATUS]: msg`No registró ni una marca esta semana: no hay timesheet que enviar ni aprobar.`,
 }
 
 /**
@@ -82,8 +83,7 @@ export function WorkerWeekSummary({
 
   const requisitionRef = row.entries[0]?.requisitionNumber ?? null
 
-  const weekStatusColor =
-    statusLight[TIMESHEET_WEEK_STATUS_TOKEN[row.weekStatus as TimesheetWeekStatus]]
+  const weekStatusColor = statusLight[WEEK_STATUS_TOKEN_WITH_VIRTUAL[row.weekStatus] ?? 'st-gris']
 
   return (
     <MagicCard className="rounded-xl">
@@ -112,7 +112,12 @@ export function WorkerWeekSummary({
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-bold text-ink">{row.workerName}</p>
             <p className="truncate text-xs text-ink-3">
-              {row.jobTitle} · {row.hotelName}
+              {/* "— · Fairfield..." se leía roto cuando el puesto no está en
+                  el catálogo (Hugo, 2026-10-15: "no se ven bien en
+                  detalles") — el guion de "sin dato" no pinta bien como
+                  prefijo de otra cosa. Sin puesto, solo el hotel. */}
+              {row.jobTitle !== '—' ? `${row.jobTitle} · ` : ''}
+              {row.hotelName}
             </p>
           </div>
         </div>
@@ -141,15 +146,14 @@ export function WorkerWeekSummary({
                     style={{ backgroundColor: weekStatusColor }}
                     aria-hidden
                   />
-                  {TIMESHEET_WEEK_STATUS_LABEL[row.weekStatus as TimesheetWeekStatus] ??
-                    row.weekStatus}
+                  {WEEK_STATUS_LABEL_WITH_VIRTUAL[row.weekStatus] ?? row.weekStatus}
                   <MaterialIcon name="info" className="text-sm text-ink-4" aria-hidden />
                 </span>
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-56">
                 <p className="text-xs">
-                  {WEEK_STATUS_DETAIL[row.weekStatus as TimesheetWeekStatus]
-                    ? i18n._(WEEK_STATUS_DETAIL[row.weekStatus as TimesheetWeekStatus])
+                  {WEEK_STATUS_DETAIL[row.weekStatus]
+                    ? i18n._(WEEK_STATUS_DETAIL[row.weekStatus] as MessageDescriptor)
                     : t`Estado de la semana.`}
                 </p>
               </TooltipContent>

@@ -34,8 +34,6 @@ export interface PersonnelRow {
    * HOY esto es casi siempre `null`; ver el hallazgo en la bitácora.
    */
   stateCode: string | null
-  /** Turno de HOY del Schedule; `null` = descansa (o su estado lo explica). */
-  shift: { startsAt: string; endsAt: string } | null
   /**
    * La zona del hotel del turno: sus horas se leen donde ocurren.
    *

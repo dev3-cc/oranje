@@ -151,11 +151,15 @@ const MODULES: NavModule[] = [
     roles: [MGR_GENERAL],
   },
   { label: msg`Mi Personal`, to: '/my-staff', icon: 'badge', roles: HOTEL },
+  /* Atrasadas sin pagar + Registrar pago se mudaron al Timesheet de todos
+     los hoteles, como tabla (Hugo, 2026-10-13) — esta pantalla deja de
+     tener entrada propia en el menú. `roles: []` oculta el enlace sin
+     borrar el módulo ni su ruta; revertir es volver a `roles: CONTABILIDAD`. */
   {
     label: msg`Consolidado Semanal`,
     to: '/accounting/consolidations',
     icon: 'payments',
-    roles: CONTABILIDAD,
+    roles: [],
   },
   {
     label: msg`Semanas sin aprobar`,

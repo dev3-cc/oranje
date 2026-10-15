@@ -6,9 +6,9 @@ import { useParams } from 'react-router'
 import {
   useAuthorizeConsolidationMutation,
   useGetConsolidationQuery,
-  usePayConsolidationMutation,
   useValidateConsolidationMutation,
 } from '../api/settlementApi'
+import { PayConsolidationButton } from '../components/PayConsolidationButton'
 import { hoursOf, money } from '../lib/settlementFormat'
 import {
   CONSOLIDATION_STATUS_LABEL,
@@ -45,9 +45,8 @@ export function ConsolidationDetailPage(): ReactNode {
   })
   const [validate, validateState] = useValidateConsolidationMutation()
   const [authorize, authorizeState] = useAuthorizeConsolidationMutation()
-  const [pay, payState] = usePayConsolidationMutation()
 
-  const busy = validateState.isLoading || authorizeState.isLoading || payState.isLoading
+  const busy = validateState.isLoading || authorizeState.isLoading
 
   if (isLoading && !row) return <DetailSkeleton />
 
@@ -147,19 +146,11 @@ export function ConsolidationDetailPage(): ReactNode {
               </Button>
             )}
             {canPay && (
-              <Button
-                variant="primary"
-                disabled={busy}
-                onClick={() =>
-                  run(
-                    () => pay(row.id).unwrap(),
-                    t`Pago registrado`,
-                    t`No se pudo registrar el pago. Reintenta.`,
-                  )
-                }
-              >
-                <Trans>Registrar pago</Trans>
-              </Button>
+              <PayConsolidationButton
+                consolidationId={row.id}
+                workerName={row.worker.fullName}
+                netAmount={row.netAmount}
+              />
             )}
           </div>
         </div>

@@ -31,6 +31,7 @@ import { FilterSelect } from '@/shared/components/FilterSelect'
 import { LoadError } from '@/shared/components/LoadError'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
+import { ReloadButton } from '@/shared/components/ReloadButton'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { TableSkeleton } from '@/shared/components/TableSkeleton'
 import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
@@ -74,7 +75,7 @@ export function ConsolidationsPage(): ReactNode {
 
   /* Sin `weekStart`: se trae todo lo que el alcance permite y la semana se
      navega del lado del cliente (mismo patrón que el Timesheet, D-28). */
-  const { data, isLoading, isError, refetch } = useGetConsolidationsQuery({
+  const { data, isLoading, isFetching, isError, refetch } = useGetConsolidationsQuery({
     ...(status !== ANY ? { status } : {}),
   })
 
@@ -110,13 +111,21 @@ export function ConsolidationsPage(): ReactNode {
             )}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={reopenIntro}
-          className="cursor-pointer rounded-md px-2 py-1 text-xs font-semibold whitespace-nowrap text-o-700 hover:bg-o-50"
-        >
-          <Trans>¿Cómo funciona?</Trans>
-        </button>
+        <div className="flex items-center gap-2">
+          <ReloadButton
+            onReload={() => {
+              void refetch()
+            }}
+            isReloading={isFetching}
+          />
+          <button
+            type="button"
+            onClick={reopenIntro}
+            className="cursor-pointer rounded-md px-2 py-1 text-xs font-semibold whitespace-nowrap text-o-700 hover:bg-o-50"
+          >
+            <Trans>¿Cómo funciona?</Trans>
+          </button>
+        </div>
       </header>
 
       <Modal
@@ -237,7 +246,13 @@ export function ConsolidationsPage(): ReactNode {
                         </Link>
                       </TableCell>
                       <TableCell className="px-4 py-3 text-sm text-ink-2">
-                        {row.hotel.name}
+                        {/* row.hotel llega siempre del back (JOIN interno
+                            contra commercial.hotel) — este guard es solo
+                            para no tronar la pantalla entera si algún día
+                            no fuera así (Hugo, 2026-10-15: "sigue
+                            fallando"), mismo patrón que ya usa este mismo
+                            archivo línea 99 y el Timesheet en settlementApi. */}
+                        {row.hotel?.name ?? '—'}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-sm text-ink-3">
                         {formatWeekRange(row.weekStart, row.weekEnd)}

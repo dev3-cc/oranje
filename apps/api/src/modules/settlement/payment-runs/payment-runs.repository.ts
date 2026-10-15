@@ -92,7 +92,9 @@ export class PaymentRunsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   /** Hoteles con horas aprobadas en la semana. Sin ellos no hay nada que correr. */
-  async hotelsWithApprovedHours(weekStart: string, hotelId?: string): Promise<HotelToRun[]> {
+  /** Un hotel, nunca "todos" (Hugo, 2026-10-14): `hotelId` ya no es opcional
+      en el DTO que llega aquí arriba. */
+  async hotelsWithApprovedHours(weekStart: string, hotelId: string): Promise<HotelToRun[]> {
     return this.prisma.$queryRaw<HotelToRun[]>`
       SELECT DISTINCT h.id AS "hotelId", h.name AS "hotelName", h.time_zone AS "timeZone"
         FROM operations.timesheet t
@@ -100,7 +102,7 @@ export class PaymentRunsRepository {
         JOIN commercial.hotel h   ON h.id = r.hotel_id
        WHERE t.week_start = ${weekStart}::date
          AND t.status = 'APPROVED'
-         AND (${hotelId ?? null}::uuid IS NULL OR h.id = ${hotelId ?? null}::uuid)
+         AND h.id = ${hotelId}::uuid
        ORDER BY h.name`
   }
 

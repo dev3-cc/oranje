@@ -110,9 +110,13 @@ export class WorkersService {
    */
   async list(query: QueryWorkersDto, user: AuthenticatedUser): Promise<WorkerBoard> {
     const seesPool = await this.permissions.can(user.roleCode, 'recruitment', 'search_candidates')
+    /* Contabilidad (sin hotel propio, D-09): ve a todos sin acotar, igual que
+       `timesheet:read_all_hotels` en el Timesheet — basta un permiso propio,
+       `staff:read` solo cubre a quien SÍ tiene `hotelId`. */
+    const seesAllHotels = await this.permissions.can(user.roleCode, 'staff', 'read_all_hotels')
     let assignedToHotelId: string | null = null
 
-    if (!seesPool) {
+    if (!seesPool && !seesAllHotels) {
       const seesStaff = await this.permissions.can(user.roleCode, 'staff', 'read')
       if (!seesStaff || !user.hotelId) {
         throw new ForbiddenException({

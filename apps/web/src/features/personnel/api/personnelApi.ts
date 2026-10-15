@@ -166,14 +166,6 @@ async function fetchBoard(
   const today = todayIso()
   const workerById = new Map(workers.map((worker) => [worker.id, worker]))
 
-  /** El turno de HOY por persona (el primero, si tuviera dos). */
-  const shiftByWorker = new Map<string, ScheduleEntryApi>()
-  for (const entry of entries) {
-    if (entry.workDate === today && !shiftByWorker.has(entry.worker.id)) {
-      shiftByWorker.set(entry.worker.id, entry)
-    }
-  }
-
   /** La última Auditoría de Presentación Personal por colaborador (`GET /audits` ya llega ordenado por fecha, más reciente primero). */
   const presentationByWorker = new Map<string, { score: number; auditedAt: string }>()
   for (const audit of audits) {
@@ -212,7 +204,6 @@ async function fetchBoard(
     .map((workerId): PersonnelRow | null => {
       const worker = workerById.get(workerId)
       if (!worker) return null
-      const shift = shiftByWorker.get(workerId)
       const stateCode = worker.state?.code ?? null
       return {
         workerId,
@@ -222,7 +213,6 @@ async function fetchBoard(
         phone: worker.phone ?? '',
         positionName: worker.position?.name ?? '—',
         stateCode,
-        shift: shift ? { startsAt: shift.startsAt, endsAt: shift.endsAt } : null,
         hotelTimeZone: schedule?.hotel.timeZone,
         clockInAt: clockInByWorker.get(workerId) ?? null,
         canStandBy: stateCode !== null && OPERATIONAL_STATES.has(stateCode),

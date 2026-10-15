@@ -258,8 +258,12 @@ const routes: readonly MockRoute[] = [
         isInternalRate: false,
         overtimeMultiplier: multiplier,
         subtotal: subtotal.toFixed(2),
+        deductionAmount: '0.00',
+        netAmount: subtotal.toFixed(2),
         isOverridden: true,
         overrideReason: dto.reason,
+        billRate: found.payPreview?.billRate ?? null,
+        billSubtotal: found.payPreview?.billSubtotal ?? null,
       }
       return { data: { ...found, totals: totalsOf(found.days) } }
     },

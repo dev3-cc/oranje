@@ -289,6 +289,32 @@ export async function makeWorker(
 
 /** Borra lo creado, al revés, incluidos los consolidados de los colaboradores de la prueba. */
 export async function cleanup(reg: Registry, workerIds: string[]): Promise<void> {
+  // El ponche (real o manual) abre su Timesheet y su Schedule de la semana
+  // solo — el servicio los crea sin que la prueba los pida, así que
+  // `reg.rows` nunca los registra. Sin este bloque, el hotel y el worker
+  // quedan con filas huérfanas y el DELETE de abajo truena por la FK (Hugo,
+  // 2026-10-14, destapado al corregir el bug de zona horaria de
+  // `ensureSchedule`: antes, ese bug impedía que estas filas llegaran a
+  // crearse, y por eso la fuga nunca se había notado).
+  if (workerIds.length > 0) {
+    await db.$executeRawUnsafe(
+      `DELETE FROM operations.punch_mark WHERE timesheet_day_id IN
+         (SELECT d.id FROM operations.timesheet_day d
+            JOIN operations.timesheet t ON t.id = d.timesheet_id
+           WHERE t.worker_id = ANY($1::uuid[]))`,
+      workerIds,
+    )
+    await db.$executeRawUnsafe(
+      `DELETE FROM operations.timesheet_day WHERE timesheet_id IN
+         (SELECT id FROM operations.timesheet WHERE worker_id = ANY($1::uuid[]))`,
+      workerIds,
+    )
+    await db.$executeRawUnsafe(
+      'DELETE FROM operations.timesheet WHERE worker_id = ANY($1::uuid[])',
+      workerIds,
+    )
+  }
+
   if (workerIds.length > 0) {
     // Las deducciones (Hugo, 2026-10-09: el descuento de un ajuste/gasto
     // incluido ya genera una fila propia aquí) también apuntan RESTRICT al
@@ -318,6 +344,20 @@ export async function cleanup(reg: Registry, workerIds: string[]): Promise<void>
 
   for (const row of [...reg.rows].reverse()) {
     await db.$executeRawUnsafe(`DELETE FROM ${row.table} WHERE id = $1::uuid`, row.id)
+  }
+
+  // Al final y no antes: un Schedule registrado en `reg.rows` (vía
+  // `makeSchedule`) todavía puede tener timesheets de workers AJENOS
+  // colgados (p. ej. `observability-pendientes.spec.ts`, que usa workers
+  // reales de la base y por eso no están en `workerIds`) — esos ya se
+  // borraron arriba, en el loop normal. Solo entonces es seguro barrer lo
+  // que el servicio haya creado solo y ningún registro conozca.
+  const hotelIds = reg.rows.filter((row) => row.table === 'commercial.hotel').map((row) => row.id)
+  if (hotelIds.length > 0) {
+    await db.$executeRawUnsafe(
+      'DELETE FROM operations.schedule WHERE hotel_id = ANY($1::uuid[])',
+      hotelIds,
+    )
   }
 }
 

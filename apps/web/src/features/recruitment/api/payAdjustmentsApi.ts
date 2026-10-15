@@ -73,7 +73,13 @@ export const payAdjustmentsApi = baseApi.injectEndpoints({
     includePayAdjustment: build.mutation<PayAdjustment, { id: string }>({
       query: ({ id }) => ({ url: `/pay-adjustments/${id}/include`, method: 'POST' }),
       transformResponse: (res: ApiEnvelope<PayAdjustment>) => res.data,
-      invalidatesTags: [{ type: 'PayAdjustment' as const, id: 'APPROVED_PENDING_INCLUSION' }],
+      /* Incluirlo también cambia el Pago estimado del Timesheet (Hugo,
+         2026-10-14): sin este tag, «Ajustes a incluir» se refresca pero el
+         Timesheet se queda con el monto de antes hasta recargar. */
+      invalidatesTags: [
+        { type: 'PayAdjustment' as const, id: 'APPROVED_PENDING_INCLUSION' },
+        { type: 'Timesheet' as const, id: 'LIST' },
+      ],
     }),
   }),
 })
