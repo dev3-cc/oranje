@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Put,
   Query,
@@ -15,7 +16,7 @@ import { CurrentUser, Requires } from '../../../common/decorators/index.js'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 
 import { ContractEntity, ContractsService } from './contracts.service.js'
-import { CreateContractDto, UpsertRateDto } from './dto/contract.dto.js'
+import { CreateContractDto, UpdateContractDto, UpsertRateDto } from './dto/contract.dto.js'
 
 @Controller('contracts')
 export class ContractsController {
@@ -59,6 +60,17 @@ export class ContractsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: ContractEntity }> {
     return { data: await this.contracts.create(dto, user) }
+  }
+
+  @Requires('terms_and_conditions', 'update')
+  @Patch(':id')
+  @HttpCode(HttpStatus.OK)
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateContractDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: ContractEntity }> {
+    return { data: await this.contracts.update(id, dto, user) }
   }
 
   @Requires('terms_and_conditions', 'update')

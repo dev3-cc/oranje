@@ -82,7 +82,7 @@ export function EditRateDialog({
           <p role="alert" className="text-sm text-red">
             {apiErrorMessage(error, {
               byCode: {
-                CONTRACT_NOT_DRAFT: t`Este contrato ya no es borrador: las tarifas quedaron congeladas al activarlo.`,
+                CONTRACT_CLOSED: t`Este contrato ya está cerrado: las tarifas quedaron congeladas.`,
                 RATE_MARGIN_NEGATIVE: t`Lo que se factura no puede ser menor a lo que se paga a la persona.`,
               },
               fallback: t`No se pudo guardar la tarifa. Inténtalo de nuevo.`,

@@ -37,8 +37,22 @@ export function Phase2Page(): ReactNode {
 
   const [step, setStep] = useState(1)
   const [transportType, setTransportType] = useState('')
+  /* Abierto a mano desde el resumen: quien ya terminó entra a corregir, no a
+     un alta. */
+  const [isEditing, setEditing] = useState(false)
 
   const hasDocument = profile?.taxDeadline.hasDocument ?? false
+
+  /* Lo que ESTA pantalla pide: el transporte —lo único que de verdad
+     bloquea— y el documento fiscal. La foto NO cuenta: es opcional y a
+     propósito queda fuera del perfil completo (Hugo, 2026-10-09), así que
+     exigirla aquí volvería a mostrar la pantalla como pendiente para siempre.
+
+     Sin esto la pestaña «Mis datos» abría SIEMPRE el asistente desde el paso
+     1, hubiera o no algo que llenar, y quien ya había terminado seguía viendo
+     una tarea pendiente que no existía (Hugo, 2026-10-16). */
+  const isDone = (profile?.transportType ?? null) !== null && hasDocument
+  const showWizard = !isDone || isEditing
 
   useEffect(() => {
     if (profile?.transportType) setTransportType(profile.transportType)
@@ -81,8 +95,11 @@ export function Phase2Page(): ReactNode {
           {IS_DEV_UI
             ? 'RF-C-01 · transporte e identificación fiscal'
             : t`Tu transporte y tu SSN o ITIN`}{' '}
+          {/* Decía «Paso 1 de 2» fijo, con TRES pasos dibujados abajo: el
+              texto quedó viejo al agregarse la foto como tercer paso, y en
+              pantalla se contradecía con el indicador (Hugo, 2026-10-16). */}
           <span className="rounded-full bg-o-50 px-2 py-0.5 font-semibold text-o-700">
-            <Trans>Paso 1 de 2</Trans>
+            {t`Paso ${step} de ${LAST_STEP}`}
           </span>
         </p>
       </header>
@@ -97,9 +114,58 @@ export function Phase2Page(): ReactNode {
         </p>
       )}
 
-      <StepIndicator steps={steps} current={step} onStepClick={setStep} />
+      {!showWizard && (
+        <section className="flex flex-col gap-3 rounded-xl border border-line bg-surface p-4">
+          <div className="flex items-center gap-2">
+            <MaterialIcon name="check_circle" className="text-lg text-green" aria-hidden />
+            <h2 className="text-sm font-semibold text-ink">
+              <Trans>Ya está todo</Trans>
+            </h2>
+          </div>
+          <p className="text-xs text-ink-3">
+            <Trans>
+              No tienes nada pendiente aquí. Esto es lo que quedó registrado; si algo cambió,
+              corrígelo.
+            </Trans>
+          </p>
+          <dl className="divide-y divide-line text-sm">
+            <div className="flex items-baseline justify-between gap-4 py-2">
+              <dt className="text-ink-3">
+                <Trans>Transporte</Trans>
+              </dt>
+              <dd className="text-right font-medium text-ink">
+                {profile?.transportType
+                  ? (TRANSPORT_LABEL[profile.transportType] ?? profile.transportType)
+                  : '—'}
+              </dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-4 py-2">
+              <dt className="text-ink-3">
+                <Trans>SSN / ITIN</Trans>
+              </dt>
+              <dd className="text-right font-medium text-ink">
+                {profile?.taxDeadline.isDocumentVerified ? (
+                  <Trans>Verificado</Trans>
+                ) : (
+                  <Trans>Enviado, en revisión</Trans>
+                )}
+              </dd>
+            </div>
+          </dl>
+          <Button
+            onClick={() => {
+              setEditing(true)
+              setStep(1)
+            }}
+          >
+            <Trans>Corregir mis datos</Trans>
+          </Button>
+        </section>
+      )}
 
-      {step === 1 && (
+      {showWizard && <StepIndicator steps={steps} current={step} onStepClick={setStep} />}
+
+      {showWizard && step === 1 && (
         <section className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
             <MaterialIcon name="photo_camera" className="text-lg text-o-700" aria-hidden />
@@ -122,7 +188,7 @@ export function Phase2Page(): ReactNode {
         </section>
       )}
 
-      {step === 2 && (
+      {showWizard && step === 2 && (
         <section className="flex flex-col gap-4">
           <div className="flex items-center gap-2">
             <MaterialIcon name="directions_car" className="text-lg text-o-700" aria-hidden />
@@ -166,7 +232,7 @@ export function Phase2Page(): ReactNode {
         </section>
       )}
 
-      {step === 3 && (
+      {showWizard && step === 3 && (
         <section className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
             <MaterialIcon name="badge" className="text-lg text-o-700" aria-hidden />
@@ -187,37 +253,47 @@ export function Phase2Page(): ReactNode {
         </section>
       )}
 
-      <div className="flex gap-3">
-        {step > 1 && (
-          <Button
-            onClick={() => {
-              setStep((current) => current - 1)
-            }}
-          >
-            <Trans>Atrás</Trans>
-          </Button>
-        )}
-        {step < LAST_STEP ? (
-          <Button
-            variant="primary"
-            disabled={step === 2 && !canSubmit}
-            onClick={() => {
-              void goNext()
-            }}
-          >
-            {step === 2 && isLoading ? t`Guardando…` : t`Continuar`}
-          </Button>
-        ) : (
-          <Link to="/colaborador/alta-3" className={buttonClass('primary', 'flex-1 text-center')}>
-            <Trans>Terminar</Trans>
-          </Link>
-        )}
-      </div>
+      {showWizard && (
+        <div className="flex gap-3">
+          {step > 1 && (
+            <Button
+              onClick={() => {
+                setStep((current) => current - 1)
+              }}
+            >
+              <Trans>Atrás</Trans>
+            </Button>
+          )}
+          {step < LAST_STEP ? (
+            <Button
+              variant="primary"
+              disabled={step === 2 && !canSubmit}
+              onClick={() => {
+                void goNext()
+              }}
+            >
+              {step === 2 && isLoading ? t`Guardando…` : t`Continuar`}
+            </Button>
+          ) : (
+            <Link
+              to="/collaborator/signup-3"
+              className={buttonClass('primary', 'flex-1 text-center')}
+            >
+              <Trans>Terminar</Trans>
+            </Link>
+          )}
+        </div>
+      )}
 
-      <p className="text-center text-xs text-ink-4">
-        <Trans>Sigues en Blanco hasta que la Reclutadora valide el alta</Trans>
-        {IS_DEV_UI ? ' (RF-08)' : ''}
-      </p>
+      {/* El recordatorio del Blanco es del ALTA: a quien ya terminó le decía
+          que sigue pendiente de validación cuando puede llevar meses
+          trabajando. */}
+      {showWizard && (
+        <p className="text-center text-xs text-ink-4">
+          <Trans>Sigues en Blanco hasta que la Reclutadora valide el alta</Trans>
+          {IS_DEV_UI ? ' (RF-08)' : ''}
+        </p>
+      )}
     </div>
   )
 }

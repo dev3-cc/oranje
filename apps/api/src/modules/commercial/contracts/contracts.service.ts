@@ -10,7 +10,7 @@ import { contractStatusLabel } from '../../../common/utils/status-labels.js'
 import { NotificationPublisherService } from '../../notifications/index.js'
 
 import { ContractRow, ContractsRepository, RateRow } from './contracts.repository.js'
-import type { CreateContractDto, UpsertRateDto } from './dto/contract.dto.js'
+import type { CreateContractDto, UpdateContractDto, UpsertRateDto } from './dto/contract.dto.js'
 
 const DRAFT = 'DRAFT'
 const ACTIVE = 'ACTIVE'
@@ -35,6 +35,7 @@ export interface ContractEntity {
   splitsInvoiceByMonth: boolean
   signedAt: string | null
   createdAt: string
+  updatedAt: string | null
   rates?: RateRow[]
 }
 
@@ -158,10 +159,17 @@ export class ContractsService {
   async setRate(id: string, dto: UpsertRateDto, user: AuthenticatedUser): Promise<ContractEntity> {
     const row = await this.contract(id)
 
-    if (row.status !== DRAFT) {
+    // Antes, solo en Borrador. Un contrato ACTIVO también se sigue
+    // cotizando (Hugo, 2026-10-16): el pago ya hecho está a salvo porque lo
+    // que paga una semana es la COPIA congelada al generarla
+    // (`consolidation_detail.pay_rate_applied`), nunca la tarifa en vivo del
+    // contrato — así que editar aquí solo cambia lo que se calcule de hoy en
+    // adelante, y la vista previa de pago avisa cuando eso pasó sobre una
+    // semana ya aprobada.
+    if (![DRAFT, ACTIVE].includes(row.status)) {
       throw new ConflictException({
-        code: 'CONTRACT_NOT_DRAFT',
-        message: `Las tarifas solo se tocan en borrador, y este contrato está ${contractStatusLabel(row.status)}`,
+        code: 'CONTRACT_CLOSED',
+        message: `Este contrato está ${contractStatusLabel(row.status)}, ya no se edita`,
       })
     }
 
@@ -177,6 +185,75 @@ export class ContractsService {
       catalogPositionId: dto.catalogPositionId,
       payRate: dto.payRate,
       billRate: dto.billRate,
+      userId: user.id,
+      roleCode: user.roleCode,
+    })
+
+    return this.get(id)
+  }
+
+  /**
+   * Edición de los términos ya pactados (Hugo, 2026-10-16): el BDC sigue
+   * tocando el contrato después de crearlo, no solo antes de activarlo.
+   * `overtimePayMultiplier`/semana NO se tocan aquí — se heredan del hotel
+   * (2026-10-07) y cambiarlos es editar el hotel. Igual que `setRate`, un
+   * contrato ACTIVO se puede editar: lo ya pagado está a salvo por la copia
+   * congelada en `consolidation_detail`, y la vista previa de pago avisa del
+   * cambio sobre una semana ya aprobada.
+   */
+  async update(
+    id: string,
+    dto: UpdateContractDto,
+    user: AuthenticatedUser,
+  ): Promise<ContractEntity> {
+    const row = await this.contract(id)
+
+    if (![DRAFT, ACTIVE].includes(row.status)) {
+      throw new ConflictException({
+        code: 'CONTRACT_CLOSED',
+        message: `Este contrato está ${contractStatusLabel(row.status)}, ya no se edita`,
+      })
+    }
+
+    const validTo = dto.validTo === undefined ? row.validTo : dto.validTo
+    const overtimeBillMultiplier = dto.overtimeBillMultiplier ?? Number(row.overtimeBillMultiplier)
+    const holidayBillMultiplier = dto.holidayBillMultiplier ?? Number(row.holidayBillMultiplier)
+    const holidayPayMultiplier = dto.holidayPayMultiplier ?? Number(row.holidayPayMultiplier)
+    const overtimePayMultiplier = Number(row.overtimePayMultiplier)
+
+    if (validTo && validTo <= row.validFrom) {
+      throw new UnprocessableEntityException({
+        code: 'VALIDITY_BACKWARDS',
+        message: 'La vigencia termina antes de empezar',
+      })
+    }
+
+    if (overtimeBillMultiplier < overtimePayMultiplier) {
+      throw new UnprocessableEntityException({
+        code: 'OVERTIME_MARGIN_NEGATIVE',
+        message: 'El hotel no puede pagar menos recargo de overtime que el colaborador',
+      })
+    }
+
+    if (holidayBillMultiplier < holidayPayMultiplier) {
+      throw new UnprocessableEntityException({
+        code: 'HOLIDAY_MARGIN_NEGATIVE',
+        message: 'El hotel no puede pagar menos recargo de festivo que el colaborador',
+      })
+    }
+
+    await this.repo.update({
+      id,
+      validTo,
+      overtimeBillMultiplier,
+      holidayBillMultiplier,
+      holidayPayMultiplier,
+      deductsMeals: dto.deductsMeals ?? row.deductsMeals,
+      splitsInvoiceByMonth: dto.splitsInvoiceByMonth ?? row.splitsInvoiceByMonth,
+      changed: {
+        ...dto,
+        validTo: dto.validTo === undefined ? undefined : (dto.validTo?.toISOString() ?? null),
+      },
       userId: user.id,
       roleCode: user.roleCode,
     })
@@ -370,5 +447,6 @@ function toEntity(row: ContractRow): ContractEntity {
     splitsInvoiceByMonth: row.splitsInvoiceByMonth,
     signedAt: row.signedAt ? new Date(row.signedAt).toISOString() : null,
     createdAt: new Date(row.createdAt).toISOString(),
+    updatedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : null,
   }
 }

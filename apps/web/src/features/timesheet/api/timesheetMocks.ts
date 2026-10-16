@@ -28,6 +28,13 @@ function mondayOfThisWeek(): string {
   return new Date(now.getTime() - weekday * MS_PER_DAY).toISOString().slice(0, 10)
 }
 
+/** 0 = lunes … 6 = domingo. Offset de HOY dentro de la semana del fixture:
+    sin esto, "Ana ya ponchó entrada hoy" solo era cierto de lunes a jueves
+    y fallaba cualquier viernes (Hugo, 2026-10-16). */
+function todayOffset(): number {
+  return (new Date().getUTCDay() + 6) % 7
+}
+
 const WEEK_START = mondayOfThisWeek()
 
 function dayIso(offset: number): string {
@@ -162,10 +169,11 @@ const timesheets: StoredTimesheet[] = [
       /** La anomalía de la maqueta: salió fuera de la geocerca. */
       fullDay({ offset: 2, hasAnomaly: true, outOfFence: true }),
       fullDay({ offset: 3 }),
-      /** Sin ponches: así se ve el selector de Descanso/OFF (2026-10-12). */
-      emptyDay(4),
-      emptyDay(5),
-      emptyDay(6),
+      /** Sin ponches: así se ve el selector de Descanso/OFF (2026-10-12).
+          Salvo que HOY caiga en 4-6: Ana siempre ponchó entrada hoy. */
+      todayOffset() === 4 ? fullDay({ offset: 4 }) : emptyDay(4),
+      todayOffset() === 5 ? fullDay({ offset: 5 }) : emptyDay(5),
+      todayOffset() === 6 ? fullDay({ offset: 6 }) : emptyDay(6),
     ],
   },
   {
@@ -264,6 +272,7 @@ const routes: readonly MockRoute[] = [
         overrideReason: dto.reason,
         billRate: found.payPreview?.billRate ?? null,
         billSubtotal: found.payPreview?.billSubtotal ?? null,
+        contractUpdatedAt: found.payPreview?.contractUpdatedAt ?? null,
       }
       return { data: { ...found, totals: totalsOf(found.days) } }
     },

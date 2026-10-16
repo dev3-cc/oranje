@@ -13,7 +13,12 @@ import { registerProposalsMocks } from './proposalsMocks'
 import { baseApi } from '@/app/baseApi'
 import type { OnboardingStatus } from '@/shared/constants/onboardingStatus'
 import { fetchAllPages } from '@/shared/lib/fetchAllPages'
-import type { ApiEnvelope, ProposalApi, ProspectApi } from '@/shared/types/apiContract.types'
+import type {
+  ApiEnvelope,
+  ContractApi,
+  ProposalApi,
+  ProspectApi,
+} from '@/shared/types/apiContract.types'
 
 registerProposalsMocks()
 
@@ -104,6 +109,14 @@ async function fetchWorkspace(
     contacts.find((contact) => contact.email)?.email ??
     null
 
+  /* Si Naranja sigue cerrado o se puede reabrir depende de esto (Hugo,
+     2026-10-16): un hotel cliente sin ningún contrato vigente no es el mismo
+     caso que uno que ya tiene el suyo. */
+  const contractsRes = await fetchWithBQ(`/contracts?hotelId=${prospect.hotel.id}&status=ACTIVE`)
+  const hasActiveContract = contractsRes.error
+    ? false
+    : (contractsRes.data as ApiEnvelope<ContractApi[]>).data.length > 0
+
   return {
     data: {
       prospectId,
@@ -119,6 +132,7 @@ async function fetchWorkspace(
         : (positionsRes.data as ApiEnvelope<Array<{ id: string; name: string }>>).data.map(
             (item) => ({ id: item.id, name: item.name }),
           ),
+      hasActiveContract,
     },
   }
 }

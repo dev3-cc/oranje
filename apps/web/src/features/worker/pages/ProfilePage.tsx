@@ -1,6 +1,7 @@
 import { Trans, useLingui } from '@lingui/react/macro'
-import { StatusLightBadge } from '@oranje/ui'
+import { MaterialIcon, StatusLightBadge } from '@oranje/ui'
 import type { ReactNode } from 'react'
+import { Link } from 'react-router'
 
 import { useGetTodayPunchingQuery } from '../api/punchApi'
 import { useGetMyHistoryQuery, useGetMyProfileQuery } from '../api/workerApi'
@@ -218,6 +219,23 @@ export function ProfilePage(): ReactNode {
             }
           />
         </dl>
+
+        {/* El Perfil era de solo lectura y lo único editable vivía dentro del
+            asistente de alta, que es justo donde nadie va a buscar «cambiar
+            mis datos» — y que además parecía una tarea pendiente. Aquí es
+            donde la gente lo busca (Hugo, 2026-10-16).
+
+            Lo que se puede cambiar es lo del propio colaborador: su
+            transporte, su foto y su documento fiscal. Posición, modalidad e
+            inglés NO: los decide Oranje en la entrevista, y por eso viven en
+            la tarjeta de arriba sin forma de tocarlos. */}
+        <Link
+          to="/collaborator/signup-2"
+          className="mt-3 flex items-center justify-center gap-1.5 rounded-md border border-white/40 bg-ink/35 px-3 py-2 text-sm font-medium text-white backdrop-blur-md transition-colors hover:bg-white/10"
+        >
+          <MaterialIcon name="edit" className="text-base" aria-hidden />
+          <Trans>Editar mis datos</Trans>
+        </Link>
       </section>
     </div>
   )

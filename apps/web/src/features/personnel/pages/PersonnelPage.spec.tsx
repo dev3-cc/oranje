@@ -2,13 +2,47 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { createMemoryRouter, RouterProvider } from 'react-router'
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { PersonnelPage } from './PersonnelPage'
 
 import { store } from '@/app/store'
 
 const SLOW = { timeout: 4000 }
+
+const MS_PER_DAY = 86_400_000
+
+/**
+ * EL RELOJ SE FIJA, PORQUE SI NO LA PRUEBA DEPENDE DEL DÍA EN QUE SE CORRE.
+ *
+ * El mock del Timesheet siembra la semana de Ana con días TRABAJADOS de lunes
+ * a jueves (offsets 0-3) y días VACÍOS viernes a domingo, a propósito, para
+ * que se vea el selector de Descanso/OFF. Y la fila dice «Entró …» solo si
+ * hay una marca CLOCK_IN con la fecha de HOY.
+ *
+ * Así que esta prueba pasaba de lunes a jueves y fallaba de viernes a
+ * domingo. Se encontró en rojo en staging un viernes (2026-10-16).
+ *
+ * Se fija al MARTES DE LA SEMANA EN CURSO —no a una fecha fija— porque el
+ * mock calcula sus días contra el lunes real de esta semana al cargarse: una
+ * fecha de hace meses no coincidiría con ninguno de sus días. Mover el día
+ * sembrado, en cambio, solo habría mudado la explosión al sábado.
+ */
+function martesDeEstaSemana(): Date {
+  const now = new Date()
+  const weekday = (now.getUTCDay() + 6) % 7
+  const monday = new Date(now.getTime() - weekday * MS_PER_DAY)
+  return new Date(`${new Date(monday.getTime() + MS_PER_DAY).toISOString().slice(0, 10)}T12:00:00Z`)
+}
+
+beforeAll(() => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(martesDeEstaSemana())
+})
+
+afterAll(() => {
+  vi.useRealTimers()
+})
 
 function renderPersonnel(): void {
   const router = createMemoryRouter([{ path: '/my-staff', element: <PersonnelPage /> }], {

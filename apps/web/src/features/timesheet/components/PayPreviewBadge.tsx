@@ -74,10 +74,14 @@ function PreviewPill({
  */
 export function PayPreviewBadge({
   payPreview,
+  approvedAt = null,
   pendingAdjustments = [],
   isRecalculating = false,
 }: {
   payPreview: TimesheetPayPreview | null | undefined
+  /** Cuándo se aprobó la semana — para avisar si el contrato cambió
+      DESPUÉS (Hugo, 2026-10-16): lo que se ve ya no es lo que se aprobó. */
+  approvedAt?: string | null
   pendingAdjustments?: PayAdjustment[]
   /** Se está recalculando el lonche de este hotel: una píldora-skeleton en
       vez del número viejo, para no mostrar algo que ya no es cierto (Hugo,
@@ -91,6 +95,15 @@ export function PayPreviewBadge({
     return <PendingAdjustmentsChip adjustments={pendingAdjustments} />
   }
 
+  /* El contrato se sigue editando aunque la semana ya esté aprobada (Hugo,
+     2026-10-16: "si no ha cerrado tome el nuevo, pero que avise"). Esto SÍ
+     cerró — approvedAt existe — y aun así el contrato se tocó después: lo
+     que se ve arriba ya no es el número que el hotel/Manager aprobó. */
+  const contractChangedAfterApproval =
+    approvedAt !== null &&
+    payPreview.contractUpdatedAt !== null &&
+    new Date(payPreview.contractUpdatedAt) > new Date(approvedAt)
+
   if (isRecalculating) {
     return (
       <div className="flex items-center gap-1.5">
@@ -101,6 +114,25 @@ export function PayPreviewBadge({
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
+      {contractChangedAfterApproval && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex cursor-help items-center gap-1.5 rounded-md border border-dashed border-yellow bg-yellow/10 px-2.5 py-1.5 text-xs font-semibold text-yellow">
+                <MaterialIcon name="sync_problem" className="text-sm" aria-hidden />
+                <Trans>Contrato cambió</Trans>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-72">
+              <Trans>
+                El contrato se editó DESPUÉS de que esta semana ya se aprobó: lo que ves aquí es el
+                cálculo nuevo, no el que se aprobó.
+              </Trans>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+
       {/* "Factura al hotel", no "Facturación" a secas — el nombre solo no
           decía A QUIÉN se le cobra (Hugo, 2026-10-15: "facturacion 168 que
           es?"). Es el bill rate del contrato × las horas, independiente de

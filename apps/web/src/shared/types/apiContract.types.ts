@@ -217,6 +217,7 @@ export interface ContractApi {
   splitsInvoiceByMonth: boolean
   signedAt: string | null
   createdAt: string
+  updatedAt: string | null
   /** Solo el detalle (`GET /contracts/:id`) trae las tarifas. */
   rates?: ContractRateApi[]
 }
@@ -527,6 +528,9 @@ export interface TimesheetApi {
         (Hugo, 2026-10-14). `null` sin contrato ni tarifa para esa posición. */
     billRate: string | null
     billSubtotal: string | null
+    /** Cuándo se tocó por última vez el contrato que resolvió la tarifa de
+        arriba; `null` sin contrato o si nunca se editó (Hugo, 2026-10-16). */
+    contractUpdatedAt: string | null
   }
 }
 

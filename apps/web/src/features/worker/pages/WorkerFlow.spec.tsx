@@ -80,9 +80,12 @@ describe('el apartado del Colaborador', () => {
     expect(
       screen.queryByRole('link', { name: /Sigue con tu contacto de emergencia/ }),
     ).not.toBeInTheDocument()
+    /* La ruta en inglés: las del front se renombraron el 2026-09-15 y esta
+       afirmación se quedó con la vieja en español, que solo funcionaba por
+       el redirector. */
     expect(screen.getByRole('link', { name: 'Terminar' })).toHaveAttribute(
       'href',
-      '/colaborador/alta-3',
+      '/collaborator/signup-3',
     )
   })
 
