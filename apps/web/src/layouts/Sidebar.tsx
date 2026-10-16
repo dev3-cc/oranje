@@ -210,7 +210,7 @@ const MODULES: NavModule[] = [
   /* Auditar es del Supervisor y, desde el 2026-09-24, del Inspector (sus
      hoteles de zona) — ninguno de sus jefes lo ve (fuera de la herencia por
      jerarquía a propósito, Hugo). */
-  { label: msg`Auditorías`, to: '/audits', icon: 'fact_check', roles: [SUPERVISOR, INSPECTOR] },
+  { label: msg`Auditorías`, to: '/audits', icon: 'fact_check', roles: [INSPECTOR] },
 ]
 
 function modulesForRole(roleId: string | undefined): NavModule[] {

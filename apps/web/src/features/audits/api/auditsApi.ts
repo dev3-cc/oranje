@@ -40,10 +40,10 @@ export const auditsApi = baseApi.injectEndpoints({
     }),
 
     /**
-     * El Inspector no tiene un hotel fijo como el Supervisor: audita los
-     * hoteles de su(s) zona(s) — `/hotels` ya viene acotado ahí desde el
-     * back (Reglas de Negocio, 2026-09-24). Vacío para todos los demás
-     * roles: no la usan porque tienen `session.hotel`.
+     * El Inspector no tiene un hotel fijo: audita los hoteles de su(s)
+     * zona(s) — `/hotels` ya viene acotado ahí desde el back (Reglas de
+     * Negocio, 2026-09-24). Es el único rol que llama esto desde
+     * `AuditsPage` (Hugo, 2026-10-16: Auditorías ya no es del Supervisor).
      */
     getAuditableHotels: build.query<Array<{ id: string; name: string }>, void>({
       queryFn: async (_arg, _api, _extra, fetchWithBQ) => {

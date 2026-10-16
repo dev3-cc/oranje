@@ -295,7 +295,7 @@ export function CatalogsPage(): ReactNode {
           />
         ))}
         {/* Los reactivos de auditoría son un catálogo de OTRA naturaleza (más
-            campos, dueño conceptual distinto — la auditoría del Supervisor,
+            campos, dueño conceptual distinto — la auditoría del Inspector,
             no el alta de personal): el separador dice «esto no es un
             catálogo operativo más», que es justo lo que se perdía cuando
             era el quinto botón idéntico al final de la fila. */}

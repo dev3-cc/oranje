@@ -22,9 +22,9 @@ import { IS_DEV_UI } from '@/shared/lib/devMode'
 type OpenPath = 'ENVIRONMENT' | 'WORKER_LIST' | 'PERSONAL'
 
 /**
- * SU hotel, como tarjeta con el hero de foto (mismo lenguaje que la ficha de
- * Mi Personal y el tablero de Requisiciones): un Supervisor tiene UN SOLO
- * hotel (`identity.user.hotelId`), así que aquí no hay grid — es una tarjeta
+ * Un hotel de la zona del Inspector, como tarjeta con el hero de foto (mismo
+ * lenguaje que la ficha de Mi Personal y el tablero de Requisiciones): se
+ * repite una por hotel en `AuditsPage` — aquí no hay grid, es una tarjeta
  * ancha con las dos auditorías detrás de "Auditar".
  */
 export function AuditHotelCard({
@@ -94,7 +94,7 @@ export function AuditHotelCard({
             ) : (
               <p className="max-w-xs text-right text-xs text-white/80">
                 <Trans>
-                  Las auditorías las hace el Supervisor del hotel; tú puedes ver el historial.
+                  Las auditorías las hace el Inspector de la zona; tú puedes ver el historial.
                 </Trans>
               </p>
             )}
