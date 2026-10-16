@@ -35,6 +35,7 @@ function makeRow(overrides: Partial<TimesheetRow>): TimesheetRow {
     totalHours: 34,
     targetHours: 40,
     overtimeHours: null,
+    approvedAt: null,
     entries: [
       {
         id: 'entry-1',

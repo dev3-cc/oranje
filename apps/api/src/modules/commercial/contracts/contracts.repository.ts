@@ -27,6 +27,7 @@ export interface ContractRow {
   splitsInvoiceByMonth: boolean
   signedAt: Date | null
   createdAt: Date
+  updatedAt: Date | null
   hotel: { id: string; name: string }
   // Solo para resolver a quien avisar (el BD dueño del ciclo comercial);
   // no se expone en ContractEntity/toEntity.
@@ -49,6 +50,7 @@ const BASE = `
          c.splits_invoice_by_month AS "splitsInvoiceByMonth",
          c.signed_at  AS "signedAt",
          c.created_at AS "createdAt",
+         c.updated_at AS "updatedAt",
          c.prospect_id AS "prospectId",
          jsonb_build_object('id', h.id, 'name', h.name) AS hotel
     FROM commercial.contract c
@@ -212,6 +214,13 @@ export class ContractsRepository {
                       bill_rate = EXCLUDED.bill_rate,
                       updated_at = now()`
 
+      // `contract.updated_at` SÍ se toca aquí, aunque la fila que cambió sea
+      // `contract_rate` (Hugo, 2026-10-16): es lo que la vista previa de
+      // pago compara contra `approvedAt` para avisar "esto cambió" — una
+      // tarifa editada en un contrato ACTIVO es precisamente el caso real.
+      await tx.$executeRaw`
+        UPDATE commercial.contract SET updated_at = now() WHERE id = ${params.contractId}::uuid`
+
       await tx.journalEntry.create({
         data: {
           id: uuidv7(),
@@ -225,6 +234,46 @@ export class ContractsRepository {
             payRate: params.payRate,
             billRate: params.billRate,
           },
+        },
+      })
+    })
+  }
+
+  async update(params: {
+    id: string
+    validTo: Date | null
+    overtimeBillMultiplier: number
+    holidayBillMultiplier: number
+    holidayPayMultiplier: number
+    deductsMeals: boolean
+    splitsInvoiceByMonth: boolean
+    changed: Prisma.InputJsonValue
+    userId: string
+    roleCode: string
+  }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.contract.update({
+        where: { id: params.id },
+        data: {
+          validTo: params.validTo,
+          overtimeBillMultiplier: params.overtimeBillMultiplier,
+          holidayBillMultiplier: params.holidayBillMultiplier,
+          holidayPayMultiplier: params.holidayPayMultiplier,
+          deductsMeals: params.deductsMeals,
+          splitsInvoiceByMonth: params.splitsInvoiceByMonth,
+          updatedAt: new Date(),
+        },
+      })
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'commercial.contract',
+          entityId: params.id,
+          eventType: 'CONTRACT_UPDATED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: params.changed,
         },
       })
     })

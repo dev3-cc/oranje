@@ -66,6 +66,7 @@ function row(overrides: Partial<TimesheetRow> = {}): TimesheetRow {
     totalHours: 8.5,
     targetHours: null,
     overtimeHours: null,
+    approvedAt: null,
     entries: [entry],
     assignment: { status: 'ACTIVE', endsOn: null },
     ...overrides,

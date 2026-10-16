@@ -36,3 +36,22 @@ export class CreateContractDto extends createZodDto(createContractSchema) {}
 export const upsertRateSchema = rateSchema
 
 export class UpsertRateDto extends createZodDto(upsertRateSchema) {}
+
+/**
+ * Edición de un contrato ya creado (Hugo, 2026-10-16): el BDC lo sigue
+ * actualizando seguido, no solo al nacer. `overtimePayMultiplier`,
+ * `weekStartDay` y `weekEndDay` NO se editan aquí: se heredan del hotel
+ * (sección "Datos contables", 2026-10-07) y cambiarlos es editar el hotel,
+ * no el contrato. `validTo: null` limpia la fecha de fin (vuelve a
+ * indefinido); ausente, no la toca.
+ */
+export const updateContractSchema = z.object({
+  validTo: z.coerce.date().nullable().optional(),
+  overtimeBillMultiplier: multiplier.optional(),
+  holidayBillMultiplier: multiplier.optional(),
+  holidayPayMultiplier: multiplier.optional(),
+  deductsMeals: z.boolean().optional(),
+  splitsInvoiceByMonth: z.boolean().optional(),
+})
+
+export class UpdateContractDto extends createZodDto(updateContractSchema) {}

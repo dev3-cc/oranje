@@ -224,4 +224,71 @@ describe('vista previa de pago en el Timesheet de Contabilidad', () => {
 
     expect(rows.every((r) => r.payPreview === undefined)).toBe(true)
   })
+
+  // Hugo, 2026-10-16: con esto se avisa "el contrato cambió" cuando la
+  // semana ya fue aprobada pero la tarifa se corrigió después.
+  it('contractUpdatedAt viaja: null recién creado, se mueve al editar una tarifa', async () => {
+    const base = await lookups()
+    const hotelId = await makeHotel(reg, {
+      label: 'ContractUpdated',
+      zoneId: base.zoneId,
+      timeZone: 'America/Cancun',
+    })
+    await makeContract(reg, {
+      hotelId,
+      positionId: base.positionId,
+      payRate: PAY_RATE,
+      validFrom: '2025-01-01',
+    })
+    const requisitionId = await makeRequisition(reg, {
+      hotelId,
+      positionId: base.positionId,
+      modalityId: base.modalityId,
+      departmentId: base.departmentId,
+      coverageStateId: base.coverageStateId,
+      reqStateId: base.reqStateId,
+      startDate: WEEK,
+    })
+    const workerId = await makeWorker(reg, {
+      zoneId: base.zoneId,
+      workerStateId: base.workerStateId,
+      actorId,
+      label: 'ContractUpdated',
+    })
+    workers.push(workerId)
+    const scheduleId = await makeSchedule(reg, {
+      hotelId,
+      weekStart: WEEK,
+      weekEnd: WEEK_END,
+      actorId,
+    })
+
+    const timesheetId = await makeTimesheet(reg, {
+      scheduleId,
+      workerId,
+      requisitionId,
+      weekStart: WEEK,
+      weekEnd: WEEK_END,
+      status: 'OPEN',
+      actorId,
+    })
+
+    const user = {
+      id: actorId,
+      roleCode: 'ROL-CO-01',
+      hotelId: null,
+      departmentId: null,
+    } as AuthenticatedUser
+
+    const before = await timesheets.list(user, { weekStart: WEEK }, true)
+    expect(before.find((r) => r.id === timesheetId)?.payPreview?.contractUpdatedAt).toBeNull()
+
+    const contractId = (
+      await db.contract.findFirstOrThrow({ where: { hotelId }, select: { id: true } })
+    ).id
+    await db.$executeRaw`UPDATE commercial.contract SET updated_at = now() WHERE id = ${contractId}::uuid`
+
+    const after = await timesheets.list(user, { weekStart: WEEK }, true)
+    expect(after.find((r) => r.id === timesheetId)?.payPreview?.contractUpdatedAt).not.toBeNull()
+  })
 })

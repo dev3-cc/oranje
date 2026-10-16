@@ -40,6 +40,9 @@ import { formatDate } from '@/shared/lib/formatters'
 
 /** Donde la propuesta se elabora y envía: Verde (RR-V) y Café (renegociación). */
 const WORKABLE_STATUSES = new Set(['GREEN', 'BROWN'])
+/** Naranja, EXCEPCIÓN: solo si el hotel se quedó sin contrato vigente
+    (Hugo, 2026-10-16) — ver `hasActiveContract` en el workspace. */
+const ORANGE = 'ORANGE'
 
 const FORM_ID = 'proposal-draft'
 
@@ -105,7 +108,10 @@ export function ProposalEditorPage({
   const canEdit = can('proposals:create')
   /* El back rechaza abrir versión fuera de Verde/Café (PROPOSAL_STATE); el
      botón lo dice ANTES, deshabilitado con título, en vez de fallar al clic. */
-  const isWorkable = workspace === undefined || WORKABLE_STATUSES.has(workspace.prospectStatus)
+  const isWorkable =
+    workspace === undefined ||
+    WORKABLE_STATUSES.has(workspace.prospectStatus) ||
+    (workspace.prospectStatus === ORANGE && !workspace.hasActiveContract)
   const workableBlock =
     !isWorkable && workspace
       ? t`La propuesta se trabaja con el hotel en Verde o Café: este está en ${ONBOARDING_STATUS_LABEL[workspace.prospectStatus]}`
