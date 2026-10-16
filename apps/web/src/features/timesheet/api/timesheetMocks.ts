@@ -30,6 +30,14 @@ function mondayOfThisWeek(): string {
 
 const WEEK_START = mondayOfThisWeek()
 
+/** 0 = lunes … 6 = domingo, el mismo criterio que `mondayOfThisWeek`. "Ana ya
+    ponchó hoy" no puede depender de en qué día de la semana se corra la
+    prueba — se quedaba fijo en offset 0-3 y fallaba todos los viernes,
+    sábados y domingos (encontrado en CI, 2026-10-16: hoy es viernes). */
+function todayOffset(): number {
+  return (new Date().getUTCDay() + 6) % 7
+}
+
 function dayIso(offset: number): string {
   return new Date(new Date(WEEK_START).getTime() + offset * MS_PER_DAY).toISOString().slice(0, 10)
 }
@@ -162,10 +170,12 @@ const timesheets: StoredTimesheet[] = [
       /** La anomalía de la maqueta: salió fuera de la geocerca. */
       fullDay({ offset: 2, hasAnomaly: true, outOfFence: true }),
       fullDay({ offset: 3 }),
-      /** Sin ponches: así se ve el selector de Descanso/OFF (2026-10-12). */
-      emptyDay(4),
-      emptyDay(5),
-      emptyDay(6),
+      /** Sin ponches: así se ve el selector de Descanso/OFF (2026-10-12) —
+          salvo que hoy caiga aquí, porque "Ana ya ponchó hoy" no puede
+          depender de qué día de la semana es. */
+      todayOffset() === 4 ? fullDay({ offset: 4 }) : emptyDay(4),
+      todayOffset() === 5 ? fullDay({ offset: 5 }) : emptyDay(5),
+      todayOffset() === 6 ? fullDay({ offset: 6 }) : emptyDay(6),
     ],
   },
   {
