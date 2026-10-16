@@ -8,14 +8,16 @@ import { AuditsPage } from './AuditsPage'
 import { store } from '@/app/store'
 
 /**
- * La sesión mock de `sessionApi.ts` no trae hotel (es un BD, Ventas — el
- * mismo grado de fidelidad que ya acepta `PersonnelPage`/`TimesheetPage`):
- * el camino "con hotel" queda cubierto por `AuditHotelCard.spec.tsx`
- * (renderizado directo con un `hotelId` real). Esta prueba cubre lo que SÍ
- * depende de la sesión: el título y el aviso honesto de "sin hotel".
+ * La sesión mock de `sessionApi.ts` no trae zonas con hoteles (es un BD,
+ * Ventas — el mismo grado de fidelidad que ya acepta
+ * `PersonnelPage`/`TimesheetPage`): el camino "con hoteles de zona" queda
+ * cubierto por `AuditHotelCard.spec.tsx` (renderizado directo con un
+ * `hotelId` real). Esta prueba cubre lo que SÍ depende de la sesión: el
+ * título y el aviso honesto de "sin hoteles en tu zona" (Hugo, 2026-10-16:
+ * Auditorías pasó del Supervisor, un hotel fijo, al Inspector, por zona).
  */
 describe('AuditsPage', () => {
-  it('encabeza la pantalla y, sin hotel en la sesión, lo dice en vez de fingir uno', async () => {
+  it('encabeza la pantalla y, sin hoteles en la zona, lo dice en vez de fingir uno', async () => {
     render(
       <Provider store={store}>
         <AuditsPage />
@@ -28,7 +30,7 @@ describe('AuditsPage', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Saltar' }))
     expect(await screen.findByRole('heading', { name: 'Auditorías' })).toBeInTheDocument()
     expect(
-      await screen.findByText(/Tu usuario no tiene un hotel asignado todavía/),
+      await screen.findByText(/Todavía no tienes ningún hotel cliente en tus zonas asignadas/),
     ).toBeInTheDocument()
   })
 })

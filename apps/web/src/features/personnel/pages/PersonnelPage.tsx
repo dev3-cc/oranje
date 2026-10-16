@@ -251,7 +251,8 @@ function WorkerDetail({
 }): ReactNode {
   const { t, i18n } = useLingui()
   const can = useCan()
-  /* Auditar es solo del Supervisor: a sus Managers no se les enseña el score. */
+  /* Auditar es solo del Inspector (Hugo, 2026-10-16): el Supervisor ya no ve
+     el score aquí tampoco, ni él ni sus Managers. */
   const canReadAudits = can('audits:read')
   const paused = row.stateCode === null ? undefined : NO_SHIFT_LABEL[row.stateCode]
   return (

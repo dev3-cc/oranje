@@ -11,9 +11,19 @@ import { close, db } from './db.js'
 import { actor } from './fixture.js'
 
 /**
- * Las dos auditorías del Supervisor: Presentación Personal (por colaborador) y
+ * Las dos auditorías del Inspector: Presentación Personal (por colaborador) y
  * Percepción de Ambiente y Recursos (por hotel), mismo mecanismo. Sin efecto
  * en semáforos y sin journal — su historial es `audit_response_history`.
+ *
+ * Estas pruebas siguen usando ROL-H-01 (Supervisor) como actor porque
+ * ejercitan `assertHotelScope()` sobre su rama de UN HOTEL FIJO — lógica de
+ * servicio que no depende del permiso `audits:*` (la llamada aquí es directa
+ * al servicio, sin pasar por el guard del controlador). El alcance por ZONA
+ * del Inspector, que SÍ es quien hoy tiene el permiso real, está cubierto en
+ * `audits-inspector.spec.ts`. Quién puede de verdad llamar esto por HTTP lo
+ * fija la Matriz al final de este archivo (Hugo, 2026-10-16: se le quita
+ * Auditorías al Supervisor por completo, ni lectura — era juez y parte
+ * auditando el ambiente de su propio hotel).
  */
 
 const prisma = db as unknown as PrismaService
@@ -541,13 +551,16 @@ describe('leer auditorías', () => {
 })
 
 describe('la Matriz sostiene audits:update', () => {
-  it('solo el Supervisor audita, corrige y ve: sus Managers no, ni por herencia', async () => {
+  it('solo el Inspector audita, corrige y ve: el Supervisor ya no, ni por herencia el Coordinador', async () => {
     // Auditorías queda fuera de la herencia por jerarquía (Reglas de Negocio,
-    // «Herencia por jerarquía», decisión de Hugo del 2026-09-14).
+    // «Herencia por jerarquía»). Se le quitó al Supervisor el 2026-10-16: era
+    // juez y parte auditando el ambiente de su propio hotel.
     const permissions = new PermissionsService(prisma)
 
     for (const action of ['create', 'read', 'update']) {
-      expect(await permissions.can('ROL-H-01', 'audits', action)).toBe(true)
+      expect(await permissions.can('ROL-I-01', 'audits', action)).toBe(true)
+      expect(await permissions.can('ROL-I-02', 'audits', action)).toBe(false)
+      expect(await permissions.can('ROL-H-01', 'audits', action)).toBe(false)
       expect(await permissions.can('ROL-H-02', 'audits', action)).toBe(false)
       expect(await permissions.can('ROL-H-03', 'audits', action)).toBe(false)
     }

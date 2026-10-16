@@ -497,29 +497,31 @@ const HOTEL: Permission[] = [
   { module: 'schedule', action: 'export', label: 'Exportar Schedule', roles: [SUPERVISOR, GA, GG] },
 
   // AUDITORIAS
-  // Solo el Supervisor audita y ve auditorias: ni sus Managers por herencia
-  // (decision de Hugo, 2026-09-14). Ampliado el 2026-09-24: el Inspector
-  // también audita, para los hoteles de su zona — sigue sin heredarse hacia
-  // el Coordinador (`inherit: false`), mismo criterio que el Supervisor.
+  // Pasa de ser del Supervisor a ser exclusiva del Inspector (Hugo,
+  // 2026-10-16): el Supervisor es personal DEL HOTEL, y auditar su propio
+  // ambiente/presentación era juez y parte. El Inspector ya hacia ambas
+  // desde el 2026-09-24 (ampliacion que el codigo tenia y el vault nunca
+  // registro) — ahora se le quita por completo al Supervisor, ni lectura.
+  // Sigue sin heredarse hacia el Coordinador (`inherit: false`).
   {
     module: 'audits',
     action: 'create',
-    label: 'Auditar presentacion o ambiente de mi hotel',
-    roles: [SUPERVISOR, INSPECTOR],
+    label: 'Auditar presentacion o ambiente de un hotel de mi zona',
+    roles: [INSPECTOR],
     inherit: false,
   },
   {
     module: 'audits',
     action: 'read',
-    label: 'Ver auditorias de mi hotel',
-    roles: [SUPERVISOR, INSPECTOR, SYS],
+    label: 'Ver auditorias de los hoteles de mi zona',
+    roles: [INSPECTOR, SYS],
     inherit: false,
   },
   {
     module: 'audits',
     action: 'update',
     label: 'Corregir una auditoria',
-    roles: [SUPERVISOR, INSPECTOR],
+    roles: [INSPECTOR],
     inherit: false,
   },
 

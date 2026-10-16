@@ -24,7 +24,8 @@ function renderCard(canCreate = true): void {
 }
 
 /**
- * El Supervisor tiene UN SOLO hotel: la tarjeta lo muestra directo (sin
+ * La tarjeta recibe UN hotel por props (quien la monta decide cuál — hoy el
+ * Inspector, uno por cada hotel de su zona): la muestra directo (sin
  * elegirlo) y "Auditar" ofrece los dos caminos — Ambiente directo, Personal
  * vía la lista de "tiempo sin auditar". Contra los fixtures reales de
  * `auditsMocks.ts`: Julia nunca fue auditada, Ana sí hace 3 días.
@@ -35,7 +36,7 @@ describe('AuditHotelCard', () => {
 
     expect(screen.getByText('Villas Coral')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Auditar/ })).not.toBeInTheDocument()
-    expect(screen.getByText(/Las auditorías las hace el Supervisor del hotel/)).toBeInTheDocument()
+    expect(screen.getByText(/Las auditorías las hace el Inspector de la zona/)).toBeInTheDocument()
   })
 
   it('Auditoría de personal: lista al roster con quién nunca fue auditado primero', async () => {

@@ -44,10 +44,10 @@ const INTRO_SLIDES: readonly {
 ]
 
 /**
- * Auditoría de Presentación y Ambiente: las dos auditorías semanales del
- * Supervisor sobre SU hotel. La ruta la ve todo Hotel (Supervisor, Manager de
- * Área, Manager General) para que quien no crea igual vea el historial
- * (`audits:read`); solo quien tiene `audits:create` ve el botón Auditar.
+ * Auditoría de Presentación y Ambiente: las dos auditorías semanales, ahora
+ * exclusivas del Inspector (Hugo, 2026-10-16 — antes eran del Supervisor,
+ * que auditaba el ambiente de su propio hotel: juez y parte). El Inspector
+ * no tiene un hotel fijo: audita los de su zona, uno por uno.
  */
 export function AuditsPage(): ReactNode {
   const { t, i18n } = useLingui()
@@ -57,15 +57,16 @@ export function AuditsPage(): ReactNode {
   const canUpdate = can('audits:update')
 
   const { data: session } = useGetSessionQuery()
-  const hotelId = session?.hotel?.id ?? ''
-  const hotelName = session?.hotel?.name ?? ''
   /* El recorrido se reabre desde «Ver el recorrido»; `GuidedTour` entrega su
      disparador al montar. */
   const [startTour, setStartTour] = useState<() => void>(() => () => undefined)
 
   /* El recorrido NO repite lo que ya dice el modal de «¿Cómo funciona?»: ahí
      se explica qué son las dos auditorías y que no mueven ningún semáforo;
-     aquí se señala dónde se toca. */
+     aquí se señala dónde se toca. Ancla al PRIMER hotel de la zona — con
+     varios hoteles, los `data-tour` solo van en el primero (Hugo,
+     2026-10-16: Auditorías pasó del Supervisor, un hotel fijo, al
+     Inspector, que puede tener varios en su zona). */
   const pasos: readonly TourStep[] = [
     {
       anchor: 'audit-card',
@@ -79,10 +80,7 @@ export function AuditsPage(): ReactNode {
     },
   ]
 
-  /* El Inspector no tiene UN hotel (Supervisor sí): audita los de su zona.
-     La consulta se salta a propósito para todos los demás roles, que ya
-     resuelven su hotel desde la sesión. */
-  const { data: zoneHotels } = useGetAuditableHotelsQuery(undefined, { skip: hotelId !== '' })
+  const { data: zoneHotels, isLoading: isLoadingHotels } = useGetAuditableHotelsQuery()
 
   /** El intro de página se ve UNA vez; «¿Cómo funciona?» lo reabre. */
   const { isIntroOpen, dismissIntro, reopenIntro } = useIntroSeen('audits')
@@ -91,8 +89,8 @@ export function AuditsPage(): ReactNode {
     return (
       <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
         <Trans>
-          Las auditorías las ve el equipo del hotel. Si crees que deberías tener acceso, pídeselo a
-          tu Manager General.
+          Las auditorías las hace el Inspector de tu zona. Si crees que deberías tener acceso,
+          pídeselo al Administrador.
         </Trans>
       </p>
     )
@@ -131,22 +129,11 @@ export function AuditsPage(): ReactNode {
         </p>
       </header>
 
-      {hotelId !== '' ? (
-        <>
-          <div data-tour="audit-card">
-            <AuditHotelCard hotelId={hotelId} hotelName={hotelName} canCreate={canCreate} />
-          </div>
-
-          <section className="flex flex-col gap-3" data-tour="audit-history">
-            <h2 className="text-lg font-semibold text-ink">
-              <Trans>Historial</Trans>
-            </h2>
-            <AuditHistoryList hotelId={hotelId} hotelName={hotelName} canUpdate={canUpdate} />
-          </section>
-        </>
+      {isLoadingHotels ? (
+        <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
+          <Trans>Cargando tus hoteles…</Trans>
+        </p>
       ) : zoneHotels && zoneHotels.length > 0 ? (
-        /* Sin hotel fijo (el Inspector): una tarjeta + su historial por cada
-           hotel de su zona — mismas piezas que el Supervisor, repetidas. */
         <>
           {session !== undefined && session.zones.length > 0 && (
             <div className="flex flex-col gap-1.5 text-sm text-ink-2">
@@ -164,26 +151,23 @@ export function AuditsPage(): ReactNode {
               </div>
             </div>
           )}
-          {zoneHotels.map((hotel) => (
+          {zoneHotels.map((hotel, index) => (
             <section key={hotel.id} className="flex flex-col gap-3">
-              <AuditHotelCard hotelId={hotel.id} hotelName={hotel.name} canCreate={canCreate} />
-              <AuditHistoryList hotelId={hotel.id} hotelName={hotel.name} canUpdate={canUpdate} />
+              <div data-tour={index === 0 ? 'audit-card' : undefined}>
+                <AuditHotelCard hotelId={hotel.id} hotelName={hotel.name} canCreate={canCreate} />
+              </div>
+              <div data-tour={index === 0 ? 'audit-history' : undefined}>
+                <AuditHistoryList hotelId={hotel.id} hotelName={hotel.name} canUpdate={canUpdate} />
+              </div>
             </section>
           ))}
         </>
       ) : (
         <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
-          {zoneHotels ? (
-            <Trans>
-              Todavía no tienes ningún hotel cliente en tus zonas asignadas — pídele al Coordinador
-              que revise tu zona.
-            </Trans>
-          ) : (
-            <Trans>
-              Tu usuario no tiene un hotel asignado todavía. Sin hotel no hay a quién auditar —
-              pídele al Administrador que revise tu alta.
-            </Trans>
-          )}
+          <Trans>
+            Todavía no tienes ningún hotel cliente en tus zonas asignadas — pídele al Coordinador
+            que revise tu zona.
+          </Trans>
         </p>
       )}
 
@@ -212,7 +196,7 @@ export function AuditsPage(): ReactNode {
         storageKey="audits-tour"
         steps={pasos}
         character={personajeEncuesta}
-        isReady={!isIntroOpen && hotelId !== ''}
+        isReady={!isIntroOpen && zoneHotels !== undefined && zoneHotels.length > 0}
         onReady={(start) => {
           setStartTour(() => start)
         }}

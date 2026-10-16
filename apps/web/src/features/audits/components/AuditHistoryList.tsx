@@ -29,8 +29,7 @@ function scoreTone(score: string): string {
 
 /**
  * El historial del hotel: quién auditó qué, cuándo y con qué calificación.
- * El Manager de Área/General lo ve con `audits:read` sin poder crear; el
- * Supervisor con `audits:update` puede reabrir cualquier fila para
+ * Con `audits:update` (el Inspector) se puede reabrir cualquier fila para
  * corregirla (PATCH sobre la misma auditoría, no una nueva).
  */
 export function AuditHistoryList({
