@@ -3256,6 +3256,10 @@ msgstr "Corregir la salida"
 msgid "Corregir marca"
 msgstr "Corregir marca"
 
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "Corregir mis datos"
+msgstr "Corregir mis datos"
+
 #. placeholder {0}: target.workerName
 #: src/features/accounting/components/PayOverrideDialog.tsx
 msgid "Corregir pago de {0}"
@@ -4083,6 +4087,10 @@ msgstr "Editar datos del hotel"
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Editar expediente"
 msgstr "Editar expediente"
+
+#: src/features/worker/pages/ProfilePage.tsx
+msgid "Editar mis datos"
+msgstr "Editar mis datos"
 
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Editar personal del sistema"
@@ -5202,6 +5210,10 @@ msgstr "Enviada a aprobación"
 #: src/features/admin/pages/MailSettingsPage.tsx
 msgid "Enviado"
 msgstr "Enviado"
+
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "Enviado, en revisión"
+msgstr "Enviado, en revisión"
 
 #: src/features/timesheet/components/WeekActionBar.tsx
 msgid "Enviando y aprobando…"
@@ -9102,6 +9114,10 @@ msgstr "No tiene fecha de fin: rige hasta que alguien lo marque expirado."
 msgid "No tiene servidor de correo configurado, así que todo sale por Firebase. El interruptor de abajo no cambia nada hasta que se configure."
 msgstr "No tiene servidor de correo configurado, así que todo sale por Firebase. El interruptor de abajo no cambia nada hasta que se configure."
 
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "No tienes nada pendiente aquí. Esto es lo que quedó registrado; si algo cambió, corrígelo."
+msgstr "No tienes nada pendiente aquí. Esto es lo que quedó registrado; si algo cambió, corrígelo."
+
 #: src/features/worker/lib/noShiftMessage.ts
 msgid "No tienes turno programado hoy. Si sí te tocaba, avísale a tu Supervisor para que revise el Schedule."
 msgstr "No tienes turno programado hoy. Si sí te tocaba, avísale a tu Supervisor para que revise el Schedule."
@@ -9644,8 +9660,8 @@ msgid "Pasaron los 30 días para cambiar la contraseña temporal que te dieron. 
 msgstr "Pasaron los 30 días para cambiar la contraseña temporal que te dieron. Elige la tuya aquí y tu acceso vuelve al instante — tus datos y tu historial no se pierden."
 
 #: src/features/worker/pages/Phase2Page.tsx
-msgid "Paso 1 de 2"
-msgstr "Paso 1 de 2"
+msgid "Paso {step} de {LAST_STEP}"
+msgstr "Paso {step} de {LAST_STEP}"
 
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "Paso 2 de 2"
@@ -10984,6 +11000,10 @@ msgstr "Salida"
 #: src/features/worker/api/punchApi.ts
 msgid "Salida a lunch"
 msgstr "Salida a lunch"
+
+#: src/features/worker/components/MobileShell.tsx
+msgid "Saliendo…"
+msgstr "Saliendo…"
 
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Salir de la requisición"
@@ -12764,6 +12784,10 @@ msgstr "Tres reglas que el sistema hace cumplir siempre: un colaborador en <0>Gr
 msgid "tú"
 msgstr "tú"
 
+#: src/features/worker/components/MobileShell.tsx
+msgid "Tu acceso terminó"
+msgstr "Tu acceso terminó"
+
 #: src/features/dashboard/components/ActivityCards.tsx
 msgid "Tu actividad"
 msgstr "Tu actividad"
@@ -12809,6 +12833,10 @@ msgstr "Tu estado hoy"
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "Tu expediente quedó completo. La Reclutadora lo validará"
 msgstr "Tu expediente quedó completo. La Reclutadora lo validará"
+
+#: src/features/worker/components/MobileShell.tsx
+msgid "Tu expediente ya no está activo en Oranje, así que aquí no hay nada que mostrarte. Si crees que es un error, habla con tu Reclutadora."
+msgstr "Tu expediente ya no está activo en Oranje, así que aquí no hay nada que mostrarte. Si crees que es un error, habla con tu Reclutadora."
 
 #: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
 msgid "tu firma"
@@ -13376,6 +13404,7 @@ msgid "verificado"
 msgstr "verificado"
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
+#: src/features/worker/pages/Phase2Page.tsx
 #: src/features/worker/pages/ProfilePage.tsx
 msgid "Verificado"
 msgstr "Verificado"
@@ -13619,6 +13648,10 @@ msgstr "Ya entró al sistema"
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Ya entró por primera vez: no hace falta reenviar la invitación."
 msgstr "Ya entró por primera vez: no hace falta reenviar la invitación."
+
+#: src/features/worker/pages/Phase2Page.tsx
+msgid "Ya está todo"
+msgstr "Ya está todo"
 
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Ya estabas trabajando esta requisición."

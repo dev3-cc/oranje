@@ -295,12 +295,44 @@ export class WorkersRepository {
   // Nunca se borra la fila (journal, historial del semáforo, auditorías...
   // todo cuelga de `worker_id`): `deleted_at` la saca del Pool y de toda
   // consulta que use BASE, sin romper esas referencias.
+  /**
+   * Borrar un colaborador CIERRA TAMBIÉN SU ACCESO.
+   *
+   * Antes solo marcaba la fila del colaborador: la cuenta quedaba activa y la
+   * persona podía seguir entrando a una app completamente vacía, porque
+   * `/workers/me` responde WORKER_NOT_LINKED y todas sus pantallas se quedan
+   * en su esqueleto sin decir nada. Hugo lo encontró el 2026-10-16 con una
+   * cuenta borrada desde septiembre que seguía entrando.
+   *
+   * Se cierran las DOS cuentas que pueden resolver a este colaborador: la
+   * suya y la de transición de la migración de AWS (`legacy_user_id`).
+   * `me.service` resuelve por cualquiera de las dos, así que dejar una viva
+   * dejaría la puerta abierta por el otro lado.
+   *
+   * Va DENTRO de la misma transacción a propósito: o se borra y se cierra el
+   * acceso, o no pasa ninguna de las dos. Un borrado que deja la cuenta viva
+   * es justo el estado que esto corrige.
+   */
   async softDelete(params: { id: string; userId: string; roleCode: string }): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
+      const worker = await tx.worker.findUniqueOrThrow({
+        where: { id: params.id },
+        select: { userId: true, legacyUserId: true },
+      })
+
       await tx.worker.update({
         where: { id: params.id },
         data: { deletedAt: new Date(), updatedAt: new Date() },
       })
+
+      const cuentas = [worker.userId, worker.legacyUserId].filter((id): id is string => id !== null)
+
+      if (cuentas.length > 0) {
+        await tx.user.updateMany({
+          where: { id: { in: cuentas } },
+          data: { isActive: false, updatedAt: new Date() },
+        })
+      }
 
       await tx.journalEntry.create({
         data: {
@@ -310,7 +342,10 @@ export class WorkersRepository {
           eventType: 'WORKER_DELETED',
           actorUserId: params.userId,
           actorRole: params.roleCode,
-          payload: {},
+          /* Cuántos accesos se cerraron con el borrado: sin esto, el journal
+             diría que se borró un colaborador sin decir que además alguien
+             perdió su entrada. */
+          payload: { accountsDeactivated: cuentas.length },
         },
       })
     })

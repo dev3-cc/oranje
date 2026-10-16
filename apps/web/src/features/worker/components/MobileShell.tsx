@@ -27,9 +27,13 @@ import { activateLocale, LOCALE_LABEL, LOCALES } from '@/app/i18n'
 import { CAMPANA_VIVA } from '@/app/notificationsApi'
 import { useLogoutMutation, useUpdateMyLocaleMutation } from '@/app/sessionApi'
 import { selectSessionUser } from '@/app/sessionSlice'
+import personajeHastaPronto from '@/assets/ilustrations/personaje-hasta-pronto.svg'
 import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
+import { Button } from '@/shared/components/Button'
+import { EmptyState } from '@/shared/components/EmptyState'
 import { WORKER_ROLE } from '@/shared/constants/roles'
 import { useNavigationSound } from '@/shared/hooks/useNavigationSound'
+import { readApiError } from '@/shared/lib/apiError'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { MOTION, SPRING } from '@/shared/lib/motion'
 import { isSoundOn, playSound, setSoundOn } from '@/shared/lib/sound'
@@ -111,7 +115,11 @@ export function MobileShell(): ReactNode {
   }
 
   const isWorker = user === null || user.roleId === WORKER_ROLE
-  const { data: profile } = useGetMyProfileQuery(undefined, {
+  const {
+    data: profile,
+    error: profileError,
+    isLoading: isProfileLoading,
+  } = useGetMyProfileQuery(undefined, {
     skip: !isWorker,
     ...REFRESCO_DEL_PERFIL,
   })
@@ -122,6 +130,41 @@ export function MobileShell(): ReactNode {
 
   /** El staff no tiene expediente propio: su casa es el shell del sidebar. */
   if (!isWorker) return <Navigate to="/" replace />
+
+  /* Su expediente ya no existe (lo dieron de baja) pero su cuenta sigue
+     abriendo sesión. Sin esto, TODAS sus pantallas se quedan en su esqueleto
+     para siempre, sin una palabra que explique por qué: la app se ve rota en
+     vez de cerrada. Hugo lo encontró el 2026-10-16 con una cuenta borrada en
+     septiembre que seguía entrando.
+
+     El origen ya se corrigió —borrar un colaborador ahora cierra su acceso—
+     pero esto se queda: las cuentas que YA quedaron así siguen ahí, y un
+     expediente puede desaparecer por otros caminos. */
+  if (
+    !isProfileLoading &&
+    profile === undefined &&
+    readApiError(profileError).code === 'WORKER_NOT_LINKED'
+  ) {
+    return (
+      <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6">
+        <EmptyState
+          image={personajeHastaPronto}
+          title={t`Tu acceso terminó`}
+          text={t`Tu expediente ya no está activo en Oranje, así que aquí no hay nada que mostrarte. Si crees que es un error, habla con tu Reclutadora.`}
+          action={
+            <Button
+              disabled={isLoggingOut}
+              onClick={() => {
+                void logout()
+              }}
+            >
+              {isLoggingOut ? t`Saliendo…` : t`Cerrar sesión`}
+            </Button>
+          }
+        />
+      </div>
+    )
+  }
 
   /* Los dos plazos (contraseña temporal, expediente a medias — que desde el
      2026-09-30 incluye el SSN/ITIN): vencidos bloquean todo menos lo que los
