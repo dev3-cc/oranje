@@ -95,6 +95,11 @@ export interface TimesheetPayPreview {
       contrato ni tarifa para esa posición. */
   billRate: string | null
   billSubtotal: string | null
+  /** Cuándo se tocó por última vez el contrato que resolvió la tarifa de
+      arriba; `null` sin contrato o si nunca se editó. Comparado contra
+      `approvedAt` de la hoja: si el contrato cambió DESPUÉS de aprobarse la
+      semana, lo que se ve aquí ya no es lo que se aprobó (Hugo, 2026-10-16). */
+  contractUpdatedAt: string | null
 }
 
 export interface TimesheetRow {
@@ -127,6 +132,9 @@ export interface TimesheetRow {
   entries: TimesheetEntry[]
   /** `undefined` sin acceso de Contabilidad al pago; `null` el back no lo mandó. */
   payPreview?: TimesheetPayPreview | null | undefined
+  /** Cuándo el hotel/Manager aprobó la semana; `null` si no se ha aprobado
+      o es una fila virtual sin timesheet real. */
+  approvedAt: string | null
 }
 
 export interface TimesheetWeek {

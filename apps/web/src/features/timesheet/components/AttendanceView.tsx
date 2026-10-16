@@ -676,6 +676,7 @@ function AttendanceDetail({
                           Consolidado (Hugo, 2026-10-14). */}
                       <PayPreviewBadge
                         payPreview={row.payPreview}
+                        approvedAt={row.approvedAt}
                         pendingAdjustments={pendingAdjustments}
                         isRecalculating={isRecalculatingLunch}
                       />

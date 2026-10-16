@@ -372,6 +372,7 @@ async function fetchWeek(
       })(),
       entries: (detail.days ?? []).map((day) => toEntry(day, requisitionRef, hotelTimeZone)),
       payPreview: detail.payPreview,
+      approvedAt: detail.approvedAt,
     })
   }
 
@@ -401,6 +402,7 @@ async function fetchWeek(
       targetHours: null,
       overtimeHours: null,
       entries: days.map((date) => emptyEntry(date, requisitionRef)),
+      approvedAt: null,
     })
   }
 

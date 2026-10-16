@@ -2396,6 +2396,7 @@ msgstr "Cancelando…"
 #: src/features/admin/pages/CatalogsPage.tsx
 #: src/features/admin/pages/CorporateEmailPage.tsx
 #: src/features/audits/components/AuditFormDialog.tsx
+#: src/features/contracts/components/EditContractDialog.tsx
 #: src/features/contracts/components/EditRateDialog.tsx
 #: src/features/contracts/components/NewContractDialog.tsx
 #: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
@@ -3107,6 +3108,14 @@ msgstr "Contrato {0}"
 msgid "Contrato {0} activado"
 msgstr "Contrato {0} activado"
 
+#: src/features/contracts/components/EditContractDialog.tsx
+msgid "Contrato actualizado"
+msgstr "Contrato actualizado"
+
+#: src/features/timesheet/components/PayPreviewBadge.tsx
+msgid "Contrato cambió"
+msgstr "Contrato cambió"
+
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Contrato creado — en Borrador"
 msgstr "Contrato creado — en Borrador"
@@ -3655,6 +3664,10 @@ msgstr "Deducciones"
 msgid "Deducciones {0}"
 msgstr "Deducciones {0}"
 
+#: src/features/contracts/components/EditContractDialog.tsx
+msgid "Deduce comida (3 USD por día laborado)"
+msgstr "Deduce comida (3 USD por día laborado)"
+
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "Define cuántos, desde cuándo y en qué horario. Cada unidad de cantidad es un lugar que Reclutamiento va a cubrir."
 msgstr "Define cuántos, desde cuándo y en qué horario. Cada unidad de cantidad es un lugar que Reclutamiento va a cubrir."
@@ -4072,6 +4085,11 @@ msgstr "Editar contacto"
 msgid "Editar contacto · {0}"
 msgstr "Editar contacto · {0}"
 
+#: src/features/contracts/components/EditContractDialog.tsx
+#: src/features/contracts/pages/ContractDetailPage.tsx
+msgid "Editar contrato"
+msgstr "Editar contrato"
+
 #: src/features/admin/components/HotelUserFormDialog.tsx
 msgid "Editar cuenta del hotel"
 msgstr "Editar cuenta del hotel"
@@ -4267,6 +4285,10 @@ msgstr "El contrato nace en Borrador, se afina y se activa. Solo puede haber uno
 msgid "El contrato no tiene tarifa de facturación para esta posición: no se calcula lo que se le cobraría al hotel."
 msgstr "El contrato no tiene tarifa de facturación para esta posición: no se calcula lo que se le cobraría al hotel."
 
+#: src/features/timesheet/components/PayPreviewBadge.tsx
+msgid "El contrato se editó DESPUÉS de que esta semana ya se aprobó: lo que ves aquí es el cálculo nuevo, no el que se aprobó."
+msgstr "El contrato se editó DESPUÉS de que esta semana ya se aprobó: lo que ves aquí es el cálculo nuevo, no el que se aprobó."
+
 #: src/features/admin/pages/UsersPage.tsx
 msgid "El correo no se edita: es con el que la persona entra. Para cambiar de persona, da de baja y da de alta. La cuenta queda enlazada la primera vez que entra. Las cuentas de los hoteles tienen su propia pestaña: «Personal de hoteles»."
 msgstr "El correo no se edita: es con el que la persona entra. Para cambiar de persona, da de baja y da de alta. La cuenta queda enlazada la primera vez que entra. Las cuentas de los hoteles tienen su propia pestaña: «Personal de hoteles»."
@@ -4384,6 +4406,14 @@ msgstr "El hotel lo mandó a descansar (Stand-by)"
 #: src/features/timesheet/pages/TimesheetPage.tsx
 msgid "El hotel no paga el lonche: se resta media hora con 6.5 h o más."
 msgstr "El hotel no paga el lonche: se resta media hora con 6.5 h o más."
+
+#: src/features/contracts/components/EditContractDialog.tsx
+msgid "El hotel no puede pagar menos recargo de festivo que el colaborador."
+msgstr "El hotel no puede pagar menos recargo de festivo que el colaborador."
+
+#: src/features/contracts/components/EditContractDialog.tsx
+msgid "El hotel no puede pagar menos recargo de overtime que el colaborador."
+msgstr "El hotel no puede pagar menos recargo de overtime que el colaborador."
 
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
 msgid "El hotel no tiene QR generado todavía: regenéralo desde su ficha."
@@ -5719,6 +5749,11 @@ msgstr "Este contrato no existe o fue borrado. Vuelve a la lista y elige otro."
 msgid "Este contrato se canceló en borrador: nunca rigió y no admite cambios."
 msgstr "Este contrato se canceló en borrador: nunca rigió y no admite cambios."
 
+#: src/features/contracts/components/EditRateDialog.tsx
+msgid "Este contrato ya está cerrado: las tarifas quedaron congeladas."
+msgstr "Este contrato ya está cerrado: las tarifas quedaron congeladas."
+
+#: src/features/contracts/components/EditContractDialog.tsx
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Este contrato ya está cerrado: no admite más cambios."
 msgstr "Este contrato ya está cerrado: no admite más cambios."
@@ -5726,14 +5761,6 @@ msgstr "Este contrato ya está cerrado: no admite más cambios."
 #: src/features/contracts/components/ContractChecklist.tsx
 msgid "Este contrato ya expiró: dejó de regir y no admite cambios. Para renovar, se crea uno nuevo para el hotel."
 msgstr "Este contrato ya expiró: dejó de regir y no admite cambios. Para renovar, se crea uno nuevo para el hotel."
-
-#: src/features/contracts/components/EditRateDialog.tsx
-msgid "Este contrato ya no es borrador: las tarifas quedaron congeladas al activarlo."
-msgstr "Este contrato ya no es borrador: las tarifas quedaron congeladas al activarlo."
-
-#: src/features/contracts/pages/ContractDetailPage.tsx
-msgid "Este contrato ya no es borrador: no se puede editar ni cancelar."
-msgstr "Este contrato ya no es borrador: no se puede editar ni cancelar."
 
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Este cuadro es el que firma el hotel: al crear el Documento de T&C se copia tal cual, sin volver a capturarlo."
@@ -5924,6 +5951,10 @@ msgstr "Factura al hotel {0}"
 msgid "Factura aprobada"
 msgstr "Factura aprobada"
 
+#: src/features/contracts/components/EditContractDialog.tsx
+msgid "Factura partida por mes cuando una semana cruza dos meses"
+msgstr "Factura partida por mes cuando una semana cruza dos meses"
+
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Factura por hora"
 msgstr "Factura por hora"
@@ -6052,6 +6083,14 @@ msgstr "Fecha y hora"
 #: src/shared/constants/workerEnums.ts
 msgid "Femenino"
 msgstr "Femenino"
+
+#: src/features/contracts/components/EditContractDialog.tsx
+msgid "Festivo · factura"
+msgstr "Festivo · factura"
+
+#: src/features/contracts/components/EditContractDialog.tsx
+msgid "Festivo · pago"
+msgstr "Festivo · pago"
 
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
 #: src/features/recruitment/types/selfPick.types.ts
@@ -6243,6 +6282,7 @@ msgstr "Guardando tu ubicación y tu foto"
 #: src/features/admin/components/UserFormDialog.tsx
 #: src/features/admin/pages/CatalogsPage.tsx
 #: src/features/audits/components/AuditFormDialog.tsx
+#: src/features/contracts/components/EditContractDialog.tsx
 #: src/features/contracts/components/EditRateDialog.tsx
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 #: src/features/onboarding/components/HotelContactsDialog.tsx
@@ -6272,6 +6312,7 @@ msgstr "Guardar borrador"
 
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/components/UserFormDialog.tsx
+#: src/features/contracts/components/EditContractDialog.tsx
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
@@ -6991,6 +7032,7 @@ msgstr "La entrevista es la Fase 1"
 msgid "La fecha de fin es anterior al inicio: corrige el rango."
 msgstr "La fecha de fin es anterior al inicio: corrige el rango."
 
+#: src/features/contracts/components/EditContractDialog.tsx
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "La fecha de fin tiene que ser posterior al inicio."
 msgstr "La fecha de fin tiene que ser posterior al inicio."
@@ -8097,6 +8139,18 @@ msgstr "Motivos"
 msgid "Motivos de salida a Rojo · Café · Negro"
 msgstr "Motivos de salida a Rojo · Café · Negro"
 
+#: src/features/contracts/components/EditContractDialog.tsx
+msgid "Multiplicador de festivo facturado"
+msgstr "Multiplicador de festivo facturado"
+
+#: src/features/contracts/components/EditContractDialog.tsx
+msgid "Multiplicador de festivo pagado"
+msgstr "Multiplicador de festivo pagado"
+
+#: src/features/contracts/components/EditContractDialog.tsx
+msgid "Multiplicador de overtime facturado"
+msgstr "Multiplicador de overtime facturado"
+
 #: src/features/contracts/components/MultiplierTable.tsx
 msgid "Multiplicadores"
 msgstr "Multiplicadores"
@@ -8912,6 +8966,10 @@ msgstr "No se pudo guardar el colaborador. Revisa los datos e inténtalo de nuev
 msgid "No se pudo guardar el contacto. Revisa los datos e inténtalo de nuevo."
 msgstr "No se pudo guardar el contacto. Revisa los datos e inténtalo de nuevo."
 
+#: src/features/contracts/components/EditContractDialog.tsx
+msgid "No se pudo guardar el contrato. Inténtalo de nuevo."
+msgstr "No se pudo guardar el contrato. Inténtalo de nuevo."
+
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
 msgid "No se pudo guardar el nuevo orden: vuelve a intentarlo."
 msgstr "No se pudo guardar el nuevo orden: vuelve a intentarlo."
@@ -9445,6 +9503,10 @@ msgstr "otro rol"
 #: src/features/contracts/components/MultiplierTable.tsx
 msgid "Overtime"
 msgstr "Overtime"
+
+#: src/features/contracts/components/EditContractDialog.tsx
+msgid "Overtime · factura"
+msgstr "Overtime · factura"
 
 #: src/features/contracts/components/ContractTable.tsx
 msgid "Overtime · Festivo"
@@ -12041,6 +12103,10 @@ msgid "solo tu departamento"
 msgstr "solo tu departamento"
 
 #: src/features/contracts/pages/ContractDetailPage.tsx
+msgid "Solo un borrador se cancela."
+msgstr "Solo un borrador se cancela."
+
+#: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Solo un contrato vigente se puede marcar expirado."
 msgstr "Solo un contrato vigente se puede marcar expirado."
 
@@ -13480,10 +13546,12 @@ msgstr "Vigente desde"
 msgid "Vigente desde el inicio, sin fecha de fin: aplica hasta que se expire a mano."
 msgstr "Vigente desde el inicio, sin fecha de fin: aplica hasta que se expire a mano."
 
+#: src/features/contracts/components/EditContractDialog.tsx
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Vigente hasta"
 msgstr "Vigente hasta"
 
+#: src/features/contracts/components/EditContractDialog.tsx
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Vigente hasta (opcional)"
 msgstr "Vigente hasta (opcional)"

@@ -264,6 +264,7 @@ const routes: readonly MockRoute[] = [
         overrideReason: dto.reason,
         billRate: found.payPreview?.billRate ?? null,
         billSubtotal: found.payPreview?.billSubtotal ?? null,
+        contractUpdatedAt: found.payPreview?.contractUpdatedAt ?? null,
       }
       return { data: { ...found, totals: totalsOf(found.days) } }
     },

@@ -13,6 +13,7 @@ import { buildContractChecks } from '../components/ContractChecklist'
 import { ContractNextStep } from '../components/ContractNextStep'
 import { ContractPaper } from '../components/ContractPaper'
 import { ContractPdfButton } from '../components/ContractPdfButton'
+import { EditContractDialog } from '../components/EditContractDialog'
 import { EditRateDialog } from '../components/EditRateDialog'
 import { MultiplierTable } from '../components/MultiplierTable'
 import { NewContractDialog } from '../components/NewContractDialog'
@@ -74,6 +75,7 @@ export function ContractDetailPage(): ReactNode {
   const canEditRates = can('terms_and_conditions:update')
 
   const [isEditingRate, setIsEditingRate] = useState(false)
+  const [isEditingContract, setIsEditingContract] = useState(false)
   /** Los cierres piden un segundo clic: el botón se vuelve «¿Confirmar…?». */
   const [confirming, setConfirming] = useState<'activate' | 'expire' | 'cancel' | null>(null)
   const [transition, { isLoading: isTransitioning, isError: hasTransitionFailed, error }] =
@@ -83,6 +85,7 @@ export function ContractDetailPage(): ReactNode {
   useEffect(() => {
     setConfirming(null)
     setIsEditingRate(false)
+    setIsEditingContract(false)
   }, [contractId])
 
   const [pendingAction, setPendingAction] = useState<'activate' | 'expire' | 'cancel' | null>(null)
@@ -204,19 +207,34 @@ export function ContractDetailPage(): ReactNode {
             </Button>
           )}
 
-          {/* Las acciones dependen del estado: DRAFT se edita y activa; ACTIVE solo se expira. */}
+          {/* Editar tarifas y términos: en Borrador y también ya ACTIVO
+              (Hugo, 2026-10-16) — lo ya pagado está a salvo porque la
+              nómina copia la tarifa vigente al generarse. Solo EXPIRED y
+              CANCELLED cierran la puerta. */}
+          {['DRAFT', 'ACTIVE'].includes(contract.status) && canEditRates && (
+            <>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setIsEditingContract(true)
+                }}
+              >
+                <Trans>Editar contrato</Trans>
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setIsEditingRate(true)
+                }}
+              >
+                <Trans>Editar tarifas</Trans>
+              </Button>
+            </>
+          )}
+
+          {/* El resto de las acciones depende del estado: DRAFT se cancela y activa. */}
           {contract.status === 'DRAFT' && (
             <>
-              {canEditRates && (
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setIsEditingRate(true)
-                  }}
-                >
-                  <Trans>Editar tarifas</Trans>
-                </Button>
-              )}
               {canApprove && (
                 <>
                   <Button
@@ -292,7 +310,8 @@ export function ContractDetailPage(): ReactNode {
             byCode: {
               CONTRACT_WITHOUT_RATES: t`No se puede activar sin tarifas: agrega al menos una.`,
               CONTRACT_ALREADY_ACTIVE: t`Este hotel ya tiene un contrato vigente: primero hay que expirarlo.`,
-              CONTRACT_NOT_DRAFT: t`Este contrato ya no es borrador: no se puede editar ni cancelar.`,
+              CONTRACT_NOT_DRAFT: t`Solo un borrador se cancela.`,
+              CONTRACT_CLOSED: t`Este contrato ya está cerrado: no admite más cambios.`,
               CONTRACT_NOT_ACTIVE: t`Solo un contrato vigente se puede marcar expirado.`,
               CONTRACT_ALREADY_CLOSED: t`Este contrato ya está cerrado: no admite más cambios.`,
             },
@@ -303,6 +322,14 @@ export function ContractDetailPage(): ReactNode {
           })}
         </p>
       )}
+
+      <EditContractDialog
+        contract={contract}
+        isOpen={isEditingContract}
+        onClose={() => {
+          setIsEditingContract(false)
+        }}
+      />
 
       <EditRateDialog
         contractId={contractId}
