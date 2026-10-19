@@ -2,6 +2,8 @@ import type { I18n } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 import { z } from 'zod'
 
+import { isCompletePhone } from '@/shared/components/PhoneInput'
+
 /**
  * Alta y edición de un prospecto (§4: React Hook Form + Zod).
  *
@@ -80,7 +82,15 @@ export function buildProspectFormSchema(i18n: I18n) {
 
       contactFullName: z.string().trim(),
       contactJobTitle: z.string(),
-      contactPhone: z.string(),
+      /* Vacío es válido —no siempre se tiene el teléfono— pero lo que se
+         escriba tiene que ser un número de verdad. Sin esto se guardaba a
+         medias: en staging quedó `+1 29342` (Hugo lo encontró, 2026-10-19). */
+      contactPhone: z
+        .string()
+        .refine(
+          (value) => value === '' || isCompletePhone(value),
+          i18n._(msg`Al teléfono le faltan dígitos para el país elegido`),
+        ),
       /** Vacío es válido: no todos los contactos dan correo. */
       contactEmail: z.union([
         z.literal(''),

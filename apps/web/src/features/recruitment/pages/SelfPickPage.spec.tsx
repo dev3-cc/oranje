@@ -2,11 +2,12 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { createMemoryRouter, RouterProvider } from 'react-router'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 
 import { SelfPickPage } from './SelfPickPage'
 import { SlotAssignmentPage } from './SlotAssignmentPage'
 
+import { baseApi } from '@/app/baseApi'
 import { store } from '@/app/store'
 
 const SLOW = { timeout: 4000 }
@@ -27,6 +28,16 @@ function renderSelfPick(): void {
 }
 
 describe('la Bolsa Self-Pick', () => {
+  /* La caché de RTK vive en el STORE COMPARTIDO, que no se recrea entre casos:
+     sin limpiarla, cada prueba arranca con lo que dejó la anterior —un tablero
+     ya cargado, un slot ya asignado— y el resultado depende del orden y de la
+     velocidad de la máquina. Eso es lo que volvía inestable este archivo: la
+     misma versión daba 7 de 7 en una corrida y 4 fallos en la siguiente
+     (medido, 2026-10-19). Mismo patrón que ya documentaron HomePage.spec y
+     PunchQrPorMarca.spec. */
+  beforeEach(() => {
+    store.dispatch(baseApi.util.resetApiState())
+  })
   it('cuenta los slots libres reales y explica RR-15', async () => {
     renderSelfPick()
 

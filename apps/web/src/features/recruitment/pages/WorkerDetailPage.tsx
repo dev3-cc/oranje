@@ -54,7 +54,7 @@ import {
 import { useCan } from '@/shared/hooks/useCan'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
-import { formatDate } from '@/shared/lib/formatters'
+import { formatDate, formatPhone } from '@/shared/lib/formatters'
 import { isFullWorkerApi, type WorkerApi } from '@/shared/types/apiContract.types'
 
 /** Se traduce al pintar con `i18n._()` (D-36). */
@@ -170,7 +170,7 @@ function BasicWorkerDetail({ worker }: { worker: WorkerApi }): ReactNode {
     },
     {
       label: t`Teléfono de emergencia`,
-      value: worker.emergencyContact?.phone ?? '—',
+      value: formatPhone(worker.emergencyContact?.phone) || '—',
       foot: 'emergency_contact_phone',
       icon: 'call',
     },
@@ -420,7 +420,7 @@ export function WorkerDetailPage(): ReactNode {
       foot: 'gender',
       icon: 'face',
     },
-    { label: t`Teléfono`, value: worker.phone, foot: 'phone', icon: 'call' },
+    { label: t`Teléfono`, value: formatPhone(worker.phone), foot: 'phone', icon: 'call' },
     { label: t`Zona`, value: worker.zone.name, foot: 'zone_id', icon: 'map' },
     {
       label: t`Usuario del sistema`,
@@ -489,7 +489,7 @@ export function WorkerDetailPage(): ReactNode {
     },
     {
       label: t`Teléfono de emergencia`,
-      value: worker.emergencyContact?.phone ?? '—',
+      value: formatPhone(worker.emergencyContact?.phone) || '—',
       foot: 'emergency_contact_phone',
       icon: 'call',
     },

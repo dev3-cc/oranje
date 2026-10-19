@@ -10,7 +10,7 @@ import {
 import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 
-import { AL_ATERRIZAR, useGetSelfPickBoardQuery } from '../api/selfPickApi'
+import { TABLERO_VIVO, useGetSelfPickBoardQuery } from '../api/selfPickApi'
 import type { SelfPickRow } from '../types/selfPick.types'
 
 import personajeComencemos from '@/assets/ilustrations/personaje-comencemos.svg'
@@ -48,7 +48,7 @@ export function SelfPickPage(): ReactNode {
     isLoading,
     isError,
     refetch,
-  } = useGetSelfPickBoardQuery(undefined, AL_ATERRIZAR)
+  } = useGetSelfPickBoardQuery(undefined, TABLERO_VIVO)
 
   const [positionId, setPositionId] = useState(ANY)
   const [modalityId, setModalityId] = useState(ANY)

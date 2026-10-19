@@ -496,6 +496,57 @@ export const onboardingApi = baseApi.injectEndpoints({
         })
         if (prospectPatch.error) return { error: prospectPatch.error as never }
 
+        /* EL CONTACTO TAMBIÉN SE GUARDA.
+           Hasta hoy `contact` llegaba hasta aquí y se descartaba en silencio:
+           el asistente de edición pintaba los campos del contacto, dejaba
+           escribir en ellos, decía «Prospecto actualizado» y la base no
+           cambiaba. Hugo lo encontró corrigiendo un teléfono (2026-10-19) —
+           la peor forma de falla, porque se ve bien y nadie se entera.
+           Se corrige el contacto PRINCIPAL, que es el que el asistente carga
+           y el único que muestra. Los demás se administran en «Contactos del
+           hotel». */
+        if (request.contact) {
+          const contactosRes = await bq(`/hotels/${hotelId}/contacts`)
+          if (contactosRes.error) return { error: contactosRes.error as never }
+
+          const contactos = (contactosRes.data as ApiEnvelope<{ id: string; isPrimary: boolean }[]>)
+            .data
+          const principal = contactos.find((c) => c.isPrimary) ?? contactos[0]
+
+          /* Los DTO del API no aceptan cadenas vacías: `jobTitle` pide al
+             menos un caracter y `email` tiene que ser un correo. Al corregir
+             hay que mandar `null` para borrarlos; al crear, omitirlos. */
+          const { fullName, jobTitle, phone, email, isPrimary } = request.contact
+          const vacio = (v: string): boolean => v.trim() === ''
+
+          const contactoRes = await bq(
+            principal
+              ? {
+                  url: `/hotels/${hotelId}/contacts/${principal.id}`,
+                  method: 'PATCH',
+                  body: {
+                    fullName,
+                    jobTitle: vacio(jobTitle) ? null : jobTitle,
+                    phone: vacio(phone) ? null : phone,
+                    email: vacio(email) ? null : email,
+                    isPrimary,
+                  },
+                }
+              : {
+                  url: `/hotels/${hotelId}/contacts`,
+                  method: 'POST',
+                  body: {
+                    fullName,
+                    ...(vacio(jobTitle) ? {} : { jobTitle }),
+                    ...(vacio(phone) ? {} : { phone }),
+                    ...(vacio(email) ? {} : { email }),
+                    isPrimary,
+                  },
+                },
+          )
+          if (contactoRes.error) return { error: contactoRes.error as never }
+        }
+
         const detail = await fetchProspectDetail(bq, request.prospectId)
         return 'error' in detail ? { error: detail.error as never } : { data: detail.data }
       },

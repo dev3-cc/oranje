@@ -19,7 +19,7 @@ import {
   WORKER_STATUS_TOKEN,
   type WorkerStatus,
 } from '@/shared/constants/workerStatus'
-import { formatDate } from '@/shared/lib/formatters'
+import { formatDate, formatPhone } from '@/shared/lib/formatters'
 import type { WorkerHistoryEntryApi } from '@/shared/types/apiContract.types'
 
 function Row({ label, value }: { label: string; value: string }): ReactNode {
@@ -177,7 +177,7 @@ export function ProfilePage(): ReactNode {
         </h2>
         <dl className="mt-1 divide-y divide-white/15">
           <Row label={t`Correo`} value={profile.email ?? '—'} />
-          <Row label={t`Teléfono`} value={profile.phone} />
+          <Row label={t`Teléfono`} value={formatPhone(profile.phone)} />
           <Row label={t`Domicilio`} value={profile.address} />
           <Row
             label={t`Transporte`}

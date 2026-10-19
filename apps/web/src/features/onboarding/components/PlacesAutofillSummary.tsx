@@ -59,7 +59,6 @@ export function PlacesAutofillSummary({
   className,
   hotelName,
   address,
-  generalPhone,
   timeZone,
   location,
   geofenceMeters,
@@ -70,7 +69,6 @@ export function PlacesAutofillSummary({
   className?: string
   hotelName: string
   address: string
-  generalPhone: string
   timeZone: string
   location: GeoPoint | null
   geofenceMeters: number
@@ -150,12 +148,6 @@ export function PlacesAutofillSummary({
           column="name"
           value={hotelName || EMPTY}
           isFilled={hotelName !== ''}
-        />
-        <AutofillRow
-          label={t`Teléfono`}
-          column="general_phone"
-          value={generalPhone || EMPTY}
-          isFilled={generalPhone !== ''}
         />
         <AutofillRow
           label={t`Ubicación`}

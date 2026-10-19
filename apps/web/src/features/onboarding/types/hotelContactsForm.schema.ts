@@ -2,6 +2,8 @@ import type { I18n } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 import { z } from 'zod'
 
+import { isCompletePhone } from '@/shared/components/PhoneInput'
+
 /** Correo suficientemente bien formado. El definitivo lo valida el backend. */
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -27,7 +29,14 @@ export function buildHotelContactDraftSchema(i18n: I18n) {
       .trim()
       .min(1, i18n._(msg`El nombre es obligatorio`)),
     jobTitle: z.string(),
-    phone: z.string(),
+    /* Vacío sí, a medias no: un teléfono incompleto no sirve para llamar
+       y ensucia la base (ver prospectForm.schema.ts). */
+    phone: z
+      .string()
+      .refine(
+        (value) => value === '' || isCompletePhone(value),
+        i18n._(msg`Al teléfono le faltan dígitos para el país elegido`),
+      ),
     email: z
       .string()
       .trim()
