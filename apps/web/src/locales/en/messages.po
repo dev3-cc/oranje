@@ -882,14 +882,6 @@ msgstr "← Back to sign in"
 msgid "+ Agregar posición"
 msgstr "+ Add position"
 
-#: src/features/onboarding/components/ProspectFormDialog.tsx
-msgid "+1 404 555 0134"
-msgstr "+1 404 555 0134"
-
-#: src/features/onboarding/components/HotelContactsDialog.tsx
-msgid "+52 998 123 4567"
-msgstr "+52 998 123 4567"
-
 #: src/features/contracts/components/ActivateContractDialog.tsx
 msgid "<0>El contrato {activeContractNumber} queda vencido.</0> Solo puede haber uno vigente por hotel."
 msgstr "<0>Contract {activeContractNumber} becomes expired.</0> Only one can be in force per hotel."
@@ -1362,6 +1354,16 @@ msgstr "Marking another contact as the primary one drops the previous one in the
 msgid "Al ponchar se abre la cámara"
 msgstr "The camera opens when you punch in"
 
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Al teléfono de emergencia le faltan dígitos para el país elegido"
+msgstr "The emergency phone number is missing digits for the selected country"
+
+#: src/features/onboarding/types/hotelContactsForm.schema.ts
+#: src/features/onboarding/types/prospectForm.schema.ts
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+msgid "Al teléfono le faltan dígitos para el país elegido"
+msgstr "The phone number is missing digits for the selected country"
+
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Al tocar el botón se abre la cámara. La foto confirma que eres tú; no se comparte con el hotel."
 msgstr "Tapping the button opens the camera. The photo confirms it's you; it isn't shared with the hotel."
@@ -1377,6 +1379,11 @@ msgstr "Allergies or medical conditions"
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
 msgid "Alguien más borró un reactivo de esta lista: recarga para ver el orden real."
 msgstr "Someone else deleted an item from this list: reload to see the real order."
+
+#. placeholder {0}: String(slotElegido)
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Alguien tomó el lugar {0} mientras llenabas esto. Se asignará el siguiente libre."
+msgstr "Someone took slot {0} while you were filling this in. The next free one will be used."
 
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Alta de personal del sistema"
@@ -2047,6 +2054,10 @@ msgstr "Search the hotel on Google"
 #: src/features/onboarding/components/PlacesAutofillSummary.tsx
 msgid "Busca el hotel o marca el punto en el mapa"
 msgstr "Search the hotel or drop the point on the map"
+
+#: src/shared/components/PhoneInput.tsx
+msgid "Busca el país"
+msgstr "Search for a country"
 
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
 msgid "Busca por folio o por hotel, o filtra por estado. «Quitar filtros» te devuelve el tablero completo."
@@ -4689,14 +4700,6 @@ msgstr "The Supervisor, the Area Manager or the General Manager open them from t
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
 msgid "el tablero de Requisiciones"
 msgstr "the Requisitions board"
-
-#: src/features/worker/pages/Phase3Page.tsx
-msgid "El teléfono de emergencia necesita al menos 7 dígitos (sin la lada)"
-msgstr "The emergency phone needs at least 7 digits (no area code)"
-
-#: src/features/recruitment/components/CreateWorkerDialog.tsx
-msgid "El teléfono necesita al menos 7 dígitos (sin contar la lada)"
-msgstr "The phone needs at least 7 digits (not counting the area code)"
 
 #: src/features/team/components/AssignTerritoryDialog.tsx
 msgid "El territorio lo reparte el BDC"
@@ -8395,6 +8398,10 @@ msgstr "No hotel is waiting on a proposal"
 msgid "Ningún motivo de {0} coincide con «{1}»."
 msgstr "No {0} reason matches “{1}”."
 
+#: src/shared/components/PhoneInput.tsx
+msgid "Ningún país se llama así"
+msgstr "No country by that name"
+
 #. placeholder {0}: activeFilterLabels.join(' · ')
 #: src/features/onboarding/pages/PipelinePage.tsx
 msgid "Ningún prospecto coincide con {0}"
@@ -9492,6 +9499,10 @@ msgstr "Source"
 msgid "Otra deducción"
 msgstr "Other deduction"
 
+#: src/features/recruitment/pages/SlotAssignmentPage.tsx
+msgid "Otra persona acaba de asignar a {nombreElegido}. Elige a alguien más."
+msgstr "Someone else just assigned {nombreElegido}. Pick another collaborator."
+
 #. placeholder {0}: IS_DEV_UI ? ' (RR-15)' : ''
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
 msgid "Otra Reclutadora tomó este slot antes{0}: el tablero ya se actualizó, revisa el siguiente libre."
@@ -9646,6 +9657,14 @@ msgstr "Payment recorded"
 #: src/features/accounting/components/GeneratePaymentRunButton.tsx
 msgid "Pago y facturación de {hotelName} esta semana, listos para bajar — el mismo cuadro de \"Lo que el hotel nos paga\" en un archivo."
 msgstr "{hotelName}'s pay and billing for the week, ready to download — the same “What the hotel pays us” table in a file."
+
+#: src/shared/components/PhoneInput.tsx
+msgid "País"
+msgstr "Country"
+
+#: src/shared/components/PhoneInput.tsx
+msgid "País o lada: México, +52…"
+msgstr "Country or code: Mexico, +52…"
 
 #. placeholder {0}: row.workerName
 #: src/features/timesheet/components/ManualPunchDialog.tsx
@@ -12376,7 +12395,6 @@ msgid "te reportan directo"
 msgstr "report directly to you"
 
 #: src/features/onboarding/components/HotelContactsDialog.tsx
-#: src/features/onboarding/components/PlacesAutofillSummary.tsx
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 #: src/features/personnel/pages/PersonnelPage.tsx
 #: src/features/recruitment/components/CreateWorkerDialog.tsx

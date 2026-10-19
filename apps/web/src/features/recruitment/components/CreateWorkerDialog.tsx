@@ -357,9 +357,18 @@ export function CreateWorkerDialog({
    * botón "sin detectar" el cambio de Posición cuando el domicilio real
    * seguía en blanco. Solo el alta (Fase 1) exige el expediente completo.
    */
+  /* El teléfono que ya estaba guardado NO bloquea editar otra cosa.
+     En producción quedan 10 expedientes con un teléfono que no se pudo
+     migrar —dos números en un campo, dígitos de menos— y exigirle a la
+     Reclutadora que lo arregle para poder corregir un domicilio la dejaría
+     atorada sin poder preguntarle a la persona. Si lo TOCA, entonces sí
+     tiene que quedar bien. Mismo criterio que el resto del expediente
+     migrado, arriba. */
+  const telefonoSinTocar = isEditing && draft.phone === (editing?.phone ?? '')
+
   const canSubmit = isEditing
     ? draft.fullName.trim() !== '' &&
-      (draft.phone === '' || isCompletePhone(draft.phone)) &&
+      (draft.phone === '' || isCompletePhone(draft.phone) || telefonoSinTocar) &&
       !isLoading
     : draft.fullName.trim() !== '' &&
       draft.birthDate !== '' &&
@@ -459,15 +468,15 @@ export function CreateWorkerDialog({
   const missingHint = isEditing
     ? draft.fullName.trim() === ''
       ? t`Falta el nombre completo`
-      : draft.phone !== '' && !isCompletePhone(draft.phone)
-        ? t`El teléfono necesita al menos 7 dígitos (sin contar la lada)`
+      : draft.phone !== '' && !isCompletePhone(draft.phone) && !telefonoSinTocar
+        ? t`Al teléfono le faltan dígitos para el país elegido`
         : null
     : draft.fullName.trim() === ''
       ? t`Falta el nombre completo`
       : draft.birthDate === ''
         ? t`Falta la fecha de nacimiento`
         : !isCompletePhone(draft.phone)
-          ? t`El teléfono necesita al menos 7 dígitos (sin contar la lada)`
+          ? t`Al teléfono le faltan dígitos para el país elegido`
           : draft.address.trim() === ''
             ? t`Falta el domicilio`
             : draft.zoneId === ''
@@ -692,7 +701,6 @@ export function CreateWorkerDialog({
                         update('phone')(value)
                       }}
                       ariaLabel={t`Teléfono`}
-                      placeholder="404 790 2517"
                     />
                     <Select
                       {...(draft.zoneId ? { value: draft.zoneId } : {})}
@@ -903,7 +911,6 @@ export function CreateWorkerDialog({
                             update('emergencyContactPhone')(value)
                           }}
                           ariaLabel={t`Teléfono del contacto de emergencia`}
-                          placeholder="404 790 2517"
                         />
                         <Select
                           value={

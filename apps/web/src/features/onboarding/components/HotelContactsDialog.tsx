@@ -3,7 +3,7 @@ import { plural } from '@lingui/core/macro'
 import { Plural, Trans, useLingui } from '@lingui/react/macro'
 import { cn, toast } from '@oranje/ui'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { useFieldArray, useForm } from 'react-hook-form'
+import { Controller, useFieldArray, useForm } from 'react-hook-form'
 
 import {
   useAddHotelContactsMutation,
@@ -20,7 +20,9 @@ import type { HotelContact } from '../types/prospect.types'
 
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
+import { isCompletePhone, PhoneInput } from '@/shared/components/PhoneInput'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
+import { formatPhone } from '@/shared/lib/formatters'
 
 const FORM_ID = 'hotel-contacts-form'
 
@@ -43,16 +45,20 @@ function Field({
   column,
   required,
   error,
+  span,
   children,
 }: {
   label: string
   column: string
   required?: boolean
   error?: string | undefined
+  /** Ocupa las dos columnas de la rejilla. Lo usa el teléfono, que lleva su
+      selector de país al lado y en media columna no le queda sitio al número. */
+  span?: boolean
   children: ReactNode
 }): ReactNode {
   return (
-    <div>
+    <div className={cn(span === true && 'sm:col-span-2')}>
       <p className="flex items-baseline gap-2 text-sm font-semibold text-ink">
         {label}
         {required === true && (
@@ -136,6 +142,16 @@ export function HotelContactsDialog({
   const draftError = errors.drafts?.[selectedIndex]
   const editingContact = contacts.find((contact) => contact.id === editingId) ?? null
   const isEditing = editingContact !== null && editDraft !== null
+
+  /* Un teléfono que ya estaba guardado NO bloquea corregir el nombre o el
+     puesto: en producción quedan 5 contactos con un número que no se pudo
+     migrar (dos números en un campo, dígitos de menos). Pero si se TOCA,
+     tiene que quedar bien — un teléfono a medias no sirve para llamar. */
+  const telefonoEditableOk =
+    editDraft === null ||
+    editDraft.phone.trim() === '' ||
+    editDraft.phone === editingContact?.phone ||
+    isCompletePhone(editDraft.phone)
 
   function startEditing(contact: HotelContact): void {
     setEditingId(contact.id)
@@ -285,7 +301,7 @@ export function HotelContactsDialog({
             </Button>
             <Button
               variant="primary"
-              disabled={isBusy || editDraft?.fullName.trim() === ''}
+              disabled={isBusy || editDraft?.fullName.trim() === '' || !telefonoEditableOk}
               onClick={() => {
                 void saveEdit()
               }}
@@ -359,7 +375,7 @@ export function HotelContactsDialog({
                     )}
                   </div>
                   <p className="mt-0.5 text-sm text-ink-3">{contact.role}</p>
-                  <p className="mt-0.5 text-sm text-ink-3">{contact.phone}</p>
+                  <p className="mt-0.5 text-sm text-ink-3">{formatPhone(contact.phone)}</p>
                   <p className="mt-1 text-xs font-medium text-o-700">
                     <Trans>Editar</Trans>
                   </p>
@@ -436,17 +452,6 @@ export function HotelContactsDialog({
                   />
                 </Field>
 
-                <Field label={t`Teléfono`} column="phone">
-                  <input
-                    value={editDraft.phone}
-                    onChange={(event) => {
-                      setEditDraft({ ...editDraft, phone: event.target.value })
-                    }}
-                    placeholder={t`+52 998 123 4567`}
-                    className={CONTROL_CLASS}
-                  />
-                </Field>
-
                 <Field label={t`Correo`} column="email">
                   <input
                     value={editDraft.email}
@@ -455,6 +460,19 @@ export function HotelContactsDialog({
                     }}
                     placeholder={t`nombre@hotel.mx`}
                     className={CONTROL_CLASS}
+                  />
+                </Field>
+
+                {/* El teléfono ocupa el renglón entero: con el selector de país
+                    al lado, media columna dejaba el número en un hueco de tres
+                    dígitos (Hugo, 2026-10-19). */}
+                <Field label={t`Teléfono`} column="phone" span>
+                  <PhoneInput
+                    value={editDraft.phone}
+                    onChange={(phone) => {
+                      setEditDraft({ ...editDraft, phone })
+                    }}
+                    ariaLabel={t`Teléfono`}
                   />
                 </Field>
               </div>
@@ -534,19 +552,28 @@ export function HotelContactsDialog({
                   />
                 </Field>
 
-                <Field label={t`Teléfono`} column="phone">
-                  <input
-                    {...register(draftPath(selectedIndex, 'phone'))}
-                    placeholder={t`+52 998 123 4567`}
-                    className={CONTROL_CLASS}
-                  />
-                </Field>
-
                 <Field label={t`Correo`} column="email" error={draftError?.email?.message}>
                   <input
                     {...register(draftPath(selectedIndex, 'email'))}
                     placeholder={t`nombre@hotel.mx`}
                     className={CONTROL_CLASS}
+                  />
+                </Field>
+
+                <Field label={t`Teléfono`} column="phone" span>
+                  {/* Controller y no `register`: el teléfono ya no es texto
+                      suelto — el campo guarda E.164 y la lada la pone su
+                      selector, así que el valor lo maneja el componente. */}
+                  <Controller
+                    control={control}
+                    name={draftPath(selectedIndex, 'phone')}
+                    render={({ field }) => (
+                      <PhoneInput
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                        ariaLabel={t`Teléfono`}
+                      />
+                    )}
                   />
                 </Field>
               </div>

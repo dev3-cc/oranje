@@ -53,6 +53,24 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # El idioma se revisa en DOS pasos porque son dos fallas distintas, y la
+      # segunda es la que llegaba a producción sin que nadie la viera.
+      #
+      #   1. El catálogo quedó desactualizado: alguien agregó texto y no corrió
+      #      `i18n:extract`. El mensaje nuevo saldría en español también en
+      #      inglés, sin avisar.
+      #   2. El mensaje está extraído pero su inglés está VACÍO. Lingui no falla
+      #      por eso: rellena con el español y sigue. `--strict` lo convierte en
+      #      error, que es lo que debe ser.
+      #
+      # Hasta hoy ninguno de los dos corría en CI y el único control era que
+      # alguien se acordara de mirar la tabla de `extract` (Hugo, 2026-10-19).
+      - name: Catálogo de mensajes al día
+        run: pnpm -F @oranje/web i18n:check
+
+      - name: Sin mensajes sin inglés
+        run: pnpm -F @oranje/web exec lingui compile --strict
+
       # prisma.config.ts lee MIGRATE_DATABASE_URL, no DATABASE_URL: las
       # migraciones corren como el dueño de los esquemas, no como la aplicación.
       - name: Esquema de Prisma

@@ -1,4 +1,5 @@
 import { t } from '@lingui/core/macro'
+import { parsePhoneNumberFromString } from 'libphonenumber-js'
 
 import { currentLocale, localeTag, type Locale } from '@/app/i18n'
 
@@ -257,4 +258,26 @@ export function formatList(items: string[]): string {
   if (items.length <= 1) return items[0] ?? ''
 
   return new Intl.ListFormat(localeTag(), { style: 'long', type: 'conjunction' }).format(items)
+}
+
+/**
+ * Un teléfono, legible y diciendo de qué país es: `+1 678 555 1234`.
+ *
+ * Se muestra **siempre con la lada**, también la de Estados Unidos. Esconderla
+ * en los números locales devolvería en pantalla justo la ambigüedad que se
+ * acaba de quitar de la base: de 317 colaboradores, 273 estaban guardados sin
+ * lada y no había forma de saber si eran de Georgia o de Cancún.
+ *
+ * Un valor que todavía no está normalizado —de los que quedaron sin migrar—
+ * se devuelve tal cual: inventarle un formato lo haría parecer correcto.
+ */
+export function formatPhone(value: string | null | undefined): string {
+  if (value == null || value.trim() === '') return ''
+
+  return parsePhoneNumberFromString(value)?.formatInternational() ?? value
+}
+
+/** El mismo número, listo para un enlace `tel:`. Sin espacios ni paréntesis. */
+export function telHref(value: string): string {
+  return `tel:${parsePhoneNumberFromString(value)?.number ?? value.replace(/\s/g, '')}`
 }

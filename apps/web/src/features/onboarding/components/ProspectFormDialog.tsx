@@ -47,6 +47,7 @@ import { Button } from '@/shared/components/Button'
 import { MapsScope } from '@/shared/components/MapsScope'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
+import { PhoneInput } from '@/shared/components/PhoneInput'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import { StepIndicator } from '@/shared/components/StepIndicator'
 import { WEEK_DAY_COUNT } from '@/shared/constants/contractStatus'
@@ -103,6 +104,7 @@ function Field({
   note,
   column,
   error,
+  span,
   children,
 }: {
   label: string
@@ -111,12 +113,15 @@ function Field({
   note?: string
   column?: string
   error?: string | undefined
+  /** Ocupa las dos columnas. Lo usa el teléfono: con el selector de país al
+      lado, media columna le deja al número un hueco de tres dígitos. */
+  span?: boolean
   children: ReactNode
 }): ReactNode {
   const labelClass = 'text-sm font-semibold text-ink'
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className={cn('flex flex-col gap-1.5', span === true && 'sm:col-span-2')}>
       <div className="flex flex-wrap items-baseline gap-2">
         {htmlFor === undefined ? (
           <span className={labelClass}>{label}</span>
@@ -228,7 +233,10 @@ const WIZARD_STEPS: Array<{ step: WizardStep; label: MessageDescriptor }> = [
 const STEP_FIELDS: Record<WizardStep, Array<keyof ProspectFormValues>> = {
   1: ['hotelSource', 'existingHotelId', 'hotelName', 'zoneId', 'timeZone', 'punchMethod'],
   2: ['location', 'geofenceMeters'],
-  3: ['contactFullName', 'contactEmail'],
+  /* El teléfono entra aquí porque desde hoy se valida (E.164). Sin él en la
+     lista, `trigger` no lo revisaba y un número a medias pasaba al paso 4 para
+     reventar al guardar — o peor, guardarse (Hugo, 2026-10-19). */
+  3: ['contactFullName', 'contactEmail', 'contactPhone'],
   4: ['weekStartDay', 'overtimePayMultiplier'],
   5: ['ownerUserId'],
 }
@@ -359,7 +367,13 @@ export function ProspectFormDialog({
   function applyPlace(place: PlaceAutofill): void {
     setValue('hotelName', place.name, { shouldValidate: true })
     setValue('address', place.address)
-    if (place.phone) setValue('generalPhone', place.phone)
+    /* EL TELÉFONO DE GOOGLE NO SE COPIA, a propósito.
+       Es dato de un tercero: el conmutador que Google tenga publicado, que
+       puede estar viejo o ser el de otra sucursal, y nadie en Oranje lo
+       mantiene. El teléfono con el que de verdad se habla con el hotel es el
+       del CONTACTO, que se captura en el paso 3 y sí tiene dueño.
+       Decisión de Hugo (2026-10-19): «de Places no tomamos ese número, ese lo
+       ponemos nosotros». */
     setValue('location', place.location, { shouldValidate: true })
     setValue('placeLocation', place.location)
     setPlacePhotoUrl(place.photoUrl)
@@ -887,15 +901,6 @@ export function ProspectFormDialog({
                             />
                           </Field>
 
-                          <Field label={t`Teléfono`} htmlFor="contactPhone" column="phone">
-                            <Input
-                              id="contactPhone"
-                              type="tel"
-                              placeholder={t`+1 404 555 0134`}
-                              {...register('contactPhone')}
-                            />
-                          </Field>
-
                           <Field
                             label={t`Correo`}
                             htmlFor="contactEmail"
@@ -907,6 +912,24 @@ export function ProspectFormDialog({
                               type="email"
                               placeholder={t`marta.solis@puertoreal.mx`}
                               {...register('contactEmail')}
+                            />
+                          </Field>
+
+                          <Field label={t`Teléfono`} column="phone" span>
+                            {/* El teléfono dejó de ser texto suelto: la lada
+                                la pone el selector y se guarda en E.164, así
+                                que el valor lo maneja el componente y no
+                                `register`. */}
+                            <Controller
+                              control={control}
+                              name="contactPhone"
+                              render={({ field }) => (
+                                <PhoneInput
+                                  value={field.value ?? ''}
+                                  onChange={field.onChange}
+                                  ariaLabel={t`Teléfono`}
+                                />
+                              )}
                             />
                           </Field>
                         </div>

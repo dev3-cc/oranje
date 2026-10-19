@@ -2,6 +2,8 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import { toDataURL } from 'qrcode'
 import { useEffect, useState, type ReactNode } from 'react'
 
+import { telHref } from '@/shared/lib/formatters'
+
 /**
  * El puente escritorio → celular: un QR con la tarjeta de contacto (vCard).
  * Se escanea con la cámara del teléfono y ahí sí se marca o se guarda — el
@@ -12,7 +14,7 @@ export function ContactQr({ name, phone }: { name: string; phone: string }): Rea
   const [dataUrl, setDataUrl] = useState<string | null>(null)
 
   useEffect(() => {
-    const vcard = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL;TYPE=CELL:${phone}\nEND:VCARD`
+    const vcard = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL;TYPE=CELL:${telHref(phone).replace('tel:', '')}\nEND:VCARD`
     toDataURL(vcard, { margin: 1, width: 240, color: { dark: '#1A1108', light: '#FFFFFF' } })
       .then(setDataUrl)
       .catch(() => {

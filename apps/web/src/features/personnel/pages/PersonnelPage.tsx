@@ -40,7 +40,7 @@ import {
 import { useCan } from '@/shared/hooks/useCan'
 import { rosterDetailClass, rosterListClass, useListDetail } from '@/shared/hooks/useListDetail'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
-import { clock24In } from '@/shared/lib/formatters'
+import { clock24In, formatPhone } from '@/shared/lib/formatters'
 import { matchesSearch } from '@/shared/lib/text'
 
 /** Se traduce al pintar con `i18n._()` (D-36). */
@@ -382,7 +382,7 @@ function WorkerDetail({
               <Trans>Teléfono</Trans>
             </p>
             <p className="flex items-center gap-1.5 text-xl font-bold text-ink">
-              {row.phone === '' ? '—' : row.phone}
+              {row.phone === '' ? '—' : formatPhone(row.phone)}
               {row.phone !== '' && (
                 <button
                   type="button"
@@ -453,7 +453,7 @@ function WorkerDetail({
                   : `${row.personal.emergencyContact.name} (${
                       RELATIONSHIP_LABEL[row.personal.emergencyContact.relationship] ??
                       row.personal.emergencyContact.relationship
-                    }) · ${row.personal.emergencyContact.phone}`
+                    }) · ${formatPhone(row.personal.emergencyContact.phone)}`
               }
             />
           </div>

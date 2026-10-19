@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import type { HotelContact } from '../types/prospect.types'
 
 import { SectionCard } from '@/shared/components/SectionCard'
+import { formatPhone, telHref } from '@/shared/lib/formatters'
 
 /** El contacto principal se destaca en `--o-50`: es a quien hay que llamar primero. */
 export function HotelContactList({
@@ -59,10 +60,10 @@ export function HotelContactList({
               </div>
               <p className="mt-1 text-sm text-ink-3">{contact.role}</p>
               <a
-                href={`tel:${contact.phone.replace(/\s/g, '')}`}
+                href={telHref(contact.phone)}
                 className="mt-1 block text-sm text-ink-2 hover:text-o-700"
               >
-                {contact.phone}
+                {formatPhone(contact.phone)}
               </a>
             </li>
           ))}
