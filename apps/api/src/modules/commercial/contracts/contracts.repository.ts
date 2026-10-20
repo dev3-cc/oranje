@@ -60,6 +60,14 @@ const BASE = `
 export class ContractsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Nombre y correo de quien manda el documento: firma el cuerpo y recibe el Reply-To. */
+  async senderInfo(userId: string): Promise<{ fullName: string; email: string } | null> {
+    return this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { fullName: true, email: true },
+    })
+  }
+
   /**
    * Lo que el contrato HEREDA del hotel: el cierre de semana y el recargo de
    * overtime pagado se capturan al dar de alta el hotel (Datos contables) y
@@ -128,6 +136,27 @@ export class ContractsRepository {
 
   async countRates(contractId: string): Promise<number> {
     return this.prisma.contractRate.count({ where: { contractId } })
+  }
+
+  /**
+   * Las posiciones que el contrato VIGENTE del hotel cotizó — para Requisición
+   * (2026-10-17): solo se pide lo que el hotel ya contrató, no el catálogo
+   * entero. `hotelDepartmentId` viaja porque fuera de Hospitality puede ser
+   * nulo (la posición no tiene departamento de hotel) — la pantalla que
+   * consume esto decide qué hacer con esas.
+   */
+  async contractedPositions(
+    hotelId: string,
+  ): Promise<Array<{ id: string; name: string; hotelDepartmentId: string | null }>> {
+    return this.prisma.$queryRaw<
+      Array<{ id: string; name: string; hotelDepartmentId: string | null }>
+    >`
+      SELECT p.id, p.name, p.hotel_department_id AS "hotelDepartmentId"
+        FROM commercial.contract_rate r
+        JOIN commercial.contract c ON c.id = r.contract_id
+        JOIN catalogs."position" p ON p.id = r.catalog_position_id
+       WHERE c.hotel_id = ${hotelId}::uuid AND c.status = 'ACTIVE'
+       ORDER BY p.name`
   }
 
   async create(params: {

@@ -69,18 +69,57 @@ const ONBOARDING_STATUS_MESSAGE = {
 export const ONBOARDING_STATUS_LABEL: Record<OnboardingStatus, string> =
   labelMap(ONBOARDING_STATUS_MESSAGE)
 
-/** Qué significa el color en ESTE semáforo. El mismo color dice otra cosa en los otros. */
-export const ONBOARDING_STATUS_DESCRIPTION: Record<OnboardingStatus, string> = {
-  GRAY: 'Hotel identificado',
-  LIGHT_BLUE: 'Contacto y datos',
-  GREEN: 'Propuesta enviada',
-  YELLOW: 'Seguimiento',
-  PINK: 'Negociación de términos',
-  BROWN: 'Renegociación / desbloqueo',
-  ORANGE: 'Cliente activo',
-  RED: 'Rechazo o no interés',
-  BLACK: 'Cliente pausado o inactivo',
+/**
+ * Qué significa el color en ESTE semáforo. El mismo color dice otra cosa en
+ * los otros.
+ *
+ * GREEN ya NO repite el nombre oficial "Propuesta enviada" (el de la base,
+ * que sigue siendo ese — ver `ONBOARDING_TRANSITION_TITLE`): como leyenda
+ * fija de columna/mapa/ayuda se leía igual de confuso que en el modal de
+ * transición, un prospecto recién llegado a Verde no tiene nada enviado
+ * todavía.
+ */
+const ONBOARDING_STATUS_DESCRIPTION_MESSAGE = {
+  GRAY: msg`Hotel identificado`,
+  LIGHT_BLUE: msg`Contacto y datos`,
+  GREEN: msg`Armar y enviar propuesta`,
+  YELLOW: msg`Seguimiento`,
+  PINK: msg`Negociación de términos`,
+  BROWN: msg`Renegociación / desbloqueo`,
+  ORANGE: msg`Cliente activo`,
+  RED: msg`Rechazo o no interés`,
+  BLACK: msg`Cliente pausado o inactivo`,
 }
+
+export const ONBOARDING_STATUS_DESCRIPTION: Record<OnboardingStatus, string> = labelMap(
+  ONBOARDING_STATUS_DESCRIPTION_MESSAGE,
+)
+
+/**
+ * Título y descripción cuando el color aparece como DESTINO al elegir a dónde
+ * mover el prospecto (`ChangeStatusDialog`). Solo se sobreescriben donde el
+ * nombre oficial del estado —que describe cómo se SALE de él, no cómo se
+ * entra (Semáforo Onboarding del vault)— confundiría como si ya fuera un
+ * requisito cumplido: "Verde — Propuesta enviada" se lee como que ya se
+ * envió, cuando en realidad es ahí donde se arma y se envía. Los demás
+ * colores no tienen este problema (describen la fase o el motivo de entrada,
+ * no una acción ya hecha) y se quedan con `ONBOARDING_STATUS_LABEL` /
+ * `ONBOARDING_STATUS_DESCRIPTION`.
+ */
+const ONBOARDING_TRANSITION_TITLE_MESSAGE = {
+  GREEN: msg`Vamos a crear la propuesta`,
+}
+
+export const ONBOARDING_TRANSITION_TITLE: Partial<Record<OnboardingStatus, string>> = labelMap(
+  ONBOARDING_TRANSITION_TITLE_MESSAGE,
+)
+
+const ONBOARDING_TRANSITION_DESCRIPTION_MESSAGE = {
+  GREEN: msg`Se arma y se envía aquí, dentro de Verde. No se sale hacia otro estado sin haberla mandado.`,
+}
+
+export const ONBOARDING_TRANSITION_DESCRIPTION: Partial<Record<OnboardingStatus, string>> =
+  labelMap(ONBOARDING_TRANSITION_DESCRIPTION_MESSAGE)
 
 /**
  * Las 12 aristas del seed (13 filas: `GREEN → BROWN` la autorizan BD o BDC).

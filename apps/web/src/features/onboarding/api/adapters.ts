@@ -16,6 +16,8 @@ import {
 } from '@/shared/constants/contactAttempt'
 import {
   ONBOARDING_STATUS_DESCRIPTION,
+  ONBOARDING_TRANSITION_DESCRIPTION,
+  ONBOARDING_TRANSITION_TITLE,
   type OnboardingStatus,
 } from '@/shared/constants/onboardingStatus'
 import type {
@@ -111,8 +113,12 @@ export function adaptTransitions(options: TransitionOptionApi[]): AllowedTransit
   return {
     transitions: options.map((option) => ({
       toStatus: option.toState.code as OnboardingStatus,
-      title: option.toState.name,
-      description: ONBOARDING_STATUS_DESCRIPTION[option.toState.code as OnboardingStatus] ?? '',
+      title:
+        ONBOARDING_TRANSITION_TITLE[option.toState.code as OnboardingStatus] ?? option.toState.name,
+      description:
+        ONBOARDING_TRANSITION_DESCRIPTION[option.toState.code as OnboardingStatus] ??
+        ONBOARDING_STATUS_DESCRIPTION[option.toState.code as OnboardingStatus] ??
+        '',
       requiresReason: option.requiresReason,
     })),
     restrictionNote: null,

@@ -13,13 +13,18 @@ import { createZodDto } from '../../../../common/pipes/index.js'
  */
 export const createCatalogItemSchema = z.object({
   name: z.string().trim().min(1).max(80),
-  hotelDepartmentId: z.string().uuid().optional(),
+  /** Solo posiciones: la industria es obligatoria (2026-10-17). */
+  industryId: z.string().uuid().optional(),
+  /** Solo posiciones y solo dentro de Hospitality: el resto de las
+      industrias no tiene departamento de hotel — `null` explícito lo quita. */
+  hotelDepartmentId: z.string().uuid().nullable().optional(),
   statusLightCode: z.string().trim().min(1).optional(),
 })
 
 export const updateCatalogItemSchema = z.object({
   name: z.string().trim().min(1).max(80).optional(),
-  hotelDepartmentId: z.string().uuid().optional(),
+  industryId: z.string().uuid().optional(),
+  hotelDepartmentId: z.string().uuid().nullable().optional(),
   statusLightCode: z.string().trim().min(1).optional(),
 })
 

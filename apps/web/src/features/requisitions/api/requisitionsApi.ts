@@ -280,15 +280,23 @@ export const requisitionsApi = baseApi.injectEndpoints({
     }),
 
     /**
-     * Las posiciones DEL departamento elegido: el catálogo agrupa por
-     * departamento (Posiciones del vault) y el back ya filtra con
-     * `?departmentId` — pedir un Chef para Housekeeping no es un pedido.
+     * Lo que el hotel puede pedir hoy: solo las posiciones de su contrato
+     * VIGENTE (2026-10-17) — antes era el catálogo entero, sin importar si el
+     * hotel la contrató. Trae `hotelDepartmentId` (nulo fuera de Hospitality)
+     * para que el diálogo siga agrupando/filtrando por departamento.
      */
-    getPositionsForDepartment: build.query<CatalogItemApi[], string>({
-      query: (departmentId) => ({ url: '/catalogs/positions', params: { departmentId } }),
-      transformResponse: (raw: ApiEnvelope<CatalogItemApi[]>) => raw.data,
-      providesTags: (_res, _err, departmentId) => [
-        { type: 'Catalog' as const, id: `POSITIONS_${departmentId}` },
+    getContractedPositions: build.query<
+      Array<Omit<CatalogItemApi, 'hotelDepartmentId'> & { hotelDepartmentId: string | null }>,
+      string
+    >({
+      query: (hotelId) => ({ url: '/requisitions/positions', params: { hotelId } }),
+      transformResponse: (
+        raw: ApiEnvelope<
+          Array<Omit<CatalogItemApi, 'hotelDepartmentId'> & { hotelDepartmentId: string | null }>
+        >,
+      ) => raw.data,
+      providesTags: (_res, _err, hotelId) => [
+        { type: 'Catalog' as const, id: `CONTRACTED_POSITIONS_${hotelId}` },
       ],
     }),
 
@@ -406,7 +414,7 @@ export const {
   useGetRequisitionBoardQuery,
   useGetRequisitionQuery,
   useGetRequisitionFormOptionsQuery,
-  useGetPositionsForDepartmentQuery,
+  useGetContractedPositionsQuery,
   useGetOwnHotelOptionQuery,
   useCreateRequisitionMutation,
   useGetParticipantsQuery,

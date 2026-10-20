@@ -3,12 +3,14 @@ import { v7 as uuidv7 } from 'uuid'
 import type { AuthenticatedUser } from '../../src/common/decorators/index.js'
 import { PlacesService } from '../../src/infra/places/index.js'
 import type { PrismaService } from '../../src/infra/prisma/index.js'
+import { ContractsRepository } from '../../src/modules/commercial/contracts/contracts.repository.js'
+import { ContractsService } from '../../src/modules/commercial/contracts/contracts.service.js'
 import { RequisitionsRepository } from '../../src/modules/demand/requisitions/requisitions.repository.js'
 import { RequisitionsService } from '../../src/modules/demand/requisitions/requisitions.service.js'
 import { PermissionsService } from '../../src/modules/identity/index.js'
 
 import { close, db } from './db.js'
-import { actor } from './fixture.js'
+import { actor, contratoActivo } from './fixture.js'
 
 /**
  * Morado · Eliminada. Eliminar es una TRANSICIÓN, no un `DELETE`: la
@@ -20,6 +22,11 @@ import { actor } from './fixture.js'
  */
 
 const prisma = db as unknown as PrismaService
+const contracts = new ContractsService(
+  new ContractsRepository(prisma),
+  { publish: (): Promise<void> => Promise.resolve() } as never,
+  {} as never,
+)
 // Ni Places ni el bucket hacen falta aquí: la foto va como doble para no abrir
 // clientes de Google en las pruebas.
 const requisitions = new RequisitionsService(
@@ -28,6 +35,7 @@ const requisitions = new RequisitionsService(
   new PlacesService({ get: () => undefined } as never),
   { signedUrl: (): Promise<null> => Promise.resolve(null) } as never,
   { publish: (): Promise<void> => Promise.resolve() } as never,
+  contracts,
 )
 
 let hotelId: string
@@ -142,6 +150,9 @@ beforeAll(async () => {
 
   hotels.push(hotel.id)
   hotelId = hotel.id
+
+  // Requisición ya solo deja pedir lo que el hotel contrató (2026-10-17).
+  await contratoActivo(hotelId, [positionId])
 })
 
 afterAll(async () => {
@@ -150,6 +161,8 @@ afterAll(async () => {
   await db.position.deleteMany({ where: { requisitionId: { in: created } } })
   await db.requisition.deleteMany({ where: { id: { in: created } } })
   await db.worker.deleteMany({ where: { id: { in: workers } } })
+  await db.contractRate.deleteMany({ where: { contract: { hotelId: { in: hotels } } } })
+  await db.contract.deleteMany({ where: { hotelId: { in: hotels } } })
 
   // Los usuarios apuntan al hotel, así que van primero. Y el journal es
   // inmutable (RR-16) y retiene al actor: al que dejó rastro se le desactiva.

@@ -3,6 +3,8 @@ import { v7 as uuidv7 } from 'uuid'
 import type { AuthenticatedUser } from '../../src/common/decorators/index.js'
 import { PlacesService } from '../../src/infra/places/index.js'
 import type { PrismaService } from '../../src/infra/prisma/index.js'
+import { ContractsRepository } from '../../src/modules/commercial/contracts/contracts.repository.js'
+import { ContractsService } from '../../src/modules/commercial/contracts/contracts.service.js'
 import { TerritoriesRepository } from '../../src/modules/commercial/territories/territories.repository.js'
 import { TerritoriesService } from '../../src/modules/commercial/territories/territories.service.js'
 import { AssignmentsRepository } from '../../src/modules/coverage/assignments/assignments.repository.js'
@@ -12,7 +14,7 @@ import { RequisitionsService } from '../../src/modules/demand/requisitions/requi
 import { PermissionsService } from '../../src/modules/identity/index.js'
 
 import { close, db } from './db.js'
-import { actor } from './fixture.js'
+import { actor, contratoActivo } from './fixture.js'
 
 /**
  * Hugo (2026-09-19): "hotel manager ve más hoteles que el suyo" — cierto, y
@@ -40,12 +42,14 @@ const notifications = { publish: (): Promise<void> => Promise.resolve() } as nev
 const storageFake = { signedUrl: (): Promise<null> => Promise.resolve(null) } as never
 const places = new PlacesService({ get: () => undefined } as never)
 
+const contracts = new ContractsService(new ContractsRepository(prisma), notifications, {} as never)
 const requisitions = new RequisitionsService(
   new RequisitionsRepository(prisma),
   permissions,
   places,
   storageFake,
   notifications,
+  contracts,
 )
 const assignments = new AssignmentsService(
   new AssignmentsRepository(prisma),
@@ -169,6 +173,10 @@ beforeAll(async () => {
   hotelIds.push(hotel.id, other.id)
   hotelId = hotel.id
   otherHotelId = other.id
+
+  // Requisición ya solo deja pedir lo que el hotel contrató (2026-10-17).
+  await contratoActivo(hotelId, [positionId])
+  await contratoActivo(otherHotelId, [positionId])
 })
 
 afterAll(async () => {
@@ -182,6 +190,8 @@ afterAll(async () => {
   await db.worker.deleteMany({ where: { id: { in: workerIds } } })
   await db.userZone.deleteMany({ where: { userId: { in: userIds } } })
   await db.user.deleteMany({ where: { id: { in: userIds } } })
+  await db.contractRate.deleteMany({ where: { contract: { hotelId: { in: hotelIds } } } })
+  await db.contract.deleteMany({ where: { hotelId: { in: hotelIds } } })
   await db.hotel.deleteMany({ where: { id: { in: hotelIds } } })
 
   await close()

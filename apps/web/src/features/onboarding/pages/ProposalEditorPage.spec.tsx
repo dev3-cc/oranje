@@ -27,6 +27,9 @@ describe('ProposalEditorPage', () => {
   it('carga el borrador abierto y su historial de versiones', async () => {
     await renderEditor('psp-0008')
 
+    /* Título y Descripción se retiraron (2026-10-19): el machote aprobado no
+       los trae y el back nunca los exigió para enviar. El encabezado siempre
+       es el genérico. */
     expect(await screen.findByText('Propuesta · Hotel Mirador')).toBeInTheDocument()
     expect(
       screen.getByText(/Versión 3 · borrador · sent_at es NULL hasta enviarla/),
@@ -67,14 +70,15 @@ describe('ProposalEditorPage', () => {
     expect(screen.getByRole('button', { name: 'Guardar borrador' })).toBeDisabled()
   })
 
-  it('el icono de PDF abre el contrato con las tarifas de ESA versión', async () => {
+  it('la tarjeta de una versión enviada abre su detalle, y de ahí el contrato con las tarifas de ESA versión', async () => {
     await renderEditor('psp-0008')
 
     await userEvent.click(
-      await screen.findByRole('button', { name: 'Vista previa del contrato de la Propuesta v1' }),
+      await screen.findByRole('button', { name: 'Ver el detalle de la Propuesta v1, enviada' }),
     )
+    await userEvent.click(await screen.findByRole('button', { name: 'Contrato enviado' }))
 
-    const dialog = await screen.findByRole('dialog')
+    const dialog = await screen.findByRole('dialog', { name: 'Vista previa del contrato' })
     // v1 se envió con Housekeeper a 170 / 250.
     expect(within(dialog).getByText('$170.00')).toBeInTheDocument()
     expect(within(dialog).getByText('$250.00')).toBeInTheDocument()
@@ -96,4 +100,33 @@ describe('ProposalEditorPage', () => {
       screen.getByText(/Versión 2 · borrador · sent_at es NULL hasta enviarla/),
     ).toBeInTheDocument()
   })
+
+  it('marcar como enviada guarda lo editado primero: no se pierde al congelar la versión', async () => {
+    await renderEditor('psp-0008')
+
+    const propertyNameInput = await screen.findByLabelText('Nombre de la propiedad')
+    await userEvent.clear(propertyNameInput)
+    await userEvent.type(propertyNameInput, 'Hotel Mirador Renovado')
+
+    /* Mirador no trae dirección ni contacto en el workspace (mock): sin esto
+       el formulario queda inválido y "Enviar propuesta" sigue deshabilitado,
+       sin relación con lo que este test cubre. */
+    await userEvent.type(screen.getByLabelText('Ciudad y estado'), 'Cancún, QR')
+    await userEvent.type(screen.getByLabelText('Dirigida a'), 'Laura Pérez')
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Enviar propuesta' }))
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Marcar como enviada' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Sí, marcar como enviada' }))
+
+    // v3 (la que era borrador) ahora aparece enviada, con lo que se editó justo antes.
+    // Dos mutaciones encadenadas (guardar + marcar) más el refetch: más margen que el resto.
+    await userEvent.click(
+      await screen.findByRole(
+        'button',
+        { name: 'Ver el detalle de la Propuesta v3, enviada' },
+        { timeout: 10000 },
+      ),
+    )
+    expect(await screen.findByDisplayValue('Hotel Mirador Renovado')).toBeInTheDocument()
+  }, 15000)
 })

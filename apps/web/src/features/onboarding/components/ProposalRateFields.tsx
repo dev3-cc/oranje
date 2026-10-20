@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@oranje/ui'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Controller, useFieldArray, type Control, type UseFormRegister } from 'react-hook-form'
 
 import type { ProposalDraftForm } from '../types/proposalDraft.schema'
@@ -29,12 +29,15 @@ import { MoneyInput } from '@/shared/components/MoneyInput'
 export function ProposalRateFields({
   control,
   register,
+  industries,
   positions,
   errors,
 }: {
   control: Control<ProposalDraftForm>
   register: UseFormRegister<ProposalDraftForm>
-  positions: Array<{ id: string; name: string }>
+  /** La industria que filtra el puesto (2026-10-17): Oranje deja de ser solo hoteles. */
+  industries: Array<{ id: string; name: string }>
+  positions: Array<{ id: string; name: string; industryId: string | null }>
   errors: {
     rates?: {
       message?: string | undefined
@@ -53,6 +56,19 @@ export function ProposalRateFields({
   /* Sin puestos en el catálogo no hay nada que cotizar: se dice quién los da de
      alta, en vez de dejar un selector vacío que parece roto. */
   const hasPositions = positions.length > 0
+  /** La industria elegida por renglón: solo filtra el puesto de ESE renglón,
+      no viaja al back. Por índice, igual que en Contratos — una propuesta que
+      ya trae puesto (al reabrir un borrador) la deriva de ahí sin pedirla de
+      nuevo. */
+  const [rowIndustry, setRowIndustry] = useState<Record<number, string>>({})
+
+  function industryOf(index: number, positionId: string): string {
+    return (
+      rowIndustry[index] ??
+      positions.find((position) => position.id === positionId)?.industryId ??
+      ''
+    )
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -71,7 +87,49 @@ export function ProposalRateFields({
 
           return (
             <li key={field.id} className="rounded-lg border border-line bg-surface-2 p-3">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+                <div className="flex flex-col gap-1.5">
+                  <label
+                    htmlFor={`rate-industry-${String(index)}`}
+                    className="text-xs font-semibold text-ink-3"
+                  >
+                    <Trans>Industria</Trans>
+                  </label>
+                  <Controller
+                    control={control}
+                    name={`rates.${String(index) as '0'}.positionId` as const}
+                    render={({ field: positionField }) => {
+                      const industryId = industryOf(index, positionField.value)
+                      return (
+                        <Select
+                          {...(industryId ? { value: industryId } : {})}
+                          onValueChange={(value) => {
+                            setRowIndustry((prev) => ({ ...prev, [index]: value }))
+                            // Cambiar de industria deja el puesto elegido sin sentido.
+                            positionField.onChange('')
+                          }}
+                          disabled={!hasPositions}
+                        >
+                          <SelectTrigger
+                            id={`rate-industry-${String(index)}`}
+                            aria-label={t`Industria`}
+                            className="w-full"
+                          >
+                            <SelectValue placeholder={t`Industria…`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {industries.map((industry) => (
+                              <SelectItem key={industry.id} value={industry.id}>
+                                {industry.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )
+                    }}
+                  />
+                </div>
+
                 <div className="flex flex-col gap-1.5">
                   <label
                     htmlFor={`rate-position-${String(index)}`}
@@ -84,28 +142,34 @@ export function ProposalRateFields({
                   <Controller
                     control={control}
                     name={`rates.${String(index) as '0'}.positionId` as const}
-                    render={({ field }) => (
-                      <Select
-                        {...(field.value ? { value: field.value } : {})}
-                        onValueChange={field.onChange}
-                        disabled={!hasPositions}
-                      >
-                        <SelectTrigger
-                          id={`rate-position-${String(index)}`}
-                          aria-label={t`Puesto`}
-                          className="w-full"
+                    render={({ field }) => {
+                      const industryId = industryOf(index, field.value)
+                      const options = positions.filter(
+                        (position) => industryId === '' || position.industryId === industryId,
+                      )
+                      return (
+                        <Select
+                          {...(field.value ? { value: field.value } : {})}
+                          onValueChange={field.onChange}
+                          disabled={!hasPositions}
                         >
-                          <SelectValue placeholder={t`Elige el puesto…`} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {positions.map((position) => (
-                            <SelectItem key={position.id} value={position.id}>
-                              {position.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
+                          <SelectTrigger
+                            id={`rate-position-${String(index)}`}
+                            aria-label={t`Puesto`}
+                            className="w-full"
+                          >
+                            <SelectValue placeholder={t`Elige el puesto…`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {options.map((position) => (
+                              <SelectItem key={position.id} value={position.id}>
+                                {position.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )
+                    }}
                   />
                 </div>
 

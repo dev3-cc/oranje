@@ -77,16 +77,36 @@ test('el nombre repetido choca por código: 409 CATALOG_NAME_TAKEN', async () =>
   await expect(service.create('hiring-modalities', again, auth)).rejects.toThrow(ConflictException)
 })
 
-test('una posición sin departamento no es una posición', async () => {
-  const dto = createCatalogItemSchema.parse({ name: `Sin Depto ${String(stamp)}` })
+test('una posición sin industria no es una posición (2026-10-17: el departamento ya es opcional)', async () => {
+  const dto = createCatalogItemSchema.parse({ name: `Sin Industria ${String(stamp)}` })
   await expect(service.create('positions', dto, auth)).rejects.toThrow(UnprocessableEntityException)
+})
+
+test('crear posición con industria pero SIN departamento: Warehouse no tiene departamento de hotel', async () => {
+  const industry = await db.industry.findFirstOrThrow({ select: { id: true } })
+
+  const dto = createCatalogItemSchema.parse({
+    name: `Forklift Prueba ${String(stamp)}`,
+    industryId: industry.id,
+  })
+  const row = await service.create('positions', dto, auth)
+  cleanup.push({ table: 'catalogPosition', id: row.id })
+
+  const fresh = await db.catalogPosition.findUniqueOrThrow({
+    where: { id: row.id },
+    select: { hotelDepartmentId: true, industryId: true },
+  })
+  expect(fresh.hotelDepartmentId).toBeNull()
+  expect(fresh.industryId).toBe(industry.id)
 })
 
 test('crear posición con departamento, renombrarla y eliminarla', async () => {
   const department = await db.hotelDepartment.findFirstOrThrow({ select: { id: true } })
+  const industry = await db.industry.findFirstOrThrow({ select: { id: true } })
 
   const dto = createCatalogItemSchema.parse({
     name: `Valet ${String(stamp)}`,
+    industryId: industry.id,
     hotelDepartmentId: department.id,
   })
   const row = await service.create('positions', dto, auth)
@@ -108,12 +128,15 @@ test('crear posición con departamento, renombrarla y eliminarla', async () => {
 
 test('un departamento con posiciones colgando no se elimina: 409 CATALOG_IN_USE', async () => {
   // Housekeeping (o el que sea) tiene posiciones del seed: la FK lo protege.
+  // Con industria (2026-10-17) la mayoría de las posiciones NO tiene
+  // departamento de hotel, así que se pide explícitamente una que sí.
   const inUse = await db.catalogPosition.findFirstOrThrow({
+    where: { hotelDepartmentId: { not: null } },
     select: { hotelDepartmentId: true },
   })
-  await expect(service.remove('hotel-departments', inUse.hotelDepartmentId, auth)).rejects.toThrow(
-    ConflictException,
-  )
+  await expect(
+    service.remove('hotel-departments', inUse.hotelDepartmentId as string, auth),
+  ).rejects.toThrow(ConflictException)
 })
 
 test('un catálogo desconocido es 404, y los semáforos NO se administran desde aquí', () => {

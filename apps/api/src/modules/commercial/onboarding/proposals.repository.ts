@@ -7,7 +7,15 @@ import { PrismaService } from '../../../infra/prisma/index.js'
 const SELECT = {
   id: true,
   version: true,
+  title: true,
   servicesNote: true,
+  propertyName: true,
+  preparedDate: true,
+  brandManagementCompany: true,
+  cityState: true,
+  contactName: true,
+  senderPhone: true,
+  senderEmail: true,
   payRate: true,
   billRate: true,
   sentAt: true,
@@ -35,7 +43,15 @@ export type RateRow = {
 export type ProposalRow = {
   id: string
   version: number
+  title: string | null
   servicesNote: string | null
+  propertyName: string | null
+  preparedDate: string | null
+  brandManagementCompany: string | null
+  cityState: string | null
+  contactName: string | null
+  senderPhone: string | null
+  senderEmail: string | null
   payRate: Prisma.Decimal | null
   billRate: Prisma.Decimal | null
   sentAt: Date | null
@@ -107,6 +123,14 @@ export class ProposalsRepository {
     return owner?.reportsToUserId ?? null
   }
 
+  /** Nombre y correo de quien manda el documento: firma el cuerpo y recibe el Reply-To. */
+  async senderInfo(userId: string): Promise<{ fullName: string; email: string } | null> {
+    return this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { fullName: true, email: true },
+    })
+  }
+
   async listAcrossProspects(params: {
     ownerUserId: string | null
     onlyDrafts: boolean
@@ -157,7 +181,15 @@ export class ProposalsRepository {
 
   async create(params: {
     prospectId: string
+    title: string | null
     servicesNote: string | null
+    propertyName: string | null
+    preparedDate: string | null
+    brandManagementCompany: string | null
+    cityState: string | null
+    contactName: string | null
+    senderPhone: string | null
+    senderEmail: string | null
     rates: RateInput[]
     payRate: string | null
     billRate: string | null
@@ -180,7 +212,15 @@ export class ProposalsRepository {
           id,
           prospectId: params.prospectId,
           version,
+          title: params.title,
           servicesNote: params.servicesNote,
+          propertyName: params.propertyName,
+          preparedDate: params.preparedDate,
+          brandManagementCompany: params.brandManagementCompany,
+          cityState: params.cityState,
+          contactName: params.contactName,
+          senderPhone: params.senderPhone,
+          senderEmail: params.senderEmail,
           payRate: params.payRate,
           billRate: params.billRate,
         },
@@ -265,7 +305,17 @@ export class ProposalsRepository {
   async update(params: {
     prospectId: string
     proposalId: string
+    /** `undefined` = el PATCH no trae el campo, así que el guardado no lo toca
+        (mismo criterio que `title` para los 5 campos del machote). */
+    title: string | undefined
     servicesNote: string | null
+    propertyName: string | undefined
+    preparedDate: string | undefined
+    brandManagementCompany: string | undefined
+    cityState: string | undefined
+    contactName: string | undefined
+    senderPhone: string | undefined
+    senderEmail: string | undefined
     /** `null` = el PATCH no trae cuadro, así que el guardado no lo toca. */
     rates: RateInput[] | null
     payRate: string | null
@@ -277,7 +327,17 @@ export class ProposalsRepository {
       await tx.proposal.update({
         where: { id: params.proposalId },
         data: {
+          ...(params.title !== undefined ? { title: params.title } : {}),
           servicesNote: params.servicesNote,
+          ...(params.propertyName !== undefined ? { propertyName: params.propertyName } : {}),
+          ...(params.preparedDate !== undefined ? { preparedDate: params.preparedDate } : {}),
+          ...(params.brandManagementCompany !== undefined
+            ? { brandManagementCompany: params.brandManagementCompany }
+            : {}),
+          ...(params.cityState !== undefined ? { cityState: params.cityState } : {}),
+          ...(params.contactName !== undefined ? { contactName: params.contactName } : {}),
+          ...(params.senderPhone !== undefined ? { senderPhone: params.senderPhone } : {}),
+          ...(params.senderEmail !== undefined ? { senderEmail: params.senderEmail } : {}),
           payRate: params.payRate,
           billRate: params.billRate,
           updatedAt: new Date(),

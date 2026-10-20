@@ -1,6 +1,7 @@
 import { v7 as uuidv7 } from 'uuid'
 
 import type { AuthenticatedUser } from '../../src/common/decorators/index.js'
+import type { MailerService } from '../../src/infra/mailer/index.js'
 import type { PrismaService } from '../../src/infra/prisma/index.js'
 import { ProposalsRepository } from '../../src/modules/commercial/onboarding/proposals.repository.js'
 import { ProposalsService } from '../../src/modules/commercial/onboarding/proposals.service.js'
@@ -20,7 +21,8 @@ import { actor } from './fixture.js'
 const prisma = db as unknown as PrismaService
 const notifications = { publish: async () => {} } as unknown as NotificationPublisherService
 const repo = new ProposalsRepository(prisma)
-const proposals = new ProposalsService(repo, notifications)
+const mailer = {} as unknown as MailerService
+const proposals = new ProposalsService(repo, notifications, mailer)
 
 let user: AuthenticatedUser
 let zoneId: string

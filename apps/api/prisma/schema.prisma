@@ -187,6 +187,26 @@ model HotelDepartment {
   @@schema("catalogs")
 }
 
+/// La industria que cotiza el puesto (Hospitality, Warehouse & Logistics,
+/// Retail…), 2026-10-17: Oranje deja de ser solo hoteles — una posición como
+/// Forklift Operator no tiene departamento de hotel. Independiente de
+/// `HotelDepartment`, que sigue siendo el alcance real de permisos del
+/// Supervisor/Manager de Área (eso no se toca).
+model Industry {
+  id   String @db.Uuid
+  code String @unique @db.Text
+  name String @db.Text
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+
+  positions CatalogPosition[]
+
+  @@id([id])
+  @@map("industry")
+  @@schema("catalogs")
+}
+
 // ============================================================================
 // identity — usuarios, roles y permisos (Modelo de Datos §9)
 //
@@ -629,7 +649,27 @@ model Proposal {
   id           String  @db.Uuid
   prospectId   String  @map("prospect_id") @db.Uuid
   version      Int
+  /// Etiqueta corta para distinguir ciclos en una lista (2026-10-17). Nulo en
+  /// lo que ya existía; el front la exige al crear o guardar desde hoy.
+  title        String? @db.Text
   servicesNote String? @map("services_note") @db.Text
+
+  /// Campos del machote aprobado (Hugo, 2026-10-19), todos nullable: las
+  /// versiones que ya existen no los tienen.
+  /// [PROPERTY NAME] del documento — puede no ser el nombre del hotel en el
+  /// sistema; el front lo prellena con `hotel.name` pero es editable.
+  propertyName            String? @map("property_name") @db.Text
+  /// "Prepared [DATE]" del documento; el front la prellena con hoy pero es editable.
+  preparedDate            String? @map("prepared_date") @db.Text
+  brandManagementCompany String? @map("brand_management_company") @db.Text
+  cityState              String? @map("city_state") @db.Text
+  /// A quién va dirigida la carta ("Dear [CONTACT NAME]"); el front la
+  /// prellena con el contacto principal del hotel, editable.
+  contactName            String? @map("contact_name") @db.Text
+  /// De quien envía, NO del Usuario: cada BD puede firmar con un contacto
+  /// distinto — el front solo prellena con el de la sesión.
+  senderPhone            String? @map("sender_phone") @db.Text
+  senderEmail            String? @map("sender_email") @db.Text
 
   /// Tentativas y globales. En retirada: la propuesta cotiza por puesto en
   /// `ProposalRate`; estas dos se quedan por las versiones anteriores y se van
@@ -714,15 +754,21 @@ model UserZone {
 /// No confundir con demand.position: esta es el catálogo de puestos, la otra es
 /// una posición solicitada en una requisición.
 model CatalogPosition {
-  id                String @db.Uuid
-  hotelDepartmentId String @map("hotel_department_id") @db.Uuid
-  code              String @unique @db.Text
-  name              String @db.Text
+  id String @db.Uuid
+  /// La industria (Hospitality, Warehouse & Logistics…). Nula en lo sembrado
+  /// antes del 2026-10-17; el alta desde la app la exige.
+  industryId String? @map("industry_id") @db.Uuid
+  /// Solo tiene sentido dentro de Hospitality — el resto de las industrias no
+  /// tiene "departamento de hotel". Por eso es opcional desde el 2026-10-17.
+  hotelDepartmentId String? @map("hotel_department_id") @db.Uuid
+  code              String  @unique @db.Text
+  name              String  @db.Text
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
 
-  hotelDepartment    HotelDepartment @relation(fields: [hotelDepartmentId], references: [id], onDelete: Restrict)
+  industry           Industry?        @relation(fields: [industryId], references: [id], onDelete: Restrict)
+  hotelDepartment    HotelDepartment? @relation(fields: [hotelDepartmentId], references: [id], onDelete: Restrict)
   requestedPositions Position[]
   workers            Worker[]
 
@@ -735,6 +781,7 @@ model CatalogPosition {
 
   @@id([id])
   @@index([hotelDepartmentId], map: "ix_position_hotel_department")
+  @@index([industryId], map: "ix_position_industry")
   @@map("position")
   @@schema("catalogs")
 }

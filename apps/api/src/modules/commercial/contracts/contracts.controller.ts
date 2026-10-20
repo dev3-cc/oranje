@@ -10,13 +10,26 @@ import {
   Post,
   Put,
   Query,
+  UnprocessableEntityException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
 
 import { CurrentUser, Requires } from '../../../common/decorators/index.js'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import type { SendMailResult } from '../../../infra/mailer/index.js'
 
 import { ContractEntity, ContractsService } from './contracts.service.js'
-import { CreateContractDto, UpdateContractDto, UpsertRateDto } from './dto/contract.dto.js'
+import {
+  CreateContractDto,
+  SendContractEmailDto,
+  UpdateContractDto,
+  UpsertRateDto,
+} from './dto/contract.dto.js'
+
+/** El PDF ya es una imagen rasterizada del documento; 8 MB cubre de sobra un contrato largo. */
+const MAX_PDF_BYTES = 8 * 1024 * 1024
 
 @Controller('contracts')
 export class ContractsController {
@@ -112,5 +125,32 @@ export class ContractsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: ContractEntity }> {
     return { data: await this.contracts.close(id, false, user) }
+  }
+
+  /** Manda el acuerdo por correo con el PDF adjunto (2026-10-17); no toca el estado del contrato. */
+  @Requires('terms_and_conditions', 'read')
+  @Post(':id/send-email')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_PDF_BYTES } }))
+  async sendEmail(
+    @Param('id', ParseUUIDPipe) id: string,
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @Body() dto: SendContractEmailDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ email: SendMailResult }> {
+    if (!file) {
+      throw new UnprocessableEntityException({
+        code: 'PDF_REQUIRED',
+        message: 'Falta el PDF del documento que se va a enviar',
+      })
+    }
+
+    const email = await this.contracts.sendEmail(id, user, {
+      to: dto.to,
+      note: dto.note ?? null,
+      pdf: file.buffer,
+    })
+
+    return { email }
   }
 }

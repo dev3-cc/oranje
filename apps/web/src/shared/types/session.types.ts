@@ -2,6 +2,8 @@ export interface SessionUser {
   id: string
   name: string
   shortName: string
+  /** Correo de login; lo usa la propuesta para prellenar el correo de quien envía. */
+  email: string
   roleId: string
   /** La foto firmada de `/me`; `null` sin foto (se pintan iniciales). */
   photoUrl: string | null

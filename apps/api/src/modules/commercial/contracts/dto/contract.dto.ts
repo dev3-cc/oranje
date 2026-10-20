@@ -37,6 +37,14 @@ export const upsertRateSchema = rateSchema
 
 export class UpsertRateDto extends createZodDto(upsertRateSchema) {}
 
+/** Mismo cuerpo que el de la Propuesta: multipart, el PDF llega aparte por Multer. */
+export const sendContractEmailSchema = z.object({
+  to: z.string().trim().email(),
+  note: z.string().trim().max(2000).optional(),
+})
+
+export class SendContractEmailDto extends createZodDto(sendContractEmailSchema) {}
+
 /**
  * Edición de un contrato ya creado (Hugo, 2026-10-16): el BDC lo sigue
  * actualizando seguido, no solo al nacer. `overtimePayMultiplier`,

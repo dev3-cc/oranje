@@ -15,6 +15,7 @@ const versionsByProspect = new Map<string, StoredVersion[]>([
         id: 'prp-0008-3',
         version: 3,
         status: 'DRAFT',
+        title: 'Housekeeping temporada alta',
         sentAt: null,
         byName: 'Ana Ruiz',
         rates: [
@@ -30,11 +31,19 @@ const versionsByProspect = new Map<string, StoredVersion[]>([
         payRate: 185,
         billRate: 265,
         servicesNote: 'Housekeeping y Steward para temporada alta, cobertura 7 días.',
+        propertyName: '',
+        preparedDate: '',
+        brandManagementCompany: '',
+        cityState: '',
+        contactName: '',
+        senderPhone: '',
+        senderEmail: '',
       },
       {
         id: 'prp-0008-2',
         version: 2,
         status: 'SENT',
+        title: 'Housekeeping temporada alta',
         sentAt: '2026-06-03',
         byName: 'Ana Ruiz',
         rates: [
@@ -50,11 +59,19 @@ const versionsByProspect = new Map<string, StoredVersion[]>([
         payRate: 185,
         billRate: 265,
         servicesNote: 'Housekeeping y Steward para temporada alta.',
+        propertyName: '',
+        preparedDate: '',
+        brandManagementCompany: '',
+        cityState: '',
+        contactName: '',
+        senderPhone: '',
+        senderEmail: '',
       },
       {
         id: 'prp-0008-1',
         version: 1,
         status: 'SENT',
+        title: 'Housekeeping temporada alta',
         sentAt: '2026-05-21',
         byName: 'Ana Ruiz',
         rates: [
@@ -70,6 +87,13 @@ const versionsByProspect = new Map<string, StoredVersion[]>([
         payRate: 170,
         billRate: 250,
         servicesNote: 'Housekeeping para temporada alta.',
+        propertyName: '',
+        preparedDate: '',
+        brandManagementCompany: '',
+        cityState: '',
+        contactName: '',
+        senderPhone: '',
+        senderEmail: '',
       },
     ],
   ],
@@ -80,6 +104,7 @@ const versionsByProspect = new Map<string, StoredVersion[]>([
         id: 'prp-0007-2',
         version: 2,
         status: 'SENT',
+        title: '',
         sentAt: '2026-06-03',
         byName: 'Ana Ruiz',
         rates: [
@@ -95,11 +120,19 @@ const versionsByProspect = new Map<string, StoredVersion[]>([
         payRate: 185,
         billRate: 265,
         servicesNote: 'Housekeeping, Steward y Chef de apoyo.',
+        propertyName: '',
+        preparedDate: '',
+        brandManagementCompany: '',
+        cityState: '',
+        contactName: '',
+        senderPhone: '',
+        senderEmail: '',
       },
       {
         id: 'prp-0007-1',
         version: 1,
         status: 'SENT',
+        title: '',
         sentAt: '2026-05-21',
         byName: 'Ana Ruiz',
         rates: [
@@ -115,6 +148,13 @@ const versionsByProspect = new Map<string, StoredVersion[]>([
         payRate: 170,
         billRate: 250,
         servicesNote: 'Housekeeping y Steward.',
+        propertyName: '',
+        preparedDate: '',
+        brandManagementCompany: '',
+        cityState: '',
+        contactName: '',
+        senderPhone: '',
+        senderEmail: '',
       },
     ],
   ],
@@ -125,6 +165,7 @@ const versionsByProspect = new Map<string, StoredVersion[]>([
         id: 'prp-0009-1',
         version: 1,
         status: 'SENT',
+        title: '',
         sentAt: '2026-07-28',
         byName: 'Ana Ruiz',
         rates: [
@@ -140,6 +181,13 @@ const versionsByProspect = new Map<string, StoredVersion[]>([
         payRate: 175,
         billRate: 255,
         servicesNote: 'Housekeeping para bloque de 40 habitaciones.',
+        propertyName: '',
+        preparedDate: '',
+        brandManagementCompany: '',
+        cityState: '',
+        contactName: '',
+        senderPhone: '',
+        senderEmail: '',
       },
     ],
   ],
@@ -150,6 +198,7 @@ const versionsByProspect = new Map<string, StoredVersion[]>([
         id: 'prp-0010-1',
         version: 1,
         status: 'SENT',
+        title: '',
         sentAt: '2026-07-14',
         byName: 'Ana Ruiz',
         rates: [
@@ -165,6 +214,13 @@ const versionsByProspect = new Map<string, StoredVersion[]>([
         payRate: 168,
         billRate: 245,
         servicesNote: 'Steward para eventos de fin de semana.',
+        propertyName: '',
+        preparedDate: '',
+        brandManagementCompany: '',
+        cityState: '',
+        contactName: '',
+        senderPhone: '',
+        senderEmail: '',
       },
     ],
   ],
@@ -175,6 +231,7 @@ const versionsByProspect = new Map<string, StoredVersion[]>([
         id: 'prp-0011-1',
         version: 1,
         status: 'SENT',
+        title: '',
         sentAt: '2026-07-02',
         byName: 'Ana Ruiz',
         rates: [
@@ -190,6 +247,13 @@ const versionsByProspect = new Map<string, StoredVersion[]>([
         payRate: 172,
         billRate: 250,
         servicesNote: 'Housekeeping de refuerzo entre semana.',
+        propertyName: '',
+        preparedDate: '',
+        brandManagementCompany: '',
+        cityState: '',
+        contactName: '',
+        senderPhone: '',
+        senderEmail: '',
       },
     ],
   ],
@@ -206,7 +270,15 @@ function toProposalApi(version: StoredVersion): ProposalApi {
   return {
     id: version.id,
     version: version.version,
+    title: version.title || null,
     servicesNote: version.servicesNote || null,
+    propertyName: version.propertyName || null,
+    preparedDate: version.preparedDate || null,
+    brandManagementCompany: version.brandManagementCompany || null,
+    cityState: version.cityState || null,
+    contactName: version.contactName || null,
+    senderPhone: version.senderPhone || null,
+    senderEmail: version.senderEmail || null,
     rates: version.rates.map((rate, index) => ({
       id: `${version.id}-r${String(index)}`,
       position: {
@@ -251,6 +323,8 @@ function createDraft(prospectId: string): ProposalApi {
     id: `prp-${prospectId}-${nextVersion}`,
     version: nextVersion,
     status: 'DRAFT',
+    // Arranca con el título de la anterior: renegociar sigue siendo el mismo ciclo.
+    title: latest?.title ?? '',
     sentAt: null,
     byName: 'Ana Ruiz',
     /* Una versión nueva arranca con el cuadro de la anterior: renegociar es
@@ -259,13 +333,29 @@ function createDraft(prospectId: string): ProposalApi {
     payRate: latest?.payRate ?? 0,
     billRate: latest?.billRate ?? 0,
     servicesNote: latest?.servicesNote ?? '',
+    propertyName: latest?.propertyName ?? '',
+    // preparedDate NO se hereda: una versión nueva se prepara hoy.
+    preparedDate: '',
+    brandManagementCompany: latest?.brandManagementCompany ?? '',
+    cityState: latest?.cityState ?? '',
+    contactName: latest?.contactName ?? '',
+    senderPhone: latest?.senderPhone ?? '',
+    senderEmail: latest?.senderEmail ?? '',
   }
   versionsByProspect.set(prospectId, [draft, ...versions])
   return toProposalApi(draft)
 }
 
 interface SaveDraftBody {
+  title?: string
   servicesNote?: string
+  propertyName?: string
+  preparedDate?: string
+  brandManagementCompany?: string
+  cityState?: string
+  contactName?: string
+  senderPhone?: string
+  senderEmail?: string
   rates?: Array<{ catalogPositionId: string; payRate: string; billRate: string }>
 }
 
@@ -282,7 +372,17 @@ function saveDraft(prospectId: string, proposalId: string, body: unknown): Propo
   const version = findVersion(prospectId, proposalId)
   if (version.status === 'SENT') throw new Error('Una propuesta enviada ya no se edita')
 
+  if (payload.title !== undefined) version.title = payload.title
   version.servicesNote = payload.servicesNote ?? ''
+  if (payload.propertyName !== undefined) version.propertyName = payload.propertyName
+  if (payload.preparedDate !== undefined) version.preparedDate = payload.preparedDate
+  if (payload.brandManagementCompany !== undefined) {
+    version.brandManagementCompany = payload.brandManagementCompany
+  }
+  if (payload.cityState !== undefined) version.cityState = payload.cityState
+  if (payload.contactName !== undefined) version.contactName = payload.contactName
+  if (payload.senderPhone !== undefined) version.senderPhone = payload.senderPhone
+  if (payload.senderEmail !== undefined) version.senderEmail = payload.senderEmail
 
   /* Ausente = el PATCH no trae cuadro y no se toca, igual que el back. */
   if (payload.rates) {
@@ -301,7 +401,6 @@ function saveDraft(prospectId: string, proposalId: string, body: unknown): Propo
 function sendProposal(prospectId: string, proposalId: string): ProposalApi {
   const version = findVersion(prospectId, proposalId)
   if (version.status === 'SENT') throw new Error('Esta propuesta ya se envió')
-  if (!version.servicesNote.trim()) throw new Error('La propuesta necesita una descripción')
   if (version.rates.length === 0) throw new Error('La propuesta necesita al menos un puesto')
 
   version.status = 'SENT'
@@ -343,6 +442,21 @@ const routes: readonly MockRoute[] = [
     resolve: ({ params }): ApiEnvelope<ProposalApi> => ({
       data: sendProposal(params.prospectId ?? '', params.proposalId ?? ''),
     }),
+  },
+  {
+    method: 'POST',
+    path: '/prospects/:prospectId/proposals/:proposalId/send-email',
+    resolve: ({
+      params,
+      body,
+    }): ApiEnvelope<ProposalApi> & { email: { status: string; transport: string } } => {
+      const to = body instanceof FormData ? body.get('to') : null
+      if (typeof to !== 'string' || to.trim() === '') throw new Error('Falta el destinatario')
+      return {
+        data: sendProposal(params.prospectId ?? '', params.proposalId ?? ''),
+        email: { status: 'SENT', transport: 'SMTP' },
+      }
+    },
   },
 ]
 
