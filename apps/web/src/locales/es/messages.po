@@ -10362,7 +10362,7 @@ msgstr "Protegido (Gris)"
 msgid "Público"
 msgstr "Público"
 
-#: src/features/auth/components/LanguagePrompt.tsx
+#: src/shared/components/LanguagePrompt.tsx
 msgid "Puedes cambiarlo después desde tu perfil · You can change this later"
 msgstr "Puedes cambiarlo después desde tu perfil · You can change this later"
 
