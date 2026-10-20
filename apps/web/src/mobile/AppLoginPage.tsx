@@ -14,6 +14,7 @@ import { useAppSelector } from '@/app/hooks'
 import { useCreateSessionMutation } from '@/app/sessionApi'
 import { selectSessionStatus } from '@/app/sessionSlice'
 import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
+import { LanguagePrompt } from '@/shared/components/LanguagePrompt'
 import { LanguageSwitch } from '@/shared/components/LanguageSwitch'
 import { requestPasswordReset, signInWithEmail } from '@/shared/lib/firebase'
 
@@ -358,6 +359,9 @@ export function AppLoginPage(): ReactNode {
           </p>
           <LanguageSwitch size="sm" />
         </div>
+
+        {/* Se pregunta de frente la primera vez; después no vuelve a salir. */}
+        <LanguagePrompt />
       </motion.section>
     </main>
   )

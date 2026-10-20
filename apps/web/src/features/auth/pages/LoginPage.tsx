@@ -16,6 +16,7 @@ import { useAppSelector } from '@/app/hooks'
 import { useCreateSessionMutation } from '@/app/sessionApi'
 import { selectSessionStatus } from '@/app/sessionSlice'
 import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
+import { LanguagePrompt } from '@/shared/components/LanguagePrompt'
 import { LanguageSwitch } from '@/shared/components/LanguageSwitch'
 import { requestPasswordReset, signInWithEmail } from '@/shared/lib/firebase'
 import { readLastRoute } from '@/shared/lib/lastRoute'
@@ -480,6 +481,9 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
               <LanguageSwitch size="sm" />
             </div>
           </section>
+
+          {/* Se pregunta de frente la primera vez; después no vuelve a salir. */}
+          <LanguagePrompt />
         </motion.div>
 
         {/* El collage: las fotos del equipo flotando sobre el mosaico, sin tarjeta detrás. */}
