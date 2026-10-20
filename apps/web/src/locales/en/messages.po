@@ -10362,6 +10362,10 @@ msgstr "Protected (Gray)"
 msgid "Público"
 msgstr "Public"
 
+#: src/features/auth/components/LanguagePrompt.tsx
+msgid "Puedes cambiarlo después desde tu perfil · You can change this later"
+msgstr "Puedes cambiarlo después desde tu perfil · You can change this later"
+
 #: src/features/team/components/AssignTerritoryDialog.tsx
 msgid "Puedes dejar al BD sin territorio: queda visible así en Mi Equipo hasta el siguiente reparto."
 msgstr "You can leave the BD with no territory: it shows that way in My Team until the next handout."
