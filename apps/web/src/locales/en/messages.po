@@ -1354,16 +1354,6 @@ msgstr "Marking another contact as the primary one drops the previous one in the
 msgid "Al ponchar se abre la cámara"
 msgstr "The camera opens when you punch in"
 
-#: src/features/worker/pages/Phase3Page.tsx
-msgid "Al teléfono de emergencia le faltan dígitos para el país elegido"
-msgstr "The emergency phone number is missing digits for the selected country"
-
-#: src/features/onboarding/types/hotelContactsForm.schema.ts
-#: src/features/onboarding/types/prospectForm.schema.ts
-#: src/features/recruitment/components/CreateWorkerDialog.tsx
-msgid "Al teléfono le faltan dígitos para el país elegido"
-msgstr "The phone number is missing digits for the selected country"
-
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Al tocar el botón se abre la cámara. La foto confirma que eres tú; no se comparte con el hotel."
 msgstr "Tapping the button opens the camera. The photo confirms it's you; it isn't shared with the hotel."
@@ -5496,6 +5486,17 @@ msgstr "That hotel no longer exists. Reload the page and pick it again."
 #: src/features/onboarding/components/ArchiveCycleDialog.tsx
 msgid "Ese motivo ya no está disponible: elige otro de la lista."
 msgstr "That reason is no longer available: choose another one from the list."
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Ese número de emergencia no es válido para el país elegido. Revisa los dígitos o cambia el país."
+msgstr "That emergency number isn't valid for the selected country. Check the digits or change the country."
+
+#: src/features/onboarding/components/HotelContactsDialog.tsx
+#: src/features/onboarding/types/hotelContactsForm.schema.ts
+#: src/features/onboarding/types/prospectForm.schema.ts
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+msgid "Ese número no es válido para el país elegido. Revisa los dígitos o cambia el país."
+msgstr "That number isn't valid for the selected country. Check the digits or change the country."
 
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 msgid "Ese paso existe, pero lo ejecuta {rolesLabel}: pídeselo — tu rol no lo tiene asignado."

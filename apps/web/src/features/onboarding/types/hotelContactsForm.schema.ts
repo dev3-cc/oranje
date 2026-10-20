@@ -35,7 +35,9 @@ export function buildHotelContactDraftSchema(i18n: I18n) {
       .string()
       .refine(
         (value) => value === '' || isCompletePhone(value),
-        i18n._(msg`Al teléfono le faltan dígitos para el país elegido`),
+        i18n._(
+          msg`Ese número no es válido para el país elegido. Revisa los dígitos o cambia el país.`,
+        ),
       ),
     email: z
       .string()

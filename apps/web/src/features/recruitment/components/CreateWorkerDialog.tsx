@@ -469,14 +469,14 @@ export function CreateWorkerDialog({
     ? draft.fullName.trim() === ''
       ? t`Falta el nombre completo`
       : draft.phone !== '' && !isCompletePhone(draft.phone) && !telefonoSinTocar
-        ? t`Al teléfono le faltan dígitos para el país elegido`
+        ? t`Ese número no es válido para el país elegido. Revisa los dígitos o cambia el país.`
         : null
     : draft.fullName.trim() === ''
       ? t`Falta el nombre completo`
       : draft.birthDate === ''
         ? t`Falta la fecha de nacimiento`
         : !isCompletePhone(draft.phone)
-          ? t`Al teléfono le faltan dígitos para el país elegido`
+          ? t`Ese número no es válido para el país elegido. Revisa los dígitos o cambia el país.`
           : draft.address.trim() === ''
             ? t`Falta el domicilio`
             : draft.zoneId === ''
