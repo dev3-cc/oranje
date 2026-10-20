@@ -491,7 +491,12 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="relative order-first h-56 w-full shrink-0 md:order-none md:h-auto md:min-h-[600px] md:w-auto md:flex-1"
+          /* EN MÓVIL NO SE DIBUJA (Hugo, 2026-10-20). Las fotos recortadas flotando
+             sobre el mosaico son del ancho grande: en una pantalla angosta se
+             amontonan encima del formulario, que es lo único a lo que alguien
+             viene en el celular. `hidden md:flex` y no `md:block`: el contenedor
+             reparte su alto con flex. */
+          className="relative hidden shrink-0 md:flex md:h-auto md:min-h-[600px] md:w-auto md:flex-1"
         >
           <LoginCollage />
         </motion.aside>
