@@ -107,6 +107,12 @@ export class ProposalsRepository {
     return this.prisma.proposal.findFirst({ where: { id, prospectId }, select: SELECT })
   }
 
+  /** Si el hotel tiene YA un contrato vigente — lo que decide si Naranja
+      sigue cerrado para la propuesta (Hugo, 2026-10-16). */
+  async hasActiveContract(hotelId: string): Promise<boolean> {
+    return (await this.prisma.contract.count({ where: { hotelId, status: 'ACTIVE' } })) > 0
+  }
+
   /** El BDC del BD dueño del prospecto (`reportsToUserId`, RR-V-01/02). */
   async bdcOf(ownerUserId: string): Promise<string | null> {
     const owner = await this.prisma.user.findUnique({

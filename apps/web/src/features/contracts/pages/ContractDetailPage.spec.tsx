@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it } from 'vitest'
@@ -58,5 +59,25 @@ describe('ContractDetailPage', () => {
 
     expect(await screen.findByText('Indefinido')).toBeInTheDocument()
     expect(screen.getByText(/Todavía no se cotiza ninguna posición/)).toBeInTheDocument()
+  })
+
+  // Hugo, 2026-10-16: editar deja de ser solo de Borrador — un contrato
+  // ACTIVO también se sigue cotizando y ajustando.
+  it('un contrato ACTIVO también se puede editar: «Editar contrato» y «Editar tarifas» ya no son solo de Borrador', async () => {
+    renderDetail('ct-0184')
+
+    await screen.findByRole('heading', { name: 'Contrato CT-2026-0184' })
+    expect(screen.getByRole('button', { name: 'Editar contrato' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Editar tarifas' })).toBeInTheDocument()
+  })
+
+  it('«Editar contrato» abre el diálogo con los términos ya cargados', async () => {
+    renderDetail('ct-0184')
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('button', { name: 'Editar contrato' }))
+
+    expect(await screen.findByRole('heading', { name: 'Editar contrato' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeInTheDocument()
   })
 })

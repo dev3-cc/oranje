@@ -103,6 +103,8 @@ export function toContractDetail(contract: ContractApi): ContractDetail {
         bill: Number(contract.multipliers.holidayBill),
       },
     },
+    deductsMeals: contract.deductsMeals,
+    splitsInvoiceByMonth: contract.splitsInvoiceByMonth,
     rates: (contract.rates ?? []).map((rate) => ({
       id: rate.id,
       catalogPositionId: rate.position.id,
@@ -110,6 +112,7 @@ export function toContractDetail(contract: ContractApi): ContractDetail {
       payRate: Number(rate.payRate),
       billRate: Number(rate.billRate),
     })),
+    updatedAt: contract.updatedAt,
   }
 }
 
@@ -282,6 +285,26 @@ export const contractsApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: 'Contract' as const, id: 'LIST' }],
     }),
 
+    /**
+     * Edita los términos ya pactados — vigencia, multiplicadores,
+     * deducción de comida, factura partida (Hugo, 2026-10-16). El back lo
+     * acepta en Borrador y también ya ACTIVO: lo ya pagado está a salvo
+     * porque la nómina copia la tarifa vigente al generarse, nunca la lee
+     * en vivo del contrato.
+     */
+    updateContract: build.mutation<ContractDetail, { contractId: string } & UpdateContractRequest>({
+      query: ({ contractId, ...body }) => ({
+        url: `/contracts/${contractId}`,
+        method: 'PATCH',
+        body,
+      }),
+      transformResponse: (raw: ApiEnvelope<ContractApi>) => toContractDetail(raw.data),
+      invalidatesTags: (_result, _error, { contractId }) => [
+        { type: 'Contract' as const, id: contractId },
+        { type: 'Contract' as const, id: 'LIST' },
+      ],
+    }),
+
     /** Alta o corrección de una tarifa; el back solo lo permite en DRAFT. */
     upsertContractRate: build.mutation<
       ContractDetail,
@@ -369,12 +392,27 @@ export interface CreateContractRequest {
   rates: Array<{ catalogPositionId: string; payRate: string; billRate: string }>
 }
 
+/**
+ * El cuerpo de `PATCH /contracts/:id` (`UpdateContractDto`). Todo opcional:
+ * lo que no viaja se queda como está. `validTo: null` limpia la fecha de fin
+ * (vuelve a indefinido); ausente, no la toca.
+ */
+export interface UpdateContractRequest {
+  validTo?: string | null
+  overtimeBillMultiplier?: number
+  holidayBillMultiplier?: number
+  holidayPayMultiplier?: number
+  deductsMeals?: boolean
+  splitsInvoiceByMonth?: boolean
+}
+
 export const {
   useGetContractsQuery,
   useGetContractQuery,
   useGetPositionPayRateQuery,
   useGetContractFormOptionsQuery,
   useCreateContractMutation,
+  useUpdateContractMutation,
   useUpsertContractRateMutation,
   useTransitionContractMutation,
   useSendContractEmailMutation,

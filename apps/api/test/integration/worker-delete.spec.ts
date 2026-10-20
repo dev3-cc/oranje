@@ -176,6 +176,70 @@ test('eliminar deja al colaborador fuera de todo (deleted_at), nunca borra la fi
   expect(row.deletedAt).not.toBeNull()
 })
 
+/**
+ * Borrar un colaborador CIERRA SU ACCESO.
+ *
+ * Antes solo marcaba `deleted_at` y la cuenta quedaba activa: la persona
+ * seguía entrando a una app completamente vacía, porque `/workers/me`
+ * responde WORKER_NOT_LINKED y sus pantallas se quedan en su esqueleto sin
+ * decir nada. Hugo lo encontró el 2026-10-16 con una cuenta borrada desde
+ * septiembre que seguía abriendo sesión.
+ *
+ * Se cubren las DOS cuentas que resuelven al mismo colaborador —la suya y la
+ * de transición de la migración de AWS— porque `me.service` busca por
+ * cualquiera de las dos: dejar una viva deja la puerta abierta por el otro
+ * lado.
+ */
+test('eliminar también desactiva la cuenta de acceso del colaborador', async () => {
+  const sello = String(Date.now())
+  const cuenta = await db.user.create({
+    data: {
+      id: uuidv7(),
+      email: `borrado-${sello}@oranje.local`,
+      fullName: `Borrado ${sello}`,
+      roleId: (await db.role.findFirstOrThrow({ where: { code: 'ROL-C-01' } })).id,
+      firebaseUid: `uid-${sello}`,
+      isActive: true,
+    },
+    select: { id: true },
+  })
+  const id = await bareWorker(`ConCuenta ${sello}`)
+  await db.worker.update({ where: { id }, data: { userId: cuenta.id } })
+
+  await workers.delete(id, user)
+
+  const despues = await db.user.findUniqueOrThrow({
+    where: { id: cuenta.id },
+    select: { isActive: true },
+  })
+  expect(despues.isActive).toBe(false)
+})
+
+test('eliminar cierra también la cuenta de transición de la migración', async () => {
+  const sello = String(Date.now())
+  const legacy = await db.user.create({
+    data: {
+      id: uuidv7(),
+      email: `legacy-${sello}@oranje.local`,
+      fullName: `Legacy ${sello}`,
+      roleId: (await db.role.findFirstOrThrow({ where: { code: 'ROL-C-01' } })).id,
+      firebaseUid: `uid-legacy-${sello}`,
+      isActive: true,
+    },
+    select: { id: true },
+  })
+  const id = await bareWorker(`ConLegacy ${sello}`)
+  await db.worker.update({ where: { id }, data: { legacyUserId: legacy.id } })
+
+  await workers.delete(id, user)
+
+  const despues = await db.user.findUniqueOrThrow({
+    where: { id: legacy.id },
+    select: { isActive: true },
+  })
+  expect(despues.isActive).toBe(false)
+})
+
 test('con una asignación ACTIVA, eliminar da 409 WORKER_HAS_ACTIVE_ASSIGNMENT', async () => {
   const id = await withActiveAssignment(`Asignado ${String(Date.now())}`)
 

@@ -96,6 +96,14 @@ export interface TimesheetPayPreview {
       lado"). `null` sin contrato ni tarifa para esa posición. */
   billRate: string | null
   billSubtotal: string | null
+  /**
+   * Cuándo se tocó por última vez el contrato (términos o alguna tarifa) que
+   * resolvió `payRate`/`billRate` — `null` sin contrato o si nunca se editó.
+   * Comparado contra `approvedAt` de la hoja (Hugo, 2026-10-16): si el
+   * contrato cambió DESPUÉS de que el hotel ya aprobó la semana, lo que se
+   * ve aquí es el cálculo NUEVO, no el que se aprobó — y eso se avisa.
+   */
+  contractUpdatedAt: Date | null
 }
 
 // La asignación de ESTA persona en ESTA requisición. El timesheet no la guarda
@@ -890,6 +898,7 @@ export class TimesheetsRepository {
                -- hay del lado del pago — es lo que el hotel paga a Oranje.
                cr.bill_rate AS bill_rate,
                COALESCE(ct.overtime_pay_multiplier, hot.overtime_pay_multiplier, 0) AS ot_multiplier,
+               ct.updated_at AS contract_updated_at,
                ar.adj_reimburse,
                ad.adj_deduction,
                ov.regular_minutes  AS override_regular_minutes,
@@ -926,6 +935,7 @@ export class TimesheetsRepository {
                is_internal,
                bill_rate,
                ot_multiplier,
+               contract_updated_at,
                adj_reimburse,
                adj_deduction,
                (override_pay_rate IS NOT NULL) AS is_overridden,
@@ -955,7 +965,8 @@ export class TimesheetsRepository {
              CASE WHEN bill_rate IS NULL THEN NULL
                   ELSE round((regular_minutes / 60.0) * bill_rate
                            + (overtime_minutes / 60.0) * bill_rate * ot_multiplier, 2)::text
-             END AS "billSubtotal"
+             END AS "billSubtotal",
+             contract_updated_at AS "contractUpdatedAt"
         FROM efectivo e`
   }
 

@@ -113,6 +113,13 @@ export interface ProposalWorkspace {
   industries: Array<{ id: string; name: string }>
   /** Los puestos del catálogo que el cuadro puede cotizar (los da de alta el Administrador). */
   positions: Array<{ id: string; name: string; industryId: string | null }>
+  /**
+   * Si el hotel YA tiene un contrato vigente. Decide si Naranja sigue siendo
+   * terminal para la propuesta/contrato (Hugo, 2026-10-16): un cliente con
+   * contrato activo no se reabre, pero uno que se quedó sin ninguno sí puede
+   * volver a cotizar.
+   */
+  hasActiveContract: boolean
 }
 
 /**

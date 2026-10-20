@@ -99,8 +99,13 @@ export interface ContractDetail {
     overtime: ContractMultiplier
     holiday: ContractMultiplier
   }
+  deductsMeals: boolean
+  splitsInvoiceByMonth: boolean
   /** Una fila por posición del catálogo (`commercial.contract_rate`). */
   rates: ContractRate[]
+  /** `null` si nunca se editó desde que se creó. Lo usa la vista previa de
+      pago para avisar «esto cambió» sobre una semana ya aprobada. */
+  updatedAt: string | null
 }
 
 /**

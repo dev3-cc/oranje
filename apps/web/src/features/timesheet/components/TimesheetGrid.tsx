@@ -50,6 +50,7 @@ function summaryOf(
     targetHours: null,
     overtimeHours: null,
     entries: row.entries.filter((entry) => weekDays.includes(entry.date)),
+    approvedAt: null,
   }
 }
 

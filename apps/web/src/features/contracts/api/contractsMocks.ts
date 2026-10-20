@@ -83,6 +83,7 @@ function buildContract(input: {
     splitsInvoiceByMonth: false,
     signedAt: input.signedAt,
     createdAt: input.validFrom,
+    updatedAt: null,
     rates: rates(input.id, input.positionCount),
   }
 }
@@ -223,6 +224,38 @@ const routes: readonly MockRoute[] = [
       }
       CONTRACTS.push(created)
       return { data: snapshot(created) }
+    },
+  },
+  {
+    method: 'PATCH',
+    path: '/contracts/:contractId',
+    resolve: ({ params, body }): ApiEnvelope<ContractApi> => {
+      const contract = CONTRACTS.find((item) => item.id === params.contractId)
+      if (!contract) throw new Error('CONTRACT_NOT_FOUND')
+      const dto = body as {
+        validTo?: string | null
+        overtimeBillMultiplier?: number
+        holidayBillMultiplier?: number
+        holidayPayMultiplier?: number
+        deductsMeals?: boolean
+        splitsInvoiceByMonth?: boolean
+      }
+      if (dto.validTo !== undefined) contract.validTo = dto.validTo
+      if (dto.overtimeBillMultiplier !== undefined) {
+        contract.multipliers.overtimeBill = dto.overtimeBillMultiplier.toFixed(2)
+      }
+      if (dto.holidayBillMultiplier !== undefined) {
+        contract.multipliers.holidayBill = dto.holidayBillMultiplier.toFixed(2)
+      }
+      if (dto.holidayPayMultiplier !== undefined) {
+        contract.multipliers.holidayPay = dto.holidayPayMultiplier.toFixed(2)
+      }
+      if (dto.deductsMeals !== undefined) contract.deductsMeals = dto.deductsMeals
+      if (dto.splitsInvoiceByMonth !== undefined) {
+        contract.splitsInvoiceByMonth = dto.splitsInvoiceByMonth
+      }
+      contract.updatedAt = isoInDays(0)
+      return { data: snapshot(contract) }
     },
   },
   {

@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Put,
   Query,
@@ -20,7 +21,12 @@ import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import type { SendMailResult } from '../../../infra/mailer/index.js'
 
 import { ContractEntity, ContractsService } from './contracts.service.js'
-import { CreateContractDto, SendContractEmailDto, UpsertRateDto } from './dto/contract.dto.js'
+import {
+  CreateContractDto,
+  SendContractEmailDto,
+  UpdateContractDto,
+  UpsertRateDto,
+} from './dto/contract.dto.js'
 
 /** El PDF ya es una imagen rasterizada del documento; 8 MB cubre de sobra un contrato largo. */
 const MAX_PDF_BYTES = 8 * 1024 * 1024
@@ -67,6 +73,17 @@ export class ContractsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: ContractEntity }> {
     return { data: await this.contracts.create(dto, user) }
+  }
+
+  @Requires('terms_and_conditions', 'update')
+  @Patch(':id')
+  @HttpCode(HttpStatus.OK)
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateContractDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: ContractEntity }> {
+    return { data: await this.contracts.update(id, dto, user) }
   }
 
   @Requires('terms_and_conditions', 'update')

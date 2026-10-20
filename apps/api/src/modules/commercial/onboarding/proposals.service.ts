@@ -14,6 +14,7 @@ import type { ProposalEntity } from './entities/proposal.entity.js'
 import { ProposalRow, ProposalsRepository, type RateInput } from './proposals.repository.js'
 
 const WORKING_STATES = ['GREEN', 'BROWN']
+const ORANGE = 'ORANGE'
 
 type ProspectSummary = {
   id: string
@@ -319,14 +320,23 @@ export class ProposalsService {
       })
     }
 
-    if (!WORKING_STATES.includes(prospect.stateCode)) {
-      throw new UnprocessableEntityException({
-        code: 'PROPOSAL_STATE_INVALID',
-        message: `La propuesta se trabaja en Verde o Café, no en ${prospect.stateCode}`,
-      })
+    if (WORKING_STATES.includes(prospect.stateCode)) {
+      return prospect
     }
 
-    return prospect
+    /* Excepcion (Hugo, 2026-10-16): un hotel que ya es cliente (Naranja) pero
+       se quedo sin contrato activo -nunca se le genero uno al convertir, o el
+       que tenia vencio o se cancelo sin renovarse- necesita poder volver a
+       cotizar sin retroceder el semaforo. Si YA tiene uno vigente, Naranja se
+       queda cerrado como siempre: ese hotel no se reabre por aqui. */
+    if (prospect.stateCode === ORANGE && !(await this.repo.hasActiveContract(prospect.hotelId))) {
+      return prospect
+    }
+
+    throw new UnprocessableEntityException({
+      code: 'PROPOSAL_STATE_INVALID',
+      message: `La propuesta se trabaja en Verde o Café, no en ${prospect.stateCode}`,
+    })
   }
 
   private async prospect(id: string): Promise<ProspectSummary> {
