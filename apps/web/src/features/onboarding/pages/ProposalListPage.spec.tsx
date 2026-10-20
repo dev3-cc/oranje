@@ -25,6 +25,7 @@ describe('ProposalListPage', () => {
 
     const rows = await screen.findAllByRole('button', { name: /Hotel Mirador/ })
     fireEvent.click(rows[0] as HTMLElement)
+    /* Título se retiró (2026-10-19): el encabezado siempre es el genérico. */
     expect(
       await screen.findByRole('heading', { name: /Propuesta · Hotel Mirador/ }),
     ).toBeInTheDocument()

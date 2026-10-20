@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router'
 
 import { useGetPipelineBoardQuery, useGetZonesQuery } from '../api/onboardingApi'
 import { ChangeStatusDialog } from '../components/ChangeStatusDialog'
+import { CreateProposalPromptDialog } from '../components/CreateProposalPromptDialog'
 import { PipelineColumn } from '../components/PipelineColumn'
 import { ProspectFormDialog } from '../components/ProspectFormDialog'
 import { SemaforoHelpButton } from '../components/SemaforoHelpDialog'
@@ -100,6 +101,10 @@ export function PipelinePage(): ReactNode {
   const [pendingMove, setPendingMove] = useState<{
     prospect: ProspectSummary
     toStatus: OnboardingStatus
+  } | null>(null)
+  const [proposalPromptTarget, setProposalPromptTarget] = useState<{
+    prospectId: string
+    hotelName: string
   } | null>(null)
 
   function handleDragStart(start: DragStart): void {
@@ -334,6 +339,12 @@ export function PipelinePage(): ReactNode {
                 status={status}
                 prospects={board.items.filter((item) => item.status === status)}
                 isDropDisabled={isDropDisabledFor(status)}
+                onCreateProposal={(prospect) => {
+                  setProposalPromptTarget({
+                    prospectId: prospect.id,
+                    hotelName: prospect.hotelName,
+                  })
+                }}
               />
             ))}
           </div>
@@ -368,8 +379,23 @@ export function PipelinePage(): ReactNode {
           hotelName={pendingMove.prospect.hotelName}
           currentStatus={pendingMove.prospect.status}
           presetStatus={pendingMove.toStatus}
+          onMovedToGreen={() => {
+            setProposalPromptTarget({
+              prospectId: pendingMove.prospect.id,
+              hotelName: pendingMove.prospect.hotelName,
+            })
+          }}
         />
       )}
+
+      <CreateProposalPromptDialog
+        isOpen={proposalPromptTarget !== null}
+        onClose={() => {
+          setProposalPromptTarget(null)
+        }}
+        prospectId={proposalPromptTarget?.prospectId ?? ''}
+        hotelName={proposalPromptTarget?.hotelName ?? ''}
+      />
     </div>
   )
 }

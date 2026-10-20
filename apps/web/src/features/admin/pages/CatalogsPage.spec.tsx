@@ -27,7 +27,9 @@ describe('CatalogsPage', () => {
     // Pestaña inicial: departamentos del seed de mocks, cada uno como sección.
     expect(await screen.findByText('Housekeeping')).toBeInTheDocument()
     expect(screen.getByText('Alimentos')).toBeInTheDocument()
-    expect(screen.queryByRole('tab', { name: 'Posiciones' })).not.toBeInTheDocument()
+    /* «Posiciones» volvió a ser pestaña propia el 2026-10-17: la mayoría de
+       las posiciones ya no tiene departamento de hotel (otras industrias). */
+    expect(screen.getByRole('tab', { name: 'Posiciones' })).toBeInTheDocument()
 
     const section = (await screen.findByText('Housekeeper')).closest('section') as HTMLElement
     expect(within(section).getByRole('heading', { name: 'Housekeeping' })).toBeInTheDocument()

@@ -119,6 +119,19 @@ export function NewContractDialog({
   const [validFrom, setValidFrom] = useState('')
   const [validTo, setValidTo] = useState('')
   const [rateRows, setRateRows] = useState<RateDraft[]>([EMPTY_RATE])
+  /** La industria elegida por renglón: solo filtra el select de Posición de
+      ESE renglón, no viaja al back (2026-10-17). Por índice, como las filas
+      mismas — una renegociación (initialRates) la deriva de la posición ya
+      elegida, sin pedirla de nuevo. */
+  const [rowIndustry, setRowIndustry] = useState<Record<number, string>>({})
+
+  function industryOf(index: number, row: RateDraft): string {
+    return (
+      rowIndustry[index] ??
+      options?.positions.find((position) => position.id === row.catalogPositionId)?.industryId ??
+      ''
+    )
+  }
 
   const { isIntroOpen: showIntro, dismissIntro } = useIntroSeen('new-contract')
 
@@ -348,7 +361,34 @@ export function NewContractDialog({
                         <MaterialIcon name="delete" className="text-lg" />
                       </button>
                     </div>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1.6fr)_minmax(0,1fr)_minmax(0,1fr)]">
+                      <label className="flex flex-col gap-1.5">
+                        <span className="text-xs font-medium text-ink-3">
+                          <Trans>Industria</Trans>
+                        </span>
+                        <Select
+                          {...(industryOf(index, row) ? { value: industryOf(index, row) } : {})}
+                          onValueChange={(value) => {
+                            setRowIndustry((prev) => ({ ...prev, [index]: value }))
+                            // Cambiar de industria deja la posición elegida sin sentido.
+                            updateRate(index, { catalogPositionId: '' })
+                          }}
+                        >
+                          <SelectTrigger
+                            aria-label={t`Industria ${String(index + 1)}`}
+                            className="w-full"
+                          >
+                            <SelectValue placeholder={t`Industria…`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(options?.industries ?? []).map((industry) => (
+                              <SelectItem key={industry.id} value={industry.id}>
+                                {industry.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </label>
                       <label className="flex flex-col gap-1.5">
                         <span className="text-xs font-medium text-ink-3">
                           <Trans>Posición</Trans>
@@ -366,11 +406,16 @@ export function NewContractDialog({
                             <SelectValue placeholder={t`Posición…`} />
                           </SelectTrigger>
                           <SelectContent>
-                            {(options?.positions ?? []).map((position) => (
-                              <SelectItem key={position.id} value={position.id}>
-                                {position.name}
-                              </SelectItem>
-                            ))}
+                            {(options?.positions ?? [])
+                              .filter((position) => {
+                                const industryId = industryOf(index, row)
+                                return industryId === '' || position.industryId === industryId
+                              })
+                              .map((position) => (
+                                <SelectItem key={position.id} value={position.id}>
+                                  {position.name}
+                                </SelectItem>
+                              ))}
                           </SelectContent>
                         </Select>
                       </label>

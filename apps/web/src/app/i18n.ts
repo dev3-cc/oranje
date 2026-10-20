@@ -52,9 +52,22 @@ export function localeTag(): string {
   return INTL_TAG[currentLocale()]
 }
 
-export function activateLocale(locale: Locale): void {
+/**
+ * Pone un idioma. **`persist: false` para lo que NO eligió una persona.**
+ *
+ * Guardar la suposición del arranque fue un defecto real: el modal que
+ * pregunta el idioma en el login mira si hay preferencia guardada, y el propio
+ * arranque la escribía milisegundos antes —con lo ADIVINADO, no con la
+ * respuesta— así que el modal no podía salir nunca. Borrar la preferencia y
+ * recargar no servía de nada: se volvía a escribir sola (Hugo, 2026-10-20).
+ *
+ * Lo guardado tiene que significar «alguien lo eligió», no «el navegador venía
+ * en inglés».
+ */
+export function activateLocale(locale: Locale, { persist = true } = {}): void {
   if (i18n.locale !== locale) i18n.activate(locale)
   if (typeof document !== 'undefined') document.documentElement.lang = locale
+  if (!persist) return
   try {
     window.localStorage.setItem(STORAGE_KEY, locale)
   } catch {
@@ -62,6 +75,8 @@ export function activateLocale(locale: Locale): void {
   }
 }
 
-activateLocale(detectLocale())
+/* El arranque ADIVINA —lo guardado, si no el del navegador, si no español— y
+   por eso no persiste: dejaría la adivinanza indistinguible de una elección. */
+activateLocale(detectLocale(), { persist: false })
 
 export { i18n }

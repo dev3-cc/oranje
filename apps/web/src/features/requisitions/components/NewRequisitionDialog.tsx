@@ -17,8 +17,8 @@ import { Controller, useFieldArray, useForm, type FieldErrors } from 'react-hook
 
 import {
   useCreateRequisitionMutation,
+  useGetContractedPositionsQuery,
   useGetOwnHotelOptionQuery,
-  useGetPositionsForDepartmentQuery,
   useGetRequisitionFormOptionsQuery,
 } from '../api/requisitionsApi'
 import {
@@ -121,6 +121,12 @@ function createRequisitionErrorMessage(error: unknown, i18n: I18n): string {
       ),
       HOTEL_OUT_OF_SCOPE: i18n._(msg`Solo puedes crear requisiciones de tu hotel.`),
       HOTEL_OUT_OF_ZONE: i18n._(msg`Ese hotel no está en ninguna de tus zonas.`),
+      HOTEL_WITHOUT_CONTRACT: i18n._(
+        msg`Este hotel no tiene un contrato vigente con tarifas: no se puede pedir personal todavía.`,
+      ),
+      POSITION_NOT_CONTRACTED: i18n._(
+        msg`Una de las posiciones no está en el contrato vigente del hotel: agrégala ahí primero.`,
+      ),
       FORBIDDEN: i18n._(
         msg`Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área, el Manager General del hotel o el Inspector de su zona.`,
       ),
@@ -262,11 +268,17 @@ export function NewRequisitionDialog({
     syncDepartmentIntoPositions()
   }, [syncDepartmentIntoPositions])
 
-  /* Las posiciones se acotan al departamento elegido (el catálogo del vault
-     agrupa por departamento): Housekeeping ofrece Housekeeper, no Chef. */
-  const { data: departmentPositions } = useGetPositionsForDepartmentQuery(department, {
-    skip: !isOpen || department === '',
+  /* Las posiciones se acotan a lo que el hotel ya CONTRATÓ (2026-10-17): antes
+     era el catálogo entero por departamento — un hotel podía pedir una
+     posición sin tarifa pactada. Sin hotel elegido todavía no hay nada que
+     pedir: `undefined`, igual que antes de elegir departamento. */
+  const { data: contractedPositions } = useGetContractedPositionsQuery(hotelId, {
+    skip: !isOpen || hotelId === '',
   })
+  const departmentPositions =
+    contractedPositions === undefined || department === ''
+      ? undefined
+      : contractedPositions.filter((item) => item.hotelDepartmentId === department)
 
   /* Si el departamento cambia, una posición del anterior deja de ser válida:
      se limpia para que el select no enseñe un puesto que ya no está. */
@@ -537,13 +549,18 @@ export function NewRequisitionDialog({
                               <SelectValue placeholder={t`Elige el departamento`} />
                             </SelectTrigger>
                             <SelectContent>
-                              {/* Un departamento sin posiciones en el catálogo no puede pedir
-                                personal: se ve, con el porqué, pero no se elige — así nadie
-                                descubre el hueco un paso después. */}
+                              {/* Un departamento sin posiciones CONTRATADAS no puede pedir
+                                personal (2026-10-17): se ve, con el porqué, pero no se
+                                elige — así nadie descubre el hueco un paso después. Sin
+                                hotel elegido todavía no se sabe qué contrató: se muestran
+                                todos, sin apagar ninguno a ciegas. */}
                               {(options?.departments ?? []).map((item) => {
-                                const hasPositions = (options?.positions ?? []).some(
-                                  (position) => position.hotelDepartmentId === item.id,
-                                )
+                                const hasPositions =
+                                  contractedPositions === undefined
+                                    ? true
+                                    : contractedPositions.some(
+                                        (position) => position.hotelDepartmentId === item.id,
+                                      )
                                 return (
                                   <SelectItem
                                     key={item.id}
@@ -551,7 +568,7 @@ export function NewRequisitionDialog({
                                     disabled={!hasPositions}
                                   >
                                     {item.name}
-                                    {!hasPositions && ` · ${t`sin posiciones en el catálogo`}`}
+                                    {!hasPositions && ` · ${t`sin posiciones contratadas`}`}
                                   </SelectItem>
                                 )
                               })}
@@ -591,13 +608,13 @@ export function NewRequisitionDialog({
                   {departmentPositions !== undefined && departmentPositions.length === 0 && (
                     <p className="mt-3 rounded-md bg-yellow/15 px-3 py-2.5 text-sm text-ink-2">
                       <Trans>
-                        Este departamento todavía no tiene posiciones en el catálogo — por eso el
-                        selector de abajo no muestra nada. Pídele al Administrador que las agregue
-                        en Catálogos antes de pedir personal aquí.
+                        El hotel no tiene ninguna posición de este departamento en su contrato
+                        vigente — por eso el selector de abajo no muestra nada. Agrégala al contrato
+                        antes de pedir personal aquí.
                       </Trans>
                       {IS_DEV_UI && (
                         <code className="block text-xs text-ink-4">
-                          catalogs.position sin filas para este hotel_department_id
+                          commercial.contract_rate sin filas de este hotel_department_id
                         </code>
                       )}
                     </p>

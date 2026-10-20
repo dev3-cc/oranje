@@ -16,6 +16,7 @@ import { useAppSelector } from '@/app/hooks'
 import { useCreateSessionMutation } from '@/app/sessionApi'
 import { selectSessionStatus } from '@/app/sessionSlice'
 import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
+import { LanguagePrompt } from '@/shared/components/LanguagePrompt'
 import { LanguageSwitch } from '@/shared/components/LanguageSwitch'
 import { requestPasswordReset, signInWithEmail } from '@/shared/lib/firebase'
 import { readLastRoute } from '@/shared/lib/lastRoute'
@@ -480,6 +481,9 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
               <LanguageSwitch size="sm" />
             </div>
           </section>
+
+          {/* Se pregunta de frente la primera vez; después no vuelve a salir. */}
+          <LanguagePrompt />
         </motion.div>
 
         {/* El collage: las fotos del equipo flotando sobre el mosaico, sin tarjeta detrás. */}
@@ -487,7 +491,12 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.6 }}
-          className="relative order-first h-56 w-full shrink-0 md:order-none md:h-auto md:min-h-[600px] md:w-auto md:flex-1"
+          /* EN MÓVIL NO SE DIBUJA (Hugo, 2026-10-20). Las fotos recortadas flotando
+             sobre el mosaico son del ancho grande: en una pantalla angosta se
+             amontonan encima del formulario, que es lo único a lo que alguien
+             viene en el celular. `hidden md:flex` y no `md:block`: el contenedor
+             reparte su alto con flex. */
+          className="relative hidden shrink-0 md:flex md:h-auto md:min-h-[600px] md:w-auto md:flex-1"
         >
           <LoginCollage />
         </motion.aside>

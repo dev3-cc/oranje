@@ -7,7 +7,7 @@ import { HotelLocationMap } from './HotelLocationMap'
 
 import { MapsScope } from '@/shared/components/MapsScope'
 import { SectionCard } from '@/shared/components/SectionCard'
-import { formatDate } from '@/shared/lib/formatters'
+import { formatDate, formatPhone } from '@/shared/lib/formatters'
 
 /** Guion largo para el dato ausente: una celda vacía se lee como error de carga. */
 const EMPTY_VALUE = '—'
@@ -29,7 +29,7 @@ export function HotelDataCard({
   const { t } = useLingui()
   const rows: { label: string; value: string }[] = [
     { label: t`Dirección`, value: hotel.address || EMPTY_VALUE },
-    { label: t`Teléfono general`, value: hotel.generalPhone },
+    { label: t`Teléfono general`, value: formatPhone(hotel.generalPhone) },
     { label: t`Zona`, value: hotel.zone },
     { label: t`Zona horaria`, value: hotel.timeZone },
     { label: t`Geocerca`, value: `${hotel.geofenceMeters} m` },

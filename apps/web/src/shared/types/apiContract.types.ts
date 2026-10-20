@@ -624,7 +624,17 @@ export interface ProposalRateApi {
 export interface ProposalApi {
   id: string
   version: number
+  /** Etiqueta corta del ciclo; `null` en lo que ya existía antes de hoy. */
+  title: string | null
   servicesNote: string | null
+  /** Campos del machote aprobado de la propuesta (2026-10-19). */
+  propertyName: string | null
+  preparedDate: string | null
+  brandManagementCompany: string | null
+  cityState: string | null
+  contactName: string | null
+  senderPhone: string | null
+  senderEmail: string | null
   /** El cuadro por puesto. Opcional: las versiones anteriores no lo traen. */
   rates?: ProposalRateApi[]
   /** @deprecated Tarifa global en retirada. Decimal serializado (`"1250.0000"`). */
@@ -636,4 +646,11 @@ export interface ProposalApi {
   sentAt: string | null
   createdAt: string
   updatedAt: string | null
+}
+
+/** Lo que `.../send-email` devuelve (Propuesta y Contrato, 2026-10-17): para
+    avisar si el correo de verdad salió. */
+export interface SendDocumentEmailResultApi {
+  status: 'SENT' | 'FAILED'
+  transport: 'SMTP' | 'FIREBASE'
 }

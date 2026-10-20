@@ -40,6 +40,19 @@ export class RequisitionsController {
     return this.requisitions.list(query, user)
   }
 
+  /**
+   * Antes de `:id` a propósito — si no, Nest la toma como el parámetro.
+   * Solo lo que el contrato vigente del hotel cotizó (2026-10-17): antes el
+   * selector ofrecía el catálogo entero, sin importar si el hotel lo contrató.
+   */
+  @Requires('requisitions', 'create')
+  @Get('positions')
+  async positionsForHotel(
+    @Query('hotelId', ParseUUIDPipe) hotelId: string,
+  ): Promise<{ data: Array<{ id: string; name: string; hotelDepartmentId: string | null }> }> {
+    return { data: await this.requisitions.positionsForHotel(hotelId) }
+  }
+
   @Get(':id')
   async get(
     @Param('id', ParseUUIDPipe) id: string,

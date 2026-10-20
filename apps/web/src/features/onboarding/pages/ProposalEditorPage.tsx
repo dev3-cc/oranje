@@ -2,9 +2,18 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import type { MessageDescriptor } from '@lingui/core'
 import { msg } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
-import { StatusLightBadge, toast } from '@oranje/ui'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  MaterialIcon,
+  StatusLightBadge,
+  toast,
+} from '@oranje/ui'
+import { motion, useReducedMotion } from 'framer-motion'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { Link, useNavigate, useParams } from 'react-router'
 
 import { useDiscardProposalDraftMutation } from '../api/onboardingApi'
@@ -12,12 +21,15 @@ import {
   useCreateProposalDraftMutation,
   useGetProposalWorkspaceQuery,
   useSaveProposalDraftMutation,
+  useSendProposalEmailMutation,
   useSendProposalMutation,
 } from '../api/proposalsApi'
+import { ConfirmSendProposalDialog } from '../components/ConfirmSendProposalDialog'
 import { ProposalRateFields } from '../components/ProposalRateFields'
 import { ProposalVersionHistory } from '../components/ProposalVersionHistory'
 import { buildProposalDraftSchema, type ProposalDraftForm } from '../types/proposalDraft.schema'
 
+import { useGetSessionQuery } from '@/app/sessionApi'
 import personajeEstrategia from '@/assets/ilustrations/personaje-estrategia.svg'
 import personajePago from '@/assets/ilustrations/personaje-pago-procesado.svg'
 import personajePresentacion from '@/assets/ilustrations/personaje-presentacion.svg'
@@ -27,7 +39,10 @@ import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { FormField } from '@/shared/components/FormField'
 import { NoticeCard } from '@/shared/components/NoticeCard'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
+import { PhoneInput } from '@/shared/components/PhoneInput'
+import { ProposalDocument } from '@/shared/components/ProposalDocument'
 import { SectionCard } from '@/shared/components/SectionCard'
+import { SendDocumentModal } from '@/shared/components/SendDocumentModal'
 import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
@@ -37,6 +52,14 @@ import { useIntroSeen } from '@/shared/hooks/useIntroSeen'
 import { apiErrorMessage } from '@/shared/lib/apiError'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
 import { formatDate } from '@/shared/lib/formatters'
+import { MOTION } from '@/shared/lib/motion'
+import {
+  downloadProposalDocx,
+  downloadProposalPdf,
+  preparedDateUs,
+  proposalPdfBlob,
+  type ProposalDocumentInput,
+} from '@/shared/lib/proposalDocument'
 
 /** Donde la propuesta se elabora y envía: Verde (RR-V) y Café (renegociación). */
 const WORKABLE_STATUSES = new Set(['GREEN', 'BROWN'])
@@ -45,6 +68,9 @@ const WORKABLE_STATUSES = new Set(['GREEN', 'BROWN'])
 const ORANGE = 'ORANGE'
 
 const FORM_ID = 'proposal-draft'
+
+/** El de Irene en el machote aprobado: lo que hoy es cierto para Oranje, editable por si cambia. */
+const DEFAULT_SENDER_PHONE = '404-790-2517'
 
 const CONTROL_CLASS =
   'w-full rounded-md border border-line bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-4 focus:border-o-500 focus:outline-none'
@@ -84,17 +110,24 @@ export function ProposalEditorPage({
   const params = useParams()
   const prospectId = prospectIdProp ?? params.prospectId ?? ''
   const navigate = useNavigate()
+  const reduceMotion = useReducedMotion() ?? false
 
   const {
     data: workspace,
     isLoading,
     isError,
   } = useGetProposalWorkspaceQuery(prospectId, { skip: prospectId === '' })
+  const { data: session } = useGetSessionQuery()
 
   const [saveDraft, { isLoading: isSaving }] = useSaveProposalDraftMutation()
-  const [sendProposal, { isLoading: isSending }] = useSendProposalMutation()
+  const [sendProposalEmail, { isLoading: isSendingEmail }] = useSendProposalEmailMutation()
+  const [sendProposal, { isLoading: isMarkingSent }] = useSendProposalMutation()
   /** El error del guardado/envío SE VE: tragárselo dejaba botones «muertos». */
   const [actionError, setActionError] = useState<string | null>(null)
+  /* Paso previo a CUALQUIER camino que deja la propuesta en Enviada — por
+     correo o marcada a mano — porque las dos cierran la versión para
+     siempre (Hugo, 2026-10-19). */
+  const [confirmSendMode, setConfirmSendMode] = useState<'email' | 'mark' | null>(null)
   const [createDraft, { isLoading: isCreating, isError: hasCreateFailed, error: createError }] =
     useCreateProposalDraftMutation()
   const [discardDraft, { isLoading: isDiscarding }] = useDiscardProposalDraftMutation()
@@ -117,17 +150,31 @@ export function ProposalEditorPage({
       ? t`La propuesta se trabaja con el hotel en Verde o Café: este está en ${ONBOARDING_STATUS_LABEL[workspace.prospectStatus]}`
       : null
 
+  /* El modal de envío: el PDF se genera ANTES de abrirlo (de lo que ya se
+     guardó), así que «Enviar correo» solo sube lo que ya se armó. */
+  const [isSendModalOpen, setSendModalOpen] = useState(false)
+  const [pendingPdf, setPendingPdf] = useState<Blob | null>(null)
+  const [sendError, setSendError] = useState<string | null>(null)
+
   /* Los mensajes del esquema se resuelven al armarlo, así que se rearma al
      cambiar de idioma: `i18n` no cambia de identidad al activar otro (D-36). */
   const schema = useMemo(() => buildProposalDraftSchema(i18n), [i18n, i18n.locale])
 
-  const { register, control, handleSubmit, reset, trigger, formState } = useForm<ProposalDraftForm>(
-    {
+  const { register, control, handleSubmit, reset, trigger, watch, formState } =
+    useForm<ProposalDraftForm>({
       resolver: zodResolver(schema),
       mode: 'onChange',
-      defaultValues: { servicesNote: '', rates: [] },
-    },
-  )
+      defaultValues: {
+        propertyName: '',
+        preparedDate: '',
+        brandManagementCompany: '',
+        cityState: '',
+        contactName: '',
+        senderPhone: DEFAULT_SENDER_PHONE,
+        senderEmail: '',
+        rates: [],
+      },
+    })
 
   const draft = workspace?.draft ?? null
   /** La última ENVIADA: lo que se enseña cuando no hay borrador abierto. */
@@ -136,11 +183,70 @@ export function ProposalEditorPage({
       .filter((version) => version.sentAt !== null)
       .sort((a, b) => b.version - a.version)[0] ?? null
 
+  const watchedValues = watch()
+
+  /* La vista previa del documento vive del formulario mientras se edita, y de
+     la última versión enviada cuando no hay borrador — nunca de un fetch
+     aparte: es literalmente lo que ya está en pantalla. */
+  const documentInput: ProposalDocumentInput | null = !workspace
+    ? null
+    : draft
+      ? {
+          hotelName: workspace.hotelName,
+          senderName: workspace.owner.name,
+          propertyName: watchedValues.propertyName || null,
+          preparedDate: watchedValues.preparedDate || null,
+          brandManagementCompany: watchedValues.brandManagementCompany || null,
+          cityState: watchedValues.cityState || null,
+          contactName: watchedValues.contactName || null,
+          senderPhone: watchedValues.senderPhone || null,
+          senderEmail: watchedValues.senderEmail || null,
+          rates: (watchedValues.rates ?? [])
+            .filter((rate) => rate.positionId !== '')
+            .map((rate) => ({
+              key: rate.positionId,
+              positionName:
+                workspace.positions.find((position) => position.id === rate.positionId)?.name ??
+                rate.positionId,
+              billRate: rate.billRate,
+            })),
+        }
+      : lastSent
+        ? {
+            hotelName: workspace.hotelName,
+            senderName: workspace.owner.name,
+            propertyName: lastSent.propertyName || null,
+            preparedDate: lastSent.preparedDate || null,
+            brandManagementCompany: lastSent.brandManagementCompany || null,
+            cityState: lastSent.cityState || null,
+            contactName: lastSent.contactName || null,
+            senderPhone: lastSent.senderPhone || null,
+            senderEmail: lastSent.senderEmail || null,
+            rates: lastSent.rates.map((rate) => ({
+              key: rate.positionId,
+              positionName: rate.positionName,
+              billRate: rate.billRate,
+            })),
+          }
+        : null
+
+  const hasQuotedRates = (documentInput?.rates.length ?? 0) > 0
+
   // El formulario se rellena cuando llega el borrador, y al cambiar de versión.
   useEffect(() => {
-    if (!draft) return
+    if (!draft || !workspace) return
     reset({
-      servicesNote: draft.servicesNote,
+      /* Lo que ya tenemos se prellena para ahorrar tecleo (Hugo, 2026-10-19);
+         lo que no existe en ningún lado queda vacío, nunca inventado. */
+      propertyName: draft.propertyName || workspace.hotelName,
+      /* A diferencia de los demás, su "ya lo tenemos" no es un dato del
+         workspace sino la fecha de hoy: nunca se inventa con datos viejos. */
+      preparedDate: draft.preparedDate || preparedDateUs(),
+      brandManagementCompany: draft.brandManagementCompany,
+      cityState: draft.cityState || workspace.hotelAddress || '',
+      contactName: draft.contactName || workspace.contactName || '',
+      senderPhone: draft.senderPhone || DEFAULT_SENDER_PHONE,
+      senderEmail: draft.senderEmail || session?.email || '',
       rates: draft.rates.map((rate) => ({
         positionId: rate.positionId,
         payRate: rate.payRate,
@@ -153,6 +259,10 @@ export function ProposalEditorPage({
      * que llega completo debe poder guardarse o enviarse de inmediato.
      */
     void trigger()
+    /* `workspace`/`session` se LEEN para el prellenado al llegar ESTE borrador,
+       pero no van en las deps a propósito: listarlos reiniciaría el formulario
+       (perdiendo lo que el BD ya tecleó) cada vez que cualquiera de los dos se
+       vuelve a pedir por su propio ciclo de vida (foco, invalidación). */
   }, [draft, reset, trigger])
 
   if (isLoading) return <DetailSkeleton />
@@ -206,7 +316,14 @@ export function ProposalEditorPage({
     if (!draft) return
     setActionError(null)
     try {
-      await saveDraft({ proposalId: draft.id, prospectId, ...values }).unwrap()
+      await saveDraft({
+        proposalId: draft.id,
+        prospectId,
+        ...values,
+        /* El único campo opcional del machote (Hugo, 2026-10-19): el resto ya
+           viene como string por el schema. */
+        brandManagementCompany: values.brandManagementCompany ?? '',
+      }).unwrap()
       toast.success(t`Borrador guardado`)
     } catch (error) {
       setActionError(actionErrorMessage(error))
@@ -214,19 +331,69 @@ export function ProposalEditorPage({
     }
   }
 
-  /** Enviar guarda primero: si no, se enviaría la versión sin los cambios en pantalla. */
-  async function persistAndSend(values: ProposalDraftForm): Promise<void> {
-    if (!draft) return
+  /** Guarda y arma el PDF ANTES de abrir el modal: lo que se adjunta es lo que
+      se acaba de guardar, no lo que había cuando se abrió la pantalla. */
+  async function openSendModal(values: ProposalDraftForm): Promise<void> {
+    if (!draft || !documentInput) return
     try {
       await persist(values)
-      await sendProposal({ proposalId: draft.id, prospectId }).unwrap()
-      toast.success(t`Propuesta enviada al hotel`)
+      const blob = await proposalPdfBlob(documentInput)
+      setPendingPdf(blob)
+      setSendError(null)
+      setSendModalOpen(true)
     } catch (error) {
       setActionError(actionErrorMessage(error))
     }
   }
 
-  const isBusy = isSaving || isSending || isCreating || isDiscarding
+  async function confirmSend({ to, note }: { to: string; note: string }): Promise<void> {
+    if (!draft || !pendingPdf) return
+    try {
+      const result = await sendProposalEmail({
+        proposalId: draft.id,
+        prospectId,
+        to,
+        note,
+        pdf: pendingPdf,
+      }).unwrap()
+      setSendModalOpen(false)
+      setPendingPdf(null)
+      toast.success(
+        result.email.status === 'SENT'
+          ? t`Propuesta enviada al hotel`
+          : t`La propuesta quedó enviada — el correo no salió, mándalo aparte.`,
+      )
+    } catch (error) {
+      setSendError(actionErrorMessage(error))
+    }
+  }
+
+  /** El OK del modal de advertencia: según por dónde entró, arma el correo o
+      congela la versión directo, sin mandar nada. */
+  async function handleConfirmSendMode(): Promise<void> {
+    if (confirmSendMode === 'mark') {
+      /* Igual que el correo (`openSendModal`): se guarda lo editado ANTES de
+         congelar la versión — "marcar como enviada" no es solo un cambio de
+         status, es el último estado del documento (Hugo, 2026-10-19). */
+      await handleSubmit(async (values) => {
+        if (!draft) return
+        try {
+          await persist(values)
+          await sendProposal({ proposalId: draft.id, prospectId }).unwrap()
+          setConfirmSendMode(null)
+          toast.success(t`Propuesta marcada como enviada`)
+        } catch (error) {
+          setActionError(actionErrorMessage(error))
+        }
+      })()
+      return
+    }
+
+    setConfirmSendMode(null)
+    await handleSubmit(openSendModal)()
+  }
+
+  const isBusy = isSaving || isSendingEmail || isMarkingSent || isCreating || isDiscarding
 
   async function discard(): Promise<void> {
     if (!draft) return
@@ -251,26 +418,27 @@ export function ProposalEditorPage({
   return (
     <div className="flex flex-col gap-6">
       {!embedded && (
-        <nav aria-label="Ruta" className="flex items-center gap-2 text-sm text-ink-3">
-          <Link to="/pipeline" className="hover:text-o-700">
-            <Trans>Pipeline</Trans>
-          </Link>
-          <span aria-hidden>›</span>
-          <Link to={`/pipeline/${prospectId}`} className="hover:text-o-700">
-            {workspace.hotelName}
-          </Link>
-          <span aria-hidden>›</span>
-          <span className="text-ink-2">
-            <Trans>Propuesta</Trans>
-          </span>
-        </nav>
+        <div className="flex items-center gap-2">
+          {/* Sin flecha propia: `AppShell` ya pinta una global para toda
+              sub-vista (mismo criterio que `ProspectDetailPage`) — con las
+              dos juntas se veía doble. */}
+          <nav aria-label="Ruta" className="flex items-center gap-2 text-sm text-ink-3">
+            <Link to="/proposals" className="hover:text-o-700">
+              <Trans>Propuestas</Trans>
+            </Link>
+            <span aria-hidden>›</span>
+            <Link to={`/pipeline/${prospectId}`} className="hover:text-o-700">
+              {workspace.hotelName}
+            </Link>
+          </nav>
+        </div>
       )}
 
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight text-ink">
-              <Trans>Propuesta · {workspace.hotelName}</Trans>
+              {t`Propuesta · ${workspace.hotelName}`}
             </h1>
             <StatusLightBadge
               token={ONBOARDING_STATUS_TOKEN[workspace.prospectStatus]}
@@ -303,42 +471,93 @@ export function ProposalEditorPage({
           </p>
         </div>
 
-        {draft && canEdit && (
-          <div className="flex items-center gap-3">
-            <Button
-              disabled={isBusy}
-              className={isDiscardArmed ? 'bg-red text-white hover:bg-red' : 'text-red'}
-              onClick={() => {
-                if (!isDiscardArmed) {
-                  setDiscardArmed(true)
-                  toast(t`¿Seguro? Toca «Sí, descartar borrador» para confirmar.`)
-                  return
-                }
-                void discard()
-              }}
-            >
-              {isDiscarding ? (
-                <Trans>Descartando…</Trans>
-              ) : isDiscardArmed ? (
-                <Trans>Sí, descartar borrador</Trans>
-              ) : (
-                <Trans>Descartar borrador</Trans>
-              )}
-            </Button>
-            <Button type="submit" form={FORM_ID} disabled={!formState.isValid || isBusy}>
-              {isSaving ? <Trans>Guardando…</Trans> : <Trans>Guardar borrador</Trans>}
-            </Button>
-            <Button
-              variant="primary"
-              disabled={!formState.isValid || isBusy}
-              onClick={() => {
-                void handleSubmit(persistAndSend)()
-              }}
-            >
-              {isSending ? <Trans>Enviando…</Trans> : <Trans>Enviar propuesta</Trans>}
-            </Button>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {documentInput && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  disabled={!hasQuotedRates}
+                  title={!hasQuotedRates ? t`Cotiza al menos un puesto para descargar` : undefined}
+                >
+                  <MaterialIcon name="download" className="text-base" aria-hidden />
+                  <Trans>Descargar</Trans>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onSelect={() => {
+                    void downloadProposalPdf(documentInput)
+                  }}
+                >
+                  <MaterialIcon name="picture_as_pdf" className="text-base" aria-hidden />
+                  <Trans>Descargar PDF</Trans>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    void downloadProposalDocx(documentInput)
+                  }}
+                >
+                  <MaterialIcon name="description" className="text-base" aria-hidden />
+                  <Trans>Descargar Word</Trans>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {draft && canEdit && (
+            <>
+              <Button
+                disabled={isBusy}
+                className={isDiscardArmed ? 'bg-red text-white hover:bg-red' : 'text-red'}
+                onClick={() => {
+                  if (!isDiscardArmed) {
+                    setDiscardArmed(true)
+                    toast(t`¿Seguro? Toca «Sí, descartar borrador» para confirmar.`)
+                    return
+                  }
+                  void discard()
+                }}
+              >
+                {isDiscarding ? (
+                  <Trans>Descartando…</Trans>
+                ) : isDiscardArmed ? (
+                  <Trans>Sí, descartar borrador</Trans>
+                ) : (
+                  <Trans>Descartar borrador</Trans>
+                )}
+              </Button>
+              <Button type="submit" form={FORM_ID} disabled={!formState.isValid || isBusy}>
+                {isSaving ? <Trans>Guardando…</Trans> : <Trans>Guardar borrador</Trans>}
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="primary" disabled={!formState.isValid || isBusy}>
+                    <Trans>Enviar propuesta</Trans>
+                    <MaterialIcon name="expand_more" className="text-base" aria-hidden />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      setConfirmSendMode('email')
+                    }}
+                  >
+                    <MaterialIcon name="mail" className="text-base" aria-hidden />
+                    <Trans>Enviar por correo</Trans>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      setConfirmSendMode('mark')
+                    }}
+                  >
+                    <MaterialIcon name="task_alt" className="text-base" aria-hidden />
+                    <Trans>Marcar como enviada</Trans>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          )}
+        </div>
       </header>
 
       {actionError !== null && (
@@ -360,8 +579,14 @@ export function ProposalEditorPage({
           />
         </div>
       ) : (
-        <>
-          <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <motion.div
+          key={draft?.id ?? lastSent?.id ?? 'sin-version'}
+          initial={{ opacity: 0, x: reduceMotion ? 0 : 40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: reduceMotion ? 0 : MOTION.enter, ease: [...MOTION.easeOut] }}
+          className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
+        >
+          <div className="flex flex-col gap-5">
             {draft && !canEdit ? (
               /* Quien consulta ve VALORES, no un formulario: inputs con errores de validación parecían una captura pendiente. */
               <SectionCard title={t`Borrador v${draft.version} · en elaboración`}>
@@ -396,14 +621,6 @@ export function ProposalEditorPage({
                   </p>
                 </div>
                 <dl className="flex flex-col divide-y divide-line rounded-lg border border-line">
-                  <div className="flex items-start justify-between gap-4 p-3">
-                    <dt className="text-sm text-ink-3">
-                      <Trans>Servicios ofrecidos</Trans>
-                    </dt>
-                    <dd className="text-right text-sm font-medium text-ink">
-                      {draft.servicesNote || t`Aún sin describir`}
-                    </dd>
-                  </div>
                   {draft.rates.map((rate) => (
                     <div
                       key={rate.positionId}
@@ -446,31 +663,130 @@ export function ProposalEditorPage({
                 }}
                 className="flex flex-col gap-5"
               >
-                <SectionCard title={t`Servicios ofrecidos`}>
-                  <FormField
-                    label={t`Descripción`}
-                    htmlFor="servicesNote"
-                    hint={
-                      IS_DEV_UI
-                        ? 'services_note — texto libre'
-                        : t`Qué va a cubrir Oranje en este hotel`
-                    }
-                    error={formState.errors.servicesNote?.message}
-                  >
-                    <input
-                      id="servicesNote"
-                      type="text"
-                      placeholder={t`Housekeeping y Steward para temporada alta…`}
-                      {...register('servicesNote')}
-                      className={CONTROL_CLASS}
-                    />
-                  </FormField>
+                <SectionCard title={t`Información general`}>
+                  <div className="flex flex-col gap-5">
+                    <FormField
+                      label={t`Nombre de la propiedad`}
+                      htmlFor="propertyName"
+                      hint={t`El [PROPERTY NAME] del machote — ya viene del hotel, cámbialo si el documento debe usar otro nombre`}
+                      error={formState.errors.propertyName?.message}
+                    >
+                      <input
+                        id="propertyName"
+                        type="text"
+                        maxLength={200}
+                        placeholder={t`Nombre del hotel en el documento`}
+                        {...register('propertyName')}
+                        className={CONTROL_CLASS}
+                      />
+                    </FormField>
+
+                    <FormField
+                      label={t`Fecha de preparación`}
+                      htmlFor="preparedDate"
+                      hint={t`El "Prepared [DATE]" del machote — se prellena con hoy, cámbiala si el documento debe llevar otra fecha`}
+                      error={formState.errors.preparedDate?.message}
+                    >
+                      <input
+                        id="preparedDate"
+                        type="text"
+                        maxLength={40}
+                        placeholder={t`Ej. 10/19/2026`}
+                        {...register('preparedDate')}
+                        className={CONTROL_CLASS}
+                      />
+                    </FormField>
+
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                      <FormField
+                        label={t`Marca / Administradora`}
+                        htmlFor="brandManagementCompany"
+                        hint={t`Opcional — solo si el hotel pertenece a una cadena o lo administra otra empresa`}
+                        error={formState.errors.brandManagementCompany?.message}
+                      >
+                        <input
+                          id="brandManagementCompany"
+                          type="text"
+                          maxLength={200}
+                          placeholder={t`Ej. Marriott International`}
+                          {...register('brandManagementCompany')}
+                          className={CONTROL_CLASS}
+                        />
+                      </FormField>
+
+                      <FormField
+                        label={t`Ciudad y estado`}
+                        htmlFor="cityState"
+                        error={formState.errors.cityState?.message}
+                      >
+                        <input
+                          id="cityState"
+                          type="text"
+                          maxLength={200}
+                          placeholder={t`Ej. Atlanta, GA`}
+                          {...register('cityState')}
+                          className={CONTROL_CLASS}
+                        />
+                      </FormField>
+                    </div>
+
+                    <FormField
+                      label={t`Dirigida a`}
+                      htmlFor="contactName"
+                      hint={t`El "Dear [nombre]," de la carta — ya viene del contacto principal del hotel, cámbialo si va dirigida a alguien más`}
+                      error={formState.errors.contactName?.message}
+                    >
+                      <input
+                        id="contactName"
+                        type="text"
+                        maxLength={200}
+                        placeholder={t`Nombre del contacto`}
+                        {...register('contactName')}
+                        className={CONTROL_CLASS}
+                      />
+                    </FormField>
+
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                      <FormField
+                        label={t`Teléfono de quien envía`}
+                        error={formState.errors.senderPhone?.message}
+                      >
+                        <Controller
+                          control={control}
+                          name="senderPhone"
+                          render={({ field }) => (
+                            <PhoneInput
+                              value={field.value}
+                              onChange={field.onChange}
+                              ariaLabel={t`Teléfono de quien envía`}
+                            />
+                          )}
+                        />
+                      </FormField>
+
+                      <FormField
+                        label={t`Correo de quien envía`}
+                        htmlFor="senderEmail"
+                        error={formState.errors.senderEmail?.message}
+                      >
+                        <input
+                          id="senderEmail"
+                          type="email"
+                          maxLength={200}
+                          placeholder={t`nombre@oranjepeople.com`}
+                          {...register('senderEmail')}
+                          className={CONTROL_CLASS}
+                        />
+                      </FormField>
+                    </div>
+                  </div>
                 </SectionCard>
 
-                <SectionCard title={t`Tarifas por puesto`}>
+                <SectionCard title={t`Puestos cotizados`}>
                   <ProposalRateFields
                     control={control}
                     register={register}
+                    industries={workspace.industries}
                     positions={workspace.positions}
                     errors={formState.errors}
                   />
@@ -494,30 +810,6 @@ export function ProposalEditorPage({
                 {/* Lo que la propuesta INCLUYE se ve aquí mismo, sea cual sea tu rol. */}
                 {lastSent && (
                   <dl className="mb-4 flex flex-col divide-y divide-line rounded-lg border border-line">
-                    <div className="flex items-start justify-between gap-4 p-3">
-                      <dt className="text-sm text-ink-3">
-                        <Trans>Servicios ofrecidos</Trans>
-                      </dt>
-                      <dd className="text-right text-sm font-medium text-ink">
-                        {lastSent.servicesNote || '—'}
-                      </dd>
-                    </div>
-                    <div className="flex items-center justify-between gap-4 p-3">
-                      <dt className="text-sm text-ink-3">
-                        <Trans>Pay rate</Trans>
-                      </dt>
-                      <dd className="text-sm font-medium text-ink">
-                        ${lastSent.payRate.toFixed(2)}
-                      </dd>
-                    </div>
-                    <div className="flex items-center justify-between gap-4 p-3">
-                      <dt className="text-sm text-ink-3">
-                        <Trans>Bill rate</Trans>
-                      </dt>
-                      <dd className="text-sm font-medium text-ink">
-                        ${lastSent.billRate.toFixed(2)}
-                      </dd>
-                    </div>
                     <div className="flex items-center justify-between gap-4 p-3">
                       <dt className="text-sm text-ink-3">
                         <Trans>Enviada</Trans>
@@ -532,8 +824,7 @@ export function ProposalEditorPage({
                 <p className="text-sm leading-relaxed text-ink-3">
                   <Trans>
                     Las enviadas no se editan: para renegociar se abre una versión nueva, que
-                    arranca con las tarifas de la anterior. El contrato de esta versión se abre
-                    desde el historial.
+                    arranca con el título y las tarifas de la anterior.
                   </Trans>
                 </p>
                 {canEdit ? (
@@ -593,11 +884,56 @@ export function ProposalEditorPage({
               hotelName={workspace.hotelName}
               hotelAddress={workspace.hotelAddress}
               contactEmail={workspace.contactEmail}
-              senderName={workspace.owner.name}
               versions={workspace.versions}
             />
           </div>
-        </>
+
+          <SectionCard title={t`Vista previa del documento`}>
+            <p className="-mt-2 mb-4 text-xs text-ink-3">
+              <Trans>Se genera automáticamente a partir de los campos — no se edita aquí.</Trans>
+            </p>
+            {documentInput ? (
+              <div className="rounded-md border border-line bg-surface px-6 py-6">
+                <ProposalDocument {...documentInput} />
+              </div>
+            ) : (
+              <p className="text-sm text-ink-3">
+                <Trans>Sin propuesta que mostrar todavía.</Trans>
+              </p>
+            )}
+          </SectionCard>
+        </motion.div>
+      )}
+
+      <SendDocumentModal
+        isOpen={isSendModalOpen}
+        onClose={() => {
+          setSendModalOpen(false)
+          setSendError(null)
+        }}
+        title={t`Enviar propuesta por correo`}
+        defaultTo={workspace.contactEmail}
+        isSending={isSendingEmail}
+        error={sendError}
+        onConfirm={(params) => {
+          void confirmSend(params)
+        }}
+      />
+
+      {confirmSendMode && (
+        <ConfirmSendProposalDialog
+          isOpen
+          onClose={() => {
+            setConfirmSendMode(null)
+          }}
+          onConfirm={() => {
+            void handleConfirmSendMode()
+          }}
+          /* "mark" ahora guarda (isSaving) antes de marcar (isMarkingSent): el
+             modal debe seguir ocupado durante las dos, no solo la segunda. */
+          isConfirming={isSaving || isMarkingSent}
+          mode={confirmSendMode}
+        />
       )}
     </div>
   )

@@ -3,12 +3,14 @@ import { v7 as uuidv7 } from 'uuid'
 import type { AuthenticatedUser } from '../../src/common/decorators/index.js'
 import { PlacesService } from '../../src/infra/places/index.js'
 import type { PrismaService } from '../../src/infra/prisma/index.js'
+import { ContractsRepository } from '../../src/modules/commercial/contracts/contracts.repository.js'
+import { ContractsService } from '../../src/modules/commercial/contracts/contracts.service.js'
 import { RequisitionsRepository } from '../../src/modules/demand/requisitions/requisitions.repository.js'
 import { RequisitionsService } from '../../src/modules/demand/requisitions/requisitions.service.js'
 import { PermissionsService } from '../../src/modules/identity/index.js'
 
 import { close, db } from './db.js'
-import { actor } from './fixture.js'
+import { actor, contratoActivo } from './fixture.js'
 
 /**
  * La tarjeta de la requisición pinta la foto del hotel y la de quien la pidió.
@@ -26,12 +28,18 @@ const storage = {
   signedUrl: (path: string): Promise<string> => Promise.resolve(`https://firmada.test/${path}`),
 } as never
 
+const contracts = new ContractsService(
+  new ContractsRepository(prisma),
+  { publish: (): Promise<void> => Promise.resolve() } as never,
+  {} as never,
+)
 const requisitions = new RequisitionsService(
   new RequisitionsRepository(prisma),
   new PermissionsService(prisma),
   places,
   storage,
   { publish: (): Promise<void> => Promise.resolve() } as never,
+  contracts,
 )
 
 let departmentId: string
@@ -60,6 +68,9 @@ async function hotel(photoRef: string | null): Promise<string> {
   })
 
   hotels.push(id)
+
+  // Requisición ya solo deja pedir lo que el hotel contrató (2026-10-17).
+  await contratoActivo(id, [positionId])
 
   return id
 }
@@ -137,6 +148,8 @@ afterAll(async () => {
   await db.slot.deleteMany({ where: { position: { requisitionId: { in: created } } } })
   await db.position.deleteMany({ where: { requisitionId: { in: created } } })
   await db.requisition.deleteMany({ where: { id: { in: created } } })
+  await db.contractRate.deleteMany({ where: { contract: { hotelId: { in: hotels } } } })
+  await db.contract.deleteMany({ where: { hotelId: { in: hotels } } })
 
   try {
     await db.user.deleteMany({ where: { id: { in: users } } })

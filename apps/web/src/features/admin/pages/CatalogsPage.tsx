@@ -86,6 +86,12 @@ const TAB_CONFIG: Record<ManagedCatalog, TabConfig> = {
     noun: msg`departamento`,
     searchPlaceholder: msg`Departamento o posición, p. ej. Steward…`,
   },
+  industries: {
+    label: msg`Industrias`,
+    pick: (data) => data.industries,
+    noun: msg`industria`,
+    searchPlaceholder: msg`Nombre de la industria, p. ej. Retail…`,
+  },
   positions: {
     label: msg`Posiciones`,
     pick: (data) => data.positions,
@@ -131,11 +137,13 @@ const TAB_CONFIG: Record<ManagedCatalog, TabConfig> = {
 }
 
 /**
- * Posiciones ya no es pestaña: cada posición pertenece a un departamento y
- * verlas separadas no decía cuál (Hugo, 2026-09-09). Viven seccionadas
- * dentro de «Departamentos y posiciones», como los reactivos por categoría.
+ * «Departamentos y posiciones» sigue mostrando Hospitality agrupada por
+ * departamento (Hugo, 2026-09-09). Pero desde el 2026-10-17 la mayoría de
+ * las posiciones no tiene departamento de hotel —son de otras industrias—,
+ * así que «Posiciones» vuelve a ser pestaña propia: lista TODAS, con su
+ * industria (y su departamento, si tiene) como etiqueta junto al nombre.
  */
-const TABS = MANAGED_CATALOGS.filter((catalog) => catalog !== 'positions').map((catalog) => ({
+const TABS = MANAGED_CATALOGS.map((catalog) => ({
   catalog,
   ...TAB_CONFIG[catalog],
 }))
@@ -147,9 +155,15 @@ interface EditorState {
   item: AdminCatalogItem | null
   /** Alta de posición desde su sección: el departamento ya viene elegido. */
   presetDepartmentId?: string
+  /** Alta de posición desde «Departamentos y posiciones»: siempre Hospitality. */
+  presetIndustryId?: string
   /** Alta de motivo desde su sección: el semáforo ya viene elegido. */
   presetStatusLightCode?: string
 }
+
+/** Sentinel del Select: Radix no acepta `value=""`. Mismo patrón que
+    `HotelUserFormDialog` para "sin departamento". */
+const NONE = 'NONE'
 
 /**
  * Catálogos del sistema, administrables solo con `catalogs:manage` (el
@@ -208,6 +222,11 @@ export function CatalogsPage(): ReactNode {
   const tab = active === REACTIVOS_TAB ? null : { catalog: active, ...TAB_CONFIG[active] }
   const rows = tab && data ? tab.pick(data) : []
   const visibleRows = rows.filter((row) => matchesSearch(search, row.name))
+  /** Para la pestaña «Posiciones»: su industria (y departamento, si tiene) junto al nombre. */
+  const industryNameOf = (id: string | undefined): string | null =>
+    (data?.industries ?? []).find((industry) => industry.id === id)?.name ?? null
+  const departmentNameOf = (id: string | undefined): string | null =>
+    (data?.departments ?? []).find((department) => department.id === id)?.name ?? null
   /**
    * Departamentos con sus posiciones. La búsqueda entra por los dos lados:
    * un departamento aparece si coincide su nombre (con todas sus posiciones)
@@ -374,11 +393,16 @@ export function CatalogsPage(): ReactNode {
                           variant="secondary"
                           className="px-3 py-1 text-xs"
                           onClick={() => {
+                            // Esta sección es de Hospitality: se propone sola.
+                            const hospitality = data?.industries.find(
+                              (industry) => industry.code === 'HOSPITALITY',
+                            )
                             setEditor({
                               catalog: 'positions',
                               noun: msg`posición`,
                               item: null,
                               presetDepartmentId: department.id,
+                              ...(hospitality ? { presetIndustryId: hospitality.id } : {}),
                             })
                           }}
                         >
@@ -621,6 +645,14 @@ export function CatalogsPage(): ReactNode {
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-ink">{row.name}</p>
+                    {active === 'positions' && (
+                      <p className="truncate text-xs text-ink-3">
+                        {industryNameOf(row.industryId) ?? t`Sin industria`}
+                        {departmentNameOf(row.hotelDepartmentId)
+                          ? ` · ${departmentNameOf(row.hotelDepartmentId)}`
+                          : ''}
+                      </p>
+                    )}
                     {IS_DEV_UI && (
                       <p className="text-xs">
                         <code className="text-ink-4">{row.code}</code>
@@ -674,6 +706,7 @@ export function CatalogsPage(): ReactNode {
       {editor !== null && data && (
         <CatalogItemDialog
           editor={editor}
+          industries={data.industries}
           departments={data.departments}
           statusLights={data.statusLights}
           onClose={() => {
@@ -725,17 +758,23 @@ function TabButton({
 /** Alta o renombrado de una fila; las posiciones eligen además su departamento, los motivos su semáforo. */
 function CatalogItemDialog({
   editor,
+  industries,
   departments,
   statusLights,
   onClose,
 }: {
   editor: EditorState
+  industries: AdminCatalogItem[]
   departments: AdminCatalogItem[]
   statusLights: AdminStatusLight[]
   onClose: () => void
 }): ReactNode {
   const { t, i18n } = useLingui()
   const [name, setName] = useState(editor.item?.name ?? '')
+  const [industryId, setIndustryId] = useState(
+    editor.item?.industryId ?? editor.presetIndustryId ?? '',
+  )
+  /** Opcional desde el 2026-10-17: solo tiene sentido dentro de Hospitality. */
   const [departmentId, setDepartmentId] = useState(
     editor.item?.hotelDepartmentId ?? editor.presetDepartmentId ?? '',
   )
@@ -751,7 +790,7 @@ function CatalogItemDialog({
   const isBusy = isCreating || isUpdating
   const canSave =
     name.trim() !== '' &&
-    (!isPosition || departmentId !== '') &&
+    (!isPosition || industryId !== '') &&
     (!isReason || statusLightCode !== '')
 
   async function save(): Promise<void> {
@@ -761,7 +800,9 @@ function CatalogItemDialog({
         await createItem({
           catalog: editor.catalog,
           name: name.trim(),
-          ...(isPosition ? { hotelDepartmentId: departmentId } : {}),
+          ...(isPosition
+            ? { industryId, hotelDepartmentId: departmentId === '' ? null : departmentId }
+            : {}),
           ...(isReason ? { statusLightCode } : {}),
         }).unwrap()
         toast.success(t`Se agregó «${name.trim()}»`)
@@ -770,7 +811,12 @@ function CatalogItemDialog({
           catalog: editor.catalog,
           id: editor.item.id,
           name: name.trim(),
-          ...(isPosition && departmentId !== '' ? { hotelDepartmentId: departmentId } : {}),
+          ...(isPosition
+            ? {
+                ...(industryId !== '' ? { industryId } : {}),
+                hotelDepartmentId: departmentId === '' ? null : departmentId,
+              }
+            : {}),
           ...(isReason && statusLightCode !== '' ? { statusLightCode } : {}),
         }).unwrap()
         toast.success(t`Catálogo actualizado`)
@@ -781,7 +827,7 @@ function CatalogItemDialog({
         apiErrorMessage(saveError, {
           byCode: {
             CATALOG_NAME_TAKEN: t`Ya existe una fila con ese nombre en este catálogo.`,
-            DEPARTMENT_REQUIRED: t`Una posición pertenece a un departamento: elige a cuál.`,
+            INDUSTRY_REQUIRED: t`Una posición pertenece a una industria: elige a cuál.`,
             STATUS_LIGHT_REQUIRED: t`Un motivo pertenece a un semáforo: elige a cuál.`,
             STATUS_LIGHT_UNKNOWN: t`Ese semáforo no existe.`,
           },
@@ -833,26 +879,54 @@ function CatalogItemDialog({
       </label>
 
       {isPosition && (
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium text-ink-2">
-            <Trans>Departamento</Trans>
-          </span>
-          <Select
-            {...(departmentId ? { value: departmentId } : {})}
-            onValueChange={setDepartmentId}
-          >
-            <SelectTrigger aria-label={t`Departamento de la posición`} className="w-full">
-              <SelectValue placeholder={t`Elige el departamento`} />
-            </SelectTrigger>
-            <SelectContent>
-              {departments.map((department) => (
-                <SelectItem key={department.id} value={department.id}>
-                  {department.name}
+        <>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-ink-2">
+              <Trans>Industria</Trans>
+            </span>
+            <Select {...(industryId ? { value: industryId } : {})} onValueChange={setIndustryId}>
+              <SelectTrigger aria-label={t`Industria de la posición`} className="w-full">
+                <SelectValue placeholder={t`Elige la industria`} />
+              </SelectTrigger>
+              <SelectContent>
+                {industries.map((industry) => (
+                  <SelectItem key={industry.id} value={industry.id}>
+                    {industry.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium text-ink-2">
+              <Trans>Departamento de hotel</Trans>
+            </span>
+            <Select
+              value={departmentId === '' ? NONE : departmentId}
+              onValueChange={(value) => {
+                setDepartmentId(value === NONE ? '' : value)
+              }}
+            >
+              <SelectTrigger aria-label={t`Departamento de la posición`} className="w-full">
+                <SelectValue placeholder={t`Elige el departamento`} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NONE}>
+                  <Trans>Ninguno — fuera de Hospitality</Trans>
                 </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </label>
+                {departments.map((department) => (
+                  <SelectItem key={department.id} value={department.id}>
+                    {department.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-ink-3">
+              <Trans>Solo tiene sentido dentro de Hospitality.</Trans>
+            </p>
+          </label>
+        </>
       )}
 
       {isReason && (

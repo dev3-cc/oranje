@@ -3,6 +3,8 @@ import { v7 as uuidv7 } from 'uuid'
 import type { AuthenticatedUser } from '../../src/common/decorators/index.js'
 import { PlacesService } from '../../src/infra/places/index.js'
 import type { PrismaService } from '../../src/infra/prisma/index.js'
+import { ContractsRepository } from '../../src/modules/commercial/contracts/contracts.repository.js'
+import { ContractsService } from '../../src/modules/commercial/contracts/contracts.service.js'
 import { RequisitionsRepository } from '../../src/modules/demand/requisitions/requisitions.repository.js'
 import { RequisitionsService } from '../../src/modules/demand/requisitions/requisitions.service.js'
 import { PermissionsService } from '../../src/modules/identity/index.js'
@@ -10,7 +12,7 @@ import { SchedulesRepository } from '../../src/modules/operations/schedules/sche
 import { SchedulesService } from '../../src/modules/operations/schedules/schedules.service.js'
 
 import { close, db } from './db.js'
-import { actor } from './fixture.js'
+import { actor, contratoActivo } from './fixture.js'
 
 /**
  * El Schedule se ve y se planea por departamento (Reglas del Hotel · resumen
@@ -20,12 +22,18 @@ import { actor } from './fixture.js'
 
 const prisma = db as unknown as PrismaService
 const places = new PlacesService({ get: () => undefined } as never)
+const contracts = new ContractsService(
+  new ContractsRepository(prisma),
+  { publish: (): Promise<void> => Promise.resolve() } as never,
+  {} as never,
+)
 const requisitions = new RequisitionsService(
   new RequisitionsRepository(prisma),
   new PermissionsService(prisma),
   places,
   { signedUrl: (): Promise<null> => Promise.resolve(null) } as never,
   { publish: (): Promise<void> => Promise.resolve() } as never,
+  contracts,
 )
 const schedules = new SchedulesService(new SchedulesRepository(prisma), places, {
   publish: (): Promise<void> => Promise.resolve(),
@@ -150,6 +158,9 @@ beforeAll(async () => {
     select: { id: true },
   })
   hotelId = hotel.id
+
+  // Requisición ya solo deja pedir lo que el hotel contrató (2026-10-17).
+  await contratoActivo(hotelId, [positionId])
 })
 
 afterAll(async () => {
@@ -172,6 +183,8 @@ afterAll(async () => {
     where: { OR: [{ entityId: { in: users } }, { actorUserId: { in: users } }] },
   })
   await db.user.deleteMany({ where: { id: { in: users } } })
+  await db.contractRate.deleteMany({ where: { contract: { hotelId } } })
+  await db.contract.deleteMany({ where: { hotelId } })
   await db.hotel.deleteMany({ where: { id: hotelId } })
   await close()
 })

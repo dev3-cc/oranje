@@ -177,6 +177,30 @@ async function fetchSlotBoard(
  */
 export const AL_ATERRIZAR = { refetchOnMountOrArgChange: true } as const
 
+/**
+ * Y además, VIVO mientras se mira.
+ *
+ * `AL_ATERRIZAR` pregunta al entrar, pero dos Reclutadoras trabajando a la vez
+ * se quedan cada una con su tablero de hace diez minutos: una elige un slot o
+ * un colaborador que la otra ya asignó, llena el formulario y el rechazo llega
+ * al final. El servidor nunca permite la doble asignación —lo impide el índice
+ * `ux_slot_active_assignment`— así que lo que se pierde es el trabajo, no el
+ * dato.
+ *
+ * 30 s y no 45 como la campana: aquí dos personas compiten por la misma fila,
+ * y medio minuto de tablero viejo ya es un formulario tirado.
+ * `skipPollingIfUnfocused` para no consultar con la pestaña de fondo.
+ */
+export const SONDEO_TABLERO_MS = 30_000
+
+export const TABLERO_VIVO = {
+  ...AL_ATERRIZAR,
+  pollingInterval: SONDEO_TABLERO_MS,
+  skipPollingIfUnfocused: true,
+  refetchOnFocus: true,
+  refetchOnReconnect: true,
+} as const
+
 export const selfPickApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     getSelfPickBoard: build.query<SelfPickBoard, void>({

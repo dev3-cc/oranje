@@ -1,6 +1,7 @@
 import { v7 as uuidv7 } from 'uuid'
 
 import type { AuthenticatedUser } from '../../src/common/decorators/index.js'
+import type { MailerService } from '../../src/infra/mailer/index.js'
 import type { PrismaService } from '../../src/infra/prisma/index.js'
 import { ProposalsRepository } from '../../src/modules/commercial/onboarding/proposals.repository.js'
 import { ProposalsService } from '../../src/modules/commercial/onboarding/proposals.service.js'
@@ -26,7 +27,10 @@ const prisma = db as unknown as PrismaService
 // Stub: el envío de propuesta ya no es mudo (dispara SALES_PROPOSAL_SENT), y
 // el constructor exige el publicador aunque esta suite no lo verifique.
 const notifications = { publish: async () => {} } as unknown as NotificationPublisherService
-const proposals = new ProposalsService(new ProposalsRepository(prisma), notifications)
+// Stub: el constructor exige el mailer desde `sendEmail` (2026-10-17), aunque
+// esta suite solo ejercita `send()`, que no lo toca.
+const mailer = {} as unknown as MailerService
+const proposals = new ProposalsService(new ProposalsRepository(prisma), notifications, mailer)
 
 let user: AuthenticatedUser
 let zoneId: string
@@ -123,7 +127,13 @@ describe('el cuadro de tarifas por puesto', () => {
       user,
     )
 
-    expect(draft.rates.map((r) => r.position.name)).toEqual(['Chef', 'Housekeeper', 'Laundry'])
+    // "Laundry" → "Laundry Attendants" (2026-10-17): el catálogo se amplió a
+    // multi-industria y esa posición se renombró para calzar con las demás.
+    expect(draft.rates.map((r) => r.position.name)).toEqual([
+      'Chef',
+      'Housekeeper',
+      'Laundry Attendants',
+    ])
 
     expect(draft.rates[0]).toMatchObject({
       position: position.get('CHEF'),

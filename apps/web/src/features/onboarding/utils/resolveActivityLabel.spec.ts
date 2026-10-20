@@ -36,7 +36,7 @@ describe('resolveActivityLabel', () => {
     ).toBe('Llamada · Interesado')
   })
 
-  it('en VERDE la propuesta le gana al intento: es lo que define esa columna', () => {
+  it('en VERDE la propuesta enviada le gana al intento: es lo que define esa columna', () => {
     expect(
       resolveActivityLabel(
         {
@@ -44,10 +44,26 @@ describe('resolveActivityLabel', () => {
           status: 'GREEN',
           lastAttempt: { channel: 'Correo', outcome: 'Interesado' },
           latestProposalVersion: 2,
+          latestProposalIsDraft: false,
         },
         i18n,
       ),
-    ).toBe('Propuesta v2')
+    ).toBe('Propuesta v2 enviada')
+  })
+
+  it('en VERDE un borrador sin mandar se distingue de una ya enviada', () => {
+    expect(
+      resolveActivityLabel(
+        {
+          ...BASE,
+          status: 'GREEN',
+          lastAttempt: { channel: 'Correo', outcome: 'Interesado' },
+          latestProposalVersion: 1,
+          latestProposalIsDraft: true,
+        },
+        i18n,
+      ),
+    ).toBe('Borrador v1')
   })
 
   it('en VERDE sin propuesta cae al intento en vez de mentir', () => {

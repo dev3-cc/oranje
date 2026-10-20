@@ -28,11 +28,13 @@ export function PipelineColumn({
   status,
   prospects,
   isDropDisabled,
+  onCreateProposal,
 }: {
   status: OnboardingStatus
   prospects: ProspectSummary[]
   /** `true` mientras se arrastra desde un estado sin arista hacia aquí. */
   isDropDisabled: boolean
+  onCreateProposal?: (prospect: ProspectSummary) => void
 }): ReactNode {
   const color = statusLight[ONBOARDING_STATUS_TOKEN[status]]
 
@@ -76,7 +78,10 @@ export function PipelineColumn({
                     {...dragProvided.dragHandleProps}
                     className={dragSnapshot.isDragging ? 'rotate-2 opacity-90' : ''}
                   >
-                    <ProspectCard prospect={prospect} />
+                    <ProspectCard
+                      prospect={prospect}
+                      {...(onCreateProposal ? { onCreateProposal } : {})}
+                    />
                   </div>
                 )}
               </Draggable>

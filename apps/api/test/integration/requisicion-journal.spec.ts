@@ -3,12 +3,14 @@ import { v7 as uuidv7 } from 'uuid'
 import type { AuthenticatedUser } from '../../src/common/decorators/index.js'
 import { PlacesService } from '../../src/infra/places/index.js'
 import type { PrismaService } from '../../src/infra/prisma/index.js'
+import { ContractsRepository } from '../../src/modules/commercial/contracts/contracts.repository.js'
+import { ContractsService } from '../../src/modules/commercial/contracts/contracts.service.js'
 import { RequisitionsRepository } from '../../src/modules/demand/requisitions/requisitions.repository.js'
 import { RequisitionsService } from '../../src/modules/demand/requisitions/requisitions.service.js'
 import { PermissionsService } from '../../src/modules/identity/index.js'
 
 import { close, db } from './db.js'
-import { actor } from './fixture.js'
+import { actor, contratoActivo } from './fixture.js'
 
 /**
  * `GET /:id/journal` — sin permiso propio: reutiliza EXACTAMENTE el criterio
@@ -17,12 +19,18 @@ import { actor } from './fixture.js'
  */
 
 const prisma = db as unknown as PrismaService
+const contracts = new ContractsService(
+  new ContractsRepository(prisma),
+  { publish: (): Promise<void> => Promise.resolve() } as never,
+  {} as never,
+)
 const requisitions = new RequisitionsService(
   new RequisitionsRepository(prisma),
   new PermissionsService(prisma),
   new PlacesService({ get: () => undefined } as never),
   { signedUrl: (): Promise<null> => Promise.resolve(null) } as never,
   { publish: (): Promise<void> => Promise.resolve() } as never,
+  contracts,
 )
 
 let hotelId: string
@@ -115,6 +123,9 @@ beforeAll(async () => {
   hotels.push(hotel.id, other.id)
   hotelId = hotel.id
   otherHotelId = other.id
+
+  // Requisición ya solo deja pedir lo que el hotel contrató (2026-10-17).
+  await contratoActivo(hotelId, [positionId])
 })
 
 afterAll(async () => {
@@ -122,6 +133,8 @@ afterAll(async () => {
   await db.slot.deleteMany({ where: { position: { requisitionId: { in: created } } } })
   await db.position.deleteMany({ where: { requisitionId: { in: created } } })
   await db.requisition.deleteMany({ where: { id: { in: created } } })
+  await db.contractRate.deleteMany({ where: { contract: { hotelId: { in: hotels } } } })
+  await db.contract.deleteMany({ where: { hotelId: { in: hotels } } })
 
   try {
     await db.user.deleteMany({ where: { id: { in: users } } })

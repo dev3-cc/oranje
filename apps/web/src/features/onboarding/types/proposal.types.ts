@@ -1,4 +1,5 @@
 import type { OnboardingStatus } from '@/shared/constants/onboardingStatus'
+import type { SendDocumentEmailResultApi } from '@/shared/types/apiContract.types'
 
 /**
  * Formas de respuesta de los endpoints de Propuestas.
@@ -33,6 +34,8 @@ export interface ProposalVersionSummary {
   id: string
   version: number
   status: ProposalStatus
+  /** Etiqueta corta del ciclo; `''` en lo que ya existía antes de hoy. */
+  title: string
   /** `null` mientras es borrador. */
   sentAt: string | null
   /** Quién la envió. La ficha del prospecto lo muestra junto a la fecha. */
@@ -42,6 +45,14 @@ export interface ProposalVersionSummary {
    * front con los datos de la versión, sin pedir nada más.
    */
   servicesNote: string
+  /** Campos del machote aprobado (2026-10-19); `''` en lo que ya existía. */
+  propertyName: string
+  preparedDate: string
+  brandManagementCompany: string
+  cityState: string
+  contactName: string
+  senderPhone: string
+  senderEmail: string
   /** El cuadro de tarifas por puesto. Vacío en las versiones anteriores al cuadro. */
   rates: ProposalRate[]
   /** @deprecated Tarifa global de las versiones anteriores al cuadro por puesto. */
@@ -58,8 +69,18 @@ export interface ProposalVersionSummary {
 export interface ProposalDraft {
   id: string
   version: number
+  /** Etiqueta corta del ciclo; `''` en lo que ya existía antes de hoy. */
+  title: string
   /** `services_note` — texto libre. */
   servicesNote: string
+  /** Campos del machote aprobado (2026-10-19); `''` en lo que ya existía. */
+  propertyName: string
+  preparedDate: string
+  brandManagementCompany: string
+  cityState: string
+  contactName: string
+  senderPhone: string
+  senderEmail: string
   /** El cuadro de tarifas por puesto: lo que el hotel firma. */
   rates: ProposalRate[]
   /** @deprecated Tarifa global; solo llega en versiones anteriores al cuadro. */
@@ -77,6 +98,8 @@ export interface ProposalWorkspace {
   hotelAddress: string | null
   /** Correo del contacto principal del hotel: a quién se le manda la propuesta. */
   contactEmail: string | null
+  /** Nombre del contacto principal, para prellenar el "Dear [CONTACT NAME]" del machote. */
+  contactName: string | null
   /** Semáforo del prospecto, para el chip del encabezado. */
   prospectStatus: OnboardingStatus
   /**
@@ -86,8 +109,10 @@ export interface ProposalWorkspace {
   draft: ProposalDraft | null
   /** Todas las versiones, de la más nueva a la más vieja. Nunca se borran. */
   versions: ProposalVersionSummary[]
+  /** Las industrias que filtran el selector de puestos (2026-10-17: Oranje deja de ser solo hoteles). */
+  industries: Array<{ id: string; name: string }>
   /** Los puestos del catálogo que el cuadro puede cotizar (los da de alta el Administrador). */
-  positions: Array<{ id: string; name: string }>
+  positions: Array<{ id: string; name: string; industryId: string | null }>
   /**
    * Si el hotel YA tiene un contrato vigente. Decide si Naranja sigue siendo
    * terminal para la propuesta/contrato (Hugo, 2026-10-16): un cliente con
@@ -125,6 +150,22 @@ export interface SaveProposalDraftRequest {
   proposalId: string
   /** Solo para invalidar la caché del prospecto; no viaja en el cuerpo. */
   prospectId: string
-  servicesNote: string
+  propertyName: string
+  preparedDate: string
+  brandManagementCompany: string
+  cityState: string
+  contactName: string
+  senderPhone: string
+  senderEmail: string
   rates: Array<{ positionId: string; payRate: number; billRate: number }>
 }
+
+export interface SendProposalEmailRequest {
+  proposalId: string
+  prospectId: string
+  to: string
+  note: string
+  pdf: Blob
+}
+
+export type SendDocumentEmailResult = SendDocumentEmailResultApi

@@ -89,7 +89,7 @@ export function Phase3Page(): ReactNode {
     draft.emergencyContactName.trim() === ''
       ? t`Falta el nombre del contacto de emergencia`
       : !isCompletePhone(draft.emergencyContactPhone)
-        ? t`El teléfono de emergencia necesita al menos 7 dígitos (sin la lada)`
+        ? t`Ese número de emergencia no es válido para el país elegido. Revisa los dígitos o cambia el país.`
         : draft.emergencyContactRelationship === ''
           ? t`Elige el parentesco`
           : draft.bloodType === ''
@@ -172,7 +172,6 @@ export function Phase3Page(): ReactNode {
               update('emergencyContactPhone')(value)
             }}
             ariaLabel={t`Teléfono`}
-            placeholder="404 512 8890"
           />
         </Field>
 

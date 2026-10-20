@@ -1,4 +1,5 @@
 import { Trans, useLingui } from '@lingui/react/macro'
+import { cn, MaterialIcon } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
 import { useGetProposalCandidatesQuery } from '../api/proposalsApi'
@@ -31,6 +32,11 @@ export function ProposalListPage(): ReactNode {
   /** Solo el BD elabora propuestas (proposals:create): a los demás no se les ofrece el botón. */
   const canCreate = can('proposals:create')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  /* Las 3 columnas juntas (lista + formulario + vista previa) se veían
+     apretadas (Hugo, 2026-10-19): la lista se puede contraer a una franja
+     angosta para darle el ancho a las otras dos. Solo en escritorio — en
+     angosto la lista ya es una tira horizontal, no compite por ancho. */
+  const [isListCollapsed, setIsListCollapsed] = useState(false)
   /** Siempre hay una propuesta abierta: la elegida o la primera de la lista. */
   const selected = candidates.find((c) => c.prospectId === selectedId) ?? candidates[0] ?? null
 
@@ -115,60 +121,97 @@ export function ProposalListPage(): ReactNode {
       )}
 
       {candidates.length > 0 && (
-        /* Lista a la izquierda, la propuesta del hotel elegido a la derecha (como Contratos). */
-        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
-          {/* En angosto: tira horizontal sobre la propuesta; en ancho, columna lateral. */}
-          <ul className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0">
-            {candidates.map((candidate) => {
-              const isSelected = candidate.prospectId === selected?.prospectId
-              return (
-                <li key={candidate.prospectId} className="w-72 shrink-0 snap-start lg:w-auto">
-                  <MagicCard className="rounded-xl">
-                    <button
-                      type="button"
-                      aria-pressed={isSelected}
-                      onClick={() => {
-                        setSelectedId(candidate.prospectId)
-                      }}
-                      className={`w-full cursor-pointer touch-manipulation rounded-xl border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500 ${isSelected ? 'border-o-500 bg-o-50' : 'border-line bg-surface hover:bg-surface-2'}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <HotelThumbnail photoUrl={candidate.hotelPhotoUrl} />
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-semibold text-ink">
-                            {candidate.hotelName}
-                          </span>
-                          <span className="block truncate text-xs text-ink-3">
-                            {candidate.zone}
-                          </span>
-                        </span>
-                        <StatusLightSoftBadge
-                          token={ONBOARDING_STATUS_TOKEN[candidate.prospectStatus]}
-                          label={ONBOARDING_STATUS_LABEL[candidate.prospectStatus]}
-                        />
-                      </div>
-                      <p className="mt-2 text-xs text-ink-3">
-                        <Trans>
-                          v{candidate.latestVersion} ·{' '}
-                          {candidate.latestSentAt
-                            ? t`Enviada ${formatDate(candidate.latestSentAt)}`
-                            : t`Borrador sin enviar`}
-                        </Trans>
-                      </p>
-                    </button>
-                  </MagicCard>
-                </li>
-              )
-            })}
-          </ul>
+        <>
+          {/* Arriba de las dos columnas, no adentro de la lista: así no le
+              quita alto a las tarjetas (Hugo, 2026-10-19: "sube el botón...
+              para que dé más espacio"). Solo en escritorio. */}
+          <button
+            type="button"
+            onClick={() => {
+              setIsListCollapsed((collapsed) => !collapsed)
+            }}
+            aria-expanded={!isListCollapsed}
+            className="hidden w-fit cursor-pointer items-center gap-1.5 self-start rounded-md border border-line bg-surface px-3 py-2 text-sm font-medium whitespace-nowrap text-ink-3 transition-colors hover:bg-surface-2 hover:text-o-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500 lg:flex"
+          >
+            <MaterialIcon
+              name={isListCollapsed ? 'chevron_right' : 'chevron_left'}
+              className="text-lg"
+              aria-hidden
+            />
+            {isListCollapsed ? t`Ver lista de propuestas` : t`Cerrar lista de propuestas`}
+          </button>
 
-          {selected && (
-            /* Detalle fijo mientras la lista baja (lista-detalle, como el Pool y la Cartera). */
-            <div className="lg:sticky lg:top-6 lg:max-h-[calc(100vh-var(--hd)-3rem)] lg:overflow-y-auto">
-              <ProposalEditorPage prospectId={selected.prospectId} embedded />
-            </div>
-          )}
-        </div>
+          {/* Lista a la izquierda, la propuesta del hotel elegido a la derecha (como Contratos). */}
+          <div
+            className={cn(
+              'grid grid-cols-1 items-start gap-5 transition-[grid-template-columns] duration-200',
+              /* Con la lista oculta (`display:none`, no `visibility`) deja de
+                 contar para el grid: si aquí se dejaran dos columnas (una en
+                 0), el panel de la derecha — ya el único hijo — se
+                 auto-colocaría en la PRIMERA (la de ancho 0), no en la
+                 segunda, y se vería todo en blanco (Hugo, 2026-10-19, lo vio
+                 en vivo). Con una sola columna no hay a dónde más ir. */
+              isListCollapsed ? 'lg:grid-cols-1' : 'lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]',
+            )}
+          >
+            {/* En angosto: tira horizontal sobre la propuesta; en ancho, columna lateral. */}
+            <ul
+              className={cn(
+                '-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0',
+                isListCollapsed && 'lg:hidden',
+              )}
+            >
+              {candidates.map((candidate) => {
+                const isSelected = candidate.prospectId === selected?.prospectId
+                return (
+                  <li key={candidate.prospectId} className="w-72 shrink-0 snap-start lg:w-auto">
+                    <MagicCard className="rounded-xl">
+                      <button
+                        type="button"
+                        aria-pressed={isSelected}
+                        onClick={() => {
+                          setSelectedId(candidate.prospectId)
+                        }}
+                        className={`w-full cursor-pointer touch-manipulation rounded-xl border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500 ${isSelected ? 'border-o-500 bg-o-50' : 'border-line bg-surface hover:bg-surface-2'}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <HotelThumbnail photoUrl={candidate.hotelPhotoUrl} />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-semibold text-ink">
+                              {candidate.hotelName}
+                            </span>
+                            <span className="block truncate text-xs text-ink-3">
+                              {candidate.zone}
+                            </span>
+                          </span>
+                          <StatusLightSoftBadge
+                            token={ONBOARDING_STATUS_TOKEN[candidate.prospectStatus]}
+                            label={ONBOARDING_STATUS_LABEL[candidate.prospectStatus]}
+                          />
+                        </div>
+                        <p className="mt-2 text-xs text-ink-3">
+                          <Trans>
+                            v{candidate.latestVersion} ·{' '}
+                            {candidate.latestSentAt
+                              ? t`Enviada ${formatDate(candidate.latestSentAt)}`
+                              : t`Borrador sin enviar`}
+                          </Trans>
+                        </p>
+                      </button>
+                    </MagicCard>
+                  </li>
+                )
+              })}
+            </ul>
+
+            {selected && (
+              /* Detalle fijo mientras la lista baja (lista-detalle, como el Pool y la Cartera). */
+              <div className="lg:sticky lg:top-6 lg:max-h-[calc(100vh-var(--hd)-3rem)] lg:overflow-y-auto">
+                <ProposalEditorPage prospectId={selected.prospectId} embedded />
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   )

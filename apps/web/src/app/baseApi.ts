@@ -80,6 +80,7 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
               id: session.user.id,
               name: session.user.fullName,
               shortName: session.user.fullName,
+              email: session.user.email,
               roleId: session.user.roleCode,
               photoUrl: null,
               roleCode: role.short,

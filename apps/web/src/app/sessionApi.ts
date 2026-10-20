@@ -19,6 +19,7 @@ function adaptSessionUser(session: SessionApi): SessionUser {
     id: session.user.id,
     name: session.user.fullName,
     shortName: toShortName(session.user.fullName),
+    email: session.user.email,
     roleId: session.user.roleCode,
     /** El canje de sesión no trae foto: llega con el `GET /me` que sigue. */
     photoUrl: null,
@@ -161,6 +162,7 @@ export const sessionApi = baseApi.injectEndpoints({
         id: raw.data.id,
         name: raw.data.fullName,
         shortName: toShortName(raw.data.fullName),
+        email: raw.data.email,
         roleId: raw.data.role.code,
         photoUrl: raw.data.photoUrl,
         roleCode: roleLabelOf(raw.data.role.code).short,

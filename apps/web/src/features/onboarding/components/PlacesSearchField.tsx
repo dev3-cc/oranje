@@ -10,7 +10,6 @@ import type { GeoPoint } from '@/shared/types/geo.types'
 export interface PlaceAutofill {
   name: string
   address: string
-  phone: string
   location: GeoPoint
   /**
    * Foto del lugar servida por Google. SOLO sirve de preview en la sesión:
@@ -46,7 +45,6 @@ interface PlacesLibrary {
     getPlace: () => {
       name?: string
       formatted_address?: string
-      formatted_phone_number?: string
       place_id?: string
       geometry?: { location?: { lat: () => number; lng: () => number } }
       photos?: Array<{ getUrl: (opts?: { maxWidth?: number; maxHeight?: number }) => string }>
@@ -81,14 +79,7 @@ function PlacesAutocompleteInput({
 
     const autocomplete = new places.Autocomplete(input, {
       /** `geometry` a secas: `geometry.location` no es un campo válido aquí. */
-      fields: [
-        'name',
-        'formatted_address',
-        'formatted_phone_number',
-        'place_id',
-        'geometry',
-        'photos',
-      ],
+      fields: ['name', 'formatted_address', 'place_id', 'geometry', 'photos'],
       /** Los hoteles cliente operan en EE. UU. y el arranque fue en México. */
       componentRestrictions: { country: ['us', 'mx'] },
     })
@@ -101,7 +92,6 @@ function PlacesAutocompleteInput({
       onPickRef.current({
         name: place.name ?? '',
         address: place.formatted_address ?? '',
-        phone: place.formatted_phone_number ?? '',
         location: { lat: location.lat(), lng: location.lng() },
         photoUrl: place.photos?.[0]?.getUrl({ maxWidth: 640 }) ?? null,
         placeId: place.place_id ?? null,

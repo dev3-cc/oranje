@@ -24,6 +24,7 @@ import type { CreateCatalogItemDto, UpdateCatalogItemDto } from './dto/manage-ca
  */
 export const MANAGED_CATALOGS = [
   'hotel-departments',
+  'industries',
   'positions',
   'hiring-modalities',
   'english-levels',
@@ -81,6 +82,8 @@ export class ManageCatalogsService {
     switch (catalog) {
       case 'hotel-departments':
         return this.prisma.hotelDepartment as unknown as CatalogDelegate
+      case 'industries':
+        return this.prisma.industry as unknown as CatalogDelegate
       case 'positions':
         return this.prisma.catalogPosition as unknown as CatalogDelegate
       case 'hiring-modalities':
@@ -119,13 +122,17 @@ export class ManageCatalogsService {
     }
 
     if (catalog === 'positions') {
-      if (!dto.hotelDepartmentId) {
+      if (!dto.industryId) {
         throw new UnprocessableEntityException({
-          code: 'DEPARTMENT_REQUIRED',
-          message: 'Una posición pertenece a un departamento: elige a cuál',
+          code: 'INDUSTRY_REQUIRED',
+          message: 'Una posición pertenece a una industria: elige a cuál',
         })
       }
-      data['hotelDepartmentId'] = dto.hotelDepartmentId
+      data['industryId'] = dto.industryId
+      /* El departamento de hotel es opcional desde el 2026-10-17: solo tiene
+         sentido dentro de Hospitality. `null` explícito también se guarda
+         (sin departamento es una respuesta válida, no "no se tocó"). */
+      if (dto.hotelDepartmentId !== undefined) data['hotelDepartmentId'] = dto.hotelDepartmentId
     }
 
     if (catalog === 'reasons') {
@@ -164,6 +171,9 @@ export class ManageCatalogsService {
       data['name'] = dto.name
       /* El código sigue al nombre: es un identificador derivado, no historia. */
       data['code'] = codeFromName(dto.name)
+    }
+    if (catalog === 'positions' && dto.industryId !== undefined) {
+      data['industryId'] = dto.industryId
     }
     if (catalog === 'positions' && dto.hotelDepartmentId !== undefined) {
       data['hotelDepartmentId'] = dto.hotelDepartmentId
@@ -249,13 +259,15 @@ export class ManageCatalogsService {
           message:
             catalog === 'hotel-departments'
               ? 'El departamento tiene posiciones u operación colgando de él: no se puede eliminar'
-              : catalog === 'zones'
-                ? 'Un hotel, un colaborador o una asignación de territorio usa esta zona: no se puede eliminar'
-                : catalog === 'reasons'
-                  ? 'Ese motivo ya quedó registrado en un cambio de estado: no se puede eliminar'
-                  : catalog === 'pay-concepts'
-                    ? 'Este concepto ya quedó registrado en un gasto o una tarifa: no se puede eliminar'
-                    : 'Hay requisiciones o colaboradores usando esta fila: no se puede eliminar',
+              : catalog === 'industries'
+                ? 'La industria tiene posiciones colgando de ella: no se puede eliminar'
+                : catalog === 'zones'
+                  ? 'Un hotel, un colaborador o una asignación de territorio usa esta zona: no se puede eliminar'
+                  : catalog === 'reasons'
+                    ? 'Ese motivo ya quedó registrado en un cambio de estado: no se puede eliminar'
+                    : catalog === 'pay-concepts'
+                      ? 'Este concepto ya quedó registrado en un gasto o una tarifa: no se puede eliminar'
+                      : 'Hay requisiciones o colaboradores usando esta fila: no se puede eliminar',
         })
       }
     }

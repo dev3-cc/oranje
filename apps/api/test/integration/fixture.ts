@@ -30,3 +30,38 @@ export async function actor(): Promise<{ id: string }> {
     select: { id: true },
   })
 }
+
+/**
+ * Un contrato ACTIVO con tarifas, para que una requisición de prueba tenga
+ * qué pedir (2026-10-17): `RequisitionsService.create` ya no acepta una
+ * posición que el hotel no contrató, así que todo fixture que vaya a crear
+ * una requisición necesita esto primero. Quien llama es responsable de
+ * borrar `contractRate`/`contract` del hotel en su `afterAll` ANTES de
+ * borrar el hotel — las dos FK son `onDelete: Restrict`.
+ */
+export async function contratoActivo(
+  hotelId: string,
+  catalogPositionIds: string[],
+): Promise<string> {
+  const contractId = uuidv7()
+
+  await db.contract.create({
+    data: {
+      id: contractId,
+      hotelId,
+      number: `CT-PRUEBA-${contractId.slice(-12)}`,
+      status: 'ACTIVE',
+      validFrom: new Date('2026-01-01'),
+      weekStartDay: 1,
+      weekEndDay: 0,
+    },
+  })
+
+  for (const catalogPositionId of catalogPositionIds) {
+    await db.contractRate.create({
+      data: { id: uuidv7(), contractId, catalogPositionId, payRate: '15.00', billRate: '20.00' },
+    })
+  }
+
+  return contractId
+}

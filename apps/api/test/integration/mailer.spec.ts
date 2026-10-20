@@ -194,6 +194,65 @@ describe('el mailer manda el correo y deja rastro', () => {
     expect(fila?.sentAt).toBeNull()
   })
 
+  it('un adjunto aparte (el PDF de una propuesta) viaja junto con el logo, y el Reply-To es de quien manda', async () => {
+    const { fake } = firebaseFalso()
+    const mailer = new MailerService(
+      configCon(SMTP_COMPLETO),
+      db as unknown as PrismaService,
+      fake,
+      ajustes(),
+    )
+
+    const visto: { attachments?: unknown; replyTo?: unknown } = {}
+    Object.assign(mailer as unknown as Record<string, unknown>, {
+      transporter: {
+        sendMail: (args: { attachments?: unknown; replyTo?: unknown }) => {
+          visto.attachments = args.attachments
+          visto.replyTo = args.replyTo
+          return Promise.resolve({ messageId: '<prop@oranjepeople.com>' })
+        },
+      },
+    })
+
+    const pdf = Buffer.from('%PDF-1.4 contenido de mentira')
+
+    const resultado = await mailer.send({
+      template: 'proposal-sent',
+      to: DESTINO,
+      replyTo: 'bd@oranjepeople.com',
+      data: { hotelName: 'Hotel Mirador', senderName: 'Ana', note: null },
+      attachments: [{ filename: 'Propuesta.pdf', content: pdf, contentType: 'application/pdf' }],
+    })
+
+    expect(resultado).toMatchObject({ transport: 'SMTP', status: 'SENT' })
+    expect(visto.replyTo).toBe('bd@oranjepeople.com')
+    expect(visto.attachments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ filename: 'Propuesta.pdf', content: pdf }),
+      ]),
+    )
+
+    const fila = await ultimoEnvio(DESTINO)
+    expect(fila).toMatchObject({ template: 'proposal-sent', status: 'SENT' })
+  })
+
+  it('sin Reply-To explícito, cae al de la plantilla; "proposal-sent" no tiene respaldo de Firebase', async () => {
+    const { fake } = firebaseFalso()
+    const mailer = new MailerService(configCon({}), db as unknown as PrismaService, fake, ajustes())
+
+    const resultado = await mailer.send({
+      template: 'proposal-sent',
+      to: DESTINO,
+      data: { hotelName: 'Hotel Mirador', senderName: 'Ana', note: 'Aquí va lo que platicamos' },
+    })
+
+    // Sin SMTP configurado y sin respaldo de Firebase posible: se registra como fallido.
+    expect(resultado.status).toBe('FAILED')
+
+    const fila = await ultimoEnvio(DESTINO)
+    expect(fila).toMatchObject({ template: 'proposal-sent', status: 'FAILED' })
+  })
+
   it('un envío fallido no puede traer hora de envío: lo impide la base', async () => {
     /* `ck_email_delivery_sent_at` no está en el datamodel de Prisma, así que
        lo que lo protege es esta prueba (el mismo criterio que los índices

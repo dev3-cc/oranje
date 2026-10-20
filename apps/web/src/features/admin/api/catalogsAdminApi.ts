@@ -21,6 +21,9 @@ registerRequisitionsMocks()
     igual que Departamentos y Posiciones. */
 export const MANAGED_CATALOGS = [
   'hotel-departments',
+  // La industria que cotiza el puesto (Hospitality, Warehouse & Logistics…):
+  // Oranje deja de ser solo hoteles (Hugo, 2026-10-17).
+  'industries',
   'positions',
   'hiring-modalities',
   'english-levels',
@@ -40,8 +43,11 @@ export interface AdminCatalogItem {
   id: string
   code: string
   name: string
-  /** Solo posiciones: cada puesto pertenece a UN departamento. */
+  /** Solo posiciones, y solo dentro de Hospitality: el resto de las
+      industrias no tiene departamento de hotel (2026-10-17). */
   hotelDepartmentId?: string
+  /** Solo posiciones: cada puesto pertenece a UNA industria. */
+  industryId?: string
   /** Solo motivos: cada uno pertenece a UN semáforo. */
   statusLightCode?: string
 }
@@ -53,6 +59,7 @@ export interface AdminStatusLight {
 
 export interface AdminCatalogs {
   departments: AdminCatalogItem[]
+  industries: AdminCatalogItem[]
   positions: AdminCatalogItem[]
   modalities: AdminCatalogItem[]
   englishLevels: AdminCatalogItem[]
@@ -76,6 +83,7 @@ export const catalogsAdminApi = baseApi.injectEndpoints({
         const fetchWithBQ = rawBaseQuery as FetchWithBQ
         const [
           departments,
+          industries,
           positions,
           modalities,
           english,
@@ -86,6 +94,7 @@ export const catalogsAdminApi = baseApi.injectEndpoints({
           statusLights,
         ] = await Promise.all([
           fetchWithBQ('/catalogs/hotel-departments'),
+          fetchWithBQ('/catalogs/industries'),
           fetchWithBQ('/catalogs/positions'),
           fetchWithBQ('/catalogs/hiring-modalities'),
           fetchWithBQ('/catalogs/english-levels'),
@@ -97,6 +106,7 @@ export const catalogsAdminApi = baseApi.injectEndpoints({
         ])
         for (const res of [
           departments,
+          industries,
           positions,
           modalities,
           english,
@@ -121,6 +131,7 @@ export const catalogsAdminApi = baseApi.injectEndpoints({
         return {
           data: {
             departments: items(departments),
+            industries: items(industries),
             positions: items(positions),
             modalities: items(modalities),
             englishLevels: items(english),
@@ -140,7 +151,8 @@ export const catalogsAdminApi = baseApi.injectEndpoints({
       {
         catalog: ManagedCatalog
         name: string
-        hotelDepartmentId?: string
+        industryId?: string
+        hotelDepartmentId?: string | null
         statusLightCode?: string
       }
     >({
@@ -156,7 +168,8 @@ export const catalogsAdminApi = baseApi.injectEndpoints({
         catalog: ManagedCatalog
         id: string
         name?: string
-        hotelDepartmentId?: string
+        industryId?: string
+        hotelDepartmentId?: string | null
         statusLightCode?: string
       }
     >({

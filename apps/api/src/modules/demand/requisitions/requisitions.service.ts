@@ -10,6 +10,7 @@ import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { requisitionStateLabel } from '../../../common/utils/status-labels.js'
 import { PlacesService } from '../../../infra/places/index.js'
 import { StorageService } from '../../../infra/storage/index.js'
+import { ContractsService } from '../../commercial/contracts/contracts.service.js'
 import { PermissionsService } from '../../identity/index.js'
 import { NotificationPublisherService } from '../../notifications/index.js'
 
@@ -52,7 +53,19 @@ export class RequisitionsService {
     private readonly places: PlacesService,
     private readonly storage: StorageService,
     private readonly notifications: NotificationPublisherService,
+    private readonly contracts: ContractsService,
   ) {}
+
+  /**
+   * Lo que este hotel puede pedir hoy: solo las posiciones del contrato
+   * VIGENTE (2026-10-17) — antes era el catálogo entero, y un hotel podía
+   * requisitar una posición que nunca contrató, sin tarifa que pagarle.
+   */
+  async positionsForHotel(
+    hotelId: string,
+  ): Promise<Array<{ id: string; name: string; hotelDepartmentId: string | null }>> {
+    return this.contracts.contractedPositions(hotelId)
+  }
 
   async create(dto: CreateRequisitionDto, user: AuthenticatedUser): Promise<RequisitionEntity> {
     if (user.hotelId && user.hotelId !== dto.hotelId) {
@@ -78,6 +91,7 @@ export class RequisitionsService {
 
     await this.assertCatalogs(dto)
     this.assertDepartmentScope(dto, user)
+    await this.assertContracted(dto)
 
     const [draft, coverage] = await Promise.all([
       this.stateOf(REQUISITION_LIGHT, DRAFT),
@@ -592,6 +606,34 @@ export class RequisitionsService {
         code: 'DEPARTMENT_OUT_OF_SCOPE',
         message: 'Solo puedes pedir posiciones de tu departamento',
       })
+    }
+  }
+
+  /**
+   * Solo se pide lo que el hotel ya contrató (2026-10-17): sin esto, una
+   * requisición podía pedir una posición sin tarifa, y Nómina/Factura no
+   * tendrían de dónde sacar el pago.
+   */
+  private async assertContracted(dto: CreateRequisitionDto): Promise<void> {
+    const contracted = await this.contracts.contractedPositions(dto.hotelId)
+
+    if (contracted.length === 0) {
+      throw new UnprocessableEntityException({
+        code: 'HOTEL_WITHOUT_CONTRACT',
+        message: 'Este hotel no tiene un contrato vigente con tarifas: no se puede pedir personal',
+      })
+    }
+
+    const ids = new Set(contracted.map((p) => p.id))
+
+    for (const [index, p] of dto.positions.entries()) {
+      if (!ids.has(p.catalogPositionId)) {
+        throw new UnprocessableEntityException({
+          code: 'POSITION_NOT_CONTRACTED',
+          message: `La posición de la línea ${String(index + 1)} no está en el contrato vigente del hotel`,
+          details: [{ field: 'catalogPositionId', value: p.catalogPositionId }],
+        })
+      }
     }
   }
 

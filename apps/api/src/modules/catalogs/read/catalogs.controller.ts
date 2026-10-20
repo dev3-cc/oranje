@@ -22,9 +22,17 @@ export class CatalogsController {
     return { data: await this.catalogs.hotelDepartments() }
   }
 
+  @Get('industries')
+  async industries(): Promise<{ data: CatalogItem[] }> {
+    return { data: await this.catalogs.industries() }
+  }
+
   @Get('positions')
-  async positions(@Query('departmentId') departmentId?: string): Promise<{ data: CatalogItem[] }> {
-    return { data: await this.catalogs.positions(departmentId) }
+  async positions(
+    @Query('departmentId') departmentId?: string,
+    @Query('industryId') industryId?: string,
+  ): Promise<{ data: CatalogItem[] }> {
+    return { data: await this.catalogs.positions(departmentId, industryId) }
   }
 
   @Get('hiring-modalities')

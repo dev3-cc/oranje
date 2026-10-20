@@ -37,14 +37,33 @@ const POSITIONS: CatalogItemApi[] = [
   { id: 'pos-hm', code: 'HOUSEMAN', name: 'Houseman' },
   { id: 'pos-ln', code: 'LAUNDRY', name: 'Laundry' },
   { id: 'pos-ck', code: 'COOK', name: 'Cocinero' },
+  { id: 'pos-fk', code: 'WH_FORKLIFT_OPERATOR', name: 'Forklift Operator' },
+  { id: 'pos-cashier', code: 'RETAIL_CASHIER', name: 'Cashier' },
 ]
 
-/** Igual que `catalogs.position.hotel_department_id`: cada puesto es de UN depto. */
+/** Igual que `catalogs.position.hotel_department_id`: cada puesto es de UN depto,
+    y desde el 2026-10-17 puede no tener ninguno (industrias fuera de Hospitality). */
 const POSITION_DEPARTMENT: Record<string, string> = {
   'pos-hk': 'dep-hk',
   'pos-hm': 'dep-hk',
   'pos-ln': 'dep-hk',
   'pos-ck': 'dep-fb',
+}
+
+/** La industria que cotiza el puesto (2026-10-17): Oranje deja de ser solo hoteles. */
+const INDUSTRIES: CatalogItemApi[] = [
+  { id: 'ind-hosp', code: 'HOSPITALITY', name: 'Hospitality' },
+  { id: 'ind-wh', code: 'WAREHOUSE_LOGISTICS', name: 'Warehouse & Logistics' },
+  { id: 'ind-retail', code: 'RETAIL', name: 'Retail' },
+]
+
+const POSITION_INDUSTRY: Record<string, string> = {
+  'pos-hk': 'ind-hosp',
+  'pos-hm': 'ind-hosp',
+  'pos-ln': 'ind-hosp',
+  'pos-ck': 'ind-hosp',
+  'pos-fk': 'ind-wh',
+  'pos-cashier': 'ind-retail',
 }
 
 const MODALITIES: CatalogItemApi[] = [
@@ -425,6 +444,7 @@ function mockWorkerNameById(workerId: string): string {
 /** Qué lista muta cada `:kind` de la escritura de catálogos del Administrador. */
 const CATALOG_FIXTURES: Record<string, CatalogItemApi[] | undefined> = {
   'hotel-departments': DEPARTMENTS,
+  industries: INDUSTRIES,
   positions: POSITIONS,
   'hiring-modalities': MODALITIES,
   'english-levels': ENGLISH,
@@ -442,26 +462,50 @@ const catalogRoute = (path: string, items: CatalogItemApi[]): MockRoute => ({
 
 const routes: readonly MockRoute[] = [
   catalogRoute('/catalogs/hotel-departments', DEPARTMENTS),
+  catalogRoute('/catalogs/industries', INDUSTRIES),
   {
     method: 'GET',
     path: '/catalogs/positions',
-    /* Como el back real: `?departmentId` acota, y cada puesto dice su
-       departamento (lo pinta la pantalla de catálogos del Administrador). */
-    resolve: ({ search }): ApiEnvelope<Array<CatalogItemApi & { hotelDepartmentId?: string }>> => {
+    /* Como el back real: `?departmentId`/`?industryId` acotan (con AND si
+       llegan juntos), y cada puesto dice a cuáles pertenece. */
+    resolve: ({
+      search,
+    }): ApiEnvelope<
+      Array<CatalogItemApi & { hotelDepartmentId?: string; industryId?: string }>
+    > => {
       const departmentId = search.get('departmentId')
-      const rows =
-        departmentId === null
-          ? POSITIONS
-          : POSITIONS.filter((item) => POSITION_DEPARTMENT[item.id] === departmentId)
+      const industryId = search.get('industryId')
+      const rows = POSITIONS.filter(
+        (item) =>
+          (departmentId === null || POSITION_DEPARTMENT[item.id] === departmentId) &&
+          (industryId === null || POSITION_INDUSTRY[item.id] === industryId),
+      )
       return {
         data: rows.map((item) => ({
           ...item,
           ...(POSITION_DEPARTMENT[item.id]
             ? { hotelDepartmentId: POSITION_DEPARTMENT[item.id] }
             : {}),
+          ...(POSITION_INDUSTRY[item.id] ? { industryId: POSITION_INDUSTRY[item.id] } : {}),
         })),
       }
     },
+  },
+  {
+    method: 'GET',
+    path: '/requisitions/positions',
+    /* Mock: todos los hoteles de prueba "contratan" el mismo catálogo
+       completo — el back real sí lo acota al contrato vigente de `hotelId`
+       (2026-10-17), pero replicar un contrato por hotel de fixture no suma
+       nada a lo que estas pruebas verifican. */
+    resolve: (): ApiEnvelope<
+      Array<Omit<CatalogItemApi, 'hotelDepartmentId'> & { hotelDepartmentId: string | null }>
+    > => ({
+      data: POSITIONS.map((item) => ({
+        ...item,
+        hotelDepartmentId: POSITION_DEPARTMENT[item.id] ?? null,
+      })),
+    }),
   },
   /* ——— Escritura de catálogos (pantalla del Administrador). Los fixtures
      viven en este archivo, así que sus writes también. ——— */
@@ -469,18 +513,25 @@ const routes: readonly MockRoute[] = [
     method: 'POST',
     path: '/catalogs/:kind',
     resolve: ({ params, body }): ApiEnvelope<CatalogItemApi> => {
-      const { name, hotelDepartmentId } = body as { name: string; hotelDepartmentId?: string }
+      const { name, industryId, hotelDepartmentId } = body as {
+        name: string
+        industryId?: string
+        hotelDepartmentId?: string
+      }
       const list = CATALOG_FIXTURES[params['kind'] ?? '']
       if (!list) throw new Error('Ese catálogo no se administra desde aquí')
       const code = name.toUpperCase().replace(/[^A-Z0-9]+/g, '_')
       if (list.some((item) => item.code === code)) {
         throw new Error('Ya existe una fila con ese nombre en el catálogo')
       }
-      if (params['kind'] === 'positions' && !hotelDepartmentId) {
-        throw new Error('Una posición pertenece a un departamento: elige a cuál')
+      if (params['kind'] === 'positions' && !industryId) {
+        throw new Error('Una posición pertenece a una industria: elige a cuál')
       }
       const row = { id: `mock-cat-${String(Date.now())}`, code, name }
       list.push(row)
+      if (params['kind'] === 'positions' && industryId) {
+        POSITION_INDUSTRY[row.id] = industryId
+      }
       if (params['kind'] === 'positions' && hotelDepartmentId) {
         POSITION_DEPARTMENT[row.id] = hotelDepartmentId
       }
@@ -495,10 +546,17 @@ const routes: readonly MockRoute[] = [
       const list = CATALOG_FIXTURES[params['kind'] ?? '']
       const row = list?.find((item) => item.id === params['id'])
       if (!row) throw new Error('Esa fila del catálogo no existe')
-      const { name, hotelDepartmentId } = body as { name?: string; hotelDepartmentId?: string }
+      const { name, industryId, hotelDepartmentId } = body as {
+        name?: string
+        industryId?: string
+        hotelDepartmentId?: string
+      }
       if (name !== undefined) {
         row.name = name
         row.code = name.toUpperCase().replace(/[^A-Z0-9]+/g, '_')
+      }
+      if (params['kind'] === 'positions' && industryId) {
+        POSITION_INDUSTRY[row.id] = industryId
       }
       if (params['kind'] === 'positions' && hotelDepartmentId) {
         POSITION_DEPARTMENT[row.id] = hotelDepartmentId

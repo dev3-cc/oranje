@@ -32,6 +32,12 @@ export interface SendMailInput<K extends TemplateName> {
   locale?: Locale | null
   /** Para poder mirar después «qué le hemos mandado a esta persona». */
   userId?: string | null
+  /** A quién le llegan las respuestas; sin él, `MAIL_REPLY_TO`. Para que un
+      correo de propuesta/contrato conteste a quien lo mandó, no al no-reply. */
+  replyTo?: string | null
+  /** Lo que no es una imagen de marca: el PDF del documento, por ejemplo. Nunca
+      viene de `MAIL_ASSETS` — eso es automático y por `cid`. */
+  attachments?: Array<{ filename: string; content: Buffer; contentType?: string }>
 }
 
 export interface SendMailResult {
@@ -136,22 +142,25 @@ export class MailerService {
         attempts += 1
 
         try {
+          const replyTo = input.replyTo ?? this.replyTo
           const info = await this.transport().sendMail({
             from: { name: this.fromName, address: this.fromEmail as string },
-            ...(this.replyTo !== undefined ? { replyTo: this.replyTo } : {}),
+            ...(replyTo !== undefined && replyTo !== null ? { replyTo } : {}),
             to: input.to,
             subject,
             text,
             html,
-            /* Solo lo que este correo pinta: el logo siempre, el personaje si
-               la plantilla lo trae. Adjuntar de más engorda el mensaje. */
-            attachments: MAIL_ASSETS.filter((asset) => html.includes(`cid:${asset.cid}`)).map(
-              (asset) => ({
+            /* Lo que este correo pinta (el logo, el personaje si la plantilla
+               lo trae) MÁS lo que el llamador adjunte aparte (un PDF, nunca
+               por `cid`: no pinta en el cuerpo, va de adjunto real). */
+            attachments: [
+              ...MAIL_ASSETS.filter((asset) => html.includes(`cid:${asset.cid}`)).map((asset) => ({
                 filename: asset.filename,
                 content: Buffer.from(asset.base64, 'base64'),
                 cid: asset.cid,
-              }),
-            ),
+              })),
+              ...(input.attachments ?? []),
+            ],
           })
 
           await this.record(input, locale, subject, {

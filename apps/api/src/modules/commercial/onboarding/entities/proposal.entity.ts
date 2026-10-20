@@ -9,7 +9,16 @@ export interface ProposalRateEntity {
 export interface ProposalEntity {
   id: string
   version: number
+  title: string | null
   servicesNote: string | null
+  /** Campos del machote aprobado de la propuesta (2026-10-19): todos opcionales. */
+  propertyName: string | null
+  preparedDate: string | null
+  brandManagementCompany: string | null
+  cityState: string | null
+  contactName: string | null
+  senderPhone: string | null
+  senderEmail: string | null
   /** El cuadro de tarifas por puesto; vacío mientras el borrador no lo tenga. */
   rates: ProposalRateEntity[]
   /** @deprecated Tarifa global de las versiones anteriores al cuadro por puesto. */

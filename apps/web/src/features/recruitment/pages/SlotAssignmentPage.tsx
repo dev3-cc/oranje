@@ -19,7 +19,7 @@ import { Link, useParams } from 'react-router'
 import { useCreatePayAdjustmentMutation, useGetPayConceptsQuery } from '../api/payAdjustmentsApi'
 import {
   useCreateAssignmentMutation,
-  AL_ATERRIZAR,
+  TABLERO_VIVO,
   useGetAssignableWorkersQuery,
   useGetSlotBoardQuery,
   useReleaseAssignmentMutation,
@@ -149,9 +149,9 @@ export function SlotAssignmentPage(): ReactNode {
     isError,
   } = useGetSlotBoardQuery(
     { requisitionId, positionId },
-    { skip: requisitionId === '' || positionId === '', ...AL_ATERRIZAR },
+    { skip: requisitionId === '' || positionId === '', ...TABLERO_VIVO },
   )
-  const { data: workers = [] } = useGetAssignableWorkersQuery(undefined, AL_ATERRIZAR)
+  const { data: workers = [] } = useGetAssignableWorkersQuery(undefined, TABLERO_VIVO)
   /**
    * El lugar elegido (Hugo, 2026-10-09). `null` = «el que siga», que es el
    * comportamiento de siempre y el que usa el Self-Pick. Se guarda el ordinal
@@ -172,6 +172,9 @@ export function SlotAssignmentPage(): ReactNode {
   const [join, { isLoading: isJoining }] = useJoinRequisitionMutation()
 
   const [workerId, setWorkerId] = useState('')
+  /* El nombre del elegido se guarda aparte: si otra Reclutadora se lo lleva,
+     desaparece de `workers` y sin esto el aviso no podría decir de quién habla. */
+  const [nombreElegido, setNombreElegido] = useState('')
   const [type, setType] = useState<'FIXED' | 'TEMPORARY'>('FIXED')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
@@ -278,9 +281,21 @@ export function SlotAssignmentPage(): ReactNode {
   const objetivo =
     slotElegido !== null && libres.includes(slotElegido) ? slotElegido : board.nextFreeOrdinal
 
+  /* AVISAR, NO SOLO CORREGIR. El respaldo de arriba ya existía pero en
+     silencio: el lugar cambiaba bajo los pies de quien llenaba el formulario.
+     Con el tablero vivo (TABLERO_VIVO) esto pasa de verdad mientras se mira,
+     así que hay que decirlo. */
+  const lugarTomado = slotElegido !== null && !libres.includes(slotElegido)
+
+  /* Y el colaborador: si otra Reclutadora lo asignó, sale de la lista de
+     Disponibles. Aquí NO hay respaldo posible —no se puede asignar a alguien
+     más por su cuenta— así que se bloquea el guardado. */
+  const colaboradorTomado = workerId !== '' && !workers.some((w) => w.id === workerId)
+
   const canSubmit =
     objetivo !== null &&
     workerId !== '' &&
+    !colaboradorTomado &&
     (type !== 'TEMPORARY' || endDate !== '') &&
     isRateFilled &&
     isExpenseFilled &&
@@ -629,7 +644,13 @@ export function SlotAssignmentPage(): ReactNode {
                     <code className="text-xs text-ink-4"> · worker_id → personal.worker</code>
                   )}
                 </label>
-                <Select {...(workerId ? { value: workerId } : {})} onValueChange={setWorkerId}>
+                <Select
+                  {...(workerId ? { value: workerId } : {})}
+                  onValueChange={(id) => {
+                    setWorkerId(id)
+                    setNombreElegido(workers.find((w) => w.id === id)?.fullName ?? '')
+                  }}
+                >
                   <SelectTrigger
                     id="assignment-worker"
                     aria-label={t`Colaborador`}
@@ -645,6 +666,29 @@ export function SlotAssignmentPage(): ReactNode {
                     ))}
                   </SelectContent>
                 </Select>
+                {lugarTomado && (
+                  <p className="flex items-start gap-2 rounded-md bg-yellow/15 px-3 py-2 text-sm text-ink-2">
+                    <MaterialIcon name="info" className="mt-0.5 size-4 shrink-0" />
+                    <span>
+                      <Trans>
+                        Alguien tomó el lugar {String(slotElegido)} mientras llenabas esto. Se
+                        asignará el siguiente libre.
+                      </Trans>
+                    </span>
+                  </p>
+                )}
+
+                {colaboradorTomado && (
+                  <p className="flex items-start gap-2 rounded-md bg-red/10 px-3 py-2 text-sm text-red">
+                    <MaterialIcon name="person_off" className="mt-0.5 size-4 shrink-0" />
+                    <span>
+                      <Trans>
+                        Otra persona acaba de asignar a {nombreElegido}. Elige a alguien más.
+                      </Trans>
+                    </span>
+                  </p>
+                )}
+
                 {/* Sin esto, una lista corta se lee como que el Pool está vacío
                     o el sistema está roto — y casi siempre es que a alguien le
                     falta su expediente o ya está en otra asignación. */}
