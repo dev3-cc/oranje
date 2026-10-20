@@ -89,7 +89,7 @@ export function Phase3Page(): ReactNode {
     draft.emergencyContactName.trim() === ''
       ? t`Falta el nombre del contacto de emergencia`
       : !isCompletePhone(draft.emergencyContactPhone)
-        ? t`Al teléfono de emergencia le faltan dígitos para el país elegido`
+        ? t`Ese número de emergencia no es válido para el país elegido. Revisa los dígitos o cambia el país.`
         : draft.emergencyContactRelationship === ''
           ? t`Elige el parentesco`
           : draft.bloodType === ''

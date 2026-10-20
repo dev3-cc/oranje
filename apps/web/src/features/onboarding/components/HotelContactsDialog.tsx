@@ -466,7 +466,21 @@ export function HotelContactsDialog({
                 {/* El teléfono ocupa el renglón entero: con el selector de país
                     al lado, media columna dejaba el número en un hueco de tres
                     dígitos (Hugo, 2026-10-19). */}
-                <Field label={t`Teléfono`} column="phone" span>
+                <Field
+                  label={t`Teléfono`}
+                  column="phone"
+                  span
+                  /* El panel de edición no pasa por Zod: lleva su propio
+                     estado. Sin este aviso, «Guardar» se quedaba apagado sin
+                     decir por qué — que es justo lo que Hugo encontró al
+                     escribir un número mexicano con la bandera de Estados
+                     Unidos (2026-10-19). */
+                  {...(telefonoEditableOk
+                    ? {}
+                    : {
+                        error: t`Ese número no es válido para el país elegido. Revisa los dígitos o cambia el país.`,
+                      })}
+                >
                   <PhoneInput
                     value={editDraft.phone}
                     onChange={(phone) => {
@@ -560,7 +574,7 @@ export function HotelContactsDialog({
                   />
                 </Field>
 
-                <Field label={t`Teléfono`} column="phone" span>
+                <Field label={t`Teléfono`} column="phone" span error={draftError?.phone?.message}>
                   {/* Controller y no `register`: el teléfono ya no es texto
                       suelto — el campo guarda E.164 y la lada la pone su
                       selector, así que el valor lo maneja el componente. */}

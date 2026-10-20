@@ -915,7 +915,18 @@ export function ProspectFormDialog({
                             />
                           </Field>
 
-                          <Field label={t`Teléfono`} column="phone" span>
+                          <Field
+                            label={t`Teléfono`}
+                            column="phone"
+                            span
+                            /* Sin esto el formulario bloqueaba «Continuar» SIN
+                               DECIR POR QUÉ: el error existía en el esquema y
+                               el campo no lo pintaba. Hugo se topó con un
+                               número mexicano escrito con la bandera de
+                               Estados Unidos y la pantalla no decía nada
+                               (2026-10-19). */
+                            error={formState.errors.contactPhone?.message}
+                          >
                             {/* El teléfono dejó de ser texto suelto: la lada
                                 la pone el selector y se guarda en E.164, así
                                 que el valor lo maneja el componente y no

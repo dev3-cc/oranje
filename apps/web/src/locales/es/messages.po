@@ -1354,16 +1354,6 @@ msgstr "Al marcar a otro como principal, el anterior deja de serlo en el mismo g
 msgid "Al ponchar se abre la cámara"
 msgstr "Al ponchar se abre la cámara"
 
-#: src/features/worker/pages/Phase3Page.tsx
-msgid "Al teléfono de emergencia le faltan dígitos para el país elegido"
-msgstr "Al teléfono de emergencia le faltan dígitos para el país elegido"
-
-#: src/features/onboarding/types/hotelContactsForm.schema.ts
-#: src/features/onboarding/types/prospectForm.schema.ts
-#: src/features/recruitment/components/CreateWorkerDialog.tsx
-msgid "Al teléfono le faltan dígitos para el país elegido"
-msgstr "Al teléfono le faltan dígitos para el país elegido"
-
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Al tocar el botón se abre la cámara. La foto confirma que eres tú; no se comparte con el hotel."
 msgstr "Al tocar el botón se abre la cámara. La foto confirma que eres tú; no se comparte con el hotel."
@@ -5496,6 +5486,17 @@ msgstr "Ese hotel ya no existe. Recarga la página y vuelve a elegirlo."
 #: src/features/onboarding/components/ArchiveCycleDialog.tsx
 msgid "Ese motivo ya no está disponible: elige otro de la lista."
 msgstr "Ese motivo ya no está disponible: elige otro de la lista."
+
+#: src/features/worker/pages/Phase3Page.tsx
+msgid "Ese número de emergencia no es válido para el país elegido. Revisa los dígitos o cambia el país."
+msgstr "Ese número de emergencia no es válido para el país elegido. Revisa los dígitos o cambia el país."
+
+#: src/features/onboarding/components/HotelContactsDialog.tsx
+#: src/features/onboarding/types/hotelContactsForm.schema.ts
+#: src/features/onboarding/types/prospectForm.schema.ts
+#: src/features/recruitment/components/CreateWorkerDialog.tsx
+msgid "Ese número no es válido para el país elegido. Revisa los dígitos o cambia el país."
+msgstr "Ese número no es válido para el país elegido. Revisa los dígitos o cambia el país."
 
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 msgid "Ese paso existe, pero lo ejecuta {rolesLabel}: pídeselo — tu rol no lo tiene asignado."
