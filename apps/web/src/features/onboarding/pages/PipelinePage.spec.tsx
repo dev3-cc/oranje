@@ -46,7 +46,7 @@ describe('PipelinePage', () => {
 
     expect(await screen.findByText('Hotel identificado')).toBeInTheDocument()
     expect(screen.getByText('Contacto y datos')).toBeInTheDocument()
-    expect(screen.getByText('Propuesta enviada')).toBeInTheDocument()
+    expect(screen.getByText('Armar y enviar propuesta')).toBeInTheDocument()
     expect(screen.getByText('Seguimiento')).toBeInTheDocument()
   })
 

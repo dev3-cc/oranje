@@ -47,6 +47,24 @@ export interface TemplateData {
     /** Total con moneda, ya formateado, p. ej. «$1,400.00». */
     totalLabel: string
   }
+  /**
+   * La propuesta comercial, con el PDF adjunto fuera de esta plantilla
+   * (2026-10-17). Sale a nombre de Oranje y no de quien la manda — el `note`
+   * es lo único que esa persona escribió, y el `Reply-To` es su correo, no el
+   * no-reply, para que la respuesta del hotel le llegue a ella.
+   */
+  'proposal-sent': {
+    hotelName: string
+    senderName: string
+    /** Lo que la persona escribió en el modal; `null` si lo dejó vacío. */
+    note: string | null
+  }
+  /** El Documento de T&C firmado, mismo patrón que la propuesta. */
+  'contract-sent': {
+    hotelName: string
+    senderName: string
+    note: string | null
+  }
 }
 
 /**
@@ -332,6 +350,60 @@ const invoiceToHotel: Template<'invoice-to-hotel'> = {
         },
 }
 
+/**
+ * Propuesta y Contrato comparten el mismo cuerpo (solo cambia el sustantivo):
+ * el PDF va adjunto aparte, el `note` es lo único que escribió la persona, y
+ * sin él el correo no finge una línea personal que nadie puso.
+ */
+function sentDocumentEmail(
+  kind: 'proposal' | 'contract',
+  locale: Locale,
+  data: { hotelName: string; senderName: string; note: string | null },
+): { subject: string } & LayoutParts {
+  const noun = {
+    es: { proposal: 'propuesta', contract: 'contrato' },
+    en: { proposal: 'proposal', contract: 'agreement' },
+  }[locale][kind]
+
+  if (locale === 'en') {
+    return {
+      subject: `${kind === 'proposal' ? 'Proposal' : 'Agreement'} from Oranje — ${data.hotelName}`,
+      heading: `Your ${noun} is attached`,
+      preheader: `The ${noun} for ${data.hotelName} is attached as a PDF.`,
+      paragraphs: [
+        'Hello,',
+        ...(data.note ? [data.note] : []),
+        `Attached is the ${noun} Oranje is proposing for ${data.hotelName}.`,
+        'Reply to this email with any questions — it reaches the Oranje team directly.',
+      ],
+      footnote: `You are receiving this email because Oranje is proposing a staffing ${noun} for your hotel.`,
+    }
+  }
+
+  return {
+    subject: `${kind === 'proposal' ? 'Propuesta' : 'Contrato'} de Oranje — ${data.hotelName}`,
+    heading: `Tu ${noun} va adjunta`,
+    preheader: `La ${noun} de ${data.hotelName} va adjunta en PDF.`,
+    paragraphs: [
+      'Hola:',
+      ...(data.note ? [data.note] : []),
+      `Adjuntamos la ${noun} que Oranje propone para ${data.hotelName}.`,
+      'Responde a este correo con cualquier duda — le llega directo al equipo de Oranje.',
+    ],
+    footnote: `Recibes este correo porque Oranje propone un ${noun} de staffing para tu hotel.`,
+  }
+}
+
+const proposalSent: Template<'proposal-sent'> = {
+  firebaseFallback: null,
+  build: (locale, data) => sentDocumentEmail('proposal', locale, data),
+}
+
+const contractSent: Template<'contract-sent'> = {
+  firebaseFallback: null,
+  build: (locale, data) => sentDocumentEmail('contract', locale, data),
+}
+
 const TEMPLATES = {
   'account-invitation': accountInvitation,
   'password-reset': passwordReset,
@@ -339,6 +411,8 @@ const TEMPLATES = {
   'management-password-reset': managementPasswordReset,
   'invoice-to-hotel': invoiceToHotel,
   'hours-week-status': hoursWeekStatus,
+  'proposal-sent': proposalSent,
+  'contract-sent': contractSent,
 } satisfies { [K in TemplateName]: Template<K> }
 
 export const firebaseFallbackOf = (template: TemplateName): 'PASSWORD_RESET' | null =>

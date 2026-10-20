@@ -6,6 +6,8 @@ import type {
   ProposalVersionSummary,
   ProposalWorkspace,
   SaveProposalDraftRequest,
+  SendDocumentEmailResult,
+  SendProposalEmailRequest,
 } from '../types/proposal.types'
 
 import { registerProposalsMocks } from './proposalsMocks'
@@ -37,9 +39,17 @@ function adaptVersion(proposal: ProposalApi): ProposalVersionSummary {
     id: proposal.id,
     version: proposal.version,
     status: proposal.isDraft ? 'DRAFT' : 'SENT',
+    title: proposal.title ?? '',
     sentAt: proposal.sentAt,
     byName: proposal.sentBy?.fullName ?? '',
     servicesNote: proposal.servicesNote ?? '',
+    propertyName: proposal.propertyName ?? '',
+    preparedDate: proposal.preparedDate ?? '',
+    brandManagementCompany: proposal.brandManagementCompany ?? '',
+    cityState: proposal.cityState ?? '',
+    contactName: proposal.contactName ?? '',
+    senderPhone: proposal.senderPhone ?? '',
+    senderEmail: proposal.senderEmail ?? '',
     rates: adaptRates(proposal),
     payRate: toRate(proposal.payRate),
     billRate: toRate(proposal.billRate),
@@ -50,7 +60,15 @@ function adaptDraft(proposal: ProposalApi): ProposalDraft {
   return {
     id: proposal.id,
     version: proposal.version,
+    title: proposal.title ?? '',
     servicesNote: proposal.servicesNote ?? '',
+    propertyName: proposal.propertyName ?? '',
+    preparedDate: proposal.preparedDate ?? '',
+    brandManagementCompany: proposal.brandManagementCompany ?? '',
+    cityState: proposal.cityState ?? '',
+    contactName: proposal.contactName ?? '',
+    senderPhone: proposal.senderPhone ?? '',
+    senderEmail: proposal.senderEmail ?? '',
     rates: adaptRates(proposal),
     payRate: toRate(proposal.payRate),
     billRate: toRate(proposal.billRate),
@@ -65,9 +83,11 @@ async function fetchWorkspace(
   fetchWithBQ: FetchWithBQ,
   prospectId: string,
 ): Promise<{ data: ProposalWorkspace } | { error: unknown }> {
-  const [prospectRes, proposalsRes, positionsRes] = await Promise.all([
+  const [prospectRes, proposalsRes, industriesRes, positionsRes] = await Promise.all([
     fetchWithBQ(`/prospects/${prospectId}`),
     fetchWithBQ(`/prospects/${prospectId}/proposals`),
+    /* La industria que filtra el puesto (2026-10-17). */
+    fetchWithBQ('/catalogs/industries'),
     /* Los puestos que el cuadro puede cotizar. Los da de alta el Administrador
        en Catálogos; si la lista falla, el formulario lo dice y no inventa. */
     fetchWithBQ('/catalogs/positions'),
@@ -98,11 +118,18 @@ async function fetchWorkspace(
   const contactsRes = await fetchWithBQ(`/hotels/${prospect.hotel.id}/contacts`)
   const contacts = contactsRes.error
     ? []
-    : (contactsRes.data as ApiEnvelope<Array<{ email: string | null; isPrimary: boolean }>>).data
+    : (
+        contactsRes.data as ApiEnvelope<
+          Array<{ fullName: string; email: string | null; isPrimary: boolean }>
+        >
+      ).data
+  const primaryContact = contacts.find((contact) => contact.isPrimary) ?? contacts[0] ?? null
   const contactEmail =
     contacts.find((contact) => contact.isPrimary && contact.email)?.email ??
     contacts.find((contact) => contact.email)?.email ??
     null
+  /** Prellena el "Dear [CONTACT NAME]" del machote; editable por si no aplica. */
+  const contactName = primaryContact?.fullName ?? null
 
   return {
     data: {
@@ -111,14 +138,20 @@ async function fetchWorkspace(
       owner: { id: prospect.owner.id, name: prospect.owner.fullName, photoUrl: ownerPhotoUrl },
       hotelAddress,
       contactEmail,
+      contactName,
       prospectStatus: prospect.state.code as OnboardingStatus,
       draft: draft ? adaptDraft(draft) : null,
       versions: proposals.map(adaptVersion),
+      industries: industriesRes.error
+        ? []
+        : (industriesRes.data as ApiEnvelope<Array<{ id: string; name: string }>>).data,
       positions: positionsRes.error
         ? []
-        : (positionsRes.data as ApiEnvelope<Array<{ id: string; name: string }>>).data.map(
-            (item) => ({ id: item.id, name: item.name }),
-          ),
+        : (
+            positionsRes.data as ApiEnvelope<
+              Array<{ id: string; name: string; industryId: string | null }>
+            >
+          ).data.map((item) => ({ id: item.id, name: item.name, industryId: item.industryId })),
     },
   }
 }
@@ -213,7 +246,16 @@ export const proposalsApi = baseApi.injectEndpoints({
           method: 'POST',
           body: lastSent
             ? {
-                ...(lastSent.servicesNote ? { servicesNote: lastSent.servicesNote } : {}),
+                ...(lastSent.propertyName ? { propertyName: lastSent.propertyName } : {}),
+                /* `preparedDate` NO se hereda a propósito: una versión nueva
+                   se prepara HOY, no en la fecha de la que ya se envió. */
+                ...(lastSent.brandManagementCompany
+                  ? { brandManagementCompany: lastSent.brandManagementCompany }
+                  : {}),
+                ...(lastSent.cityState ? { cityState: lastSent.cityState } : {}),
+                ...(lastSent.contactName ? { contactName: lastSent.contactName } : {}),
+                ...(lastSent.senderPhone ? { senderPhone: lastSent.senderPhone } : {}),
+                ...(lastSent.senderEmail ? { senderEmail: lastSent.senderEmail } : {}),
                 rates: lastSent.rates.map((rate) => ({
                   catalogPositionId: rate.positionId,
                   payRate: rate.payRate.toFixed(2),
@@ -239,7 +281,13 @@ export const proposalsApi = baseApi.injectEndpoints({
           url: `/prospects/${request.prospectId}/proposals/${request.proposalId}`,
           method: 'PATCH',
           body: {
-            servicesNote: request.servicesNote,
+            propertyName: request.propertyName,
+            preparedDate: request.preparedDate,
+            brandManagementCompany: request.brandManagementCompany,
+            cityState: request.cityState,
+            contactName: request.contactName,
+            senderPhone: request.senderPhone,
+            senderEmail: request.senderEmail,
             /* Dos decimales, como el contrato: el cuadro se copia tal cual al firmar. */
             rates: request.rates.map((rate) => ({
               catalogPositionId: rate.positionId,
@@ -271,6 +319,41 @@ export const proposalsApi = baseApi.injectEndpoints({
         { type: 'Prospect', id: 'LIST' },
       ],
     }),
+
+    /**
+     * «Enviar por correo» de verdad (Hugo, 2026-10-17): congela la versión
+     * (como `sendProposal`) Y manda el correo real con el PDF — el que ya
+     * generó la pantalla a partir de lo que se ve en la vista previa.
+     */
+    sendProposalEmail: build.mutation<
+      { workspace: ProposalWorkspace; email: SendDocumentEmailResult },
+      SendProposalEmailRequest
+    >({
+      queryFn: async ({ proposalId, prospectId, to, note, pdf }, _api, _extra, fetchWithBQ) => {
+        const bq = fetchWithBQ as FetchWithBQ
+        const body = new FormData()
+        body.append('to', to)
+        if (note !== '') body.append('note', note)
+        body.append('file', pdf, 'propuesta.pdf')
+
+        const sendRes = await bq({
+          url: `/prospects/${prospectId}/proposals/${proposalId}/send-email`,
+          method: 'POST',
+          body,
+        })
+        if (sendRes.error) return { error: sendRes.error as never }
+
+        const email = (sendRes.data as { email: SendDocumentEmailResult }).email
+        const result = await fetchWorkspace(bq, prospectId)
+        return 'error' in result
+          ? { error: result.error as never }
+          : { data: { workspace: result.data, email } }
+      },
+      invalidatesTags: (_result, _error, { prospectId }) => [
+        { type: 'Prospect', id: prospectId },
+        { type: 'Prospect', id: 'LIST' },
+      ],
+    }),
   }),
 })
 
@@ -281,4 +364,5 @@ export const {
   useCreateProposalDraftMutation,
   useSaveProposalDraftMutation,
   useSendProposalMutation,
+  useSendProposalEmailMutation,
 } = proposalsApi

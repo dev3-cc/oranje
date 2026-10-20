@@ -9,6 +9,7 @@ import { ArchiveCycleDialog } from '../components/ArchiveCycleDialog'
 import { ChangeStatusDialog } from '../components/ChangeStatusDialog'
 import { ContactAttemptLog } from '../components/ContactAttemptLog'
 import { ContractStepCard } from '../components/ContractStepCard'
+import { CreateProposalPromptDialog } from '../components/CreateProposalPromptDialog'
 import { HotelContactList } from '../components/HotelContactList'
 import { HotelContactsDialog } from '../components/HotelContactsDialog'
 import { HotelDataCard } from '../components/HotelDataCard'
@@ -47,6 +48,7 @@ export function ProspectDetailPage(): ReactNode {
   const { t } = useLingui()
   const { prospectId = '' } = useParams()
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false)
+  const [isProposalPromptOpen, setIsProposalPromptOpen] = useState(false)
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
   const [attemptToEdit, setAttemptToEdit] = useState<ContactAttempt | null>(null)
   const { data: session } = useGetSessionQuery()
@@ -398,6 +400,18 @@ export function ProspectDetailPage(): ReactNode {
         prospectId={prospect.id}
         hotelName={prospect.hotelName}
         currentStatus={prospect.status}
+        onMovedToGreen={() => {
+          setIsProposalPromptOpen(true)
+        }}
+      />
+
+      <CreateProposalPromptDialog
+        isOpen={isProposalPromptOpen}
+        onClose={() => {
+          setIsProposalPromptOpen(false)
+        }}
+        prospectId={prospect.id}
+        hotelName={prospect.hotelName}
       />
 
       <ArchiveCycleDialog

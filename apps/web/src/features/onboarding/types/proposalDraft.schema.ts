@@ -30,10 +30,41 @@ export function buildProposalRateSchema(i18n: I18n) {
 export function buildProposalDraftSchema(i18n: I18n) {
   return z
     .object({
-      servicesNote: z
+      /** Campos del machote aprobado (2026-10-19): todos menos la marca son obligatorios.
+          Título y Descripción se retiraron el mismo día: no están en el machote
+          y el back nunca los exigió para enviar (Hugo). */
+      propertyName: z
         .string()
         .trim()
-        .min(1, i18n._(msg`Describe los servicios ofrecidos`)),
+        .min(1, i18n._(msg`Dinos el nombre de la propiedad en el documento`))
+        .max(200),
+      preparedDate: z
+        .string()
+        .trim()
+        .min(1, i18n._(msg`Dinos la fecha de preparación del documento`))
+        .max(40),
+      brandManagementCompany: z.string().trim().max(200).optional(),
+      cityState: z
+        .string()
+        .trim()
+        .min(1, i18n._(msg`Dinos la ciudad y el estado del hotel`))
+        .max(200),
+      contactName: z
+        .string()
+        .trim()
+        .min(1, i18n._(msg`Dinos a quién va dirigida la propuesta`))
+        .max(200),
+      senderPhone: z
+        .string()
+        .trim()
+        .min(1, i18n._(msg`El teléfono de quien envía es obligatorio`))
+        .max(40),
+      senderEmail: z
+        .string()
+        .trim()
+        .min(1, i18n._(msg`El correo de quien envía es obligatorio`))
+        .email(i18n._(msg`Ese correo no es válido`))
+        .max(200),
       rates: z
         .array(buildProposalRateSchema(i18n))
         .min(1, i18n._(msg`Agrega al menos un puesto con su tarifa`)),

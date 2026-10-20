@@ -266,6 +266,17 @@ const routes: readonly MockRoute[] = [
       return { data: snapshot(contract) }
     },
   },
+  {
+    method: 'POST',
+    path: '/contracts/:contractId/send-email',
+    resolve: ({ params, body }): { email: { status: string; transport: string } } => {
+      const contract = CONTRACTS.find((item) => item.id === params.contractId)
+      if (!contract) throw new Error('CONTRACT_NOT_FOUND')
+      const to = body instanceof FormData ? body.get('to') : null
+      if (typeof to !== 'string' || to.trim() === '') throw new Error('Falta el destinatario')
+      return { email: { status: 'SENT', transport: 'SMTP' } }
+    },
+  },
 ]
 
 let mockContractSequence = 0

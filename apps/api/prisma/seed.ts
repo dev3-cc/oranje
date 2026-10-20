@@ -7,6 +7,7 @@ import { v7 as uuidv7 } from 'uuid'
 import { SYSTEM_USER_EMAIL } from '../src/common/constants/system-actor.js'
 
 import { expandRoles, flattenPermissions } from './permissions.js'
+import { HOTEL_DEPARTMENTS, INDUSTRIES, POSITIONS } from './seed-data/catalog-industries.js'
 
 /**
  * Seed de catálogos. Las reglas del negocio son FILAS, no código: sin esto el
@@ -62,21 +63,6 @@ const ROLES: Array<{ code: string; name: string; department: string | null }> = 
 // Catálogos. Posiciones y Zonas no son exhaustivas: se siembra lo documentado y
 // el negocio agrega el resto desde la aplicación.
 // ---------------------------------------------------------------------------
-const HOTEL_DEPARTMENTS = [
-  { code: 'HOUSEKEEPING', name: 'Housekeeping' },
-  { code: 'FOOD', name: 'Alimentos' },
-  { code: 'MAINTENANCE', name: 'Mantenimiento' },
-  { code: 'FRONT_DESK', name: 'Front Desk' },
-]
-
-/// Agrupadas por departamento, como las lista el vault.
-const POSITIONS = [
-  { code: 'HOUSEKEEPER', name: 'Housekeeper', department: 'HOUSEKEEPING' },
-  { code: 'HOUSEMAN', name: 'Houseman', department: 'HOUSEKEEPING' },
-  { code: 'LAUNDRY', name: 'Laundry', department: 'HOUSEKEEPING' },
-  { code: 'CHEF', name: 'Chef', department: 'FOOD' },
-]
-
 const HIRING_MODALITIES = [
   { code: 'FULL_TIME', name: 'Tiempo completo' },
   { code: 'PART_TIME', name: 'Medio tiempo' },
@@ -1199,6 +1185,15 @@ async function main(): Promise<void> {
   }
   log(`hotel_department: ${HOTEL_DEPARTMENTS.length}`)
 
+  for (const i of INDUSTRIES) {
+    await prisma.industry.upsert({
+      where: { code: i.code },
+      update: { name: i.name },
+      create: { id: uuidv7(), code: i.code, name: i.name },
+    })
+  }
+  log(`industry: ${INDUSTRIES.length}`)
+
   for (const t of NOTIFICATION_TYPES) {
     await prisma.notificationType.upsert({
       where: { code: t.code },
@@ -1215,11 +1210,20 @@ async function main(): Promise<void> {
   log(`notification_type: ${NOTIFICATION_TYPES.length}`)
 
   for (const p of POSITIONS) {
-    const dept = await prisma.hotelDepartment.findUniqueOrThrow({ where: { code: p.department } })
+    const industry = await prisma.industry.findUniqueOrThrow({ where: { code: p.industry } })
+    const dept = p.department
+      ? await prisma.hotelDepartment.findUniqueOrThrow({ where: { code: p.department } })
+      : null
     await prisma.catalogPosition.upsert({
       where: { code: p.code },
-      update: { name: p.name, hotelDepartmentId: dept.id },
-      create: { id: uuidv7(), code: p.code, name: p.name, hotelDepartmentId: dept.id },
+      update: { name: p.name, industryId: industry.id, hotelDepartmentId: dept?.id ?? null },
+      create: {
+        id: uuidv7(),
+        code: p.code,
+        name: p.name,
+        industryId: industry.id,
+        hotelDepartmentId: dept?.id ?? null,
+      },
     })
   }
   log(`catalogs.position: ${POSITIONS.length}`)

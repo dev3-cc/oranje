@@ -6,17 +6,21 @@ import type { ProspectSummary } from '../types/prospect.types'
 /**
  * Tercera línea de la tarjeta del tablero: qué fue lo último que pasó.
  *
- * En VERDE lo relevante es la propuesta que se envió, no la llamada previa —
- * es lo que distingue esa columna. En el resto de estados manda el último
- * intento de contacto, y si no hay ninguno se dice explícitamente: una tarjeta
- * sin actividad es justo la que hay que atender.
+ * En VERDE lo relevante es la propuesta, no la llamada previa — es lo que
+ * distingue esa columna. Distingue Borrador de Enviada (`latestProposalIsDraft`):
+ * un borrador sin mandar no es lo mismo que una ya en manos del hotel. En el
+ * resto de estados manda el último intento de contacto, y si no hay ninguno
+ * se dice explícitamente: una tarjeta sin actividad es justo la que hay que
+ * atender.
  *
  * `i18n` viene de quien la llama (`useLingui`): así el texto habla el idioma
  * activo (D-36).
  */
 export function resolveActivityLabel(prospect: ProspectSummary, i18n: I18n): string {
   if (prospect.status === 'GREEN' && prospect.latestProposalVersion !== null) {
-    return i18n._(msg`Propuesta v${prospect.latestProposalVersion}`)
+    return prospect.latestProposalIsDraft
+      ? i18n._(msg`Borrador v${prospect.latestProposalVersion}`)
+      : i18n._(msg`Propuesta v${prospect.latestProposalVersion} enviada`)
   }
 
   if (prospect.lastAttempt) {

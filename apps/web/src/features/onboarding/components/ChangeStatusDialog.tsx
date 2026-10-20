@@ -3,6 +3,7 @@ import { msg } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
 import {
   cn,
+  MaterialIcon,
   Select,
   SelectContent,
   SelectItem,
@@ -26,6 +27,7 @@ import { Modal } from '@/shared/components/Modal'
 import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
+  ONBOARDING_TRANSITION_DESCRIPTION,
   type OnboardingStatus,
 } from '@/shared/constants/onboardingStatus'
 import { apiErrorMessage } from '@/shared/lib/apiError'
@@ -57,6 +59,8 @@ export interface ChangeStatusDialogProps {
   hotelName: string
   currentStatus: OnboardingStatus
   presetStatus?: OnboardingStatus
+  /** Se dispara tras confirmar el paso a Verde — ya se puede abrir la propuesta. */
+  onMovedToGreen?: () => void
 }
 
 const ROLE_SHORT: Record<string, MessageDescriptor> = {
@@ -118,6 +122,7 @@ export function ChangeStatusDialog({
   hotelName,
   currentStatus,
   presetStatus,
+  onMovedToGreen,
 }: ChangeStatusDialogProps): ReactNode {
   const { t, i18n } = useLingui()
   const [selectedStatus, setSelectedStatus] = useState<OnboardingStatus | null>(null)
@@ -164,7 +169,9 @@ export function ChangeStatusDialog({
         ...(isReasonRequired ? { reasonId } : {}),
       }).unwrap()
       toast.success(t`Estado cambiado a ${ONBOARDING_STATUS_LABEL[selectedStatus]}`)
+      const movedToGreen = selectedStatus === 'GREEN'
       onClose()
+      if (movedToGreen) onMovedToGreen?.()
     } catch {
       return
     }
@@ -217,6 +224,7 @@ export function ChangeStatusDialog({
 
         {allowed?.transitions.map((transition) => {
           const isSelected = transition.toStatus === selectedStatus
+          const hasActionHint = ONBOARDING_TRANSITION_DESCRIPTION[transition.toStatus] !== undefined
 
           return (
             <label
@@ -256,7 +264,17 @@ export function ChangeStatusDialog({
 
               <span className="min-w-0">
                 <span className="block text-sm font-semibold text-ink">{transition.title}</span>
-                <span className="block text-sm text-ink-3">{transition.description}</span>
+                {hasActionHint ? (
+                  <span className="mt-0.5 flex items-start gap-1.5 text-sm text-ink-2">
+                    <MaterialIcon
+                      name="lightbulb"
+                      className="mt-0.5 shrink-0 text-base text-o-500"
+                    />
+                    {transition.description}
+                  </span>
+                ) : (
+                  <span className="block text-sm text-ink-3">{transition.description}</span>
+                )}
               </span>
             </label>
           )

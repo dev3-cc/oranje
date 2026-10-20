@@ -36,3 +36,11 @@ export class CreateContractDto extends createZodDto(createContractSchema) {}
 export const upsertRateSchema = rateSchema
 
 export class UpsertRateDto extends createZodDto(upsertRateSchema) {}
+
+/** Mismo cuerpo que el de la Propuesta: multipart, el PDF llega aparte por Multer. */
+export const sendContractEmailSchema = z.object({
+  to: z.string().trim().email(),
+  note: z.string().trim().max(2000).optional(),
+})
+
+export class SendContractEmailDto extends createZodDto(sendContractEmailSchema) {}

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common'
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import { MailerService, type SendMailResult } from '../../../infra/mailer/index.js'
 import { NotificationPublisherService } from '../../notifications/index.js'
 
 import type { CreateProposalDto } from './dto/create-proposal.dto.js'
@@ -28,6 +29,7 @@ export class ProposalsService {
   constructor(
     private readonly repo: ProposalsRepository,
     private readonly notifications: NotificationPublisherService,
+    private readonly mailer: MailerService,
   ) {}
 
   async listAcross(
@@ -69,7 +71,15 @@ export class ProposalsService {
     return toEntity(
       await this.repo.create({
         prospectId,
+        title: dto.title ?? null,
         servicesNote: dto.servicesNote ?? null,
+        propertyName: dto.propertyName ?? null,
+        preparedDate: dto.preparedDate ?? null,
+        brandManagementCompany: dto.brandManagementCompany ?? null,
+        cityState: dto.cityState ?? null,
+        contactName: dto.contactName ?? null,
+        senderPhone: dto.senderPhone ?? null,
+        senderEmail: dto.senderEmail ?? null,
         rates,
         payRate: dto.payRate ?? null,
         billRate: dto.billRate ?? null,
@@ -106,7 +116,15 @@ export class ProposalsService {
       await this.repo.update({
         prospectId,
         proposalId,
+        title: dto.title,
         servicesNote: dto.servicesNote ?? null,
+        propertyName: dto.propertyName,
+        preparedDate: dto.preparedDate,
+        brandManagementCompany: dto.brandManagementCompany,
+        cityState: dto.cityState,
+        contactName: dto.contactName,
+        senderPhone: dto.senderPhone,
+        senderEmail: dto.senderEmail,
         rates,
         payRate: dto.payRate ?? null,
         billRate: dto.billRate ?? null,
@@ -166,6 +184,48 @@ export class ProposalsService {
     }
 
     return sent
+  }
+
+  /**
+   * Lo mismo que `send()` (congela la versión) y además manda el correo real
+   * al hotel, con el PDF que el front ya generó de la vista previa — el mismo
+   * documento que la persona está viendo, no uno recompuesto en el servidor.
+   *
+   * El correo es mejor esfuerzo, como la notificación interna de `send()`:
+   * si el SMTP falla, la propuesta queda enviada igual (es el hecho de
+   * negocio que importa) y `email.status` dice `FAILED` para que el front lo
+   * avise en vez de mentir que salió.
+   */
+  async sendEmail(
+    prospectId: string,
+    proposalId: string,
+    user: AuthenticatedUser,
+    params: { to: string; note: string | null; pdf: Buffer },
+  ): Promise<{ proposal: ProposalEntity; email: SendMailResult }> {
+    const proposal = await this.send(prospectId, proposalId, user)
+    const prospect = await this.prospect(prospectId)
+    const sender = await this.repo.senderInfo(user.id)
+
+    const email = await this.mailer.send({
+      template: 'proposal-sent',
+      to: params.to,
+      replyTo: sender?.email ?? null,
+      data: {
+        hotelName: prospect.hotelName,
+        senderName: sender?.fullName ?? 'Oranje',
+        note: params.note,
+      },
+      userId: user.id,
+      attachments: [
+        {
+          filename: `Propuesta-${prospect.hotelName.replaceAll(/\s+/g, '-')}-v${proposal.version}.pdf`,
+          content: params.pdf,
+          contentType: 'application/pdf',
+        },
+      ],
+    })
+
+    return { proposal, email }
   }
 
   // Sin assertOpen a proposito: el caso que resuelve es "lo abri por error y el
@@ -297,7 +357,15 @@ function toEntity(row: ProposalRow): ProposalEntity {
   return {
     id: row.id,
     version: row.version,
+    title: row.title,
     servicesNote: row.servicesNote,
+    propertyName: row.propertyName,
+    preparedDate: row.preparedDate,
+    brandManagementCompany: row.brandManagementCompany,
+    cityState: row.cityState,
+    contactName: row.contactName,
+    senderPhone: row.senderPhone,
+    senderEmail: row.senderEmail,
     rates: row.rates.map((r) => ({
       id: r.id,
       position: r.catalogPosition,

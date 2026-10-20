@@ -13,7 +13,12 @@ import { baseApi } from '@/app/baseApi'
 import type { ContractStatus } from '@/shared/constants/contractStatus'
 import { fetchAllPages } from '@/shared/lib/fetchAllPages'
 import { matchesSearch } from '@/shared/lib/text'
-import type { ApiEnvelope, ContractApi, HotelApi } from '@/shared/types/apiContract.types'
+import type {
+  ApiEnvelope,
+  ContractApi,
+  HotelApi,
+  SendDocumentEmailResultApi as SendDocumentEmailResult,
+} from '@/shared/types/apiContract.types'
 
 /**
  * Contratos sobre el contrato real: `GET /contracts` da la lista y
@@ -236,24 +241,34 @@ export const contractsApi = baseApi.injectEndpoints({
       ],
     }),
 
-    /** Lo que el alta necesita elegir: el hotel cliente y las posiciones del catálogo. */
+    /**
+     * Lo que el alta necesita elegir: el hotel cliente, las industrias y las
+     * posiciones del catálogo. La industria filtra la posición (2026-10-17):
+     * Oranje deja de ser solo hoteles — Warehouse, Retail, IT…
+     */
     getContractFormOptions: build.query<ContractFormOptions, void>({
       queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
         const bq = fetchWithBQ as FetchWithBQ
-        const [hotelsRes, positionsRes] = await Promise.all([
+        const [hotelsRes, industriesRes, positionsRes] = await Promise.all([
           fetchAllPages<HotelApi>(bq, '/hotels', { onlyClients: true }),
+          bq('/catalogs/industries'),
           bq('/catalogs/positions'),
         ])
         if ('error' in hotelsRes) return { error: hotelsRes.error as never }
+        if (industriesRes.error) return { error: industriesRes.error as never }
         if (positionsRes.error) return { error: positionsRes.error as never }
         return {
           data: {
             hotels: hotelsRes.data
               .filter((hotel) => hotel.isClient)
               .map((hotel) => ({ id: hotel.id, name: hotel.name })),
+            industries: (industriesRes.data as ApiEnvelope<Array<{ id: string; name: string }>>)
+              .data,
             positions: (
-              positionsRes.data as ApiEnvelope<Array<{ id: string; name: string }>>
-            ).data.map((item) => ({ id: item.id, name: item.name })),
+              positionsRes.data as ApiEnvelope<
+                Array<{ id: string; name: string; industryId: string | null }>
+              >
+            ).data.map((item) => ({ id: item.id, name: item.name, industryId: item.industryId })),
           },
         }
       },
@@ -305,12 +320,33 @@ export const contractsApi = baseApi.injectEndpoints({
         { type: 'Hotel' as const, id: 'LIST' },
       ],
     }),
+
+    /**
+     * «Enviar por correo» (Hugo, 2026-10-17): el PDF ya lo generó la pantalla
+     * de la misma vista previa que se está viendo — este endpoint no cambia
+     * el estado del contrato, solo manda el correo.
+     */
+    sendContractEmail: build.mutation<
+      SendDocumentEmailResult,
+      { contractId: string; to: string; note: string; pdf: Blob }
+    >({
+      query: ({ contractId, to, note, pdf }) => {
+        const body = new FormData()
+        body.append('to', to)
+        if (note !== '') body.append('note', note)
+        body.append('file', pdf, 'contrato.pdf')
+        return { url: `/contracts/${contractId}/send-email`, method: 'POST', body }
+      },
+      transformResponse: (raw: { email: SendDocumentEmailResult }) => raw.email,
+    }),
   }),
 })
 
 export interface ContractFormOptions {
   hotels: Array<{ id: string; name: string }>
-  positions: Array<{ id: string; name: string }>
+  industries: Array<{ id: string; name: string }>
+  /** `industryId` nulo en posiciones sembradas antes del 2026-10-17. */
+  positions: Array<{ id: string; name: string; industryId: string | null }>
 }
 
 /**
@@ -341,4 +377,5 @@ export const {
   useCreateContractMutation,
   useUpsertContractRateMutation,
   useTransitionContractMutation,
+  useSendContractEmailMutation,
 } = contractsApi

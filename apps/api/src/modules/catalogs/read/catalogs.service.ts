@@ -50,14 +50,28 @@ export class CatalogsService {
     })
   }
 
+  /** Las industrias que cotiza Oranje (Hospitality, Warehouse & Logistics…), 2026-10-17. */
+  async industries(): Promise<CatalogItem[]> {
+    return this.prisma.industry.findMany({
+      select: { id: true, code: true, name: true },
+      orderBy: { name: 'asc' },
+    })
+  }
+
   async positions(
     departmentId?: string,
-  ): Promise<Array<CatalogItem & { hotelDepartmentId: string }>> {
-    /* `hotelDepartmentId` viaja: la pantalla de catálogos del Administrador
-       pinta a qué departamento pertenece cada puesto (cambio aditivo). */
+    industryId?: string,
+  ): Promise<Array<CatalogItem & { hotelDepartmentId: string | null; industryId: string | null }>> {
+    /* `hotelDepartmentId`/`industryId` viajan: la pantalla de catálogos del
+       Administrador y el select de Industria en Contratos/Propuestas pintan
+       a qué grupo pertenece cada puesto (cambio aditivo). Los dos filtros se
+       combinan con AND si llegan juntos. */
     return this.prisma.catalogPosition.findMany({
-      where: departmentId ? { hotelDepartmentId: departmentId } : {},
-      select: { id: true, code: true, name: true, hotelDepartmentId: true },
+      where: {
+        ...(departmentId ? { hotelDepartmentId: departmentId } : {}),
+        ...(industryId ? { industryId } : {}),
+      },
+      select: { id: true, code: true, name: true, hotelDepartmentId: true, industryId: true },
       orderBy: { name: 'asc' },
     })
   }

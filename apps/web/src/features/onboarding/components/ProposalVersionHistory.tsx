@@ -7,12 +7,12 @@ import {
   TooltipTrigger,
   cn,
 } from '@oranje/ui'
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import { summarizeRates } from '../lib/summarizeRates'
 import type { ProposalVersionSummary } from '../types/proposal.types'
 
-import { ContractPreviewButton } from './ContractPreviewButton'
+import { ProposalVersionDetailDialog } from './ProposalVersionDetailDialog'
 
 import { SectionCard } from '@/shared/components/SectionCard'
 import { IS_DEV_UI } from '@/shared/lib/devMode'
@@ -25,13 +25,11 @@ export function ProposalVersionHistory({
   hotelName,
   hotelAddress = null,
   contactEmail = null,
-  senderName = 'Oranje',
   versions,
 }: {
   hotelName: string
   hotelAddress?: string | null
   contactEmail?: string | null
-  senderName?: string
   versions: ProposalVersionSummary[]
 }): ReactNode {
   const { t, i18n } = useLingui()
@@ -40,6 +38,11 @@ export function ProposalVersionHistory({
     [...versions]
       .filter((version) => version.sentAt !== null)
       .sort((a, b) => b.version - a.version)[0]?.id ?? null
+  /* Al tocar la tarjeta COMPLETA de una enviada (Hugo, 2026-10-19: "al dar
+     click al contenedor completo") se abre con sus valores congelados — un
+     borrador no tiene nada que mostrar aquí que el formulario de al lado ya
+     no muestre editable. */
+  const [openVersion, setOpenVersion] = useState<ProposalVersionSummary | null>(null)
   return (
     <SectionCard title={t`Historial de versiones`}>
       {versions.length === 0 ? (
@@ -51,59 +54,86 @@ export function ProposalVersionHistory({
           {versions.map((version) => {
             /* La que TIENE el hotel: la enviada más reciente. El icono la señala. */
             const isHotelsCopy = version.id === hotelsCopyId
-            return (
-              <li
-                key={version.id}
-                className={cn(
-                  'rounded-md p-4',
-                  version.status === 'DRAFT' ? 'bg-o-50' : 'border border-line bg-surface-2',
-                )}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-                      <Trans>Propuesta v{version.version}</Trans>
-                      {isHotelsCopy && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger
+            const isSent = version.status === 'SENT'
+            const rowContent = (
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+                    <Trans>Propuesta v{version.version}</Trans>
+                    {isHotelsCopy && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          {/* `asChild` + `span`: la fila de una enviada ya es un
+                              `button` (Hugo, 2026-10-19) — el trigger por
+                              defecto de Radix es otro `button`, y uno dentro de
+                              otro es HTML inválido y rompe la hidratación. */}
+                          <TooltipTrigger asChild>
+                            <span
                               aria-label={t`Esta es la versión que tiene el hotel`}
                               className="flex size-5 cursor-default items-center justify-center rounded-full bg-st-naranja/15 text-st-naranja"
                             >
                               <MaterialIcon name="mark_email_read" className="text-[14px]" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <Trans>
-                                Esta es la versión que tiene el hotel: la última que se le envió.
-                              </Trans>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
-                    </p>
-                    <p className="mt-1 text-sm text-ink-3">
-                      {version.sentAt
-                        ? version.byName
-                          ? t`Enviada ${formatDate(version.sentAt)} por ${version.byName}`
-                          : t`Enviada ${formatDate(version.sentAt)}`
-                        : NOT_SENT}{' '}
-                      · {summarizeRates(version, i18n)}
-                    </p>
-                  </div>
-
-                  <div className="flex shrink-0 items-center gap-1">
-                    <span className="text-xs font-semibold text-ink-2">
-                      {version.status === 'DRAFT' ? t`Borrador` : t`Enviada`}
-                    </span>
-                    <ContractPreviewButton
-                      hotelName={hotelName}
-                      hotelAddress={hotelAddress}
-                      contactEmail={contactEmail}
-                      senderName={senderName}
-                      version={version}
-                    />
-                  </div>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <Trans>
+                              Esta es la versión que tiene el hotel: la última que se le envió.
+                            </Trans>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </p>
+                  <p className="mt-1 text-sm text-ink-3">
+                    {version.sentAt
+                      ? version.byName
+                        ? t`Enviada ${formatDate(version.sentAt)} por ${version.byName}`
+                        : t`Enviada ${formatDate(version.sentAt)}`
+                      : NOT_SENT}{' '}
+                    · {summarizeRates(version, i18n)}
+                  </p>
                 </div>
+
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <span className="text-xs font-semibold text-ink-2">
+                    {version.status === 'DRAFT' ? t`Borrador` : t`Enviada`}
+                  </span>
+                  {/* Enviada = congelada para siempre (`PROPOSAL_ALREADY_SENT`
+                      en el back): mismo candado que usa Timesheet para una
+                      semana cerrada — tinte + ícono, no solo color. Tocar la
+                      tarjeta entera abre el detalle congelado (Hugo,
+                      2026-10-19), así que el candado ya no necesita su propio
+                      botón de PDF al lado — el detalle trae "Contrato
+                      enviado". */}
+                  {isSent && (
+                    <MaterialIcon name="lock" className="text-[15px] text-ink-4" aria-hidden />
+                  )}
+                </div>
+              </div>
+            )
+
+            return (
+              <li
+                key={version.id}
+                className={cn(
+                  'rounded-md',
+                  version.status === 'DRAFT' ? 'bg-o-50' : 'border border-line bg-surface-2',
+                )}
+              >
+                {isSent ? (
+                  <button
+                    type="button"
+                    aria-label={t`Ver el detalle de la Propuesta v${version.version}, enviada`}
+                    onClick={() => {
+                      setOpenVersion(version)
+                    }}
+                    className="w-full cursor-pointer rounded-md p-4 text-left transition-colors hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500"
+                  >
+                    {rowContent}
+                  </button>
+                ) : (
+                  <div className="p-4">{rowContent}</div>
+                )}
               </li>
             )
           })}
@@ -117,6 +147,19 @@ export function ProposalVersionHistory({
           <Trans>Cada envío queda como una versión; ninguna se borra.</Trans>
         )}
       </p>
+
+      {openVersion && (
+        <ProposalVersionDetailDialog
+          isOpen
+          onClose={() => {
+            setOpenVersion(null)
+          }}
+          hotelName={hotelName}
+          hotelAddress={hotelAddress}
+          contactEmail={contactEmail}
+          version={openVersion}
+        />
+      )}
     </SectionCard>
   )
 }

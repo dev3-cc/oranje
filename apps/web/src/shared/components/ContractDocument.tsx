@@ -33,7 +33,7 @@ export const PROVIDER_ADDRESS = '730 Peachtree St NE, Suite 570, Atlanta, GA 303
  * Transcrito del machote real (ORANGE SOLUTIONS & OPERATIONS, LLC), en inglés
  * como el resto del documento.
  */
-const EXHIBIT_HEADER =
+export const EXHIBIT_HEADER =
   `All personnel furnished under the Agreement are employees of ${PROVIDER}. Service Provider ` +
   'will administer payroll and applicable payroll taxes and maintain workers’ compensation and ' +
   'general liability coverage as stated in the Agreement. Employee screening will be performed ' +

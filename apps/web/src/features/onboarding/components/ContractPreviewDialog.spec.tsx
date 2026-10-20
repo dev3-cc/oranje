@@ -10,9 +10,17 @@ const VERSION: ProposalVersionSummary = {
   id: 'prp-0008-1',
   version: 1,
   status: 'SENT',
+  title: 'Housekeeping temporada alta',
   sentAt: '2026-05-21',
   byName: 'Ana Ruiz',
   servicesNote: 'Housekeeping para temporada alta.',
+  propertyName: '',
+  preparedDate: '',
+  brandManagementCompany: '',
+  cityState: '',
+  contactName: '',
+  senderPhone: '',
+  senderEmail: '',
   rates: [
     {
       id: 'rate-1',

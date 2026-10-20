@@ -7,6 +7,7 @@ import {
 
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 import { contractStatusLabel } from '../../../common/utils/status-labels.js'
+import { MailerService, type SendMailResult } from '../../../infra/mailer/index.js'
 import { NotificationPublisherService } from '../../notifications/index.js'
 
 import { ContractRow, ContractsRepository, RateRow } from './contracts.repository.js'
@@ -43,7 +44,41 @@ export class ContractsService {
   constructor(
     private readonly repo: ContractsRepository,
     private readonly notifications: NotificationPublisherService,
+    private readonly mailer: MailerService,
   ) {}
+
+  /**
+   * Enviar el acuerdo por correo (2026-10-17) — mismo patrón que la Propuesta:
+   * el PDF viaja del front (es el mismo documento que la persona ve), el
+   * correo es mejor esfuerzo y nunca revierte nada ya guardado.
+   */
+  async sendEmail(
+    id: string,
+    user: AuthenticatedUser,
+    params: { to: string; note: string | null; pdf: Buffer },
+  ): Promise<SendMailResult> {
+    const contract = await this.get(id)
+    const sender = await this.repo.senderInfo(user.id)
+
+    return this.mailer.send({
+      template: 'contract-sent',
+      to: params.to,
+      replyTo: sender?.email ?? null,
+      data: {
+        hotelName: contract.hotel.name,
+        senderName: sender?.fullName ?? 'Oranje',
+        note: params.note,
+      },
+      userId: user.id,
+      attachments: [
+        {
+          filename: `Contrato-${contract.hotel.name.replaceAll(/\s+/g, '-')}-${contract.number}.pdf`,
+          content: params.pdf,
+          contentType: 'application/pdf',
+        },
+      ],
+    })
+  }
 
   async create(dto: CreateContractDto, user: AuthenticatedUser): Promise<ContractEntity> {
     const hotelAccounting = await this.repo.hotelAccounting(dto.hotelId)
@@ -147,6 +182,13 @@ export class ContractsService {
     const rate = rates.find((r) => r.position.id === catalogPositionId)
 
     return rate ? { payRate: rate.payRate, contractNumber: active.number } : null
+  }
+
+  /** Para Requisición (2026-10-17): solo lo que el contrato vigente del hotel cotizó. */
+  async contractedPositions(
+    hotelId: string,
+  ): Promise<Array<{ id: string; name: string; hotelDepartmentId: string | null }>> {
+    return this.repo.contractedPositions(hotelId)
   }
 
   async get(id: string): Promise<ContractEntity> {

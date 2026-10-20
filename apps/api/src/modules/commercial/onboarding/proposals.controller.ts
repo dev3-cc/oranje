@@ -10,14 +10,23 @@ import {
   Patch,
   Post,
   Query,
+  UnprocessableEntityException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common'
+import { FileInterceptor } from '@nestjs/platform-express'
 
 import { CurrentUser, Requires } from '../../../common/decorators/index.js'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
+import type { SendMailResult } from '../../../infra/mailer/index.js'
 
 import { CreateProposalDto } from './dto/create-proposal.dto.js'
+import { SendProposalEmailDto } from './dto/send-proposal-email.dto.js'
 import type { ProposalEntity } from './entities/proposal.entity.js'
 import { ProposalsService } from './proposals.service.js'
+
+/** El PDF ya es una imagen rasterizada del documento; 8 MB cubre de sobra una propuesta larga. */
+const MAX_PDF_BYTES = 8 * 1024 * 1024
 
 @Controller()
 export class ProposalsController {
@@ -87,5 +96,36 @@ export class ProposalsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: ProposalEntity }> {
     return { data: await this.proposals.send(id, proposalId, user) }
+  }
+
+  /**
+   * Lo mismo que `/send` y además el correo real, con el PDF que el front ya
+   * generó de la vista previa (2026-10-17) — por eso es multipart y no JSON.
+   */
+  @Requires('proposals', 'send')
+  @Post('prospects/:id/proposals/:proposalId/send-email')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_PDF_BYTES } }))
+  async sendEmail(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('proposalId', ParseUUIDPipe) proposalId: string,
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @Body() dto: SendProposalEmailDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: ProposalEntity; email: SendMailResult }> {
+    if (!file) {
+      throw new UnprocessableEntityException({
+        code: 'PDF_REQUIRED',
+        message: 'Falta el PDF del documento que se va a enviar',
+      })
+    }
+
+    const { proposal, email } = await this.proposals.sendEmail(id, proposalId, user, {
+      to: dto.to,
+      note: dto.note ?? null,
+      pdf: file.buffer,
+    })
+
+    return { data: proposal, email }
   }
 }

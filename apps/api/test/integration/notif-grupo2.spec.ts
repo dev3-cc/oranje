@@ -4,6 +4,8 @@ import { v7 as uuidv7 } from 'uuid'
 import type { AuthenticatedUser } from '../../src/common/decorators/index.js'
 import { PlacesService } from '../../src/infra/places/index.js'
 import type { PrismaService } from '../../src/infra/prisma/index.js'
+import { ContractsRepository } from '../../src/modules/commercial/contracts/contracts.repository.js'
+import { ContractsService } from '../../src/modules/commercial/contracts/contracts.service.js'
 import { ParticipationRepository } from '../../src/modules/coverage/participation/participation.repository.js'
 import { ParticipationService } from '../../src/modules/coverage/participation/participation.service.js'
 import { RequisitionsRepository } from '../../src/modules/demand/requisitions/requisitions.repository.js'
@@ -37,12 +39,14 @@ const notifications = {
 const storageFake = { signedUrl: (): Promise<null> => Promise.resolve(null) } as never
 const permissions = new PermissionsService(prisma)
 
+const contracts = new ContractsService(new ContractsRepository(prisma), notifications, {} as never)
 const requisitions = new RequisitionsService(
   new RequisitionsRepository(prisma),
   permissions,
   places,
   storageFake,
   notifications,
+  contracts,
 )
 const participation = new ParticipationService(new ParticipationRepository(prisma), notifications)
 const workers = new WorkersService(

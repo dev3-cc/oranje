@@ -21,7 +21,18 @@ export const proposalRateSchema = z.object({
 })
 
 export const createProposalSchema = z.object({
+  /** Etiqueta corta del ciclo; el front la exige, el DTO la deja opcional
+      porque un PATCH puede seguir sin tocarla. */
+  title: z.string().trim().min(1).max(200).optional(),
   servicesNote: z.string().trim().min(1).max(4000).optional(),
+  /** Campos del machote aprobado de la propuesta (2026-10-19), todos libres. */
+  propertyName: z.string().trim().max(200).optional(),
+  preparedDate: z.string().trim().max(40).optional(),
+  brandManagementCompany: z.string().trim().max(200).optional(),
+  cityState: z.string().trim().max(200).optional(),
+  contactName: z.string().trim().max(200).optional(),
+  senderPhone: z.string().trim().max(40).optional(),
+  senderEmail: z.string().trim().email().max(200).optional(),
   /**
    * El cuadro de tarifas por puesto (el Exhibit "A" del contrato). Opcional
    * porque un borrador recién abierto todavía no tiene renglones; para ENVIAR
