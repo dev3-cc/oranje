@@ -8,19 +8,19 @@ import { TimesheetPage } from './TimesheetPage'
 
 import { store } from '@/app/store'
 
-/* El Observador (Hugo, 2026-09-29): el Timesheet de todos los hoteles para
+/* El Manager de QA (Hugo, 2026-09-29): el Timesheet de todos los hoteles para
    trabajar la nómina mientras se construye Contabilidad, solo en lectura.
    Referencia estable, como la que devuelve RTK Query. */
 const OBSERVER_SESSION = {
   data: {
     id: 'u-obs',
     email: 'observador@casacurtidor.com',
-    name: 'Observador',
-    shortName: 'Observador',
-    roleId: 'ROL-OBS-01',
+    name: 'Manager de QA',
+    shortName: 'Manager de QA',
+    roleId: 'ROL-Q-02',
     photoUrl: null,
     roleCode: 'OBS',
-    roleTitle: 'Observador',
+    roleTitle: 'Manager de QA',
     hotel: null,
     department: null,
     locale: 'es',
@@ -48,7 +48,7 @@ async function renderTimesheet(): Promise<void> {
   await user.click(await screen.findByRole('button', { name: 'Días' }))
 }
 
-describe.skip('TimesheetPage · Observador', () => {
+describe.skip('TimesheetPage · Manager de QA', () => {
   it('ve las horas de todos los hoteles sin un solo botón de escritura', async () => {
     await renderTimesheet()
 

@@ -12,7 +12,7 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
 import { formatMoney } from '@/shared/lib/formatters'
 
 /**
- * Lo que el Observador ya aprobó para esta persona y Contabilidad todavía no
+ * Lo que el Manager de QA ya aprobó para esta persona y Contabilidad todavía no
  * decidió si pesa en la nómina — opcional sumarlo, uno por uno (Hugo,
  * 2026-10-14: "¿estamos consumiendo los datos del contrato? ... sea opcional
  * sumarlo"). Por trabajador, no por semana exacta: el ajuste vive en la
@@ -67,8 +67,8 @@ export function PendingAdjustmentsChip({
         >
           <p className="mb-2 text-xs text-ink-3">
             <Trans>
-              Aprobados por el Observador, sin decidir si pesan en esta nómina. Inclúyelos uno por
-              uno.
+              Aprobados por el Manager de QA, sin decidir si pesan en esta nómina. Inclúyelos uno
+              por uno.
             </Trans>
           </p>
           <ul className="flex flex-col gap-2">

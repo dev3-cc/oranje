@@ -52,7 +52,7 @@ export interface HeaderNotifications {
 /**
  * La campana del header. `system:receive_notification` lo tienen todos los
  * roles, así que la lista y el contador son reales para cualquiera; el «3»
- * hardcodeado que había antes era decoración (auditoría del 2026-09-04).
+ * hardcodeado que había antes era decoración (inspección del 2026-09-04).
  */
 export const notificationsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({

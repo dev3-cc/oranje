@@ -1,7 +1,7 @@
 import type { MessageDescriptor } from '@lingui/core'
 
 /**
- * El único lugar donde vive una meta (Guía del Observador, regla 3).
+ * El único lugar donde vive una meta (Guía del Manager de QA, regla 3).
  *
  * Las metas salen del tablero maquetado y son **de ejemplo**: ningún documento
  * de Reglas de Negocio las aprobó (Guía §6.2). Por eso la tarjeta lo dice. Un

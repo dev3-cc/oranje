@@ -36,7 +36,7 @@ import {
 /**
  * Leer el Timesheet lo pueden dos alcances: el del hotel (`read_department`,
  * acotado por hotel y departamento, D-09) y el de todos los hoteles
- * (`read_all_hotels`, solo lectura: el Observador y, con su Matriz, la
+ * (`read_all_hotels`, solo lectura: el Manager de QA y, con su Matriz, la
  * Contadora). `@Requires` solo sabe de un par, así que el «uno u otro» se
  * resuelve aquí. Escribir sigue exigiendo su permiso propio.
  */

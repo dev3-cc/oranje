@@ -14,7 +14,11 @@ import { CurrentUser, Requires } from '../../../common/decorators/index.js'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
 
 import { ReassignDto } from './dto/reassign.dto.js'
-import { ParticipantEntity, ParticipationResult, ParticipationService } from './participation.service.js'
+import {
+  ParticipantEntity,
+  ParticipationResult,
+  ParticipationService,
+} from './participation.service.js'
 
 @Controller('requisitions/:id/participants')
 export class ParticipationController {

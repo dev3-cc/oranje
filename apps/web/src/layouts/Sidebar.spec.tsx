@@ -47,7 +47,7 @@ const HIDDEN_LINKS = [
   'Timesheet Global',
   'Mi Personal',
   'Accidentes',
-  'Auditorías',
+  'Inspecciones',
 ]
 
 function renderSidebar(): void {

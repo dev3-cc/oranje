@@ -180,7 +180,7 @@ export class PayAdjustmentsRepository {
     return rows.map((row) => toRow(row as RawRow))
   }
 
-  /** La cola del Observador: todo lo PENDING, del más viejo al más nuevo, de cualquier hotel. */
+  /** La cola del Manager de QA: todo lo PENDING, del más viejo al más nuevo, de cualquier hotel. */
   async pending(): Promise<PayAdjustmentRow[]> {
     const rows = await this.prisma.assignmentPayAdjustment.findMany({
       where: { status: 'PENDING' },
@@ -239,7 +239,11 @@ export class PayAdjustmentsRepository {
     })
   }
 
-  async include(params: { id: string; userId: string; roleCode: string }): Promise<PayAdjustmentRow> {
+  async include(params: {
+    id: string
+    userId: string
+    roleCode: string
+  }): Promise<PayAdjustmentRow> {
     return this.prisma.$transaction(async (tx) => {
       await tx.assignmentPayAdjustment.update({
         where: { id: params.id },

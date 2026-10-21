@@ -56,7 +56,7 @@ const INTRO_SLIDES: readonly {
   },
   {
     image: personajeEstrategia,
-    title: msg`Reactivos de Auditoría es distinto`,
+    title: msg`Reactivos de Inspección es distinto`,
     text: msg`Su propio peso por reactivo y arrastre para reordenar — por eso vive separado, con una línea divisoria antes de su pestaña.`,
   },
   {
@@ -179,7 +179,7 @@ export function CatalogsPage(): ReactNode {
   /** El intro de página se ve UNA vez; «¿Cómo funciona?» lo reabre. */
   const { isIntroOpen, dismissIntro, reopenIntro } = useIntroSeen('catalogs')
 
-  /** Los reactivos de auditoría son un catálogo propio (más campos, dueño distinto): pestaña aparte. */
+  /** Los reactivos de inspección son un catálogo propio (más campos, dueño distinto): pestaña aparte. */
   const REACTIVOS_TAB = 'audit-checklist-items' as const
   type TabKey = ManagedCatalog | typeof REACTIVOS_TAB
   const ALL_TAB_KEYS: readonly TabKey[] = [...MANAGED_CATALOGS, REACTIVOS_TAB]
@@ -313,14 +313,14 @@ export function CatalogsPage(): ReactNode {
             }}
           />
         ))}
-        {/* Los reactivos de auditoría son un catálogo de OTRA naturaleza (más
-            campos, dueño conceptual distinto — la auditoría del Supervisor,
+        {/* Los reactivos de inspección son un catálogo de OTRA naturaleza (más
+            campos, dueño conceptual distinto — la inspección del Supervisor,
             no el alta de personal): el separador dice «esto no es un
             catálogo operativo más», que es justo lo que se perdía cuando
             era el quinto botón idéntico al final de la fila. */}
         <span aria-hidden className="mx-1 h-6 w-px shrink-0 bg-line" />
         <TabButton
-          label={t`Reactivos de Auditoría`}
+          label={t`Reactivos de Inspección`}
           isActive={isReactivosTab}
           onSelect={() => {
             selectTab(REACTIVOS_TAB)

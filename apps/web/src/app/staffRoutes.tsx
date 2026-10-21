@@ -50,6 +50,7 @@ const LEGACY_PATHS: Array<{ from: string; to: string }> = [
   { from: 'contratos/:contractId', to: '/contracts/:contractId' },
   { from: 'mi-personal', to: '/my-staff' },
   { from: 'auditorias', to: '/audits' },
+  { from: 'inspecciones', to: '/audits' },
   { from: 'mi-territorio', to: '/my-territory' },
   { from: 'accidentes', to: '/accidents' },
   { from: 'hoteles/:hotelId/qr-ponche', to: '/hotels/:hotelId/punch-qr' },
@@ -82,7 +83,10 @@ const LEGACY_STAFF_ROUTES = legacyRoutes(
  * Módulos del sidebar que ya navegan pero todavía no tienen diseño. Cada uno
  * sale de aquí y pasa a ser una feature propia cuando llegue su maqueta.
  */
-const PENDING_MODULES = [{ path: 'accidents', title: 'Accidentes' }]
+const PENDING_MODULES = [
+  { path: 'accidents', title: 'Accidentes' },
+  { path: 'incidents', title: 'Incidencias' },
+]
 
 /** Vistas que trabajan a lo ancho: el shell no les acota el `max-w`. */
 const FULL_WIDTH: RouteHandle = { fullWidth: true }
@@ -345,14 +349,14 @@ const STAFF_CHILDREN: RouteObject[] = [
     path: 'reports',
     lazy: async () => {
       const m = await import('@/features/reports')
-      return { Component: m.ReportsPage }
+      return { Component: m.ReportsByRolePage }
     },
   },
   {
     path: 'my-team',
     lazy: async () => {
       const m = await import('@/features/team')
-      return { Component: m.TeamPage }
+      return { Component: m.MyTeamPage }
     },
   },
   {
@@ -407,7 +411,7 @@ const STAFF_CHILDREN: RouteObject[] = [
     },
   },
   {
-    /* La única pantalla de escritura del Observador (Hugo, 2026-10-08). */
+    /* La única pantalla de escritura del Manager de QA (Hugo, 2026-10-08). */
     path: 'pay-adjustments',
     lazy: async () => {
       const m = await import('@/features/observability')

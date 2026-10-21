@@ -172,7 +172,7 @@ export function WeekActionBar({
       tiene sentido desde su lado, porque Oranje es ella misma (Hugo,
       2026-10-15: "cambia este texto a que el hotel ya aprobó esa semana"). */
   const seesAllHotels = can('timesheet:read_all_hotels')
-  /** Enviar es de quien revisa; el Observador solo lee y no ve el botón. */
+  /** Enviar es de quien revisa; el Manager de QA solo lee y no ve el botón. */
   const canSubmit = can('timesheet:review_punches')
 
   /* Lo que el back rechazaría DESPUÉS se dice ANTES, en el botón (patrón

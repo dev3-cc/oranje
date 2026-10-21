@@ -164,6 +164,48 @@ export interface TeamMemberApi {
   openProspects: number
 }
 
+/** `GET /team/recruitment`: el equipo de la Manager de Reclutamiento, con su carga ya contada. */
+export interface RecruitmentTeamMemberApi {
+  id: string
+  fullName: string
+  email: string
+  role: { code: string; name: string }
+  photoUrl: string | null
+  /** La propia Manager o una Líder de su equipo. */
+  reportsTo: { id: string; fullName: string } | null
+  /** Requisiciones que tomó y siguen abiertas: Autorizada, En proceso o Cubierta parcialmente. */
+  activeRequisitions: number
+  coveredRequisitions: number
+  assignmentsLast30Days: number
+  workersCreatedLast30Days: number
+  /** Colaboradores que dio de alta y siguen en Blanco. */
+  pendingValidation: number
+  lastActivityAt: string | null
+  /** Sus requisiciones abiertas, para abrir cada una. `statusCode` es del Semáforo de Requisición. */
+  openRequisitions: Array<{ id: string; number: string; hotelName: string; statusCode: string }>
+  /** Sus altas en Blanco, la más reciente primero; el servidor manda 10 como máximo. */
+  pendingWorkers: Array<{ id: string; fullName: string; createdAt: string }>
+  /** Quiénes dio de alta en 30 días; `statusCode` es su estado de hoy en el Semáforo del Colaborador. Máximo 50. */
+  recentWorkers: Array<{ id: string; fullName: string; createdAt: string; statusCode: string }>
+}
+
+/** `GET /team/hotel`: el equipo del Manager General. Los `null` son números que no aplican a ese rol. */
+export interface HotelTeamMemberApi {
+  id: string
+  fullName: string
+  email: string
+  role: { code: string; name: string }
+  photoUrl: string | null
+  department: { id: string; name: string } | null
+  reportsTo: { id: string; fullName: string } | null
+  /** Manager de Área: Supervisores activos que le reportan. */
+  supervisorsInCharge: number | null
+  /** Manager de Área: colaboradores con asignación activa en su departamento. */
+  activeWorkers: number | null
+  /** Supervisor: requisiciones que creó desde el día 1 del mes. */
+  requisitionsThisMonth: number | null
+}
+
 // --- commercial/onboarding -------------------------------------------------
 
 export interface ProspectStateApi {
@@ -505,7 +547,7 @@ export interface TimesheetApi {
   hotel?: { id: string; name: string }
   requisitionFolio?: string
   /**
-   * Solo con `timesheet:read_all_hotels` (Contabilidad, el Observador): lo
+   * Solo con `timesheet:read_all_hotels` (Contabilidad, el Manager de QA): lo
    * que se le pagaría hoy a esta hoja, calculado en vivo (D-10: 40 h por
    * requisición). `payRate`/`overtimeMultiplier`/`subtotal` en `null` cuando
    * no hay contrato ni tarifa interna que resolver — no se inventa un pago.

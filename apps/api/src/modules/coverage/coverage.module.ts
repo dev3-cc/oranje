@@ -4,7 +4,6 @@ import { SchedulerTokenService } from '../../common/security/scheduler-token.ser
 import { IdentityModule } from '../identity/index.js'
 import { NotificationsModule } from '../notifications/index.js'
 
-
 import { AssignmentsController } from './assignments/assignments.controller.js'
 import { AssignmentsRepository } from './assignments/assignments.repository.js'
 import { AssignmentsService } from './assignments/assignments.service.js'

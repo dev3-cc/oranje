@@ -11,7 +11,7 @@ import { close, db } from './db.js'
 import { actor } from './fixture.js'
 
 /**
- * Las dos auditorías del Supervisor: Presentación Personal (por colaborador) y
+ * Las dos inspecciones del Supervisor: Presentación Personal (por colaborador) y
  * Percepción de Ambiente y Recursos (por hotel), mismo mecanismo. Sin efecto
  * en semáforos y sin journal — su historial es `audit_response_history`.
  */
@@ -97,11 +97,11 @@ async function colaborador(): Promise<string> {
   const worker = await db.worker.create({
     data: {
       id: uuidv7(),
-      fullName: `Auditado ${Date.now()}${Math.floor(Math.random() * 1000)}`,
+      fullName: `Inspeccionado ${Date.now()}${Math.floor(Math.random() * 1000)}`,
       birthDate: new Date('1995-01-01'),
       gender: 'MALE',
       phone: '9990000002',
-      address: 'Calle Auditoría',
+      address: 'Calle Inspección',
       zoneId,
       statusLightStateId: state.id,
       statusLightCode: 'WORKER',
@@ -193,8 +193,8 @@ beforeAll(async () => {
   positionId = (await db.catalogPosition.findFirstOrThrow({ select: { id: true } })).id
   modalityId = (await db.hiringModality.findFirstOrThrow({ select: { id: true } })).id
 
-  hotelId = await hotel('Hotel Auditorías')
-  otherHotelId = await hotel('Hotel Ajeno Auditorías')
+  hotelId = await hotel('Hotel Inspecciones')
+  otherHotelId = await hotel('Hotel Ajeno Inspecciones')
 
   workerId = await colaborador()
   await asignar(workerId, hotelId)
@@ -236,7 +236,7 @@ afterAll(async () => {
   await close()
 })
 
-describe('crear una auditoría', () => {
+describe('crear una inspección', () => {
   it('Presentación Personal calcula el score ponderado', async () => {
     const supervisor = await usuario('ROL-H-01', hotelId)
 
@@ -379,7 +379,7 @@ describe('crear una auditoría', () => {
   })
 })
 
-describe('corregir una auditoría', () => {
+describe('corregir una inspección', () => {
   it('corregir una respuesta deja historia y recalcula el score', async () => {
     const supervisor = await usuario('ROL-H-01', hotelId)
 
@@ -467,8 +467,8 @@ describe('corregir una auditoría', () => {
   })
 })
 
-describe('tiempo sin auditar', () => {
-  it('un colaborador auditado trae fecha y uno nunca auditado trae null', async () => {
+describe('tiempo sin inspeccionar', () => {
+  it('un colaborador inspeccionado trae fecha y uno nunca inspeccionado trae null', async () => {
     const supervisor = await usuario('ROL-H-01', hotelId)
 
     const created = await audits.create(
@@ -498,7 +498,7 @@ describe('tiempo sin auditar', () => {
   })
 })
 
-describe('leer auditorías', () => {
+describe('leer inspecciones', () => {
   it('el detalle trae las respuestas con categoría y etiqueta del reactivo', async () => {
     const supervisor = await usuario('ROL-H-01', hotelId)
 
@@ -541,8 +541,8 @@ describe('leer auditorías', () => {
 })
 
 describe('la Matriz sostiene audits:update', () => {
-  it('solo el Supervisor audita, corrige y ve: sus Managers no, ni por herencia', async () => {
-    // Auditorías queda fuera de la herencia por jerarquía (Reglas de Negocio,
+  it('solo el Supervisor inspecciona, corrige y ve: sus Managers no, ni por herencia', async () => {
+    // Inspecciones queda fuera de la herencia por jerarquía (Reglas de Negocio,
     // «Herencia por jerarquía», decisión de Hugo del 2026-09-14).
     const permissions = new PermissionsService(prisma)
 

@@ -1,4 +1,13 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, ParseUUIDPipe, Post } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from '@nestjs/common'
 
 import { CurrentUser, Requires } from '../../../common/decorators/index.js'
 import type { AuthenticatedUser } from '../../../common/decorators/index.js'
@@ -31,7 +40,7 @@ export class PayAdjustmentsController {
     return { data: await this.payAdjustments.byAssignment(id, user) }
   }
 
-  /** La cola del Observador: todo lo PENDING, de cualquier hotel. */
+  /** La cola del Manager de QA: todo lo PENDING, de cualquier hotel. */
   @Requires('requisitions', 'approve_pay_adjustment')
   @Get('pay-adjustments/pending')
   async pending(): Promise<{ data: PayAdjustmentEntity[] }> {

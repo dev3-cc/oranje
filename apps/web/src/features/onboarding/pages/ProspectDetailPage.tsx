@@ -105,8 +105,8 @@ export function ProspectDetailPage(): ReactNode {
   const editHotelDataLabel = t`Editar datos del hotel`
   const archiveCycleTitle = t`Cierra el ciclo definitivamente y libera al hotel`
   /* Ninguno de estos tenía guardia: todo rol que llegaba a esta ficha ya
-     tenía los cuatro permisos, hasta el Observador (Hugo, 2026-09-22:
-     "¿el Observador puede crear, registrar, eliminar?" — el back ya lo
+     tenía los cuatro permisos, hasta el Manager de QA (Hugo, 2026-09-22:
+     "¿el Manager de QA puede crear, registrar, eliminar?" — el back ya lo
      rechaza siempre, esto es solo que el botón no mienta). */
   const canRegisterAttempt = can('pipeline:create_contact_attempt')
   const canArchiveCycle = can('pipeline:close_cycle')

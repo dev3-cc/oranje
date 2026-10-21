@@ -16,9 +16,9 @@ import { ApprovalTimelinessPanel } from '@/shared/components/ApprovalTimelinessP
 import { LoadError } from '@/shared/components/LoadError'
 
 /**
- * Observador (`ROL-OBS-01`): transversal, de solo lectura. Una pestaña por
+ * Manager de QA (antes Observador, `ROL-OBS-01`): transversal, de solo lectura. Una pestaña por
  * departamento con sus KPIs, compuestos en el front con las listas que el
- * Observador ya lee (Guía del Observador, 2026-10-07). Las metas son las del
+ * Manager de QA ya lee (Guía del Manager de QA, 2026-10-07). Las metas son las del
  * tablero maquetado y se marcan como de ejemplo; viven en `lib/kpi.ts`.
  */
 export function ObservabilityPage(): ReactNode {
@@ -37,7 +37,7 @@ export function ObservabilityPage(): ReactNode {
       <header className="relative flex items-end justify-between gap-4 overflow-hidden rounded-2xl border border-line bg-gradient-to-r from-o-50 via-surface to-surface px-6 pt-5 pb-5 sm:min-h-52 sm:pr-96">
         <div className="relative z-10">
           <h1 className="text-3xl font-bold tracking-tight text-ink">
-            <Trans>Observador</Trans>
+            <Trans>Dashboard de QA</Trans>
           </h1>
           <p className="mt-1.5 max-w-xl text-sm text-ink-3">
             <Trans>

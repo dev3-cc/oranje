@@ -33,7 +33,7 @@ export function Header(): ReactNode {
   const [isSearchOpen, setSearchOpen] = useState(false)
 
   /* El atajo que el header promete de verdad existe: Ctrl/⌘ + K abre la
-     búsqueda desde cualquier pantalla (auditoría: antes era solo texto). */
+     búsqueda desde cualquier pantalla (inspección: antes era solo texto). */
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent): void {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {

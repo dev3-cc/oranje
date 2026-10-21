@@ -3,7 +3,7 @@ import { MaterialIcon } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
 /**
- * «Quitar filtros»: aparece SOLO cuando hay filtros activos (auditoría del
+ * «Quitar filtros»: aparece SOLO cuando hay filtros activos (inspección del
  * 2026-09-04: ninguna pantalla tenía forma de volver a ver todo sin abrir
  * cada select). Dice cuántos hay para que la persona entienda por qué la
  * lista está corta. Es un botón con texto — no un icono suelto.

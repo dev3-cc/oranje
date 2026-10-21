@@ -17,7 +17,7 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
 import { formatDateTime, formatMoney } from '@/shared/lib/formatters'
 
 /**
- * La cola del Observador (Hugo, 2026-10-08): el ajuste de tarifa o el gasto
+ * La cola del Manager de QA (Hugo, 2026-10-08): el ajuste de tarifa o el gasto
  * extra (p. ej. «Uber») de una asignación eventual, pedido por Reclutamiento
  * — única acción de escritura que tiene este rol, por lo demás de puro
  * lectura. Mientras un ajuste está aquí, no pesa en ningún cálculo de pago.

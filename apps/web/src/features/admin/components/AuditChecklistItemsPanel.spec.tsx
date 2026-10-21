@@ -19,10 +19,10 @@ function renderPanel(): void {
 
 /**
  * El catálogo de reactivos (`catalogs.audit_checklist_item`), agrupado por
- * auditoría y categoría — solo aquí el Administrador edita el peso.
+ * inspección y categoría — solo aquí el Administrador edita el peso.
  */
 describe('AuditChecklistItemsPanel', () => {
-  it('agrupa los reactivos por auditoría y categoría, con su peso', async () => {
+  it('agrupa los reactivos por inspección y categoría, con su peso', async () => {
     renderPanel()
 
     expect(
@@ -32,13 +32,13 @@ describe('AuditChecklistItemsPanel', () => {
     expect(screen.getAllByText('Peso 1.00').length).toBeGreaterThan(0)
   })
 
-  it('el filtro por auditoría deja solo Ambiente y Recursos', async () => {
+  it('el filtro por inspección deja solo Ambiente y Recursos', async () => {
     renderPanel()
     const user = userEvent.setup()
 
     await screen.findByText('Uniforme completo, limpio y planchado', undefined, SLOW)
-    await user.click(screen.getByLabelText('Auditoría'))
-    await user.click(await screen.findByRole('option', { name: 'Auditoría: Ambiente y Recursos' }))
+    await user.click(screen.getByLabelText('Inspección'))
+    await user.click(await screen.findByRole('option', { name: 'Inspección: Ambiente y Recursos' }))
 
     expect(screen.queryByText('Uniforme completo, limpio y planchado')).not.toBeInTheDocument()
     expect(screen.getByText('Químicos y materiales suficientes')).toBeInTheDocument()
@@ -70,7 +70,7 @@ describe('AuditChecklistItemsPanel', () => {
     await user.click(screen.getByRole('button', { name: 'Sí, eliminar' }))
 
     expect(
-      await screen.findByText(/Hay auditorías con respuestas a este reactivo/, undefined, SLOW),
+      await screen.findByText(/Hay inspecciones con respuestas a este reactivo/, undefined, SLOW),
     ).toBeInTheDocument()
   })
 })

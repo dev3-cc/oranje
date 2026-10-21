@@ -41,7 +41,7 @@ function recruiter(): AuthenticatedUser {
   return { id: actorId, roleCode: 'ROL-R-01', hotelId: null, departmentId: null }
 }
 function observer(): AuthenticatedUser {
-  return { id: actorId, roleCode: 'ROL-OBS-01', hotelId: null, departmentId: null }
+  return { id: actorId, roleCode: 'ROL-Q-02', hotelId: null, departmentId: null }
 }
 function accountant(): AuthenticatedUser {
   return { id: actorId, roleCode: 'ROL-CO-01', hotelId: null, departmentId: null }

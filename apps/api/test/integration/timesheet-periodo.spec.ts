@@ -55,9 +55,9 @@ async function semana(lunes: string): Promise<void> {
   sheets.push(sheet.id)
 }
 
-/** El Observador: ve todos los hoteles, que es el alcance con el tope alto. */
+/** El Manager de QA: ve todos los hoteles, que es el alcance con el tope alto. */
 function observador(): AuthenticatedUser {
-  return { id: actorId, roleCode: 'ROL-OBS-01', hotelId: null, departmentId: null }
+  return { id: actorId, roleCode: 'ROL-Q-02', hotelId: null, departmentId: null }
 }
 
 async function semanasEn(from?: string, to?: string): Promise<string[]> {

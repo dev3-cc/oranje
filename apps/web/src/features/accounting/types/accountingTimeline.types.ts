@@ -9,7 +9,7 @@ import type {
  * staff (persona × requisición, días en una sola línea de tiempo), más lo
  * que el staff no necesita — la vista previa de pago por semana. Es un tipo
  * propio, no el de `timesheet/`, para no acoplar un cambio de Contabilidad a
- * la pantalla que ya usan Supervisor/Manager/Observador (Hugo, 2026-10-08).
+ * la pantalla que ya usan Supervisor/Manager/Manager de QA (Hugo, 2026-10-08).
  */
 export interface AccountingTimelineWeek {
   timesheetId: string

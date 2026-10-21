@@ -49,7 +49,7 @@ interface Props {
  * Recorrido guiado sobre los controles REALES de una pantalla (driver.js).
  *
  * Se distingue de `OnboardingIntro`, que es un modal aparte y explica el
- * CONCEPTO: esto señala dónde se toca. Las dos cosas conviven —en Auditorías
+ * CONCEPTO: esto señala dónde se toca. Las dos cosas conviven —en Inspecciones
  * ya está el modal— y a propósito no repiten el mismo texto.
  *
  * Tres cosas que lo hacen honesto:
