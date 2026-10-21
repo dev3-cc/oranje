@@ -12465,8 +12465,8 @@ msgid "Solo se aprueba una semana enviada a aprobación."
 msgstr "Only a week sent for approval can be approved."
 
 #: src/features/admin/components/UserFormDialog.tsx
-msgid "Solo se ofrecen los superiores del rol elegido: el BD apunta a su BDC, la Reclutadora a su Líder."
-msgstr "Only the chosen role's superiors are offered: a BD points to their BDC, a Recruiter to their Group Leader."
+msgid "Solo se ofrecen los superiores del rol elegido: el BD apunta a su BDC, la Reclutadora a su Líder o al Manager de Reclutamiento."
+msgstr "Only the chosen role's superiors are offered: a BD points to their BDC, a Recruiter to their Group Leader or the Recruitment Manager."
 
 #: src/features/worker/pages/HomePage.tsx
 msgid "Solo se usa al ponchar, para saber que estás dentro del hotel. Al continuar, tu teléfono te va a pedir permiso de ubicación."
