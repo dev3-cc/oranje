@@ -12608,8 +12608,8 @@ msgid "Solo se desbloquea un contrato vigente."
 msgstr "Only an active contract can be unlocked."
 
 #: src/features/admin/components/UserFormDialog.tsx
-msgid "Solo se ofrecen los superiores del rol elegido: el BD apunta a su BDC, la Reclutadora a su Líder."
-msgstr "Only the chosen role's superiors are offered: a BD points to their BDC, a Recruiter to their Group Leader."
+msgid "Solo se ofrecen los superiores del rol elegido: el BD apunta a su BDC, la Reclutadora a su Líder o al Manager de Reclutamiento."
+msgstr "Only superiors of the chosen role are offered: the BD points to their BDC, the Recruiter to their Lead or the Recruitment Manager."
 
 #: src/features/worker/pages/HomePage.tsx
 msgid "Solo se usa al ponchar, para saber que estás dentro del hotel. Al continuar, tu teléfono te va a pedir permiso de ubicación."

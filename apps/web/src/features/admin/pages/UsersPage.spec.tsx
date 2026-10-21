@@ -210,6 +210,22 @@ describe('UsersPage', () => {
     expect(screen.getByText('nueva@xcaret.local', { selector: 'p' })).toBeInTheDocument()
   })
 
+  it('una Reclutadora puede reportar a su Líder o al Manager de Reclutamiento', async () => {
+    const user = userEvent.setup()
+    renderUsers()
+
+    await user.click(screen.getByRole('button', { name: 'Agregar usuario' }))
+    await user.click(await screen.findByRole('button', { name: 'Saltar' }))
+    await user.click(screen.getByRole('combobox', { name: 'Rol' }))
+    await user.click(await screen.findByRole('option', { name: 'Reclutadora' }))
+
+    // Un equipo chico no siempre tiene Líder: la Manager también vale como jefa.
+    await user.click(screen.getByRole('combobox', { name: 'Reporta a' }))
+    expect(await screen.findByRole('option', { name: /Laura Peña/ })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: /Iván Mora/ })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: /Oliver Craig/ })).not.toBeInTheDocument()
+  })
+
   it('las zonas solo aparecen con el rol Inspector, y se guardan al crear', async () => {
     const user = userEvent.setup()
     renderUsers()

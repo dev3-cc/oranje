@@ -720,28 +720,32 @@ export function CreateWorkerDialog({
                   </FormRow>
 
                   <FormRow label={t`Teléfono y zona`} column="phone · zone_id">
-                    <PhoneInput
-                      value={draft.phone}
-                      onChange={(value) => {
-                        update('phone')(value)
-                      }}
-                      ariaLabel={t`Teléfono`}
-                    />
-                    <Select
-                      {...(draft.zoneId ? { value: draft.zoneId } : {})}
-                      onValueChange={update('zoneId')}
-                    >
-                      <SelectTrigger aria-label={t`Zona`} className="w-full">
-                        <SelectValue placeholder={t`Elige la zona…`} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(options?.zones ?? []).map((zone) => (
-                          <SelectItem key={zone.id} value={zone.id}>
-                            {zone.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    {/* Uno debajo del otro: lado a lado, el selector de país se
+                        comía la fila y al número le quedaban tres cifras. */}
+                    <div className="flex w-full flex-col gap-3">
+                      <PhoneInput
+                        value={draft.phone}
+                        onChange={(value) => {
+                          update('phone')(value)
+                        }}
+                        ariaLabel={t`Teléfono`}
+                      />
+                      <Select
+                        {...(draft.zoneId ? { value: draft.zoneId } : {})}
+                        onValueChange={update('zoneId')}
+                      >
+                        <SelectTrigger aria-label={t`Zona`} className="w-full">
+                          <SelectValue placeholder={t`Elige la zona…`} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(options?.zones ?? []).map((zone) => (
+                            <SelectItem key={zone.id} value={zone.id}>
+                              {zone.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </FormRow>
 
                   <FormRow label={t`Domicilio`} column="address">
@@ -929,7 +933,7 @@ export function CreateWorkerDialog({
                           update('emergencyContactName')(event.target.value)
                         }}
                       />
-                      <div className="flex gap-3">
+                      <div className="flex flex-col gap-3">
                         <PhoneInput
                           value={draft.emergencyContactPhone}
                           onChange={(value) => {

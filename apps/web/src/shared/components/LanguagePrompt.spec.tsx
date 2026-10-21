@@ -120,3 +120,41 @@ describe('la pregunta del idioma en el login', () => {
     )
   })
 })
+
+/**
+ * Lo que de verdad rompió el modal, y que ninguna prueba de arriba veía.
+ *
+ * `i18n.ts` llama a `activateLocale(detectLocale())` al cargarse el módulo, y
+ * `activateLocale` guardaba SIEMPRE. Resultado: la app escribía la suposición
+ * del arranque milisegundos antes de que el modal mirara si había preferencia,
+ * así que el modal no podía salir nunca. Borrar el almacenamiento y recargar
+ * tampoco servía: se volvía a escribir sola (Hugo lo cazó en staging).
+ *
+ * Las pruebas de arriba no lo veían porque simulan el almacenamiento DESPUÉS
+ * de que ese código ya corrió. Esta mira el contrato directamente.
+ */
+describe('lo guardado significa «alguien lo eligió»', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('poner un idioma sin persistir no deja rastro', async () => {
+    simularAlmacenamiento()
+    const { activateLocale, readStoredLocale } = await import('@/app/i18n')
+
+    activateLocale('en', { persist: false })
+
+    /* Esto es lo que hace el arranque: adivina y aplica, pero no decide por
+       nadie. Si guardara, el modal nunca tendría a quién preguntarle. */
+    expect(readStoredLocale()).toBeNull()
+  })
+
+  it('elegirlo sí se guarda', async () => {
+    simularAlmacenamiento()
+    const { activateLocale, readStoredLocale } = await import('@/app/i18n')
+
+    activateLocale('en')
+
+    expect(readStoredLocale()).toBe('en')
+  })
+})

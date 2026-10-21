@@ -66,13 +66,16 @@ const INTRO_SLIDES: readonly {
 /**
  * Quién puede ser el jefe de cada rol, por la jerarquía de cada departamento:
  * el BD apunta a su BDC, la Reclutadora a su Líder, el Líder a su Manager…
- * y las cabezas de departamento al Administrador. Un rol sin fila muestra a
+ * y las cabezas de departamento al Administrador. La Reclutadora también
+ * puede reportar directo al Manager de Reclutamiento: un equipo chico no
+ * siempre tiene Líder en medio, y sin esto el formulario borraba en silencio
+ * a la Manager como jefa al abrir la ficha. Un rol sin fila muestra a
  * todos (resguardo: mejor de más que bloquear un alta).
  */
 const SUPERIOR_ROLES: Partial<Record<string, readonly string[]>> = {
   'ROL-V-01': ['ROL-V-02'],
   'ROL-V-02': ['ROL-ADM-01'],
-  'ROL-R-01': ['ROL-R-02'],
+  'ROL-R-01': ['ROL-R-02', 'ROL-R-03'],
   'ROL-R-02': ['ROL-R-03'],
   'ROL-R-03': ['ROL-ADM-01'],
   'ROL-I-01': ['ROL-I-02'],
@@ -724,7 +727,7 @@ export function UserFormDialog({
                       ? t`El Administrador no reporta a nadie.`
                       : roleCode && superiorOptions.length === 0
                         ? t`Aún no hay nadie dado de alta con el rol al que reporta. Da de alta primero a esa persona.`
-                        : t`Solo se ofrecen los superiores del rol elegido: el BD apunta a su BDC, la Reclutadora a su Líder.`}
+                        : t`Solo se ofrecen los superiores del rol elegido: el BD apunta a su BDC, la Reclutadora a su Líder o al Manager de Reclutamiento.`}
                   </p>
                   {roleCode &&
                     reportsToUserId === NOBODY &&

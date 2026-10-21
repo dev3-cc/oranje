@@ -16,6 +16,12 @@ export default defineConfig({
       '@ui': fileURLToPath(new URL('../../packages/ui/src', import.meta.url)),
     },
   },
+  /* `__APP_VERSION__` lo define el build (vite.config.ts) y las pruebas no lo
+     tenían: cualquier pantalla que lo use —el login, por ejemplo— reventaba
+     con «is not defined» y no se podía probar. Por eso el login nunca tuvo
+     spec (descubierto al escribir el del modal de idioma, 2026-10-20). */
+  define: { __APP_VERSION__: JSON.stringify('test') },
+
   test: {
     environment: 'jsdom',
     /* 15 s y no los 5 por defecto.
