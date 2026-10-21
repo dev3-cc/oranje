@@ -7,6 +7,7 @@ import { resolveActivityLabel } from '../utils/resolveActivityLabel'
 
 import { HotelPhotoBackdrop } from '@/shared/components/HotelPhotoBackdrop'
 import { StarBorder } from '@/shared/components/StarBorder'
+import { CONTRACT_ELIGIBLE_STATUSES } from '@/shared/constants/onboardingStatus'
 import { formatDaysInStatus } from '@/shared/lib/formatters'
 
 /**
@@ -25,6 +26,10 @@ import { formatDaysInStatus } from '@/shared/lib/formatters'
  * workspace (`ProposalEditorPage` ya sabe mostrar uno u otra sin que haga
  * falta distinguir aquí). Mismo criterio que `ProposalsService.create` en el
  * back para cuándo aplica: solo Verde.
+ *
+ * La franja de contrato (mismo lugar, Amarillo/Rosa/Café) es un link simple a
+ * la ficha: no hay "borrador de contrato" que distinguir como en la
+ * propuesta, solo avisar que ya se puede armar (Hugo, 2026-10-20).
  */
 const BAR_CLASS =
   'flex w-full cursor-pointer items-center justify-center gap-1 rounded-t-2xl bg-o-500 py-2 text-sm font-semibold text-ink shadow-sm transition-colors hover:brightness-95 focus-visible:relative focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500'
@@ -42,6 +47,10 @@ export function ProspectCard({
     onCreateProposal !== undefined && prospect.status === 'GREEN' && !hasProposal
   const canOpenProposal = prospect.status === 'GREEN' && hasProposal
   const showProposalBar = canCreateProposal || canOpenProposal
+  /* Mismo criterio que `ProspectDetailPage` para la tarjeta "Sigue el
+     contrato" — el Naranja-sin-contrato no se puede saber desde esta tarjeta
+     (no trae `hasActiveContract`), así que esa variante no se cubre aquí. */
+  const showContractBar = CONTRACT_ELIGIBLE_STATUSES.has(prospect.status)
 
   return (
     <StarBorder>
@@ -68,10 +77,16 @@ export function ProspectCard({
           </Link>
         )}
 
+        {showContractBar && (
+          <Link to={`/pipeline/${prospect.id}`} className={BAR_CLASS}>
+            <Trans>Sigue el contrato →</Trans>
+          </Link>
+        )}
+
         <Link
           to={`/pipeline/${prospect.id}`}
           className={`relative block h-48 overflow-hidden shadow-md transition-shadow hover:shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-o-500 ${
-            showProposalBar ? 'rounded-b-2xl' : 'rounded-2xl'
+            showProposalBar || showContractBar ? 'rounded-b-2xl' : 'rounded-2xl'
           }`}
         >
           <HotelPhotoBackdrop photoUrl={prospect.photoUrl} />

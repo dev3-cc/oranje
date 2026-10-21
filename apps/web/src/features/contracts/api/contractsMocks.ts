@@ -64,6 +64,8 @@ function buildContract(input: {
   positionCount: number
   overtimeBill?: string
   holidayBill?: string
+  isUnlocked?: boolean
+  proposal?: { id: string; prospectId: string; version: number } | null
 }): StoredContract {
   return {
     id: input.id,
@@ -79,12 +81,21 @@ function buildContract(input: {
       holidayBill: input.holidayBill ?? '2.50',
       holidayPay: '2.00',
     },
-    deductsMeals: false,
+    mealDeductionAmount: '0.00',
     splitsInvoiceByMonth: false,
     signedAt: input.signedAt,
     createdAt: input.validFrom,
     updatedAt: null,
     rates: rates(input.id, input.positionCount),
+    proposal: input.proposal ?? null,
+    propertyName: null,
+    propertyAddress: null,
+    companyEmail: null,
+    serviceProviderName: null,
+    serviceProviderEmail: null,
+    // Un ACTIVO nace bloqueado, igual que en el back — mismo criterio para
+    // que las pruebas no se mientan a sí mismas (Hugo, 2026-10-21).
+    isUnlocked: input.isUnlocked ?? false,
   }
 }
 
@@ -99,6 +110,10 @@ const CONTRACTS: StoredContract[] = [
     validTo: isoInDays(310),
     signedAt: '2026-06-20',
     positionCount: 4,
+    // Desbloqueado por fijo aquí: es EL fixture ACTIVO que usan las pruebas
+    // de edición de términos — ct-0151 se queda bloqueado (el normal) para
+    // probar el candado mismo (Hugo, 2026-10-21).
+    isUnlocked: true,
   }),
   buildContract({
     id: 'ct-0151',
@@ -121,6 +136,10 @@ const CONTRACTS: StoredContract[] = [
     validTo: isoInDays(45),
     signedAt: '2026-02-25',
     positionCount: 2,
+    // El único fixture con propuesta de origen, para probar el hipervínculo
+    // (Hugo, 2026-10-21) — los demás se quedan en null a propósito, para
+    // probar también el estado sin propuesta.
+    proposal: { id: 'prop-0098', prospectId: 'prospect-0098', version: 3 },
   }),
   buildContract({
     id: 'ct-0042',
@@ -196,6 +215,11 @@ const routes: readonly MockRoute[] = [
         validFrom: string
         validTo?: string
         rates: Array<{ catalogPositionId: string; payRate: string; billRate: string }>
+        propertyName?: string
+        propertyAddress?: string
+        companyEmail?: string
+        serviceProviderName?: string
+        serviceProviderEmail?: string
       }
       mockContractSequence += 1
       const id = `ct-new-${String(mockContractSequence)}`
@@ -211,6 +235,11 @@ const routes: readonly MockRoute[] = [
           signedAt: null,
           positionCount: 0,
         }),
+        propertyName: dto.propertyName ?? null,
+        propertyAddress: dto.propertyAddress ?? null,
+        companyEmail: dto.companyEmail ?? null,
+        serviceProviderName: dto.serviceProviderName ?? null,
+        serviceProviderEmail: dto.serviceProviderEmail ?? null,
         rates: dto.rates.map((rate, index) => ({
           id: `rate-${id}-${String(index + 1)}`,
           payRate: rate.payRate,
@@ -237,10 +266,24 @@ const routes: readonly MockRoute[] = [
         overtimeBillMultiplier?: number
         holidayBillMultiplier?: number
         holidayPayMultiplier?: number
-        deductsMeals?: boolean
+        mealDeductionAmount?: string
         splitsInvoiceByMonth?: boolean
+        propertyName?: string | null
+        propertyAddress?: string | null
+        companyEmail?: string | null
+        serviceProviderName?: string | null
+        serviceProviderEmail?: string | null
       }
       if (dto.validTo !== undefined) contract.validTo = dto.validTo
+      if (dto.propertyName !== undefined) contract.propertyName = dto.propertyName
+      if (dto.propertyAddress !== undefined) contract.propertyAddress = dto.propertyAddress
+      if (dto.companyEmail !== undefined) contract.companyEmail = dto.companyEmail
+      if (dto.serviceProviderName !== undefined) {
+        contract.serviceProviderName = dto.serviceProviderName
+      }
+      if (dto.serviceProviderEmail !== undefined) {
+        contract.serviceProviderEmail = dto.serviceProviderEmail
+      }
       if (dto.overtimeBillMultiplier !== undefined) {
         contract.multipliers.overtimeBill = dto.overtimeBillMultiplier.toFixed(2)
       }
@@ -250,7 +293,9 @@ const routes: readonly MockRoute[] = [
       if (dto.holidayPayMultiplier !== undefined) {
         contract.multipliers.holidayPay = dto.holidayPayMultiplier.toFixed(2)
       }
-      if (dto.deductsMeals !== undefined) contract.deductsMeals = dto.deductsMeals
+      if (dto.mealDeductionAmount !== undefined) {
+        contract.mealDeductionAmount = dto.mealDeductionAmount
+      }
       if (dto.splitsInvoiceByMonth !== undefined) {
         contract.splitsInvoiceByMonth = dto.splitsInvoiceByMonth
       }
@@ -281,6 +326,34 @@ const routes: readonly MockRoute[] = [
           },
         })
       }
+      return { data: snapshot(contract) }
+    },
+  },
+  {
+    // Antes del catch-all `:action` genérico, mismo motivo que el de
+    // `position-rate`: si no, el router de mocks lee «unlock»/«lock» como la
+    // acción de ESE endpoint y nunca llega aquí.
+    method: 'POST',
+    path: '/contracts/:contractId/unlock',
+    resolve: ({ params, body }): ApiEnvelope<ContractApi> => {
+      const contract = CONTRACTS.find((item) => item.id === params.contractId)
+      if (!contract) throw new Error('CONTRACT_NOT_FOUND')
+      if (contract.status !== 'ACTIVE') throw new Error('CONTRACT_NOT_ACTIVE')
+      const dto = body as { reason: string }
+      if (dto.reason.trim().length < 4)
+        throw new Error('El motivo debe explicar por qué se desbloquea')
+      contract.isUnlocked = true
+      return { data: snapshot(contract) }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/contracts/:contractId/lock',
+    resolve: ({ params }): ApiEnvelope<ContractApi> => {
+      const contract = CONTRACTS.find((item) => item.id === params.contractId)
+      if (!contract) throw new Error('CONTRACT_NOT_FOUND')
+      if (contract.status !== 'ACTIVE') throw new Error('CONTRACT_NOT_ACTIVE')
+      contract.isUnlocked = false
       return { data: snapshot(contract) }
     },
   },

@@ -1,6 +1,7 @@
+import { plural } from '@lingui/core/macro'
 import { Trans, useLingui } from '@lingui/react/macro'
 import { cn, MaterialIcon } from '@oranje/ui'
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 
 import { useGetProposalCandidatesQuery } from '../api/proposalsApi'
 import { NewProposalDialog } from '../components/NewProposalDialog'
@@ -16,17 +17,30 @@ import { FoldText } from '@/shared/components/FoldText'
 import { HotelThumbnail } from '@/shared/components/HotelThumbnail'
 import { LoadError } from '@/shared/components/LoadError'
 import { MagicCard } from '@/shared/components/MagicCard'
+import { SearchField } from '@/shared/components/SearchField'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
 import {
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
 } from '@/shared/constants/onboardingStatus'
 import { useCan } from '@/shared/hooks/useCan'
+import { useDebounce } from '@/shared/hooks/useDebounce'
 import { formatDate } from '@/shared/lib/formatters'
 
 export function ProposalListPage(): ReactNode {
   const { t } = useLingui()
-  const { data: candidates = [], isLoading, isError, refetch } = useGetProposalCandidatesQuery()
+  /** El nombre va al servidor (Hugo, 2026-10-21): `/prospects` ya lo soporta
+      — se espera a que se deje de teclear, igual que el Pool. */
+  const [searchInput, setSearchInput] = useState('')
+  const search = useDebounce(searchInput)
+  const appliedArg = useMemo(() => ({ search }), [search])
+  const {
+    data: candidates = [],
+    isLoading,
+    isFetching,
+    isError,
+    refetch,
+  } = useGetProposalCandidatesQuery(appliedArg)
   const [isCreating, setIsCreating] = useState(false)
   const can = useCan()
   /** Solo el BD elabora propuestas (proposals:create): a los demás no se les ofrece el botón. */
@@ -55,10 +69,18 @@ export function ProposalListPage(): ReactNode {
           <p className="mt-1.5 max-w-xl text-sm text-ink-3">
             {isLoading
               ? t`Cargando propuestas…`
-              : t`${candidates.length} hoteles con propuesta · cada una se edita desde la ficha del hotel`}
+              : t`${plural(candidates.length, { one: '# hotel con propuesta', other: '# hoteles con propuesta' })} · cada una se edita desde la ficha del hotel`}
           </p>
-          {canCreate ? (
-            <div className="mt-4">
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <SearchField
+              isSearching={isFetching && search.trim() !== ''}
+              value={searchInput}
+              onChange={setSearchInput}
+              label={t`Buscar hotel`}
+              placeholder={t`Nombre del hotel, p. ej. Puerto Real…`}
+              className="w-full max-w-md"
+            />
+            {canCreate ? (
               <Button
                 variant="primary"
                 onClick={() => {
@@ -67,8 +89,8 @@ export function ProposalListPage(): ReactNode {
               >
                 <Trans>Nueva propuesta</Trans>
               </Button>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
         </div>
         <img
           src={fotoEquipo}
@@ -101,7 +123,24 @@ export function ProposalListPage(): ReactNode {
         />
       )}
 
-      {!isLoading && !isError && candidates.length === 0 && (
+      {!isLoading && !isError && candidates.length === 0 && searchInput.trim() !== '' && (
+        <EmptyState
+          title={t`Ningún hotel con ese nombre`}
+          text={t`Prueba con otra parte del nombre, o quita la búsqueda.`}
+          action={
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setSearchInput('')
+              }}
+            >
+              <Trans>Quitar búsqueda</Trans>
+            </Button>
+          }
+        />
+      )}
+
+      {!isLoading && !isError && candidates.length === 0 && searchInput.trim() === '' && (
         <EmptyState
           title={t`Aún no hay propuestas`}
           text={t`La propuesta se abre cuando un prospecto llega a Verde. Crea la primera con «Nueva propuesta» o desde la ficha del prospecto.`}

@@ -49,21 +49,26 @@ export function ContractPreviewDialog({
   const printRoot = document.getElementById('print-root')
 
   /* El documento no sabe de propuestas: recibe el cuadro ya armado, para servir
-     igual a una versión de propuesta y a un contrato firmado. */
+     igual a una versión de propuesta y a un contrato firmado. propertyName y
+     la dirección se toman de ESTA versión — son los mismos campos que ya se
+     editan en la propuesta (Hugo, 2026-10-20): no se vuelven a capturar. */
   const documentProps = {
+    propertyName: version.propertyName || null,
+    propertyAddress: version.cityState || hotelAddress,
+    companyEmail: null,
+    serviceProviderName: null,
+    serviceProviderEmail: null,
     rates:
       version.rates.length > 0
         ? version.rates.map((rate) => ({
             key: rate.positionId,
             positionName: rate.positionName,
-            payRate: rate.payRate,
             billRate: rate.billRate,
           }))
         : [
             {
               key: 'global',
               positionName: 'All positions',
-              payRate: version.payRate,
               billRate: version.billRate,
             },
           ],
@@ -108,7 +113,7 @@ export function ContractPreviewDialog({
       }
     >
       <div className="rounded-md border border-line bg-surface px-8 py-7">
-        <ContractDocument hotelName={hotelName} hotelAddress={hotelAddress} {...documentProps} />
+        <ContractDocument hotelName={hotelName} {...documentProps} />
       </div>
 
       {/*
@@ -118,11 +123,7 @@ export function ContractPreviewDialog({
       {printRoot !== null &&
         createPortal(
           <div aria-hidden="true">
-            <ContractDocument
-              hotelName={hotelName}
-              hotelAddress={hotelAddress}
-              {...documentProps}
-            />
+            <ContractDocument hotelName={hotelName} {...documentProps} />
           </div>,
           printRoot,
         )}

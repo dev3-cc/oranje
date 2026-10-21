@@ -172,11 +172,16 @@ async function fetchWorkspace(
 
 export const proposalsApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
-    getProposalCandidates: build.query<ProposalCandidate[], void>({
-      queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
-        /** `/prospects` no filtra por "tiene propuesta": hay que traer TODOS para filtrar aquí. */
+    /** `search` por nombre de hotel (Hugo, 2026-10-21): `/prospects` ya lo
+        soporta server-side, solo faltaba mandarlo. */
+    getProposalCandidates: build.query<ProposalCandidate[], { search?: string } | void>({
+      queryFn: async (arg, _api, _extra, fetchWithBQ) => {
+        const search = arg?.search?.trim() ?? ''
+        /** `/prospects` no filtra por "tiene propuesta": hay que traer TODOS
+            (los que ya coincidan con `search`) para filtrar eso aquí. */
         const res = await fetchAllPages<ProspectApi>(fetchWithBQ as FetchWithBQ, '/prospects', {
           includeClosed: true,
+          ...(search !== '' ? { search } : {}),
         })
         if ('error' in res) return { error: res.error as never }
 
