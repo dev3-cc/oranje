@@ -1,9 +1,9 @@
 import { v7 as uuidv7 } from 'uuid'
 
+import { PERMISSIONS } from '../../prisma/permissions.js'
 import type { AuthenticatedUser } from '../../src/common/decorators/index.js'
 import type { PrismaService } from '../../src/infra/prisma/index.js'
 import type { StorageService } from '../../src/infra/storage/index.js'
-import { PermissionsService } from '../../src/modules/identity/index.js'
 import { AuditsRepository } from '../../src/modules/supervision/audits/audits.repository.js'
 import { AuditsService } from '../../src/modules/supervision/audits/audits.service.js'
 
@@ -11,9 +11,13 @@ import { close, db } from './db.js'
 import { actor } from './fixture.js'
 
 /**
- * Las dos auditorías del Supervisor: Presentación Personal (por colaborador) y
- * Percepción de Ambiente y Recursos (por hotel), mismo mecanismo. Sin efecto
- * en semáforos y sin journal — su historial es `audit_response_history`.
+ * Las dos auditorías del Inspector: Presentación Personal (por colaborador) y
+ * Percepción de Ambiente y Recursos (por hotel), mismo mecanismo. Nació del
+ * Supervisor (2026-09-14), se amplió al Inspector por zona (2026-09-24) y
+ * quedó EXCLUSIVA del Inspector el 2026-10-21 (el vault ya lo pedía desde el
+ * 2026-10-16) — el Supervisor pierde create/read/update por completo, ver
+ * `audits.service.ts`. Sin efecto en semáforos y sin journal — su historial
+ * es `audit_response_history`.
  */
 
 const prisma = db as unknown as PrismaService
@@ -31,6 +35,7 @@ const audits = new AuditsService(
 
 let actorId: string
 let zoneId: string
+let otherZoneId: string
 let departmentId: string
 let positionId: string
 let modalityId: string
@@ -52,14 +57,16 @@ const workerIds: string[] = []
 const auditIds: string[] = []
 const checklistItemIds: string[] = []
 
-async function hotel(name: string): Promise<string> {
+// `zone` por defecto es la zona primaria del archivo; `otherHotelId` pasa la
+// suya para poder probar el límite real del Inspector (zona, no hotel).
+async function hotel(name: string, zone: string = zoneId): Promise<string> {
   const id = uuidv7()
 
   await db.hotel.create({
     data: {
       id,
       name: `${name} ${id.slice(-8)}`,
-      zoneId,
+      zoneId: zone,
       timeZone: 'America/Cancun',
       createdBy: actorId,
       updatedBy: actorId,
@@ -71,6 +78,9 @@ async function hotel(name: string): Promise<string> {
   return id
 }
 
+// Fixture para roles con hotel fijo (Supervisor, Manager de Área/General):
+// sigue haciendo falta para la auditoría de "la Matriz" (el Supervisor ya
+// rechazado) y para el caso del Manager General sin hotel.
 async function usuario(roleCode: string, scopeHotelId: string | null): Promise<AuthenticatedUser> {
   const role = await db.role.findFirstOrThrow({ where: { code: roleCode } })
   const user = await db.user.create({
@@ -87,6 +97,28 @@ async function usuario(roleCode: string, scopeHotelId: string | null): Promise<A
   users.push(user.id)
 
   return { id: user.id, roleCode, hotelId: scopeHotelId, departmentId: null }
+}
+
+// El Inspector no tiene hotel fijo: audita los hoteles de la(s) zona(s) que
+// se le asignen (`commercial.user_zone`) — mismo patrón que
+// `audits-inspector.spec.ts` y `RequisitionsRepository`.
+async function inspector(zoneIds: string[]): Promise<AuthenticatedUser> {
+  const role = await db.role.findFirstOrThrow({ where: { code: 'ROL-I-01' } })
+  const user = await db.user.create({
+    data: {
+      id: uuidv7(),
+      email: `audit-inspector-${uuidv7().slice(-12)}@oranje.local`,
+      fullName: 'ROL-I-01',
+      roleId: role.id,
+    },
+    select: { id: true },
+  })
+
+  users.push(user.id)
+
+  await db.userZone.createMany({ data: zoneIds.map((zone) => ({ userId: user.id, zoneId: zone })) })
+
+  return { id: user.id, roleCode: 'ROL-I-01', hotelId: null, departmentId: null }
 }
 
 async function colaborador(): Promise<string> {
@@ -189,12 +221,17 @@ async function checklistItem(
 beforeAll(async () => {
   actorId = (await actor()).id
   zoneId = (await db.zone.findFirstOrThrow({ select: { id: true } })).id
+  otherZoneId = (
+    await db.zone.findFirstOrThrow({ where: { id: { not: zoneId } }, select: { id: true } })
+  ).id
   departmentId = (await db.hotelDepartment.findFirstOrThrow({ select: { id: true } })).id
   positionId = (await db.catalogPosition.findFirstOrThrow({ select: { id: true } })).id
   modalityId = (await db.hiringModality.findFirstOrThrow({ select: { id: true } })).id
 
   hotelId = await hotel('Hotel Auditorías')
-  otherHotelId = await hotel('Hotel Ajeno Auditorías')
+  // En OTRA zona a propósito: el límite real del Inspector es su zona, no un
+  // hotel ajeno dentro de la misma (2026-10-21).
+  otherHotelId = await hotel('Hotel Ajeno Auditorías', otherZoneId)
 
   workerId = await colaborador()
   await asignar(workerId, hotelId)
@@ -222,6 +259,8 @@ afterAll(async () => {
   await db.requisition.deleteMany({ where: { id: { in: requisitions } } })
   await db.worker.deleteMany({ where: { id: { in: workerIds } } })
 
+  await db.userZone.deleteMany({ where: { userId: { in: users } } })
+
   try {
     await db.user.deleteMany({ where: { id: { in: users } } })
   } catch {
@@ -238,7 +277,7 @@ afterAll(async () => {
 
 describe('crear una auditoría', () => {
   it('Presentación Personal calcula el score ponderado', async () => {
-    const supervisor = await usuario('ROL-H-01', hotelId)
+    const inspectorDeLaZona = await inspector([zoneId])
 
     const entity = await audits.create(
       {
@@ -250,7 +289,7 @@ describe('crear una auditoría', () => {
           { checklistItemId: ppItemB, value: 'NO' }, // weight 3
         ],
       },
-      supervisor,
+      inspectorDeLaZona,
     )
     auditIds.push(entity.id)
 
@@ -261,7 +300,7 @@ describe('crear una auditoría', () => {
   })
 
   it('Ambiente y Recursos no lleva colaborador', async () => {
-    const supervisor = await usuario('ROL-H-01', hotelId)
+    const inspectorDeLaZona = await inspector([zoneId])
 
     const entity = await audits.create(
       {
@@ -272,7 +311,7 @@ describe('crear una auditoría', () => {
           { checklistItemId: envItemB, value: 'CUMPLE' },
         ],
       },
-      supervisor,
+      inspectorDeLaZona,
     )
     auditIds.push(entity.id)
 
@@ -281,7 +320,7 @@ describe('crear una auditoría', () => {
   })
 
   it('N/A no cuenta ni pesa en el promedio', async () => {
-    const supervisor = await usuario('ROL-H-01', hotelId)
+    const inspectorDeLaZona = await inspector([zoneId])
 
     const entity = await audits.create(
       {
@@ -292,7 +331,7 @@ describe('crear una auditoría', () => {
           { checklistItemId: envItemB, value: 'N/A' }, // weight 2, fuera del cálculo
         ],
       },
-      supervisor,
+      inspectorDeLaZona,
     )
     auditIds.push(entity.id)
 
@@ -301,7 +340,7 @@ describe('crear una auditoría', () => {
   })
 
   it('todos N/A se rechaza: no hay nada que calificar', async () => {
-    const supervisor = await usuario('ROL-H-01', hotelId)
+    const inspectorDeLaZona = await inspector([zoneId])
 
     await expect(
       audits.create(
@@ -310,13 +349,13 @@ describe('crear una auditoría', () => {
           hotelId,
           responses: [{ checklistItemId: envItemA, value: 'N/A' }],
         },
-        supervisor,
+        inspectorDeLaZona,
       ),
     ).rejects.toMatchObject({ response: { code: 'AUDIT_ALL_NA' } })
   })
 
-  it('un Supervisor de OTRO hotel recibe 403', async () => {
-    const ajeno = await usuario('ROL-H-01', otherHotelId)
+  it('un Inspector de OTRA zona recibe 403 (HOTEL_OUT_OF_ZONE)', async () => {
+    const ajeno = await inspector([otherZoneId])
 
     await expect(
       audits.create(
@@ -327,11 +366,11 @@ describe('crear una auditoría', () => {
         },
         ajeno,
       ),
-    ).rejects.toMatchObject({ response: { code: 'HOTEL_OUT_OF_SCOPE' } })
+    ).rejects.toMatchObject({ response: { code: 'HOTEL_OUT_OF_ZONE' } })
   })
 
   it('PERSONAL_PRESENTATION exige workerId', async () => {
-    const supervisor = await usuario('ROL-H-01', hotelId)
+    const inspectorDeLaZona = await inspector([zoneId])
 
     await expect(
       audits.create(
@@ -340,13 +379,13 @@ describe('crear una auditoría', () => {
           hotelId,
           responses: [{ checklistItemId: ppItemA, value: 'CUMPLE' }],
         },
-        supervisor,
+        inspectorDeLaZona,
       ),
     ).rejects.toMatchObject({ response: { code: 'WORKER_REQUIRED' } })
   })
 
   it('ENVIRONMENT rechaza workerId', async () => {
-    const supervisor = await usuario('ROL-H-01', hotelId)
+    const inspectorDeLaZona = await inspector([zoneId])
 
     await expect(
       audits.create(
@@ -356,13 +395,13 @@ describe('crear una auditoría', () => {
           workerId,
           responses: [{ checklistItemId: envItemA, value: 'CUMPLE' }],
         },
-        supervisor,
+        inspectorDeLaZona,
       ),
     ).rejects.toMatchObject({ response: { code: 'WORKER_NOT_ALLOWED' } })
   })
 
   it('un colaborador sin asignación activa en ese hotel se rechaza', async () => {
-    const supervisor = await usuario('ROL-H-01', hotelId)
+    const inspectorDeLaZona = await inspector([zoneId])
     const suelto = await colaborador()
 
     await expect(
@@ -373,7 +412,7 @@ describe('crear una auditoría', () => {
           workerId: suelto,
           responses: [{ checklistItemId: ppItemA, value: 'CUMPLE' }],
         },
-        supervisor,
+        inspectorDeLaZona,
       ),
     ).rejects.toMatchObject({ response: { code: 'WORKER_NOT_ASSIGNED_TO_HOTEL' } })
   })
@@ -381,7 +420,7 @@ describe('crear una auditoría', () => {
 
 describe('corregir una auditoría', () => {
   it('corregir una respuesta deja historia y recalcula el score', async () => {
-    const supervisor = await usuario('ROL-H-01', hotelId)
+    const inspectorDeLaZona = await inspector([zoneId])
 
     const created = await audits.create(
       {
@@ -392,7 +431,7 @@ describe('corregir una auditoría', () => {
           { checklistItemId: envItemB, value: 'NO' }, // weight 2
         ],
       },
-      supervisor,
+      inspectorDeLaZona,
     )
     auditIds.push(created.id)
 
@@ -401,7 +440,7 @@ describe('corregir una auditoría', () => {
     const corrected = await audits.update(
       created.id,
       { responses: [{ checklistItemId: envItemB, value: 'CUMPLE' }] },
-      supervisor,
+      inspectorDeLaZona,
     )
 
     // possible = 1 + 2 = 3, earned = 2 → 66.67
@@ -419,7 +458,7 @@ describe('corregir una auditoría', () => {
   })
 
   it('mandar el mismo valor no deja historia', async () => {
-    const supervisor = await usuario('ROL-H-01', hotelId)
+    const inspectorDeLaZona = await inspector([zoneId])
 
     const created = await audits.create(
       {
@@ -427,14 +466,14 @@ describe('corregir una auditoría', () => {
         hotelId,
         responses: [{ checklistItemId: envItemA, value: 'CUMPLE' }],
       },
-      supervisor,
+      inspectorDeLaZona,
     )
     auditIds.push(created.id)
 
     await audits.update(
       created.id,
       { responses: [{ checklistItemId: envItemA, value: 'CUMPLE' }] },
-      supervisor,
+      inspectorDeLaZona,
     )
 
     const responseRow = await db.auditResponse.findFirstOrThrow({
@@ -447,9 +486,9 @@ describe('corregir una auditoría', () => {
     expect(history).toHaveLength(0)
   })
 
-  it('un Supervisor de otro hotel no corrige', async () => {
-    const supervisor = await usuario('ROL-H-01', hotelId)
-    const ajeno = await usuario('ROL-H-01', otherHotelId)
+  it('un Inspector de otra zona no corrige', async () => {
+    const inspectorDeLaZona = await inspector([zoneId])
+    const ajeno = await inspector([otherZoneId])
 
     const created = await audits.create(
       {
@@ -457,19 +496,19 @@ describe('corregir una auditoría', () => {
         hotelId,
         responses: [{ checklistItemId: envItemA, value: 'CUMPLE' }],
       },
-      supervisor,
+      inspectorDeLaZona,
     )
     auditIds.push(created.id)
 
     await expect(
       audits.update(created.id, { observations: 'intento ajeno' }, ajeno),
-    ).rejects.toMatchObject({ response: { code: 'HOTEL_OUT_OF_SCOPE' } })
+    ).rejects.toMatchObject({ response: { code: 'HOTEL_OUT_OF_ZONE' } })
   })
 })
 
 describe('tiempo sin auditar', () => {
   it('un colaborador auditado trae fecha y uno nunca auditado trae null', async () => {
-    const supervisor = await usuario('ROL-H-01', hotelId)
+    const inspectorDeLaZona = await inspector([zoneId])
 
     const created = await audits.create(
       {
@@ -478,11 +517,11 @@ describe('tiempo sin auditar', () => {
         workerId,
         responses: [{ checklistItemId: ppItemA, value: 'CUMPLE' }],
       },
-      supervisor,
+      inspectorDeLaZona,
     )
     auditIds.push(created.id)
 
-    const rows = await audits.lastPerWorker(hotelId, supervisor)
+    const rows = await audits.lastPerWorker(hotelId, inspectorDeLaZona)
 
     const audited = rows.find((r) => r.workerId === workerId)
     const never = rows.find((r) => r.workerId === unauditedWorkerId)
@@ -491,6 +530,10 @@ describe('tiempo sin auditar', () => {
     expect(never?.lastAuditedAt).toBeNull()
   })
 
+  // No es sobre el permiso de Auditorías (el GM nunca lo tuvo, con o sin el
+  // cambio del 2026-10-21): es el caso borde de `assertHotelScope` para
+  // cualquier usuario sin hotel fijo Y sin zonas asignadas (mismo camino que
+  // Sistema) — el GM solo presta el `hotelId: null`.
   it('un Manager General (sin hotel) también puede consultarla', async () => {
     const gm = await usuario('ROL-H-03', null)
 
@@ -500,7 +543,7 @@ describe('tiempo sin auditar', () => {
 
 describe('leer auditorías', () => {
   it('el detalle trae las respuestas con categoría y etiqueta del reactivo', async () => {
-    const supervisor = await usuario('ROL-H-01', hotelId)
+    const inspectorDeLaZona = await inspector([zoneId])
 
     const created = await audits.create(
       {
@@ -508,11 +551,11 @@ describe('leer auditorías', () => {
         hotelId,
         responses: [{ checklistItemId: envItemA, value: 'CUMPLE' }],
       },
-      supervisor,
+      inspectorDeLaZona,
     )
     auditIds.push(created.id)
 
-    const detail = await audits.get(created.id, supervisor)
+    const detail = await audits.get(created.id, inspectorDeLaZona)
 
     expect(detail.responses[0]).toMatchObject({
       checklistItemId: envItemA,
@@ -521,8 +564,8 @@ describe('leer auditorías', () => {
     })
   })
 
-  it('la lista respeta el alcance de hotel del Supervisor', async () => {
-    const supervisor = await usuario('ROL-H-01', hotelId)
+  it('la lista respeta el alcance de zona del Inspector: incluye la suya, no la ajena', async () => {
+    const inspectorDeLaZona = await inspector([zoneId])
 
     const created = await audits.create(
       {
@@ -530,26 +573,68 @@ describe('leer auditorías', () => {
         hotelId,
         responses: [{ checklistItemId: envItemA, value: 'CUMPLE' }],
       },
-      supervisor,
+      inspectorDeLaZona,
     )
     auditIds.push(created.id)
 
-    const board = await audits.list({ page: 1, limit: 50 }, supervisor)
+    // Una auditoría de un hotel de OTRA zona, hecha por su propio Inspector:
+    // no debe aparecer en el tablero del primero.
+    const inspectorDeOtraZona = await inspector([otherZoneId])
+    const deOtraZona = await audits.create(
+      {
+        auditType: 'ENVIRONMENT',
+        hotelId: otherHotelId,
+        responses: [{ checklistItemId: envItemA, value: 'CUMPLE' }],
+      },
+      inspectorDeOtraZona,
+    )
+    auditIds.push(deOtraZona.id)
 
-    expect(board.data.some((a) => a.id === created.id)).toBe(true)
+    const board = await audits.list({ page: 1, limit: 50 }, inspectorDeLaZona)
+    const ids = board.data.map((a) => a.id)
+
+    expect(ids).toContain(created.id)
+    expect(ids).not.toContain(deOtraZona.id)
   })
 })
 
-describe('la Matriz sostiene audits:update', () => {
-  it('solo el Supervisor audita, corrige y ve: sus Managers no, ni por herencia', async () => {
-    // Auditorías queda fuera de la herencia por jerarquía (Reglas de Negocio,
-    // «Herencia por jerarquía», decisión de Hugo del 2026-09-14).
-    const permissions = new PermissionsService(prisma)
+describe('la Matriz sostiene audits:create/read/update', () => {
+  // Contra `PERMISSIONS` (la fuente en `prisma/permissions.ts`), no contra
+  // `PermissionsService`/`role_permission`: esta base de pruebas local no se
+  // resembró con el cambio del 2026-10-21 (seguía dando ROL-H-01 → true antes
+  // de este archivo), y reseeder aquí habría destapado además una fila
+  // desactualizada en `herencia-jerarquia.spec.ts` (línea ~126, hardcodea
+  // ROL-H-01 en el set de audits) que no me corresponde tocar. Esto prueba
+  // exactamente lo mismo que probaba el bloque anterior —quién sostiene la
+  // Matriz— leyendo la fuente de verdad en vez de una base que puede quedar
+  // detrás de ella.
+  const filasAudits = new Map(
+    PERMISSIONS.filter((p) => p.module === 'audits').map((p) => [p.action, p]),
+  )
 
-    for (const action of ['create', 'read', 'update']) {
-      expect(await permissions.can('ROL-H-01', 'audits', action)).toBe(true)
-      expect(await permissions.can('ROL-H-02', 'audits', action)).toBe(false)
-      expect(await permissions.can('ROL-H-03', 'audits', action)).toBe(false)
+  it('solo el Inspector audita, corrige y ve: el Supervisor ya NO (exclusividad del 2026-10-21)', () => {
+    for (const action of ['create', 'read', 'update'] as const) {
+      const fila = filasAudits.get(action)
+
+      expect(fila?.inherit).toBe(false)
+      expect(fila?.roles).toContain('ROL-I-01')
+      expect(fila?.roles).not.toContain('ROL-H-01') // el Supervisor lo tenía hasta el 2026-10-21
     }
+  })
+
+  it('sigue sin heredarse: ni los Managers del hotel ni el Coordinador del Inspector', () => {
+    for (const action of ['create', 'read', 'update'] as const) {
+      const roles = filasAudits.get(action)?.roles ?? []
+
+      expect(roles).not.toContain('ROL-H-02') // Manager de Área
+      expect(roles).not.toContain('ROL-H-03') // Manager General
+      expect(roles).not.toContain('ROL-I-02') // Coordinador ⊃ Inspector, pero esto es `inherit: false`
+    }
+  })
+
+  it('crear y corregir son exclusivos del Inspector; leer también lo abre el Sistema', () => {
+    expect(filasAudits.get('create')?.roles).toEqual(['ROL-I-01'])
+    expect(filasAudits.get('update')?.roles).toEqual(['ROL-I-01'])
+    expect(new Set(filasAudits.get('read')?.roles)).toEqual(new Set(['ROL-I-01', 'ROL-SYS-01']))
   })
 })

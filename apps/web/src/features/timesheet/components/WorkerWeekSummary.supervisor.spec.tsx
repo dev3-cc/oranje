@@ -11,8 +11,8 @@ import { store } from '@/app/store'
 
 /* El mock de sesión por defecto trae TODOS los permisos (sessionApi.ts: "en
    modo mock ningún botón se esconde") — para probar el camino del
-   Supervisor puro (sin `timesheet:approve_hours`) hay que acotar la sesión,
-   igual que `TimesheetPage.observer.spec.tsx`. */
+   Supervisor real hay que acotar la sesión, igual que
+   `TimesheetPage.observer.spec.tsx`. */
 const SUPERVISOR_SESSION = {
   data: {
     id: 'u-sup',
@@ -26,7 +26,7 @@ const SUPERVISOR_SESSION = {
     hotel: null,
     department: null,
     locale: 'es',
-    permissions: ['timesheet.review_punches', 'timesheet.create_manual_punch'],
+    permissions: ['timesheet.create_manual_punch'],
   },
 }
 
@@ -74,12 +74,13 @@ function row(overrides: Partial<TimesheetRow> = {}): TimesheetRow {
 }
 
 /**
- * El Supervisor no aprueba (D-09): en OPEN sigue viendo "Enviar a
- * revisión", no el botón combinado que sí ve un Manager de Área/General
- * (Hugo, 2026-10-10).
+ * El Supervisor ya ni envía ni aprueba (Hugo, 2026-10-21 — antes sí enviaba,
+ * D-09 lo separaba de aprobar; ahora las dos son del Manager de Área/General).
+ * En OPEN no ve ningún botón de Enviar/Aprobar, solo sigue pudiendo capturar
+ * una marca manual (`timesheet:create_manual_punch`, que no se tocó).
  */
 describe('WorkerWeekSummary · Supervisor', () => {
-  it('ve Enviar a revisión, no el botón combinado de aprobar', () => {
+  it('no ve ni «Enviar a revisión» ni el botón combinado de aprobar', () => {
     render(
       <Provider store={store}>
         <MemoryRouter>
@@ -88,7 +89,9 @@ describe('WorkerWeekSummary · Supervisor', () => {
       </Provider>,
     )
 
-    expect(screen.getByRole('button', { name: 'Enviar a revisión' })).toBeEnabled()
+    expect(screen.queryByRole('button', { name: 'Enviar a revisión' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Enviar y aprobar' })).not.toBeInTheDocument()
+    // Sigue pudiendo capturar una marca que el ponche no registró.
+    expect(screen.getByRole('button', { name: 'Marca manual' })).toBeEnabled()
   })
 })
