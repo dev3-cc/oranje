@@ -85,16 +85,18 @@ export interface CreateWorkerRequest {
   phone: string
   address: string
   zoneId: string
-  catalogPositionId?: string
-  hiringModalityId?: string
-  englishLevelId?: string
-  experienceLevel?: string
+  catalogPositionId?: string | null
+  hiringModalityId?: string | null
+  englishLevelId?: string | null
+  experienceLevel?: string | null
   /** Fases 2 y 3, opcionales: si la Reclutadora ya las tiene, las captura aquí. */
-  transportType?: string
+  transportType?: string | null
   emergencyContactName?: string
   emergencyContactPhone?: string
-  emergencyContactRelationship?: string
-  bloodType?: string
+  /** `null` explícito = "Sin definir aún" al editar: limpia el campo en vez
+      de dejarlo intacto (Hugo, 2026-10-21). */
+  emergencyContactRelationship?: string | null
+  bloodType?: string | null
 }
 
 /** Lo que devuelve `POST /workers/:id/access`, una sola vez. */

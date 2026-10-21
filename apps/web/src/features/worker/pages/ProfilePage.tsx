@@ -199,7 +199,12 @@ export function ProfilePage(): ReactNode {
             label={t`Emergencia`}
             value={
               profile.emergencyContact
-                ? `${profile.emergencyContact.name} · ${RELATIONSHIP_LABEL[profile.emergencyContact.relationship] ?? profile.emergencyContact.relationship}`
+                ? `${profile.emergencyContact.name ?? '—'} · ${
+                    profile.emergencyContact.relationship === null
+                      ? '—'
+                      : (RELATIONSHIP_LABEL[profile.emergencyContact.relationship] ??
+                        profile.emergencyContact.relationship)
+                  }`
                 : '—'
             }
           />
