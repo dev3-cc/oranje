@@ -95,14 +95,14 @@ describe('la base sembrada respeta la herencia', () => {
      note, así que al agregar una hay que venir aquí a decir por qué. */
   it('las excepciones a la herencia son solo estas seis', () => {
     expect([...SIN_HERENCIA].sort()).toEqual([
-      // Auditar es solo del Inspector, nunca de sus jefes (orden de Hugo,
+      // Inspeccionar es solo del Inspector, nunca de sus jefes (orden de Hugo,
       // 2026-09-14; nació del Supervisor, se le quitó el 2026-10-21 —
       // el vault ya lo pedía desde el 2026-10-16).
       'audits:create',
       'audits:read',
       'audits:update',
       // Aprobar el ajuste/gasto de una asignación eventual: es del
-      // Observador, que no hereda nada ni nadie hereda de él (Hugo,
+      // Manager de QA (antes Observador), que no hereda nada ni nadie hereda de él (Hugo,
       // 2026-10-08) — la excepción es doble, no solo "fuera de la herencia".
       'requisitions:approve_pay_adjustment',
       // Confirmar una cuenta de gerencia que el propio hotel propuso: es
@@ -119,7 +119,7 @@ describe('la base sembrada respeta la herencia', () => {
      (Hugo) — el Supervisor pierde audits:create/read/update por completo.
      Sigue sin heredarse hacia el Coordinador — mismo criterio de "sin
      herencia" que ya protegía al Supervisor. */
-  it('lo marcado sin herencia se queda en su rol: Auditorías es exclusiva del Inspector', async () => {
+  it('lo marcado sin herencia se queda en su rol: Inspecciones es exclusiva del Inspector', async () => {
     const rows = await db.rolePermission.findMany({
       where: { module: 'audits' },
       select: { role: { select: { code: true } } },

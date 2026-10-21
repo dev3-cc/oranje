@@ -61,7 +61,7 @@ export class AuditsRepository {
     return (await this.prisma.hotel.count({ where: { id: hotelId } })) > 0
   }
 
-  // El Inspector no tiene hotel fijo: audita los de su zona (Reglas de
+  // El Inspector no tiene hotel fijo: inspecciona los de su zona (Reglas de
   // Negocio, 2026-09-24) — mismo patrón que RequisitionsRepository.
   async hotelIdsInUserZones(userId: string): Promise<string[]> {
     const rows = await this.prisma.hotel.findMany({
@@ -91,7 +91,7 @@ export class AuditsRepository {
   }
 
   // Los `checklistItemId` que SÍ existen y SÍ son del `auditType` de la
-  // auditoría — la FK compuesta de la base rechazaría el resto, pero
+  // inspección — la FK compuesta de la base rechazaría el resto, pero
   // pre-validar da un 422 de negocio en vez de traducir un 500 del motor.
   async checklistItems(
     auditType: string,

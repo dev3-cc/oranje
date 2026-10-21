@@ -25,7 +25,7 @@ function renderHeader(): void {
 }
 
 /**
- * La barra global era decorativa (auditoría del 2026-09-04): ni handler ni
+ * La barra global era decorativa (inspección del 2026-09-04): ni handler ni
  * atajo. Estas pruebas fijan que Ctrl K abre la paleta, que busca de verdad
  * contra los fixtures y que la campana no pinta contadores inventados.
  */

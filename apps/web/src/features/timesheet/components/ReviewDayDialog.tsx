@@ -76,7 +76,7 @@ export function ReviewDayDialog({
       `undefined` = el ícono no se dibuja — lo que el permiso no autoriza no
       se dibuja. */
   onCorrectPunch?: ((punch: TimesheetPunch) => void) | undefined
-  /** Quien no revisa (el Observador) ve el día y su nota, sin nada que guardar. */
+  /** Quien no revisa (el Manager de QA) ve el día y su nota, sin nada que guardar. */
   readOnly?: boolean
   onClose: () => void
 }): ReactNode {

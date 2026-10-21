@@ -66,27 +66,27 @@ function groupByCategory(items: ChecklistItem[]): Array<[string, ChecklistItem[]
 function auditErrorMessage(error: unknown, i18n: I18n): string {
   return apiErrorMessage(error, {
     byCode: {
-      WORKER_REQUIRED: i18n._(msg`Elige a quién se audita antes de guardar.`),
+      WORKER_REQUIRED: i18n._(msg`Elige a quién se inspecciona antes de guardar.`),
       WORKER_NOT_ASSIGNED_TO_HOTEL: i18n._(
         msg`Ese colaborador ya no tiene asignación activa en este hotel.`,
       ),
-      AUDIT_ALL_NA: i18n._(msg`No se puede calificar una auditoría donde todo quedó en N/A.`),
+      AUDIT_ALL_NA: i18n._(msg`No se puede calificar una inspección donde todo quedó en N/A.`),
       RESPONSE_NOT_FOUND: i18n._(
-        msg`Uno de los reactivos ya no es parte de esta auditoría. Recarga e inténtalo de nuevo.`,
+        msg`Uno de los reactivos ya no es parte de esta inspección. Recarga e inténtalo de nuevo.`,
       ),
       CHECKLIST_ITEM_NOT_FOUND: i18n._(
         msg`Uno de los reactivos ya no existe. Recarga e inténtalo de nuevo.`,
       ),
-      HOTEL_OUT_OF_SCOPE: i18n._(msg`Esta auditoría no es de tu hotel.`),
+      HOTEL_OUT_OF_SCOPE: i18n._(msg`Esta inspección no es de tu hotel.`),
     },
-    fallback: i18n._(msg`No se pudo guardar la auditoría. Inténtalo de nuevo.`),
+    fallback: i18n._(msg`No se pudo guardar la inspección. Inténtalo de nuevo.`),
   })
 }
 
 export interface AuditFormDialogProps {
   auditType: AuditType
   hotelId: string
-  /** Solo PERSONAL_PRESENTATION: a quién se audita. */
+  /** Solo PERSONAL_PRESENTATION: a quién se inspecciona. */
   worker?: { id: string; fullName: string; photoUrl: string | null }
   title: string
   description: string
@@ -97,7 +97,7 @@ export interface AuditFormDialogProps {
 }
 
 /**
- * El formulario de las dos auditorías: header, reactivos por categoría con
+ * El formulario de las dos inspecciones: header, reactivos por categoría con
  * pills CUMPLE/NO/N/A, observaciones y el score preliminar EN VIVO (preview
  * del cliente; el score real y final lo calcula y devuelve el back al
  * guardar). `PersonalPresentationAuditDialog` y `EnvironmentAuditDialog` solo
@@ -157,7 +157,7 @@ export function AuditFormDialog({
           responses: payloadResponses,
           ...(observations.trim() !== '' ? { observations: observations.trim() } : {}),
         }).unwrap()
-        toast.success(t`Auditoría corregida`)
+        toast.success(t`Inspección corregida`)
       } else {
         await createAudit({
           auditType,
@@ -166,7 +166,7 @@ export function AuditFormDialog({
           ...(observations.trim() !== '' ? { observations: observations.trim() } : {}),
           responses: payloadResponses,
         }).unwrap()
-        toast.success(t`Auditoría guardada`)
+        toast.success(t`Inspección guardada`)
       }
       onSaved?.()
       onClose()
@@ -224,7 +224,7 @@ export function AuditFormDialog({
                 }}
               >
                 <MaterialIcon name="save" className="text-base" aria-hidden />
-                {isSaving ? t`Guardando…` : t`Finalizar auditoría`}
+                {isSaving ? t`Guardando…` : t`Finalizar inspección`}
               </Button>
             </div>
           </div>
@@ -252,7 +252,7 @@ export function AuditFormDialog({
           )}
           <p className="text-sm text-ink-2">
             <Trans>
-              Auditando a <span className="font-semibold text-ink">{worker.fullName}</span>
+              Inspeccionando a <span className="font-semibold text-ink">{worker.fullName}</span>
             </Trans>
           </p>
         </div>
@@ -263,8 +263,8 @@ export function AuditFormDialog({
       ) : (items ?? []).length === 0 ? (
         <p className="rounded-lg border border-dashed border-line bg-surface p-6 text-center text-sm text-ink-3">
           <Trans>
-            Todavía no hay reactivos para esta auditoría. Pídele al Administrador que los agregue en
-            Catálogos.
+            Todavía no hay reactivos para esta inspección. Pídele al Administrador que los agregue
+            en Catálogos.
           </Trans>
           {IS_DEV_UI && (
             <code className="block text-xs text-ink-4">catalogs.audit_checklist_item</code>

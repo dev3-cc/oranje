@@ -235,7 +235,7 @@ export function AttendanceView({
 }: {
   rows: TimesheetRow[]
   selectedWeek: string
-  /** Aprobados por el Observador, sin decidir si pesan en la nómina — se
+  /** Aprobados por el Manager de QA, sin decidir si pesan en la nómina — se
       filtran por persona para el `PayPreviewBadge` de cada ficha (Hugo,
       2026-10-14). Vacío sin `payroll:generate`: a nadie más se le dibuja. */
   pendingAdjustments?: PayAdjustment[]
@@ -256,7 +256,7 @@ export function AttendanceView({
     ((target: { punch: TimesheetPunch; date: string; workerName: string }) => void) | undefined
   /** Abre la Revisión del día observado — sin esto, un día con anomalía
       bloqueaba "Enviar y aprobar" sin ninguna forma de resolverlo desde
-      Asistencia. `undefined` = el aviso no se dibuja (p. ej. el Observador). */
+      Asistencia. `undefined` = el aviso no se dibuja (p. ej. el Manager de QA). */
   onReview?: ReviewHandler | undefined
 }): ReactNode {
   const [selectedId, setSelectedId] = useState<string | null>(null)

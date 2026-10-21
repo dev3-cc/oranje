@@ -25,7 +25,7 @@ type OpenPath = 'ENVIRONMENT' | 'WORKER_LIST' | 'PERSONAL'
  * SU hotel, como tarjeta con el hero de foto (mismo lenguaje que la ficha de
  * Mi Personal y el tablero de Requisiciones): un Supervisor tiene UN SOLO
  * hotel (`identity.user.hotelId`), así que aquí no hay grid — es una tarjeta
- * ancha con las dos auditorías detrás de "Auditar".
+ * ancha con las dos inspecciones detrás de "Inspeccionar".
  */
 export function AuditHotelCard({
   hotelId,
@@ -69,7 +69,7 @@ export function AuditHotelCard({
                 <DropdownMenuTrigger asChild>
                   <Button variant="primary">
                     <MaterialIcon name="fact_check" className="text-base" aria-hidden />
-                    <Trans>Auditar</Trans>
+                    <Trans>Inspeccionar</Trans>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -79,7 +79,7 @@ export function AuditHotelCard({
                     }}
                   >
                     <MaterialIcon name="badge" className="text-base" aria-hidden />
-                    <Trans>Auditoría de personal</Trans>
+                    <Trans>Inspección de personal</Trans>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onSelect={() => {
@@ -87,14 +87,14 @@ export function AuditHotelCard({
                     }}
                   >
                     <MaterialIcon name="apartment" className="text-base" aria-hidden />
-                    <Trans>Auditar por ambiente</Trans>
+                    <Trans>Inspeccionar por ambiente</Trans>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <p className="max-w-xs text-right text-xs text-white/80">
                 <Trans>
-                  Las auditorías las hace el Supervisor del hotel; tú puedes ver el historial.
+                  Las inspecciones las hace el Supervisor del hotel; tú puedes ver el historial.
                 </Trans>
               </p>
             )}

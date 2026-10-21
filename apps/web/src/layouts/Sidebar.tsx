@@ -45,7 +45,7 @@ const MGR_GENERAL = 'ROL-H-03'
 const ADMIN = 'ROL-ADM-01'
 const INSPECTOR = 'ROL-I-01'
 const COORDINADOR_INSPECCION = 'ROL-I-02'
-const OBSERVADOR = 'ROL-OBS-01'
+const MGR_QA = 'ROL-Q-02'
 
 const VENTAS = [BD, BDC] as const
 const RECLUTAMIENTO = [RECLUTADORA, LIDER_GRUPO, MGR_RECLUTAMIENTO] as const
@@ -66,29 +66,29 @@ const MAPPED_ROLES: ReadonlySet<string> = new Set([
   ...INSPECCION,
   ...CONTABILIDAD,
   ADMIN,
-  OBSERVADOR,
+  MGR_QA,
 ])
 
 const MODULES: NavModule[] = [
   { label: msg`Dashboard`, to: '/dashboard', icon: 'space_dashboard', roles: STAFF },
-  /* Observador (ROL-OBS-01, Roles del Sistema.md 2026-09-21): transversal, de
+  /* Manager de QA (antes Observador, ROL-OBS-01, Roles del Sistema.md 2026-09-21): transversal, de
      solo lectura — del sidebar del staff solo ve el Timesheet (todos los
      hoteles, Hugo 2026-09-29); ni siquiera el Dashboard, que compone datos por
-     rol que el Observador no tiene. */
+     rol que el Manager de QA no tiene. */
   {
-    label: msg`Observador`,
+    label: msg`Dashboard de QA`,
     to: '/observability',
     icon: 'monitoring',
-    roles: [OBSERVADOR],
+    roles: [MGR_QA],
   },
-  /* La única acción de escritura del Observador (Hugo, 2026-10-08): el ajuste
+  /* La única acción de escritura del Manager de QA (Hugo, 2026-10-08): el ajuste
      de tarifa o el gasto extra de una asignación eventual que pidió
      Reclutamiento. Por lo demás, el rol sigue siendo de puro lectura. */
   {
     label: msg`Ajustes pendientes`,
     to: '/pay-adjustments',
     icon: 'rule',
-    roles: [OBSERVADOR],
+    roles: [MGR_QA],
   },
   { label: msg`Usuarios`, to: '/users', icon: 'manage_accounts', roles: [ADMIN] },
   { label: msg`Catálogos`, to: '/catalogs', icon: 'category', roles: [ADMIN] },
@@ -135,15 +135,21 @@ const MODULES: NavModule[] = [
     roles: RECLUTAMIENTO,
   },
   { label: msg`Blacklist`, to: '/blacklist', icon: 'block', roles: RECLUTAMIENTO },
+  /* La Manager de Reclutamiento tiene su Mi Equipo y sus Reportes (la misma
+     ruta elige la vista por rol, como el Dashboard). Incidencias todavía no
+     tiene pantalla: entra al «Muy pronto» hasta que se construya. */
+  { label: msg`Mi Equipo`, to: '/my-team', icon: 'groups', roles: [MGR_RECLUTAMIENTO] },
+  { label: msg`Incidencias`, to: '/incidents', icon: 'report', roles: [MGR_RECLUTAMIENTO] },
+  { label: msg`Reportes`, to: '/reports', icon: 'bar_chart', roles: [MGR_RECLUTAMIENTO] },
   /* Beta «Ponche por Horario» (fecha indefinida, Reglas de Negocio, 2026-09-23):
      nadie planea turnos a mano y la pantalla ya no tiene entradas propias que
      mostrar — el Timesheet ya dice quién ponchó. `roles: []` oculta el enlace
      sin borrar el módulo; revertir es volver a `roles: HOTEL`. */
   { label: msg`Schedule`, to: '/schedule', icon: 'calendar_month', roles: [] },
-  /* El Observador lo ve de todos los hoteles y solo en lectura
+  /* El Manager de QA lo ve de todos los hoteles y solo en lectura
      (`timesheet:read_all_hotels`), para trabajar la nómina mientras se
      construye Contabilidad (Hugo, 2026-09-29). */
-  { label: msg`Timesheet`, to: '/timesheet', icon: 'schedule', roles: [...HOTEL, OBSERVADOR] },
+  { label: msg`Timesheet`, to: '/timesheet', icon: 'schedule', roles: [...HOTEL, MGR_QA] },
   {
     label: msg`Timesheet Global`,
     to: '/timesheet-global',
@@ -151,6 +157,8 @@ const MODULES: NavModule[] = [
     roles: [MGR_GENERAL],
   },
   { label: msg`Mi Personal`, to: '/my-staff', icon: 'badge', roles: HOTEL },
+  /* Mi Equipo del Hotel: sus gerentes y supervisores (Hugo, 2026-10-21). */
+  { label: msg`Mi Equipo`, to: '/my-team', icon: 'groups', roles: [MGR_GENERAL] },
   /* Atrasadas sin pagar + Registrar pago se mudaron al Timesheet de todos
      los hoteles, como tabla (Hugo, 2026-10-13) — esta pantalla deja de
      tener entrada propia en el menú. `roles: []` oculta el enlace sin
@@ -206,11 +214,13 @@ const MODULES: NavModule[] = [
     icon: 'playlist_add_check',
     roles: CONTABILIDAD,
   },
-  { label: msg`Accidentes`, to: '/accidents', icon: 'report', roles: [...HOTEL, ...INSPECCION] },
-  /* Auditar es del Supervisor y, desde el 2026-09-24, del Inspector (sus
+  /* Inspección no ve Accidentes todavía: hoy solo Requisiciones e Inspecciones
+     (Hugo, 2026-10-21), hasta que Accidentes tenga pantalla. */
+  { label: msg`Accidentes`, to: '/accidents', icon: 'report', roles: HOTEL },
+  /* Inspeccionar es del Supervisor y, desde el 2026-09-24, del Inspector (sus
      hoteles de zona) — ninguno de sus jefes lo ve (fuera de la herencia por
      jerarquía a propósito, Hugo). */
-  { label: msg`Auditorías`, to: '/audits', icon: 'fact_check', roles: [SUPERVISOR, INSPECTOR] },
+  { label: msg`Inspecciones`, to: '/audits', icon: 'fact_check', roles: [SUPERVISOR, INSPECTOR] },
 ]
 
 function modulesForRole(roleId: string | undefined): NavModule[] {

@@ -65,7 +65,7 @@ export class AuditsService {
       if (!dto.workerId) {
         throw new UnprocessableEntityException({
           code: 'WORKER_REQUIRED',
-          message: 'La auditoría de Presentación Personal exige un colaborador',
+          message: 'La inspección de Presentación Personal exige un colaborador',
         })
       }
 
@@ -78,7 +78,7 @@ export class AuditsService {
     } else if (dto.workerId) {
       throw new BadRequestException({
         code: 'WORKER_NOT_ALLOWED',
-        message: 'La auditoría de Ambiente y Recursos no lleva colaborador',
+        message: 'La inspección de Ambiente y Recursos no lleva colaborador',
       })
     }
 
@@ -145,7 +145,7 @@ export class AuditsService {
         if (!existing) {
           throw new UnprocessableEntityException({
             code: 'RESPONSE_NOT_FOUND',
-            message: `El reactivo en la posición ${index + 1} no forma parte de esta auditoría`,
+            message: `El reactivo en la posición ${index + 1} no forma parte de esta inspección`,
           })
         }
 
@@ -211,7 +211,7 @@ export class AuditsService {
     return toDetailEntity(row, photos)
   }
 
-  // Alimenta "tiempo sin auditar" desde la ficha del hotel: cada colaborador
+  // Alimenta "tiempo sin inspeccionar" desde la ficha del hotel: cada colaborador
   // con asignación ACTIVA ahí, con la fecha de su última
   // PERSONAL_PRESENTATION (o null si nunca se le ha hecho una).
   async lastPerWorker(hotelId: string, user: AuthenticatedUser): Promise<LastAuditPerWorker[]> {
@@ -230,7 +230,7 @@ export class AuditsService {
   }
 
   // Mismo patrón que `WorkersService.signPhotos`: firma cada ruta DISTINTA una
-  // sola vez, aunque aparezca en varias filas (varias auditorías del mismo
+  // sola vez, aunque aparezca en varias filas (varias inspecciones del mismo
   // colaborador comparten la misma foto).
   private async signPhotos(paths: Array<string | null>): Promise<Map<string, string>> {
     const distinct = [...new Set(paths.filter((p): p is string => p !== null))]
@@ -249,7 +249,7 @@ export class AuditsService {
       if (user.hotelId !== hotelId) {
         throw new ForbiddenException({
           code: 'HOTEL_OUT_OF_SCOPE',
-          message: 'Esta auditoría no es de tu hotel',
+          message: 'Esta inspección no es de tu hotel',
         })
       }
       return
@@ -278,7 +278,7 @@ export class AuditsService {
       if (queryHotelId && queryHotelId !== user.hotelId) {
         throw new ForbiddenException({
           code: 'HOTEL_OUT_OF_SCOPE',
-          message: 'Solo puedes ver auditorías de tu hotel',
+          message: 'Solo puedes ver inspecciones de tu hotel',
         })
       }
       return user.hotelId
@@ -309,7 +309,7 @@ export class AuditsService {
     if (new Set(ids).size !== ids.length) {
       throw new UnprocessableEntityException({
         code: 'DUPLICATE_CHECKLIST_ITEM',
-        message: 'No repitas un reactivo en la misma auditoría',
+        message: 'No repitas un reactivo en la misma inspección',
       })
     }
   }
@@ -326,7 +326,7 @@ export class AuditsService {
     const row = await this.repo.findById(id)
 
     if (!row) {
-      throw new NotFoundException({ code: 'AUDIT_NOT_FOUND', message: 'La auditoría no existe' })
+      throw new NotFoundException({ code: 'AUDIT_NOT_FOUND', message: 'La inspección no existe' })
     }
 
     return row
@@ -357,7 +357,7 @@ function computeScore(responses: Array<{ value: string; weight: Prisma.Decimal }
   if (possible === 0) {
     throw new UnprocessableEntityException({
       code: 'AUDIT_ALL_NA',
-      message: 'No se puede calificar una auditoría donde todos los reactivos son N/A',
+      message: 'No se puede calificar una inspección donde todos los reactivos son N/A',
     })
   }
 

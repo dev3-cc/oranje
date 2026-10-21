@@ -18,7 +18,7 @@ function renderPage(): void {
 }
 
 /**
- * Que el Observador apruebe el ajuste/gasto de una eventual no lo mete a la
+ * Que el Manager de QA apruebe el ajuste/gasto de una eventual no lo mete a la
  * nómina (Hugo, 2026-10-09): Contabilidad lo ve aquí y decide, viendo antes
  * qué le pasaría al pago del colaborador.
  */

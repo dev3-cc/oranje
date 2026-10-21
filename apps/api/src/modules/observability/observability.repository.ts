@@ -195,7 +195,7 @@ export class ObservabilityRepository {
   }
 
   // El ponche de cualquier hotel: PunchMark -> TimesheetDay -> Timesheet ->
-  // Requisition -> Hotel (el mismo cruce de esquemas que ya usa Auditorías).
+  // Requisition -> Hotel (el mismo cruce de esquemas que ya usa Inspecciones).
   async punches(params: {
     page: number
     limit: number

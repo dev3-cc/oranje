@@ -27,10 +27,10 @@ export function PersonalPresentationAuditDialog({
       auditType="PERSONAL_PRESENTATION"
       hotelId={hotelId}
       worker={worker}
-      title={t`Auditoría de Presentación Personal`}
+      title={t`Inspección de Presentación Personal`}
       description={
         auditId
-          ? t`Corrige lo que haga falta: se guarda con PATCH, sobre la misma auditoría.`
+          ? t`Corrige lo que haga falta: se guarda con PATCH, sobre la misma inspección.`
           : t`Uniformidad, higiene, seguridad y actitud del colaborador, reactivo por reactivo.`
       }
       {...(auditId ? { auditId } : {})}

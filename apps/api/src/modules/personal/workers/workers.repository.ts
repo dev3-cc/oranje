@@ -292,7 +292,7 @@ export class WorkersRepository {
     })
   }
 
-  // Nunca se borra la fila (journal, historial del semáforo, auditorías...
+  // Nunca se borra la fila (journal, historial del semáforo, inspecciones...
   // todo cuelga de `worker_id`): `deleted_at` la saca del Pool y de toda
   // consulta que use BASE, sin romper esas referencias.
   /**

@@ -188,7 +188,7 @@ export const mobileRouter = createBrowserRouter([
       {
         /*
          * El hotel: el MISMO shell del web con sus MISMAS pantallas (Dashboard,
-         * Requisiciones, Timesheet, Mi Personal, Accidentes, Auditorías…) y la
+         * Requisiciones, Timesheet, Mi Personal, Accidentes, Inspecciones…) y la
          * hoja del QR de ponche. La app no las reconstruye: las consume. El
          * sidebar filtra por rol igual que en el navegador. Sin la ruta índice
          * del shell: `/` lo reparte `MobileRoleHome`.

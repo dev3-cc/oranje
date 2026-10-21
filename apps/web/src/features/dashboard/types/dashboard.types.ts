@@ -54,6 +54,11 @@ export interface RecruitmentOverview {
   queueOpen: number
   queueInProgress: number
   queue: DashboardRequisition[]
+  /** Cubiertas parcialmente: tomadas, con lugares todavía sin llenar. */
+  queuePartial: number
+  /** Autorizadas hace más de 24 h y que nadie ha tomado (la más vieja primero). */
+  critical: DashboardRequisition[]
+  criticalCount: number
 }
 
 export interface HotelOverview {

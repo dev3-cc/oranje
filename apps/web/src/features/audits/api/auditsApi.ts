@@ -19,7 +19,7 @@ type FetchWithBQ = (
 ) => Promise<{ data?: unknown; error?: unknown }>
 
 /**
- * Auditoría de Presentación y Ambiente (`supervision.audit`), ya construida y
+ * Inspección de Presentación y Ambiente (`supervision.audit`), ya construida y
  * probada en el back — 183/183 tests verdes en
  * `apps/api/src/modules/supervision/audits/`. Contrato verificado leyendo el
  * controller, el service y los DTOs reales, no transcrito de memoria.
@@ -40,7 +40,7 @@ export const auditsApi = baseApi.injectEndpoints({
     }),
 
     /**
-     * El Inspector no tiene un hotel fijo como el Supervisor: audita los
+     * El Inspector no tiene un hotel fijo como el Supervisor: inspecciona los
      * hoteles de su(s) zona(s) — `/hotels` ya viene acotado ahí desde el
      * back (Reglas de Negocio, 2026-09-24). Vacío para todos los demás
      * roles: no la usan porque tienen `session.hotel`.
@@ -56,7 +56,7 @@ export const auditsApi = baseApi.injectEndpoints({
       },
     }),
 
-    /** Los reactivos vigentes de UNA auditoría, agrupados por categoría y ordinal (lectura abierta). */
+    /** Los reactivos vigentes de UNA inspección, agrupados por categoría y ordinal (lectura abierta). */
     getChecklistItems: build.query<ChecklistItem[], AuditType | void>({
       query: (auditType) => ({
         url: '/catalogs/audit-checklist-items',
@@ -98,7 +98,7 @@ export const auditsApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: 'ChecklistItem' as const, id: 'LIST' }],
     }),
 
-    /** El tablero: auditorías del hotel (o de un colaborador/tipo), más recientes primero. */
+    /** El tablero: inspecciones del hotel (o de un colaborador/tipo), más recientes primero. */
     getAudits: build.query<
       AuditHeader[],
       { hotelId?: string; workerId?: string; auditType?: AuditType }
@@ -117,7 +117,7 @@ export const auditsApi = baseApi.injectEndpoints({
       providesTags: (_res, _err, id) => [{ type: 'Audit' as const, id }],
     }),
 
-    /** "Tiempo sin auditar": el roster del hotel con su última PERSONAL_PRESENTATION (o `null`). */
+    /** "Tiempo sin inspeccionar": el roster del hotel con su última PERSONAL_PRESENTATION (o `null`). */
     getLastAuditPerWorker: build.query<LastAuditPerWorker[], string>({
       query: (hotelId) => ({ url: '/audits/last-per-worker', params: { hotelId } }),
       transformResponse: (raw: ApiEnvelope<LastAuditPerWorker[]>) => raw.data,

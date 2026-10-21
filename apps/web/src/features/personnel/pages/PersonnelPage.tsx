@@ -58,10 +58,10 @@ const SHOW_METRICS = false
 
 /**
  * "92% · hace 3 días" — el score y cuándo, en una sola línea (mismo criterio
- * que la pastilla de Auditorías). El `i18n` viene del componente (D-36).
+ * que la pastilla de Inspecciones). El `i18n` viene del componente (D-36).
  */
 function presentationLabel(audit: { score: number; auditedAt: string } | null, i18n: I18n): string {
-  if (audit === null) return i18n._(msg`Sin auditar`)
+  if (audit === null) return i18n._(msg`Sin inspeccionar`)
   const days = Math.floor((Date.now() - new Date(audit.auditedAt).getTime()) / MS_PER_DAY)
   const when =
     days <= 0 ? i18n._(msg`hoy`) : days === 1 ? i18n._(msg`ayer`) : i18n._(msg`hace ${days} días`)
@@ -251,7 +251,7 @@ function WorkerDetail({
 }): ReactNode {
   const { t, i18n } = useLingui()
   const can = useCan()
-  /* Auditar es solo del Supervisor: a sus Managers no se les enseña el score. */
+  /* Inspeccionar es solo del Supervisor: a sus Managers no se les enseña el score. */
   const canReadAudits = can('audits:read')
   const paused = row.stateCode === null ? undefined : NO_SHIFT_LABEL[row.stateCode]
   return (

@@ -5,7 +5,7 @@ import { ObservabilityService } from '../../src/modules/observability/observabil
 import { close, db } from './db.js'
 
 /**
- * Observador (`ROL-OBS-01`, Roles del Sistema.md 2026-09-21): rol transversal
+ * Manager de QA (antes Observador, `ROL-OBS-01`, Roles del Sistema.md 2026-09-21; fusionado el 2026-10-21): rol transversal
  * de solo lectura sin alcance por hotel/departamento, así que estas pruebas
  * no necesitan un `actor` — el propio servicio no filtra nada, la Matriz de
  * Permisos ya lo hace en el guard.
@@ -22,7 +22,7 @@ const service = new ObservabilityService(repo)
 
 afterAll(close)
 
-describe('Observador', () => {
+describe('Manager de QA (antes Observador)', () => {
   it('reporta los 9 semáforos con su nivel real de detalle', async () => {
     const summary = await service.statusLightDurations()
     const byCode = new Map(summary.map((s) => [s.code, s]))
@@ -99,15 +99,15 @@ describe('Observador', () => {
   /**
    * Hugo (2026-09-21): enlazar desde aquí a la lista real de Requisiciones y
    * al Pipeline (Ventas). Reutiliza `requisitions:read_all` y `pipeline:read`
-   * + `pipeline:read_all` — seguro porque el Observador tiene `hotelId=null`,
+   * + `pipeline:read_all` — seguro porque el Manager de QA tiene `hotelId=null`,
    * igual que Reclutamiento y el BDC, así que esas lecturas no filtran nada.
    */
-  it('el Observador tiene lectura otorgada a Requisiciones y Pipeline, sin permisos de escritura', async () => {
+  it('el Manager de QA tiene lectura otorgada a Requisiciones y Pipeline, sin permisos de escritura', async () => {
     const rows = await prisma.$queryRaw<Array<{ module: string; action: string }>>`
       SELECT rp.module, rp.action
         FROM identity.role_permission rp
         JOIN identity.role r ON r.id = rp.role_id
-       WHERE r.code = 'ROL-OBS-01'
+       WHERE r.code = 'ROL-Q-02'
        ORDER BY rp.module, rp.action`
 
     const keys = rows.map((r) => `${r.module}:${r.action}`)

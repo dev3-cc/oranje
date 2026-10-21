@@ -76,12 +76,12 @@ export function PipelinePage(): ReactNode {
   /**
    * El tablero solo pinta prospectos ABIERTOS a propósito — los convertidos
    * (Naranja) se ven en Clientes Activos (BD/BDC no los necesitan aquí). El
-   * Observador sí quiere ver el ciclo completo, así que gana la columna
+   * Manager de QA sí quiere ver el ciclo completo, así que gana la columna
    * Naranja además de las 6 abiertas (Hugo, 2026-09-21: "no se ve el naranja
    * status, cuando ya es cliente, debería").
    */
   const visibleColumns: readonly OnboardingStatus[] =
-    session?.roleId === 'ROL-OBS-01' ? [...PIPELINE_COLUMNS, 'ORANGE'] : PIPELINE_COLUMNS
+    session?.roleId === 'ROL-Q-02' ? [...PIPELINE_COLUMNS, 'ORANGE'] : PIPELINE_COLUMNS
 
   /** Los filtros puestos, en palabras: el vacío los nombra para que se entienda por qué. */
   const activeFilterLabels = [
@@ -160,14 +160,14 @@ export function PipelinePage(): ReactNode {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* El Observador llega aquí desde su pantalla de solo lectura; el
+      {/* El Manager de QA llega aquí desde su pantalla de solo lectura; el
           Pipeline no tiene breadcrumb propio, así que esta línea es solo
           suya (Hugo, 2026-09-21). Sin flecha propia: el shell (AppShell) ya
           pinta la suya para esta ruta — dos flechas confundían (Hugo, mismo día). */}
-      {session?.roleId === 'ROL-OBS-01' && (
+      {session?.roleId === 'ROL-Q-02' && (
         <nav aria-label={t`Ruta`} className="text-sm text-ink-3">
           <Link to="/observability" className="hover:text-o-700">
-            <Trans>Observador</Trans>
+            <Trans>Manager de QA</Trans>
           </Link>
         </nav>
       )}

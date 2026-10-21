@@ -69,9 +69,9 @@ export function InspectionTab({
             />
             <p className="text-sm text-ink-3">
               <Trans>
-                Accidentes levantados a tiempo, auditorías programadas y visitas a hoteles todavía
-                no se pueden medir: el Observador no lee accidentes y el sistema no guarda
-                auditorías programadas ni visitas.
+                Accidentes levantados a tiempo, inspecciones programadas y visitas a hoteles todavía
+                no se pueden medir: el Manager de QA no lee accidentes y el sistema no guarda
+                inspecciones programadas ni visitas.
               </Trans>
             </p>
           </>
@@ -81,8 +81,8 @@ export function InspectionTab({
               <PeopleNotice>
                 <Trans>
                   Solo lo que dicen las requisiciones: las de su zona y las que creó. Sus
-                  auditorías, accidentes y visitas no se ven: el Observador no tiene permiso para
-                  leerlos. Un inspector sin requisiciones asignadas no aparece.
+                  inspecciones, accidentes y visitas no se ven: el Manager de QA no tiene permiso
+                  para leerlos. Un inspector sin requisiciones asignadas no aparece.
                 </Trans>
               </PeopleNotice>
               {requisitions.data.truncated && <TruncatedNotice />}
@@ -118,8 +118,8 @@ export function AccountingTab(): ReactNode {
           <p className="text-sm text-ink-3">
             <Trans>
               Solo los consolidados de nómina por estado. Los KPIs de Contabilidad (consolidados a
-              tiempo, días a invoice, cobro, fuga de horas) necesitan que el Observador pueda leer
-              nómina y facturación.
+              tiempo, días a invoice, cobro, fuga de horas) necesitan que el Manager de QA pueda
+              leer nómina y facturación.
             </Trans>
           </p>
         </TabState>
@@ -127,7 +127,7 @@ export function AccountingTab(): ReactNode {
         <PeopleNotice>
           <Trans>
             Todavía no hay actividad por persona en Contabilidad: quién consolidó, validó o pagó
-            vive en nómina y facturación, que el Observador no tiene permiso para leer.
+            vive en nómina y facturación, que el Manager de QA no tiene permiso para leer.
           </Trans>
         </PeopleNotice>
       )}

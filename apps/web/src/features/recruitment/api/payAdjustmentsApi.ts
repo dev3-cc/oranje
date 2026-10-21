@@ -14,7 +14,7 @@ import type { ApiEnvelope, CatalogItemApi } from '@/shared/types/apiContract.typ
 /**
  * El ajuste de tarifa o el gasto extra (p. ej. «Uber») de una asignación
  * EVENTUAL (Hugo, 2026-10-08): Reclutamiento lo pide al llenar el slot, el
- * Observador lo aprueba o lo rechaza — única excepción a que ese rol es de
+ * Manager de QA lo aprueba o lo rechaza — única excepción a que ese rol es de
  * puro lectura. Mientras está PENDING no pesa en nada.
  */
 registerRequisitionsMocks()
@@ -39,7 +39,7 @@ export const payAdjustmentsApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: 'PayAdjustment' as const, id: 'PENDING' }],
     }),
 
-    /** La cola del Observador: todo lo PENDING, de cualquier hotel. */
+    /** La cola del Manager de QA: todo lo PENDING, de cualquier hotel. */
     getPendingPayAdjustments: build.query<PayAdjustment[], void>({
       query: () => '/pay-adjustments/pending',
       transformResponse: (res: ApiEnvelope<PayAdjustment[]>) => res.data,
@@ -62,7 +62,7 @@ export const payAdjustmentsApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: 'PayAdjustment' as const, id: 'PENDING' }],
     }),
 
-    /** La cola de Contabilidad: aprobados por el Observador, sin decidir
+    /** La cola de Contabilidad: aprobados por el Manager de QA, sin decidir
         todavía si pesan en la nómina (Hugo, 2026-10-09). */
     getApprovedPendingInclusion: build.query<PayAdjustment[], void>({
       query: () => '/pay-adjustments/approved-pending-inclusion',

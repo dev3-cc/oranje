@@ -183,7 +183,7 @@ export function SlotAssignmentPage(): ReactNode {
 
   /* El ajuste de tarifa Y el gasto extra (Uber…) de una EVENTUAL (Hugo,
      2026-10-08): opcional, solo con `type === 'TEMPORARY'`, y solo si el rol
-     puede pedirlo — lo aprueba el Observador, nunca quien lo pide. Son dos
+     puede pedirlo — lo aprueba el Manager de QA, nunca quien lo pide. Son dos
      cosas INDEPENDIENTES, no una u otra (Hugo, 2026-10-08): una misma
      asignación puede llevar las dos, cada una su propia aprobación — por eso
      el back no tiene UNIQUE sobre `assignmentId`. */
@@ -367,7 +367,9 @@ export function SlotAssignmentPage(): ReactNode {
             amount: rateAmountValue,
             reason: rateReason.trim(),
           }).unwrap()
-          toast.success(t`Ajuste de tarifa pedido: queda pendiente de que lo apruebe el Observador`)
+          toast.success(
+            t`Ajuste de tarifa pedido: queda pendiente de que lo apruebe el Manager de QA`,
+          )
           setRateRequested(rateAmountValue.toFixed(2))
           setWantsRateAdjustment(false)
           setRateAmount('')
@@ -386,7 +388,7 @@ export function SlotAssignmentPage(): ReactNode {
             reason: expenseReason.trim(),
             ...(expenseSettlementEffect ? { settlementEffect: expenseSettlementEffect } : {}),
           }).unwrap()
-          toast.success(t`Gasto pedido: queda pendiente de que lo apruebe el Observador`)
+          toast.success(t`Gasto pedido: queda pendiente de que lo apruebe el Manager de QA`)
           setExpenseRequested(expenseAmountValue.toFixed(2))
           setWantsExpense(false)
           setExpenseAmount('')
@@ -766,7 +768,7 @@ export function SlotAssignmentPage(): ReactNode {
                 <div className="flex flex-col gap-3 rounded-md border border-dashed border-line p-3">
                   <p className="text-xs text-ink-3">
                     <Trans>
-                      Opcional, y las dos pueden ir juntas: cada una la aprueba el Observador por
+                      Opcional, y las dos pueden ir juntas: cada una la aprueba el Manager de QA por
                       separado antes de que pese en el pago.
                     </Trans>
                   </p>

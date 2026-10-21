@@ -64,7 +64,9 @@ export class ParticipationRepository {
       select: {
         id: true,
         joinedAt: true,
-        user: { select: { id: true, fullName: true, role: { select: { code: true, name: true } } } },
+        user: {
+          select: { id: true, fullName: true, role: { select: { code: true, name: true } } },
+        },
       },
     })
   }

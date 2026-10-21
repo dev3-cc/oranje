@@ -258,9 +258,9 @@ const PP_ITEMS = CHECKLIST_ITEMS.filter((item) => item.auditType === 'PERSONAL_P
 const ENV_ITEMS = CHECKLIST_ITEMS.filter((item) => item.auditType === 'ENVIRONMENT')
 
 /**
- * Historial variado a propósito: Ana auditada hace poco y bien, Luis hace
+ * Historial variado a propósito: Ana inspeccionada hace poco y bien, Luis hace
  * tiempo y regular, María hoy mismo, Julia NUNCA (para que "tiempo sin
- * auditar" tenga los tres casos: reciente, viejo, nunca) — y un ENVIRONMENT
+ * inspeccionar" tenga los tres casos: reciente, viejo, nunca) — y un ENVIRONMENT
  * del hotel sin colaborador.
  */
 const AUDITS: Audit[] = [
@@ -355,7 +355,7 @@ const routes: readonly MockRoute[] = [
       }
       const code = codeFromLabel(dto.label)
       if (CHECKLIST_ITEMS.some((item) => item.auditType === dto.auditType && item.code === code)) {
-        throw new Error('Ya existe un reactivo con ese texto en esta auditoría')
+        throw new Error('Ya existe un reactivo con ese texto en esta inspección')
       }
       const created = checklistItem(dto.auditType, dto.category, code, dto.label, dto.ordinal)
       if (dto.weight !== undefined) created.weight = dto.weight
@@ -395,7 +395,7 @@ const routes: readonly MockRoute[] = [
         audit.responses.some((response) => response.checklistItemId === params['id']),
       )
       if (inUse) {
-        throw new Error('Hay auditorías con respuestas a este reactivo: no se puede eliminar')
+        throw new Error('Hay inspecciones con respuestas a este reactivo: no se puede eliminar')
       }
       CHECKLIST_ITEMS.splice(index, 1)
       return { ok: true }
@@ -439,7 +439,7 @@ const routes: readonly MockRoute[] = [
     path: '/audits/:id',
     resolve: ({ params }): ApiEnvelope<Audit> => {
       const found = AUDITS.find((audit) => audit.id === params['id'])
-      if (!found) throw new Error('La auditoría no existe')
+      if (!found) throw new Error('La inspección no existe')
       return { data: found }
     },
   },
@@ -478,12 +478,12 @@ const routes: readonly MockRoute[] = [
 
       if (dto.auditType === 'PERSONAL_PRESENTATION') {
         if (!dto.workerId)
-          throw new Error('La auditoría de Presentación Personal exige un colaborador')
+          throw new Error('La inspección de Presentación Personal exige un colaborador')
         if (!(WORKERS_BY_HOTEL[dto.hotelId] ?? []).some((worker) => worker.id === dto.workerId)) {
           throw new Error('Este colaborador no tiene asignación activa en ese hotel')
         }
       } else if (dto.workerId) {
-        throw new Error('La auditoría de Ambiente y Recursos no lleva colaborador')
+        throw new Error('La inspección de Ambiente y Recursos no lleva colaborador')
       }
 
       const responses = dto.responses.map((response) => {
@@ -491,7 +491,7 @@ const routes: readonly MockRoute[] = [
           (candidate) =>
             candidate.id === response.checklistItemId && candidate.auditType === dto.auditType,
         )
-        if (!item) throw new Error('Uno de los reactivos no existe o no es de esta auditoría')
+        if (!item) throw new Error('Uno de los reactivos no existe o no es de esta inspección')
         return { item, value: response.value }
       })
 
@@ -516,13 +516,13 @@ const routes: readonly MockRoute[] = [
     path: '/audits/:id',
     resolve: ({ params, body }): ApiEnvelope<Audit> => {
       const audit = AUDITS.find((item) => item.id === params['id'])
-      if (!audit) throw new Error('La auditoría no existe')
+      if (!audit) throw new Error('La inspección no existe')
       const dto = body as { observations?: string; responses?: AuditResponseInput[] }
 
       if (dto.responses && dto.responses.length > 0) {
         for (const change of dto.responses) {
           const existing = audit.responses.find((r) => r.checklistItemId === change.checklistItemId)
-          if (!existing) throw new Error('Ese reactivo no forma parte de esta auditoría')
+          if (!existing) throw new Error('Ese reactivo no forma parte de esta inspección')
           existing.value = change.value
         }
         const items = pickItems(audit)
@@ -537,7 +537,7 @@ const routes: readonly MockRoute[] = [
           .filter((r) => r.value === 'CUMPLE')
           .reduce((sum, r) => sum + r.weight, 0)
         if (possible === 0)
-          throw new Error('No se puede calificar una auditoría donde todos los reactivos son N/A')
+          throw new Error('No se puede calificar una inspección donde todos los reactivos son N/A')
         audit.score = (Math.round((earned / possible) * 10000) / 100).toFixed(2)
       }
       if (dto.observations !== undefined) audit.observations = dto.observations

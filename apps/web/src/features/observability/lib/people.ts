@@ -16,7 +16,7 @@ import type {
 
 /**
  * La actividad por persona de un departamento. Solo aparece quien dejó rastro
- * en los datos que el Observador puede leer: el personal sin actividad ni
+ * en los datos que el Manager de QA puede leer: el personal sin actividad ni
  * cartera no se puede listar (`/users` y `/team` piden otros permisos).
  */
 
@@ -251,7 +251,7 @@ const RECRUITMENT_METRICS = [
  * nombre y el rol de quien actuó, no su id: se agrupa por nombre y rol. «A su
  * cargo» = su último movimiento en una requisición que se está llenando fue
  * tomarla. La asignación de colaboradores se registra en otra bitácora que el
- * Observador no lee, así que no aparece aquí.
+ * Manager de QA no lee, así que no aparece aquí.
  */
 export function recruitmentPeople(input: {
   period: Period
@@ -333,8 +333,8 @@ const INSPECTION_METRICS = [
 
 /**
  * Cada inspector según las requisiciones que tiene asignadas (`inspector`) y
- * las que creó (`createdBy`). Sus auditorías y accidentes no se ven: el
- * Observador no tiene permiso para leerlos.
+ * las que creó (`createdBy`). Sus inspecciones y accidentes no se ven: el
+ * Manager de QA no tiene permiso para leerlos.
  */
 export function inspectionPeople(input: {
   period: Period
