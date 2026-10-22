@@ -1,21 +1,17 @@
 import { Table, TableBody, TableCell, TableHead, TableRow } from '@oranje/ui'
 import type { ReactNode } from 'react'
 
+import logoOrange from '@/assets/logo/Logo_ORANJE_Orange.png'
 import { CONTRACT_CLAUSES } from '@/shared/lib/contractClauses'
 import { formatMoney } from '@/shared/lib/formatters'
 
-/** Un renglón del Exhibit «A», venga de la propuesta o del contrato firmado. */
+/** Un renglón del Exhibit «A», venga de la propuesta o del contrato firmado.
+    Sin `payRate`: el machote real (igual que la Propuesta) solo le enseña al
+    hotel el bill rate — el pay rate es margen interno de Oranje. */
 export interface DocumentRate {
   key: string
   positionName: string
-  payRate: number
   billRate: number
-}
-
-/** Los recargos pactados; solo el contrato los tiene. */
-export interface DocumentTerms {
-  overtime: { pay: number; bill: number }
-  holiday: { pay: number; bill: number }
 }
 
 /**
@@ -33,11 +29,34 @@ export const PROVIDER_ADDRESS = '730 Peachtree St NE, Suite 570, Atlanta, GA 303
  * Transcrito del machote real (ORANGE SOLUTIONS & OPERATIONS, LLC), en inglés
  * como el resto del documento.
  */
-export const EXHIBIT_HEADER =
-  `All personnel furnished under the Agreement are employees of ${PROVIDER}. Service Provider ` +
-  'will administer payroll and applicable payroll taxes and maintain workers’ compensation and ' +
-  'general liability coverage as stated in the Agreement. Employee screening will be performed ' +
-  'in accordance with Section 13.'
+export function exhibitHeader(provider: string = PROVIDER): string {
+  return (
+    `All personnel furnished under the Agreement are employees of ${provider}. Service Provider ` +
+    'will administer payroll and applicable payroll taxes and maintain workers’ compensation and ' +
+    'general liability coverage as stated in the Agreement. Employee screening will be performed ' +
+    'in accordance with Section 13.'
+  )
+}
+
+/** Transcrito del machote real: sin números de multiplicador — ni el de pago
+    (interno) ni el de cobro — solo la referencia a la cláusula 5. */
+export const OVERTIME_NOTE =
+  'Overtime: Billed in accordance with Section 5. The applicable service markup will be applied ' +
+  'to the employee’s actual overtime wage cost, together with applicable payroll burden and ' +
+  'legally required costs, unless otherwise agreed in writing.'
+
+/**
+ * Separa el `(a)` inicial de un párrafo de cláusula, para pintarlo en
+ * negrita como el machote real — el resto del párrafo sigue en texto normal.
+ * Sin el prefijo (no debería pasar, los 17 párrafos del machote lo traen
+ * todos), regresa el texto completo tal cual.
+ */
+export function splitClauseMarker(paragraph: string): { marker: string | null; rest: string } {
+  const match = /^(\([a-z]\))\s(.*)$/s.exec(paragraph)
+  return match
+    ? { marker: match[1] ?? null, rest: match[2] ?? '' }
+    : { marker: null, rest: paragraph }
+}
 
 /** `2026-09-15` → `09/15/2026`, la forma del acuerdo original. */
 function usDate(iso: string): string {
@@ -76,15 +95,24 @@ function oneYearLater(iso: string): string {
  */
 export function ContractDocument({
   hotelName,
-  hotelAddress = null,
+  propertyName = null,
+  propertyAddress = null,
+  companyEmail = null,
+  serviceProviderName = null,
+  serviceProviderEmail = null,
   rates,
   servicesNote = null,
   startDate = todayIso(),
   endDate = null,
-  terms = null,
 }: {
   hotelName: string
-  hotelAddress?: string | null
+  /** [PROPERTY NAME] del machote; cae en `hotelName` si no hay override. */
+  propertyName?: string | null
+  propertyAddress?: string | null
+  companyEmail?: string | null
+  /** Hoy fijos en código (`PROVIDER`/`PROVIDER_ADDRESS`): nulo = usa esos valores. */
+  serviceProviderName?: string | null
+  serviceProviderEmail?: string | null
   /** El cuadro del Exhibit «A». */
   rates: DocumentRate[]
   servicesNote?: string | null
@@ -92,26 +120,37 @@ export function ContractDocument({
   startDate?: string
   /** Fin del Term; sin él se calcula el año que manda la cláusula 1. */
   endDate?: string | null
-  terms?: DocumentTerms | null
 }): ReactNode {
+  const provider = serviceProviderName || PROVIDER
+  const displayName = propertyName || hotelName
+
   const fill = (text: string): string =>
     text
       .replace('{startDate}', usDate(startDate))
       .replace('{endDate}', usDate(endDate ?? oneYearLater(startDate)))
-      .replace('{provider}', PROVIDER)
+      .replace('{provider}', provider)
 
   return (
     <article className="text-ink">
+      {/* Mismo encabezado que la Propuesta (Hugo, 2026-10-21): el machote
+          real no lo trae, es una adición deliberada, no una corrección. */}
+      <div className="mb-4 flex items-center justify-between border-b border-line pb-3">
+        <img src={logoOrange} alt="ORANJE PEOPLE" className="h-5 w-auto" />
+        <span className="text-xs font-bold tracking-wide text-ink-3 uppercase">
+          Hospitality Staffing
+        </span>
+      </div>
+
       <header className="text-center">
         <h3 className="text-lg font-bold text-ink uppercase">Service Agreement</h3>
       </header>
 
       <p className="mt-5 text-sm leading-relaxed text-ink-2">
         This Service Agreement (“Agreement”) is between{' '}
-        <span className="font-semibold text-ink">{PROVIDER}</span>, a Georgia limited liability
+        <span className="font-semibold text-ink">{provider}</span>, a Georgia limited liability
         company, {PROVIDER_ADDRESS} (“Service Provider”), and{' '}
-        <span className="font-semibold text-ink">{hotelName}</span>
-        {hotelAddress ? `, ${hotelAddress}` : ''} (“Company”).
+        <span className="font-semibold text-ink">{displayName}</span>
+        {propertyAddress ? `, ${propertyAddress}` : ''} (“Company”).
       </p>
 
       <p className="mt-3 text-sm leading-relaxed text-ink-2">
@@ -119,15 +158,19 @@ export function ContractDocument({
         services, and Service Provider agrees to provide such services under the following terms.
       </p>
 
-      <ol className="mt-6 flex list-decimal flex-col gap-5 pl-5">
+      <ol className="mt-6 flex list-decimal flex-col gap-5 pl-5 marker:font-bold marker:text-ink">
         {CONTRACT_CLAUSES.map((clause) => (
           <li key={clause.title} className="text-sm leading-relaxed text-ink-2">
-            <span className="font-bold text-ink">{clause.title}.</span>
-            {clause.paragraphs.map((paragraph, index) => (
-              <p key={index} className={index === 0 ? 'mt-1' : 'mt-2'}>
-                {fill(paragraph)}
-              </p>
-            ))}
+            <span className="font-bold text-ink">{clause.title}</span>
+            {clause.paragraphs.map((paragraph, index) => {
+              const { marker, rest } = splitClauseMarker(fill(paragraph))
+              return (
+                <p key={index} className={index === 0 ? 'mt-1' : 'mt-2'}>
+                  {marker && <span className="font-bold text-ink">{marker}</span>}
+                  {marker ? ` ${rest}` : rest}
+                </p>
+              )
+            })}
           </li>
         ))}
       </ol>
@@ -137,15 +180,15 @@ export function ContractDocument({
         <div className="mt-3 grid grid-cols-1 gap-4 text-sm text-ink-2 sm:grid-cols-2">
           <div>
             <p className="font-semibold text-ink">Service Provider:</p>
-            <p>{PROVIDER},</p>
+            <p>{provider},</p>
             <p>{PROVIDER_ADDRESS}.</p>
-            <p>Email: ______________________________.</p>
+            <p>Email: {serviceProviderEmail || <span>______________________________</span>}.</p>
           </div>
           <div>
             <p className="font-semibold text-ink">Company:</p>
-            <p>{hotelName}</p>
-            {hotelAddress && <p>{hotelAddress}</p>}
-            <p>Email: ______________________________.</p>
+            <p>{displayName}</p>
+            {propertyAddress && <p>{propertyAddress}</p>}
+            <p>Email: {companyEmail || <span>______________________________</span>}.</p>
           </div>
         </div>
       </section>
@@ -155,14 +198,14 @@ export function ContractDocument({
         <h4 className="text-sm font-bold tracking-wide text-ink uppercase">Signatures</h4>
         <div className="mt-6 grid grid-cols-1 gap-8 sm:grid-cols-2">
           <div>
-            <p className="text-sm font-semibold text-ink">{PROVIDER}</p>
+            <p className="text-sm font-semibold text-ink">{provider}</p>
             <p className="mt-6 text-xs text-ink-3">
               By: ______________________________ Date: ____________
             </p>
             <p className="mt-4 text-xs text-ink-3">Name/Title: ______________________________</p>
           </div>
           <div>
-            <p className="text-sm font-semibold text-ink">{hotelName}</p>
+            <p className="text-sm font-semibold text-ink">{displayName}</p>
             <p className="mt-6 text-xs text-ink-3">
               By: ______________________________ Date: ____________
             </p>
@@ -174,39 +217,36 @@ export function ContractDocument({
       {/* El Exhibit «A» arranca en su propia hoja al imprimir. */}
       <section className="mt-10 break-before-page">
         <h4 className="text-center text-sm font-bold text-ink uppercase underline">
-          Exhibit “A” - Rates and Staffing Terms
+          Exhibit “A” - Rates
         </h4>
-        <p className="mt-4 text-xs leading-relaxed text-ink-3">{EXHIBIT_HEADER}</p>
+        <p className="mt-4 text-xs leading-relaxed text-ink-3">{exhibitHeader(provider)}</p>
 
         <div className="mt-6 text-center">
-          <p className="text-sm font-bold text-ink">{hotelName}</p>
-          {hotelAddress && <p className="text-xs text-ink-3">{hotelAddress}</p>}
+          <p className="text-sm font-bold text-ink">{displayName}</p>
+          {propertyAddress && <p className="text-xs text-ink-3">{propertyAddress}</p>}
         </div>
 
-        <h5 className="mt-6 text-center text-sm font-bold tracking-wide text-ink uppercase">
-          Rates by department
-        </h5>
-
-        <Table className="mt-3 text-sm">
+        <Table className="mt-6 text-sm">
           <TableBody>
-            <TableRow className="border-line">
-              <TableHead scope="col" className="h-auto px-0 py-2.5 text-left text-xs text-ink-3">
+            {/* Franja negra con texto blanco, igual que el machote real. */}
+            <TableRow className="border-none bg-[#1A1108] hover:bg-[#1A1108]">
+              <TableHead
+                scope="col"
+                className="h-auto px-3 py-2.5 text-left text-xs font-bold text-white"
+              >
                 Position
               </TableHead>
-              <TableHead scope="col" className="h-auto px-0 py-2.5 text-right text-xs text-ink-3">
-                Hourly Pay Rate
-              </TableHead>
-              <TableHead scope="col" className="h-auto px-0 py-2.5 text-right text-xs text-ink-3">
-                Hourly Bill Rate
+              <TableHead
+                scope="col"
+                className="h-auto px-3 py-2.5 text-right text-xs font-bold text-white"
+              >
+                Regular Hourly Bill Rate
               </TableHead>
             </TableRow>
             {rates.map((rate) => (
               <TableRow key={rate.key} className="border-line">
-                <TableCell className="px-0 py-2.5 text-ink">{rate.positionName}</TableCell>
-                <TableCell className="px-0 py-2.5 text-right text-ink">
-                  {formatMoney(rate.payRate)}
-                </TableCell>
-                <TableCell className="px-0 py-2.5 text-right text-ink">
+                <TableCell className="px-3 py-2.5 text-ink">{rate.positionName}</TableCell>
+                <TableCell className="px-3 py-2.5 text-right text-ink">
                   {formatMoney(rate.billRate)}
                 </TableCell>
               </TableRow>
@@ -214,13 +254,7 @@ export function ContractDocument({
           </TableBody>
         </Table>
 
-        {terms && (
-          <p className="mt-3 text-xs leading-relaxed text-ink-3">
-            Overtime: billed in accordance with Section 5 — {terms.overtime.bill.toFixed(2)}× bill
-            rate and {terms.overtime.pay.toFixed(2)}× pay rate. Holidays:{' '}
-            {terms.holiday.bill.toFixed(2)}× bill rate and {terms.holiday.pay.toFixed(2)}× pay rate.
-          </p>
-        )}
+        <p className="mt-3 text-xs leading-relaxed text-ink-3">{OVERTIME_NOTE}</p>
 
         {servicesNote && (
           <p className="mt-4 text-xs leading-relaxed text-ink-3">

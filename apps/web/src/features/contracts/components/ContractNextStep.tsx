@@ -33,7 +33,7 @@ export function ContractNextStep({
           detail:
             failing.length > 0
               ? t`Antes hay que resolver: ${failing.map((check) => check.title.toLowerCase()).join(' · ')}.`
-              : t`Las tarifas ya están completas. Al activarlo, la nómina y la factura del hotel empiezan a usarlo y no se puede volver a editar.`,
+              : t`Las tarifas ya están completas. Al activarlo, la nómina y la factura del hotel empiezan a usarlo y queda bloqueado — se desbloquea con un motivo si hace falta corregir algo.`,
           then: activeContractNumber
             ? t`Ojo: el ${activeContractNumber} sigue vigente para este hotel — solo puede haber uno activo, así que al activar este hay que expirar aquel.`
             : t`Después: nadie más aprueba. El contrato queda vigente y el hotel puede pedir personal con estas tarifas.`,
@@ -47,7 +47,7 @@ export function ContractNextStep({
               contract.validTo === null
                 ? t`No tiene fecha de fin: rige hasta que alguien lo marque expirado.`
                 : t`Vence el ${formatDate(contract.validTo)}. Para renovar, crea un contrato nuevo antes de esa fecha y marca este como expirado.`,
-            then: t`Si cambian las tarifas, no se edita este: se crea uno nuevo con vigencia propia, para que las semanas ya pagadas no se recalculen.`,
+            then: t`Si cambian las tarifas, se corrigen aquí mismo — primero hay que desbloquearlo. Las semanas ya pagadas no se recalculan: cada una usó la tarifa que regía ese día.`,
           }
         : contract.status === 'EXPIRED'
           ? {

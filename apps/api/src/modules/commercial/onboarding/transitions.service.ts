@@ -32,6 +32,15 @@ export class TransitionsService {
 
   async available(prospectId: string, user: AuthenticatedUser): Promise<TransitionOptionEntity[]> {
     const prospect = await this.prospect(prospectId)
+
+    /* `apply()` rechaza CUALQUIER salida de Verde sin propuesta enviada
+       (`assertSentProposal`, más abajo) — sin este espejo aquí, el modal
+       ofrecía Amarillo/Café/Rojo como si fueran a funcionar y el usuario
+       llenaba el motivo para toparse con PROPOSAL_REQUIRED al confirmar. */
+    if (prospect.state.code === PROPOSAL_STATE && !(await this.proposals.hasSent(prospectId))) {
+      return []
+    }
+
     const steps = await this.repo.stepsFrom(prospect.onboardingStateId)
 
     const mine = steps.filter((p) => p.roleCode === user.roleCode)

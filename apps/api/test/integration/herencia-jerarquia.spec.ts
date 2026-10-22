@@ -95,15 +95,15 @@ describe('la base sembrada respeta la herencia', () => {
      note, así que al agregar una hay que venir aquí a decir por qué. */
   it('las excepciones a la herencia son solo estas seis', () => {
     expect([...SIN_HERENCIA].sort()).toEqual([
-      // Inspeccionar es del Supervisor y del Inspector, nunca de sus jefes
-      // (orden de Hugo, 2026-09-14; el Inspector se sumó el 2026-09-24).
+      // Inspeccionar es solo del Inspector, nunca de sus jefes (orden de Hugo,
+      // 2026-09-14; nació del Supervisor, se le quitó el 2026-10-21 —
+      // el vault ya lo pedía desde el 2026-10-16).
       'audits:create',
       'audits:read',
       'audits:update',
       // Aprobar el ajuste/gasto de una asignación eventual: es del
-      // Manager de QA (antes Observador), que no hereda nada ni nadie hereda
-      // de él (Hugo, 2026-10-08) — la excepción es doble, no solo "fuera de
-      // la herencia".
+      // Manager de QA (antes Observador), que no hereda nada ni nadie hereda de él (Hugo,
+      // 2026-10-08) — la excepción es doble, no solo "fuera de la herencia".
       'requisitions:approve_pay_adjustment',
       // Confirmar una cuenta de gerencia que el propio hotel propuso: es
       // el segundo par de ojos, y heredarlo lo devolvería a quien invita.
@@ -114,17 +114,17 @@ describe('la base sembrada respeta la herencia', () => {
     ])
   })
 
-  /* Ampliado el 2026-09-24: el Inspector también inspecciona (sus hoteles de
-     zona), pero sigue sin heredarse hacia el Coordinador — mismo criterio
-     de "sin herencia" que ya protegía al Supervisor. */
-  it('lo marcado sin herencia se queda en su rol: Inspecciones es del Supervisor y el Inspector', async () => {
+  /* Ampliado el 2026-09-24: el Inspector también auditaba (sus hoteles de
+     zona), junto al Supervisor. Exclusiva del Inspector desde el 2026-10-21
+     (Hugo) — el Supervisor pierde audits:create/read/update por completo.
+     Sigue sin heredarse hacia el Coordinador — mismo criterio de "sin
+     herencia" que ya protegía al Supervisor. */
+  it('lo marcado sin herencia se queda en su rol: Inspecciones es exclusiva del Inspector', async () => {
     const rows = await db.rolePermission.findMany({
       where: { module: 'audits' },
       select: { role: { select: { code: true } } },
     })
-    expect(new Set(rows.map((r) => r.role.code))).toEqual(
-      new Set(['ROL-H-01', 'ROL-I-01', 'ROL-SYS-01']),
-    )
+    expect(new Set(rows.map((r) => r.role.code))).toEqual(new Set(['ROL-I-01', 'ROL-SYS-01']))
   })
 
   it('la herencia no sube: el BD no gana lo exclusivo del BDC', async () => {

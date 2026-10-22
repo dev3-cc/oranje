@@ -1,7 +1,7 @@
 import { Trans, useLingui } from '@lingui/react/macro'
 import { StatusLightBadge } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useParams, useSearchParams } from 'react-router'
 
 import { useDeleteContactAttemptMutation, useGetProspectQuery } from '../api/onboardingApi'
 import { useGetProposalWorkspaceQuery } from '../api/proposalsApi'
@@ -9,6 +9,7 @@ import { ArchiveCycleDialog } from '../components/ArchiveCycleDialog'
 import { ChangeStatusDialog } from '../components/ChangeStatusDialog'
 import { ContactAttemptLog } from '../components/ContactAttemptLog'
 import { ContractStepCard } from '../components/ContractStepCard'
+import { ContractUnlockedDialog } from '../components/ContractUnlockedDialog'
 import { CreateProposalPromptDialog } from '../components/CreateProposalPromptDialog'
 import { HotelContactList } from '../components/HotelContactList'
 import { HotelContactsDialog } from '../components/HotelContactsDialog'
@@ -25,7 +26,6 @@ import type { ContactAttempt } from '../types/prospect.types'
  * (el hotel ya vio la propuesta) y se sigue trabajando en Rosa, mientras se
  * negocian los términos.
  */
-const CONTRACT_STATUSES = new Set(['YELLOW', 'PINK', 'BROWN'])
 /** Naranja, EXCEPCIÓN: solo si el hotel se quedó sin contrato vigente
     (Hugo, 2026-10-16). */
 const ORANGE = 'ORANGE'
@@ -36,6 +36,7 @@ import { Button } from '@/shared/components/Button'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { NoticeCard } from '@/shared/components/NoticeCard'
 import {
+  CONTRACT_ELIGIBLE_STATUSES,
   isTerminalStatus,
   ONBOARDING_STATUS_LABEL,
   ONBOARDING_STATUS_TOKEN,
@@ -50,8 +51,11 @@ const HERO_GHOST_BUTTON =
 export function ProspectDetailPage(): ReactNode {
   const { t } = useLingui()
   const { prospectId = '' } = useParams()
+  /** `?createContract=1`: lo manda «Hoteles listos para su contrato» de Contratos. */
+  const [searchParams] = useSearchParams()
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false)
   const [isProposalPromptOpen, setIsProposalPromptOpen] = useState(false)
+  const [isContractPromptOpen, setIsContractPromptOpen] = useState(false)
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
   const [attemptToEdit, setAttemptToEdit] = useState<ContactAttempt | null>(null)
   const { data: session } = useGetSessionQuery()
@@ -340,7 +344,7 @@ export function ProspectDetailPage(): ReactNode {
               arma con el cuadro de la propuesta que el hotel ya vio. Naranja
               entra solo si el hotel se quedó sin contrato vigente (Hugo,
               2026-10-16): uno que ya tiene el suyo no reabre esta tarjeta. */}
-          {(CONTRACT_STATUSES.has(prospect.status) ||
+          {(CONTRACT_ELIGIBLE_STATUSES.has(prospect.status) ||
             (prospect.status === ORANGE && proposals?.hasActiveContract === false)) && (
             <ContractStepCard
               hotel={{
@@ -348,7 +352,9 @@ export function ProspectDetailPage(): ReactNode {
                 name: prospect.hotelName,
                 photoUrl: prospect.hotel.photoUrl,
               }}
+              prospectId={prospect.id}
               versions={proposals?.versions ?? []}
+              autoOpen={searchParams.get('createContract') !== null}
             />
           )}
         </div>
@@ -409,12 +415,24 @@ export function ProspectDetailPage(): ReactNode {
         onMovedToGreen={() => {
           setIsProposalPromptOpen(true)
         }}
+        onMovedToYellow={() => {
+          setIsContractPromptOpen(true)
+        }}
       />
 
       <CreateProposalPromptDialog
         isOpen={isProposalPromptOpen}
         onClose={() => {
           setIsProposalPromptOpen(false)
+        }}
+        prospectId={prospect.id}
+        hotelName={prospect.hotelName}
+      />
+
+      <ContractUnlockedDialog
+        isOpen={isContractPromptOpen}
+        onClose={() => {
+          setIsContractPromptOpen(false)
         }}
         prospectId={prospect.id}
         hotelName={prospect.hotelName}

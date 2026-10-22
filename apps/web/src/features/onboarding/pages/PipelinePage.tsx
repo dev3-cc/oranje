@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router'
 
 import { useGetPipelineBoardQuery, useGetZonesQuery } from '../api/onboardingApi'
 import { ChangeStatusDialog } from '../components/ChangeStatusDialog'
+import { ContractUnlockedDialog } from '../components/ContractUnlockedDialog'
 import { CreateProposalPromptDialog } from '../components/CreateProposalPromptDialog'
 import { PipelineColumn } from '../components/PipelineColumn'
 import { ProspectFormDialog } from '../components/ProspectFormDialog'
@@ -103,6 +104,10 @@ export function PipelinePage(): ReactNode {
     toStatus: OnboardingStatus
   } | null>(null)
   const [proposalPromptTarget, setProposalPromptTarget] = useState<{
+    prospectId: string
+    hotelName: string
+  } | null>(null)
+  const [contractPromptTarget, setContractPromptTarget] = useState<{
     prospectId: string
     hotelName: string
   } | null>(null)
@@ -385,6 +390,12 @@ export function PipelinePage(): ReactNode {
               hotelName: pendingMove.prospect.hotelName,
             })
           }}
+          onMovedToYellow={() => {
+            setContractPromptTarget({
+              prospectId: pendingMove.prospect.id,
+              hotelName: pendingMove.prospect.hotelName,
+            })
+          }}
         />
       )}
 
@@ -395,6 +406,15 @@ export function PipelinePage(): ReactNode {
         }}
         prospectId={proposalPromptTarget?.prospectId ?? ''}
         hotelName={proposalPromptTarget?.hotelName ?? ''}
+      />
+
+      <ContractUnlockedDialog
+        isOpen={contractPromptTarget !== null}
+        onClose={() => {
+          setContractPromptTarget(null)
+        }}
+        prospectId={contractPromptTarget?.prospectId ?? ''}
+        hotelName={contractPromptTarget?.hotelName ?? ''}
       />
     </div>
   )

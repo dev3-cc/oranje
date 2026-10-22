@@ -280,13 +280,13 @@ model User {
   /// guarda — sería una credencial vencida.
   photoPath String? @map("photo_path") @db.Text
 
-  isActive     Boolean   @default(true) @map("is_active")
+  isActive             Boolean   @default(true) @map("is_active")
   /// Idioma de la interfaz (D-36): es | en. CHECK ck_user_locale en la migracion.
-  locale       String    @default("es") @db.Text
+  locale               String    @default("es") @db.Text
   /// Cuenta de transición (correo viejo, mismo colaborador que `legacyAccount`
   /// en Worker): a partir de esta fecha ya no puede iniciar sesión. Null =
   /// cuenta normal, sin vencimiento.
-  deprecatesAt DateTime? @map("deprecates_at") @db.Timestamptz(6)
+  deprecatesAt         DateTime? @map("deprecates_at") @db.Timestamptz(6)
   /// El acceso nació con una contraseña temporal entregada en mano (alta del
   /// Colaborador): desde esta fecha corren los 3 días para cambiarla. Null =
   /// contraseña propia.
@@ -334,7 +334,7 @@ model User {
   punchesRegistered  PunchMark[]    @relation("punchRegisteredBy")
 
   notifications          Notification[]
-  notificationsTriggered Notification[] @relation("notificationActor")
+  notificationsTriggered Notification[]  @relation("notificationActor")
   devices                Device[]
   emailDeliveries        EmailDelivery[]
   settingsChanged        AppSetting[]
@@ -456,8 +456,8 @@ model Hotel {
 
   /// Día de la semana (0-6) en que empieza/cierra la semana de nómina de este
   /// hotel. El Contrato lo hereda sin volver a pedirlo (Hugo, 2026-10-07).
-  weekStartDay Int? @map("week_start_day") @db.SmallInt
-  weekEndDay   Int? @map("week_end_day") @db.SmallInt
+  weekStartDay          Int?     @map("week_start_day") @db.SmallInt
+  weekEndDay            Int?     @map("week_end_day") @db.SmallInt
   /// 0 = no paga horas extra; 1.5 = tiempo y medio. Corregido el mismo día:
   /// "Regular" es que no se paga, no que se paga igual (ck_hotel_overtime_multiplier).
   overtimePayMultiplier Decimal? @map("overtime_pay_multiplier") @db.Decimal(4, 2)
@@ -466,7 +466,7 @@ model Hotel {
   /// a 6.5 h (390 min); menos que eso, nada que restar — el turno no alcanza
   /// a necesitar un descanso (Hugo, 2026-10-14). Antes era fijo en 30 min
   /// para todos, sin este piso.
-  paysLunch Boolean @default(false) @map("pays_lunch")
+  paysLunch             Boolean  @default(false) @map("pays_lunch")
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
@@ -658,9 +658,9 @@ model Proposal {
   /// versiones que ya existen no los tienen.
   /// [PROPERTY NAME] del documento — puede no ser el nombre del hotel en el
   /// sistema; el front lo prellena con `hotel.name` pero es editable.
-  propertyName            String? @map("property_name") @db.Text
+  propertyName           String? @map("property_name") @db.Text
   /// "Prepared [DATE]" del documento; el front la prellena con hoy pero es editable.
-  preparedDate            String? @map("prepared_date") @db.Text
+  preparedDate           String? @map("prepared_date") @db.Text
   brandManagementCompany String? @map("brand_management_company") @db.Text
   cityState              String? @map("city_state") @db.Text
   /// A quién va dirigida la carta ("Dear [CONTACT NAME]"); el front la
@@ -684,9 +684,11 @@ model Proposal {
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
 
-  prospect Prospect       @relation(fields: [prospectId], references: [id], onDelete: Restrict)
-  sentBy   User?          @relation(fields: [sentByUserId], references: [id], onDelete: Restrict)
-  rates    ProposalRate[]
+  prospect  Prospect       @relation(fields: [prospectId], references: [id], onDelete: Restrict)
+  sentBy    User?          @relation(fields: [sentByUserId], references: [id], onDelete: Restrict)
+  rates     ProposalRate[]
+  /// Contratos que nacieron de ESTA version exacta (contract.proposal_id).
+  contracts Contract[]
 
   @@id([id])
   @@unique([prospectId, version], map: "ux_proposal_prospect_version")
@@ -754,10 +756,10 @@ model UserZone {
 /// No confundir con demand.position: esta es el catálogo de puestos, la otra es
 /// una posición solicitada en una requisición.
 model CatalogPosition {
-  id String @db.Uuid
+  id                String  @db.Uuid
   /// La industria (Hospitality, Warehouse & Logistics…). Nula en lo sembrado
   /// antes del 2026-10-17; el alta desde la app la exige.
-  industryId String? @map("industry_id") @db.Uuid
+  industryId        String? @map("industry_id") @db.Uuid
   /// Solo tiene sentido dentro de Hospitality — el resto de las industrias no
   /// tiene "departamento de hotel". Por eso es opcional desde el 2026-10-17.
   hotelDepartmentId String? @map("hotel_department_id") @db.Uuid
@@ -796,8 +798,8 @@ model PayConcept {
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
 
-  workerRates      WorkerRate[]
-  payAdjustments   AssignmentPayAdjustment[]
+  workerRates    WorkerRate[]
+  payAdjustments AssignmentPayAdjustment[]
 
   @@id([id])
   @@map("pay_concept")
@@ -1089,14 +1091,14 @@ model JournalEntry {
 /// la app. Una fila a medias ES el estado Blanco. Lo "obligatorio" es regla del
 /// formulario; la del negocio es el guard de Blanco -> Verde fuerte.
 model Worker {
-  id           String  @db.Uuid
+  id           String    @db.Uuid
   /// La cuenta con la que entra a la app. Nulable: la Fase 1 puede capturarse
   /// antes de que exista la cuenta de Firebase.
-  userId       String? @unique(map: "ux_worker_user") @map("user_id") @db.Uuid
+  userId       String?   @unique(map: "ux_worker_user") @map("user_id") @db.Uuid
   /// Migración del correo viejo (ej. el de otro sistema, antes de tener el
   /// corporativo): mientras exista y no haya vencido (`User.deprecatesAt`),
   /// también puede iniciar sesión con esta cuenta y llegar al mismo perfil.
-  legacyUserId String? @unique(map: "ux_worker_legacy_user") @map("legacy_user_id") @db.Uuid
+  legacyUserId String?   @unique(map: "ux_worker_legacy_user") @map("legacy_user_id") @db.Uuid
   /// Validado con el expediente a medias: hasta cuándo puede completarlo. Solo
   /// cuenta mientras `is_profile_complete` sea falso.
   profileDueAt DateTime? @map("profile_due_at") @db.Timestamptz(6)
@@ -1292,11 +1294,11 @@ model Assignment {
 /// slot puede llevar el ajuste de tarifa Y un gasto, cada uno con su propia
 /// aprobación.
 model AssignmentPayAdjustment {
-  id             String  @db.Uuid
-  assignmentId   String  @map("assignment_id") @db.Uuid
-  payConceptId   String? @map("pay_concept_id") @db.Uuid
-  amount         Decimal @db.Decimal(10, 2)
-  reason         String  @db.Text
+  id           String  @db.Uuid
+  assignmentId String  @map("assignment_id") @db.Uuid
+  payConceptId String? @map("pay_concept_id") @db.Uuid
+  amount       Decimal @db.Decimal(10, 2)
+  reason       String  @db.Text
 
   /// Solo del GASTO (payConceptId con valor): REIMBURSE (el colaborador lo
   /// pagó, Contabilidad se lo suma) · COMPANY_EXPENSE (lo pagó Oranje, no le
@@ -1311,9 +1313,9 @@ model AssignmentPayAdjustment {
   requestedBy String   @map("requested_by") @db.Uuid
   requestedAt DateTime @default(now()) @map("requested_at") @db.Timestamptz(6)
 
-  approvedBy       String?   @map("approved_by") @db.Uuid
-  approvedAt       DateTime? @map("approved_at") @db.Timestamptz(6)
-  rejectionReason  String?   @map("rejection_reason") @db.Text
+  approvedBy      String?   @map("approved_by") @db.Uuid
+  approvedAt      DateTime? @map("approved_at") @db.Timestamptz(6)
+  rejectionReason String?   @map("rejection_reason") @db.Text
 
   /// Que el Observador lo apruebe no lo mete a la nómina: Contabilidad
   /// decide si lo incluye, viendo antes qué hace (Hugo, 2026-10-09). Solo
@@ -1329,11 +1331,11 @@ model AssignmentPayAdjustment {
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
 
-  assignment    Assignment  @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
-  payConcept    PayConcept? @relation(fields: [payConceptId], references: [id], onDelete: Restrict)
-  requestedByUser User      @relation("payAdjustmentRequestedBy", fields: [requestedBy], references: [id], onDelete: Restrict)
-  approvedByUser   User?    @relation("payAdjustmentApprovedBy", fields: [approvedBy], references: [id], onDelete: Restrict)
-  includedByUser   User?    @relation("payAdjustmentIncludedBy", fields: [includedBy], references: [id], onDelete: Restrict)
+  assignment      Assignment  @relation(fields: [assignmentId], references: [id], onDelete: Restrict)
+  payConcept      PayConcept? @relation(fields: [payConceptId], references: [id], onDelete: Restrict)
+  requestedByUser User        @relation("payAdjustmentRequestedBy", fields: [requestedBy], references: [id], onDelete: Restrict)
+  approvedByUser  User?       @relation("payAdjustmentApprovedBy", fields: [approvedBy], references: [id], onDelete: Restrict)
+  includedByUser  User?       @relation("payAdjustmentIncludedBy", fields: [includedBy], references: [id], onDelete: Restrict)
 
   @@id([id])
   @@index([assignmentId], map: "ix_assignment_pay_adjustment_assignment")
@@ -1543,7 +1545,7 @@ model TimesheetDay {
 
   /// El Supervisor REVISA por jornada —resuelve anomalos y registra manuales—
   /// pero NO aprueba. La aprobacion vive en el timesheet.
-  hasAnomaly Boolean   @default(false) @map("has_anomaly")
+  hasAnomaly Boolean @default(false) @map("has_anomaly")
 
   /// El dia se guarda por fecha calendario de CADA marca (D-08), asi que un
   /// turno que cruza medianoche queda partido en dos dias: este trae la
@@ -1649,6 +1651,12 @@ model Contract {
   /// De que ciclo comercial nacio. Nulable: un contrato heredado o migrado puede
   /// no tener prospecto detras.
   prospectId String? @map("prospect_id") @db.Uuid
+  /// De que Propuesta nacio (Hugo, 2026-10-21: "no puede haber contrato sin
+  /// propuesta"). Nulable por la misma razon que prospectId: heredado o
+  /// migrado puede no tenerla. Separado de prospectId porque un ciclo
+  /// comercial tiene VARIAS versiones de propuesta -- este apunta a la
+  /// version exacta de la que salieron las tarifas.
+  proposalId String? @map("proposal_id") @db.Uuid
   number     String  @db.Text
 
   /// Los CUATRO multiplicadores. Son columnas y no constantes de codigo porque el
@@ -1680,9 +1688,11 @@ model Contract {
   /// comida si/no", y Facturacion dice "el Contrato indica si el hotel requiere
   /// factura partida por mes".
   ///
-  /// deductsMeals dispara la deduccion de 3 USD por dia laborado — que tiene DOBLE
-  /// efecto: se le descuenta al colaborador Y se le acredita al hotel.
-  deductsMeals         Boolean @default(false) @map("deducts_meals")
+  /// Monto que dispara la deduccion de comida por dia laborado -- tiene DOBLE
+  /// efecto: se le descuenta al colaborador Y se le acredita al hotel. 0 = no
+  /// se descuenta. Antes era un boolean con "3 USD" fijo en el texto del
+  /// front; ahora es el monto real, editable por contrato (Hugo, 2026-10-21).
+  mealDeductionAmount  Decimal @default(0) @map("meal_deduction_amount") @db.Decimal(10, 2)
   /// Cuando una semana cruza dos meses, se emiten DOS facturas en vez de una.
   splitsInvoiceByMonth Boolean @default(false) @map("splits_invoice_by_month")
 
@@ -1697,11 +1707,31 @@ model Contract {
   signedBy String?   @map("signed_by") @db.Uuid
   signedAt DateTime? @map("signed_at") @db.Timestamptz(6)
 
+  /// Campos del machote real del Service Agreement (Hugo, 2026-10-20): todos
+  /// nulables, se prellenan desde la última propuesta enviada pero son
+  /// editables. `propertyAddress` es un solo campo (el machote pide calle,
+  /// ciudad y estado por separado, pero Propuestas solo captura un
+  /// `cityState` combinado — separarlo exigiría un dato que no se recaba).
+  propertyName         String? @map("property_name") @db.Text
+  propertyAddress      String? @map("property_address") @db.Text
+  companyEmail         String? @map("company_email") @db.Text
+  /// Hoy fijos en código ("Orange Solutions & Operations, LLC" /
+  /// irene@oranjepeople.com): nulo = usa esos valores por defecto.
+  serviceProviderName  String? @map("service_provider_name") @db.Text
+  serviceProviderEmail String? @map("service_provider_email") @db.Text
+
+  /// El candado del contrato ACTIVO (Hugo, 2026-10-21): "bloqueado" se
+  /// calcula (status = ACTIVE y isUnlocked = false), esta columna nunca
+  /// toca el status. Se apaga sola en los demás estados: un DRAFT ya es
+  /// editable sin esto, y uno cerrado ya no se edita de ningún modo.
+  isUnlocked Boolean @default(false) @map("is_unlocked")
+
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
 
   hotel        Hotel     @relation(fields: [hotelId], references: [id], onDelete: Restrict)
   prospect     Prospect? @relation(fields: [prospectId], references: [id], onDelete: Restrict)
+  proposal     Proposal? @relation(fields: [proposalId], references: [id], onDelete: Restrict)
   signedByUser User?     @relation("contractSignedBy", fields: [signedBy], references: [id], onDelete: Restrict)
 
   rates ContractRate[]
@@ -1713,6 +1743,7 @@ model Contract {
   @@id([id])
   @@unique([number], map: "ux_contract_number")
   @@index([hotelId], map: "ix_contract_hotel")
+  @@index([proposalId], map: "ix_contract_proposal")
   @@map("contract")
   @@schema("commercial")
 }

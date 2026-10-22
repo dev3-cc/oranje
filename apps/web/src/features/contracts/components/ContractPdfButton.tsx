@@ -48,22 +48,18 @@ export function ContractPdfButton({ contract }: { contract: ContractDetail }): R
 
   const documentProps = {
     hotelName: contract.hotelName,
-    hotelAddress: contract.hotelAddress,
+    propertyName: contract.propertyName,
+    propertyAddress: contract.propertyAddress ?? contract.hotelAddress,
+    companyEmail: contract.companyEmail,
+    serviceProviderName: contract.serviceProviderName,
+    serviceProviderEmail: contract.serviceProviderEmail,
     rates: contract.rates.map((rate) => ({
       key: rate.id,
       positionName: rate.positionName,
-      payRate: rate.payRate,
       billRate: rate.billRate,
     })),
     startDate: contract.validFrom,
     endDate: contract.validTo,
-    terms: {
-      overtime: {
-        pay: contract.multipliers.overtime.pay,
-        bill: contract.multipliers.overtime.bill,
-      },
-      holiday: { pay: contract.multipliers.holiday.pay, bill: contract.multipliers.holiday.bill },
-    },
   }
 
   async function confirmSend({ to, note }: { to: string; note: string }): Promise<void> {

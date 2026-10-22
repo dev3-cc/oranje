@@ -497,30 +497,32 @@ const HOTEL: Permission[] = [
   },
   { module: 'schedule', action: 'export', label: 'Exportar Schedule', roles: [SUPERVISOR, GA, GG] },
 
-  // AUDITORIAS
-  // Solo el Supervisor inspecciona y ve inspecciones: ni sus Managers por herencia
-  // (decision de Hugo, 2026-09-14). Ampliado el 2026-09-24: el Inspector
-  // también inspecciona, para los hoteles de su zona — sigue sin heredarse hacia
-  // el Coordinador (`inherit: false`), mismo criterio que el Supervisor.
+  // INSPECCIONES (antes AUDITORIAS)
+  // Nacio solo del Supervisor (decision de Hugo, 2026-09-14), amplio el
+  // 2026-09-24 al Inspector para los hoteles de su zona. El vault ya decia
+  // desde el 2026-10-16 que la inspeccion es EXCLUSIVA del Inspector — el
+  // codigo nunca se termino de actualizar entonces; se corrige aqui
+  // (Hugo, 2026-10-21). Sigue sin heredarse hacia el Coordinador
+  // (`inherit: false`). Antes se llamaba Auditoria (renombrada el 2026-10-21).
   {
     module: 'audits',
     action: 'create',
-    label: 'Inspeccionar presentacion o ambiente de mi hotel',
-    roles: [SUPERVISOR, INSPECTOR],
+    label: 'Inspeccionar presentacion o ambiente de mi zona',
+    roles: [INSPECTOR],
     inherit: false,
   },
   {
     module: 'audits',
     action: 'read',
-    label: 'Ver inspecciones de mi hotel',
-    roles: [SUPERVISOR, INSPECTOR, SYS],
+    label: 'Ver inspecciones de mi zona',
+    roles: [INSPECTOR, SYS],
     inherit: false,
   },
   {
     module: 'audits',
     action: 'update',
     label: 'Corregir una inspeccion',
-    roles: [SUPERVISOR, INSPECTOR],
+    roles: [INSPECTOR],
     inherit: false,
   },
 
@@ -548,13 +550,16 @@ const HOTEL: Permission[] = [
     label: 'Ver el Timesheet de todos los hoteles (solo lectura)',
     roles: [QA_MANAGER, ACCOUNTANT, ACCOUNTING_MANAGER],
   },
+  // El Supervisor ya ni revisa ni aprueba (Hugo, 2026-10-21 — antes sí
+  // revisaba, D-09 separaba revisar de aprobar entre Supervisor y Manager).
+  // Las dos quedan en GA/GG: aprobar sigue sin tocarlo nadie más, D-09
+  // ("Solo el ponche aprobado paga") no se mueve.
   {
     module: 'timesheet',
     action: 'review_punches',
     label: 'Revisar ponches y resolver anómalos',
-    roles: [SUPERVISOR, GA, GG, SYS],
+    roles: [GA, GG, SYS],
   },
-  // D-09: el corte entre operación y dinero. El Supervisor revisa, NO aprueba
   {
     module: 'timesheet',
     action: 'approve_hours',

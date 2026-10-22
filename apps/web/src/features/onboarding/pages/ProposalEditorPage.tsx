@@ -112,9 +112,15 @@ export function ProposalEditorPage({
   const navigate = useNavigate()
   const reduceMotion = useReducedMotion() ?? false
 
+  /*
+   * `currentData`, no `data`: al cambiar de propuesta en la lista, `data` se
+   * queda con la anterior mientras llega la nueva y la pantalla mentiría un
+   * instante — se sentía «pegada» (Hugo, 2026-10-20). Con `currentData` se
+   * vacía y aparece el skeleton, mismo criterio que ya usa `ContractDetailPage`.
+   */
   const {
-    data: workspace,
-    isLoading,
+    currentData: workspace,
+    isFetching,
     isError,
   } = useGetProposalWorkspaceQuery(prospectId, { skip: prospectId === '' })
   const { data: session } = useGetSessionQuery()
@@ -265,7 +271,7 @@ export function ProposalEditorPage({
        vuelve a pedir por su propio ciclo de vida (foco, invalidación). */
   }, [draft, reset, trigger])
 
-  if (isLoading) return <DetailSkeleton />
+  if (isFetching && !workspace) return <DetailSkeleton />
 
   if (isError || !workspace) {
     return (
@@ -312,7 +318,10 @@ export function ProposalEditorPage({
     })
   }
 
-  async function persist(values: ProposalDraftForm): Promise<void> {
+  /** `silent`: cuando guardar es un PASO previo a enviar/marcar como enviada,
+      no al botón "Guardar borrador" — "Borrador guardado" ahí confunde, el
+      usuario pidió enviar, no guardar (Hugo, 2026-10-20). */
+  async function persist(values: ProposalDraftForm, { silent = false } = {}): Promise<void> {
     if (!draft) return
     setActionError(null)
     try {
@@ -324,7 +333,7 @@ export function ProposalEditorPage({
            viene como string por el schema. */
         brandManagementCompany: values.brandManagementCompany ?? '',
       }).unwrap()
-      toast.success(t`Borrador guardado`)
+      if (!silent) toast.success(t`Borrador guardado`)
     } catch (error) {
       setActionError(actionErrorMessage(error))
       throw error
@@ -336,7 +345,7 @@ export function ProposalEditorPage({
   async function openSendModal(values: ProposalDraftForm): Promise<void> {
     if (!draft || !documentInput) return
     try {
-      await persist(values)
+      await persist(values, { silent: true })
       const blob = await proposalPdfBlob(documentInput)
       setPendingPdf(blob)
       setSendError(null)
@@ -378,7 +387,7 @@ export function ProposalEditorPage({
       await handleSubmit(async (values) => {
         if (!draft) return
         try {
-          await persist(values)
+          await persist(values, { silent: true })
           await sendProposal({ proposalId: draft.id, prospectId }).unwrap()
           setConfirmSendMode(null)
           toast.success(t`Propuesta marcada como enviada`)

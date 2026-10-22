@@ -154,6 +154,19 @@ export const PIPELINE_COLUMNS: readonly OnboardingStatus[] = [
 ]
 
 /**
+ * De Amarillo en adelante el siguiente papel es el Contrato, y se arma con el
+ * cuadro de la propuesta que el hotel ya vio (Hugo, 2026-10-16). Naranja NO
+ * entra aquí: ese caso (sin contrato vigente) depende de un dato que esta
+ * lista no tiene — `ProspectDetailPage` lo revisa aparte con
+ * `proposals?.hasActiveContract`.
+ */
+export const CONTRACT_ELIGIBLE_STATUSES: ReadonlySet<OnboardingStatus> = new Set([
+  'YELLOW',
+  'PINK',
+  'BROWN',
+])
+
+/**
  * Ya no queda como "sin transiciones": desde el seed TODOS los estados tienen
  * salida (RED, BROWN y BLACK reentran por Azul claro). Terminal aquí significa
  * que el prospecto salió del pipeline activo.

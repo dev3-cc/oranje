@@ -201,9 +201,10 @@ describe('PoolPage', () => {
     await user.click(await scoped.findByLabelText('Zona'))
     await user.click(await screen.findByRole('option', { name: 'Zona Centro' }))
 
-    /* La foto es obligatoria en el alta (Hugo, 2026-10-09): con todo lo demás
-       lleno, «Continuar» sigue apagado hasta que se sube. */
-    expect(goNext).toBeDisabled()
+    /* La foto ya es opcional en el alta (Hugo, 2026-10-21): con todo lo demás
+       lleno, «Continuar» ya está habilitado sin necesidad de subirla —
+       subirla aquí solo prueba que seguir pudiendo hacerlo no rompe nada. */
+    expect(goNext).toBeEnabled()
     await user.upload(
       scoped.getByLabelText('Foto del colaborador'),
       new File(['foto'], 'foto.jpg', { type: 'image/jpeg' }),

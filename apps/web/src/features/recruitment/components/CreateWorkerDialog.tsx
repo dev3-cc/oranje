@@ -245,6 +245,20 @@ function saveErrorMessage(error: unknown, i18n: I18n): string {
   })
 }
 
+/**
+ * Mismo criterio que `telefonoSinTocar` (abajo), generalizado a los 7 selects
+ * con «Sin definir aún»: si el borrador no cambió respecto al valor con el
+ * que abrió el editor, no se manda nada — así el journal (`fields:
+ * Object.keys(params.data)`, workers.repository.ts) no anota como «cambiado»
+ * un campo que nadie tocó. Si SÍ cambió y quedó en «Sin definir aún» (''), se
+ * manda `null` explícito: el back ignora `undefined` pero sí limpia con
+ * `null` (los 7 campos ya son `.nullish()` en updateWorkerSchema).
+ */
+function changedOrNull(current: string, original: string): string | null | undefined {
+  if (current === original) return undefined
+  return current !== '' ? current : null
+}
+
 function initialsOf(fullName: string): string {
   return fullName
     .trim()
@@ -375,11 +389,6 @@ export function CreateWorkerDialog({
       isCompletePhone(draft.phone) &&
       draft.address.trim() !== '' &&
       draft.zoneId !== '' &&
-      /* La foto es obligatoria al dar de alta (Hugo, 2026-10-09): la toma la
-         Reclutadora en la entrevista. Al EDITAR no se exige — ninguno de los
-         344 que ya existen tiene, y pedirla para corregir un teléfono los
-         dejaría sin poder guardar. El servidor exige lo mismo. */
-      draft.photoPath !== '' &&
       !isLoading
 
   /* Solo el paso 1 (Datos personales) tiene campos obligatorios — 2 y 3 son
@@ -396,6 +405,23 @@ export function CreateWorkerDialog({
     if (!canSubmit) return
     try {
       if (isEditing && workerId) {
+        const catalogPositionId = changedOrNull(
+          draft.catalogPositionId,
+          editing?.position?.id ?? '',
+        )
+        const hiringModalityId = changedOrNull(
+          draft.hiringModalityId,
+          editing?.hiringModality?.id ?? '',
+        )
+        const englishLevelId = changedOrNull(draft.englishLevelId, editing?.englishLevel?.id ?? '')
+        const experienceLevel = changedOrNull(draft.experienceLevel, editing?.experienceLevel ?? '')
+        const transportType = changedOrNull(draft.transportType, editing?.transportType ?? '')
+        const bloodType = changedOrNull(draft.bloodType, editing?.bloodType ?? '')
+        const emergencyContactRelationship = changedOrNull(
+          draft.emergencyContactRelationship,
+          editing?.emergencyContact?.relationship ?? '',
+        )
+
         await updateWorker({
           workerId,
           fullName: draft.fullName.trim(),
@@ -405,21 +431,19 @@ export function CreateWorkerDialog({
           address: draft.address.trim(),
           zoneId: draft.zoneId,
           ...(draft.photoPath !== '' ? { photoPath: draft.photoPath } : {}),
-          ...(draft.catalogPositionId !== '' ? { catalogPositionId: draft.catalogPositionId } : {}),
-          ...(draft.hiringModalityId !== '' ? { hiringModalityId: draft.hiringModalityId } : {}),
-          ...(draft.englishLevelId !== '' ? { englishLevelId: draft.englishLevelId } : {}),
-          ...(draft.experienceLevel !== '' ? { experienceLevel: draft.experienceLevel } : {}),
-          ...(draft.transportType !== '' ? { transportType: draft.transportType } : {}),
+          ...(catalogPositionId !== undefined ? { catalogPositionId } : {}),
+          ...(hiringModalityId !== undefined ? { hiringModalityId } : {}),
+          ...(englishLevelId !== undefined ? { englishLevelId } : {}),
+          ...(experienceLevel !== undefined ? { experienceLevel } : {}),
+          ...(transportType !== undefined ? { transportType } : {}),
           ...(draft.emergencyContactName.trim() !== ''
             ? { emergencyContactName: draft.emergencyContactName.trim() }
             : {}),
           ...(isCompletePhone(draft.emergencyContactPhone)
             ? { emergencyContactPhone: draft.emergencyContactPhone.trim() }
             : {}),
-          ...(draft.emergencyContactRelationship !== ''
-            ? { emergencyContactRelationship: draft.emergencyContactRelationship }
-            : {}),
-          ...(draft.bloodType !== '' ? { bloodType: draft.bloodType } : {}),
+          ...(emergencyContactRelationship !== undefined ? { emergencyContactRelationship } : {}),
+          ...(bloodType !== undefined ? { bloodType } : {}),
         }).unwrap()
         toast.success(t`Colaborador actualizado`)
       } else {
@@ -430,8 +454,9 @@ export function CreateWorkerDialog({
           phone: draft.phone.trim(),
           address: draft.address.trim(),
           zoneId: draft.zoneId,
-          /* En el alta siempre va: `canSubmit` no deja guardar sin ella. */
-          photoPath: draft.photoPath,
+          /* Opcional también al dar de alta (Hugo, 2026-10-21): se puede
+             agregar después desde el Pool — ya no la exige `canSubmit`. */
+          ...(draft.photoPath !== '' ? { photoPath: draft.photoPath } : {}),
           ...(draft.catalogPositionId !== '' ? { catalogPositionId: draft.catalogPositionId } : {}),
           ...(draft.hiringModalityId !== '' ? { hiringModalityId: draft.hiringModalityId } : {}),
           ...(draft.englishLevelId !== '' ? { englishLevelId: draft.englishLevelId } : {}),

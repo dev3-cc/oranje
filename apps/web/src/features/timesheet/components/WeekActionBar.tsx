@@ -166,7 +166,8 @@ export function WeekActionBar({
   }, [pendingAction])
 
   const can = useCan()
-  /** Aprobar es de los Managers (timesheet:approve_hours); el Supervisor envía y captura. */
+  /** Aprobar y enviar son de los Managers (Hugo, 2026-10-21 — antes el
+      Supervisor enviaba; ya solo captura marca manual, D-09 no se mueve). */
   const canApprove = can('timesheet:approve_hours')
   /** Contabilidad ve TODOS los hoteles, no el suyo — "enviada a Oranje" no
       tiene sentido desde su lado, porque Oranje es ella misma (Hugo,

@@ -289,7 +289,15 @@ export function HomePage(): ReactNode {
   const faltantes: string[] = [
     profile.transportType === null ? t`cómo llegas al trabajo` : null,
     !profile.taxDeadline.hasDocument ? t`tu SSN o ITIN` : null,
-    profile.emergencyContact === null ? t`tu contacto de emergencia` : null,
+    /* Los tres sub-campos son independientes desde el 2026-10-21: un contacto
+       a medias ya no llega colapsado a null, así que "falta" se decide por
+       cada uno — si no, bastaría con haber guardado el nombre para que el
+       aviso dejara de pedir el parentesco que de verdad sigue faltando. */
+    profile.emergencyContact?.name == null ||
+    profile.emergencyContact?.phone == null ||
+    profile.emergencyContact?.relationship == null
+      ? t`tu contacto de emergencia`
+      : null,
     profile.bloodType === null ? t`tu tipo de sangre` : null,
   ].filter((campo): campo is string => campo !== null)
 

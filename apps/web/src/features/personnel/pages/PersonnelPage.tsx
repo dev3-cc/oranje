@@ -450,10 +450,15 @@ function WorkerDetail({
               value={
                 row.personal.emergencyContact === null
                   ? '—'
-                  : `${row.personal.emergencyContact.name} (${
-                      RELATIONSHIP_LABEL[row.personal.emergencyContact.relationship] ??
-                      row.personal.emergencyContact.relationship
-                    }) · ${formatPhone(row.personal.emergencyContact.phone)}`
+                  : // Cada sub-campo es independiente desde el 2026-10-21: un
+                    // contacto a medias (p. ej. sin parentesco) ya no llega
+                    // colapsado a null — cada parte cae a '—' por su cuenta.
+                    `${row.personal.emergencyContact.name ?? '—'} (${
+                      row.personal.emergencyContact.relationship === null
+                        ? '—'
+                        : (RELATIONSHIP_LABEL[row.personal.emergencyContact.relationship] ??
+                          row.personal.emergencyContact.relationship)
+                    }) · ${formatPhone(row.personal.emergencyContact.phone) || '—'}`
               }
             />
           </div>

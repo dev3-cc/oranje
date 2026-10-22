@@ -14,7 +14,11 @@ export interface WorkerEntity {
   hiringModality: { id: string; code: string; name: string } | null
   experienceLevel: string | null
   transportType: string | null
-  emergencyContact: { name: string; phone: string; relationship: string } | null
+  emergencyContact: {
+    name: string | null
+    phone: string | null
+    relationship: string | null
+  } | null
   bloodType: string | null
   medicalNotes: string | null
   state: { code: string; color: string; name: string }
@@ -59,7 +63,11 @@ export interface WorkerBasicEntity {
   englishLevel: { id: string; code: string; name: string } | null
   hiringModality: { id: string; code: string; name: string } | null
   transportType: string | null
-  emergencyContact: { name: string; phone: string; relationship: string } | null
+  emergencyContact: {
+    name: string | null
+    phone: string | null
+    relationship: string | null
+  } | null
   medicalNotes: string | null
   /// Dónde está trabajando hoy: es justo lo que Mi Personal necesita mostrar.
   assignment: {

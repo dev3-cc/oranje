@@ -24,13 +24,14 @@ async function renderList(): Promise<void> {
   /* Sin storage en jsdom el intro es fail-open: sale siempre. Radix pone
      `aria-hidden` en el resto de la página mientras está abierto, así que hay
      que cerrarlo ANTES de leer nada. */
-  await userEvent.click(await screen.findByRole('button', { name: 'Saltar' }))
+  await userEvent.click(await screen.findByRole('button', { name: 'Saltar' }, SLOW))
 }
 
 /*
- * Toda la suite con tiempo propio: la pantalla monta la lista Y el documento
- * embebido, y en el runner del CI (suite en paralelo) cualquiera de sus casos
- * puede pasarse de los 5 s por defecto. En local pasan siempre.
+ * Toda la suite con tiempo propio: la pantalla monta la lista Y el contrato
+ * elegido embebido (con su propia vista previa del documento), y en el
+ * runner del CI (suite en paralelo) cualquiera de sus casos puede pasarse de
+ * los 5 s por defecto. En local pasan siempre.
  */
 describe('ContractListPage', { timeout: 20_000 }, () => {
   it('el intro explica de qué va la pantalla antes de entrar', async () => {
@@ -44,64 +45,65 @@ describe('ContractListPage', { timeout: 20_000 }, () => {
     )
 
     /* Lo primero que ve quien entra: qué distingue un contrato de una propuesta
-       y de dónde salen la nómina y la factura. */
-    expect(await screen.findByText('El hotel ya dijo que sí')).toBeInTheDocument()
+       y de dónde salen la nómina y la factura. `findBy*` sin segundo argumento
+       usa 1 s por omisión, menor que el `timeout: 20_000` del describe — bajo
+       el runner en paralelo (suite completa) eso solo alcanzaba a veces
+       (visto en vivo 2026-10-20), así que cada espera lleva su propio SLOW. */
+    expect(await screen.findByText('El hotel ya dijo que sí', undefined, SLOW)).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
-    expect(await screen.findByText('De aquí salen la nómina y la factura')).toBeInTheDocument()
+    expect(
+      await screen.findByText('De aquí salen la nómina y la factura', undefined, SLOW),
+    ).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Saltar' }))
     expect(screen.queryByText('El hotel ya dijo que sí')).not.toBeInTheDocument()
   })
 
-  it('muestra el estado de cada contrato en su tarjeta', async () => {
+  it('al entrar ya se ve el primer contrato de la lista, sin tener que elegirlo', async () => {
     await renderList()
 
-    expect((await screen.findAllByText('Activo')).length).toBeGreaterThanOrEqual(3)
+    expect(
+      await screen.findByRole('heading', { name: 'Contrato CT-2026-0184' }, SLOW),
+    ).toBeInTheDocument()
+  })
+
+  it('elegir otro contrato de la lista lo abre a la derecha, sin salir de la lista', async () => {
+    await renderList()
+
+    await screen.findByRole('heading', { name: 'Contrato CT-2026-0184' }, SLOW)
+    await userEvent.click(screen.getByRole('button', { name: /Hotel Mirador/ }))
+    expect(
+      await screen.findByRole('heading', { name: 'Contrato CT-2026-0098' }, SLOW),
+    ).toBeInTheDocument()
+  })
+
+  it('muestra el estado de cada contrato en su renglón', async () => {
+    await renderList()
+
+    expect((await screen.findAllByText('Activo', undefined, SLOW)).length).toBeGreaterThanOrEqual(3)
     expect(screen.getByText('Expirado')).toBeInTheDocument()
     expect(screen.getByText('Borrador')).toBeInTheDocument()
   })
 
-  it('la tarjeta lleva el hotel, su foto y desde cuánto se factura', async () => {
-    await renderList()
-
-    /* El documento es el mismo machote para todos: lo que distingue una tarjeta
-       de otra es el hotel y su foto, no una miniatura del papel. */
-    const card = (await screen.findAllByRole('link'))
-      .map((link) => link)
-      .find((link) => link.getAttribute('href')?.startsWith('/contracts/'))
-    expect(card).toBeDefined()
-    /* El fondo del hotel: su foto de Places o, sin ella, el placeholder de marca. */
-    expect((card as HTMLElement).querySelector('img')).not.toBeNull()
-    expect(screen.getAllByText(/desde \$/).length).toBeGreaterThan(0)
-  })
-
-  it('cada tarjeta enlaza a la ficha de su contrato', async () => {
-    await renderList()
-
-    const links = await screen.findAllByRole('link')
-    const hrefs = links
-      .map((link) => link.getAttribute('href'))
-      .filter((href): href is string => href?.startsWith('/contracts/') ?? false)
-
-    expect(hrefs.length).toBeGreaterThanOrEqual(5)
-    expect(new Set(hrefs).size).toBe(hrefs.length)
-  })
-
-  it('los filtros viven detrás de «Filtrar» y no ocupan la pantalla', async () => {
+  // Hugo, 2026-10-21: "necesitamos un buscador de hoteles" — ya existía,
+  // pero escondido detrás de «Filtrar» nadie lo encontraba. Los 3 filtros de
+  // categoría (Estado/Zona/Vencimiento) sí se quedan detrás del botón.
+  it('el buscador vive siempre visible; los filtros de categoría detrás de «Filtrar»', async () => {
     const user = userEvent.setup()
     await renderList()
 
-    await screen.findAllByText('Activo')
-    expect(screen.queryByLabelText('Buscar contrato')).not.toBeInTheDocument()
+    await screen.findAllByText('Activo', undefined, SLOW)
+    expect(screen.getByLabelText('Buscar contrato')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Estado')).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /Filtrar/ }))
-    expect(await screen.findByLabelText('Buscar contrato')).toBeInTheDocument()
+    expect(await screen.findByLabelText('Estado')).toBeInTheDocument()
   })
 
-  it('el estado sí filtra, y lo hace en el servidor', async () => {
+  it('el estado sí filtra la lista', async () => {
     const user = userEvent.setup()
     await renderList()
 
-    await screen.findAllByText('Activo')
+    await screen.findAllByText('Activo', undefined, SLOW)
     await user.click(screen.getByRole('button', { name: /Filtrar/ }))
     await user.click(await screen.findByLabelText('Estado'))
     /* La opción se lee con la etiqueta humana del estado, no con el código
@@ -118,23 +120,21 @@ describe('ContractListPage', { timeout: 20_000 }, () => {
     const user = userEvent.setup()
     await renderList()
 
-    await screen.findAllByText('Activo')
+    await screen.findAllByText('Activo', undefined, SLOW)
     await user.click(screen.getByRole('button', { name: /Filtrar/ }))
     await user.type(await screen.findByLabelText('Buscar contrato'), 'Mirador')
 
     await waitFor(() => {
-      expect(
-        screen.getAllByRole('link').filter((l) => l.getAttribute('href')?.startsWith('/contracts/'))
-          .length,
-      ).toBe(1)
+      expect(screen.queryByRole('button', { name: /Hotel Puerto Real/ })).not.toBeInTheDocument()
     }, SLOW)
+    expect(screen.getByRole('button', { name: /Hotel Mirador/ })).toBeInTheDocument()
   })
 
   it('con un filtro sin resultados lo dice y ofrece quitarlo', async () => {
     const user = userEvent.setup()
     await renderList()
 
-    await screen.findAllByText('Activo')
+    await screen.findAllByText('Activo', undefined, SLOW)
     await user.click(screen.getByRole('button', { name: /Filtrar/ }))
     await user.type(await screen.findByLabelText('Buscar contrato'), 'Hotel que no existe')
 

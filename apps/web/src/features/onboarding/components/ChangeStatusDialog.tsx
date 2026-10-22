@@ -61,6 +61,8 @@ export interface ChangeStatusDialogProps {
   presetStatus?: OnboardingStatus
   /** Se dispara tras confirmar el paso a Verde — ya se puede abrir la propuesta. */
   onMovedToGreen?: () => void
+  /** Se dispara tras confirmar el paso a Amarillo — ya se puede armar el Contrato. */
+  onMovedToYellow?: () => void
 }
 
 const ROLE_SHORT: Record<string, MessageDescriptor> = {
@@ -123,6 +125,7 @@ export function ChangeStatusDialog({
   currentStatus,
   presetStatus,
   onMovedToGreen,
+  onMovedToYellow,
 }: ChangeStatusDialogProps): ReactNode {
   const { t, i18n } = useLingui()
   const [selectedStatus, setSelectedStatus] = useState<OnboardingStatus | null>(null)
@@ -170,8 +173,10 @@ export function ChangeStatusDialog({
       }).unwrap()
       toast.success(t`Estado cambiado a ${ONBOARDING_STATUS_LABEL[selectedStatus]}`)
       const movedToGreen = selectedStatus === 'GREEN'
+      const movedToYellow = selectedStatus === 'YELLOW'
       onClose()
       if (movedToGreen) onMovedToGreen?.()
+      if (movedToYellow) onMovedToYellow?.()
     } catch {
       return
     }
@@ -206,7 +211,20 @@ export function ChangeStatusDialog({
         </p>
       )}
 
-      {!areTransitionsLoading && allowed?.transitions.length === 0 && (
+      {!areTransitionsLoading && allowed?.transitions.length === 0 && currentStatus === 'GREEN' && (
+        /* El back vacía la lista a propósito si Verde no ha enviado su
+           propuesta (apply() rechaza CUALQUIER salida de Verde sin ella):
+           decirlo tal cual, no el mensaje de rol, que aquí sería falso — el
+           rol sí puede, solo que todavía no hay propuesta que mandar. */
+        <p className="rounded-md bg-surface-2 p-4 text-sm text-ink-2">
+          <Trans>
+            Verde no se abandona sin enviar la Propuesta Personalizada: abre la propuesta, envíala y
+            vuelve a intentar.
+          </Trans>
+        </p>
+      )}
+
+      {!areTransitionsLoading && allowed?.transitions.length === 0 && currentStatus !== 'GREEN' && (
         /* Quién sigue, con nombre: «tu rol no puede» dejaba al BDC sin saber
            que los primeros estados los mueven el BD o el BDC (Semáforo Onboarding). */
         <p className="rounded-md bg-surface-2 p-4 text-sm text-ink-2">

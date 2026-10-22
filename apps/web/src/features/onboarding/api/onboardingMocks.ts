@@ -22,6 +22,7 @@ import {
   type OnboardingStatus,
 } from '@/shared/constants/onboardingStatus'
 import { registerMockRoutes, type MockRoute } from '@/shared/lib/mockBaseQuery'
+import { matchesSearch } from '@/shared/lib/text'
 import type {
   ApiEnvelope,
   CatalogItemApi,
@@ -1113,11 +1114,14 @@ const routes: readonly MockRoute[] = [
       const ownerUserId = search.get('ownerUserId')
 
       const state = search.get('state')
+      /** Como el back (`hotel.name`, insensible a mayúsculas): Hugo, 2026-10-21. */
+      const term = search.get('search')
 
       const items = board.filter((item) => {
         if (zoneId && zoneIdFromLabel(item.zone) !== zoneId) return false
         if (ownerUserId && item.owner.id !== ownerUserId) return false
         if (state && item.status !== state) return false
+        if (term && !matchesSearch(term, item.hotelName)) return false
         return true
       })
 
