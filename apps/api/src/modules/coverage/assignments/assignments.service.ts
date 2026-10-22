@@ -425,7 +425,8 @@ export class AssignmentsService {
       : (
           await this.stateOf(
             COVERAGE_LIGHT,
-            (await this.coverageAfter(position.requisitionId, row.slot.positionId, -1)).positionCode,
+            (await this.coverageAfter(position.requisitionId, row.slot.positionId, -1))
+              .positionCode,
           )
         ).id
 

@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import { createZodDto } from '../../../../common/pipes/index.js'
 
-// Las dos auditorías del Supervisor. Un solo mecanismo, discriminado por tipo
+// Las dos inspecciones del Supervisor. Un solo mecanismo, discriminado por tipo
 // (ver migración: `ck_audit_type`).
 export const AUDIT_TYPES = ['PERSONAL_PRESENTATION', 'ENVIRONMENT'] as const
 

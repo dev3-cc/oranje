@@ -17,19 +17,19 @@ const MS_PER_DAY = 86_400_000
 
 /**
  * "Hoy" solo, sin verbo, se leía como "audítalo hoy" — lo contrario de lo que
- * dice (ya se hizo). Todo lo que NO es "Sin auditar" empieza con "Auditado"
+ * dice (ya se hizo). Todo lo que NO es "Sin inspeccionar" empieza con "Inspeccionado"
  * para que la pastilla se lea siempre como estado, nunca como instrucción.
  * Devuelve el descriptor; quien pinta lo traduce con `i18n._()` (D-36).
  */
 function sinceLabel(lastAuditedAt: string | null): MessageDescriptor {
-  if (lastAuditedAt === null) return msg`Sin auditar`
+  if (lastAuditedAt === null) return msg`Sin inspeccionar`
   const days = Math.floor((Date.now() - new Date(lastAuditedAt).getTime()) / MS_PER_DAY)
-  if (days <= 0) return msg`Auditado hoy`
-  if (days === 1) return msg`Auditado ayer`
-  return msg`Auditado hace ${days} días`
+  if (days <= 0) return msg`Inspeccionado hoy`
+  if (days === 1) return msg`Inspeccionado ayer`
+  return msg`Inspeccionado hace ${days} días`
 }
 
-/** Los que más lo necesitan primero: nunca auditados, luego el más antiguo. */
+/** Los que más lo necesitan primero: nunca inspeccionados, luego el más antiguo. */
 function sortByUrgency(rows: LastAuditPerWorker[]): LastAuditPerWorker[] {
   return [...rows].sort((a, b) => {
     if (a.lastAuditedAt === null && b.lastAuditedAt === null)
@@ -48,9 +48,9 @@ function toneOf(lastAuditedAt: string | null): string {
 }
 
 /**
- * "Auditoría de personal": el roster del hotel con cuánto lleva cada quien
+ * "Inspección de personal": el roster del hotel con cuánto lleva cada quien
  * sin su Presentación Personal — el Supervisor elige a quién le toca. Fuente:
- * `GET /audits/last-per-worker`, ya el orden por urgencia (nunca auditado
+ * `GET /audits/last-per-worker`, ya el orden por urgencia (nunca inspeccionado
  * primero).
  */
 export function AuditWorkerList({
@@ -70,8 +70,8 @@ export function AuditWorkerList({
     <Modal
       isOpen
       onClose={onClose}
-      title={t`Auditoría de personal`}
-      description={t`Elige a quién auditar. El tiempo sin auditar te dice por dónde empezar.`}
+      title={t`Inspección de personal`}
+      description={t`Elige a quién inspeccionar. El tiempo sin inspeccionar te dice por dónde empezar.`}
       className="max-w-lg"
     >
       {isLoading ? (
@@ -86,7 +86,7 @@ export function AuditWorkerList({
       ) : rows.length === 0 ? (
         <EmptyState
           title={t`Este hotel no tiene colaboradores asignados`}
-          text={t`Cuando el Schedule programe a alguien en este hotel, aparecerá aquí para auditarlo.`}
+          text={t`Cuando el Schedule programe a alguien en este hotel, aparecerá aquí para inspeccionarlo.`}
         />
       ) : (
         <ul className="flex flex-col gap-2">

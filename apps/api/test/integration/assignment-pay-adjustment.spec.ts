@@ -19,7 +19,7 @@ import {
 
 /**
  * El ajuste de tarifa o el gasto extra (p. ej. «Uber») de una asignación
- * EVENTUAL (Hugo, 2026-10-08): Reclutamiento lo pide, el Observador —única
+ * EVENTUAL (Hugo, 2026-10-08): Reclutamiento lo pide, el Manager de QA —única
  * excepción a que es de puro lectura— lo aprueba o lo rechaza, y mientras
  * está PENDING no pesa en nada.
  */
@@ -37,7 +37,7 @@ function recruiter(): AuthenticatedUser {
 }
 
 function observer(): AuthenticatedUser {
-  return { id: actorId, roleCode: 'ROL-OBS-01', hotelId: null, departmentId: null }
+  return { id: actorId, roleCode: 'ROL-Q-02', hotelId: null, departmentId: null }
 }
 
 function accountant(): AuthenticatedUser {
@@ -102,7 +102,7 @@ afterAll(async () => {
 })
 
 describe('ajuste/gasto de una asignación eventual', () => {
-  it('Reclutamiento lo pide, el Observador lo aprueba, y el permiso del uno no sirve para lo del otro', async () => {
+  it('Reclutamiento lo pide, el Manager de QA lo aprueba, y el permiso del uno no sirve para lo del otro', async () => {
     const base = await lookups()
     const hotelId = await makeHotel(reg, {
       label: 'Adjustment',
@@ -140,15 +140,15 @@ describe('ajuste/gasto de una asignación eventual', () => {
     trackAdjustment(created.id)
     expect(created).toMatchObject({ status: 'PENDING', amount: '180.00', payConcept: null })
 
-    // El Observador lo ve en SU cola, no solo quien lo pidió.
+    // El Manager de QA lo ve en SU cola, no solo quien lo pidió.
     const queue = await payAdjustments.pending()
     expect(queue.map((row) => row.id)).toContain(created.id)
 
     // Reclutamiento no puede aprobar lo suyo: la guarda vive en el permiso
     // (el controller la exige), no en el servicio — un recruiter nunca pasa
-    // `requisitions:approve_pay_adjustment`, solo el Observador.
+    // `requisitions:approve_pay_adjustment`, solo el Manager de QA.
     expect(await permissions.can('ROL-R-01', 'requisitions', 'approve_pay_adjustment')).toBe(false)
-    expect(await permissions.can('ROL-OBS-01', 'requisitions', 'approve_pay_adjustment')).toBe(true)
+    expect(await permissions.can('ROL-Q-02', 'requisitions', 'approve_pay_adjustment')).toBe(true)
 
     const approved = await payAdjustments.approve(created.id, observer())
     expect(approved).toMatchObject({ status: 'APPROVED', approvedBy: { id: actorId } })
@@ -198,7 +198,7 @@ describe('ajuste/gasto de una asignación eventual', () => {
     ).rejects.toMatchObject({ response: { code: 'ASSIGNMENT_NOT_TEMPORARY' } })
   })
 
-  it('el gasto con concepto (Uber) lo rechaza el Observador con motivo, y no queda pendiente', async () => {
+  it('el gasto con concepto (Uber) lo rechaza el Manager de QA con motivo, y no queda pendiente', async () => {
     const base = await lookups()
     const hotelId = await makeHotel(reg, {
       label: 'AdjustmentReject',
@@ -318,7 +318,7 @@ describe('ajuste/gasto de una asignación eventual', () => {
     }
   })
 
-  it('que el Observador lo apruebe no lo mete a la nómina: Contabilidad decide aparte', async () => {
+  it('que el Manager de QA lo apruebe no lo mete a la nómina: Contabilidad decide aparte', async () => {
     const base = await lookups()
     const hotelId = await makeHotel(reg, {
       label: 'AdjustmentInclude',

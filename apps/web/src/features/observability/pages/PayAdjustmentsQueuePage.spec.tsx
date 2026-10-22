@@ -18,7 +18,7 @@ function renderQueue(): void {
 }
 
 /**
- * La única pantalla de escritura del Observador (Hugo, 2026-10-08): el
+ * La única pantalla de escritura del Manager de QA (Hugo, 2026-10-08): el
  * ajuste de tarifa o el gasto extra de una asignación eventual, pedido por
  * Reclutamiento.
  */

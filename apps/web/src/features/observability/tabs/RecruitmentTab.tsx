@@ -140,8 +140,9 @@ export function RecruitmentTab({
                     <Trans>
                       Sale de la bitácora de las requisiciones (quién las tomó, soltó o reasignó) y
                       del historial de cada candidato nuevo (quién lo dio de alta). A quién asignó
-                      cada reclutador no se ve: eso se registra en otra bitácora que el Observador
-                      no lee. Quien no movió ninguna requisición ni dio de alta a nadie no aparece.
+                      cada reclutador no se ve: eso se registra en otra bitácora que el Manager de
+                      QA no lee. Quien no movió ninguna requisición ni dio de alta a nadie no
+                      aparece.
                     </Trans>
                   </PeopleNotice>
                   {(journalIds.capped || signupIds.capped) && <TruncatedNotice />}

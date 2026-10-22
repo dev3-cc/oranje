@@ -28,7 +28,7 @@ import type {
  * Mi Personal COMPONE el contrato real (D-28): `GET /schedules` +
  * `/schedules/:id/entries` para el turno, `GET /timesheets` para las marcas,
  * `GET /workers` para el semáforo y `GET /audits` (PERSONAL_PRESENTATION,
- * scope automático al hotel del Supervisor) para la última Auditoría de
+ * scope automático al hotel del Supervisor) para la última Inspección de
  * Presentación — el score vive en el perfil del colaborador (nota del
  * módulo). Stand-by es la MISMA transición del semáforo
  * (`POST /workers/:id/transitions` → PINK), no un endpoint aparte.
@@ -134,7 +134,7 @@ async function fetchBoard(
   if (schedulesRes.error) return { error: schedulesRes.error }
   if (timesheetsRes.error) return { error: timesheetsRes.error }
   if ('error' in workersRes) return { error: workersRes.error }
-  /* Las auditorías son solo del Supervisor: a un Manager `/audits` le responde
+  /* Las inspecciones son solo del Supervisor: a un Manager `/audits` le responde
      403 y el tablero sigue sin ese dato (la ficha no pinta la columna). */
   if (auditsRes.error && !isForbidden(auditsRes.error)) return { error: auditsRes.error }
 
@@ -166,7 +166,7 @@ async function fetchBoard(
   const today = todayIso()
   const workerById = new Map(workers.map((worker) => [worker.id, worker]))
 
-  /** La última Auditoría de Presentación Personal por colaborador (`GET /audits` ya llega ordenado por fecha, más reciente primero). */
+  /** La última Inspección de Presentación Personal por colaborador (`GET /audits` ya llega ordenado por fecha, más reciente primero). */
   const presentationByWorker = new Map<string, { score: number; auditedAt: string }>()
   for (const audit of audits) {
     const workerId = audit.worker?.id

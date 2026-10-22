@@ -4,7 +4,7 @@
  * Sale de los tres `06 - Matriz de Permisos.md` del vault — Ventas, Hotel y
  * Reclutamiento — más las de Contabilidad, que no tiene matriz y se derivaron
  * de `Flujo de Nómina`. Cada entrada conserva la etiqueta en español del documento
- * original: es lo que permite auditar esta tabla contra su fuente sin adivinar
+ * original: es lo que permite inspeccionar esta tabla contra su fuente sin adivinar
  * qué fila corresponde a cuál.
  *
  * Los identificadores van en inglés (D-11); las etiquetas, en español, porque
@@ -36,7 +36,7 @@ export interface Permission {
   /** Módulo del sidebar, no el módulo de D-01. Es lo que la matriz agrupa. */
   module: string
   action: string
-  /** La fila del vault, tal cual. Para poder auditar. */
+  /** La fila del vault, tal cual. Para poder inspeccionar. */
   label: string
   roles: string[]
   /**
@@ -66,7 +66,8 @@ const INSPECTOR = 'ROL-I-01'
 
 const SYS = 'ROL-SYS-01'
 
-const OBSERVER = 'ROL-OBS-01'
+/** El Observador se fusionó en el Manager de QA (Hugo, 2026-10-21): sus permisos son de él. */
+const QA_MANAGER = 'ROL-Q-02'
 
 // ---------------------------------------------------------------------------
 // VENTAS — Business Developer y Business Developer Coordinator
@@ -77,17 +78,17 @@ const SALES: Permission[] = [
     module: 'pipeline',
     action: 'read',
     label: 'Ver Pipeline (mi territorio)',
-    /* Observador (ROL-OBS-01, pedido de Hugo 2026-09-21): desde su pantalla
+    /* Manager de QA (antes Observador, ROL-OBS-01, pedido de Hugo 2026-09-21): desde su pantalla
        enlaza al Pipeline real de Ventas — lectura, nunca escritura. Seguro de
        reutilizar: `hotelId=null` en este rol ya hace que `scope()` no fuerce
        `ownerUserId`, el mismo criterio que ya usa el BDC. */
-    roles: [BD, BDC, SYS, OBSERVER],
+    roles: [BD, BDC, SYS, QA_MANAGER],
   },
   {
     module: 'pipeline',
     action: 'read_all',
     label: 'Ver Pipeline global',
-    roles: [BDC, SYS, OBSERVER],
+    roles: [BDC, SYS, QA_MANAGER],
   },
   {
     module: 'pipeline',
@@ -497,28 +498,28 @@ const HOTEL: Permission[] = [
   { module: 'schedule', action: 'export', label: 'Exportar Schedule', roles: [SUPERVISOR, GA, GG] },
 
   // AUDITORIAS
-  // Solo el Supervisor audita y ve auditorias: ni sus Managers por herencia
+  // Solo el Supervisor inspecciona y ve inspecciones: ni sus Managers por herencia
   // (decision de Hugo, 2026-09-14). Ampliado el 2026-09-24: el Inspector
-  // también audita, para los hoteles de su zona — sigue sin heredarse hacia
+  // también inspecciona, para los hoteles de su zona — sigue sin heredarse hacia
   // el Coordinador (`inherit: false`), mismo criterio que el Supervisor.
   {
     module: 'audits',
     action: 'create',
-    label: 'Auditar presentacion o ambiente de mi hotel',
+    label: 'Inspeccionar presentacion o ambiente de mi hotel',
     roles: [SUPERVISOR, INSPECTOR],
     inherit: false,
   },
   {
     module: 'audits',
     action: 'read',
-    label: 'Ver auditorias de mi hotel',
+    label: 'Ver inspecciones de mi hotel',
     roles: [SUPERVISOR, INSPECTOR, SYS],
     inherit: false,
   },
   {
     module: 'audits',
     action: 'update',
-    label: 'Corregir una auditoria',
+    label: 'Corregir una inspeccion',
     roles: [SUPERVISOR, INSPECTOR],
     inherit: false,
   },
@@ -536,7 +537,7 @@ const HOTEL: Permission[] = [
     label: 'Ver Timesheet global del hotel',
     roles: [GG, SYS],
   },
-  /* Todos los hoteles, solo lectura (pedido de Hugo 2026-09-29): el Observador
+  /* Todos los hoteles, solo lectura (pedido de Hugo 2026-09-29): el Manager de QA
      trabaja la nómina con él mientras se construye Contabilidad, y la Contadora
      lo recibe con su Matriz (decisión de Hugo: ve el Timesheet completo de todos
      los hoteles). Permiso propio y no `read_all`, que significa «todo MI hotel»:
@@ -545,7 +546,7 @@ const HOTEL: Permission[] = [
     module: 'timesheet',
     action: 'read_all_hotels',
     label: 'Ver el Timesheet de todos los hoteles (solo lectura)',
-    roles: [OBSERVER, ACCOUNTANT, ACCOUNTING_MANAGER],
+    roles: [QA_MANAGER, ACCOUNTANT, ACCOUNTING_MANAGER],
   },
   {
     module: 'timesheet',
@@ -760,21 +761,21 @@ const RECRUITMENT: Permission[] = [
   },
   // Hugo, 2026-10-08: al llenar un slot EVENTUAL, Reclutamiento puede pedir un
   // ajuste a la tarifa de esa posición o un gasto extra (p. ej. Uber) — queda
-  // PENDING hasta que lo apruebe el Observador.
+  // PENDING hasta que lo apruebe el Manager de QA.
   {
     module: 'requisitions',
     action: 'request_pay_adjustment',
     label: 'Pedir un ajuste de tarifa o un gasto extra al asignar un slot eventual',
     roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS],
   },
-  // Excepción deliberada: el Observador es de puro lectura (ver bloque
+  // Excepción deliberada: el Manager de QA es de puro lectura (ver bloque
   // OBSERVABILITY más abajo), salvo esto — fuera de la herencia por el mismo
   // motivo que sus lecturas: nadie más hereda esta capacidad de aprobar.
   {
     module: 'requisitions',
     action: 'approve_pay_adjustment',
-    label: 'Aprobar o rechazar el ajuste/gasto de una asignación eventual (Observador)',
-    roles: [OBSERVER],
+    label: 'Aprobar o rechazar el ajuste/gasto de una asignación eventual (Manager de QA)',
+    roles: [QA_MANAGER],
     inherit: false,
   },
   {
@@ -823,16 +824,16 @@ const RECRUITMENT: Permission[] = [
     module: 'requisitions',
     action: 'read_all',
     label: 'Ver vista global',
-    /* Observador (ROL-OBS-01, pedido de Hugo 2026-09-21): enlaza a la lista
+    /* Manager de QA (antes Observador, ROL-OBS-01, pedido de Hugo 2026-09-21): enlaza a la lista
        real de Requisiciones. Seguro de reutilizar: `hotelId=null` hace que
        `list()`/`get()` no filtren por hotel, el mismo criterio que
        Reclutamiento — no repite el hueco de PR #89 porque aquí las DOS
        lecturas de `hotelId=null` significan lo mismo: "todos los hoteles".
-       Contabilidad entra por el mismo motivo que el Observador: el Timesheet
+       Contabilidad entra por el mismo motivo que el Manager de QA: el Timesheet
        de todos los hoteles enlaza a su requisición (`/requisitions/:id`) y
        sin esto el enlace daba "No se encontró la requisición" — ni 404 ni
        403 reales, el 403 se traduce igual (Hugo, 2026-10-15, en vivo). */
-    roles: [GROUP_LEAD, RECRUITMENT_MANAGER, SYS, OBSERVER, ACCOUNTANT, ACCOUNTING_MANAGER],
+    roles: [GROUP_LEAD, RECRUITMENT_MANAGER, SYS, QA_MANAGER, ACCOUNTANT, ACCOUNTING_MANAGER],
   },
   {
     module: 'requisitions',
@@ -870,11 +871,11 @@ const RECRUITMENT: Permission[] = [
     module: 'recruitment',
     action: 'search_candidates',
     label: 'Buscar / filtrar candidatos',
-    /* Observador (ROL-OBS-01, pedido de Hugo 2026-09-21): "al hacer clic en
+    /* Manager de QA (antes Observador, ROL-OBS-01, pedido de Hugo 2026-09-21): "al hacer clic en
        una persona desde un slot de la requisición debería poder ir a ver el
        empleado". Es el único permiso que destraba `getScoped()` sin exigir
        `hotelId` — de lectura, unscoped, igual que Reclutamiento. */
-    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS, OBSERVER],
+    roles: [RECRUITER, GROUP_LEAD, RECRUITMENT_MANAGER, SYS, QA_MANAGER],
   },
   {
     module: 'recruitment',
@@ -1356,30 +1357,31 @@ const INSPECTION: Permission[] = [
 ]
 
 // ---------------------------------------------------------------------------
-// OBSERVADOR — transversal, de solo lectura (ROL-OBS-01, Roles del Sistema.md
-// 2026-09-21). Permisos NUEVOS y propios: no reutiliza `*.read_all` de otros
-// roles a propósito, porque esa fue la causa de los tres huecos de alcance
-// cerrados en PR #89 — un mismo permiso con significado distinto según quién
-// lo tuviera. El Observador no hereda nada y nadie hereda de él.
+// MANAGER DE QA — la lectura transversal que era del Observador (ROL-OBS-01,
+// Roles del Sistema.md 2026-09-21), fusionado en el Manager de QA el
+// 2026-10-21 (Hugo). Permisos NUEVOS y propios: no reutiliza `*.read_all` de
+// otros roles a propósito, porque esa fue la causa de los tres huecos de
+// alcance cerrados en PR #89 — un mismo permiso con significado distinto según
+// quién lo tuviera. No hereda nada y nadie hereda de él.
 // ---------------------------------------------------------------------------
 const OBSERVABILITY: Permission[] = [
   {
     module: 'observability',
     action: 'read_status_durations',
-    label: 'Ver cuánto tarda cada semáforo en cada estado (Observador)',
-    roles: [OBSERVER],
+    label: 'Ver cuánto tarda cada semáforo en cada estado (Manager de QA)',
+    roles: [QA_MANAGER],
   },
   {
     module: 'observability',
     action: 'read_punches',
-    label: 'Ver cada ponche de cualquier hotel (Observador)',
-    roles: [OBSERVER],
+    label: 'Ver cada ponche de cualquier hotel (Manager de QA)',
+    roles: [QA_MANAGER],
   },
   {
     module: 'observability',
     action: 'read_department_metrics',
-    label: 'Ver métricas agregadas de los 7 departamentos (Observador)',
-    roles: [OBSERVER],
+    label: 'Ver métricas agregadas de los 7 departamentos (Manager de QA)',
+    roles: [QA_MANAGER],
   },
 ]
 
@@ -1415,7 +1417,7 @@ export const PERMISSIONS: Permission[] = [
  * `status_light_transition` quedan explícitas y el guard no sabe de jerarquía.
  * Fuera a propósito: Contabilidad (el Flujo de Nómina exige dos firmas de
  * personas distintas), el Colaborador (su ponche es evidencia de presencia,
- * nadie lo da por él) y las filas marcadas `inherit: false` (Auditorías: solo
+ * nadie lo da por él) y las filas marcadas `inherit: false` (Inspecciones: solo
  * el Supervisor).
  */
 export const ROLE_INHERITANCE: Record<string, readonly string[]> = {
@@ -1425,7 +1427,7 @@ export const ROLE_INHERITANCE: Record<string, readonly string[]> = {
   'ROL-R-02': ['ROL-R-01'],
   /** Manager de Reclutamiento ⊃ Líder ⊃ Reclutadora: también toma requisiciones y asigna. */
   'ROL-R-03': ['ROL-R-02', 'ROL-R-01'],
-  /** Manager de Área ⊃ Supervisor (accidente en sitio, marca manual); Auditorías queda fuera (`inherit: false`). */
+  /** Manager de Área ⊃ Supervisor (accidente en sitio, marca manual); Inspecciones queda fuera (`inherit: false`). */
   'ROL-H-02': ['ROL-H-01'],
   /** Manager General ⊃ Manager de Área ⊃ Supervisor; el alcance sigue siendo su hotel. */
   'ROL-H-03': ['ROL-H-02', 'ROL-H-01'],

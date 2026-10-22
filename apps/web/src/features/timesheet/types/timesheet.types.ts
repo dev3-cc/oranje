@@ -71,7 +71,7 @@ export interface TimesheetAssignment {
 
 /**
  * Lo que se le pagaría HOY a esta hoja, en vivo (D-10: 40 h por requisición).
- * Solo viaja con `timesheet:read_all_hotels` (Contabilidad, el Observador).
+ * Solo viaja con `timesheet:read_all_hotels` (Contabilidad, el Manager de QA).
  * `subtotal` en `null` cuando no hay contrato ni tarifa interna que
  * resolver — nunca se inventa un pago (Hugo, 2026-10-14: "qué pasa cuando
  * no tenemos contrato, deberíamos mostrar que el contrato no está listo").

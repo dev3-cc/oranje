@@ -10,7 +10,7 @@ import { close, db } from './db.js'
 import { actor } from './fixture.js'
 
 /**
- * El Inspector audita (Reglas de Negocio, 2026-09-24) igual que el
+ * El Inspector inspecciona (Reglas de Negocio, 2026-09-24) igual que el
  * Supervisor, pero sin hotel fijo — acotado a los hoteles de su(s) zona(s)
  * asignada(s), mismo criterio que Requisiciones.
  */
@@ -39,7 +39,7 @@ async function hotelInZone(zoneId: string): Promise<string> {
   await db.hotel.create({
     data: {
       id,
-      name: `Hotel Auditoría Zona ${id.slice(-8)}`,
+      name: `Hotel Inspección Zona ${id.slice(-8)}`,
       zoneId,
       timeZone: 'America/Cancun',
       createdBy: actorId,
@@ -109,8 +109,8 @@ afterAll(async () => {
   await close()
 })
 
-describe('el Inspector audita hoteles de su zona', () => {
-  it('crea una auditoría de un hotel de su zona', async () => {
+describe('el Inspector inspecciona hoteles de su zona', () => {
+  it('crea una inspección de un hotel de su zona', async () => {
     const zones = await db.zone.findMany({ take: 2, select: { id: true } })
     const [suZona, otraZona] = zones
     if (!suZona || !otraZona) throw new Error('Se requieren al menos 2 zonas sembradas')

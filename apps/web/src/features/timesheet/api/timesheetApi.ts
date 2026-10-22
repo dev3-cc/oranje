@@ -350,7 +350,7 @@ async function fetchWeek(
       jobTitle: workerInfo.get(detail.worker.id)?.jobTitle ?? '—',
       photoUrl: workerInfo.get(detail.worker.id)?.photoUrl ?? null,
       /* `sheet.hotel` ya viene en el LISTADO (`GET /timesheets`), sin pasar
-         por `/requisitions` — que Contabilidad y el Observador no pueden
+         por `/requisitions` — que Contabilidad y el Manager de QA no pueden
          leer (403: sus permisos son `read_own`/`read_all` de Hotel y
          Reclutamiento, ninguno el suyo). Antes esta fila caía siempre al
          fallback para esos dos roles, y con un hotel elegido en el filtro

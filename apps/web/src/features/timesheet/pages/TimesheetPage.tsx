@@ -71,7 +71,7 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
 import { formatWeekRange } from '@/shared/lib/formatters'
 
 /**
- * Solo para quien ve todos los hoteles (Contabilidad, el Observador): el
+ * Solo para quien ve todos los hoteles (Contabilidad, el Manager de QA): el
  * Supervisor y los Managers ya conocen esta pantalla, así que no les toca
  * (Hugo, 2026-10-14: "créale onboarding también a Contabilidad"). El texto
  * se traduce al pintar con `i18n._()` (D-36), como el resto de los intros.
@@ -140,7 +140,7 @@ export function TimesheetPage(): ReactNode {
   const can = useCan()
   /** Pagar es de Contabilidad (doble firma del Flujo de Nómina), no del Hotel. */
   const canPay = can('payroll:validate') || can('payroll:authorize')
-  /** Lo que el permiso no autoriza no se dibuja: el Observador solo lee. */
+  /** Lo que el permiso no autoriza no se dibuja: el Manager de QA solo lee. */
   const canReview = can('timesheet:review_punches')
   const canManualPunch = can('timesheet:create_manual_punch')
   /** Corregir una marca ya registrada: Manager de Área/General, sembrado
@@ -148,7 +148,7 @@ export function TimesheetPage(): ReactNode {
   const canCorrectPunch = can('timesheet:correct_punch')
   const seesAllHotels = can('timesheet:read_all_hotels')
   /** Incluir un ajuste/gasto en la nómina es de Contabilidad, no de
-      `read_all_hotels` a secas: el Observador ve todos los hoteles pero no
+      `read_all_hotels` a secas: el Manager de QA ve todos los hoteles pero no
       puede incluir nada (Hugo, 2026-10-14). */
   const canIncludeAdjustments = can('payroll:generate')
 

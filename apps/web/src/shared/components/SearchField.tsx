@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { useDelayedFlag } from '@/shared/hooks/useDelayedFlag'
 
 /**
- * El buscador de la casa. Una sola forma para todo el sistema (auditoría de
+ * El buscador de la casa. Una sola forma para todo el sistema (inspección de
  * Hugo, 2026-09-04) con las reglas de las Web Interface Guidelines: la lupa
  * DENTRO del campo como afordancia, `type="search"` (Escape limpia, el
  * teclado móvil pone «Buscar»), `aria-label` porque no lleva etiqueta

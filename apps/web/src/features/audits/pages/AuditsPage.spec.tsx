@@ -26,7 +26,7 @@ describe('AuditsPage', () => {
        la página (aria-hidden) — se cierra primero. Sin storage en jsdom es
        fail-open: sale siempre y se salta. */
     await userEvent.click(await screen.findByRole('button', { name: 'Saltar' }))
-    expect(await screen.findByRole('heading', { name: 'Auditorías' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Inspecciones' })).toBeInTheDocument()
     expect(
       await screen.findByText(/Tu usuario no tiene un hotel asignado todavía/),
     ).toBeInTheDocument()

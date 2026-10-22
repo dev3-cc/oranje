@@ -71,9 +71,9 @@ async function inBatches<T, R>(items: T[], run: (item: T) => Promise<R>): Promis
 }
 
 /**
- * Observador (`ROL-OBS-01`, Roles del Sistema.md 2026-09-21): transversal, de
+ * Manager de QA (antes Observador, `ROL-OBS-01`, Roles del Sistema.md 2026-09-21): transversal, de
  * solo lectura. Los KPIs por departamento se componen en el front con las
- * listas que el Observador ya puede leer (`pipeline:read_all`,
+ * listas que el Manager de QA ya puede leer (`pipeline:read_all`,
  * `requisitions:read_all`, `recruitment:search_candidates`,
  * `timesheet:read_all_hotels`, `observability:*`), sin endpoint nuevo.
  *
@@ -128,7 +128,7 @@ export const observabilityApi = baseApi.injectEndpoints({
       },
     }),
 
-    /* `recruitment:search_candidates` (que el Observador tiene) es lo que
+    /* `recruitment:search_candidates` (que el Manager de QA tiene) es lo que
        decide la ficha completa en el back (`isFullWorkerApi`): sus workers
        siempre traen `state`. */
     getObserverWorkers: build.query<Listed<FullWorkerApi>, void>({

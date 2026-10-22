@@ -34,7 +34,7 @@ export interface PayAdjustmentEntity {
 
 /**
  * El ajuste de tarifa o el gasto extra (p. ej. «Uber») de una asignación
- * EVENTUAL (Hugo, 2026-10-08). Reclutamiento lo pide; el Observador —única
+ * EVENTUAL (Hugo, 2026-10-08). Reclutamiento lo pide; el Manager de QA —única
  * excepción a que es de puro lectura— lo aprueba o lo rechaza. Mientras está
  * PENDING no pesa en ningún cálculo de nómina.
  */
@@ -109,8 +109,11 @@ export class PayAdjustmentsService {
     return toEntity(row)
   }
 
-  /** Lo ve quien pide (Reclutamiento) o quien aprueba (Observador) — nadie más. */
-  async byAssignment(assignmentId: string, user: AuthenticatedUser): Promise<PayAdjustmentEntity[]> {
+  /** Lo ve quien pide (Reclutamiento) o quien aprueba (Manager de QA) — nadie más. */
+  async byAssignment(
+    assignmentId: string,
+    user: AuthenticatedUser,
+  ): Promise<PayAdjustmentEntity[]> {
     const allowed = await Promise.all([
       this.permissions.can(user.roleCode, 'requisitions', 'request_pay_adjustment'),
       this.permissions.can(user.roleCode, 'requisitions', 'approve_pay_adjustment'),
@@ -157,7 +160,7 @@ export class PayAdjustmentsService {
     return toEntity(row)
   }
 
-  /** La cola de Contabilidad: aprobados por el Observador, todavía sin
+  /** La cola de Contabilidad: aprobados por el Manager de QA, todavía sin
       decidir si pesan en la nómina. */
   async approvedPendingInclusion(): Promise<PayAdjustmentEntity[]> {
     return (await this.repo.approvedPendingInclusion()).map(toEntity)
@@ -165,7 +168,7 @@ export class PayAdjustmentsService {
 
   /**
    * Contabilidad decide, viendo antes qué hace, si este ajuste/gasto se
-   * suma a la próxima corrida de pago. Que el Observador lo haya aprobado es
+   * suma a la próxima corrida de pago. Que el Manager de QA lo haya aprobado es
    * condición necesaria, no suficiente — esto es lo que de verdad lo mete al
    * cálculo (Hugo, 2026-10-09).
    */
@@ -181,7 +184,7 @@ export class PayAdjustmentsService {
     if (row.status !== 'APPROVED') {
       throw new ConflictException({
         code: 'PAY_ADJUSTMENT_NOT_APPROVED',
-        message: 'Solo se incluye un ajuste ya aprobado por el Observador',
+        message: 'Solo se incluye un ajuste ya aprobado por el Manager de QA',
       })
     }
     if (row.includedAt) {

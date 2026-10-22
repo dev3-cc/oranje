@@ -28,8 +28,8 @@ import { MOTION } from '@/shared/lib/motion'
 /** Lo que una ruta puede decirle al shell desde `handle` (React Router). */
 export type RouteHandle = { fullWidth?: boolean }
 
-/** Las secciones que el Observador tiene en su sidebar: ahí no hay «volver». */
-const OBSERVADOR_SIDEBAR_ROOTS: ReadonlySet<string> = new Set(['observability', 'timesheet'])
+/** Las secciones que el Manager de QA tiene en su sidebar: ahí no hay «volver». */
+const QA_SIDEBAR_ROOTS: ReadonlySet<string> = new Set(['observability', 'timesheet'])
 
 export function AppShell(): ReactNode {
   const { t } = useLingui()
@@ -66,14 +66,14 @@ export function AppShell(): ReactNode {
    */
   const pathSegments = location.pathname.split('/').filter(Boolean)
   /**
-   * El Observador es la única excepción: `/requisitions` y `/pipeline` son
+   * El Manager de QA es la única excepción: `/requisitions` y `/pipeline` son
    * "raíz de sección" para Reclutamiento/Ventas, que sí las tienen en su
-   * sidebar — pero el Observador llega ahí desde SU pantalla (`/observability`,
+   * sidebar — pero el Manager de QA llega ahí desde SU pantalla (`/observability`,
    * pedido de Hugo 2026-09-21), así que ahí sí son subvista suya.
    */
-  const isObservadorAwayFromHome =
-    user?.roleId === 'ROL-OBS-01' && !OBSERVADOR_SIDEBAR_ROOTS.has(pathSegments[0] ?? '')
-  const isSubView = pathSegments.length > 1 || isObservadorAwayFromHome
+  const isQaManagerAwayFromHome =
+    user?.roleId === 'ROL-Q-02' && !QA_SIDEBAR_ROOTS.has(pathSegments[0] ?? '')
+  const isSubView = pathSegments.length > 1 || isQaManagerAwayFromHome
   function goBack(): void {
     if (historyIndex > 0) {
       void navigate(-1)

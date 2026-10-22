@@ -28,10 +28,10 @@ function scoreTone(score: string): string {
 }
 
 /**
- * El historial del hotel: quién auditó qué, cuándo y con qué calificación.
+ * El historial del hotel: quién inspeccionó qué, cuándo y con qué calificación.
  * El Manager de Área/General lo ve con `audits:read` sin poder crear; el
  * Supervisor con `audits:update` puede reabrir cualquier fila para
- * corregirla (PATCH sobre la misma auditoría, no una nueva).
+ * corregirla (PATCH sobre la misma inspección, no una nueva).
  */
 export function AuditHistoryList({
   hotelId,
@@ -50,7 +50,7 @@ export function AuditHistoryList({
   if (isError) {
     return (
       <LoadError
-        message={t`No se pudo cargar el historial de auditorías. Inténtalo de nuevo.`}
+        message={t`No se pudo cargar el historial de inspecciones. Inténtalo de nuevo.`}
         onRetry={() => {
           void refetch()
         }}
@@ -60,7 +60,7 @@ export function AuditHistoryList({
   if (!audits || audits.length === 0) {
     return (
       <EmptyState
-        title={t`Todavía no hay auditorías`}
+        title={t`Todavía no hay inspecciones`}
         text={t`Cuando se guarde la primera de Presentación Personal o de Ambiente y Recursos, aparecerá aquí.`}
       />
     )

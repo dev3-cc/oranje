@@ -26,6 +26,12 @@ const FULLY_COVERED = 'LIGHT_BLUE'
 const POOL_AVAILABLE = 'STRONG_GREEN'
 const POOL_PENDING = 'WHITE'
 const LIST_LIMIT = 6
+const PARTIAL = 'RED'
+/**
+ * Una autorizada sin tomar pasa a crítica a las 24 h: es el plazo en que el
+ * vault manda asignarla de oficio (Manager de Reclutamiento, «Responsabilidades»).
+ */
+const CRITICAL_MS = 24 * 3_600_000
 
 function countStates(states: Array<{ code: string; name: string; color: string }>): StateCount[] {
   const buckets = new Map<string, StateCount>()
@@ -75,6 +81,16 @@ async function fetchRecruitmentOverview(
     (row) => row.state.code === QUEUE_OPEN || row.state.code === QUEUE_IN_PROGRESS,
   )
 
+  const now = Date.now()
+  const critical = requisitions
+    .filter(
+      (row) =>
+        row.state.code === QUEUE_OPEN &&
+        row.authorizedAt !== null &&
+        now - new Date(row.authorizedAt).getTime() > CRITICAL_MS,
+    )
+    .sort((a, b) => (a.authorizedAt ?? '').localeCompare(b.authorizedAt ?? ''))
+
   return {
     data: {
       poolTotal: workers.length,
@@ -85,6 +101,9 @@ async function fetchRecruitmentOverview(
       queueOpen: queue.filter((row) => row.state.code === QUEUE_OPEN).length,
       queueInProgress: queue.filter((row) => row.state.code === QUEUE_IN_PROGRESS).length,
       queue: queue.slice(0, LIST_LIMIT).map(toDashboardRequisition),
+      queuePartial: requisitions.filter((row) => row.state.code === PARTIAL).length,
+      critical: critical.slice(0, LIST_LIMIT).map(toDashboardRequisition),
+      criticalCount: critical.length,
     },
   }
 }

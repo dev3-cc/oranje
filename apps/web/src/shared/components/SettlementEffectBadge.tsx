@@ -8,7 +8,7 @@ import type { SettlementEffect } from '@/features/recruitment'
 
 /** Quién pagó el gasto (Hugo, 2026-10-09): sin color sola, cada una lleva su
     propia etiqueta — lo que importa es qué le toca al pago del colaborador.
-    Compartido entre la cola del Observador y la de Contabilidad: es el mismo
+    Compartido entre la cola del Manager de QA y la de Contabilidad: es el mismo
     hecho visto por dos roles distintos. */
 const SETTLEMENT_EFFECT_BADGE: Record<
   SettlementEffect,

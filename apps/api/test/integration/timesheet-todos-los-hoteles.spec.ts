@@ -9,7 +9,7 @@ import { close, db } from './db.js'
 import { actor } from './fixture.js'
 
 /**
- * El Timesheet de todos los hoteles (pedido de Hugo 2026-09-29): el Observador
+ * El Timesheet de todos los hoteles (pedido de Hugo 2026-09-29): el Manager de QA
  * lo lee para trabajar la nómina mientras se construye Contabilidad. Es un
  * alcance que se pide por permiso (`timesheet:read_all_hotels`), nunca uno que
  * salga de un `hotelId` vacío, y es solo de lectura.
@@ -130,7 +130,7 @@ describe('Timesheet de todos los hoteles', () => {
   it('con el alcance de todos los hoteles, llegan las semanas de cualquier hotel', async () => {
     const observer = {
       id: actorId,
-      roleCode: 'ROL-OBS-01',
+      roleCode: 'ROL-Q-02',
       hotelId: null,
       departmentId: null,
     } as AuthenticatedUser
@@ -154,14 +154,14 @@ describe('Timesheet de todos los hoteles', () => {
     expect(ids).not.toContain(sheets[1])
   })
 
-  it('todos los hoteles lo tienen el Observador y los dos roles de Contabilidad, y nadie más', async () => {
+  it('todos los hoteles lo tienen el Manager de QA y los dos roles de Contabilidad, y nadie más', async () => {
     const rows = await prisma.$queryRaw<Array<{ role: string; action: string }>>`
       SELECT r.code AS role, rp.action
         FROM identity.role_permission rp
         JOIN identity.role r ON r.id = rp.role_id
        WHERE rp.module = 'timesheet'`
 
-    const observer = rows.filter((row) => row.role === 'ROL-OBS-01').map((row) => row.action)
+    const observer = rows.filter((row) => row.role === 'ROL-Q-02').map((row) => row.action)
 
     expect(observer).toEqual(['read_all_hotels'])
     // Decisión de Hugo: la Contadora y el Manager de Contabilidad leen el
@@ -171,6 +171,6 @@ describe('Timesheet de todos los hoteles', () => {
         .filter((row) => row.action === 'read_all_hotels')
         .map((row) => row.role)
         .sort(),
-    ).toEqual(['ROL-CO-01', 'ROL-CO-02', 'ROL-OBS-01'])
+    ).toEqual(['ROL-CO-01', 'ROL-CO-02', 'ROL-Q-02'])
   })
 })
