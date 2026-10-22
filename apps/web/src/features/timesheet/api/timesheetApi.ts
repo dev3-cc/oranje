@@ -229,18 +229,46 @@ export function toEntry(
   }
 }
 
+/** Semanas de margen alrededor de la semana de referencia cuando no hay
+    periodo elegido a mano — basta para navegar con las flechas varias
+    semanas de historial antes de necesitar el filtro de Periodo. */
+const SEMANAS_DE_MARGEN_POR_DEFECTO = 10
+
+/**
+ * `from`/`to` que se mandan cuando quien ve la pantalla no eligió un periodo
+ * a mano. Un solo extremo puesto ya acota a propósito («desde el 1» es una
+ * pregunta legítima): solo se completa cuando LOS DOS están vacíos.
+ */
+export function periodoPorDefecto(filters: TimesheetFilters): { from: string; to: string } {
+  if (filters.from !== '' || filters.to !== '') return { from: filters.from, to: filters.to }
+
+  const referencia = filters.weekStart !== ANY_VALUE ? filters.weekStart : todayIso()
+  return {
+    from: addDaysIso(referencia, -SEMANAS_DE_MARGEN_POR_DEFECTO * 7),
+    to: addDaysIso(referencia, 7),
+  }
+}
+
 /**
  * Lo que viaja al servidor: el estado y el periodo.
  *
  * El periodo se manda, no se recorta aquí: pedir todas las semanas y filtrar
  * después deja que el tope del listado muerda antes — y cuando muerde, la
  * pantalla enseña lo que quepa sin decir que cortó (Hugo, 2026-10-05).
+ *
+ * Esa protección solo corría cuando HABÍA un periodo elegido a mano: sin
+ * ninguno, `from`/`to` se mandaban vacíos, el tope volvía a morder sin
+ * avisar, y la pantalla de Contabilidad enseñaba "sin ponches" en semanas
+ * que sí los tenían — mismo defecto de fondo, reproducido en vivo el
+ * 2026-10-22. `periodoPorDefecto` cierra el hueco: sin periodo a mano,
+ * manda una ventana acotada en vez de nada.
  */
 function paramsDe(filters: TimesheetFilters): Record<string, string> {
+  const { from, to } = periodoPorDefecto(filters)
   return {
     ...(filters.status !== ANY_VALUE ? { status: filters.status } : {}),
-    ...(filters.from !== '' ? { from: filters.from } : {}),
-    ...(filters.to !== '' ? { to: filters.to } : {}),
+    ...(from !== '' ? { from } : {}),
+    ...(to !== '' ? { to } : {}),
   }
 }
 
