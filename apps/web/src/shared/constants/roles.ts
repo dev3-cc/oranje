@@ -20,6 +20,11 @@ export interface RoleLabel {
 /** El único rol que NO usa el shell del staff: su apartado es `/collaborator`. */
 export const WORKER_ROLE = 'ROL-C-01'
 
+/** Contabilidad no tiene tablero propio: su inicio es el Consolidado, nunca
+    el Dashboard de Ventas al que caía por no estar en ninguna lista (`RoleHome`
+    ya lo sabía; `DashboardPage` no — reproducido en vivo 2026-10-22). */
+export const ACCOUNTING_ROLES = ['ROL-CO-01', 'ROL-CO-02']
+
 /**
  * El título habla el idioma activo (D-36); las siglas no se traducen.
  *

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
+import { addDaysIso, todayIso } from '../lib/weekNavigation'
 import { EMPTY_TIMESHEET_FILTERS } from '../types/timesheet.types'
 
-import { enElPeriodo } from './timesheetApi'
+import { enElPeriodo, periodoPorDefecto } from './timesheetApi'
 
 /**
  * La regla que decide qué semanas entran en un periodo (Hugo, 2026-10-05).
@@ -52,5 +53,38 @@ describe('el periodo del Timesheet', () => {
   it('un periodo sin ninguna semana devuelve vacío, no todo', () => {
     /* El caso que deja la pantalla en blanco si nadie lo explica. */
     expect(semanasEn(SEMANAS, '2026-12-01', '2026-12-31')).toEqual([])
+  })
+})
+
+/**
+ * Sin periodo a mano, `paramsDe` igual manda uno: pedir sin acotar dejaba que
+ * el tope del listado mordiera en silencio (2026-10-22, reproducido en vivo
+ * con ponches reales que la Contadora veía como "sin marcas").
+ */
+describe('el periodo por defecto, sin filtro a mano', () => {
+  it('sin periodo ni semana elegida, la ventana es alrededor de hoy', () => {
+    const hoy = todayIso()
+    expect(periodoPorDefecto({ ...EMPTY_TIMESHEET_FILTERS, from: '', to: '' })).toEqual({
+      from: addDaysIso(hoy, -70),
+      to: addDaysIso(hoy, 7),
+    })
+  })
+
+  it('con una semana elegida, la ventana se recentra ahí, no en hoy', () => {
+    const semana = '2026-08-03'
+    expect(
+      periodoPorDefecto({ ...EMPTY_TIMESHEET_FILTERS, from: '', to: '', weekStart: semana }),
+    ).toEqual({ from: addDaysIso(semana, -70), to: addDaysIso(semana, 7) })
+  })
+
+  it('un periodo puesto a mano, aunque sea un solo extremo, no se toca', () => {
+    expect(periodoPorDefecto({ ...EMPTY_TIMESHEET_FILTERS, from: '2026-01-01', to: '' })).toEqual({
+      from: '2026-01-01',
+      to: '',
+    })
+    expect(periodoPorDefecto({ ...EMPTY_TIMESHEET_FILTERS, from: '', to: '2026-01-31' })).toEqual({
+      from: '',
+      to: '2026-01-31',
+    })
   })
 })
