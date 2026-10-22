@@ -99,13 +99,30 @@ export interface ContractDetail {
     overtime: ContractMultiplier
     holiday: ContractMultiplier
   }
-  deductsMeals: boolean
+  /** 0 = no se descuenta. Antes era un sí/no con "3 USD" fijo en el texto
+      (Hugo, 2026-10-21): ahora el monto es el dato real, editable. */
+  mealDeductionAmount: number
   splitsInvoiceByMonth: boolean
   /** Una fila por posición del catálogo (`commercial.contract_rate`). */
   rates: ContractRate[]
   /** `null` si nunca se editó desde que se creó. Lo usa la vista previa de
       pago para avisar «esto cambió» sobre una semana ya aprobada. */
   updatedAt: string | null
+  /** De qué Propuesta (versión exacta) nace, para enlazar a
+      `/proposals/:prospectId/:version` (Hugo, 2026-10-21). `null` en
+      contratos heredados/migrados. */
+  proposal: { id: string; prospectId: string; version: number } | null
+  /** Campos del machote del Service Agreement (Hugo, 2026-10-20): se
+      prellenan desde la última propuesta enviada pero son editables. */
+  propertyName: string | null
+  propertyAddress: string | null
+  companyEmail: string | null
+  /** Hoy fijos en código si vienen `null`: "Orange Solutions & Operations, LLC" / irene@oranjepeople.com. */
+  serviceProviderName: string | null
+  serviceProviderEmail: string | null
+  /** Candado del contrato ACTIVO (Hugo, 2026-10-21): "bloqueado" es
+      `status === 'ACTIVE' && !isUnlocked` — nunca cambia el status. */
+  isUnlocked: boolean
 }
 
 /**

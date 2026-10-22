@@ -65,8 +65,10 @@ describe('ContractPreviewDialog', () => {
     expect(printable.getByText('Service Agreement')).toBeInTheDocument()
     /* El cuadro por puesto es lo que se imprime, en el Exhibit «A». */
     expect(printable.getByText('Housekeeper')).toBeInTheDocument()
-    expect(printable.getByText('$15.00')).toBeInTheDocument()
     expect(printable.getByText('$19.50')).toBeInTheDocument()
+    /* El pay rate ($15.00) es margen interno de Oranje — el machote real
+       solo le enseña al hotel el bill rate (Hugo, 2026-10-20). */
+    expect(printable.queryByText('$15.00')).not.toBeInTheDocument()
   })
 
   it('la copia imprimible lleva todos los datos de la propuesta', () => {
@@ -75,10 +77,12 @@ describe('ContractPreviewDialog', () => {
     const printable = within(printRoot)
     expect(printable.getByText(/Housekeeping para temporada alta\./)).toBeInTheDocument()
     expect(printable.getAllByText('Hotel Mirador').length).toBeGreaterThan(0)
-    /* El clausulado completo del acuerdo vigente, no un resumen. */
-    expect(printable.getAllByText('TERM AND RENEWAL.').length).toBeGreaterThan(0)
-    expect(printable.getByText('DISPUTE RESOLUTION; GOVERNING LAW.')).toBeInTheDocument()
-    expect(printable.getByText('AMENDMENTS; ENTIRE AGREEMENT; COUNTERPARTS.')).toBeInTheDocument()
+    /* El clausulado completo del acuerdo vigente, no un resumen. Sin punto
+       final tras el título — así es el machote real (Hugo, 2026-10-20): el
+       número sí, el punto después de RENEWAL no. */
+    expect(printable.getAllByText(/TERM AND RENEWAL/).length).toBeGreaterThan(0)
+    expect(printable.getByText(/DISPUTE RESOLUTION; GOVERNING LAW/)).toBeInTheDocument()
+    expect(printable.getByText(/AMENDMENTS; ENTIRE AGREEMENT; COUNTERPARTS/)).toBeInTheDocument()
     expect(printable.getByText(/laws of the State of Georgia/)).toBeInTheDocument()
   })
 
@@ -109,7 +113,7 @@ describe('ContractPreviewDialog', () => {
     renderDialog()
 
     const printable = within(printRoot)
-    expect(printable.getByText('Exhibit “A” - Rates and Staffing Terms')).toBeInTheDocument()
+    expect(printable.getByText('Exhibit “A” - Rates')).toBeInTheDocument()
     expect(
       printable.getByText(/employees of ORANGE SOLUTIONS & OPERATIONS, LLC/),
     ).toBeInTheDocument()

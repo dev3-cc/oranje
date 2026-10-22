@@ -79,13 +79,14 @@ describe('ProposalEditorPage', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Contrato enviado' }))
 
     const dialog = await screen.findByRole('dialog', { name: 'Vista previa del contrato' })
-    // v1 se envió con Housekeeper a 170 / 250.
-    expect(within(dialog).getByText('$170.00')).toBeInTheDocument()
+    // v1 se envió con Housekeeper a 170 / 250 — solo el bill rate ($250) le
+    // llega al hotel; el pay rate ($170) es margen interno de Oranje.
     expect(within(dialog).getByText('$250.00')).toBeInTheDocument()
+    expect(within(dialog).queryByText('$170.00')).not.toBeInTheDocument()
 
     // El acuerdo completo, con su clausulado y su Exhibit «A».
     expect(within(dialog).getByText('Service Agreement')).toBeInTheDocument()
-    expect(within(dialog).getByText('Exhibit “A” - Rates and Staffing Terms')).toBeInTheDocument()
+    expect(within(dialog).getByText('Exhibit “A” - Rates')).toBeInTheDocument()
   })
 
   it('la versión nueva arranca con las tarifas de la anterior', async () => {

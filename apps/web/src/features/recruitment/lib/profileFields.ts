@@ -100,7 +100,15 @@ export function missingProfile(
     modality: worker.hiringModality === null,
     experience: worker.experienceLevel === null,
     transport: worker.transportType === null,
-    emergencyContact: worker.emergencyContact === null,
+    /* Los tres sub-campos son independientes desde el 2026-10-21: un contacto
+       a medias (p. ej. nombre+teléfono sin parentesco) ya no llega colapsado
+       a null, así que "falta" se decide por cada uno, no por el objeto
+       completo — si no, un dato realmente ausente dejaría de contarse como
+       faltante en cuanto cualquier otro sub-campo se hubiera guardado. */
+    emergencyContact:
+      worker.emergencyContact?.name == null ||
+      worker.emergencyContact?.phone == null ||
+      worker.emergencyContact?.relationship == null,
     bloodType: worker.bloodType === null,
     ssnItin: !worker.hasTaxDocument,
   }

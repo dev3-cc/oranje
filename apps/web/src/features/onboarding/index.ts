@@ -21,3 +21,7 @@ export type { HotelMapPoint } from './types/prospect.types'
 export { ProspectCard } from './components/ProspectCard'
 export { adaptProspectSummary } from './api/adapters'
 export type { ProspectSummary } from './types/prospect.types'
+
+/** Contratos lo usa para saber qué hoteles ya pueden tener contrato (Hugo, 2026-10-20). */
+export { useGetProposalCandidatesQuery } from './api/proposalsApi'
+export type { ProposalCandidate } from './types/proposal.types'

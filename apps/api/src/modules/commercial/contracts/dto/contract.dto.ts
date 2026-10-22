@@ -18,6 +18,12 @@ export const rateSchema = z.object({
 export const createContractSchema = z.object({
   hotelId: z.uuid(),
   prospectId: z.uuid().optional(),
+  // De qué versión exacta de la Propuesta nace (Hugo, 2026-10-21): para el
+  // hipervínculo en el detalle del contrato. Opcional por lo mismo que
+  // prospectId — un contrato heredado o migrado puede no tenerla — pero los
+  // dos caminos reales de la UI (alta desde Onboarding, renovar) siempre la
+  // mandan.
+  proposalId: z.uuid().optional(),
   validFrom: z.coerce.date(),
   validTo: z.coerce.date().optional(),
   // weekStartDay/weekEndDay/overtimePayMultiplier NO se piden aquí: el
@@ -26,9 +32,21 @@ export const createContractSchema = z.object({
   overtimeBillMultiplier: multiplier.default(1.5),
   holidayBillMultiplier: multiplier.default(2),
   holidayPayMultiplier: multiplier.default(1),
-  deductsMeals: z.boolean().default(false),
+  // Monto por día laborado, no un sí/no (Hugo, 2026-10-21): 0 = no se
+  // descuenta. Mismo patrón money que payRate/billRate.
+  mealDeductionAmount: money.default('0.00'),
   splitsInvoiceByMonth: z.boolean().default(false),
   rates: z.array(rateSchema).min(1).max(50),
+  // Campos del machote del Service Agreement (Hugo, 2026-10-20): todos
+  // opcionales porque un contrato recién creado puede no traerlos todavía.
+  // Sin `.email()`: el campo puede llegar vacío (nada que validar como
+  // formato) y es texto para un documento, no una dirección a la que se
+  // manda correo.
+  propertyName: z.string().trim().max(200).optional(),
+  propertyAddress: z.string().trim().max(300).optional(),
+  companyEmail: z.string().trim().max(200).optional(),
+  serviceProviderName: z.string().trim().max(200).optional(),
+  serviceProviderEmail: z.string().trim().max(200).optional(),
 })
 
 export class CreateContractDto extends createZodDto(createContractSchema) {}
@@ -58,8 +76,21 @@ export const updateContractSchema = z.object({
   overtimeBillMultiplier: multiplier.optional(),
   holidayBillMultiplier: multiplier.optional(),
   holidayPayMultiplier: multiplier.optional(),
-  deductsMeals: z.boolean().optional(),
+  mealDeductionAmount: money.optional(),
   splitsInvoiceByMonth: z.boolean().optional(),
+  propertyName: z.string().trim().max(200).nullable().optional(),
+  propertyAddress: z.string().trim().max(300).nullable().optional(),
+  companyEmail: z.string().trim().max(200).nullable().optional(),
+  serviceProviderName: z.string().trim().max(200).nullable().optional(),
+  serviceProviderEmail: z.string().trim().max(200).nullable().optional(),
 })
 
 export class UpdateContractDto extends createZodDto(updateContractSchema) {}
+
+/** Desbloquear un contrato ACTIVO pide motivo (Hugo, 2026-10-21) — mismo
+    criterio que rechazar un documento o corregir una nómina ya hecha. */
+export const unlockContractSchema = z.object({
+  reason: z.string().trim().min(4, 'El motivo debe explicar por qué se desbloquea').max(500),
+})
+
+export class UnlockContractDto extends createZodDto(unlockContractSchema) {}

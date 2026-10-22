@@ -32,12 +32,24 @@ export interface ContractEntity {
     holidayBill: string
     holidayPay: string
   }
-  deductsMeals: boolean
+  mealDeductionAmount: string
   splitsInvoiceByMonth: boolean
   signedAt: string | null
   createdAt: string
   updatedAt: string | null
   rates?: RateRow[]
+  /** De qué Propuesta (versión exacta) nace — para el hipervínculo del
+      detalle (Hugo, 2026-10-21): "no puede haber contrato sin propuesta".
+      `null` en contratos heredados/migrados, que sí pueden no tenerla. */
+  proposal: { id: string; prospectId: string; version: number } | null
+  /** Campos del machote del Service Agreement (Hugo, 2026-10-20). */
+  propertyName: string | null
+  propertyAddress: string | null
+  companyEmail: string | null
+  serviceProviderName: string | null
+  serviceProviderEmail: string | null
+  /** Candado del contrato ACTIVO — nunca cambia el `status` por sí solo. */
+  isUnlocked: boolean
 }
 
 @Injectable()
@@ -116,6 +128,7 @@ export class ContractsService {
       number: await this.nextNumber(),
       hotelId: dto.hotelId,
       prospectId: dto.prospectId ?? null,
+      proposalId: dto.proposalId ?? null,
       validFrom: dto.validFrom,
       validTo: dto.validTo ?? null,
       weekStartDay: hotelAccounting.weekStartDay,
@@ -124,9 +137,14 @@ export class ContractsService {
       overtimePayMultiplier,
       holidayBillMultiplier: dto.holidayBillMultiplier,
       holidayPayMultiplier: dto.holidayPayMultiplier,
-      deductsMeals: dto.deductsMeals,
+      mealDeductionAmount: dto.mealDeductionAmount,
       splitsInvoiceByMonth: dto.splitsInvoiceByMonth,
       rates: dto.rates,
+      propertyName: dto.propertyName ?? null,
+      propertyAddress: dto.propertyAddress ?? null,
+      companyEmail: dto.companyEmail ?? null,
+      serviceProviderName: dto.serviceProviderName ?? null,
+      serviceProviderEmail: dto.serviceProviderEmail ?? null,
       userId: user.id,
       roleCode: user.roleCode,
     })
@@ -214,6 +232,7 @@ export class ContractsService {
         message: `Este contrato está ${contractStatusLabel(row.status)}, ya no se edita`,
       })
     }
+    this.assertUnlocked(row)
 
     if (Number(dto.billRate) < Number(dto.payRate)) {
       throw new UnprocessableEntityException({
@@ -256,8 +275,17 @@ export class ContractsService {
         message: `Este contrato está ${contractStatusLabel(row.status)}, ya no se edita`,
       })
     }
+    this.assertUnlocked(row)
 
     const validTo = dto.validTo === undefined ? row.validTo : dto.validTo
+    const propertyName = dto.propertyName === undefined ? row.propertyName : dto.propertyName
+    const propertyAddress =
+      dto.propertyAddress === undefined ? row.propertyAddress : dto.propertyAddress
+    const companyEmail = dto.companyEmail === undefined ? row.companyEmail : dto.companyEmail
+    const serviceProviderName =
+      dto.serviceProviderName === undefined ? row.serviceProviderName : dto.serviceProviderName
+    const serviceProviderEmail =
+      dto.serviceProviderEmail === undefined ? row.serviceProviderEmail : dto.serviceProviderEmail
     const overtimeBillMultiplier = dto.overtimeBillMultiplier ?? Number(row.overtimeBillMultiplier)
     const holidayBillMultiplier = dto.holidayBillMultiplier ?? Number(row.holidayBillMultiplier)
     const holidayPayMultiplier = dto.holidayPayMultiplier ?? Number(row.holidayPayMultiplier)
@@ -290,8 +318,13 @@ export class ContractsService {
       overtimeBillMultiplier,
       holidayBillMultiplier,
       holidayPayMultiplier,
-      deductsMeals: dto.deductsMeals ?? row.deductsMeals,
+      mealDeductionAmount: dto.mealDeductionAmount ?? row.mealDeductionAmount,
       splitsInvoiceByMonth: dto.splitsInvoiceByMonth ?? row.splitsInvoiceByMonth,
+      propertyName,
+      propertyAddress,
+      companyEmail,
+      serviceProviderName,
+      serviceProviderEmail,
       changed: {
         ...dto,
         validTo: dto.validTo === undefined ? undefined : (dto.validTo?.toISOString() ?? null),
@@ -395,6 +428,48 @@ export class ContractsService {
     return this.get(id)
   }
 
+  /**
+   * El candado del contrato ACTIVO (Hugo, 2026-10-21): se cuelga del
+   * status, no es un paso aparte — un DRAFT no necesita desbloquearse (ya
+   * se edita) y uno cerrado no se desbloquea nunca. Desbloquear pide
+   * motivo; volver a bloquear no, porque ahí no se arriesga nada.
+   */
+  async setLock(
+    id: string,
+    isUnlocked: boolean,
+    reason: string | null,
+    user: AuthenticatedUser,
+  ): Promise<ContractEntity> {
+    const row = await this.contract(id)
+
+    if (row.status !== ACTIVE) {
+      throw new ConflictException({
+        code: 'CONTRACT_NOT_ACTIVE',
+        message: `El candado solo aplica a un contrato vigente, y este está ${contractStatusLabel(row.status)}`,
+      })
+    }
+
+    await this.repo.setLocked({
+      id,
+      isUnlocked,
+      reason,
+      userId: user.id,
+      roleCode: user.roleCode,
+    })
+
+    return this.get(id)
+  }
+
+  /** Un contrato vigente y bloqueado no se edita por aquí: hay que desbloquearlo primero. */
+  private assertUnlocked(row: ContractRow): void {
+    if (row.status === ACTIVE && !row.isUnlocked) {
+      throw new ConflictException({
+        code: 'CONTRACT_LOCKED',
+        message: 'Este contrato está bloqueado: desbloquéalo antes de editarlo',
+      })
+    }
+  }
+
   private assertMargins(dto: CreateContractDto, overtimePayMultiplier: number): void {
     if (dto.overtimeBillMultiplier < overtimePayMultiplier) {
       throw new UnprocessableEntityException({
@@ -485,10 +560,20 @@ function toEntity(row: ContractRow): ContractEntity {
       holidayBill: row.holidayBillMultiplier,
       holidayPay: row.holidayPayMultiplier,
     },
-    deductsMeals: row.deductsMeals,
+    mealDeductionAmount: row.mealDeductionAmount,
     splitsInvoiceByMonth: row.splitsInvoiceByMonth,
     signedAt: row.signedAt ? new Date(row.signedAt).toISOString() : null,
     createdAt: new Date(row.createdAt).toISOString(),
     updatedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : null,
+    proposal:
+      row.proposalId && row.proposalProspectId && row.proposalVersion !== null
+        ? { id: row.proposalId, prospectId: row.proposalProspectId, version: row.proposalVersion }
+        : null,
+    propertyName: row.propertyName,
+    propertyAddress: row.propertyAddress,
+    companyEmail: row.companyEmail,
+    serviceProviderName: row.serviceProviderName,
+    serviceProviderEmail: row.serviceProviderEmail,
+    isUnlocked: row.isUnlocked,
   }
 }

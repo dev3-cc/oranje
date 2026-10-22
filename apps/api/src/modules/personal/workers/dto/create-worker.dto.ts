@@ -51,16 +51,17 @@ export const createWorkerSchema = z.object({
   address: z.string().trim().min(1).max(300),
   zoneId: z.uuid(),
   /**
-   * Obligatoria al dar de alta (Hugo, 2026-10-09). La toma la Reclutadora en
-   * la entrevista, que es donde el vault la pone.
+   * Opcional también al dar de alta (Hugo, 2026-10-21): fue obligatoria desde
+   * el 2026-10-09 —la tomaba la Reclutadora en la entrevista— pero se revirtió
+   * para no bloquear el alta por falta de foto; se puede agregar después
+   * desde el Pool.
    *
-   * Solo aquí: `is_profile_complete` NO la incluye y se queda igual. Si
-   * contara, los 344 colaboradores que ya existen —ninguno tiene foto, todos
-   * vienen de la migración— quedarían incompletos de golpe y a los tres días
-   * perderían el acceso a la app. Obligatoria para los que nacen de hoy en
-   * adelante; a los de antes no se les quita nada.
+   * `is_profile_complete` NO la incluye y se queda igual. Si contara, los 344
+   * colaboradores que ya existen —ninguno tiene foto, todos vienen de la
+   * migración— quedarían incompletos de golpe y a los tres días perderían el
+   * acceso a la app.
    */
-  photoPath,
+  photoPath: photoPath.nullish(),
 
   catalogPositionId: z.uuid().optional(),
   hiringModalityId: z.uuid().optional(),

@@ -8,10 +8,10 @@ import { ProspectDetailPage } from './ProspectDetailPage'
 
 import { store } from '@/app/store'
 
-function renderDetail(prospectId: string): void {
+function renderDetail(prospectId: string, search = ''): void {
   const router = createMemoryRouter(
     [{ path: '/pipeline/:prospectId', element: <ProspectDetailPage /> }],
-    { initialEntries: [`/pipeline/${prospectId}`] },
+    { initialEntries: [`/pipeline/${prospectId}${search}`] },
   )
 
   render(
@@ -82,5 +82,18 @@ describe('ProspectDetailPage', () => {
 
     expect(screen.getByText('commercial.hotel_contact · Hotel Puerto Real')).toBeInTheDocument()
     expect(screen.getByText('3 registrados · 1 sin guardar')).toBeInTheDocument()
+  })
+
+  // Hugo, 2026-10-20: «Hoteles listos para su contrato» de Contratos manda
+  // aquí con ?createContract=1 — debe entrar directo al diálogo, sin que la
+  // persona tenga que encontrar el botón ella misma. Sin storage en jsdom el
+  // intro de «new-contract» sale siempre (fail-open): es justo lo que se
+  // pidió — con el intro si nunca lo ha visto.
+  it('?createContract=1 abre el diálogo de crear contrato solo, con su intro', async () => {
+    renderDetail('psp-0007', '?createContract=1')
+
+    expect(
+      await screen.findByText('Solo el contrato define lo que se paga y se factura'),
+    ).toBeInTheDocument()
   })
 })

@@ -61,7 +61,11 @@ export interface PersonnelRow {
     hiringModality: string | null
     transportType: string | null
     bloodType: string | null
-    emergencyContact: { name: string; phone: string; relationship: string } | null
+    emergencyContact: {
+      name: string | null
+      phone: string | null
+      relationship: string | null
+    } | null
   }
 }
 

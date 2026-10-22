@@ -98,8 +98,8 @@ export function ActivateContractDialog({
         <ul className="flex flex-col gap-2 text-sm leading-relaxed text-ink-2">
           <li>
             <Trans>
-              <span className="font-semibold text-ink">Las tarifas dejan de editarse.</span> Para
-              cambiarlas después hay que crear un contrato nuevo.
+              <span className="font-semibold text-ink">Tarifas y términos quedan bloqueados.</span>{' '}
+              Si hace falta corregir algo, se desbloquea con un motivo.
             </Trans>
           </li>
           {activeContractNumber !== null && (

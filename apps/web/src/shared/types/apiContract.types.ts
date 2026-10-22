@@ -213,13 +213,23 @@ export interface ContractApi {
     holidayBill: string
     holidayPay: string
   }
-  deductsMeals: boolean
+  mealDeductionAmount: string
   splitsInvoiceByMonth: boolean
   signedAt: string | null
   createdAt: string
   updatedAt: string | null
   /** Solo el detalle (`GET /contracts/:id`) trae las tarifas. */
   rates?: ContractRateApi[]
+  /** De qué Propuesta (versión exacta) nace (Hugo, 2026-10-21). `null` en
+      contratos heredados/migrados. */
+  proposal: { id: string; prospectId: string; version: number } | null
+  propertyName: string | null
+  propertyAddress: string | null
+  companyEmail: string | null
+  serviceProviderName: string | null
+  serviceProviderEmail: string | null
+  /** Candado del contrato ACTIVO — nunca cambia `status` por sí solo. */
+  isUnlocked: boolean
 }
 
 /** Fila cruda de un catálogo (`/catalogs/*`). */
@@ -345,7 +355,11 @@ export interface WorkerApi {
   /** Solo ficha completa. */
   experienceLevel?: string | null
   transportType: string | null
-  emergencyContact: { name: string; phone: string; relationship: string } | null
+  emergencyContact: {
+    name: string | null
+    phone: string | null
+    relationship: string | null
+  } | null
   /** Solo ficha completa. */
   bloodType?: string | null
   medicalNotes: string | null

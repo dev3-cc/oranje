@@ -23,7 +23,7 @@ export interface ContractRow {
   overtimePayMultiplier: string
   holidayBillMultiplier: string
   holidayPayMultiplier: string
-  deductsMeals: boolean
+  mealDeductionAmount: string
   splitsInvoiceByMonth: boolean
   signedAt: Date | null
   createdAt: Date
@@ -32,6 +32,19 @@ export interface ContractRow {
   // Solo para resolver a quien avisar (el BD dueño del ciclo comercial);
   // no se expone en ContractEntity/toEntity.
   prospectId: string | null
+  // De qué Propuesta nace (Hugo, 2026-10-21) — para el hipervínculo del
+  // detalle. proposalProspectId/proposalVersion vienen del JOIN a la
+  // propuesta misma, no de prospectId de arriba: ese es el del contrato, este
+  // el de la versión exacta que se usó.
+  proposalId: string | null
+  proposalProspectId: string | null
+  proposalVersion: number | null
+  propertyName: string | null
+  propertyAddress: string | null
+  companyEmail: string | null
+  serviceProviderName: string | null
+  serviceProviderEmail: string | null
+  isUnlocked: boolean
 }
 
 const BASE = `
@@ -46,15 +59,25 @@ const BASE = `
          c.overtime_pay_multiplier::text  AS "overtimePayMultiplier",
          c.holiday_bill_multiplier::text  AS "holidayBillMultiplier",
          c.holiday_pay_multiplier::text   AS "holidayPayMultiplier",
-         c.deducts_meals AS "deductsMeals",
+         c.meal_deduction_amount::text AS "mealDeductionAmount",
          c.splits_invoice_by_month AS "splitsInvoiceByMonth",
          c.signed_at  AS "signedAt",
          c.created_at AS "createdAt",
          c.updated_at AS "updatedAt",
          c.prospect_id AS "prospectId",
+         c.proposal_id AS "proposalId",
+         pr.prospect_id AS "proposalProspectId",
+         pr.version AS "proposalVersion",
+         c.property_name AS "propertyName",
+         c.property_address AS "propertyAddress",
+         c.company_email AS "companyEmail",
+         c.service_provider_name AS "serviceProviderName",
+         c.service_provider_email AS "serviceProviderEmail",
+         c.is_unlocked AS "isUnlocked",
          jsonb_build_object('id', h.id, 'name', h.name) AS hotel
     FROM commercial.contract c
-    JOIN commercial.hotel h ON h.id = c.hotel_id`
+    JOIN commercial.hotel h ON h.id = c.hotel_id
+    LEFT JOIN commercial.proposal pr ON pr.id = c.proposal_id`
 
 @Injectable()
 export class ContractsRepository {
@@ -163,6 +186,7 @@ export class ContractsRepository {
     number: string
     hotelId: string
     prospectId: string | null
+    proposalId: string | null
     validFrom: Date
     validTo: Date | null
     weekStartDay: number
@@ -171,9 +195,14 @@ export class ContractsRepository {
     overtimePayMultiplier: number
     holidayBillMultiplier: number
     holidayPayMultiplier: number
-    deductsMeals: boolean
+    mealDeductionAmount: string
     splitsInvoiceByMonth: boolean
     rates: Array<{ catalogPositionId: string; payRate: string; billRate: string }>
+    propertyName: string | null
+    propertyAddress: string | null
+    companyEmail: string | null
+    serviceProviderName: string | null
+    serviceProviderEmail: string | null
     userId: string
     roleCode: string
   }): Promise<string> {
@@ -186,6 +215,7 @@ export class ContractsRepository {
           number: params.number,
           hotelId: params.hotelId,
           prospectId: params.prospectId,
+          proposalId: params.proposalId,
           validFrom: params.validFrom,
           validTo: params.validTo,
           weekStartDay: params.weekStartDay,
@@ -194,8 +224,13 @@ export class ContractsRepository {
           overtimePayMultiplier: params.overtimePayMultiplier,
           holidayBillMultiplier: params.holidayBillMultiplier,
           holidayPayMultiplier: params.holidayPayMultiplier,
-          deductsMeals: params.deductsMeals,
+          mealDeductionAmount: params.mealDeductionAmount,
           splitsInvoiceByMonth: params.splitsInvoiceByMonth,
+          propertyName: params.propertyName,
+          propertyAddress: params.propertyAddress,
+          companyEmail: params.companyEmail,
+          serviceProviderName: params.serviceProviderName,
+          serviceProviderEmail: params.serviceProviderEmail,
         },
       })
 
@@ -274,8 +309,13 @@ export class ContractsRepository {
     overtimeBillMultiplier: number
     holidayBillMultiplier: number
     holidayPayMultiplier: number
-    deductsMeals: boolean
+    mealDeductionAmount: string
     splitsInvoiceByMonth: boolean
+    propertyName: string | null
+    propertyAddress: string | null
+    companyEmail: string | null
+    serviceProviderName: string | null
+    serviceProviderEmail: string | null
     changed: Prisma.InputJsonValue
     userId: string
     roleCode: string
@@ -288,8 +328,13 @@ export class ContractsRepository {
           overtimeBillMultiplier: params.overtimeBillMultiplier,
           holidayBillMultiplier: params.holidayBillMultiplier,
           holidayPayMultiplier: params.holidayPayMultiplier,
-          deductsMeals: params.deductsMeals,
+          mealDeductionAmount: params.mealDeductionAmount,
           splitsInvoiceByMonth: params.splitsInvoiceByMonth,
+          propertyName: params.propertyName,
+          propertyAddress: params.propertyAddress,
+          companyEmail: params.companyEmail,
+          serviceProviderName: params.serviceProviderName,
+          serviceProviderEmail: params.serviceProviderEmail,
           updatedAt: new Date(),
         },
       })
@@ -334,6 +379,34 @@ export class ContractsRepository {
           actorUserId: params.userId,
           actorRole: params.roleCode,
           payload: { status: params.status },
+        },
+      })
+    })
+  }
+
+  /** Candado del contrato ACTIVO: nunca toca `status`, solo `is_unlocked`. */
+  async setLocked(params: {
+    id: string
+    isUnlocked: boolean
+    reason: string | null
+    userId: string
+    roleCode: string
+  }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.contract.update({
+        where: { id: params.id },
+        data: { isUnlocked: params.isUnlocked },
+      })
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'commercial.contract',
+          entityId: params.id,
+          eventType: params.isUnlocked ? 'CONTRACT_UNLOCKED' : 'CONTRACT_LOCKED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: params.isUnlocked ? { reason: params.reason } : {},
         },
       })
     })

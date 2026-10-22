@@ -77,7 +77,7 @@ async function nuevoContrato(etiqueta: string): Promise<{ id: string; hotelId: s
       overtimeBillMultiplier: 1.5,
       holidayBillMultiplier: 2,
       holidayPayMultiplier: 1,
-      deductsMeals: false,
+      mealDeductionAmount: '0.00',
       splitsInvoiceByMonth: false,
       rates: [{ catalogPositionId: housekeeperId, payRate: '15.00', billRate: '20.00' }],
     },
@@ -93,11 +93,11 @@ describe('editar un contrato ya creado', () => {
 
     const updated = await contracts.update(
       id,
-      { deductsMeals: true, splitsInvoiceByMonth: true, holidayBillMultiplier: 2.5 },
+      { mealDeductionAmount: '3.50', splitsInvoiceByMonth: true, holidayBillMultiplier: 2.5 },
       user,
     )
 
-    expect(updated.deductsMeals).toBe(true)
+    expect(updated.mealDeductionAmount).toBe('3.50')
     expect(updated.splitsInvoiceByMonth).toBe(true)
     expect(updated.multipliers.holidayBill).toBe('2.50')
     expect(updated.updatedAt).not.toBeNull()
@@ -108,9 +108,26 @@ describe('editar un contrato ya creado', () => {
     expect(entry).not.toBeNull()
   })
 
-  it('ACTIVO: también se edita, y setRate ya no lo rechaza', async () => {
+  it('ACTIVO pero bloqueado: ni update ni setRate lo tocan sin desbloquear primero', async () => {
+    const { id } = await nuevoContrato('active-locked')
+    await contracts.activate(id, user)
+
+    await expect(
+      contracts.update(id, { validTo: new Date('2027-01-01') }, user),
+    ).rejects.toMatchObject({ response: { code: 'CONTRACT_LOCKED' } })
+    await expect(
+      contracts.setRate(
+        id,
+        { catalogPositionId: housekeeperId, payRate: '16.00', billRate: '21.00' },
+        user,
+      ),
+    ).rejects.toMatchObject({ response: { code: 'CONTRACT_LOCKED' } })
+  })
+
+  it('ACTIVO y desbloqueado: también se edita, y setRate ya no lo rechaza', async () => {
     const { id } = await nuevoContrato('active')
     await contracts.activate(id, user)
+    await contracts.setLock(id, true, 'Se renegoció la tarifa con el hotel', user)
 
     const updated = await contracts.update(id, { validTo: new Date('2027-01-01') }, user)
     expect(updated.validTo).toBe('2027-01-01')
@@ -130,9 +147,11 @@ describe('editar un contrato ya creado', () => {
     await contracts.activate(id, user)
     await contracts.close(id, true, user)
 
-    await expect(contracts.update(id, { deductsMeals: true }, user)).rejects.toMatchObject({
-      response: { code: 'CONTRACT_CLOSED' },
-    })
+    await expect(contracts.update(id, { mealDeductionAmount: '3.00' }, user)).rejects.toMatchObject(
+      {
+        response: { code: 'CONTRACT_CLOSED' },
+      },
+    )
   })
 
   it('la vigencia no puede terminar antes de empezar', async () => {

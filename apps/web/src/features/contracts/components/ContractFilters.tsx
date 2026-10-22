@@ -5,13 +5,16 @@ import { ANY_VALUE, type ContractListFilters } from '../types/contract.types'
 
 import { FilterReset } from '@/shared/components/FilterReset'
 import { FilterSelect } from '@/shared/components/FilterSelect'
-import { SearchField } from '@/shared/components/SearchField'
 import {
   CONTRACT_STATUS_LABEL,
   CONTRACT_STATUSES,
   EXPIRY_WINDOWS,
 } from '@/shared/constants/contractStatus'
 
+/** El buscador por hotel vive siempre visible en `ContractListPage`, no
+    aquí adentro (Hugo, 2026-10-21): escondido detrás de «Filtrar» no se
+    encontraba. `filters.search` se sigue leyendo para que «Quitar filtros»
+    también lo limpie. */
 export function ContractFilters({
   filters,
   zoneNames,
@@ -40,14 +43,6 @@ export function ContractFilters({
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <SearchField
-        value={filters.search}
-        onChange={update('search')}
-        label={t`Buscar contrato`}
-        placeholder={t`Hotel o número de contrato, p. ej. Puerto Real…`}
-        className="w-full max-w-md"
-      />
-
       <FilterSelect
         label={t`Estado`}
         anyLabel={t`todos`}

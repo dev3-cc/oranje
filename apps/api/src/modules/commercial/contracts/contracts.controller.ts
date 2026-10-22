@@ -24,6 +24,7 @@ import { ContractEntity, ContractsService } from './contracts.service.js'
 import {
   CreateContractDto,
   SendContractEmailDto,
+  UnlockContractDto,
   UpdateContractDto,
   UpsertRateDto,
 } from './dto/contract.dto.js'
@@ -125,6 +126,28 @@ export class ContractsController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<{ data: ContractEntity }> {
     return { data: await this.contracts.close(id, false, user) }
+  }
+
+  /** Mismo rol que activa/aprueba (Hugo, 2026-10-21): no es un permiso nuevo. */
+  @Requires('terms_and_conditions', 'approve')
+  @Post(':id/unlock')
+  @HttpCode(HttpStatus.OK)
+  async unlock(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UnlockContractDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: ContractEntity }> {
+    return { data: await this.contracts.setLock(id, true, dto.reason, user) }
+  }
+
+  @Requires('terms_and_conditions', 'approve')
+  @Post(':id/lock')
+  @HttpCode(HttpStatus.OK)
+  async lock(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: ContractEntity }> {
+    return { data: await this.contracts.setLock(id, false, null, user) }
   }
 
   /** Manda el acuerdo por correo con el PDF adjunto (2026-10-17); no toca el estado del contrato. */

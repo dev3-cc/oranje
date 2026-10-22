@@ -22,6 +22,7 @@ import personajeContratacion from '@/assets/ilustrations/personaje-contratacion.
 import personajeCronograma from '@/assets/ilustrations/personaje-cronograma.svg'
 import personajePago from '@/assets/ilustrations/personaje-pago-procesado.svg'
 import { Button } from '@/shared/components/Button'
+import { PROVIDER } from '@/shared/components/ContractDocument'
 import { DateField } from '@/shared/components/DateField'
 import { Modal } from '@/shared/components/Modal'
 import { OnboardingIntro } from '@/shared/components/OnboardingIntro'
@@ -96,11 +97,23 @@ function saveErrorMessage(error: unknown, i18n: I18n): string {
 export function NewContractDialog({
   isOpen,
   onClose,
+  isRenewal,
   hotel = null,
   initialRates = null,
+  initialPropertyName = null,
+  initialPropertyAddress = null,
+  prospectId = null,
+  proposalId = null,
 }: {
   isOpen: boolean
   onClose: () => void
+  /**
+   * Lo decide quien abre el diálogo, no una adivinanza sobre los datos
+   * (Hugo, 2026-10-21): antes se inferÍa de `initialRates.length > 0`, y un
+   * hotel en su PRIMER contrato con una propuesta ya cotizada por puesto se
+   * leía como renovación sin serlo — nunca hubo un contrato antes.
+   */
+  isRenewal: boolean
   /**
    * El hotel ya decidido, cuando el contrato nace desde su ficha — que es el
    * camino normal (Reglas de Negocio: el Documento de T&C se crea dentro del
@@ -109,16 +122,33 @@ export function NewContractDialog({
   hotel?: { id: string; name: string; photoUrl?: string | null } | null
   /** El cuadro de la propuesta aceptada, para no recapturar lo ya cotizado. */
   initialRates?: RateDraft[] | null
+  /** [PROPERTY NAME] y dirección del machote: de la última propuesta enviada
+      (Hugo, 2026-10-20) — mismo criterio que `initialRates`, no se recaptura. */
+  initialPropertyName?: string | null
+  initialPropertyAddress?: string | null
+  /** Para avisar al BD dueño del ciclo (SALES_TERMS_CREATED): solo lo manda
+      el alta nueva desde Onboarding, no la renovación (Hugo, 2026-10-21) —
+      la renovación ya avisó de esto cuando se creó el contrato original. */
+  prospectId?: string | null
+  /** De qué versión de la Propuesta nace, para el hipervínculo del detalle.
+      Este sí viaja en los dos caminos: nuevo (la última enviada) y
+      renovación (heredado del contrato que se renueva). */
+  proposalId?: string | null
 }): ReactNode {
   const { t, i18n } = useLingui()
   const navigate = useNavigate()
   const { data: options } = useGetContractFormOptionsQuery(undefined, { skip: !isOpen })
   const [createContract, { isLoading, isError, error }] = useCreateContractMutation()
-
   const [hotelId, setHotelId] = useState(hotel?.id ?? '')
   const [validFrom, setValidFrom] = useState('')
   const [validTo, setValidTo] = useState('')
   const [rateRows, setRateRows] = useState<RateDraft[]>([EMPTY_RATE])
+  /* Campos del machote del Service Agreement (Hugo, 2026-10-20). */
+  const [propertyName, setPropertyName] = useState('')
+  const [propertyAddress, setPropertyAddress] = useState('')
+  const [companyEmail, setCompanyEmail] = useState('')
+  const [serviceProviderName, setServiceProviderName] = useState('')
+  const [serviceProviderEmail, setServiceProviderEmail] = useState('')
   /** La industria elegida por renglón: solo filtra el select de Posición de
       ESE renglón, no viaja al back (2026-10-17). Por índice, como las filas
       mismas — una renegociación (initialRates) la deriva de la posición ya
@@ -149,7 +179,15 @@ export function NewContractDialog({
     /* Las tarifas llegan de la propuesta que el hotel aceptó: se revisan y se
        ajustan si hubo negociación, pero no se vuelven a teclear. */
     setRateRows(initialRates && initialRates.length > 0 ? initialRates : [EMPTY_RATE])
-  }, [isOpen, hotel, initialRates])
+    /* El mismo valor que el documento ya usaría sin nada escrito aquí (el
+       hotel, el PROVIDER fijo): el input nunca se ve vacío sin estarlo
+       (Hugo, 2026-10-20). */
+    setPropertyName(initialPropertyName ?? hotel?.name ?? '')
+    setPropertyAddress(initialPropertyAddress ?? '')
+    setCompanyEmail('')
+    setServiceProviderName(PROVIDER)
+    setServiceProviderEmail('')
+  }, [isOpen, hotel, initialRates, initialPropertyName, initialPropertyAddress])
 
   const completeRates = rateRows.filter(isCompleteRate)
   const canSubmit = hotelId !== '' && validFrom !== '' && completeRates.length > 0 && !isLoading
@@ -169,14 +207,25 @@ export function NewContractDialog({
     try {
       const created = await createContract({
         hotelId,
+        ...(prospectId !== null ? { prospectId } : {}),
+        ...(proposalId !== null ? { proposalId } : {}),
         validFrom,
         ...(validTo !== '' ? { validTo } : {}),
         overtimeBillMultiplier: 1.5,
         holidayBillMultiplier: 2,
         holidayPayMultiplier: 1,
-        deductsMeals: false,
+        mealDeductionAmount: '0.00',
         splitsInvoiceByMonth: false,
         rates: completeRates,
+        ...(propertyName.trim() !== '' ? { propertyName: propertyName.trim() } : {}),
+        ...(propertyAddress.trim() !== '' ? { propertyAddress: propertyAddress.trim() } : {}),
+        ...(companyEmail.trim() !== '' ? { companyEmail: companyEmail.trim() } : {}),
+        ...(serviceProviderName.trim() !== ''
+          ? { serviceProviderName: serviceProviderName.trim() }
+          : {}),
+        ...(serviceProviderEmail.trim() !== ''
+          ? { serviceProviderEmail: serviceProviderEmail.trim() }
+          : {}),
       }).unwrap()
       toast.success(t`Contrato creado — en Borrador`)
       onClose()
@@ -190,7 +239,7 @@ export function NewContractDialog({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={t`Nuevo contrato`}
+      title={isRenewal ? t`Renovar contrato` : t`Nuevo contrato`}
       chromeless
       className={showIntro ? 'max-w-2xl' : 'max-w-4xl'}
     >
@@ -253,12 +302,20 @@ export function NewContractDialog({
           <section className="flex max-h-[calc(100vh-3rem)] min-w-0 flex-col">
             <header className="border-b border-line px-6 py-5">
               <h2 className="text-xl font-bold text-ink">
-                <Trans>Nuevo contrato</Trans>
+                {isRenewal ? <Trans>Renovar contrato</Trans> : <Trans>Nuevo contrato</Trans>}
               </h2>
               <p className="mt-1 text-sm text-ink-3">
-                <Trans>
-                  Nace en Borrador: las tarifas se afinan ahí y activarlo es el paso final.
-                </Trans>
+                {isRenewal ? (
+                  <Trans>
+                    Nace en Borrador con las tarifas del contrato vigente: ajusta lo que haya
+                    cambiado y actívalo cuando esté listo — el anterior sigue rigiendo hasta
+                    entonces.
+                  </Trans>
+                ) : (
+                  <Trans>
+                    Nace en Borrador: las tarifas se afinan ahí y activarlo es el paso final.
+                  </Trans>
+                )}
               </p>
             </header>
 
@@ -301,6 +358,79 @@ export function NewContractDialog({
                   </Select>
                 </label>
               )}
+
+              {/* Campos del machote del Service Agreement (Hugo, 2026-10-20):
+              se prellenan de la última propuesta enviada, pero son editables —
+              el documento los necesita y hoy varios estaban fijos en código. */}
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-ink-2">
+                  <Trans>Nombre de la propiedad</Trans>
+                </span>
+                <Input
+                  value={propertyName}
+                  onChange={(event) => {
+                    setPropertyName(event.target.value)
+                  }}
+                  placeholder={t`Nombre del hotel en el documento`}
+                  aria-label={t`Nombre de la propiedad`}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-ink-2">
+                  <Trans>Dirección de la propiedad</Trans>
+                </span>
+                <Input
+                  value={propertyAddress}
+                  onChange={(event) => {
+                    setPropertyAddress(event.target.value)
+                  }}
+                  placeholder={t`Calle, ciudad y estado`}
+                  aria-label={t`Dirección de la propiedad`}
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-sm font-medium text-ink-2">
+                    <Trans>Correo del hotel</Trans>
+                  </span>
+                  <Input
+                    type="email"
+                    value={companyEmail}
+                    onChange={(event) => {
+                      setCompanyEmail(event.target.value)
+                    }}
+                    placeholder="gerencia@hotel.com"
+                    aria-label={t`Correo del hotel`}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-sm font-medium text-ink-2">
+                    <Trans>Razón social de Oranje</Trans>
+                  </span>
+                  <Input
+                    value={serviceProviderName}
+                    onChange={(event) => {
+                      setServiceProviderName(event.target.value)
+                    }}
+                    placeholder="Orange Solutions & Operations, LLC"
+                    aria-label={t`Razón social de Oranje`}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium text-ink-2">
+                  <Trans>Correo de Oranje en el documento</Trans>
+                </span>
+                <Input
+                  type="email"
+                  value={serviceProviderEmail}
+                  onChange={(event) => {
+                    setServiceProviderEmail(event.target.value)
+                  }}
+                  placeholder="irene@oranjepeople.com"
+                  aria-label={t`Correo de Oranje en el documento`}
+                />
+              </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {/* Calendario de shadcn y no `input[type=date]`: dentro de un

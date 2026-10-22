@@ -81,7 +81,7 @@ test('setRate no truena al repetir la misma posición: actualiza, no duplica', a
       overtimeBillMultiplier: 1.5,
       holidayBillMultiplier: 2,
       holidayPayMultiplier: 1,
-      deductsMeals: false,
+      mealDeductionAmount: '0.00',
       splitsInvoiceByMonth: false,
       rates: [{ catalogPositionId: housekeeperId, payRate: '13.50', billRate: '17.55' }],
     },

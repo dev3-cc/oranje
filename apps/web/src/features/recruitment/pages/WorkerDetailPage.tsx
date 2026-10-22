@@ -177,7 +177,7 @@ function BasicWorkerDetail({ worker }: { worker: WorkerApi }): ReactNode {
     {
       label: t`Parentesco`,
       value:
-        worker.emergencyContact === null
+        worker.emergencyContact === null || worker.emergencyContact.relationship === null
           ? '—'
           : (RELATIONSHIP_LABEL[worker.emergencyContact.relationship] ??
             worker.emergencyContact.relationship),
@@ -496,7 +496,7 @@ export function WorkerDetailPage(): ReactNode {
     {
       label: t`Parentesco`,
       value:
-        worker.emergencyContact === null
+        worker.emergencyContact === null || worker.emergencyContact.relationship === null
           ? '—'
           : (RELATIONSHIP_LABEL[worker.emergencyContact.relationship] ??
             worker.emergencyContact.relationship),

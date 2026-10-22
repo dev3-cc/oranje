@@ -103,7 +103,7 @@ export function toContractDetail(contract: ContractApi): ContractDetail {
         bill: Number(contract.multipliers.holidayBill),
       },
     },
-    deductsMeals: contract.deductsMeals,
+    mealDeductionAmount: Number(contract.mealDeductionAmount),
     splitsInvoiceByMonth: contract.splitsInvoiceByMonth,
     rates: (contract.rates ?? []).map((rate) => ({
       id: rate.id,
@@ -113,6 +113,13 @@ export function toContractDetail(contract: ContractApi): ContractDetail {
       billRate: Number(rate.billRate),
     })),
     updatedAt: contract.updatedAt,
+    proposal: contract.proposal,
+    propertyName: contract.propertyName,
+    propertyAddress: contract.propertyAddress,
+    companyEmail: contract.companyEmail,
+    serviceProviderName: contract.serviceProviderName,
+    serviceProviderEmail: contract.serviceProviderEmail,
+    isUnlocked: contract.isUnlocked,
   }
 }
 
@@ -345,6 +352,34 @@ export const contractsApi = baseApi.injectEndpoints({
     }),
 
     /**
+     * El candado del contrato ACTIVO (Hugo, 2026-10-21): no es una
+     * transición de `status` — por eso va aparte de `transitionContract`, y
+     * por eso `unlock` sí lleva motivo y `lock` no.
+     */
+    unlockContract: build.mutation<ContractDetail, { contractId: string; reason: string }>({
+      query: ({ contractId, reason }) => ({
+        url: `/contracts/${contractId}/unlock`,
+        method: 'POST',
+        body: { reason },
+      }),
+      transformResponse: (raw: ApiEnvelope<ContractApi>) => toContractDetail(raw.data),
+      invalidatesTags: (_result, _error, { contractId }) => [
+        { type: 'Contract' as const, id: contractId },
+      ],
+    }),
+
+    lockContract: build.mutation<ContractDetail, { contractId: string }>({
+      query: ({ contractId }) => ({
+        url: `/contracts/${contractId}/lock`,
+        method: 'POST',
+      }),
+      transformResponse: (raw: ApiEnvelope<ContractApi>) => toContractDetail(raw.data),
+      invalidatesTags: (_result, _error, { contractId }) => [
+        { type: 'Contract' as const, id: contractId },
+      ],
+    }),
+
+    /**
      * «Enviar por correo» (Hugo, 2026-10-17): el PDF ya lo generó la pantalla
      * de la misma vista previa que se está viendo — este endpoint no cambia
      * el estado del contrato, solo manda el correo.
@@ -382,14 +417,21 @@ export interface ContractFormOptions {
 export interface CreateContractRequest {
   hotelId: string
   prospectId?: string
+  /** De qué versión de la Propuesta nace (Hugo, 2026-10-21). */
+  proposalId?: string
   validFrom: string
   validTo?: string
   overtimeBillMultiplier: number
   holidayBillMultiplier: number
   holidayPayMultiplier: number
-  deductsMeals: boolean
+  mealDeductionAmount: string
   splitsInvoiceByMonth: boolean
   rates: Array<{ catalogPositionId: string; payRate: string; billRate: string }>
+  propertyName?: string
+  propertyAddress?: string
+  companyEmail?: string
+  serviceProviderName?: string
+  serviceProviderEmail?: string
 }
 
 /**
@@ -402,8 +444,13 @@ export interface UpdateContractRequest {
   overtimeBillMultiplier?: number
   holidayBillMultiplier?: number
   holidayPayMultiplier?: number
-  deductsMeals?: boolean
+  mealDeductionAmount?: string
   splitsInvoiceByMonth?: boolean
+  propertyName?: string | null
+  propertyAddress?: string | null
+  companyEmail?: string | null
+  serviceProviderName?: string | null
+  serviceProviderEmail?: string | null
 }
 
 export const {
@@ -415,5 +462,7 @@ export const {
   useUpdateContractMutation,
   useUpsertContractRateMutation,
   useTransitionContractMutation,
+  useUnlockContractMutation,
+  useLockContractMutation,
   useSendContractEmailMutation,
 } = contractsApi

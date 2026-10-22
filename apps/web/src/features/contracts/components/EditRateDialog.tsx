@@ -10,7 +10,8 @@ import {
 } from '@oranje/ui'
 import { useEffect, useState, type ReactNode } from 'react'
 
-import { useGetContractFormOptionsQuery, useUpsertContractRateMutation } from '../api/contractsApi'
+import { useUpsertContractRateMutation } from '../api/contractsApi'
+import type { ContractRate } from '../types/contract.types'
 
 import { Button } from '@/shared/components/Button'
 import { Modal } from '@/shared/components/Modal'
@@ -19,21 +20,25 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
 const MONEY_PATTERN = /^\d{1,8}(\.\d{1,2})?$/
 
 /**
- * Alta o corrección de UNA tarifa del borrador (`PUT /contracts/:id/rates`):
- * elegir una posición que ya tiene fila la reemplaza — así es el upsert del
- * back, y solo funciona mientras el contrato sigue en Borrador.
+ * Corrige UNA tarifa ya cotizada (`PUT /contracts/:id/rates`, el mismo
+ * upsert): el selector solo ofrece las posiciones que el contrato YA trae —
+ * las que se cotizaron en la propuesta — no el catálogo completo (antes
+ * mezclaba ahí cualquier puesto de cualquier industria; Hugo, 2026-10-20).
+ * Agregar una posición que nunca se cotizó es un caso aparte, no este.
  */
 export function EditRateDialog({
   contractId,
+  rates,
   isOpen,
   onClose,
 }: {
   contractId: string
+  /** Las posiciones ya cotizadas del contrato — el único universo que se ofrece aquí. */
+  rates: ContractRate[]
   isOpen: boolean
   onClose: () => void
 }): ReactNode {
   const { t } = useLingui()
-  const { data: options } = useGetContractFormOptionsQuery(undefined, { skip: !isOpen })
   const [upsertRate, { isLoading, isError, error }] = useUpsertContractRateMutation()
 
   const [positionId, setPositionId] = useState('')
@@ -46,6 +51,14 @@ export function EditRateDialog({
     setPayRate('')
     setBillRate('')
   }, [isOpen])
+
+  /** Elegir una posición parte de lo que ya está cotizado, no de cero. */
+  function selectPosition(id: string): void {
+    setPositionId(id)
+    const current = rates.find((rate) => rate.catalogPositionId === id)
+    setPayRate(current?.payRate.toFixed(2) ?? '')
+    setBillRate(current?.billRate.toFixed(2) ?? '')
+  }
 
   const marginIsNegative =
     MONEY_PATTERN.test(payRate) &&
@@ -74,8 +87,8 @@ export function EditRateDialog({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={t`Definir tarifa por posición`}
-      description={t`Si la posición ya tiene tarifa, esta la reemplaza.`}
+      title={t`Corregir tarifa`}
+      description={t`Ajusta lo que ya se cotizó en la propuesta para esta posición.`}
     >
       <div className="flex flex-col gap-4">
         {isError && (
@@ -94,14 +107,14 @@ export function EditRateDialog({
           <span className="text-sm font-medium text-ink-2">
             <Trans>Posición</Trans>
           </span>
-          <Select {...(positionId ? { value: positionId } : {})} onValueChange={setPositionId}>
+          <Select {...(positionId ? { value: positionId } : {})} onValueChange={selectPosition}>
             <SelectTrigger aria-label={t`Posición`} className="w-full">
               <SelectValue placeholder={t`Elige la posición…`} />
             </SelectTrigger>
             <SelectContent>
-              {(options?.positions ?? []).map((position) => (
-                <SelectItem key={position.id} value={position.id}>
-                  {position.name}
+              {rates.map((rate) => (
+                <SelectItem key={rate.catalogPositionId} value={rate.catalogPositionId}>
+                  {rate.positionName}
                 </SelectItem>
               ))}
             </SelectContent>

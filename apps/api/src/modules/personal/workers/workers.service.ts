@@ -704,8 +704,11 @@ function toEntity(row: WorkerRow, photos: Map<string, string>): WorkerEntity {
     hiringModality: row.hiringModality,
     experienceLevel: row.experienceLevel,
     transportType: row.transportType,
+    // Parcial de verdad: antes cualquier campo faltante colapsaba los TRES a
+    // null, aunque sí se hubiera guardado un nombre+teléfono sin parentesco
+    // (Hugo, 2026-10-21). Solo es null si NINGUNO de los tres tiene valor.
     emergencyContact:
-      row.emergencyContactName && row.emergencyContactPhone && row.emergencyContactRelationship
+      row.emergencyContactName || row.emergencyContactPhone || row.emergencyContactRelationship
         ? {
             name: row.emergencyContactName,
             phone: row.emergencyContactPhone,
@@ -738,8 +741,11 @@ function toBasicEntity(row: WorkerRow, photos: Map<string, string>): WorkerBasic
     englishLevel: row.englishLevel,
     hiringModality: row.hiringModality,
     transportType: row.transportType,
+    // Parcial de verdad: antes cualquier campo faltante colapsaba los TRES a
+    // null, aunque sí se hubiera guardado un nombre+teléfono sin parentesco
+    // (Hugo, 2026-10-21). Solo es null si NINGUNO de los tres tiene valor.
     emergencyContact:
-      row.emergencyContactName && row.emergencyContactPhone && row.emergencyContactRelationship
+      row.emergencyContactName || row.emergencyContactPhone || row.emergencyContactRelationship
         ? {
             name: row.emergencyContactName,
             phone: row.emergencyContactPhone,
