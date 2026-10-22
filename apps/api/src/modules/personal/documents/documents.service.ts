@@ -56,6 +56,11 @@ export class DocumentsService {
     }
   }
 
+  // Igual que `createOwn`: un documento sin verificar se reemplaza solo (la
+  // Reclutadora resube el mismo tipo porque se equivocó de archivo), uno
+  // verificado no — ahí sí hace falta DOCUMENT_VERIFIED, deja rastro de quién
+  // lo revisó. OTHER no tiene "el" documento: siempre se agrega (Hugo,
+  // 2026-10-23, un expediente puede traer varios "otro").
   async create(
     workerId: string,
     dto: CreateDocumentDto,
@@ -63,10 +68,15 @@ export class DocumentsService {
   ): Promise<DocumentEntity> {
     await this.worker(workerId)
 
-    if (dto.documentType !== 'OTHER' && (await this.repo.ofType(workerId, dto.documentType))) {
+    const current =
+      dto.documentType === 'OTHER'
+        ? null
+        : await this.repo.unverifiedOfType(workerId, dto.documentType)
+
+    if (current?.verifiedAt != null) {
       throw new ConflictException({
-        code: 'DOCUMENT_ALREADY_EXISTS',
-        message: `Ya hay un documento de tipo ${dto.documentType}: bórralo antes de subir otro`,
+        code: 'DOCUMENT_VERIFIED',
+        message: 'Ese documento ya está verificado: no se puede reemplazar',
       })
     }
 
@@ -77,6 +87,7 @@ export class DocumentsService {
         filePath: dto.filePath,
         userId: user.id,
         roleCode: user.roleCode,
+        ...(current ? { replaceId: current.id } : {}),
       }),
     )
   }
