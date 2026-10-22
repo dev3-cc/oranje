@@ -62,7 +62,7 @@ const routes: readonly MockRoute[] = [
       const row = adjustments.find((item) => item.id === params['id'])
       if (!row) throw new Error('Ese ajuste no existe')
       row.status = 'APPROVED'
-      row.approvedBy = { id: 'mock-observer', fullName: 'Observador de prueba' }
+      row.approvedBy = { id: 'mock-observer', fullName: 'Manager de QA de prueba' }
       row.approvedAt = new Date().toISOString()
       return { data: { ...row } }
     },
@@ -75,7 +75,7 @@ const routes: readonly MockRoute[] = [
       if (!row) throw new Error('Ese ajuste no existe')
       const { reason } = body as { reason: string }
       row.status = 'REJECTED'
-      row.approvedBy = { id: 'mock-observer', fullName: 'Observador de prueba' }
+      row.approvedBy = { id: 'mock-observer', fullName: 'Manager de QA de prueba' }
       row.approvedAt = new Date().toISOString()
       row.rejectionReason = reason
       return { data: { ...row } }
@@ -144,7 +144,7 @@ export function seedApprovedPendingInclusion(
 ): PayAdjustment {
   return seedPendingPayAdjustment({
     status: 'APPROVED',
-    approvedBy: { id: 'mock-observer', fullName: 'Observador de prueba' },
+    approvedBy: { id: 'mock-observer', fullName: 'Manager de QA de prueba' },
     approvedAt: new Date().toISOString(),
     ...overrides,
   })

@@ -5,7 +5,7 @@ import { Trans, useLingui } from '@lingui/react/macro'
 import { cn, MaterialIcon, toast } from '@oranje/ui'
 import { useState, type ReactNode } from 'react'
 
-// La feature de auditorías es dueña del dominio de este catálogo: se importa
+// La feature de inspecciones es dueña del dominio de este catálogo: se importa
 // por su índice público (§4), no hay import profundo que disculpar aquí.
 import {
   AUDIT_TYPES,
@@ -33,13 +33,13 @@ const AUDIT_TYPE_LABEL: Record<AuditType, MessageDescriptor> = {
 }
 const ANY_AUDIT_TYPE = 'ALL'
 
-/** Compuesta: dos auditorías podrían coincidir en el nombre de una categoría sin ser la misma lista. */
+/** Compuesta: dos inspecciones podrían coincidir en el nombre de una categoría sin ser la misma lista. */
 function groupKey(auditType: AuditType, category: string): string {
   return `${auditType}::${category}`
 }
 
 /**
- * Agrupa por auditoría + categoría, en el orden que cada una tiene guardado
+ * Agrupa por inspección + categoría, en el orden que cada una tiene guardado
  * (`ordinal`) — salvo que un arrastre reciente en esa categoría todavía no
  * se confirme con el back: mientras tanto manda el orden que se soltó, para
  * que la fila no "rebote" a su posición vieja y luego salte a la nueva.
@@ -78,9 +78,9 @@ interface EditorState {
 }
 
 /**
- * "Reactivos de Auditoría": el catálogo de `catalogs.audit_checklist_item`,
+ * "Reactivos de Inspección": el catálogo de `catalogs.audit_checklist_item`,
  * solo del Administrador (`catalogs:manage`, ya validado por la página que
- * lo aloja). Agrupado por auditoría y categoría — así lo pinta el
+ * lo aloja). Agrupado por inspección y categoría — así lo pinta el
  * formulario del Supervisor — con el peso como el ÚNICO campo numérico del
  * sistema de catálogos: aquí sí se edita, en ningún otro lado.
  */
@@ -105,7 +105,7 @@ export function AuditChecklistItemsPanel(): ReactNode {
   )
   const activeFilters =
     (auditTypeFilter === ANY_AUDIT_TYPE ? 0 : 1) + (search.trim() === '' ? 0 : 0)
-  /* El arrastre solo tiene sentido sin filtro de texto ni de auditoría: con
+  /* El arrastre solo tiene sentido sin filtro de texto ni de inspección: con
      un recorte activo, el índice que suelta el mouse ya no corresponde al
      `ordinal` real (faltan filas de por medio) — se desactiva, no se rompe
      en silencio. */
@@ -163,7 +163,7 @@ export function AuditChecklistItemsPanel(): ReactNode {
             className="w-full max-w-xs"
           />
           <FilterSelect
-            label={t`Auditoría`}
+            label={t`Inspección`}
             anyLabel={t`Las dos`}
             anyValue={ANY_AUDIT_TYPE}
             value={auditTypeFilter}
@@ -394,7 +394,7 @@ function ChecklistItemDialog({
         apiErrorMessage(saveError, {
           byCode: {
             CHECKLIST_ITEM_NAME_TAKEN: i18n._(
-              msg`Ya existe un reactivo con ese texto en esta auditoría.`,
+              msg`Ya existe un reactivo con ese texto en esta inspección.`,
             ),
           },
           fallback: i18n._(msg`No se pudo guardar. Revisa los campos e inténtalo de nuevo.`),
@@ -511,7 +511,7 @@ function DeleteChecklistItemDialog({
         apiErrorMessage(deleteError, {
           byCode: {
             CATALOG_IN_USE: i18n._(
-              msg`Hay auditorías con respuestas a este reactivo: no se puede eliminar.`,
+              msg`Hay inspecciones con respuestas a este reactivo: no se puede eliminar.`,
             ),
           },
           fallback: i18n._(msg`No se pudo eliminar. Inténtalo de nuevo.`),
@@ -544,7 +544,7 @@ function DeleteChecklistItemDialog({
     >
       <p className="text-sm text-ink-2">
         <Trans>
-          «{item.label}» se elimina de verdad. Si alguna auditoría ya lo contestó, el sistema lo va
+          «{item.label}» se elimina de verdad. Si alguna inspección ya lo contestó, el sistema lo va
           a impedir y te lo dice aquí.
         </Trans>
       </p>

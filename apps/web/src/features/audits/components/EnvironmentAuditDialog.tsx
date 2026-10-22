@@ -29,7 +29,7 @@ export function EnvironmentAuditDialog({
       title={t`Percepción de Ambiente y Recursos`}
       description={
         auditId
-          ? t`Corrige lo que haga falta de ${hotelName}: se guarda con PATCH, sobre la misma auditoría.`
+          ? t`Corrige lo que haga falta de ${hotelName}: se guarda con PATCH, sobre la misma inspección.`
           : t`Insumos, relaciones, carga laboral y entorno de ${hotelName}.`
       }
       {...(auditId ? { auditId } : {})}

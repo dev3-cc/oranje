@@ -1,10 +1,10 @@
 /**
- * Auditoría de Presentación y Ambiente: dos auditorías semanales del
+ * Inspección de Presentación y Ambiente: dos inspecciones semanales del
  * Supervisor de hotel — `supervision.audit`, ya construido y probado en el
  * back (183/183). Un registro SIN consecuencia: no toca ningún semáforo.
  */
 
-/** Las dos auditorías; discriminan la forma de `Audit.worker`. */
+/** Las dos inspecciones; discriminan la forma de `Audit.worker`. */
 export const AUDIT_TYPES = ['PERSONAL_PRESENTATION', 'ENVIRONMENT'] as const
 export type AuditType = (typeof AUDIT_TYPES)[number]
 
@@ -38,7 +38,7 @@ export interface Audit extends AuditHeader {
   responses: AuditResponse[]
 }
 
-/** Una fila de `GET /audits/last-per-worker`: para "tiempo sin auditar". */
+/** Una fila de `GET /audits/last-per-worker`: para "tiempo sin inspeccionar". */
 export interface LastAuditPerWorker {
   workerId: string
   workerName: string

@@ -167,13 +167,13 @@ export class AuditChecklistItemsService {
       if (error.code === 'P2002') {
         return new ConflictException({
           code: 'CHECKLIST_ITEM_NAME_TAKEN',
-          message: 'Ya existe un reactivo con ese texto en esta auditoría',
+          message: 'Ya existe un reactivo con ese texto en esta inspección',
         })
       }
       if (error.code === 'P2003') {
         return new ConflictException({
           code: 'CATALOG_IN_USE',
-          message: 'Hay auditorías con respuestas a este reactivo: no se puede eliminar',
+          message: 'Hay inspecciones con respuestas a este reactivo: no se puede eliminar',
         })
       }
     }

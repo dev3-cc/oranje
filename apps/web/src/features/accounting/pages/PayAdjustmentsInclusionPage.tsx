@@ -29,8 +29,8 @@ const INTRO_SLIDES: readonly {
 }[] = [
   {
     image: personajeContabilidad,
-    title: msg`Reclutamiento pide, el Observador aprueba`,
-    text: msg`Una eventual puede llevar un ajuste de tarifa o un gasto con concepto (Uber…). El Observador los revisa, pero eso todavía no les hace nada a tus números.`,
+    title: msg`Reclutamiento pide, el Manager de QA aprueba`,
+    text: msg`Una eventual puede llevar un ajuste de tarifa o un gasto con concepto (Uber…). El Manager de QA los revisa, pero eso todavía no les hace nada a tus números.`,
   },
   {
     image: personajePagado,
@@ -40,7 +40,7 @@ const INTRO_SLIDES: readonly {
 ] as const
 
 /**
- * Lo que Reclutamiento pidió y el Observador aprobó, para una asignación
+ * Lo que Reclutamiento pidió y el Manager de QA aprobó, para una asignación
  * eventual — ajuste de tarifa o gasto con concepto — todavía sin decidir si
  * pesa en la nómina. Esa decisión es de Contabilidad, viendo antes qué hace
  * cada uno (Hugo, 2026-10-09): aprobado no es lo mismo que incluido.
@@ -77,7 +77,7 @@ export function PayAdjustmentsInclusionPage(): ReactNode {
           </h1>
           <p className="mt-1.5 text-sm text-ink-3">
             <Trans>
-              El ajuste de tarifa o el gasto de una eventual, ya aprobado por el Observador.
+              El ajuste de tarifa o el gasto de una eventual, ya aprobado por el Manager de QA.
               Mientras no lo incluyas, no pesa en la nómina.
             </Trans>
           </p>

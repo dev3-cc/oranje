@@ -153,7 +153,7 @@ export const adminApi = baseApi.injectEndpoints({
     /**
      * Zonas del Inspector: mismo `PUT /users/:id/zones` que usa el territorio
      * de Ventas (territory:assign, el Administrador lo tiene), abierto al
-     * Inspector el 2026-09-24 — el alcance de sus requisiciones y auditorías.
+     * Inspector el 2026-09-24 — el alcance de sus requisiciones y inspecciones.
      */
     getZoneOptions: build.query<Array<{ id: string; name: string }>, void>({
       query: () => '/catalogs/zones',

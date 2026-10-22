@@ -38,7 +38,7 @@ function effectCopy(effect: string | null): { lead: MessageDescriptor; detail: M
 }
 
 /**
- * Que el Observador apruebe el ajuste o el gasto de una eventual no lo mete
+ * Que el Manager de QA apruebe el ajuste o el gasto de una eventual no lo mete
  * a la nómina: Contabilidad decide aparte, viendo antes qué va a pasar con
  * el pago del colaborador (Hugo, 2026-10-09). Mismo patrón que «Activar el
  * contrato» — un diálogo que enseña la consecuencia, no un doble toque mudo.

@@ -11,13 +11,16 @@ import { useState } from 'react'
  * la lista y el detalle NUNCA conviven en una sola columna. Desde `lg` las
  * dos clases (`ROSTER_LIST_CLASS`/`ROSTER_DETAIL_CLASS`) fuerzan que ambas se
  * vean siempre, lado a lado, sin importar el estado de selección.
+ *
+ * `startOnDetail` es para cuando se llega con una fila ya elegida (un enlace
+ * desde otra pantalla): en móvil abre directo en el detalle.
  */
-export function useListDetail(): {
+export function useListDetail(startOnDetail = false): {
   showDetailOnMobile: boolean
   select: () => void
   backToList: () => void
 } {
-  const [showDetailOnMobile, setShowDetailOnMobile] = useState(false)
+  const [showDetailOnMobile, setShowDetailOnMobile] = useState(startOnDetail)
 
   return {
     showDetailOnMobile,

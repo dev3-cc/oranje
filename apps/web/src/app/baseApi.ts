@@ -144,6 +144,8 @@ export const baseApi = createApi({
     'MailSettings',
     'PaymentLimits',
     'PayAdjustment',
+    'RecruitmentTeam',
+    'HotelTeam',
   ],
   endpoints: () => ({}),
 })

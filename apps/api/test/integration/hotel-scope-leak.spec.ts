@@ -20,7 +20,7 @@ import { actor, contratoActivo } from './fixture.js'
  * Hugo (2026-09-19): "hotel manager ve más hoteles que el suyo" — cierto, y
  * el mismo patrón (una llave de permiso compartida por dos roles con
  * alcances distintos, sin que el código lo distinga) se repetía en dos
- * lugares más, encontrados en esta auditoría. Los tres casos:
+ * lugares más, encontrados en esta inspección. Los tres casos:
  *
  * 1. `RequisitionsService.list()` — `requisitions:read_all` la comparten el
  *    Manager General («todos los deptos de MI hotel») y Reclutamiento

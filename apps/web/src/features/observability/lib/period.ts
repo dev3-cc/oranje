@@ -4,7 +4,7 @@ import { msg } from '@lingui/core/macro'
 /**
  * El periodo que mide cada KPI «del periodo». Por defecto la semana en curso
  * (Hugo, 2026-10-07). La semana empieza el lunes 00:00 en la hora del
- * navegador: el Observador ve todos los hoteles a la vez y no hay una sola
+ * navegador: el Manager de QA ve todos los hoteles a la vez y no hay una sola
  * zona que mande.
  */
 export const PERIODS = ['week', 'month', 'quarter'] as const

@@ -74,7 +74,7 @@ export interface TimesheetEntity {
   days?: DayEntity[]
   totals?: { grossMinutes: number; netMinutes: number; overtimeMinutes: number }
   /**
-   * Solo con `timesheet:read_all_hotels` (Contabilidad, el Observador): lo
+   * Solo con `timesheet:read_all_hotels` (Contabilidad, el Manager de QA): lo
    * que se le pagaría a esta hoja hoy. Quien solo ve su hotel no recibe esta
    * cifra — es dato de sueldo, no de operación del día a día.
    */

@@ -91,7 +91,7 @@ export function Modal({
    * haría ganar sobre el `max-w-[calc(100%-2rem)]` base y en un teléfono el
    * modal saldría de 48rem en una pantalla de 390 px, cortado por la derecha
    * (Hugo, 2026-09-21: «las tablas no se ven bien en móvil» era esto, en la
-   * auditoría y en cualquier modal ancho). Bajo `sm` manda siempre el ancho
+   * inspección y en cualquier modal ancho). Bajo `sm` manda siempre el ancho
    * de la pantalla.
    *
    * `sm:${item}` armado en tiempo de ejecución NUNCA llega a Tailwind: el

@@ -28,7 +28,7 @@ const INTRO_SLIDES: readonly {
 }[] = [
   {
     image: personajeEncuesta,
-    title: msg`Dos auditorías, un mismo registro`,
+    title: msg`Dos inspecciones, un mismo registro`,
     text: msg`Presentación Personal por colaborador y Percepción de Ambiente y Recursos de tu hotel — misma mecánica, categorías distintas.`,
   },
   {
@@ -39,15 +39,15 @@ const INTRO_SLIDES: readonly {
   {
     image: personajeComencemos,
     title: msg`Un registro sin consecuencia`,
-    text: msg`No mueve ningún semáforo. Audita cuando quieras antes del corte semanal — el sistema te avisa conforme se acerca.`,
+    text: msg`No mueve ningún semáforo. Inspecciona cuando quieras antes del corte semanal — el sistema te avisa conforme se acerca.`,
   },
 ]
 
 /**
- * Auditoría de Presentación y Ambiente: las dos auditorías semanales del
+ * Inspección de Presentación y Ambiente: las dos inspecciones semanales del
  * Supervisor sobre SU hotel. La ruta la ve todo Hotel (Supervisor, Manager de
  * Área, Manager General) para que quien no crea igual vea el historial
- * (`audits:read`); solo quien tiene `audits:create` ve el botón Auditar.
+ * (`audits:read`); solo quien tiene `audits:create` ve el botón Inspeccionar.
  */
 export function AuditsPage(): ReactNode {
   const { t, i18n } = useLingui()
@@ -64,22 +64,22 @@ export function AuditsPage(): ReactNode {
   const [startTour, setStartTour] = useState<() => void>(() => () => undefined)
 
   /* El recorrido NO repite lo que ya dice el modal de «¿Cómo funciona?»: ahí
-     se explica qué son las dos auditorías y que no mueven ningún semáforo;
+     se explica qué son las dos inspecciones y que no mueven ningún semáforo;
      aquí se señala dónde se toca. */
   const pasos: readonly TourStep[] = [
     {
       anchor: 'audit-card',
-      title: t`Desde aquí auditas`,
-      description: t`Dos caminos: el ambiente del hotel se contesta de una, y la de personal te deja elegir a quién — arriba salen primero los que llevan más tiempo sin auditarse.`,
+      title: t`Desde aquí inspeccionas`,
+      description: t`Dos caminos: el ambiente del hotel se contesta de una, y la de personal te deja elegir a quién — arriba salen primero los que llevan más tiempo sin inspeccionarse.`,
     },
     {
       anchor: 'audit-history',
-      title: t`Lo que ya auditaste`,
-      description: t`Cada auditoría queda con su calificación y su fecha. Si te equivocaste en un reactivo, desde aquí la corriges: no se borra, se corrige.`,
+      title: t`Lo que ya inspeccionaste`,
+      description: t`Cada inspección queda con su calificación y su fecha. Si te equivocaste en un reactivo, desde aquí la corriges: no se borra, se corrige.`,
     },
   ]
 
-  /* El Inspector no tiene UN hotel (Supervisor sí): audita los de su zona.
+  /* El Inspector no tiene UN hotel (Supervisor sí): inspecciona los de su zona.
      La consulta se salta a propósito para todos los demás roles, que ya
      resuelven su hotel desde la sesión. */
   const { data: zoneHotels } = useGetAuditableHotelsQuery(undefined, { skip: hotelId !== '' })
@@ -91,8 +91,8 @@ export function AuditsPage(): ReactNode {
     return (
       <p className="rounded-lg border border-dashed border-line bg-surface p-8 text-center text-sm text-ink-3">
         <Trans>
-          Las auditorías las ve el equipo del hotel. Si crees que deberías tener acceso, pídeselo a
-          tu Manager General.
+          Las inspecciones las ve el equipo del hotel. Si crees que deberías tener acceso, pídeselo
+          a tu Manager General.
         </Trans>
       </p>
     )
@@ -102,7 +102,7 @@ export function AuditsPage(): ReactNode {
     <div className="flex flex-col gap-6">
       <header>
         <h1 className="text-3xl font-bold tracking-tight text-ink">
-          <FoldText text={t`Auditorías`} />
+          <FoldText text={t`Inspecciones`} />
         </h1>
         <p className="mt-1.5 text-sm text-ink-3">
           <Trans>
@@ -153,8 +153,8 @@ export function AuditsPage(): ReactNode {
               <span className="font-semibold">
                 <Plural
                   value={session.zones.length}
-                  one="Auditas los hoteles de tu zona:"
-                  other="Auditas los hoteles de tus zonas:"
+                  one="Inspeccionas los hoteles de tu zona:"
+                  other="Inspeccionas los hoteles de tus zonas:"
                 />
               </span>
               <div className="flex flex-wrap gap-1.5">
@@ -180,7 +180,7 @@ export function AuditsPage(): ReactNode {
             </Trans>
           ) : (
             <Trans>
-              Tu usuario no tiene un hotel asignado todavía. Sin hotel no hay a quién auditar —
+              Tu usuario no tiene un hotel asignado todavía. Sin hotel no hay a quién inspeccionar —
               pídele al Administrador que revise tu alta.
             </Trans>
           )}
@@ -190,7 +190,7 @@ export function AuditsPage(): ReactNode {
       <Modal
         isOpen={isIntroOpen}
         onClose={dismissIntro}
-        title={t`Cómo funciona Auditorías`}
+        title={t`Cómo funciona Inspecciones`}
         chromeless
         className="max-w-2xl"
       >
@@ -200,7 +200,7 @@ export function AuditsPage(): ReactNode {
             title: i18n._(slide.title),
             text: i18n._(slide.text),
           }))}
-          startLabel={t`Ir a Auditorías`}
+          startLabel={t`Ir a Inspecciones`}
           onDone={dismissIntro}
         />
       </Modal>

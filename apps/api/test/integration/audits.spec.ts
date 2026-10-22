@@ -11,7 +11,7 @@ import { close, db } from './db.js'
 import { actor } from './fixture.js'
 
 /**
- * Las dos auditorías del Inspector: Presentación Personal (por colaborador) y
+ * Las dos inspecciones del Inspector: Presentación Personal (por colaborador) y
  * Percepción de Ambiente y Recursos (por hotel), mismo mecanismo. Nació del
  * Supervisor (2026-09-14), se amplió al Inspector por zona (2026-09-24) y
  * quedó EXCLUSIVA del Inspector el 2026-10-21 (el vault ya lo pedía desde el
@@ -79,7 +79,7 @@ async function hotel(name: string, zone: string = zoneId): Promise<string> {
 }
 
 // Fixture para roles con hotel fijo (Supervisor, Manager de Área/General):
-// sigue haciendo falta para la auditoría de "la Matriz" (el Supervisor ya
+// sigue haciendo falta para la inspección de "la Matriz" (el Supervisor ya
 // rechazado) y para el caso del Manager General sin hotel.
 async function usuario(roleCode: string, scopeHotelId: string | null): Promise<AuthenticatedUser> {
   const role = await db.role.findFirstOrThrow({ where: { code: roleCode } })
@@ -99,7 +99,7 @@ async function usuario(roleCode: string, scopeHotelId: string | null): Promise<A
   return { id: user.id, roleCode, hotelId: scopeHotelId, departmentId: null }
 }
 
-// El Inspector no tiene hotel fijo: audita los hoteles de la(s) zona(s) que
+// El Inspector no tiene hotel fijo: inspecciona los hoteles de la(s) zona(s) que
 // se le asignen (`commercial.user_zone`) — mismo patrón que
 // `audits-inspector.spec.ts` y `RequisitionsRepository`.
 async function inspector(zoneIds: string[]): Promise<AuthenticatedUser> {
@@ -129,11 +129,11 @@ async function colaborador(): Promise<string> {
   const worker = await db.worker.create({
     data: {
       id: uuidv7(),
-      fullName: `Auditado ${Date.now()}${Math.floor(Math.random() * 1000)}`,
+      fullName: `Inspeccionado ${Date.now()}${Math.floor(Math.random() * 1000)}`,
       birthDate: new Date('1995-01-01'),
       gender: 'MALE',
       phone: '9990000002',
-      address: 'Calle Auditoría',
+      address: 'Calle Inspección',
       zoneId,
       statusLightStateId: state.id,
       statusLightCode: 'WORKER',
@@ -228,10 +228,10 @@ beforeAll(async () => {
   positionId = (await db.catalogPosition.findFirstOrThrow({ select: { id: true } })).id
   modalityId = (await db.hiringModality.findFirstOrThrow({ select: { id: true } })).id
 
-  hotelId = await hotel('Hotel Auditorías')
+  hotelId = await hotel('Hotel Inspecciones')
   // En OTRA zona a propósito: el límite real del Inspector es su zona, no un
   // hotel ajeno dentro de la misma (2026-10-21).
-  otherHotelId = await hotel('Hotel Ajeno Auditorías', otherZoneId)
+  otherHotelId = await hotel('Hotel Ajeno Inspecciones', otherZoneId)
 
   workerId = await colaborador()
   await asignar(workerId, hotelId)
@@ -275,7 +275,7 @@ afterAll(async () => {
   await close()
 })
 
-describe('crear una auditoría', () => {
+describe('crear una inspección', () => {
   it('Presentación Personal calcula el score ponderado', async () => {
     const inspectorDeLaZona = await inspector([zoneId])
 
@@ -418,7 +418,7 @@ describe('crear una auditoría', () => {
   })
 })
 
-describe('corregir una auditoría', () => {
+describe('corregir una inspección', () => {
   it('corregir una respuesta deja historia y recalcula el score', async () => {
     const inspectorDeLaZona = await inspector([zoneId])
 
@@ -506,8 +506,8 @@ describe('corregir una auditoría', () => {
   })
 })
 
-describe('tiempo sin auditar', () => {
-  it('un colaborador auditado trae fecha y uno nunca auditado trae null', async () => {
+describe('tiempo sin inspeccionar', () => {
+  it('un colaborador inspeccionado trae fecha y uno nunca inspeccionado trae null', async () => {
     const inspectorDeLaZona = await inspector([zoneId])
 
     const created = await audits.create(
@@ -530,7 +530,7 @@ describe('tiempo sin auditar', () => {
     expect(never?.lastAuditedAt).toBeNull()
   })
 
-  // No es sobre el permiso de Auditorías (el GM nunca lo tuvo, con o sin el
+  // No es sobre el permiso de Inspecciones (el GM nunca lo tuvo, con o sin el
   // cambio del 2026-10-21): es el caso borde de `assertHotelScope` para
   // cualquier usuario sin hotel fijo Y sin zonas asignadas (mismo camino que
   // Sistema) — el GM solo presta el `hotelId: null`.
@@ -541,7 +541,7 @@ describe('tiempo sin auditar', () => {
   })
 })
 
-describe('leer auditorías', () => {
+describe('leer inspecciones', () => {
   it('el detalle trae las respuestas con categoría y etiqueta del reactivo', async () => {
     const inspectorDeLaZona = await inspector([zoneId])
 
@@ -577,7 +577,7 @@ describe('leer auditorías', () => {
     )
     auditIds.push(created.id)
 
-    // Una auditoría de un hotel de OTRA zona, hecha por su propio Inspector:
+    // Una inspección de un hotel de OTRA zona, hecha por su propio Inspector:
     // no debe aparecer en el tablero del primero.
     const inspectorDeOtraZona = await inspector([otherZoneId])
     const deOtraZona = await audits.create(
@@ -612,7 +612,7 @@ describe('la Matriz sostiene audits:create/read/update', () => {
     PERMISSIONS.filter((p) => p.module === 'audits').map((p) => [p.action, p]),
   )
 
-  it('solo el Inspector audita, corrige y ve: el Supervisor ya NO (exclusividad del 2026-10-21)', () => {
+  it('solo el Inspector inspecciona, corrige y ve: el Supervisor ya NO (exclusividad del 2026-10-21)', () => {
     for (const action of ['create', 'read', 'update'] as const) {
       const fila = filasAudits.get(action)
 

@@ -107,7 +107,7 @@ export type SettlementEffect = 'REIMBURSE' | 'COMPANY_EXPENSE' | 'PAYROLL_DEDUCT
 /**
  * El ajuste de tarifa o el gasto extra (p. ej. «Uber») de una asignación
  * EVENTUAL (Hugo, 2026-10-08): Reclutamiento lo pide al llenar el slot, solo
- * el Observador lo aprueba o lo rechaza, y mientras está PENDING no pesa en
+ * el Manager de QA lo aprueba o lo rechaza, y mientras está PENDING no pesa en
  * nada. `payConcept` ausente = ajuste del rate llano de la posición.
  */
 export interface PayAdjustment {
@@ -123,7 +123,7 @@ export interface PayAdjustment {
   approvedBy: { id: string; fullName: string } | null
   approvedAt: string | null
   rejectionReason: string | null
-  /** Que el Observador apruebe no lo mete a la nómina: esto es lo que lo
+  /** Que el Manager de QA apruebe no lo mete a la nómina: esto es lo que lo
       mete de verdad, y lo decide Contabilidad (Hugo, 2026-10-09). */
   includedBy: { id: string; fullName: string } | null
   includedAt: string | null

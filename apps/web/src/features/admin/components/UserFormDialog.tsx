@@ -89,14 +89,11 @@ const SUPERIOR_ROLES: Partial<Record<string, readonly string[]>> = {
   'ROL-ADM-01': [],
 }
 
-const PENDING_ROLES: ReadonlySet<string> = new Set([
-  'ROL-Q-01',
-  'ROL-Q-02',
-  'ROL-CS-01',
-  'ROL-CS-02',
-])
+/* El Manager de QA ya se crea: heredó la pantalla del Observador (Hugo,
+   2026-10-21). El Operador de QA y Customer Service siguen sin pantalla. */
+const PENDING_ROLES: ReadonlySet<string> = new Set(['ROL-Q-01', 'ROL-CS-01', 'ROL-CS-02'])
 
-/** Único rol con zonas propias fuera de Ventas: su alcance de requisiciones y auditorías. */
+/** Único rol con zonas propias fuera de Ventas: su alcance de requisiciones y inspecciones. */
 const INSPECTOR_ROLE_CODE = 'ROL-I-01'
 
 /* Los mensajes se resuelven al armar el esquema con el `i18n` del componente
@@ -689,7 +686,7 @@ export function UserFormDialog({
                       {selectedZones.size === 0 ? (
                         <Trans>
                           Sin zonas elegidas el Inspector no ve ningún hotel para levantar
-                          requisiciones ni auditar.
+                          requisiciones ni inspeccionar.
                         </Trans>
                       ) : (
                         <Trans>Solo verá los hoteles de estas zonas — nunca todos.</Trans>

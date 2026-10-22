@@ -13,7 +13,7 @@ import { TerritoriesRepository, ZoneRow } from './territories.repository.js'
 
 /**
  * Roles con zonas propias vía `user_zone`: el BD/BDC las usa como territorio
- * de venta, el Inspector como alcance de requisiciones y auditorías
+ * de venta, el Inspector como alcance de requisiciones y inspecciones
  * (2026-09-24) — mismo mecanismo, mismo endpoint, distinto uso.
  */
 const ZONE_ASSIGNABLE_ROLES = ['ROL-V-01', 'ROL-V-02', 'ROL-I-01']
