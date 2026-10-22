@@ -217,10 +217,11 @@ const MODULES: NavModule[] = [
   /* Inspección no ve Accidentes todavía: hoy solo Requisiciones e Inspecciones
      (Hugo, 2026-10-21), hasta que Accidentes tenga pantalla. */
   { label: msg`Accidentes`, to: '/accidents', icon: 'report', roles: HOTEL },
-  /* Inspeccionar es del Supervisor y, desde el 2026-09-24, del Inspector (sus
-     hoteles de zona) — ninguno de sus jefes lo ve (fuera de la herencia por
-     jerarquía a propósito, Hugo). */
-  { label: msg`Inspecciones`, to: '/audits', icon: 'fact_check', roles: [SUPERVISOR, INSPECTOR] },
+  /* Inspeccionar es exclusivo del Inspector (sus hoteles de zona) desde el
+     2026-10-21: el Supervisor perdió audits:* en la API, así que tampoco ve la
+     entrada — antes le salía y la pantalla le respondía 403. Ninguno de sus
+     jefes lo ve (fuera de la herencia por jerarquía a propósito, Hugo). */
+  { label: msg`Inspecciones`, to: '/audits', icon: 'fact_check', roles: [INSPECTOR] },
 ]
 
 function modulesForRole(roleId: string | undefined): NavModule[] {
