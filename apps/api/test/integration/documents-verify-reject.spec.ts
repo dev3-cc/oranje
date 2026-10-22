@@ -229,4 +229,68 @@ describe('Reclutamiento revisa el SSN/ITIN', () => {
     expect(resuelto.hasDocument).toBe(true)
     expect(resuelto.wasRejected).toBe(false)
   })
+
+  // Hugo, 2026-10-23: la Reclutadora resube el mismo tipo por error de
+  // archivo — igual que ya hacía `createOwn` para el colaborador, ahora
+  // también reemplaza sola en vez de exigir borrar primero.
+  it('subir el mismo tipo sin verificar reemplaza, no duplica', async () => {
+    const { workerId } = await workerConCuenta('doc-reemplaza')
+    const primero = await documents.create(
+      workerId,
+      { documentType: 'ID', filePath: 'workers/document/id-v1.pdf' },
+      reviewer,
+    )
+
+    const segundo = await documents.create(
+      workerId,
+      { documentType: 'ID', filePath: 'workers/document/id-v2.pdf' },
+      reviewer,
+    )
+
+    expect(segundo.id).not.toBe(primero.id)
+    expect(await db.workerDocument.findUnique({ where: { id: primero.id } })).toBeNull()
+
+    const restantes = await db.workerDocument.findMany({ where: { workerId, documentType: 'ID' } })
+    expect(restantes).toHaveLength(1)
+    expect(restantes[0]?.id).toBe(segundo.id)
+  })
+
+  it('subir el mismo tipo ya verificado no reemplaza: DOCUMENT_VERIFIED', async () => {
+    const { workerId } = await workerConCuenta('doc-no-reemplaza-verificado')
+    const doc = await documents.create(
+      workerId,
+      { documentType: 'PROOF_OF_ADDRESS', filePath: 'workers/document/dom-v1.pdf' },
+      reviewer,
+    )
+    await documents.verify(workerId, doc.id, reviewer)
+
+    await expect(
+      documents.create(
+        workerId,
+        { documentType: 'PROOF_OF_ADDRESS', filePath: 'workers/document/dom-v2.pdf' },
+        reviewer,
+      ),
+    ).rejects.toMatchObject({ response: { code: 'DOCUMENT_VERIFIED' } })
+
+    expect(await db.workerDocument.findUnique({ where: { id: doc.id } })).not.toBeNull()
+  })
+
+  it('OTHER siempre agrega: un expediente puede traer varios "otro"', async () => {
+    const { workerId } = await workerConCuenta('doc-other-acumula')
+    await documents.create(
+      workerId,
+      { documentType: 'OTHER', filePath: 'workers/document/otro-1.pdf' },
+      reviewer,
+    )
+    await documents.create(
+      workerId,
+      { documentType: 'OTHER', filePath: 'workers/document/otro-2.pdf' },
+      reviewer,
+    )
+
+    const restantes = await db.workerDocument.findMany({
+      where: { workerId, documentType: 'OTHER' },
+    })
+    expect(restantes).toHaveLength(2)
+  })
 })

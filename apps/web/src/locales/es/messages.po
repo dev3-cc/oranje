@@ -1270,6 +1270,10 @@ msgstr "Agregar motivo"
 msgid "Agregar otra posición"
 msgstr "Agregar otra posición"
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Agregar otro"
+msgstr "Agregar otro"
+
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 msgid "Agregar otro contacto"
 msgstr "Agregar otro contacto"
@@ -1797,10 +1801,6 @@ msgstr "Aún no hay cambios de estado."
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "Aún no hay clientes activos"
 msgstr "Aún no hay clientes activos"
-
-#: src/features/recruitment/pages/WorkerDetailPage.tsx
-msgid "Aún no hay documentos. Elige el tipo y súbelo desde aquí arriba."
-msgstr "Aún no hay documentos. Elige el tipo y súbelo desde aquí arriba."
 
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Aún no hay nadie dado de alta con el rol al que reporta. Da de alta primero a esa persona."
@@ -4283,6 +4283,10 @@ msgid "Documento"
 msgstr "Documento"
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Documento agregado"
+msgstr "Documento agregado"
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Documento borrado"
 msgstr "Documento borrado"
 
@@ -5827,6 +5831,14 @@ msgstr "Ese correo ya está en uso: prueba otro."
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Ese correo ya tiene cuenta de acceso. Da el alta sin contraseña (invitación) o que la persona use «¿Olvidaste tu contraseña?»."
 msgstr "Ese correo ya tiene cuenta de acceso. Da el alta sin contraseña (invitación) o que la persona use «¿Olvidaste tu contraseña?»."
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Ese documento ya está verificado: no se puede borrar, deja rastro de quién lo revisó."
+msgstr "Ese documento ya está verificado: no se puede borrar, deja rastro de quién lo revisó."
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Ese documento ya está verificado: no se puede reemplazar."
+msgstr "Ese documento ya está verificado: no se puede reemplazar."
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Ese documento ya estaba verificado: no se puede rechazar."
@@ -10226,6 +10238,10 @@ msgstr "otro estado"
 msgid "otro rol"
 msgstr "otro rol"
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Otros documentos"
+msgstr "Otros documentos"
+
 #: src/features/contracts/components/MultiplierTable.tsx
 msgid "Overtime"
 msgstr "Overtime"
@@ -11429,6 +11445,10 @@ msgstr "Recupera tu contraseña"
 msgid "Reembolso: se le suma"
 msgstr "Reembolso: se le suma"
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Reemplazar"
+msgstr "Reemplazar"
+
 #: src/features/admin/components/UserFormDialog.tsx
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Reemplazar foto"
@@ -12524,6 +12544,10 @@ msgstr "Sin departamento, esta cuenta ve y pide personal de TODOS los departamen
 msgid "Sin dirección todavía"
 msgstr "Sin dirección todavía"
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Sin documentos adicionales."
+msgstr "Sin documentos adicionales."
+
 #: src/features/timesheet/components/AttendanceView.tsx
 msgid "Sin entrada registrada"
 msgstr "Sin entrada registrada"
@@ -12759,6 +12783,10 @@ msgstr "Sin salir"
 #: src/shared/components/ApprovalTimelinessPanel.tsx
 msgid "Sin semanas cerradas en el periodo."
 msgstr "Sin semanas cerradas en el periodo."
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Sin subir todavía"
+msgstr "Sin subir todavía"
 
 #: src/features/clients/components/ClientCardGrid.tsx
 msgid "Sin tarifas"
@@ -13117,8 +13145,8 @@ msgid "Su semana aún no da para medir"
 msgstr "Su semana aún no da para medir"
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
-msgid "Sube y verifica los documentos del perfil"
-msgstr "Sube y verifica los documentos del perfil"
+msgid "Sube un archivo nuevo en lugar de este."
+msgstr "Sube un archivo nuevo en lugar de este."
 
 #: src/features/admin/components/UserFormDialog.tsx
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
@@ -13128,13 +13156,14 @@ msgstr "Sube y verifica los documentos del perfil"
 msgid "Subiendo…"
 msgstr "Subiendo…"
 
+#. placeholder {0}: documentTypeLabel(type)
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Subir {0}"
+msgstr "Subir {0}"
+
 #: src/features/worker/components/TaxDeadlineBanner.tsx
 msgid "Subir de nuevo"
 msgstr "Subir de nuevo"
-
-#: src/features/recruitment/pages/WorkerDetailPage.tsx
-msgid "Subir documento"
-msgstr "Subir documento"
 
 #: src/features/admin/components/UserFormDialog.tsx
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
@@ -13447,10 +13476,6 @@ msgstr "Timesheets sin aprobar"
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
 msgid "Tipo"
 msgstr "Tipo"
-
-#: src/features/recruitment/pages/WorkerDetailPage.tsx
-msgid "Tipo de documento"
-msgstr "Tipo de documento"
 
 #: src/features/onboarding/components/RegisterAttemptDialog.tsx
 msgid "Tipo de intento"
@@ -14065,6 +14090,10 @@ msgstr "Un consolidado es de un colaborador, un hotel y una semana: quien trabaj
 #: src/features/timesheet/components/DayStatusTour.tsx
 msgid "Un día sin marcas no se puede enviar a aprobar hasta que elijas qué fue: Descanso, OFF… Tócalo aquí para marcarlo."
 msgstr "Un día sin marcas no se puede enviar a aprobar hasta que elijas qué fue: Descanso, OFF… Tócalo aquí para marcarlo."
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Un documento por tipo — súbelo, verifícalo o reemplázalo"
+msgstr "Un documento por tipo — súbelo, verifícalo o reemplázalo"
 
 #: src/features/onboarding/components/ArchiveCycleDialog.tsx
 msgid "Un hotel en Naranja es cliente activo: primero pásalo a Negro y luego archiva."
@@ -14738,6 +14767,14 @@ msgstr "Ya entró por primera vez: no hace falta reenviar la invitación."
 msgid "Ya está todo"
 msgstr "Ya está todo"
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Ya está verificado: no se puede borrar, deja rastro de quién lo revisó."
+msgstr "Ya está verificado: no se puede borrar, deja rastro de quién lo revisó."
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Ya está verificado: no se puede reemplazar, deja rastro de quién lo revisó."
+msgstr "Ya está verificado: no se puede reemplazar, deja rastro de quién lo revisó."
+
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Ya estabas trabajando esta requisición."
 msgstr "Ya estabas trabajando esta requisición."
@@ -14765,11 +14802,6 @@ msgstr "Ya existe un usuario con ese correo."
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Ya existe una fila con ese nombre en este catálogo."
 msgstr "Ya existe una fila con ese nombre en este catálogo."
-
-#. placeholder {0}: documentTypeLabel(uploadType)
-#: src/features/recruitment/pages/WorkerDetailPage.tsx
-msgid "Ya hay un documento de {0}: bórralo antes de subir otro."
-msgstr "Ya hay un documento de {0}: bórralo antes de subir otro."
 
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
 msgid "Ya hay un veto vigente para esta persona: levántalo antes de registrar otro."
