@@ -41,6 +41,7 @@ function toPoolWorker(worker: FullWorkerApi): PoolWorker {
     profileDueAt: worker.profileDueAt,
     hasAccount: worker.hasAccount,
     hasTaxId: worker.hasTaxId,
+    taxRetentionAccepted: worker.taxRetentionAccepted ?? false,
     hasPendingDocument: worker.hasPendingDocument,
     createdAt: worker.createdAt,
     isBlacklisted: worker.isBlacklisted,

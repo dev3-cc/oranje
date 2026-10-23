@@ -230,13 +230,21 @@ export function PoolRoster({
                         <Trans>Sin acceso a la app</Trans>
                       </CautionPill>
                     )}
-                    {!selected.hasTaxId && (
-                      <CautionPill>
-                        <Trans>
-                          Sin ITIN: aplica retención del 16%{IS_DEV_UI ? ' (D-27)' : ''}
-                        </Trans>
-                      </CautionPill>
-                    )}
+                    {!selected.hasTaxId &&
+                      (selected.taxRetentionAccepted ? (
+                        /* Decisión tomada, no algo pendiente: no es un CautionPill
+                           (Hugo, 2026-10-23 — el "Sin ITIN" seguía sonando a
+                           problema aunque Reclutamiento ya hubiera aceptado). */
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-o-50 px-3 py-1 text-xs font-medium text-o-700">
+                          <Trans>Retención del 16% aceptada</Trans>
+                        </span>
+                      ) : (
+                        <CautionPill>
+                          <Trans>
+                            Sin ITIN: aplica retención del 16%{IS_DEV_UI ? ' (D-27)' : ''}
+                          </Trans>
+                        </CautionPill>
+                      ))}
                     {selected.hasPendingDocument && (
                       <CautionPill>
                         <Trans>Documento pendiente de verificar</Trans>

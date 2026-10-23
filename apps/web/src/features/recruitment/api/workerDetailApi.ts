@@ -152,8 +152,13 @@ export const workerDetailApi = baseApi.injectEndpoints({
         url: `/workers/${workerId}/documents/tax-retention-acceptance`,
         method: 'POST',
       }),
+      // A diferencia de verificar/rechazar: esto SÍ cambia hasTaxDocument/
+      // isProfileComplete del propio Worker (Pool y el encabezado del
+      // expediente los leen de ahí, no de /documents), así que invalida los
+      // dos — si no, el "Sin ITIN" del Pool se queda pegado hasta refrescar.
       invalidatesTags: (_res, _err, { workerId }) => [
         { type: 'Worker' as const, id: `${workerId}-documents` },
+        { type: 'Worker' as const, id: workerId },
       ],
     }),
 
@@ -165,6 +170,7 @@ export const workerDetailApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: (_res, _err, { workerId }) => [
         { type: 'Worker' as const, id: `${workerId}-documents` },
+        { type: 'Worker' as const, id: workerId },
       ],
     }),
   }),
