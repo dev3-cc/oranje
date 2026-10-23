@@ -4,10 +4,7 @@ import { Navigate } from 'react-router'
 import { useAppSelector } from './hooks'
 import { selectSessionUser } from './sessionSlice'
 
-import { WORKER_ROLE } from '@/shared/constants/roles'
-
-/** Contabilidad no tiene tablero propio: su inicio es el Consolidado. */
-const ACCOUNTING_ROLES = ['ROL-CO-01', 'ROL-CO-02']
+import { ACCOUNTING_ROLES, WORKER_ROLE } from '@/shared/constants/roles'
 
 /**
  * El `/` de cada rol: el Colaborador (ROL-C-01) vive en `/collaborator`, el

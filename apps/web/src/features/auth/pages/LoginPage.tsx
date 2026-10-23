@@ -14,7 +14,7 @@ import { buildLoginSchema, type LoginFormValues } from '../types/login.schema'
 
 import { useAppSelector } from '@/app/hooks'
 import { useCreateSessionMutation } from '@/app/sessionApi'
-import { selectSessionStatus } from '@/app/sessionSlice'
+import { selectSessionStatus, selectSessionUser } from '@/app/sessionSlice'
 import logoAnimado from '@/assets/loader/oranje-sidebar-light.lottie'
 import { LanguagePrompt } from '@/shared/components/LanguagePrompt'
 import { LanguageSwitch } from '@/shared/components/LanguageSwitch'
@@ -118,6 +118,32 @@ function loginErrorMessage(error: unknown): MessageDescriptor {
   return msg`El correo o la contraseña no coinciden. Revísalos e inténtalo de nuevo.`
 }
 
+/**
+ * A dónde ir tras entrar (o al caer en `/login` ya autenticado).
+ *
+ * `from` (`RequireSession`, la liga de un QR/enlace compartido) solo es de
+ * fiar cuando puede ser de QUIEN ACABA DE ENTRAR: la MISMA persona que
+ * reanuda, o nadie antes en este navegador. El `lastRoute` ya resuelve esto
+ * por su cuenta — existe justo para no heredar la ruta de otra persona
+ * (ver el comentario de `lastRoute.ts`) — pero `from` nunca quedó
+ * SUBORDINADO a esa misma protección: si el último en este navegador fue
+ * OTRA persona que cerró sesión, `from` es el resto de SU bote (la ruta
+ * donde `RequireSession` la rebotó al perder la sesión), no una ruta que
+ * pidió quien acaba de entrar, y heredarla aterriza en un 403 ajeno —
+ * reproducido en vivo el 2026-10-22: Contadora entraba y caía en el
+ * Dashboard de Ventas de quien había cerrado sesión antes.
+ */
+export function destinoTrasLogin(
+  from: string | undefined,
+  last: { userId: string; path: string } | null,
+  userId: string,
+): string {
+  const mismaPersona = last !== null && last.userId === userId
+  if (mismaPersona) return from ?? last.path
+  if (last === null) return from ?? '/'
+  return '/'
+}
+
 type AuthMode = 'login' | 'reset'
 
 /**
@@ -138,6 +164,7 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
   const { t, i18n } = useLingui()
   const isColaborador = audience === 'colaborador'
   const status = useAppSelector(selectSessionStatus)
+  const sessionUser = useAppSelector(selectSessionUser)
   const navigate = useNavigate()
   const location = useLocation()
   const [createSession] = useCreateSessionMutation()
@@ -158,9 +185,10 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
   } = useForm<LoginFormValues>({ resolver: zodResolver(schema) })
 
   /** Con sesión viva no hay nada que hacer aquí. */
-  if (status === 'authenticated') {
-    const from = (location.state as { from?: string } | null)?.from ?? '/'
-    return <Navigate to={from} replace />
+  if (status === 'authenticated' && sessionUser) {
+    const from = (location.state as { from?: string } | null)?.from
+    const dest = destinoTrasLogin(from, readLastRoute(), sessionUser.id)
+    return <Navigate to={dest} replace />
   }
 
   async function onSubmit(values: LoginFormValues): Promise<void> {
@@ -171,17 +199,11 @@ export function LoginPage({ audience = 'staff' }: LoginPageProps): ReactNode {
       const user = await createSession({ idToken }).unwrap()
       /*
        * La MISMA persona reanuda donde estaba (la sesión murió, no su
-       * trabajo); otra persona arranca en el Dashboard — heredar la ruta del
-       * usuario anterior era aterrizar en un 403 ajeno.
+       * trabajo); otra persona arranca en su propio inicio — heredar la ruta
+       * del usuario anterior era aterrizar en un 403 ajeno.
        */
       const from = (location.state as { from?: string } | null)?.from
-      const last = readLastRoute()
-      /* A dónde venía gana sobre dónde se quedó: quien abre una liga (el QR
-         del acceso, un enlace compartido) espera llegar ahí, no a su última
-         pantalla. Sin liga, la MISMA persona reanuda donde estaba. */
-      void navigate(from ?? (last !== null && last.userId === user.id ? last.path : '/'), {
-        replace: true,
-      })
+      void navigate(destinoTrasLogin(from, readLastRoute(), user.id), { replace: true })
     } catch (error) {
       setSubmitError(i18n._(loginErrorMessage(error)))
     }

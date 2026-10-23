@@ -783,7 +783,10 @@ export class TimesheetsRepository {
                SELECT 1 FROM demand."position" p
                 WHERE p.requisition_id = t.requisition_id
                   AND p.hotel_department_id = ${params.departmentId}::uuid))
-       ORDER BY t.week_start DESC
+       -- t.id desempata: sin un segundo criterio, filas con el mismo week_start
+       -- pueden quedar en cualquier lado del LIMIT de una corrida a otra — el
+       -- mismo recorte, pero ya no al azar.
+       ORDER BY t.week_start DESC, t.id DESC
        LIMIT ${params.limit}`
   }
 

@@ -71,7 +71,14 @@ export const workerDetailApi = baseApi.injectEndpoints({
       ],
     }),
 
-    /** La ruta viene de `POST /files` (WORKER_DOCUMENT): el back valida el prefijo. */
+    /**
+     * La ruta viene de `POST /files` (WORKER_DOCUMENT): el back valida el prefijo.
+     * Invalida TAMBIÉN `Worker:{id}` — no solo la lista — porque
+     * `isProfileComplete`/`hasTaxId` viven en `getWorkerDetail`, no en
+     * `getWorkerDocuments`: sin esto, "Perfil incompleto" seguía en pantalla
+     * aunque el expediente ya estuviera completo hasta recargar a mano
+     * (Hugo, 2026-10-23, capturas en vivo con los 4 documentos ya cargados).
+     */
     createWorkerDocument: build.mutation<
       void,
       { workerId: string; documentType: string; filePath: string }
@@ -83,6 +90,7 @@ export const workerDetailApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: (_res, _err, { workerId }) => [
         { type: 'Worker' as const, id: `${workerId}-documents` },
+        { type: 'Worker' as const, id: workerId },
       ],
     }),
 
@@ -119,6 +127,7 @@ export const workerDetailApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: (_res, _err, { workerId }) => [
         { type: 'Worker' as const, id: `${workerId}-documents` },
+        { type: 'Worker' as const, id: workerId },
       ],
     }),
 
@@ -129,6 +138,7 @@ export const workerDetailApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: (_res, _err, { workerId }) => [
         { type: 'Worker' as const, id: `${workerId}-documents` },
+        { type: 'Worker' as const, id: workerId },
       ],
     }),
   }),

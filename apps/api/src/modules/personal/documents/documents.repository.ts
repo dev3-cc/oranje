@@ -67,13 +67,6 @@ export class DocumentsRepository {
     })
   }
 
-  async ofType(workerId: string, documentType: string): Promise<{ id: string } | null> {
-    return this.prisma.workerDocument.findFirst({
-      where: { workerId, documentType },
-      select: { id: true },
-    })
-  }
-
   // `origin` distingue quien lo subio: SELF es el propio colaborador desde
   // /empleado, STAFF la Reclutadora desde el expediente. El evento no cambia de
   // nombre —es el mismo hecho— y partirlo fragmentaria la historia.

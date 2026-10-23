@@ -57,7 +57,17 @@ const baseSchema = z.object({
         .filter(Boolean),
     ),
 
-  RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(120),
+  /* Es el límite GLOBAL (ThrottlerGuard como APP_GUARD, toda ruta sin su
+     propio @Throttle lo hereda) y compartido por IP — no solo de auth. En
+     120/min, una sola carga del Timesheet (lista + /me + 7 páginas de
+     /workers + un detalle por fila de la semana) más la navegación normal
+     entre semanas lo agota entre dos personas en la misma red, y una fila
+     que choca con el límite responde 429 y se pinta como "Sin Timesheet"
+     — un error de red disfrazado de "no trabajó" (reproducido en vivo,
+     Hugo, 2026-10-22). Las rutas sensibles (login, etc.) ya tienen su
+     propio @Throttle más estricto en auth.controller.ts y no dependen de
+     este default. */
+  RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(1000),
 
   // Places. La del SERVIDOR resuelve la foto del hotel y no sale de aqui; la
   // del NAVEGADOR va dentro de la URL de media que consume el <img> del
