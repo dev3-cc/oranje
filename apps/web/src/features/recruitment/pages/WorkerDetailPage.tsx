@@ -6,12 +6,14 @@ import { useRef, useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 
 import {
+  useAcceptTaxRetentionMutation,
   useCreateWorkerDocumentMutation,
   useDeleteWorkerDocumentMutation,
   useGetWorkerDetailQuery,
   useGetWorkerDocumentsQuery,
   useGetWorkerHistoryQuery,
   useRejectWorkerDocumentMutation,
+  useRevokeTaxRetentionAcceptanceMutation,
   useVerifyWorkerDocumentMutation,
 } from '../api/workerDetailApi'
 import { ChangeStateDialog } from '../components/ChangeStateDialog'
@@ -27,6 +29,7 @@ import mascotaTriste from '@/assets/mascota/mascota-triste.png'
 import { Button } from '@/shared/components/Button'
 import { CautionPill } from '@/shared/components/CautionPill'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
+import { Modal } from '@/shared/components/Modal'
 import { NoticeCard } from '@/shared/components/NoticeCard'
 import { SectionCard } from '@/shared/components/SectionCard'
 import { StatusLightSoftBadge } from '@/shared/components/StatusLightSoftBadge'
@@ -287,6 +290,14 @@ export function WorkerDetailPage(): ReactNode {
   const { data: documents } = useGetWorkerDocumentsQuery(workerId, { skip: workerId === '' })
   const others = (documents?.data ?? []).filter((doc) => doc.documentType === 'OTHER')
 
+  /** Qué documento se previsualiza — por id, no por copia: así el modal
+      siempre lee el doc fresco de `documents` y un verificar/rechazar hecho
+      ahí mismo se refleja de inmediato (chip, botones) sin que el modal se
+      cierre solo ni se quede con una foto vieja del estado. */
+  const [previewDocId, setPreviewDocId] = useState<string | null>(null)
+  const [previewLoadFailed, setPreviewLoadFailed] = useState(false)
+  const previewDoc = (documents?.data ?? []).find((doc) => doc.id === previewDocId) ?? null
+
   /** Alta de documento: el archivo primero al bucket, luego la fila del expediente.
       `uploadType` ya no es un selector a mano (Hugo, 2026-10-23: "nunca
       seleccionan en el selector... y solo van subiendo" — la causa real de
@@ -300,6 +311,9 @@ export function WorkerDetailPage(): ReactNode {
   const [verifyDocument] = useVerifyWorkerDocumentMutation()
   const [rejectDocument, { isLoading: isRejecting }] = useRejectWorkerDocumentMutation()
   const [deleteDocument] = useDeleteWorkerDocumentMutation()
+  const [acceptTaxRetention, { isLoading: isAcceptingRetention }] = useAcceptTaxRetentionMutation()
+  const [revokeTaxRetention, { isLoading: isRevokingRetention }] =
+    useRevokeTaxRetentionAcceptanceMutation()
   const [documentError, setDocumentError] = useState<string | null>(null)
   /** Borrar pide segundo clic sobre la misma fila. */
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null)
@@ -387,13 +401,52 @@ export function WorkerDetailPage(): ReactNode {
     }
   }
 
-  /** Misma fila para los 3 tipos fijos y para "Otros" — lo único que cambia
-      es si ofrece Borrar (solo tiene sentido en una lista con varios) o
-      Reemplazar (los tipos fijos: un documento nuevo sustituye al viejo).
-      Verificado es inmutable en los dos casos (candado del back). */
+  async function handleAcceptTaxRetention(): Promise<void> {
+    setDocumentError(null)
+    try {
+      await acceptTaxRetention({ workerId }).unwrap()
+      toast.success(t`Retención del 16% aceptada: ya no se pide el SSN/ITIN`)
+    } catch (error) {
+      setDocumentError(
+        apiErrorMessage(error, {
+          fallback: t`No se pudo aceptar la retención. Inténtalo de nuevo.`,
+        }),
+      )
+    }
+  }
+
+  async function handleRevokeTaxRetention(): Promise<void> {
+    setDocumentError(null)
+    try {
+      await revokeTaxRetention({ workerId }).unwrap()
+      toast.success(t`Se vuelve a pedir el SSN/ITIN`)
+    } catch (error) {
+      setDocumentError(
+        apiErrorMessage(error, {
+          fallback: t`No se pudo quitar la retención. Inténtalo de nuevo.`,
+        }),
+      )
+    }
+  }
+
+  function openPreview(doc: WorkerDocumentApi): void {
+    setPreviewLoadFailed(false)
+    setPreviewDocId(doc.id)
+  }
+
+  /** Misma fila para los 3 tipos fijos, para "Otros" y para el cuerpo del
+      modal de previsualizar (ese llamado sin `onPreview`: ahí el nombre ya
+      no es botón, porque el archivo ya se está viendo). Lo único que cambia
+      entre lista y modal es si ofrece Borrar (solo tiene sentido en una
+      lista con varios) o Reemplazar (los tipos fijos: un documento nuevo
+      sustituye al viejo). Verificado es inmutable en los dos casos (candado
+      del back). */
   function renderDocumentRow(
     doc: WorkerDocumentApi,
-    { allowDelete }: { allowDelete: boolean },
+    {
+      allowDelete,
+      onPreview,
+    }: { allowDelete: boolean; onPreview?: (doc: WorkerDocumentApi) => void },
   ): ReactNode {
     const locked = doc.isVerified
     return (
@@ -402,15 +455,16 @@ export function WorkerDetailPage(): ReactNode {
           <span className="w-52 text-sm font-medium text-ink">
             {documentTypeLabel(doc.documentType)}
           </span>
-          {doc.url ? (
-            <a
-              href={doc.url}
-              target="_blank"
-              rel="noreferrer"
-              className="text-sm text-o-700 hover:underline"
+          {onPreview ? (
+            <button
+              type="button"
+              onClick={() => {
+                onPreview(doc)
+              }}
+              className="cursor-pointer text-sm text-o-700 hover:underline"
             >
               {doc.filePath.split('/').pop()}
-            </a>
+            </button>
           ) : (
             <span className="text-sm text-ink-2">{doc.filePath.split('/').pop()}</span>
           )}
@@ -878,34 +932,85 @@ export function WorkerDetailPage(): ReactNode {
             <ul className="flex flex-col divide-y divide-line">
               {(['ID', 'PROOF_OF_ADDRESS', 'SSN_ITIN'] as const).map((type) => {
                 const doc = (documents?.data ?? []).find((item) => item.documentType === type)
+                const retentionAccepted =
+                  type === 'SSN_ITIN' && (documents?.meta.taxRetentionAccepted ?? false)
                 return (
                   <li key={type} className="py-3">
                     {doc ? (
-                      renderDocumentRow(doc, { allowDelete: false })
-                    ) : (
-                      <div className="flex items-center gap-3">
+                      renderDocumentRow(doc, { allowDelete: false, onPreview: openPreview })
+                    ) : retentionAccepted ? (
+                      <div className="flex flex-wrap items-center gap-3">
                         <span className="w-52 text-sm font-medium text-ink">
                           {documentTypeLabel(type)}
                         </span>
-                        {canEditDocuments ? (
+                        <span className="rounded-full bg-o-50 px-3 py-1 text-xs font-medium text-o-700">
+                          <Trans>Retención del 16% aceptada</Trans>
+                        </span>
+                        <span className="text-xs text-ink-3">
+                          {documents?.meta.taxRetentionAcceptedBy?.fullName ?? '—'}
+                          {documents?.meta.taxRetentionAcceptedAt
+                            ? ` · ${formatDate(documents.meta.taxRetentionAcceptedAt)}`
+                            : ''}
+                        </span>
+                        {canEditDocuments && (
                           <Button
                             variant="secondary"
-                            className="px-3 py-1.5 text-xs"
-                            disabled={isUploading}
+                            className="ml-auto px-3 py-1 text-xs"
+                            disabled={isRevokingRetention}
                             onClick={() => {
-                              startUpload(type)
+                              void handleRevokeTaxRetention()
                             }}
                           >
-                            {isUploading && uploadType === type ? (
-                              <Trans>Subiendo…</Trans>
+                            {isRevokingRetention ? (
+                              <Trans>Quitando…</Trans>
                             ) : (
-                              <Trans>Subir {documentTypeLabel(type)}</Trans>
+                              <Trans>Quitar, volver a pedirlo</Trans>
                             )}
                           </Button>
-                        ) : (
-                          <span className="text-sm text-ink-3">
-                            <Trans>Sin subir todavía</Trans>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-3">
+                          <span className="w-52 text-sm font-medium text-ink">
+                            {documentTypeLabel(type)}
                           </span>
+                          {canEditDocuments ? (
+                            <Button
+                              variant="secondary"
+                              className="px-3 py-1.5 text-xs"
+                              disabled={isUploading}
+                              onClick={() => {
+                                startUpload(type)
+                              }}
+                            >
+                              {isUploading && uploadType === type ? (
+                                <Trans>Subiendo…</Trans>
+                              ) : (
+                                <Trans>Subir {documentTypeLabel(type)}</Trans>
+                              )}
+                            </Button>
+                          ) : (
+                            <span className="text-sm text-ink-3">
+                              <Trans>Sin subir todavía</Trans>
+                            </span>
+                          )}
+                        </div>
+                        {type === 'SSN_ITIN' && canEditDocuments && (
+                          <button
+                            type="button"
+                            className="ml-52 w-fit cursor-pointer text-left text-xs text-ink-3 underline decoration-dotted hover:text-ink-2"
+                            disabled={isAcceptingRetention}
+                            onClick={() => {
+                              void handleAcceptTaxRetention()
+                            }}
+                          >
+                            {isAcceptingRetention ? (
+                              <Trans>Aceptando…</Trans>
+                            ) : (
+                              <Trans>o acepta la retención del 16% y no lo pidas</Trans>
+                            )}
+                          </button>
                         )}
                       </div>
                     )}
@@ -942,7 +1047,7 @@ export function WorkerDetailPage(): ReactNode {
                 <ul className="divide-y divide-line">
                   {others.map((doc) => (
                     <li key={doc.id} className="py-3">
-                      {renderDocumentRow(doc, { allowDelete: true })}
+                      {renderDocumentRow(doc, { allowDelete: true, onPreview: openPreview })}
                     </li>
                   ))}
                 </ul>
@@ -1025,6 +1130,74 @@ export function WorkerDetailPage(): ReactNode {
           setEditOpen(false)
         }}
       />
+
+      {previewDoc && (
+        <Modal
+          isOpen
+          onClose={() => {
+            setPreviewDocId(null)
+            setPreviewLoadFailed(false)
+          }}
+          title={documentTypeLabel(previewDoc.documentType)}
+          description={
+            previewDoc.isVerified
+              ? t`Verificado por ${previewDoc.verifiedBy?.fullName ?? '—'} · ${previewDoc.verifiedAt === null ? '—' : formatDate(previewDoc.verifiedAt)}`
+              : t`Pendiente de verificar`
+          }
+          className="max-w-2xl"
+        >
+          <div className="flex flex-col gap-3">
+            {documentError && (
+              <p role="alert" className="text-xs text-red">
+                {documentError}
+              </p>
+            )}
+
+            {previewDoc.url === null ? (
+              <p className="rounded-md border border-dashed border-line px-4 py-10 text-center text-sm text-ink-3">
+                <Trans>
+                  No se pudo generar la vista previa — el enlace firmado venció. Cierra y vuelve a
+                  abrir el expediente.
+                </Trans>
+              </p>
+            ) : previewDoc.filePath.toLowerCase().endsWith('.pdf') ? (
+              <iframe
+                src={previewDoc.url}
+                title={documentTypeLabel(previewDoc.documentType)}
+                className="h-[65vh] w-full rounded-md border border-line"
+              />
+            ) : previewLoadFailed ? (
+              <p className="rounded-md border border-dashed border-red/40 bg-red/5 px-4 py-10 text-center text-sm text-red">
+                <Trans>
+                  La imagen no cargó o está dañada — ábrela en pestaña nueva para revisarla.
+                </Trans>
+              </p>
+            ) : (
+              <img
+                src={previewDoc.url}
+                alt={documentTypeLabel(previewDoc.documentType)}
+                onError={() => {
+                  setPreviewLoadFailed(true)
+                }}
+                className="max-h-[65vh] w-full rounded-md border border-line bg-surface-2 object-contain"
+              />
+            )}
+
+            {previewDoc.url && (
+              <a
+                href={previewDoc.url}
+                target="_blank"
+                rel="noreferrer"
+                className="self-start text-xs text-o-700 hover:underline"
+              >
+                <Trans>Abrir el original en pestaña nueva ↗</Trans>
+              </a>
+            )}
+
+            {renderDocumentRow(previewDoc, { allowDelete: previewDoc.documentType === 'OTHER' })}
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

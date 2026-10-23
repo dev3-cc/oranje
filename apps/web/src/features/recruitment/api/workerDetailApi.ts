@@ -141,6 +141,32 @@ export const workerDetailApi = baseApi.injectEndpoints({
         { type: 'Worker' as const, id: workerId },
       ],
     }),
+
+    /**
+     * Reclutamiento acepta la retención del 16% en vez de pedir el SSN/ITIN
+     * (Hugo, 2026-10-23). Nunca levanta `hasTaxId`/`taxRetentionApplies`: la
+     * retención debe seguir aplicando, es justo lo que se está aceptando.
+     */
+    acceptTaxRetention: build.mutation<void, { workerId: string }>({
+      query: ({ workerId }) => ({
+        url: `/workers/${workerId}/documents/tax-retention-acceptance`,
+        method: 'POST',
+      }),
+      invalidatesTags: (_res, _err, { workerId }) => [
+        { type: 'Worker' as const, id: `${workerId}-documents` },
+      ],
+    }),
+
+    /** Vuelve a pedir el SSN/ITIN — no toca ningún documento que ya exista. */
+    revokeTaxRetentionAcceptance: build.mutation<void, { workerId: string }>({
+      query: ({ workerId }) => ({
+        url: `/workers/${workerId}/documents/tax-retention-acceptance`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (_res, _err, { workerId }) => [
+        { type: 'Worker' as const, id: `${workerId}-documents` },
+      ],
+    }),
   }),
 })
 
@@ -154,4 +180,6 @@ export const {
   useVerifyWorkerDocumentMutation,
   useRejectWorkerDocumentMutation,
   useDeleteWorkerDocumentMutation,
+  useAcceptTaxRetentionMutation,
+  useRevokeTaxRetentionAcceptanceMutation,
 } = workerDetailApi
