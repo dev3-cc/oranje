@@ -24,9 +24,13 @@ on:
 
 # Uno a la vez por ambiente: dos merges seguidos competirían por la misma
 # versión del sitio.
+#
+# En main, el nuevo cancela al anterior: un despliegue esperando la aprobación
+# de `production` bloqueaba a todos los de detrás (ver deploy.yml). El commit
+# nuevo ya trae todo lo del anterior.
 concurrency:
   group: desplegar-web-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.ref == 'refs/heads/main' }}
 
 permissions:
   contents: read
