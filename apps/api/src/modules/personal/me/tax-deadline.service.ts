@@ -23,8 +23,11 @@ export interface TaxDeadline {
   dueAt: string | null
   /// El documento subido, que es lo que corre el plazo.
   hasDocument: boolean
-  /// El documento revisado por la Reclutadora. NO es lo que levanta la
-  /// retencion: eso lo decide `has_tax_id`, que lee las columnas cifradas.
+  /// El documento revisado por la Reclutadora. Desde el 2026-10-23 esto SÍ
+  /// levanta la retención (ver `taxRetentionApplies`) — antes `has_tax_id`
+  /// solo leía las columnas cifradas, que nadie llena, y la retención se
+  /// quedaba aplicada para siempre aunque la Reclutadora ya hubiera
+  /// verificado el documento (D-27, reproducido en vivo, Adam Mahmud).
   isDocumentVerified: boolean
   /// Sin documento cargado (`hasDocument` false) por un rechazo reciente que
   /// todavia no se reemplaza — el aviso en el journal, no una columna nueva
@@ -36,8 +39,9 @@ export interface TaxDeadline {
   /// verificado, se haya suspendido el acceso o no.
   ///
   /// Una sola fuente, la misma que el expediente: `has_tax_id` de la vista.
-  /// Mientras el cifrado de campo siga sin conectarse esto es SIEMPRE true —
-  /// ver D-27.
+  /// Hugo, 2026-10-23: sin el cifrado de campo conectado (D-27, pendiente),
+  /// el criterio es el documento SSN/ITIN ya verificado — "depende de la
+  /// que verifica que ver que es", no del número real capturado.
   taxRetentionApplies: boolean
 }
 

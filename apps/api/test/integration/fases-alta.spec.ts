@@ -141,9 +141,13 @@ describe('el alta por fases', () => {
     await db.workerDocument.deleteMany({ where: { workerId: id } })
   })
 
-  // D-27: mientras el cifrado de campo no se conecte, la retención del 16%
-  // aplica a todos, tengan documento o no.
-  it('has_tax_id sigue en falso aunque el expediente tenga el documento', async () => {
+  // Hugo, 2026-10-23: con el cifrado de campo sin conectar (D-27), el
+  // criterio pasa a ser el documento YA VERIFICADO — "ya se cubrió ese
+  // input, depende de la que verifica que ver que es" — en vez de pedir el
+  // número real de SSN/ITIN. Antes de este cambio, has_tax_id se quedaba en
+  // falso para siempre, así que la retención del 16% se veía aplicada
+  // incluso con el documento revisado (reproducido en vivo, Adam Mahmud).
+  it('has_tax_id se levanta cuando el SSN/ITIN ya fue verificado', async () => {
     const id = await worker()
 
     await db.workerDocument.create({
@@ -154,6 +158,23 @@ describe('el alta por fases', () => {
         filePath: 'workers/document/x.pdf',
         verifiedBy: actorId,
         verifiedAt: new Date(),
+      },
+    })
+
+    expect((await view(id)).has_tax_id).toBe(true)
+
+    await db.workerDocument.deleteMany({ where: { workerId: id } })
+  })
+
+  it('has_tax_id sigue en falso mientras el documento no esté verificado', async () => {
+    const id = await worker()
+
+    await db.workerDocument.create({
+      data: {
+        id: uuidv7(),
+        workerId: id,
+        documentType: 'SSN_ITIN',
+        filePath: 'workers/document/sin-revisar.pdf',
       },
     })
 

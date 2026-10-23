@@ -24,8 +24,9 @@ export interface WorkerRow {
   isProfileComplete: boolean
   hasTaxId: boolean
   /// Hay un documento SSN/ITIN cargado (verificado o no) — distinto de
-  /// `hasTaxId`, que depende del cifrado sin conectar (D-27) y hoy es
-  /// siempre falso.
+  /// `hasTaxId`, que desde el 2026-10-23 pide que además esté VERIFICADO
+  /// (D-27: el cifrado de campo sigue sin conectar, así que el criterio es
+  /// el documento, no el número real).
   hasTaxDocument: boolean
   /// Cargado y TODAVÍA sin revisar: lo que el Pool necesita para no tener
   /// que abrir cada expediente a ver quién ya mandó a verificar.

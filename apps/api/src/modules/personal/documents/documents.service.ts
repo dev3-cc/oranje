@@ -56,11 +56,15 @@ export class DocumentsService {
     }
   }
 
-  // Igual que `createOwn`: un documento sin verificar se reemplaza solo (la
-  // Reclutadora resube el mismo tipo porque se equivocó de archivo), uno
-  // verificado no — ahí sí hace falta DOCUMENT_VERIFIED, deja rastro de quién
-  // lo revisó. OTHER no tiene "el" documento: siempre se agrega (Hugo,
-  // 2026-10-23, un expediente puede traer varios "otro").
+  // La Reclutadora siempre puede reemplazar el documento de un tipo fijo,
+  // esté o no verificado (Hugo, 2026-10-23: "si ya está verificado debería
+  // aún así poder reemplazarlos") — el nuevo archivo entra sin verificar y
+  // hay que volver a revisarlo; el reemplazo queda en el journal con el id
+  // del documento que sustituyó, así que no se pierde el rastro aunque la
+  // fila vieja se borre. Distinto de `createOwn`: el colaborador por su
+  // cuenta SÍ sigue sin poder tocar uno ya verificado — ese caso pide el
+  // cambio a Oranje. OTHER no tiene "el" documento: siempre se agrega
+  // (un expediente puede traer varios "otro").
   async create(
     workerId: string,
     dto: CreateDocumentDto,
@@ -72,13 +76,6 @@ export class DocumentsService {
       dto.documentType === 'OTHER'
         ? null
         : await this.repo.unverifiedOfType(workerId, dto.documentType)
-
-    if (current?.verifiedAt != null) {
-      throw new ConflictException({
-        code: 'DOCUMENT_VERIFIED',
-        message: 'Ese documento ya está verificado: no se puede reemplazar',
-      })
-    }
 
     return this.toEntity(
       await this.repo.create({

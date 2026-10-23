@@ -255,8 +255,12 @@ describe('Reclutamiento revisa el SSN/ITIN', () => {
     expect(restantes[0]?.id).toBe(segundo.id)
   })
 
-  it('subir el mismo tipo ya verificado no reemplaza: DOCUMENT_VERIFIED', async () => {
-    const { workerId } = await workerConCuenta('doc-no-reemplaza-verificado')
+  // Hugo, 2026-10-23: "si ya está verificado debería aún así poder
+  // reemplazarlos" — a diferencia de borrar/rechazar, reemplazar SÍ puede
+  // aunque ya esté verificado; el archivo nuevo entra sin verificar, pide
+  // revisión otra vez.
+  it('subir el mismo tipo ya verificado SÍ reemplaza, y queda sin verificar', async () => {
+    const { workerId } = await workerConCuenta('doc-reemplaza-verificado')
     const doc = await documents.create(
       workerId,
       { documentType: 'PROOF_OF_ADDRESS', filePath: 'workers/document/dom-v1.pdf' },
@@ -264,15 +268,21 @@ describe('Reclutamiento revisa el SSN/ITIN', () => {
     )
     await documents.verify(workerId, doc.id, reviewer)
 
-    await expect(
-      documents.create(
-        workerId,
-        { documentType: 'PROOF_OF_ADDRESS', filePath: 'workers/document/dom-v2.pdf' },
-        reviewer,
-      ),
-    ).rejects.toMatchObject({ response: { code: 'DOCUMENT_VERIFIED' } })
+    const reemplazo = await documents.create(
+      workerId,
+      { documentType: 'PROOF_OF_ADDRESS', filePath: 'workers/document/dom-v2.pdf' },
+      reviewer,
+    )
 
-    expect(await db.workerDocument.findUnique({ where: { id: doc.id } })).not.toBeNull()
+    expect(reemplazo.id).not.toBe(doc.id)
+    expect(reemplazo.isVerified).toBe(false)
+    expect(await db.workerDocument.findUnique({ where: { id: doc.id } })).toBeNull()
+
+    const restantes = await db.workerDocument.findMany({
+      where: { workerId, documentType: 'PROOF_OF_ADDRESS' },
+    })
+    expect(restantes).toHaveLength(1)
+    expect(restantes[0]?.id).toBe(reemplazo.id)
   })
 
   it('OTHER siempre agrega: un expediente puede traer varios "otro"', async () => {
