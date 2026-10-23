@@ -320,6 +320,7 @@ model User {
   worker             Worker?              @relation("workerAccount")
   workerLegacyOf     Worker?              @relation("workerLegacyAccount")
   workersCreated     Worker[]             @relation("workerCreatedBy")
+  taxRetentionAccepted Worker[]           @relation("workerTaxRetentionAcceptedBy")
   documentsVerified  WorkerDocument[]
   workerStateChanges WorkerStateHistory[]
   assignmentsMade    Assignment[]
@@ -1149,6 +1150,14 @@ model Worker {
   /// aquí: Prisma no sabe representar columnas GENERATED y su diff intenta un
   /// SET/DROP DEFAULT que Postgres rechaza, rompiendo toda migración futura.
 
+  /// Reclutamiento acepta la retención del 16% en vez de pedir el SSN/ITIN
+  /// (Hugo, 2026-10-23): levanta has_tax_document e is_profile_complete en la
+  /// vista, igual que el documento — pero NUNCA has_tax_id, porque la
+  /// retención sigue aplicando a propósito. Columna real (no vive en la
+  /// vista) porque es un hecho que alguien decide, no algo que se calcule.
+  taxRetentionAcceptedAt DateTime? @map("tax_retention_accepted_at") @db.Timestamptz(6)
+  taxRetentionAcceptedBy String?   @map("tax_retention_accepted_by") @db.Uuid
+
   // --- el semaforo: 12 estados ---
   statusLightStateId String @map("status_light_state_id") @db.Uuid
   /// Sostiene la FK compuesta. Sin ella, CAFE del Onboarding sería un estado
@@ -1165,6 +1174,7 @@ model Worker {
   account         User?            @relation("workerAccount", fields: [userId], references: [id], onDelete: Restrict)
   legacyAccount   User?            @relation("workerLegacyAccount", fields: [legacyUserId], references: [id], onDelete: Restrict)
   createdByUser   User             @relation("workerCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  taxRetentionAcceptedByUser User? @relation("workerTaxRetentionAcceptedBy", fields: [taxRetentionAcceptedBy], references: [id], onDelete: Restrict)
   zone            Zone             @relation(fields: [zoneId], references: [id], onDelete: Restrict)
   catalogPosition CatalogPosition? @relation(fields: [catalogPositionId], references: [id], onDelete: Restrict)
   englishLevel    EnglishLevel?    @relation(fields: [englishLevelId], references: [id], onDelete: Restrict)

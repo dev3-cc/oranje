@@ -1161,6 +1161,10 @@ msgstr "Accidents still open, across all hotels."
 msgid "Acciones"
 msgstr "Actions"
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Aceptando…"
+msgstr "Accepting…"
+
 #: src/features/onboarding/components/HotelLocationMap.tsx
 msgid "Acercar"
 msgstr "Zoom in"
@@ -9495,6 +9499,10 @@ msgstr "The camera couldn't be opened. Close other apps using it and try again."
 msgid "No se pudo abrir la versión. Inténtalo de nuevo."
 msgstr "Couldn't open the version. Try again."
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "No se pudo aceptar la retención. Inténtalo de nuevo."
+msgstr "Couldn't accept the retention. Try again."
+
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "No se pudo actualizar. Inténtalo de nuevo."
 msgstr "It couldn't be updated. Try again."
@@ -9879,6 +9887,10 @@ msgid "No se pudo quitar la corrección."
 msgstr "Couldn't remove the correction."
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "No se pudo quitar la retención. Inténtalo de nuevo."
+msgstr "Couldn't remove the retention. Try again."
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "No se pudo rechazar el documento. Inténtalo de nuevo."
 msgstr "The document couldn't be rejected. Try again."
 
@@ -10239,6 +10251,10 @@ msgstr "Number"
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 msgid "o"
 msgstr "or"
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "o acepta la retención del 16% y no lo pidas"
+msgstr "or accept the 16% retention and don't ask for it"
 
 #: src/shared/constants/workerEnums.ts
 msgid "O+"
@@ -11409,6 +11425,7 @@ msgid "Quita el filtro para reordenar"
 msgstr "Clear the filter to reorder"
 
 #: src/features/accounting/components/PayOverrideDialog.tsx
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Quitando…"
 msgstr "Removing…"
 
@@ -11453,6 +11470,10 @@ msgstr "Remove position {ordinal}"
 #: src/features/timesheet/pages/TimesheetPage.tsx
 msgid "Quitar selección"
 msgstr "Clear selection"
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Quitar, volver a pedirlo"
+msgstr "Remove, ask for it again"
 
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "Radio de geocerca"
@@ -11909,6 +11930,14 @@ msgstr "Results"
 msgid "Retención del 16%"
 msgstr "16% withholding"
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Retención del 16% aceptada"
+msgstr "16% retention accepted"
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Retención del 16% aceptada: ya no se pide el SSN/ITIN"
+msgstr "16% retention accepted: the SSN/ITIN is no longer requested"
+
 #: src/features/observability/components/CohortsView.tsx
 msgid "Retención por cohorte"
 msgstr "Retention by cohort"
@@ -12204,6 +12233,10 @@ msgstr "They marked themselves available on their own — it doesn't change the 
 #: src/features/accounting/components/PayConsolidationButton.tsx
 msgid "Se registran <0>{0}</0> como pagados a {workerName}. No se puede deshacer ni editar desde aquí: si algo cambia después, el ajuste va en otra semana."
 msgstr "<0>{0}</0> is recorded as paid to {workerName}. This can't be undone or edited from here: if something changes later, the adjustment goes in another week."
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Se vuelve a pedir el SSN/ITIN"
+msgstr "The SSN/ITIN is requested again"
 
 #: src/features/worker/components/MobileShell.tsx
 msgid "Secciones"

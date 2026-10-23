@@ -206,4 +206,76 @@ export class DocumentsRepository {
 
     return rows[0]?.has ?? false
   }
+
+  async taxRetentionAcceptance(workerId: string): Promise<{
+    acceptedAt: Date | null
+    acceptedBy: { id: string; fullName: string } | null
+  }> {
+    const row = await this.prisma.worker.findUnique({
+      where: { id: workerId },
+      select: {
+        taxRetentionAcceptedAt: true,
+        taxRetentionAcceptedByUser: { select: { id: true, fullName: true } },
+      },
+    })
+
+    return {
+      acceptedAt: row?.taxRetentionAcceptedAt ?? null,
+      acceptedBy: row?.taxRetentionAcceptedByUser ?? null,
+    }
+  }
+
+  // Levanta has_tax_document/is_profile_complete en la vista (nunca
+  // has_tax_id: la retención sigue aplicando a propósito, D-33 § retención).
+  async acceptTaxRetention(params: {
+    workerId: string
+    userId: string
+    roleCode: string
+  }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.worker.update({
+        where: { id: params.workerId },
+        data: { taxRetentionAcceptedAt: new Date(), taxRetentionAcceptedBy: params.userId },
+      })
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'personal.worker',
+          entityId: params.workerId,
+          eventType: 'TAX_RETENTION_ACCEPTED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: {},
+        },
+      })
+    })
+  }
+
+  // Vuelve a pedir el SSN/ITIN: siempre segura, aunque ya exista un
+  // documento (verificado o no) — ese no se toca, solo la aceptación.
+  async revokeTaxRetentionAcceptance(params: {
+    workerId: string
+    userId: string
+    roleCode: string
+  }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.worker.update({
+        where: { id: params.workerId },
+        data: { taxRetentionAcceptedAt: null, taxRetentionAcceptedBy: null },
+      })
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'personal.worker',
+          entityId: params.workerId,
+          eventType: 'TAX_RETENTION_ACCEPTANCE_REVOKED',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: {},
+        },
+      })
+    })
+  }
 }

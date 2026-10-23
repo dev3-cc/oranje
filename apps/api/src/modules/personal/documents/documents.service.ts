@@ -33,7 +33,14 @@ export interface DocumentEntity {
 
 export interface DocumentList {
   data: DocumentEntity[]
-  meta: { hasTaxId: boolean; taxRetentionApplies: boolean }
+  meta: {
+    hasTaxId: boolean
+    taxRetentionApplies: boolean
+    /** Reclutamiento aceptó la retención en vez de pedir el SSN/ITIN. */
+    taxRetentionAccepted: boolean
+    taxRetentionAcceptedBy: { id: string; fullName: string } | null
+    taxRetentionAcceptedAt: string | null
+  }
 }
 
 @Injectable()
@@ -49,11 +56,48 @@ export class DocumentsService {
     await this.worker(workerId)
 
     const hasTaxId = await this.repo.hasTaxId(workerId)
+    const retention = await this.repo.taxRetentionAcceptance(workerId)
 
     return {
       data: await Promise.all((await this.repo.listAll(workerId)).map((row) => this.toEntity(row))),
-      meta: { hasTaxId, taxRetentionApplies: !hasTaxId },
+      meta: {
+        hasTaxId,
+        taxRetentionApplies: !hasTaxId,
+        taxRetentionAccepted: retention.acceptedAt !== null,
+        taxRetentionAcceptedBy: retention.acceptedBy,
+        taxRetentionAcceptedAt: retention.acceptedAt?.toISOString() ?? null,
+      },
     }
+  }
+
+  /**
+   * Reclutamiento acepta la retención del 16% en vez de pedir el SSN/ITIN
+   * (Hugo, 2026-10-23). Invalida el plazo de acceso de inmediato: sin esto,
+   * un colaborador que ya tenía el expediente vencido por falta del SSN/ITIN
+   * seguiría bloqueado hasta que la caché de 60s expirara sola, aunque ya no
+   * se le esté pidiendo nada.
+   */
+  async acceptTaxRetention(workerId: string, user: AuthenticatedUser): Promise<void> {
+    await this.worker(workerId)
+
+    await this.repo.acceptTaxRetention({ workerId, userId: user.id, roleCode: user.roleCode })
+
+    const ownerId = await this.repo.workerUserId(workerId)
+    if (ownerId) this.accessDeadline.invalidate(ownerId)
+  }
+
+  /** Vuelve a pedir el SSN/ITIN — no toca ningún documento que ya exista. */
+  async revokeTaxRetentionAcceptance(workerId: string, user: AuthenticatedUser): Promise<void> {
+    await this.worker(workerId)
+
+    await this.repo.revokeTaxRetentionAcceptance({
+      workerId,
+      userId: user.id,
+      roleCode: user.roleCode,
+    })
+
+    const ownerId = await this.repo.workerUserId(workerId)
+    if (ownerId) this.accessDeadline.invalidate(ownerId)
   }
 
   // La Reclutadora siempre puede reemplazar el documento de un tipo fijo,
