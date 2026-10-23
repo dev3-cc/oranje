@@ -31,6 +31,11 @@ msgstr "; additional Supervisors, Area Managers and General Managers are created
 msgid "¡Listo!"
 msgstr "Done!"
 
+#. placeholder {0}: String(latestVersion)
+#: src/features/contracts/components/ProposalSyncNotice.tsx
+msgid "¿Actualizar las tarifas con la v{0}?"
+msgstr "Update the rates to v{0}?"
+
 #. placeholder {0}: eligible.length
 #: src/features/timesheet/components/BulkApproveButton.tsx
 msgid "¿Aprobar {0} semanas de un golpe?"
@@ -1227,6 +1232,7 @@ msgstr "Active"
 msgid "Actualizado hace un momento"
 msgstr "Updated just now"
 
+#: src/features/contracts/components/ProposalSyncNotice.tsx
 #: src/features/timesheet/components/CorrectPunchDialog.tsx
 #: src/features/timesheet/components/ManualPunchDialog.tsx
 #: src/shared/components/RefreshControl.tsx
@@ -1240,6 +1246,10 @@ msgstr "Refresh"
 #: src/shared/components/RefreshControl.tsx
 msgid "Actualizar {label}"
 msgstr "Refresh {label}"
+
+#: src/features/contracts/components/ProposalSyncNotice.tsx
+msgid "Actualizar con la v{latestVersion}"
+msgstr "Update to v{latestVersion}"
 
 #: src/shared/constants/roles.ts
 msgid "Administrador"
@@ -1435,6 +1445,11 @@ msgstr "When you authorize, urgency is calculated against the start date: {start
 msgid "Al convertirlo"
 msgstr "When you convert it"
 
+#. placeholder {0}: atCost.map((rate) => rate.positionName).join(', ')
+#: src/features/contracts/components/ContractChecklist.tsx
+msgid "Al costo, sin margen para Oranje: {0}. Es válido; si no era la intención, corrígelo con «Editar tarifas»."
+msgstr "At cost, no margin for Oranje: {0}. That's allowed; if it wasn't intended, fix it with “Edit rates”."
+
 #: src/features/admin/components/HotelUserFormDialog.tsx
 msgid "Al crear la cuenta, la persona recibe un correo de invitación y establece su contraseña."
 msgstr "When the account is created, the person gets an invitation email and sets their own password."
@@ -1560,6 +1575,10 @@ msgstr "Unresolved anomaly"
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Antes de activar:"
 msgstr "Before activating:"
+
+#: src/features/contracts/components/ProposalSyncNotice.tsx
+msgid "Antes de actualizar:"
+msgstr "Before updating:"
 
 #: src/features/accounting/pages/ConsolidationDetailPage.tsx
 msgid "antes de deducciones"
@@ -2402,10 +2421,6 @@ msgstr "Each person carries their Status Light. Search by name and tap to see th
 msgid "Cada posición con fecha y hora"
 msgstr "Each position with a date and time"
 
-#: src/features/contracts/components/ContractChecklist.tsx
-msgid "Cada posición deja margen"
-msgstr "Every position leaves a margin"
-
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Cada puesto con sus lugares. Donde dice «Sin asignar» puedes tocar para llenarlo, y si ya está ocupado te lleva al perfil de quien lo cubre."
 msgstr "Each position with its slots. Where it says “Unassigned” you can tap to fill it, and if it's taken it takes you to the profile of whoever covers it."
@@ -2569,6 +2584,7 @@ msgstr "Cancelling…"
 #: src/features/contracts/components/EditRateDialog.tsx
 #: src/features/contracts/components/MultiplierTable.tsx
 #: src/features/contracts/components/NewContractDialog.tsx
+#: src/features/contracts/components/ProposalSyncNotice.tsx
 #: src/features/contracts/components/UnlockContractDialog.tsx
 #: src/features/contracts/pages/ContractDetailPage.tsx
 #: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
@@ -3527,6 +3543,10 @@ msgstr "Correct pay for {0}"
 #: src/features/contracts/components/EditRateDialog.tsx
 msgid "Corregir tarifa"
 msgstr "Correct rate"
+
+#: src/features/contracts/components/RateTable.tsx
+msgid "Corregir una tarifa"
+msgstr "Fix a rate"
 
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/components/UserFormDialog.tsx
@@ -4573,14 +4593,14 @@ msgstr "the BDC"
 msgid "El bill rate debe ser mayor que cero"
 msgstr "The bill rate must be greater than zero"
 
-#. placeholder {0}: badMargin.map((rate) => rate.positionName).join(', ')
-#: src/features/contracts/components/ContractChecklist.tsx
-msgid "El bill rate debe ser mayor que el pay rate: revisa {0}."
-msgstr "The bill rate has to be higher than the pay rate: check {0}."
-
 #: src/features/contracts/components/ContractChecklist.tsx
 msgid "El bill rate es mayor que el pay rate en todas las posiciones: la diferencia es el margen de Oranje."
 msgstr "The bill rate is higher than the pay rate in every position: the difference is Oranje's margin."
+
+#. placeholder {0}: badMargin.map((rate) => rate.positionName).join(', ')
+#: src/features/contracts/components/ContractChecklist.tsx
+msgid "El bill rate no puede quedar por debajo del pay rate: corrige {0} con «Editar tarifas»."
+msgstr "The bill rate can't be below the pay rate: fix {0} with “Edit rates”."
 
 #: src/features/onboarding/types/proposalDraft.schema.ts
 msgid "El bill rate no puede quedar por debajo del pay rate: se pierde en cada hora."
@@ -4693,6 +4713,15 @@ msgstr "The contract has no billing rate for this position: what would be billed
 #: src/features/timesheet/components/PayPreviewBadge.tsx
 msgid "El contrato se editó DESPUÉS de que esta semana ya se aprobó: lo que ves aquí es el cálculo nuevo, no el que se aprobó."
 msgstr "The contract was edited AFTER this week was already approved: what you see here is the new calculation, not what was approved."
+
+#: src/features/contracts/components/ProposalSyncNotice.tsx
+msgid "El contrato ya tenía las tarifas de la última propuesta."
+msgstr "The contract already had the latest proposal's rates."
+
+#. placeholder {0}: String(latestVersion)
+#: src/features/contracts/components/ProposalSyncNotice.tsx
+msgid "El contrato ya tiene las tarifas de la v{0}"
+msgstr "The contract now has the v{0} rates"
 
 #: src/features/onboarding/types/proposalDraft.schema.ts
 msgid "El correo de quien envía es obligatorio"
@@ -6011,6 +6040,10 @@ msgstr "This app is for collaborators and hotels"
 msgid "Esta asignación paga esto en vez de la tarifa del contrato, desde ahora."
 msgstr "From now on, this assignment pays this instead of the contract's rate."
 
+#: src/features/contracts/components/ProposalSyncNotice.tsx
+msgid "Está bloqueado: desbloquéalo primero."
+msgstr "It's locked: unlock it first."
+
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
 msgid "Está en Gris por un accidente laboral: no se puede vetar hasta que su caso se resuelva."
 msgstr "They're in Gray because of a work accident: they can't be banned until their case is resolved."
@@ -6238,9 +6271,17 @@ msgstr "This contact shows up in the attempt log, so it can't be deleted. Deacti
 msgid "Este contrato no existe o fue borrado. Vuelve a la lista y elige otro."
 msgstr "This contract does not exist or was deleted. Go back to the list and pick another one."
 
+#: src/features/contracts/components/RateTable.tsx
+msgid "Este contrato no trae ninguna posición cotizada."
+msgstr "This contract has no quoted positions."
+
 #: src/features/contracts/components/ContractChecklist.tsx
 msgid "Este contrato se canceló en borrador: nunca rigió y no admite cambios."
 msgstr "This contract was cancelled while still a draft: it never applied and admits no changes."
+
+#: src/features/contracts/components/ProposalSyncNotice.tsx
+msgid "Este contrato tiene las tarifas de la propuesta v{currentVersion}, pero la última enviada es la v{latestVersion}."
+msgstr "This contract has the rates from proposal v{currentVersion}, but the latest one sent is v{latestVersion}."
 
 #: src/features/contracts/components/EditRateDialog.tsx
 msgid "Este contrato ya está cerrado: las tarifas quedaron congeladas."
@@ -7772,6 +7813,10 @@ msgstr "the position"
 msgid "La posición y la requisición del turno se enseñan en la fila de Demanda: el contrato aún no liga el turno con una posición."
 msgstr "The shift's position and requisition are shown in the Demand row: the contract doesn't link the shift to a position yet."
 
+#: src/features/contracts/components/ProposalSyncNotice.tsx
+msgid "La propuesta cambió después de este contrato"
+msgstr "The proposal changed after this contract"
+
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "La propuesta quedó enviada — el correo no salió, mándalo aparte."
 msgstr "The proposal was sent — the email didn't go out, send it separately."
@@ -7957,6 +8002,11 @@ msgstr "Sent weeks are approved by the Area Manager of their department or by th
 #: src/features/contracts/components/ActivateContractDialog.tsx
 msgid "Las semanas ya aprobadas <0>no se recalculan</0>: cada consolidado guarda lo que regía ese día."
 msgstr "Weeks already approved <0>are not recalculated</0>: each consolidation keeps whatever applied that day."
+
+#. placeholder {0}: String(latestVersion)
+#: src/features/contracts/components/ProposalSyncNotice.tsx
+msgid "Las tarifas del contrato se reemplazan por las de la v{0}. Los datos del documento, la vigencia y los multiplicadores no cambian."
+msgstr "The contract's rates are replaced with the v{0} rates. Document details, term and multipliers stay the same."
 
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Las tarifas solo se editan en borrador"
@@ -9187,6 +9237,10 @@ msgstr "No pending requisition matches your search: change the number or the hot
 msgid "Ninguna posición de {0} coincide con «{1}»."
 msgstr "No {0} position matches “{1}”."
 
+#: src/features/contracts/components/ContractChecklist.tsx
+msgid "Ninguna posición se factura por debajo de lo que se paga"
+msgstr "No position is billed below what is paid"
+
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
 msgid "Ninguna requisición coincide con {activeFiltersText}"
 msgstr "No requisition matches {activeFiltersText}"
@@ -9506,6 +9560,10 @@ msgstr "Couldn't accept the retention. Try again."
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "No se pudo actualizar. Inténtalo de nuevo."
 msgstr "It couldn't be updated. Try again."
+
+#: src/features/contracts/components/ProposalSyncNotice.tsx
+msgid "No se pudo actualizar. Reintenta en unos segundos."
+msgstr "Couldn't update. Try again in a few seconds."
 
 #: src/features/schedule/components/AddShiftDialog.tsx
 msgid "No se pudo agregar el turno. Inténtalo de nuevo."
@@ -12449,6 +12507,10 @@ msgstr "If your session expires, you pick up on the same screen when you sign ba
 msgid "Sí, activar contrato"
 msgstr "Yes, activate contract"
 
+#: src/features/contracts/components/ProposalSyncNotice.tsx
+msgid "Sí, actualizar"
+msgstr "Yes, update"
+
 #: src/features/timesheet/components/BulkApproveButton.tsx
 msgid "Sí, aprobarlas"
 msgstr "Yes, approve them"
@@ -12990,8 +13052,8 @@ msgid "Sin tarifas no se puede enviar el contrato."
 msgstr "A contract with no rates can't be sent."
 
 #: src/features/contracts/components/ContractChecklist.tsx
-msgid "Sin tarifas no se puede enviar ni activar: agrega la primera con «Editar tarifas»."
-msgstr "Without rates it can't be sent or activated: add the first one with “Edit rates”."
+msgid "Sin tarifas no se puede enviar ni activar: este contrato no trae ninguna posición cotizada."
+msgstr "Without rates it can't be sent or activated: this contract has no quoted positions."
 
 #: src/features/team/pages/TeamPage.tsx
 msgid "sin territorio asignado todavía"
@@ -13824,10 +13886,6 @@ msgstr "There aren't any timesheets yet."
 #: src/features/onboarding/components/ProposalVersionHistory.tsx
 msgid "Todavía no hay versiones de la propuesta."
 msgstr "No proposal versions yet."
-
-#: src/features/contracts/components/RateTable.tsx
-msgid "Todavía no se cotiza ninguna posición. Agrégala con «Editar tarifas» mientras el contrato sea borrador."
-msgstr "No position is quoted yet. Add one with «Edit rates» while the contract is still a draft."
 
 #: src/features/onboarding/components/ViewProposalDialog.tsx
 msgid "Todavía no se puede crear: el hotel está en {statusLabel}. La propuesta se abre cuando llega a Verde (o regresa en Café)."
@@ -15085,6 +15143,10 @@ msgstr "It's already approved: a rejection doesn't undo an approval."
 #: src/features/accounting/components/GeneratePaymentRunButton.tsx
 msgid "Ya se cerraron {0} hojas esta semana, por {1} neto."
 msgstr "{0} sheets already closed this week, for {1} net."
+
+#: src/features/contracts/components/ProposalSyncNotice.tsx
+msgid "Ya se le envió al hotel y está bloqueado: desbloquéalo primero."
+msgstr "It was already sent to the hotel and is locked: unlock it first."
 
 #: src/features/conversion/pages/ConversionQueuePage.tsx
 msgid "Ya son clientes: su ficha completa vive en Clientes Activos"

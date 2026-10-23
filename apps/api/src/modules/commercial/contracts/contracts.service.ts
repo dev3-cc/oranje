@@ -47,6 +47,9 @@ export interface ContractEntity {
       detalle (Hugo, 2026-10-21): "no puede haber contrato sin propuesta".
       `null` en contratos heredados/migrados, que sí pueden no tenerla. */
   proposal: { id: string; prospectId: string; version: number } | null
+  /** La última versión enviada de su ciclo. Si es más nueva que `proposal`,
+      el contrato quedó atrás y se puede actualizar (2026-10-23). */
+  latestProposal: { id: string; version: number } | null
   /** Campos del machote del Service Agreement (Hugo, 2026-10-20). */
   propertyName: string | null
   propertyAddress: string | null
@@ -134,6 +137,42 @@ export class ContractsService {
     await this.assertHasRates(id, 'enviar')
 
     await this.repo.markSent({ id, userId: user.id, roleCode: user.roleCode })
+
+    return this.get(id)
+  }
+
+  /**
+   * El borrador toma las tarifas de la última propuesta enviada (Hugo,
+   * 2026-10-23). Al enviar una versión nueva esto pasa solo si el contrato
+   * todavía no se le envió al hotel; si ya se envió, o la versión salió antes,
+   * se pide desde el contrato — y un borrador enviado está bloqueado, así que
+   * primero se desbloquea, como cualquier otra corrección.
+   */
+  async syncFromProposal(id: string, user: AuthenticatedUser): Promise<ContractEntity> {
+    const row = await this.contract(id)
+
+    if (row.status !== DRAFT) {
+      throw new ConflictException({
+        code: 'CONTRACT_NOT_DRAFT',
+        message: `Solo un borrador toma las tarifas de la propuesta, y este está ${contractStatusLabel(row.status)}`,
+      })
+    }
+
+    this.assertUnlocked(row)
+
+    if (!row.latestProposalId || row.latestProposalId === row.proposalId) {
+      throw new ConflictException({
+        code: 'CONTRACT_PROPOSAL_CURRENT',
+        message: 'El contrato ya tiene las tarifas de la última propuesta enviada',
+      })
+    }
+
+    await this.repo.syncFromProposal({
+      id,
+      proposalId: row.latestProposalId,
+      userId: user.id,
+      roleCode: user.roleCode,
+    })
 
     return this.get(id)
   }
@@ -636,6 +675,10 @@ function toEntity(row: ContractRow): ContractEntity {
     proposal:
       row.proposalId && row.proposalProspectId && row.proposalVersion !== null
         ? { id: row.proposalId, prospectId: row.proposalProspectId, version: row.proposalVersion }
+        : null,
+    latestProposal:
+      row.latestProposalId && row.latestProposalVersion !== null
+        ? { id: row.latestProposalId, version: row.latestProposalVersion }
         : null,
     propertyName: row.propertyName,
     propertyAddress: row.propertyAddress,

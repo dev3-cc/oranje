@@ -4,6 +4,8 @@ import { v7 as uuidv7 } from 'uuid'
 
 import { PrismaService } from '../../../infra/prisma/index.js'
 
+import { syncContractRatesFromProposal } from './contract-proposal-sync.js'
+
 export interface RateRow {
   id: string
   payRate: string
@@ -44,6 +46,10 @@ export interface ContractRow {
   proposalId: string | null
   proposalProspectId: string | null
   proposalVersion: number | null
+  /** La última versión ENVIADA de su ciclo (2026-10-23): si es más nueva que
+      `proposalVersion`, el contrato quedó atrás de la propuesta. */
+  latestProposalId: string | null
+  latestProposalVersion: number | null
   propertyName: string | null
   propertyAddress: string | null
   companyEmail: string | null
@@ -76,6 +82,8 @@ const BASE = `
          c.proposal_id AS "proposalId",
          pr.prospect_id AS "proposalProspectId",
          pr.version AS "proposalVersion",
+         lp.id AS "latestProposalId",
+         lp.version AS "latestProposalVersion",
          c.property_name AS "propertyName",
          c.property_address AS "propertyAddress",
          c.company_email AS "companyEmail",
@@ -86,6 +94,13 @@ const BASE = `
     FROM commercial.contract c
     JOIN commercial.hotel h ON h.id = c.hotel_id
     LEFT JOIN commercial.proposal pr ON pr.id = c.proposal_id
+    LEFT JOIN LATERAL (
+      SELECT p.id, p.version
+        FROM commercial.proposal p
+       WHERE p.prospect_id = c.prospect_id AND p.sent_at IS NOT NULL
+       ORDER BY p.version DESC
+       LIMIT 1
+    ) lp ON true
     LEFT JOIN identity."user" sg ON sg.id = c.signed_by
     LEFT JOIN identity."user" se ON se.id = c.sent_by`
 
@@ -419,6 +434,23 @@ export class ContractsRepository {
           actorRole: params.roleCode,
           payload: {},
         },
+      })
+    })
+  }
+
+  /** Las tarifas de una versión de la propuesta pasan al contrato (ver `syncContractRatesFromProposal`). */
+  async syncFromProposal(params: {
+    id: string
+    proposalId: string
+    userId: string
+    roleCode: string
+  }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await syncContractRatesFromProposal(tx, {
+        contractId: params.id,
+        proposalId: params.proposalId,
+        userId: params.userId,
+        roleCode: params.roleCode,
       })
     })
   }

@@ -90,8 +90,11 @@ export function toContractDetail(contract: ContractApi): ContractDetail {
        creación y un borrador decía «firmado el …» (Hugo, 2026-10-23). */
     signedByName: contract.signedByName,
     signedAt: contract.signedAt,
-    sentAt: contract.sentAt,
-    sentByName: contract.sentByName,
+    /* `?? null` a propósito: la web se despliega antes que el API, y un API
+       que todavía no manda el campo dejaba `undefined`, que `!== null` leía
+       como «enviado» y bloqueaba todos los borradores (2026-10-23). */
+    sentAt: contract.sentAt ?? null,
+    sentByName: contract.sentByName ?? null,
     createdAt: contract.createdAt,
     validFrom: contract.validFrom,
     validTo: contract.validTo,
@@ -118,6 +121,7 @@ export function toContractDetail(contract: ContractApi): ContractDetail {
     })),
     updatedAt: contract.updatedAt,
     proposal: contract.proposal,
+    latestProposal: contract.latestProposal ?? null,
     propertyName: contract.propertyName,
     propertyAddress: contract.propertyAddress,
     companyEmail: contract.companyEmail,
@@ -387,6 +391,19 @@ export const contractsApi = baseApi.injectEndpoints({
      * «Marcar como enviado» (Hugo, 2026-10-23): mismo patrón que la Propuesta.
      * Congela el borrador; desde aquí solo se edita si el BDC lo desbloquea.
      */
+    /** El borrador toma las tarifas de la última propuesta enviada (2026-10-23). */
+    syncContractProposal: build.mutation<ContractDetail, { contractId: string }>({
+      query: ({ contractId }) => ({
+        url: `/contracts/${contractId}/sync-proposal`,
+        method: 'POST',
+      }),
+      transformResponse: (raw: ApiEnvelope<ContractApi>) => toContractDetail(raw.data),
+      invalidatesTags: (_result, _error, { contractId }) => [
+        { type: 'Contract' as const, id: contractId },
+        { type: 'Contract' as const, id: 'LIST' },
+      ],
+    }),
+
     markContractSent: build.mutation<ContractDetail, { contractId: string }>({
       query: ({ contractId }) => ({
         url: `/contracts/${contractId}/mark-sent`,
@@ -489,5 +506,6 @@ export const {
   useUnlockContractMutation,
   useLockContractMutation,
   useMarkContractSentMutation,
+  useSyncContractProposalMutation,
   useSendContractEmailMutation,
 } = contractsApi

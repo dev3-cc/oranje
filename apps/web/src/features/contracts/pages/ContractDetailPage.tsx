@@ -18,6 +18,7 @@ import { ContractPdfButton } from '../components/ContractPdfButton'
 import { EditRateDialog } from '../components/EditRateDialog'
 import { MultiplierTable } from '../components/MultiplierTable'
 import { NewContractDialog } from '../components/NewContractDialog'
+import { ProposalSyncNotice } from '../components/ProposalSyncNotice'
 import { RateTable } from '../components/RateTable'
 import { UnlockContractDialog } from '../components/UnlockContractDialog'
 import { ANY_VALUE } from '../types/contract.types'
@@ -287,7 +288,7 @@ export function ContractDetailPage({
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="@container flex flex-col gap-6">
       {!embedded && (
         <nav aria-label={t`Ruta`} className="flex items-center gap-2 text-sm text-ink-3">
           <Link to="/contracts" className="hover:text-o-700">
@@ -376,7 +377,7 @@ export function ContractDetailPage({
           </p>
         </div>
 
-        <div className="flex shrink-0 flex-wrap gap-3">
+        <div className="flex min-w-0 flex-wrap gap-3">
           <ContractPdfButton
             contract={contract}
             canSend={canEditRates}
@@ -514,6 +515,8 @@ export function ContractDetailPage({
         isSendBlockShown && <BlockedReasons reasons={sendBlockers} title={t`Antes de enviar:`} />
       )}
 
+      <ProposalSyncNotice contract={contract} canEdit={canEditRates} isLocked={isLocked} />
+
       {/* Sin approve, la acción que da sentido al borrador se explica: quién sigue. */}
       {contract.status === 'DRAFT' && !canApprove && (
         <NoticeCard image={personajeContratacion} title={t`Activar es del BDC`} role="status">
@@ -600,7 +603,11 @@ export function ContractDetailPage({
 
       {/* Inputs del machote a la izquierda, el documento real en vivo a la
           derecha — mismo patrón que la Propuesta (Hugo, 2026-10-20). */}
-      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      {/* Las dos columnas se deciden por el ancho del DETALLE, no de la
+          ventana: con la lista de contratos abierta al lado quedaban dos
+          columnas angostas y las tablas de tarifas y multiplicadores salían
+          cortadas (Hugo, 2026-10-23). */}
+      <div className="grid grid-cols-1 items-start gap-6 @5xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="relative flex flex-col gap-6">
           <SectionCard
             title={t`Datos del documento`}
@@ -918,7 +925,16 @@ export function ContractDetailPage({
             canEdit={canEditContractTerms}
           />
 
-          <RateTable rates={contract.rates} />
+          <RateTable
+            rates={contract.rates}
+            onEdit={
+              canEditContractTerms
+                ? () => {
+                    setIsEditingRate(true)
+                  }
+                : undefined
+            }
+          />
 
           <ContractNextStep contract={contract} activeContractNumber={activeContractNumber} />
 

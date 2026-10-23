@@ -26,7 +26,12 @@ export interface ContractCheck {
 export function buildContractChecks(contract: ContractDetail, i18n: I18n): ContractCheck[] {
   const today = new Date().toISOString().slice(0, 10)
   const rates = contract.rates
-  const badMargin = rates.filter((rate) => rate.billRate <= rate.payRate)
+  /* Reglas de Negocio: lo único que se impone es que el bill nunca quede POR
+     DEBAJO del pay. Al costo (bill = pay) es válido — la propuesta lo deja
+     cotizar así y el servidor también; aquí se exigía margen y un contrato
+     que nació de una propuesta válida no se podía activar (Hugo, 2026-10-23). */
+  const badMargin = rates.filter((rate) => rate.billRate < rate.payRate)
+  const atCost = rates.filter((rate) => rate.billRate === rate.payRate)
   const { overtime, holiday } = contract.multipliers
   const isIndefinite = contract.validTo === null
   const isValidRange = isIndefinite || (contract.validTo ?? '') > contract.validFrom
@@ -40,7 +45,7 @@ export function buildContractChecks(contract: ContractDetail, i18n: I18n): Contr
       detail:
         rates.length === 0
           ? i18n._(
-              msg`Sin tarifas no se puede enviar ni activar: agrega la primera con «Editar tarifas».`,
+              msg`Sin tarifas no se puede enviar ni activar: este contrato no trae ninguna posición cotizada.`,
             )
           : rates.length === 1
             ? i18n._(msg`1 posición cotizada, con su pay rate y su bill rate.`)
@@ -51,15 +56,19 @@ export function buildContractChecks(contract: ContractDetail, i18n: I18n): Contr
     {
       id: 'margin',
       status: badMargin.length > 0 ? 'fail' : rates.length === 0 ? 'pending' : 'ok',
-      title: i18n._(msg`Cada posición deja margen`),
+      title: i18n._(msg`Ninguna posición se factura por debajo de lo que se paga`),
       detail:
         badMargin.length > 0
           ? i18n._(
-              msg`El bill rate debe ser mayor que el pay rate: revisa ${badMargin.map((rate) => rate.positionName).join(', ')}.`,
+              msg`El bill rate no puede quedar por debajo del pay rate: corrige ${badMargin.map((rate) => rate.positionName).join(', ')} con «Editar tarifas».`,
             )
-          : i18n._(
-              msg`El bill rate es mayor que el pay rate en todas las posiciones: la diferencia es el margen de Oranje.`,
-            ),
+          : atCost.length > 0
+            ? i18n._(
+                msg`Al costo, sin margen para Oranje: ${atCost.map((rate) => rate.positionName).join(', ')}. Es válido; si no era la intención, corrígelo con «Editar tarifas».`,
+              )
+            : i18n._(
+                msg`El bill rate es mayor que el pay rate en todas las posiciones: la diferencia es el margen de Oranje.`,
+              ),
     },
     {
       id: 'multipliers',

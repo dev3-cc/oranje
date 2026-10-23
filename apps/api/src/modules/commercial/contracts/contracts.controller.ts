@@ -154,6 +154,17 @@ export class ContractsController {
    * «Marcar como enviado» (2026-10-23): el contrato llegó al hotel por fuera.
    * Mismo permiso que editarlo, porque enviar es lo que lo congela.
    */
+  /** El borrador toma las tarifas de la última propuesta enviada (2026-10-23). */
+  @Requires('terms_and_conditions', 'update')
+  @Post(':id/sync-proposal')
+  @HttpCode(HttpStatus.OK)
+  async syncProposal(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: ContractEntity }> {
+    return { data: await this.contracts.syncFromProposal(id, user) }
+  }
+
   @Requires('terms_and_conditions', 'update')
   @Post(':id/mark-sent')
   @HttpCode(HttpStatus.OK)

@@ -117,6 +117,9 @@ export interface ContractDetail {
       `/proposals/:prospectId/:version` (Hugo, 2026-10-21). `null` en
       contratos heredados/migrados. */
   proposal: { id: string; prospectId: string; version: number } | null
+  /** La última versión enviada de ese ciclo (Hugo, 2026-10-23): si es más
+      nueva que `proposal`, el contrato quedó atrás de la propuesta. */
+  latestProposal: { id: string; version: number } | null
   /** Campos del machote del Service Agreement (Hugo, 2026-10-20): se
       prellenan desde la última propuesta enviada pero son editables. */
   propertyName: string | null

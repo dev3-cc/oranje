@@ -67,6 +67,7 @@ function buildContract(input: {
   isUnlocked?: boolean
   sentAt?: string | null
   proposal?: { id: string; prospectId: string; version: number } | null
+  latestProposal?: { id: string; version: number } | null
 }): StoredContract {
   return {
     id: input.id,
@@ -93,6 +94,9 @@ function buildContract(input: {
     updatedAt: null,
     rates: rates(input.id, input.positionCount),
     proposal: input.proposal ?? null,
+    latestProposal:
+      input.latestProposal ??
+      (input.proposal ? { id: input.proposal.id, version: input.proposal.version } : null),
     propertyName: null,
     propertyAddress: null,
     companyEmail: null,
@@ -167,6 +171,9 @@ const CONTRACTS: StoredContract[] = [
     validTo: null,
     signedAt: null,
     positionCount: 0,
+    // Nació de la v1 y ya se envió la v2: el contrato quedó atrás (2026-10-23).
+    proposal: { id: 'prop-0203-v1', prospectId: 'psp-0016', version: 1 },
+    latestProposal: { id: 'prop-0203-v2', version: 2 },
   }),
 ]
 
@@ -365,12 +372,31 @@ const routes: readonly MockRoute[] = [
   {
     // Antes del catch-all `:action`, igual que unlock/lock.
     method: 'POST',
+    path: '/contracts/:contractId/sync-proposal',
+    resolve: ({ params }): ApiEnvelope<ContractApi> => {
+      const contract = CONTRACTS.find((item) => item.id === params.contractId)
+      if (!contract) throw new Error('CONTRACT_NOT_FOUND')
+      if (contract.status !== 'DRAFT') throw new Error('CONTRACT_NOT_DRAFT')
+      if (contract.sentAt && !contract.isUnlocked) throw new Error('CONTRACT_LOCKED')
+      const latest = contract.latestProposal
+      if (!latest || !contract.proposal || latest.id === contract.proposal.id) {
+        throw new Error('CONTRACT_PROPOSAL_CURRENT')
+      }
+      // Igual que el back: el cuadro de la versión nueva reemplaza al anterior.
+      contract.rates = rates(contract.id, 2)
+      contract.proposal = { ...contract.proposal, id: latest.id, version: latest.version }
+      return { data: snapshot(contract) }
+    },
+  },
+  {
+    method: 'POST',
     path: '/contracts/:contractId/mark-sent',
     resolve: ({ params }): ApiEnvelope<ContractApi> => {
       const contract = CONTRACTS.find((item) => item.id === params.contractId)
       if (!contract) throw new Error('CONTRACT_NOT_FOUND')
       if (contract.status !== 'DRAFT') throw new Error('CONTRACT_NOT_DRAFT')
       if (contract.sentAt) throw new Error('CONTRACT_ALREADY_SENT')
+      if (contract.rates.length === 0) throw new Error('CONTRACT_WITHOUT_RATES')
       markSent(contract)
       return { data: snapshot(contract) }
     },

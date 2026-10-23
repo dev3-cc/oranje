@@ -270,6 +270,9 @@ export interface ContractApi {
   /** De qué Propuesta (versión exacta) nace (Hugo, 2026-10-21). `null` en
       contratos heredados/migrados. */
   proposal: { id: string; prospectId: string; version: number } | null
+  /** La última versión ENVIADA de su ciclo (2026-10-23). Opcional mientras
+      el API desplegado sea anterior: la web sale antes que el API. */
+  latestProposal?: { id: string; version: number } | null
   propertyName: string | null
   propertyAddress: string | null
   companyEmail: string | null
