@@ -194,12 +194,21 @@ describe('WorkerDetailPage', () => {
     const user = userEvent.setup()
 
     await screen.findByRole('heading', { name: 'María Fernanda Ortiz' })
+    // Antes de aceptar: el encabezado avisa que falta (Hugo, 2026-10-23 — se
+    // quedaba pegado en este texto aunque ya se hubiera aceptado la retención).
+    expect(await screen.findByText(/Sin ITIN: aplica retención del 16%/)).toBeInTheDocument()
 
     await user.click(
       await screen.findByRole('button', { name: 'o acepta la retención del 16% y no lo pidas' }),
     )
 
-    expect(await screen.findByText('Retención del 16% aceptada')).toBeInTheDocument()
+    // Aparece en los DOS lugares: el encabezado (Pool/expediente, lee del
+    // Worker) y la fila de Documentos (lee de /documents) — las dos
+    // invalidaciones de la mutación tienen que alcanzar a ambas consultas.
+    await waitFor(() => {
+      expect(screen.getAllByText('Retención del 16% aceptada')).toHaveLength(2)
+    }, SLOW)
+    expect(screen.queryByText(/Sin ITIN: aplica retención del 16%/)).not.toBeInTheDocument()
     // Ya no pide el documento: el botón de subir desaparece para ese renglón.
     const itinRow = screen.getByText('SSN / ITIN').closest('li') as HTMLElement
     expect(within(itinRow).queryByRole('button', { name: /Subir/ })).not.toBeInTheDocument()
@@ -209,6 +218,7 @@ describe('WorkerDetailPage', () => {
     await waitFor(() => {
       expect(screen.queryByText('Retención del 16% aceptada')).not.toBeInTheDocument()
     }, SLOW)
+    expect(screen.getByText(/Sin ITIN: aplica retención del 16%/)).toBeInTheDocument()
     expect(
       within(screen.getByText('SSN / ITIN').closest('li') as HTMLElement).getByRole('button', {
         name: /Subir/,

@@ -28,6 +28,10 @@ export interface WorkerRow {
   /// (D-27: el cifrado de campo sigue sin conectar, así que el criterio es
   /// el documento, no el número real).
   hasTaxDocument: boolean
+  /// Reclutamiento aceptó la retención del 16% en vez de pedir el SSN/ITIN
+  /// (Hugo, 2026-10-23): sin esto, el Pool seguía mostrando «Sin ITIN: aplica
+  /// retención» como si nadie hubiera hecho nada, aunque fue una decisión.
+  taxRetentionAccepted: boolean
   /// Cargado y TODAVÍA sin revisar: lo que el Pool necesita para no tener
   /// que abrir cada expediente a ver quién ya mandó a verificar.
   hasPendingDocument: boolean
@@ -88,6 +92,7 @@ const BASE = `
          w.has_tax_id          AS "hasTaxId",
          w.has_tax_document    AS "hasTaxDocument",
          w.has_pending_tax_document AS "hasPendingDocument",
+         (w.tax_retention_accepted_at IS NOT NULL) AS "taxRetentionAccepted",
          (w.user_id IS NOT NULL) AS "hasAccount",
          u.email AS "email",
          EXISTS (SELECT 1 FROM coverage.blacklist_entry b

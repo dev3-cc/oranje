@@ -29,6 +29,8 @@ export interface WorkerEntity {
   /// Hay un documento SSN/ITIN cargado (verificado o no) — a diferencia de
   /// `hasTaxId`, no depende del cifrado (D-27).
   hasTaxDocument: boolean
+  /// Reclutamiento aceptó la retención del 16% en vez de pedir el SSN/ITIN.
+  taxRetentionAccepted: boolean
   /// Cargado y todavía sin revisar (Pool: badge/filtro "con documento pendiente").
   hasPendingDocument: boolean
   hasAccount: boolean

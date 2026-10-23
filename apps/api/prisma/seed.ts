@@ -409,6 +409,21 @@ const WORKER_TRANSITIONS: Array<{
     note: 'completa 7 días: fijo',
   },
   { from: 'ORANGE', to: 'STRONG_GREEN', roles: ['ROL-SYS-01'], reason: false, note: 'queda libre' },
+  // La fija liberada en su primera semana también queda libre (Hugo, 2026-10-23).
+  {
+    from: 'APPLE_GREEN',
+    to: 'STRONG_GREEN',
+    roles: ['ROL-SYS-01'],
+    reason: false,
+    note: 'queda libre antes de los 7 días',
+  },
+  {
+    from: 'LIGHT_BLUE',
+    to: 'STRONG_GREEN',
+    roles: ['ROL-SYS-01'],
+    reason: false,
+    note: 'queda libre antes de los 7 días',
+  },
 
   // --- disponibilidad voluntaria: 3 orígenes, y los 3 los dispara el colaborador ---
   { from: 'STRONG_GREEN', to: 'YELLOW', roles: ['ROL-C-01'], reason: false },
