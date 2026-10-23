@@ -39,7 +39,9 @@ export function buildContractChecks(contract: ContractDetail, i18n: I18n): Contr
       title: i18n._(msg`Tiene al menos una posición cotizada`),
       detail:
         rates.length === 0
-          ? i18n._(msg`Sin tarifas no se puede activar: agrega la primera con «Editar tarifas».`)
+          ? i18n._(
+              msg`Sin tarifas no se puede enviar ni activar: agrega la primera con «Editar tarifas».`,
+            )
           : rates.length === 1
             ? i18n._(msg`1 posición cotizada, con su pay rate y su bill rate.`)
             : i18n._(
@@ -83,12 +85,11 @@ export function buildContractChecks(contract: ContractDetail, i18n: I18n): Contr
     },
     {
       id: 'signer',
-      status: contract.signedByName === '—' ? 'pending' : 'ok',
+      /* El hotel firma fuera del sistema: quién firmó por él todavía no se
+         registra (`signedByName` es el BDC que activó, no el hotel). */
+      status: 'pending',
       title: i18n._(msg`Consta quién firmó por el hotel`),
-      detail:
-        contract.signedByName === '—'
-          ? i18n._(msg`El firmante aún no está registrado: se captura en la ficha del hotel.`)
-          : i18n._(msg`Firmado por ${contract.signedByName}.`),
+      detail: i18n._(msg`El firmante aún no está registrado: se captura en la ficha del hotel.`),
     },
   ]
   return checks

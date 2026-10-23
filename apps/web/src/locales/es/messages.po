@@ -99,6 +99,10 @@ msgstr "¿La olvidaste?"
 msgid "¿Marcamos la propuesta como enviada?"
 msgstr "¿Marcamos la propuesta como enviada?"
 
+#: src/features/contracts/components/ContractPdfButton.tsx
+msgid "¿Marcar el contrato como enviado?"
+msgstr "¿Marcar el contrato como enviado?"
+
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 msgid "¿Necesitas regresarlo? El semáforo no retrocede: se sale por una rama y se reactiva hacia Azul claro. Desde <0>Rojo</0> reactivan el BD o el BDC; desde <1>Café</1> y <2>Negro</2>, solo el BDC."
 msgstr "¿Necesitas regresarlo? El semáforo no retrocede: se sale por una rama y se reactiva hacia Azul claro. Desde <0>Rojo</0> reactivan el BD o el BDC; desde <1>Café</1> y <2>Negro</2>, solo el BDC."
@@ -423,11 +427,36 @@ msgstr "{0} · {1} abiertos · {2}"
 msgid "{0} · {1} años"
 msgstr "{0} · {1} años"
 
+#. placeholder {0}: contract.hotelName
+#. placeholder {1}: formatDate(contract.signedAt)
+#: src/features/contracts/pages/ContractDetailPage.tsx
+msgid "{0} · activado el {1}"
+msgstr "{0} · activado el {1}"
+
+#. placeholder {0}: contract.hotelName
+#. placeholder {1}: contract.signedByName
+#. placeholder {2}: formatDate(contract.signedAt)
+#: src/features/contracts/pages/ContractDetailPage.tsx
+msgid "{0} · activado por {1} el {2}"
+msgstr "{0} · activado por {1} el {2}"
+
+#. placeholder {0}: hotel.zone
+#. placeholder {1}: workspace.owner.name
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "{0} · BD: {1}"
+msgstr "{0} · BD: {1}"
+
 #. placeholder {0}: version.rates[0]?.positionName ?? ''
 #. placeholder {1}: formatMoney(cheapest)
 #: src/features/onboarding/lib/summarizeRates.ts
 msgid "{0} · bill {1}"
 msgstr "{0} · bill {1}"
+
+#. placeholder {0}: contract.hotelName
+#. placeholder {1}: formatDate(contract.createdAt)
+#: src/features/contracts/pages/ContractDetailPage.tsx
+msgid "{0} · borrador creado el {1}"
+msgstr "{0} · borrador creado el {1}"
 
 #. placeholder {0}: row.startTime
 #. placeholder {1}: row.quantity
@@ -447,17 +476,17 @@ msgid "{0} · días de esta requisición"
 msgstr "{0} · días de esta requisición"
 
 #. placeholder {0}: contract.hotelName
-#. placeholder {1}: formatDate(contract.signedAt)
+#. placeholder {1}: formatDate(contract.sentAt)
 #: src/features/contracts/pages/ContractDetailPage.tsx
-msgid "{0} · firmado el {1}"
-msgstr "{0} · firmado el {1}"
+msgid "{0} · enviado el {1}"
+msgstr "{0} · enviado el {1}"
 
 #. placeholder {0}: contract.hotelName
-#. placeholder {1}: contract.signedByName
-#. placeholder {2}: formatDate(contract.signedAt)
+#. placeholder {1}: contract.sentByName
+#. placeholder {2}: formatDate(contract.sentAt)
 #: src/features/contracts/pages/ContractDetailPage.tsx
-msgid "{0} · firmado por {1} el {2}"
-msgstr "{0} · firmado por {1} el {2}"
+msgid "{0} · enviado por {1} el {2}"
+msgstr "{0} · enviado por {1} el {2}"
 
 #. placeholder {0}: hotel.zone
 #. placeholder {1}: hotel.geofenceMeters
@@ -1055,7 +1084,7 @@ msgid "Abriendo tu sesión…"
 msgstr "Abriendo tu sesión…"
 
 #: src/features/onboarding/components/CreateProposalPromptDialog.tsx
-#: src/features/onboarding/components/NewProposalDialog.tsx
+#: src/features/onboarding/components/ViewProposalDialog.tsx
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Abriendo…"
 msgstr "Abriendo…"
@@ -1082,6 +1111,7 @@ msgid "Abrir la semana de este día en la vista Días"
 msgstr "Abrir la semana de este día en la vista Días"
 
 #: src/features/onboarding/components/ProposalVersionList.tsx
+#: src/features/onboarding/components/ViewProposalDialog.tsx
 msgid "Abrir propuesta"
 msgstr "Abrir propuesta"
 
@@ -1519,17 +1549,35 @@ msgstr "Ancho de columna"
 msgid "Anomalía sin resolver"
 msgstr "Anomalía sin resolver"
 
+#: src/features/contracts/pages/ContractDetailPage.tsx
+msgid "Antes de activar:"
+msgstr "Antes de activar:"
+
 #: src/features/accounting/pages/ConsolidationDetailPage.tsx
 msgid "antes de deducciones"
 msgstr "antes de deducciones"
 
+#: src/features/contracts/pages/ContractDetailPage.tsx
+msgid "Antes de enviar o activar:"
+msgstr "Antes de enviar o activar:"
+
+#: src/features/contracts/components/ContractPdfButton.tsx
+#: src/features/contracts/pages/ContractDetailPage.tsx
+#: src/features/onboarding/pages/ProposalEditorPage.tsx
+msgid "Antes de enviar:"
+msgstr "Antes de enviar:"
+
+#: src/features/onboarding/pages/ProposalEditorPage.tsx
+msgid "Antes de guardar o enviar:"
+msgstr "Antes de guardar o enviar:"
+
+#: src/features/onboarding/pages/ProposalEditorPage.tsx
+msgid "Antes de guardar:"
+msgstr "Antes de guardar:"
+
 #: src/features/accounting/pages/AccountingPendingPages.tsx
 msgid "Antes de pagar, se revisa"
 msgstr "Antes de pagar, se revisa"
-
-#: src/features/contracts/pages/ContractDetailPage.tsx
-msgid "Antes hay que resolver lo que dice «Qué sigue»"
-msgstr "Antes hay que resolver lo que dice «Qué sigue»"
 
 #. placeholder {0}: failing.map((check) => check.title.toLowerCase()).join(' · ')
 #: src/features/contracts/components/ContractNextStep.tsx
@@ -2080,7 +2128,9 @@ msgstr "Borrador guardado"
 msgid "Borrador sin enviar"
 msgstr "Borrador sin enviar"
 
+#. placeholder {0}: last.version
 #. placeholder {0}: prospect.latestProposalVersion
+#: src/features/onboarding/components/ViewProposalDialog.tsx
 #: src/features/onboarding/utils/resolveActivityLabel.ts
 msgid "Borrador v{0}"
 msgstr "Borrador v{0}"
@@ -2090,10 +2140,18 @@ msgstr "Borrador v{0}"
 msgid "Borrador v{0} · en elaboración"
 msgstr "Borrador v{0} · en elaboración"
 
+#. placeholder {0}: String(version)
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "Borrador v{0} abierto"
+msgstr "Borrador v{0} abierto"
+
 #: src/features/onboarding/components/CreateProposalPromptDialog.tsx
-#: src/features/onboarding/components/NewProposalDialog.tsx
 msgid "Borrador v1 abierto"
 msgstr "Borrador v1 abierto"
+
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "Borrador, sin enviar"
+msgstr "Borrador, sin enviar"
 
 #. placeholder {0}: documentTypeLabel(doc.documentType)
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
@@ -2148,10 +2206,6 @@ msgstr "Buscando"
 msgid "Buscando «{0}»…"
 msgstr "Buscando «{0}»…"
 
-#: src/features/onboarding/components/NewProposalDialog.tsx
-msgid "Buscando hoteles en Verde…"
-msgstr "Buscando hoteles en Verde…"
-
 #: src/features/recruitment/components/ChangeStateDialog.tsx
 msgid "Buscando los cambios disponibles…"
 msgstr "Buscando los cambios disponibles…"
@@ -2192,6 +2246,7 @@ msgstr "Buscar en tu plantel"
 
 #: src/features/clients/components/ClientFilters.tsx
 #: src/features/contracts/components/MissingContractsNotice.tsx
+#: src/features/onboarding/components/ViewProposalDialog.tsx
 #: src/features/onboarding/pages/PipelinePage.tsx
 #: src/features/onboarding/pages/ProposalListPage.tsx
 msgid "Buscar hotel"
@@ -2294,7 +2349,7 @@ msgstr "Cada cuenta pertenece a un solo hotel. El primer Manager General nace en
 msgid "Cada deducción dice de dónde sale, para que la Contadora pueda cotejarla."
 msgstr "Cada deducción dice de dónde sale, para que la Contadora pueda cotejarla."
 
-#: src/features/onboarding/components/NewProposalDialog.tsx
+#: src/features/onboarding/components/ViewProposalDialog.tsx
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Cada envío congela una versión. Renegociar es abrir una nueva, que arranca con las tarifas de la anterior."
 msgstr "Cada envío congela una versión. Renegociar es abrir una nueva, que arranca con las tarifas de la anterior."
@@ -2502,6 +2557,7 @@ msgstr "Cancelando…"
 #: src/features/admin/pages/CatalogsPage.tsx
 #: src/features/admin/pages/CorporateEmailPage.tsx
 #: src/features/audits/components/AuditFormDialog.tsx
+#: src/features/contracts/components/ContractPdfButton.tsx
 #: src/features/contracts/components/EditRateDialog.tsx
 #: src/features/contracts/components/MultiplierTable.tsx
 #: src/features/contracts/components/NewContractDialog.tsx
@@ -2672,7 +2728,6 @@ msgstr "Cerrando…"
 #: src/features/clients/pages/ClientPortfolioPage.tsx
 #: src/features/contracts/components/ContractPdfButton.tsx
 #: src/features/onboarding/components/ContractPreviewDialog.tsx
-#: src/features/onboarding/components/NewProposalDialog.tsx
 #: src/features/onboarding/components/ProposalVersionDetailDialog.tsx
 #: src/features/requisitions/components/RequisitionJournalDialog.tsx
 #: src/features/timesheet/components/DayStatusTour.tsx
@@ -3307,6 +3362,10 @@ msgstr "Contrato enviado al hotel"
 msgid "Contrato expirado: dejó de regir"
 msgstr "Contrato expirado: dejó de regir"
 
+#: src/features/contracts/components/ContractPdfButton.tsx
+msgid "Contrato marcado como enviado: quedó bloqueado"
+msgstr "Contrato marcado como enviado: quedó bloqueado"
+
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Contrato marcado como expirado"
 msgstr "Contrato marcado como expirado"
@@ -3527,10 +3586,6 @@ msgstr "Corte de pago (miércoles)"
 msgid "Cotiza al menos un puesto para descargar"
 msgstr "Cotiza al menos un puesto para descargar"
 
-#: src/features/onboarding/components/NewProposalDialog.tsx
-msgid "Cotizar →"
-msgstr "Cotizar →"
-
 #: src/features/admin/pages/CorporateEmailPage.tsx
 msgid "cPanel rechazó la operación."
 msgstr "cPanel rechazó la operación."
@@ -3584,9 +3639,17 @@ msgstr "Crear cuenta del hotel"
 msgid "Crear el contrato"
 msgstr "Crear el contrato"
 
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "Crear o versionar la propuesta es del BD dueño del hotel."
+msgstr "Crear o versionar la propuesta es del BD dueño del hotel."
+
 #: src/features/onboarding/components/ProspectCard.tsx
 msgid "Crear propuesta →"
 msgstr "Crear propuesta →"
+
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "Crear propuesta v1"
+msgstr "Crear propuesta v1"
 
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "Crear prospecto"
@@ -4559,6 +4622,10 @@ msgstr "El ciclo abre con un contacto: escribe su nombre"
 msgid "El ciclo comercial"
 msgstr "El ciclo comercial"
 
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "El ciclo comercial de este hotel está cerrado: ya no se cotiza."
+msgstr "El ciclo comercial de este hotel está cerrado: ya no se cotiza."
+
 #: src/features/onboarding/components/SemaforoHelpDialog.tsx
 msgid "El ciclo comercial del hotel: de prospecto a cliente."
 msgstr "El ciclo comercial del hotel: de prospecto a cliente."
@@ -5069,7 +5136,7 @@ msgstr "El veto siempre carga su porqué y su respaldo — sin evidencia no hay 
 msgid "Elaborar la propuesta es del BD o del BDC"
 msgstr "Elaborar la propuesta es del BD o del BDC"
 
-#: src/features/onboarding/components/NewProposalDialog.tsx
+#: src/features/onboarding/components/ViewProposalDialog.tsx
 msgid "Elegir el hotel"
 msgstr "Elegir el hotel"
 
@@ -5132,13 +5199,13 @@ msgstr "elige el hotel"
 msgid "Elige el hotel"
 msgstr "Elige el hotel"
 
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "Elige el hotel y ves en qué va su propuesta: seguirla, abrir una nueva versión o crear la primera."
+msgstr "Elige el hotel y ves en qué va su propuesta: seguirla, abrir una nueva versión o crear la primera."
+
 #: src/features/onboarding/types/prospectForm.schema.ts
 msgid "Elige el hotel ya registrado"
 msgstr "Elige el hotel ya registrado"
-
-#: src/features/onboarding/components/NewProposalDialog.tsx
-msgid "Elige el hotel: se abre su borrador v1 y pasas directo a cotizarlo."
-msgstr "Elige el hotel: se abre su borrador v1 y pasas directo a cotizarlo."
 
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Elige el hotel…"
@@ -5245,6 +5312,10 @@ msgstr "Elige tu transporte…"
 #: src/features/timesheet/components/TimesheetHoursView.tsx
 msgid "Elige un bloque para ver a sus colaboradores y revisar sus días."
 msgstr "Elige un bloque para ver a sus colaboradores y revisar sus días."
+
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "Elige un hotel de la lista para ver su propuesta."
+msgstr "Elige un hotel de la lista para ver su propuesta."
 
 #: src/features/timesheet/pages/TimesheetPage.tsx
 msgid "Elige un hotel para ajustar si paga el lonche"
@@ -5576,6 +5647,7 @@ msgstr "Enviada {0}"
 #. placeholder {1}: selected.byName
 #. placeholder {1}: version.byName
 #: src/features/onboarding/components/ProposalVersionList.tsx
+#: src/features/onboarding/components/ViewProposalDialog.tsx
 #: src/features/onboarding/pages/ProposalVersionPage.tsx
 msgid "Enviada {0} · {1}"
 msgstr "Enviada {0} · {1}"
@@ -5591,6 +5663,7 @@ msgid "Enviada a aprobación"
 msgstr "Enviada a aprobación"
 
 #: src/features/admin/pages/MailSettingsPage.tsx
+#: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Enviado"
 msgstr "Enviado"
 
@@ -5613,6 +5686,10 @@ msgstr "Enviando…"
 #: src/features/timesheet/components/WeekActionBar.tsx
 msgid "Enviar a revisión"
 msgstr "Enviar a revisión"
+
+#: src/features/contracts/components/ContractPdfButton.tsx
+msgid "Enviar contrato"
+msgstr "Enviar contrato"
 
 #: src/features/contracts/components/ContractPdfButton.tsx
 msgid "Enviar contrato por correo"
@@ -6166,6 +6243,10 @@ msgstr "Este contrato ya está cerrado: las tarifas quedaron congeladas."
 msgid "Este contrato ya está cerrado: no admite más cambios."
 msgstr "Este contrato ya está cerrado: no admite más cambios."
 
+#: src/features/contracts/components/ContractPdfButton.tsx
+msgid "Este contrato ya estaba marcado como enviado."
+msgstr "Este contrato ya estaba marcado como enviado."
+
 #: src/features/contracts/components/ContractChecklist.tsx
 msgid "Este contrato ya expiró: dejó de regir y no admite cambios. Para renovar, se crea uno nuevo para el hotel."
 msgstr "Este contrato ya expiró: dejó de regir y no admite cambios. Para renovar, se crea uno nuevo para el hotel."
@@ -6213,6 +6294,10 @@ msgstr "Este hotel poncha con selfie: cambia el método antes."
 #: src/features/onboarding/pages/HotelPunchQrPrintPage.tsx
 msgid "Este hotel poncha con selfie: no tiene QR que imprimir."
 msgstr "Este hotel poncha con selfie: no tiene QR que imprimir."
+
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "Este hotel todavía no tiene propuesta."
+msgstr "Este hotel todavía no tiene propuesta."
 
 #: src/features/schedule/pages/SchedulePage.tsx
 msgid "Este hotel todavía no tiene Schedule. En cuanto se programe una semana, aparece aquí."
@@ -6384,6 +6469,10 @@ msgstr "Falta aprobar antes de cerrar:"
 msgid "Falta decir quién pagó el gasto."
 msgstr "Falta decir quién pagó el gasto."
 
+#: src/features/onboarding/pages/ProposalEditorPage.tsx
+msgid "Falta el bill rate de un puesto"
+msgstr "Falta el bill rate de un puesto"
+
 #: src/features/requisitions/types/requisitionForm.schema.ts
 msgid "Falta el departamento"
 msgstr "Falta el departamento"
@@ -6411,6 +6500,10 @@ msgstr "Falta el nombre completo"
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "Falta el nombre del contacto de emergencia"
 msgstr "Falta el nombre del contacto de emergencia"
+
+#: src/features/onboarding/pages/ProposalEditorPage.tsx
+msgid "Falta el pay rate de un puesto"
+msgstr "Falta el pay rate de un puesto"
 
 #: src/features/conversion/api/conversionApi.ts
 msgid "Falta el Usuario del Hotel: sin él no se puede aprobar"
@@ -6532,11 +6625,6 @@ msgstr "Firebase (respaldo)"
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Firebase no pudo mandar el correo. Inténtalo de nuevo."
 msgstr "Firebase no pudo mandar el correo. Inténtalo de nuevo."
-
-#. placeholder {0}: contract.signedByName
-#: src/features/contracts/components/ContractChecklist.tsx
-msgid "Firmado por {0}."
-msgstr "Firmado por {0}."
 
 #: src/features/accounting/pages/InvoicesPage.tsx
 msgid "Folio"
@@ -6987,6 +7075,10 @@ msgstr "Hotel ya registrado"
 #: src/layouts/GlobalSearch.tsx
 msgid "Hotel, folio de requisición o colaborador, p. ej. Xcaret…"
 msgstr "Hotel, folio de requisición o colaborador, p. ej. Xcaret…"
+
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "Hoteles"
+msgstr "Hoteles"
 
 #: src/features/clients/pages/ClientPortfolioPage.tsx
 msgid "Hoteles activados como clientes, listos para generar requisiciones"
@@ -7672,13 +7764,9 @@ msgstr "La posición y la requisición del turno se enseñan en la fila de Deman
 msgid "La propuesta quedó enviada — el correo no salió, mándalo aparte."
 msgstr "La propuesta quedó enviada — el correo no salió, mándalo aparte."
 
-#: src/features/onboarding/components/NewProposalDialog.tsx
-msgid "La propuesta se abre cuando un prospecto está en Verde (o vuelve en Café) y todavía no tiene una. Los hoteles que ya tienen propuesta se siguen desde su fila de la lista."
-msgstr "La propuesta se abre cuando un prospecto está en Verde (o vuelve en Café) y todavía no tiene una. Los hoteles que ya tienen propuesta se siguen desde su fila de la lista."
-
 #: src/features/onboarding/pages/ProposalListPage.tsx
-msgid "La propuesta se abre cuando un prospecto llega a Verde. Crea la primera con «Nueva propuesta» o desde la ficha del prospecto."
-msgstr "La propuesta se abre cuando un prospecto llega a Verde. Crea la primera con «Nueva propuesta» o desde la ficha del prospecto."
+msgid "La propuesta se abre cuando un prospecto llega a Verde. Búscalo con «Ver propuesta» o ábrela desde la ficha del prospecto."
+msgstr "La propuesta se abre cuando un prospecto llega a Verde. Búscalo con «Ver propuesta» o ábrela desde la ficha del prospecto."
 
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "La propuesta se trabaja con el hotel en Verde o Café — este está en {statusLabel}."
@@ -7689,7 +7777,7 @@ msgstr "La propuesta se trabaja con el hotel en Verde o Café — este está en 
 msgid "La propuesta se trabaja con el hotel en Verde o Café: este está en {0}"
 msgstr "La propuesta se trabaja con el hotel en Verde o Café: este está en {0}"
 
-#: src/features/onboarding/components/NewProposalDialog.tsx
+#: src/features/onboarding/components/ViewProposalDialog.tsx
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "La propuesta vive en Verde"
 msgstr "La propuesta vive en Verde"
@@ -7830,8 +7918,11 @@ msgstr "Las notas al BD llegan pronto"
 msgid "Las posiciones"
 msgstr "Las posiciones"
 
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "Las propuestas las elabora el BD dueño de cada hotel: pídele que la abra."
+msgstr "Las propuestas las elabora el BD dueño de cada hotel: pídele que la abra."
+
 #: src/features/onboarding/components/CreateProposalPromptDialog.tsx
-#: src/features/onboarding/components/NewProposalDialog.tsx
 msgid "Las propuestas las elabora el BD dueño de cada prospecto: pídele que la abra."
 msgstr "Las propuestas las elabora el BD dueño de cada prospecto: pídele que la abra."
 
@@ -8034,7 +8125,7 @@ msgstr "Lo de Fase 1 ({0}) lo defines tú con «Editar»."
 msgid "Lo elabora <0>{0}</0> — el BD dueño del ciclo — o el BDC."
 msgstr "Lo elabora <0>{0}</0> — el BD dueño del ciclo — o el BDC."
 
-#: src/features/onboarding/components/NewProposalDialog.tsx
+#: src/features/onboarding/components/ViewProposalDialog.tsx
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Lo enviado no se edita"
 msgstr "Lo enviado no se edita"
@@ -8387,6 +8478,7 @@ msgstr "Marca manual"
 msgid "Marca manual registrada"
 msgstr "Marca manual registrada"
 
+#: src/features/contracts/components/ContractPdfButton.tsx
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Marcando…"
 msgstr "Marcando…"
@@ -8394,6 +8486,10 @@ msgstr "Marcando…"
 #: src/features/onboarding/pages/ProposalEditorPage.tsx
 msgid "Marcar como enviada"
 msgstr "Marcar como enviada"
+
+#: src/features/contracts/components/ContractPdfButton.tsx
+msgid "Marcar como enviado"
+msgstr "Marcar como enviado"
 
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 msgid "Marcar como principal"
@@ -8998,6 +9094,10 @@ msgstr "Ningún hotel coincide con la búsqueda."
 msgid "Ningún hotel con ese nombre"
 msgstr "Ningún hotel con ese nombre"
 
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "Ningún hotel con ese nombre. Prueba con otra parte del nombre."
+msgstr "Ningún hotel con ese nombre. Prueba con otra parte del nombre."
+
 #. placeholder {0}: search.trim()
 #: src/features/conversion/pages/ConversionQueuePage.tsx
 msgid "Ningún hotel de la cola se llama «{0}»"
@@ -9006,10 +9106,6 @@ msgstr "Ningún hotel de la cola se llama «{0}»"
 #: src/features/territory/pages/TerritoryPage.tsx
 msgid "Ningún hotel de tu territorio coincide con estos filtros. Cambia la búsqueda o elige otra zona."
 msgstr "Ningún hotel de tu territorio coincide con estos filtros. Cambia la búsqueda o elige otra zona."
-
-#: src/features/onboarding/components/NewProposalDialog.tsx
-msgid "Ningún hotel espera propuesta"
-msgstr "Ningún hotel espera propuesta"
 
 #. placeholder {0}: statusLight.name
 #. placeholder {1}: search.trim()
@@ -9338,6 +9434,10 @@ msgstr "No se pudieron cargar los contratos. Reintenta en unos segundos."
 msgid "No se pudieron cargar los hoteles del mapa. Recarga la página para reintentar."
 msgstr "No se pudieron cargar los hoteles del mapa. Recarga la página para reintentar."
 
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "No se pudieron cargar los hoteles. Reintenta en unos segundos."
+msgstr "No se pudieron cargar los hoteles. Reintenta en unos segundos."
+
 #: src/features/observability/components/TabParts.tsx
 msgid "No se pudieron cargar los indicadores."
 msgstr "No se pudieron cargar los indicadores."
@@ -9366,9 +9466,9 @@ msgstr "No se pudieron guardar tus datos. Inténtalo de nuevo."
 msgid "No se pudo abrir el borrador. Ciérralo e inténtalo de nuevo desde la ficha del prospecto."
 msgstr "No se pudo abrir el borrador. Ciérralo e inténtalo de nuevo desde la ficha del prospecto."
 
-#: src/features/onboarding/components/NewProposalDialog.tsx
-msgid "No se pudo abrir el borrador. Revisa que el hotel siga en Verde e inténtalo de nuevo."
-msgstr "No se pudo abrir el borrador. Revisa que el hotel siga en Verde e inténtalo de nuevo."
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "No se pudo abrir el borrador. Reintenta en unos segundos."
+msgstr "No se pudo abrir el borrador. Reintenta en unos segundos."
 
 #: src/features/accounting/pages/InvoiceDetailPage.tsx
 msgid "No se pudo abrir esta factura. Puede que ya no exista."
@@ -9543,6 +9643,10 @@ msgstr "No se pudo cargar la lista de colaboradores."
 #: src/features/admin/pages/CorporateEmailPage.tsx
 msgid "No se pudo cargar la lista de correos corporativos."
 msgstr "No se pudo cargar la lista de correos corporativos."
+
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "No se pudo cargar la propuesta de este hotel."
+msgstr "No se pudo cargar la propuesta de este hotel."
 
 #: src/features/timesheet/pages/TimesheetGlobalPage.tsx
 msgid "No se pudo cargar la semana del Timesheet Global. Reintenta en unos segundos."
@@ -9745,6 +9849,10 @@ msgstr "No se pudo mandar el correo — inténtalo de nuevo o mándalo tú apart
 #: src/features/contracts/components/ContractPdfButton.tsx
 msgid "No se pudo mandar el correo."
 msgstr "No se pudo mandar el correo."
+
+#: src/features/contracts/components/ContractPdfButton.tsx
+msgid "No se pudo marcar como enviado. Reintenta en unos segundos."
+msgstr "No se pudo marcar como enviado. Reintenta en unos segundos."
 
 #: src/features/accounting/pages/ConsolidationDetailPage.tsx
 msgid "No se pudo marcar como revisado. Reintenta."
@@ -9984,6 +10092,10 @@ msgstr "Nombre o correo, p. ej. Ana López…"
 msgid "Nombre o correo, p. ej. Ana Rivera…"
 msgstr "Nombre o correo, p. ej. Ana Rivera…"
 
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "Nombre o zona, p. ej. Puerto Real…"
+msgstr "Nombre o zona, p. ej. Puerto Real…"
+
 #: src/features/admin/components/HotelUsersSection.tsx
 msgid "Nombre, correo u hotel, p. ej. Xcaret…"
 msgstr "Nombre, correo u hotel, p. ej. Xcaret…"
@@ -10072,14 +10184,13 @@ msgstr "Nuestras plantillas, remitente @oranjepeople.com."
 msgid "Nueva cuenta del hotel"
 msgstr "Nueva cuenta del hotel"
 
-#: src/features/onboarding/components/NewProposalDialog.tsx
-#: src/features/onboarding/pages/ProposalListPage.tsx
-msgid "Nueva propuesta"
-msgstr "Nueva propuesta"
-
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "Nueva requisición"
 msgstr "Nueva requisición"
+
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "Nueva versión (v{nextVersion})"
+msgstr "Nueva versión (v{nextVersion})"
 
 #: src/features/clients/components/ClientSpotlightCard.tsx
 #: src/features/recruitment/components/PoolCardBoard.tsx
@@ -11031,6 +11142,10 @@ msgstr "Propuesta"
 msgid "Propuesta · {0}"
 msgstr "Propuesta · {0}"
 
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "Propuesta del hotel"
+msgstr "Propuesta del hotel"
+
 #: src/features/conversion/api/conversionApi.ts
 #: src/features/onboarding/components/ProposalVersionDetailDialog.tsx
 msgid "Propuesta enviada"
@@ -11461,10 +11576,18 @@ msgstr "Reemplazar"
 msgid "Reemplazar foto"
 msgstr "Reemplazar foto"
 
+#: src/features/contracts/components/ContractPdfButton.tsx
+msgid "Reenviar contrato por correo"
+msgstr "Reenviar contrato por correo"
+
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Reenviar invitación"
 msgstr "Reenviar invitación"
+
+#: src/features/contracts/components/ContractPdfButton.tsx
+msgid "Reenviar por correo"
+msgstr "Reenviar por correo"
 
 #: src/features/onboarding/components/HotelPunchQrCard.tsx
 msgid "Regenerando…"
@@ -11540,6 +11663,10 @@ msgstr "Regresaron la semana siguiente"
 #: src/features/worker/api/punchApi.ts
 msgid "Regreso de lunch"
 msgstr "Regreso de lunch"
+
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "Reintentar"
+msgstr "Reintentar"
 
 #: src/shared/constants/onboardingStatus.ts
 msgid "Renegociación / desbloqueo"
@@ -12077,6 +12204,11 @@ msgstr "Seguimiento"
 msgid "Seguimiento médico"
 msgstr "Seguimiento médico"
 
+#. placeholder {0}: draft.version
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "Seguir borrador v{0}"
+msgstr "Seguir borrador v{0}"
+
 #: src/shared/constants/catalogs.ts
 msgid "Según solicitud"
 msgstr "Según solicitud"
@@ -12341,6 +12473,10 @@ msgstr "Sí, liberar slot"
 #: src/features/onboarding/components/ConfirmSendProposalDialog.tsx
 msgid "Sí, marcar como enviada"
 msgstr "Sí, marcar como enviada"
+
+#: src/features/contracts/components/ContractPdfButton.tsx
+msgid "Sí, marcar como enviado"
+msgstr "Sí, marcar como enviado"
 
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Sí, marcar expirado"
@@ -12735,6 +12871,10 @@ msgstr "Sin posiciones: mientras no tenga, nadie puede pedir personal de este de
 msgid "Sin problemas"
 msgstr "Sin problemas"
 
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "Sin propuesta"
+msgstr "Sin propuesta"
+
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "sin propuesta de origen"
 msgstr "sin propuesta de origen"
@@ -12799,9 +12939,13 @@ msgstr "Sin subir todavía"
 msgid "Sin tarifas"
 msgstr "Sin tarifas"
 
+#: src/features/contracts/components/ContractPdfButton.tsx
+msgid "Sin tarifas no se puede enviar el contrato."
+msgstr "Sin tarifas no se puede enviar el contrato."
+
 #: src/features/contracts/components/ContractChecklist.tsx
-msgid "Sin tarifas no se puede activar: agrega la primera con «Editar tarifas»."
-msgstr "Sin tarifas no se puede activar: agrega la primera con «Editar tarifas»."
+msgid "Sin tarifas no se puede enviar ni activar: agrega la primera con «Editar tarifas»."
+msgstr "Sin tarifas no se puede enviar ni activar: agrega la primera con «Editar tarifas»."
 
 #: src/features/team/pages/TeamPage.tsx
 msgid "sin territorio asignado todavía"
@@ -12985,7 +13129,7 @@ msgstr "Solo lo que dicen las requisiciones: las de su zona y las que creó. Sus
 msgid "Solo los consolidados de nómina por estado. Los KPIs de Contabilidad (consolidados a tiempo, días a invoice, cobro, fuga de horas) necesitan que el Manager de QA pueda leer nómina y facturación."
 msgstr "Solo los consolidados de nómina por estado. Los KPIs de Contabilidad (consolidados a tiempo, días a invoice, cobro, fuga de horas) necesitan que el Manager de QA pueda leer nómina y facturación."
 
-#: src/features/onboarding/components/NewProposalDialog.tsx
+#: src/features/onboarding/components/ViewProposalDialog.tsx
 msgid "Solo los hoteles en Verde (o Café, para renegociar) pueden abrir propuesta — y de Verde no se avanza sin enviarla."
 msgstr "Solo los hoteles en Verde (o Café, para renegociar) pueden abrir propuesta — y de Verde no se avanza sin enviarla."
 
@@ -13285,7 +13429,7 @@ msgstr "Tarifa/h"
 msgid "Tarifas"
 msgstr "Tarifas"
 
-#: src/features/onboarding/components/NewProposalDialog.tsx
+#: src/features/onboarding/components/ViewProposalDialog.tsx
 msgid "Tarifas globales, por ahora"
 msgstr "Tarifas globales, por ahora"
 
@@ -13638,6 +13782,14 @@ msgstr "Todavía no hay versiones de la propuesta."
 #: src/features/contracts/components/RateTable.tsx
 msgid "Todavía no se cotiza ninguna posición. Agrégala con «Editar tarifas» mientras el contrato sea borrador."
 msgstr "Todavía no se cotiza ninguna posición. Agrégala con «Editar tarifas» mientras el contrato sea borrador."
+
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "Todavía no se puede crear: el hotel está en {statusLabel}. La propuesta se abre cuando llega a Verde (o regresa en Café)."
+msgstr "Todavía no se puede crear: el hotel está en {statusLabel}. La propuesta se abre cuando llega a Verde (o regresa en Café)."
+
+#: src/features/onboarding/pages/ProposalEditorPage.tsx
+msgid "Todavía no se puede:"
+msgstr "Todavía no se puede:"
 
 #: src/features/team/pages/RecruitmentTeamPage.tsx
 msgid "Todavía no tiene Reclutadoras en su grupo."
@@ -14155,7 +14307,7 @@ msgstr "Un número mayor a 0."
 msgid "Un número válido, 0 o más."
 msgstr "Un número válido, 0 o más."
 
-#: src/features/onboarding/components/NewProposalDialog.tsx
+#: src/features/onboarding/components/ViewProposalDialog.tsx
 msgid "Un pay rate y un bill rate para todo el hotel. Cotizar por posición llegará más adelante."
 msgstr "Un pay rate y un bill rate para todo el hotel. Cotizar por posición llegará más adelante."
 
@@ -14308,6 +14460,10 @@ msgstr "Urgentes"
 msgid "Úsalo cuando ya se entregó por otro medio — impresa, en mano, por otro correo."
 msgstr "Úsalo cuando ya se entregó por otro medio — impresa, en mano, por otro correo."
 
+#: src/features/contracts/components/ContractPdfButton.tsx
+msgid "Úsalo si ya se lo hiciste llegar al hotel por fuera. Igual que la propuesta, al enviarlo queda bloqueado: si hay que corregir algo, el BDC lo desbloquea."
+msgstr "Úsalo si ya se lo hiciste llegar al hotel por fuera. Igual que la propuesta, al enviarlo queda bloqueado: si hay que corregir algo, el BDC lo desbloquea."
+
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Usuario activado"
 msgstr "Usuario activado"
@@ -14358,6 +14514,11 @@ msgstr "V"
 #: src/features/onboarding/pages/ProposalListPage.tsx
 msgid "v{0} · {1}"
 msgstr "v{0} · {1}"
+
+#. placeholder {0}: last.version
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "v{0} enviada"
+msgstr "v{0} enviada"
 
 #: src/features/accounting/pages/AccountingPendingPages.tsx
 #: src/features/personnel/components/StandByDialog.tsx
@@ -14478,6 +14639,8 @@ msgid "Ver perfil"
 msgstr "Ver perfil"
 
 #: src/features/onboarding/components/ProposalVersionList.tsx
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+#: src/features/onboarding/pages/ProposalListPage.tsx
 msgid "Ver propuesta"
 msgstr "Ver propuesta"
 
@@ -14554,6 +14717,7 @@ msgid "Versión nueva abierta"
 msgstr "Versión nueva abierta"
 
 #: src/features/onboarding/components/ProposalVersionList.tsx
+#: src/features/onboarding/components/ViewProposalDialog.tsx
 msgid "Versiones de la propuesta"
 msgstr "Versiones de la propuesta"
 
@@ -14773,6 +14937,10 @@ msgstr "Ya entró al sistema"
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Ya entró por primera vez: no hace falta reenviar la invitación."
 msgstr "Ya entró por primera vez: no hace falta reenviar la invitación."
+
+#: src/features/onboarding/components/ViewProposalDialog.tsx
+msgid "Ya es cliente con contrato vigente: la propuesta no se reabre. Si cambian las tarifas, se edita el contrato."
+msgstr "Ya es cliente con contrato vigente: la propuesta no se reabre. Si cambian las tarifas, se edita el contrato."
 
 #: src/features/worker/pages/Phase2Page.tsx
 msgid "Ya está todo"

@@ -10,9 +10,10 @@ import {
 import { useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
-import { useSendContractEmailMutation } from '../api/contractsApi'
+import { useMarkContractSentMutation, useSendContractEmailMutation } from '../api/contractsApi'
 import type { ContractDetail } from '../types/contract.types'
 
+import { BlockedAction } from '@/shared/components/BlockedAction'
 import { Button } from '@/shared/components/Button'
 import { ContractDocument } from '@/shared/components/ContractDocument'
 import { Modal } from '@/shared/components/Modal'
@@ -37,13 +38,31 @@ import {
  * verlo y portalizado a `#print-root` para imprimirlo completo — dentro del
  * modal queda encerrado en un contenedor con scroll y solo saldría el trozo
  * visible. Y sale sin firmas: se firma fuera del sistema.
+ *
+ * Enviar es como en la Propuesta (Hugo, 2026-10-23): «Enviar contrato» con
+ * «Enviar por correo» o «Marcar como enviado», y cualquiera de los dos congela
+ * el borrador. Ya enviado, solo queda reenviarlo por correo.
  */
-export function ContractPdfButton({ contract }: { contract: ContractDetail }): ReactNode {
+export function ContractPdfButton({
+  contract,
+  canSend,
+  sendBlockers = [],
+}: {
+  contract: ContractDetail
+  /** `terms_and_conditions:update`: el mismo permiso que editarlo. */
+  canSend: boolean
+  /** Lo que impide enviarlo (hoy, no tener tarifas): apaga el botón y lo dice. */
+  sendBlockers?: readonly string[]
+}): ReactNode {
   const { t } = useLingui()
   const [isOpen, setIsOpen] = useState(false)
   const [isSendOpen, setSendOpen] = useState(false)
+  const [isMarkOpen, setMarkOpen] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
   const [sendContractEmail, { isLoading: isSendingEmail }] = useSendContractEmailMutation()
+  const [markContractSent, { isLoading: isMarking }] = useMarkContractSentMutation()
+  const isDraftUnsent = contract.status === 'DRAFT' && contract.sentAt === null
+  const canResend = contract.status === 'ACTIVE' || contract.status === 'DRAFT'
   const printRoot = document.getElementById('print-root')
 
   const documentProps = {
@@ -73,7 +92,30 @@ export function ContractPdfButton({ contract }: { contract: ContractDetail }): R
           : t`No se pudo mandar el correo — inténtalo de nuevo o mándalo tú aparte.`,
       )
     } catch (error) {
-      setSendError(apiErrorMessage(error, { fallback: t`No se pudo mandar el correo.` }))
+      setSendError(
+        apiErrorMessage(error, {
+          byCode: { CONTRACT_WITHOUT_RATES: t`Sin tarifas no se puede enviar el contrato.` },
+          fallback: t`No se pudo mandar el correo.`,
+        }),
+      )
+    }
+  }
+
+  async function confirmMark(): Promise<void> {
+    try {
+      await markContractSent({ contractId: contract.id }).unwrap()
+      setMarkOpen(false)
+      toast.success(t`Contrato marcado como enviado: quedó bloqueado`)
+    } catch (error) {
+      toast.error(
+        apiErrorMessage(error, {
+          byCode: {
+            CONTRACT_ALREADY_SENT: t`Este contrato ya estaba marcado como enviado.`,
+            CONTRACT_WITHOUT_RATES: t`Sin tarifas no se puede enviar el contrato.`,
+          },
+          fallback: t`No se pudo marcar como enviado. Reintenta en unos segundos.`,
+        }),
+      )
     }
   }
 
@@ -115,15 +157,84 @@ export function ContractPdfButton({ contract }: { contract: ContractDetail }): R
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Button
-        onClick={() => {
-          setSendError(null)
-          setSendOpen(true)
+      {canSend && isDraftUnsent && (
+        <DropdownMenu>
+          <BlockedAction reasons={sendBlockers} title={t`Antes de enviar:`}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="primary" disabled={sendBlockers.length > 0}>
+                <Trans>Enviar contrato</Trans>
+                <MaterialIcon name="expand_more" className="text-base" aria-hidden />
+              </Button>
+            </DropdownMenuTrigger>
+          </BlockedAction>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onSelect={() => {
+                setSendError(null)
+                setSendOpen(true)
+              }}
+            >
+              <MaterialIcon name="mail" className="text-base" aria-hidden />
+              <Trans>Enviar por correo</Trans>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                setMarkOpen(true)
+              }}
+            >
+              <MaterialIcon name="task_alt" className="text-base" aria-hidden />
+              <Trans>Marcar como enviado</Trans>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+
+      {canSend && !isDraftUnsent && canResend && (
+        <BlockedAction reasons={sendBlockers} title={t`Antes de enviar:`}>
+          <Button
+            disabled={sendBlockers.length > 0}
+            onClick={() => {
+              setSendError(null)
+              setSendOpen(true)
+            }}
+          >
+            <MaterialIcon name="mail" className="text-base" aria-hidden />
+            <Trans>Reenviar por correo</Trans>
+          </Button>
+        </BlockedAction>
+      )}
+
+      <Modal
+        isOpen={isMarkOpen}
+        onClose={() => {
+          setMarkOpen(false)
         }}
+        title={t`¿Marcar el contrato como enviado?`}
+        description={t`Úsalo si ya se lo hiciste llegar al hotel por fuera. Igual que la propuesta, al enviarlo queda bloqueado: si hay que corregir algo, el BDC lo desbloquea.`}
+        footer={
+          <>
+            <Button
+              disabled={isMarking}
+              onClick={() => {
+                setMarkOpen(false)
+              }}
+            >
+              <Trans>Cancelar</Trans>
+            </Button>
+            <Button
+              variant="primary"
+              disabled={isMarking}
+              onClick={() => {
+                void confirmMark()
+              }}
+            >
+              {isMarking ? <Trans>Marcando…</Trans> : <Trans>Sí, marcar como enviado</Trans>}
+            </Button>
+          </>
+        }
       >
-        <MaterialIcon name="mail" className="text-base" aria-hidden />
-        <Trans>Enviar por correo</Trans>
-      </Button>
+        {null}
+      </Modal>
 
       <Modal
         isOpen={isOpen}
@@ -173,7 +284,7 @@ export function ContractPdfButton({ contract }: { contract: ContractDetail }): R
           setSendOpen(false)
           setSendError(null)
         }}
-        title={t`Enviar contrato por correo`}
+        title={isDraftUnsent ? t`Enviar contrato por correo` : t`Reenviar contrato por correo`}
         isSending={isSendingEmail}
         error={sendError}
         onConfirm={(params) => {

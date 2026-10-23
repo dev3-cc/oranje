@@ -23,6 +23,7 @@ import { UnlockContractDialog } from '../components/UnlockContractDialog'
 import { ANY_VALUE } from '../types/contract.types'
 
 import personajeContratacion from '@/assets/ilustrations/personaje-contratacion.svg'
+import { BlockedAction, BlockedReasons } from '@/shared/components/BlockedAction'
 import { Button } from '@/shared/components/Button'
 import { ContractDocument, PROVIDER } from '@/shared/components/ContractDocument'
 import { DateField } from '@/shared/components/DateField'
@@ -228,13 +229,28 @@ export function ContractDetailPage({
   }
 
   /* El botón de activar respeta la lista: si hay un problema, el motor lo rechazaría igual. */
-  const hasFailingChecks = buildContractChecks(contract, i18n).some(
+  const failingChecks = buildContractChecks(contract, i18n).filter(
     (check) => check.status === 'fail',
   )
+  const activateBlockers = failingChecks.map((check) => check.detail)
+  const hasFailingChecks = activateBlockers.length > 0
+  /* Enviar también exige tarifas (Hugo, 2026-10-23): al hotel no le llega un
+     contrato con el cuadro vacío. El servidor lo rechaza igual. */
+  const sendBlockers = failingChecks
+    .filter((check) => check.id === 'rates')
+    .map((check) => check.detail)
+  const isSendBlockShown =
+    canEditRates &&
+    contract.status === 'DRAFT' &&
+    contract.sentAt === null &&
+    sendBlockers.length > 0
 
-  /* El candado del contrato ACTIVO (Hugo, 2026-10-21): se cuelga del
-     status, nunca de un paso aparte. Un Borrador nunca está bloqueado. */
-  const isLocked = contract.status === 'ACTIVE' && !contract.isUnlocked
+  /* El candado (Hugo, 2026-10-21; ampliado a los enviados el 2026-10-23):
+     el contrato ACTIVO y el Borrador que ya se envió al hotel, igual que la
+     Propuesta enviada. Un Borrador sin enviar se edita libre. */
+  const isSent = contract.status === 'DRAFT' && contract.sentAt !== null
+  const isLockable = contract.status === 'ACTIVE' || isSent
+  const isLocked = isLockable && !contract.isUnlocked
 
   /* Mismo criterio que antes abría el modal «Editar contrato»: solo en
      Borrador/Activo, con el permiso, y sin el candado puesto. */
@@ -292,7 +308,13 @@ export function ContractDetailPage({
               token={CONTRACT_STATUS_TOKEN[contract.status]}
               label={CONTRACT_STATUS_LABEL[contract.status]}
             />
-            {contract.status === 'ACTIVE' && (
+            {isSent && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-o-50 px-3 py-1.5 text-sm font-medium text-o-700">
+                <MaterialIcon name="send" aria-hidden className="text-base" />
+                <Trans>Enviado</Trans>
+              </span>
+            )}
+            {isLockable && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-3 py-1.5 text-sm font-medium text-ink-3">
                 <MaterialIcon
                   name={isLocked ? 'lock' : 'lock_open'}
@@ -305,14 +327,34 @@ export function ContractDetailPage({
           </div>
           <p className="mt-1.5 text-sm text-ink-3">
             {IS_DEV_UI && 'commercial.contract · '}
-            {contract.signedByName === '—' ? (
-              <Trans>
-                {contract.hotelName} · firmado el {formatDate(contract.signedAt)}
-              </Trans>
+            {/* Sin activar no hay firma: antes un borrador decía «firmado el
+                …» con su fecha de creación (Hugo, 2026-10-23). El hotel firma
+                fuera del sistema; aquí consta cuándo se activó y quién. */}
+            {contract.signedAt !== null ? (
+              contract.signedByName !== null ? (
+                <Trans>
+                  {contract.hotelName} · activado por {contract.signedByName} el{' '}
+                  {formatDate(contract.signedAt)}
+                </Trans>
+              ) : (
+                <Trans>
+                  {contract.hotelName} · activado el {formatDate(contract.signedAt)}
+                </Trans>
+              )
+            ) : contract.sentAt !== null ? (
+              contract.sentByName !== null ? (
+                <Trans>
+                  {contract.hotelName} · enviado por {contract.sentByName} el{' '}
+                  {formatDate(contract.sentAt)}
+                </Trans>
+              ) : (
+                <Trans>
+                  {contract.hotelName} · enviado el {formatDate(contract.sentAt)}
+                </Trans>
+              )
             ) : (
               <Trans>
-                {contract.hotelName} · firmado por {contract.signedByName} el{' '}
-                {formatDate(contract.signedAt)}
+                {contract.hotelName} · borrador creado el {formatDate(contract.createdAt)}
               </Trans>
             )}
             {contract.proposal ? (
@@ -335,7 +377,11 @@ export function ContractDetailPage({
         </div>
 
         <div className="flex shrink-0 flex-wrap gap-3">
-          <ContractPdfButton contract={contract} />
+          <ContractPdfButton
+            contract={contract}
+            canSend={canEditRates}
+            sendBlockers={sendBlockers}
+          />
 
           {/* Renovar es el único alta que no viene de una propuesta: es el
               mismo hotel, con el cuadro del contrato que vence. */}
@@ -352,8 +398,8 @@ export function ContractDetailPage({
 
           {/* El candado (Hugo, 2026-10-21): mismo rol que activa/aprueba.
               Desbloquear pide motivo (abre el diálogo); bloquear no, ahí no
-              se arriesga nada. */}
-          {contract.status === 'ACTIVE' && canApprove && (
+              se arriesga nada. Aplica también al borrador enviado. */}
+          {isLockable && canApprove && (
             <Button
               variant="secondary"
               disabled={isLocking}
@@ -418,24 +464,21 @@ export function ContractDetailPage({
                       <Trans>Cancelar borrador</Trans>
                     )}
                   </Button>
-                  <Button
-                    variant="primary"
-                    disabled={isTransitioning || hasFailingChecks}
-                    title={
-                      hasFailingChecks
-                        ? t`Antes hay que resolver lo que dice «Qué sigue»`
-                        : undefined
-                    }
-                    onClick={() => {
-                      setActivateOpen(true)
-                    }}
-                  >
-                    {pendingAction === 'activate' ? (
-                      <Trans>Activando…</Trans>
-                    ) : (
-                      <Trans>Activar contrato</Trans>
-                    )}
-                  </Button>
+                  <BlockedAction reasons={activateBlockers} title={t`Antes de activar:`}>
+                    <Button
+                      variant="primary"
+                      disabled={isTransitioning || hasFailingChecks}
+                      onClick={() => {
+                        setActivateOpen(true)
+                      }}
+                    >
+                      {pendingAction === 'activate' ? (
+                        <Trans>Activando…</Trans>
+                      ) : (
+                        <Trans>Activar contrato</Trans>
+                      )}
+                    </Button>
+                  </BlockedAction>
                 </>
               )}
             </>
@@ -459,6 +502,17 @@ export function ContractDetailPage({
           )}
         </div>
       </header>
+
+      {/* Una sola lista en rojo: lo que impide enviar (las tarifas) también
+          impide activar, y repetirlo dos veces solo estorba. */}
+      {contract.status === 'DRAFT' && canApprove ? (
+        <BlockedReasons
+          reasons={activateBlockers}
+          title={isSendBlockShown ? t`Antes de enviar o activar:` : t`Antes de activar:`}
+        />
+      ) : (
+        isSendBlockShown && <BlockedReasons reasons={sendBlockers} title={t`Antes de enviar:`} />
+      )}
 
       {/* Sin approve, la acción que da sentido al borrador se explica: quién sigue. */}
       {contract.status === 'DRAFT' && !canApprove && (

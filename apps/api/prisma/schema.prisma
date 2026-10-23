@@ -353,6 +353,7 @@ model User {
   auditResponseHistoryChanges AuditResponseHistory[] @relation("auditResponseHistoryChangedBy")
 
   contractsSigned Contract[] @relation("contractSignedBy")
+  contractsSent   Contract[] @relation("contractSentBy")
 
   workerRatesAuthorized    WorkerRate[]    @relation("workerRateAuthorizedBy")
   consolidationsValidated  Consolidation[] @relation("consolidationValidatedBy")
@@ -1707,6 +1708,13 @@ model Contract {
   signedBy String?   @map("signed_by") @db.Uuid
   signedAt DateTime? @map("signed_at") @db.Timestamptz(6)
 
+  /// Enviado al hotel (Hugo, 2026-10-23): mismo patrón que la Propuesta —
+  /// «Enviar por correo» o «Marcar como enviado» lo congelan. Un DRAFT
+  /// enviado queda bloqueado igual que uno ACTIVO; el BDC lo desbloquea con
+  /// el mismo candado (`isUnlocked`) si hay que corregirlo. NULO = no enviado.
+  sentBy String?   @map("sent_by") @db.Uuid
+  sentAt DateTime? @map("sent_at") @db.Timestamptz(6)
+
   /// Campos del machote real del Service Agreement (Hugo, 2026-10-20): todos
   /// nulables, se prellenan desde la última propuesta enviada pero son
   /// editables. `propertyAddress` es un solo campo (el machote pide calle,
@@ -1720,9 +1728,9 @@ model Contract {
   serviceProviderName  String? @map("service_provider_name") @db.Text
   serviceProviderEmail String? @map("service_provider_email") @db.Text
 
-  /// El candado del contrato ACTIVO (Hugo, 2026-10-21): "bloqueado" se
-  /// calcula (status = ACTIVE y isUnlocked = false), esta columna nunca
-  /// toca el status. Se apaga sola en los demás estados: un DRAFT ya es
+  /// El candado (Hugo, 2026-10-21; ampliado el 2026-10-23 a los enviados):
+  /// "bloqueado" se calcula —ACTIVE, o DRAFT ya enviado, con isUnlocked =
+  /// false—; esta columna nunca toca el status. Un DRAFT sin enviar ya es
   /// editable sin esto, y uno cerrado ya no se edita de ningún modo.
   isUnlocked Boolean @default(false) @map("is_unlocked")
 
@@ -1733,6 +1741,7 @@ model Contract {
   prospect     Prospect? @relation(fields: [prospectId], references: [id], onDelete: Restrict)
   proposal     Proposal? @relation(fields: [proposalId], references: [id], onDelete: Restrict)
   signedByUser User?     @relation("contractSignedBy", fields: [signedBy], references: [id], onDelete: Restrict)
+  sentByUser   User?     @relation("contractSentBy", fields: [sentBy], references: [id], onDelete: Restrict)
 
   rates ContractRate[]
 

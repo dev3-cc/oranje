@@ -4,6 +4,8 @@ import { Provider } from 'react-redux'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
+import { contractsApi } from '../api/contractsApi'
+
 import { ContractDetailPage } from './ContractDetailPage'
 
 import { store } from '@/app/store'
@@ -22,15 +24,13 @@ function renderDetail(contractId = 'ct-0184'): void {
 }
 
 describe('ContractDetailPage', () => {
-  it('encabeza con el contrato, su estado y quién lo firmó', async () => {
+  it('encabeza con el contrato, su estado y quién lo activó', async () => {
     renderDetail()
 
     expect(
       await screen.findByRole('heading', { name: 'Contrato CT-2026-0184' }),
     ).toBeInTheDocument()
-    expect(
-      screen.getByText('commercial.contract · Hotel Puerto Real · firmado el 20 jun 2026'),
-    ).toBeInTheDocument()
+    expect(screen.getByText(/activado por Bruno Salas el 20 jun 2026/)).toBeInTheDocument()
   })
 
   it('traduce la semana de nómina y enseña los números que la guardan', async () => {
@@ -231,5 +231,60 @@ describe('ContractDetailPage', () => {
       expect(screen.getByText(/sin propuesta de origen/)).toBeInTheDocument()
       expect(screen.queryByRole('link', { name: /Propuesta v/ })).not.toBeInTheDocument()
     })
+  })
+
+  // Hugo, 2026-10-23: un botón apagado dice por qué. ct-0203 es un borrador
+  // sin tarifas, así que no se puede activar todavía.
+  it('sin tarifas no se envía ni se activa, y lo dice en rojo una sola vez', async () => {
+    renderDetail('ct-0203')
+
+    await screen.findByRole('heading', { name: 'Contrato CT-2026-0203' })
+    expect(screen.getByRole('button', { name: 'Enviar contrato' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Activar contrato' })).toBeDisabled()
+    const aviso = screen
+      .getByText('Antes de enviar o activar:')
+      .closest('[role="status"]') as HTMLElement
+    expect(within(aviso).getByText(/Sin tarifas no se puede enviar ni activar/)).toBeInTheDocument()
+  })
+
+  it('un contrato activo no enseña faltantes de activación', async () => {
+    renderDetail('ct-0184')
+
+    await screen.findByRole('heading', { name: 'Contrato CT-2026-0184' })
+    expect(screen.queryByText('Antes de activar:')).not.toBeInTheDocument()
+  })
+
+  // Hugo, 2026-10-23: un borrador decía «firmado el …» con su fecha de
+  // creación, y enviarlo no lo congelaba. Ahora se envía como la Propuesta.
+  it('un borrador dice cuándo se creó y, al marcarlo como enviado, queda bloqueado', async () => {
+    const user = userEvent.setup()
+    /* Sin tarifas no se envía (caso de arriba): primero se cotiza un puesto. */
+    await store
+      .dispatch(
+        contractsApi.endpoints.upsertContractRate.initiate({
+          contractId: 'ct-0203',
+          catalogPositionId: 'pos-hk',
+          payRate: '170.00',
+          billRate: '250.00',
+        }),
+      )
+      .unwrap()
+    renderDetail('ct-0203')
+
+    await screen.findByRole('heading', { name: 'Contrato CT-2026-0203' })
+    expect(screen.getByText(/borrador creado el/)).toBeInTheDocument()
+    expect(screen.queryByText(/firmado el/)).not.toBeInTheDocument()
+    expect(screen.queryByText('Bloqueado')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Enviar contrato' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Marcar como enviado' }))
+    await user.click(await screen.findByRole('button', { name: 'Sí, marcar como enviado' }))
+
+    expect(await screen.findByText('Bloqueado')).toBeInTheDocument()
+    expect(screen.getByText('Enviado')).toBeInTheDocument()
+    expect(screen.getByText(/enviado por Ana Ruiz el/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Enviar contrato' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Reenviar por correo' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Editar tarifas' })).not.toBeInTheDocument()
   })
 })

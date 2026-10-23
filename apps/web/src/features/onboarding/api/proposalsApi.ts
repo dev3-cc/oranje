@@ -2,7 +2,7 @@ import type {
   ProposalCandidate,
   ProposalDraft,
   ProposalRate,
-  ProposalTarget,
+  ProposalHotel,
   ProposalVersionSummary,
   ProposalWorkspace,
   SaveProposalDraftRequest,
@@ -207,29 +207,40 @@ export const proposalsApi = baseApi.injectEndpoints({
     }),
 
     /**
-     * A quién se le puede abrir una propuesta NUEVA: prospectos en Verde o
-     * Café (la regla del back) que todavía no tienen ninguna. Los que ya
-     * tienen versiones se siguen desde su fila de la lista.
+     * «Ver propuesta» (Hugo, 2026-10-23): TODOS los hoteles, también los que
+     * todavía no pueden abrir propuesta — el diálogo dice por qué en vez de
+     * esconderlos. Un renglón por hotel: su ciclo abierto o, si no tiene, el
+     * más reciente (un hotel puede tener ciclos cerrados de antes).
      */
-    getProposalTargets: build.query<ProposalTarget[], void>({
+    getProposalHotels: build.query<ProposalHotel[], void>({
       queryFn: async (_arg, _api, _extra, fetchWithBQ) => {
-        const res = await fetchAllPages<ProspectApi>(fetchWithBQ as FetchWithBQ, '/prospects')
+        const res = await fetchAllPages<ProspectApi>(fetchWithBQ as FetchWithBQ, '/prospects', {
+          includeClosed: true,
+        })
         if ('error' in res) return { error: res.error as never }
 
-        const prospects = res.data
+        const byHotel = new Map<string, ProspectApi>()
+        for (const prospect of res.data) {
+          const current = byHotel.get(prospect.hotel.id)
+          const sameOpenness = (prospect.closedAt === null) === (current?.closedAt === null)
+          const isBetter =
+            current === undefined ||
+            (prospect.closedAt === null && current.closedAt !== null) ||
+            (sameOpenness && prospect.openedAt > current.openedAt)
+          if (isBetter) byHotel.set(prospect.hotel.id, prospect)
+        }
+
         return {
-          data: prospects
-            .filter(
-              (prospect) =>
-                (prospect.state.code === 'GREEN' || prospect.state.code === 'BROWN') &&
-                !prospect.lastProposal,
-            )
+          data: [...byHotel.values()]
             .map((prospect) => ({
               prospectId: prospect.id,
               hotelName: prospect.hotel.name,
               zone: prospect.hotel.zone.name,
               prospectStatus: prospect.state.code as OnboardingStatus,
-            })),
+              isClosed: prospect.closedAt !== null,
+              lastProposal: prospect.lastProposal,
+            }))
+            .sort((a, b) => a.hotelName.localeCompare(b.hotelName, 'es')),
         }
       },
       providesTags: [{ type: 'Prospect', id: 'LIST' }],
@@ -378,7 +389,7 @@ export const proposalsApi = baseApi.injectEndpoints({
 
 export const {
   useGetProposalCandidatesQuery,
-  useGetProposalTargetsQuery,
+  useGetProposalHotelsQuery,
   useGetProposalWorkspaceQuery,
   useCreateProposalDraftMutation,
   useSaveProposalDraftMutation,

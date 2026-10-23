@@ -35,6 +35,11 @@ export interface ContractEntity {
   mealDeductionAmount: string
   splitsInvoiceByMonth: boolean
   signedAt: string | null
+  /** Quién lo activó; `null` si nunca se activó. */
+  signedByName: string | null
+  /** Enviado al hotel (2026-10-23): un borrador enviado queda bloqueado. */
+  sentAt: string | null
+  sentByName: string | null
   createdAt: string
   updatedAt: string | null
   rates?: RateRow[]
@@ -48,7 +53,7 @@ export interface ContractEntity {
   companyEmail: string | null
   serviceProviderName: string | null
   serviceProviderEmail: string | null
-  /** Candado del contrato ACTIVO — nunca cambia el `status` por sí solo. */
+  /** Candado del contrato ACTIVO o del borrador enviado — nunca cambia el `status`. */
   isUnlocked: boolean
 }
 
@@ -63,13 +68,23 @@ export class ContractsService {
   /**
    * Enviar el acuerdo por correo (2026-10-17) — mismo patrón que la Propuesta:
    * el PDF viaja del front (es el mismo documento que la persona ve), el
-   * correo es mejor esfuerzo y nunca revierte nada ya guardado.
+   * correo es mejor esfuerzo y nunca revierte nada ya guardado. Un borrador
+   * que todavía no se había enviado queda enviado y bloqueado ANTES de
+   * mandar el correo (2026-10-23): lo que le llega al hotel ya no se mueve.
    */
   async sendEmail(
     id: string,
     user: AuthenticatedUser,
     params: { to: string; note: string | null; pdf: Buffer },
   ): Promise<SendMailResult> {
+    const row = await this.contract(id)
+
+    await this.assertHasRates(id, 'enviar')
+
+    if (row.status === DRAFT && !row.sentAt) {
+      await this.repo.markSent({ id, userId: user.id, roleCode: user.roleCode })
+    }
+
     const contract = await this.get(id)
     const sender = await this.repo.senderInfo(user.id)
 
@@ -91,6 +106,36 @@ export class ContractsService {
         },
       ],
     })
+  }
+
+  /**
+   * «Marcar como enviado» (Hugo, 2026-10-23): para el contrato que se le
+   * hizo llegar al hotel por fuera (en persona, otro correo). Igual que en la
+   * Propuesta, enviar congela: desde aquí solo se edita si el BDC lo
+   * desbloquea.
+   */
+  async markSent(id: string, user: AuthenticatedUser): Promise<ContractEntity> {
+    const row = await this.contract(id)
+
+    if (row.status !== DRAFT) {
+      throw new ConflictException({
+        code: 'CONTRACT_NOT_DRAFT',
+        message: `Solo se envía un contrato en borrador, y este está ${contractStatusLabel(row.status)}`,
+      })
+    }
+
+    if (row.sentAt) {
+      throw new ConflictException({
+        code: 'CONTRACT_ALREADY_SENT',
+        message: 'Este contrato ya está marcado como enviado',
+      })
+    }
+
+    await this.assertHasRates(id, 'enviar')
+
+    await this.repo.markSent({ id, userId: user.id, roleCode: user.roleCode })
+
+    return this.get(id)
   }
 
   async create(dto: CreateContractDto, user: AuthenticatedUser): Promise<ContractEntity> {
@@ -346,12 +391,7 @@ export class ContractsService {
       })
     }
 
-    if ((await this.repo.countRates(id)) === 0) {
-      throw new UnprocessableEntityException({
-        code: 'CONTRACT_WITHOUT_RATES',
-        message: 'Un contrato sin tarifas no puede pagar ni facturar nada',
-      })
-    }
+    await this.assertHasRates(id, 'activar')
 
     const active = await this.repo.activeOf(row.hotel.id)
 
@@ -429,10 +469,10 @@ export class ContractsService {
   }
 
   /**
-   * El candado del contrato ACTIVO (Hugo, 2026-10-21): se cuelga del
-   * status, no es un paso aparte — un DRAFT no necesita desbloquearse (ya
-   * se edita) y uno cerrado no se desbloquea nunca. Desbloquear pide
-   * motivo; volver a bloquear no, porque ahí no se arriesga nada.
+   * El candado (Hugo, 2026-10-21; ampliado a los enviados el 2026-10-23):
+   * aplica a un contrato ACTIVO y a un borrador ya enviado. Un borrador sin
+   * enviar no lo necesita (ya se edita) y uno cerrado no se desbloquea nunca.
+   * Desbloquear pide motivo; volver a bloquear no, ahí no se arriesga nada.
    */
   async setLock(
     id: string,
@@ -442,10 +482,13 @@ export class ContractsService {
   ): Promise<ContractEntity> {
     const row = await this.contract(id)
 
-    if (row.status !== ACTIVE) {
+    if (!isLockable(row)) {
       throw new ConflictException({
         code: 'CONTRACT_NOT_ACTIVE',
-        message: `El candado solo aplica a un contrato vigente, y este está ${contractStatusLabel(row.status)}`,
+        message:
+          row.status === DRAFT
+            ? 'Este borrador todavía no se envía: se edita sin desbloquear nada'
+            : `El candado solo aplica a un contrato enviado o vigente, y este está ${contractStatusLabel(row.status)}`,
       })
     }
 
@@ -460,12 +503,29 @@ export class ContractsService {
     return this.get(id)
   }
 
-  /** Un contrato vigente y bloqueado no se edita por aquí: hay que desbloquearlo primero. */
+  /** Un contrato vigente o ya enviado, y bloqueado, no se edita por aquí: hay que desbloquearlo primero. */
+  /**
+   * Sin tarifas no se activa (no pagaría ni facturaría nada) ni se envía
+   * (Hugo, 2026-10-23: al hotel no le llega un cuadro vacío). Mismo código en
+   * los dos casos: el front lo dice antes y esto lo cierra para un `curl`.
+   */
+  private async assertHasRates(id: string, action: 'activar' | 'enviar'): Promise<void> {
+    if ((await this.repo.countRates(id)) > 0) return
+
+    throw new UnprocessableEntityException({
+      code: 'CONTRACT_WITHOUT_RATES',
+      message: `Un contrato sin tarifas no se puede ${action}`,
+    })
+  }
+
   private assertUnlocked(row: ContractRow): void {
-    if (row.status === ACTIVE && !row.isUnlocked) {
+    if (isLockable(row) && !row.isUnlocked) {
       throw new ConflictException({
         code: 'CONTRACT_LOCKED',
-        message: 'Este contrato está bloqueado: desbloquéalo antes de editarlo',
+        message:
+          row.status === DRAFT
+            ? 'Este contrato ya se envió al hotel y está bloqueado: el BDC lo desbloquea si hay que corregirlo'
+            : 'Este contrato está bloqueado: desbloquéalo antes de editarlo',
       })
     }
   }
@@ -545,6 +605,11 @@ export class ContractsService {
   }
 }
 
+/** El candado aplica al contrato vigente y al borrador que ya se envió al hotel. */
+function isLockable(row: ContractRow): boolean {
+  return row.status === ACTIVE || (row.status === DRAFT && row.sentAt !== null)
+}
+
 function toEntity(row: ContractRow): ContractEntity {
   return {
     id: row.id,
@@ -563,6 +628,9 @@ function toEntity(row: ContractRow): ContractEntity {
     mealDeductionAmount: row.mealDeductionAmount,
     splitsInvoiceByMonth: row.splitsInvoiceByMonth,
     signedAt: row.signedAt ? new Date(row.signedAt).toISOString() : null,
+    signedByName: row.signedByName,
+    sentAt: row.sentAt ? new Date(row.sentAt).toISOString() : null,
+    sentByName: row.sentByName,
     createdAt: new Date(row.createdAt).toISOString(),
     updatedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : null,
     proposal:

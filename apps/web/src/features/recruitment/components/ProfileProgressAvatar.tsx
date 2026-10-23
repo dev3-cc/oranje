@@ -29,8 +29,9 @@ import { formatList } from '@/shared/lib/formatters'
  * está, el arco cuenta lo de la **Fase 1** — lo que Reclutamiento necesita
  * capturar para validarlo y saber a qué posición cabe.
  *
- * Nunca lo dice SOLO con color: cierra con palomita cuando está listo y lleva
- * la cuenta («2/4») o el signo cuando falta.
+ * Nunca lo dice SOLO con color: cierra con palomita cuando está listo o con
+ * el signo «?» cuando falta — el tooltip dice qué falta por su nombre; el
+ * conteo («2/4») se quitó por confuso (Hugo, 2026-10-23).
  */
 export function ProfileProgressAvatar({
   fullName,
@@ -51,8 +52,6 @@ export function ProfileProgressAvatar({
 }): ReactNode {
   const { t, i18n } = useLingui()
   const ring = statusLight[WORKER_STATUS_TOKEN[status]]
-  /** Bajo ~48px la cuenta no se lee: la cara chica lleva el signo. */
-  const isCompact = size < 48
   const badge = Math.max(14, Math.round(size * 0.42))
 
   const stroke = Math.max(2, Math.round(size * 0.07))
@@ -159,19 +158,12 @@ export function ProfileProgressAvatar({
         >
           {isReady ? (
             <MaterialIcon name="check" style={{ fontSize: Math.round(size * 0.34) }} />
-          ) : isCompact ? (
+          ) : (
             <span
               className="flex items-center justify-center leading-none"
               style={{ fontSize: Math.round(size * 0.4), width: badge, height: badge }}
             >
               ?
-            </span>
-          ) : (
-            <span
-              className="px-1 leading-none"
-              style={{ fontSize: Math.round(size * 0.26), paddingBlock: Math.round(size * 0.09) }}
-            >
-              {readiness.kind === 'pending' ? `${readiness.done}/${readiness.total}` : '?'}
             </span>
           )}
         </span>
