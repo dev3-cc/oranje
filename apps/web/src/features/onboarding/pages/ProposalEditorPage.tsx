@@ -34,6 +34,7 @@ import personajeEstrategia from '@/assets/ilustrations/personaje-estrategia.svg'
 import personajePago from '@/assets/ilustrations/personaje-pago-procesado.svg'
 import personajePresentacion from '@/assets/ilustrations/personaje-presentacion.svg'
 import personajeRetro from '@/assets/ilustrations/personaje-retroalimentacion.svg'
+import { BlockedAction, BlockedReasons } from '@/shared/components/BlockedAction'
 import { Button } from '@/shared/components/Button'
 import { DetailSkeleton } from '@/shared/components/DetailSkeleton'
 import { FormField } from '@/shared/components/FormField'
@@ -190,6 +191,29 @@ export function ProposalEditorPage({
       .sort((a, b) => b.version - a.version)[0] ?? null
 
   const watchedValues = watch()
+
+  /* Por qué Guardar/Enviar están apagados (Hugo, 2026-10-23): «ya llené los
+     campos y no me deja enviar» — faltaba el cuadro de tarifas, más abajo, y
+     el error de un campo solo sale al tocarlo. Se valida lo que hay en
+     pantalla con el mismo esquema y se dice en voz alta. El back también
+     rechaza guardar y enviar fuera de Verde/Café, así que eso va en la lista. */
+  const parsedDraft = schema.safeParse(watchedValues)
+  const draftBlockers = [
+    ...new Set([
+      ...(workableBlock ? [workableBlock] : []),
+      ...(parsedDraft.success
+        ? []
+        : parsedDraft.error.issues.map((issue) =>
+            /* Una tarifa vacía llega como NaN y Zod la reporta en inglés. */
+            issue.path[0] === 'rates' && issue.code === 'invalid_type'
+              ? issue.path[2] === 'billRate'
+                ? t`Falta el bill rate de un puesto`
+                : t`Falta el pay rate de un puesto`
+              : issue.message,
+          )),
+    ]),
+  ]
+  const isDraftBlocked = !formState.isValid || !isWorkable
 
   /* La vista previa del documento vive del formulario mientras se edita, y de
      la última versión enviada cuando no hay borrador — nunca de un fetch
@@ -535,16 +559,26 @@ export function ProposalEditorPage({
                   <Trans>Descartar borrador</Trans>
                 )}
               </Button>
-              <Button type="submit" form={FORM_ID} disabled={!formState.isValid || isBusy}>
-                {isSaving ? <Trans>Guardando…</Trans> : <Trans>Guardar borrador</Trans>}
-              </Button>
+              <BlockedAction
+                reasons={isDraftBlocked ? draftBlockers : []}
+                title={t`Antes de guardar:`}
+              >
+                <Button type="submit" form={FORM_ID} disabled={isDraftBlocked || isBusy}>
+                  {isSaving ? <Trans>Guardando…</Trans> : <Trans>Guardar borrador</Trans>}
+                </Button>
+              </BlockedAction>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="primary" disabled={!formState.isValid || isBusy}>
-                    <Trans>Enviar propuesta</Trans>
-                    <MaterialIcon name="expand_more" className="text-base" aria-hidden />
-                  </Button>
-                </DropdownMenuTrigger>
+                <BlockedAction
+                  reasons={isDraftBlocked ? draftBlockers : []}
+                  title={t`Antes de enviar:`}
+                >
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="primary" disabled={isDraftBlocked || isBusy}>
+                      <Trans>Enviar propuesta</Trans>
+                      <MaterialIcon name="expand_more" className="text-base" aria-hidden />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </BlockedAction>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem
                     onSelect={() => {
@@ -568,6 +602,10 @@ export function ProposalEditorPage({
           )}
         </div>
       </header>
+
+      {draft && canEdit && isDraftBlocked && (
+        <BlockedReasons reasons={draftBlockers} title={t`Antes de guardar o enviar:`} />
+      )}
 
       {actionError !== null && (
         <p role="alert" className="text-sm text-red">
@@ -838,22 +876,31 @@ export function ProposalEditorPage({
                 </p>
                 {canEdit ? (
                   <>
-                    <Button
-                      variant="primary"
-                      className="mt-5"
-                      disabled={isBusy || !isWorkable}
-                      title={workableBlock ?? undefined}
-                      onClick={() => {
-                        void createDraft(prospectId)
-                          .unwrap()
-                          .then(() => {
-                            toast.success(t`Versión nueva abierta`)
-                          })
-                          .catch(() => {})
-                      }}
-                    >
-                      {isCreating ? <Trans>Abriendo…</Trans> : <Trans>Abrir versión nueva</Trans>}
-                    </Button>
+                    <div className="mt-5">
+                      <BlockedAction
+                        reasons={workableBlock ? [workableBlock] : []}
+                        title={t`Todavía no se puede:`}
+                      >
+                        <Button
+                          variant="primary"
+                          disabled={isBusy || !isWorkable}
+                          onClick={() => {
+                            void createDraft(prospectId)
+                              .unwrap()
+                              .then(() => {
+                                toast.success(t`Versión nueva abierta`)
+                              })
+                              .catch(() => {})
+                          }}
+                        >
+                          {isCreating ? (
+                            <Trans>Abriendo…</Trans>
+                          ) : (
+                            <Trans>Abrir versión nueva</Trans>
+                          )}
+                        </Button>
+                      </BlockedAction>
+                    </div>
                     {hasCreateFailed && (
                       <p role="alert" className="mt-3 text-sm text-red">
                         {apiErrorMessage(createError, {

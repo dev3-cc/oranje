@@ -19,7 +19,9 @@ import { actor } from './fixture.js'
 
 const prisma = db as unknown as PrismaService
 const notifications = { publish: async () => {} } as unknown as NotificationPublisherService
-const mailer = {} as unknown as MailerService
+const mailer = {
+  send: (): Promise<{ status: string }> => Promise.resolve({ status: 'SENT' }),
+} as unknown as MailerService
 const contracts = new ContractsService(new ContractsRepository(prisma), notifications, mailer)
 
 let user: AuthenticatedUser
@@ -139,5 +141,83 @@ describe('candado del contrato', () => {
     await expect(contracts.setLock(id, true, 'Motivo cualquiera', user)).rejects.toMatchObject({
       response: { code: 'CONTRACT_NOT_ACTIVE' },
     })
+  })
+
+  it('marcar como enviado congela el borrador: queda bloqueado y en el journal', async () => {
+    const id = await nuevoContrato('enviado')
+
+    const sent = await contracts.markSent(id, user)
+    expect(sent.sentAt).not.toBeNull()
+    expect(sent.sentByName).not.toBeNull()
+    expect(sent.status).toBe('DRAFT')
+    expect(sent.isUnlocked).toBe(false)
+
+    await expect(contracts.update(id, { propertyName: 'Otro nombre' }, user)).rejects.toMatchObject(
+      { response: { code: 'CONTRACT_LOCKED' } },
+    )
+
+    const entry = await db.journalEntry.findFirst({
+      where: { entityType: 'commercial.contract', entityId: id, eventType: 'CONTRACT_SENT' },
+    })
+    expect(entry).not.toBeNull()
+  })
+
+  it('no se marca dos veces como enviado', async () => {
+    const id = await nuevoContrato('enviado-dos-veces')
+    await contracts.markSent(id, user)
+
+    await expect(contracts.markSent(id, user)).rejects.toMatchObject({
+      response: { code: 'CONTRACT_ALREADY_SENT' },
+    })
+  })
+
+  it('un borrador enviado se desbloquea para corregirlo y al activarse vuelve a quedar bloqueado', async () => {
+    const id = await nuevoContrato('enviado-corrige')
+    await contracts.markSent(id, user)
+
+    const unlocked = await contracts.setLock(id, true, 'El hotel pidió otra dirección', user)
+    expect(unlocked.isUnlocked).toBe(true)
+    const edited = await contracts.update(id, { propertyName: 'Nombre corregido' }, user)
+    expect(edited.propertyName).toBe('Nombre corregido')
+
+    const active = await contracts.activate(id, user)
+    expect(active.status).toBe('ACTIVE')
+    expect(active.isUnlocked).toBe(false)
+    expect(active.signedByName).not.toBeNull()
+  })
+
+  // Hugo, 2026-10-23: al hotel no le llega un contrato con el cuadro vacío.
+  it('sin tarifas no se envía, ni por correo ni marcándolo, y sigue sin enviar', async () => {
+    const id = await nuevoContrato('sin-tarifas')
+    await db.contractRate.deleteMany({ where: { contractId: id } })
+
+    await expect(contracts.markSent(id, user)).rejects.toMatchObject({
+      response: { code: 'CONTRACT_WITHOUT_RATES' },
+    })
+    await expect(
+      contracts.sendEmail(id, user, {
+        to: 'hotel@example.com',
+        note: null,
+        pdf: Buffer.from('%PDF-1.4'),
+      }),
+    ).rejects.toMatchObject({ response: { code: 'CONTRACT_WITHOUT_RATES' } })
+
+    const row = await contracts.get(id)
+    expect(row.sentAt).toBeNull()
+  })
+
+  it('enviar por correo un borrador lo deja enviado y bloqueado', async () => {
+    const id = await nuevoContrato('correo')
+
+    const result = await contracts.sendEmail(id, user, {
+      to: 'hotel@example.com',
+      note: null,
+      pdf: Buffer.from('%PDF-1.4'),
+    })
+    expect(result).toMatchObject({ status: 'SENT' })
+
+    const row = await contracts.get(id)
+    expect(row.sentAt).not.toBeNull()
+    expect(row.isUnlocked).toBe(false)
   })
 })

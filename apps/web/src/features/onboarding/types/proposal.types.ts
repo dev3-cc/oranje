@@ -139,11 +139,16 @@ export interface ProposalCandidate {
 }
 
 /** Un prospecto al que se le puede abrir su PRIMERA propuesta (Verde o Café). */
-export interface ProposalTarget {
+/** Un hotel en «Ver propuesta»: cualquiera, pueda o no abrir propuesta todavía. */
+export interface ProposalHotel {
   prospectId: string
   hotelName: string
   zone: string
   prospectStatus: OnboardingStatus
+  /** Ciclo comercial cerrado: ya no se cotiza. */
+  isClosed: boolean
+  /** La última versión, si tiene alguna. */
+  lastProposal: { version: number; isDraft: boolean; sentAt: string | null } | null
 }
 
 export interface SaveProposalDraftRequest {

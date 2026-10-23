@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { createMemoryRouter, RouterProvider } from 'react-router'
@@ -65,9 +65,44 @@ describe('ProposalEditorPage', () => {
     await userEvent.clear(billRate!)
     await userEvent.type(billRate!, '100')
 
-    expect(await screen.findByText(/por debajo del pay rate/)).toBeInTheDocument()
+    /* Junto al campo y en la lista de faltantes. */
+    expect(await screen.findAllByText(/por debajo del pay rate/)).toHaveLength(2)
     expect(screen.getByRole('button', { name: 'Enviar propuesta' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Guardar borrador' })).toBeDisabled()
+  })
+
+  /* Hugo, 2026-10-23: «ya llené los campos y no me deja enviar» — faltaba una
+     tarifa y nada lo decía. Un botón apagado dice por qué, en rojo. */
+  it('con algo faltante, dice qué falta en vez de solo apagar los botones', async () => {
+    await renderEditor('psp-0008')
+
+    const billRate = (await screen.findAllByLabelText('Bill rate'))[0]
+    await userEvent.clear(billRate!)
+
+    const aviso = (await screen.findByText('Antes de guardar o enviar:')).closest(
+      '[role="status"]',
+    ) as HTMLElement
+    expect(within(aviso).getByText('Falta el bill rate de un puesto')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Enviar propuesta' })).toBeDisabled()
+  })
+
+  it('nombra los campos que faltan y el aviso se va al llenarlos', async () => {
+    await renderEditor('psp-0008')
+
+    /* Mirador no trae ciudad ni contacto en el mock: justo el caso de Hugo. */
+    const aviso = (await screen.findByText('Antes de guardar o enviar:')).closest(
+      '[role="status"]',
+    ) as HTMLElement
+    expect(within(aviso).getByText('Dinos la ciudad y el estado del hotel')).toBeInTheDocument()
+    expect(within(aviso).getByText('Dinos a quién va dirigida la propuesta')).toBeInTheDocument()
+
+    await userEvent.type(screen.getByLabelText('Ciudad y estado'), 'Cancún, QR')
+    await userEvent.type(screen.getByLabelText('Dirigida a'), 'Laura Pérez')
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Enviar propuesta' })).toBeEnabled()
+    })
+    expect(screen.queryByText('Antes de guardar o enviar:')).not.toBeInTheDocument()
   })
 
   it('la tarjeta de una versión enviada abre su detalle, y de ahí el contrato con las tarifas de ESA versión', async () => {

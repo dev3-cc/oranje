@@ -86,9 +86,14 @@ export interface ContractDetail {
   /** Dirección del hotel para el acuerdo imprimible; `null` si no se pudo leer. */
   hotelAddress: string | null
   status: ContractStatus
-  signedByName: string
-  /** ISO sin hora. */
-  signedAt: string
+  /** Quién lo activó (el BDC); `null` si nunca se activó. El hotel firma fuera. */
+  signedByName: string | null
+  /** Cuándo se activó; `null` en un borrador. */
+  signedAt: string | null
+  /** Enviado al hotel (Hugo, 2026-10-23): un borrador enviado queda bloqueado. */
+  sentAt: string | null
+  sentByName: string | null
+  createdAt: string
   validFrom: string
   /** `null` = indefinido. */
   validTo: string | null
@@ -120,8 +125,9 @@ export interface ContractDetail {
   /** Hoy fijos en código si vienen `null`: "Orange Solutions & Operations, LLC" / irene@oranjepeople.com. */
   serviceProviderName: string | null
   serviceProviderEmail: string | null
-  /** Candado del contrato ACTIVO (Hugo, 2026-10-21): "bloqueado" es
-      `status === 'ACTIVE' && !isUnlocked` — nunca cambia el status. */
+  /** Candado (Hugo, 2026-10-21; ampliado a los enviados el 2026-10-23):
+      "bloqueado" es ACTIVO o Borrador ya enviado, con `!isUnlocked`. Nunca
+      cambia el status. */
   isUnlocked: boolean
 }
 

@@ -150,8 +150,26 @@ export class ContractsController {
     return { data: await this.contracts.setLock(id, false, null, user) }
   }
 
-  /** Manda el acuerdo por correo con el PDF adjunto (2026-10-17); no toca el estado del contrato. */
-  @Requires('terms_and_conditions', 'read')
+  /**
+   * «Marcar como enviado» (2026-10-23): el contrato llegó al hotel por fuera.
+   * Mismo permiso que editarlo, porque enviar es lo que lo congela.
+   */
+  @Requires('terms_and_conditions', 'update')
+  @Post(':id/mark-sent')
+  @HttpCode(HttpStatus.OK)
+  async markSent(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: ContractEntity }> {
+    return { data: await this.contracts.markSent(id, user) }
+  }
+
+  /**
+   * Manda el acuerdo por correo con el PDF adjunto (2026-10-17). Si el
+   * borrador no se había enviado, lo deja enviado y bloqueado (2026-10-23):
+   * por eso pide el permiso de editar y no solo el de leer.
+   */
+  @Requires('terms_and_conditions', 'update')
   @Post(':id/send-email')
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_PDF_BYTES } }))
