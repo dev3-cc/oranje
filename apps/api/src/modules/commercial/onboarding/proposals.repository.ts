@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client'
 import { v7 as uuidv7 } from 'uuid'
 
 import { PrismaService } from '../../../infra/prisma/index.js'
+import { syncContractRatesFromProposal } from '../contracts/contract-proposal-sync.js'
 
 const SELECT = {
   id: true,
@@ -294,6 +295,29 @@ export class ProposalsRepository {
           payload: { proposalId: params.proposalId, version: updated.version },
         },
       })
+
+      /* El contrato en borrador de este ciclo toma las tarifas de la versión
+         que se acaba de enviar (Hugo, 2026-10-23). Solo si todavía no se le
+         envió al hotel: ese ya está bloqueado y se actualiza a mano desde el
+         contrato, después de desbloquearlo. */
+      const drafts = await tx.contract.findMany({
+        where: {
+          prospectId: params.prospectId,
+          status: 'DRAFT',
+          sentAt: null,
+          NOT: { proposalId: params.proposalId },
+        },
+        select: { id: true },
+      })
+
+      for (const draft of drafts) {
+        await syncContractRatesFromProposal(tx, {
+          contractId: draft.id,
+          proposalId: params.proposalId,
+          userId: params.userId,
+          roleCode: params.roleCode,
+        })
+      }
     })
 
     return this.prisma.proposal.findUniqueOrThrow({
