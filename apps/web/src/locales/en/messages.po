@@ -11988,6 +11988,7 @@ msgstr "Results"
 msgid "Retención del 16%"
 msgstr "16% withholding"
 
+#: src/features/recruitment/components/PoolRoster.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Retención del 16% aceptada"
 msgstr "16% retention accepted"

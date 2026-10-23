@@ -806,11 +806,17 @@ export function WorkerDetailPage(): ReactNode {
                     <Trans>Sin acceso a la app</Trans>
                   </CautionPill>
                 )}
-                {!worker.hasTaxId && (
-                  <CautionPill>
-                    <Trans>Sin ITIN: aplica retención del 16%{IS_DEV_UI ? ' (D-27)' : ''}</Trans>
-                  </CautionPill>
-                )}
+                {!worker.hasTaxId &&
+                  (worker.taxRetentionAccepted ? (
+                    /* Decisión tomada, no algo pendiente (Hugo, 2026-10-23). */
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-o-50 px-3 py-1 text-xs font-medium text-o-700">
+                      <Trans>Retención del 16% aceptada</Trans>
+                    </span>
+                  ) : (
+                    <CautionPill>
+                      <Trans>Sin ITIN: aplica retención del 16%{IS_DEV_UI ? ' (D-27)' : ''}</Trans>
+                    </CautionPill>
+                  ))}
               </p>
             )}
           </div>

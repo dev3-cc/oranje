@@ -19,6 +19,8 @@ export interface PoolWorker {
   profileDueAt: string | null
   hasAccount: boolean
   hasTaxId: boolean
+  /** Reclutamiento aceptó la retención del 16% en vez de pedir el SSN/ITIN. */
+  taxRetentionAccepted: boolean
   /** SSN/ITIN cargado y todavía sin revisar: badge "1 pendiente" en la fila. */
   hasPendingDocument: boolean
   createdAt: string

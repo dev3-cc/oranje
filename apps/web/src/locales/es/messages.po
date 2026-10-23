@@ -11988,6 +11988,7 @@ msgstr "Resultados"
 msgid "Retención del 16%"
 msgstr "Retención del 16%"
 
+#: src/features/recruitment/components/PoolRoster.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Retención del 16% aceptada"
 msgstr "Retención del 16% aceptada"

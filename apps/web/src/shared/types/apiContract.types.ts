@@ -425,6 +425,9 @@ export interface WorkerApi {
   /** Solo ficha completa. Hay un documento SSN/ITIN cargado (verificado o
       no) — a diferencia de `hasTaxId` (D-27). */
   hasTaxDocument?: boolean
+  /** Solo ficha completa. Reclutamiento aceptó la retención del 16% en vez
+      de pedir el SSN/ITIN. */
+  taxRetentionAccepted?: boolean
   /** Solo ficha completa. Cargado y todavía sin revisar (Pool: badge/filtro
       "con documento pendiente"). */
   hasPendingDocument?: boolean
@@ -462,6 +465,7 @@ type WorkerFullOnlyKey =
   | 'profileDueAt'
   | 'hasTaxId'
   | 'hasTaxDocument'
+  | 'taxRetentionAccepted'
   | 'hasPendingDocument'
   | 'hasAccount'
   | 'email'

@@ -76,6 +76,7 @@ function buildWorker(input: {
   isProfileComplete?: boolean
   isBlacklisted?: boolean
   hasPendingDocument?: boolean
+  taxRetentionAccepted?: boolean
   email?: string
   assignment?: WorkerApi['assignment']
 }): FullWorkerApi {
@@ -105,6 +106,7 @@ function buildWorker(input: {
     /** D-27: mientras el cifrado no se conecte, `has_tax_id` es siempre false. */
     hasTaxId: false,
     hasTaxDocument: false,
+    taxRetentionAccepted: input.taxRetentionAccepted ?? false,
     hasPendingDocument: input.hasPendingDocument ?? false,
     hasAccount: input.email !== undefined,
     email: input.email ?? null,
@@ -441,10 +443,12 @@ const routes: readonly MockRoute[] = [
     method: 'POST',
     path: '/workers/:workerId/documents/tax-retention-acceptance',
     resolve: ({ params }): { data: null } => {
-      RETENTION_ACCEPTED[params.workerId ?? ''] = {
+      const workerId = params.workerId ?? ''
+      RETENTION_ACCEPTED[workerId] = {
         acceptedAt: new Date().toISOString(),
         acceptedBy: { id: 'usr-diana', fullName: 'Diana Roldán' },
       }
+      syncRetentionOntoWorker(workerId)
       return { data: null }
     },
   },
@@ -452,7 +456,9 @@ const routes: readonly MockRoute[] = [
     method: 'DELETE',
     path: '/workers/:workerId/documents/tax-retention-acceptance',
     resolve: ({ params }): { data: null } => {
-      delete RETENTION_ACCEPTED[params.workerId ?? '']
+      const workerId = params.workerId ?? ''
+      delete RETENTION_ACCEPTED[workerId]
+      syncRetentionOntoWorker(workerId)
       return { data: null }
     },
   },
@@ -625,6 +631,18 @@ const DOCUMENTS: Record<string, WorkerDocumentApi[]> = {
       createdAt: '2026-08-02T15:00:00.000Z',
     },
   ],
+}
+
+/** Espeja la aceptación en el Worker (Pool/expediente la leen de ahí, no de
+    /documents) — igual que la vista real, que las junta en la misma fila. */
+function syncRetentionOntoWorker(workerId: string): void {
+  const worker = workers.find((item) => item.id === workerId)
+  if (!worker) return
+
+  const accepted = RETENTION_ACCEPTED[workerId] !== undefined
+  const hasDocument = (DOCUMENTS[workerId] ?? []).some((doc) => doc.documentType === 'SSN_ITIN')
+  worker.taxRetentionAccepted = accepted
+  worker.hasTaxDocument = hasDocument || accepted
 }
 
 /** Para los mocks hermanos de la feature (Blacklist) que solo tienen el id. */
