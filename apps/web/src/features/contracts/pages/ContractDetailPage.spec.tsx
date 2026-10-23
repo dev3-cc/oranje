@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Provider } from 'react-redux'
 import { createMemoryRouter, RouterProvider } from 'react-router'
@@ -66,7 +66,7 @@ describe('ContractDetailPage', () => {
     renderDetail('ct-0203')
 
     expect(await screen.findByText('Indefinido')).toBeInTheDocument()
-    expect(screen.getByText(/Todavía no se cotiza ninguna posición/)).toBeInTheDocument()
+    expect(screen.getByText(/Este contrato no trae ninguna posición cotizada/)).toBeInTheDocument()
   })
 
   // Hugo, 2026-10-16: editar deja de ser solo de Borrador — un contrato
@@ -247,11 +247,62 @@ describe('ContractDetailPage', () => {
     expect(within(aviso).getByText(/Sin tarifas no se puede enviar ni activar/)).toBeInTheDocument()
   })
 
+  // Hugo, 2026-10-23 (Villa Magna, CT-2026-66161): la propuesta v3 cotizó
+  // $10/$10 y el contrato exigía margen. Reglas de Negocio solo prohíbe que
+  // el bill quede POR DEBAJO del pay: al costo es válido.
+  it('al costo (bill = pay) se puede activar', async () => {
+    await store
+      .dispatch(
+        contractsApi.endpoints.upsertContractRate.initiate({
+          contractId: 'ct-0203',
+          catalogPositionId: 'pos-hk',
+          payRate: '10.00',
+          billRate: '10.00',
+        }),
+      )
+      .unwrap()
+    renderDetail('ct-0203')
+
+    await screen.findByRole('heading', { name: 'Contrato CT-2026-0203' })
+    expect(screen.getByRole('button', { name: 'Activar contrato' })).toBeEnabled()
+    expect(screen.queryByText(/Antes de/)).not.toBeInTheDocument()
+  })
+
+  it('la tarjeta de tarifas trae su lápiz y abre «Corregir tarifa»', async () => {
+    const user = userEvent.setup()
+    renderDetail('ct-0203')
+
+    await screen.findByRole('heading', { name: 'Contrato CT-2026-0203' })
+    await user.click(screen.getByRole('button', { name: 'Corregir una tarifa' }))
+    expect(await screen.findByText('Corregir tarifa')).toBeInTheDocument()
+  })
+
   it('un contrato activo no enseña faltantes de activación', async () => {
     renderDetail('ct-0184')
 
     await screen.findByRole('heading', { name: 'Contrato CT-2026-0184' })
     expect(screen.queryByText('Antes de activar:')).not.toBeInTheDocument()
+  })
+
+  // Hugo, 2026-10-23 (Villa Magna): corrigió la propuesta con una versión
+  // nueva y el contrato seguía con las tarifas de la vieja, sin decirlo.
+  // ct-0203 nació de la v1 y ya se envió la v2.
+  it('si la propuesta cambió después, lo dice y trae las tarifas de la última', async () => {
+    const user = userEvent.setup()
+    renderDetail('ct-0203')
+
+    await screen.findByRole('heading', { name: 'Contrato CT-2026-0203' })
+    expect(screen.getByText('La propuesta cambió después de este contrato')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Actualizar con la v2' }))
+    await user.click(await screen.findByRole('button', { name: 'Sí, actualizar' }))
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText('La propuesta cambió después de este contrato'),
+      ).not.toBeInTheDocument()
+    })
+    expect(screen.getByRole('link', { name: /Propuesta v2/ })).toBeInTheDocument()
   })
 
   // Hugo, 2026-10-23: un borrador decía «firmado el …» con su fecha de
