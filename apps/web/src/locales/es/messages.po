@@ -7016,9 +7016,17 @@ msgstr "hoy"
 msgid "Hoy descansas"
 msgstr "Hoy descansas"
 
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Hoy descansas. No tienes turno programado hoy."
+msgstr "Hoy descansas. No tienes turno programado hoy."
+
 #: src/features/observability/components/TabParts.tsx
 msgid "Hoy en el sistema"
 msgstr "Hoy en el sistema"
+
+#: src/features/worker/pages/PunchPage.tsx
+msgid "Hoy no ponchas."
+msgstr "Hoy no ponchas."
 
 #: src/features/worker/lib/noShiftMessage.ts
 msgid "Hoy no tienes turno"

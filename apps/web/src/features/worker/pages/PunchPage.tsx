@@ -223,7 +223,7 @@ function locate(): Promise<{ latitude: number; longitude: number }> {
 }
 
 /** El `i18n` viene del componente (`useLingui`): así el mensaje habla el idioma activo (D-36). */
-function punchErrorMessage(error: unknown, i18n: I18n): string {
+export function punchErrorMessage(error: unknown, i18n: I18n): string {
   if (error instanceof Error) {
     switch (error.message) {
       case 'GEOLOCATION_DENIED':
@@ -240,6 +240,14 @@ function punchErrorMessage(error: unknown, i18n: I18n): string {
   }
   return apiErrorMessage(error, {
     byCode: {
+      /* El código REST tiene su propio texto, igual al de la pantalla de
+         Inicio cuando no hay turno — cualquier otro estado del catálogo
+         (OFF, o lo que agregue el Administrador) usa el nombre real que
+         mandó el servidor, nunca "descansas" a secas (Hugo, 2026-10-23). */
+      DAY_MARKED_STATUS: (info) =>
+        info.details[0]?.value === 'REST'
+          ? i18n._(msg`Hoy descansas. No tienes turno programado hoy.`)
+          : (info.message ?? i18n._(msg`Hoy no ponchas.`)),
       NO_SHIFT_TODAY: i18n._(msg`Hoy no tienes turno: no hay nada que ponchar.`),
       MULTIPLE_SHIFTS_TODAY: i18n._(
         msg`Hoy tienes más de un turno: pídele al Supervisor que registre la marca.`,
