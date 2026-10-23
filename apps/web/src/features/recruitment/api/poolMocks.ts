@@ -205,7 +205,9 @@ const routes: readonly MockRoute[] = [
       const zoneId = search.get('zoneId')
       const positionId = search.get('catalogPositionId')
       const englishId = search.get('englishLevelId')
+      const hotelId = search.get('hotelId')
       const items = workers.filter((worker) => {
+        if (hotelId && worker.assignment?.hotelId !== hotelId) return false
         if (term && !matchesSearch(term, worker.fullName)) return false
         if (state && worker.state.code !== state) return false
         if (zoneId && worker.zone.id !== zoneId) return false

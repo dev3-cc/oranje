@@ -64,6 +64,15 @@ export class WorkersController {
     return { data: { domain: this.access.domainName } }
   }
 
+  /* Antes de `:id`, por la misma razón que «access-domain». */
+  /** Las opciones del filtro por hotel. Sin `@Requires`: el alcance es el de `list`. */
+  @Get('assigned-hotels')
+  async assignedHotels(
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ data: Array<{ id: string; name: string }> }> {
+    return { data: await this.workers.assignedHotels(user) }
+  }
+
   /**
    * Sin `@Requires`: dos permisos válidos con alcances distintos.
    * `recruitment:search_candidates` ve el Pool entero; `staff:read_history` ve

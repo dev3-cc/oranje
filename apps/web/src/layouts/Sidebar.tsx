@@ -222,6 +222,9 @@ const MODULES: NavModule[] = [
      entrada — antes le salía y la pantalla le respondía 403. Ninguno de sus
      jefes lo ve (fuera de la herencia por jerarquía a propósito, Hugo). */
   { label: msg`Inspecciones`, to: '/audits', icon: 'fact_check', roles: [INSPECTOR] },
+  /* Mensajería por WhatsApp: entra al «Muy pronto» hasta que se construya.
+     Sin `roles`: la ven todos los roles, siempre al final (Hugo, 2026-10-22). */
+  { label: msg`Mensajería`, to: '/messaging', icon: 'chat' },
 ]
 
 function modulesForRole(roleId: string | undefined): NavModule[] {

@@ -5,6 +5,7 @@ import { CPanelModule } from './infra/cpanel/index.js'
 import { FirebaseModule } from './infra/firebase/index.js'
 import { HealthModule } from './infra/health/index.js'
 import { MailerModule } from './infra/mailer/index.js'
+import { MessagingPlatformModule } from './infra/messaging/index.js'
 import { PlacesModule } from './infra/places/index.js'
 import { PrismaModule } from './infra/prisma/index.js'
 import { PubSubModule } from './infra/pubsub/index.js'
@@ -35,6 +36,7 @@ import { SupervisionModule } from './modules/supervision/index.js'
     FirebaseModule,
     SettingsModule,
     MailerModule,
+    MessagingPlatformModule,
     HealthModule,
     CatalogsModule,
     IdentityModule,

@@ -133,6 +133,13 @@ const STAFF_CHILDREN: RouteObject[] = [
     },
   },
   {
+    path: 'messaging',
+    lazy: async () => {
+      const m = await import('@/features/messaging')
+      return { Component: m.MessagingPage }
+    },
+  },
+  {
     path: 'pipeline',
     handle: FULL_WIDTH,
     lazy: async () => {

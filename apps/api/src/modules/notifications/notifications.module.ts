@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common'
 
 import { EventsController } from './events.controller.js'
+import { MessagingController } from './messaging/messaging.controller.js'
+import { MessagingService } from './messaging/messaging.service.js'
 import { NotificationsController } from './notifications.controller.js'
 import { NotificationsService } from './notifications.service.js'
 import { NotificationPublisherService } from './publisher.service.js'
@@ -18,9 +20,10 @@ import { RecipientsService } from './recipients.service.js'
 // `Test.createTestingModule({ imports: [AppModule] })`).
 @Module({
   imports: [],
-  controllers: [NotificationsController, EventsController],
+  controllers: [NotificationsController, EventsController, MessagingController],
   providers: [
     NotificationsService,
+    MessagingService,
     NotificationPublisherService,
     RecipientsService,
     PushService,

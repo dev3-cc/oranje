@@ -40,6 +40,11 @@ msgstr "¿Aprobar {0} semanas de un golpe?"
 msgid "¿Aprobar la semana?"
 msgstr "¿Aprobar la semana?"
 
+#. placeholder {0}: campaign.name
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "¿Cancelar «{0}»?"
+msgstr "¿Cancelar «{0}»?"
+
 #: src/features/worker/pages/PunchPage.tsx
 msgid "¿Cómo funciona el ponche?"
 msgstr "¿Cómo funciona el ponche?"
@@ -70,6 +75,14 @@ msgstr "¿Cómo te trasladas?"
 msgid "¿Creamos la propuesta ahora?"
 msgstr "¿Creamos la propuesta ahora?"
 
+#: src/features/messaging/components/ContactActions.tsx
+msgid "¿Dar de baja a {name}?"
+msgstr "¿Dar de baja a {name}?"
+
+#: src/features/messaging/components/ContactActions.tsx
+msgid "¿Eliminar a {name}?"
+msgstr "¿Eliminar a {name}?"
+
 #: src/features/dashboard/components/InviteHotelAccountCard.tsx
 msgid "¿Entró un Supervisor o un gerente nuevo?"
 msgstr "¿Entró un Supervisor o un gerente nuevo?"
@@ -77,6 +90,11 @@ msgstr "¿Entró un Supervisor o un gerente nuevo?"
 #: src/features/onboarding/components/ConfirmSendProposalDialog.tsx
 msgid "¿Enviamos la propuesta?"
 msgstr "¿Enviamos la propuesta?"
+
+#. placeholder {0}: campaign.name
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "¿Enviar «{0}»?"
+msgstr "¿Enviar «{0}»?"
 
 #: src/features/timesheet/components/WeekActionBar.tsx
 msgid "¿Enviar la semana a revisión?"
@@ -151,6 +169,10 @@ msgstr "¿Sin acceso? Si eres colaborador, tu Reclutadora te da de alta. Si trab
 msgid "¿Sin acceso? Tu Reclutadora te da de alta y te llega un correo para crear tu contraseña."
 msgstr "¿Sin acceso? Tu Reclutadora te da de alta y te llega un correo para crear tu contraseña."
 
+#: src/features/messaging/components/SyncWorkersButton.tsx
+msgid "¿Sincronizar colaboradores con Mensajería?"
+msgstr "¿Sincronizar colaboradores con Mensajería?"
+
 #: src/features/auth/pages/LoginPage.tsx
 msgid "¿Trabajas en Oranje o en un hotel? <0>Entra por aquí</0>"
 msgstr "¿Trabajas en Oranje o en un hotel? <0>Entra por aquí</0>"
@@ -185,6 +207,21 @@ msgstr "· gasto: {0}"
 msgid "· marca manual"
 msgstr "· marca manual"
 
+#. placeholder {0}: i18n._(active.label)
+#: src/features/messaging/pages/MessagingPage.tsx
+msgid "«{0}» de Mensajería todavía se está construyendo."
+msgstr "«{0}» de Mensajería todavía se está construyendo."
+
+#. placeholder {0}: campaign.name
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "«{0}» quedó en pausa."
+msgstr "«{0}» quedó en pausa."
+
+#. placeholder {0}: campaign.name
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "«{0}» se canceló."
+msgstr "«{0}» se canceló."
+
 #. placeholder {0}: pending.item.name
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "«{0}» se elimina de verdad — no se archiva. Si algo del sistema lo está usando, el propio sistema lo va a impedir y te lo dirá aquí."
@@ -194,6 +231,16 @@ msgstr "«{0}» se elimina de verdad — no se archiva. Si algo del sistema lo e
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
 msgid "«{0}» se elimina de verdad. Si alguna inspección ya lo contestó, el sistema lo va a impedir y te lo dice aquí."
 msgstr "«{0}» se elimina de verdad. Si alguna inspección ya lo contestó, el sistema lo va a impedir y te lo dice aquí."
+
+#. placeholder {0}: campaign.name
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "«{0}» se está enviando."
+msgstr "«{0}» se está enviando."
+
+#. placeholder {0}: campaign.name
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "«{0}» se reanudó."
+msgstr "«{0}» se reanudó."
 
 #: src/shared/components/ModulePlaceholder.tsx
 msgid "«{title}» ya tiene su lugar en el menú. Lo estamos construyendo y va a estar listo muy pronto."
@@ -226,6 +273,18 @@ msgstr "«Stand-by» es una pausa temporal y la compartes con el Manager de Áre
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "«Ver bitácora» te dice quién la movió y cuándo. El resto de los botones cambia según dónde esté: firmarla, cubrirla o eliminarla con motivo."
 msgstr "«Ver bitácora» te dice quién la movió y cuándo. El resto de los botones cambia según dónde esté: firmarla, cubrirla o eliminarla con motivo."
+
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "[Apellido]"
+msgstr "[Apellido]"
+
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "[Nombre]"
+msgstr "[Nombre]"
+
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "[Teléfono]"
+msgstr "[Teléfono]"
 
 #. placeholder {0}: reasons.length
 #: src/features/admin/pages/CatalogsPage.tsx
@@ -533,6 +592,11 @@ msgstr "{0} antes del lonche (-{weekLunchMinutes} min)"
 msgid "{0} colaboradores"
 msgstr "{0} colaboradores"
 
+#. placeholder {0}: excluded.length
+#: src/features/messaging/components/ExcludedWorkersDialog.tsx
+msgid "{0} colaboradores sin teléfono válido"
+msgstr "{0} colaboradores sin teléfono válido"
+
 #. placeholder {0}: metrics.awaitingOver48h
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
 msgid "{0} con más de 48 h"
@@ -602,6 +666,28 @@ msgstr "{0} en cartera"
 msgid "{0} en el pool"
 msgstr "{0} en el pool"
 
+#. placeholder {0}: data.meta.total
+#. placeholder {0}: data.pagination.total
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/components/MessagingContactsList.tsx
+#: src/features/messaging/components/MessagingWorkersList.tsx
+msgid "{0} en total"
+msgstr "{0} en total"
+
+#. placeholder {0}: campaign.deliveredCount
+#. placeholder {1}: campaign.readCount
+#. placeholder {2}: campaign.failedCount
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "{0} entregados · {1} leídos · {2} fallidos"
+msgstr "{0} entregados · {1} leídos · {2} fallidos"
+
+#. placeholder {0}: result.sent
+#. placeholder {1}: result.created
+#. placeholder {2}: result.updated
+#: src/features/messaging/components/SyncWorkersButton.tsx
+msgid "{0} enviados a Mensajería: {1} nuevos y {2} actualizados."
+msgstr "{0} enviados a Mensajería: {1} nuevos y {2} actualizados."
+
 #. placeholder {0}: String(spot.hotels.length)
 #: src/features/onboarding/components/HotelGlobeCard.tsx
 msgid "{0} hoteles aquí"
@@ -668,6 +754,13 @@ msgstr "{0} sin guardar"
 msgid "{0} sin requisición"
 msgstr "{0} sin requisición"
 
+#. placeholder {0}: result.synced
+#. placeholder {1}: result.created
+#. placeholder {2}: result.updated
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "{0} sincronizadas: {1} nuevas y {2} actualizadas."
+msgstr "{0} sincronizadas: {1} nuevas y {2} actualizadas."
+
 #. placeholder {0}: metrics.freeSlots
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
 msgid "{0} slots libres"
@@ -677,6 +770,11 @@ msgstr "{0} slots libres"
 #: src/features/timesheet/pages/TimesheetPage.tsx
 msgid "{0} tiene semanas atrasadas sin aprobar:"
 msgstr "{0} tiene semanas atrasadas sin aprobar:"
+
+#. placeholder {0}: template.variableCount
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "{0} variables"
+msgstr "{0} variables"
 
 #. placeholder {0}: actedHotelName || fallbackProspect
 #: src/features/conversion/pages/ConversionPage.tsx
@@ -832,6 +930,14 @@ msgstr "{minutos, plural, one {Actualizado hace # minuto} other {Actualizado hac
 msgid "{missing, plural, one {# hueco} other {# huecos}}"
 msgstr "{missing, plural, one {# hueco} other {# huecos}}"
 
+#: src/features/messaging/components/ContactActions.tsx
+msgid "{name} quedó dado de baja."
+msgstr "{name} quedó dado de baja."
+
+#: src/features/messaging/components/ContactActions.tsx
+msgid "{name} se eliminó."
+msgstr "{name} se eliminó."
+
 #: src/features/requisitions/components/RequisitionCardList.tsx
 msgid "{number} · {department} · {positions, plural, one {# posición} other {# posiciones}}"
 msgstr "{number} · {department} · {positions, plural, one {# posición} other {# posiciones}}"
@@ -847,6 +953,10 @@ msgstr "{okCount} semanas aprobadas"
 #: src/features/contracts/components/ContractChecklist.tsx
 msgid "{pending, plural, one {# pendiente} other {# pendientes}}"
 msgstr "{pending, plural, one {# pendiente} other {# pendientes}}"
+
+#: src/features/messaging/components/WorkersSyncNotice.tsx
+msgid "{pending} colaboradores nuevos sin sincronizar"
+msgstr "{pending} colaboradores nuevos sin sincronizar"
 
 #: src/features/recruitment/pages/PoolPage.tsx
 msgid "{pendingDocsCount} por verificar"
@@ -875,6 +985,10 @@ msgstr "{quantity, plural, one {# slot libre} other {# slots libres}}"
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "{reason}: revisa la fecha de nacimiento."
 msgstr "{reason}: revisa la fecha de nacimiento."
+
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "{sentCount} de {totalRecipients} enviados"
+msgstr "{sentCount} de {totalRecipients} enviados"
 
 #: src/features/requisitions/components/RequisitionSummaryStrip.tsx
 msgid "{slotCount} · {occupiedCount} ocupados"
@@ -938,6 +1052,10 @@ msgstr "← Volver a iniciar sesión"
 msgid "+ Agregar posición"
 msgstr "+ Agregar posición"
 
+#: src/features/messaging/components/ContactActions.tsx
+msgid "+ Nuevo contacto"
+msgstr "+ Nuevo contacto"
+
 #: src/features/dashboard/components/RecruitmentManagerDashboard.tsx
 msgid "<0>Casos escalados.</0> Los que te escalan Líderes e Inspectores llegarán con la pantalla de <1>Incidencias</1>."
 msgstr "<0>Casos escalados.</0> Los que te escalan Líderes e Inspectores llegarán con la pantalla de <1>Incidencias</1>."
@@ -965,6 +1083,14 @@ msgstr "<0>Tarifas y términos quedan bloqueados.</0> Si hace falta corregir alg
 msgid "${0} pay · ${1} bill"
 msgstr "${0} pay · ${1} bill"
 
+#: src/features/messaging/components/WorkersSyncNotice.tsx
+msgid "1 colaborador nuevo sin sincronizar"
+msgstr "1 colaborador nuevo sin sincronizar"
+
+#: src/features/messaging/components/ExcludedWorkersDialog.tsx
+msgid "1 colaborador sin teléfono válido"
+msgstr "1 colaborador sin teléfono válido"
+
 #: src/features/contracts/utils/validity.ts
 msgid "1 mes restante"
 msgstr "1 mes restante"
@@ -981,6 +1107,10 @@ msgstr "1 puesto · {0} el bill"
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 msgid "1 sin guardar"
 msgstr "1 sin guardar"
+
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "1 variable"
+msgstr "1 variable"
 
 #: src/shared/constants/workerEnums.ts
 msgid "1–2 años"
@@ -1009,6 +1139,10 @@ msgstr "A bill rate, no a lo que pagamos"
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "A quién llamamos y qué debemos saber"
 msgstr "A quién llamamos y qué debemos saber"
+
+#: src/features/messaging/pages/MessagingPage.tsx
+msgid "A quién se le escribe"
+msgstr "A quién se le escribe"
 
 #: src/shared/constants/workerEnums.ts
 msgid "A+"
@@ -1068,6 +1202,10 @@ msgstr "Abrir"
 msgid "Abrir en el editor"
 msgstr "Abrir en el editor"
 
+#: src/features/messaging/components/ExcludedWorkersDialog.tsx
+msgid "Abrir expediente"
+msgstr "Abrir expediente"
+
 #: src/features/clients/components/ClientSpotlightCard.tsx
 #: src/features/territory/components/HotelMapCard.tsx
 msgid "Abrir ficha del hotel"
@@ -1124,6 +1262,8 @@ msgstr "Accidentes que todavía no se cierran, de todos los hoteles."
 
 #: src/features/admin/pages/CorporateEmailPage.tsx
 #: src/features/contracts/components/ContractTable.tsx
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/components/MessagingContactsList.tsx
 msgid "Acciones"
 msgstr "Acciones"
 
@@ -1171,6 +1311,7 @@ msgstr "Actividad en el periodo"
 #: src/features/admin/components/ColaboradorAccountsSection.tsx
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/components/UserFormDialog.tsx
+#: src/features/messaging/components/MessagingContactsList.tsx
 #: src/features/worker/pages/PermissionsPage.tsx
 #: src/shared/constants/contractStatus.ts
 msgid "Activo"
@@ -1515,6 +1656,12 @@ msgstr "Ancho de columna"
 msgid "Anomalía sin resolver"
 msgstr "Anomalía sin resolver"
 
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/components/MessagingContactsList.tsx
+#: src/features/messaging/components/MessagingWorkersList.tsx
+msgid "Anterior"
+msgstr "Anterior"
+
 #: src/features/accounting/pages/ConsolidationDetailPage.tsx
 msgid "antes de deducciones"
 msgstr "antes de deducciones"
@@ -1540,6 +1687,14 @@ msgstr "Anticipación"
 msgid "Aparece quien tiene prospectos o registró intentos. Quien no tiene cartera ni actividad no se puede listar desde aquí. Las conversiones se le cuentan al dueño del prospecto."
 msgstr "Aparece quien tiene prospectos o registró intentos. Quien no tiene cartera ni actividad no se puede listar desde aquí. Las conversiones se le cuentan al dueño del prospecto."
 
+#: src/features/messaging/components/ContactActions.tsx
+msgid "Apellido"
+msgstr "Apellido"
+
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Apellido del colaborador"
+msgstr "Apellido del colaborador"
+
 #: src/features/observability/pages/ObservabilityPage.tsx
 msgid "Aprobación de ponches"
 msgstr "Aprobación de ponches"
@@ -1549,6 +1704,7 @@ msgid "Aprobación oportuna de ponches"
 msgstr "Aprobación oportuna de ponches"
 
 #: src/features/accounting/pages/InvoiceDetailPage.tsx
+#: src/features/messaging/components/MessagingTemplatesList.tsx
 #: src/shared/constants/timesheetStatus.ts
 msgid "Aprobada"
 msgstr "Aprobada"
@@ -1714,6 +1870,10 @@ msgstr "Arrastra para cambiar el orden"
 msgid "Así quedó en Borrador, antes de validar y autorizar."
 msgstr "Así quedó en Borrador, antes de validar y autorizar."
 
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Así se leería"
+msgstr "Así se leería"
+
 #: src/shared/constants/workerStatus.ts
 msgid "Asig. temporal"
 msgstr "Asig. temporal"
@@ -1851,6 +2011,10 @@ msgstr "Aún sin cotizar ningún puesto"
 msgid "aún sin pin"
 msgstr "aún sin pin"
 
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "Autenticación"
+msgstr "Autenticación"
+
 #: src/features/observability/lib/cohorts.ts
 msgid "Automático"
 msgstr "Automático"
@@ -1929,6 +2093,14 @@ msgstr "Autorizar requisición"
 #: src/features/requisitions/components/AuthorizationResolutionForm.tsx
 msgid "Autorizas como {authorizerRole} — alcance: {scopeLabel}"
 msgstr "Autorizas como {authorizerRole} — alcance: {scopeLabel}"
+
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "Avance"
+msgstr "Avance"
+
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "Avance del envío"
+msgstr "Avance del envío"
 
 #. placeholder {0}: step.movedBy
 #: src/features/onboarding/components/SemaforoHelpDialog.tsx
@@ -2044,6 +2216,8 @@ msgid "Bolsa · Self-Pick"
 msgstr "Bolsa · Self-Pick"
 
 #: src/features/accounting/types/settlement.constants.ts
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/components/MessagingOverviewPanel.tsx
 #: src/features/observability/lib/inspectionKpis.ts
 #: src/features/onboarding/components/ProposalVersionHistory.tsx
 #: src/features/requisitions/components/RequisitionCardList.tsx
@@ -2054,6 +2228,12 @@ msgstr "Borrador"
 #: src/features/onboarding/components/ProposalVersionList.tsx
 msgid "Borrador · sin enviar"
 msgstr "Borrador · sin enviar"
+
+#. placeholder {0}: campaign.name
+#. placeholder {1}: campaign.totalRecipients
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Borrador «{0}» creado: le llegaría a {1} colaboradores."
+msgstr "Borrador «{0}» creado: le llegaría a {1} colaboradores."
 
 #: src/features/accounting/pages/ConsolidationsPage.tsx
 msgid "Borrador → la Contadora lo valida contra los Timesheets aprobados → el Manager de Contabilidad autoriza (segunda firma) → se registra el pago."
@@ -2156,6 +2336,11 @@ msgstr "Buscando hoteles en Verde…"
 msgid "Buscando los cambios disponibles…"
 msgstr "Buscando los cambios disponibles…"
 
+#: src/features/messaging/components/MessagingContactsList.tsx
+#: src/features/messaging/components/MessagingWorkersList.tsx
+msgid "Buscar"
+msgstr "Buscar"
+
 #: src/features/team/pages/TeamPage.tsx
 msgid "Buscar BD"
 msgstr "Buscar BD"
@@ -2167,6 +2352,14 @@ msgstr "Buscar BD"
 #: src/features/timesheet/components/TimesheetToolbar.tsx
 msgid "Buscar colaborador"
 msgstr "Buscar colaborador"
+
+#: src/features/messaging/components/MessagingWorkersList.tsx
+msgid "Buscar colaboradores"
+msgstr "Buscar colaboradores"
+
+#: src/features/messaging/components/MessagingContactsList.tsx
+msgid "Buscar contactos"
+msgstr "Buscar contactos"
 
 #: src/features/contracts/pages/ContractListPage.tsx
 msgid "Buscar contrato"
@@ -2220,6 +2413,14 @@ msgstr "Buscar la ubicación del hotel"
 #: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
 msgid "Buscar pendiente"
 msgstr "Buscar pendiente"
+
+#: src/features/messaging/components/MessagingContactsList.tsx
+msgid "Buscar por nombre, teléfono o email…"
+msgstr "Buscar por nombre, teléfono o email…"
+
+#: src/features/messaging/components/MessagingWorkersList.tsx
+msgid "Buscar por nombre…"
+msgstr "Buscar por nombre…"
 
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
 msgid "Buscar reactivo"
@@ -2344,6 +2545,10 @@ msgstr "Cada posición deja margen"
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Cada puesto con sus lugares. Donde dice «Sin asignar» puedes tocar para llenarlo, y si ya está ocupado te lleva al perfil de quien lo cubre."
 msgstr "Cada puesto con sus lugares. Donde dice «Sin asignar» puedes tocar para llenarlo, y si ya está ocupado te lleva al perfil de quien lo cubre."
+
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Cada quien recibe el suyo."
+msgstr "Cada quien recibe el suyo."
 
 #: src/features/audits/pages/AuditsPage.tsx
 msgid "Cada reactivo pesa lo suyo"
@@ -2478,9 +2683,29 @@ msgstr "Cambiar foto"
 msgid "Cambiar mi foto"
 msgstr "Cambiar mi foto"
 
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/components/MessagingOverviewPanel.tsx
+msgid "Campaña"
+msgstr "Campaña"
+
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/components/MessagingOverviewPanel.tsx
+#: src/features/messaging/pages/MessagingPage.tsx
+msgid "Campañas"
+msgstr "Campañas"
+
+#: src/features/messaging/components/MessagingOverviewPanel.tsx
+msgid "Campañas recientes"
+msgstr "Campañas recientes"
+
 #: src/features/onboarding/components/RegisterAttemptDialog.tsx
 msgid "Canal y resultado, de la lista"
 msgstr "Canal y resultado, de la lista"
+
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/components/MessagingOverviewPanel.tsx
+msgid "Cancelada"
+msgstr "Cancelada"
 
 #: src/shared/constants/contractStatus.ts
 msgid "Cancelado"
@@ -2505,6 +2730,9 @@ msgstr "Cancelando…"
 #: src/features/contracts/components/NewContractDialog.tsx
 #: src/features/contracts/components/UnlockContractDialog.tsx
 #: src/features/contracts/pages/ContractDetailPage.tsx
+#: src/features/messaging/components/ContactActions.tsx
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+#: src/features/messaging/components/MessagingCampaignsList.tsx
 #: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
 #: src/features/onboarding/components/ArchiveCycleDialog.tsx
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
@@ -2540,6 +2768,10 @@ msgstr "Cancelar"
 #: src/features/contracts/pages/ContractDetailPage.tsx
 msgid "Cancelar borrador"
 msgstr "Cancelar borrador"
+
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "Cancelar campaña"
+msgstr "Cancelar campaña"
 
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 msgid "Cancelar edición"
@@ -2857,6 +3089,9 @@ msgid "Colaborador creado — {created}"
 msgstr "Colaborador creado — {created}"
 
 #: src/features/admin/pages/UsersPage.tsx
+#: src/features/messaging/components/MessagingOverviewPanel.tsx
+#: src/features/messaging/components/MessagingWorkersList.tsx
+#: src/features/messaging/pages/MessagingPage.tsx
 #: src/layouts/GlobalSearch.tsx
 msgid "Colaboradores"
 msgstr "Colaboradores"
@@ -2892,6 +3127,10 @@ msgstr "Colaboradores puestos en un hotel"
 #: src/features/team/pages/RecruitmentTeamPage.tsx
 msgid "Colaboradores que dio de alta"
 msgstr "Colaboradores que dio de alta"
+
+#: src/features/messaging/components/ExcludedWorkersDialog.tsx
+msgid "Colaboradores sin teléfono válido"
+msgstr "Colaboradores sin teléfono válido"
 
 #: src/features/admin/components/UserFormDialog.tsx
 #: src/features/onboarding/components/ProspectFormDialog.tsx
@@ -3016,6 +3255,11 @@ msgstr "Completa tus datos"
 msgid "Completa tus datos para seguir"
 msgstr "Completa tus datos para seguir"
 
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/components/MessagingOverviewPanel.tsx
+msgid "Completada"
+msgstr "Completada"
+
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "Completado"
 msgstr "Completado"
@@ -3060,6 +3304,10 @@ msgstr "Con estos datos y el SSN/ITIN de Documentos el perfil queda completo; la
 #: src/features/accounting/pages/AccountingTimesheetPage.tsx
 msgid "con la tarifa y el multiplicador vigentes"
 msgstr "con la tarifa y el multiplicador vigentes"
+
+#: src/features/messaging/components/ContactActions.tsx
+msgid "Con lada de país (+52…) o elige el país al lado."
+msgstr "Con lada de país (+52…) o elige el país al lado."
 
 #: src/features/dashboard/components/RecruitmentManagerDashboard.tsx
 msgid "Con lugares todavía sin llenar"
@@ -3157,6 +3405,14 @@ msgstr "contactado hoy"
 msgid "Contacto actualizado"
 msgstr "Contacto actualizado"
 
+#: src/features/messaging/components/ContactActions.tsx
+msgid "Contacto actualizado."
+msgstr "Contacto actualizado."
+
+#: src/features/messaging/components/ContactActions.tsx
+msgid "Contacto creado."
+msgstr "Contacto creado."
+
 #: src/features/personnel/components/ContactQr.tsx
 msgid "Contacto de {name} en QR"
 msgstr "Contacto de {name} en QR"
@@ -3196,6 +3452,10 @@ msgstr "Contacto principal registrado"
 #: src/shared/constants/onboardingStatus.ts
 msgid "Contacto y datos"
 msgstr "Contacto y datos"
+
+#: src/features/messaging/components/MessagingContactsList.tsx
+msgid "Contactos"
+msgstr "Contactos"
 
 #: src/features/onboarding/components/HotelContactList.tsx
 msgid "Contactos del hotel"
@@ -3533,6 +3793,8 @@ msgstr "Cotizar →"
 msgid "cPanel rechazó la operación."
 msgstr "cPanel rechazó la operación."
 
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/components/MessagingOverviewPanel.tsx
 #: src/features/requisitions/api/requisitionsApi.ts
 msgid "Creada"
 msgstr "Creada"
@@ -3552,12 +3814,17 @@ msgstr "Créalo desde <0>Correos corporativos</0>."
 msgid "Creando…"
 msgstr "Creando…"
 
+#: src/features/messaging/components/ContactActions.tsx
+msgid "Crear"
+msgstr "Crear"
+
 #: src/features/recruitment/components/CreateAccessDialog.tsx
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Crear acceso"
 msgstr "Crear acceso"
 
 #: src/features/contracts/components/NewContractDialog.tsx
+#: src/features/messaging/components/CreateCampaignDialog.tsx
 msgid "Crear borrador"
 msgstr "Crear borrador"
 
@@ -3771,6 +4038,10 @@ msgstr "D"
 msgid "Da de alta el primero con «Nuevo prospecto»: el ciclo arranca en Gris."
 msgstr "Da de alta el primero con «Nuevo prospecto»: el ciclo arranca en Gris."
 
+#: src/features/messaging/components/MessagingContactsList.tsx
+msgid "Dado de baja"
+msgstr "Dado de baja"
+
 #: src/features/team/pages/RecruitmentTeamPage.tsx
 msgid "Dados de alta, todavía en Blanco"
 msgstr "Dados de alta, todavía en Blanco"
@@ -3790,6 +4061,7 @@ msgstr "Dar de alta el hotel abre su ciclo comercial en Gris. Un hotel solo pued
 
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/components/UserFormDialog.tsx
+#: src/features/messaging/components/ContactActions.tsx
 msgid "Dar de baja"
 msgstr "Dar de baja"
 
@@ -3806,6 +4078,10 @@ msgstr "Dashboard"
 #: src/layouts/Sidebar.tsx
 msgid "Dashboard de QA"
 msgstr "Dashboard de QA"
+
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Datos"
+msgstr "Datos"
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Datos básicos"
@@ -4046,6 +4322,10 @@ msgstr "Descartar borrador"
 msgid "Descartar cambios"
 msgstr "Descartar cambios"
 
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Descripción"
+msgstr "Descripción"
+
 #: src/shared/components/SettlementEffectBadge.tsx
 msgid "Descuento: se le resta"
 msgstr "Descuento: se le resta"
@@ -4107,6 +4387,10 @@ msgstr "Desempeño"
 msgid "Desempeño del equipo"
 msgstr "Desempeño del equipo"
 
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "Deshabilitada"
+msgstr "Deshabilitada"
+
 #: src/features/contracts/components/ContractNextStep.tsx
 msgid "Después"
 msgstr "Después"
@@ -4118,6 +4402,10 @@ msgstr "Después de esto la versión queda congelada: no se vuelve a editar. Par
 #: src/features/contracts/components/ContractNextStep.tsx
 msgid "Después: nadie más aprueba. El contrato queda vigente y el hotel puede pedir personal con estas tarifas."
 msgstr "Después: nadie más aprueba. El contrato queda vigente y el hotel puede pedir personal con estas tarifas."
+
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Destinatarios"
+msgstr "Destinatarios"
 
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Detalle de Requisición"
@@ -4354,6 +4642,7 @@ msgid "Edad"
 msgstr "Edad"
 
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
+#: src/features/messaging/components/ContactActions.tsx
 #: src/features/onboarding/components/HotelContactList.tsx
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 #: src/features/recruitment/components/PoolRoster.tsx
@@ -4365,6 +4654,7 @@ msgstr "Editar"
 msgid "Editar colaborador"
 msgstr "Editar colaborador"
 
+#: src/features/messaging/components/ContactActions.tsx
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 msgid "Editar contacto"
 msgstr "Editar contacto"
@@ -5268,6 +5558,10 @@ msgstr "Elige un turno para ver a sus colaboradores."
 msgid "Elige una Líder o «Directo contigo»"
 msgstr "Elige una Líder o «Directo contigo»"
 
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Elige una plantilla aprobada"
+msgstr "Elige una plantilla aprobada"
+
 #: src/features/worker/pages/PasswordPage.tsx
 msgid "Elige una que solo tú sepas; la temporal que te dieron deja de servir."
 msgstr "Elige una que solo tú sepas; la temporal que te dieron deja de servir."
@@ -5289,6 +5583,7 @@ msgid "Eliminando…"
 msgstr "Eliminando…"
 
 #: src/features/admin/pages/CorporateEmailPage.tsx
+#: src/features/messaging/components/ContactActions.tsx
 #: src/features/recruitment/components/PoolRoster.tsx
 msgid "Eliminar"
 msgstr "Eliminar"
@@ -5340,6 +5635,10 @@ msgstr "Eliminar reactivo"
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Eliminar requisición"
 msgstr "Eliminar requisición"
+
+#: src/features/messaging/components/ContactActions.tsx
+msgid "Email"
+msgstr "Email"
 
 #: src/features/worker/pages/ProfilePage.tsx
 msgid "Emergencia"
@@ -5468,6 +5767,10 @@ msgstr "En meta"
 msgid "En proceso"
 msgstr "En proceso"
 
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "En revisión"
+msgstr "En revisión"
+
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "En Stand-by"
 msgstr "En Stand-by"
@@ -5592,6 +5895,11 @@ msgstr "Enviado"
 msgid "Enviado, en revisión"
 msgstr "Enviado, en revisión"
 
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/components/MessagingOverviewPanel.tsx
+msgid "Enviando"
+msgstr "Enviando"
+
 #: src/features/timesheet/components/WeekActionBar.tsx
 msgid "Enviando y aprobando…"
 msgstr "Enviando y aprobando…"
@@ -5604,9 +5912,17 @@ msgstr "Enviando y aprobando…"
 msgid "Enviando…"
 msgstr "Enviando…"
 
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "Enviar"
+msgstr "Enviar"
+
 #: src/features/timesheet/components/WeekActionBar.tsx
 msgid "Enviar a revisión"
 msgstr "Enviar a revisión"
+
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "Enviar ahora"
+msgstr "Enviar ahora"
 
 #: src/features/contracts/components/ContractPdfButton.tsx
 msgid "Enviar contrato por correo"
@@ -5650,6 +5966,11 @@ msgstr "Envío de emergencia (jueves)"
 #: src/features/accounting/pages/InvoiceDetailPage.tsx
 msgid "Envío registrado"
 msgstr "Envío registrado"
+
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/pages/MessagingPage.tsx
+msgid "Envíos masivos por WhatsApp"
+msgstr "Envíos masivos por WhatsApp"
 
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "Es el contacto principal"
@@ -5757,6 +6078,10 @@ msgstr "Escribe el nombre completo"
 #: src/features/onboarding/types/prospectForm.schema.ts
 msgid "Escribe el nombre del hotel"
 msgstr "Escribe el nombre del hotel"
+
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Escribe el texto de cada variable fija."
+msgstr "Escribe el texto de cada variable fija."
 
 #: src/features/auth/types/login.schema.ts
 #: src/mobile/AppLoginPage.tsx
@@ -5948,6 +6273,10 @@ msgstr "Esta pantalla dice a quién avisar"
 msgid "Esta pantalla existe para que el módulo tenga su lugar; sus reglas siguen en el vault."
 msgstr "Esta pantalla existe para que el módulo tenga su lugar; sus reglas siguen en el vault."
 
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Esta plantilla no tiene variables: le llega igual a todos."
+msgstr "Esta plantilla no tiene variables: le llega igual a todos."
+
 #: src/features/requisitions/components/UrgencyChip.tsx
 msgid "Esta posición ya está cubierta: no importa cuánto falte para que inicie."
 msgstr "Esta posición ya está cubierta: no importa cuánto falte para que inicie."
@@ -6027,6 +6356,12 @@ msgstr "estado"
 #: src/features/admin/components/UserFormDialog.tsx
 #: src/features/contracts/components/ContractFilters.tsx
 #: src/features/contracts/components/ContractTable.tsx
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/components/MessagingContactsList.tsx
+#: src/features/messaging/components/MessagingFilters.tsx
+#: src/features/messaging/components/MessagingOverviewPanel.tsx
+#: src/features/messaging/components/MessagingWorkersList.tsx
 #: src/features/recruitment/components/CreateBlacklistDialog.tsx
 #: src/features/recruitment/components/PoolFilters.tsx
 #: src/features/recruitment/components/PoolTable.tsx
@@ -6102,6 +6437,13 @@ msgstr "Estás fuera del hotel: la marca no se guarda. Pídele al Supervisor un 
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "Este — Atlanta, Miami, Nueva York"
 msgstr "Este — Atlanta, Miami, Nueva York"
+
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/components/MessagingContactsList.tsx
+#: src/features/messaging/components/MessagingOverviewPanel.tsx
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "Este ambiente no está conectado a la plataforma de mensajería"
+msgstr "Este ambiente no está conectado a la plataforma de mensajería"
 
 #: src/features/admin/pages/MailSettingsPage.tsx
 msgid "Este ambiente no manda correo propio"
@@ -6297,6 +6639,11 @@ msgstr "Esto no cambia tu turno de hoy: es solo para que te consideren para más
 msgid "Esto no se deshace desde aquí. Si sigue trabajando en algún hotel, su asignación se libera al eliminarlo. El expediente y su historial se conservan por dentro, pero nadie vuelve a verlo en el Pool."
 msgstr "Esto no se deshace desde aquí. Si sigue trabajando en algún hotel, su asignación se libera al eliminarlo. El expediente y su historial se conservan por dentro, pero nadie vuelve a verlo en el Pool."
 
+#: src/features/messaging/components/ContactActions.tsx
+#: src/features/messaging/components/MessagingContactsList.tsx
+msgid "Etiquetas"
+msgstr "Etiquetas"
+
 #: src/features/recruitment/components/LiftBlacklistDialog.tsx
 #: src/features/recruitment/pages/BlacklistPage.tsx
 msgid "Evidencia"
@@ -6356,6 +6703,11 @@ msgstr "Factura aprobada"
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Factura por hora"
 msgstr "Factura por hora"
+
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/components/MessagingOverviewPanel.tsx
+msgid "Falló"
+msgstr "Falló"
 
 #: src/features/timesheet/components/AttendanceView.tsx
 msgid "Falta"
@@ -6437,6 +6789,22 @@ msgstr "Falta la posición"
 #: src/features/worker/pages/HomePage.tsx
 msgid "Faltan datos tuyos"
 msgstr "Faltan datos tuyos"
+
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "Faltan las variables MESSAGING_API_* en el API. Cuando se configuren, aquí aparecen las campañas."
+msgstr "Faltan las variables MESSAGING_API_* en el API. Cuando se configuren, aquí aparecen las campañas."
+
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "Faltan las variables MESSAGING_API_* en el API. Cuando se configuren, aquí aparecen las plantillas."
+msgstr "Faltan las variables MESSAGING_API_* en el API. Cuando se configuren, aquí aparecen las plantillas."
+
+#: src/features/messaging/components/MessagingOverviewPanel.tsx
+msgid "Faltan las variables MESSAGING_API_* en el API. Cuando se configuren, aquí aparecen los contactos, las plantillas y las campañas."
+msgstr "Faltan las variables MESSAGING_API_* en el API. Cuando se configuren, aquí aparecen los contactos, las plantillas y las campañas."
+
+#: src/features/messaging/components/MessagingContactsList.tsx
+msgid "Faltan las variables MESSAGING_API_* en el API. Cuando se configuren, aquí aparecen los contactos."
+msgstr "Faltan las variables MESSAGING_API_* en el API. Cuando se configuren, aquí aparecen los contactos."
 
 #: src/features/worker/components/NativePunchGate.tsx
 msgid "Faltan permisos para ponchar"
@@ -6706,6 +7074,7 @@ msgstr "Guardando…"
 
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
 #: src/features/admin/pages/CatalogsPage.tsx
+#: src/features/messaging/components/ContactActions.tsx
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "Guardar"
 msgstr "Guardar"
@@ -6915,6 +7284,9 @@ msgstr "Horas regulares"
 #: src/features/admin/components/HotelUserFormDialog.tsx
 #: src/features/admin/components/HotelUsersSection.tsx
 #: src/features/contracts/components/ContractTable.tsx
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+#: src/features/messaging/components/MessagingFilters.tsx
+#: src/features/messaging/components/MessagingWorkersList.tsx
 #: src/features/observability/components/CohortsView.tsx
 #: src/features/observability/pages/ObservabilityPage.tsx
 #: src/features/reports/pages/RecruitmentReportsPage.tsx
@@ -7934,6 +8306,12 @@ msgstr "Líneas trabajadas"
 msgid "Lista de verificación"
 msgstr "Lista de verificación"
 
+#. placeholder {0}: result.deactivated
+#. placeholder {1}: result.reactivated
+#: src/features/messaging/components/SyncWorkersButton.tsx
+msgid "Lista negra: {0} dejan de recibir y {1} vuelven a recibir."
+msgstr "Lista negra: {0} dejan de recibir y {1} vuelven a recibir."
+
 #: src/shared/components/GuidedTour.tsx
 msgid "Listo"
 msgstr "Listo"
@@ -8167,6 +8545,10 @@ msgstr "Lo usan Contabilidad y el hotel cada semana, sin que tengas que hacer na
 msgid "lo valida Reclutamiento (la Reclutadora, su Líder de Grupo o el Manager) cuando el expediente está completo."
 msgstr "lo valida Reclutamiento (la Reclutadora, su Líder de Grupo o el Manager) cuando el expediente está completo."
 
+#: src/features/messaging/components/MessagingWorkersList.tsx
+msgid "Lo ven Reclutamiento, el Manager de QA, Contabilidad y los roles del hotel (solo su personal)."
+msgstr "Lo ven Reclutamiento, el Manager de QA, Contabilidad y los roles del hotel (solo su personal)."
+
 #. placeholder {0}: board.slots.length
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
 msgid "Los {0} slots están ocupados: la cobertura del renglón quedó completa."
@@ -8221,6 +8603,10 @@ msgstr "Los hoteles de tus zonas, del prospecto al cliente activo.{0} Cada pin a
 #: src/features/observability/pages/ObservabilityPage.tsx
 msgid "Los indicadores de cada departamento, calculados con lo que el sistema ya registra — todo de solo lectura."
 msgstr "Los indicadores de cada departamento, calculados con lo que el sistema ya registra — todo de solo lectura."
+
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "Los mensajes que aún no salieron ya no se envían. No se puede deshacer."
+msgstr "Los mensajes que aún no salieron ya no se envían. No se puede deshacer."
 
 #: src/features/team/pages/TeamPage.tsx
 msgid "Los reportes por BD llegan con la pantalla de Reportes"
@@ -8422,6 +8808,10 @@ msgstr "Margen bruto por hora"
 msgid "María Sandoval Ruiz"
 msgstr "María Sandoval Ruiz"
 
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "Marketing"
+msgstr "Marketing"
+
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "Marta Solís"
 msgstr "Marta Solís"
@@ -8473,6 +8863,23 @@ msgstr "Medio"
 #: src/shared/constants/catalogs.ts
 msgid "Medio tiempo"
 msgstr "Medio tiempo"
+
+#: src/features/messaging/pages/MessagingPage.tsx
+#: src/layouts/Sidebar.tsx
+msgid "Mensajería"
+msgstr "Mensajería"
+
+#: src/features/messaging/pages/MessagingPage.tsx
+msgid "Mensajes aprobados por Meta"
+msgstr "Mensajes aprobados por Meta"
+
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "Mensajes aprobados por Meta, disponibles para usar en campañas."
+msgstr "Mensajes aprobados por Meta, disponibles para usar en campañas."
+
+#: src/features/messaging/pages/MessagingPage.tsx
+msgid "Mensajes por WhatsApp a colaboradores, con plantillas y campañas."
+msgstr "Mensajes por WhatsApp a colaboradores, con plantillas y campañas."
 
 #: src/features/observability/components/CohortsView.tsx
 msgid "Mensual"
@@ -8682,6 +9089,11 @@ msgstr "Motivo del levantamiento <0>(obligatorio)</0>"
 msgid "Motivo del rechazo"
 msgstr "Motivo del rechazo"
 
+#. placeholder {0}: template.rejectionReason
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "Motivo del rechazo: {0}"
+msgstr "Motivo del rechazo: {0}"
+
 #: src/features/conversion/pages/ConversionPage.tsx
 msgid "Motivo del regreso (obligatorio):"
 msgstr "Motivo del regreso (obligatorio):"
@@ -8743,6 +9155,7 @@ msgstr "Multiplicadores"
 msgid "Multiplicadores actualizados"
 msgstr "Multiplicadores actualizados"
 
+#: src/features/messaging/pages/MessagingPage.tsx
 #: src/shared/components/ModulePlaceholder.tsx
 msgid "Muy pronto estará aquí"
 msgstr "Muy pronto estará aquí"
@@ -8820,6 +9233,13 @@ msgstr "Nadie — la punta de la jerarquía del hotel"
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Nadie (sin jefe por ahora)"
 msgstr "Nadie (sin jefe por ahora)"
+
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/components/MessagingContactsList.tsx
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+#: src/features/messaging/components/MessagingWorkersList.tsx
+msgid "Nadie coincide"
+msgstr "Nadie coincide"
 
 #: src/features/admin/components/ColaboradorAccountsSection.tsx
 msgid "Nadie coincide con «{search}»."
@@ -8946,10 +9366,22 @@ msgstr "Neto a pagar"
 msgid "Ningún BD de tu equipo se llama «{0}». Cambia la búsqueda o límpiala para ver a todos."
 msgstr "Ningún BD de tu equipo se llama «{0}». Cambia la búsqueda o límpiala para ver a todos."
 
+#: src/features/messaging/components/MessagingWorkersList.tsx
+msgid "Ningún colaborador coincide con «{search}»."
+msgstr "Ningún colaborador coincide con «{search}»."
+
 #: src/features/recruitment/components/PoolCardBoard.tsx
 #: src/features/recruitment/components/PoolTable.tsx
 msgid "Ningún colaborador coincide con estos filtros. Cambia o quita un filtro para ver más."
 msgstr "Ningún colaborador coincide con estos filtros. Cambia o quita un filtro para ver más."
+
+#: src/features/messaging/components/MessagingWorkersList.tsx
+msgid "Ningún colaborador está en ese estado."
+msgstr "Ningún colaborador está en ese estado."
+
+#: src/features/messaging/components/MessagingContactsList.tsx
+msgid "Ningún contacto coincide con «{search}»."
+msgstr "Ningún contacto coincide con «{search}»."
 
 #: src/features/contracts/components/ContractRowList.tsx
 msgid "Ningún contrato coincide"
@@ -9034,6 +9466,10 @@ msgstr "Ningún veto es de alguien llamado «{0}». Prueba otro nombre o quita l
 msgid "Ninguna"
 msgstr "Ninguna"
 
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "Ninguna campaña está en ese estado."
+msgstr "Ninguna campaña está en ese estado."
+
 #: src/features/admin/components/HotelUsersSection.tsx
 msgid "Ninguna cuenta de hotel está de baja. Las que des de baja aparecerán aquí."
 msgstr "Ninguna cuenta de hotel está de baja. Las que des de baja aparecerán aquí."
@@ -9054,6 +9490,10 @@ msgstr "Ninguna pendiente coincide con «{searchTerm}». Cambia la búsqueda o l
 #: src/features/requisitions/pages/RequisitionAuthorizationPage.tsx
 msgid "Ninguna pendiente coincide con la búsqueda: cambia el folio o el hotel, o límpiala."
 msgstr "Ninguna pendiente coincide con la búsqueda: cambia el folio o el hotel, o límpiala."
+
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "Ninguna plantilla está en ese estado."
+msgstr "Ninguna plantilla está en ese estado."
 
 #. placeholder {0}: department.name
 #. placeholder {1}: search.trim()
@@ -9145,6 +9585,10 @@ msgstr "No hay nada que contar."
 #: src/features/team/components/MoveRecruiterDialog.tsx
 msgid "No hay otra Líder en tu equipo a la cual moverla. Cuando des de alta a una Líder y te reporte, aparecerá aquí."
 msgstr "No hay otra Líder en tu equipo a la cual moverla. Cuando des de alta a una Líder y te reporte, aparecerá aquí."
+
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "No hay plantillas aprobadas. Sincronízalas desde Meta en la sección Plantillas."
+msgstr "No hay plantillas aprobadas. Sincronízalas desde Meta en la sección Plantillas."
 
 #: src/features/schedule/pages/SchedulePage.tsx
 msgid "No hay requisiciones autorizadas para esta semana. Cuando un Manager autorice una, sus posiciones aparecerán aquí."
@@ -9263,6 +9707,12 @@ msgstr "No se encontró esta posición: puede que ya se haya cubierto o eliminad
 msgid "No se encontró la requisición: puede que se haya eliminado o que el enlace sea viejo."
 msgstr "No se encontró la requisición: puede que se haya eliminado o que el enlace sea viejo."
 
+#. placeholder {0}: result.withoutPhone
+#. placeholder {1}: result.invalidPhone + result.rejected
+#: src/features/messaging/components/SyncWorkersButton.tsx
+msgid "No se enviaron {skipped}: {0} sin teléfono y {1} con teléfono inválido."
+msgstr "No se enviaron {skipped}: {0} sin teléfono y {1} con teléfono inválido."
+
 #: src/features/worker/pages/PunchPage.tsx
 msgid "No se guardó"
 msgstr "No se guardó"
@@ -9276,6 +9726,10 @@ msgstr "No se guardó tu idioma: al volver a entrar puede regresar a español."
 msgid "No se podrá cambiar después del alta: es el correo con el que la persona entra."
 msgstr "No se podrá cambiar después del alta: es el correo con el que la persona entra."
 
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "No se pudieron cargar las campañas."
+msgstr "No se pudieron cargar las campañas."
+
 #: src/features/admin/components/HotelUsersSection.tsx
 msgid "No se pudieron cargar las cuentas de los hoteles. Reintenta en unos segundos."
 msgstr "No se pudieron cargar las cuentas de los hoteles. Reintenta en unos segundos."
@@ -9283,6 +9737,10 @@ msgstr "No se pudieron cargar las cuentas de los hoteles. Reintenta en unos segu
 #: src/features/accounting/pages/InvoicesPage.tsx
 msgid "No se pudieron cargar las facturas. Reintenta en unos segundos."
 msgstr "No se pudieron cargar las facturas. Reintenta en unos segundos."
+
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "No se pudieron cargar las plantillas."
+msgstr "No se pudieron cargar las plantillas."
 
 #: src/features/onboarding/pages/ProposalListPage.tsx
 msgid "No se pudieron cargar las propuestas. Reintenta en unos segundos."
@@ -9308,9 +9766,17 @@ msgstr "No se pudieron cargar los ajustes. Reintenta en unos segundos."
 msgid "No se pudieron cargar los catálogos. Reintenta en unos segundos."
 msgstr "No se pudieron cargar los catálogos. Reintenta en unos segundos."
 
+#: src/features/messaging/components/MessagingWorkersList.tsx
+msgid "No se pudieron cargar los colaboradores."
+msgstr "No se pudieron cargar los colaboradores."
+
 #: src/features/accounting/pages/ConsolidationsPage.tsx
 msgid "No se pudieron cargar los consolidados. Reintenta en unos segundos."
 msgstr "No se pudieron cargar los consolidados. Reintenta en unos segundos."
+
+#: src/features/messaging/components/MessagingContactsList.tsx
+msgid "No se pudieron cargar los contactos."
+msgstr "No se pudieron cargar los contactos."
 
 #: src/features/contracts/pages/ContractListPage.tsx
 msgid "No se pudieron cargar los contratos. Reintenta en unos segundos."
@@ -9343,6 +9809,14 @@ msgstr "No se pudieron guardar los límites. Inténtalo de nuevo."
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "No se pudieron guardar tus datos. Inténtalo de nuevo."
 msgstr "No se pudieron guardar tus datos. Inténtalo de nuevo."
+
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "No se pudieron sincronizar las plantillas."
+msgstr "No se pudieron sincronizar las plantillas."
+
+#: src/features/messaging/components/SyncWorkersButton.tsx
+msgid "No se pudieron sincronizar los colaboradores."
+msgstr "No se pudieron sincronizar los colaboradores."
 
 #: src/features/onboarding/components/CreateProposalPromptDialog.tsx
 msgid "No se pudo abrir el borrador. Ciérralo e inténtalo de nuevo desde la ficha del prospecto."
@@ -9466,6 +9940,10 @@ msgstr "No se pudo cargar el dashboard. Reintenta en unos segundos."
 msgid "No se pudo cargar el historial de inspecciones. Inténtalo de nuevo."
 msgstr "No se pudo cargar el historial de inspecciones. Inténtalo de nuevo."
 
+#: src/features/messaging/components/MessagingOverviewPanel.tsx
+msgid "No se pudo cargar el Panel de Mensajería."
+msgstr "No se pudo cargar el Panel de Mensajería."
+
 #: src/features/onboarding/pages/PipelinePage.tsx
 msgid "No se pudo cargar el Pipeline. Reintenta en unos segundos."
 msgstr "No se pudo cargar el Pipeline. Reintenta en unos segundos."
@@ -9560,6 +10038,11 @@ msgstr "No se pudo cargar tu turno."
 msgid "No se pudo cerrar la semana. Reintenta."
 msgstr "No se pudo cerrar la semana. Reintenta."
 
+#: src/features/messaging/components/ContactActions.tsx
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "No se pudo completar la acción."
+msgstr "No se pudo completar la acción."
+
 #: src/features/admin/pages/CorporateEmailPage.tsx
 msgid "No se pudo completar la operación. Inténtalo de nuevo."
 msgstr "No se pudo completar la operación. Inténtalo de nuevo."
@@ -9583,6 +10066,10 @@ msgstr "No se pudo crear el acceso. Inténtalo de nuevo."
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "No se pudo crear el contrato. Revisa los datos e inténtalo de nuevo."
 msgstr "No se pudo crear el contrato. Revisa los datos e inténtalo de nuevo."
+
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "No se pudo crear la campaña."
+msgstr "No se pudo crear la campaña."
 
 #: src/features/conversion/pages/ConversionPage.tsx
 msgid "No se pudo crear la cuenta del hotel. Inténtalo de nuevo."
@@ -9628,6 +10115,10 @@ msgstr "No se pudo guardar el archivo. Inténtalo de nuevo."
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "No se pudo guardar el colaborador. Revisa los datos e inténtalo de nuevo."
 msgstr "No se pudo guardar el colaborador. Revisa los datos e inténtalo de nuevo."
+
+#: src/features/messaging/components/ContactActions.tsx
+msgid "No se pudo guardar el contacto."
+msgstr "No se pudo guardar el contacto."
 
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 msgid "No se pudo guardar el contacto. Revisa los datos e inténtalo de nuevo."
@@ -9825,6 +10316,10 @@ msgstr "No se puede calificar una inspección donde todo quedó en N/A."
 msgid "No se registró entrada ni salida. Puede ser que no tuviera turno ese día, o que el ponche no llegara a guardarse (por ejemplo, fuera de la geocerca). Revisa el Schedule para saber cuál de las dos fue."
 msgstr "No se registró entrada ni salida. Puede ser que no tuviera turno ese día, o que el ponche no llegara a guardarse (por ejemplo, fuera de la geocerca). Revisa el Schedule para saber cuál de las dos fue."
 
+#: src/features/messaging/components/ExcludedWorkersDialog.tsx
+msgid "No se sincronizan con Mensajería, así que ninguna campaña les llega. Corrige el teléfono en su expediente."
+msgstr "No se sincronizan con Mensajería, así que ninguna campaña les llega. Corrige el teléfono en su expediente."
+
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "No sirve (ilegible, incorrecto…): se le vuelve a pedir al colaborador."
 msgstr "No sirve (ilegible, incorrecto…): se le vuelve a pedir al colaborador."
@@ -9854,12 +10349,19 @@ msgid "No-show del día 1"
 msgstr "No-show del día 1"
 
 #: src/features/admin/pages/CatalogsPage.tsx
+#: src/features/messaging/components/MessagingContactsList.tsx
+#: src/features/messaging/components/MessagingWorkersList.tsx
 #: src/features/onboarding/components/PlacesAutofillSummary.tsx
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 #: src/features/recruitment/components/PoolTable.tsx
 #: src/features/worker/pages/Phase3Page.tsx
 msgid "Nombre"
 msgstr "Nombre"
+
+#: src/features/messaging/components/ContactActions.tsx
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Nombre *"
+msgstr "Nombre *"
 
 #: src/features/clients/types/client.types.ts
 msgid "nombre A–Z"
@@ -9903,6 +10405,10 @@ msgstr "Nombre de la zona, p. ej. Riviera Maya…"
 #: src/features/team/pages/TeamPage.tsx
 msgid "Nombre del BD, p. ej. Rocío Lima…"
 msgstr "Nombre del BD, p. ej. Rocío Lima…"
+
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Nombre del colaborador"
+msgstr "Nombre del colaborador"
 
 #: src/features/admin/pages/CorporateEmailPage.tsx
 #: src/features/personnel/pages/PersonnelPage.tsx
@@ -10049,6 +10555,10 @@ msgstr "Notificaciones: nada nuevo"
 msgid "Nuestras plantillas, remitente @oranjepeople.com."
 msgstr "Nuestras plantillas, remitente @oranjepeople.com."
 
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Nueva campaña"
+msgstr "Nueva campaña"
+
 #: src/features/admin/components/HotelUserFormDialog.tsx
 msgid "Nueva cuenta del hotel"
 msgstr "Nueva cuenta del hotel"
@@ -10070,6 +10580,10 @@ msgstr "Nuevo"
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Nuevo colaborador"
 msgstr "Nuevo colaborador"
+
+#: src/features/messaging/components/ContactActions.tsx
+msgid "Nuevo contacto"
+msgstr "Nuevo contacto"
 
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Nuevo contrato"
@@ -10320,6 +10834,16 @@ msgstr "Pagar"
 msgid "Pagar seleccionados"
 msgstr "Pagar seleccionados"
 
+#. placeholder {0}: data.meta.page
+#. placeholder {0}: data.pagination.page
+#. placeholder {1}: data.meta.totalPages
+#. placeholder {1}: data.pagination.totalPages
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/components/MessagingContactsList.tsx
+#: src/features/messaging/components/MessagingWorkersList.tsx
+msgid "Página {0} de {1}"
+msgstr "Página {0} de {1}"
+
 #. placeholder {0}: String(index + 1)
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Pago {0}"
@@ -10353,6 +10877,7 @@ msgstr "Pago registrado"
 msgid "Pago y facturación de {hotelName} esta semana, listos para bajar — el mismo cuadro de \"Lo que el hotel nos paga\" en un archivo."
 msgstr "Pago y facturación de {hotelName} esta semana, listos para bajar — el mismo cuadro de \"Lo que el hotel nos paga\" en un archivo."
 
+#: src/features/messaging/components/ContactActions.tsx
 #: src/shared/components/PhoneInput.tsx
 msgid "País"
 msgstr "País"
@@ -10360,6 +10885,10 @@ msgstr "País"
 #: src/shared/components/PhoneInput.tsx
 msgid "País o lada: México, +52…"
 msgstr "País o lada: México, +52…"
+
+#: src/features/messaging/pages/MessagingPage.tsx
+msgid "Panel"
+msgstr "Panel"
 
 #: src/shared/components/SendDocumentModal.tsx
 msgid "Para"
@@ -10471,9 +11000,19 @@ msgstr "Pausa temporal (Rosa); lo compartes con el Manager de Área"
 msgid "Pausa, no baja"
 msgstr "Pausa, no baja"
 
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/components/MessagingOverviewPanel.tsx
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "Pausada"
+msgstr "Pausada"
+
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "Pausado (Stand-by)"
 msgstr "Pausado (Stand-by)"
+
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "Pausar"
+msgstr "Pausar"
 
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 msgid "pausarlo o reactivarlo es del BDC."
@@ -10680,6 +11219,16 @@ msgstr "Pipeline"
 #: src/features/dashboard/components/StatusFunnel.tsx
 msgid "Pipeline por estado"
 msgstr "Pipeline por estado"
+
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Plantilla"
+msgstr "Plantilla"
+
+#: src/features/messaging/components/MessagingOverviewPanel.tsx
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+#: src/features/messaging/pages/MessagingPage.tsx
+msgid "Plantillas"
+msgstr "Plantillas"
 
 #: src/features/admin/components/PaymentLimitsSection.tsx
 msgid "Plazo para aprobar las horas (miércoles)"
@@ -10965,15 +11514,28 @@ msgstr "Primer contacto"
 msgid "Primero envía una propuesta al hotel"
 msgstr "Primero envía una propuesta al hotel"
 
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Primero sincroniza a los colaboradores nuevos."
+msgstr "Primero sincroniza a los colaboradores nuevos."
+
 #: src/features/onboarding/components/HotelContactList.tsx
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 msgid "Principal"
 msgstr "Principal"
 
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/components/MessagingOverviewPanel.tsx
+msgid "Programada"
+msgstr "Programada"
+
 #: src/features/reports/pages/RecruitmentReportsPage.tsx
 #: src/features/reports/pages/ReportsPage.tsx
 msgid "Programar envío recurrente"
 msgstr "Programar envío recurrente"
+
+#: src/features/messaging/components/MessagingOverviewPanel.tsx
+msgid "Progreso"
+msgstr "Progreso"
 
 #: src/features/clients/pages/ClientPortfolioPage.tsx
 msgid "promedio como cliente"
@@ -11188,6 +11750,11 @@ msgstr "Qué pasó y motivo"
 msgid "Qué semanas ver"
 msgstr "Qué semanas ver"
 
+#. placeholder {0}: index + 1
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Qué va en la variable {0}"
+msgstr "Qué va en la variable {0}"
+
 #: src/features/timesheet/components/ReviewDayDialog.tsx
 msgid "Qué viste y cómo se resuelve — p. ej. «Salió por el acceso de servicio; el GPS tomó la calle.»"
 msgstr "Qué viste y cómo se resuelve — p. ej. «Salió por el acceso de servicio; el GPS tomó la calle.»"
@@ -11340,6 +11907,10 @@ msgstr "Reactivos de Inspección es distinto"
 msgid "Reales"
 msgstr "Reales"
 
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "Reanudar"
+msgstr "Reanudar"
+
 #: src/features/observability/lib/people.ts
 msgid "Reasignadas"
 msgstr "Reasignadas"
@@ -11355,6 +11926,10 @@ msgstr "Recargar"
 #: src/features/onboarding/components/HotelLocationMap.tsx
 msgid "Recentrar"
 msgstr "Recentrar"
+
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "Rechazada"
+msgstr "Rechazada"
 
 #: src/features/observability/pages/PayAdjustmentsQueuePage.tsx
 msgid "Rechazando…"
@@ -11738,6 +12313,10 @@ msgstr "Resultado"
 msgid "Resultados"
 msgstr "Resultados"
 
+#: src/features/messaging/pages/MessagingPage.tsx
+msgid "Resumen de la operación"
+msgstr "Resumen de la operación"
+
 #: src/features/accounting/types/settlement.constants.ts
 msgid "Retención del 16%"
 msgstr "Retención del 16%"
@@ -11921,6 +12500,10 @@ msgstr "Se arma el PDF y se manda por correo al contacto del hotel."
 msgid "Se arma y se envía aquí, dentro de Verde. No se sale hacia otro estado sin haberla mandado."
 msgstr "Se arma y se envía aquí, dentro de Verde. No se sale hacia otro estado sin haberla mandado."
 
+#: src/features/messaging/components/ContactActions.tsx
+msgid "Se borra de la plataforma de mensajería junto con su historial de mensajes. No se puede deshacer."
+msgstr "Se borra de la plataforma de mensajería junto con su historial de mensajes. No se puede deshacer."
+
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "Se capturan una sola vez, aquí: cuando el hotel firme su contrato, lo hereda de aquí y no se vuelve a preguntar."
 msgstr "Se capturan una sola vez, aquí: cuando el hotel firme su contrato, lo hereda de aquí y no se vuelve a preguntar."
@@ -11940,6 +12523,11 @@ msgstr "Se cotiza por puesto"
 #: src/features/contracts/components/NewContractDialog.tsx
 msgid "Se crea como borrador. Ajusta las tarifas por posición y actívalo cuando esté listo."
 msgstr "Se crea como borrador. Ajusta las tarifas por posición y actívalo cuando esté listo."
+
+#. placeholder {0}: campaign.name
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Se creó «{0}», pero nadie tiene esas etiquetas: revisa a quién va antes de enviarla."
+msgstr "Se creó «{0}», pero nadie tiene esas etiquetas: revisa a quién va antes de enviarla."
 
 #. placeholder {0}: mealDeductionAmount.toFixed(2)
 #: src/features/contracts/components/MultiplierTable.tsx
@@ -11972,6 +12560,10 @@ msgstr "Se genera automáticamente a partir de los campos de arriba — no se ed
 #: src/features/accounting/pages/ConsolidationsPage.tsx
 msgid "Se genera solo al correr el pago de la semana (miércoles o la emergencia del jueves) — nunca se crea uno a mano aquí."
 msgstr "Se genera solo al correr el pago de la semana (miércoles o la emergencia del jueves) — nunca se crea uno a mano aquí."
+
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Se guarda como borrador: enviarla es otro paso, desde el listado."
+msgstr "Se guarda como borrador: enviarla es otro paso, desde el listado."
 
 #: src/features/contracts/components/EditRateDialog.tsx
 #: src/features/contracts/components/MultiplierTable.tsx
@@ -12009,6 +12601,12 @@ msgstr "se llena ahora"
 msgid "Se manda desde notificaciones@oranjepeople.com — las respuestas del hotel llegan a tu correo."
 msgstr "Se manda desde notificaciones@oranjepeople.com — las respuestas del hotel llegan a tu correo."
 
+#. placeholder {0}: campaign.totalRecipients
+#. placeholder {1}: campaign.templateName ?? '—'
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "Se manda por WhatsApp a {0} contactos con la plantilla {1}. Una vez enviado, el mensaje no se puede retirar."
+msgstr "Se manda por WhatsApp a {0} contactos con la plantilla {1}. Una vez enviado, el mensaje no se puede retirar."
+
 #: src/features/timesheet/components/WeekActionBar.tsx
 msgid "Se manda y se aprueba en un solo paso: el hotel ya no podrá editar estos días. Si algo cambia después, contacta a Oranje."
 msgstr "Se manda y se aprueba en un solo paso: el hotel ya no podrá editar estos días. Si algo cambia después, contacta a Oranje."
@@ -12037,6 +12635,15 @@ msgstr "Se puso disponible por su cuenta: no cambia la asignación de arriba."
 #: src/features/accounting/components/PayConsolidationButton.tsx
 msgid "Se registran <0>{0}</0> como pagados a {workerName}. No se puede deshacer ni editar desde aquí: si algo cambia después, el ajuste va en otra semana."
 msgstr "Se registran <0>{0}</0> como pagados a {workerName}. No se puede deshacer ni editar desde aquí: si algo cambia después, el ajuste va en otra semana."
+
+#. placeholder {0}: status.workers
+#: src/features/messaging/components/SyncWorkersButton.tsx
+msgid "Se registran o actualizan {0} colaboradores como contactos en la plataforma, con sus etiquetas de hotel y estado. Los de la lista negra quedan inactivos."
+msgstr "Se registran o actualizan {0} colaboradores como contactos en la plataforma, con sus etiquetas de hotel y estado. Los de la lista negra quedan inactivos."
+
+#: src/features/messaging/components/SyncWorkersButton.tsx
+msgid "Se registran o actualizan los colaboradores como contactos en la plataforma, con sus etiquetas de hotel y estado. Los de la lista negra quedan inactivos."
+msgstr "Se registran o actualizan los colaboradores como contactos en la plataforma, con sus etiquetas de hotel y estado. Los de la lista negra quedan inactivos."
 
 #: src/features/worker/components/MobileShell.tsx
 msgid "Secciones"
@@ -12377,6 +12984,9 @@ msgid "Sigues en Blanco hasta que la Reclutadora valide el alta"
 msgstr "Sigues en Blanco hasta que la Reclutadora valide el alta"
 
 #: src/features/accounting/components/GeneratePaymentRunButton.tsx
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/components/MessagingContactsList.tsx
+#: src/features/messaging/components/MessagingWorkersList.tsx
 #: src/shared/components/GuidedTour.tsx
 msgid "Siguiente"
 msgstr "Siguiente"
@@ -12427,6 +13037,10 @@ msgstr "Sin altas ni asignaciones todavía"
 msgid "Sin aprobación no se paga"
 msgstr "Sin aprobación no se paga"
 
+#: src/features/messaging/components/MessagingWorkersList.tsx
+msgid "Sin asignación"
+msgstr "Sin asignación"
+
 #: src/features/timesheet/components/WeekActionBar.tsx
 msgid "Sin asignación en esta requisición: no hay contra qué capturar marcas"
 msgstr "Sin asignación en esta requisición: no hay contra qué capturar marcas"
@@ -12448,6 +13062,10 @@ msgstr "Sin avisos por ahora."
 msgid "Sin bill rate"
 msgstr "Sin bill rate"
 
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "Sin campañas"
+msgstr "Sin campañas"
+
 #: src/features/onboarding/components/HotelGlobeCard.tsx
 msgid "Sin ciclo abierto"
 msgstr "Sin ciclo abierto"
@@ -12455,6 +13073,10 @@ msgstr "Sin ciclo abierto"
 #: src/features/team/pages/TeamPage.tsx
 msgid "Sin ciclos abiertos ahora mismo: todo lo suyo está convertido o cerrado."
 msgstr "Sin ciclos abiertos ahora mismo: todo lo suyo está convertido o cerrado."
+
+#: src/features/messaging/components/MessagingWorkersList.tsx
+msgid "Sin colaboradores"
+msgstr "Sin colaboradores"
 
 #: src/features/recruitment/pages/SlotAssignmentPage.tsx
 msgid "Sin conceptos en el catálogo: pídele al Administrador que agregue uno en Catálogos."
@@ -12471,6 +13093,10 @@ msgstr "Sin contacto identificado"
 #: src/features/conversion/api/conversionApi.ts
 msgid "Sin contacto registrado — agrégalo en la ficha del prospecto"
 msgstr "Sin contacto registrado — agrégalo en la ficha del prospecto"
+
+#: src/features/messaging/components/MessagingContactsList.tsx
+msgid "Sin contactos"
+msgstr "Sin contactos"
 
 #: src/features/admin/components/UserFormDialog.tsx
 msgid "Sin contraseñas de por medio"
@@ -12666,6 +13292,14 @@ msgstr "Sin permiso de cámara no se puede leer el QR. Permítelo para este siti
 msgid "Sin permiso de ubicación no se puede ponchar: actívalo en Permisos, en el menú de tu cuenta."
 msgstr "Sin permiso de ubicación no se puede ponchar: actívalo en Permisos, en el menú de tu cuenta."
 
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "Sin plantilla"
+msgstr "Sin plantilla"
+
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "Sin plantillas"
+msgstr "Sin plantillas"
+
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "Sin ponche hoy"
 msgstr "Sin ponche hoy"
@@ -12768,6 +13402,10 @@ msgstr "Sin tarifas"
 msgid "Sin tarifas no se puede activar: agrega la primera con «Editar tarifas»."
 msgstr "Sin tarifas no se puede activar: agrega la primera con «Editar tarifas»."
 
+#: src/features/messaging/components/ExcludedWorkersDialog.tsx
+msgid "Sin teléfono"
+msgstr "Sin teléfono"
+
 #: src/features/team/pages/TeamPage.tsx
 msgid "sin territorio asignado todavía"
 msgstr "sin territorio asignado todavía"
@@ -12820,6 +13458,28 @@ msgstr "Sin zonas elegidas el Inspector no ve ningún hotel para levantar requis
 msgid "Sin zonas también es válido"
 msgstr "Sin zonas también es válido"
 
+#. placeholder {0}: formatDateTime(template.syncedAt)
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "Sincronizada {0}"
+msgstr "Sincronizada {0}"
+
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+#: src/features/messaging/components/SyncWorkersButton.tsx
+msgid "Sincronizando…"
+msgstr "Sincronizando…"
+
+#: src/features/messaging/components/SyncWorkersButton.tsx
+msgid "Sincronizar"
+msgstr "Sincronizar"
+
+#: src/features/messaging/components/SyncWorkersButton.tsx
+msgid "Sincronizar colaboradores"
+msgstr "Sincronizar colaboradores"
+
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "Sincronizar desde Meta"
+msgstr "Sincronizar desde Meta"
+
 #: src/features/recruitment/components/CreateAccessDialog.tsx
 msgid "Sirve para entrar a la app y para el correo. Tiene 30 días para cambiarla desde su app; si no, su acceso se bloquea hasta que lo haga."
 msgstr "Sirve para entrar a la app y para el correo. Tiene 30 días para cambiarla desde su app; si no, su acceso se bloquea hasta que lo haga."
@@ -12864,6 +13524,10 @@ msgstr "solo ciclos abiertos"
 #: src/features/dashboard/components/StatusFunnel.tsx
 msgid "Solo ciclos abiertos"
 msgstr "Solo ciclos abiertos"
+
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Solo colaboradores de Oranje. La plataforma deja fuera a quien se dio de baja o está en la lista negra."
+msgstr "Solo colaboradores de Oranje. La plataforma deja fuera a quien se dio de baja o está en la lista negra."
 
 #: src/features/timesheet/components/CorrectPunchDialog.tsx
 msgid "Solo corriges las horas de tu departamento."
@@ -13284,6 +13948,8 @@ msgstr "te reportan directo"
 msgid "Te reportan directo"
 msgstr "Te reportan directo"
 
+#: src/features/messaging/components/MessagingContactsList.tsx
+#: src/features/messaging/components/MessagingWorkersList.tsx
 #: src/features/onboarding/components/HotelContactsDialog.tsx
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 #: src/features/personnel/pages/PersonnelPage.tsx
@@ -13301,6 +13967,10 @@ msgstr "Teléfono"
 msgid "teléfono {0} · <0>servidor {1}</0>"
 msgstr "teléfono {0} · <0>servidor {1}</0>"
 
+#: src/features/messaging/components/ContactActions.tsx
+msgid "Teléfono *"
+msgstr "Teléfono *"
+
 #: src/features/personnel/pages/PersonnelPage.tsx
 msgid "Teléfono copiado: márcalo desde tu celular"
 msgstr "Teléfono copiado: márcalo desde tu celular"
@@ -13314,6 +13984,10 @@ msgstr "Teléfono de emergencia"
 msgid "Teléfono de quien envía"
 msgstr "Teléfono de quien envía"
 
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Teléfono del colaborador"
+msgstr "Teléfono del colaborador"
+
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Teléfono del contacto de emergencia"
 msgstr "Teléfono del contacto de emergencia"
@@ -13321,6 +13995,11 @@ msgstr "Teléfono del contacto de emergencia"
 #: src/features/onboarding/components/HotelDataCard.tsx
 msgid "Teléfono general"
 msgstr "Teléfono general"
+
+#. placeholder {0}: worker.phone
+#: src/features/messaging/components/ExcludedWorkersDialog.tsx
+msgid "Teléfono inválido: {0}"
+msgstr "Teléfono inválido: {0}"
 
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "Teléfono y zona"
@@ -13358,6 +14037,11 @@ msgstr "Territorio asignado a {0}"
 msgid "Territorio de {ownerName}"
 msgstr "Territorio de {ownerName}"
 
+#. placeholder {0}: index + 1
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Texto de la variable {0}"
+msgstr "Texto de la variable {0}"
+
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
 msgid "Texto del reactivo"
 msgstr "Texto del reactivo"
@@ -13365,6 +14049,10 @@ msgstr "Texto del reactivo"
 #: src/features/admin/components/AuditChecklistItemsPanel.tsx
 msgid "Texto del reactivo, p. ej. Uniforme…"
 msgstr "Texto del reactivo, p. ej. Uniforme…"
+
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Texto fijo"
+msgstr "Texto fijo"
 
 #: src/shared/constants/catalogs.ts
 msgid "Tiempo completo"
@@ -13519,9 +14207,29 @@ msgstr "Todavía no ha salido ningún correo desde este ambiente."
 msgid "Todavía no hay actividad por persona en Contabilidad: quién consolidó, validó o pagó vive en nómina y facturación, que el Manager de QA no tiene permiso para leer."
 msgstr "Todavía no hay actividad por persona en Contabilidad: quién consolidó, validó o pagó vive en nómina y facturación, que el Manager de QA no tiene permiso para leer."
 
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+msgid "Todavía no hay campañas en la plataforma."
+msgstr "Todavía no hay campañas en la plataforma."
+
+#: src/features/messaging/components/MessagingOverviewPanel.tsx
+msgid "Todavía no hay campañas."
+msgstr "Todavía no hay campañas."
+
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Todavía no hay colaboradores en la plataforma: usa «Sincronizar colaboradores»."
+msgstr "Todavía no hay colaboradores en la plataforma: usa «Sincronizar colaboradores»."
+
+#: src/features/messaging/components/MessagingWorkersList.tsx
+msgid "Todavía no hay colaboradores que puedas ver."
+msgstr "Todavía no hay colaboradores que puedas ver."
+
 #: src/features/accounting/pages/ConsolidationsPage.tsx
 msgid "Todavía no hay consolidados. Se generan al cerrar la semana con las horas ya aprobadas."
 msgstr "Todavía no hay consolidados. Se generan al cerrar la semana con las horas ya aprobadas."
+
+#: src/features/messaging/components/MessagingContactsList.tsx
+msgid "Todavía no hay contactos en la plataforma de mensajería."
+msgstr "Todavía no hay contactos en la plataforma de mensajería."
 
 #: src/features/onboarding/components/HotelContactList.tsx
 msgid "Todavía no hay contactos."
@@ -13542,6 +14250,10 @@ msgstr "Todavía no hay cuentas de hotel activas. Agrega la primera con el botó
 #: src/features/admin/pages/CatalogsPage.tsx
 msgid "Todavía no hay departamentos. Agrega el primero con el botón de arriba; las posiciones se cuelgan de cada uno."
 msgstr "Todavía no hay departamentos. Agrega el primero con el botón de arriba; las posiciones se cuelgan de cada uno."
+
+#: src/features/messaging/components/ContactActions.tsx
+msgid "Todavía no hay etiquetas en la plataforma de mensajería."
+msgstr "Todavía no hay etiquetas en la plataforma de mensajería."
 
 #: src/features/accounting/pages/InvoicesPage.tsx
 msgid "Todavía no hay facturas. Se generan por hotel y semana con las horas autorizadas."
@@ -13661,6 +14373,10 @@ msgstr "todos"
 msgid "Todos"
 msgstr "Todos"
 
+#: src/features/messaging/components/ExcludedWorkersDialog.tsx
+msgid "Todos los colaboradores tienen un teléfono válido."
+msgstr "Todos los colaboradores tienen un teléfono válido."
+
 #: src/features/observability/components/CohortSection.tsx
 msgid "Todos los de esta cohorte siguen trabajando: no hay salidas que desglosar."
 msgstr "Todos los de esta cohorte siguen trabajando: no hay salidas que desglosar."
@@ -13673,11 +14389,15 @@ msgstr "todos los departamentos de tu hotel"
 msgid "Todos los días de este grupo pertenecen a esta requisición"
 msgstr "Todos los días de este grupo pertenecen a esta requisición"
 
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+#: src/features/messaging/components/MessagingFilters.tsx
 #: src/features/timesheet/components/TimesheetToolbar.tsx
 msgid "Todos los estados"
 msgstr "Todos los estados"
 
 #: src/features/clients/pages/ClientPortfolioPage.tsx
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+#: src/features/messaging/components/MessagingFilters.tsx
 #: src/features/observability/components/CohortsView.tsx
 #: src/features/timesheet/components/TimesheetToolbar.tsx
 #: src/features/timesheet/pages/TimesheetPage.tsx
@@ -13899,6 +14619,10 @@ msgstr "Tu rol no autoriza requisiciones: lo hacen el Manager de Área, el Manag
 #: src/features/requisitions/components/NewRequisitionDialog.tsx
 msgid "Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área, el Manager General del hotel o el Inspector de su zona."
 msgstr "Tu rol no puede crear requisiciones: las crean el Supervisor, el Manager de Área, el Manager General del hotel o el Inspector de su zona."
+
+#: src/features/messaging/components/MessagingWorkersList.tsx
+msgid "Tu rol no puede ver el listado de colaboradores"
+msgstr "Tu rol no puede ver el listado de colaboradores"
 
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
 msgid "Tu rol no tiene acceso al Tablero de Requisiciones. Lo ven el hotel que las pide y Reclutamiento."
@@ -14264,6 +14988,14 @@ msgstr "Urgente"
 msgid "Urgentes"
 msgstr "Urgentes"
 
+#: src/features/messaging/components/WorkersSyncNotice.tsx
+msgid "Usa «Sincronizar colaboradores» antes de crear una campaña: si no, no les llegaría."
+msgstr "Usa «Sincronizar colaboradores» antes de crear una campaña: si no, no les llegaría."
+
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "Usa «Sincronizar desde Meta» para traer las plantillas aprobadas."
+msgstr "Usa «Sincronizar desde Meta» para traer las plantillas aprobadas."
+
 #: src/features/onboarding/components/ConfirmSendProposalDialog.tsx
 msgid "Úsalo cuando ya se entregó por otro medio — impresa, en mano, por otro correo."
 msgstr "Úsalo cuando ya se entregó por otro medio — impresa, en mano, por otro correo."
@@ -14309,6 +15041,10 @@ msgstr "Usuarios del sistema"
 msgid "Usuarios del sistema es del Administrador"
 msgstr "Usuarios del sistema es del Administrador"
 
+#: src/features/messaging/components/MessagingTemplatesList.tsx
+msgid "Utilidad"
+msgstr "Utilidad"
+
 #: src/features/schedule/components/ScheduleMiniCalendar.tsx
 msgid "V"
 msgstr "V"
@@ -14340,6 +15076,10 @@ msgstr "Validarlo de todas formas"
 #: src/shared/constants/onboardingStatus.ts
 msgid "Vamos a crear la propuesta"
 msgstr "Vamos a crear la propuesta"
+
+#: src/features/messaging/components/CreateCampaignDialog.tsx
+msgid "Variables"
+msgstr "Variables"
 
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Varias Reclutadoras pueden trabajar la misma requisición a la vez."
@@ -14376,6 +15116,8 @@ msgstr "Vencimiento"
 msgid "Ventas"
 msgstr "Ventas"
 
+#: src/features/messaging/components/ExcludedWorkersDialog.tsx
+#: src/features/messaging/components/SyncWorkersButton.tsx
 #: src/shared/components/ListItemViewHint.tsx
 msgid "Ver"
 msgstr "Ver"
@@ -14642,6 +15384,8 @@ msgstr "Vista previa del documento"
 msgid "Vista tabla"
 msgstr "Vista tabla"
 
+#: src/features/messaging/components/MessagingCampaignsList.tsx
+#: src/features/messaging/components/SyncWorkersButton.tsx
 #: src/layouts/AppShell.tsx
 #: src/mobile/layouts.tsx
 msgid "Volver"
@@ -14800,6 +15544,10 @@ msgstr "Ya no aplica"
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Ya no estabas trabajando esta requisición."
 msgstr "Ya no estabas trabajando esta requisición."
+
+#: src/features/messaging/components/ContactActions.tsx
+msgid "Ya no recibirá mensajes de ninguna campaña. Es la baja que pide la ley: no se deshace desde aquí."
+msgstr "Ya no recibirá mensajes de ninguna campaña. Es la baja que pide la ley: no se deshace desde aquí."
 
 #: src/features/observability/components/CohortSection.tsx
 msgid "Ya no trabajan"

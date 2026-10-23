@@ -17,6 +17,8 @@ import { RatesController } from './rates/rates.controller.js'
 import { RatesRepository } from './rates/rates.repository.js'
 import { RatesService } from './rates/rates.service.js'
 import { WorkerAccessService } from './workers/worker-access.service.js'
+import { WorkersMessagingSyncService } from './workers/workers-messaging-sync.service.js'
+import { WorkersMessagingController } from './workers/workers-messaging.controller.js'
 import { WorkersController } from './workers/workers.controller.js'
 import { WorkersRepository } from './workers/workers.repository.js'
 import { WorkersService } from './workers/workers.service.js'
@@ -24,11 +26,18 @@ import { WorkersService } from './workers/workers.service.js'
 @Module({
   imports: [IdentityModule, CoverageModule, NotificationsModule],
   // MeController va primero: `workers/me` debe ganarle a `workers/:id`.
-  controllers: [MeController, WorkersController, DocumentsController, RatesController],
+  controllers: [
+    MeController,
+    WorkersController,
+    WorkersMessagingController,
+    DocumentsController,
+    RatesController,
+  ],
   providers: [
     WorkersService,
     WorkersRepository,
     WorkerAccessService,
+    WorkersMessagingSyncService,
     DocumentsService,
     DocumentsRepository,
     RatesService,

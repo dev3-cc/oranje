@@ -127,6 +127,11 @@ export class WorkersService {
       assignedToHotelId = user.hotelId
     }
 
+    // El filtro por hotel solo aplica a quien ve más de un hotel.
+    if (assignedToHotelId === null && query.hotelId !== undefined) {
+      assignedToHotelId = query.hotelId
+    }
+
     const { rows, total } = await this.repo.findMany(query, assignedToHotelId)
 
     const photos = await this.signPhotos(rows)
@@ -140,6 +145,30 @@ export class WorkersService {
         totalPages: Math.max(1, Math.ceil(total / query.limit)),
       },
     }
+  }
+
+  /**
+   * Los hoteles donde hoy trabaja alguien (asignación ACTIVA): las opciones del
+   * filtro por hotel de `list`. Mismo alcance que `list` —quien no puede
+   * listar colaboradores tampoco ve esto, y el rol del hotel solo el suyo—,
+   * porque `GET /hotels` es de Ventas y Reclutamiento no lo puede pedir.
+   */
+  async assignedHotels(user: AuthenticatedUser): Promise<Array<{ id: string; name: string }>> {
+    const seesPool = await this.permissions.can(user.roleCode, 'recruitment', 'search_candidates')
+    const seesAllHotels = await this.permissions.can(user.roleCode, 'staff', 'read_all_hotels')
+
+    if (seesPool || seesAllHotels) {
+      return this.repo.findAssignedHotels(null)
+    }
+
+    const seesStaff = await this.permissions.can(user.roleCode, 'staff', 'read')
+    if (!seesStaff || !user.hotelId) {
+      throw new ForbiddenException({
+        code: 'FORBIDDEN',
+        message: 'Tu rol no puede listar colaboradores',
+      })
+    }
+    return this.repo.findAssignedHotels(user.hotelId)
   }
 
   /**

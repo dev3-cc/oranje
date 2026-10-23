@@ -114,6 +114,9 @@ export const queryWorkersSchema = z.object({
   zoneId: z.uuid().optional(),
   catalogPositionId: z.uuid().optional(),
   englishLevelId: z.uuid().optional(),
+  /** Solo quien tiene asignación ACTIVA en este hotel (filtro de Mensajería,
+      2026-10-23). Al rol del hotel no le cambia nada: ya está acotado al suyo. */
+  hotelId: z.uuid().optional(),
   search: z.string().trim().min(1).max(120).optional(),
   onlyAvailable: z.coerce.boolean().default(false),
   /** Con un SSN/ITIN cargado y sin revisar — Reclutamiento no lo ve hasta

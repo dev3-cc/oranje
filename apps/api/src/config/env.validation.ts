@@ -71,6 +71,14 @@ const baseSchema = z.object({
   CPANEL_DOMAIN: optionalVar(z.string().min(1)),
   CPANEL_API_TOKEN: optionalVar(z.string().min(1)),
 
+  // La plataforma de Mensajería por WhatsApp (meta-mensajes, la VM de
+  // e-ministry-oranje). El API entra con una cuenta de servicio de esa
+  // plataforma; sin las tres, el Panel de Mensajería dice que no está
+  // configurado en vez de fallar.
+  MESSAGING_API_URL: optionalVar(z.string().url()),
+  MESSAGING_API_EMAIL: optionalVar(z.string().email()),
+  MESSAGING_API_PASSWORD: optionalVar(z.string().min(1)),
+
   // El mailer propio (Hugo, 2026-09-25). Sale por el SMTP de cPanel, que ya
   // firma con el SPF y el DKIM del dominio. Si FALTA cualquiera de las
   // cuatro, el mailer queda apagado y todo el correo sigue saliendo por

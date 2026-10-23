@@ -440,6 +440,28 @@ export class WorkersRepository {
     return { rows, total: Number(counted[0]?.total ?? 0) }
   }
 
+  /**
+   * Los hoteles con al menos una asignación ACTIVA, por nombre. Las mismas
+   * uniones que el filtro `assignedToHotelId` de `findMany`, para que cada
+   * opción devuelva colaboradores. `onlyHotelId` acota al hotel del rol.
+   */
+  async findAssignedHotels(
+    onlyHotelId: string | null,
+  ): Promise<Array<{ id: string; name: string }>> {
+    return this.prisma.$queryRawUnsafe<Array<{ id: string; name: string }>>(
+      `SELECT DISTINCT h.id, h.name
+         FROM coverage.assignment a
+         JOIN demand.slot sl ON sl.id = a.slot_id
+         JOIN demand.position p ON p.id = sl.position_id
+         JOIN demand.requisition r ON r.id = p.requisition_id
+         JOIN commercial.hotel h ON h.id = r.hotel_id
+        WHERE a.status = 'ACTIVE'
+          AND ($1::uuid IS NULL OR h.id = $1::uuid)
+        ORDER BY h.name`,
+      onlyHotelId,
+    )
+  }
+
   async create(params: {
     fullName: string
     birthDate: Date
