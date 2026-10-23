@@ -5837,10 +5837,6 @@ msgid "Ese documento ya está verificado: no se puede borrar, deja rastro de qui
 msgstr "Ese documento ya está verificado: no se puede borrar, deja rastro de quién lo revisó."
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
-msgid "Ese documento ya está verificado: no se puede reemplazar."
-msgstr "Ese documento ya está verificado: no se puede reemplazar."
-
-#: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Ese documento ya estaba verificado: no se puede rechazar."
 msgstr "Ese documento ya estaba verificado: no se puede rechazar."
 
@@ -13145,6 +13141,10 @@ msgid "Su semana aún no da para medir"
 msgstr "Su semana aún no da para medir"
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Sube un archivo nuevo en lugar de este — queda pendiente de verificar otra vez."
+msgstr "Sube un archivo nuevo en lugar de este — queda pendiente de verificar otra vez."
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Sube un archivo nuevo en lugar de este."
 msgstr "Sube un archivo nuevo en lugar de este."
 
@@ -14770,10 +14770,6 @@ msgstr "Ya está todo"
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Ya está verificado: no se puede borrar, deja rastro de quién lo revisó."
 msgstr "Ya está verificado: no se puede borrar, deja rastro de quién lo revisó."
-
-#: src/features/recruitment/pages/WorkerDetailPage.tsx
-msgid "Ya está verificado: no se puede reemplazar, deja rastro de quién lo revisó."
-msgstr "Ya está verificado: no se puede reemplazar, deja rastro de quién lo revisó."
 
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "Ya estabas trabajando esta requisición."
