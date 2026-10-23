@@ -304,3 +304,94 @@ describe('Reclutamiento revisa el SSN/ITIN', () => {
     expect(restantes).toHaveLength(2)
   })
 })
+
+// Hugo, 2026-10-23: Reclutamiento acepta la retención del 16% en vez de
+// pedir el SSN/ITIN. Antes de construirlo preguntó si eso chocaba con el
+// plazo del expediente a medias — y sí chocaba: sin tocar
+// has_tax_document/is_profile_complete, un colaborador al que ya no se le
+// pide el documento se habría quedado bloqueado igual al vencer el día de
+// gracia. has_tax_id (y con él taxRetentionApplies) NO debe moverse nunca:
+// la retención sigue aplicando, es justo lo que se está aceptando.
+describe('Reclutamiento acepta la retención del 16%', () => {
+  it('levanta el bloqueo de acceso de inmediato, sin tocar si la retención aplica', async () => {
+    const { workerId, userId } = await workerConCuenta('retencion-levanta-bloqueo')
+
+    // El resto del expediente ya está — solo el SSN/ITIN sostiene el plazo.
+    await db.worker.update({
+      where: { id: workerId },
+      data: {
+        transportType: 'PUBLIC',
+        emergencyContactName: 'Mamá',
+        emergencyContactPhone: '9991112222',
+        emergencyContactRelationship: 'MOTHER',
+        bloodType: 'O_POS',
+        profileDueAt: new Date(Date.now() - 86_400_000),
+      },
+    })
+
+    expect(await accessDeadline.overdueOf(userId)).toContain('PROFILE')
+
+    const before = await documents.list(workerId)
+    expect(before.meta.taxRetentionAccepted).toBe(false)
+    expect(before.meta.taxRetentionApplies).toBe(true)
+
+    await documents.acceptTaxRetention(workerId, reviewer)
+
+    expect(await accessDeadline.overdueOf(userId)).not.toContain('PROFILE')
+
+    const after = await documents.list(workerId)
+    expect(after.meta.taxRetentionAccepted).toBe(true)
+    expect(after.meta.taxRetentionAcceptedBy?.id).toBe(actorId)
+    expect(after.meta.taxRetentionAcceptedAt).not.toBeNull()
+    // La retención SIGUE aplicando: aceptarla no es lo mismo que levantarla.
+    expect(after.meta.taxRetentionApplies).toBe(true)
+    expect(after.meta.hasTaxId).toBe(false)
+  })
+
+  it('revocarla vuelve a pedir el documento, sin tocar uno que ya exista', async () => {
+    const { workerId, userId } = await workerConCuenta('retencion-revoca')
+
+    await db.worker.update({
+      where: { id: workerId },
+      data: {
+        transportType: 'PUBLIC',
+        emergencyContactName: 'Mamá',
+        emergencyContactPhone: '9991112222',
+        emergencyContactRelationship: 'MOTHER',
+        bloodType: 'O_POS',
+        profileDueAt: new Date(Date.now() - 86_400_000),
+      },
+    })
+
+    await documents.acceptTaxRetention(workerId, reviewer)
+    expect(await accessDeadline.overdueOf(userId)).not.toContain('PROFILE')
+
+    await documents.revokeTaxRetentionAcceptance(workerId, reviewer)
+
+    expect(await accessDeadline.overdueOf(userId)).toContain('PROFILE')
+    const after = await documents.list(workerId)
+    expect(after.meta.taxRetentionAccepted).toBe(false)
+    expect(after.meta.taxRetentionAcceptedBy).toBeNull()
+  })
+
+  it('verificar el SSN/ITIN sigue siendo lo único que levanta taxRetentionApplies', async () => {
+    const { workerId } = await workerConCuenta('retencion-no-sustituye-verificado')
+
+    await documents.acceptTaxRetention(workerId, reviewer)
+    const aceptada = await documents.list(workerId)
+    expect(aceptada.meta.taxRetentionApplies).toBe(true)
+
+    const doc = await documents.create(
+      workerId,
+      { documentType: 'SSN_ITIN', filePath: 'workers/document/retencion-g.pdf' },
+      reviewer,
+    )
+    await documents.verify(workerId, doc.id, reviewer)
+
+    const verificada = await documents.list(workerId)
+    expect(verificada.meta.taxRetentionApplies).toBe(false)
+    expect(verificada.meta.hasTaxId).toBe(true)
+    // La aceptación no se borra sola, pero ya no es lo que decide nada.
+    expect(verificada.meta.taxRetentionAccepted).toBe(true)
+  })
+})

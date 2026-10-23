@@ -37,6 +37,27 @@ export class DocumentsController {
     return { data: await this.documents.create(id, dto, user) }
   }
 
+  /** Reclutamiento acepta la retención del 16% en vez de pedir el SSN/ITIN. */
+  @Requires('recruitment', 'update_worker')
+  @Post('tax-retention-acceptance')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async acceptTaxRetention(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<void> {
+    await this.documents.acceptTaxRetention(id, user)
+  }
+
+  @Requires('recruitment', 'update_worker')
+  @Delete('tax-retention-acceptance')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async revokeTaxRetentionAcceptance(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<void> {
+    await this.documents.revokeTaxRetentionAcceptance(id, user)
+  }
+
   @Requires('recruitment', 'validate_signup')
   @Post(':documentId/verify')
   @HttpCode(HttpStatus.OK)

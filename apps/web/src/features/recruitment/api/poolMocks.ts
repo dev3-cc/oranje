@@ -402,11 +402,20 @@ const routes: readonly MockRoute[] = [
   {
     method: 'GET',
     path: '/workers/:workerId/documents',
-    resolve: ({ params }): WorkerDocumentListApi => ({
-      data: (DOCUMENTS[params.workerId ?? ''] ?? []).map((doc) => ({ ...doc })),
-      /** D-27: el cifrado no está conectado — la retención del 16% aplica a todos. */
-      meta: { hasTaxId: false, taxRetentionApplies: true },
-    }),
+    resolve: ({ params }): WorkerDocumentListApi => {
+      const retention = RETENTION_ACCEPTED[params.workerId ?? ''] ?? null
+      return {
+        data: (DOCUMENTS[params.workerId ?? ''] ?? []).map((doc) => ({ ...doc })),
+        /** D-27: el cifrado no está conectado — la retención del 16% aplica a todos. */
+        meta: {
+          hasTaxId: false,
+          taxRetentionApplies: true,
+          taxRetentionAccepted: retention !== null,
+          taxRetentionAcceptedBy: retention?.acceptedBy ?? null,
+          taxRetentionAcceptedAt: retention?.acceptedAt ?? null,
+        },
+      }
+    },
   },
   {
     method: 'POST',
@@ -425,6 +434,25 @@ const routes: readonly MockRoute[] = [
         verifiedAt: null,
         createdAt: new Date().toISOString(),
       })
+      return { data: null }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/workers/:workerId/documents/tax-retention-acceptance',
+    resolve: ({ params }): { data: null } => {
+      RETENTION_ACCEPTED[params.workerId ?? ''] = {
+        acceptedAt: new Date().toISOString(),
+        acceptedBy: { id: 'usr-diana', fullName: 'Diana Roldán' },
+      }
+      return { data: null }
+    },
+  },
+  {
+    method: 'DELETE',
+    path: '/workers/:workerId/documents/tax-retention-acceptance',
+    resolve: ({ params }): { data: null } => {
+      delete RETENTION_ACCEPTED[params.workerId ?? '']
       return { data: null }
     },
   },
@@ -557,6 +585,12 @@ function historyOf(workerId: string): WorkerHistoryEntryApi[] {
   ]
   return HISTORY[workerId]
 }
+
+/** Quién aceptó la retención del 16% en vez de pedir el SSN/ITIN, por worker. */
+const RETENTION_ACCEPTED: Record<
+  string,
+  { acceptedAt: string; acceptedBy: { id: string; fullName: string } } | undefined
+> = {}
 
 const DOCUMENTS: Record<string, WorkerDocumentApi[]> = {
   'wrk-0001': [

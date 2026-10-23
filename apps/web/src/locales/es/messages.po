@@ -1098,6 +1098,10 @@ msgstr "Abriendo…"
 msgid "Abrir"
 msgstr "Abrir"
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Abrir el original en pestaña nueva ↗"
+msgstr "Abrir el original en pestaña nueva ↗"
+
 #: src/features/onboarding/pages/ProposalVersionPage.tsx
 msgid "Abrir en el editor"
 msgstr "Abrir en el editor"
@@ -1161,6 +1165,10 @@ msgstr "Accidentes que todavía no se cierran, de todos los hoteles."
 #: src/features/contracts/components/ContractTable.tsx
 msgid "Acciones"
 msgstr "Acciones"
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Aceptando…"
+msgstr "Aceptando…"
 
 #: src/features/onboarding/components/HotelLocationMap.tsx
 msgid "Acercar"
@@ -7744,6 +7752,10 @@ msgstr "La hora extra se paga 1.5 veces la hora normal."
 msgid "La hora que pongas manda"
 msgstr "La hora que pongas manda"
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "La imagen no cargó o está dañada — ábrela en pestaña nueva para revisarla."
+msgstr "La imagen no cargó o está dañada — ábrela en pestaña nueva para revisarla."
+
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "La imagen pasa de 15 MB: toma la foto con menos resolución o comprímela."
 msgstr "La imagen pasa de 15 MB: toma la foto con menos resolución o comprímela."
@@ -9541,6 +9553,10 @@ msgstr "No se pudo abrir la cámara. Cierra otras apps que la usen e inténtalo 
 msgid "No se pudo abrir la versión. Inténtalo de nuevo."
 msgstr "No se pudo abrir la versión. Inténtalo de nuevo."
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "No se pudo aceptar la retención. Inténtalo de nuevo."
+msgstr "No se pudo aceptar la retención. Inténtalo de nuevo."
+
 #: src/features/requisitions/pages/RequisitionDetailPage.tsx
 msgid "No se pudo actualizar. Inténtalo de nuevo."
 msgstr "No se pudo actualizar. Inténtalo de nuevo."
@@ -9801,6 +9817,10 @@ msgstr "No se pudo eliminar. Inténtalo de nuevo."
 msgid "No se pudo generar el PDF. Inténtalo de nuevo."
 msgstr "No se pudo generar el PDF. Inténtalo de nuevo."
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "No se pudo generar la vista previa — el enlace firmado venció. Cierra y vuelve a abrir el expediente."
+msgstr "No se pudo generar la vista previa — el enlace firmado venció. Cierra y vuelve a abrir el expediente."
+
 #: src/mobile/nativeDownloads.ts
 msgid "No se pudo guardar el archivo. Inténtalo de nuevo."
 msgstr "No se pudo guardar el archivo. Inténtalo de nuevo."
@@ -9923,6 +9943,10 @@ msgstr "No se pudo mover. Reintenta en unos segundos."
 #: src/features/accounting/components/PayOverrideDialog.tsx
 msgid "No se pudo quitar la corrección."
 msgstr "No se pudo quitar la corrección."
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "No se pudo quitar la retención. Inténtalo de nuevo."
+msgstr "No se pudo quitar la retención. Inténtalo de nuevo."
 
 #: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "No se pudo rechazar el documento. Inténtalo de nuevo."
@@ -10285,6 +10309,10 @@ msgstr "Número"
 #: src/features/onboarding/components/ChangeStatusDialog.tsx
 msgid "o"
 msgstr "o"
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "o acepta la retención del 16% y no lo pidas"
+msgstr "o acepta la retención del 16% y no lo pidas"
 
 #: src/shared/constants/workerEnums.ts
 msgid "O+"
@@ -10723,6 +10751,7 @@ msgid "pendiente de horas contractuales"
 msgstr "pendiente de horas contractuales"
 
 #: src/features/recruitment/components/PoolFilters.tsx
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Pendiente de verificar"
 msgstr "Pendiente de verificar"
 
@@ -11454,6 +11483,7 @@ msgid "Quita el filtro para reordenar"
 msgstr "Quita el filtro para reordenar"
 
 #: src/features/accounting/components/PayOverrideDialog.tsx
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Quitando…"
 msgstr "Quitando…"
 
@@ -11498,6 +11528,10 @@ msgstr "Quitar posición {ordinal}"
 #: src/features/timesheet/pages/TimesheetPage.tsx
 msgid "Quitar selección"
 msgstr "Quitar selección"
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Quitar, volver a pedirlo"
+msgstr "Quitar, volver a pedirlo"
 
 #: src/features/onboarding/components/ProspectFormDialog.tsx
 msgid "Radio de geocerca"
@@ -11954,6 +11988,14 @@ msgstr "Resultados"
 msgid "Retención del 16%"
 msgstr "Retención del 16%"
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Retención del 16% aceptada"
+msgstr "Retención del 16% aceptada"
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Retención del 16% aceptada: ya no se pide el SSN/ITIN"
+msgstr "Retención del 16% aceptada: ya no se pide el SSN/ITIN"
+
 #: src/features/observability/components/CohortsView.tsx
 msgid "Retención por cohorte"
 msgstr "Retención por cohorte"
@@ -12249,6 +12291,10 @@ msgstr "Se puso disponible por su cuenta: no cambia la asignación de arriba."
 #: src/features/accounting/components/PayConsolidationButton.tsx
 msgid "Se registran <0>{0}</0> como pagados a {workerName}. No se puede deshacer ni editar desde aquí: si algo cambia después, el ajuste va en otra semana."
 msgstr "Se registran <0>{0}</0> como pagados a {workerName}. No se puede deshacer ni editar desde aquí: si algo cambia después, el ajuste va en otra semana."
+
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Se vuelve a pedir el SSN/ITIN"
+msgstr "Se vuelve a pedir el SSN/ITIN"
 
 #: src/features/worker/components/MobileShell.tsx
 msgid "Secciones"
@@ -14745,6 +14791,12 @@ msgstr "verificado"
 #: src/features/worker/pages/ProfilePage.tsx
 msgid "Verificado"
 msgstr "Verificado"
+
+#. placeholder {0}: previewDoc.verifiedBy?.fullName ?? '—'
+#. placeholder {1}: previewDoc.verifiedAt === null ? '—' : formatDate(previewDoc.verifiedAt)
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Verificado por {0} · {1}"
+msgstr "Verificado por {0} · {1}"
 
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Verificando…"

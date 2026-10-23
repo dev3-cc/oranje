@@ -513,8 +513,15 @@ export interface WorkerDocumentApi {
 
 export interface WorkerDocumentListApi {
   data: WorkerDocumentApi[]
-  /** D-27: sin el cifrado conectado, `hasTaxId` es false y la retención aplica. */
-  meta: { hasTaxId: boolean; taxRetentionApplies: boolean }
+  meta: {
+    /** D-27: sin el cifrado conectado, `hasTaxId` es false y la retención aplica. */
+    hasTaxId: boolean
+    taxRetentionApplies: boolean
+    /** Reclutamiento aceptó la retención en vez de pedir el SSN/ITIN. */
+    taxRetentionAccepted: boolean
+    taxRetentionAcceptedBy: { id: string; fullName: string } | null
+    taxRetentionAcceptedAt: string | null
+  }
 }
 
 /** Una marca del ponche (`operations.punch_mark`), como la sirve la API. */
