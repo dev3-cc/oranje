@@ -347,6 +347,30 @@ test('al terminar una fija, de Naranja vuelve a Verde fuerte', async () => {
   expect(w.statusState.code).toBe('STRONG_GREEN')
 })
 
+/* Hugo, 2026-10-23: «Liberar» una fija en su primera semana dejaba a la persona
+   en Verde manzana o Azul claro, fuera de los asignables. Usa el slot 8, que el
+   caso de Naranja acaba de liberar. */
+test.each(['APPLE_GREEN', 'LIGHT_BLUE'])(
+  'al liberar una fija en su primera semana, de %s vuelve a Verde fuerte',
+  async (code) => {
+    const workerId = await colaborador(`Primera semana ${code} ${String(Date.now())}`)
+    const creada = await service.create(
+      { positionId, slotOrdinal: 8, workerId, type: 'FIXED' } as never,
+      user,
+    )
+
+    const estado = await db.statusLightState.findFirstOrThrow({
+      where: { code, statusLightCode: 'WORKER' },
+      select: { id: true },
+    })
+    await db.worker.update({ where: { id: workerId }, data: { statusLightStateId: estado.id } })
+
+    await service.release(creada.assignment.id, 'El hotel ya no lo necesita', user)
+
+    expect(await códigoDelEstado(workerId)).toBe('STRONG_GREEN')
+  },
+)
+
 test('la lista de asignables deja de esconder a quien ya terminó', async () => {
   const marca = String(Date.now())
   const terminó = await colaborador(`Terminó ${marca}`)

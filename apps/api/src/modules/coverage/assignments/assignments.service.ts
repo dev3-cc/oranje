@@ -39,6 +39,8 @@ const WORKER_LIGHT = 'WORKER'
 const BROWN = 'BROWN'
 const ORANGE = 'ORANGE'
 const STRONG_GREEN = 'STRONG_GREEN'
+/** Los pasos de la primera semana de una fija: día 1 y día 3 (los del semáforo del colaborador). */
+const FIRST_WEEK = ['APPLE_GREEN', 'LIGHT_BLUE']
 /** Los dos orígenes que el vault admite hacia Café. */
 const PUEDEN_IR_A_CAFE = ['STRONG_GREEN', 'YELLOW']
 
@@ -263,7 +265,13 @@ export class AssignmentsService {
      * quien terminaba un fijo se quedaba en Naranja para siempre (Hugo,
      * 2026-10-09).
      */
-    if (actual.code === ORANGE) {
+    /*
+     * Lo mismo si la fija se libera en su primera semana, en Verde manzana o
+     * Azul claro: solo regresaban Café y Naranja, así que quien se liberaba
+     * antes de los 7 días se quedaba en ese color y no volvía a salir como
+     * asignable — los asignables son Verde fuerte y Amarillo (Hugo, 2026-10-23).
+     */
+    if (actual.code === ORANGE || FIRST_WEEK.includes(actual.code)) {
       const disponible = await this.repo.stateByCode(WORKER_LIGHT, STRONG_GREEN)
       return disponible ? { workerId, fromStateId: actual.stateId, toStateId: disponible.id } : null
     }
