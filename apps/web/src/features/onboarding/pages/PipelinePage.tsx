@@ -24,12 +24,14 @@ import { FilterSelect } from '@/shared/components/FilterSelect'
 import { FoldText } from '@/shared/components/FoldText'
 import { LoadError } from '@/shared/components/LoadError'
 import { RefreshControl } from '@/shared/components/RefreshControl'
+import { SearchField } from '@/shared/components/SearchField'
 import {
   ONBOARDING_TRANSITIONS,
   PIPELINE_COLUMNS,
   type OnboardingStatus,
 } from '@/shared/constants/onboardingStatus'
 import { useCan } from '@/shared/hooks/useCan'
+import { matchesSearch } from '@/shared/lib/text'
 
 /** El globo carga aparte: three-globe + continentes no pesan en el chunk base. */
 const HotelGlobeCard = lazy(() =>
@@ -54,8 +56,19 @@ export function PipelinePage(): ReactNode {
   const navigate = useNavigate()
   const can = useCan()
   const [isFormOpen, setIsFormOpen] = useState(false)
-  const { filters, isStaleOnly, activeCount, toggleStaleOnly, setZone, setOwnerId, reset } =
-    usePipelineFilters()
+  /** Por nombre de hotel, sobre lo que ya trajo el tablero — no viaja al
+      servidor: con el tope de 100 prospectos ya está todo cargado, igual
+      que el buscador de Requisiciones (Hugo, 2026-10-23). */
+  const [search, setSearch] = useState('')
+  const {
+    filters,
+    isStaleOnly,
+    activeCount: filterCount,
+    toggleStaleOnly,
+    setZone,
+    setOwnerId,
+    reset,
+  } = usePipelineFilters()
   const { data: session } = useGetSessionQuery()
   const { data: zones = [] } = useGetZonesQuery()
   const {
@@ -74,14 +87,16 @@ export function PipelinePage(): ReactNode {
   }))
 
   /**
-   * El tablero solo pinta prospectos ABIERTOS a propósito — los convertidos
-   * (Naranja) se ven en Clientes Activos (BD/BDC no los necesitan aquí). El
-   * Manager de QA sí quiere ver el ciclo completo, así que gana la columna
-   * Naranja además de las 6 abiertas (Hugo, 2026-09-21: "no se ve el naranja
-   * status, cuando ya es cliente, debería").
+   * Naranja también se pinta aquí — antes solo la veía el Manager de QA y
+   * BD/BDC tenía que ir a Clientes Activos para editar un hotel ya cliente,
+   * sin buscador ahí tampoco (Hugo, 2026-10-23: "cuando ya estén en naranja
+   * no aparecen en el pipeline"). Mismo tablero para todos, con su propia
+   * columna.
    */
-  const visibleColumns: readonly OnboardingStatus[] =
-    session?.roleId === 'ROL-Q-02' ? [...PIPELINE_COLUMNS, 'ORANGE'] : PIPELINE_COLUMNS
+  const visibleColumns: readonly OnboardingStatus[] = [...PIPELINE_COLUMNS, 'ORANGE']
+
+  const searchTerm = search.trim()
+  const activeCount = filterCount + (searchTerm !== '' ? 1 : 0)
 
   /** Los filtros puestos, en palabras: el vacío los nombra para que se entienda por qué. */
   const activeFilterLabels = [
@@ -89,6 +104,7 @@ export function PipelinePage(): ReactNode {
       t`Zona: ${zoneOptions.find((zone) => zone.value === filters.zone)?.label ?? filters.zone}`,
     filters.ownerId !== null && t`Dueño: yo`,
     isStaleOnly && t`Sin actividad 7+ días`,
+    searchTerm !== '' && t`búsqueda «${searchTerm}»`,
   ].filter((label): label is string => typeof label === 'string')
 
   /**
@@ -157,6 +173,9 @@ export function PipelinePage(): ReactNode {
       timers.forEach(clearTimeout)
     }
   }, [board, reduceMotion])
+
+  const visibleItems =
+    board?.items.filter((item) => matchesSearch(searchTerm, item.hotelName)) ?? []
 
   return (
     <div className="flex flex-col gap-6">
@@ -254,7 +273,19 @@ export function PipelinePage(): ReactNode {
         >
           <Trans>Sin actividad 7+ días</Trans>
         </button>
-        <FilterReset activeCount={activeCount} onReset={reset} />
+        <SearchField
+          value={search}
+          onChange={setSearch}
+          label={t`Buscar hotel`}
+          placeholder={t`Nombre del hotel…`}
+        />
+        <FilterReset
+          activeCount={activeCount}
+          onReset={() => {
+            reset()
+            setSearch('')
+          }}
+        />
         <RefreshControl
           onRefresh={() => {
             void refetch()
@@ -303,7 +334,7 @@ export function PipelinePage(): ReactNode {
         </div>
       )}
 
-      {board && board.items.length === 0 && (
+      {board && visibleItems.length === 0 && (
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-line px-6 py-12 text-center">
           <img src={pipelineIllustration} alt="" aria-hidden className="h-32 w-auto" />
           {activeFilterLabels.length > 0 ? (
@@ -335,14 +366,14 @@ export function PipelinePage(): ReactNode {
         </div>
       )}
 
-      {board && board.items.length > 0 && (
+      {board && visibleItems.length > 0 && (
         <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-4">
             {visibleColumns.map((status) => (
               <PipelineColumn
                 key={status}
                 status={status}
-                prospects={board.items.filter((item) => item.status === status)}
+                prospects={visibleItems.filter((item) => item.status === status)}
                 isDropDisabled={isDropDisabledFor(status)}
                 onCreateProposal={(prospect) => {
                   setProposalPromptTarget({

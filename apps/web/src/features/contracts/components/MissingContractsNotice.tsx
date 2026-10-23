@@ -31,6 +31,13 @@ const SEARCH_THRESHOLD = 4
  * nunca lo ha visto — en vez de dejar a medio camino en la ficha (Hugo,
  * 2026-10-20).
  */
+/** Naranja normalmente ya tiene contrato — pero si se quedó sin uno
+    (Villa Magna, 2026-10-23: se restauró el hotel sin que nunca hubiera
+    tenido contrato), sigue siendo candidato. Mismo criterio que ya usa
+    `ProspectDetailPage` para mostrar la tarjeta «Sigue el contrato»; aquí
+    faltaba y el hotel no aparecía en ningún lado. */
+const ORANGE = 'ORANGE'
+
 export function MissingContractsNotice({ rows }: { rows: ContractRow[] }): ReactNode {
   const { t } = useLingui()
   const { data: candidates = [] } = useGetProposalCandidatesQuery()
@@ -40,7 +47,8 @@ export function MissingContractsNotice({ rows }: { rows: ContractRow[] }): React
   const hotelsWithContract = new Set(rows.map((row) => row.hotelName))
   const missing = candidates.filter(
     (candidate) =>
-      CONTRACT_ELIGIBLE_STATUSES.has(candidate.prospectStatus) &&
+      (CONTRACT_ELIGIBLE_STATUSES.has(candidate.prospectStatus) ||
+        candidate.prospectStatus === ORANGE) &&
       !hotelsWithContract.has(candidate.hotelName),
   )
 
