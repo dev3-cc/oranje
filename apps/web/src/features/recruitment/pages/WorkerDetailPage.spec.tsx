@@ -188,4 +188,31 @@ describe('WorkerDetailPage', () => {
     await user.click(within(dialog).getByRole('checkbox'))
     expect(within(dialog).getByRole('button', { name: 'Cambiar estado' })).toBeEnabled()
   })
+
+  it('la retención del 16% se acepta y se quita desde el expediente, sin pedir el SSN/ITIN', async () => {
+    renderDetail('wrk-0003')
+    const user = userEvent.setup()
+
+    await screen.findByRole('heading', { name: 'María Fernanda Ortiz' })
+
+    await user.click(
+      await screen.findByRole('button', { name: 'o acepta la retención del 16% y no lo pidas' }),
+    )
+
+    expect(await screen.findByText('Retención del 16% aceptada')).toBeInTheDocument()
+    // Ya no pide el documento: el botón de subir desaparece para ese renglón.
+    const itinRow = screen.getByText('SSN / ITIN').closest('li') as HTMLElement
+    expect(within(itinRow).queryByRole('button', { name: /Subir/ })).not.toBeInTheDocument()
+
+    await user.click(within(itinRow).getByRole('button', { name: 'Quitar, volver a pedirlo' }))
+
+    await waitFor(() => {
+      expect(screen.queryByText('Retención del 16% aceptada')).not.toBeInTheDocument()
+    }, SLOW)
+    expect(
+      within(screen.getByText('SSN / ITIN').closest('li') as HTMLElement).getByRole('button', {
+        name: /Subir/,
+      }),
+    ).toBeInTheDocument()
+  })
 })

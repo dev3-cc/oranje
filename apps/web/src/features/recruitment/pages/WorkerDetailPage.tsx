@@ -6,12 +6,14 @@ import { useRef, useState, type ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
 
 import {
+  useAcceptTaxRetentionMutation,
   useCreateWorkerDocumentMutation,
   useDeleteWorkerDocumentMutation,
   useGetWorkerDetailQuery,
   useGetWorkerDocumentsQuery,
   useGetWorkerHistoryQuery,
   useRejectWorkerDocumentMutation,
+  useRevokeTaxRetentionAcceptanceMutation,
   useVerifyWorkerDocumentMutation,
 } from '../api/workerDetailApi'
 import { ChangeStateDialog } from '../components/ChangeStateDialog'
@@ -309,6 +311,9 @@ export function WorkerDetailPage(): ReactNode {
   const [verifyDocument] = useVerifyWorkerDocumentMutation()
   const [rejectDocument, { isLoading: isRejecting }] = useRejectWorkerDocumentMutation()
   const [deleteDocument] = useDeleteWorkerDocumentMutation()
+  const [acceptTaxRetention, { isLoading: isAcceptingRetention }] = useAcceptTaxRetentionMutation()
+  const [revokeTaxRetention, { isLoading: isRevokingRetention }] =
+    useRevokeTaxRetentionAcceptanceMutation()
   const [documentError, setDocumentError] = useState<string | null>(null)
   /** Borrar pide segundo clic sobre la misma fila. */
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null)
@@ -391,6 +396,34 @@ export function WorkerDetailPage(): ReactNode {
             DOCUMENT_VERIFIED: t`Ese documento ya está verificado: no se puede borrar, deja rastro de quién lo revisó.`,
           },
           fallback: t`No se pudo borrar el documento. Inténtalo de nuevo.`,
+        }),
+      )
+    }
+  }
+
+  async function handleAcceptTaxRetention(): Promise<void> {
+    setDocumentError(null)
+    try {
+      await acceptTaxRetention({ workerId }).unwrap()
+      toast.success(t`Retención del 16% aceptada: ya no se pide el SSN/ITIN`)
+    } catch (error) {
+      setDocumentError(
+        apiErrorMessage(error, {
+          fallback: t`No se pudo aceptar la retención. Inténtalo de nuevo.`,
+        }),
+      )
+    }
+  }
+
+  async function handleRevokeTaxRetention(): Promise<void> {
+    setDocumentError(null)
+    try {
+      await revokeTaxRetention({ workerId }).unwrap()
+      toast.success(t`Se vuelve a pedir el SSN/ITIN`)
+    } catch (error) {
+      setDocumentError(
+        apiErrorMessage(error, {
+          fallback: t`No se pudo quitar la retención. Inténtalo de nuevo.`,
         }),
       )
     }
@@ -899,34 +932,85 @@ export function WorkerDetailPage(): ReactNode {
             <ul className="flex flex-col divide-y divide-line">
               {(['ID', 'PROOF_OF_ADDRESS', 'SSN_ITIN'] as const).map((type) => {
                 const doc = (documents?.data ?? []).find((item) => item.documentType === type)
+                const retentionAccepted =
+                  type === 'SSN_ITIN' && (documents?.meta.taxRetentionAccepted ?? false)
                 return (
                   <li key={type} className="py-3">
                     {doc ? (
                       renderDocumentRow(doc, { allowDelete: false, onPreview: openPreview })
-                    ) : (
-                      <div className="flex items-center gap-3">
+                    ) : retentionAccepted ? (
+                      <div className="flex flex-wrap items-center gap-3">
                         <span className="w-52 text-sm font-medium text-ink">
                           {documentTypeLabel(type)}
                         </span>
-                        {canEditDocuments ? (
+                        <span className="rounded-full bg-o-50 px-3 py-1 text-xs font-medium text-o-700">
+                          <Trans>Retención del 16% aceptada</Trans>
+                        </span>
+                        <span className="text-xs text-ink-3">
+                          {documents?.meta.taxRetentionAcceptedBy?.fullName ?? '—'}
+                          {documents?.meta.taxRetentionAcceptedAt
+                            ? ` · ${formatDate(documents.meta.taxRetentionAcceptedAt)}`
+                            : ''}
+                        </span>
+                        {canEditDocuments && (
                           <Button
                             variant="secondary"
-                            className="px-3 py-1.5 text-xs"
-                            disabled={isUploading}
+                            className="ml-auto px-3 py-1 text-xs"
+                            disabled={isRevokingRetention}
                             onClick={() => {
-                              startUpload(type)
+                              void handleRevokeTaxRetention()
                             }}
                           >
-                            {isUploading && uploadType === type ? (
-                              <Trans>Subiendo…</Trans>
+                            {isRevokingRetention ? (
+                              <Trans>Quitando…</Trans>
                             ) : (
-                              <Trans>Subir {documentTypeLabel(type)}</Trans>
+                              <Trans>Quitar, volver a pedirlo</Trans>
                             )}
                           </Button>
-                        ) : (
-                          <span className="text-sm text-ink-3">
-                            <Trans>Sin subir todavía</Trans>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center gap-3">
+                          <span className="w-52 text-sm font-medium text-ink">
+                            {documentTypeLabel(type)}
                           </span>
+                          {canEditDocuments ? (
+                            <Button
+                              variant="secondary"
+                              className="px-3 py-1.5 text-xs"
+                              disabled={isUploading}
+                              onClick={() => {
+                                startUpload(type)
+                              }}
+                            >
+                              {isUploading && uploadType === type ? (
+                                <Trans>Subiendo…</Trans>
+                              ) : (
+                                <Trans>Subir {documentTypeLabel(type)}</Trans>
+                              )}
+                            </Button>
+                          ) : (
+                            <span className="text-sm text-ink-3">
+                              <Trans>Sin subir todavía</Trans>
+                            </span>
+                          )}
+                        </div>
+                        {type === 'SSN_ITIN' && canEditDocuments && (
+                          <button
+                            type="button"
+                            className="ml-52 w-fit cursor-pointer text-left text-xs text-ink-3 underline decoration-dotted hover:text-ink-2"
+                            disabled={isAcceptingRetention}
+                            onClick={() => {
+                              void handleAcceptTaxRetention()
+                            }}
+                          >
+                            {isAcceptingRetention ? (
+                              <Trans>Aceptando…</Trans>
+                            ) : (
+                              <Trans>o acepta la retención del 16% y no lo pidas</Trans>
+                            )}
+                          </button>
                         )}
                       </div>
                     )}
