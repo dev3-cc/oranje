@@ -1093,6 +1093,10 @@ msgstr "Abriendo…"
 msgid "Abrir"
 msgstr "Abrir"
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Abrir el original en pestaña nueva ↗"
+msgstr "Abrir el original en pestaña nueva ↗"
+
 #: src/features/onboarding/pages/ProposalVersionPage.tsx
 msgid "Abrir en el editor"
 msgstr "Abrir en el editor"
@@ -7703,6 +7707,10 @@ msgstr "La hora extra se paga 1.5 veces la hora normal."
 msgid "La hora que pongas manda"
 msgstr "La hora que pongas manda"
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "La imagen no cargó o está dañada — ábrela en pestaña nueva para revisarla."
+msgstr "La imagen no cargó o está dañada — ábrela en pestaña nueva para revisarla."
+
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "La imagen pasa de 15 MB: toma la foto con menos resolución o comprímela."
 msgstr "La imagen pasa de 15 MB: toma la foto con menos resolución o comprímela."
@@ -9743,6 +9751,10 @@ msgstr "No se pudo eliminar. Inténtalo de nuevo."
 msgid "No se pudo generar el PDF. Inténtalo de nuevo."
 msgstr "No se pudo generar el PDF. Inténtalo de nuevo."
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "No se pudo generar la vista previa — el enlace firmado venció. Cierra y vuelve a abrir el expediente."
+msgstr "No se pudo generar la vista previa — el enlace firmado venció. Cierra y vuelve a abrir el expediente."
+
 #: src/mobile/nativeDownloads.ts
 msgid "No se pudo guardar el archivo. Inténtalo de nuevo."
 msgstr "No se pudo guardar el archivo. Inténtalo de nuevo."
@@ -10665,6 +10677,7 @@ msgid "pendiente de horas contractuales"
 msgstr "pendiente de horas contractuales"
 
 #: src/features/recruitment/components/PoolFilters.tsx
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Pendiente de verificar"
 msgstr "Pendiente de verificar"
 
@@ -14687,6 +14700,12 @@ msgstr "verificado"
 #: src/features/worker/pages/ProfilePage.tsx
 msgid "Verificado"
 msgstr "Verificado"
+
+#. placeholder {0}: previewDoc.verifiedBy?.fullName ?? '—'
+#. placeholder {1}: previewDoc.verifiedAt === null ? '—' : formatDate(previewDoc.verifiedAt)
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Verificado por {0} · {1}"
+msgstr "Verificado por {0} · {1}"
 
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Verificando…"
