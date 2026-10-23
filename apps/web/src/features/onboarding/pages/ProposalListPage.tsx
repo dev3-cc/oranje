@@ -4,7 +4,7 @@ import { cn, MaterialIcon } from '@oranje/ui'
 import { useMemo, useState, type ReactNode } from 'react'
 
 import { useGetProposalCandidatesQuery } from '../api/proposalsApi'
-import { NewProposalDialog } from '../components/NewProposalDialog'
+import { ViewProposalDialog } from '../components/ViewProposalDialog'
 
 import { ProposalEditorPage } from './ProposalEditorPage'
 
@@ -80,16 +80,17 @@ export function ProposalListPage(): ReactNode {
               placeholder={t`Nombre del hotel, p. ej. Puerto Real…`}
               className="w-full max-w-md"
             />
-            {canCreate ? (
-              <Button
-                variant="primary"
-                onClick={() => {
-                  setIsCreating(true)
-                }}
-              >
-                <Trans>Nueva propuesta</Trans>
-              </Button>
-            ) : null}
+            {/* «Ver propuesta» (Hugo, 2026-10-23): de cualquier hotel, también
+                los que todavía no pueden abrirla. Crear y versionar se deciden
+                adentro, con el permiso. */}
+            <Button
+              variant="primary"
+              onClick={() => {
+                setIsCreating(true)
+              }}
+            >
+              <Trans>Ver propuesta</Trans>
+            </Button>
           </div>
         </div>
         <img
@@ -100,8 +101,9 @@ export function ProposalListPage(): ReactNode {
         />
       </header>
 
-      <NewProposalDialog
+      <ViewProposalDialog
         isOpen={isCreating}
+        canCreate={canCreate}
         onClose={() => {
           setIsCreating(false)
         }}
@@ -143,18 +145,16 @@ export function ProposalListPage(): ReactNode {
       {!isLoading && !isError && candidates.length === 0 && searchInput.trim() === '' && (
         <EmptyState
           title={t`Aún no hay propuestas`}
-          text={t`La propuesta se abre cuando un prospecto llega a Verde. Crea la primera con «Nueva propuesta» o desde la ficha del prospecto.`}
+          text={t`La propuesta se abre cuando un prospecto llega a Verde. Búscalo con «Ver propuesta» o ábrela desde la ficha del prospecto.`}
           action={
-            canCreate ? (
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setIsCreating(true)
-                }}
-              >
-                <Trans>Nueva propuesta</Trans>
-              </Button>
-            ) : undefined
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setIsCreating(true)
+              }}
+            >
+              <Trans>Ver propuesta</Trans>
+            </Button>
           }
         />
       )}

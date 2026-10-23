@@ -258,6 +258,11 @@ export interface ContractApi {
   mealDeductionAmount: string
   splitsInvoiceByMonth: boolean
   signedAt: string | null
+  /** Quién lo activó; `null` si nunca se activó. */
+  signedByName: string | null
+  /** Enviado al hotel (2026-10-23): un borrador enviado queda bloqueado. */
+  sentAt: string | null
+  sentByName: string | null
   createdAt: string
   updatedAt: string | null
   /** Solo el detalle (`GET /contracts/:id`) trae las tarifas. */
@@ -270,7 +275,7 @@ export interface ContractApi {
   companyEmail: string | null
   serviceProviderName: string | null
   serviceProviderEmail: string | null
-  /** Candado del contrato ACTIVO — nunca cambia `status` por sí solo. */
+  /** Candado del contrato ACTIVO o del borrador enviado — nunca cambia `status`. */
   isUnlocked: boolean
 }
 

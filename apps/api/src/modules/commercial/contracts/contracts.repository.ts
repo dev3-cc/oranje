@@ -26,6 +26,11 @@ export interface ContractRow {
   mealDeductionAmount: string
   splitsInvoiceByMonth: boolean
   signedAt: Date | null
+  /** Quién lo activó (hoy `signed_by` = el BDC que activa; el hotel firma fuera). */
+  signedByName: string | null
+  /** Enviado al hotel: congela el borrador como en la Propuesta (2026-10-23). */
+  sentAt: Date | null
+  sentByName: string | null
   createdAt: Date
   updatedAt: Date | null
   hotel: { id: string; name: string }
@@ -62,6 +67,9 @@ const BASE = `
          c.meal_deduction_amount::text AS "mealDeductionAmount",
          c.splits_invoice_by_month AS "splitsInvoiceByMonth",
          c.signed_at  AS "signedAt",
+         sg.full_name AS "signedByName",
+         c.sent_at    AS "sentAt",
+         se.full_name AS "sentByName",
          c.created_at AS "createdAt",
          c.updated_at AS "updatedAt",
          c.prospect_id AS "prospectId",
@@ -77,7 +85,9 @@ const BASE = `
          jsonb_build_object('id', h.id, 'name', h.name) AS hotel
     FROM commercial.contract c
     JOIN commercial.hotel h ON h.id = c.hotel_id
-    LEFT JOIN commercial.proposal pr ON pr.id = c.proposal_id`
+    LEFT JOIN commercial.proposal pr ON pr.id = c.proposal_id
+    LEFT JOIN identity."user" sg ON sg.id = c.signed_by
+    LEFT JOIN identity."user" se ON se.id = c.sent_by`
 
 @Injectable()
 export class ContractsRepository {
@@ -366,7 +376,11 @@ export class ContractsRepository {
         where: { id: params.id },
         data: {
           status: params.status,
-          ...(params.sign ? { signedBy: params.userId, signedAt: new Date() } : {}),
+          // Activar deja el contrato bloqueado de nuevo aunque el borrador
+          // enviado se hubiera desbloqueado para corregirlo.
+          ...(params.sign
+            ? { signedBy: params.userId, signedAt: new Date(), isUnlocked: false }
+            : {}),
         },
       })
 
@@ -384,7 +398,32 @@ export class ContractsRepository {
     })
   }
 
-  /** Candado del contrato ACTIVO: nunca toca `status`, solo `is_unlocked`. */
+  /**
+   * Enviado al hotel (Hugo, 2026-10-23): congela el borrador como en la
+   * Propuesta. Nace bloqueado (`is_unlocked = false`) y no toca el status.
+   */
+  async markSent(params: { id: string; userId: string; roleCode: string }): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.contract.update({
+        where: { id: params.id },
+        data: { sentBy: params.userId, sentAt: new Date(), isUnlocked: false },
+      })
+
+      await tx.journalEntry.create({
+        data: {
+          id: uuidv7(),
+          entityType: 'commercial.contract',
+          entityId: params.id,
+          eventType: 'CONTRACT_SENT',
+          actorUserId: params.userId,
+          actorRole: params.roleCode,
+          payload: {},
+        },
+      })
+    })
+  }
+
+  /** Candado del contrato (ACTIVO, o borrador ya enviado): nunca toca `status`, solo `is_unlocked`. */
   async setLocked(params: {
     id: string
     isUnlocked: boolean

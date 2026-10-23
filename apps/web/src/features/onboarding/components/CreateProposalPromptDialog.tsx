@@ -17,7 +17,7 @@ import { apiErrorMessage } from '@/shared/lib/apiError'
  * (`WORKING_STATES` en `proposals.service.ts` incluye GREEN), así que en vez
  * de dejar al BD/BDC buscar el botón aparte, se le pregunta aquí mismo.
  *
- * "Sí" repite exactamente lo que hace `NewProposalDialog.start()`: crea el
+ * "Sí" repite exactamente lo que hace `ViewProposalDialog` al crear la v1: crea el
  * borrador v1 y navega a cotizarlo. "No" no hace nada — el prospecto se
  * queda en Verde, sin propuesta, y se abre después desde su ficha.
  */

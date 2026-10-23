@@ -86,9 +86,13 @@ export function toContractDetail(contract: ContractApi): ContractDetail {
        hotel, porque el acuerdo imprimible la necesita en la cabecera. */
     hotelAddress: null,
     status: contract.status as ContractStatus,
-    /** El contrato real aún no guarda QUIÉN firmó, solo cuándo. */
-    signedByName: '—',
-    signedAt: contract.signedAt ?? contract.createdAt,
+    /* Sin activar no hay fecha de firma: antes se rellenaba con la de
+       creación y un borrador decía «firmado el …» (Hugo, 2026-10-23). */
+    signedByName: contract.signedByName,
+    signedAt: contract.signedAt,
+    sentAt: contract.sentAt,
+    sentByName: contract.sentByName,
+    createdAt: contract.createdAt,
     validFrom: contract.validFrom,
     validTo: contract.validTo,
     weekStartDay: contract.week.startDay,
@@ -380,9 +384,25 @@ export const contractsApi = baseApi.injectEndpoints({
     }),
 
     /**
+     * «Marcar como enviado» (Hugo, 2026-10-23): mismo patrón que la Propuesta.
+     * Congela el borrador; desde aquí solo se edita si el BDC lo desbloquea.
+     */
+    markContractSent: build.mutation<ContractDetail, { contractId: string }>({
+      query: ({ contractId }) => ({
+        url: `/contracts/${contractId}/mark-sent`,
+        method: 'POST',
+      }),
+      transformResponse: (raw: ApiEnvelope<ContractApi>) => toContractDetail(raw.data),
+      invalidatesTags: (_result, _error, { contractId }) => [
+        { type: 'Contract' as const, id: contractId },
+        { type: 'Contract' as const, id: 'LIST' },
+      ],
+    }),
+
+    /**
      * «Enviar por correo» (Hugo, 2026-10-17): el PDF ya lo generó la pantalla
-     * de la misma vista previa que se está viendo — este endpoint no cambia
-     * el estado del contrato, solo manda el correo.
+     * de la misma vista previa que se está viendo. Si el borrador no se había
+     * enviado, el back lo deja enviado y bloqueado (2026-10-23).
      */
     sendContractEmail: build.mutation<
       SendDocumentEmailResult,
@@ -396,6 +416,10 @@ export const contractsApi = baseApi.injectEndpoints({
         return { url: `/contracts/${contractId}/send-email`, method: 'POST', body }
       },
       transformResponse: (raw: { email: SendDocumentEmailResult }) => raw.email,
+      invalidatesTags: (_result, _error, { contractId }) => [
+        { type: 'Contract' as const, id: contractId },
+        { type: 'Contract' as const, id: 'LIST' },
+      ],
     }),
   }),
 })
@@ -464,5 +488,6 @@ export const {
   useTransitionContractMutation,
   useUnlockContractMutation,
   useLockContractMutation,
+  useMarkContractSentMutation,
   useSendContractEmailMutation,
 } = contractsApi

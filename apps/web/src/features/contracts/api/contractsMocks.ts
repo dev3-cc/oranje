@@ -65,6 +65,7 @@ function buildContract(input: {
   overtimeBill?: string
   holidayBill?: string
   isUnlocked?: boolean
+  sentAt?: string | null
   proposal?: { id: string; prospectId: string; version: number } | null
 }): StoredContract {
   return {
@@ -84,7 +85,11 @@ function buildContract(input: {
     mealDeductionAmount: '0.00',
     splitsInvoiceByMonth: false,
     signedAt: input.signedAt,
-    createdAt: input.validFrom,
+    signedByName: input.signedAt ? 'Bruno Salas' : null,
+    sentAt: input.sentAt ?? null,
+    sentByName: input.sentAt ? 'Ana Ruiz' : null,
+    /* Un borrador puede arrancar a regir en el futuro, pero no crearse en él. */
+    createdAt: input.validFrom < isoInDays(0) ? input.validFrom : isoInDays(-2),
     updatedAt: null,
     rates: rates(input.id, input.positionCount),
     proposal: input.proposal ?? null,
@@ -338,7 +343,7 @@ const routes: readonly MockRoute[] = [
     resolve: ({ params, body }): ApiEnvelope<ContractApi> => {
       const contract = CONTRACTS.find((item) => item.id === params.contractId)
       if (!contract) throw new Error('CONTRACT_NOT_FOUND')
-      if (contract.status !== 'ACTIVE') throw new Error('CONTRACT_NOT_ACTIVE')
+      if (!isLockable(contract)) throw new Error('CONTRACT_NOT_ACTIVE')
       const dto = body as { reason: string }
       if (dto.reason.trim().length < 4)
         throw new Error('El motivo debe explicar por qué se desbloquea')
@@ -352,9 +357,35 @@ const routes: readonly MockRoute[] = [
     resolve: ({ params }): ApiEnvelope<ContractApi> => {
       const contract = CONTRACTS.find((item) => item.id === params.contractId)
       if (!contract) throw new Error('CONTRACT_NOT_FOUND')
-      if (contract.status !== 'ACTIVE') throw new Error('CONTRACT_NOT_ACTIVE')
+      if (!isLockable(contract)) throw new Error('CONTRACT_NOT_ACTIVE')
       contract.isUnlocked = false
       return { data: snapshot(contract) }
+    },
+  },
+  {
+    // Antes del catch-all `:action`, igual que unlock/lock.
+    method: 'POST',
+    path: '/contracts/:contractId/mark-sent',
+    resolve: ({ params }): ApiEnvelope<ContractApi> => {
+      const contract = CONTRACTS.find((item) => item.id === params.contractId)
+      if (!contract) throw new Error('CONTRACT_NOT_FOUND')
+      if (contract.status !== 'DRAFT') throw new Error('CONTRACT_NOT_DRAFT')
+      if (contract.sentAt) throw new Error('CONTRACT_ALREADY_SENT')
+      markSent(contract)
+      return { data: snapshot(contract) }
+    },
+  },
+  {
+    method: 'POST',
+    path: '/contracts/:contractId/send-email',
+    resolve: ({ params, body }): { email: { status: string; transport: string } } => {
+      const contract = CONTRACTS.find((item) => item.id === params.contractId)
+      if (!contract) throw new Error('CONTRACT_NOT_FOUND')
+      const to = body instanceof FormData ? body.get('to') : null
+      if (typeof to !== 'string' || to.trim() === '') throw new Error('Falta el destinatario')
+      // Igual que el back: un borrador sin enviar queda enviado y bloqueado.
+      if (contract.status === 'DRAFT' && !contract.sentAt) markSent(contract)
+      return { email: { status: 'SENT', transport: 'SMTP' } }
     },
   },
   {
@@ -368,19 +399,12 @@ const routes: readonly MockRoute[] = [
       ]
       if (!nextStatus) throw new Error('UNKNOWN_ACTION')
       contract.status = nextStatus
-      if (nextStatus === 'ACTIVE') contract.signedAt = isoInDays(0)
+      if (nextStatus === 'ACTIVE') {
+        contract.signedAt = isoInDays(0)
+        contract.signedByName = 'Bruno Salas'
+        contract.isUnlocked = false
+      }
       return { data: snapshot(contract) }
-    },
-  },
-  {
-    method: 'POST',
-    path: '/contracts/:contractId/send-email',
-    resolve: ({ params, body }): { email: { status: string; transport: string } } => {
-      const contract = CONTRACTS.find((item) => item.id === params.contractId)
-      if (!contract) throw new Error('CONTRACT_NOT_FOUND')
-      const to = body instanceof FormData ? body.get('to') : null
-      if (typeof to !== 'string' || to.trim() === '') throw new Error('Falta el destinatario')
-      return { email: { status: 'SENT', transport: 'SMTP' } }
     },
   },
 ]
@@ -388,6 +412,17 @@ const routes: readonly MockRoute[] = [
 let mockContractSequence = 0
 
 /** RTK congela lo que sirve: cada respuesta va con SUS copias, nunca la referencia viva. */
+/** El candado aplica al contrato vigente y al borrador ya enviado (2026-10-23). */
+function isLockable(contract: StoredContract): boolean {
+  return contract.status === 'ACTIVE' || (contract.status === 'DRAFT' && contract.sentAt !== null)
+}
+
+function markSent(contract: StoredContract): void {
+  contract.sentAt = new Date().toISOString()
+  contract.sentByName = 'Ana Ruiz'
+  contract.isUnlocked = false
+}
+
 function snapshot(contract: StoredContract): ContractApi {
   return { ...contract, rates: contract.rates.map((rate) => ({ ...rate })) }
 }
