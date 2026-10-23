@@ -2192,6 +2192,7 @@ msgstr "Buscar en tu plantel"
 
 #: src/features/clients/components/ClientFilters.tsx
 #: src/features/contracts/components/MissingContractsNotice.tsx
+#: src/features/onboarding/pages/PipelinePage.tsx
 #: src/features/onboarding/pages/ProposalListPage.tsx
 msgid "Buscar hotel"
 msgstr "Buscar hotel"
@@ -2241,6 +2242,7 @@ msgstr "Business Developer"
 msgid "Business Developer Coordinator"
 msgstr "Business Developer Coordinator"
 
+#: src/features/onboarding/pages/PipelinePage.tsx
 #: src/features/requisitions/pages/RequisitionBoardPage.tsx
 msgid "búsqueda «{searchTerm}»"
 msgstr "búsqueda «{searchTerm}»"
@@ -9958,6 +9960,7 @@ msgid "Nombre del hotel, p. ej. Puerto Real…"
 msgstr "Nombre del hotel, p. ej. Puerto Real…"
 
 #: src/features/contracts/components/MissingContractsNotice.tsx
+#: src/features/onboarding/pages/PipelinePage.tsx
 msgid "Nombre del hotel…"
 msgstr "Nombre del hotel…"
 
