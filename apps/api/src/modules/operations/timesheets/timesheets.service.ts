@@ -159,6 +159,22 @@ export class TimesheetsService {
 
     this.assertEditable(status)
 
+    // Si Reclutamiento/el hotel ya marcó el día (Descanso, OFF, lo que sea
+    // que haya en el catálogo), el ponche se rechaza con ESE motivo — antes
+    // no se revisaba nada aquí, y un día marcado igual dejaba ponchar sin
+    // avisar (Hugo, 2026-10-23: "que diga el estado correcto").
+    if (dayId !== null) {
+      const dayStatus = await this.repo.dayStatusOf(dayId)
+
+      if (dayStatus) {
+        throw new UnprocessableEntityException({
+          code: 'DAY_MARKED_STATUS',
+          message: `Hoy no ponchas: ${dayStatus.name}`,
+          details: [{ field: 'dayStatus', value: dayStatus.code }],
+        })
+      }
+    }
+
     if (dayId !== null && (await this.repo.punchExists(dayId, dto.type))) {
       throw new ConflictException({
         code: 'PUNCH_ALREADY_REGISTERED',

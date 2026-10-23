@@ -349,6 +349,61 @@ describe('ponchar sin conocer la asignación', () => {
     schedulesCreated.push(after.id)
   })
 
+  // Hugo, 2026-10-23: el día marcado (Descanso, OFF...) ya rechazaba el
+  // ponche por falta de turno "normal" — esto confirma que ahora el motivo
+  // es el REAL, no un genérico, y que cada estado del catálogo trae su
+  // propio nombre.
+  it('con el día ya marcado, el ponche se rechaza con ESE motivo, no uno genérico', async () => {
+    const t = await turnoDeHoy(`punch-marcado-${Date.now()}`)
+
+    const schedule = await db.schedule.findFirstOrThrow({
+      where: { hotelId: t.hotelId },
+      select: { id: true, weekStart: true, weekEnd: true },
+    })
+    const assignment = await db.assignment.findUniqueOrThrow({
+      where: { id: t.assignmentId },
+      select: { slot: { select: { position: { select: { requisitionId: true } } } } },
+    })
+    const fecha = await db.$queryRaw<Array<{ hoy: Date }>>`
+      SELECT (now() AT TIME ZONE 'America/Cancun')::date AS hoy`
+    const workDate = (fecha[0] as { hoy: Date }).hoy
+
+    const timesheetId = uuidv7()
+    await db.timesheet.create({
+      data: {
+        id: timesheetId,
+        scheduleId: schedule.id,
+        workerId: t.workerId,
+        requisitionId: assignment.slot.position.requisitionId,
+        weekStart: schedule.weekStart,
+        weekEnd: schedule.weekEnd,
+        status: 'OPEN',
+      },
+    })
+
+    const rest = await db.timesheetDayStatus.findFirstOrThrow({
+      where: { code: 'REST' },
+      select: { id: true },
+    })
+    await db.timesheetDay.create({
+      data: { id: uuidv7(), timesheetId, workDate, dayStatusId: rest.id, grossMinutes: 0 },
+    })
+
+    await expect(
+      timesheets.punch(
+        {
+          type: 'CLOCK_IN',
+          latitude: 21.16,
+          longitude: -86.85,
+          photoPath: 'operations/punch/x.webp',
+        } as never,
+        t.user,
+      ),
+    ).rejects.toMatchObject({
+      response: { code: 'DAY_MARKED_STATUS', details: [{ field: 'dayStatus', value: 'REST' }] },
+    })
+  })
+
   it('no puede ponchar la asignación de otro', async () => {
     const mia = await turnoDeHoy(`punch-mia-${Date.now()}`)
     const ajena = await turnoDeHoy(`punch-ajena-${Date.now()}`)

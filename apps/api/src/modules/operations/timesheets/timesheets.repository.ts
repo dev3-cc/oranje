@@ -325,6 +325,19 @@ export class TimesheetsRepository {
     })
   }
 
+  /** El estado del día, si ya tiene uno puesto (Descanso, OFF, o lo que
+      agregue el Administrador desde /catalogos) — lo que el ponche necesita
+      para avisar POR QUÉ no toca hoy, en vez de asumir que siempre es
+      descanso (Hugo, 2026-10-23). */
+  async dayStatusOf(dayId: string): Promise<{ code: string; name: string } | null> {
+    const day = await this.prisma.timesheetDay.findUnique({
+      where: { id: dayId },
+      select: { dayStatus: { select: { code: true, name: true } } },
+    })
+
+    return day?.dayStatus ?? null
+  }
+
   async dayStatusExists(id: string): Promise<boolean> {
     return (
       (await this.prisma.timesheetDayStatus.findUnique({ where: { id }, select: { id: true } })) !==
