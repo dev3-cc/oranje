@@ -3,7 +3,9 @@
 #
 # UN SOLO ARTEFACTO: la imagen se construye una vez en `staging` y producción
 # reutiliza ese digest. Reconstruirla haría que lo probado y lo desplegado
-# fueran dos binarios distintos.
+# fueran dos binarios distintos. La excepción: si ningún commit con imagen en
+# staging trae el mismo código del API (un hotfix o un cherry-pick directo a
+# main), producción construye la suya en vez de promover una equivocada.
 name: Desplegar
 
 on:
@@ -11,10 +13,20 @@ on:
     branches: [staging, main]
 
 # Uno a la vez por ambiente: dos merges seguidos competirían por la misma
-# revisión de Cloud Run
+# revisión de Cloud Run.
+#
+# En main, el despliegue nuevo CANCELA al anterior. Un despliegue esperando la
+# aprobación de `production` cuenta como en curso y bloqueaba a todos los que
+# venían detrás: el 2026-10-22 uno del #240 llevaba 23 h sin aprobar y el del
+# #246 esperó 19 min en la fila hasta que alguien lo aprobó — y entonces
+# desplegó primero el viejo. El nuevo commit de main ya trae todo lo del
+# anterior, así que cancelarlo no pierde nada; si lo alcanza a medio desplegar,
+# las migraciones son idempotentes y Cloud Run termina la revisión que ya pidió
+# antes de que el nuevo la reemplace. En staging no se cancela: ahí cada merge
+# construye su imagen y no hay aprobación que espere.
 concurrency:
   group: desplegar-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.ref == 'refs/heads/main' }}
 
 permissions:
   # write: el último paso del deploy a producción deja un tag `prod-…` en el
@@ -79,14 +91,22 @@ jobs:
             --substitutions "_IMAGEN=${{ steps.imagen.outputs.ruta }}:${{ github.sha }}" \
             --project "${{ vars.GCP_PROJECT_ID }}"
 
-      # --- main: no construye, promueve lo que ya se probó ---
-      # Si el commit no tiene imagen en staging, nunca pasó por ahí y se detiene.
+      # --- main: promueve lo que ya se probó; si no existe, lo construye ---
       #
       # El PR staging → main se cierra con un merge commit (la protección de
       # rama no deja hacer fast-forward), así que el SHA de main no existe en
       # staging: la imagen probada es la de su SEGUNDO padre, que es la punta
       # de staging al mergear. Se prueba primero el SHA tal cual (por si algún
       # día el merge fuera fast-forward) y luego el padre.
+      #
+      # Una imagen de otro commit solo sirve si el código del API es IDÉNTICO
+      # (mismas carpetas que entran al build, ver CONTEXTO). Antes bastaba con
+      # que el ancestro tuviera imagen: el 2026-10-22 el #246 (cherry-pick
+      # directo a main, que staging nunca construyó) promovió la del #237 con
+      # la etiqueta del commit nuevo — la web quedó nueva, el API viejo y la
+      # migración sin correr, todo en verde. Si ningún ancestro trae el mismo
+      # código, se construye la imagen de ESTE commit en producción: un
+      # hotfix directo a main deja de ser un callejón.
       - name: Promover la imagen probada en staging
         if: github.ref_name == 'main'
         id: promover
@@ -94,6 +114,10 @@ jobs:
           ORIGEN="${{ vars.STAGING_PROJECT_ID }}"
           DESTINO="${{ vars.GCP_PROJECT_ID }}"
           RUTA_ORIGEN="$REGION-docker.pkg.dev/$ORIGEN/$REPOSITORIO/$SERVICIO"
+          RUTA_DESTINO="$REGION-docker.pkg.dev/$DESTINO/$REPOSITORIO/$SERVICIO:${{ github.sha }}"
+          # Lo que decide los bytes de la imagen: el Dockerfile copia todo el
+          # repo, instala con el lockfile y compila solo @oranje/api.
+          CONTEXTO="apps/api packages package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc tsconfig.base.json cloudbuild.yaml"
 
           # Caminar solo "segundos padres" en cadena se rompe en cuanto un
           # commit intermedio no es un merge (p. ej. un hotfix lineal
@@ -114,23 +138,26 @@ jobs:
 
           DIGEST=""
           for CANDIDATO in $(git rev-list --max-count=50 "${{ github.sha }}"); do
-            DIGEST=$(awk -v c="$CANDIDATO" '$1 == c { print $2; exit }' "$TAGS")
-            if [ -n "$DIGEST" ]; then
-              echo "Imagen probada en staging: $CANDIDATO → $DIGEST"
+            ENCONTRADO=$(awk -v c="$CANDIDATO" '$1 == c { print $2; exit }' "$TAGS")
+            [ -z "$ENCONTRADO" ] && continue
+            # shellcheck disable=SC2086 # CONTEXTO es una lista de rutas a propósito
+            if git diff --quiet "$CANDIDATO" "${{ github.sha }}" -- $CONTEXTO; then
+              DIGEST="$ENCONTRADO"
+              echo "Imagen probada en staging: $CANDIDATO → $DIGEST (mismo código del API)"
               break
             fi
+            echo "La imagen de $CANDIDATO no sirve: su código del API no es el de ${{ github.sha }}"
           done
 
-          if [ -z "$DIGEST" ]; then
-            echo "::error::Ninguno de los últimos 50 ancestros de ${{ github.sha }} tiene imagen en staging."
-            echo "::error::Producción solo promueve lo que ya se probó — no reconstruye."
-            exit 1
+          if [ -n "$DIGEST" ]; then
+            gcloud container images add-tag "$RUTA_ORIGEN@$DIGEST" "$RUTA_DESTINO" --quiet
+          else
+            echo "::warning::Ningún ancestro con imagen en staging trae este código del API: se construye la imagen de ${{ github.sha }} en producción."
+            gcloud builds submit \
+              --config cloudbuild.yaml \
+              --substitutions "_IMAGEN=$RUTA_DESTINO" \
+              --project "$DESTINO"
           fi
-
-          gcloud container images add-tag \
-            "$RUTA_ORIGEN@$DIGEST" \
-            "$REGION-docker.pkg.dev/$DESTINO/$REPOSITORIO/$SERVICIO:${{ github.sha }}" \
-            --quiet
 
       # El paso más caro del despliegue y el que casi nunca tiene algo que
       # hacer: de los últimos 40 commits de staging solo 2 tocaron
