@@ -65,6 +65,53 @@ describe('WorkerDetailPage', () => {
     expect(within(itinRow).getByText('Pendiente')).toBeInTheDocument()
   })
 
+  it('el documento se previsualiza y se verifica en un modal, sin pestaña nueva', async () => {
+    renderDetail()
+    const user = userEvent.setup()
+
+    await screen.findByRole('heading', { name: 'Ana Rivera Gómez' })
+
+    // El ITIN está pendiente: su nombre de archivo es botón (abre el modal),
+    // no un link a otra pestaña.
+    await user.click(await screen.findByRole('button', { name: 'itin.pdf' }))
+
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByText('Pendiente de verificar')).toBeInTheDocument()
+    // El fixture no trae URL firmada: el modal lo dice, no deja un hueco mudo.
+    expect(within(dialog).getByText(/No se pudo generar la vista previa/)).toBeInTheDocument()
+    // Nada que abrir aparte: sin URL no hay link muerto a una pestaña nueva.
+    expect(within(dialog).queryByText(/Abrir el original/)).not.toBeInTheDocument()
+
+    await user.click(within(dialog).getByRole('button', { name: 'Verificar documento' }))
+
+    // Misma mutación que ya invalida la ficha (`{type:'Worker', id}`): el
+    // modal la ve sin cerrarse solo, porque lee el doc fresco por id.
+    await waitFor(() => {
+      expect(
+        within(dialog).queryByRole('button', { name: 'Verificar documento' }),
+      ).not.toBeInTheDocument()
+    }, SLOW)
+    expect(within(dialog).getByText(/Verificado por/)).toBeInTheDocument()
+
+    await user.keyboard('{Escape}')
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+    // Nunca se navegó a ningún lado: el encabezado sigue ahí, intacto, al
+    // cerrar (mientras el modal está abierto Radix lo marca aria-hidden a
+    // propósito, por accesibilidad — no se consulta mientras tanto).
+    expect(screen.getByRole('heading', { name: 'Ana Rivera Gómez' })).toBeInTheDocument()
+
+    // Uno YA verificado desde antes: sigue pudiendo reemplazarse ahí mismo
+    // (Hugo, 2026-10-23 — verificado no debería impedir reemplazar).
+    await user.click(await screen.findByRole('button', { name: 'ine-frente.pdf' }))
+    const idDialog = await screen.findByRole('dialog')
+    expect(
+      within(idDialog).queryByRole('button', { name: 'Verificar documento' }),
+    ).not.toBeInTheDocument()
+    expect(within(idDialog).getByRole('button', { name: 'Reemplazar' })).toBeInTheDocument()
+  })
+
   it('el historial cuenta el recorrido del seed, con el nacimiento en BLANCO sin origen', async () => {
     renderDetail()
 

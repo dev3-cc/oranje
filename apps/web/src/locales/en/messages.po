@@ -1093,6 +1093,10 @@ msgstr "Opening…"
 msgid "Abrir"
 msgstr "Open"
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Abrir el original en pestaña nueva ↗"
+msgstr "Open the original in a new tab ↗"
+
 #: src/features/onboarding/pages/ProposalVersionPage.tsx
 msgid "Abrir en el editor"
 msgstr "Open in the editor"
@@ -7703,6 +7707,10 @@ msgstr "Overtime is paid 1.5 times the regular hour."
 msgid "La hora que pongas manda"
 msgstr "The time you enter is what counts"
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "La imagen no cargó o está dañada — ábrela en pestaña nueva para revisarla."
+msgstr "The image didn't load or is damaged — open it in a new tab to review it."
+
 #: src/features/recruitment/components/CreateWorkerDialog.tsx
 msgid "La imagen pasa de 15 MB: toma la foto con menos resolución o comprímela."
 msgstr "The image is over 15 MB: take it at a lower resolution or compress it."
@@ -9743,6 +9751,10 @@ msgstr "We couldn't delete it. Try again."
 msgid "No se pudo generar el PDF. Inténtalo de nuevo."
 msgstr "Couldn't generate the PDF. Try again."
 
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "No se pudo generar la vista previa — el enlace firmado venció. Cierra y vuelve a abrir el expediente."
+msgstr "Couldn't generate the preview — the signed link expired. Close and reopen the profile."
+
 #: src/mobile/nativeDownloads.ts
 msgid "No se pudo guardar el archivo. Inténtalo de nuevo."
 msgstr "The file couldn't be saved. Try again."
@@ -10665,6 +10677,7 @@ msgid "pendiente de horas contractuales"
 msgstr "waiting for contract hours"
 
 #: src/features/recruitment/components/PoolFilters.tsx
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
 msgid "Pendiente de verificar"
 msgstr "Pending verification"
 
@@ -14687,6 +14700,12 @@ msgstr "verified"
 #: src/features/worker/pages/ProfilePage.tsx
 msgid "Verificado"
 msgstr "Verified"
+
+#. placeholder {0}: previewDoc.verifiedBy?.fullName ?? '—'
+#. placeholder {1}: previewDoc.verifiedAt === null ? '—' : formatDate(previewDoc.verifiedAt)
+#: src/features/recruitment/pages/WorkerDetailPage.tsx
+msgid "Verificado por {0} · {1}"
+msgstr "Verified by {0} · {1}"
 
 #: src/features/worker/pages/PunchPage.tsx
 msgid "Verificando…"
