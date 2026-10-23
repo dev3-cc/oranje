@@ -329,11 +329,6 @@ export function WorkerDetailPage(): ReactNode {
         apiErrorMessage(error, {
           byCode: {
             UNSUPPORTED_FILE_TYPE: t`Ese formato no se puede procesar (los HEIC del iPhone no entran): usa JPG, PNG, WebP o PDF.`,
-            /* Antes de D-xx, esto solo pasaba si alguien subía dos veces sin
-               borrar. Con el reemplazo automático (2026-10-23) solo puede
-               pasar si el que ya existía estaba verificado — el mismo
-               candado que protege borrar y rechazar. */
-            DOCUMENT_VERIFIED: t`Ese documento ya está verificado: no se puede reemplazar.`,
           },
           byStatus: {
             413: t`El archivo pasa de 15 MB: comprímelo o escanéalo con menos resolución.`,
@@ -476,10 +471,10 @@ export function WorkerDetailPage(): ReactNode {
             <Button
               variant="secondary"
               className="px-3 py-1 text-xs"
-              disabled={locked || isUploading}
+              disabled={isUploading}
               title={
                 locked
-                  ? t`Ya está verificado: no se puede reemplazar, deja rastro de quién lo revisó.`
+                  ? t`Sube un archivo nuevo en lugar de este — queda pendiente de verificar otra vez.`
                   : t`Sube un archivo nuevo en lugar de este.`
               }
               onClick={() => {
