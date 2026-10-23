@@ -37,8 +37,10 @@ describe('PipelinePage', () => {
     expect(await screen.findByText('38 prospectos abiertos · 4 zonas')).toBeInTheDocument()
 
     expect(await screen.findByText('Hotel Riviera Maya')).toBeInTheDocument()
-    expect(screen.getByText('Grand Costa Nube')).toBeInTheDocument()
-    expect(screen.getByText('Hotel Puerto Real')).toBeInTheDocument()
+    expect(screen.getAllByText('Grand Costa Nube').length).toBeGreaterThan(0)
+    // Hotel Puerto Real sale dos veces a propósito: un prospecto en Rosa y
+    // otro, distinto, ya convertido en Naranja (ver el tablero completo).
+    expect(screen.getAllByText('Hotel Puerto Real').length).toBeGreaterThan(0)
   })
 
   it('rotula cada columna con lo que el color significa en este semáforo', async () => {
@@ -86,7 +88,39 @@ describe('PipelinePage', () => {
   it('la tarjeta lleva al detalle del prospecto', async () => {
     renderPipeline()
 
-    const card = await screen.findByRole('link', { name: /Hotel Puerto Real/ })
-    expect(card).toHaveAttribute('href', '/pipeline/psp-0007')
+    // Dos prospectos distintos comparten el nombre "Hotel Puerto Real"
+    // (uno en Rosa, otro ya en Naranja) — se busca la tarjeta de ESTE
+    // prospecto por su href, no por el nombre del hotel.
+    const cards = await screen.findAllByRole('link', { name: /Hotel Puerto Real/ })
+    const card = cards.find((link) => link.getAttribute('href') === '/pipeline/psp-0007')
+    expect(card).toBeDefined()
+  })
+
+  // Hugo, 2026-10-23: antes solo el Manager de QA veía la columna Naranja —
+  // BD/BDC tenía que ir a Clientes Activos, sin buscador, para encontrar un
+  // hotel ya cliente. Ahora el tablero la pinta para todos.
+  it('Naranja se ve para todos, no solo para el Manager de QA', async () => {
+    renderPipeline()
+
+    expect(await screen.findByText('Hotel identificado')).toBeInTheDocument()
+    expect(screen.getByText('Cliente activo')).toBeInTheDocument()
+  })
+
+  it('el buscador filtra por nombre de hotel, sobre lo que ya cargó el tablero', async () => {
+    const user = userEvent.setup()
+    renderPipeline()
+
+    expect(await screen.findByText('Hotel Riviera Maya')).toBeInTheDocument()
+    expect(screen.getByText('Hotel Playa Azul')).toBeInTheDocument()
+
+    await user.type(screen.getByLabelText('Buscar hotel'), 'Riviera')
+
+    await waitFor(() => {
+      expect(screen.queryByText('Hotel Playa Azul')).not.toBeInTheDocument()
+    })
+    expect(screen.getByText('Hotel Riviera Maya')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /Quitar filtros/ }))
+    expect(await screen.findByText('Hotel Playa Azul')).toBeInTheDocument()
   })
 })
